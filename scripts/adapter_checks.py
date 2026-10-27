@@ -1,13 +1,19 @@
-"""Gate checks for the four benchmark adapters under benchmark/adapters/ (loop stage S4c).
+"""Checks for the five benchmark adapters under benchmark/adapters/ (loop stage S4c), run
+by the verify gate (scripts/verify_session1.py) through check(); check_group(name) runs one
+group, and `py -3.12 -X utf8 scripts/adapter_checks.py [group ...]` runs them by hand.
 
-Every case runs on small hand-written synthetic items in each benchmark's documented
-schema (the fixtures beside each adapter), in temporary folders; nothing under
-config/, durable/, ontology/ or output/ is read or written, and no benchmark data under
-external/ is ever needed. benchmark/ is not shipped in the container image, so with
-benchmark/adapters/ absent every case is SKIPPED with the reason, never failed.
+Every case runs on small synthetic items in each benchmark's documented schema (the
+fixtures beside each adapter: hand-written, CUAD's 41 QA entries per contract expanded by
+the tracked benchmark/adapters/cuad/fixtures/make_synthetic_items.py), in temporary
+folders; nothing under config/, durable/, ontology/ or output/ is read or written, and no
+benchmark data under external/ is ever needed. benchmark/ is not shipped in the container
+image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
 
-  build      building twice gives byte-identical output, and the cut rule keeps whole
-             parts and writes the cut line with the hand-computed word counts
+  build      building twice gives byte-identical output; the cut budget is computed per
+             document from the bundle's own conventions with the B1 prompt; the cut rule
+             keeps whole parts and writes the cut line with hand-counted words; evidence
+             units are read on the kept text; a build without a budget, or with a
+             document off its declared side, is refused; an empty document is skipped
   split      the hash split rule (SHA-256 of the document's split key, mod 5) is
              recomputed here independently, and every item of a document falls on
              that document's side, including where the item's own id would not
@@ -17,11 +23,14 @@ benchmark/adapters/ absent every case is SKIPPED with the reason, never failed.
   structure  each bundle passes a structural reading of input-format-v1-draft: the
              headings give the expected unit ids, every unit's label line is
              `Passage: part` with no digit, a source `#` line never starts a unit, one
-             rule per item, the manifest names the target alone
+             rule per item, the manifest names the target alone; and Shimmer's own unit
+             splitter (scripts/pairing_map.split_units) gives the same unit ids, keeps an
+             escaped `#` line inside its unit, and numbers positions above 99 as u100
   mapping    the section 5.1 and 5.2 mapping gives the expected label for every case
-             of the hand-written run outputs (run failure, refusal, silence,
-             irregular, ok, CUAD missing_field against another relation, prior
-             relations), for B3, B1 and B0, with S-1 and S-2
+             of the hand-written run outputs (run failure from the completion record,
+             refusal, silence, irregular, ok, superseded revisions, CUAD missing_field
+             against another relation, prior relations), for B2, B1 and B0, with S-1
+             and S-2; B3 is refused while the typed-record key is unsettled
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, and an end-to-end score on a built
              bundle gives the hand-computed accuracy, location recall and false
@@ -43,7 +52,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ADAPTERS = ROOT / "benchmark" / "adapters"
-NAMES = ("contradoc", "cuad", "scitab", "findver")
+NAMES = ("contradoc", "cuad", "scitab", "findver", "contractnli")
 ABSENT_REASON = "benchmark/adapters/ is not present here (the container image ships no benchmark/)"
 _MODULES = {}
 
@@ -59,7 +68,8 @@ def _common():
         sys.path.insert(0, str(ADAPTERS))
         try:
             _MODULES["common"] = {m: importlib.import_module("common." + m)
-                                  for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli")}
+                                  for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli",
+                                            "prompt")}
         finally:
             sys.path.remove(str(ADAPTERS))
     return _MODULES["common"]
@@ -85,10 +95,25 @@ def _fixture(name, file_name):
     return ADAPTERS / name / "fixtures" / file_name
 
 
-def _build(name, out, cut=None):
-    c = _common()
-    return c["cli"].build(_adapter(name), _fixture(name, "synthetic_items.json"), out,
-                          *((cut[0], cut[1]) if cut else ()))
+def _build(name, out, source=None, **options):
+    """A build of the synthetic items; --development unless the caller says otherwise."""
+    options.setdefault("development", True)
+    return _common()["cli"].build(_adapter(name), source or _fixture(name, "synthetic_items.json"),
+                                  out, **options)
+
+
+class WordCounter:
+    """A stand-in tokenizer: one token per whitespace-separated word; the prompt with
+    an empty document counts a fixed `overhead` (or its lines, when `lines` is set)."""
+
+    def __init__(self, overhead=100, lines=False):
+        self.overhead, self.lines = overhead, lines
+
+    def count(self, text):
+        return len(text.split())
+
+    def count_prompt(self, system, user):
+        return (system + "\n" + user).count("\n") + 1 if self.lines else self.overhead
 
 
 def _files(folder):
@@ -132,32 +157,109 @@ class BuildChecks(_Case):
 
     def test_cut_rule_keeps_whole_parts_with_counted_words(self):
         c = _common()
-
-        def count(text):  # a stand-in tokenizer: one token per whitespace-separated word
-            return len(text.split())
-
-        # ContraDoc document 101: parts of 16, 18 and 12 words (46 in all). The rendered
-        # document adds the title (2 words), and per part a heading (2) and the label
-        # line (2). The cut line "[Document cut: the remaining N of M words are not
-        # shown.]" is 11 words.
-        _build("contradoc", self.root / "cut", (55, count))
+        # Budget = context - prompt overhead - output allowance - 32 = 198 - 100 - 10 - 32 = 56.
+        _build("contradoc", self.root / "cut", max_context=198, output_allowance=10,
+               token_counter=WordCounter(100))
         parts = {d["source_document_id"]: d for d in _json(self.root / "cut" / "parts.json")["documents"]}
         doc = parts[101]
-        # whole: 2 + (4+16) + (4+18) + (4+12) = 60 > 55. Two whole parts with the cut line:
-        # 2 + 20 + 22 + 11 = 55 <= 55; three would be 71. Removed: 46 - 34 = 12.
+        self.assertEqual((doc["cut"]["budget"], doc["cut"]["prompt_overhead"]), (56, 100))
+        # ContraDoc document 101: parts of 16, 18 and 12 words (46 in all). The rendered
+        # document adds the title (2 words), and per part a heading (2) and the label
+        # line (2). The cut line "[Document cut. The remaining N of M words are not
+        # shown.]" is 11 words. Whole: 2 + 20 + 22 + 16 = 60 > 56; two whole parts with
+        # the cut line: 2 + 20 + 22 + 11 = 55 <= 56; three would be 71. Removed 46 - 34 = 12.
         self.assertEqual((doc["cut"]["cut"], doc["cut"]["parts_kept"], doc["cut"]["words_removed"],
-                          doc["cut"]["words_total"]), (True, 2, 12, 46))
+                          doc["cut"]["words_total"], doc["source_words"]), (True, 2, 12, 46, 46))
         text = (self.root / "cut" / doc["document_id"] / "context" / (doc["document_id"] + ".md")).read_text(encoding="utf-8")
-        self.assertTrue(text.endswith("sits here.\n[Document cut: the remaining 12 of 46 words are not shown.]\n"))
+        self.assertTrue(text.endswith("sits here.\n[Document cut. The remaining 12 of 46 words are not shown.]\n"))
         self.assertEqual([p["part"] for p in doc["parts_beyond_cut"]], [3])
         self.assertFalse(parts[409]["cut"]["cut"], "a document that fits is not cut")
+        # Evidence units are read on the kept text: the evidence sentence of 101 was in the
+        # cut third part, its reference sentence in the first part, which is kept.
+        answer = _json(self.root / "cut" / doc["document_id"] / "answer_key.json")["items"][0]
+        self.assertEqual((answer["evidence_unit_ids"], answer["evidence_beyond_cut"]), (["u01-p-00001"], True))
+        # A part cut mid-text keeps only the evidence that survived: one paragraph of 8 + 7
+        # words, budget 162 - 100 - 10 - 32 = 20: whole 2 + 4 + 15 = 21 > 20; the part with
+        # the line is 32; three words and the line are 2 + 4 + 3 + 11 = 20. The evidence
+        # sentence was in the cut tail, so its unit is no longer an evidence unit.
+        source = self.root / "one.json"
+        source.write_text(json.dumps([{"unique id": 501, "label": "contradictory",
+                                       "text": "Alpha one two three four five six seven. "
+                                               "The orchard has no trees at all.",
+                                       "evidence": "The orchard has no trees at all."}]), encoding="utf-8")
+        _build("contradoc", self.root / "tail", source, max_context=162, output_allowance=10,
+               token_counter=WordCounter(100))
+        record = _json(self.root / "tail" / "parts.json")["documents"][0]
+        self.assertEqual((record["cut"]["whole_parts_kept"], record["cut"]["words_removed"]), (0, 12))
+        answer = _json(self.root / "tail" / record["document_id"] / "answer_key.json")["items"][0]
+        self.assertEqual((answer["evidence_unit_ids"], answer["evidence_beyond_cut"]), ([], True))
         # A first part that alone does not fit is cut at the last whitespace that fits:
         # parts of 20 and 1 words, budget 15: one part with the line is 31; four words
         # and the 11-word line are 15. Removed: 21 - 4 = 17.
         first = " ".join("w%d" % i for i in range(1, 21))
+        count = WordCounter().count
         kept, info = c["cut"].cut_parts([first, "w21"], 15, count, lambda t: "\n".join(t))
-        self.assertEqual(kept, ["w1 w2 w3 w4\n[Document cut: the remaining 17 of 21 words are not shown.]"])
+        self.assertEqual(kept, ["w1 w2 w3 w4\n[Document cut. The remaining 17 of 21 words are not shown.]"])
         self.assertEqual((info["parts_kept"], info["whole_parts_kept"], info["words_removed"]), (1, 0, 17))
+        # A table part counts its cell words, as the source word count does.
+        self.assertEqual(c["cut"].words("| A | 71.2 |\n|---|---|\n| B \\| C | 9 |"), 6)
+
+    def test_budget_is_computed_per_document_from_its_own_conventions(self):
+        # One line per convention in the B1 prompt: the two-claim table's prompt is one
+        # line longer than the one-claim table's, so its budget is one token smaller.
+        _build("scitab", self.root / "b", max_context=5000, output_allowance=100,
+               token_counter=WordCounter(lines=True))
+        docs = {d["source_document_id"]: d["cut"] for d in _json(self.root / "b" / "parts.json")["documents"]}
+        self.assertEqual(docs["syn-tab-1"]["prompt_overhead"] - docs["syn-tab-3"]["prompt_overhead"], 1)
+        for cut in docs.values():
+            self.assertEqual(cut["budget"], 5000 - cut["prompt_overhead"] - 100 - 32)
+
+    def test_build_refuses_without_budget_or_off_its_declared_side(self):
+        with self.assertRaisesRegex(ValueError, "never skipped"):
+            _build("cuad", self.root / "a", development=False, side="holdout")
+        budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+        # SciTab: syn-paper-bz is development, syn-paper-a holdout: a holdout build refuses.
+        with self.assertRaisesRegex(ValueError, "not on the declared side holdout"):
+            _build("scitab", self.root / "b", development=False, side="holdout", **budget)
+        self.assertFalse((self.root / "b").exists() and any((self.root / "b").iterdir()),
+                         "a refused build writes nothing")
+        # FinDVer: a holdout build needs testmini and refuses a report testmini holds.
+        records = _json(_fixture("findver", "synthetic_items.json"))
+        mini = self.root / "mini.json"
+        mini.write_text(json.dumps([records[0]]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "needs --testmini"):
+            _build("findver", self.root / "c", development=False, side="holdout", **budget)
+        with self.assertRaisesRegex(ValueError, "also appear in testmini"):
+            _build("findver", self.root / "d", development=False, side="holdout", testmini=mini, **budget)
+
+    def test_contractnli_items_rules_and_evidence(self):
+        # 2 agreements x 3 hypotheses; one rule per hypothesis with the hypothesis as its
+        # only slot (whitespace collapsed); evidence spans map to the paragraphs they touch.
+        _build("contractnli", self.root / "b")
+        items = _json(self.root / "b" / "items.json")["items"]
+        self.assertEqual(len(items), 6)
+        doc = _common()["ids"].opaque_document_id("contractnli", 7101)
+        rules = (self.root / "b" / doc / "conventions" / "rules.md").read_text(encoding="utf-8")
+        self.assertIn("## CONV-CNLI-NDA-2 Hypothesis [required] [conformance]\n\nHypothesis about the "
+                      "agreement: The receiving party shall not share the information with its "
+                      "employees. The hypothesis must agree with the passages of the agreement. If the "
+                      "agreement does not settle the hypothesis, emit UNCERTAIN.\n", rules)
+        answers = {a["hypothesis_key"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
+        self.assertEqual((answers["nda-2"]["gold"], answers["nda-2"]["evidence_unit_ids"],
+                          answers["nda-2"]["location_measurable"]), ("contradiction", ["u03-p-00003"], True))
+        self.assertEqual((answers["nda-1"]["evidence_unit_ids"], answers["nda-1"]["location_measurable"]),
+                         (["u02-p-00002"], False))
+        self.assertEqual(answers["nda-11"]["gold"], "not mentioned")
+
+    def test_empty_document_is_skipped_and_listed(self):
+        records = _json(_fixture("contradoc", "synthetic_items.json"))
+        records.append({"unique id": 777, "text": "  \n\n \n", "label": "not contradictory"})
+        source = self.root / "with_empty.json"
+        source.write_text(json.dumps(records), encoding="utf-8")
+        summary = _build("contradoc", self.root / "b", source)
+        self.assertEqual([s["source_document_id"] for s in summary["skipped_documents"]], [777])
+        self.assertEqual(summary["documents"], 4)
+        self.assertEqual(len(_json(self.root / "b" / "parts.json")["skipped"]), 1)
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +311,48 @@ class SplitChecks(_Case):
         self.assertGreater(differs, 0, "no fixture item whose own id would fall on another side")
         self.assertIn("development", {_independent_side(k) for k in ("409", "syn-paper-bz")})
 
+    def test_contradoc_groups_come_from_the_frozen_assignment(self):
+        # The assignment is computed once on the whole input; a later build from a sample
+        # holding only 102 keeps 102 in group 101 (its near-duplicate 101 is not in the
+        # sample), where regrouping the sample would have made 102 its own group.
+        adapter = _adapter("contradoc")
+        records = _json(_fixture("contradoc", "synthetic_items.json"))
+        assignment = self.root / "assignment.json"
+        code = _common()["cli"].main(adapter, ["split", "--input", str(_fixture("contradoc", "synthetic_items.json")),
+                                               "--out", str(assignment)])
+        self.assertEqual(code, 0)
+        sample = self.root / "sample.json"
+        sample.write_text(json.dumps([r for r in records if r["unique id"] == 102]), encoding="utf-8")
+        budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+        _build("contradoc", self.root / "b", sample, development=False, side="holdout",
+               assignment=assignment, **budget)
+        record = _json(self.root / "b" / "parts.json")
+        self.assertEqual([(d["cluster"], d["groups_from"]) for d in record["documents"]], [("101", "assignment")])
+        self.assertEqual(record["assignment_sha256"], hashlib.sha256(assignment.read_bytes()).hexdigest())
+        _build("contradoc", self.root / "c", sample)
+        self.assertEqual(_json(self.root / "c" / "parts.json")["documents"][0]["cluster"], "102")
+        with self.assertRaisesRegex(ValueError, "not on the declared side development"):
+            _build("contradoc", self.root / "d", sample, development=False, side="development",
+                   assignment=assignment, **budget)
+        with self.assertRaisesRegex(ValueError, "needs --assignment"):
+            _build("contradoc", self.root / "e", sample, development=False, side="holdout", **budget)
+
+    def test_contractnli_official_split(self):
+        # The dev split is development, the test split the holdout pool: the side is the
+        # one declared for the file, never a hash, and every agreement carries it.
+        adapter = _adapter("contractnli")
+        data = adapter.read_source(_fixture("contractnli", "synthetic_items.json"))
+        for side in ("development", "holdout"):
+            args = type("A", (), {"official": side})()
+            self.assertEqual({r["side"] for r in adapter.split_rows(data, args)}, {side})
+            budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+            _build("contractnli", self.root / side, development=False, side=side, **budget)
+            record = _json(self.root / side / "parts.json")
+            self.assertEqual({d["side"] for d in record["documents"]}, {side})
+            self.assertEqual(sorted(d["split_key"] for d in record["documents"]), ["7101", "7102"])
+        with self.assertRaisesRegex(ValueError, "required for ContractNLI"):
+            adapter.split_rows(data, type("A", (), {"official": None})())
+
     def test_findver_official_split_drops_testmini_reports(self):
         adapter = _adapter("findver")
         records = adapter.read_source(_fixture("findver", "synthetic_items.json"))
@@ -239,6 +383,8 @@ class OpaqueChecks(_Case):
                 sources.update(e["title"] for e in _json(_fixture(name, "synthetic_items.json"))["data"])
             if name == "scitab":
                 sources.update(r["paper_id"] for r in _json(_fixture(name, "synthetic_items.json")))
+            if name == "contractnli":
+                sources.update(d["file_name"] for d in _json(_fixture(name, "synthetic_items.json"))["documents"])
             patterns = [re.compile(r"(?<![0-9A-Za-z])" + re.escape(s) + r"(?![0-9A-Za-z])") for s in sources]
             bundles = [p for p in (self.root / name).iterdir() if p.is_dir()]
             self.assertEqual(sorted(p.name for p in bundles), sorted({i["document_id"] for i in items}))
@@ -303,11 +449,31 @@ class StructureChecks(_Case):
         self.assertEqual(rules, sorted(rules), "rules in rule-id order")
         return rules
 
+    def _shimmer_splits_the_same_way(self, records_by_name):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        for name, records in records_by_name.items():
+            for doc_id, record in records.items():
+                text = (self.root / name / doc_id / "context" / (doc_id + ".md")).read_text(encoding="utf-8")
+                units = pairing_map.split_units(text, document_id=doc_id)
+                self.assertEqual([u["unit_id"] for u in units], [p["unit_id"] for p in record["parts"]],
+                                 "%s %s: Shimmer's splitter" % (name, doc_id))
+        c = _common()
+        text = c["bundle"].render_document("x", ["Word number %s." % w for w in ("one",) * 102])
+        units = [u["unit_id"] for u in pairing_map.split_units(text, document_id="x")]
+        self.assertEqual(units[98:101], ["u99-p-00099", "u100-p-00100", "u101-p-00101"])
+        self.assertEqual(units, [c["bundle"].unit_id(k) for k in range(1, 103)])
+
     def test_bundles_follow_the_input_format(self):
+        records_by_name = {}
         for name in NAMES:
             _build(name, self.root / name)
             items = _json(self.root / name / "items.json")["items"]
             records = {d["document_id"]: d for d in _json(self.root / name / "parts.json")["documents"]}
+            records_by_name[name] = records
             for doc_id, record in records.items():
                 folder = self.root / name / doc_id
                 self.assertEqual(sorted(p.name for p in (folder / "context").iterdir()),
@@ -332,6 +498,7 @@ class StructureChecks(_Case):
                 if name == "findver":
                     indices = [p["source"]["context_index"] for p in record["parts"]]
                     self.assertEqual(indices, list(range(len(indices))))
+        self._shimmer_splits_the_same_way(records_by_name)
         # the escaped hash line and the escaped cell, read back as written
         _build("scitab", self.root / "again")
         texts = [p.read_text(encoding="utf-8") for p in (self.root / "again").rglob("*.md")
@@ -349,8 +516,9 @@ def _materialise(cases, root):
     for doc, run in cases["runs"].items():
         folder = runs / doc
         folder.mkdir(parents=True)
-        if run.get("final_status") is not None:
-            (folder / "FINAL_STATUS.json").write_text(json.dumps(run["final_status"]), encoding="utf-8")
+        if run.get("completion") is not None:
+            (folder / "audit").mkdir()
+            (folder / "audit" / "run_completion.json").write_text(json.dumps(run["completion"]), encoding="utf-8")
         deliverables = folder / "deliverables" / doc
         deliverables.mkdir(parents=True)
         if run.get("review_data") is not None:
@@ -358,7 +526,7 @@ def _materialise(cases, root):
         for file_name, text in (run.get("deliverables") or {}).items():
             (deliverables / file_name).write_text(text, encoding="utf-8")
         if run.get("pairing_map") is not None:
-            (folder / "audit").mkdir()
+            (folder / "audit").mkdir(exist_ok=True)
             (folder / "audit" / "pairing_map.json").write_text(json.dumps(run["pairing_map"]), encoding="utf-8")
     for doc, labels in (cases.get("b1") or {}).items():
         folder = b1 / doc / "labels"
@@ -381,8 +549,11 @@ class MappingChecks(_Case):
             adapter = _adapter(name)
             cases = _json(_fixture(name, "mapping_cases.json"))
             items, runs, b1 = _materialise(cases, self.root / name)
-            arms = {"B3": c["cli"].label(adapter, items, "B3", runs),
+            arms = {"B2": c["cli"].label(adapter, items, "B2", runs),
                     "B1": c["cli"].label(adapter, items, "B1", b1)}
+            for arm in ("B3", "B4"):
+                with self.assertRaises(c["mapping"].Refused, msg=name + " " + arm):
+                    c["cli"].label(adapter, items, arm, runs)
             for arm, labels in arms.items():
                 for variant in ("", " S-1", " S-2"):
                     key = arm + variant
@@ -406,9 +577,12 @@ class MappingChecks(_Case):
         cases = _json(_fixture("findver", "mapping_cases.json"))
         items, runs, _ = _materialise(cases, self.root / "exit")
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            code = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+            code = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B2",
                                                        "--runs", str(runs), "--out", str(self.root / "l.json")])
-        self.assertEqual(code, 3)
+            refused = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+                                                          "--runs", str(runs), "--out", str(self.root / "m.json")])
+        self.assertEqual((code, refused), (3, 4))
+        self.assertFalse((self.root / "m.json").exists(), "a refused arm writes no labels")
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +615,9 @@ class MetricChecks(_Case):
         # F1 4/7; pooled macro (1/2 + 4/7) / 2 = 15/28. Category A (first three):
         # absent F1 2/3, present F1 2/3, macro 2/3. Category B: absent tp 0 fp 1 fn 0 ->
         # 0 (recall and F1 zero denominators), present tp 1 fp 0 fn 2 -> 1/2; macro 1/4.
-        # Mean over categories (2/3 + 1/4) / 2 = 11/24.
+        # Mean over categories (2/3 + 1/4) / 2 = 11/24. Zero denominators, counted as
+        # scikit-learn counts them: only category B's absent recall (tp + fn = 0); its F1
+        # denominator 2tp + fp + fn = 1 is not zero.
         ab, pr = "absent", "present"
         pairs = [(ab, ab), (pr, ab), (pr, pr), (pr, pr), (A, pr), (ab, pr)]
         rows = [{"item_id": str(i)} for i in range(6)]
@@ -451,7 +627,7 @@ class MetricChecks(_Case):
         self.assertAlmostEqual(h["present"]["precision"], 2 / 3)
         self.assertAlmostEqual(h["present"]["recall"], 0.5)
         self.assertAlmostEqual(h["secondary_mean_category_macro_f1"], 11 / 24)
-        self.assertEqual(h["secondary_zero_denominators"], 2)
+        self.assertEqual(h["secondary_zero_denominators"], 1)
         # Zero division: no item predicted or gold absent -> every absent ratio is 0, three
         # zero denominators; macro (1 + 0) / 2.
         h = _adapter("cuad").headline([(pr, pr)], [{"item_id": "z"}], {"z": {"category_row": "cuad-01"}})
@@ -468,6 +644,16 @@ class MetricChecks(_Case):
         self.assertAlmostEqual(h["coverage"]["accuracy_on_answered"], 2 / 3)
         self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["accuracy"]["accuracy"], 0.5)
         self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["coverage"]["coverage"], 0.5)
+        # ContractNLI. (pred, gold): 3 of 6 correct (ABSTAIN wrong): accuracy 1/2.
+        # contradiction: tp 1, fp 1, fn 1 -> F1 2/(2+1+1) = 1/2; entailment: tp 1, fp 1,
+        # fn 2 (ABSTAIN and contradiction) -> P 1/2, R 1/3, F1 2/(2+1+2) = 2/5.
+        c, e, n = "contradiction", "entailment", "not mentioned"
+        h = _adapter("contractnli").headline([(c, c), (e, c), (n, n), (A, e), (e, e), (c, e)])
+        self.assertAlmostEqual(h["accuracy"]["accuracy"], 0.5)
+        self.assertAlmostEqual(h["contradiction"]["f1"], 0.5)
+        self.assertAlmostEqual(h["entailment"]["recall"], 1 / 3)
+        self.assertAlmostEqual(h["entailment"]["f1"], 0.4)
+        self.assertEqual(h["confusion"][e][A], 1)
 
     def test_end_to_end_score_on_a_built_bundle(self):
         c = _common()
@@ -482,7 +668,7 @@ class MetricChecks(_Case):
                     "cited_unit_ids": cited, "layer": "judged", "evidence": None, "faults": []}
         labels = {"arm": "B3", "analysis": "primary", "documents": [],
                   "counts": {"refusals": 0, "run_failure_documents": 0},
-                  "labels": [row(101, "FLAG", ["u03-p-00003"]), row(102, "FLAG", ["u01-p-00001"]),
+                  "labels": [row(101, "FLAG", ["U03-P-00003"]), row(102, "FLAG", ["u01-p-00001"]),
                              row(205, "FLAG", ["u01-p-00001"]), row(409, "CLEAR", [])]}
         result = c["metrics"].score_arm(adapter.SPEC, labels, self.root / "b", adapter.headline)
         # 101 and 205 are contradictory, 102 and 409 are not: 3 of 4 correct; 101 cites
@@ -494,6 +680,26 @@ class MetricChecks(_Case):
         self.assertAlmostEqual(result["headline"]["evidence_containment"]["value"], 0.5)
         self.assertEqual((result["documents"], result["clusters"], result["decisions"]), (4, 3, 4))
         self.assertIn("Not comparable", result["comparability"])
+        # B1: 101's evidence quotes two sentences from two different units; one of them lies
+        # in an evidence unit, so it is located. 205 quotes a sentence in no evidence unit.
+        b1 = dict(labels, arm="B1", labels=[
+            dict(row(101, "FLAG", []), arm="B1", evidence="The harbour bridge opened in spring. "
+                 "The   bridge has never opened to traffic."),
+            dict(row(205, "FLAG", []), arm="B1", evidence="A small orchard sits by the river."),
+            dict(row(102, "CLEAR", []), arm="B1"), dict(row(409, "CLEAR", []), arm="B1")])
+        result = c["metrics"].score_arm(adapter.SPEC, b1, self.root / "b", adapter.headline)
+        self.assertAlmostEqual(result["location"]["value"], 0.5)
+        # A gold item of a labelled document with no label is an error, never skipped:
+        # SciTab's table syn-tab-1 carries two claims and only one is labelled.
+        scitab = _adapter("scitab")
+        _build("scitab", self.root / "s")
+        table = c["ids"].opaque_document_id("scitab", "syn-tab-1")
+        one = {"item_id": c["ids"].opaque_item_id("scitab", 9001), "document_id": table,
+               "rule_id": "x", "arm": "B3", "class": "CLEAR", "label": "supports", "basis": "fixture",
+               "cited_unit_ids": [], "layer": "", "evidence": None, "faults": []}
+        short = dict(labels, labels=[one])
+        with self.assertRaisesRegex(ValueError, "have no label"):
+            c["metrics"].score_arm(scitab.SPEC, short, self.root / "s", scitab.headline)
 
 
 class AbsentChecks(unittest.TestCase):
@@ -528,20 +734,28 @@ def _verdict(results, what):
 
 
 GROUPS = {
-    "build": (BuildChecks, "two builds of every adapter are byte-identical; the cut rule keeps "
-                           "whole parts and writes the hand-counted cut line"),
+    "build": (BuildChecks, "two builds of every adapter are byte-identical; the budget is per "
+                           "document from its own conventions; the cut keeps whole parts with the "
+                           "hand-counted cut line and evidence read on the kept text; no budget, "
+                           "an off-side document or a testmini report is refused; empty documents "
+                           "are skipped and listed"),
     "split": (SplitChecks, "the split key is the documented document key, its SHA-256 mod 5 "
                            "recomputed independently, every item of a document on its side, "
-                           "FinDVer's testmini reports dropped from the holdout"),
+                           "ContraDoc groups read from the frozen assignment, FinDVer's testmini "
+                           "reports dropped from the holdout, ContractNLI on its declared official side"),
     "opaque": (OpaqueChecks, "opaque ids are SHA-256 prefixes of the documented strings and no "
                              "source id appears in any bundle file"),
     "structure": (StructureChecks, "every bundle reads back as the input format: expected unit "
                                    "ids, `Passage: part` with no digit, escaped # lines, one "
-                                   "rule per item, the target-only manifest"),
+                                   "rule per item, the target-only manifest, and Shimmer's own splitter "
+                                   "agrees, above 99 units too"),
     "mapping": (MappingChecks, "the section 5.1 and 5.2 mapping gives the hand-written expected "
-                               "label for every run-output case, for B3, B1 and B0, with S-1 and S-2"),
+                               "label for every run-output case (completion record, supersession, "
+                               "refusal, CUAD missing_field), for B2, B1 and B0 with S-1 and S-2; "
+                               "B3 and B4 refused while the typed-record key is unsettled"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
-                              "confusion example, and an end-to-end score matches by hand"),
+                              "confusion example, and an end-to-end score (location for B3 and B1, "
+                              "false positives, unlabelled gold refused) matches by hand"),
 }
 
 
@@ -552,10 +766,11 @@ def check_group(name):
 
 def check():
     results = [_run(case) for case, _ in GROUPS.values()] + [_run(AbsentChecks)]
-    return _verdict(results, "the four benchmark adapters build byte-identical bundles that read "
-                             "back as the input format, split by document, leak no source id, "
-                             "map hand-written run outputs to the expected labels (B3, B1, B0, "
-                             "S-1, S-2) and score tiny examples as computed by hand")
+    return _verdict(results, "the five benchmark adapters build byte-identical bundles that read "
+                             "back as the input format and as Shimmer splits them, cut per document, "
+                             "split by document, leak no source id, map synthetic run outputs to "
+                             "the expected labels (B2, B1, B0, S-1, S-2; B3 refused until the "
+                             "typed-record key is settled) and score tiny examples as computed by hand")
 
 
 if __name__ == "__main__":
