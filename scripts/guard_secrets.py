@@ -172,18 +172,26 @@ def scan_line(line: str):
 # module-level alternation of lowercase words would need gate check 242's list).
 # A prefix matches at the repository root only.
 REFUSED_STAGED_PREFIXES = ("seals/",)
+# Path segments refused at ANY depth: a run folder's saved model replies
+# (<run>/audit/model_replies/, scripts/reply_records.py) hold reply and payload
+# text and are never committed, wherever the run folder sits.
+REFUSED_STAGED_SEGMENTS = ("audit/model_replies/",)
 
 
 def refused_staged_paths(names):
     """Return the staged names that must never be committed.
 
     A pure function over git's own name list, so it can be tested without git.
-    Names are compared with forward slashes, case as git reports them.
+    Names are compared with forward slashes, case as git reports them. A prefix
+    matches at the root; a segment matches at the root or after any "/".
     """
     refused = []
     for name in names:
         normal = name.replace("\\", "/")
         if any(normal.startswith(prefix) for prefix in REFUSED_STAGED_PREFIXES):
+            refused.append(name)
+        elif any(normal.startswith(segment) or ("/" + segment) in normal
+                 for segment in REFUSED_STAGED_SEGMENTS):
             refused.append(name)
     return refused
 

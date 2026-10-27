@@ -24767,6 +24767,19 @@ def check_275_staged_seal_paths_are_refused():
     return check()
 
 
+def check_276_every_model_reply_is_saved_once_with_its_outcome():
+    """Annex A 11.6.4 (loop of 2026-10-27, S1 Part 4): every model reply is saved,
+    including replies the pipeline withholds. Before this, the raw text of a reply
+    reached disk only when it broke its output contract; v12's one call aimed at the
+    missed flaw was neither promoted nor kept. Each backend function (call_claude,
+    call_gpt, call_qwen, call_local) and Auditor896's predict now write exactly one
+    record through reply_records.write into <run_dir>/audit/model_replies/, the
+    outcome is appended later by call id, a redaction-enabled run keeps only SHA-256
+    and byte lengths, and a call with no run context writes nothing anywhere."""
+    from reply_records_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25121,6 +25134,8 @@ CHECKS = [
      check_274_every_long_phase_reports_a_measured_reading_or_refuses),
     ("275 a staged or force-added seal manifest path is refused before commit",
      check_275_staged_seal_paths_are_refused),
+    ("276 every model reply is saved once per call with its outcome",
+     check_276_every_model_reply_is_saved_once_with_its_outcome),
 ]
 
 

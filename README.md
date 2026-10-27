@@ -87,6 +87,11 @@ Each run has its own folder under `output/runs/`. Per-document deliverables incl
 grounding and document summaries, `review_data.json`, `review_findings.md`,
 `tracked_changes.docx` and `reviewed_document.md`. The JSON amendment master is the
 source for the Markdown and DOCX renders. A run summary indexes the deliverables.
+Every model call also leaves one record under the run's `audit/model_replies/`: the
+reply, the exact payload sent, the model and the decoding settings, plus an
+`outcomes.jsonl` that says what became of each reply (for example posted, advisory,
+or not promoted). In a run with redaction enabled only SHA-256 hashes and byte
+lengths are kept. These records are never committed.
 Every amendment is rendered from a finding Python computed from the document's own
 figures; a finding a model wrote stays on the bus and in the console but never
 becomes an amendment, and each amendment states which of the two it came from.

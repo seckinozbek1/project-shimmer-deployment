@@ -48,6 +48,7 @@ import execution_topology
 import run_options
 import semantic_waves
 import agent_activation
+import reply_records
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
 import amendment_render
@@ -760,6 +761,8 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
             reason="draft_task_memo", source_phase="0", evidence={"task": "draft"})
     finally:
         drafter._cost_call_id = ""
+    reply_records.write_outcome(run_ctx, call_id, "free_text" if getattr(r, "ok", False)
+                                else "backend_failure", source="draft_memo")
     return r.raw_text if getattr(r, "ok", False) else ""
 
 
@@ -3220,6 +3223,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                           f"model_findings_not_promoted count={len(_withheld)} "
                           f"agents={sorted({str(f.get('agent') or '?') for f in _withheld})}",
                           run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+                reply_records.mark_not_promoted(orch.run_context, (production, audit, conv_review),
+                                                _withheld, doc_id=doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, _promotable, unit_texts=_unit_texts,
                 refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)

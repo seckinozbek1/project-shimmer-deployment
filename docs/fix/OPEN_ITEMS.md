@@ -171,18 +171,11 @@ loop's evidence rule for gate checks, with its own neutralise, fail, restore, pa
 
 ---
 
-## 8. Gate check 112 fails on a real log-event name in agent_wrapper.py (found at loop S0)
+## 8. (Closed 2026-10-27, loop S1 commit C3.) Gate check 112 and a log-event name
 
-**What it is.** `scripts/agent_wrapper.py:1783` logs `'prompt_structure_write_error error_type=' +
-type(exc).__name__`. The event name contains the word `prompt`, which check 112 treats as a
-content-bearing name. The value interpolated is only an exception class name.
-
-**Evidence.** The loop's S0 baseline, check 112's printed reason.
-
-**Why it was left.** S0 changes no product file. S1 Part 4 changes `agent_wrapper.py` and fixes
-it there (P16).
-
-**What would settle it.** A content-free event name for that line, with check 112 passing.
+The event in `scripts/agent_wrapper.py` that check 112 refused (its name contained the word
+`prompt`) is now `call_structure_write_error`; no reader used the old name. Kept here only so
+item numbers do not shift.
 
 ---
 
