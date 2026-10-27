@@ -27,7 +27,7 @@ The input side (documents, rules, answer keys) is described in `docs/INPUT_FORMA
 
 ## 2. Where the run folder is and what it is called
 
-<!-- Sources: scripts/run_context.py (create_run, run_dirname, date_run_dirname, rename_run, start_run_in, for_run_dir, RunContext.ensure); scripts/pipeline.py (main: --output-dir handling, rename at end only when --output-dir is absent, _review_slug, _slug_from_question); tools/ordinary_final_run.py (execute: --output-dir evidence/run); tools/score_corpus.py (main: --run). -->
+<!-- Sources: scripts/run_context.py (create_run, run_dirname, date_run_dirname, rename_run, start_run_in, for_run_dir, RunContext.ensure: deliverables/, logs/ and audit/ created for every run; multi_round_path); scripts/multi_round.py (begin, write_record); scripts/pipeline.py (main: --output-dir handling, multi_round.begin only when a case manifest was given, right after the SHIMMER_INST_FINDER guard and its exit 9, rename at end only when --output-dir is absent, _review_slug, _slug_from_question); tools/ordinary_final_run.py (execute: --output-dir evidence/run); tools/score_corpus.py (main: --run). -->
 
 - **A run started on this machine** without an output folder is created as `output/runs/<YYYYMMDD>T<HHMMSS>Z__<run id>` (time in UTC).
 - When an ordinary review or draft run reaches its end, the folder is renamed to `output/runs/<YYYY-MM-DD>__<slug>`. The slug of a review is `<N>doc_review`, where N is the number of documents under review (`1doc_review`). The slug of a draft is made from the draft question. If that name is taken, `__<run id>` is added. If the move fails, the folder keeps its first name.
@@ -35,7 +35,8 @@ The input side (documents, rules, answer keys) is described in `docs/INPUT_FORMA
 - **A run given an output folder** (`--output-dir`) writes into that folder and is never renamed. The server and the cloud runner do this.
 - **A cloud run** writes its run folder on the rented machine as `evidence/run`. After collection and analysis it is at `<session folder>/downloaded/evidence/run/` (section 11).
 - Two runs never share a folder.
-- **What a scorer is given** is a run folder: the folder that holds `logs/`, `audit/` and, for an ordinary review, `deliverables/`. The repository's own scorer takes it as `--run <run folder>`.
+- **What a scorer is given** is a run folder: the folder that holds `logs/`, `audit/` and `deliverables/`. Every run creates all three when its run folder is made, a multi-round run included; a multi-round run leaves `deliverables/` empty (section 10). The repository's own scorer takes it as `--run <run folder>`.
+- **Which kind of run a folder holds** is told by one file, `audit/multi_round.json`. A multi-round run writes it as soon as the run starts, before any review, and again when it stops early; an ordinary review or a draft never writes it. So a folder with `audit/multi_round.json` is a multi-round run, and a folder without it is an ordinary review (or a draft). The presence of `deliverables/` decides nothing. The one multi-round run without the file is a run refused at start with exit code 9 (section 4.2), which stops before writing it and reviews nothing.
 
 ## 3. Map of the run folder
 
@@ -556,7 +557,7 @@ Every model call writes exactly one record here, whatever path it took. A run wi
 
 <!-- Sources: scripts/multi_round.py (begin, activation, write_record, validate_records, project, read_saved, STATES, KINDS, MOVEMENTS, CATEGORIES); scripts/multi_round_phase.py (execute, accept_review); scripts/multi_round_rounds.py (review_rounds, review_document, _findings_for_plans, _rebase, bus_envelopes, post_findings, PYTHON_PLAN_KINDS, SIGNATURE_INPUTS, FINDINGS_AGENT); scripts/paired_review.py (finding_from_check: source_rule_id defaults to empty); scripts/pipeline.py (main: multi-round branch returns before the convention assignment, exit 8, reached_end with amendment_count 0); tools/ordinary_final_run.py (assess, MULTI_ROUND_ARGV). -->
 
-A multi-round run (input format, section 12) writes `audit/multi_round.json`, `audit/round_reuse.json`, its bus posts, its model replies, `audit/reference_index.json` (the source spans only), `audit/agent_switches.json`, `audit/run_options.json`, `audit/agent_activation.json` and `audit/run_completion.json`. It writes no deliverables, no amendments, no `audit/pairing_map.json` and no `audit/convention_assignment.json`, and its folder is never renamed.
+A multi-round run (input format, section 12) writes `audit/multi_round.json`, `audit/round_reuse.json`, its bus posts, its model replies, `audit/reference_index.json` (the source spans only), `audit/agent_switches.json`, `audit/run_options.json`, `audit/agent_activation.json` and `audit/run_completion.json`. It writes no deliverables (its `deliverables/` folder exists, as in every run, and stays empty), no amendments, no `audit/pairing_map.json` and no `audit/convention_assignment.json`, and its folder is never renamed. `audit/multi_round.json` is the file that marks a multi-round run (section 2).
 
 ### 10.1 `audit/multi_round.json`
 
@@ -598,7 +599,7 @@ A unit entry: `unit_id`, `signature` (a hash of what the computation read), `sta
 
 ## 11. Cloud runs: the session folder
 
-<!-- Sources: tools/ordinary_final_cloud.py (execute, run_entry, collect and its pack script, batch_schedule, batch_entries, BATCH_ARMS, park_command, consumed, save calls: run_record.json, launch.json, operator_authorization.json, workload_return.json, asset_copy_receipt.json, independent_inventory_confirmation.json, cleanup.json, controller_failure.json); tools/ordinary_final_bound_cloud.py (run_folder, refuse_sealed_bundle_in_repository); tools/ordinary_final_run.py (execute, assess, failure_identity, budget_stop); tools/analyze_ordinary_final_run.py (analyze, analyze_batch, report_fields, write_report). -->
+<!-- Sources: tools/ordinary_final_cloud.py (execute, run_entry, collect and its pack script, batch_schedule, batch_entries, BATCH_ARMS, park_command, consumed, save calls: run_record.json, launch.json, operator_authorization.json, workload_return.json, asset_copy_receipt.json, independent_inventory_confirmation.json, cleanup.json, controller_failure.json); tools/ordinary_final_bound_cloud.py (run_folder, refuse_sealed_bundle_in_repository); tools/prepare_ordinary_final_run.py (test_seal, prepare: test_archive_sha256 in seal.json and execution_manifest.json); tools/ordinary_final_cloud.py (admit: the test manifest's archive_sha256, the seal's and the manifest's test_archive_sha256 compared at launch; batch entries: each folder's own seal.json); tools/ordinary_final_run.py (execute, assess, failure_identity, budget_stop); tools/analyze_ordinary_final_run.py (analyze, analyze_batch, report_fields, write_report). -->
 
 A cloud run is controlled from this machine. The **session folder** is the prepared bundle's own folder, or, when the launch names an output folder, a fresh copy `<output folder>/<bundle name>` (then `<bundle name>.2`, `.3`, ... if earlier attempts left folders). A sealed run's bundle and session folder sit outside the repository.
 
@@ -619,9 +620,12 @@ The controller collects the run as one archive, `collected_evidence.tar.gz`. The
 | `verified_evidence.json` | machine | `{"passed": true, "members", "archive_sha256", "originals_unmodified": true}`: the download matched its hashes. |
 | `analysis/` | machine | Cost and telemetry summaries; not described here. |
 | `run_record.json` | machine | The launch plan: `purpose`, `exposure` (`exposed` or `sealed`), `test_manifest_sha256`, `multi_round`, `protected_test`, `shimmer_inst_finder`, `frozen_tag`, `batch_entries`, `report`. |
+| `seal.json`, `execution_manifest.json` | machine | The bundle's seal and its manifest, as sealed (copied into the session folder when the launch names an output folder). For a sealed run both carry `test_archive_sha256` (below). `seal.json` also carries `exposure` and `test_manifest_sha256`. |
 | `launch.json` | machine | `instance_id`, `epoch`, `hourly_rate`, `instance_type`, `region`. |
 | `workload_return.json` | machine | `exit_code` (section 4.2, code 124), `epoch`, `full_run_retried`. |
 | `collected_evidence.tar.gz`, `remote_collection_manifest.json`, `collection_integrity.json` | machine | The collected archive and its hashes. |
+
+**Which test archive the run was made from.** The session folder's `seal.json`, field `test_archive_sha256`: the SHA-256 of the bytes of the test archive (input format, section 1) that the sealed bundle was prepared from. `tools/prepare_ordinary_final_run.py` writes it when the bundle is sealed, after checking that it equals the `archive_sha256` of the test manifest it was given, and writes the same value into `execution_manifest.json`; the controller checks the two again at launch. This is the hash a key's `archives` object is matched against (input format, section 12). An exposed run's `seal.json` has no `test_archive_sha256`, and its `test_manifest_sha256` is the text `exposed, no manifest`. A run started on this machine records no archive hash anywhere in its run folder.
 
 **`evidence/result.json`**: `execution_integrity_passed` (boolean), `reasons` (list), `failed_backend_attempts` (integer), `collection_and_teardown_pending` (`true`), `quality_claim` (`null`), `pipeline_exit_code` (integer). `reasons` values: `pipeline_not_completed`, `required_telemetry_missing`, `auditor_pair_failure`, `required_contract_failure`, `backend_failure`, and for a multi-round run `multi_round_not_reviewed`, `multi_round_not_activated`, `multi_round_round_review_not_recorded`. The runner's own exit code is 0 only when the pipeline returned 0 and the check passed; otherwise 2.
 
@@ -636,6 +640,7 @@ One rented machine can run several bundles in turn. Each bundle's run has its ow
 - `NN` is the bundle's place in the schedule, two digits from `00`. `item` is the batch item's name (letters, digits, `_`, `.`, `-`). `arm` is `B3` or `B1`: the two arms the loop specification pairs; the code only names them. Items run in turn, each `B3` then `B1`.
 - Each folder holds the files of section 11.1 for its own run: its `execution_manifest.json`, `seal.json`, `operator_authorization.json`, `workload_return.json`, its collected archive and, after analysis, `downloaded/`, `FINAL_STATUS.json` and `RUN_REPORT.md`. It also holds `seal_entry.json` (`index`, `item`, `arm`, `paired_with`, `bundle`, `execution_manifest_sha256`, `seal_sha256`, `exposure`, `test_manifest_sha256`) and copies of the session's `launch.json`, `run_record.json`, `asset_copy_receipt.json` and clean-up records.
 - `paired_with` is the schedule index of the same item's other arm.
+- A batch folder's own `seal.json` carries that bundle's `test_archive_sha256` (section 11.1) for a sealed run: match each batch folder against a key by its own seal, not by the session folder's.
 - **The batch folder is the one to score.** The analyser in batch mode reads only `batch/*` folders that hold `collection_integrity.json`, one run each. A folder without that file was not collected.
 - After the last entry, or after a stop, the controller also collects the machine's state into the session folder itself. That copy repeats the last entry's evidence, or holds a partial run when the stop came mid-entry. The batch analyser does not read it; do not score it.
 - The `Cost` row of a batch folder's report is the cost of the whole session, not of that bundle alone.
@@ -687,7 +692,8 @@ All files at branch `loop/s03`, commit `990ed88`, unless noted.
 - `scripts/multi_round_rounds.py`: whole module.
 - `scripts/server.py`: `_STATUS_FIELDS`, `_write_status`.
 - `tools/ordinary_final_run.py`: `execute`, `assess`, `failure_identity`, `argv_for`, `ARGV`, `MULTI_ROUND_ARGV`.
-- `tools/ordinary_final_cloud.py`: `execute`, `run_entry`, `collect` and its pack script, `batch_schedule`, `batch_entries`, `BATCH_ARMS`, `park_command`, `consumed`.
+- `tools/ordinary_final_cloud.py`: `execute`, `run_entry`, `collect` and its pack script, `batch_schedule`, `batch_entries`, `BATCH_ARMS`, `park_command`, `consumed`, `admit` (the test archive hash compared at launch).
+- `tools/prepare_ordinary_final_run.py`: `test_seal`, `prepare` (`test_archive_sha256` in `seal.json` and `execution_manifest.json`).
 - `tools/ordinary_final_bound_cloud.py`: `run_folder`, `refuse_sealed_bundle_in_repository`, `consumed`.
 - `tools/analyze_ordinary_final_run.py`: `analyze`, `analyze_batch`, `report_fields`, `write_report`.
 - `tools/score_corpus.py`: `main`, `_load_bus_findings`, `_load_review_data`, `_completeness_note`, `twin_findings`, `score`, `score_rounds` (used only to confirm which files the repository's own scorer reads).
