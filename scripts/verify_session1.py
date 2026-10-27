@@ -24769,6 +24769,15 @@ def check_280_multi_round_launch_end_to_end():
     return check()
 
 
+
+def check_281_synthetic_generators():
+    """Loop of 2026-10-27, S3 items 8 to 10 and family 4's multi-round case: the generators'
+    self-validation, determinism and catches; family 4's case manifests agree with the
+    controller, its round reuse and band breaches with multi_round_rounds, its rename probes
+    with paired_review.absent_checks."""
+    from generator_checks import check
+    return check()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25133,6 +25142,8 @@ CHECKS = [
      check_279_multi_round_rounds),
     ("280 a declared multi-round Review is sealed, launched, admitted in final mode and assessed",
      check_280_multi_round_launch_end_to_end),
+    ("281 the synthetic generators validate, and family 4's multi-round case agrees with the controller and the round review",
+     check_281_synthetic_generators),
 ]
 
 

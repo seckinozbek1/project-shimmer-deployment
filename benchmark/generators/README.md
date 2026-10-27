@@ -11,6 +11,7 @@ reading of the format (`textrules.py`, `audit.py`).
 py -3.12 benchmark/generators/generate.py suite dev          # benchmark/dev_suite/generated/
 py -3.12 benchmark/generators/generate.py suite long_range   # benchmark/long_range/generated/
 py -3.12 benchmark/generators/generate.py one f3 7 --out SOME_DIR [--long-range]
+py -3.12 benchmark/generators/generate.py one f4 7 --out SOME_DIR --rounds 3
 py -3.12 benchmark/generators/generate.py check benchmark/dev_suite/generated
 ```
 
@@ -27,8 +28,9 @@ them for developers.
 
 Each bundle holds `context/_review_targets.json`, the document, one reference file,
 for some probes an earlier version, `conventions/rules_*.md` (or `mandate_*.md`),
-and `answer_key.json` at the top. No per-test settings file is written: section 8
-says none is read.
+and `answer_key.json` at the top. A family 4 bundle also carries `case_manifest.json`
+at the top (the declared multi-round case, below). No per-test settings file is
+written: section 8 says none is read.
 
 ## Families
 
@@ -37,22 +39,34 @@ says none is read.
 | f1 tabular result sheet | `family_result_sheet.py` | result above its reference range, below it, a total volume that does not add up, a missing analyst (computed absence), a blank aliquot cell | results exactly on a bound, decimal totals that add up |
 | f2 declaration with arithmetic | `family_declaration.py` | line value not quantity times unit price (product), unit price above its band, below it (the ratio of line value to quantity agrees, so it duplicates and is not keyed), a consignment total that does not add up (cross-row sum), a missing country of origin | unit prices on a bound, decimal products, a total written with comma groups |
 | f3 financial statement | `family_statement.py` | current-period subtotal wrong, prior-period subtotal wrong, period change above the band the rule states, below it, a missing preparer | a period change just inside a bound, a subtotal with comma groups |
-| f4 contract terms across versions | `family_terms.py` | band breaches in the later version: unchanged, moved away into a breach, moved toward the band but still out, on a new term, on a renamed term, on a value in a different format | a term on its bound; the version changes below |
+| f4 contract terms across two or three versions | `family_terms.py` | band breaches in the later version: unchanged, moved away into a breach, moved toward the band but still out, on a new term, on a renamed term, on a value in a different format | a term on its bound; the version changes below |
 | f5 regulation-style provisions | `family_provisions.py` | a filing-to-notice gap over its window, a receipt-to-answer gap over its window, a filing fee above its band, below it, a definition without its source, an appeal provision without its appeal body | gaps exactly equal to the window, fees on a bound, filing provisions outside the appeal rule's pinned scope |
 | f6 neighbour-dependent stock count | `family_ledger.py` | carry_in (the opening row mis-carried from the count before), carry_out (the stated closing wrong; the next count carries the right figure), shrinkage above the band, below it, a missing counter | the count after each carry_out, which looks mis-carried beside its neighbour and is not; a shrinkage on its bound |
 
 Every test plants at least 10 flaws of at least three kinds (f1: 12 of 5, f2: 12 of 5,
 f3: 11 of 5, f4: 10 of 6, f5: 11 of 6, f6: 11 of 5).
 
-Family 4 is the two-version form, keyed as a negotiation-style test (section 9):
-`prior_records` and `band_irregularities` are what the scorer reads. Between the two
-versions it plants: terms unchanged, changed inside the band, moved toward the band
-(also into it), moved away, a term renamed with its value unchanged (refused as a
-possible rename, no record), a term renamed with its value moved (absent_since_prior
-on the old label), a withdrawn term (absent_since_prior), a term new in the later
-version (no record), sections reordered, and a value written with comma groups
-(unchanged). `version_changes` in the key is the family's own plan of every record,
-computed from its own figures; the validator requires the audit to agree with it. The
+Family 4 is keyed as a negotiation-style test (section 9): `prior_records` and
+`band_irregularities` are what the scorer reads. Between the prior and the target it
+plants: terms unchanged, changed inside the band, moved toward the band (also into
+it), moved away, a term renamed with its value unchanged (refused as a possible
+rename, no record), a term renamed with its value moved (refused as a possible
+successor, no record: S2b item 5, below), a withdrawn term (absent_since_prior), a
+term new in the later version (no record), sections reordered, and a value written
+with comma groups (unchanged). `version_changes` in the key is the family's own plan
+of every record, computed from its own figures, each refusal with its typed reason
+(`refusal`); the validator requires the audit to agree with it.
+
+`rename_probes` in the key is one typed row per rename-probe kind (the synthetic
+rename probes S5 measures S2b item 5 on): `renamed_value_unchanged` (reason
+`possible_rename`), `renamed_value_moved` (`possible_successor`), `withdrawn`
+(`no_successor_in_section`, expect `absent_since_prior`), `new_in_later_version`
+(`not_stated_in_earlier_version`, expect `none`), `value_in_different_format`
+(`comma_grouped_digits`, expect `unchanged_from_prior`) and `reordered_sections`
+(`unit_identity_by_heading`, with the target's unit ids in the prior's reading
+order). Each row names the earlier and later normalised label, the target unit, both
+figures and both written forms, and the validator checks every row against the
+rendered versions by the audit. The
 scorer reports no per-kind recall for a negotiation-style test, so f4's six kinds are
 for development.
 
@@ -60,11 +74,53 @@ Family 5 with `long_range` puts the four definitions first and every flaw at lea
 twelve units from the definition it needs. Every family 5 key entry names that unit in
 `related_unit` (for a definition without its source, the farthest provision using it).
 
-**TODO (family 4, multi-round).** The three-version (multi-round) case declaration is
-written only after S2 merges, against S2's live case manifest (section 12 of the
-format is still empty). Nothing here guesses that manifest. Once section 12 lands,
-add the three-version form to `family_terms.py`, regenerate the suite and re-run the
-generator gate check.
+### Family 4 as a declared multi-round case
+
+Family 4 writes two or three rounds (`rounds` in `SEEDS.json`, `--rounds` on the
+command line, two by default). Every bundle of a family 4 test (the test, its twin and
+the four probes) carries `case_manifest.json` at the top, beside `answer_key.json`: the
+live case manifest a declared multi-round Review is sealed and run with
+(`--multi-round --multi-round-manifest case_manifest.json`, the controller's
+`MULTI_ROUND_ARGV`). Built in `multi_round_case.py`:
+
+- the live schema: `schema_version` 1, only the live top-level fields, `fixture`
+  false, `allow_recommendations` false, `decision_support_mode` `trajectory_only`;
+- rounds `r1`..`rN` in version order, one document each, named by its document id (the
+  file's stem, as the pipeline's corpus loader names it): two rounds are the prior and
+  the target; three rounds put the **earliest version** first. The earliest version is
+  the prior with three ordinary terms (in three different sections) at other figures,
+  same labels, same section order, drawn from its own random stream so the two-round
+  form of a seed is unchanged. It is a grounding file, never a declared prior (the
+  ordinary review compares the target with the prior only), and only the case manifest
+  names it;
+- one actor (`counterparty`, the party whose versions they are); one issue per term,
+  keyed by its earliest label (`issue-<slug>`), so a renamed term keeps one issue
+  across the rename. That is an operator declaration: a multi-round run is told the
+  identity a blind two-version review has to refuse. The rename probes are blind only in
+  the ordinary two-version review of the same bundle;
+- one source per label line of every round document (state `accepted`), quoting the
+  whole line, its span measured on the document text and its `unit_id` the unit that
+  holds it.
+
+The key adds `case_manifest`, `rounds` (`round_id`, `sequence`, `version`:
+`earliest`, `prior`, `target`), `round_reuse` (the units a later round reuses by the
+per-round review's rule: same unit text, same set of labels, same measures; ids are not
+part of the rule) and, for three rounds, `round_changes` (each term at another figure
+in the earliest version). The scorer reads none of them.
+
+The validator restates the controller's `validate_live_case_manifest` rules
+(`multi_round_case.validate`) and checks the declaration itself: rounds in version
+order, a source for every label line on its unit, a renamed term on one issue, the
+reuse and round changes as stated. The generators never import Shimmer; the gate
+check proves the restatement agrees with the controller (every generated manifest
+accepted by both, every mutation in its list refused by both), that Shimmer's own
+round review reuses exactly the keyed units and finds the keyed band breaches in the
+last round, and that Shimmer's own `absent_checks` mints and refuses exactly what the
+key says for every rename probe.
+
+**Sealing a bundle.** The controller's sealer reads a test folder with
+`_review_targets.json` at its top, `context/`, `conventions/` and `case_manifest.json`
+only: drop `answer_key.json` and move `context/_review_targets.json` to the top.
 
 ## How the twin and the probes are built
 
@@ -112,7 +168,11 @@ the written files. A test that fails writes nothing. It checks:
   exactly as the key says, every other neighbour pair carries it, and the whole twin
   chain is consistent;
 - for f4, the change records computed from the audit equal the family's own plan,
-  rename refusals included.
+  rename refusals and their typed reasons included; every rename-probe row holds in the
+  rendered versions; the case manifest passes the controller's rules restated, declares
+  the rounds the key names in version order, a source for every label line and one
+  issue per renamed term, and the key's reuse and round changes are what the round
+  documents show.
 
 ## Input-format questions, as settled (D-025)
 
@@ -169,6 +229,14 @@ readings stood; three changed the audit (9, 10, 13), and 11 is now stated more e
     unless the earlier version states it, under any heading, with a successful lookup;
     a refused lookup counts as new. The audit and f4's own plan both use this; f4's
     renamed terms either stay equal or move more than 5%, so no seed changed.
+    **After S2 (S2b item 5).** Outside that window the vanished label is still not
+    withdrawn while its section states a newcomer in the same measure (two figures with
+    no measure count as the same) that no value-corroborated rename has claimed: it is
+    refused as a possible successor (`audit.possible_successor`, mirroring
+    `paired_review.possible_successor`). From 100, 97.96 in the same measure is now
+    refused too, and a moved rename in f4 is keyed as a refusal, not as
+    `absent_since_prior` (the f4 keys of both seeds changed; their documents did not).
+    `docs/INPUT_FORMAT.md` section 6 still states the window rule alone.
 
 ## File names
 

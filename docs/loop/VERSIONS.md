@@ -20,3 +20,4 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (after the generators' 13 questions) | `c2723037d73a3f855721c48a8b6f67831db6afae277aa37b0aad414a9deb982f` | 2026-10-27 11:34 +0300, loop/s03 (D-025) |
 | `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (section 1 test archive and working folder; section 12 multi-round case) | `3f4a50776168b592d88ca8635445f8437918fd1f92b72313353ed99fc443c0f9` | 2026-10-27 15:46 +0300, loop/s03 (D-041) |
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (first draft) | `dcce00dd05aa11d69a6042656f6a91d7c98b3ce645680dcd7f39d732dfc173c9` | 2026-10-27 15:46 +0300, loop/s03 (D-041) |
+| `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (section 6: the possible-successor refusal) | `58bb6f4ce21eda578bb081059eaeecc0cde4eafa90336b97df6b217883f39c3c` | 2026-10-27 15:56 +0300, loop/s03 (D-041) |
