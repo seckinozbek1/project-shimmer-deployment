@@ -115,6 +115,11 @@ def review_markdown(payload, document_name="", language="tr"):
                 lines.extend(["**" + heading + ":**", block(shown), ""])
         lines.extend(["**" + label("evidence", language) + ":**",
                       block({k: v for k, v in amendment.items() if k not in headings}), ""])
+    # S2a: the master's model findings, labelled in the output language. The JSON
+    # block below still carries every field verbatim.
+    import amendment_render
+    lines.extend(amendment_render.render_model_findings(
+        payload.get(amendment_render.MODEL_FINDINGS_KEY) or [], output_language=language))
     lines.extend(["## " + label("evidence", language) + " / " + label("references", language),
                   block({k: v for k, v in payload.items() if k != "amendments"})])
     return "\n".join(lines)

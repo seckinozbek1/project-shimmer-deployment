@@ -1029,10 +1029,15 @@ def _bus_findings(run_dir):
             continue
         agent = payload.get("agent") or msg.get("sender") or ""
         doc_id = payload.get("doc_id") or ""
+        # S2a: who wrote each record, read off the post it travelled in, so the
+        # console can mark a model's finding as written by a model, not promoted
+        # and not checked by Python.
+        written_by = _fr.written_by(body.get("backend"), body.get("model"))
         for item in items:
             if not _fr.is_finding(item):
                 continue
             record = _project_finding(item, agent=agent, doc_id=doc_id)
+            record["written_by"] = written_by
             key = record["item_id"]
             if not key:
                 out.append(record)

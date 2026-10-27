@@ -2640,6 +2640,22 @@ function findingRuleParen(f, extra) {
   return mutedParenHtml(text);
 }
 
+/* S2a: who wrote a finding, from the server's written_by (read off the bus post).
+   A model's finding is marked BEFORE its sentence, so a reader meets the mark
+   first: written by a model, not promoted, not checked by Python. Python's own
+   finding gets a quiet note AFTER its sentence. A record from an older server
+   that carries no written_by shows neither, rather than a guess. */
+function writtenByHtml(f, before) {
+  if (before && f.written_by === "model") {
+    return '<p class="notice warn written-by-model">' +
+      ui("Written by a model. Not promoted to an amendment. Not checked by Python.") + '</p>';
+  }
+  if (!before && f.written_by === "python") {
+    return ' ' + mutedParen(ui("Computed by Python from the document's own figures."));
+  }
+  return "";
+}
+
 function findingPriorParen(f) {
   var id = f.unit_id || "";
   return mutedParen((id ? id + ", " : "") + ui("compared to the earlier version"));
@@ -3170,8 +3186,8 @@ function loadFindings(runId, isPartial) {
         '<ul class="findings-human">' + findings.map(function (f) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
           var amend = byKey[amendmentKey(f.unit_id, f.rule_id)];
-          return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) +
-            citationsHtml(f.source_refs, runId, true) +
+          return '<li class="finding-human ' + cls + '">' + writtenByHtml(f, true) + findingSentenceHtml(f) +
+            writtenByHtml(f, false) + citationsHtml(f.source_refs, runId, true) +
             (amend ? amendmentHumanHtml(amend) : "") + '</li>';
         }).join("") + '</ul>';
       wireRuleLinks(holder);
@@ -3191,8 +3207,9 @@ function loadFindings(runId, isPartial) {
         '<td>' + escapeHtml(displayValue(f.relation || "")) + '</td>' +
         '<td>' + escapeHtml(displayValue(f.record_verdict || "")) + '</td>' +
         '<td class="fig">' + escapeHtml(f.value_a) + " " + escapeHtml(f.unit_a || "") + " / " + escapeHtml(f.value_b) + " " + escapeHtml(f.unit_b || "") + '</td>' +
-        '<td class="explanation">' +
+        '<td class="explanation">' + writtenByHtml(f, true) +
           '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
+          writtenByHtml(f, false) +
           (long ? '<br><button class="expand-toggle" data-target="' + explId + ui('">Show more</button>') : '') +
           citationsHtml(f.source_refs, runId, false) +
           (amend ? amendmentDeveloperHtml(amend) : "") +

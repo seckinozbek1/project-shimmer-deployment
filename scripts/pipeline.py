@@ -93,6 +93,7 @@ import run_completion as run_completion_mod
 from review_scope import apply_cutoff
 from search_router import SearchRouter
 from summary_generators import render_context_summary, render_operative_summary
+import summary_generators
 import text_extract
 
 
@@ -3026,6 +3027,10 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     own: two places to look means one of them goes unread. Omitted entirely when
     there are no external rules, which is every installation today, so the
     ordinary run summary is byte-for-byte what it was."""
+    # Imported here, not only at module level: the localization gate executes this
+    # function's own definition in an isolated namespace.
+    import finding_record
+    import summary_generators
     deliv_dir = Path(deliv_dir)
     deliv_dir.mkdir(parents=True, exist_ok=True)
     total_amendments = sum((deliverables.get(d["id"]) or {}).get("amendment_count", 0)
@@ -3076,7 +3081,15 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
             absent = info.get("prior_absent_count", 0)
             if absent:
                 suffix += f', {absent}{localization.text(' absent since it')}'
+        # S2a, item 1: the run report names the model findings that were not
+        # promoted, with the same mark every other deliverable carries.
+        unpromoted = info.get("model_findings_not_promoted", 0)
+        if unpromoted:
+            suffix += (f', {unpromoted}{localization.text(' model finding(s) not promoted')}'
+                       f' ({localization.text(finding_record.MODEL_FINDING_MARK)})')
         lines.append(f'- [{doc['name']}]({doc['id']}/): {n}{localization.text(' amendment(s)')}{suffix}')
+    # S2a, item 7: relations Python computed, apart from relations only a model reported.
+    lines += summary_generators.relation_report_lines(deliverables, op_docs)
 
     # THREE-D: the refused pairs, on the surface the operator already reads.
     # Nothing is emitted when no external rules were supplied, so a run without
@@ -3166,11 +3179,25 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
     # and returns (doc_id, info); the deliverables map is assembled from the returns.
     # The cross-doc steps above (WEB-REF minting, verifiability gate) stay serial.
     async def _process_doc(doc):
+        # S2a: every item is stamped with who wrote it, read off the envelope it was
+        # posted under (finding_record.written_by), BEFORE any copy is made: the
+        # promoter's input, the withheld list, the summaries, the master and the run
+        # summary all read that one stamp, so no file can call a model's finding
+        # computed or Python's finding a model's. (The identity test that used to
+        # decide _withheld below compared copies and counted computed findings as
+        # model findings in the run log.)
+        upstream_findings = {
+            name: _stamp_source_rule_ids(finding_record.stamp_written_by(
+                results, _items_for(results, name, doc_id=doc["id"]) or []), convention_registry)
+            for name, results in (("PRACTICE_AUDITOR", conv_review), ("STYLE_GUARDIAN", conv_review),
+                                  ("VERIFIER", audit), ("FACT_CHECKER", audit),
+                                  ("LEGAL_ANALYST", production))}
         # Findings first: they determine the topical scope for context_summary too.
-        pa_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]) or [], convention_registry)
-        sg_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]) or [], convention_registry)
+        pa_findings = upstream_findings["PRACTICE_AUDITOR"]
+        sg_findings = upstream_findings["STYLE_GUARDIAN"]
+        model_findings = [dict(f, agent=f.get("agent") or name)
+                          for name, group in upstream_findings.items() for f in group
+                          if finding_record.is_finding(f) and finding_record.is_model_written(f)]
         findings = []
         categories_with_findings = set()
         for agent, raw_findings in (("PRACTICE_AUDITOR", pa_findings),
@@ -3192,11 +3219,18 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         ) or _filter_context_refs_for_doc(all_context_refs, doc["text"])
         topics = sorted(categories_with_findings) if categories_with_findings \
             else list(conventions_by_category.keys())
-        ctx_body = (
-            f"This document was reviewed against {n_total_conventions} conventions. "
-            f"{len(findings)} findings were produced by PRACTICE_AUDITOR and STYLE_GUARDIAN. "
-            f"The context references below are filtered for topical relevance to {doc['name']}."
-        )
+        # S2a, item 2: the producer sentence is generated from what happened in this
+        # run: who wrote each finding (the stamp above) and which agents' model
+        # replies carried one. It used to name PRACTICE_AUDITOR and STYLE_GUARDIAN
+        # as producers whatever ran, including when STYLE_GUARDIAN never ran and
+        # Python computed every finding. The same counts go to the run log.
+        provenance = summary_generators.findings_provenance(findings)
+        log_event(_LOG, f"findings_provenance computed={provenance['computed']} "
+                        f"model={provenance['model']} "
+                        f"model_agents={','.join(provenance['model_agents']) or 'none'}",
+                  run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+        ctx_body = summary_generators.context_findings_sentence(
+            n_total_conventions, provenance, doc["name"])
         # BP-16: every artifact for this doc goes into deliverables/<doc_id>/,
         # with the doc-name prefix stripped from the filename.
         doc_dir = orch.run_context.doc_deliverables_dir(doc["id"])
@@ -3212,9 +3246,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         op_summary = render_operative_summary(
             document_id=doc["id"], document_name=doc["name"],
             conventions_by_category=conventions_by_category, findings=findings,
-            body_text="Findings are produced by PRACTICE_AUDITOR and STYLE_GUARDIAN in PHASE 5.5 "
-                       "against the convention registry. Each finding cites the convention ID and "
-                       "the operational reference ID(s).",
+            body_text=summary_generators.operative_findings_sentence(provenance),
             question=question, prior_refusals=_prior_refusals_for(doc),
             prior_orphans=_prior_orphans_for(doc),
         )
@@ -3248,18 +3280,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # largest prefill, and two local runs died inside it or beside it to a
             # GPU engine timeout. Removing it removes that exposure. It does not
             # remove TDR, which also hit a Phi-3.5 generation with no swap at all.
-            upstream_findings = {
-                "PRACTICE_AUDITOR": _stamp_source_rule_ids(
-                    _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]), convention_registry),
-                "STYLE_GUARDIAN": _stamp_source_rule_ids(
-                    _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]), convention_registry),
-                "VERIFIER": _stamp_source_rule_ids(
-                    _items_for(audit, "VERIFIER", doc_id=doc["id"]), convention_registry),
-                "FACT_CHECKER": _stamp_source_rule_ids(
-                    _items_for(audit, "FACT_CHECKER", doc_id=doc["id"]), convention_registry),
-                "LEGAL_ANALYST": _stamp_source_rule_ids(
-                    _items_for(production, "LEGAL_ANALYST", doc_id=doc["id"]), convention_registry),
-            }
+            # (upstream_findings is built once, stamped, at the top of _process_doc.)
             # refine R2: NO amendment is ever taken from the model. The template
             # builds every one of them from the typed Findings below, so an
             # amendment the arithmetic did not produce cannot exist by
@@ -3336,10 +3357,12 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # the PROMOTER's input that narrows, which is what makes "no
             # amendment is ever taken from the model" true by construction.
             _promotable = [f for f in computed_findings if finding_record.is_finding(f)]
+            # S2a: decided by the written_by stamp, not by object identity, which
+            # never held once the items above were copied.
             _withheld = [f for f in all_upstream
                          if finding_record.is_finding(f)
                          and str(f.get("record_verdict") or "").lower() == "irregular"
-                         and not any(f is c for c in computed_findings)]
+                         and finding_record.is_model_written(f)]
             if _withheld:
                 log_event(_LOG,
                           f"model_findings_not_promoted count={len(_withheld)} "
@@ -3347,9 +3370,14 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                           run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
                 reply_records.mark_not_promoted(orch.run_context, (production, audit, conv_review),
                                                 _withheld, doc_id=doc["id"])
+            # S2a, item 5: where Python can place a unit's own passage in the
+            # reference index, an absence amendment points there.
+            _unit_refs = paired_review_mod.unit_passage_refs(
+                _unit_texts, reference_index.entries, doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, _promotable, unit_texts=_unit_texts,
-                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
+                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id,
+                unit_refs=_unit_refs)
             # Never silently drop a finding this function could not turn into
             # an amendment: a real, irregular finding a model wrote under a
             # field name this pipeline did not yet recognise is not an error
@@ -3422,6 +3450,10 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                                   "prior_refusals": _prior_refusals_for(doc),
                                   "prior_orphans": _prior_orphans_for(doc)}
 
+        # S2a, item 1: every finding a model wrote for this document travels in the
+        # master, labelled by the renders, never removed from view and never an
+        # amendment (only computed findings are promoted).
+        amendments_payload[amendment_render.MODEL_FINDINGS_KEY] = model_findings
         # INFRA-042: in the empty-registry state the CONV-* requirement is relaxed (an amendment
         # grounds on >=1 REF-* or >=1 WEB-REF-*); when conventions exist the rule holds unchanged.
         ok_payload, errs = validate_amendment_payload(
@@ -3463,6 +3495,12 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             "prior_absent_count": sum(
                 1 for f in (amendments_payload.get("prior_comparisons") or [])
                 if f.get("relation") == "absent_since_prior"),
+            # S2a, items 1 and 7: what the run summary reports, from the stamps.
+            "model_findings_not_promoted": len(model_findings),
+            "relations_computed": summary_generators.relation_counts(
+                [f for g in upstream_findings.values() for f in g
+                 if finding_record.is_finding(f) and not finding_record.is_model_written(f)]),
+            "relations_model_only": summary_generators.relation_counts(model_findings),
         }
 
     for doc_id, info in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
@@ -3722,7 +3760,9 @@ def _append_board_to_deliverable(info, consolidated):
     if not p or not Path(p).exists():
         return
     try:
-        lines = ["", "## Editorial review board (advisory)", ""]
+        # S2a: the board's observations are model output; the heading says so.
+        lines = ["", "## Editorial review board (advisory: written by models, "
+                     "not promoted to amendments, not checked by Python)", ""]
         if not consolidated:
             lines.append("_(no observations)_")
         for c in consolidated:
@@ -3900,6 +3940,18 @@ def _render_per_agent_md(doc, production, audit, conv_review):
         for r in by_agent[agent]:
             if not r.get("ok"):
                 lines.append(f'{localization.text('_(failed: ')}{r.get('error')})_'); continue
+            # S2a, item 1: each reply says who wrote it, and every model finding in
+            # it carries the mark, before its JSON. Nothing is removed.
+            import finding_record
+            if finding_record.written_by(r.get("backend"), r.get("model")) == finding_record.WRITTEN_BY_PYTHON:
+                lines.append(f'_{localization.text(finding_record.COMPUTED_FINDING_MARK)}_')
+            else:
+                lines.append(f'{localization.text('_Written by a model: backend ')}`{r.get('backend') or '?'}`'
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`._')
+                for item in decode_items(r.get("parsed")):
+                    if finding_record.is_finding(item):
+                        lines.append(f'- {finding_record.typed_line(item)} '
+                                     f'({localization.text(finding_record.MODEL_FINDING_MARK)})')
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")

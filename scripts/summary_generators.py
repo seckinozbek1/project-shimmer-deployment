@@ -18,6 +18,83 @@ import finding_record
 def _now(): return datetime.now(timezone.utc).isoformat()
 
 
+# S2a, item 2: the sentences that name who produced a document's findings are
+# generated from the findings themselves (each stamped `written_by` from the
+# envelope it was posted under), never from a fixed list of agent names. Both
+# sentences have a Turkish rendering in scripts/ui/localization_catalog.js.
+NO_MODEL_AGENT = "no model agent"
+
+
+def findings_provenance(findings) -> dict:
+    """Counts by who wrote them, and the agents whose MODEL replies carried one."""
+    findings = [f for f in findings or [] if isinstance(f, dict)]
+    model = [f for f in findings if finding_record.is_model_written(f)]
+    return {"total": len(findings), "computed": len(findings) - len(model),
+            "model": len(model),
+            "model_agents": sorted({str(f.get("agent") or "?") for f in model})}
+
+
+def _agents_text(provenance):
+    return ", ".join(provenance["model_agents"]) or NO_MODEL_AGENT
+
+
+def context_findings_sentence(n_conventions, provenance, document_name) -> str:
+    return ("This document was reviewed against %d conventions. Findings: %d in total, %d "
+            "computed by Python from the document's figures, %d written by a model (%s) and "
+            "not promoted. The context references below are filtered for topical relevance "
+            "to %s." % (n_conventions, provenance["total"], provenance["computed"],
+                        provenance["model"], _agents_text(provenance), document_name))
+
+
+def relation_counts(findings) -> dict:
+    """{relation: count} over typed Finding records, named from the data."""
+    counts = {}
+    for f in findings or []:
+        if finding_record.is_finding(f):
+            rel = str(f.get("relation"))
+            counts[rel] = counts.get(rel, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+RELATIONS_FOUND_HEADING = "## Relations found (computed by Python)"
+RELATIONS_MODEL_HEADING = "## Relations a model reported (not confirmed by Python or the scorer)"
+
+
+@localization.presentation
+def relation_report_lines(deliverables, op_docs) -> list:
+    """S2a, item 7: the run report's relations, in two lists that cannot mix.
+
+    A relation reaches "Relations found" only from a finding Python computed. A
+    relation that only a model's finding carries is listed apart and marked, so
+    "sum_mismatch" written by a model is never read as a sum Python found wrong."""
+    computed, model_only = {}, {}
+    for doc in op_docs or []:
+        info = (deliverables or {}).get(doc["id"]) or {}
+        for rel, n in (info.get("relations_computed") or {}).items():
+            computed[rel] = computed.get(rel, 0) + n
+        for rel, n in (info.get("relations_model_only") or {}).items():
+            model_only[rel] = model_only.get(rel, 0) + n
+    if not computed and not model_only:
+        return []
+    lines = ["", localization.text(RELATIONS_FOUND_HEADING), ""]
+    lines += ([f"- {rel}: {n}" for rel, n in sorted(computed.items())]
+              or [localization.text('- (none)')])
+    lines += ["", localization.text(RELATIONS_MODEL_HEADING), ""]
+    if model_only:
+        mark = localization.text(finding_record.MODEL_FINDING_MARK)
+        lines += [f"- {rel}: {n} ({mark})" for rel, n in sorted(model_only.items())]
+    else:
+        lines.append(localization.text('- (none)'))
+    return lines
+
+
+def operative_findings_sentence(provenance) -> str:
+    return ("Findings below come from the convention review: %d computed by Python from the "
+            "document's figures, %d written by a model (%s) and not promoted. Each finding "
+            "cites the convention ID and the reference ID(s) and says who wrote it."
+            % (provenance["computed"], provenance["model"], _agents_text(provenance)))
+
+
 @localization.presentation
 def render_context_summary(
     *,
@@ -117,13 +194,21 @@ def render_operative_summary(
                 # free-text field happened to survive normalisation. A finding that
                 # is not a typed record renders exactly as it did before.
                 typed = finding_record.typed_line(f) if finding_record.is_finding(f) else ""
+                # S2a: every finding says who wrote it. A model's finding is never
+                # removed from view; it is labelled, in this file as in every other.
+                mark = finding_record.provenance_mark(f) if "written_by" in f else ""
                 if typed:
                     prose = (f.get("explanation") or f.get("reasoning") or "")[:240]
-                    lines.append(f"- {typed}")
+                    if prose and not finding_record.is_model_written(f):
+                        # Python's own sentence has a catalog rendering; a model's
+                        # sentence is source content and stays exactly as written.
+                        prose = localization.message(prose)
+                    lines.append(f"- {typed}" + (f" ({mark})" if mark else ""))
                     if prose:
                         lines.append(f"  - {prose}")
                 else:
-                    lines.append(f'- {f.get('verdict', '?')}{localization.text(' on [')}{f.get('conv_id', '?')}{localization.text('] at refs [')}{refs}]: {f.get('reasoning', '')[:240]}')
+                    lines.append(f'- {f.get('verdict', '?')}{localization.text(' on [')}{f.get('conv_id', '?')}{localization.text('] at refs [')}{refs}]: {f.get('reasoning', '')[:240]}'
+                                 + (f" ({mark})" if mark else ""))
                 rendered_count += 1
         lines.append("")
     # R6 / INFRA-044: the comparison with the operator-declared earlier version, an

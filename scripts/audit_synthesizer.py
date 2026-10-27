@@ -183,13 +183,22 @@ def _count_disputed_by_source(findings):
     return out
 
 
+AUDIT_COUNT_NOTE = (" (patterns in this run's audit trail, such as repeated escalations; "
+                    "not findings about the document under review, which are in "
+                    "deliverables/<document>/document_summary.md)")
+
+
 @localization.presentation
 def _render_md(summary):
+    # S2a, item 6: the count here is of PATTERNS in the run's audit trail (repeated
+    # escalations, repeated verdicts, repeated proposals), never of findings about
+    # the document under review, and it says so where the number is shown.
     lines = [localization.text('# Audit synthesis'), "", f'{localization.text('- generated: ')}{summary['generated_at']}',
              f'{localization.text('- bus messages: ')}{summary['bus_messages']}',
-             f'{localization.text('- findings: ')}{len(summary['findings'])}',
-             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "", localization.text('## Findings')]
-    if not summary["findings"]: lines.append(localization.text('_no findings this run_'))
+             f'{localization.text('- audit-trail patterns: ')}{len(summary['findings'])}{localization.text(AUDIT_COUNT_NOTE)}',
+             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "",
+             localization.text('## Audit-trail patterns (not document findings)')]
+    if not summary["findings"]: lines.append(localization.text('_no audit-trail patterns this run_'))
     else:
         for f in summary["findings"]:
             lines.append(f"- [{f['severity'].upper()}] ({f['category']}) {localization.message(f['summary'])}")
