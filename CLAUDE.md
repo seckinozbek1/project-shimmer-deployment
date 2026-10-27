@@ -121,10 +121,12 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
   decision through the intent line and reading the provider inventory again just before it:
   it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
-  in the inventory), when the per-run cap `min(1.5 x forecast, hard stop - spend - running
-  caps - storage forecast)` is below the forecast (measured minutes x live price x 1.3), or when
+  in the inventory), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
+  caps - storage forecast)`, ceiling `min(hard stop, budget - 1)` (`loop_budget_guard.cap_ceiling`,
+  so a hard stop at the budget never removes the one-dollar margin), is below the forecast
+  (measured minutes x live price x 1.3), or when
   the capped run time does not cover the forecast time plus the run's stop reserve (the cap
-  rule alone keeps spend + forecast + storage at or below the reaper's hard stop). The budget is
+  rule alone keeps spend + forecast + storage at or below that ceiling). The budget is
   never a code constant (D-S9): the guard and the reaper read it from the ledgers' latest
   `budget_open` or `budget_change` line (`instance_reaper.budget_figures`; the hard stop is that
   line's `hard_stop_usd`, else the budget less the one-dollar margin), a launch with no readable
@@ -132,8 +134,11 @@ processing swarm governed by an append-only constitution.
   be read. The type rule's A10 reference is the latest `a10_reference_price_usd_per_hour` on any
   budget line. An open launch accrues spend only up to its recorded deadline; past it, with no
   instance of its name listed, the reaper closes it with one termination line
-  (`intent_without_instance`, or `instance_not_listed` for a launch whose instance is gone),
-  charged to the deadline. The ledger lock holds its pid and creation time; a held lock is
+  (`intent_without_instance`, or `instance_not_listed_charged_to_deadline` for a launch whose
+  instance is gone), charged to the deadline: a ceiling counted as actual spend and never
+  refunded. A closing or termination line goes to every ledger file that holds the launch
+  (`instance_reaper.holders`: R's ledger for a launch only R recorded, both for a copied line),
+  and to the append ledger only for a listed loop instance no ledger records. The ledger lock holds its pid and creation time; a held lock is
   refused in one line naming its age, its pid and whether that pid runs, and no tool removes it.
   `--purpose` is checked in `launch_plan()` before any provider call. Spend is counted once per
   launch across ledgers, a termination closing a launch by its instance id or its name (a
@@ -474,8 +479,12 @@ processing swarm governed by an append-only constitution.
   passage cited, the pairing map's rejection of its rule, no addends named, figures not in its
   unit). Every paired judging call is recorded with its outcome
   (`paired_review.judging_call_record`) on the computed bus post (`judging_calls`), on a
-  `PAIRED_JUDGING_CALLS` post when no computed finding carries it, and in the pairing map; the
-  deliverables state the calls made and the notes kept. A docx comment's author is read from the
+  `PAIRED_JUDGING_CALLS` post when no computed finding carries it, and in the pairing map; a
+  failed call is `reply_failed` whatever it was asked, and a judged-absence call that returned
+  carries its claims listed and refused (`absence_listed`, `absence_refused`). The deliverables
+  state the calls made and the notes kept with ONE count (`paired_review.notes_on_python_findings`,
+  one per Python finding carrying a model's note) under one label in every file, and count the
+  judged-absence calls, never asked for a note, apart (`paired_review.judging_call_counts`). A docx comment's author is read from the
   amendment's provenance (`docx_builder.comment_author`): Python for an amendment built from a
   computed finding, the model agent for one built from a model's record, and the drafter only for
   an amendment taken from AMENDMENT_DRAFTER's own payload. Figures go

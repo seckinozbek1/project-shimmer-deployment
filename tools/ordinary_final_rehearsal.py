@@ -72,7 +72,8 @@ def rehearsal_budget():
     candidates = guard.instance_candidates([A10_TYPE], reference)
     forecast = guard.forecast_usd(REHEARSAL_FORECAST_MINUTES, candidates[0]['max_hourly_rate'])
     # The rehearsal ledger's line names no hard stop, so its stop is the budget less the margin.
-    cap = guard.per_run_cap(forecast, 0.0, 0.0, 0.0, REHEARSAL_BUDGET_USD - guard.RESERVE_USD)
+    cap = guard.per_run_cap(forecast, 0.0, 0.0, 0.0,
+                            guard.cap_ceiling(REHEARSAL_BUDGET_USD, REHEARSAL_BUDGET_USD - guard.RESERVE_USD))
     return dict(instance_candidates=candidates, a10_reference_rate=reference, region=guard.PREFERRED_REGION,
                 max_hourly_rate=candidates[0]['max_hourly_rate'], forecast_minutes=REHEARSAL_FORECAST_MINUTES,
                 forecast_usd=forecast, soft_budget_usd=forecast, hard_ceiling_usd=cap, per_run_cap_usd=cap,

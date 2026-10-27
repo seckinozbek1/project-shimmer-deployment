@@ -145,13 +145,17 @@ def prior_case_items(doc_id="batch_sheet"):
 
 
 def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False,
-               text=None):
+               text=None, rules=None, absence_reply=None, plan_calls=None):
     """One mocked run, faithful to a real one where it matters: the computed
     findings come from the REAL phase 5.5 paired review (pairing map, planner,
     arithmetic, mint, bus post under paired/python); only the judging model's
     sentence is authored (`_run_one` returns it, as a model reply would). The model
     finding is an authored wide-review reply posted under its model backend. Then
-    the real phase 6, the run summary, and the INST_FINDER record main() writes."""
+    the real phase 6, the run summary, and the INST_FINDER record main() writes.
+
+    S2 checker round 3: `rules` replaces the rule set, `absence_reply(payload,
+    call_id)` authors the reply to a judged-absence question (a failed call or
+    claims Python refuses), and `plan_calls` wraps the real planner."""
     import pipeline as pl
     import reference_builder as rb
     import run_options
@@ -159,7 +163,7 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     from harness.run_agent import build_orchestrator
     text = text or DOC_TEXT
     doc = {"id": "batch_sheet", "name": "batch_sheet.md", "text": text}
-    registry = {"conventions": RULES}
+    registry = {"conventions": rules or RULES}
     out_root = Path(out_root)
     orch = build_orchestrator(root=ROOT, out_root=out_root)
     run_options.configure(orch.run_context, "auto", language, "enabled")
@@ -191,6 +195,8 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     async def judging_reply(wrapper, payload, run_objectives, *args, **kwargs):
         call_id = uuid.uuid4().hex
         record_call(wrapper.name, call_id, "5.5")
+        if absence_reply is not None and "absence_question" in payload:
+            return absence_reply(payload, call_id)
         return {"ok": True, "backend": "local_auditor", "model": "fixture-auditor",
                 "call_id": call_id, "raw_text": "", "item_count": 1,
                 "parsed": {"agent": wrapper.name, "doc_id": doc["id"],
@@ -200,7 +206,9 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     logger.addHandler(capture)
     try:
         with contextlib.redirect_stderr(io.StringIO()):
-            with patch.object(pl, "_run_one", judging_reply):
+            planner = (patch.object(pr, "plan_calls", plan_calls(pr.plan_calls)) if plan_calls
+                       else contextlib.nullcontext())
+            with patch.object(pl, "_run_one", judging_reply), planner:
                 conv_review = asyncio.run(pl.phase_5_5_convention_review(
                     orch, {}, [doc], "declared proof", registry, index, embed_store=None,
                     max_concurrent_docs=1, review_mode="paired"))
@@ -434,7 +442,11 @@ def _localized_samples():
               + list(agent_activation.STATE_WORDS.values()) + list(pr.JUDGING_OUTCOMES.values())
               + list(absence_prediction.STATUS_SENTENCES.values())
               + list(absence_prediction.COMPARISON_WORDS.values())
-              + ["## Absence quote check", docx_builder.COMPUTED_AUTHOR, "total does not match its parts"])
+              + ["## Absence quote check", docx_builder.COMPUTED_AUTHOR, "total does not match its parts"]
+              # S2 checker round 3 (item 2): the one count of notes and the calls split apart.
+              + [summary_generators.CALLS_AND_NOTES_TEXT,
+                 "Judging calls this agent made on this document: {calls}; {counts}.",
+                 "; judging calls: {calls}; {counts}"])
     return texts + [a["comment"] for a in template_amendments()] + [
         pr.amendment_from_finding(sums[1], unit_texts=units,
                                   unit_refs={sums[1]["unit_id"]: "REF-0004"},
@@ -794,8 +806,9 @@ def observe_reader_check():
             # RD1/RD4/RD6: the note is quoted and names its model; the counts keep notes apart
             "note_named": ('A model\'s note (model: fixture-auditor), not checked by Python: "%s"' % AUTHORED_JUDGMENT
                            in alpha.get("comment", "")),
-            "note_counts": ("Model-written notes attached to Python's findings (model: fixture-auditor), not checked "
-                            "by Python: 2 kept from 3 judging call(s)." in files["grounding_summary.md"]
+            "note_counts": ("Model-written notes kept on Python's findings (model: fixture-auditor), not checked "
+                            "by Python: 2; judging calls that could carry a note: 3; judged-absence calls, never "
+                            "asked for a note: 0." in files["grounding_summary.md"]
                             and "Items written by a model (STYLE_GUARDIAN), not checked by Python and not promoted: 1."
                             in files["grounding_summary.md"]),
             # RD2: the model item's citation, applicability and missing addends, in words
@@ -960,13 +973,18 @@ def observe_round3():
             "bus_calls_match_activation": sorted(c.get("call_id") for c in bus_calls) == pa_call_ids,
             "judging_call_count": len(pa_call_ids),
             "bus_outcomes": sorted(c.get("outcome") for c in bus_calls),
-            "calls_stated": ("Judging calls this agent made on this document: 3; notes kept on Python's findings: 2."
-                             in files["reviewed_document.md"]
+            "calls_stated": (("Judging calls this agent made on this document: 3; judging calls that could carry a "
+                              "note: 3; judged-absence calls, never asked for a note: 0; model-written notes kept on "
+                              "Python's findings: 2.") in files["reviewed_document.md"]
                              and ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
                                   "and was kept neither as a finding nor as a note") in files["reviewed_document.md"]
-                             and "2 kept from 3 judging call(s)" in files["document_summary.md"]
-                             and "2 kept from 3 judging call(s)" in files["grounding_summary.md"]
-                             and "; judging calls with a note kept: 2 of 3" in files["reviewed_document.md"]),
+                             and ("not checked by Python: 2; judging calls that could carry a note: 3; judged-absence "
+                                  "calls, never asked for a note: 0.") in files["document_summary.md"]
+                             and ("not checked by Python: 2; judging calls that could carry a note: 3; judged-absence "
+                                  "calls, never asked for a note: 0.") in files["grounding_summary.md"]
+                             and ("; judging calls: 3; judging calls that could carry a note: 3; judged-absence calls, "
+                                  "never asked for a note: 0; model-written notes kept on Python's findings: 2")
+                             in files["reviewed_document.md"]),
             # 3: no "not judged by a model" beside a model's note
             "note_beside_not_judged": [c[:60] for c in comments if "A model's note" in c and "not judged by a model" in c],
             "note_sentence": sum(pr.COMPUTED_PROVENANCE_WITH_NOTE in c for c in comments),
@@ -1088,7 +1106,9 @@ def observe_calls_without_findings():
                 "posted_match_made": sorted(c.get("call_id") for c in posted) == made,
                 "findings_on_bus": sum(len(((m.get("body") or {}).get("payload") or {}).get("items") or [])
                                        for m in bus if m.get("sender") == "PRACTICE_AUDITOR"),
-                "stated": "Judging calls this agent made on this document: 2; notes kept on Python's findings: 0." in per_agent,
+                "stated": ("Judging calls this agent made on this document: 2; judging calls that could carry a note: 2; "
+                           "judged-absence calls, never asked for a note: 0; model-written notes kept on Python's "
+                           "findings: 0.") in per_agent,
                 "said_did_not_run": "agent did not run" in per_agent}
 
 
@@ -1097,6 +1117,109 @@ def check_calls_without_findings():
     ok = (o["calls_made"] == 2 and o["posted_match_made"]
           and o["findings_on_bus"] == 0 and o["stated"] and not o["said_did_not_run"])
     return ("PASS" if ok else "FAIL", "judging calls with no computed finding are on the bus and in the file")
+
+
+# ---------- S2 checker round 3: judged-absence call outcomes and one count of notes ----
+
+# A scoped rule that declares no required field: every unit in its scope (each entry
+# states a reading) is put to the model as a judged-absence question.
+JUDGED_RULE = {"id": "CONV-004", "category": "conv-h04", "severity": "required",
+               "rule": "An entry whose reading lies outside the range must carry a countersignature.",
+               "scope": ["reading"]}
+# Entry Beta with two totals, so the planner makes two computed disagreements there.
+TWO_TOTALS_TEXT = DOC_TEXT.replace(
+    "Total weight: 9 kg\n\n| Line | Weight |\n|---|---|\n| L1 | 3 kg |\n| L2 | 5 kg |",
+    "Total weight: 9 kg\nTotal length: 7 m\n\n| Line | Weight | Length |\n|---|---|---|\n"
+    "| L1 | 3 kg | 2 m |\n| L2 | 5 kg | 4 m |")
+
+
+def _absence_claim(quote=None, field="countersignature"):
+    """PRE-AUTHORED, NOT MODEL OUTPUT: a judged-absence claim as a model returns it."""
+    claim = {"kind": "finding", "record_verdict": "irregular", "rule_id": JUDGED_RULE["id"],
+             "relation": "missing_field", "stated_field": field, "value_a": 0, "unit_a": "values",
+             "value_b": 1, "unit_b": "required", "source_refs": ["REF-0002"],
+             "explanation": "The entry carries no %s." % field}
+    if quote:
+        claim["quote"] = quote
+    return claim
+
+
+def judged_absence_reply(payload, call_id):
+    """PRE-AUTHORED replies to the judged-absence questions: on Entry Alpha the call
+    fails; on Entry Beta every claim is refused (one quotes nothing, one claims a field
+    the unit carries); on Entry Gamma one claim is listed and one refused."""
+    unit = str(payload.get("unit_id") or "")
+    base = {"backend": "local_auditor", "model": "fixture-auditor", "call_id": call_id, "raw_text": ""}
+    if "entry-alpha" in unit:
+        return dict(base, ok=False, error="fixture: the provider refused the call", parsed=None, item_count=0)
+    items = ([_absence_claim(), _absence_claim("Reading: 40 units", field="reading")] if "entry-beta" in unit
+             else [_absence_claim("Reading: 12 units"), _absence_claim()])
+    return dict(base, ok=True, item_count=len(items), parsed={"agent": "PRACTICE_AUDITOR", "doc_id": unit, "items": items})
+
+
+def one_call_for_both_beta_totals(real):
+    """The planner with Entry Beta's two computed disagreements put to ONE judging
+    call, so one call's note sits on two of Python's findings."""
+    def plan(*args, **kwargs):
+        plans = real(*args, **kwargs)
+        beta = [p for p in plans if p.get("kind") == "computed" and "entry-beta" in p["unit"]["unit_id"]]
+        if len(beta) < 2:
+            return plans
+        beta[0]["checks"] = [c for p in beta for c in p["checks"]]
+        return [p for p in plans if not any(p is b for b in beta[1:])]
+    return plan
+
+
+def observe_judged_absence_and_notes():
+    """S2 checker round 3, items 1 and 2, read off one mocked run: three judged-absence
+    calls (one failed, one whose claims were all refused, one listing one claim and
+    refusing one) and three calls asked about Python's figures, one of whose notes sits
+    on two findings."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_absence_calls_") as td:
+        run = mocked_run(td, style_guardian=False, text=TWO_TOTALS_TEXT, rules=RULES + [JUDGED_RULE],
+                         absence_reply=judged_absence_reply, plan_calls=one_call_for_both_beta_totals)
+        files = {k: _read(v) for k, v in run["files"].items()}
+        bus = [json.loads(ln) for ln in _read(run["run_dir"] / "logs" / "agent_bus.jsonl").splitlines() if ln.strip()]
+        records = [c for m in bus for c in ((m.get("body") or {}).get("judging_calls") or [])]
+        said = {}
+        for line in files["reviewed_document.md"].splitlines():
+            match = re.match(r"- Judging call \S+ on unit u\d+-entry-(\w+) under rule CONV-004 \(model: [^)]*\): (.*)\.$", line)
+            if match:
+                said[match[1]] = match[2]
+        notes = summary_generators.CALLS_AND_NOTES_TEXT.format(note_calls=3, absence_calls=3, notes=3)
+        return {
+            "absence_lines": said,
+            "absence_records": sorted((r["unit_id"].split("-", 2)[-1], r["outcome"], r["absence_listed"], r["absence_refused"])
+                                      for r in records if r.get("rule_id") == "CONV-004"),
+            "per_agent": "Judging calls this agent made on this document: 6; %s." % notes in files["reviewed_document.md"],
+            "registered": "; judging calls: 6; %s" % notes in files["reviewed_document.md"],
+            "summaries": all(("Model-written notes kept on Python's findings (model: fixture-auditor), not checked by "
+                              "Python: 3; judging calls that could carry a note: 3; judged-absence calls, never asked "
+                              "for a note: 3.") in files[n] for n in ("document_summary.md", "grounding_summary.md")),
+        }
+
+
+def check_judged_absence_and_notes():
+    o = observe_judged_absence_and_notes()
+    bad = []
+    if o["absence_lines"] != {"alpha": "the call failed, so nothing from its reply was kept",
+                              "beta": "judged absence: 0 listed as a model's items, 2 refused by Python",
+                              "gamma": "judged absence: 1 listed as a model's items, 1 refused by Python"}:
+        bad.append("absence_lines")
+    if o["absence_records"] != [("alpha", "reply_failed", 0, 0), ("beta", "judged_absence", 0, 2),
+                                ("gamma", "judged_absence", 1, 1)]:
+        bad.append("absence_records")
+    bad += [k for k in ("per_agent", "registered", "summaries") if not o[k]]
+    return ("FAIL" if bad else "PASS", "judged-absence calls in their outcome order, one count of notes: %s"
+            % (bad or "all"))
+
+
+def notes_counted_by_call(records):
+    """The reading before S2 checker round 3 (item 2): a call that kept a note counted
+    once, however many of Python's findings carry its sentence."""
+    return len({str(r.get("explanation_call_id") or r.get("explanation_model")) for r in records or []
+                if isinstance(r, dict) and not finding_record.is_model_written(r)
+                and r.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
 
 
 def check_unstamped():
@@ -1379,6 +1502,29 @@ class HonestOutputChecks(unittest.TestCase):
     def test_r3_11_unregistered_agents_set_apart(self):
         self.prove("r3_11_unregistered", observe_round3, check_round3,
                    lambda: patch.object(audit_synthesizer, "registered_agents", lambda messages: None))
+
+    # S2 checker round 3: each mechanism, neutralised alone, must fail the check.
+    def test_c3r1_failed_judged_absence_call_is_a_failed_call(self):
+        real = pr.judging_call_record
+        self.prove("c3r1_absence_order", observe_judged_absence_and_notes, check_judged_absence_and_notes,
+                   lambda: patch.object(pr, "judging_call_record", lambda reply, **kw: dict(
+                       real(reply, **kw), outcome="judged_absence")
+                       if kw.get("plan_kind") == pr.JUDGED_ABSENCE_PLAN else real(reply, **kw)))
+
+    def test_c3r1_judged_absence_states_claims_listed_and_refused(self):
+        real = pr.judging_call_record
+        self.prove("c3r1_absence_counts", observe_judged_absence_and_notes, check_judged_absence_and_notes,
+                   lambda: patch.object(pr, "judging_call_record",
+                                        lambda reply, **kw: real(reply, **dict(kw, absence_listed=0, absence_refused=0))))
+
+    def test_c3r2_one_count_of_notes_everywhere(self):
+        self.prove("c3r2_note_count", observe_judged_absence_and_notes, check_judged_absence_and_notes,
+                   lambda: patch.object(pr, "notes_on_python_findings", notes_counted_by_call))
+
+    def test_c3r2_judged_absence_calls_counted_apart(self):
+        self.prove("c3r2_calls_apart", observe_judged_absence_and_notes, check_judged_absence_and_notes,
+                   lambda: patch.object(pr, "judging_call_counts", lambda calls: {
+                       "calls": len(calls or []), "note_calls": len(calls or []), "absence_calls": 0}))
 
     # Adversarial round 2: each mechanism, neutralised alone, must fail the check.
     def test_adv_a_unstamped_is_never_pythons(self):
