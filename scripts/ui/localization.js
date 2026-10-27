@@ -21,7 +21,9 @@ var ShimmerLocale = (function () {
     if (Object.prototype.hasOwnProperty.call(catalog, original)) return catalog[original];
     for (var row of (catalog._messages || [])) {
       var match = original.match(new RegExp(row.pattern, "s"));
-      if (match) return row.translation.replace(/\{(\d+)\}/g, function (_, n) { return match[Number(n) + 1]; });
+      // "{n}" keeps group n exactly; "{n!m}" renders group n through the catalog too.
+      if (match) return row.translation.replace(/\{(\d+)(!m)?\}/g, function (_, n, m) {
+        return m ? message(match[Number(n) + 1], lang) : match[Number(n) + 1]; });
     }
     // Unrecognized diagnostics remain exact, never replaced by an invented explanation.
     return original;

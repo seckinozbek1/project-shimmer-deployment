@@ -52,14 +52,135 @@ def write(path, value):
     Path(path).write_text(json.dumps(value, indent=2, sort_keys=True)+'\n', encoding='utf8')
 
 
+HEX64 = r'[0-9a-f]{64}'
+CASE_MANIFEST = 'case_manifest.json'
+EXPOSED_NO_MANIFEST = 'exposed, no manifest'
+# The live case manifest (S2b item 2): the multi-round manifest schema version 1 of
+# scripts/multi_round.py, with exactly these top-level fields, `fixture` false, and every
+# source span measured on the bundled LF-normalised document bytes. A fixture (synthetic,
+# pre-authored outputs, documents carried inside the file) is refused in a live run.
+LIVE_CASE_FIELDS = frozenset({'schema_version', 'case_id', 'fixture', 'allow_recommendations',
+                              'decision_support_mode', 'rounds', 'actors', 'issues', 'sources'})
+
+
+def _multi_round_module():
+    try:
+        import multi_round
+    except ImportError:
+        sys.path.append(str(Path(__file__).resolve().parents[1]/'scripts'))
+        import multi_round
+    return multi_round
+
+
+def validate_live_case_manifest(value, documents=None):
+    """The live case manifest, or a one-line refusal naming the rule, never the content.
+
+    `documents` maps a document id (a context file name without its extension) to its
+    LF-normalised text; with it, every round's documents must exist and every source quote
+    must equal the text between char_start and char_end exactly, as bind_sources requires
+    at run time, so a sealed case cannot fail forty minutes into a rented instance."""
+    require(isinstance(value, dict), 'Case manifest must be an object')
+    require(set(value) <= LIVE_CASE_FIELDS, 'Case manifest carries a field outside the live schema')
+    require(value.get('fixture') is False, 'Fixture case manifest refused in a live run')
+    mr = _multi_round_module()
+    try:
+        checked = mr.validate_manifest(value)
+    except mr.InvalidState as exc:
+        raise RuntimeError('Invalid case manifest: ' + str(exc)) from None
+    if documents is not None:
+        for round_ in checked['rounds']:
+            for doc in round_['document_ids']:
+                require(doc in documents, 'Case document missing from the bundle: a round names an absent document')
+        for source in checked['sources']:
+            text = documents[source['document_id']]
+            require(text[source['char_start']:source['char_end']] == source['quote'],
+                    'Case source span does not match the bundled document text')
+    return checked
+
+
+def case_corpus_documents(members, pipeline_source):
+    """{document id: text} for context files ({path under input/context/: bytes}), loaded by
+    the BOUND pipeline's own _load_corpus: top-level files only, `_` files skipped, empty text
+    skipped, ids `stem__ext` on a stem collision, binary formats through its extractor. Read
+    from the bound source rather than restated, so sealing and launch validate exactly the
+    documents bind_sources will see on the instance."""
+    import ast
+    import contextlib
+    import io
+    import tempfile
+    source = pipeline_source.decode('utf-8-sig') if isinstance(pipeline_source, bytes) else pipeline_source
+    function = next(n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef) and n.name == '_load_corpus')
+    try:
+        import text_extract
+    except ImportError:
+        sys.path.append(str(Path(__file__).resolve().parents[1]/'scripts'))
+        import text_extract
+    scope = dict(Path=Path, text_extract=text_extract)
+    exec(compile(ast.Module(body=[function], type_ignores=[]), 'bound_pipeline_load_corpus', 'exec'), scope)
+    with tempfile.TemporaryDirectory() as folder:
+        for name, data in members.items():
+            parts = name.split('/')
+            require(name and not name.startswith('/') and '..' not in parts and '' not in parts, 'Unsafe case document name')
+            target = Path(folder, *parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        # The extractor warns on unsupported files by name; nothing of a test is printed here.
+        with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+            documents = scope['_load_corpus'](Path(folder))
+    return {d['id']: d['text'] for d in documents}
+
+
+def argv_for(manifest):
+    """The one sealed flag list for the workload the manifest declares."""
+    return MULTI_ROUND_ARGV if manifest.get('multi_round') is True else ARGV
+
+
+def admit_workload(manifest, seal, base=None):
+    """Replaces the old blanket refusal ('Excluded workload') of multi-round and protected
+    tests: each is admitted exactly when it is DECLARED in the manifest, SEALED (bound by a
+    hash the seal covers) and VALID, and an undeclared one is refused as before. A bundle can
+    never claim more than it was sealed with."""
+    require(type(manifest.get('multi_round')) is bool and type(manifest.get('protected_test')) is bool,
+            'Workload declaration must be explicit')
+    exposure = seal.get('exposure', 'exposed')
+    require(exposure in ('exposed', 'sealed'), 'Unknown exposure in the seal')
+    if exposure == 'sealed':
+        # Sealed runs only: declared sealed, the test archive hash the bundle was built from
+        # equals the seal's, and the code commit equals the seal's (the frozen tag's commit,
+        # resolved by the controller before launch).
+        require(isinstance(seal.get('test_manifest_sha256'), str) and re.fullmatch(HEX64, seal['test_manifest_sha256'])
+                and isinstance(manifest.get('test_archive_sha256'), str)
+                and seal.get('test_archive_sha256') == manifest['test_archive_sha256']
+                and seal.get('code_commit') == manifest['source_commit'], 'Sealed declaration not bound to its test')
+    else:
+        # Exposed runs behave as before: no protected test.
+        require(manifest['protected_test'] is False, 'Protected test requires a sealed run')
+        require(seal.get('test_manifest_sha256', EXPOSED_NO_MANIFEST) == EXPOSED_NO_MANIFEST,
+                'An exposed run carries no test manifest')
+    support = manifest.get('support_files', {})
+    if manifest['multi_round']:
+        digest = manifest.get('case_manifest_sha256')
+        require(isinstance(digest, str) and re.fullmatch(HEX64, digest) and support.get(CASE_MANIFEST) == digest,
+                'Multi-round declared without its sealed case manifest')
+        if base is not None:
+            require(sha(Path(base)/CASE_MANIFEST) == digest, 'Case manifest changed')
+            case = read(Path(base)/CASE_MANIFEST)
+            require(isinstance(case, dict) and case.get('fixture') is False, 'Fixture case manifest refused in a live run')
+            require(set(case) <= LIVE_CASE_FIELDS, 'Case manifest carries a field outside the live schema')
+    else:
+        require('case_manifest_sha256' not in manifest and CASE_MANIFEST not in support,
+                'Case manifest sealed without a multi-round declaration')
+    require(manifest['argv'] == argv_for(manifest), 'Run flags changed')
+    return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure)
+
+
 def verify(base):
     base = Path(base).resolve()
     manifest = read(base/'execution_manifest.json')
     seal = read(base/'seal.json')
     require(seal['execution_manifest_sha256'] == sha(base/'execution_manifest.json'), 'Manifest seal mismatch')
     require(manifest['max_runs'] == 1 and manifest['model_mode'] == 'final', 'Ordinary final run only')
-    require(manifest['multi_round'] is False and manifest['protected_test'] is False, 'Excluded workload')
-    require(manifest['argv'] == ARGV, 'Run flags changed')
+    admit_workload(manifest, seal, base)
     require(manifest['topology'] == TOPOLOGY, 'Residency topology changed')
     for key,value in {'SHIMMER_MODEL_MODE':'final','SHIMMER_BACKEND_PROFILE':'local',
                       'HF_HUB_OFFLINE':'1','TRANSFORMERS_OFFLINE':'1','CUBLAS_WORKSPACE_CONFIG':':4096:8'}.items():
@@ -86,6 +207,21 @@ ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense',
         '--input-language', 'auto', '--output-language', 'en']
 TOPOLOGY = {'schema_version': 1, 'lanes': [
     {'name': 'primary', 'device': 'cuda:0', 'resident_limit': 1}]}
+# A declared multi-round Review: the ordinary flags under `reference_serial` (D-011 choice 3:
+# the topology code is not widened), no topology configuration, and the sealed case manifest.
+MULTI_ROUND_ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense',
+                    '--review-mode', 'paired', '--task', 'review', '--mode', 'standalone',
+                    '--non-interactive', '--skip-confirmation', '--sensitivity-layer-inactive-override',
+                    '--no-redaction-override', '--execution-topology', 'reference_serial',
+                    '--agent-briefs', 'enabled', '--input-language', 'auto', '--output-language', 'en',
+                    '--multi-round', '--multi-round-manifest', CASE_MANIFEST]
+
+
+def selected_candidate(manifest, permit):
+    """The sealed instance candidate the authorization names; nothing outside the list."""
+    matches = [c for c in manifest['instance_candidates'] if c['type'] == permit.get('instance_type')]
+    require(len(matches) == 1 and permit.get('instance_candidate') == matches[0], 'Instance authorization mismatch')
+    return matches[0]
 
 
 def authorization(base, manifest, permit, now=None):
@@ -97,19 +233,34 @@ def authorization(base, manifest, permit, now=None):
     require(permit.get('source_commit') == manifest['source_commit'], 'Authorization source mismatch')
     require(permit.get('soft_budget_usd') == manifest['soft_budget_usd'] and
             permit.get('hard_ceiling_usd') == manifest['hard_ceiling_usd'], 'Budget authorization mismatch')
-    require(permit.get('provider') == 'Lambda' and permit.get('instance_type') == 'gpu_1x_a10'
-            and permit.get('region') == 'us-east-1', 'Instance authorization mismatch')
+    require(permit.get('multi_round') == manifest['multi_round'], 'Workload authorization mismatch')
+    candidate = selected_candidate(manifest, permit)
+    require(permit.get('provider') == 'Lambda' and isinstance(permit.get('region'), str)
+            and re.fullmatch(r'[a-z]+-[a-z]+-[0-9]+', permit['region']), 'Instance authorization mismatch')
     require(isinstance(permit.get('instance_id'),str) and
             re.fullmatch(r'[a-f0-9]{32}|[a-f0-9-]{36}',permit['instance_id']), 'Instance ID required')
-    require(0 < permit['hourly_rate'] <= manifest['max_hourly_rate'], 'Price exceeds ceiling')
+    require(0 < permit['hourly_rate'] <= candidate['max_hourly_rate'], 'Price exceeds ceiling')
     start = permit['active_start_epoch']
     require(isinstance(start, (int, float)) and 0 < start <= now, 'Invalid billing start')
-    require(now < start + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600 - 900,
+    require(now < start + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600 - manifest['workload_stop_reserve_seconds'],
             'Insufficient execution/collection reserve')
 
 
-def assess(completion, raw):
+def assess(completion, raw, multi_round=None):
+    """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
+    record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
+    reviewed, a Python round review recorded (`round_review.availability`);
+    quality is reported separately and is never a pass."""
     reasons = []
+    if multi_round is not None:
+        if not (isinstance(multi_round, dict) and multi_round.get('outcome') == 'reviewed'):
+            reasons.append('multi_round_not_reviewed')
+        if not (isinstance(multi_round, dict) and (multi_round.get('activation') or {}).get('activated') is True):
+            reasons.append('multi_round_not_activated')
+        if (isinstance(multi_round, dict) and multi_round.get('outcome') == 'reviewed' and
+                (multi_round.get('round_review') or {}).get('availability') != 'recorded'):
+            # S2 checker A10: a reviewed run whose Python round review failed is not healthy.
+            reasons.append('multi_round_round_review_not_recorded')
     if not (completion and completion.get('state') == 'completed' and
             completion.get('reached_end') is True and completion.get('exit_code') == 0):
         reasons.append('pipeline_not_completed')
@@ -175,17 +326,26 @@ def installed_runtime(manifest, distribution=None):
             require(sha(dist.locate_file(name))==digest,'Installed runtime hash mismatch: '+package)
 
 
-def hardware_admission(base, torch, psutil):
+def gpu_matches(token, name):
+    """Whole-token match, so 'A10' never admits an 'A100'."""
+    return bool(token) and re.search(r'(?<![A-Za-z0-9])'+re.escape(token)+r'(?![0-9])', str(name)) is not None
+
+
+def hardware_admission(base, torch, psutil, candidate):
+    """The selected type's requirements, read from its sealed candidate entry: its GPU, the
+    run's VRAM, the host the provider advertised for that type, and the run's own floors."""
     require(torch.cuda.device_count()==1,'Exactly one GPU required')
     props=torch.cuda.get_device_properties(0)
     free,total=torch.cuda.mem_get_info(0)
     memory=psutil.virtual_memory()
     value=dict(gpu_name=props.name,gpu_total_bytes=total,gpu_free_bytes=free,
                cpu_count=psutil.cpu_count(),ram_total_bytes=memory.total,ram_available_bytes=memory.available,
-               disk_free_bytes=shutil.disk_usage(base).free)
-    require('A10' in props.name and total>=23_000_000_000 and free>=20*2**30,'A10 memory admission')
-    require(value['cpu_count']>=30 and memory.total>=190*2**30 and memory.available>=40*2**30,'Host resource admission')
-    require(value['disk_free_bytes']>=30*2**30,'Storage admission')
+               disk_free_bytes=shutil.disk_usage(base).free,instance_type=candidate['type'])
+    require(gpu_matches(candidate['gpu_token'],props.name) and total>=candidate['run_gpu_total_bytes']
+            and free>=candidate['run_gpu_free_bytes'],'GPU memory admission')
+    require(value['cpu_count']>=candidate['min_cpu'] and memory.total>=candidate['min_ram_bytes']
+            and memory.available>=candidate['run_ram_available_bytes'],'Host resource admission')
+    require(value['disk_free_bytes']>=candidate['run_disk_free_bytes'],'Storage admission')
     return value
 
 
@@ -197,12 +357,15 @@ def execute(base):
     authorization(base, manifest, permit)
     require((base/'WATCHDOG_ARMED.json').is_file(), 'Independent operator watchdog required')
     watch = read(base/'WATCHDOG_ARMED.json')
-    require(watch.get('execution_manifest_sha256') == sha(base/'execution_manifest.json') and
+    own = sha(base/'execution_manifest.json')
+    # A batch session's watchdog names every bundle of the batch it guards.
+    require((watch.get('execution_manifest_sha256') == own or own in (watch.get('batch_manifest_sha256s') or [])) and
             watch.get('instance_id') == permit.get('instance_id') and
             0 <= time.time()-watch.get('heartbeat_epoch', 0) < 30, 'Watchdog not current')
     with (base/'RUN_CLAIMED').open('x', encoding='utf8') as stream:
         stream.write(str(time.time()))
-    deadline = permit['active_start_epoch'] + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600 - 900
+    deadline = (permit['active_start_epoch'] + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600
+                - manifest['workload_stop_reserve_seconds'])
     def budget_stop():
         time.sleep(max(0, deadline-time.time()))
         write(base/'BUDGET_WORKLOAD_STOP.json', {'epoch':time.time(), 'completed':False})
@@ -233,15 +396,19 @@ def execute(base):
     import final_models
     final_models.admit_ordinary()
     import psutil
-    write(base/'hardware_admission.json',hardware_admission(base,sys.modules['torch'],psutil))
+    write(base/'hardware_admission.json',hardware_admission(base,sys.modules['torch'],psutil,
+                                                           selected_candidate(manifest, permit)))
     from cloud_run_observer import Recorder, deny_network
     evidence = base/'evidence'
     evidence.mkdir(exist_ok=False)
     rec = Recorder(evidence/'network.jsonl')
     deny_network(rec)
     # Every inherited runtime flag was removed; only the manifest flags survive.
-    argv = list(ARGV)
-    argv[argv.index('--topology-config')+1] = str(base/'topology.json')
+    argv = list(argv_for(manifest))
+    if '--topology-config' in argv:
+        argv[argv.index('--topology-config')+1] = str(base/'topology.json')
+    if '--multi-round-manifest' in argv:
+        argv[argv.index('--multi-round-manifest')+1] = str(base/CASE_MANIFEST)
     argv += ['--output-dir', str(evidence/'run')]
     code = 1
     try:
@@ -257,10 +424,15 @@ def execute(base):
         if len(directories) == 1:
             directory = directories[0]
             raw = [json.loads(line) for line in (directory/'logs/model_telemetry.jsonl').read_text(encoding='utf8').splitlines() if line]
-            result = assess(run_completion.read(directory), raw)
+            completion = run_completion.read(directory)
+            saved = None
+            if manifest['multi_round']:
+                import multi_round
+                saved = multi_round.read_saved(directory, (completion or {}).get('run_id') or directory.name)
+            result = assess(completion, raw, saved)
             model_telemetry.recompute(directory)
         else:
-            result = assess(None, [])
+            result = assess(None, [], {} if manifest['multi_round'] else None)
         result['pipeline_exit_code'] = code
         write(evidence/'result.json', result)
     return 0 if code == 0 and result['execution_integrity_passed'] else 2

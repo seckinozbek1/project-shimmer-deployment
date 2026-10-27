@@ -262,3 +262,46 @@ covered, and S1 had used its three checker rounds (D-016).
 **What would settle it.** Refusing any archive with trailing data after its last compressed
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
+
+## 12 (closed at loop S2). The execution seal and FINAL_STATUS now handle the INST_FINDER setting
+
+- **Closed.** Both halves landed in S2c (plan revision R11): `tools/prepare_ordinary_final_run.py` refuses to seal an unratified `SHIMMER_INST_FINDER=off`, using the pipeline's own ratification test, and the run report written by `tools/analyze_ordinary_final_run.py` states the setting. Proofs in `tools/ordinary_final_controller_checks.py` (`test_unratified_inst_finder_off_refuses_to_seal`, `test_report_states_every_11_12_field`). The entry above is kept as written.
+
+## 18. Em and en dashes remain in 32 files under scripts/, tools/ and config/ (found at loop S2)
+
+- **What it is.** The repository's hard rule is no em dashes anywhere. S2 removed them from every file it changed that reaches a reader (`amendment_render.py`, `summary_generators.py`, `audit_synthesizer.py`, two catalog keys). 32 files under `scripts/`, `tools/` and `config/` still hold em or en dashes (for example `scripts/preflight.py`, `scripts/snapshot_manager.py`, `scripts/agent_wrapper.py`, `scripts/sensitivity_layer/rules.py`), and `config/constitution.json` holds 16.
+- **Evidence.** `git grep -c` for U+2014 and U+2013 over `scripts tools config` at `loop/s02`.
+- **Why it was left.** None of these files is changed by S2 (P16). `config/constitution.json` is append-only and its existing entries are never edited (H9), so its dashes stay. One catalog key in `scripts/ui/localization_catalog.js` keeps a dash because it must match an agent description in `config/agent_registry.json` word for word.
+- **What would settle it.** An S6 sweep over the other files (each reader-facing string checked against its catalog row), and a registry edit with its catalog key together.
+
+## 19. Three reader-check items left after S2's last round (found at loop S2)
+
+- **What it is.** (1) The run summary's absence-quote prediction section is developer telemetry in reader-facing text ("**PASS**", "the forecast of fourteen claims", untranslated in Turkish runs). (2) The deliverable `reviewed_document.md` is a per-agent technical record, not the reviewed document; only its heading was retitled. (3) The document summary prints Python's stored figures ("61.0") rather than the figures as the source writes them.
+- **Evidence.** `docs/loop/private` reader checks rounds 1 and 2 (RC17, RD10, RD18); `scripts/absence_prediction.py`; check 253 asserts "**PASS**" and "14 judged and 7 computed"; `run_context.DELIVERABLE_FILENAMES`.
+- **Why it was left.** Three reader-check rounds are the limit (IV.4); (1) needs check 253 changed with its owner file; (2) changes a deliverable name used by routes, docs and readers; (3) the summary writer has no unit text at hand.
+- **What would settle it.** (1) rewording with check 253 updated in the same commit; (2) a rename with the route table, docs and console updated (S7 console work is the natural place); (3) passing the unit text to the summary writer.
+
+## Corrections to items 12, 18 and 19 (loop S2 checker round 1)
+
+- **Item 12 (closed).** "Both halves landed" overstates the report half: the run report states the setting sealed in the manifest (`tools/analyze_ordinary_final_run.py`), not the setting the run observed in `audit/agent_switches.json`. The seal refuses an unratified `off`, so the sealed value is the run's value; reading the run's own record as a cross-check is left for S6.
+- **Item 18.** "None of these files is changed by S2" is wrong for one file: `scripts/ui/localization_catalog.js` was changed by S2 and still holds the one dash whose key must match the agent registry word for word (stated in the same item).
+- **Item 19 (1).** The absence-prediction section is translated in Turkish runs (`scripts/absence_prediction.py` localizes each sentence); only the raw status token is untranslated.
+
+## Corrections after S2 checker round 2 (2026-10-27)
+
+- **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
+- **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
+
+## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2)
+
+- **What it is.** Sixteen frozen tuning and evaluation launchers in `tools/` (`auditor_blocker_closure_cloud`, `auditor_canonical_cloud`, the three `auditor_classifier_lora*_cloud`, `auditor_feature_cloud`, `auditor_final_cloud`, `auditor_final_retry_cloud`, `auditor_linear_cloud`, `auditor_optuna_hpo_cloud`, `auditor_v2_cloud`, `checkpoint120_cloud`, `checkpoint120_v21_cloud`, `producer_v3_cloud`, `run_first_real_tuning`, `second_tuning_pilot`) can send a launch request through the provider adapter without the loop budget guard or the general path's refusals, and their instance names do not start with `shimmer-loop-`, so the reaper would not end one.
+- **Evidence.** S2 checker round 2 (adversarial item 15) and the controller fix lane's read-only inventory: every launch request goes through `LambdaExperiment.request` (`tools/lambda_experiment_provider.py`); the only common barrier is each launcher's refusal when its `docs/fix/<run>/LAUNCH_INTENT.json` exists (all exist and are tracked); most also require HEAD to equal an old commit (for example `tools/auditor_final_cloud.py` around lines 40 to 42); `auditor_blocker_closure_cloud`, `auditor_final_retry_cloud` and `run_first_real_tuning` have no HEAD check (the last checks only its marker and two hashes; its frozen source commit is only written into its manifest).
+- **Why it was left.** They are frozen tools, bound to past runs; S2c item 16 keeps frozen tools as they are, and changing what a frozen record would do is not the loop's to decide (P9 reason a: needs an operator decision). The loop never runs them.
+- **What would settle it.** An operator decision either to retire them (an archive folder outside `tools/`, keeping the records), or to route every remaining launcher through the loop guard.
+
+## 21. An in-range value under a range the rule states costs a model call (found at loop S2)
+
+- **What it is.** For a range stated in the rule itself, a value inside the range yields no agreeing check (`scripts/paired_review.py`, around lines 791 to 792, `continue`), so the planner marks the pair uncomputable and spends a judging call on a value Python already found in range. A range read from a reference table does give an agreeing check (the comment around lines 620 to 627 covers only that case).
+- **Evidence.** S2 reader tie-break on the mocked run from `45aaaea`: a unit reading 12 units under a rule stating 10 to 60 units was sent to the model, and the deliverables said Python could compute nothing (that sentence was reworded in S2, D-037). Check 278's proofs expect two judging calls on the clean mocked sheet, where every value is in range.
+- **Why it was left.** Fixing it changes what a review does (fewer model calls, a new agreeing check) and the proofs built around it; it does not make any output dishonest after the rewording. P16 sends such defects to the S6 sweep.
+- **What would settle it.** An in-range value under a rule-stated range gives an agreeing check, so the pair counts as settled and costs no call; a check that fails when a pair whose figure was read is reported as uncomputable; the proofs updated; measured on a development run in S6 (cost per verified finding).

@@ -98,12 +98,137 @@ processing swarm governed by an append-only constitution.
   call, instance, key or launch intent. The watchdog argument and the independent cleanup use
   the same path; the status reader and both live preflights use the same function. This edit
   changed the bound controller file, so every bundle sealed before it (v12 included) refuses
-  with `Controller source changed` and must be re-sealed; past results are unaffected.
+  with `Controller source changed` and must be re-sealed; past results are unaffected. Loop S2
+  (2026-10-27) changed six of the seven bound files (`tools/cloud_run_common.py`,
+  `tools/cloud_run_watchdog.py`, `tools/ordinary_final_bound_cloud.py`,
+  `tools/ordinary_final_cloud.py`, `tools/ordinary_final_run.py`,
+  `tools/ordinary_final_watchdog.py`; `tools/lambda_experiment_provider.py` is unchanged) and
+  added four files the controller imports to decide and record a launch to the binding
+  (`tools/loop_budget_guard.py`, `tools/loop/instance_reaper.py`, `tools/loop/keep_awake.py`,
+  `tools/run_remote_experiment.py`), so every bundle sealed before S2 refuses the same way and
+  cannot be re-executed; a new seal carries the new hashes. S2 checker round 2 changed
+  `tools/ordinary_final_cloud.py`, `tools/ordinary_final_bound_cloud.py`,
+  `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` again, so bundles sealed
+  before it refuse the same way and must be re-sealed. `scripts/agent_wrapper.py` is not
+  in the controller binding: the seal already pins it among the runtime files the bundle
+  carries.
+- LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
+  (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
+  identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
+  `execute()` refuses without that launch plan. The `--ledger` must be one the reaper reads
+  (the private ledger or R's), and the guard always reads both of those beside any
+  `--read-ledger` and needs a `budget_open` line among them. Before the launch request
+  `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
+  decision through the intent line and reading the provider inventory again just before it:
+  it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
+  in the inventory), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
+  caps - storage forecast)`, ceiling `min(hard stop, budget - 1)` (`loop_budget_guard.cap_ceiling`,
+  so a hard stop at the budget never removes the one-dollar margin), is below the forecast
+  (measured minutes x live price x 1.3), or when
+  the capped run time does not cover the forecast time plus the run's stop reserve (the cap
+  rule alone keeps spend + forecast + storage at or below that ceiling). The budget is
+  never a code constant (D-S9): the guard and the reaper read it from the ledgers' latest
+  `budget_open` or `budget_change` line (`instance_reaper.budget_figures`; the hard stop is that
+  line's `hard_stop_usd`, else the budget less the one-dollar margin), a launch with no readable
+  budget line is refused, and the reaper terminates every loop instance while no budget line can
+  be read. The type rule's A10 reference is the latest `a10_reference_price_usd_per_hour` on any
+  budget line. An open launch accrues spend only up to its recorded deadline; past it, with no
+  instance of its name listed, the reaper closes it with one termination line
+  (`intent_without_instance`, or `instance_not_listed_charged_to_deadline` for a launch whose
+  instance is gone), charged to the deadline: a ceiling counted as actual spend and never
+  refunded. A closing or termination line goes to every ledger file that holds the launch
+  (`instance_reaper.holders`: R's ledger for a launch only R recorded, both for a copied line),
+  and to the append ledger only for a listed loop instance no ledger records. The ledger lock holds its pid and creation time; a held lock is
+  refused in one line naming its age, its pid and whether that pid runs, and no tool removes it.
+  `--purpose` is checked in `launch_plan()` before any provider call. Spend is counted once per
+  launch across ledgers, a termination closing a launch by its instance id or its name (a
+  `copied_from` line is not counted twice). The instance name always starts `shimmer-loop-`
+  and the `launch_intent` line, with its `deadline_utc`, is written before the request;
+  `launch` and `termination` lines follow, a recovered launch gets its `launch` line before
+  its termination, and the ledger is closed in its own try before the rest of the cleanup. A
+  ledger line carries only the declared fields (`loop_budget_guard.LEDGER_FIELDS`, which also
+  declares the reaper's `by` and `reason`) and anything else is refused. Instance candidates
+  (the A10 first, then other single-GPU types with the run's VRAM at no more than twice the
+  A10's recorded price), rate caps and the soft and hard caps are sealed manifest fields set
+  by the sealer from the provider inventory it is given and the guard's formula; the type rule
+  polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
+  hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
+  exactly: the loop's budget rule (the 1-dollar margin, the 1.5 cap factor,
+  the 1.3 forecast factor, the type rule's factor 2) in `tools/loop_budget_guard.py`, the two
+  reserves (`WORKLOAD_STOP_RESERVE_SECONDS` 900, `TERMINATION_RESERVE_SECONDS` 180) in the
+  sealer, and the run's own hardware floors. No per-run cap is a code default:
+  `cloud_run_common.budget_deadlines` and the general watchdog (`--soft-usd`, `--hard-usd`)
+  take them as required arguments, and the general path's sealers take them on the command
+  line (`prepare_cloud_run.py --soft-usd/--hard-usd`, `run_remote_experiment.py prepare
+  --soft-usd/--hard-usd`). The general cloud path (`tools/deploy_cloud_run.py`,
+  `tools/run_remote_experiment.py`) refuses a `shimmer-loop-` name, any loop ledger argument,
+  and any launch while a loop ledger is open (`budget_open` without `budget_close`);
+  `deploy_cloud_run` resolves the instance name first and, on a failure, terminates only an
+  instance whose name it resolved and which is not a loop instance. `--detach` runs the
+  controller as a detached process that survives the session; while an instance can exist the
+  controller holds `SetThreadExecutionState` through `tools/loop/keep_awake.py`, and the ledger
+  deadline is what `tools/loop/instance_reaper.py` acts on if the controller dies. A bundle is
+  launched once: `RUN_FOLDER.json` is written into it only after the launch intent, and either
+  marker refuses a second launch with or without `--output-dir`, for the session bundle and
+  for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
+  attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
+- SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
+  `--test-manifest`) is prepared outside the repository from the test archive; its seal
+  carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
+  the controller requires the same test manifest and `--frozen-tag`, the bundle hash and the
+  tag's commit to equal the seal's, and a run folder outside the repository. It prints counts
+  and timings only (`phase N at S s`), attaches no provider storage, and writes nothing in the
+  repository except ledger lines. `--frozen-tag` resolves `refs/tags/<name>` only (annotated or
+  lightweight); a commit id, branch, HEAD or revision expression is refused. A sealed bundle
+  inside the repository is refused before any write, with or without `--output-dir` or
+  `--detach`. The sealer LF-normalises only plain-text and HTML workload members (the
+  extensions `scripts/text_extract.py` reads as text); binary members and the case manifest
+  keep their bytes. `protected_test` is sealable only on a sealed bundle; an
+  exposed run behaves as before. `--batch` runs several bundles in one instance session
+  item by item (B3 then B1 per item), each with its own run folder under `batch/`, seal entry,
+  authorization and evidence, so a stop leaves every finished pair complete. The analyser
+  (`tools/analyze_ordinary_final_run.py`, `--batch` for a session) writes `RUN_REPORT.md`
+  (Annex A 11.12: purpose and sealed-or-exposed lines first, the `SHIMMER_INST_FINDER` value,
+  FACT_CHECKER withheld with both B.4 reasons, instance type and price, asset copy MATCH or
+  not, the role-separation sentence for a sealed run; a field that does not apply says why) and
+  the same rows in `FINAL_STATUS.json` under `report`. The sealer refuses an unratified
+  `SHIMMER_INST_FINDER=off` with the pipeline's own ratification test, read from the bound
+  source. Named extras of the source archive are `prepare_ordinary_final_run.ARCHIVE_EXTRAS`;
+  a listed path the bound commit lacks fails in one line, and test material never travels in
+  the source archive.
+- MULTI-ROUND-A (loop S2, D-011): final mode admits Review with `--multi-round` and
+  `--multi-round-manifest` together; Draft, the flag alone and the manifest alone stay refused
+  by `main()`'s own final-mode block. The controller admits a multi-round workload only when
+  DECLARED, SEALED and VALID: `ordinary_final_run.admit_workload` checks `multi_round` true,
+  the case manifest hash in `support_files` and `case_manifest_sha256`, `fixture: false`, the
+  live field set and exactly `MULTI_ROUND_ARGV` (`reference_serial`, no topology file); the
+  spans are checked by `validate_live_case_manifest` at sealing and at launch (not on the
+  instance), against the documents the bound pipeline's own `_load_corpus` loads;
+  `execution_topology` is unchanged (D-011 choice 3).
+  The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
+  `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
+  Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
+  paired rules, the document's field vocabulary and its units of measure (`SIGNATURE_INPUTS`),
+  reused records and model asks are rebased onto the new unit id, the record is
+  `audit/round_reuse.json`, and the round findings are posted on the run bus (backend `paired`,
+  model `python`, one envelope per round document); nothing downstream reads them yet. A
+  term that vanished while its section states an unclaimed newcomer in the same unit of measure
+  is refused as a possible rename (`paired_review.possible_successor`), never minted as
+  withdrawn, until S5 measures an ensemble decision for it; two figures with no unit count as
+  the same measure there and are refused under their own reason. Check 279 and
+  `tools/multi_round_launch_checks.py` hold this end to end.
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
   operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
-  `operator_authorized: true`), written by `tools/declare_asset_copy.py` from the bundle's own
-  digest. The one such resource, `shimmer-filesystem` (us-east-1, 20 GB, $4.00 a month, created
+  `operator_authorized: true`, `assets_sha256`), written by `tools/declare_asset_copy.py` from
+  the bundle's own digest; a declaration whose `assets_sha256` is not this bundle's archive is
+  refused (`Asset copy declaration is for another bundle`), the controller never writes one (for
+  the autonomous loop of 27 October 2026 only, the operator authorised the loop to write the
+  declaration with `tools/declare_asset_copy.py` for the bundles it runs and to replace the
+  filesystem's archive after recording the old digest, `docs/loop/DECISIONS.md` D-028; the
+  filesystem is never deleted), a
+  sealed run never reads one, a launch outside us-east-1 drops it, and without one the launch
+  plan must state `--forecast-includes-upload`. The one such resource, `shimmer-filesystem` (us-east-1, 20 GB, $4.00 a month, created
   by the operator by hand because the adapter has no create endpoint and never will), is
   recorded with its verification and deletion rule in `docs/DEPLOYMENT_RESOURCES.md`. With one, the instance is launched with that filesystem
   attached (the provider adapter admits exactly one `file_system_names` entry and nothing else
@@ -118,7 +243,9 @@ processing swarm governed by an append-only constitution.
   `tools/ordinary_final_controller_checks.py` (states MATCH, MISSING, MISMATCH, UNREACHABLE;
   a copy under another digest never matches; the fallback argv equals the v9 argv; no seed
   without integrity; a neutralised probe that stops hashing is caught) and the rehearsal runs
-  three copy polarities through a real shell. The rehearsal works only in
+  three copy polarities through a real shell, each a loop launch named `shimmer-loop-rehearsal`
+  on a ledger of its own (`rehearsal_ledger.jsonl` beside each rehearsal bundle, never the
+  loop's ledger). The rehearsal works only in
   `<Linux home>/shimmer-rehearsal`, read through its own shell at run time; it refuses an
   empty, root or relative home, and builds every `rm -rf` through one guard that refuses
   anything outside that folder (checked in `tools/ordinary_final_controller_checks.py`).
@@ -263,6 +390,15 @@ processing swarm governed by an append-only constitution.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
   `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+- WRITTEN-BY-A (loop S2): who wrote a finding is read off the bus post it travelled in
+  (`finding_record.written_by`): `python` only for `backend` `paired`/`computed` with a model
+  id starting `python`, `model` for everything else, including an item no envelope claims.
+  Items are stamped (`stamp_written_by`) before any copy is made: the stamp joins each item to
+  the envelope that carried it by object identity, which holds only for the envelope's own
+  items, so it runs first and every later reader reads the stamp. Never compare the identities
+  of copies, and never decide provenance by an agent name or by a field the item itself carries
+  (a model's `provenance` is removed when it is stamped). `GET /runs/{run_id}/findings` carries
+  `written_by` on every record.
 
 ## Review modes
 
@@ -322,6 +458,44 @@ processing swarm governed by an append-only constitution.
   a currency symbol (Unicode Sc) or a short all-caps code before the number, accented unit
   letters, comma-grouped thousands, and a multi-word unit only when the document writes it
   after a figure more than once; no currency, unit or word is named in code.
+- HONEST-OUTPUT-A (loop S2): every model-written finding stays in view and is marked, in both
+  languages, "Written by a model. Not promoted to an amendment. Not checked by Python."
+  (`finding_record.MODEL_FINDING_MARK`): in `document_summary.md`, `reviewed_document.md`,
+  `_run_summary.md`, the console (its proof needs Node and says so when skipped) and the
+  master's own `model_findings_not_promoted` section of `review_data.json` (rendered in
+  `review_findings.md`). `tracked_changes.docx` carries amendments only, so no model finding
+  and no mark. Only Python's records enter the earlier-version section and its band list. A model item there carries `model_claimed_verdict`,
+  `checked_by_python: false` and `promoted: false` and never `confidence`, `record_verdict` or
+  `verdict`. The producer sentence is generated from the stamps (`findings_provenance`, also a
+  log event) and names only what ran; Python findings and model items are counted apart; a
+  relation only a model reported is listed apart and marked, in the run summary and in
+  `tools/score_corpus.py`. `audit_synthesis.md` counts "audit-trail patterns", not document
+  findings, and counts an escalation once per distinct topic and payload
+  (`audit_synthesizer.escalation_key`); one with no topic or no payload is reported apart and
+  never becomes a pattern or a proposal. A judging model's sentence on a Python finding is a
+  quoted note naming the model its call recorded (`paired_review.stamp_note_writer`, the
+  computed bus post's `note_models`), "not recorded" otherwise, and notes are counted apart.
+  A model item carries `reader_notes` (`paired_review.model_item_notes`: another unit's
+  passage cited, the pairing map's rejection of its rule, no addends named, figures not in its
+  unit). Every paired judging call is recorded with its outcome
+  (`paired_review.judging_call_record`) on the computed bus post (`judging_calls`), on a
+  `PAIRED_JUDGING_CALLS` post when no computed finding carries it, and in the pairing map; a
+  failed call is `reply_failed` whatever it was asked, and a judged-absence call that returned
+  carries its claims listed and refused (`absence_listed`, `absence_refused`). The deliverables
+  state the calls made and the notes kept with ONE count (`paired_review.notes_on_python_findings`,
+  one per Python finding carrying a model's note) under one label in every file, and count the
+  judged-absence calls, never asked for a note, apart (`paired_review.judging_call_counts`). A docx comment's author is read from the
+  amendment's provenance (`docx_builder.comment_author`): Python for an amendment built from a
+  computed finding, the model agent for one built from a model's record, and the drafter only for
+  an amendment taken from AMENDMENT_DRAFTER's own payload. Figures go
+  through one formatter (`finding_record.figure_text`). A record without a `written_by` stamp is
+  never Python's in any section (`finding_record.is_model_written`). An escalation naming an agent
+  the run did not register is counted apart in `audit_synthesis.md`, with the names listed. The
+  run summary states the INST_FINDER setting as "switched on/off for this run"; its internal name
+  stays in `audit/agent_switches.json`. `review_data.json` and `delta_proposals.json` stay
+  canonical English in a Turkish run (the Turkish reader gets the `.md` and `.docx` renders).
+  None of the markdown deliverables, `_run_summary.md` or `audit_synthesis.md` carries an
+  em dash. Check 278.
 
 ## Document role resolution and task modes
 
@@ -377,6 +551,23 @@ processing swarm governed by an append-only constitution.
 - `proposed_text` is the one field a model can supply that arithmetic cannot: the corrected
   line as it should read. `action` stays `flag` either way, because proposing wording is not
   deciding the change is safe to make.
+- A comment opens with one plain sentence per relation naming the unit (with its heading), the
+  rule, both figures with their units and the relation; a sum names the values it added and a
+  product its two factors. An absence says what was checked in code instead of figures. The
+  rule's own words follow, quoted, and a model's sentence comes last, labelled as the model's.
+  Every template has a row for the second output language (tr) in
+  `scripts/ui/localization_catalog.js`. A figure is written as the unit's own text writes it
+  (`61 units`); a figure the unit does not write keeps the record's format (`16.0`, checks 171
+  and 172). The two provenance sentences check 269 reads stay word for word.
+- An amendment and its finding sit at the UNIT'S OWN PASSAGE: phase 5.5 cites the indexed
+  passage that holds the unit's first line when exactly one does
+  (`paired_review.unit_passage_refs`); a figure compared from elsewhere (a reference table, a
+  bound) is cited as such (`compared_with_refs`), never as the location; a unit Python cannot
+  place sits at document level, its finding and amendment cite no other unit's or the corpus's
+  passage, and the amendment says so. A heading places a unit only at a passage whose first
+  line it is, exactly (`paired_review.opens_with`). A comment that ends with a model's note says
+  the figures were computed in code and only the quoted note is a model's
+  (`COMPUTED_PROVENANCE_WITH_NOTE`).
 
 ## The sensitivity boundary
 

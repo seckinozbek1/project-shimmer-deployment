@@ -136,7 +136,8 @@ class LocalizationChecks(unittest.TestCase):
         self.assertIn('Operative summary',summary_generators.render_operative_summary(**args))
 
     def test_prior_report_headings_do_not_change_records(self):
-        item=dict(relation='absent_since_prior',provenance='computed',value_b=3.5,unit_b='t/ha',unit_id='U-1',rule_id='CONV-1',source_refs=['REF-1'])
+        # Stamped as Python's own record: an unstamped one is never shown as computed.
+        item=dict(relation='absent_since_prior',provenance='computed',written_by='python',value_b=3.5,unit_b='t/ha',unit_id='U-1',rule_id='CONV-1',source_refs=['REF-1'])
         original=deepcopy(item)
         tr='\n'.join(finding_record.render_prior_comparison([item],output_language='tr'))
         self.assertIn('Önceki sürümle karşılaştırma',tr);self.assertIn('3.5t/ha',tr);self.assertNotIn('Moved toward',tr)
@@ -225,7 +226,7 @@ class LocalizationChecks(unittest.TestCase):
         amendment=amendment_from_finding(item,unit_texts={'U-1':{'text':SOURCE}})
         before=deepcopy(amendment)
         shown=loc.message(amendment['comment'],'tr')
-        self.assertIn('Hesaplanan değer 3.5 t/ha',shown)
+        self.assertIn("'value' değeri 3.5 t/ha",shown)
         self.assertIn('üst sınırı 2 t/ha',shown)
         self.assertIn('model tarafından değerlendirilmedi',shown)
         self.assertIn('CONV-001',shown);self.assertIn('REF-0001',shown)
