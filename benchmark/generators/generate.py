@@ -10,6 +10,7 @@ memory, and only when all pass replaces the suite's generated/ folder. A failure
 nothing.
 """
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -57,7 +58,14 @@ def _listing(built):
             row["rounds"] = opts.get("rounds", 2)
         row["bundles"] = {role: roles[role] for role in sorted(roles)}
         rows.append(row)
-    return {"format": gen.bundle.tr.FORMAT_VERSION, "tests": rows}
+    return {"format": gen.bundle.tr.FORMAT_VERSION, "input_format_sha256": input_format_sha256(),
+            "tests": rows}
+
+
+def input_format_sha256():
+    """The SHA-256 of the input-format draft the suite was generated against (the bytes
+    of docs/INPUT_FORMAT.md, as VERSIONS.md records them)."""
+    return hashlib.sha256((BENCH.parent / "docs" / "INPUT_FORMAT.md").read_bytes()).hexdigest()
 
 
 def _replace_generated(target):
@@ -86,7 +94,8 @@ def cmd_suite(args):
         n += len(bundle.write_test(test, str(out / _test_name(test))))
     with open(out / "suite_listing.json", "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(_listing(built), indent=2) + "\n")
-    print("%d tests, %d files written under %s" % (len(built), n, out))
+    print("%d tests, %d files written under %s (input format draft %s)"
+          % (len(built), n, out, input_format_sha256()))
     return 0
 
 

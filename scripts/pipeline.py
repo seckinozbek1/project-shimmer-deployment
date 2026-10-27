@@ -1817,6 +1817,7 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
                 if c.get("stated_field") not in minted_fields:
                     refused2.append({"label": c.get("stated_field", ""),
                                      "reason": "no rule to cite for this comparison",
+                                     "reason_kind": "no_rule",
                                      "ref_ids": list(c.get("ref_ids") or [])})
             entry["prior_comparisons"] = {
                 "hit_count": len(hits),
@@ -1834,7 +1835,8 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
         slugs_here = {e["unit_id"].split("-", 1)[1] for e in pairing.get("units", [])
                       if "-" in e["unit_id"]}
         orphan = [{"label": " ".join(x["label"]), "unit_slug": x.get("unit_slug", ""),
-                   "reason": "the earlier document's heading has no counterpart here"}
+                   "reason": "the earlier document's heading has no counterpart here",
+                   "reason_kind": "orphan"}
                   for x in index["lines"]
                   if x["label"] not in present_all and x.get("unit_slug") not in slugs_here]
         if orphan:
@@ -3629,12 +3631,14 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 def _prior_refusals_for(doc):
     """The comparisons the prior-version step refused, per unit, read from the
     pairing map phase 5.5 left on the document (R6). Empty when no earlier version
-    was declared, so every existing caller renders as before."""
+    was declared, so every existing caller renders as before. `reason_kind` is the
+    typed kind (paired_review.PRIOR_REFUSAL_KINDS) a scorer reads; `reason` stays the
+    sentence for a human."""
     out = []
     for entry in ((doc.get("_pairing") or {}).get("units") or []):
         for r in ((entry.get("prior_comparisons") or {}).get("refused") or []):
             out.append({"unit_id": entry.get("unit_id"), "label": r.get("label", ""),
-                        "reason": r.get("reason", "")})
+                        "reason": r.get("reason", ""), "reason_kind": r.get("reason_kind", "")})
     return out
 
 

@@ -155,9 +155,8 @@ def build(seed):
         ("prose", "The period change is the movement of the current total against the prior total, in percent."),
     ])
     conv = md.Conventions("Statement conventions", "These rules govern the cost statement.", RULES)
-    flaw_units = {p["unit"] for p in planted}
-    plain = [i for i in range(n) if i not in flaw_units and i not in clean]
     cur_sum = [p for p in planted if p["kind"] == "current_total_mismatch"][0]
+    above = [p for p in planted if p["kind"] == "change_above"][0]
     return {
         "family": FAMILY, "family_name": NAME, "seed": seed, "mode": "single",
         "doc": doc, "twin": twin, "conventions": conv, "references": [reference],
@@ -166,7 +165,8 @@ def build(seed):
         "probes": {
             "reword": {"old": "Period change", "new": "Change on prior period"},
             "reorder": wl.reorder(len(doc_units), rng),
-            "term": {"unit": plain[0], "label": "Period change"},
+            # probe 3: the term only in the later version carries a keyed flaw
+            "term": {"unit": above["unit"], "label": "Period change"},
             "reformat": {"unit": cur_sum["unit"], "label": "Total current period",
                          "text": "%s EUR" % tr.format_number(cur_sum["value_b"], 0, True)},
         },
