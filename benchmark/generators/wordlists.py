@@ -46,5 +46,17 @@ def reorder(n, rng, keep_together=()):
     return order
 
 
+def rotate(n, rng, keep_together=()):
+    """A reordering that moves one whole block: the units from a cut to the end are read
+    first, then the units before the cut. Its only new neighbour pair is the last unit
+    before the first; the cut is never inside a pair in keep_together."""
+    safe = [c for c in range(1, n)
+            if not any(min(i, j) < c <= max(i, j) for i, j in keep_together)]
+    if not safe:
+        raise ValueError("no safe cut to rotate")
+    c = rng.choice(safe)
+    return list(range(c, n)) + list(range(0, c))
+
+
 def make_rng(family, seed):
     return random.Random("%s:%d" % (family, int(seed)))
