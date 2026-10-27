@@ -183,6 +183,33 @@ class GeneratorChecks(unittest.TestCase):
         self.assertEqual(tr.norm("Days for reply"), "day reply")
         self.assertEqual(tr.norm("series"), "sery")
 
+    def test_settled_readings_of_the_format(self):
+        """D-025: the audit reads sentences, renames and attribution as the format now says."""
+        au, tr = self.g.bundle.au, self.g.bundle.tr
+        text = ("# T\n\nWindow note: standard\nWindow length: 48 hours\n\n"
+                "The standard reply window is 48 hours. Then a reply follows!\n| a | b |\n")
+        self.assertEqual(au.reader_sentences(text),
+                         ["Window note: standard Window length: 48 hours",
+                          "The standard reply window is 48 hours.", "Then a reply follows!"])
+        self.assertEqual(len(tr.numbers_with_measures("Logged: 2026-03-01")), 3)
+        conv = ("# C\n\nThese rules govern the clauses.\n\n"
+                "## CONV-XA Other [required] [conformance]\n\n"
+                "The other term must lie between 1 box and 9 box.\n\n"
+                "## CONV-XB New [required] [conformance]\n\n"
+                "The new charge must lie between 50 box and 200 box.\n")
+        prior = "# T\n\n## Clause Alpha\n\nOld charge: 100 box\nOther term: 5 box\n"
+        for now, renamed in (("102.04", True), ("102", True), ("98", True), ("97.96", False)):
+            target = "# T\n\n## Clause Alpha\n\nNew charge: %s box\nOther term: 5 box\n" % now
+            res = au.audit(target, "t.md", conv, "c.md", {"p.md": prior}, "p.md")
+            self.assertEqual(res["errors"], [])
+            records, refusals = au.prior_records(res)
+            absent = [r for r in records if r["relation"] == "absent_since_prior"]
+            self.assertEqual(("possible rename", "old charge") in refusals, renamed, now)
+            self.assertEqual(bool(absent), not renamed, now)
+        rules = [{"id": "A", "named": ["line total"]}, {"id": "B", "named": ["line total sum"]}]
+        self.assertEqual(au._attribute(rules, "line total", "sum of 3 values under line"),
+                         ("B", None))
+
     def test_no_source_name_matches_a_trap_pattern(self):
         traps = ("*key*", "*config*.py", "*secret*", "*credential*")
         for dirpath, dirs, names in os.walk(GEN):
@@ -213,8 +240,10 @@ def check():
                     "every figure recomputed with no unintended comparison); the same seed "
                     "gives identical bytes, also in a second process; a removed planted flaw, "
                     "a flawed twin, a digit in a text value and a missing probe are caught; "
-                    "ids follow the published slug rule; no source name matches a trap "
-                    "pattern" % result.testsRun)
+                    "ids follow the published slug rule; the audit joins a paragraph's lines "
+                    "into sentences, counts a date as three numbers, refuses a rename within "
+                    "2%% of the larger figure and scores the basis words; no source name "
+                    "matches a trap pattern" % result.testsRun)
 
 
 if __name__ == "__main__":

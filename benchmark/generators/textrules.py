@@ -101,7 +101,9 @@ def classify_cell(cell):
     if m:
         return ("range", (to_number(m.group(1)), to_number(m.group(2))))
     if re.search(r"\d", c):
-        return ("bad", "a digit in a text cell: %r" % c)
+        # a document cell's own measure would replace the header's (section 2), and a
+        # reference cell's would be ignored (section 7): cells here are plain numbers
+        return ("bad", "a table cell that is not a plain number, a plain range or text: %r" % c)
     return ("text", c)
 
 
