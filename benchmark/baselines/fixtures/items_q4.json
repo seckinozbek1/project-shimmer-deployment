@@ -1,0 +1,9 @@
+{
+  "items": [
+    {"item_id": "a1", "document_id": "dq4", "rule_id": "CONV-QA-01", "benchmark": "findver"},
+    {"item_id": "a2", "document_id": "dq4", "rule_id": "CONV-QA-02", "benchmark": "contradoc"},
+    {"item_id": "a3", "document_id": "dq4", "rule_id": "CONV-QA-01", "benchmark": "scitab"},
+    {"item_id": "a4", "document_id": "dq4", "rule_id": "CONV-QA-02", "benchmark": "cuad"},
+    {"item_id": "b1", "document_id": "dother", "rule_id": "CONV-QA-01", "benchmark": "findver"}
+  ]
+}
