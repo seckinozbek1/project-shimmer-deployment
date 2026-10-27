@@ -1820,6 +1820,84 @@ class ControllerChecks(unittest.TestCase):
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
 
+    # ---- follow-ups: the rehearsal under the loop launch, and R3 with no cap default ------
+
+    def test_rehearsal_plan_and_manifest_launch_under_the_loop_guard(self):
+        """The rehearsal builds a manifest with the IV.3 budget fields and this tree's controller
+        binding from a bundle sealed before S2, and a launch plan whose shimmer-loop- launch
+        passes the budget guard on its own temporary ledger. Proven by running the real
+        controller with that plan, name and manifest against the mocked provider and transport
+        (the rehearsal's WSL target is not used)."""
+        source = self.root / 'source_bundle'
+        work = self.root / 'rehearsal_work'
+        source.mkdir()
+        work.mkdir()
+        for name in ('ordinary_final_run.py', 'ordinary_final_summary.py', 'cloud_run_observer.py', 'topology.json',
+                     'install.lock', 'runtime.candidate.lock', 'provider_inventory.json'):
+            (source / name).write_text('fixture\n', encoding='utf8')
+        (source / 'project.tar.gz').write_bytes(b'project fixture')
+        (work / 'assets.tar').write_bytes(b'rehearsal assets fixture')
+        old = fixture_manifest(source / 'project.tar.gz', work / 'assets.tar',
+                               local_control_hashes={'tools/ordinary_final_cloud.py': '0' * 64})
+        for key in ('instance_candidates', 'a10_reference_rate', 'per_run_cap_usd', 'workload_stop_reserve_seconds',
+                    'termination_reserve_seconds'):
+            old.pop(key)
+        write(source / 'execution_manifest.json', old)
+        assets = dict(filename='assets.tar', sha256=sha(work / 'assets.tar'), bytes=(work / 'assets.tar').stat().st_size)
+        with patch.object(rehearsal, 'SOURCE_BUNDLE', source), patch.object(rehearsal, 'WORK', work):
+            base = rehearsal.make_bundle('fixture', assets, [])
+        manifest = read(base / 'execution_manifest.json')
+        for key in ('instance_candidates', 'a10_reference_rate', 'per_run_cap_usd', 'workload_stop_reserve_seconds',
+                    'termination_reserve_seconds', 'soft_budget_usd', 'hard_ceiling_usd'):
+            self.assertIn(key, manifest)
+        self.assertEqual(manifest['local_control_hashes'], {'tools/ordinary_final_cloud.py': sha(ROOT / 'tools/ordinary_final_cloud.py')})
+        name = rehearsal.rehearsal_name()
+        self.assertTrue(name.startswith(guard.PREFIX))
+        plan = rehearsal.rehearsal_plan(base)
+        decision = guard.check(ledgers=[plan['ledger']], forecast_minutes=plan['forecast_minutes'], hourly_rate=1.29,
+                               storage_forecast_usd=plan['storage_forecast_usd'], now_epoch=time_module.time())
+        self.assertGreaterEqual(decision['cap_usd'] + 1e-9, manifest['hard_ceiling_usd'])
+
+        def launch():
+            with patch.object(controller, 'INSTANCE_NAME', name), patch.object(controller, 'credential_path', rehearsal.no_credential):
+                controller.execute()
+        transport, console, failure = self.execute(root=ROOT, base=base, plan=plan, call=launch)
+        self.assertIsNone(failure, failure)
+        self.assertEqual(FakeProvider.state['launch_body']['name'], name)
+        events = [r['event'] for r in ledger_rows(plan['ledger']) if r['event'] != 'budget_open']
+        self.assertEqual(events, ['launch_intent', 'launch', 'termination'])
+        self.assertEqual(read(base / 'CURRENT_PHASE.json')['phase'], 'terminated_and_cleaned')
+
+    def test_general_path_caps_are_passed_never_defaulted(self):
+        """R3 finished: budget_deadlines has no cap default; the general path's watchdog takes
+        --soft-usd and --hard-usd (deploy_cloud_run passes the experiment's sealed caps) and its
+        deadlines follow them."""
+        with self.assertRaises(TypeError):
+            cloud_run_common.budget_deadlines(1.99, 1000)
+        folder = self.root / 'general'
+        folder.mkdir()
+        (folder / 'TERMINATE_REQUEST').touch()
+        provider = SimpleNamespace(instance=lambda iid: dict(instance_id=iid, status='terminated'), terminate=lambda iid: None)
+        argv = ['--arm', '--instance-id', 'a' * 32, '--hourly-rate', '1.99', '--running-epoch', '1000',
+                '--directory', str(folder)]
+        with patch.object(cloud_run_watchdog, 'load_credential', lambda path=None: 'unused'), \
+                patch.object(cloud_run_watchdog, 'LambdaTermination', lambda path=None: provider):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                cloud_run_watchdog.main(argv)
+            cloud_run_watchdog.main(argv + ['--soft-usd', '2', '--hard-usd', '3'])
+        armed = read(folder / 'WATCHDOG_ARMED.json')
+        self.assertAlmostEqual(armed['soft_epoch'], 1000 + 2 / 1.99 * 3600)
+        self.assertAlmostEqual(armed['ceiling_epoch'], 1000 + 3 / 1.99 * 3600)
+        self.assertTrue((folder / 'TERMINATION_VERIFIED.json').exists())
+        # The emergency path terminates with no cap at all.
+        emergency = self.root / 'emergency'
+        emergency.mkdir()
+        cloud_run_watchdog.terminate_now(provider, 'a' * 32, 1.99, 1000, emergency, sleep=lambda s: None, now=lambda: 1001.0)
+        self.assertTrue((emergency / 'TERMINATION_VERIFIED.json').exists())
+        source = Path(deploy_cloud_run.__file__).read_text(encoding='utf-8')
+        self.assertIn("'--soft-usd', str(config['soft_usd']), '--hard-usd', str(config['hard_usd'])", source)
+        self.assertNotIn('GENERAL_PATH_CAPS', Path(cloud_run_common.__file__).read_text(encoding='utf-8'))
+
     # ---- S2c item 7: a detached controller survives its parent; the reaper ends an orphan --
 
     def test_detached_controller_survives_its_parent_and_the_reaper_ends_an_orphan(self):
@@ -2244,6 +2322,12 @@ NEUTRALIZATIONS = [
     # R11: the ratification test skipped at sealing.
     ('test_unratified_inst_finder_off_refuses_to_seal', sealer, 'inst_finder_setting',
      lambda files, value: dict(refusal=None, setting=value or 'on')),
+    # Follow-up: the rehearsal manifest without the IV.3 budget fields (its pre-S2 shape).
+    ('test_rehearsal_plan_and_manifest_launch_under_the_loop_guard', rehearsal, 'rehearsal_budget', lambda: {}),
+    # Follow-up, R3: the general watchdog's deadlines from fixed caps instead of the passed ones.
+    ('test_general_path_caps_are_passed_never_defaulted', cloud_run_watchdog, 'budget_deadlines',
+     lambda rate, epoch, reserve_seconds=120, *, soft_usd, hard_usd:
+         cloud_run_common.budget_deadlines(rate, epoch, reserve_seconds, soft_usd=5, hard_usd=10)),
     # S2c item 7: the controller started inside the parent instead of detached.
     ('test_detached_controller_survives_its_parent_and_the_reaper_ends_an_orphan', sys.modules[__name__], 'parent_spawner',
      lambda: 'inline'),
