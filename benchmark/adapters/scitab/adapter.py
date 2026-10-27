@@ -6,7 +6,10 @@ rule per claim (CONV-<opaque item id>). The split key is `paper_id`, so every ta
 a paper falls on the same side. FLAG = refutes, UNDECIDED = not enough info, CLEAR =
 supports; a run failure is ABSTAIN, never not enough info.
 
-Developed on hand-written synthetic items only (D-019): no SciTab data was opened.
+Written on hand-written synthetic items (D-019), then confirmed on the B-dev development
+items (S4c item 4). Where the claims of one table store different cells (one development
+table does), the document is the table as its first claim in file order stores it, and
+parts.json lists the claims whose table differs under `table_variants`.
 
 Usage: as the ContraDoc adapter (build, split, label, score).
 """
@@ -29,19 +32,24 @@ RULE_TEMPLATE = ("Claim about the table in this passage: {claim} The claim must 
                  "UNCERTAIN.")
 
 # --- source schema --------------------------------------------------------------------
-ID_FIELD = "id"                         # documented (SELECTION.md): the claim
-TABLE_ID_FIELD = "table_id"             # documented
-PAPER_ID_FIELD = "paper_id"             # documented
+# Confirmed on the B-dev development items (95 claims, 29 tables), unless marked otherwise.
+# The file is a JSON list of claim records, every value below a string except the table.
+ID_FIELD = "id"                         # documented; a string, unique per claim
+TABLE_ID_FIELD = "table_id"             # documented; a string
+PAPER_ID_FIELD = "paper_id"             # documented; a string, one per table
 LABEL_FIELD = "label"                   # documented
-GOLD_VALUES = {"supports": "supports", "refutes": "refutes",          # PROVISIONAL spellings
-               "not enough info": "not enough info"}
-CLAIM_FIELD = "claim"                   # PROVISIONAL
-CAPTION_FIELD = "table_caption"         # PROVISIONAL
-HEADER_FIELD = "table_column_names"     # PROVISIONAL: the header row, a list of cells
-ROWS_FIELD = "table_content_values"     # PROVISIONAL: the body rows, a list of lists of cells
-# PROVISIONAL: the file holds a JSON list of claim records.
-# The 25 demonstration claims (5 tables) are excluded from both sets; their table ids are
-# pending B-dev (section 1). Empty: no item is excluded.
+GOLD_VALUES = {"supports": "supports", "refutes": "refutes",          # confirmed spellings
+               "not enough info": "not enough info"}   # PROVISIONAL: no development claim
+                                        # carries this class, so its spelling is unconfirmed
+CLAIM_FIELD = "claim"                   # confirmed
+CAPTION_FIELD = "table_caption"         # confirmed: one line in every record
+HEADER_FIELD = "table_column_names"     # confirmed: the header row, a list of strings
+ROWS_FIELD = "table_content_values"     # confirmed: the body rows, lists of strings as wide
+                                        # as the header
+# The 25 demonstration claims (5 tables) are excluded from both sets when they can be
+# identified (section 1). B-dev matched four of the five tables by caption (all four in the
+# holdout pool) but could not identify the fifth table or the 25 claims, so, as section 1
+# says, no item is excluded: empty.
 DEMONSTRATION_TABLE_IDS = ()
 # ---------------------------------------------------------------------------------------
 
@@ -73,17 +81,33 @@ def part_text(record) -> str:
         record[HEADER_FIELD], record[ROWS_FIELD])
 
 
+TABLE_FIELDS = (CAPTION_FIELD, HEADER_FIELD, ROWS_FIELD)
+
+
 def _tables(records):
+    """{table id: its claims in file order}. Claims of one table that name different papers
+    are refused (the paper is the split key). Claims that carry a different caption, header
+    or cells are kept: the document is the table as the table's first claim in file order
+    stores it (B-dev counted words the same way), and `table_variants` lists the others."""
     tables = {}
     for r in records:
         tables.setdefault(ids.key_string(r[TABLE_ID_FIELD]), []).append(r)
     for key, claims in tables.items():
-        first = claims[0]
-        for other in claims[1:]:
-            for field in (PAPER_ID_FIELD, CAPTION_FIELD, HEADER_FIELD, ROWS_FIELD):
-                if other[field] != first[field]:
-                    raise ValueError("claims of table %s disagree on %s" % (key, field))
+        if any(other[PAPER_ID_FIELD] != claims[0][PAPER_ID_FIELD] for other in claims[1:]):
+            raise ValueError("claims of table %s disagree on %s" % (key, PAPER_ID_FIELD))
     return tables
+
+
+def table_variants(claims) -> list:
+    """[{claim id, fields}] for every claim whose stored table differs from the first
+    claim's, with the fields that differ."""
+    first = claims[0]
+    out = []
+    for other in claims[1:]:
+        fields = [f for f in TABLE_FIELDS if other[f] != first[f]]
+        if fields:
+            out.append({"source_item_id": other[ID_FIELD], "fields": fields})
+    return out
 
 
 def _gold(record) -> str:
@@ -116,7 +140,9 @@ def documents(records, options=None) -> list:
             "parts": [{"text": part_text(first), "source": {"part": "caption and table"},
                        "words": ids.word_count(caption_line(first[CAPTION_FIELD]))
                        + bundle.table_words(first[HEADER_FIELD], first[ROWS_FIELD])}],
-            "rules": rules, "items": items})
+            "rules": rules, "items": items,
+            "record_extra": {"table_from_claim": first[ID_FIELD],
+                             "table_variants": table_variants(claims)}})
     return out
 
 

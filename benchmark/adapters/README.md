@@ -111,12 +111,10 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 
 **CUAD.** Confirmed on the B-dev development items (S4c item 4): the SQuAD-style container (`{version, data}`, one paragraph per contract, 41 QA entries), the `<title>__<category>` QA id, `answers` empty exactly when `is_impossible` is true, `title` as the tie-break between duplicate copies, and the data's own category spellings (`DATA_SPELLING`: 15 of the 41 differ from the paper's names, which stay in the rule text). Still PROVISIONAL: the category descriptions, empty until they are copied at freeze from the release's `CUAD_v1_README.txt` category list.
 
-**SciTab.** `id`, `table_id`, `paper_id` and `label` are documented. These are PROVISIONAL:
+**SciTab.** Confirmed on the B-dev development items (S4c item 4): the file is a list of claim records; `id`, `table_id`, `paper_id`, `claim` and `table_caption` are strings; `table_column_names` is a list of strings and `table_content_values` a list of rows as wide as it; the labels are spelled `supports` and `refutes`. Where the claims of one table store different cells (one development table, two of its eight claims), the document is the table as its first claim in file order stores it and `parts.json` lists the other claims under `table_variants`; claims of one table naming different papers are refused. Still PROVISIONAL:
 
-- the label spellings;
-- `claim`, `table_caption`, `table_column_names` and `table_content_values`;
-- the file shape;
-- `DEMONSTRATION_TABLE_IDS`, which is empty, pending B-dev.
+- the spelling `not enough info`: no development claim carries that class;
+- `DEMONSTRATION_TABLE_IDS`, empty: B-dev matched four of the five tables by caption (all in the holdout pool) but could not identify the fifth or the 25 claims, so section 1 excludes nothing.
 
 **FinDVer.** `example_id` and `report` are documented. These are PROVISIONAL:
 

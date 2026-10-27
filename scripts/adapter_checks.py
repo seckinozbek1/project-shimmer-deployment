@@ -308,6 +308,29 @@ class BuildChecks(_Case):
         with self.assertRaisesRegex(ValueError, "0 QA entries for category 'Notice Period To Terminate Renewal'"):
             _build("cuad", self.root / "w", path)
 
+    def test_scitab_table_stored_differently_by_its_claims(self):
+        # On the B-dev development items one table's claims store different cells. The build
+        # is not refused: the document is the table as its first claim in file order stores
+        # it, and parts.json names every claim whose table differs, with the fields. Claims
+        # of one table naming different papers are still refused (the paper is the split key).
+        records = _json(_fixture("scitab", "synthetic_items.json"))
+        variant = json.loads(json.dumps(records[1]))
+        variant["table_content_values"] = [["A", "71.2", "64.0"], ["B", "73.5", "65.9"]]
+        source = self.root / "variants.json"
+        source.write_text(json.dumps([records[0], variant] + records[2:]), encoding="utf-8")
+        _build("scitab", self.root / "b", source)
+        record = next(d for d in _json(self.root / "b" / "parts.json")["documents"]
+                      if d["source_document_id"] == "syn-tab-1")
+        self.assertEqual((record["table_from_claim"], record["table_variants"]),
+                         ("9001", [{"source_item_id": "9002", "fields": ["table_content_values"]}]))
+        text = (self.root / "b" / record["document_id"] / "context" / (record["document_id"] + ".md")).read_text(encoding="utf-8")
+        self.assertIn("| B | 73.5 | 63.1 |", text)
+        self.assertNotIn("65.9", text)
+        variant["paper_id"] = "syn-paper-other"
+        source.write_text(json.dumps([records[0], variant]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "disagree on paper_id"):
+            _build("scitab", self.root / "c", source)
+
     def test_empty_document_is_skipped_and_listed(self):
         records = _json(_fixture("contradoc", "synthetic_items.json"))
         records["neg"]["777"] = {"unique id": "777", "text": "  \n\n \n"}
@@ -466,7 +489,8 @@ class OpaqueChecks(_Case):
             if name == "cuad":
                 sources.update(e["title"] for e in _json(_fixture(name, "synthetic_items.json"))["data"])
             if name == "scitab":
-                sources.update(r["paper_id"] for r in _json(_fixture(name, "synthetic_items.json")))
+                sources.update(r[k] for r in _json(_fixture(name, "synthetic_items.json"))
+                               for k in ("paper_id", "paper"))
             if name == "contractnli":
                 sources.update(d["file_name"] for d in _json(_fixture(name, "synthetic_items.json"))["documents"])
             patterns = [re.compile(r"(?<![0-9A-Za-z])" + re.escape(s) + r"(?![0-9A-Za-z])") for s in sources]
