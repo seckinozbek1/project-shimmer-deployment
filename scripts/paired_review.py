@@ -1727,6 +1727,27 @@ def prior_index(prior_text, ref_for_paragraph, known_units=()):
             "uncited_paragraphs": uncited}
 
 
+# Every refusal of a change record carries `reason_kind`, one of these, beside the human
+# `reason` sentence (D-042): a scorer reads the kind, never the sentence. Written where
+# the refusal is made (here, reference_tables.prior_values_for_scalars and
+# pipeline._prior_comparison) and copied into review_data.json by
+# pipeline._prior_refusals_for; prior_refusal_checks.py holds the list and the copy.
+PRIOR_REFUSAL_KINDS = (
+    "possible_rename",             # a newcomer in the section within rename_tolerance(), same unit
+    "possible_successor",          # an unclaimed newcomer in the section in the same unit
+    "possible_successor_no_unit",  # the same, where neither figure carries a unit
+    "tie",                         # differing earlier statements, or a tie between table rows
+    "reverse_tie",                 # several document labels match one table row
+    "no_citation",                 # the earlier statement has no REF id on file
+    "unit_mismatch",               # the two figures' units differ, or one is empty
+    "disagreeing_bands",           # two or more distinct bands orient the change
+    "no_key_column",               # an earlier table with no key column identifying its rows
+    "value_column_count",          # an earlier table without exactly one value column
+    "no_rule",                     # no paired rule to cite for the comparison
+    "orphan",                      # (prior_orphans) the earlier heading has no counterpart
+)
+
+
 def prior_lookup(index, scalars, unit_slug):
     """The earlier figure for each of this unit's labelled fields, or a refusal.
 
@@ -1752,6 +1773,7 @@ def prior_lookup(index, scalars, unit_slug):
             # A whole-table refusal carries an empty label; it is kept so the operator
             # can see why a table of the earlier version supplied no figure at all.
             refused.append({"label": r.get("label", ""), "reason": r["reason"],
+                            "reason_kind": r.get("reason_kind", ""),
                             "ref_ids": [r["ref_id"]] if r.get("ref_id") else []})
 
     def _distinct(cands):
@@ -1764,12 +1786,14 @@ def prior_lookup(index, scalars, unit_slug):
         if len(_distinct(chosen)) != 1:
             refused.append({"label": " ".join(label),
                             "reason": "tie: %d differing earlier statements" % len(_distinct(cands)),
+                            "reason_kind": "tie",
                             "ref_ids": sorted({c["ref_id"] for c in cands if c.get("ref_id")})})
             continue
         refs = sorted({c["ref_id"] for c in chosen if c.get("ref_id")})
         if not refs:
             refused.append({"label": " ".join(label),
                             "reason": "no citation on file for the earlier statement",
+                            "reason_kind": "no_citation",
                             "ref_ids": []})
             continue
         first = chosen[0]
@@ -1804,6 +1828,7 @@ def prior_checks(scalars, hits, bands_by_label):
         ue = _unit_str(unit_exponents(unit))
         if not ue or ue != hit["unit"]:
             refused.append({"label": " ".join(label), "reason": "units differ or are empty",
+                            "reason_kind": "unit_mismatch",
                             "ref_ids": list(hit["ref_ids"])})
             continue
         same = _close(value, hit["value"])
@@ -1833,6 +1858,7 @@ def prior_checks(scalars, hits, bands_by_label):
         elif len(spans) > 1:
             refused.append({"label": " ".join(label),
                             "reason": "bands disagree: %d spans" % len(spans),
+                            "reason_kind": "disagreeing_bands",
                             "ref_ids": list(hit["ref_ids"])})
         checks.append(check)
     return checks, refused
@@ -1978,6 +2004,7 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
             # written, and the refusal says why.
             refused.append({"label": " ".join(label),
                             "reason": "no citation on file for the earlier statement",
+                            "reason_kind": "no_citation",
                             "ref_ids": []})
             continue
         rename = _rename_candidate(label, entry["value"], entry["unit"])
@@ -1997,6 +2024,7 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                         " ".join(label), entry["value"],
                         " ".join(cand_label), cand_val,
                         rename_tolerance() * 100)),
+                "reason_kind": "possible_rename",
                 "ref_ids": refs,
             })
             continue
@@ -2008,6 +2036,8 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                 "label": " ".join(label),
                 "reason": template % (" ".join(label), entry["value"],
                                       " ".join(cand_label), cand_val),
+                "reason_kind": ("possible_successor" if entry["unit"]
+                                else "possible_successor_no_unit"),
                 "ref_ids": refs,
             })
             continue
