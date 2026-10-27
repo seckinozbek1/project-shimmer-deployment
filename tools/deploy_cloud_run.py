@@ -17,6 +17,7 @@ import time
 
 from cloud_run_common import budget_deadlines, digest, require, safe_metadata, verify_bundle, verify_files, write_json
 from runtime_contract import load_contract, remote_resolver_command, compatible
+from loop_budget_guard import GuardRefusal, refuse_general_path
 
 
 def host_value(value):
@@ -38,7 +39,8 @@ def plan(bundle, host, running_epoch):
     require(exp['max_runs'] == 1 and exp['source_commit'] == ready['source_commit'], 'invalid experiment identity')
     require(exp['experiment_id'] == ready['experiment_id'] and re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', exp['experiment_id']), 'unsafe experiment ID')
     remote = '/home/ubuntu/shimmer_experiments/' + exp['experiment_id']
-    limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch)
+    limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch, soft_usd=exp['soft_budget_usd'],
+                              hard_usd=exp['absolute_budget_usd'])
     return {'host': host, 'remote_directory': remote, 'experiment_id': exp['experiment_id'], 'hourly_rate': exp['hourly_rate_usd'],
             'max_runs': 1, 'budget': limits, 'steps': ['arm independent local termination watchdog',
             'verify manually provisioned instance identity and IP', 'first SSH success',
@@ -119,6 +121,10 @@ def execute(args, runner=subprocess.run, provider=None):
     require(0 <= time.time()-epoch < 600, 'running timestamp is future or setup already delayed; terminate and prepare locally')
     require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
     require(config['budget']['soft_epoch'] > time.time(), 'soft budget already exhausted')
+    # Not a loop launch path (R4): refused before any watchdog is armed, so a loop instance
+    # named here is never touched, let alone terminated, by this tool.
+    provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
+    refuse_general_path(names=[provider.instance(args.instance_id).get('name')])
     # This is outside the immutable bundle. It is never uploaded to the instance.
     local = args.collection.resolve() / config['experiment_id']
     local.mkdir(parents=True, exist_ok=False)
@@ -138,7 +144,6 @@ def execute(args, runner=subprocess.run, provider=None):
             break
         time.sleep(0.1)
     require((local / 'WATCHDOG_ARMED.json').is_file(), 'watchdog arm timed out')
-    provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
     success = False
     remote = config['remote_directory']
     interactive = getattr(args, 'interactive_ssh', False)
@@ -203,6 +208,7 @@ def execute(args, runner=subprocess.run, provider=None):
 
 
 def main(argv=None):
+    refuse_general_path(argv=sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', required=True)
     parser.add_argument('--bundle', type=Path, required=True)
@@ -221,7 +227,8 @@ def main(argv=None):
         return execute(args)
     except Exception as exc:
         report = {'deployment_refused': True, 'error_type': type(exc).__name__}
-        if args.execute and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id):
+        # A loop instance refused by name is the guarded controller's to end, never this tool's.
+        if args.execute and not isinstance(exc, GuardRefusal) and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id):
             # Even a local prerequisite discovered AFTER provisioning triggers
             # termination. Never leave a paid instance idle while repairing setup.
             from cloud_run_watchdog import LambdaTermination, watch

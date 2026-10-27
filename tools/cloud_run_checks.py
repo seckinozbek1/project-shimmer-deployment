@@ -41,7 +41,8 @@ class Checks(unittest.TestCase):
     def sealed(self):
         root = self.root / 'bundle'
         root.mkdir()
-        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99})
+        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99,
+                                              'soft_budget_usd': 5, 'absolute_budget_usd': 10})
         write_json(root / 'operator_readiness.json', {'ssh_public_key_sha256': 'fixture'})
         write_json(root / 'runtime.json', preparation.RUNTIME)
         (root / 'runtime_contract.py').write_bytes((ROOT / 'tools/runtime_contract.py').read_bytes())
@@ -254,6 +255,27 @@ class Checks(unittest.TestCase):
         for rate in [0, -1, float('nan'), float('inf'), True]:
             with self.assertRaises(ValueError):
                 budget_deadlines(rate, 1000)
+
+    def test_budget_caps_are_the_callers(self):
+        """R3: the caps are parameters; each caller passes its own sealed values."""
+        value = budget_deadlines(1.99, 1000, soft_usd=2, hard_usd=3)
+        self.assertAlmostEqual(value['soft_epoch'] - 1000, 2 / 1.99 * 3600)
+        self.assertAlmostEqual(value['ceiling_epoch'] - 1000, 3 / 1.99 * 3600)
+        for soft, hard in [(3, 2), (0, 3), (2, float('inf')), (True, 3)]:
+            with self.assertRaises(ValueError):
+                budget_deadlines(1.99, 1000, soft_usd=soft, hard_usd=hard)
+        plan_value = plan(self.sealed(), 'ubuntu@203.0.113.1', 1000)
+        self.assertAlmostEqual(plan_value['budget']['ceiling_epoch'] - 1000, 10 / 1.99 * 3600)
+
+    def test_multi_round_declaration_on_the_dag_path_is_refused_by_the_topology_rule(self):
+        """S2b item 1 on the older path: multi-round is checked against the declaration; this
+        path seals dependency_dag, so a declaration can never be valid here (D-011 choice 3)."""
+        files = {'scripts/' + n + '.py': (ROOT / 'scripts' / (n + '.py')).read_bytes()
+                 for n in ('pipeline', 'agent_activation', 'execution_scheduler', 'execution_topology')}
+        with self.assertRaisesRegex(ValueError, 'reference_serial'):
+            behavioral_proof(files, self.root / 'declared', multi_round_declared=True)
+        proof = behavioral_proof(files, self.root / 'undeclared')
+        self.assertEqual((proof['multi_round_declared'], proof['multi_round_inactive'], len(proof['guards'])), (False, True, 3))
 
     def test_watchdog_ceiling_and_verified_termination(self):
         provider = SimpleNamespace(terminated=False, calls=0)
