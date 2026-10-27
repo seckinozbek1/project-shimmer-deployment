@@ -1,0 +1,31 @@
+{
+  "documents": [
+    {
+      "id": 7101,
+      "file_name": "syn-nda-alpha.txt",
+      "text": "MUTUAL NONDISCLOSURE AGREEMENT\n\nEach party shall keep the other party's confidential information secret.\n\nThe receiving party may share confidential information with its employees who need to know it.\n\n# Term\nThis agreement lasts for two years after the effective date.",
+      "spans": [[32, 53], [126, 179], [234, 243]],
+      "annotation_sets": [{"annotations": {
+        "nda-1": {"choice": "Entailment", "spans": [0]},
+        "nda-2": {"choice": "Contradiction", "spans": [1]},
+        "nda-11": {"choice": "NotMentioned", "spans": []}
+      }}]
+    },
+    {
+      "id": 7102,
+      "file_name": "syn-nda-beta.txt",
+      "text": "ONE-WAY CONFIDENTIALITY AGREEMENT\n\nThe recipient shall not disclose confidential information to any third party.\n\nThe recipient shall return all confidential information when asked.",
+      "spans": [[49, 67], [134, 157]],
+      "annotation_sets": [{"annotations": {
+        "nda-1": {"choice": "Entailment", "spans": [0]},
+        "nda-2": {"choice": "NotMentioned", "spans": []},
+        "nda-11": {"choice": "Contradiction", "spans": [1]}
+      }}]
+    }
+  ],
+  "labels": {
+    "nda-1": {"short_description": "Confidentiality", "hypothesis": "The receiving party shall keep the information confidential."},
+    "nda-2": {"short_description": "No sharing with employees", "hypothesis": "The receiving party shall not  share the information\nwith its employees."},
+    "nda-11": {"short_description": "Keeps copies", "hypothesis": "The receiving party may keep copies of the information."}
+  }
+}
