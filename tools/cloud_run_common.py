@@ -158,19 +158,12 @@ def extract_source(archive, destination, expected):
             path.write_bytes(tar.extractfile(m).read())
 
 
-# The caps are parameters: each caller passes its own sealed soft and hard caps. The one
-# caller that still passes none is the general path's watchdog (tools/cloud_run_watchdog.py,
-# not a loop launch path); for that caller alone the general path's sealed experiment values
-# apply until it passes its own.
-GENERAL_PATH_CAPS = (5, 10)
-
-
-def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120, soft_usd=None, hard_usd=None):
+# The caps are required parameters with no default: every caller passes its own sealed soft
+# and hard caps (R3), so no cap is ever a code default.
+def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120, *, soft_usd, hard_usd):
     require(type(hourly_rate) in (int, float) and math.isfinite(hourly_rate) and hourly_rate > 0,
             'positive operator hourly rate required')
     require(math.isfinite(running_epoch) and running_epoch > 0, 'billing start required')
-    if soft_usd is None and hard_usd is None:
-        soft_usd, hard_usd = GENERAL_PATH_CAPS
     require(all(type(v) in (int, float) and not isinstance(v, bool) and math.isfinite(v) for v in (soft_usd, hard_usd))
             and 0 < soft_usd < hard_usd, 'positive soft cap below the hard cap required')
     require(0 < reserve_seconds < soft_usd / hourly_rate * 3600, 'invalid termination reserve')
