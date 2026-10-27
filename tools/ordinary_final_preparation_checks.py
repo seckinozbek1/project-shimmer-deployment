@@ -94,10 +94,10 @@ class PreparationChecks(unittest.TestCase):
         fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='_build_arg_parser')
         scope=dict(argparse=argparse,agent_activation=agent_activation)
         exec(compile(ast.Module(body=[fn],type_ignores=[]),'actual-parser','exec'),scope)
-        args=scope['_build_arg_parser']().parse_args(run.ARGV)
+        args=scope['_build_arg_parser']().parse_args(run.argv_for(dict(multi_round=False)))
         self.assertFalse(args.multi_round);self.assertIsNone(args.multi_round_manifest)
         self.assertEqual((args.execution_topology,args.activation_profile,args.review_mode),('report_optimized','dense','paired'))
-        args=scope['_build_arg_parser']().parse_args(run.MULTI_ROUND_ARGV)
+        args=scope['_build_arg_parser']().parse_args(run.argv_for(dict(multi_round=True)))
         self.assertTrue(args.multi_round);self.assertEqual(args.multi_round_manifest,run.CASE_MANIFEST)
         self.assertEqual((args.execution_topology,args.topology_config,args.task),('reference_serial',None,'review'))
     def raw(self):

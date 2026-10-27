@@ -61,7 +61,7 @@ def launch_plan():
             and type(plan.get('forecast_includes_upload')) is bool,
             'Loop launch plan required: ledger, purpose, forecast minutes, storage forecast, upload in forecast')
     value=dict(read_ledgers=[],r_inputs=None,test_manifest=None,frozen_tag=None,batch=None,report={},
-               poll_seconds=guard.POLL_LIMIT_SECONDS)
+               poll_seconds=guard.POLL_LIMIT_SECONDS,reaped=None,bundle_folder=None)
     value.update(plan)
     return value
 
@@ -75,10 +75,12 @@ def frozen_commit(tag):
 
 
 def case_documents(archive):
-    """The bundled context documents by id (file name without extension), as the run reads them."""
+    """The bundled context documents by id, loaded by the bound pipeline's own corpus rules."""
     with tarfile.open(archive) as tar:
-        return {Path(m.name).stem:tar.extractfile(m).read().decode('utf-8') for m in tar.getmembers()
-                if m.isfile() and m.name.startswith('input/context/') and not m.name.endswith('_review_targets.json')}
+        members={m.name[len('input/context/'):]:tar.extractfile(m).read() for m in tar.getmembers()
+                 if m.isfile() and m.name.startswith('input/context/')}
+        source=tar.extractfile('scripts/pipeline.py').read()
+    return runner.case_corpus_documents(members,source)
 
 
 def admit(m,seal,plan,base):
@@ -94,7 +96,7 @@ def admit(m,seal,plan,base):
         require(test.get('archive_sha256')==seal['test_archive_sha256']==m['test_archive_sha256'],'Bundle hash differs from the seal')
         require(frozen_commit(plan['frozen_tag'])==m['source_commit']==test.get('code_commit'),
                 'Code commit differs from the frozen tag')
-        require(not Path(base).resolve().is_relative_to(Path(ROOT).resolve()),'A sealed run folder sits outside the repository')
+        require(not Path(base).resolve().is_relative_to(Path(ROOT).resolve()),'A sealed run folder must sit outside the repository')
     else:
         require(plan['test_manifest'] is None,'An exposed run takes no test manifest')
     return workload
@@ -361,22 +363,35 @@ def execute():
     save('asset_copy_receipt.json',copy_receipt)
     require(copy is not None or plan['forecast_includes_upload'],
             'No asset-copy declaration applies to this bundle: the forecast must include the upload')
-    decision=guard.check(ledgers=[plan['ledger'],*plan['read_ledgers']],forecast_minutes=plan['forecast_minutes'],
-                         hourly_rate=rate,storage_forecast_usd=plan['storage_forecast_usd'],now_epoch=time.time(),
-                         provider_names=[x.get('name') for x in inventory],instance_type=candidate['type'],
-                         r_inputs=plan['r_inputs'])
-    require(decision['cap_usd']+1e-9>=hard,'Loop cap at launch %.2f dollars is below the sealed hard cap %.2f dollars; reseal'
-            %(decision['cap_usd'],hard))
-    require(hard>=decision['forecast_usd'] and hard/rate*60>=plan['forecast_minutes'],
-            'Sealed hard cap leaves less than the forecast at the live price')
-    require(m['image'] in provider.request('images')['data'],'Prepared image unavailable')
-    save('launch_preflight.json',dict(epoch=time.time(),instances=[],instance=current,image=m['image'],manifest_sha256=MANIFEST,
-         selected=dict(type=candidate['type'],region=region,hourly_rate=rate,polls=polls),budget=decision))
-    identity=BASE/'ssh_identity'
-    require(not identity.exists() and not Path(str(identity)+'.pub').exists(),'Temporary key path occupied')
-    name=INSTANCE_NAME
-    require(name.startswith(guard.PREFIX),'Loop instance names start with '+guard.PREFIX)
+    # The launch's own ledger must be one the reaper reads (a mocked launch names its own).
+    guard.require_reaped(plan['ledger'],plan['reaped'])
+    reserve_minutes=m['workload_stop_reserve_seconds']/60
+    # One decision at a time: the lock is held from here through the intent line, and the
+    # inventory is read again now, since the type poll above can last 30 minutes (A12).
+    lock=guard.acquire_lock(plan['ledger'])
+    try:
+        inventory=provider.request('instances')['data']
+        require(inventory==[],'Provider inventory not empty')
+        decision=guard.check(ledgers=[plan['ledger'],*plan['read_ledgers']],forecast_minutes=plan['forecast_minutes'],
+                             hourly_rate=rate,storage_forecast_usd=plan['storage_forecast_usd'],now_epoch=time.time(),
+                             reserve_minutes=reserve_minutes,provider_names=[x.get('name') for x in inventory],
+                             instance_type=candidate['type'],r_inputs=plan['r_inputs'],reaped=plan['reaped'])
+        require(decision['cap_usd']+1e-9>=hard,'Loop cap at launch %.2f dollars is below the sealed hard cap %.2f dollars; reseal'
+                %(decision['cap_usd'],hard))
+        require(hard>=decision['forecast_usd'] and hard/rate*60>=plan['forecast_minutes']+reserve_minutes,
+                'Sealed hard cap leaves less than the forecast at the live price')
+        require(m['image'] in provider.request('images')['data'],'Prepared image unavailable')
+        save('launch_preflight.json',dict(epoch=time.time(),instances=[],instance=current,image=m['image'],manifest_sha256=MANIFEST,
+             selected=dict(type=candidate['type'],region=region,hourly_rate=rate,polls=polls),budget=decision))
+        identity=BASE/'ssh_identity'
+        require(not identity.exists() and not Path(str(identity)+'.pub').exists(),'Temporary key path occupied')
+        name=INSTANCE_NAME
+        require(name.startswith(guard.PREFIX),'Loop instance names start with '+guard.PREFIX)
+    except BaseException:
+        guard.release_lock(lock)
+        raise
     registration=iid=ssh=host=None
+    launch_line=False
     options=[]
     start=time.time()
     intent=False
@@ -556,6 +571,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         # IV.3: the name and the deadline are in the ledger before the launch request.
         ledger('launch_intent',time_utc=utc(start),launch_requested_utc=utc(start),deadline_utc=utc(deadline))
         intent=True
+        guard.release_lock(lock);lock=None
         for entry in batch:
             if entry['base']!=Path(BASE).resolve():
                 with (entry['base']/'LAUNCH_INTENT.json').open('x',encoding='utf8') as stream:
@@ -563,6 +579,12 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         with (BASE/'LAUNCH_INTENT.json').open('x',encoding='utf8') as stream:
             json.dump(dict(epoch=start,maximum_instances=1,operator_authorized=True,
                 execution_manifest_sha256=MANIFEST,seal_sha256=SEAL,controller_sha256=sha(__file__)),stream)
+        if plan['bundle_folder'] and Path(plan['bundle_folder']).resolve()!=Path(BASE).resolve():
+            # The bundle records its run folder only once the launch intent exists (A6): a
+            # refusal before this point leaves the bundle launchable, and after it the
+            # bundle refuses a second launch with or without --output-dir.
+            with (Path(plan['bundle_folder'])/'RUN_FOLDER.json').open('x',encoding='utf8') as stream:
+                json.dump(dict(run_folder=Path(BASE).resolve().as_posix()),stream)
         # Keep this machine awake while an instance can exist; the request ends with the process.
         held=keep_awake('hold')
         save('keep_awake.json',dict(held=held))
@@ -574,6 +596,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         launch=provider.request('instance-operations/launch',launch_body)['data']
         iid=launch['instance_ids'][0]
         ledger('launch',time_utc=utc(time.time()),launch_requested_utc=utc(start),instance_id=iid,deadline_utc=utc(deadline))
+        launch_line=True
         save('launch.json',dict(instance_id=iid,epoch=start,hourly_rate=rate,instance_type=candidate['type'],region=region))
         permit=dict(operator_authorized=True,action='one-ordinary-final-cloud-run',
             execution_manifest_sha256=MANIFEST,seal_sha256=SEAL,source_commit=m['source_commit'],
@@ -664,10 +687,19 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         if sealed:print('Controller stopped at phase %d'%counter[0],flush=True)
         else:print('Controller stopped:',type(exc).__name__,flush=True)
     finally:
+        # A failure before the intent line never leaves the ledger lock behind.
+        guard.release_lock(lock)
+        recovered=True
         if iid is None and (BASE/'LAUNCH_INTENT.json').exists():
-            matches=[x for x in provider.request('instances')['data'] if x.get('name')==name]
-            require(len(matches)<=1,'Ambiguous launch recovery; inspect inventory')
-            if matches:iid=matches[0]['instance_id']
+            try:
+                matches=[x for x in provider.request('instances')['data'] if x.get('name')==name]
+                require(len(matches)<=1,'Ambiguous launch recovery; inspect inventory')
+                if matches:iid=matches[0]['instance_id']
+            except Exception as exc:
+                # Unknown whether an instance exists: the ledger stays open for the reaper,
+                # which ends the instance at its deadline and closes the launch by name or id.
+                recovered=False
+                save('launch_recovery_failure.json',dict(error_type=type(exc).__name__))
         if iid:
             if ssh:
                 try:
@@ -683,12 +715,23 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
                     if termination(provider,iid,BASE,start,rate):break
                 except Exception:pass
                 time.sleep(5)
+        if intent and recovered:
+            # The ledger is closed first, once the instance is gone, in its own try (A1, A2):
+            # a recovered id whose launch line was never written gets that line now, so the
+            # launch and its termination share an id, and the termination time is read from
+            # either writer's shape of TERMINATION_VERIFIED.json.
+            try:
+                end=termination_epoch(BASE/'TERMINATION_VERIFIED.json') if iid else time.time()
+                if iid and not launch_line:
+                    ledger('launch',time_utc=utc(end),launch_requested_utc=utc(start),instance_id=iid,deadline_utc=utc(deadline))
+                    launch_line=True
+                minutes=max(0,math.ceil((end-start)/60)) if iid else 0
+                ledger('termination',time_utc=utc(end),launch_requested_utc=utc(start),instance_id=iid,
+                       actual_minutes=minutes,actual_cost=round(rate*minutes/60,4))
+            except Exception as exc:
+                save('ledger_close_failure.json',dict(error_type=type(exc).__name__))
+        if iid:
             save('instances_after.json',provider.request('instances')['data'])
-        if intent:
-            end=read(BASE/'TERMINATION_VERIFIED.json')['epoch'] if (BASE/'TERMINATION_VERIFIED.json').exists() else time.time()
-            minutes=max(0,math.ceil((end-start)/60)) if iid else 0
-            ledger('termination',time_utc=utc(end),launch_requested_utc=utc(start),instance_id=iid,
-                   actual_minutes=minutes,actual_cost=round(rate*minutes/60,4))
         if held:keep_awake('release')
         if registration:
             provider.request('ssh-keys/'+registration['id'],method='DELETE')
@@ -706,9 +749,24 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
             # Each batch run folder carries the session's launch and cleanup records, so
             # the analyser reads one folder per bundle exactly as it reads a single run.
             if entry['folder'].exists():
-                for shared in ('launch.json','independent_inventory_confirmation.json','cleanup.json','run_record.json'):
+                for shared in ('launch.json','independent_inventory_confirmation.json','cleanup.json','run_record.json',
+                               'asset_copy_receipt.json'):
                     if (BASE/shared).exists():(entry['folder']/shared).write_bytes((BASE/shared).read_bytes())
         phase('terminated_and_cleaned')
+
+
+def termination_epoch(path):
+    """When termination was verified. Two writers make this file: the controller's termination
+    step writes `epoch`, the watchdog writes `confirmed_epoch`; either is read, and with neither
+    (or no file) the moment of reading stands in."""
+    try:
+        value=read(path)
+    except (OSError,ValueError):
+        return time.time()
+    for key in ('epoch','confirmed_epoch'):
+        if isinstance(value,dict) and type(value.get(key)) in (int,float):
+            return value[key]
+    return time.time()
 
 
 def keep_awake(action):
@@ -722,4 +780,7 @@ def keep_awake(action):
     return helper.hold() if action=='hold' else helper.release()
 
 
-if __name__=='__main__':execute()
+if __name__=='__main__':
+    # Not an entry point of its own any more (loop stage S2): every launch needs a launch plan,
+    # which tools/ordinary_final_bound_cloud.py builds, so this refuses at launch_plan().
+    execute()

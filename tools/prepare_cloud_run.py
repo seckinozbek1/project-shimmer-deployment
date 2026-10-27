@@ -30,8 +30,6 @@ ASSETS = Path(__file__).resolve().parent / 'cloud_run'
 BASELINE = '15d0721fbc24cd38fdaa6bc4969d7b18ad66387e'
 from runtime_contract import RuntimeContractError, assert_current, load_contract, resolve, subprocess_check
 RUNTIME = load_contract()
-# The general path's own sealed caps (not a loop launch path; the loop's caps follow IV.3).
-SOFT_BUDGET_USD, ABSOLUTE_BUDGET_USD = 5, 10
 
 TOPOLOGY = {'schema_version': 1, 'lanes': [{'name': 'primary', 'device': 'cuda:0', 'resident_limit': 2}]}
 ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense', '--review-mode', 'paired',
@@ -324,7 +322,7 @@ def prepare(args):
     assert_current()
     require(re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', args.experiment_id), 'invalid experiment ID')
     from cloud_run_common import budget_deadlines
-    budget_deadlines(args.hourly_rate, 1, soft_usd=SOFT_BUDGET_USD, hard_usd=ABSOLUTE_BUDGET_USD)
+    budget_deadlines(args.hourly_rate, 1, soft_usd=args.soft_usd, hard_usd=args.hard_usd)
     destination = Path(args.output).resolve() / args.experiment_id
     require(not destination.exists(), 'experiment destination exists; never overwrite evidence')
     destination.mkdir(parents=True)
@@ -375,7 +373,7 @@ def prepare(args):
     write_json(destination / 'runtime.json', RUNTIME)
     write_json(destination / 'experiment.json', {'experiment_id': args.experiment_id, 'source_commit': args.expected_commit,
         'workload': 'clinical_reference', 'classification': 'PREPARED / NOT RUN', 'max_runs': 1,
-        'hourly_rate_usd': args.hourly_rate, 'soft_budget_usd': SOFT_BUDGET_USD, 'absolute_budget_usd': ABSOLUTE_BUDGET_USD,
+        'hourly_rate_usd': args.hourly_rate, 'soft_budget_usd': args.soft_usd, 'absolute_budget_usd': args.hard_usd,
         'termination_reserve_seconds': 120, 'billing_includes_setup_and_collection': True,
         'model_delivery': 'concurrent fixed hub downloads; locally converted BGE safetensors bundled',
         'target_instance_class': RUNTIME['instance_class']})
@@ -487,6 +485,8 @@ def main(argv=None):
     parser.add_argument('--experiment-id', required=True)
     parser.add_argument('--expected-commit', required=True)
     parser.add_argument('--hourly-rate', type=float, required=True)
+    parser.add_argument('--soft-usd', type=float, required=True, help='the experiment soft cap, sealed into experiment.json')
+    parser.add_argument('--hard-usd', type=float, required=True, help='the experiment hard cap, sealed into experiment.json')
     parser.add_argument('--credential-file', type=Path, help='Optional local private Python config; only loaded status is retained')
     parser.add_argument('--identity-file', type=Path, required=True, help='Local prepared SSH identity; never included in the bundle')
     parser.add_argument('--model-cache', default=str(Path.home() / '.cache/huggingface/hub'))

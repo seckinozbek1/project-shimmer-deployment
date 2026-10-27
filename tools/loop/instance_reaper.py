@@ -10,7 +10,9 @@ What it does on every run:
 3. Terminates every instance whose name starts with ``shimmer-loop-`` that is past its
    recorded deadline, or that has no recorded deadline, and every loop instance once
    total loop spend reaches the hard stop (49 USD).
-4. Appends one ledger line per termination and writes ``reaper_status.json``.
+4. Appends one ledger line per termination and writes ``reaper_status.json``. A line it
+   writes carries only declared ledger fields (``tools/loop_budget_guard.LEDGER_FIELDS``,
+   which declares its ``by`` and ``reason``).
 
 It never touches an instance without the loop prefix, and it never prints a key: every
 provider error is reduced to its class name before it reaches output.
@@ -60,7 +62,8 @@ def read_ledger(path):
 
 
 def ledger_view(rows, now):
-    """Return per-instance records keyed by name, and total spend counted once per launch.
+    """Return per-instance records keyed by name, the closed launches (launch key to the
+    termination line that closed it), and total spend counted once per launch.
 
     A launch is identified by its instance id when known, else by its name. Each launch is
     counted once across both ledgers: a closed launch by its recorded actual cost, an open
@@ -68,7 +71,7 @@ def ledger_view(rows, now):
     overstates slightly and is safe). The storage share accrues from the loop's start.
     """
     launches = {}
-    closed = {}
+    terminations = []
     storage_rate = 0.0
     loop_start = None
     for row in rows:
@@ -87,9 +90,27 @@ def ledger_view(rows, now):
             merged.update(launches.get(ident, {}))
             merged.update(row)
             launches[ident] = merged
-        elif event == 'termination':
-            ident = row.get('instance_id') or row.get('instance_name')
-            if ident:
+        elif event == 'termination' and (row.get('instance_id') or row.get('instance_name')):
+            terminations.append(row)
+    # A termination closes a launch when it names the launch's instance id OR its instance
+    # name. An intent whose launch line was never written (the request succeeded but its
+    # reply was lost, or the controller died before writing it) is keyed by its name, while
+    # the termination that ends it (the controller's recovery, or this reaper) carries the
+    # id: matching on either keeps such a launch from staying open, and charged, for good.
+    # A name match counts only for a termination at or after the launch request, so a later
+    # launch reusing a name is never closed by an earlier termination.
+    closed = {}
+    for ident, rec in launches.items():
+        for row in terminations:
+            by_id = row.get('instance_id') and row.get('instance_id') in (ident, rec.get('instance_id'))
+            by_name = row.get('instance_name') and row.get('instance_name') == rec.get('instance_name')
+            if by_name and not by_id:
+                start = rec.get('launch_requested_utc') or rec.get('time_utc')
+                try:
+                    by_name = not start or not row.get('time_utc') or parse_time(row['time_utc']) >= parse_time(start)
+                except (ValueError, TypeError):
+                    by_name = False
+            if by_id or by_name:
                 closed[ident] = row
     spend = 0.0
     by_name = {}

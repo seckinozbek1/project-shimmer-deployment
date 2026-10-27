@@ -30,7 +30,7 @@ import zipfile
 from prepare_cloud_run import git, make_source, pins, validate_wheels
 from cloud_run_common import credential_locations
 from ordinary_final_run import (ARGV, MULTI_ROUND_ARGV, TOPOLOGY, CASE_MANIFEST, EXPOSED_NO_MANIFEST, sha, read,
-                                write, require, cache_ref_bytes, validate_live_case_manifest)
+                                write, require, cache_ref_bytes, validate_live_case_manifest, case_corpus_documents)
 from prepare_ordinary_final_assets import build_assets
 import loop_budget_guard as guard
 
@@ -177,7 +177,7 @@ def workload_members(path):
                 require(not (member.issym() or member.islnk()) and '..' not in member.name.split('/'),
                         'Unsafe test archive member')
                 if member.isfile():
-                    members[member.name.lstrip('./')] = archive.extractfile(member).read()
+                    members[member.name.removeprefix('./')] = archive.extractfile(member).read()
     allowed = ('context/', 'conventions/')
     for name in members:
         require(name.startswith(allowed) or name in ('_review_targets.json', CASE_MANIFEST),
@@ -203,7 +203,8 @@ def budget_fields(provider, budget, now_epoch):
     rate = candidates[0]['max_hourly_rate']
     decision = guard.check(ledgers=budget['ledgers'], forecast_minutes=budget['forecast_minutes'], hourly_rate=rate,
                            storage_forecast_usd=budget['storage_forecast_usd'], now_epoch=now_epoch,
-                           provider_names=[i.get('name') for i in provider['instances']])
+                           provider_names=[i.get('name') for i in provider['instances']],
+                           reserve_minutes=WORKLOAD_STOP_RESERVE_SECONDS / 60, reaped=budget.get('reaped'))
     return dict(instance_candidates=candidates, region=guard.PREFERRED_REGION,
         max_hourly_rate=max(c['max_hourly_rate'] for c in candidates), a10_reference_rate=reference,
         forecast_minutes=budget['forecast_minutes'], forecast_usd=decision['forecast_usd'],
@@ -235,7 +236,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     if sealed:
         # The test never enters the builder's repository (11.2): a sealed bundle is built
         # outside it, and only counts are printed (B.8).
-        require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle is prepared outside the repository')
+        require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle must be prepared outside the repository')
         require(workload is not None and Path(workload).is_file(), 'A sealed bundle is built from the test archive')
     require(not protected_test or sealed, 'Only a sealed bundle may set protected_test')
     require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
@@ -283,7 +284,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         workload_hashes[name] = hashlib.sha256(data).hexdigest()
     multi_round = case is not None
     if multi_round:
-        documents = {Path(n).stem: d.decode('utf-8') for n, d in members.items() if n.startswith('context/')}
+        # The documents bind_sources will see on the instance, by the bound pipeline's own rules.
+        documents = case_corpus_documents({n[len('context/'):]: d for n, d in members.items() if n.startswith('context/')},
+                                          files['scripts/pipeline.py'])
         validate_live_case_manifest(json.loads(case.decode('utf-8')), documents)
         (OUT/CASE_MANIFEST).write_bytes(case)
     # Numerical/prompt helpers only; no training controller or datasets.
@@ -368,7 +371,12 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         local_control_hashes={n:sha(ROOT/n) for n in ('tools/ordinary_final_watchdog.py',
             'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py',
             'tools/ordinary_final_cloud.py','tools/ordinary_final_bound_cloud.py',
-            'tools/lambda_experiment_provider.py')},
+            'tools/lambda_experiment_provider.py',
+            # What the controller imports to decide and record a launch (S2): the budget
+            # guard, the reaper's ledger reading it reuses, the keep-awake helper and the
+            # termination and state functions it takes from the general controller.
+            'tools/loop_budget_guard.py','tools/loop/instance_reaper.py','tools/loop/keep_awake.py',
+            'tools/run_remote_experiment.py')},
         support_files=support,models=models,assets_archive=assets,
         preparation_source_hashes={n:sha(ROOT/n) for n in
             ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},

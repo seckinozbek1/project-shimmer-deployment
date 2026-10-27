@@ -37,6 +37,12 @@ class Checks(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='shimmer-cloud-check-')
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        # The loop's real ledgers are never read here: the reaper's paths point at fixtures.
+        import instance_reaper
+        for name in ('PRIVATE_LEDGER', 'R_LEDGER'):
+            patcher = patch.object(instance_reaper, name, self.root / ('absent_' + name.lower() + '.jsonl'))
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def sealed(self):
         root = self.root / 'bundle'
@@ -400,6 +406,54 @@ class Checks(unittest.TestCase):
         command = self.watch_command
         self.assertEqual((command[command.index('--soft-usd') + 1], command[command.index('--hard-usd') + 1]), ('5', '10'))
 
+    def test_general_deploy_never_terminates_a_loop_or_unidentified_instance(self):
+        """A7: the name is resolved first; a loop instance is refused and never terminated, an
+        instance whose name cannot be read is never terminated, and a known non-loop instance
+        still is when a later step fails."""
+        import deploy_cloud_run
+        import cloud_run_watchdog
+        bundle = self.sealed()
+        terminated = []
+        def args(**changes):
+            value = SimpleNamespace(bundle=bundle, host='ubuntu@203.0.113.1', execute=True, running_since='2000-01-01T00:00:00Z',
+                                    hourly_rate=1.99, instance_id='a' * 32, collection=self.root / 'collected', credential_file=None,
+                                    identity_file=self.root / 'fixture_identity', interactive_ssh=False, upload_timeout_seconds=10)
+            value.__dict__.update(changes)
+            return value
+        def run(name=None, fail=False):
+            def instance(identity):
+                if fail:
+                    raise RuntimeError('transport')
+                return {'instance_id': identity, 'name': name, 'status': 'active'}
+            provider = SimpleNamespace(instance=instance, terminate=lambda i: terminated.append(i))
+            parsed = args()
+            with patch.object(cloud_run_watchdog, 'LambdaTermination', lambda *a, **k: provider), \
+                    patch.object(cloud_run_watchdog, 'operator_preflight', return_value={'ssh_public_key_sha256': 'fixture'}), \
+                    patch.object(cloud_run_watchdog, 'terminate_now', lambda p, i, *a, **k: terminated.append(i)), \
+                    patch.object(deploy_cloud_run.time, 'sleep', lambda s: None), \
+                    patch.object(deploy_cloud_run.argparse.ArgumentParser, 'parse_args', lambda self, argv=None: parsed), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                code = deploy_cloud_run.main([])
+            return code, json.loads(out.getvalue().strip().splitlines()[-1])
+        code, report = run(name='shimmer-loop-running')
+        self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
+        code, report = run(fail=True)
+        self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
+        code, report = run(name='operator-manual')
+        self.assertEqual((code, terminated), (2, ['a' * 32]))  # the stale timestamp fails after the name is known
+
+    def test_general_path_refuses_while_the_loop_budget_is_open(self):
+        """A11: a loop ledger opened and not closed stops the general path from launching."""
+        import instance_reaper
+        import loop_budget_guard
+        ledger = self.root / 'loop_ledger.jsonl'
+        ledger.write_text(json.dumps({'event': 'budget_open'}) + chr(10), encoding='utf-8')
+        with patch.object(instance_reaper, 'PRIVATE_LEDGER', ledger):
+            with self.assertRaisesRegex(loop_budget_guard.GuardRefusal, 'loop budget is open'):
+                loop_budget_guard.refuse_while_loop_open()
+            ledger.write_text(ledger.read_text() + json.dumps({'event': 'budget_close'}) + chr(10), encoding='utf-8')
+            loop_budget_guard.refuse_while_loop_open()
+
     def test_incompatible_mock_remote_runtime_never_transfers_source(self):
         code, calls, status = self.mocked_deploy(fail_runtime=True)
         self.assertEqual(code, 2)
@@ -518,7 +572,7 @@ class Checks(unittest.TestCase):
                  'config/local_models.json': (ROOT / 'config/local_models.json').read_bytes(),
                  'benchmark/corpora/clinical_reference/context/result_sheet.md': b'synthetic\n'}
         args = SimpleNamespace(experiment_id='fixture', expected_commit=preparation.BASELINE,
-                               hourly_rate=1.99, output=output, wheelhouse=wh, model_cache=self.root)
+                               hourly_rate=1.99, soft_usd=5, hard_usd=10, output=output, wheelhouse=wh, model_cache=self.root)
         mock_models = [{'model': n, 'revision': r, 'files': {}} for n, r in json.loads((preparation.ASSETS / 'models.json').read_text()).items()]
         test_result = SimpleNamespace(returncode=0, stdout=json.dumps({'passed': True, 'tests_run': 1}).encode())
         with patch.object(preparation, 'resolve', return_value={'executable': sys.executable, 'profile': 'experiment'}), \

@@ -152,9 +152,13 @@ rehearsal mocks the provider, so it locates no credential file at all.
 
 Use a new experiment ID and replace the placeholder paths below with existing
 operator-side files. The hourly rate is an explicit operator input. The example
-uses $1.99/hour. Preparation seals this path's own caps into `experiment.json`
-(`soft_budget_usd` 5, `absolute_budget_usd` 10); the deployment tool passes those
-sealed values to the watchdog, and no cap is a code default anywhere else.
+uses $1.99/hour. Preparation takes this path's caps on the command line
+(`--soft-usd`, `--hard-usd`, required) and seals them into `experiment.json`
+(`soft_budget_usd`, `absolute_budget_usd`); the deployment tool passes those sealed
+values to the watchdog. No per-run cap is a code default; the loop's budget rule and
+the two reserves are code constants (see the ordinary final section below). This
+path does not launch while the loop budget is open (a loop ledger with `budget_open`
+and no `budget_close`).
 
 ```powershell
 # Download exact public runtime wheels locally when the wheelhouse is absent.
@@ -232,8 +236,10 @@ instance idle for investigation.
 
 Budget accounting includes setup, inference, scoring and collection. The watchdog
 (`tools/cloud_run_watchdog.py`) requires `--soft-usd` and `--hard-usd`; the
-deployment tool supplies the experiment's sealed caps (5 and 10 dollars as
-prepared). It requests termination 120 seconds before the calculated hard ceiling
+deployment tool supplies the experiment's sealed caps. It resolves the
+instance's name first, with retries, refuses a `shimmer-loop-` instance, and on a
+failure terminates only an instance whose name it resolved and which is not a loop
+instance; anything else is left to the operator. It requests termination 120 seconds before the calculated hard ceiling
 and retries until the provider verifies termination. An emergency termination after
 a failed deployment requests termination at once and reads no cap. Keep the operator workstation and its
 watchdog running. A provider outage can prevent timely termination; an unverified
@@ -316,7 +322,7 @@ preflight `tools/ordinary_final_bound_preflight.py`, which now reads the sealed
 candidates with the same type rule as the launch) before the launch:
 
 ```powershell
-python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGER.jsonl --purpose "one short line" --forecast-minutes MINUTES --storage-forecast-usd DOLLARS --forecast-includes-upload
+python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGER.jsonl --purpose dev-smoke --forecast-minutes MINUTES --storage-forecast-usd DOLLARS --forecast-includes-upload
 ```
 
 | Wrapper flag | Meaning |
@@ -325,7 +331,7 @@ python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGE
 | `--ledger` | The loop ledger: read by the guard, and it receives the launch and termination lines. Required. |
 | `--read-ledger` (repeatable) | Another ledger the guard reads (role R's). |
 | `--r-inputs` | `R_INPUTS.json` when role R launches. |
-| `--purpose` | One short plain line saying why this run exists. Required. |
+| `--purpose` | A short identifier saying why this run exists (lower case, digits, hyphens, at most 40 characters). Required. |
 | `--forecast-minutes`, `--storage-forecast-usd` | The measured basis and the storage forecast. Required. |
 | `--forecast-includes-upload` | States that the forecast includes the asset upload. Required whenever no asset-copy declaration applies to this bundle. |
 | `--output-dir` | Run in a fresh folder `<output-dir>/<bundle name>` instead of in the bundle; the asset archive is read where it is. |
@@ -335,14 +341,18 @@ python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGE
 | `--detach` | Start the controller as a detached process and return; its output goes to `controller_detached.log` in the bundle and its pid to `controller_process.json`. |
 
 Before the launch request, `tools/loop_budget_guard.py` decides from the ledgers
-and the live price. It refuses, in one line, when another loop instance is
-running (an open launch in a ledger, or a `shimmer-loop-` name in the provider
-inventory), when the per-run cap `min(1.5 x forecast, 50 - spend - caps of
-running loop instances - storage forecast - 1)` is below the forecast (measured
-minutes times the live price times 1.3), when the capped run time is shorter
-than the forecast time, or when spend plus forecast plus storage would pass the
-50 dollar budget. Spend is counted once per launch by instance id across every
-ledger given. The controller also refuses when the sealed hard cap no longer fits
+and the live price. The `--ledger` must be one the reaper reads (the private ledger
+or R's); the guard always reads both of those beside any `--read-ledger`, needs a
+`budget_open` line among them, and holds an exclusive lock beside the ledger from
+its decision through the intent line, reading the provider inventory again just
+before it. It refuses, in one line, when another loop instance is running (an
+open launch in a ledger, or a `shimmer-loop-` name in the provider inventory),
+when the per-run cap `min(1.5 x forecast, 50 - spend - caps of running loop
+instances - storage forecast - 1)` is below the forecast (measured minutes times
+the live price times 1.3), or when the capped run time does not cover the forecast
+time plus the run's stop reserve. The cap rule alone keeps spend plus forecast plus
+storage at or below 49 dollars. Spend is counted once per launch across every
+ledger read; a termination closes a launch by its instance id or its name. The controller also refuses when the sealed hard cap no longer fits
 under the cap at the live price; reseal in that case.
 
 The instance type follows the IV.3 rule: `gpu_1x_a10` in `us-east-1`, polling the
@@ -354,9 +364,12 @@ reserves into deadlines.
 
 The instance is always named `shimmer-loop-...`. The `launch_intent` line, with
 the deadline, is written to the ledger before the launch request; `launch` and
-`termination` lines follow. A ledger line carries only time, instance id and
+`termination` lines follow; a launch recovered after a lost reply gets its
+`launch` line before its termination, and the ledger is closed in its own step
+before the rest of the cleanup. A ledger line carries only time, instance id and
 name, type, region, price, purpose, forecast, cap, deadline, actual minutes and
-actual cost, and the writer refuses any other field. While an instance can exist
+actual cost (plus the reaper's `by` and `reason`), and the writer refuses any other
+field. The purpose is a short identifier (lower case, digits, hyphens). While an instance can exist
 the controller keeps the workstation awake through `tools/loop/keep_awake.py`,
 and the ledger deadline is what the loop reaper `tools/loop/instance_reaper.py`
 acts on if the controller itself dies.
