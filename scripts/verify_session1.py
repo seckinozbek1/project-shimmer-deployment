@@ -24750,6 +24750,18 @@ def check_279_multi_round_rounds():
     return check()
 
 
+def check_280_multi_round_launch_end_to_end():
+    """R2 (loop S2): a declared multi-round Review sealed by the sealer, admitted by the
+    instance, launched by the real controller against fakes, admitted by pipeline main()
+    in final mode (Draft, flag alone, manifest alone refused) and assessed only on
+    outcome reviewed and activation activated."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from multi_round_launch_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25112,6 +25124,8 @@ CHECKS = [
      check_278_honest_deliverables),
     ("279 later multi-round rounds reuse unchanged units and refuse moved renames",
      check_279_multi_round_rounds),
+    ("280 a declared multi-round Review is sealed, launched, admitted in final mode and assessed",
+     check_280_multi_round_launch_end_to_end),
 ]
 
 
