@@ -1,0 +1,823 @@
+{
+ "version": "synthetic",
+ "data": [
+  {
+   "title": "SYN-ALPHA-SUPPLY",
+   "paragraphs": [
+    {
+     "context": "SUPPLY AGREEMENT\n\nThis agreement is made between Alpha Works and Beta Stores.\n\nThis agreement is governed by the laws of the State of Nowhere.\n\n## Section heading written with hashes\n\nEither party may end this agreement on thirty days notice.",
+     "qas": [
+      {
+       "id": "SYN-ALPHA-SUPPLY__Document Name",
+       "question": "Highlight the parts (if any) of this contract related to \"Document Name\".",
+       "answers": [
+        {
+         "text": "SUPPLY AGREEMENT",
+         "answer_start": 0
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Parties",
+       "question": "Highlight the parts (if any) of this contract related to \"Parties\".",
+       "answers": [
+        {
+         "text": "Alpha Works and Beta Stores",
+         "answer_start": 49
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Agreement Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Agreement Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Effective Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Effective Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Expiration Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Expiration Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Renewal Term",
+       "question": "Highlight the parts (if any) of this contract related to \"Renewal Term\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Notice to Terminate Renewal",
+       "question": "Highlight the parts (if any) of this contract related to \"Notice to Terminate Renewal\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Governing Law",
+       "question": "Highlight the parts (if any) of this contract related to \"Governing Law\".",
+       "answers": [
+        {
+         "text": "governed by the laws of the State of Nowhere",
+         "answer_start": 97
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Most Favored Nation",
+       "question": "Highlight the parts (if any) of this contract related to \"Most Favored Nation\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Non-Compete",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Compete\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Exclusivity",
+       "question": "Highlight the parts (if any) of this contract related to \"Exclusivity\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__No-Solicit of Customers",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Customers\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Competitive Restriction Exception",
+       "question": "Highlight the parts (if any) of this contract related to \"Competitive Restriction Exception\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__No-Solicit of Employees",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Employees\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Non-Disparagement",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Disparagement\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Termination for Convenience",
+       "question": "Highlight the parts (if any) of this contract related to \"Termination for Convenience\".",
+       "answers": [
+        {
+         "text": "Either party may end this agreement on thirty days notice.",
+         "answer_start": 184
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__ROFR/ROFO/ROFN",
+       "question": "Highlight the parts (if any) of this contract related to \"ROFR/ROFO/ROFN\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Change of Control",
+       "question": "Highlight the parts (if any) of this contract related to \"Change of Control\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Anti-Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"Anti-Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Revenue/Profit Sharing",
+       "question": "Highlight the parts (if any) of this contract related to \"Revenue/Profit Sharing\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Price Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Price Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Minimum Commitment",
+       "question": "Highlight the parts (if any) of this contract related to \"Minimum Commitment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Volume Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Volume Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__IP Ownership Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"IP Ownership Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Joint IP Ownership",
+       "question": "Highlight the parts (if any) of this contract related to \"Joint IP Ownership\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__License Grant",
+       "question": "Highlight the parts (if any) of this contract related to \"License Grant\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Non-Transferable License",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Transferable License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Affiliate IP License-Licensor",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensor\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Affiliate IP License-Licensee",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensee\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Unlimited/All-You-Can-Eat License",
+       "question": "Highlight the parts (if any) of this contract related to \"Unlimited/All-You-Can-Eat License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Irrevocable or Perpetual License",
+       "question": "Highlight the parts (if any) of this contract related to \"Irrevocable or Perpetual License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Source Code Escrow",
+       "question": "Highlight the parts (if any) of this contract related to \"Source Code Escrow\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Post-Termination Services",
+       "question": "Highlight the parts (if any) of this contract related to \"Post-Termination Services\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Audit Rights",
+       "question": "Highlight the parts (if any) of this contract related to \"Audit Rights\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Uncapped Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Uncapped Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Cap on Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Cap on Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Liquidated Damages",
+       "question": "Highlight the parts (if any) of this contract related to \"Liquidated Damages\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Warranty Duration",
+       "question": "Highlight the parts (if any) of this contract related to \"Warranty Duration\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Insurance",
+       "question": "Highlight the parts (if any) of this contract related to \"Insurance\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Covenant Not to Sue",
+       "question": "Highlight the parts (if any) of this contract related to \"Covenant Not to Sue\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-ALPHA-SUPPLY__Third Party Beneficiary",
+       "question": "Highlight the parts (if any) of this contract related to \"Third Party Beneficiary\".",
+       "answers": [],
+       "is_impossible": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "SYN-BETA-SERVICE",
+   "paragraphs": [
+    {
+     "context": "SERVICE AGREEMENT\n\nThe provider shall perform the services with care.\n\nThe provider shall keep insurance in force.",
+     "qas": [
+      {
+       "id": "SYN-BETA-SERVICE__Document Name",
+       "question": "Highlight the parts (if any) of this contract related to \"Document Name\".",
+       "answers": [
+        {
+         "text": "SERVICE AGREEMENT",
+         "answer_start": 0
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Parties",
+       "question": "Highlight the parts (if any) of this contract related to \"Parties\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Agreement Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Agreement Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Effective Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Effective Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Expiration Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Expiration Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Renewal Term",
+       "question": "Highlight the parts (if any) of this contract related to \"Renewal Term\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Notice to Terminate Renewal",
+       "question": "Highlight the parts (if any) of this contract related to \"Notice to Terminate Renewal\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Governing Law",
+       "question": "Highlight the parts (if any) of this contract related to \"Governing Law\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Most Favored Nation",
+       "question": "Highlight the parts (if any) of this contract related to \"Most Favored Nation\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Non-Compete",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Compete\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Exclusivity",
+       "question": "Highlight the parts (if any) of this contract related to \"Exclusivity\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__No-Solicit of Customers",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Customers\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Competitive Restriction Exception",
+       "question": "Highlight the parts (if any) of this contract related to \"Competitive Restriction Exception\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__No-Solicit of Employees",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Employees\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Non-Disparagement",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Disparagement\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Termination for Convenience",
+       "question": "Highlight the parts (if any) of this contract related to \"Termination for Convenience\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__ROFR/ROFO/ROFN",
+       "question": "Highlight the parts (if any) of this contract related to \"ROFR/ROFO/ROFN\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Change of Control",
+       "question": "Highlight the parts (if any) of this contract related to \"Change of Control\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Anti-Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"Anti-Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Revenue/Profit Sharing",
+       "question": "Highlight the parts (if any) of this contract related to \"Revenue/Profit Sharing\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Price Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Price Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Minimum Commitment",
+       "question": "Highlight the parts (if any) of this contract related to \"Minimum Commitment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Volume Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Volume Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__IP Ownership Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"IP Ownership Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Joint IP Ownership",
+       "question": "Highlight the parts (if any) of this contract related to \"Joint IP Ownership\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__License Grant",
+       "question": "Highlight the parts (if any) of this contract related to \"License Grant\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Non-Transferable License",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Transferable License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Affiliate IP License-Licensor",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensor\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Affiliate IP License-Licensee",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensee\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Unlimited/All-You-Can-Eat License",
+       "question": "Highlight the parts (if any) of this contract related to \"Unlimited/All-You-Can-Eat License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Irrevocable or Perpetual License",
+       "question": "Highlight the parts (if any) of this contract related to \"Irrevocable or Perpetual License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Source Code Escrow",
+       "question": "Highlight the parts (if any) of this contract related to \"Source Code Escrow\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Post-Termination Services",
+       "question": "Highlight the parts (if any) of this contract related to \"Post-Termination Services\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Audit Rights",
+       "question": "Highlight the parts (if any) of this contract related to \"Audit Rights\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Uncapped Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Uncapped Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Cap on Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Cap on Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Liquidated Damages",
+       "question": "Highlight the parts (if any) of this contract related to \"Liquidated Damages\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Warranty Duration",
+       "question": "Highlight the parts (if any) of this contract related to \"Warranty Duration\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Insurance",
+       "question": "Highlight the parts (if any) of this contract related to \"Insurance\".",
+       "answers": [
+        {
+         "text": "keep insurance in force",
+         "answer_start": 90
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Covenant Not to Sue",
+       "question": "Highlight the parts (if any) of this contract related to \"Covenant Not to Sue\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-BETA-SERVICE__Third Party Beneficiary",
+       "question": "Highlight the parts (if any) of this contract related to \"Third Party Beneficiary\".",
+       "answers": [],
+       "is_impossible": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "SYN-AARDVARK-COPY",
+   "paragraphs": [
+    {
+     "context": "SUPPLY AGREEMENT\n\nThis agreement is made between Alpha Works and Beta Stores.\n\nThis agreement is governed by the laws of the State of Nowhere.\n\n## Section heading written with hashes\n\nEither party may end this agreement on thirty days notice.",
+     "qas": [
+      {
+       "id": "SYN-AARDVARK-COPY__Document Name",
+       "question": "Highlight the parts (if any) of this contract related to \"Document Name\".",
+       "answers": [
+        {
+         "text": "SUPPLY AGREEMENT",
+         "answer_start": 0
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Parties",
+       "question": "Highlight the parts (if any) of this contract related to \"Parties\".",
+       "answers": [
+        {
+         "text": "Alpha Works and Beta Stores",
+         "answer_start": 49
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Agreement Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Agreement Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Effective Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Effective Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Expiration Date",
+       "question": "Highlight the parts (if any) of this contract related to \"Expiration Date\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Renewal Term",
+       "question": "Highlight the parts (if any) of this contract related to \"Renewal Term\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Notice to Terminate Renewal",
+       "question": "Highlight the parts (if any) of this contract related to \"Notice to Terminate Renewal\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Governing Law",
+       "question": "Highlight the parts (if any) of this contract related to \"Governing Law\".",
+       "answers": [
+        {
+         "text": "governed by the laws of the State of Nowhere",
+         "answer_start": 97
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Most Favored Nation",
+       "question": "Highlight the parts (if any) of this contract related to \"Most Favored Nation\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Non-Compete",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Compete\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Exclusivity",
+       "question": "Highlight the parts (if any) of this contract related to \"Exclusivity\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__No-Solicit of Customers",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Customers\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Competitive Restriction Exception",
+       "question": "Highlight the parts (if any) of this contract related to \"Competitive Restriction Exception\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__No-Solicit of Employees",
+       "question": "Highlight the parts (if any) of this contract related to \"No-Solicit of Employees\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Non-Disparagement",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Disparagement\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Termination for Convenience",
+       "question": "Highlight the parts (if any) of this contract related to \"Termination for Convenience\".",
+       "answers": [
+        {
+         "text": "Either party may end this agreement on thirty days notice.",
+         "answer_start": 184
+        }
+       ],
+       "is_impossible": false
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__ROFR/ROFO/ROFN",
+       "question": "Highlight the parts (if any) of this contract related to \"ROFR/ROFO/ROFN\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Change of Control",
+       "question": "Highlight the parts (if any) of this contract related to \"Change of Control\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Anti-Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"Anti-Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Revenue/Profit Sharing",
+       "question": "Highlight the parts (if any) of this contract related to \"Revenue/Profit Sharing\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Price Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Price Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Minimum Commitment",
+       "question": "Highlight the parts (if any) of this contract related to \"Minimum Commitment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Volume Restriction",
+       "question": "Highlight the parts (if any) of this contract related to \"Volume Restriction\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__IP Ownership Assignment",
+       "question": "Highlight the parts (if any) of this contract related to \"IP Ownership Assignment\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Joint IP Ownership",
+       "question": "Highlight the parts (if any) of this contract related to \"Joint IP Ownership\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__License Grant",
+       "question": "Highlight the parts (if any) of this contract related to \"License Grant\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Non-Transferable License",
+       "question": "Highlight the parts (if any) of this contract related to \"Non-Transferable License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Affiliate IP License-Licensor",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensor\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Affiliate IP License-Licensee",
+       "question": "Highlight the parts (if any) of this contract related to \"Affiliate IP License-Licensee\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Unlimited/All-You-Can-Eat License",
+       "question": "Highlight the parts (if any) of this contract related to \"Unlimited/All-You-Can-Eat License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Irrevocable or Perpetual License",
+       "question": "Highlight the parts (if any) of this contract related to \"Irrevocable or Perpetual License\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Source Code Escrow",
+       "question": "Highlight the parts (if any) of this contract related to \"Source Code Escrow\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Post-Termination Services",
+       "question": "Highlight the parts (if any) of this contract related to \"Post-Termination Services\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Audit Rights",
+       "question": "Highlight the parts (if any) of this contract related to \"Audit Rights\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Uncapped Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Uncapped Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Cap on Liability",
+       "question": "Highlight the parts (if any) of this contract related to \"Cap on Liability\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Liquidated Damages",
+       "question": "Highlight the parts (if any) of this contract related to \"Liquidated Damages\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Warranty Duration",
+       "question": "Highlight the parts (if any) of this contract related to \"Warranty Duration\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Insurance",
+       "question": "Highlight the parts (if any) of this contract related to \"Insurance\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Covenant Not to Sue",
+       "question": "Highlight the parts (if any) of this contract related to \"Covenant Not to Sue\".",
+       "answers": [],
+       "is_impossible": true
+      },
+      {
+       "id": "SYN-AARDVARK-COPY__Third Party Beneficiary",
+       "question": "Highlight the parts (if any) of this contract related to \"Third Party Beneficiary\".",
+       "answers": [],
+       "is_impossible": true
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

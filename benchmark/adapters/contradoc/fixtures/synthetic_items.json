@@ -1,0 +1,26 @@
+[
+  {
+    "unique id": 101,
+    "text": "The harbour bridge opened in spring. Its towers are tall. It carries two lanes each way.\n\n# A line that starts with a hash mark.\nA second line of the same paragraph sits here.\n\nThe bridge has never opened to traffic. Ferries still cross the bay.",
+    "label": "contradictory",
+    "evidence": "The bridge has never opened to traffic.",
+    "reference": ["The harbour bridge opened in spring."]
+  },
+  {
+    "unique id": 102,
+    "text": "The harbour bridge opened in spring. Its towers are tall. It carries two lanes each way.\n\n# A line that starts with a hash mark.\nA second line of the same paragraph sits here.\n\nThe bridge is painted grey. Ferries still cross the bay.",
+    "label": "not contradictory"
+  },
+  {
+    "unique id": 205,
+    "text": "A small orchard sits by the river.\r\n\r\nApples ripen there in autumn.\n   \nThe orchard has no trees at all.",
+    "label": "contradictory",
+    "evidence": "The orchard has no trees at all.",
+    "reference": "Apples ripen there in autumn."
+  },
+  {
+    "unique id": 409,
+    "text": "Only one paragraph here, and it says nothing odd.",
+    "label": "not contradictory"
+  }
+]

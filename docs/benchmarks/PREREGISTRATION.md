@@ -280,6 +280,26 @@ Passage: part
 - **SciTab**: one part only: the caption line, a blank line, then the table as a pipe-delimited Markdown table, header row first, then the separator row, then body rows, each cell's text as given with `|` written as `\|`. Field names for caption and table: PROVISIONAL.
 - **FinDVer**: the filing's paragraphs and tables in index order, one part each, a table written as SciTab's is. The part at context index k is part k when indices start at 1, and part k + 1 when they start at 0; the adapter records which, so that context index k maps to exactly one unit. Field names: PROVISIONAL.
 
+### 5.7 Readings fixed while writing the adapters (synthetic items only)
+
+The adapters under `benchmark/adapters/` were written and gate-checked on hand-written synthetic items in each benchmark's documented schema (D-019). Where this text left a choice, the adapters made the one below; C implements the same from this text.
+
+1. A source line whose first non-blank character is `#` is written with a backslash before that `#`.
+2. Part text: a carriage return before a line feed is dropped; lines are split at line feeds only; leading and trailing blank lines of a part are dropped.
+3. A document with no text is refused when bundles are built and reported.
+4. `{claim}`: each run of whitespace becomes one space; nothing is trimmed.
+5. CUAD with an empty description: the rule text ends with the category name, with no trailing space.
+6. SciTab: a line break inside a caption or a cell is written as a space.
+7. The cut rule counts tokens over the written document file, headings, label lines and the cut line included; N and M in the cut line are words of the source parts.
+8. ContraDoc grouping (section 1): the share is the distinct shared sentences over the distinct sentences of the document that has fewer; the smallest unique id is numeric order when every id is an integer, else string order; groups are computed over the whole input B-dev receives.
+9. CUAD: an irregular record with another relation together with a refusal gives present (line 2 of section 5.1 matches first); a `missing_field` record carrying the UNCERTAIN marker is a refusal, not an absence.
+10. A record whose verdict is neither `ok` nor `irregular` matches no line of section 5.1: the item is CLEAR and an adapter fault is recorded and reported.
+11. A run output with no typed-record key is not a run failure: its items are silent, an adapter fault is recorded, and the labelling step exits non-zero so the fault cannot pass unnoticed.
+12. Location: a record locates when its `unit_id` equals the gold unit id, ignoring case, counting only the irregular records that decide the FLAG; for ContraDoc the evidence measure reads B1's `evidence` string or the text of a unit B3 cites.
+13. `items.json` also carries `source_item_id` and `source_document_id` (section 0 says source ids appear only there); no arm reads it.
+14. The catch layer is reported as computed, judged, or both.
+15. Each bundle's `answer_key.json` (required by the input format) holds empty `planted`, `clean` and `twin_of`, and the gold labels under `items`.
+
 ## 6. The model-text review sample
 
 For each external benchmark: a seeded random sample of at least 50 model-written texts from the B3 holdout runs (saved model reply records, and the `explanation` and `proposed_text` of model-written findings), or all of them if there are fewer. For B's synthetic tests: every text. The seed is derived (section 4, purpose `text-review`) and so fixed before any text is read. Each text gets one verdict, read against the source document: correct, partly correct, wrong, empty, unverifiable. The reviewer is never the builder. Verdict counts are reported per benchmark and change no label.
@@ -340,9 +360,11 @@ A `loop-checker` attacks this draft, including the B1 prompt as a possible straw
 1. The exact field names of a refusal and of a run's final status, from `docs/OUTPUT_FORMAT.md`.
 2. Whether B3, under the frozen review mode, can return one document-level judgement for the ContraDoc rule and a document-level absence for a CUAD category when each rule pairs with every unit, rather than one record per unit.
 3. Whether claim figures in a SciTab or FinDVer rule are read as a band (`docs/INPUT_FORMAT.md` section 7). If they are, the count of items whose FLAG came from a band relation is reported per arm.
-4. Whether the backslash before a source `#` keeps the line from starting a unit, and whether unit positions above 99 keep their ids.
+4. Settled on synthetic bundles: Shimmer's own unit splitter keeps an escaped `\#` line inside its unit and gives `u100-p-00100` above 99 (adapters lane, S4). To be confirmed on development items.
 5. The PROVISIONAL field names for CUAD, SciTab and FinDVer, and the FinDVer subset and issuer fields.
 6. The SciTab demonstration tables (section 1) and the FinDVer test labels at the pinned commit.
 7. Computed findings on source text. Python reads every `Label: value` line, number and pipe table inside a part as fields and figures, and computes sums, products, bands and blank cells on them, whatever the rules say (`docs/INPUT_FORMAT.md` section 7, "Figure audit"). Such a finding is attributed to the paired rule sharing the most words with its labels, ties to the first in reading order (section 9 of the input format); with every rule naming only `passage`, that is the first rule of the bundle. Settle on development items: the count per benchmark and arm of irregular records whose relation is `sum_mismatch`, `product_mismatch` or `missing_field` from blank cells, and whether they are excluded from the item mapping (they are not a check of the item's claim) or kept. Dates and identifiers with digits read as figures with no measure (open item 16, defect 2) are part of this count.
 8. The main reading agent: which model and output allowance B1 uses and the cut rule counts with. The agent registry names a cloud model for the reading agent while the local profile and the final-model configuration name local checkpoints, and the output allowance differs by path (2048 by default, other bounds on the optimized path). One model id, checkpoint digest and output allowance are pinned in VERSIONS.md before sampling (section 4), and B1 is passed that allowance explicitly.
 9. Where the typed records live in a run's output. `review_data.json` holds amendments without each finding's `source_rule_id` and `record_verdict`; section 5.1 needs them. `docs/OUTPUT_FORMAT.md` names the key that carries the typed records (B2 writes them under `findings`), and the pipeline and B2 agree on it, before C0.
+10. Claim rules may not pair through `Passage` alone: Shimmer reads table headers and caption lines (such as `Table 1: ...`) as field labels, so a SciTab or FinDVer claim using those words names them and pairs only with the units carrying them (section 5.5 says every rule pairs with every unit). Settle on development items: count items whose rule pairs with fewer units than the document has, and either keep the behaviour (it is Shimmer's) or change the template.
+11. Refusals in the pairing map name the registry id (`CONV-001`), not the operator's own id, so a pairing-map refusal never matches an item's rule today. Settle before C0: map the registry id to the operator's id from the run's own convention registry, or rely only on UNCERTAIN markers on records.
