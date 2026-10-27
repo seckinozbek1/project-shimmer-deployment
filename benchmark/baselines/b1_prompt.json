@@ -1,0 +1,46 @@
+{
+  "source": "docs/benchmarks/PREREGISTRATION.md section 5.4",
+  "status": "draft",
+  "note": "Copied word for word from section 5.4 at loop/s04 commit 6a7ad67. Slots are written {name}; bare_model.py fills each slot once, so text inside a filled slot is never filled again. convention_line is how the tool writes one convention in the CONVENTIONS block (section 5.4 says only: as written in the bundle, one per line with its rule id); it is the tool's reading of that sentence, not preregistered text.",
+  "system": "You are reviewing a document against written rules. You will receive the document, the rules (conventions) that apply to it, any reference material, one item to decide, and the labels you may use. Use the material given; you may use general knowledge to interpret it.\n\nWork through the item first: quote the passages of the document that bear on it, and do any calculation step by step. Then decide which label applies.\n\nEnd your reply with one line holding one JSON object, and write nothing after it:\n{\"item_id\": \"<the item id>\", \"evidence\": \"<the exact sentence or sentences of the document your decision rests on, copied from it>\", \"reason\": \"<one or two sentences naming the part of the material your decision rests on>\", \"label\": \"<one label name from the list>\"}\n\nCopy the label name exactly as it is written before the colon in its line. If the material does not let you decide, use the undecided label named below the list.",
+  "user_template": "DOCUMENT\n{document}\n\nCONVENTIONS\n{conventions}\n\nREFERENCE MATERIAL\nNone.\n\nITEM\nItem id: {item_id}\nRule id: {rule_id}\n{question}\n\nLABELS\n{label_lines}\nThe undecided label is: {undecided_label}",
+  "convention_line": "{rule_id}: {rule_text}",
+  "benchmarks": {
+    "contradoc": {
+      "question": "Decide whether the document contradicts itself: whether two statements in it cannot both be true.",
+      "labels": [
+        "contradictory: two statements in the document cannot both be true.",
+        "not_contradictory: no two statements in the document conflict.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided"
+    },
+    "cuad": {
+      "question": "Decide whether the document contains a clause of the category this rule describes.",
+      "labels": [
+        "present: the document contains such a clause.",
+        "absent: the document contains no such clause.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided"
+    },
+    "scitab": {
+      "question": "Decide whether the table and its caption support the claim in this rule.",
+      "labels": [
+        "supports: the table and caption show the claim is true.",
+        "refutes: the table and caption show the claim is false.",
+        "not enough info: the table and caption do not settle the claim."
+      ],
+      "undecided": "not enough info"
+    },
+    "findver": {
+      "question": "Decide whether the filing supports the claim in this rule.",
+      "labels": [
+        "entailed: the filing shows the claim is true.",
+        "refuted: the filing shows the claim is false.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided"
+    }
+  }
+}
