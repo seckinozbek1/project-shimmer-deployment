@@ -318,7 +318,7 @@ Fields follow S4a. "Fit" applies the V6 criterion.
 - **ContractNLI**: click-through terms of use on the download page; accepted by the operator on 27 October 2026 (D-S3), so it is chosen, and only role B downloads it.
 - **LLM-AggreFact**: gated by a click and contact details; CC BY-ND 4.0; evaluation only. Not accepted.
 
-The loop accepts no terms itself: ContractNLI's were accepted by the operator (D-S3). Both are recorded, with their exact terms, in the operator's private notes (`FOR_SECKIN.md`, section on the two benchmarks that need an acceptance), as candidates for a later run. Those notes also list every NC or ND item found: LLM-AggreFact (ND), the NC LegalBench families, and SummEdits' samsum upstream (NC and ND).
+The loop accepts no terms itself: ContractNLI's were accepted by the operator (D-S3). Both are recorded, with their exact terms, in the operator's private notes (`FOR_SECKIN.md`, section on the two benchmarks that need an acceptance); LLM-AggreFact stays there as a candidate for a later run. Those notes also list every NC or ND item found: LLM-AggreFact (ND), the NC LegalBench families, and SummEdits' samsum upstream (NC and ND).
 
 ## Dry-run results (development)
 
