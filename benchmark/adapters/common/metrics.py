@@ -11,9 +11,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import bundle, mapping
+from . import bundle, ids, mapping
 
 ABSTAIN = mapping.ABSTAIN
+# Section 3.2: B1's quoted sentence may contain an evidence unit's text only when that text
+# holds at least this many words (the one word rule of section 5.6), so a span such as a
+# list marker is never located by any sentence that happens to contain it. On the
+# ContractNLI development items 10 of the 95 Contradiction items have an evidence part under
+# 5 words and none has every evidence part under 5 (private run summary
+# round3_development_counts.json).
+REVERSE_CONTAINMENT_MIN_WORDS = 5
 NOT_COMPARABLE = ("Not comparable with published numbers: computed on this preregistration's "
                   "split, sample and mapping, and where marked on a measure other than the "
                   "official one.")
@@ -145,22 +152,27 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
         compared without regard to case). B1: any one sentence of its `evidence` string
         (split by the section 1 sentence rule), whitespace-normalised, lies in a unit
         holding the evidence; on a benchmark that marks evidence as parts (FinDVer,
-        ContractNLI), it may also contain an evidence unit's text, or lie in the evidence
-        units' texts joined in order (D-039 item 10)."""
+        ContractNLI), it may also contain an evidence unit's text of at least
+        REVERSE_CONTAINMENT_MIN_WORDS words, or lie in the evidence units' texts joined in
+        order (D-039 item 10). A unit's text is as `bundle.read_units` reads it back: the
+        lines after the label line up to the next heading, unescaped, leading and trailing
+        blank lines dropped, the cut line included where the unit was cut."""
         evidence = {u.casefold() for u in answers[row["item_id"]]["evidence_unit_ids"]}
         if row["class"] != mapping.FLAG or not evidence:
             return False
         if row["arm"] != "B1":
             return bool(evidence & {u.casefold() for u in row["cited_unit_ids"]})
         quoted = bundle.sentences(row.get("evidence") or "")
-        texts = [bundle.normalise_space(unit_text(row["document_id"], u))
-                 for u in sorted(evidence, key=unit_position)]
+        raw = [unit_text(row["document_id"], u) for u in sorted(evidence, key=unit_position)]
+        texts = [bundle.normalise_space(t) for t in raw]
         if any(s in t for s in quoted for t in texts):
             return True
         if not spec.unit_evidence:
             return False
         joined = " ".join(t for t in texts if t)
-        return any((t and t in s) or s in joined for s in quoted for t in texts)
+        long_enough = [t for t, r in zip(texts, raw)
+                       if t and ids.word_count(r) >= REVERSE_CONTAINMENT_MIN_WORDS]
+        return any(t in s for s in quoted for t in long_enough) or any(s in joined for s in quoted)
 
     def unit_text(document_id, uid):
         units = unit_cache.setdefault(document_id, {

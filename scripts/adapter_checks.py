@@ -20,16 +20,22 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              empty document is skipped; one word rule (section 5.6, Words) counts every
              part, band and cut line; ContractNLI makes one part per span of the
              agreement's own span list, or merged parts under the cost fallback; the
-             bands command gives every document's words and band with no build; listed
-             demonstration documents are excluded
+             bands command gives every document's words, band and side with no build,
+             and band totals for the holdout pool alone and the development side apart,
+             a FinDVer test filing testmini also holds removed (a mixed-side input);
+             listed demonstration documents are excluded
   cli        the command line in a fresh `-I` interpreter from a copied tree (no
              repository on the path): a FinDVer build with every budget option, its own
              --reports option wired through, a table that already has a separator row
              kept as it is, the token counter's SHA-256 recorded, an option the adapter
-             does not take refused, and the bands command
+             does not take refused; SciTab with --exclude and CUAD holdout builds; a
+             ContractNLI holdout build with --frozen-sha256 and --parts merged (a wrong
+             hash and a development build of a non-frozen file refused); bands and split
   development  counts only, on the B-dev development items when external/ holds them
-             (skipped otherwise): every adapter builds its development file, and the
-             counts and readings recorded in the preregistration and SELECTION.md hold
+             (skipped otherwise): every adapter builds its development file; the counts
+             the preregistration lists in section 5.7 hold (ContractNLI parts, spans,
+             splitter and short evidence parts; ContraDoc grouping, one-part documents
+             and evidence sentences; FinDVer table entries, CIKs and development bands)
   split      the hash split rule (SHA-256 of the document's split key, mod 5) is
              recomputed here independently, and every item of a document falls on
              that document's side, including where the item's own id would not
@@ -47,14 +53,19 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              refusal, silence, irregular, ok, superseded revisions, CUAD missing_field
              against another relation, prior relations, a settled answer on one unit
              against a refusal on another, figure-audit records in one-rule and
-             several-rule bundles), for B2, B1 and B0, with S-1, S-2 and S-3; B3 is
-             refused while the typed-record key is unsettled; the catch layer is read
-             from the WRITTEN-BY-A stamp alone, compared exactly
+             several-rule bundles), for B2, B1 and B0, with S-1, S-2, S-3 and S-5; a
+             figure-audit record is a figure-audit relation stamped python on every
+             benchmark (band records decide their rule's item, a model-written record
+             always decides, a computed blank-cell record on a CUAD-shaped bundle does
+             not); S-5 puts a refusal before an ok record; B3 is refused while the
+             typed-record key is unsettled; the catch layer is read from the
+             WRITTEN-BY-A stamp alone, compared exactly
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
-             (B1 by containment either way on a benchmark that marks parts) and false
-             positives, and S-4 leaves out the items whose evidence lies beyond the cut
+             (B1 by containment either way on a benchmark that marks parts, the reverse
+             way only for a unit of at least 5 words) and false positives, and S-4
+             leaves out the items whose evidence lies beyond the cut
 """
 from __future__ import annotations
 
@@ -256,7 +267,7 @@ class BuildChecks(_Case):
         data.mkdir(parents=True)
         reports.mkdir()
         (reports / "ZQX-2024-03-31_10-Q.json").write_text(json.dumps({
-            "url": "https://www.sec.gov/Archives/edgar/data/1000003/x/zqx-10q.htm",
+            "url": "https://filings.example.invalid/Archives/edgar/data/9990000003/x/zqx-10q.htm",
             "context": [{"id": 0, "type": "paragraph",
                          "context": " ".join("w%d" % i for i in range(1, 21))}]}), encoding="utf-8")
         (data / "testmini.json").write_text(json.dumps([{
@@ -426,7 +437,8 @@ class BuildChecks(_Case):
         self.assertEqual([p["source"] for p in record["parts"]],
                          [{"context_index": 0, "kind": "paragraph"}, {"context_index": 1, "kind": "table"},
                           {"context_index": 2, "kind": "paragraph"}])
-        self.assertEqual((record["issuer_cik"], record["context_index_base"]), (1000001, 0))
+        # an impossible CIK on a reserved host: no real filer is named by a fixture
+        self.assertEqual((record["issuer_cik"], record["context_index_base"]), (9990000001, 0))
         self.assertEqual(record["report_sha256"], hashlib.sha256(
             _fixture("findver", "financial_reports/ZQX-2024-01-31_10-K.json").read_bytes()).hexdigest())
         text = (self.root / "b" / doc / "context" / (doc + ".md")).read_text(encoding="utf-8")
@@ -623,21 +635,85 @@ class BuildChecks(_Case):
         # D-039 item 7: `bands` gives every document's words and band by the one word rule,
         # over a whole input, with no build: the same figures a build records in parts.json,
         # and per band the documents, items and median words.
+        # Each document also carries the side a build records, and the band totals are the
+        # holdout pool's alone, the development side's apart (S4 round 3, decision C).
         c = _common()
+        contractnli = _adapter("contractnli")
         for name in NAMES:
             options = {"reports": _fixture("findver", "financial_reports")} if name == "findver" else {}
-            result = c["cli"].bands(_adapter(name), _source(name), **options)
+            with mock.patch.object(contractnli, "FROZEN_DEV_SHA256",
+                                   hashlib.sha256(_source("contractnli").read_bytes()).hexdigest()):
+                result = c["cli"].bands(_adapter(name), _source(name), **options)
             _build(name, self.root / name)
             built = {d["document_id"]: d for d in _json(self.root / name / "parts.json")["documents"]}
-            self.assertEqual({r["document_id"]: (r["words"], r["length_band"]) for r in result["documents"]},
-                             {k: (d["source_words"], d["length_band"]) for k, d in built.items()}, name)
-            self.assertEqual(sum(b["documents"] for b in result["bands"].values()), len(built), name)
-            self.assertEqual(sum(b["items"] for b in result["bands"].values()),
-                             len(_json(self.root / name / "items.json")["items"]), name)
+            if name == "contractnli":
+                # the synthetic build lifts the frozen-file check; bands never does, so its
+                # side is the patched frozen file's (development)
+                built = {k: dict(d, side="development") for k, d in built.items()}
+            self.assertEqual({r["document_id"]: (r["words"], r["length_band"], r["side"])
+                              for r in result["documents"]},
+                             {k: (d["source_words"], d["length_band"], d["side"]) for k, d in built.items()}, name)
+            items = _json(self.root / name / "items.json")["items"]
+            for key, side in (("holdout_pool_bands", "holdout"), ("development_bands", "development")):
+                mine = {k for k, d in built.items() if d["side"] == side}
+                self.assertEqual(sum(b["documents"] for b in result[key].values()), len(mine), name + key)
+                self.assertEqual(sum(b["items"] for b in result[key].values()),
+                                 sum(1 for i in items if i["document_id"] in mine), name + key)
             self.assertEqual(result["input_sha256"], hashlib.sha256(_source(name).read_bytes()).hexdigest())
         result = c["cli"].bands(_adapter("contradoc"), _source("contradoc"))
-        words = sorted(r["words"] for r in result["documents"] if r["length_band"] == "A")
-        self.assertEqual(result["bands"]["A"]["median_words"], (words[1] + words[2]) / 2)
+        self.assertEqual(result["documents_by_side"], {"development": 1, "holdout": 3})
+        words = sorted(r["words"] for r in result["documents"]
+                       if r["length_band"] == "A" and r["side"] == "holdout")
+        self.assertEqual(result["holdout_pool_bands"]["A"]["median_words"], words[1])
+        # ContractNLI's side is its frozen file's, checked as a build checks it
+        with self.assertRaisesRegex(ValueError, "not the frozen ContractNLI file"):
+            c["cli"].bands(contractnli, _source("contractnli"))
+        digest = hashlib.sha256(_source("contractnli").read_bytes()).hexdigest()
+        result = c["cli"].bands(contractnli, _source("contractnli"), frozen_sha256=digest)
+        self.assertEqual(result["documents_by_side"], {"holdout": 2})
+        with self.assertRaisesRegex(ValueError, "options this adapter does not take: testmini"):
+            c["cli"].bands(_adapter("scitab"), _source("scitab"), testmini=_source("findver"))
+
+    def test_bands_on_a_mixed_side_findver_input(self):
+        # Decision C: one input holding a development filing, a holdout filing and a holdout
+        # filing that testmini also holds. The band totals count the holdout pool alone (the
+        # overlap removed, as section 1 removes it) and the development side apart; without
+        # --testmini a holdout input is refused.
+        c = _common()
+        records = _json(_source("findver"))
+        reports = self.root / "financial_reports"
+        shutil.copytree(_fixture("findver", "financial_reports"), reports)
+        shutil.copy2(reports / "ZQX-2024-01-31_10-K.json", reports / "ZQW-2024-03-31_10-Q.json")
+        dev = [r for r in records if r["report"] == "ZQX-2024-01-31_10-K.json"]
+        pool = [dict(r, split="test") for r in records if r["report"] == "ZQY-WT-2024-02-29_10-Q.json"]
+        overlap = [dict(r, example_id=r["example_id"] + "-w", report="ZQW-2024-03-31_10-Q.json", split="test")
+                   for r in dev[:2]]
+        data = self.root / "data"
+        data.mkdir()
+        mixed, mini = data / "mixed.json", data / "mini.json"
+        mixed.write_text(json.dumps(dev + pool + overlap), encoding="utf-8")
+        mini.write_text(json.dumps(dev + [dict(r, split="testmini") for r in overlap]), encoding="utf-8")
+        result = c["cli"].bands(_adapter("findver"), mixed, testmini=mini, reports=reports)
+        sides = {r["source_document_id"]: (r["side"], r["items"]) for r in result["documents"]}
+        self.assertEqual(sides, {"ZQX-2024-01-31_10-K.json": ("development", len(dev)),
+                                 "ZQY-WT-2024-02-29_10-Q.json": ("holdout", len(pool)),
+                                 "ZQW-2024-03-31_10-Q.json": ("removed_overlap", len(overlap))})
+        self.assertEqual(result["documents_by_side"], {"development": 1, "holdout": 1, "removed_overlap": 1})
+        totals = lambda key: (sum(b["documents"] for b in result[key].values()),
+                              sum(b["items"] for b in result[key].values()))
+        self.assertEqual(totals("holdout_pool_bands"), (1, len(pool)))
+        self.assertEqual(totals("development_bands"), (1, len(dev)))
+        self.assertEqual(result["testmini_sha256"], hashlib.sha256(mini.read_bytes()).hexdigest())
+        with self.assertRaisesRegex(ValueError, "needs --testmini"):
+            c["cli"].bands(_adapter("findver"), mixed, reports=reports)
+        # the command line takes --testmini and prints the two totals
+        out = self.root / "bands.json"
+        with contextlib.redirect_stdout(io.StringIO()) as printed:
+            code = c["cli"].main(_adapter("findver"), ["bands", "--input", str(mixed), "--testmini", str(mini),
+                                                       "--reports", str(reports), "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(printed.getvalue())["holdout_pool_bands"], result["holdout_pool_bands"])
+        self.assertEqual(_json(out)["documents_by_side"], result["documents_by_side"])
 
     def test_demonstration_documents_are_excluded(self):
         # D-039 item 15, section 1: the documents a benchmark's own paper prints as
@@ -1000,7 +1076,7 @@ class MappingChecks(_Case):
                 with self.assertRaises(c["mapping"].Refused, msg=name + " " + arm):
                     c["cli"].label(adapter, items, arm, runs)
             for arm, labels in arms.items():
-                for variant in ("", " S-1", " S-2", " S-3"):
+                for variant in ("", " S-1", " S-2", " S-3", " S-5"):
                     key = arm + variant
                     analysis = variant.strip() or "primary"
                     if key in cases["expected"]:
@@ -1057,36 +1133,108 @@ class MappingChecks(_Case):
         run = {"failure": False, "records": [refusal, record("ok", "u02")], "pairing_refusals": []}
         self.assertEqual(spec.label(m.classify(spec, "CONV-X-1", run)["class"]), "entailment")
 
-    def test_figure_audit_records_decide_only_in_a_one_rule_bundle(self):
-        # D-039 item 3: a record of relation missing_field, below_band, above_band,
-        # sum_mismatch or product_mismatch decides an item only when the bundle has one
-        # rule. In a several-rule bundle a blank-cell record on the first rule leaves that
-        # rule's item CLEAR in the primary analysis (counted unattached), and S-3 attributes
-        # it. CUAD is not applied (its absent class is read from missing_field alone).
+    def test_figure_audit_records_one_definition_for_every_benchmark(self):
+        # Section 0 and 5.1 (S4 round 3, lead decision A): a figure-audit record is a record
+        # of relation missing_field, below_band, above_band, sum_mismatch or product_mismatch
+        # AND stamped `written_by: python`. In a several-rule bundle Python's missing_field,
+        # sum_mismatch and product_mismatch records (attributed by shared words) decide no
+        # item and are unattached; S-3 attributes them. A band record decides the item of
+        # the rule that produced it. A model-written record of any relation decides the item
+        # of the rule it was posted for. One rule for all five benchmarks, CUAD included.
         m = _common()["mapping"]
-        for relation in m.FIGURE_AUDIT_RELATIONS:
-            blank = {"item_id": "rec-blank", "source_rule_id": "CONV-A-1", "unit_id": "u02-p-00002",
-                     "relation": relation, "record_verdict": "irregular", "written_by": "python"}
-            run = {"failure": False, "records": [blank], "pairing_refusals": []}
-            for name in ("scitab", "findver", "contractnli"):
-                spec = _adapter(name).SPEC
-                self.assertEqual(m.classify(spec, "CONV-A-1", run, rule_count=1)["class"], "FLAG", name)
+        cuad_rules = ["CONV-CUAD-%02d" % k for k in range(1, 42)]
+        for name in NAMES:
+            spec = _adapter(name).SPEC
+            flag = "FLAG"
+            for relation in m.FIGURE_AUDIT_RELATIONS:
+                # CUAD's FLAG (absent) is read from missing_field alone (section 5.2)
+                want = flag if (name != "cuad" or relation == "missing_field") else "CLEAR"
+                python = {"item_id": "rec-p", "source_rule_id": "CONV-A-1", "unit_id": "u02-p-00002",
+                          "relation": relation, "record_verdict": "irregular", "written_by": "python"}
+                run = {"failure": False, "records": [python], "pairing_refusals": []}
+                self.assertTrue(m.is_figure_audit(python))
+                self.assertEqual(m.classify(spec, "CONV-A-1", run, rule_count=1)["class"], want,
+                                 name + " one rule " + relation)
                 row = m.classify(spec, "CONV-A-1", run, rule_count=2)
-                self.assertEqual((row["class"], row["basis"], row["figure_audit_set_aside"]),
-                                 ("CLEAR", "silent", 1), name + " " + relation)
-                self.assertEqual(m.classify(spec, "CONV-A-1", run, rule_count=2,
-                                            attribute_figure_audit=True)["class"], "FLAG", name)
-                self.assertEqual(m.unattached(run, ["CONV-A-1", "CONV-A-2"], self.root, "d",
-                                              True)["figure_audit"], 1)
-        judged = {"item_id": "rec-j", "source_rule_id": "CONV-A-1", "unit_id": "u02-p-00002",
-                  "relation": "", "record_verdict": "irregular", "written_by": "model"}
-        run = {"failure": False, "records": [judged], "pairing_refusals": []}
-        self.assertEqual(m.classify(_adapter("findver").SPEC, "CONV-A-1", run, rule_count=2)["class"], "FLAG")
+                if relation in m.BAND_RELATIONS:
+                    # a band record decides its producing rule's item, several rules or one
+                    self.assertEqual((row["class"], row["figure_audit_set_aside"]), (want, 0),
+                                     name + " band " + relation)
+                    self.assertEqual(m.unattached(run, ["CONV-A-1", "CONV-A-2"], self.root, "d",
+                                                  True)["figure_audit"], 0, name + " " + relation)
+                else:
+                    self.assertEqual((row["class"], row["basis"], row["figure_audit_set_aside"]),
+                                     ("CLEAR", "silent", 1), name + " " + relation)
+                    self.assertEqual(m.classify(spec, "CONV-A-1", run, rule_count=2,
+                                                attribute_figure_audit=True)["class"], want, name)
+                    self.assertEqual(m.unattached(run, ["CONV-A-1", "CONV-A-2"], self.root, "d",
+                                                  True)["figure_audit"], 1, name + " " + relation)
+                # the same relation written by a model is no figure-audit record: it decides
+                for stamp in ({"written_by": "model"}, {}, {"written_by": "Python"}):
+                    judged = dict(python, **{"item_id": "rec-j", "absence_path": "judged"})
+                    judged.pop("written_by")
+                    judged.update(stamp)
+                    run = {"failure": False, "records": [judged], "pairing_refusals": []}
+                    self.assertFalse(m.is_figure_audit(judged))
+                    row = m.classify(spec, "CONV-A-1", run, rule_count=41)
+                    self.assertEqual((row["class"], row["figure_audit_set_aside"]), (want, 0),
+                                     "%s judged %s %s" % (name, relation, stamp))
+        # The CUAD-shaped bundle: 41 rules; a computed blank-cell record on the first rule
+        # decides nothing (present) and is unattached; a judged missing_field decides its
+        # own rule's item (absent); S-3 attributes the computed one (absent).
         cuad = _adapter("cuad").SPEC
-        self.assertFalse(cuad.figure_audit_unattached)
-        blank = dict(judged, relation="missing_field", written_by="python")
-        run = {"failure": False, "records": [blank], "pairing_refusals": []}
-        self.assertEqual(m.classify(cuad, "CONV-A-1", run, rule_count=41)["class"], "FLAG")
+        blank = {"item_id": "rec-b", "source_rule_id": cuad_rules[0], "unit_id": "u01-p-00001",
+                 "relation": "missing_field", "record_verdict": "irregular", "written_by": "python",
+                 "absence_path": "computed"}
+        judged = {"item_id": "rec-j", "source_rule_id": cuad_rules[6], "unit_id": "u03-p-00003",
+                  "relation": "missing_field", "record_verdict": "irregular", "written_by": "model",
+                  "absence_path": "judged"}
+        run = {"failure": False, "records": [blank, judged], "pairing_refusals": []}
+        first = m.classify(cuad, cuad_rules[0], run, rule_count=41)
+        self.assertEqual((cuad.label(first["class"]), first["basis"], first["figure_audit_set_aside"]),
+                         ("present", "silent", 1))
+        self.assertEqual(cuad.label(m.classify(cuad, cuad_rules[0], run, rule_count=41,
+                                                attribute_figure_audit=True)["class"]), "absent")
+        seventh = m.classify(cuad, cuad_rules[6], run, rule_count=41)
+        self.assertEqual((cuad.label(seventh["class"]), seventh["layer"]), ("absent", "judged"))
+        self.assertEqual(m.unattached(run, cuad_rules, self.root, "d", True)["figure_audit"], 1)
+        self.assertFalse(hasattr(cuad, "figure_audit_unattached"), "no per-benchmark exception")
+
+    def test_sensitivity_s5_puts_a_refusal_before_an_ok_record(self):
+        # Section 5.1, S-5 (lead decision B): the earlier order, irregular, then a refusal,
+        # then ok, then silence, for every pipeline arm on all five benchmarks; B0 and B1
+        # unchanged. The primary order (ok before refusal) is untouched by it.
+        m = _common()["mapping"]
+        refusal = {"item_id": "r1", "source_rule_id": "CONV-X-1", "unit_id": "u01",
+                   "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"}
+        ok = {"item_id": "r2", "source_rule_id": "CONV-X-1", "unit_id": "u02",
+              "relation": "", "record_verdict": "ok"}
+        bad = {"item_id": "r3", "source_rule_id": "CONV-X-1", "unit_id": "u03",
+               "relation": "", "record_verdict": "irregular"}
+        cases = [([refusal, ok], "CLEAR", "UNDECIDED"), ([refusal, ok, bad], "FLAG", "FLAG"),
+                 ([ok], "CLEAR", "CLEAR"), ([refusal], "UNDECIDED", "UNDECIDED"), ([], "CLEAR", "CLEAR")]
+        for name in NAMES:
+            spec = _adapter(name).SPEC
+            for records, primary, s5 in cases:
+                run = {"failure": False, "records": records, "pairing_refusals": []}
+                if name == "cuad" and primary == "FLAG":
+                    primary = s5 = "CLEAR"      # an irregular record with no missing_field is present
+                got = (m.classify(spec, "CONV-X-1", run)["class"],
+                       m.classify(spec, "CONV-X-1", run, refusal_first=True)["class"])
+                self.assertEqual(got, (primary, s5), "%s %d records" % (name, len(records)))
+            row = m.classify(spec, "CONV-X-1", {"failure": False, "records": [refusal, ok],
+                                                 "pairing_refusals": []})
+            self.assertTrue(row["ok_over_refusal"], name)
+        # through the label command: an S-5 analysis beside the others; B0 and B1 unchanged
+        c = _common()
+        cases = _json(_fixture("contractnli", "mapping_cases.json"))
+        items, runs, b1 = _materialise(cases, self.root / "s5")
+        b2 = c["cli"].label(_adapter("contractnli"), items, "B2", runs)
+        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "primary"])
+        for arm, folder in (("B1", b1), ("B0", None)):
+            labels = c["cli"].label(_adapter("contractnli"), items, arm, folder)
+            self.assertEqual([r["class"] for r in labels["S-5"]["labels"]],
+                             [r["class"] for r in labels["primary"]["labels"]], arm)
 
     def test_catch_layer_reads_the_written_by_stamp(self):
         # Section 3.6 (D-039 item 16): the WRITTEN-BY-A stamp alone decides the layer,
@@ -1291,6 +1439,16 @@ class MetricChecks(_Case):
         self.assertEqual((location["value"], location["flag_items_measurable"]), (0.5, 2))
         self.assertEqual(score("with its   employees who need")["value"], 0.5)
         self.assertEqual(score("The orchard is green.")["value"], 0.0)
+        # Adversarial round 3, item 6: the reverse branch (a quoted sentence containing an
+        # evidence unit's text) needs a unit text of at least REVERSE_CONTAINMENT_MIN_WORDS
+        # words (5). Part 4 holds 8 words; with the minimum raised above 8 the same sentence
+        # no longer locates the item, while a quote inside the unit still does.
+        self.assertEqual(c["metrics"].REVERSE_CONTAINMENT_MIN_WORDS, 5)
+        with mock.patch.object(c["metrics"], "REVERSE_CONTAINMENT_MIN_WORDS", 9):
+            self.assertEqual(score(sentence)["value"], 0.0)
+            self.assertEqual(score("with its   employees who need")["value"], 0.5)
+        with mock.patch.object(c["metrics"], "REVERSE_CONTAINMENT_MIN_WORDS", 8):
+            self.assertEqual(score(sentence)["value"], 0.5)
 
     def test_cut_sensitivity_leaves_out_items_with_evidence_beyond_the_cut(self):
         # S-4 (section 5.3, D-039 item 8): the primary labels without the items parts.json
@@ -1302,7 +1460,7 @@ class MetricChecks(_Case):
                token_counter=WordCounter(100))
         items = self.root / "cut" / "items.json"
         result = c["cli"].score(adapter, c["cli"].label(adapter, items, "B0"), self.root / "cut")
-        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "primary"])
+        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "primary"])
         self.assertEqual((result["primary"]["decisions"], result["S-4"]["decisions"]), (4, 3))
         self.assertEqual((result["primary"]["items_evidence_beyond_cut"],
                           result["S-4"]["items_evidence_beyond_cut"]), (1, 0))
@@ -1388,13 +1546,67 @@ class CliChecks(_Case):
         code, stdout, stderr = self._cli("contradoc", "bands", "--input", fixtures / "synthetic_items.json",
                                          "--out", self.root / "bands.json")
         self.assertEqual(code, 0, stderr)
-        self.assertEqual(sum(b["documents"] for b in json.loads(stdout)["bands"].values()), 4)
+        printed = json.loads(stdout)
+        self.assertEqual(sum(b["documents"] for key in ("holdout_pool_bands", "development_bands")
+                             for b in printed[key].values()), 4)
         self.assertEqual(len(_json(self.root / "bands.json")["documents"]), 4)
         code, _stdout, stderr = self._cli("contradoc", "split", "--input", fixtures / "synthetic_items.json",
                                           "--out", self.root / "split.json")
         self.assertEqual(code, 0, stderr)
         self.assertEqual(len(_json(self.root / "split.json")["documents"]), 4)
         self.assertNotIn(str(ROOT / "scripts"), stderr)
+
+    def _budget(self):
+        return ["--max-context", 5000, "--output-allowance", 10, "--token-counter", self.counter]
+
+    def test_scitab_and_cuad_builds_with_exclude_from_a_copied_tree(self):
+        # Adversarial round 3, item 9: the SciTab and CUAD builds and --exclude through the
+        # command line. The SciTab fixture holds two holdout tables and one development
+        # table; listing the development one makes a holdout build possible, and parts.json
+        # records the list's SHA-256 and what it removed.
+        fixtures = self.tree / "adapters" / "scitab" / "fixtures"
+        listed = self.root / "exclude.json"
+        listed.write_text(json.dumps({"source_document_ids": ["syn-tab-3"]}), encoding="utf-8")
+        code, _out, stderr = self._cli("scitab", "build", "--input", fixtures / "synthetic_items.json",
+                                       "--out", self.root / "s1", "--side", "holdout", *self._budget())
+        self.assertEqual((code, "not on the declared side holdout" in stderr), (4, True), stderr)
+        code, stdout, stderr = self._cli("scitab", "build", "--input", fixtures / "synthetic_items.json",
+                                         "--out", self.root / "s2", "--side", "holdout", "--exclude", listed,
+                                         *self._budget())
+        self.assertEqual(code, 0, stderr)
+        record = _json(self.root / "s2" / "parts.json")
+        self.assertEqual(sorted(d["source_document_id"] for d in record["documents"]), ["syn-tab-1", "syn-tab-2"])
+        self.assertEqual([r["source_document_id"] for r in record["excluded_documents"]], ["syn-tab-3"])
+        self.assertEqual(record["exclusion_sha256"], hashlib.sha256(listed.read_bytes()).hexdigest())
+        cuad = self.tree / "adapters" / "cuad" / "fixtures" / "synthetic_items.json"
+        code, stdout, stderr = self._cli("cuad", "build", "--input", cuad, "--out", self.root / "c",
+                                         "--side", "holdout", *self._budget())
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(json.loads(stdout)["documents"], 2)
+        self.assertEqual(len(_json(self.root / "c" / "items.json")["items"]), 2 * 41)
+
+    def test_contractnli_frozen_file_and_merged_parts_from_a_copied_tree(self):
+        # Adversarial round 3, item 9: --frozen-sha256 and --parts merged through the command
+        # line. The fixture is no frozen development file, so a development build refuses
+        # it; as a holdout input it is accepted only under its own SHA-256.
+        fixture = self.tree / "adapters" / "contractnli" / "fixtures" / "synthetic_items.json"
+        digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        code, _out, stderr = self._cli("contractnli", "build", "--input", fixture, "--out", self.root / "d",
+                                       "--side", "development", *self._budget())
+        self.assertEqual((code, "not the frozen ContractNLI file" in stderr), (4, True), stderr)
+        code, _out, stderr = self._cli("contractnli", "build", "--input", fixture, "--out", self.root / "w",
+                                       "--side", "holdout", "--frozen-sha256", "0" * 64, *self._budget())
+        self.assertEqual((code, "not the frozen ContractNLI file" in stderr), (4, True), stderr)
+        code, stdout, stderr = self._cli("contractnli", "build", "--input", fixture, "--out", self.root / "h",
+                                         "--side", "holdout", "--frozen-sha256", digest, "--parts", "merged",
+                                         *self._budget())
+        self.assertEqual(code, 0, stderr)
+        record = _json(self.root / "h" / "parts.json")
+        self.assertEqual(record["input_check"], {"input_sha256": digest, "frozen_for": "holdout"})
+        self.assertEqual({(d["part_rule"], d["side"]) for d in record["documents"]}, {("merged", "holdout")})
+        code, stdout, stderr = self._cli("contractnli", "bands", "--input", fixture, "--frozen-sha256", digest)
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(json.loads(stdout)["documents_by_side"], {"holdout": 2})
 
 
 # ---------------------------------------------------------------------------
@@ -1452,6 +1664,68 @@ class DevelopmentChecks(_Case):
         self.assertEqual((len(docs), len(items)), (255, 700))
         self.assertTrue(all(d["issuer_cik"] for d in docs))
 
+    # Claims round 3, items 2 and 3: the remaining figures the preregistration and
+    # SELECTION.md cite from the development items, held here (counts only).
+
+    def test_contradoc_one_part_documents_and_evidence(self):
+        source = _dev("contradoc", "ContraDoc.development.json")
+        frozen = _dev("contradoc", "contradoc_split_development.json")
+        if not (source.is_file() and frozen.is_file()):
+            self.skipTest("no ContraDoc development file or B-dev split file")
+        adapter, c = _adapter("contradoc"), _common()
+        docs = adapter.documents(adapter.read_source(source), {"development": True, "assignment": str(frozen)})
+        flag = [d for d in docs if d["items"][0]["gold"] == "contradictory"]
+        self.assertEqual((len(docs), sum(len(d["parts"]) == 1 for d in docs)), (184, 123))
+        self.assertEqual((len(flag), sum(len(d["parts"]) == 1 for d in flag)), (103, 64))
+        # every contradictory document's evidence sentence lies inside a single part
+        self.assertTrue(all(any(c["bundle"].normalise_space(p["text"]).find(
+            d["items"][0]["extra"]["evidence_sentence"]) >= 0 for p in d["parts"]) for d in flag))
+
+    def test_contractnli_splitter_and_short_evidence_parts(self):
+        source = _dev("contractnli", "dev.json")
+        if not source.is_file():
+            self.skipTest("no ContractNLI development file")
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        adapter, c = _adapter("contractnli"), _common()
+        docs = adapter.documents(adapter.read_source(source), {"frozen_for": "development"})
+        agree = above = 0
+        for d in docs:
+            d["benchmark"] = "contractnli"
+            text, record, _answers = c["bundle"].build_document("contractnli", d)
+            units = [u["unit_id"] for u in pairing_map.split_units(text, document_id=d["document_id"])]
+            agree += units == [p["unit_id"] for p in record["parts"]]
+            above += len(record["parts"]) > 99
+        self.assertEqual((len(docs), agree, above), (61, 61, 16))
+        floor = c["metrics"].REVERSE_CONTAINMENT_MIN_WORDS
+        words = [[c["ids"].word_count(d["parts"][k - 1]["text"]) for k in i["evidence_parts"]]
+                 for d in docs for i in d["items"] if i["gold"] == "contradiction"]
+        self.assertEqual(len(words), 95)
+        self.assertEqual(sum(1 for w in words if any(n < floor for n in w)), 10)
+        self.assertEqual(sum(1 for w in words if w and all(n < floor for n in w)), 0)
+
+    def test_findver_table_entries_and_development_bands(self):
+        source = _dev("findver", "data", "testmini.json")
+        if not source.is_file():
+            self.skipTest("no FinDVer development file")
+        adapter, c = _adapter("findver"), _common()
+        tables = with_separator = 0
+        for report in sorted({r["report"] for r in adapter.read_source(source)}):
+            entries, _digest, _url = adapter.read_filing(_dev("findver", "financial_reports"), report)
+            for entry in entries:
+                if entry.get("type") == "table":
+                    tables += 1
+                    with_separator += any(adapter._separator(line) for line in entry["context"].split("\n"))
+        self.assertEqual((tables, with_separator), (10991, 3))
+        result = c["cli"].bands(adapter, source, reports=_dev("findver", "financial_reports"))
+        self.assertEqual(result["documents_by_side"], {"development": 255})
+        self.assertEqual({k: v["documents"] for k, v in result["development_bands"].items()},
+                         {"A": 0, "B": 4, "C": 65, "D": 186})
+        self.assertEqual(sum(v["documents"] for v in result["holdout_pool_bands"].values()), 0)
+
 
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
@@ -1495,11 +1769,14 @@ GROUPS = {
                            "line (markup tokens on pipe rows not words); each release's schema is "
                            "read as the B-dev development items showed it, ContractNLI one part per "
                            "span of its own span list or merged parts under the cost fallback; the "
-                           "bands command matches a build; demonstration documents are excluded"),
+                           "bands command matches a build, records sides and totals the holdout "
+                           "pool apart from development (a mixed-side FinDVer input with its "
+                           "testmini overlap); demonstration documents are excluded"),
     "cli": (CliChecks, "an isolated interpreter builds FinDVer from a copied tree with every budget "
                        "option and its own --reports, keeps a table's own separator row, records "
-                       "the token counter's SHA-256, refuses another adapter's option, and runs "
-                       "bands and split"),
+                       "the token counter's SHA-256, refuses another adapter's option, builds SciTab "
+                       "with --exclude, CUAD, and ContractNLI holdout with --frozen-sha256 and "
+                       "--parts merged, and runs bands and split"),
     "development": (DevelopmentChecks, "the development counts and readings recorded from the "
                                        "B-dev items hold (skipped when external/ does not hold them)"),
     "split": (SplitChecks, "the split key is the documented document key, its SHA-256 mod 5 "
@@ -1514,16 +1791,19 @@ GROUPS = {
                                    "agrees, above 99 units too"),
     "mapping": (MappingChecks, "the section 5.1 and 5.2 mapping gives the hand-written expected "
                                "label for every run-output case (completion record, supersession, "
-                               "refusal, CUAD missing_field), for B2, B1 and B0 with S-1, S-2 and "
-                               "S-3; a settled answer on any unit beats a refusal; figure-audit "
-                               "records decide only in a one-rule bundle; B3 and B4 refused while "
+                               "refusal, CUAD missing_field), for B2, B1 and B0 with S-1, S-2, "
+                               "S-3 and S-5; a settled answer on any unit beats a refusal (S-5 "
+                               "the other way); one figure-audit definition for every benchmark "
+                               "(relation and python stamp; bands decide their rule, blank-cell, "
+                               "sum and product records only in a one-rule bundle, model records "
+                               "always); B3 and B4 refused while "
                                "the typed-record key is unsettled; the catch layer read from the "
                                "written_by stamp alone, exactly"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "
-                              "are marked, false positives, unlabelled gold refused, S-4) matches by "
-                              "hand"),
+                              "are marked, the reverse way for units of 5 words or more, false "
+                              "positives, unlabelled gold refused, S-4) matches by hand"),
 }
 
 
@@ -1538,7 +1818,7 @@ def check():
                              "back as the input format and as Shimmer splits them, cut per document, "
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
-                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3; B3 refused "
+                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5; B3 refused "
                              "until the typed-record key is settled), score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")

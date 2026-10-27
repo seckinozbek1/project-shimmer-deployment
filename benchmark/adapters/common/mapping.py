@@ -1,4 +1,4 @@
-"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2 and S-3.
+"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2, S-3 and S-5.
 
 An item is a claim about the whole document judged unit by unit, so a settled answer on
 any unit beats a refusal on another (decision D-039 item 1). For each item, the first
@@ -13,13 +13,18 @@ matching line wins:
 
 A record belongs to an item when its source_rule_id equals the item's rule id, compared
 without regard to case. Before anything is classified, a record superseded by a higher
-`revision` of the same `item_id` (INFRA-037) is dropped. A figure-audit record (relation
-missing_field, below_band, above_band, sum_mismatch or product_mismatch) decides an
-item only when the document has exactly one rule; with several rules it decides no item
-and is counted as unattached (decision D-039 item 3; not applied to CUAD, see its
-adapter); S-3 attributes it as the record says. UNDECIDED becomes the benchmark's
-undecided label where it has one (SciTab: not enough info; ContractNLI: not mentioned)
-and ABSTAIN elsewhere.
+`revision` of the same `item_id` (INFRA-037) is dropped. A figure-audit record is one
+whose relation is missing_field, below_band, above_band, sum_mismatch or
+product_mismatch AND whose written_by stamp is exactly `python` (section 0), one
+definition for every benchmark. A band record (below_band, above_band) belongs to the
+rule that produced it and decides that rule's item like any other record. Python's
+missing_field, sum_mismatch and product_mismatch records are attributed among the
+paired rules by shared words, so in a bundle with several rules they decide no item and
+are counted as unattached (section 5.1); S-3 attributes them as the record says. A
+model-written record always decides the item of the rule it was posted for. UNDECIDED
+becomes the benchmark's undecided label where it has one (SciTab: not enough info;
+ContractNLI: not mentioned) and ABSTAIN elsewhere. S-5 applies the earlier order, a
+refusal before an ok record, to every pipeline arm (section 5.1).
 
 Where the run output's exact names are not settled yet they are named constants here,
 marked PROVISIONAL, in one place (preregistration section 12, items 1 and 9).
@@ -35,8 +40,9 @@ ARMS = ("B0", "B1", "B2", "B3", "B4")
 PIPELINE_ARMS = ("B3", "B4")
 
 # --- PROVISIONAL: run output names (section 12 items 1 and 9) -------------------------
-# Every name in this block is PROVISIONAL until docs/OUTPUT_FORMAT.md (to be written in
-# S3) settles it. The completion record is the pipeline's own (scripts/run_completion.py),
+# Every name in this block is PROVISIONAL until docs/OUTPUT_FORMAT.md settles it (its draft,
+# output-format-v1-draft, is on branch loop/s03 since 5fca716; preregistration section 12
+# item 9 records where it and this block differ). The completion record is the pipeline's own (scripts/run_completion.py),
 # read with the same validity rules as its read(); B2 writes the same record.
 TYPED_RECORDS_KEY = "findings"            # PROVISIONAL: key of the typed records in review_data.json
 TYPED_RECORDS_SETTLED = False             # the pipeline does not emit that key yet: B3/B4 refused
@@ -69,14 +75,17 @@ class Refused(Exception):
 
 
 MISSING_FIELD = "missing_field"
-# The figure audit's relations (docs/INPUT_FORMAT.md section 7): Python computes them on any
-# figure in a part, whatever the rules say, and attributes them to a paired rule: by the
-# words a rule's text shares with the record's labels, a tie or no shared word going to the
-# first rule in reading order (hash order of the opaque ids), and a band record to the rule
-# that produced it (section 9). In a bundle of several claims that is not a check of the
-# item's claim, so they decide an item only in a one-rule bundle (D-039 item 3).
+# The figure audit's relations (docs/INPUT_FORMAT.md section 7). A figure-audit record is a
+# record of one of these relations stamped `written_by: python` (section 0); a model-written
+# record of the same relation is not one. Python attributes a band record to the rule that
+# produced it, and every other figure-audit record among the paired rules by the words a
+# rule's text shares with the record's labels, a tie or no shared word going to the first
+# rule in reading order (hash order of the opaque ids) (docs/INPUT_FORMAT.md section 9).
+# Only that word-based attribution is not a check of the item's claim, so only those
+# records decide no item in a several-rule bundle (section 5.1).
 FIGURE_AUDIT_RELATIONS = ("missing_field", "below_band", "above_band", "sum_mismatch",
                           "product_mismatch")
+BAND_RELATIONS = ("below_band", "above_band")
 PRIOR_RELATIONS = ("changed_from_prior", "unchanged_from_prior", "moved_toward", "moved_away",
                    "absent_since_prior")
 
@@ -85,19 +94,17 @@ class Spec:
     """One benchmark's label names. `labels` maps FLAG, CLEAR and UNDECIDED to the
     benchmark's label (None for UNDECIDED means ABSTAIN); `b1_labels` maps each B1
     label name to its class; `absence_flag` is CUAD's missing_field rule; `s2` says
-    whether sensitivity analysis S-2 applies; `figure_audit_unattached` whether a
-    figure-audit record in a several-rule bundle decides no item (D-039 item 3);
-    `unit_evidence` whether the benchmark marks its evidence as parts (by index), which
-    decides how B1 is located (section 3.2)."""
+    whether sensitivity analysis S-2 applies; `unit_evidence` whether the benchmark marks
+    its evidence as parts (by index), which decides how B1 is located (section 3.2). The
+    figure-audit rule of section 5.1 has no per-benchmark switch: it is one rule for all."""
 
     def __init__(self, name, labels, b1_labels, absence_flag=False, s2=True,
-                 figure_audit_unattached=True, unit_evidence=False):
+                 unit_evidence=False):
         self.name = name
         self.labels = dict(labels)
         self.b1_labels = {normalise_b1_label(k): v for k, v in b1_labels.items()}
         self.absence_flag = absence_flag
         self.s2 = s2
-        self.figure_audit_unattached = figure_audit_unattached
         self.unit_evidence = unit_evidence
 
     def label(self, cls: str) -> str:
@@ -245,12 +252,21 @@ def is_computed(record) -> bool:
 
 
 def is_figure_audit(record) -> bool:
-    return str(record.get("relation") or "") in FIGURE_AUDIT_RELATIONS
+    """Section 0: a figure-audit relation AND Python's own stamp, compared exactly."""
+    return str(record.get("relation") or "") in FIGURE_AUDIT_RELATIONS and is_computed(record)
+
+
+def attributed_by_words(record) -> bool:
+    """A figure-audit record Python attributes among the paired rules by shared words
+    (missing_field, sum_mismatch, product_mismatch); a band record is not one: it belongs
+    to the rule that produced it."""
+    return is_figure_audit(record) and str(record.get("relation") or "") not in BAND_RELATIONS
 
 
 def set_aside(spec: Spec, rule_count: int) -> bool:
-    """Whether figure-audit records decide no item in this document (D-039 item 3)."""
-    return spec.figure_audit_unattached and int(rule_count) > 1
+    """Whether the records `attributed_by_words` decide no item in this document: exactly
+    when the bundle has more than one rule (section 5.1), on every benchmark alike."""
+    return int(rule_count) > 1
 
 
 def _layer(records) -> str:
@@ -263,10 +279,11 @@ def _layer(records) -> str:
 
 
 def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
-             attribute_figure_audit: bool = False) -> dict:
+             attribute_figure_audit: bool = False, refusal_first: bool = False) -> dict:
     """The class of one item from one document's run (sections 5.1, 5.2). `rule_count` is
-    the number of rules in the item's bundle; with more than one, figure-audit records
-    decide nothing unless `attribute_figure_audit` (sensitivity S-3)."""
+    the number of rules in the item's bundle; with more than one, Python's figure-audit
+    records attributed by shared words decide nothing unless `attribute_figure_audit`
+    (sensitivity S-3). `refusal_first` is sensitivity S-5: a refusal before an ok record."""
     rid = _fold(rule_id)
     mine = [r for r in run["records"] if _fold(r.get("source_rule_id")) == rid]
     faults = []
@@ -276,8 +293,8 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
     mine = [r for r in mine if r.get("relation") not in PRIOR_RELATIONS]
     set_apart = 0
     if set_aside(spec, rule_count) and not attribute_figure_audit:
-        set_apart = sum(1 for r in mine if is_figure_audit(r))
-        mine = [r for r in mine if not is_figure_audit(r)]
+        set_apart = sum(1 for r in mine if attributed_by_words(r))
+        mine = [r for r in mine if not attributed_by_words(r)]
     irregular = [r for r in mine if verdict(r) == "irregular" and not is_refusal(r)]
     refusals = [r for r in mine if is_refusal(r)] + [
         e for e in run["pairing_refusals"]
@@ -291,7 +308,8 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
            "figure_audit_set_aside": set_apart,
            # per-unit records that disagree (section 12 item 2): reported, never a label
            "refusal_and_ok": bool(refusals) and bool(oks),
-           "irregular_and_ok": bool(irregular) and bool(oks)}
+           "irregular_and_ok": bool(irregular) and bool(oks),
+           "ok_over_refusal": not irregular and bool(refusals) and bool(oks)}
     if run["failure"]:
         return dict(row, **{"class": ABSTAIN, "basis": "run_failure"})
     if irregular:
@@ -311,7 +329,10 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
                                         for r in deciding if r.get("unit_id")})
         row["layer"] = _layer(deciding)
         return dict(row, **{"class": cls, "basis": basis})
-    # a settled answer on any unit beats a refusal on another (D-039 item 1)
+    # a settled answer on any unit beats a refusal on another (D-039 item 1); S-5 keeps
+    # the earlier order, a refusal on any unit before an ok record
+    if refusal_first and refusals:
+        return dict(row, **{"class": UNDECIDED, "basis": "refusal"})
     if oks:
         return dict(row, **{"class": CLEAR, "basis": "ok"})
     if refusals:
@@ -342,12 +363,13 @@ def _deliverable_text(path: Path) -> str:
 def unattached(run: dict, rule_ids, run_dir, document_id, set_aside_figure_audit=False) -> dict:
     """Irregular records whose source_rule_id matches no item, counted once by record id
     in review_data.json, and how many of those ids each deliverable shows (3.4). With
-    `set_aside_figure_audit` (a several-rule bundle, D-039 item 3), the irregular
-    figure-audit records tied to an item count here too; `figure_audit` says how many."""
+    `set_aside_figure_audit` (a several-rule bundle, section 5.1), the irregular
+    figure-audit records attributed by shared words and tied to an item count here too;
+    `figure_audit` says how many."""
     wanted = {_fold(r) for r in rule_ids}
     irregular = [r for r in run["records"] if verdict(r) == "irregular" and not is_refusal(r)]
     stray = [r for r in irregular if _fold(r.get("source_rule_id")) not in wanted]
-    figure = [r for r in irregular if set_aside_figure_audit and is_figure_audit(r)
+    figure = [r for r in irregular if set_aside_figure_audit and attributed_by_words(r)
               and _fold(r.get("source_rule_id")) in wanted]
     stray = stray + figure
     with_id = sorted(set(_record_ids(stray)))
@@ -400,7 +422,8 @@ def _row(spec, item, arm, result):
             "judged_without_relation": result.get("judged_without_relation", 0),
             "figure_audit_set_aside": result.get("figure_audit_set_aside", 0),
             "refusal_and_ok": result.get("refusal_and_ok", False),
-            "irregular_and_ok": result.get("irregular_and_ok", False)}
+            "irregular_and_ok": result.get("irregular_and_ok", False),
+            "ok_over_refusal": result.get("ok_over_refusal", False)}
 
 
 def by_document(items):
@@ -412,7 +435,8 @@ def by_document(items):
 
 def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
     """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder. Each
-    row also carries its sensitivity S-3 class (figure-audit records attributed)."""
+    row also carries its sensitivity S-3 class (figure-audit records attributed) and its
+    S-5 class (a refusal before an ok record)."""
     rows, documents = [], []
     for doc_id, doc_items in by_document(items).items():
         run_dir = Path(runs_root) / doc_id
@@ -421,9 +445,11 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
         count = len({_fold(r) for r in rules})
         for item in doc_items:
             row = _row(spec, item, arm, classify(spec, item["rule_id"], run, count))
-            s3 = classify(spec, item["rule_id"], run, count, attribute_figure_audit=True)
-            row["s3"] = {"class": s3["class"], "basis": s3["basis"],
-                         "cited_unit_ids": s3["cited_unit_ids"], "layer": s3["layer"]}
+            for key, options in (("s3", {"attribute_figure_audit": True}),
+                                 ("s5", {"refusal_first": True})):
+                other = classify(spec, item["rule_id"], run, count, **options)
+                row[key] = {"class": other["class"], "basis": other["basis"],
+                            "cited_unit_ids": other["cited_unit_ids"], "layer": other["layer"]}
             rows.append(row)
         aside = set_aside(spec, count)
         documents.append({"document_id": doc_id, "run_failure": run["failure"],
@@ -483,6 +509,7 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         "items_with_figure_audit_set_aside": sum(1 for r in rows if r.get("figure_audit_set_aside")),
         "items_with_refusal_and_ok": sum(1 for r in rows if r.get("refusal_and_ok")),
         "items_with_irregular_and_ok": sum(1 for r in rows if r.get("irregular_and_ok")),
+        "items_decided_by_ok_over_refusal": sum(1 for r in rows if r.get("ok_over_refusal")),
         "unattached_figure_audit": sum((d.get("unattached") or {}).get("figure_audit", 0)
                                        for d in documents),
     }
@@ -520,20 +547,31 @@ def sensitivity_s2(spec: Spec, result: dict) -> dict:
                     if spec.s2 and r["class"] == UNDECIDED else None)
 
 
-def sensitivity_s3(spec: Spec, result: dict) -> dict:
-    """S-3 (D-039 item 3): figure-audit records in a several-rule bundle are attributed to
-    the rule they name, as a one-rule bundle's are. B0 and B1 rows are unchanged."""
+def _alternative(spec, result, key, analysis, documents):
     rows = []
     for row in result["labels"]:
         row = dict(row)
-        s3 = row.get("s3")
-        if s3 is not None:
-            row.update(s3)
+        other = row.get(key)
+        if other is not None:
+            row.update(other)
             row["label"] = spec.label(row["class"])
         rows.append(row)
+    return _labels(spec, result["arm"], rows, documents, analysis)
+
+
+def sensitivity_s3(spec: Spec, result: dict) -> dict:
+    """S-3: Python's figure-audit records attributed by shared words in a several-rule
+    bundle are attributed to the rule they name, as a one-rule bundle's are. B0 and B1
+    rows are unchanged."""
     documents = [dict(d, unattached=d.get("unattached_s3", d.get("unattached")))
                  for d in result["documents"]]
-    return _labels(spec, result["arm"], rows, documents, "S-3")
+    return _alternative(spec, result, "s3", "S-3", documents)
+
+
+def sensitivity_s5(spec: Spec, result: dict) -> dict:
+    """S-5: the earlier order of section 5.1, a refusal on any unit before an ok record
+    (irregular still first), for every pipeline arm; B0 and B1 rows are unchanged."""
+    return _alternative(spec, result, "s5", "S-5", result["documents"])
 
 
 def read_items(path) -> list:

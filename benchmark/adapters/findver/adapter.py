@@ -16,6 +16,9 @@ release lays it out.
 
 Usage: as the ContraDoc adapter (build, label, score), and
     py -3.12 benchmark/adapters/findver/adapter.py split --input <file> --official development|holdout [--testmini <file>]
+    py -3.12 benchmark/adapters/findver/adapter.py bands --input <file> [--reports <folder>] --testmini <file>
+(`bands` needs --testmini for a holdout input: a test filing testmini also holds is
+removed_overlap and in no band total.)
 """
 from __future__ import annotations
 
@@ -147,6 +150,12 @@ def entry_text(entry):
     return text, "paragraph", ids.word_count(text)
 
 
+def overlapping_documents(testmini_path) -> set:
+    """The reports the testmini file holds (section 1): a holdout filing among them is
+    removed from the pool. Read by build, split and bands alike."""
+    return {ids.key_string(r[REPORT_FIELD]) for r in read_source(testmini_path)}
+
+
 def _reports(records):
     reports = {}
     for r in records:
@@ -168,7 +177,7 @@ def documents(records, options=None) -> list:
     options = options or {}
     side = options.get("side") or "official (undeclared, development build)"
     if options.get("testmini") and side == ids.HOLDOUT:
-        overlap = {ids.key_string(r[REPORT_FIELD]) for r in read_source(options["testmini"])}
+        overlap = overlapping_documents(options["testmini"])
         found = sorted({ids.key_string(r[REPORT_FIELD]) for r in records} & overlap)
         if found:
             raise ValueError("holdout reports that also appear in testmini: " + ", ".join(found[:10]))
@@ -236,12 +245,12 @@ def split_rows(records, args=None) -> list:
         raise ValueError("--official development|holdout is required for FinDVer")
     overlap = set()
     if getattr(args, "testmini", None):
-        overlap = {ids.key_string(r[REPORT_FIELD]) for r in read_source(args.testmini)}
+        overlap = overlapping_documents(args.testmini)
     rows = []
     for report, claims in sorted(_reports(records).items()):
         removed = side == ids.HOLDOUT and report in overlap
         rows.append({"source_document_id": report, "split_key": report,
-                     "side": "removed_overlap" if removed else side, "items": len(claims)})
+                     "side": cli.REMOVED_OVERLAP if removed else side, "items": len(claims)})
     return rows
 
 

@@ -1,5 +1,5 @@
 {
-  "description": "Hand-written synthetic run outputs for CUAD's missing_field rule (section 5.2), materialised as the ContraDoc cases are.",
+  "description": "Hand-written synthetic run outputs for CUAD's missing_field rule (section 5.2), materialised as the ContraDoc cases are. The bundle has several rules, so Python's blank-cell missing_field (k01, stamped written_by python) decides no item in the primary analysis and S-3 attributes it; a model's judged missing_field (k02) decides its rule's item; records with no written_by stamp are a model's, whatever their model field says (k03, k08).",
   "items": [
     {"item_id": "k01", "document_id": "k-run", "rule_id": "CONV-CUAD-01", "benchmark": "cuad"},
     {"item_id": "k02", "document_id": "k-run", "rule_id": "CONV-CUAD-02", "benchmark": "cuad"},
@@ -43,6 +43,18 @@
   },
   "expected": {
     "B2": {
+      "k01": ["CLEAR", "present", "silent"],
+      "k02": ["FLAG", "absent", "irregular_missing_field"],
+      "k03": ["CLEAR", "present", "irregular_other_relation"],
+      "k04": ["CLEAR", "present", "irregular_other_relation"],
+      "k05": ["CLEAR", "present", "ok"],
+      "k06": ["CLEAR", "present", "silent"],
+      "k07": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "k08": ["CLEAR", "present", "irregular_other_relation"],
+      "k09": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "k21": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B2 S-3": {
       "k01": ["FLAG", "absent", "irregular_missing_field"],
       "k02": ["FLAG", "absent", "irregular_missing_field"],
       "k03": ["CLEAR", "present", "irregular_other_relation"],
@@ -55,7 +67,7 @@
       "k21": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
     "B2 S-2": {
-      "k01": ["FLAG", "absent", "irregular_missing_field"],
+      "k01": ["CLEAR", "present", "silent"],
       "k02": ["FLAG", "absent", "irregular_missing_field"],
       "k03": ["CLEAR", "present", "irregular_other_relation"],
       "k04": ["CLEAR", "present", "irregular_other_relation"],
@@ -81,12 +93,15 @@
   },
   "expected_detail": {
     "B2": {
-      "k01": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"], "missing_field_and_other": false},
+      "k01": {"layer": "", "cited_unit_ids": [], "figure_audit_set_aside": 1},
       "k02": {"layer": "judged", "cited_unit_ids": ["u02-p-00002"], "missing_field_and_other": true},
       "k04": {"judged_without_relation": 1}
+    },
+    "B2 S-3": {
+      "k01": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}
     }
   },
   "expected_counts": {
-    "B2": {"items": 10, "silent": 1, "undecided": 2, "refusals": 2, "run_failure_documents": 1, "abstain": 3, "missing_field_and_other_relation": 1, "judged_irregular_without_relation": 1, "missing_field_by_layer": {"computed": 1, "judged": 1}}
+    "B2": {"items": 10, "silent": 2, "undecided": 2, "refusals": 2, "run_failure_documents": 1, "abstain": 3, "missing_field_and_other_relation": 1, "judged_irregular_without_relation": 1, "missing_field_by_layer": {"computed": 1, "judged": 1}, "items_with_figure_audit_set_aside": 1, "unattached_figure_audit": 1}
   }
 }
