@@ -15,10 +15,14 @@ line ``None.`` when it has none. It writes:
                                run stops if a record cannot be written
   <out>/labels/<item_id>.json  one typed label per item; a reply that does not parse,
                                or whose label is not in the list, is ABSTAIN
-  <out>/b1_summary.json        counts and the parse rate per benchmark, the number of
-                               replies whose length reached the output allowance
-                               (possibly truncated), and whether the parse rate is
-                               below the development floor of 95 percent
+  <out>/b1_summary.json        counts and the parse rate per benchmark for this document,
+                               the number of replies whose length reached the output
+                               allowance (possibly truncated), and whether this document's
+                               rate is below 95 percent (information only)
+
+The development floor of 95 percent (section 5.4) is decided per benchmark on the rate
+pooled over all its development items: ``bare_model.py pool --runs <folder>`` reads every
+document's b1_summary.json and writes b1_parse_rates.json.
 
 Before the first item the model is loaded and verified ONCE: its model id, checkpoint
 digest and decoding are compared with the values passed in (from VERSIONS.md; section 4),
@@ -36,6 +40,7 @@ pipeline's PROCESSOR budget (PRODUCTION_MAX_TOKENS) unless --max-new-tokens over
 Usage (loads a local model; for the rented machine, never this laptop):
     py -3.12 benchmark/baselines/bare_model.py --bundle <bundle> --items <items.json> --out <dir>
         --agent <AGENT> --expect-model-id <id> --expect-digest <sha256> --expect-decoding '<json>'
+    py -3.12 benchmark/baselines/bare_model.py pool --runs <folder> [--out <file>]   (no model)
 """
 from __future__ import annotations
 
@@ -73,8 +78,9 @@ PIPELINE_SOURCE = SCRIPTS / "pipeline.py"
 _FENCE = re.compile(r"^\s*```[^`\s]*\s*$")
 _ESCAPE = re.compile(r'\\(["\\/bfnrtu])|\\')
 UNCERTAIN_LABEL = "uncertain"
-# Section 5.4 (D-039 item 11): a benchmark whose development parse rate is below this floor
-# has its prompt and parser revised before the freeze.
+# Section 5.4 (D-039 item 11): a benchmark whose development parse rate, pooled over all its
+# development items (pool_parse_rates), is below this floor has its prompt and parser
+# revised before the freeze, at most three times.
 PARSE_RATE_FLOOR = 0.95
 
 
@@ -454,7 +460,50 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     return result
 
 
+def pool_parse_rates(runs_root, out=None) -> dict:
+    """Section 5.4: the development parse rate per benchmark, pooled over every document's
+    b1_summary.json under `runs_root` (one bare_model.py output folder per document, as the
+    adapters' label command reads them). The 95 percent floor is decided on this pooled rate,
+    never on one document's; a document's own `below_parse_rate_floor` is information only.
+    Writes `out` (default `<runs_root>/b1_parse_rates.json`)."""
+    root = Path(runs_root)
+    pooled, documents = {}, 0
+    for path in sorted(root.glob("*/b1_summary.json")):
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        documents += 1
+        for bench, row in (summary.get("benchmarks") or {}).items():
+            total = pooled.setdefault(bench, {"documents": 0, "items": 0, "parsed": 0})
+            total["documents"] += 1
+            total["items"] += int(row["items"])
+            total["parsed"] += int(row["parsed"])
+    if not documents:
+        raise ValueError("no b1_summary.json under " + str(root))
+    for row in pooled.values():
+        row["parse_rate"] = row["parsed"] / row["items"] if row["items"] else 0.0
+        row["parse_rate_floor"] = PARSE_RATE_FLOOR
+        row["below_parse_rate_floor"] = row["parse_rate"] < PARSE_RATE_FLOOR
+    result = {"baseline": BASELINE_TEXT, "arm": ARM, "documents": documents,
+              "floor_decided_on": "the pooled rate per benchmark (section 5.4)",
+              "benchmarks": dict(sorted(pooled.items()))}
+    _write_json(Path(out) if out else root / "b1_parse_rates.json", result)
+    return result
+
+
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["pool"]:
+        pool = argparse.ArgumentParser(prog="bare_model.py pool",
+                                       description="pool the development parse rate per benchmark")
+        pool.add_argument("--runs", required=True, help="one bare_model.py output folder per document")
+        pool.add_argument("--out")
+        args = pool.parse_args(argv[1:])
+        try:
+            result = pool_parse_rates(args.runs, args.out)
+        except (OSError, ValueError, KeyError) as exc:
+            print("pooling stopped: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
+            return 4
+        print(json.dumps(result["benchmarks"], indent=2))
+        return 0
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--bundle", required=True)
     parser.add_argument("--items", required=True, help="items.json written beside the bundle")

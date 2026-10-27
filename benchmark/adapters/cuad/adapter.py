@@ -86,15 +86,16 @@ DATA_SPELLING = {
 # Description line per category); copying it is the freeze step of section 5.5.
 DESCRIPTIONS = {}
 
-# D-039 item 3 (figure-audit records decide no item in a several-rule bundle) is NOT applied
-# to CUAD, pending the lead: every CUAD bundle has 41 rules, and CUAD's FLAG (absent) is
-# read from missing_field alone (section 5.2), so applying it would make absent
-# unreachable in the primary analysis. S-3 therefore equals the primary analysis here.
+# Section 5.1's figure-audit rule applies here as on every benchmark, with no exception:
+# every CUAD bundle has 41 rules, so Python's missing_field records (attributed among the
+# paired rules by shared words) decide no item in the primary analysis and S-3 attributes
+# them; a model-written missing_field (a judged absence) decides the item of the rule it
+# was posted for, so absent stays reachable.
 SPEC = mapping.Spec(
     BENCHMARK,
     labels={mapping.FLAG: "absent", mapping.CLEAR: "present", mapping.UNDECIDED: None},
     b1_labels={"absent": mapping.FLAG, "present": mapping.CLEAR, "undecided": mapping.UNDECIDED},
-    absence_flag=True, s2=True, figure_audit_unattached=False)
+    absence_flag=True, s2=True)
 
 
 def row_name(index: int) -> str:
