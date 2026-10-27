@@ -194,3 +194,14 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **The pinned-baseline tool is committed.** Every amendment so far was written by a lead tool kept outside the repository; it is now `tools/loop/amend_pinned_baselines.py` (same code, repository-relative root), so the amendments can be reproduced.
 - **Fixes in progress.** The controller lane takes the budget, ledger, binding and launch items (A1-A3, A6, A7, A11-A17, H1, H2 controller half, H11, H17-H19, C12, C25, C31, C34, C39); the pipeline lane takes the deliverable and multi-round items (A4, A5, A8-A10, H3-H5, H8-H10, H12-H14, C3, C51). Open items 12, 18 and 19 are corrected below by the lead (H15, H16).
 - **Rules.** P1, P10, IV.4, IV.8.
+
+## D-027. D-007 lifted: the S0 proofs pass; the operator approves B.9 and B.11 to B.15
+
+- **When, stage.** 2026-10-27 12:09 +0300 (system clock), during S2 to S4, at the operator's message.
+- **What happened.** The operator installed `.claude/settings.local.json` and the two agent definitions and asked for the failed S0 proofs to be re-run. All passed (S0 report addendum of this date): status line fresh, SessionStart output in a new session, worktree base at HEAD, a `loop-checker` that cannot see the pointer, eleven canaries and the transcript rule refused, three controls readable, connectors blocked by policy.
+- **Decision.** D-007 is lifted, as the operator directed: role sessions are allowed again (one at a time, started as IV.10a says), and the loop continues through S8 to S14 as written instead of ending after S7. S4c's B-dev step runs when S4 is ready for it; S4 can close as `loop-s04-v1` if B-dev delivers development items, otherwise `-open` as before.
+- **Operator approvals.** The operator approved Annex B items B.9 and B.11 to B.15 (message of this date). Every earlier entry that applied one of them as an overrulable decision now stands approved.
+- **Checkers.** From the next stage checker round, checkers run as `loop-checker` (D-001's `Plan` substitute ends), and discussions may use `loop-discussant`, but only in a session started after the definitions were installed; this session cannot load them, so its remaining checkers stay `Plan` with the read-only brief, and any role session started from this session uses the definitions through its own new process.
+- **Context level.** The status line now reports context use (55% at the time of writing); IV.2a's thresholds apply from now on.
+- **Rules.** P1, IV.10, IV.10a, IV.10b, S0 steps 12 to 15a.
+- **Reverse.** A failing canary or a changed settings file stops role sessions again.
