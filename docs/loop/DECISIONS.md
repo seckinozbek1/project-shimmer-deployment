@@ -218,3 +218,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **D-S7 (the SummEdits files stay).** Applied on `loop/s04` (`6224559`): `PROVENANCE.md` added to `tuning/auditor_external_relation_v1/`, open item 15 closed (the v2 folder decided the same way by the profile).
 - **D-S8 (GitHub Issues as the public tracker; added 12:15).** Applied after the D-S5 restart, by the new session: `gh auth status` first (if not signed in, record and skip; never sign in), list existing issues as data, create issues for open items, exposed-test change requests, deferrals, BLOCKED steps and roadmap items under its rules, batched at stage ends.
 - **Rules.** Annex D; P1; Part III.
+
+## D-030. D-S9 applied: a 70 USD budget, a 69 USD hard stop, a 95 percent weekly launch limit
+
+- **When, stage.** 2026-10-27 12:34 +0300 (system clock), at the operator's decision D-S9 (Annex D, 12:21).
+- **Done now.** A `budget_change` line appended to the private ledger (budget 70 USD, hard stop 69 USD, allocations S5 24, S8 36, smoke 3, reserve 7; launch limits five-hour 70 percent, seven-day 95 percent); a row and the new allocation table in `BUDGET.md` (storage share to date 0.03 USD, nothing else spent). Every rule that names 50 USD now means 70 USD; S4e item 2's sizing rule is re-run with the 36 USD S8 allocation at the end of S5.
+- **Code change (D-S9 item 3), next.** `tools/loop/instance_reaper.py` (`HARD_STOP_USD = 49.0`) and `tools/loop_budget_guard.py` (`BUDGET_USD = 50.0`) will read the budget from the ledger's latest `budget_open` or `budget_change` line, proven on the mocked provider and in the controller gate. Until it lands, the live reaper keeps 49 USD in code, which can only stop earlier, never later; no launch happens before S5. The reaper ignores the new event type until then (its event chain skips unknown events).
+- **Rules.** Annex D (D-S9), H3, H4a, IV.3.
