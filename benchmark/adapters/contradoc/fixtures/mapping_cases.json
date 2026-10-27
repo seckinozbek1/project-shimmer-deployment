@@ -1,0 +1,141 @@
+{
+  "description": "Hand-written synthetic run outputs for the section 5.1 and 5.2 mapping. Each run entry is materialised as <runs>/<document>/FINAL_STATUS.json, <runs>/<document>/deliverables/<document>/review_data.json (and any other deliverable named), and <runs>/<document>/audit/pairing_map.json. A null or absent entry writes no file.",
+  "items": [
+    {"item_id": "it-fail", "document_id": "d-fail", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-nodata", "document_id": "d-nodata", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-irr", "document_id": "d-irr", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-ref", "document_id": "d-ref", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-pmref", "document_id": "d-pmref", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-ok", "document_id": "d-ok", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"},
+    {"item_id": "it-silent", "document_id": "d-silent", "rule_id": "CONV-CDOC-01", "benchmark": "contradoc"}
+  ],
+  "runs": {
+    "d-fail": {
+      "final_status": {"state": "failed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-f1", "source_rule_id": "CONV-CDOC-01", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular"}
+      ]}
+    },
+    "d-nodata": {
+      "final_status": {"state": "completed"}
+    },
+    "d-irr": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-i1", "source_rule_id": "CONV-CDOC-01", "unit_id": "u02-p-00002", "relation": "", "record_verdict": "irregular", "model": "fixture-reader"},
+        {"item_id": "rec-i2", "source_rule_id": "CONV-CDOC-01", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"}
+      ]}
+    },
+    "d-ref": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-r1", "source_rule_id": "CONV-CDOC-01", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"},
+        {"item_id": "rec-r2", "source_rule_id": "CONV-CDOC-01", "unit_id": "u02-p-00002", "relation": "", "record_verdict": "ok"}
+      ]}
+    },
+    "d-pmref": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": []},
+      "pairing_map": {"d-pmref": {"absence_refused": [
+        {"unit_id": "u01-p-00001", "rule_id": "conv-cdoc-01", "relation": "missing_field", "reason": "quotes text that does not appear in this unit"}
+      ]}}
+    },
+    "d-ok": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-o1", "source_rule_id": "conv-cdoc-01", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"}
+      ]}
+    },
+    "d-silent": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-stray", "source_rule_id": "CONV-OTHER-9", "unit_id": "u01-p-00001", "relation": "product_mismatch", "record_verdict": "irregular", "model": "python"},
+        {"item_id": "rec-prior", "source_rule_id": "CONV-CDOC-01", "unit_id": "u01-p-00001", "relation": "changed_from_prior", "record_verdict": "ok"}
+      ]},
+      "deliverables": {
+        "review_findings.md": "# Findings\n\nrec-stray: a stated figure differs from the computed one.\n",
+        "document_summary.md": "# Summary\n\nNothing to report.\n"
+      }
+    }
+  },
+  "b1": {
+    "d-irr": {"it-irr": {"label": "contradictory", "abstain": false, "evidence": "The bridge has never opened to traffic."}},
+    "d-ref": {"it-ref": {"label": "undecided", "abstain": false}},
+    "d-ok": {"it-ok": {"label": null, "abstain": true, "parse_failure": "no_json_object"}},
+    "d-silent": {"it-silent": {"label": "Not_Contradictory", "abstain": false}},
+    "d-nodata": {"it-nodata": {"label": "maybe", "abstain": false}},
+    "d-pmref": {"it-pmref": {"label": "contradictory: two statements in the document cannot both be true.", "abstain": false}}
+  },
+  "expected": {
+    "B3": {
+      "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-irr": ["FLAG", "contradictory", "irregular"],
+      "it-ref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-pmref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-ok": ["CLEAR", "not contradictory", "ok"],
+      "it-silent": ["CLEAR", "not contradictory", "silent"]
+    },
+    "B3 S-1": {
+      "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-irr": ["FLAG", "contradictory", "irregular"],
+      "it-ref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-pmref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-ok": ["CLEAR", "not contradictory", "ok"],
+      "it-silent": ["CLEAR", "not contradictory", "silent"]
+    },
+    "B3 S-2": {
+      "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "it-irr": ["FLAG", "contradictory", "irregular"],
+      "it-ref": ["CLEAR", "not contradictory", "s2_undecided_as_clear"],
+      "it-pmref": ["CLEAR", "not contradictory", "s2_undecided_as_clear"],
+      "it-ok": ["CLEAR", "not contradictory", "ok"],
+      "it-silent": ["CLEAR", "not contradictory", "silent"]
+    },
+    "B1": {
+      "it-fail": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-nodata": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-irr": ["FLAG", "contradictory", "b1_label"],
+      "it-ref": ["UNDECIDED", "ABSTAIN", "b1_label"],
+      "it-pmref": ["FLAG", "contradictory", "b1_label"],
+      "it-ok": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-silent": ["CLEAR", "not contradictory", "b1_label"]
+    },
+    "B1 S-1": {
+      "it-fail": ["CLEAR", "not contradictory", "s1_parse_failure_as_clear"],
+      "it-nodata": ["CLEAR", "not contradictory", "s1_parse_failure_as_clear"],
+      "it-irr": ["FLAG", "contradictory", "b1_label"],
+      "it-ref": ["UNDECIDED", "ABSTAIN", "b1_label"],
+      "it-pmref": ["FLAG", "contradictory", "b1_label"],
+      "it-ok": ["CLEAR", "not contradictory", "s1_parse_failure_as_clear"],
+      "it-silent": ["CLEAR", "not contradictory", "b1_label"]
+    },
+    "B1 S-2": {
+      "it-fail": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-nodata": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-irr": ["FLAG", "contradictory", "b1_label"],
+      "it-ref": ["CLEAR", "not contradictory", "s2_undecided_as_clear"],
+      "it-pmref": ["FLAG", "contradictory", "b1_label"],
+      "it-ok": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "it-silent": ["CLEAR", "not contradictory", "b1_label"]
+    }
+  },
+  "expected_detail": {
+    "B3": {
+      "it-irr": {"cited_unit_ids": ["u02-p-00002"], "layer": "judged"},
+      "it-silent": {"faults": ["prior_relation_ignored:1"]}
+    }
+  },
+  "expected_counts": {
+    "B3": {"items": 7, "silent": 1, "undecided": 2, "refusals": 2, "b1_parse_failures": 0, "run_failure_documents": 2, "abstain": 4},
+    "B1": {"items": 7, "silent": 0, "undecided": 1, "refusals": 0, "b1_parse_failures": 3, "run_failure_documents": 0, "abstain": 4}
+  },
+  "expected_documents": {
+    "B3": {
+      "d-silent": {"unattached": 1, "per_deliverable": {"review_data.json": 1, "review_findings.md": 1, "tracked_changes.docx": null, "document_summary.md": 0}},
+      "d-irr": {"unattached": 0}
+    }
+  }
+}

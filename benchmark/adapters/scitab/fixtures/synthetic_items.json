@@ -1,0 +1,42 @@
+[
+  {
+    "id": 9001,
+    "table_id": "syn-tab-1",
+    "paper_id": "syn-paper-a",
+    "claim": "Method B scores higher than method A on the first set.",
+    "label": "supports",
+    "table_caption": "Table 1: Scores of two methods\non two sets.",
+    "table_column_names": ["Method", "Set one", "Set two"],
+    "table_content_values": [["A", "71.2", "64.0"], ["B", "73.5", "63.1"]]
+  },
+  {
+    "id": 9002,
+    "table_id": "syn-tab-1",
+    "paper_id": "syn-paper-a",
+    "claim": "Method B is better on both sets.",
+    "label": "refutes",
+    "table_caption": "Table 1: Scores of two methods\non two sets.",
+    "table_column_names": ["Method", "Set one", "Set two"],
+    "table_content_values": [["A", "71.2", "64.0"], ["B", "73.5", "63.1"]]
+  },
+  {
+    "id": 9003,
+    "table_id": "syn-tab-2",
+    "paper_id": "syn-paper-a",
+    "claim": "The  larger   model\ntrains faster.",
+    "label": "not enough info",
+    "table_caption": "# Table 2: Model sizes",
+    "table_column_names": ["Model", "Size | layers"],
+    "table_content_values": [["Small", "6"], ["Large", "24"]]
+  },
+  {
+    "id": 9004,
+    "table_id": "syn-tab-3",
+    "paper_id": "syn-paper-bz",
+    "claim": "Recall is above precision.",
+    "label": "supports",
+    "table_caption": "Table 3: Recall and precision",
+    "table_column_names": ["Metric", "Value"],
+    "table_content_values": [["Recall", "0.81"], ["Precision", "0.77"]]
+  }
+]
