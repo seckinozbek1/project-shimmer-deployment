@@ -44,7 +44,12 @@ UNCERTAIN_VALUE = "UNCERTAIN"             # verifiability gate tests it: a truth
 UNCERTAIN_FLAG_FIELD = "uncertain"        # or `confidence` equal to UNCERTAIN once uppercased
 RECORD_ID_FIELD = "item_id"               # PROVISIONAL: the record id (supersession, section 3.4)
 REVISION_FIELD = "revision"               # PROVISIONAL: INFRA-037 revision number
+WRITTEN_BY_FIELD = "written_by"           # WRITTEN-BY-A: the pipeline's stamp, "python" or
+WRITTEN_BY_PYTHON = "python"              # "model", decided from the post that carried the
+                                          # record; B2 writes the same stamp. Where present
+                                          # it alone decides the layer.
 COMPUTED_MARKERS = (("model", "python"), ("absence_path", "computed"), ("provenance", "computed"))
+                                          # read only for a record with no stamp
 B1_LABELS_DIR = "labels"                  # bare_model.py: <out>/labels/<item id>.json
 DELIVERABLE_FILES = ("review_data.json", "review_findings.md", "tracked_changes.docx",
                      "document_summary.md")
@@ -211,6 +216,11 @@ def is_refusal(record) -> bool:
 
 
 def is_computed(record) -> bool:
+    """Python's own record (section 3.6): stamped `written_by: python`. A record stamped
+    anything else is a model's, whatever other field it carries; only a record with no
+    stamp at all is read by the older markers."""
+    if WRITTEN_BY_FIELD in record:
+        return _fold(record.get(WRITTEN_BY_FIELD)) == WRITTEN_BY_PYTHON
     return any(_fold(record.get(k)) == v for k, v in COMPUTED_MARKERS)
 
 
