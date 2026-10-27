@@ -21,6 +21,7 @@ from lambda_experiment_provider import LambdaExperiment
 from prepare_cloud_run import git
 from prepare_source_layer import manifest as source_manifest
 import runtime_contract as runtime
+from loop_budget_guard import refuse_general_path
 
 ROOT=Path(__file__).resolve().parents[1]
 CONFIGS=('local_models.json','constitution.json','agent_contracts.json')
@@ -55,6 +56,8 @@ def bundle(root, directory):
 
 
 def prepare(args):
+    # Not a loop launch path (R4): the instance name is derived from the folder name.
+    refuse_general_path(names=['shimmer-'+Path(args.directory).name])
     base=args.directory; base.mkdir(parents=True,exist_ok=False)
     suites=('contract_ab_checks.py','lambda_metadata_checks.py','runtime_contract_checks.py','cloud_run_checks.py',
             'cloud_run_transport_checks.py','cloud_run_transfer_checks.py')
@@ -137,6 +140,7 @@ def watch(args):
 def execute(args):
     base=args.directory;m=json.loads((base/'manifest.json').read_text());gate=json.loads((base/'LOCAL_GATES.json').read_text())
     require(gate['REMOTE_RETRY_LOCAL_GATES_PASS'] is True,'local gates not passed')
+    refuse_general_path(names=[m['name']])
     require(git(ROOT,'rev-parse','HEAD').decode().strip()==m['source_commit'],'source HEAD changed')
     require(digest(base/'source.tar.gz')==m['bundle']['sha256'],'reviewed archive changed')
     require(not (base/'launch_intent.json').exists(),'one launch only')
@@ -241,6 +245,7 @@ def execute(args):
 
 
 def main():
+    refuse_general_path(argv=sys.argv[1:])
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=('prepare','execute','watch'))
     p.add_argument('--directory',type=Path,required=True);p.add_argument('--credential-file',type=Path,required=True)
     args=p.parse_args();args.directory=args.directory.absolute()
