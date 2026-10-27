@@ -2,9 +2,10 @@
 by the verify gate (scripts/verify_session1.py) through check(); check_group(name) runs one
 group, and `py -3.12 -X utf8 scripts/adapter_checks.py [group ...]` runs them by hand.
 
-Every case runs on small synthetic items in each benchmark's documented schema (the
-fixtures beside each adapter: hand-written, CUAD's 41 QA entries per contract expanded by
-the tracked benchmark/adapters/cuad/fixtures/make_synthetic_items.py), in temporary
+Every case runs on small synthetic items in each benchmark's release schema, as confirmed
+on the B-dev development items (the fixtures beside each adapter: hand-written, CUAD's 41
+QA entries per contract expanded by the tracked
+benchmark/adapters/cuad/fixtures/make_synthetic_items.py), in temporary
 folders; nothing under config/, durable/, ontology/ or output/ is read or written, and no
 benchmark data under external/ is ever needed. benchmark/ is not shipped in the container
 image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
@@ -911,7 +912,8 @@ GROUPS = {
                            "document from its own conventions; the cut keeps whole parts with the "
                            "hand-counted cut line and evidence read on the kept text; no budget, "
                            "an off-side document or a testmini report is refused; empty documents "
-                           "are skipped and listed"),
+                           "are skipped and listed; each release's schema is read as the B-dev "
+                           "development items showed it"),
     "split": (SplitChecks, "the split key is the documented document key, its SHA-256 mod 5 "
                            "recomputed independently, every item of a document on its side, "
                            "ContraDoc groups read from the frozen assignment, FinDVer's testmini "
