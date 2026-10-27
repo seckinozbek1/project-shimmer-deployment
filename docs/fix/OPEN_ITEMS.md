@@ -283,23 +283,23 @@ open-item sweep.
   8. `pipeline._reattribute_computed_plan` splits rule text raw instead of using `pairing_map._norm_label` (a second tokeniser, against the one-tokeniser rule).
   9. `paired_review.prior_index` attributes a paragraph repeated under two headings to the first.
   10. `[note:]` and `[2026: x]` are absorbed as subject tags instead of refused.
-- **Evidence.** Probes on invented strings, recorded with file and function in the S3 closure table (`docs/loop/stages/S03_REPORT.md` when written).
+- **Evidence.** Probes on invented strings, recorded with file and function in the S3 closure table (`docs/loop/stages/S03_REPORT.md`). Where each sits, at `loop/s03` commit `0b25902`: 1, `scripts/paired_review.py` `date_pair_for_rule` (line 336); 2, the same file's `_QUANTITY` (line 93), `_band_comparisons` (line 600) and `compute_checks` (line 649); 3, `scripts/text_extract.py` lines 105 and 126 and `scripts/convention_parser.py` line 340 (`encoding="utf-8"`, not `utf-8-sig`); 4, `paired_review._header_unit` (line 496) against `scripts/reference_tables.py` `resolve_unit` (line 162); 5, `tools/score_corpus.py` `score_rounds`; 6, `scripts/pairing_map.py` (scope pins) against `paired_review.extract_fields` (figures); 7, `scripts/convention_parser.py` `_parse_text_lines` (line 344); 8, `scripts/pipeline.py` `_reattribute_computed_plan`; 9, `paired_review.prior_index` (line 1716, the first unit whose text holds the paragraph); 10, `convention_parser._heading_bracket_tags`.
 - **Why it was left.** None sits in a file S3 changes (P16), and each fix changes product behaviour that needs its own proof; the S6 open-item sweep owns them. Items 1, 2 and 3 can make a correct detection fail or a correct unit flag, so they lead that sweep, and item 2 is weighed by the S4 adapters (units built so no date shares a unit with a compared figure where avoidable) and by S5.
 - **What would settle it.** A fix with a gate check per item, and a new input-format draft where a workaround becomes unnecessary.
 
 ## 17. The scorer reads keys only from benchmark/corpora/ (found at loop S3)
 
-- **What it is.** `tools/score_corpus.py` hardcodes `benchmark/corpora/<bundle>/answer_key.json` and finds twins there. The development suite (S3c) lives in `benchmark/dev_suite/generated/` and sealed tests live in role folders, so neither can be scored with it as it stands.
+- **What it is.** `tools/score_corpus.py` hardcodes `benchmark/corpora/<bundle>/answer_key.json` and finds twins there. The development suite (S3c) lives in `benchmark/dev_suite/generated/` and sealed tests live in role folders, so neither can be scored with it as it stands. It also reads none of the key parts D-042 added to `docs/INPUT_FORMAT.md` section 9: `expected_refusals` (it counts a matched rename's record as a false positive and cannot tell a refusal kind), the multi-round key (entries scoped by round and document), and the four relations Python never writes (`unit_mismatch`, `rate_mismatch`, `copy_mismatch`, `carry_mismatch`), which it can only ever count as missed.
 - **Evidence.** `tools/score_corpus.py` line 75 (`CORPORA = ROOT / "benchmark" / "corpora"`); `--corpus` takes a name, not a path.
 - **Why it was left.** S3 does not score; the first scoring of generated bundles is S5, and the sealed scorer is role C's own. Recorded in `docs/INPUT_FORMAT.md` section 1.
-- **What would settle it.** A `--corpora-root` option (with a gate check) before S5 scores the development suite.
+- **What would settle it.** A `--corpora-root` option (with a gate check) before S5 scores the development suite, and readers for the section 9 parts above (role C's scorer, or the repository's) before S5 measures the rename probes.
 
 ## 22. The pairing map reports a firm low side as conditional (found at loop S3)
 
 - **Number.** Recorded as item 20 in D-025 on `loop/s03`; renumbered 22 when the S2 merge brought another item 20 (D-041).
 
 - **What it is.** `reference_tables.band_conditions_for_unit` leaves the compared field out of the fields it treats as used, so a unit's `band_conditions` record in `audit/pairing_map.json` says the low side goes to the model (conditional) for a comparison the finding itself treats as firm. Findings, amendments and scores are unaffected; only the audit record misreports.
-- **Evidence.** A probe on the input format's own unit-price example (S3 answers to the generators' questions, kept privately); the finding path never sets `conditional_on` there.
+- **Evidence.** `scripts/reference_tables.py`, `band_conditions_for_unit` (lines 835 to 862 at `loop/s03` commit `0b25902`), passes only the band's `key_labels` as used to `low_side_condition` (lines 849 and 850; the test itself is lines 675 to 701), while the finding path, `scripts/paired_review.py` `compute_checks`, passes the key labels and the compared field (line 854: `used = set(band.get("key_labels") or ()) | set(labels)`). Reproducible with the committed probe `py -3.12 scripts/generator_checks.py --probe-open-item-22` (`generator_checks.probe_open_item_22`), on the input format's own unit-price example with a neutral measure (a unit price of 5 `zed/box` against the band 8 to 15 for its item class): it prints `([('model', ['unit price'])], [None])`, the map's record conditional on `unit price` and the finding with no `conditional_on`.
 - **Why it was left.** The file is not changed by S3 (P16); the misreport affects an audit record, not a result.
 - **What would settle it.** Count the compared field as used, with a gate check on the format's example; S6 sweep.
 
