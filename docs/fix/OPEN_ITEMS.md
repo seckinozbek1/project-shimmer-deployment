@@ -269,3 +269,27 @@ open-item sweep.
 - **Evidence.** `scripts/role_resolution.py` reads the manifest and `config/review_scope.json`; no bundle-level settings file is opened by the pipeline or by `tools/score_corpus.py`.
 - **Why it was left.** A new reader is a product change outside S3; the manifest already removes the one per-test dependency (the date cutoff) when it names every file. Decision D-018.
 - **What would settle it.** A test that genuinely needs a different value for one of these settings; then a reader, a gate check and a format version bump.
+
+## 16. Ten parser and scorer defects found while settling the input format (found at loop S3)
+
+- **What it is.** Settling the code-blind checker's guesses against the code (S3a item 4) found ten behaviours that are wrong, not merely undocumented. `docs/INPUT_FORMAT.md` tells preparers how to avoid each one; none is fixed.
+  1. A `date_window` finding's field label joins a Python `set`, so its word order changes between processes (`scripts/paired_review.py`, `date_pair_for_rule`); the scorer compares labels as exact text.
+  2. Dates and identifiers with digits are read as figures with no measure (`2026-03-01` gives 2026, `SR-101` gives -101) and then enter products and ratios (`_QUANTITY`, `compute_checks`, `_band_comparisons`); probes produced a false `below_band` and a false `product_mismatch` on correct units. This matters for the S4 adapters: filings and contracts are full of dates.
+  3. A UTF-8 byte-order mark drops content: files are decoded as `utf-8`, not `utf-8-sig` (`scripts/text_extract.py`, `scripts/convention_parser.py`); a conventions file starting with one yields zero rules, silently.
+  4. A table header measure with a currency symbol or a non-ASCII letter passes `paired_review._header_unit` and fails `reference_tables.resolve_unit`, so that table's bands are ignored.
+  5. The negotiation scorer turns a missing field label into the word `none`, so every ratio band breach is a false positive no key can list (`tools/score_corpus.py`, `score_rounds`).
+  6. A label repeated in one unit is read two ways: scope pins take the first value, figures the last.
+  7. Rules dropped as shorter than 16 characters still consume registry ids.
+  8. `pipeline._reattribute_computed_plan` splits rule text raw instead of using `pairing_map._norm_label` (a second tokeniser, against the one-tokeniser rule).
+  9. `paired_review.prior_index` attributes a paragraph repeated under two headings to the first.
+  10. `[note:]` and `[2026: x]` are absorbed as subject tags instead of refused.
+- **Evidence.** Probes on invented strings, recorded with file and function in the S3 closure table (`docs/loop/stages/S03_REPORT.md` when written).
+- **Why it was left.** None sits in a file S3 changes (P16), and each fix changes product behaviour that needs its own proof; the S6 open-item sweep owns them. Items 1, 2 and 3 can make a correct detection fail or a correct unit flag, so they lead that sweep, and item 2 is weighed by the S4 adapters (units built so no date shares a unit with a compared figure where avoidable) and by S5.
+- **What would settle it.** A fix with a gate check per item, and a new input-format draft where a workaround becomes unnecessary.
+
+## 17. The scorer reads keys only from benchmark/corpora/ (found at loop S3)
+
+- **What it is.** `tools/score_corpus.py` hardcodes `benchmark/corpora/<bundle>/answer_key.json` and finds twins there. The development suite (S3c) lives in `benchmark/dev_suite/generated/` and sealed tests live in role folders, so neither can be scored with it as it stands.
+- **Evidence.** `tools/score_corpus.py` line 75 (`CORPORA = ROOT / "benchmark" / "corpora"`); `--corpus` takes a name, not a path.
+- **Why it was left.** S3 does not score; the first scoring of generated bundles is S5, and the sealed scorer is role C's own. Recorded in `docs/INPUT_FORMAT.md` section 1.
+- **What would settle it.** A `--corpora-root` option (with a gate check) before S5 scores the development suite.
