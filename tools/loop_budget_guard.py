@@ -11,14 +11,17 @@ refuses a launch, in one line, when:
   * another loop instance runs (an open launch in a ledger, or a `shimmer-loop-` name
     in the provider inventory the caller listed);
   * the per-run cap formula leaves less than the forecast:
-        cap = min(1.5 x forecast, budget - spend - caps of running loop instances
-                  - storage forecast - 1),
-    where the budget is read from the ledgers' latest `budget_open` or `budget_change`
-    line (`instance_reaper.budget_figures`), never from a number in this file;
+        cap = min(1.5 x forecast, hard stop - spend - caps of running loop instances
+                  - storage forecast),
+    where the hard stop is read from the ledgers' latest `budget_open` or
+    `budget_change` line (`instance_reaper.budget_figures`: its `hard_stop_usd`, else its
+    `budget_usd` less the one-dollar margin), never from a number in this file; with no
+    hard stop on the line this is the IV.3 formula `budget - spend - caps - storage - 1`;
   * the capped run time (cap / live price) does not cover the forecast time plus the
     run's stop reserve (the runner stops its workload that long before the ceiling).
 "Spend + forecast + storage passes the budget" needs no refusal of its own: the cap rule
-already keeps it at or below the budget less one dollar, the reaper's hard stop. Spend is counted once per launch by instance id or name across
+already keeps it at or below the hard stop, the spend at which the reaper ends every loop
+instance. Spend is counted once per launch by instance id or name across
 every ledger read (the reaper's own reading, so a line copied from R's ledger with
 `copied_from` is not counted twice). The forecast is the measured basis in minutes times
 the live price times 1.3.
@@ -101,9 +104,13 @@ def forecast_usd(minutes, hourly_rate):
     return number(minutes, 'forecast minutes') / 60 * number(hourly_rate, 'hourly rate') * FORECAST_FACTOR
 
 
-def per_run_cap(forecast, spend, running_caps, storage_forecast, budget):
-    """IV.3: min(1.5 x forecast, budget - spend - running caps - storage forecast - 1)."""
-    return min(CAP_FACTOR * forecast, budget - spend - running_caps - storage_forecast - RESERVE_USD)
+def per_run_cap(forecast, spend, running_caps, storage_forecast, hard_stop):
+    """IV.3: min(1.5 x forecast, hard stop - spend - running caps - storage forecast).
+
+    `hard_stop` is the ledger's (`instance_reaper.budget_figures`); where the budget line
+    names none it is the budget less the one-dollar margin, so this is then exactly
+    min(1.5 x forecast, budget - spend - running caps - storage forecast - 1)."""
+    return min(CAP_FACTOR * forecast, hard_stop - spend - running_caps - storage_forecast)
 
 
 def reaper_ledgers():
@@ -145,14 +152,22 @@ def ledger_state(ledgers, now_epoch):
 
 
 def a10_reference_rate(ledgers):
-    """The A10's last recorded price (the type rule's reference), from the ledger's opening line."""
-    rate = None
+    """The A10's last recorded price (the type rule's reference): the latest, by its own
+    `time_utc` (read order breaks a tie), of the budget lines (`budget_open` or
+    `budget_change`) that carry `a10_reference_price_usd_per_hour`. A line with no readable
+    time is skipped, as `instance_reaper.budget_figures` skips it."""
+    timed = []
     for path in ledgers:
         for row in instance_reaper.read_ledger(path):
-            if row.get('event') == 'budget_open' and row.get('a10_reference_price_usd_per_hour') is not None:
-                rate = row['a10_reference_price_usd_per_hour']
-    refuse(rate is not None, 'No recorded A10 reference price in the ledgers given')
-    return number(rate, 'A10 reference price')
+            if row.get('event') not in instance_reaper.BUDGET_EVENTS or row.get('a10_reference_price_usd_per_hour') is None:
+                continue
+            try:
+                moment = instance_reaper.parse_time(row['time_utc'])
+            except (KeyError, TypeError, ValueError):
+                continue
+            timed.append((moment, len(timed), row['a10_reference_price_usd_per_hour']))
+    refuse(bool(timed), 'No recorded A10 reference price in the ledgers given')
+    return number(max(timed, key=lambda item: (item[0], item[1]))[2], 'A10 reference price')
 
 
 def read_r_inputs(path):
@@ -173,8 +188,8 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
     reserve = number(reserve_minutes, 'reserve minutes', positive=False)
     spend, running, running_caps, rows = ledger_state(ledgers, now_epoch)
     refuse(any(r.get('event') == 'budget_open' for r in rows), 'No budget_open line in the loop ledgers')
-    budget, _ = instance_reaper.budget_figures(rows)
-    refuse(budget is not None, 'No readable budget line in the loop ledgers')
+    budget, hard_stop = instance_reaper.budget_figures(rows)
+    refuse(budget is not None and hard_stop is not None, 'No readable budget line in the loop ledgers')
     if r_inputs is not None:
         r = read_r_inputs(r_inputs)
         spend = max(spend, number(r['spend_usd'], 'R spend', positive=False))
@@ -184,7 +199,7 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
                'Forecast %.2f dollars exceeds the allocation left %.2f dollars' % (forecast, r['allocation_left_usd']))
     others = sorted(n for n in provider_names if str(n).startswith(PREFIX))
     refuse(not running and not others, 'Another loop instance is running; at most one at a time')
-    cap = per_run_cap(forecast, spend, running_caps, storage, budget)
+    cap = per_run_cap(forecast, spend, running_caps, storage, hard_stop)
     if r_inputs is not None:
         cap = min(cap, number(r['cap_usd'], 'R cap'))
     refuse(cap >= forecast, 'Per-run cap %.2f dollars leaves less than the forecast %.2f dollars' % (cap, forecast))
@@ -194,7 +209,16 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
            % (capped_minutes, forecast_minutes, reserve))
     return dict(forecast_usd=round(forecast, 4), cap_usd=round(cap, 4), capped_minutes=round(capped_minutes, 2),
                 spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage,
-                budget_usd=budget)
+                budget_usd=budget, hard_stop_usd=hard_stop)
+
+
+def require_purpose(purpose):
+    """A launch purpose is a short identifier (lower case, digits, hyphens, at most 40),
+    never prose. The launch plan is refused on it before any provider call; the ledger
+    line checks it again."""
+    refuse(isinstance(purpose, str) and PURPOSE.fullmatch(purpose) is not None,
+           'Purpose must be a short identifier (lower case, digits, hyphens)')
+    return purpose
 
 
 def undeclared(fields):
@@ -209,8 +233,7 @@ def ledger_line(event, **fields):
     refuse(not extra, 'Ledger line field outside IV.3: ' + ','.join(sorted(extra)))
     refuse(str(fields.get('instance_name', '')).startswith(PREFIX), 'Ledger line without a loop instance name')
     if 'purpose' in fields:
-        refuse(isinstance(fields['purpose'], str) and PURPOSE.fullmatch(fields['purpose']) is not None,
-               'Purpose must be a short identifier (lower case, digits, hyphens)')
+        require_purpose(fields['purpose'])
     if event == 'launch_intent':
         refuse(fields.get('deadline_utc') and fields.get('launch_requested_utc'), 'Intent needs a deadline and a request time')
     return dict(event=event, **fields)
@@ -225,16 +248,69 @@ def append(path, line):
 
 # ---- one launch decision at a time (A12) -------------------------------------------------
 
+def pid_alive(pid):
+    """True if a process with this id runs, False if none does, None when it cannot be told.
+    Observation only: on Windows the process is opened for a query and never signalled
+    (os.kill there would end it)."""
+    if type(pid) is not int or pid <= 0:
+        return None
+    if os.name == 'nt':
+        import ctypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        handle = kernel.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            error = ctypes.get_last_error()
+            return True if error == 5 else False if error == 87 else None  # access denied / no such process
+        try:
+            code = ctypes.c_ulong()
+            if not kernel.GetExitCodeProcess(ctypes.c_void_p(handle), ctypes.byref(code)):
+                return None
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel.CloseHandle(ctypes.c_void_p(handle))
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return None
+    return True
+
+
+def lock_holder(lock, now_epoch=None):
+    """One clause naming a held lock's age, its holder's pid and whether that pid runs, read
+    from what the lock holds; never the lock's removal."""
+    try:
+        held = json.loads(Path(lock).read_text(encoding='utf-8'))
+        pid, created = held['pid'], float(held['created_epoch'])
+    except (OSError, ValueError, TypeError, KeyError):
+        return 'holder unreadable'
+    age = max(0.0, (time.time() if now_epoch is None else now_epoch) - created)
+    state = {True: 'running', False: 'not running', None: 'state unknown'}[pid_alive(pid)]
+    return 'held %.0f s, since %s, by pid %s (%s)' % (age, utc(created), pid, state)
+
+
 def acquire_lock(ledger):
     """An exclusive lock beside the ledger, held from the guard's decision through the intent
-    line, so two controllers can never both pass the guard for one free slot. A lock left by
-    a crash is reported with its holder and time, never broken silently."""
+    line, so two controllers can never both pass the guard for one free slot. The lock holds
+    its pid and creation time. A lock left by a crash is reported, in one line, with its
+    age, its pid and whether that pid still runs, so the operator can act; it is never
+    broken here.
+
+    One lock per launch ledger, not one across ledgers: the lead and role R never launch at
+    the same time (by procedure), and the controller reads the provider inventory again
+    under this lock just before the guard, so a launch through the other ledger is seen
+    there as a running loop instance."""
     lock = Path(str(ledger) + '.lock')
     try:
         with open(lock, 'x', encoding='utf-8') as handle:
-            handle.write(json.dumps(dict(pid=os.getpid(), time_utc=utc(time.time()))) + '\n')
+            now = time.time()
+            handle.write(json.dumps(dict(pid=os.getpid(), created_epoch=now, time_utc=utc(now))) + '\n')
     except FileExistsError:
-        raise GuardRefusal('Another launch holds the ledger lock (' + lock.name
+        raise GuardRefusal('Another launch holds the ledger lock (' + lock.name + ', ' + lock_holder(lock)
                            + '); remove it only if no launch is running') from None
     return lock
 

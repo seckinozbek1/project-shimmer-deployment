@@ -60,16 +60,29 @@ def launch_plan():
             and plan.get('forecast_minutes') is not None and plan.get('storage_forecast_usd') is not None
             and type(plan.get('forecast_includes_upload')) is bool,
             'Loop launch plan required: ledger, purpose, forecast minutes, storage forecast, upload in forecast')
+    # The purpose is a short identifier, refused here, before any provider call, rather than
+    # at the intent line after the temporary key is registered.
+    guard.require_purpose(plan['purpose'])
     value=dict(read_ledgers=[],r_inputs=None,test_manifest=None,frozen_tag=None,batch=None,report={},
                poll_seconds=guard.POLL_LIMIT_SECONDS,reaped=None,bundle_folder=None)
     value.update(plan)
     return value
 
 
+FROZEN_TAG=re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,99}')
+
+
 def frozen_commit(tag):
-    """The commit a frozen tag names, from git at the repository root."""
+    """The commit a frozen tag names, from git at the repository root.
+
+    Only a tag resolves: refs/tags/<name>, annotated or lightweight, peeled to its commit.
+    A branch, a commit id, HEAD or any other revision expression is refused, so a sealed
+    run is never admitted on a revision that can move or that names no frozen tag."""
     import subprocess as process
-    result=process.run(['git','rev-parse','--verify',tag+'^{commit}'],cwd=ROOT,capture_output=True,timeout=30)
+    require(isinstance(tag,str) and FROZEN_TAG.fullmatch(tag) is not None and '..' not in tag
+            and not tag.endswith(('.','.lock')),'Frozen tag not found')
+    result=process.run(['git','rev-parse','--verify','--quiet','refs/tags/'+tag+'^{commit}'],cwd=ROOT,
+                       capture_output=True,timeout=30)
     require(result.returncode==0,'Frozen tag not found')
     return result.stdout.decode().strip()
 
@@ -100,6 +113,11 @@ def admit(m,seal,plan,base):
     else:
         require(plan['test_manifest'] is None,'An exposed run takes no test manifest')
     return workload
+
+
+def consumed(bundle):
+    """A bundle launched once, in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json)."""
+    return (Path(bundle)/'LAUNCH_INTENT.json').exists() or (Path(bundle)/'RUN_FOLDER.json').exists()
 
 
 def batch_schedule(entries):
@@ -137,7 +155,9 @@ def batch_entries(plan,m,assets):
         require(all(em[k]==m[k] for k in BUDGET_KEYS),'Batch bundles share the session sealed budget')
         require(em['max_runs']==1 and em['model_mode']=='final','Ordinary final run only')
         admit(em,es,plan,b)
-        require(not (b/'LAUNCH_INTENT.json').exists() or b==Path(BASE).resolve(),'Batch bundle already consumed')
+        # Every entry, the session bundle among them: launched once in place (LAUNCH_INTENT.json)
+        # or in a run folder with --output-dir (RUN_FOLDER.json) is consumed either way.
+        require(not consumed(b),'Batch bundle already consumed')
         e.update(base=b,manifest=em,seal=es,manifest_sha256=sha(b/'execution_manifest.json'),seal_sha256=sha(b/'seal.json'),
                  runner=em.get('runner','ordinary_final_run.py'),
                  folder=Path(BASE)/'batch'/('%02d_%s_%s'%(e['index'],e['item'],e['arm'])))

@@ -63,7 +63,8 @@ def fixture_budget(types=None, reference=1.29):
     the soft (forecast) and hard (per-run cap) figures from the guard's own formula."""
     candidates = guard.instance_candidates(types or [A10_TYPE], reference)
     forecast = guard.forecast_usd(FORECAST_MINUTES, candidates[0]['max_hourly_rate'])
-    cap = guard.per_run_cap(forecast, 0.0, 0.0, STORAGE_USD, FIXTURE_BUDGET_USD)
+    # The fixture ledger's opening line names no hard stop: the stop is the budget less the margin.
+    cap = guard.per_run_cap(forecast, 0.0, 0.0, STORAGE_USD, FIXTURE_BUDGET_USD - guard.RESERVE_USD)
     return dict(instance_candidates=candidates, a10_reference_rate=reference, max_hourly_rate=candidates[0]['max_hourly_rate'],
                 region='us-east-1', soft_budget_usd=forecast, hard_ceiling_usd=cap, per_run_cap_usd=cap,
                 forecast_minutes=FORECAST_MINUTES, workload_stop_reserve_seconds=900, termination_reserve_seconds=180)
@@ -2272,6 +2273,322 @@ class ControllerChecks(unittest.TestCase):
         last = ledger_rows(hang / 'ledger.jsonl')[-1]
         self.assertEqual((last['event'], last['reason'], last['instance_name']), ('termination', 'deadline_passed', LOOP_NAME))
 
+    # ---- S2 checker round 2 ---------------------------------------------------------------
+
+    @staticmethod
+    def docx_with_crlf(text):
+        """A real DOCX holding `text`, stored uncompressed with a CR LF pair after its document
+        part, so a line-ending conversion of the file's bytes is certain to corrupt it. Without
+        python-docx, a stored zip with the same CR LF pair (bytes only)."""
+        import zipfile
+        try:
+            import docx
+        except ImportError:
+            docx = None
+        built = io.BytesIO()
+        if docx is not None:
+            document = docx.Document()
+            document.add_paragraph(text)
+            document.save(built)
+        else:
+            with zipfile.ZipFile(built, 'w') as out:
+                out.writestr('word/document.xml', '<w:document/>')
+        source = zipfile.ZipFile(io.BytesIO(built.getvalue()))
+        stored = io.BytesIO()
+        with zipfile.ZipFile(stored, 'w', zipfile.ZIP_STORED) as out:
+            for info in source.infolist():
+                data = source.read(info.filename)
+                out.writestr(info.filename, data + b'\r\n' if info.filename == 'word/document.xml' else data)
+        return stored.getvalue(), docx is not None
+
+    def test_binary_workload_members_keep_their_bytes_and_reach_the_case_validation(self):
+        """Round 2 item 1: only plain-text and HTML members are LF-normalised. A DOCX or PDF
+        holding a CR LF pair comes through byte-identical, from a folder and from an archive;
+        the case manifest keeps its own bytes; and the case validation reads the DOCX's text,
+        where a converted file would be extracted as empty and silently skipped."""
+        import tarfile as tar_module
+        docx_bytes, readable = self.docx_with_crlf('First text of round one.')
+        self.assertIn(b'\r\n', docx_bytes)
+        pdf = b'%PDF-1.4\r\n%\xe2\xe3\xcf\xd3\r\nfixture stream\r\n'
+        case = json.dumps(self.live_case(), indent=1).replace('\n', '\r\n').encode()
+        given = {'context/round_one.docx': docx_bytes, 'context/round_two.md': b'Second text of round two.\r\n',
+                 'context/paper.pdf': pdf, 'context/page.html': b'<p>x</p>\r\n', 'conventions/rules.md': b'Rule.\r\n',
+                 '_review_targets.json': b'{"targets": []}\r\n', runner.CASE_MANIFEST: case}
+        folder = self.root / 'r2i1' / 'folder'
+        for name, data in given.items():
+            (folder / name).parent.mkdir(parents=True, exist_ok=True)
+            (folder / name).write_bytes(data)
+        archive = self.root / 'r2i1' / 'test.tar'
+        with tar_module.open(archive, 'w') as out:
+            for name, data in given.items():
+                info = tar_module.TarInfo('./' + name)
+                info.size = len(data)
+                out.addfile(info, io.BytesIO(data))
+        for source in (folder, archive):
+            with self.subTest(source=source.name):
+                members = sealer.workload_members(source)
+                self.assertEqual(members['context/round_one.docx'], docx_bytes)
+                self.assertEqual(members['context/paper.pdf'], pdf)
+                self.assertEqual(members[runner.CASE_MANIFEST], case)
+                self.assertEqual(members['context/round_two.md'], b'Second text of round two.\n')
+                self.assertEqual(members['context/page.html'], b'<p>x</p>\n')
+                self.assertEqual(members['conventions/rules.md'], b'Rule.\n')
+                self.assertEqual(members['_review_targets.json'], b'{"targets": []}\n')
+        if readable:
+            documents = runner.case_corpus_documents(
+                {n[len('context/'):]: d for n, d in members.items() if n.startswith('context/')},
+                (ROOT / 'scripts/pipeline.py').read_bytes())
+            self.assertEqual(documents['round_one'], 'First text of round one.')
+            runner.validate_live_case_manifest(json.loads(members[runner.CASE_MANIFEST].decode('utf-8')), documents)
+
+    def test_a_batch_entry_launched_in_a_run_folder_is_consumed(self):
+        """Round 2 item 2: a batch entry launched earlier with --output-dir carries only
+        RUN_FOLDER.json; it is refused as consumed, as one carrying LAUNCH_INTENT.json is,
+        before any provider call."""
+        for marker in ('RUN_FOLDER.json', 'LAUNCH_INTENT.json'):
+            with self.subTest(marker=marker):
+                self.setUp()
+                bundles, entries = self.batch_bundles()
+                write(bundles[('i2', 'B3')] / marker, dict(run_folder='elsewhere'))
+                with self.assertRaisesRegex(RuntimeError, 'Batch bundle already consumed'):
+                    self.execute(plan=fixture_plan(self.ledger, batch=entries))
+                self.assertIsNone(FakeProvider.state)
+                self.assertEqual([r['event'] for r in ledger_rows(self.ledger)], ['budget_open'])
+
+    def test_an_intent_without_an_instance_stops_accruing_and_the_reaper_closes_it(self):
+        """Round 2 item 3: an open launch accrues only to its recorded deadline; past it, with
+        no instance of its name listed, the reaper closes it with one termination line of
+        declared fields (charged to the deadline), after which the guard admits a launch; a
+        listed instance past its deadline is still terminated, never merely closed."""
+        from datetime import datetime, timedelta, timezone
+        now = datetime(2026, 10, 27, 12, 0, tzinfo=timezone.utc)
+        opening = dict(self.OPEN_LINE, storage_usd_per_day=0.0)
+        intent = dict(event='launch_intent', time_utc='2026-10-27T10:00:00+00:00', launch_requested_utc='2026-10-27T10:00:00+00:00',
+                      instance_name='shimmer-loop-lost', type='gpu_1x_a10', region='us-east-1', price_usd_per_hour=1.29,
+                      cap_usd=2.0, deadline_utc='2026-10-27T11:30:00+00:00', purpose='fixture')
+        for later in (now, now + timedelta(days=3)):
+            self.assertAlmostEqual(instance_reaper.ledger_view([opening, intent], later)[2], 1.29 * 90 / 60, places=6)
+        ledger = self.root / 'r2i3' / 'ledger.jsonl'
+        write_lines(ledger, [opening, intent])
+        state = self.root / 'r2i3' / 'state.json'
+        write(state, dict(instances=[dict(instance_id='b' * 32, name='someone-else', status='active')]))
+        provider = instance_reaper.MockProvider(state)
+        status = instance_reaper.reap(provider, [ledger], ledger, now=instance_reaper.parse_time('2026-10-27T11:00:00+00:00'))
+        self.assertEqual((status['closed_without_instance'], len(ledger_rows(ledger))), ([], 2))
+        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+            guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0, now_epoch=now.timestamp(),
+                        reserve_minutes=15, reaped=[])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual(status['closed_without_instance'], [dict(instance_name='shimmer-loop-lost', reason='intent_without_instance')])
+        self.assertEqual(status['terminated'], [])
+        line = ledger_rows(ledger)[-1]
+        self.assertLessEqual(set(line), set(guard.LEDGER_FIELDS))
+        self.assertEqual((line['event'], line['by'], line['instance_name'], line['actual_minutes'], line['actual_cost']),
+                         ('termination', 'reaper', 'shimmer-loop-lost', 90, round(1.29 * 1.5, 4)))
+        self.assertEqual(guard.ledger_state([ledger], now.timestamp())[1], [])
+        guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0, now_epoch=now.timestamp(),
+                    reserve_minutes=15, reaped=[])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now + timedelta(minutes=5))
+        self.assertEqual((status['closed_without_instance'], len(ledger_rows(ledger))), ([], 3))
+        self.assertEqual(read(state)['instances'][0]['status'], 'active')
+        # A launch whose instance is already gone is closed the same way.
+        gone = dict(intent, event='launch', instance_id='c' * 32, instance_name='shimmer-loop-gone')
+        ledger2 = self.root / 'r2i3' / 'gone.jsonl'
+        write_lines(ledger2, [opening, gone])
+        status = instance_reaper.reap(provider, [ledger2], ledger2, now=now)
+        self.assertEqual(status['closed_without_instance'], [dict(instance_name='shimmer-loop-gone', reason='instance_not_listed')])
+        self.assertEqual(ledger_rows(ledger2)[-1]['instance_id'], 'c' * 32)
+        # A listed instance past its deadline is terminated, and only that line is written.
+        write(state, dict(instances=[dict(instance_id='d' * 32, name='shimmer-loop-lost', status='active')]))
+        ledger3 = self.root / 'r2i3' / 'listed.jsonl'
+        write_lines(ledger3, [opening, intent])
+        status = instance_reaper.reap(provider, [ledger3], ledger3, now=now)
+        self.assertEqual((status['terminated'], status['closed_without_instance']),
+                         ([dict(instance_name='shimmer-loop-lost', reason='deadline_passed')], []))
+        self.assertEqual(read(state)['instances'][0]['status'], 'terminated')
+        self.assertEqual([r['event'] for r in ledger_rows(ledger3)], ['budget_open', 'launch_intent', 'termination'])
+
+    def test_the_cap_ceiling_is_the_ledgers_hard_stop(self):
+        """Round 2 item 4: cap = min(1.5 x forecast, hard stop - spend - running caps - storage),
+        the hard stop read from the latest budget line; a line with no hard stop gives the IV.3
+        formula with the one-dollar margin."""
+        now = 1_000_000.0 + 3600
+        ledger = self.root / 'r2i4' / 'ledger.jsonl'
+        open_ledger(ledger)
+        write_lines(ledger, [dict(event='launch', instance_id='a' * 32, instance_name='shimmer-loop-old', price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now - 7200)),
+                             dict(event='termination', instance_id='a' * 32, instance_name='shimmer-loop-old', actual_cost=55.0),
+                             dict(event='budget_change', time_utc=guard.utc(now - 60), budget_usd=70.0, hard_stop_usd=62.0)])
+        decide = lambda: guard.check(ledgers=[ledger], forecast_minutes=100, hourly_rate=1.29, storage_forecast_usd=3.9,
+                                     now_epoch=now, reserve_minutes=15, reaped=[])
+        forecast = guard.forecast_usd(100, 1.29)
+        decision = decide()
+        self.assertEqual((decision['budget_usd'], decision['hard_stop_usd']), (70.0, 62.0))
+        self.assertAlmostEqual(decision['cap_usd'], 62.0 - decision['spend_usd'] - 3.9, places=3)
+        self.assertLess(decision['cap_usd'], 1.5 * forecast)
+        write_lines(ledger, [dict(event='budget_change', time_utc=guard.utc(now - 30), budget_usd=70.0, hard_stop_usd=60.0)])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'leaves less than the forecast'):
+            decide()
+        write_lines(ledger, [dict(event='budget_change', time_utc=guard.utc(now - 10), budget_usd=70.0)])
+        decision = decide()
+        self.assertEqual(decision['hard_stop_usd'], 69.0)
+        self.assertAlmostEqual(decision['cap_usd'], min(1.5 * forecast, 70.0 - decision['spend_usd'] - 3.9 - 1.0), places=3)
+        self.assertAlmostEqual(guard.per_run_cap(2.0, 10.0, 1.0, 3.9, 69.0), min(3.0, 70.0 - 10.0 - 1.0 - 3.9 - 1.0))
+
+    def test_the_guard_refuses_a_budget_line_it_cannot_read(self):
+        """Round 2 item 5: a budget_open line with no readable budget_usd is refused by the
+        guard, and the reaper reading it has no hard stop, so it ends every loop instance."""
+        now = 1_000_000.0 + 60
+        for k, unreadable in enumerate((dict(), dict(budget_usd='seventy'), dict(budget_usd=70.0, hard_stop_usd=80.0))):
+            with self.subTest(line=unreadable):
+                ledger = self.root / 'r2i5' / ('%d.jsonl' % k)
+                write_lines(ledger, [dict(dict(event='budget_open', time_utc=guard.utc(1_000_000.0), storage_usd_per_day=0.0,
+                                               a10_reference_price_usd_per_hour=1.29), **unreadable)])
+                with self.assertRaisesRegex(guard.GuardRefusal, 'No readable budget line'):
+                    guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0.0, now_epoch=now,
+                                reserve_minutes=15, reaped=[])
+        state = self.root / 'r2i5' / 'state.json'
+        write(state, dict(instances=[dict(instance_id='b' * 32, name=LOOP_NAME, status='active')]))
+        status = instance_reaper.reap(instance_reaper.MockProvider(state), [ledger], ledger,
+                                      now=instance_reaper.parse_time(guard.utc(now)))
+        self.assertEqual(status['terminated'], [dict(instance_name=LOOP_NAME, reason='no_budget_recorded')])
+
+    def test_a_held_lock_is_reported_with_its_age_and_its_pid(self):
+        """Round 2 item 6: a launch's lock records its pid and creation time; a held lock is
+        refused in one line naming its age, its pid and whether that pid runs, and is left in
+        place for the operator."""
+        lock = Path(str(self.ledger) + '.lock')
+        created = time_module.time() - 3600
+        held = json.dumps(dict(pid=os.getpid(), created_epoch=created, time_utc=guard.utc(created)))
+        lock.write_text(held, encoding='utf8')
+        with self.assertRaises(guard.GuardRefusal) as caught:
+            self.execute()
+        message = str(caught.exception)
+        self.assertNotIn('\n', message)
+        self.assertIn('holds the ledger lock', message)
+        self.assertTrue(3590 <= int(re.search(r'held (\d+) s', message).group(1)) <= 3700, message)
+        self.assertIn('by pid %d (running)' % os.getpid(), message)
+        self.assertEqual((lock.read_text(encoding='utf8'), FakeProvider.state['launches']), (held, 0))
+        ended = subprocess.Popen([sys.executable, '-c', 'pass'])
+        ended.wait()
+        lock.write_text(json.dumps(dict(pid=ended.pid, created_epoch=created, time_utc=guard.utc(created))), encoding='utf8')
+        with self.assertRaisesRegex(guard.GuardRefusal, r'by pid %d \(not running\)' % ended.pid):
+            guard.acquire_lock(self.ledger)
+        lock.unlink()
+        fresh = guard.acquire_lock(self.ledger)
+        value = json.loads(fresh.read_text(encoding='utf8'))
+        self.assertEqual(value['pid'], os.getpid())
+        self.assertLess(abs(value['created_epoch'] - time_module.time()), 60)
+        guard.release_lock(fresh)
+
+    def in_repository_sealed_bundle(self):
+        """A sealed bundle INSIDE a fixture repository (the case SEALED-RUN-A refuses), its test
+        manifest and archive outside it; returns (repo, bundle, plan)."""
+        repo, commit, _ = self.git_repo()
+        outside = self.root / 'outside'
+        outside.mkdir(parents=True, exist_ok=True)
+        archive = outside / 'test.tar'
+        archive.write_bytes(b'sealed test archive fixture')
+        manifest = outside / 'seal_manifest.json'
+        write(manifest, dict(archive_sha256=sha(archive), code_commit=commit, scorer_sha256='c' * 64))
+        bundle = repo / 'bundles' / 'sealed'
+        bundle.mkdir(parents=True)
+        (bundle / 'assets.tar').write_bytes(b'assets fixture')
+        with patch.object(controller, 'ROOT', repo):
+            make_bundle(bundle, bundle / 'assets.tar', source_commit=commit, protected_test=True, test_archive_sha256=sha(archive))
+            reseal(bundle, bundle / 'assets.tar', exposure='sealed', test_manifest_sha256=sha(manifest),
+                   test_archive_sha256=sha(archive), code_commit=commit)
+        self.bind(bundle)
+        return repo, bundle, fixture_plan(self.ledger, test_manifest=manifest, frozen_tag='loop-s08-frozen')
+
+    def test_a_sealed_bundle_inside_the_repository_is_refused_before_any_write(self):
+        """Round 2 item 7: with --output-dir, and with --detach, a sealed bundle inside the
+        repository is refused before anything is written into it or anywhere else."""
+        repo, bundle, plan = self.in_repository_sealed_bundle()
+        runs = self.root / 'outside' / 'runs'
+        before = self.tree(repo)
+        with self.assertRaisesRegex(RuntimeError, 'A sealed bundle must sit outside the repository'):
+            self.execute(root=repo, base=bundle, call=lambda: bound.execute(bundle, plan, runs))
+        self.assertEqual(self.tree(repo), before)
+        self.assertFalse(runs.exists())
+        self.assertIsNone(FakeProvider.state)
+
+        def spawned(argv, log):
+            raise AssertionError('a detached controller was started')
+        argv = ['--bundle', str(bundle), '--output-dir', str(runs), '--ledger', str(self.ledger), '--purpose', 'sealed-fixture',
+                '--forecast-minutes', '120', '--storage-forecast-usd', '3.9', '--test-manifest', str(plan['test_manifest']),
+                '--frozen-tag', 'loop-s08-frozen', '--detach']
+        with patch.object(controller, 'ROOT', repo), patch.object(bound, 'spawn_detached', spawned), \
+                self.assertRaisesRegex(RuntimeError, 'A sealed bundle must sit outside the repository'):
+            bound.main(argv)
+        self.assertEqual(self.tree(repo), before)
+        self.assertFalse((bundle / bound.DETACH_LOG).exists() or (bundle / 'controller_process.json').exists())
+
+    def test_the_frozen_tag_resolves_only_a_tag(self):
+        """Round 2 item 8: --frozen-tag resolves refs/tags/<name> only, a lightweight or an
+        annotated tag peeled to its commit; a commit id, a branch, HEAD or any revision
+        expression is refused, and a sealed launch naming one never reaches the provider."""
+        repo, commit, first = self.git_repo()
+        git = lambda *a: subprocess.run(['git', '-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', *a],
+                                        cwd=repo, capture_output=True, check=True).stdout.decode().strip()
+        git('tag', '-a', 'annotated-frozen', '-m', 'fixture')
+        branch = git('rev-parse', '--abbrev-ref', 'HEAD')
+        with patch.object(controller, 'ROOT', repo):
+            self.assertEqual(controller.frozen_commit('loop-s08-frozen'), commit)
+            self.assertEqual(controller.frozen_commit('annotated-frozen'), commit)
+            self.assertEqual(controller.frozen_commit('older'), first)
+            for revision in (commit, commit[:12], 'HEAD', branch, 'refs/heads/' + branch, 'loop-s08-frozen~1',
+                             'loop-s08-frozen^{commit}', 'older..loop-s08-frozen', '--all', 'no-such-tag'):
+                with self.subTest(revision=revision), self.assertRaisesRegex(RuntimeError, 'Frozen tag not found'):
+                    controller.frozen_commit(revision)
+        bundle, manifest = self.sealed_bundle(commit)
+        with self.assertRaisesRegex(RuntimeError, 'Frozen tag not found'):
+            self.execute(root=repo, base=bundle, plan=fixture_plan(self.ledger, test_manifest=manifest, frozen_tag=commit))
+        self.assertIsNone(FakeProvider.state)
+
+    def test_a_prose_purpose_is_refused_before_any_provider_call(self):
+        """Round 2 item 10: the purpose is checked in the launch plan, before any provider call
+        and before the bound wrapper writes a run folder; the CLI help says what it is."""
+        with self.assertRaisesRegex(guard.GuardRefusal, 'short identifier'):
+            self.execute(plan=fixture_plan(self.ledger, purpose='Checking the fixture on item 3'))
+        self.assertIsNone(FakeProvider.state)
+        self.assertEqual([r['event'] for r in ledger_rows(self.ledger)], ['budget_open'])
+        repo = self.root / 'repo'
+        repo.mkdir()
+        bundle = self.root / 'outside' / 'bundle'
+        bundle.mkdir(parents=True)
+        (bundle / 'assets.tar').write_bytes(b'assets fixture')
+        with patch.object(controller, 'ROOT', repo):
+            make_bundle(bundle, bundle / 'assets.tar')
+        self.bind(bundle)
+        runs = self.root / 'outside' / 'runs'
+        with self.assertRaisesRegex(guard.GuardRefusal, 'short identifier'):
+            self.execute(root=repo, base=bundle,
+                         call=lambda: bound.execute(bundle, fixture_plan(self.ledger, purpose='Why: a test'), runs))
+        self.assertFalse(runs.exists())
+        self.assertIsNone(FakeProvider.state)
+        self.assertIn('a short identifier', ' '.join(bound.parser().format_help().split()))
+
+    def test_the_a10_reference_price_is_the_latest_recorded_on_any_budget_line(self):
+        """Round 2 item 11: the type rule's reference is the latest A10 price recorded on a
+        budget_open or budget_change line, by its own time, across the ledgers read."""
+        start = 1_000_000.0
+        ledger = self.root / 'r2i11' / 'ledger.jsonl'
+        open_ledger(ledger, start)
+        self.assertEqual(guard.a10_reference_rate([ledger]), 1.29)
+        change = lambda offset, **k: dict(dict(event='budget_change', time_utc=guard.utc(start + offset), budget_usd=70.0,
+                                               hard_stop_usd=69.0), **k)
+        write_lines(ledger, [change(600, a10_reference_price_usd_per_hour=1.49)])
+        self.assertEqual(guard.a10_reference_rate([ledger]), 1.49)
+        write_lines(ledger, [change(1200), change(300, a10_reference_price_usd_per_hour=1.10)])
+        self.assertEqual(guard.a10_reference_rate([ledger]), 1.49)
+        other = self.root / 'r2i11' / 'R_ledger.jsonl'
+        write_lines(other, [change(1800, a10_reference_price_usd_per_hour=1.59)])
+        self.assertEqual(guard.a10_reference_rate([ledger, other]), 1.59)
+        # The type rule reads it: at twice 1.59 the H100's 2.99 is admitted, at twice 1.29 it was not.
+        self.assertEqual([c['type'] for c in guard.instance_candidates(self.TYPES, guard.a10_reference_rate([ledger, other]))],
+                         ['gpu_1x_a10', 'gpu_1x_a6000', 'gpu_1x_a100_sxm4', 'gpu_1x_h100_pcie'])
+
 
 def shlex_quote(value):
     import shlex
@@ -2580,6 +2897,36 @@ def declaration_written_when_absent(base, digest):
     return _ORIGINAL_DECLARATION(base, digest)
 
 
+_ORIGINAL_BUDGET_FIGURES = instance_reaper.budget_figures
+
+
+def budget_figures_without_the_hard_stop(rows):
+    """A reading that drops the budget line's own hard stop: the budget less the margin."""
+    budget, _ = _ORIGINAL_BUDGET_FIGURES(rows)
+    return budget, None if budget is None else budget - instance_reaper.MARGIN_USD
+
+
+def frozen_commit_of_any_revision(tag):
+    """The reading before round 2 item 8: any revision git resolves to a commit is admitted."""
+    result = subprocess.run(['git', 'rev-parse', '--verify', tag + '^{commit}'], cwd=controller.ROOT, capture_output=True,
+                            timeout=30)
+    if result.returncode != 0:
+        raise RuntimeError('Frozen tag not found')
+    return result.stdout.decode().strip()
+
+
+def a10_rate_from_the_opening_line(ledgers):
+    """The reading before round 2 item 11: the A10 price from budget_open lines only."""
+    rate = None
+    for path in ledgers:
+        for row in instance_reaper.read_ledger(path):
+            if row.get('event') == 'budget_open' and row.get('a10_reference_price_usd_per_hour') is not None:
+                rate = row['a10_reference_price_usd_per_hour']
+    if rate is None:
+        raise guard.GuardRefusal('No recorded A10 reference price in the ledgers given')
+    return float(rate)
+
+
 def archive_names_ignoring_extras(names, extra=(), extras=None):
     return [n for n in names if (n.startswith(sealer.RUNTIME_PREFIXES) or n in sealer.RUNTIME_FILES or n in extra)
             and not (n.endswith('_checks.py') or '/fixtures/' in n)]
@@ -2681,6 +3028,35 @@ NEUTRALIZATIONS = [
     # S2c item 7: the controller started inside the parent instead of detached.
     ('test_detached_controller_survives_its_parent_and_the_reaper_ends_an_orphan', sys.modules[__name__], 'parent_spawner',
      lambda: 'inline'),
+    # D-S9: the budget and hard stop held at the old code figures instead of the ledger's.
+    ('test_budget_and_hard_stop_are_read_from_the_latest_ledger_line', instance_reaper, 'budget_figures',
+     lambda rows: (50.0, 49.0)),
+    # S2 checker round 2, one mechanism per proof.
+    # Item 1: every member's line endings converted, binary ones included.
+    ('test_binary_workload_members_keep_their_bytes_and_reach_the_case_validation', sealer, 'text_member',
+     lambda name: True),
+    # Item 2: a batch entry consumed only by LAUNCH_INTENT.json.
+    ('test_a_batch_entry_launched_in_a_run_folder_is_consumed', controller, 'consumed',
+     lambda bundle: (Path(bundle) / 'LAUNCH_INTENT.json').exists()),
+    # Item 3: the recorded deadline not read, so accrual never stops and nothing is closed.
+    ('test_an_intent_without_an_instance_stops_accruing_and_the_reaper_closes_it', instance_reaper, 'recorded_deadline',
+     lambda rec: None),
+    # Item 4: the cap's ceiling from the budget less the margin, whatever hard stop the line names.
+    ('test_the_cap_ceiling_is_the_ledgers_hard_stop', instance_reaper, 'budget_figures', budget_figures_without_the_hard_stop),
+    # Item 5: a budget line read as readable whatever it holds.
+    ('test_the_guard_refuses_a_budget_line_it_cannot_read', instance_reaper, 'budget_figures', lambda rows: (50.0, 49.0)),
+    # Item 6: a held lock reported without its age, pid or the pid's state.
+    ('test_a_held_lock_is_reported_with_its_age_and_its_pid', guard, 'lock_holder', lambda lock, now_epoch=None: 'holder unreadable'),
+    # Item 7: no refusal of a sealed bundle inside the repository.
+    ('test_a_sealed_bundle_inside_the_repository_is_refused_before_any_write', bound, 'refuse_sealed_bundle_in_repository',
+     lambda bundle: None),
+    # Item 8: any revision admitted as the frozen tag.
+    ('test_the_frozen_tag_resolves_only_a_tag', controller, 'frozen_commit', frozen_commit_of_any_revision),
+    # Item 10: the purpose not checked until the ledger line.
+    ('test_a_prose_purpose_is_refused_before_any_provider_call', guard, 'require_purpose', lambda purpose: purpose),
+    # Item 11: the A10 price from the opening line only.
+    ('test_the_a10_reference_price_is_the_latest_recorded_on_any_budget_line', guard, 'a10_reference_rate',
+     a10_rate_from_the_opening_line),
 ]
 
 

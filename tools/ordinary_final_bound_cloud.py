@@ -10,7 +10,9 @@ commits; what launches is the sealed archive whose digest is bound here.
 Every launch is a loop launch: the ledger, the purpose and the measured forecast basis
 are required, and the budget guard decides before the launch request (IV.3).
 --output-dir runs the bundle in a fresh run folder outside it (a sealed run's folder
-must sit outside the repository); without it the run folder is the bundle, as before.
+must sit outside the repository); without it the run folder is the bundle, as before. A
+sealed bundle inside the repository is refused before anything is written, with or
+without --output-dir or --detach.
 --detach starts the controller as a detached process that survives this one.
 """
 import argparse
@@ -51,8 +53,17 @@ def spawn_detached(argv, log):
 
 
 def consumed(bundle):
-    """A bundle launched once, in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json)."""
-    return (Path(bundle) / 'LAUNCH_INTENT.json').exists() or (Path(bundle) / 'RUN_FOLDER.json').exists()
+    """A bundle launched once, in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json):
+    the controller's own reading, which it applies to every batch entry as well."""
+    return controller.consumed(bundle)
+
+
+def refuse_sealed_bundle_in_repository(bundle):
+    """A sealed bundle must sit outside the repository (SEALED-RUN-A): refused before anything
+    is written, into the bundle or anywhere else, with or without --output-dir or --detach."""
+    sealed = read(Path(bundle) / 'seal.json').get('exposure') == 'sealed'
+    require(not sealed or not Path(bundle).resolve().is_relative_to(controller.ROOT.resolve()),
+            'A sealed bundle must sit outside the repository')
 
 
 def run_folder(bundle, output_dir, sealed):
@@ -82,6 +93,12 @@ def run_folder(bundle, output_dir, sealed):
 
 def execute(bundle, plan, output_dir=None):
     b = Path(bundle).resolve()
+    # Before any write: a sealed bundle inside the repository, and a purpose that is not a
+    # short identifier (a plan with no purpose at all is refused by the controller's own
+    # launch_plan(), with the rest of the plan).
+    refuse_sealed_bundle_in_repository(b)
+    if isinstance(plan, dict) and plan.get('purpose') is not None:
+        guard.require_purpose(plan['purpose'])
     binding = read(b / 'authorization_binding.json')
     controller.MANIFEST = binding['manifest_sha256']
     controller.SEAL = binding['seal_sha256']
@@ -152,7 +169,8 @@ def parser():
     p.add_argument('--ledger', type=Path, required=True, help='loop ledger: read, and receives the launch and termination lines')
     p.add_argument('--read-ledger', type=Path, action='append', help="another ledger the guard reads (R's)")
     p.add_argument('--r-inputs', type=Path, default=None, help='R_INPUTS.json when role R launches')
-    p.add_argument('--purpose', required=True, help='one short line: why this run')
+    p.add_argument('--purpose', required=True,
+                   help='a short identifier for why this run (lower case, digits, hyphens; at most 40)')
     p.add_argument('--forecast-minutes', type=float, required=True, help='measured basis in minutes (docs/loop/BUDGET.md)')
     p.add_argument('--forecast-includes-upload', action='store_true')
     p.add_argument('--storage-forecast-usd', type=float, required=True)
@@ -171,6 +189,9 @@ def parser():
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(argv)
+    # Refused here, before the detached log or the process record is written into the bundle.
+    refuse_sealed_bundle_in_repository(Path(args.bundle).resolve())
+    guard.require_purpose(args.purpose)
     if args.detach:
         rest = [a for a in argv if a != '--detach']
         log = Path(args.bundle).resolve() / DETACH_LOG
