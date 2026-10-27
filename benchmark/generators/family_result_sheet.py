@@ -6,9 +6,11 @@ keyed by parameter. Planted kinds: a result above its range, a result below it, 
 total volume that does not add up, a missing analyst (computed absence), a blank
 aliquot cell, and a unit mismatch: a result written in g/L against a reference range in
 mg/L, or a total volume written in L against a volume column in mL (the figure, read in
-the right measure, is correct: only the measure is wrong). Python compares nothing in
-another measure, so the unit mismatches are keyed from this family's own ground truth
-and found again by the ground-truth scanner (ground_truth.py), not by the audit.
+the right measure, is correct: only the measure is wrong). CONV-SE requires each result
+in its range's measure and each total in its column's measure, so a unit mismatch breaks
+a convention as written, and its key cites CONV-SE. Python compares nothing in another
+measure, so the unit mismatches are keyed from this family's own ground truth and found
+again by the ground-truth scanner (ground_truth.py), not by the audit.
 Clean distractors: results exactly on a bound, and totals in decimals that do add up.
 """
 from . import model as md
@@ -28,12 +30,18 @@ RULES = [
     md.Rule("CONV-SC", "Aliquot form", "Each aliquot volume must be given as a figure in millilitres."),
     md.Rule("CONV-SD", "Analyst", "Every sample entry must state the analyst.",
             scope=["parameter"], requires=["analyst"]),
+    # The rule a unit mismatch breaks, cited in its key. Worded to name only the result and
+    # the parameter (never the range column's header, which would give it a band, nor the
+    # total's label, which would tie it with CONV-SB for the sum findings).
+    md.Rule("CONV-SE", "Measures",
+            "Each result must be written in the measure in which its parameter's range is given, "
+            "and each total in the measure of the column it adds up."),
 ]
 ORDINALS = ["First", "Second", "Third", "Fourth"]
 # The conversions a unit mismatch is planted with, and read back by the scanner.
 CONVERSIONS = [["g/L", "mg/L", 1000], ["L", "mL", 1000]]
 GROUND_TRUTH = [{"check": "measure", "kind": "unit_mismatch", "conversions": CONVERSIONS,
-                 "rule_for": {"reference": "CONV-SA", "column": "CONV-SB"}}]
+                 "row_key": "parameter", "rule_for": {"reference": "CONV-SE", "column": "CONV-SE"}}]
 
 
 def _fmt2(x):
@@ -118,14 +126,14 @@ def build(seed):
         elif kind == "unit_mismatch_result":
             # the right result, written in g/L: 45.23 mg/L as 0.04523 g/L
             flawed.set_line("Result", "%s g/L" % tr.format_number(result / 1000.0, 5))
-            planted.append({"unit": i, "rule": "CONV-SA", "relation": "unit_mismatch",
+            planted.append({"unit": i, "rule": "CONV-SE", "relation": "unit_mismatch",
                             "kind": "unit_mismatch", "field_label": "result",
                             "value_a": round(result / 1000.0, 6), "value_b": result,
                             "unit_a": "g/L", "unit_b": "mg/L", "extra": {"compared_with": "reference"}})
         elif kind == "unit_mismatch_total":
             # the right total, written in L: 12.3 mL as 0.0123 L
             flawed.set_line("Total volume", "%s L" % tr.format_number(total / 1000.0, 4))
-            planted.append({"unit": i, "rule": "CONV-SB", "relation": "unit_mismatch",
+            planted.append({"unit": i, "rule": "CONV-SE", "relation": "unit_mismatch",
                             "kind": "unit_mismatch", "field_label": "total volume",
                             "value_a": round(total / 1000.0, 6), "value_b": round(total, 6),
                             "unit_a": "L", "unit_b": "mL", "extra": {"compared_with": "column"}})

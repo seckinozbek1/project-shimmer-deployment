@@ -19,8 +19,9 @@ section in the same measure; a renamed term moved to another section is not with
 
 Version changes planted between the prior and the target: terms unchanged, terms
 changed inside the band, terms moved toward or away from the band, a term renamed with
-its value unchanged, a term renamed with its value moved (by a seeded 2 to 45 percent),
-a term renamed and moved to another section (also by a seeded 2 to 45 percent), a
+its value unchanged, a term renamed with its value moved (by a seeded 2.05 to 45
+percent, so never within 2% of the larger figure; its twin's repair is such a move
+too), a term renamed and moved to another section (also by 2.05 to 45 percent), a
 withdrawn term, a withdrawn term beside an unrelated new term in the same measure, terms
 new in the later version, sections reordered, and a value written in a different format
 (unchanged).
@@ -69,17 +70,39 @@ TERMS = [
     ("Support hours", "hours", 20, 60, 0, "Help hours", "Assistance time"),
     ("Uptime target", "%", 95.0, 99.5, 1, "Availability goal", "Service level"),
 ]
-MOVE_LOW, MOVE_HIGH = 0.02, 0.45      # a moved rename moves by 2 to 45 percent, seeded
+# A moved rename moves by a seeded 2.05 to 45 percent of the earlier figure. The low end
+# sits above 2/0.98 = 2.0408 percent, so a moved figure is never within 2% of the larger
+# of the two (section 6's possible-rename window), whichever way it moves.
+MOVE_LOW, MOVE_HIGH = 0.0205, 0.45
+RENAME_WINDOW = 0.02     # section 6: within 2% of the larger figure in absolute value
 
-# The ground-truth expectation for each rename-probe kind, and the honest refusal a
-# blind reviewer may give instead of matching the rename (None: a refusal of any kind).
+# The ground-truth expectation for each rename-probe kind. The honest refusal a blind
+# reviewer may give instead of matching the rename follows from the planted figures
+# (expected_refusal_kind), never from the role.
 RENAME_KINDS = {
-    "renamed_unchanged": ("renamed_value_unchanged", "same_term_new_label", "possible_rename"),
-    "breach_renamed_moved": ("renamed_value_moved", "same_term_new_label_moved_value",
-                             "possible_successor"),
-    "renamed_moved_section": ("renamed_moved_to_other_section",
-                              "same_term_new_label_other_section", None),
+    "renamed_unchanged": ("renamed_value_unchanged", "same_term_new_label"),
+    "breach_renamed_moved": ("renamed_value_moved", "same_term_new_label_moved_value"),
+    "renamed_moved_section": ("renamed_moved_to_other_section", "same_term_new_label_other_section"),
 }
+
+
+def expected_refusal_kind(before, after, same_section):
+    """The refusal kind the planted figures support (INPUT_FORMAT sections 6 and 9):
+    another section, any refusal (None); the figures within 2% of the larger,
+    `possible_rename`; otherwise `possible_successor`."""
+    if not same_section:
+        return None
+    if abs(after - before) <= RENAME_WINDOW * max(abs(before), abs(after)):
+        return "possible_rename"
+    return "possible_successor"
+
+
+def in_move_range(before, after):
+    """A moved rename's figures: moved by MOVE_LOW to MOVE_HIGH of the earlier figure,
+    and so never within 2% of the larger."""
+    p = abs(after - before) / abs(before)
+    return (MOVE_LOW <= p <= MOVE_HIGH
+            and abs(after - before) > RENAME_WINDOW * max(abs(before), abs(after)))
 
 
 def _fmt(t, v, grouped=False):
@@ -133,7 +156,7 @@ def _values(rng, t, how):
 
 
 def _moved_from(rng, t, later, inside=False):
-    """An earlier figure from which `later` moved by a seeded 2 to 45 percent (of the
+    """An earlier figure from which `later` moved by a seeded 2.05 to 45 percent (of the
     earlier figure), optionally itself inside the band."""
     lo, hi, dec = t[2], t[3], t[4]
     for _ in range(2000):
@@ -143,13 +166,24 @@ def _moved_from(rng, t, later, inside=False):
             continue
         if inside and not lo < before < hi:
             continue
-        if MOVE_LOW * 100 <= moved_percent(before, later) <= MOVE_HIGH * 100:
+        if in_move_range(before, later):
             return float(before)
     raise ValueError("no moved earlier figure for %s" % t[0])
 
 
+def _moved_to_band(rng, t, before):
+    """A figure inside the band (bounds included) moved from `before` by 2.05 to 45
+    percent: the twin of a moved rename, which stays a moved rename; None if none."""
+    lo, hi, dec = t[2], t[3], t[4]
+    for _ in range(400):
+        v = round(before * (1 + rng.choice([-1, 1]) * rng.uniform(MOVE_LOW, MOVE_HIGH)), dec)
+        if lo <= v <= hi and in_move_range(before, v):
+            return float(v)
+    return None
+
+
 def _inside_moved(rng, t):
-    """(earlier, later), both inside the band, the later moved by 2 to 45 percent."""
+    """(earlier, later), both inside the band, the later moved by 2.05 to 45 percent."""
     for _ in range(200):
         later = _values(rng, t, "inside")
         try:
@@ -251,8 +285,16 @@ def build(seed, rounds=2):
         elif role in ("breach_new_term", "newcomer_unrelated"):
             e["later"] = _values(rng, t, side if role == "breach_new_term" else "inside")
         elif role == "breach_renamed_moved":
-            e["later"] = _values(rng, t, side)
-            e["prior"] = _moved_from(rng, t, e["later"])
+            # The breach and its twin's repair are both moves of 2.05 to 45 percent from
+            # the earlier figure, so the twin's rename is a moved rename too.
+            for _ in range(500):
+                e["later"] = _values(rng, t, side)
+                e["prior"] = _moved_from(rng, t, e["later"])
+                e["twin"] = _moved_to_band(rng, t, e["prior"])
+                if e["twin"] is not None:
+                    break
+            else:
+                raise ValueError("no moved rename with a moved twin for %s" % label)
             e["later_label"] = alt
         elif role == "renamed_moved_section":
             e["prior"], e["later"] = _inside_moved(rng, t)
@@ -278,12 +320,14 @@ def build(seed, rounds=2):
         if role.startswith("breach_"):
             e["side"] = side
             e["kind"] = role
-            # the twin repairs the breach inside the band, more than 5% from the earlier figure
-            for _ in range(200):
-                tv = _values(rng, t, "inside")
-                if e["prior"] is None or abs(tv - e["prior"]) > 0.05 * abs(e["prior"]):
-                    break
-            e["twin"] = tv
+            # the twin repairs the breach inside the band, more than 5% from the earlier
+            # figure (a moved rename's twin is already drawn above)
+            if role != "breach_renamed_moved":
+                for _ in range(200):
+                    tv = _values(rng, t, "inside")
+                    if e["prior"] is None or abs(tv - e["prior"]) > 0.05 * abs(e["prior"]):
+                        break
+                e["twin"] = tv
         else:
             e["twin"] = e["later"]
         terms.append(e)
@@ -392,11 +436,11 @@ def build(seed, rounds=2):
     bands.sort(key=lambda b: (b["unit"], b["field_label"]))
     # One typed row per rename-probe kind, from the same ground truth; units are the
     # target's and the prior's unit indexes, mapped to the bundle's ids when written.
-    probe_kinds = {"withdrawn": ("withdrawn", "no_successor", None),
+    probe_kinds = {"withdrawn": ("withdrawn", "no_successor"),
                    "withdrawn_beside_newcomer": ("withdrawn_beside_newcomer",
-                                                 "unrelated_newcomer_same_measure", None),
-                   "breach_new_term": ("new_in_later_version", "not_stated_in_earlier_version", None),
-                   "breach_reformatted": ("value_in_different_format", "comma_grouped_digits", None)}
+                                                 "unrelated_newcomer_same_measure"),
+                   "breach_new_term": ("new_in_later_version", "not_stated_in_earlier_version"),
+                   "breach_reformatted": ("value_in_different_format", "comma_grouped_digits")}
     probe_kinds.update(RENAME_KINDS)
 
     def rename_probes(which):
@@ -404,8 +448,11 @@ def build(seed, rounds=2):
         for e in terms:
             if e["role"] not in probe_kinds:
                 continue
-            kind, reason, refusal = probe_kinds[e["role"]]
+            kind, reason = probe_kinds[e["role"]]
             now = e[which]
+            refusal = None
+            if e["role"] in RENAME_KINDS:
+                refusal = expected_refusal_kind(e["prior"], now, e["unit"] == e["prior_unit"])
             lp, ln = tr.norm(e["label"]), tr.norm(e["later_label"])
             v = plan_row(e, which)
             row = {"kind": kind, "field_label": ln if e["prior"] is None else lp,
@@ -443,6 +490,14 @@ def build(seed, rounds=2):
     if rounds == 3:
         earliest, round_changes = _earliest(seed, terms, prior_units, prior_order, title, preamble)
     clean_unit = [e["unit"] for e in terms if e["role"] == "at_bound"][0]
+    # For the multi-round key: every label a round may write for a term the mandate
+    # governs (its earlier and its later label), with that term's band, rule and issue.
+    term_bands = {}
+    for e in terms:
+        if id(e) in rule_of:
+            for lab in (e["label"], e["later_label"]):
+                term_bands[lab] = {"lo": e["t"][2], "hi": e["t"][3], "rule": rule_of[id(e)],
+                                   "issue": issues[lab]}
     # probes
     # The dropped term leaves its earlier unit with another line where it can.
     size = {gi: len(g) for gi, g in enumerate(groups)}
@@ -468,6 +523,8 @@ def build(seed, rounds=2):
         "term_version_changes": plan("later", dropped),
         "rename_probes": rename_probes("later"), "twin_rename_probes": rename_probes("twin"),
         "rounds": rounds, "earliest": earliest, "round_changes": round_changes, "issues": issues,
+        "term_bands": term_bands,
+        "clean_label": [e["label"] for e in terms if e["role"] == "at_bound"][0],
         "doc_stem": "terms", "conv_stem": "mandate",
         "task": "Compare the later version of the supply terms with the earlier one and review it against the mandate.",
         "probes": {

@@ -5,7 +5,8 @@ The figure audit (audit.py) finds every comparison Python would make. Some plant
 flaws are flaws whether or not Python computes them: a figure written in another
 measure than its rule or reference table uses, a rate applied wrongly, a copied figure
 that differs from its source unit, a carried figure that differs from the unit before,
-a window or fee band that lives only in a distant definition. Each family declares how
+a stated ratio that disagrees with its own figures, a window or fee band that lives only
+in a distant unit (a definition, or a schedule that is no definition). Each family declares how
 to find its own such flaws in the key's `ground_truth_checks` (the scorer ignores it),
 and `scan` finds EVERY instance in a parsed document. The validator requires the
 instances to equal the keyed entries of those kinds exactly, so a flaw dropped from the
@@ -61,24 +62,18 @@ def _entry(unit, rule, relation, kind, field, a, b, **extra):
     return e
 
 
-def _band_row(res, u, band):
-    """The reference-table range a unit matches for one band column (section 7 row
-    matching: key-cell words inside the unit's value words, most words wins, a tie
-    refused); None when there is none."""
+def _band_row(u, band, row_key):
+    """The reference-table range of the row the family planted for this unit: the row
+    whose `row_key` column cell is exactly the unit's own `row_key` value (for family 1,
+    the sample's parameter). This is the family's ground truth, not Shimmer's row
+    matching; None when the table or the unit has no such row."""
     t, c = band["table"], band["col"]
-    cands = []
-    for row in t["rows"]:
-        kw = set()
-        for k in band["keys"]:
-            if row[k][0] == "text":
-                kw.update(tr.words(row[k][1]))
-        if kw and kw <= u["value_words"] and row[c][0] == "range":
-            cands.append((len(kw), row[c][1]))
-    if not cands:
+    ln = _line(u, row_key)
+    keys = [k for k, hd in enumerate(t["headers"]) if hd["norm"] == row_key]
+    if ln is None or len(keys) != 1:
         return None
-    top = max(n for n, _ in cands)
-    best = [r for n, r in cands if n == top]
-    return best[0] if len(best) == 1 else None
+    rows = [row for row in t["rows"] if row[keys[0]] == ("text", ln["value"]) and row[c][0] == "range"]
+    return rows[0][c][1] if len(rows) == 1 else None
 
 
 def _scan_measure(res, chk):
@@ -100,7 +95,7 @@ def _scan_measure(res, chk):
             for band in res.get("bands", []):
                 hd = band["table"]["headers"][band["col"]]
                 f = _factor(conv, m, hd["measure"])
-                if f and tr.measure_powers(m) != hd["powers"] and _band_row(res, u, band) is not None:
+                if f and tr.measure_powers(m) != hd["powers"] and _band_row(u, band, chk["row_key"]) is not None:
                     out.append(_entry(u["id"], chk["rule_for"]["reference"], "unit_mismatch", chk["kind"],
                                       ln["norm"], v, v * f, unit_a=m, unit_b=hd["measure"],
                                       compared_with="reference"))
@@ -114,6 +109,19 @@ def _scan_rate(res, chk):
         if not (rate and base and got) or rate[1] != "%":
             continue
         want = tr.r6(rate[0] * base[0] / 100.0)
+        if not tr.same(want, got[0]):
+            out.append(_entry(u["id"], chk["rule"], "rate_mismatch", chk["kind"], chk["result"], want, got[0]))
+    return out
+
+
+def _scan_ratio(res, chk):
+    """A stated percentage that is not one figure of the unit as a percentage of another."""
+    out = []
+    for u in _units(res):
+        part, whole, got = (_figure(u, chk[k]) for k in ("part", "whole", "result"))
+        if not (part and whole and got) or got[1] != "%" or whole[0] == 0:
+            continue
+        want = tr.r6(part[0] * 100.0 / whole[0])
         if not tr.same(want, got[0]):
             out.append(_entry(u["id"], chk["rule"], "rate_mismatch", chk["kind"], chk["result"], want, got[0]))
     return out
@@ -164,22 +172,35 @@ def _scan_carry(res, chk):
     return out
 
 
-def _definition(res, chk, term):
+def related(res, select, match_label, use):
+    """The one unit that decides a use: every (label, value) in `select` stated on its
+    label lines, and the same `match_label` value as the use. None when there is no such
+    unit or more than one (a ground truth that names no single unit is no ground truth)."""
+    want = _line(use, match_label)
+    if want is None:
+        return None
+    hits = []
     for u in _units(res):
-        ln = _line(u, chk["term_label"])
-        if ln is not None and ln["value"] == term:
-            return u
-    return None
+        if u is use:
+            continue
+        ln = _line(u, match_label)
+        if ln is None or ln["value"] != want["value"]:
+            continue
+        if all((_line(u, lab) or {}).get("value") == val for lab, val in select):
+            hits.append(u)
+    return hits[0] if len(hits) == 1 else None
 
 
 def _scan_far_window(res, chk):
     out = []
-    for first, second, term, rule, kind in chk["pairs"]:
-        d = _definition(res, chk, term)
-        bound = _figure(d, chk["bound_label"]) if d is not None else None
+    for first, second, select, rule, kind in chk["pairs"]:
         for u in _units(res):
             a, b = _line(u, first), _line(u, second)
-            if a is None or b is None or a["kind"][0] != "date" or b["kind"][0] != "date" or bound is None:
+            if a is None or b is None or a["kind"][0] != "date" or b["kind"][0] != "date":
+                continue
+            d = related(res, select, chk["match_label"], u)
+            bound = _figure(d, chk["bound_label"]) if d is not None else None
+            if bound is None:
                 continue
             gap = abs((datetime.date(*b["kind"][1]) - datetime.date(*a["kind"][1])).days)
             if gap > bound[0]:
@@ -190,16 +211,18 @@ def _scan_far_window(res, chk):
 
 def _scan_far_fee(res, chk):
     out = []
-    d = _definition(res, chk, chk["term"])
-    col = _column(d, chk["table_column"]) if d is not None else None
-    cls_col = _column(d, chk["class"]) if d is not None else None
-    if col is None or cls_col is None:
-        return out
-    ranges = {row[cls_col[1]][1]: row[col[1]][1] for row in col[0]["rows"]
-              if row[cls_col[1]][0] == "text" and row[col[1]][0] == "range"}
     for u in _units(res):
         fee, cls = _figure(u, chk["fee"]), _line(u, chk["class"])
-        if fee is None or cls is None or cls["value"] not in ranges:
+        if fee is None or cls is None:
+            continue
+        d = related(res, chk["select"], chk["match_label"], u)
+        col = _column(d, chk["table_column"]) if d is not None else None
+        cls_col = _column(d, chk["class"]) if d is not None else None
+        if col is None or cls_col is None or col[0] is not cls_col[0]:
+            continue
+        ranges = {row[cls_col[1]][1]: row[col[1]][1] for row in col[0]["rows"]
+                  if row[cls_col[1]][0] == "text" and row[col[1]][0] == "range"}
+        if cls["value"] not in ranges:
             continue
         lo, hi = ranges[cls["value"]]
         if fee[0] > hi:
@@ -211,8 +234,8 @@ def _scan_far_fee(res, chk):
     return out
 
 
-SCANNERS = {"measure": _scan_measure, "rate": _scan_rate, "copy": _scan_copy, "carry": _scan_carry,
-            "far_window": _scan_far_window, "far_fee": _scan_far_fee}
+SCANNERS = {"measure": _scan_measure, "rate": _scan_rate, "ratio": _scan_ratio, "copy": _scan_copy,
+            "carry": _scan_carry, "far_window": _scan_far_window, "far_fee": _scan_far_fee}
 LINKS = ("depends_on_unit", "source_unit", "related_unit")
 
 
@@ -228,15 +251,40 @@ def kinds(checks):
     return out
 
 
-def scan(res, checks, ordered=True):
-    """Every ground-truth instance in an audited document. `ordered` False skips the
-    checks that read reading order (the reordered-sections probe moves blocks)."""
+def scan(res, checks):
+    """Every ground-truth instance in an audited document, every check run on every
+    bundle (the reordered-sections probe included: family 6 reorders so that no new
+    neighbour pair breaks the chain)."""
     out = []
     for chk in checks or ():
-        if chk["check"] == "carry" and not ordered:
-            continue
         out.extend(SCANNERS[chk["check"]](res, chk))
     return out
+
+
+def reword_checks(checks, old, new):
+    """The ground-truth checks of a reworded-labels probe: every label string equal to
+    the old normalised label names the new one (the document says it in other words; the
+    flaw is still there)."""
+    def fix(x):
+        if isinstance(x, str):
+            return new if x == old else x
+        if isinstance(x, list):
+            return [fix(y) for y in x]
+        if isinstance(x, dict):
+            return {k: fix(v) for k, v in x.items()}
+        return x
+    return [fix(c) for c in checks or ()]
+
+
+def reword_field(label, old, new):
+    """A key's field label after a rewording: the label itself, or a table cell of it
+    (`<label> rowN`)."""
+    if label == old:
+        return new
+    head, sep, tail = label.rpartition(" row")
+    if sep and head == old and tail.isdigit():
+        return new + sep + tail
+    return label
 
 
 def signature(e):
