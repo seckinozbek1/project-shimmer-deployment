@@ -248,7 +248,8 @@ def authorization(base, manifest, permit, now=None):
 
 def assess(completion, raw, multi_round=None):
     """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
-    record (multi_round.read_saved) to show outcome `reviewed` and activation `activated`;
+    record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
+    reviewed, a Python round review recorded (`round_review.availability`);
     quality is reported separately and is never a pass."""
     reasons = []
     if multi_round is not None:
@@ -256,6 +257,10 @@ def assess(completion, raw, multi_round=None):
             reasons.append('multi_round_not_reviewed')
         if not (isinstance(multi_round, dict) and (multi_round.get('activation') or {}).get('activated') is True):
             reasons.append('multi_round_not_activated')
+        if (isinstance(multi_round, dict) and multi_round.get('outcome') == 'reviewed' and
+                (multi_round.get('round_review') or {}).get('availability') != 'recorded'):
+            # S2 checker A10: a reviewed run whose Python round review failed is not healthy.
+            reasons.append('multi_round_round_review_not_recorded')
     if not (completion and completion.get('state') == 'completed' and
             completion.get('reached_end') is True and completion.get('exit_code') == 0):
         reasons.append('pipeline_not_completed')

@@ -2517,7 +2517,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         for check in paired_review_mod.disagreements(checks):
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
-                source_rule_id=source_rule_id, refs=refs, explanation=explanation)
+                source_rule_id=source_rule_id, refs=refs, explanation=explanation,
+                unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"]))
             # Reader check RD1: the record names the model call that wrote its note.
             paired_review_mod.stamp_note_writer(item, r)
             computed_items_by_agent.setdefault(agent, []).append(item)
@@ -2587,10 +2588,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     evidence={"selected_agent": agent, "rule_id": rule["id"],
                               "unit_id": unit["unit_id"], "plan_index": plan_index})
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
-        # Reader check RC2/RC3: the finding cites the unit's own passage when
-        # Python placed it; the excerpt refs still go to the model's payload.
-        own_passage = (doc.get("_unit_refs") or {}).get(unit["unit_id"])
-        finding_refs = [own_passage] if own_passage else refs
+        # Reader check RC2/RC3 and S2 checker A8: the finding cites the unit's own
+        # passage when Python placed it, nothing when it could not (the record then
+        # sits at the document level); a compared passage is carried apart. The
+        # excerpt refs go to the model's payload only.
+        unit_ref = paired_review_mod.unit_ref_for(doc, unit["unit_id"])
         # D, option 2, Python first: a declared required field absent from a unit
         # in scope is a finding Python decides, no call made; the record says so.
         if plan.get("kind") == "absence_computed":
@@ -2602,7 +2604,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             check = checks[0]
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
-                source_rule_id=source_rule_id, refs=finding_refs)
+                source_rule_id=source_rule_id, refs=refs, unit_ref=unit_ref)
             if prediction is not None:
                 prediction.outcome(doc["id"], plan_index, "computed")
             item["absence_path"] = "computed"
@@ -2617,7 +2619,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             for check in paired_review_mod.disagreements(checks):
                 computed_items_by_agent.setdefault(agent, []).append(
                     paired_review_mod.finding_from_check(unit_id=unit["unit_id"], rule=rule,
-                        check=check, source_rule_id=source_rule_id, refs=finding_refs))
+                        check=check, source_rule_id=source_rule_id, refs=refs,
+                        unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"])))
             agent_activation.not_called(orch.run_context, agent,
                 reason="exact_comparison_reason_rendered", source_phase="5.5", doc_id=doc["id"],
                 trigger_source="paired_plan", consumer="typed_finding_and_deterministic_reason",
@@ -2690,7 +2693,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                         "evidence": {"unit_id": unit["unit_id"], "rule_id": rule["id"],
                                      "plan_index": plan_index, "plan_kind": plan.get("kind")}},
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
-        judgment_context = (plan_index, plan, unit, rule, checks, agent, source_rule_id, finding_refs)
+        judgment_context = (plan_index, plan, unit, rule, checks, agent, source_rule_id, refs)
         if semantic_waves.enabled():
             pending_judgments.append((planned_judgment, judgment_context))
         else:
@@ -3484,9 +3487,12 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # R6 / INFRA-044: the comparison with the earlier version travels in the
             # MASTER too, so review_data.json and review_findings.md carry it in its
             # own section. Never an amendment: every such record is ok-verdict.
+            # S2 checker A4: a model can write `provenance`; only Python's own
+            # records (by the post they travelled in) enter the comparison.
             _prior_records = [f for f in all_upstream
                               if f.get("relation") in finding_record.PRIOR_RELATIONS
-                              and f.get("provenance") == "computed"]
+                              and f.get("provenance") == "computed"
+                              and not finding_record.is_model_written(f)]
             amendments_payload = {"document_id": doc["id"], "amendments": raw_amendments,
                                   "prior_comparisons": _prior_records,
                                   "prior_refusals": _prior_refusals_for(doc),

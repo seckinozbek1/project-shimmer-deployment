@@ -24737,7 +24737,8 @@ def check_278_honest_deliverables():
     is generated from what ran; one plain sentence per relation names the unit, the
     rule, both figures and the addends; an amendment sits at its unit's own passage;
     the audit synthesis does not present audit patterns as findings; relations only a
-    model reported are listed apart; the reader-check round 1 items stay closed."""
+    model reported are listed apart; the reader-check rounds 1 and 2 items and the S2
+    checker round 1 items (A4, A5, A8, C3) stay closed."""
     from honest_output_checks import check
     return check()
 

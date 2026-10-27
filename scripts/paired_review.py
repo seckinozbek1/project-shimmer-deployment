@@ -1122,13 +1122,32 @@ def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
 RELATION_DETAIL_FIELDS = ("addend_field", "addends", "factor_fields", "factors")
 
 
+_NO_UNIT_REF = object()
+
+
+def unit_ref_for(doc, unit_id):
+    """The unit's own passage (or None, unplaced) when phase 5.5 placed this
+    document's units (doc["_unit_refs"]); otherwise the marker that keeps the
+    old citation, for a caller that never placed units."""
+    if not isinstance(doc, dict) or "_unit_refs" not in doc:
+        return _NO_UNIT_REF
+    return (doc.get("_unit_refs") or {}).get(unit_id)
+
+
 def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
-                       explanation=""):
+                       explanation="", unit_ref=_NO_UNIT_REF):
     """A typed Finding record built from a COMPUTED comparison.
 
     The values in the record are the ones Python computed. Whatever the model says
     about materiality lands in `explanation` and nowhere else, so a wrong sentence
     can never change a figure.
+
+    unit_ref (S2 checker A8): passed by the paired review, the REF-* of the unit's
+    own passage as Python placed it, or None when Python could not place it. Then
+    the record cites that passage alone (`ref`, `source_refs`), or nothing at the
+    document level, and a passage a compared figure came from (a reference table,
+    a duration bound) is carried apart in `compared_with_refs`. Not passed, the
+    citation is exactly what it was (the excerpt refs, or the compared passage).
     """
     # R1: a band read off a reference table cites THAT passage. Anything else
     # cites whatever excerpt happened to be in the prompt, which is not what the
@@ -1137,8 +1156,11 @@ def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
     # R6: a prior-version check carries every citation of the earlier statement
     # (a line and a summary table may both state it). Existing checks carry no
     # ref_ids, so their citation is byte-identical to before.
-    cited = ([str(r) for r in (check.get("ref_ids") or []) if r]
-             or ([band_ref] if band_ref else list(refs or [])))
+    compared = [str(r) for r in (check.get("ref_ids") or []) if r] or ([band_ref] if band_ref else [])
+    if unit_ref is _NO_UNIT_REF:
+        cited = compared or list(refs or [])
+    else:
+        cited = [str(unit_ref)] if unit_ref else []
     item = {
         "ref": (cited or ["document-level"])[0],
         "kind": "finding",
@@ -1195,8 +1217,8 @@ def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
     # Reader check RC2: a citation that names where the COMPARED figure came from
     # (a reference table, a prior statement, a duration bound) is kept apart from
     # the unit's own passage, so the amendment can say which is which.
-    if band_ref or check.get("ref_ids"):
-        item["compared_with_refs"] = list(cited)
+    if compared:
+        item["compared_with_refs"] = list(compared)
     # S2a: the explanation says who wrote it. A sentence a judging model supplied
     # is marked as the model's; with none, Python writes the plain sentence from
     # the figures it computed (the same sentence an amendment leads with), so the
@@ -1815,12 +1837,31 @@ def prior_checks(scalars, hits, bands_by_label):
     return checks, refused
 
 
+MOVED_SUCCESSOR_REASON = (
+    "possible rename with a moved value, not a confirmed withdrawal: "
+    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same "
+    "section in the same unit of measure; whether it is the same term "
+    "is not decided here")
+UNITLESS_SUCCESSOR_REASON = (
+    "possible rename of a figure with no unit, not a confirmed withdrawal: "
+    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same section; neither figure carries a "
+    "unit of measure, so the unit cannot tell them apart, and whether it is the "
+    "same term is not decided here")
+
+
 def possible_successor(unit, candidates, claimed):
     """S2b item 5: the first label newly stated in this section, in the same unit
     of measure as a vanished label, that no value-corroborated rename has claimed;
     (label, value) or None. Structural only (no word meaning is read): it says a
     successor is POSSIBLE, which is enough to refuse calling the vanished label
-    withdrawn. `candidates` are (label, value, unit) as absent_checks builds them."""
+    withdrawn. `candidates` are (label, value, unit) as absent_checks builds them.
+
+    S2 checker A9: two figures with NO unit of measure count as the same measure
+    here. That is deliberate and differs from the value-corroborated rename test,
+    which needs a unit: there a unit is what makes two close values comparable,
+    while here a missing unit only means the unit cannot tell the figures apart,
+    and a withdrawal the structure cannot rule out is refused, never minted. The
+    caller gives that case its own refusal reason (UNITLESS_SUCCESSOR_REASON)."""
     def measure(u):
         return _unit_str(unit_exponents(u)) if u else ""
     for cand_label, cand_val, cand_unit in candidates:
@@ -1885,8 +1926,6 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
     # values; refusing is always allowed, fabricating a withdrawal never is. A
     # label with no possible successor (no unclaimed newcomer in that unit of
     # measure in its section) is still minted as withdrawn. (possible_successor)
-    def _moved_rename_candidate(value, unit, claimed):
-        return possible_successor(unit, candidates, claimed)
 
     seen, checks, refused = set(), [], []
     entries = list(index.get("lines", []))
@@ -1960,18 +1999,14 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                 "ref_ids": refs,
             })
             continue
-        moved = _moved_rename_candidate(entry["value"], entry["unit"], claimed)
+        moved = possible_successor(entry["unit"], candidates, claimed)
         if moved is not None:
             cand_label, cand_val = moved
+            template = MOVED_SUCCESSOR_REASON if entry["unit"] else UNITLESS_SUCCESSOR_REASON
             refused.append({
                 "label": " ".join(label),
-                "reason": (
-                    "possible rename with a moved value, not a confirmed withdrawal: "
-                    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same "
-                    "section in the same unit of measure; whether it is the same term "
-                    "is not decided here" % (
-                        " ".join(label), entry["value"],
-                        " ".join(cand_label), cand_val)),
+                "reason": template % (" ".join(label), entry["value"],
+                                      " ".join(cand_label), cand_val),
                 "ref_ids": refs,
             })
             continue
@@ -2242,9 +2277,16 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         refs = [passage] + [r for r in refs if r != passage]
         location = passage
     elif placed:
+        # S2 checker A8: an unplaced unit cites no other unit's (or the corpus's)
+        # passage; only a passage a compared figure came from stays, said as such.
         location = document_level
-    citation = (GROUND_AT_PASSAGE % (rule_text, location) if placed and passage else
-                GROUND_CITED % (rule_text, refs[0] if refs else document_level))
+        refs = [str(r) for r in (item.get("compared_with_refs") or []) if r]
+    if placed and passage:
+        citation = GROUND_AT_PASSAGE % (rule_text, location)
+    elif placed:
+        citation = GROUND_UNPLACED % rule_text
+    else:
+        citation = GROUND_CITED % (rule_text, refs[0] if refs else document_level)
     # refine R2: the COMPUTED FIGURES lead, always. They used to be a fallback,
     # used only when no model sentence existed, and the model's sentence usually
     # existed and usually named no figure. Measured on one run's own output: with
@@ -2269,7 +2311,7 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # involves no figures, so its sentence says what was checked instead.
     if not computed_provenance:
         parts.append("Reported by the agent named above, not computed in code from this unit's figures.")
-    elif str(item.get("relation") or "") in ABSENCE_RELATIONS:
+    elif str(item.get("relation") or "") in finding_record.ABSENCE_RELATIONS:
         parts.append(ABSENCE_PROVENANCE)
     else:
         parts.append("Computed in code from the figures in this unit, not judged by a model.")
@@ -2397,24 +2439,24 @@ def apply_polish(item, polished):
 
 # S2a, item 4: the sentences a reader meets, one template per relation, each
 # naming the unit, the rule, both figures with their units and the relation in
-# plain words. Every template here has a Turkish rendering in
-# scripts/ui/localization_catalog.js (`_messages`), which the localization side
-# gate and honest_output_checks hold. The provenance sentence and the citation
+# plain words. Every template here has a rendering in the second output language
+# (tr) in scripts/ui/localization_catalog.js (`_messages`), which the localization
+# side gate and honest_output_checks hold. The provenance sentence and the citation
 # follow in amendment_from_finding; nothing here says who computed what.
-MODEL_NOTE_PREFIX = "A model's note, not checked by Python: "
 # Reader check RD1/RD6: a model's sentence is quoted and names the model that wrote
-# it, as the call that returned it recorded; with no record, it says so.
-NOTE_MODEL_NOT_RECORDED = "not recorded"
+# it, as the call that returned it recorded; with no record, it says so
+# (finding_record.NOTE_MODEL_NOT_RECORDED, the one copy of that phrase).
 # Reader check RD7: the rule and the passage are named apart, so the passage is
 # never read as where the rule is written.
 GROUND_AT_PASSAGE = "Rule %s; passage %s."
 GROUND_CITED = "Rule %s; cited passage %s."
+GROUND_UNPLACED = "Rule %s; no passage of this unit could be cited."
 
 
 def model_note(text, model=None):
     """The labelled, quoted form of a model's sentence inside a comment."""
     return 'A model\'s note (model: %s), not checked by Python: "%s"' % (
-        model or NOTE_MODEL_NOT_RECORDED, " ".join(str(text).split()).replace('"', "'"))
+        model or finding_record.NOTE_MODEL_NOT_RECORDED, " ".join(str(text).split()).replace('"', "'"))
 
 
 def stamp_note_writer(item, reply):
@@ -2436,7 +2478,8 @@ def note_models(items):
     return sorted({str(i.get("explanation_model")) for i in items or []
                    if isinstance(i, dict) and i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
                    and i.get("explanation_model")})
-ABSENCE_RELATIONS = ("missing_field", "licence_missing")
+
+
 # Reader check RC12: the provenance of a computed ABSENCE, which involves no figure.
 ABSENCE_PROVENANCE = ("Checked in code: the field is absent from this unit's text; "
                       "not judged by a model.")
@@ -2821,10 +2864,11 @@ def unit_passage_refs(unit_texts, entries, document_id):
     """{unit_id: REF-*} for every unit whose own passage Python can place (S2a 5).
 
     Structural only: the unit's first non-empty line (its heading, or the first
-    line of a preamble) is looked for, whitespace-folded, in this document's own
-    indexed passages. Exactly one passage holding it places the unit there; none
-    or several leave the unit unplaced, and an absence amendment on it then says
-    so rather than borrowing a header passage that is not the unit."""
+    line of a preamble) is looked for, whitespace-folded, at the START of this
+    document's own indexed passages, as a whole line. Exactly one passage opening
+    with it places the unit there; none or several leave the unit unplaced, and an
+    amendment on it then says so rather than borrowing a passage that is not the
+    unit's."""
     passages = []
     for e in entries or []:
         row = e.as_dict() if hasattr(e, "as_dict") else e
@@ -2836,7 +2880,18 @@ def unit_passage_refs(unit_texts, entries, document_id):
         if not lines:
             continue
         head = _folded(lines[0])
-        hits = sorted({ref for ref, text in passages if head and head in text})
+        # S2 checker A8: the heading must OPEN the passage as a whole line (the
+        # passage is the heading, or the heading followed by more text), never sit
+        # inside another passage or be the prefix of a longer heading ("## Lot 1"
+        # in "## Lot 12").
+        hits = sorted({ref for ref, text in passages if head and opens_with(text, head)})
         if len(hits) == 1:
             out[unit_id] = hits[0]
     return out
+
+
+def opens_with(passage, head):
+    """True when the whitespace-folded passage is the heading, or the heading
+    followed by more text (S2 checker A8: never a substring, never a prefix of a
+    longer heading)."""
+    return passage == head or passage.startswith(head + " ")

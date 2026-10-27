@@ -182,10 +182,15 @@ processing swarm governed by an append-only constitution.
   `execution_topology` is unchanged (D-011 choice 3).
   The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
   `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
-  Python-only per-round review (`multi_round_rounds`), recorded in `audit/round_reuse.json`. A
+  Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
+  paired rules, the document's field vocabulary and its units of measure (`SIGNATURE_INPUTS`),
+  reused records and model asks are rebased onto the new unit id, the record is
+  `audit/round_reuse.json`, and the round findings are posted on the run bus (backend `paired`,
+  model `python`, one envelope per round document); nothing downstream reads them yet. A
   term that vanished while its section states an unclaimed newcomer in the same unit of measure
   is refused as a possible rename (`paired_review.possible_successor`), never minted as
-  withdrawn, until S5 measures an ensemble decision for it. Check 279 and
+  withdrawn, until S5 measures an ensemble decision for it; two figures with no unit count as
+  the same measure there and are refused under their own reason. Check 279 and
   `tools/multi_round_launch_checks.py` hold this end to end.
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
@@ -359,9 +364,12 @@ processing swarm governed by an append-only constitution.
 - WRITTEN-BY-A (loop S2): who wrote a finding is read off the bus post it travelled in
   (`finding_record.written_by`): `python` only for `backend` `paired`/`computed` with a model
   id starting `python`, `model` for everything else, including an item no envelope claims.
-  Items are stamped (`stamp_written_by`) before any copy is made, and
-  `GET /runs/{run_id}/findings` carries `written_by` on every record. Never decide provenance
-  by object identity or by an agent name.
+  Items are stamped (`stamp_written_by`) before any copy is made: the stamp joins each item to
+  the envelope that carried it by object identity, which holds only for the envelope's own
+  items, so it runs first and every later reader reads the stamp. Never compare the identities
+  of copies, and never decide provenance by an agent name or by a field the item itself carries
+  (a model's `provenance` is removed when it is stamped). `GET /runs/{run_id}/findings` carries
+  `written_by` on every record.
 
 ## Review modes
 
@@ -421,12 +429,13 @@ processing swarm governed by an append-only constitution.
   a currency symbol (Unicode Sc) or a short all-caps code before the number, accented unit
   letters, comma-grouped thousands, and a multi-word unit only when the document writes it
   after a figure more than once; no currency, unit or word is named in code.
-- HONEST-OUTPUT-A (loop S2): every model-written finding stays in view and is marked, in
-  every reader-facing file and both languages, "Written by a model. Not promoted to an
-  amendment. Not checked by Python." (`finding_record.MODEL_FINDING_MARK`): in
-  `document_summary.md`, `reviewed_document.md`, `_run_summary.md`, the console and the
+- HONEST-OUTPUT-A (loop S2): every model-written finding stays in view and is marked, in both
+  languages, "Written by a model. Not promoted to an amendment. Not checked by Python."
+  (`finding_record.MODEL_FINDING_MARK`): in `document_summary.md`, `reviewed_document.md`,
+  `_run_summary.md`, the console (its proof needs Node and says so when skipped) and the
   master's own `model_findings_not_promoted` section of `review_data.json` (rendered in
-  `review_findings.md`). A model item there carries `model_claimed_verdict`,
+  `review_findings.md`). `tracked_changes.docx` carries amendments only, so no model finding
+  and no mark. Only Python's records enter the earlier-version section and its band list. A model item there carries `model_claimed_verdict`,
   `checked_by_python: false` and `promoted: false` and never `confidence`, `record_verdict` or
   `verdict`. The producer sentence is generated from the stamps (`findings_provenance`, also a
   log event) and names only what ran; Python findings and model items are counted apart; a
@@ -439,7 +448,8 @@ processing swarm governed by an append-only constitution.
   computed bus post's `note_models`), "not recorded" otherwise, and notes are counted apart.
   A model item carries `reader_notes` (`paired_review.model_item_notes`: another unit's
   passage cited, the pairing map's rejection of its rule, no addends named, figures not in its
-  unit). No reader file carries an em dash. Check 278.
+  unit). None of the markdown deliverables, `_run_summary.md` or `audit_synthesis.md` carries an
+  em dash. Check 278.
 
 ## Document role resolution and task modes
 
@@ -499,14 +509,17 @@ processing swarm governed by an append-only constitution.
   rule, both figures with their units and the relation; a sum names the values it added and a
   product its two factors. An absence says what was checked in code instead of figures. The
   rule's own words follow, quoted, and a model's sentence comes last, labelled as the model's.
-  Every template has a Turkish row in `scripts/ui/localization_catalog.js`. Figures keep their
-  existing format (`16.0`, checks 171 and 172) and the two provenance sentences check 269 reads
-  stay word for word.
+  Every template has a row for the second output language (tr) in
+  `scripts/ui/localization_catalog.js`. A figure is written as the unit's own text writes it
+  (`61 units`); a figure the unit does not write keeps the record's format (`16.0`, checks 171
+  and 172). The two provenance sentences check 269 reads stay word for word.
 - An amendment and its finding sit at the UNIT'S OWN PASSAGE: phase 5.5 cites the indexed
   passage that holds the unit's first line when exactly one does
   (`paired_review.unit_passage_refs`); a figure compared from elsewhere (a reference table, a
-  bound) is cited as such, never as the location; a unit Python cannot place sits at document
-  level and the amendment says so.
+  bound) is cited as such (`compared_with_refs`), never as the location; a unit Python cannot
+  place sits at document level, its finding and amendment cite no other unit's or the corpus's
+  passage, and the amendment says so. A heading places a unit only where it opens a passage as
+  a whole line (`paired_review.opens_with`).
 
 ## The sensitivity boundary
 
