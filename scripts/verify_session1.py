@@ -12224,7 +12224,10 @@ def check_181_the_comparison_is_rendered_in_both_deliverables_and_is_never_an_am
     # --- the renderer ------------------------------------------------------------------
     def _cat(f):
         f = dict(f); f["category"] = "conv-a01"; return f
-    findings = [_cat(band), _cat(unchanged), _cat(toward), _cat(absent), _cat(model_emitted)]
+    # Python's records carry the written_by stamp their bus post gives them (WRITTEN-BY-A); an
+    # unstamped record is never Python's, so the model-emitted one stays unstamped.
+    _py = lambda f: dict(f, written_by="python")
+    findings = [_cat(_py(band)), _cat(_py(unchanged)), _cat(_py(toward)), _cat(_py(absent)), _cat(model_emitted)]
     text = _render(document_id="x", document_name="x.md",
                    conventions_by_category={"conv-a01": registry["conventions"]},
                    findings=findings, question="ZQ_QUESTION",
@@ -12234,7 +12237,7 @@ def check_181_the_comparison_is_rendered_in_both_deliverables_and_is_never_an_am
                    "### Moved toward the mandate", "alpha rate: 30kes -> 45kes (delta +15) band distance -10",
                    "### Unchanged", "total declared extent: 25zed -> 25zed", "### Absent since the earlier version",
                    "eta rate: 50kes -> (not stated)", "### Outside a stated band now", "above_band",
-                   "### Not comparable", "delta span: units differ", "theta: no counterpart", "- findings: 5"):
+                   "### Not comparable", "delta span: units differ", "theta: no counterpart", "- items written by a model (not checked by Python): 1"):
         if needle not in text:
             return _fail(f"document_summary render lacks {needle!r}")
     section = text.split("## Compared with the earlier version", 1)[1]

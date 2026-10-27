@@ -163,8 +163,23 @@ def seal_environment(files, value):
         TOKENIZERS_PARALLELISM='false')
 
 
+def text_member(name):
+    """True for a member whose line endings may be normalised: the plain-text and HTML
+    extensions the pipeline's own extractor reads as text (scripts/text_extract.py). A PDF,
+    a DOCX or anything else is binary and keeps its bytes: a CR LF pair inside a zip or a
+    PDF stream is data, and converting it corrupts the file, which the extractor then
+    returns as empty text and _load_corpus silently skips."""
+    try:
+        import text_extract
+    except ImportError:
+        sys.path.append(str(ROOT/'scripts'))
+        import text_extract
+    return Path(name).suffix.lower() in (*text_extract.PLAINTEXT_EXTENSIONS, *text_extract.HTML_EXTENSIONS)
+
+
 def workload_members(path):
-    """A test's members as {relative name: LF-normalised bytes}, from an archive or a folder."""
+    """A test's members as {relative name: bytes}, from an archive or a folder: text members
+    LF-normalised, binary members and the case manifest exactly as given."""
     path = Path(path)
     members = {}
     if path.is_dir():
@@ -182,7 +197,7 @@ def workload_members(path):
     for name in members:
         require(name.startswith(allowed) or name in ('_review_targets.json', CASE_MANIFEST),
                 'Test archive member outside context/, conventions/, the targets file and the case manifest')
-    return {n: (d if n == CASE_MANIFEST else d.replace(b'\r\n', b'\n')) for n, d in members.items()}
+    return {n: (d.replace(b'\r\n', b'\n') if n != CASE_MANIFEST and text_member(n) else d) for n, d in members.items()}
 
 
 def default_workload():

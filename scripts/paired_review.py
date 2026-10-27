@@ -38,6 +38,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import finding_record
+import localization
 import pairing_map
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -2303,15 +2304,24 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
             (unit_record.get("text") if isinstance(unit_record, dict) else "") + " "
             + str((rule_texts or {}).get(rule_id) or ""))))
     parts = [computed]
+    # Reader check round 3 (item 3): a comment that ends with a model's note does
+    # not also say "not judged by a model"; it says the figures were computed in
+    # code and only the quoted note is a model's.
+    model_note_follows = bool(
+        computed_provenance and explanation and explanation != computed
+        and item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL)
     # v7: this sentence used to be unconditional, so the two amendments built
     # from VERIFIER's fabricated records told the operator they were computed in
     # code and not judged by a model, which was false of both. The provenance a
     # comment states is now the provenance the caller passes; an amendment built
     # from a model's own record says so instead. Reader check RC12: an absence
     # involves no figures, so its sentence says what was checked instead.
+    absence = str(item.get("relation") or "") in finding_record.ABSENCE_RELATIONS
     if not computed_provenance:
         parts.append("Reported by the agent named above, not computed in code from this unit's figures.")
-    elif str(item.get("relation") or "") in finding_record.ABSENCE_RELATIONS:
+    elif model_note_follows:
+        parts.append(ABSENCE_PROVENANCE_WITH_NOTE if absence else COMPUTED_PROVENANCE_WITH_NOTE)
+    elif absence:
         parts.append(ABSENCE_PROVENANCE)
     else:
         parts.append("Computed in code from the figures in this unit, not judged by a model.")
@@ -2473,6 +2483,56 @@ def stamp_note_writer(item, reply):
     return item
 
 
+# Reader check round 3 (item 2): what became of each judging call's reply, in the
+# flat record the computed bus post and the pairing map carry. Every call is
+# recorded, including one whose reply was not kept, so a counted call is never
+# missing from the bus.
+JUDGING_OUTCOMES = {
+    "note_kept": "its note is attached to Python's finding",
+    "no_note_returned": "it returned no note",
+    "no_finding_to_attach": "Python found no disagreement on this unit and rule, so its note was not kept",
+    "advisory_not_kept": ("Python could compute nothing for this unit and rule, so the reply was advisory "
+                          "and was kept neither as a finding nor as a note"),
+    "reply_failed": "the call failed, so no note was kept",
+    "judged_absence": "its answer is a judged absence, listed as a model's item",
+}
+
+
+def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note):
+    """One judging call as a flat record (scalars only): who was asked, about
+    what, and what became of the reply. Nothing from the reply's text."""
+    ok = isinstance(reply, dict) and reply.get("ok") is not False
+    if plan_kind == "absence_judged":
+        outcome = "judged_absence"
+    elif not ok:
+        outcome = "reply_failed"
+    elif notes_kept:
+        outcome = "note_kept"
+    elif plan_kind == "uncomputable":
+        outcome = "advisory_not_kept"
+    elif not has_note:
+        outcome = "no_note_returned"
+    else:
+        outcome = "no_finding_to_attach"
+    reply = reply if isinstance(reply, dict) else {}
+    return {"call_id": str(reply.get("call_id") or ""), "agent": str(agent or ""),
+            "unit_id": str(unit_id or ""), "rule_id": str(rule_id or ""),
+            "plan_kind": str(plan_kind or ""), "backend": str(reply.get("backend") or ""),
+            "model": str(reply.get("model") or ""), "notes_kept": int(notes_kept or 0),
+            "outcome": outcome}
+
+
+@localization.presentation
+def judging_call_line(record) -> str:
+    """One judging call in a reader's words, in the run's output language."""
+    return localization.text(
+        "Judging call {call} on unit {unit} under rule {rule} (model: {model}): {outcome}.",
+        call=record.get("call_id") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
+        unit=record.get("unit_id") or "?", rule=record.get("rule_id") or "?",
+        model=record.get("model") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
+        outcome=localization.text(JUDGING_OUTCOMES.get(record.get("outcome"), str(record.get("outcome")))))
+
+
 def note_models(items):
     """The models whose sentences sit in these records as notes (flat, sorted)."""
     return sorted({str(i.get("explanation_model")) for i in items or []
@@ -2483,10 +2543,25 @@ def note_models(items):
 # Reader check RC12: the provenance of a computed ABSENCE, which involves no figure.
 ABSENCE_PROVENANCE = ("Checked in code: the field is absent from this unit's text; "
                       "not judged by a model.")
+# Reader check round 3 (item 3): the provenance sentence when the comment ends with
+# a model's note. Check 269's two sentences stay word for word for every comment
+# that carries no model note.
+COMPUTED_PROVENANCE_WITH_NOTE = ("The figures were computed in code from this unit; "
+                                 "only the note quoted at the end was written by a model.")
+ABSENCE_PROVENANCE_WITH_NOTE = ("Checked in code: the field is absent from this unit's text; "
+                                "only the note quoted at the end was written by a model.")
 
 
 def _number_tokens(text):
     return re.findall(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])", str(text or ""))
+
+
+def written_tokens(item, unit_texts, rule_texts=None):
+    """The numbers a finding's unit (and its rule) write, as written, for the one
+    figure formatter (finding_record.figure_text; reader check round 3, item 7)."""
+    unit = (unit_texts or {}).get(item.get("unit_id")) if isinstance(item, dict) else None
+    rule = str((rule_texts or {}).get(finding_record.resolved_rule_id(item)) or "") if isinstance(item, dict) else ""
+    return _number_tokens((unit.get("text") if isinstance(unit, dict) else "") + " " + rule)
 
 
 def _written(value, tokens):
@@ -2499,10 +2574,8 @@ def _figure(value, unit, tokens=None):
     """A figure, its unit after it (a bare ratio's unit "1" is not written). With
     the unit's own number tokens, a figure the text writes is shown as written;
     without them (or for a figure the text does not write) exactly as the typed
-    record holds it."""
-    unit = str(unit or "").strip()
-    shown = _written(value, tokens) or "%s" % (value,)
-    return ("%s %s" % (shown, unit)) if unit and unit != "1" else shown
+    record holds it. The one formatter is finding_record.figure_text."""
+    return finding_record.figure_text(value, unit, tokens)
 
 
 def _rule_text(item):
@@ -2545,14 +2618,11 @@ def relation_clause(item):
         # Reader check RC1: the addends are named, with their values, so the
         # reader can find them in the unit's passage.
         addends = item.get("addends")
-        shown = [_written(v, tokens) for v in addends] if isinstance(addends, list) else []
-        if shown and all(shown) and all("." not in t for t in shown) \
-                and isinstance(a, float) and a.is_integer() and not _written(a, tokens):
-            # The sum of figures written as whole numbers, written the same way.
-            fa = _figure(int(a), item.get("unit_a"))
+        # The sum of figures written as whole numbers, written the same way (the
+        # one formatter, finding_record.value_a_text).
+        fa = finding_record.value_a_text(item, tokens)
         what = ("the values under '%s' (%s)" % (
-            item.get("addend_field") or "?",
-            _figure(" + ".join(w or str(v) for w, v in zip(shown, addends)), item.get("unit_a")))
+            item.get("addend_field") or "?", finding_record.addends_text(item, tokens))
             if isinstance(addends, list) and addends else "the values listed")
         clause = ("%s add up to %s, but the stated %s is %s" % (what, fa, name, fb)
                   if irregular else
@@ -2864,8 +2934,8 @@ def unit_passage_refs(unit_texts, entries, document_id):
     """{unit_id: REF-*} for every unit whose own passage Python can place (S2a 5).
 
     Structural only: the unit's first non-empty line (its heading, or the first
-    line of a preamble) is looked for, whitespace-folded, at the START of this
-    document's own indexed passages, as a whole line. Exactly one passage opening
+    line of a preamble) is compared, whitespace-folded, with the FIRST LINE of
+    each of this document's own indexed passages. Exactly one passage opening
     with it places the unit there; none or several leave the unit unplaced, and an
     amendment on it then says so rather than borrowing a passage that is not the
     unit's."""
@@ -2873,17 +2943,17 @@ def unit_passage_refs(unit_texts, entries, document_id):
     for e in entries or []:
         row = e.as_dict() if hasattr(e, "as_dict") else e
         if isinstance(row, dict) and row.get("document_id") == document_id and row.get("ref_id"):
-            passages.append((str(row["ref_id"]), _folded(row.get("text_excerpt"))))
+            passages.append((str(row["ref_id"]), str(row.get("text_excerpt") or "")))
     out = {}
     for unit_id, unit in (unit_texts or {}).items():
         lines = [ln for ln in str((unit or {}).get("text") or "").splitlines() if ln.strip()]
         if not lines:
             continue
         head = _folded(lines[0])
-        # S2 checker A8: the heading must OPEN the passage as a whole line (the
-        # passage is the heading, or the heading followed by more text), never sit
-        # inside another passage or be the prefix of a longer heading ("## Lot 1"
-        # in "## Lot 12").
+        # S2 checker A8 and adversarial round 2 (b): the heading must be the
+        # passage's FIRST LINE exactly, never sit inside another passage and never
+        # be the start of a longer heading ("## Lot 1" in "## Lot 12" or in
+        # "## Lot 1 - annex").
         hits = sorted({ref for ref, text in passages if head and opens_with(text, head)})
         if len(hits) == 1:
             out[unit_id] = hits[0]
@@ -2891,7 +2961,9 @@ def unit_passage_refs(unit_texts, entries, document_id):
 
 
 def opens_with(passage, head):
-    """True when the whitespace-folded passage is the heading, or the heading
-    followed by more text (S2 checker A8: never a substring, never a prefix of a
-    longer heading)."""
-    return passage == head or passage.startswith(head + " ")
+    """True when the passage's first non-empty line, whitespace-folded within the
+    line, is exactly the heading (adversarial round 2 (b): folding the whole
+    passage removed its line breaks, so "## Lot 1" opened a passage headed
+    "## Lot 1 - annex")."""
+    first = next((ln for ln in str(passage or "").splitlines() if ln.strip()), "")
+    return bool(head) and _folded(first) == head

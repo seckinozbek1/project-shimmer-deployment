@@ -286,3 +286,15 @@ open-item sweep.
 - **Item 12 (closed).** "Both halves landed" overstates the report half: the run report states the setting sealed in the manifest (`tools/analyze_ordinary_final_run.py`), not the setting the run observed in `audit/agent_switches.json`. The seal refuses an unratified `off`, so the sealed value is the run's value; reading the run's own record as a cross-check is left for S6.
 - **Item 18.** "None of these files is changed by S2" is wrong for one file: `scripts/ui/localization_catalog.js` was changed by S2 and still holds the one dash whose key must match the agent registry word for word (stated in the same item).
 - **Item 19 (1).** The absence-prediction section is translated in Turkish runs (`scripts/absence_prediction.py` localizes each sentence); only the raw status token is untranslated.
+
+## Corrections after S2 checker round 2 (2026-10-27)
+
+- **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
+- **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
+
+## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2)
+
+- **What it is.** Sixteen frozen tuning and evaluation launchers in `tools/` (`auditor_blocker_closure_cloud`, `auditor_canonical_cloud`, the three `auditor_classifier_lora*_cloud`, `auditor_feature_cloud`, `auditor_final_cloud`, `auditor_final_retry_cloud`, `auditor_linear_cloud`, `auditor_optuna_hpo_cloud`, `auditor_v2_cloud`, `checkpoint120_cloud`, `checkpoint120_v21_cloud`, `producer_v3_cloud`, `run_first_real_tuning`, `second_tuning_pilot`) can send a launch request through the provider adapter without the loop budget guard or the general path's refusals, and their instance names do not start with `shimmer-loop-`, so the reaper would not end one.
+- **Evidence.** S2 checker round 2 (adversarial item 15) and the controller fix lane's read-only inventory: every launch request goes through `LambdaExperiment.request` (`tools/lambda_experiment_provider.py`); the only common barrier is each launcher's refusal when its `docs/fix/<run>/LAUNCH_INTENT.json` exists (all exist and are tracked); most also require HEAD to equal an old commit (for example `tools/auditor_final_cloud.py` around lines 40 to 42); `auditor_blocker_closure_cloud` and `auditor_final_retry_cloud` have no HEAD check.
+- **Why it was left.** They are frozen tools, bound to past runs; S2c item 16 keeps frozen tools as they are, and changing what a frozen record would do is not the loop's to decide (P9 reason a: needs an operator decision). The loop never runs them.
+- **What would settle it.** An operator decision either to retire them (an archive folder outside `tools/`, keeping the records), or to route every remaining launcher through the loop guard.

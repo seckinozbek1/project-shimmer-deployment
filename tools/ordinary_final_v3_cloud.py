@@ -6,13 +6,6 @@ evidence-only commits; what launches is the sealed archive, whose digest is boun
 here and re-checked by the controller before transfer, so the runtime that
 executes is e4b52e6's and nothing later. Nothing else about the controller,
 workload, routing, models or budget changes.
-
-HISTORICAL (loop stage S2): frozen to bundle v3, never edited and never deleted. Its scope
-check (`multi_round is False and max_runs == 1`, line 38) stays as written: it IS the
-declared-sealed-valid check for its one bundle, whose sealed manifest says exactly that, so
-S2b item 1's replacement changes nothing here. It can no longer launch: v3's authorization
-is consumed, its instance name lacks the shimmer-loop- prefix and it sets no launch plan, so
-the current controller refuses it before any provider call.
 """
 import ordinary_final_cloud as controller
 from ordinary_final_run import read, write, sha, require

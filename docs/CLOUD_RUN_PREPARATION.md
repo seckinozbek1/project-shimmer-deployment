@@ -236,7 +236,8 @@ instance idle for investigation.
 
 Budget accounting includes setup, inference, scoring and collection. The watchdog
 (`tools/cloud_run_watchdog.py`) requires `--soft-usd` and `--hard-usd`; the
-deployment tool supplies the experiment's sealed caps. It resolves the
+deployment tool supplies the experiment's sealed caps. The deployment tool
+(`tools/deploy_cloud_run.py`), not the watchdog, resolves the
 instance's name first, with retries, refuses a `shimmer-loop-` instance, and on a
 failure terminates only an instance whose name it resolved and which is not a loop
 instance; anything else is left to the operator. It requests termination 120 seconds before the calculated hard ceiling

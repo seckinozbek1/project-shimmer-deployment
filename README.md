@@ -197,7 +197,9 @@ from the provider-backed Cloud option in the console. The sealed ordinary final
 controller (`tools/ordinary_final_bound_cloud.py`) launches only as a budgeted loop
 launch: it reads the loop ledger, lets `tools/loop_budget_guard.py` refuse a launch
 the budget cannot carry, names the instance `shimmer-loop-...` and writes the
-launch and termination lines. It can run detached, run several bundles in one
+launch and termination lines. It takes a test bundle from any folder and writes
+the run output to any folder (`--output-dir`), so a sealed test never enters the
+repository. It can run detached, run several bundles in one
 session and run a sealed test that prints counts only; the analyser
 (`tools/analyze_ordinary_final_run.py`) then writes a `RUN_REPORT.md` per run. The
 [cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)
