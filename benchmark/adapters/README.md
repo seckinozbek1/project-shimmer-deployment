@@ -123,7 +123,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 
 `build --reports <folder>` names the filings' folder; by default it is `financial_reports` beside the items file's folder, as the release lays it out. A table entry is written with a separator row after the first row of its pipe rows (section 5.6, as SciTab's table is; Shimmer reads a table's header only when a separator row follows it), and its words are its cell words. An item whose `split` names the other official split is refused. `parts.json` records per filing its SHA-256 and `issuer_cik`, the number after `/edgar/data/` in the filing's `url`, for the issuer bootstrap.
 
-**ContractNLI.** PROVISIONAL as a whole: `documents`, `id`, `text`, `spans`, `annotation_sets` (the first set is used), `annotations`, `choice` with its values, `labels` and `hypothesis`. The hypothesis keys also feed the rule ids.
+**ContractNLI.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now: `documents`, `id` (an integer), `text`, `spans` (character spans that segment the text, none crossing a line break), `annotation_sets` (one per agreement; the first is used), `annotations`, `choice` with the values `Entailment`, `Contradiction`, `NotMentioned`, `labels` and `hypothesis`; the hypothesis keys are `nda-1` to `nda-20` (17 keys). No development agreement's text holds a blank line, so under section 5.6 every agreement is one part (61 of 61), and location is not measurable in the sense of section 3.2.
 
 ## Readings
 
