@@ -214,7 +214,7 @@ class InstFinderSwitchChecks(unittest.TestCase):
                 self.assertIsNone(pipeline._inst_finder_startup_guard(ctx, root))
                 saved = json.loads((ctx.audit_dir() / "agent_switches.json").read_text(encoding="utf-8"))
                 self.assertEqual((saved["setting"], saved["value"], saved["switched_off"]), ("on", None, []))
-                self.assertIn("- INST_FINDER: on (SHIMMER_INST_FINDER is not off)", _summary(ctx))
+                self.assertIn("- INST_FINDER: switched on for this run", _summary(ctx))
                 for waves in (False, True):
                     out = _produce(root, waves)
                     self.assertIsNone(out["error"])
@@ -300,7 +300,7 @@ class InstFinderSwitchChecks(unittest.TestCase):
                 self.assertIsNone(pipeline._inst_finder_startup_guard(ctx, root))
                 saved = json.loads((ctx.audit_dir() / "agent_switches.json").read_text(encoding="utf-8"))
                 self.assertEqual((saved["switched_off"], saved["ratified_by"]), (["INST_FINDER"], FIXTURE_ID))
-                self.assertIn("switched off by the ratified SHIMMER_INST_FINDER setting, amendment " + FIXTURE_ID,
+                self.assertIn("switched off for this run by the operator, as ratified in amendment " + FIXTURE_ID,
                               _summary(ctx))
                 for waves in (False, True):
                     out = _produce(root, waves, phase[0])

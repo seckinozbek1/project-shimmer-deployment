@@ -42,14 +42,65 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 import ordinary_final_cloud as controller
 from ordinary_final_run import read, write, sha, require, cache_ref_bytes
-from ordinary_final_controller_checks import FakeProvider, INSTANCE
+from ordinary_final_controller_checks import FakeProvider, INSTANCE, A10_TYPE
 from prepare_ordinary_final_assets import build_assets
+import loop_budget_guard as guard
 
 SOURCE_BUNDLE = ROOT / 'docs/fix/ordinary_final_cloud_run_v4'
 WORK = ROOT / '.tmp/rehearsal'
 WHEELS = ROOT / 'output/cloud_wheels/ordinary_final_cp312'
 REHEARSAL_FOLDER = 'shimmer-rehearsal'
 DISTRO = 'Ubuntu'
+# The rehearsal is a loop launch against a MOCKED provider: nothing is billed, but it goes
+# through the same launch plan, budget guard and ledger lines as a real launch, on a ledger
+# of its own beside each rehearsal bundle (never the loop's ledger).
+REHEARSAL_FORECAST_MINUTES = 60
+REHEARSAL_PURPOSE = 'rehearsal'
+# The budget the rehearsal's own ledger opens with; the guard reads it from that ledger.
+REHEARSAL_BUDGET_USD = 70.0
+
+
+def rehearsal_name():
+    """The rehearsal's instance name: a loop name like every launch's."""
+    return guard.instance_name('rehearsal')
+
+
+def rehearsal_budget():
+    """The IV.3 budget fields a rehearsal manifest carries, set from the mocked provider's
+    own inventory and price exactly as the sealer sets them from the live one."""
+    reference = A10_TYPE['metadata']['hourly_rate']
+    candidates = guard.instance_candidates([A10_TYPE], reference)
+    forecast = guard.forecast_usd(REHEARSAL_FORECAST_MINUTES, candidates[0]['max_hourly_rate'])
+    # The rehearsal ledger's line names no hard stop, so its stop is the budget less the margin.
+    cap = guard.per_run_cap(forecast, 0.0, 0.0, 0.0,
+                            guard.cap_ceiling(REHEARSAL_BUDGET_USD, REHEARSAL_BUDGET_USD - guard.RESERVE_USD))
+    return dict(instance_candidates=candidates, a10_reference_rate=reference, region=guard.PREFERRED_REGION,
+                max_hourly_rate=candidates[0]['max_hourly_rate'], forecast_minutes=REHEARSAL_FORECAST_MINUTES,
+                forecast_usd=forecast, soft_budget_usd=forecast, hard_ceiling_usd=cap, per_run_cap_usd=cap,
+                workload_stop_reserve_seconds=900, termination_reserve_seconds=180)
+
+
+def rehearsal_plan(base):
+    """The launch plan for one rehearsal bundle, on a fresh ledger in that bundle's folder."""
+    ledger = Path(base) / 'rehearsal_ledger.jsonl'
+    ledger.unlink(missing_ok=True)
+    start = guard.utc(time.time())
+    ledger.write_text(json.dumps(dict(event='budget_open', time_utc=start, loop_start_utc=start, budget_usd=REHEARSAL_BUDGET_USD,
+                                      storage_usd_per_day=0.0,
+                                      a10_reference_price_usd_per_hour=A10_TYPE['metadata']['hourly_rate']),
+                                 sort_keys=True) + '\n', encoding='utf8')
+    # `reaped` names this mocked ledger as the one the (mocked) reaper reads: the rehearsal's
+    # explicit mocked path, so the loop's real ledgers are neither read nor written.
+    return dict(ledger=ledger, purpose=REHEARSAL_PURPOSE, forecast_minutes=REHEARSAL_FORECAST_MINUTES,
+                forecast_includes_upload=True, storage_forecast_usd=0.0, reaped=[ledger])
+
+
+def repository_label(path):
+    """A path relative to the repository when it is inside it, else absolute."""
+    try:
+        return Path(path).resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return Path(path).resolve().as_posix()
 
 
 def linux(command, timeout=600, stdin=None):
@@ -185,13 +236,18 @@ def make_bundle(name, assets, models):
     m['models'] = models
     m['assets_archive'] = assets
     m['classification'] = 'REHEARSAL_NOT_AUTHORIZED'
-    m['rehearsal'] = dict(source_bundle=SOURCE_BUNDLE.relative_to(ROOT).as_posix(), model_weights_included=False,
+    m['rehearsal'] = dict(source_bundle=repository_label(SOURCE_BUNDLE), model_weights_included=False,
                           provider='mocked', transport='local Ubuntu shell')
+    # The budget the current controller reads (a bundle sealed before loop stage S2 has none),
+    # and the controller files of this tree: the rehearsal rehearses the controller about to
+    # be used, so a rehearsal manifest binds it as the sealer would.
+    m.update(rehearsal_budget())
+    m['local_control_hashes'] = {n: sha(ROOT / n) for n in m.get('local_control_hashes', {})}
     write(base / 'execution_manifest.json', m)
     write(base / 'seal.json', dict(execution_manifest_sha256=sha(base / 'execution_manifest.json'), source_commit=m['source_commit'],
                                    operator_authorized=False, classification='REHEARSAL_NOT_AUTHORIZED'))
     write(base / 'AUTHORIZED_LOCAL_REVERIFICATION.json', dict(passed=True, rehearsal=True))
-    write(base / 'assets_transfer_archive.json', dict(path=(WORK / 'assets.tar').relative_to(ROOT).as_posix(), bytes=assets['bytes'],
+    write(base / 'assets_transfer_archive.json', dict(path=repository_label(WORK / 'assets.tar'), bytes=assets['bytes'],
                                                        sha256=assets['sha256'], manifest_sha256=sha(base / 'execution_manifest.json')))
     return base
 
@@ -214,7 +270,8 @@ def run_controller(base, remote_root_present, layout):
     with patch.object(controller, 'BASE', base), patch.object(controller, 'REMOTE', layout.remote), \
             patch.object(controller, 'MANIFEST', sha(base / 'execution_manifest.json')), \
             patch.object(controller, 'SEAL', sha(base / 'seal.json')), \
-            patch.object(controller, 'PREPARATION', 'rehearsal'), patch.object(controller, 'INSTANCE_NAME', 'shimmer-rehearsal'), \
+            patch.object(controller, 'PREPARATION', 'rehearsal'), patch.object(controller, 'INSTANCE_NAME', rehearsal_name()), \
+            patch.object(controller, 'LAUNCH', rehearsal_plan(base)), \
             patch.object(controller, 'LambdaExperiment', FakeProvider), patch.object(controller, 'subprocess', fake_subprocess), \
             patch.object(controller, 'credential_path', no_credential), contextlib.redirect_stdout(console):
         controller.execute()
@@ -278,7 +335,7 @@ def main(out):
                                                                      detached=r.get('detached', False), polls=r.get('polls'),
                                                                      unreachable_polls=r.get('unreachable_polls')) for n, r in phases.items()},
         workload_return=workload, workload_refusal_line=refusal,
-        runner_reached_hardware_admission='A10 memory admission' in stderr_text,
+        runner_reached_hardware_admission='memory admission' in stderr_text,
         evidence_archive_verified=(base / 'collection_integrity.json').exists(),
         torn_down=(base / 'TERMINATION_VERIFIED.json').exists() and read(base / 'CURRENT_PHASE.json')['phase'] == 'terminated_and_cleaned')
     (out / 'absent_root_console.log').write_text('\n'.join(console) + '\n', encoding='utf8')
@@ -326,7 +383,8 @@ def main(out):
 
     def copy_polarity(name, prepare):
         base_c = make_bundle(name, assets, models)
-        write(base_c / 'asset_copy_declaration.json', dict(filesystem_name='rehearsal-fs', mount=mount, operator_authorized=True))
+        write(base_c / 'asset_copy_declaration.json', dict(filesystem_name='rehearsal-fs', mount=mount, operator_authorized=True,
+                                                           assets_sha256=assets['sha256']))
         linux(remove_command(layout, mount) + ' && mkdir -p ' + shlex.quote(mount) + (' && ' + prepare if prepare else ''))
         transport_c, console_c, failure_c = run_controller(base_c, remote_root_present=False, layout=layout)
         phases_c = phase_receipts(base_c)
@@ -338,7 +396,7 @@ def main(out):
                     phases={n: dict(returncode=r.get('returncode'), seconds=round(r.get('seconds', 0), 1)) for n, r in phases_c.items()},
                     uploaded_assets=any(a[0] == 'scp' and any(x.endswith('/assets.tar') for x in a) for a, _ in transport_c.calls),
                     copy_digest_after=digest_after,
-                    runner_reached_hardware_admission='A10 memory admission' in workload_stderr(base_c),
+                    runner_reached_hardware_admission='memory admission' in workload_stderr(base_c),
                     torn_down=(base_c / 'TERMINATION_VERIFIED.json').exists() and read(base_c / 'CURRENT_PHASE.json')['phase'] == 'terminated_and_cleaned')
 
     report['polarities']['asset_copy_match'] = copy_polarity('asset_copy_match', 'cp ' + source_copy + ' ' + shlex.quote(copy_path))
@@ -353,6 +411,7 @@ def main(out):
     FakeProvider.state = None
     with patch.object(controller, 'BASE', base3), patch.object(controller, 'MANIFEST', sha(base3 / 'execution_manifest.json')), \
             patch.object(controller, 'SEAL', sha(base3 / 'seal.json')), patch.object(controller, 'LambdaExperiment', FakeProvider), \
+            patch.object(controller, 'INSTANCE_NAME', rehearsal_name()), patch.object(controller, 'LAUNCH', rehearsal_plan(base3)), \
             patch.object(controller, 'credential_path', no_credential), contextlib.redirect_stdout(io.StringIO()):
         try:
             controller.execute()

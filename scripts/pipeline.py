@@ -93,6 +93,7 @@ import run_completion as run_completion_mod
 from review_scope import apply_cutoff
 from search_router import SearchRouter
 from summary_generators import render_context_summary, render_operative_summary
+import summary_generators
 import text_extract
 
 
@@ -1920,6 +1921,12 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
             )
             pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
             doc["_pairing"] = pairing
+            # Reader check RC2/RC3: where Python can place each unit's own passage
+            # in the reference index, a computed finding cites THAT passage, not
+            # whichever document excerpt happened to rank first.
+            doc["_unit_refs"] = paired_review_mod.unit_passage_refs(
+                paired_review_mod.unit_texts_for(doc["text"], doc["id"]),
+                reference_index.entries, doc["id"])
             log_event(_LOG,
                       f"pairing_map units={pairing['unit_count']} rules={pairing['rule_count']} "
                       f"pairs={pairing['pair_count']} rejected={pairing['rejected_count']} "
@@ -2451,6 +2458,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                           "undecided_count": pairing.get("undecided_count", 0),
                           "rejected_count": pairing.get("rejected_count", 0)})
     pending_judgments = []
+    # Reader check round 3 (item 2): every judging call, with what became of its
+    # reply (a note kept, no note returned, nothing to attach it to, a failed
+    # call), by agent; carried on the computed bus post and in the pairing map so
+    # a call the run counts is never missing from the record.
+    judging_calls_by_agent: dict = {}
     def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
@@ -2494,6 +2506,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     doc["id"], plan_index, "returned", raw=judged, kept=kept,
                     refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
                     response_ok=isinstance(r, dict) and r.get("ok") is True)
+            # S2 checker round 3 (item 1): recorded once its items are known, with
+            # the claims listed and the claims refused; a failed call says so.
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                absence_listed=len(paired_review_mod.dedupe(kept)),
+                absence_refused=len(refused_judged) - refusal_start))
             judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
@@ -2507,11 +2526,19 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             results.append(r)
             return
         explanation = _first_explanation(r)
+        notes_kept = 0
         for check in paired_review_mod.disagreements(checks):
-            computed_items_by_agent.setdefault(agent, []).append(
-                paired_review_mod.finding_from_check(
-                    unit_id=unit["unit_id"], rule=rule, check=check,
-                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
+            item = paired_review_mod.finding_from_check(
+                unit_id=unit["unit_id"], rule=rule, check=check,
+                source_rule_id=source_rule_id, refs=refs, explanation=explanation,
+                unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"]))
+            # Reader check RD1: the record names the model call that wrote its note.
+            paired_review_mod.stamp_note_writer(item, r)
+            notes_kept += item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
+            computed_items_by_agent.setdefault(agent, []).append(item)
+        judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+            r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"], plan_kind=plan.get("kind"),
+            notes_kept=notes_kept, has_note=bool(explanation)))
         results.append(r)
 
     for plan_index, plan in enumerate(plans):
@@ -2578,6 +2605,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     evidence={"selected_agent": agent, "rule_id": rule["id"],
                               "unit_id": unit["unit_id"], "plan_index": plan_index})
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
+        # Reader check RC2/RC3 and S2 checker A8: the finding cites the unit's own
+        # passage when Python placed it, nothing when it could not (the record then
+        # sits at the document level); a compared passage is carried apart. The
+        # excerpt refs go to the model's payload only.
+        unit_ref = paired_review_mod.unit_ref_for(doc, unit["unit_id"])
         # D, option 2, Python first: a declared required field absent from a unit
         # in scope is a finding Python decides, no call made; the record says so.
         if plan.get("kind") == "absence_computed":
@@ -2589,7 +2621,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             check = checks[0]
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
-                source_rule_id=source_rule_id, refs=refs)
+                source_rule_id=source_rule_id, refs=refs, unit_ref=unit_ref)
             if prediction is not None:
                 prediction.outcome(doc["id"], plan_index, "computed")
             item["absence_path"] = "computed"
@@ -2604,7 +2636,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             for check in paired_review_mod.disagreements(checks):
                 computed_items_by_agent.setdefault(agent, []).append(
                     paired_review_mod.finding_from_check(unit_id=unit["unit_id"], rule=rule,
-                        check=check, source_rule_id=source_rule_id, refs=refs))
+                        check=check, source_rule_id=source_rule_id, refs=refs,
+                        unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"])))
             agent_activation.not_called(orch.run_context, agent,
                 reason="exact_comparison_reason_rendered", source_phase="5.5", doc_id=doc["id"],
                 trigger_source="paired_plan", consumer="typed_finding_and_deterministic_reason",
@@ -2729,6 +2762,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # neighbour rule's 13 dropped plans looked like a model failure rather than
     # a question never asked. planned = made + not_judged + absence_computed.
     pairing["calls_made"] = len(results)
+    # Reader check round 3 (item 2): what became of every call, beside the count.
+    pairing["judging_calls"] = [c for calls in judging_calls_by_agent.values() for c in calls]
     # SEVEN-A: the suspension evidence lands in the pairing map, which is the
     # artifact that already carries per-unit evidence (band_conditions,
     # prior_comparisons) and which a scorer already reads. A third fact beside
@@ -2773,7 +2808,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 _build_wrapper(agent, orch, keys).post_to_bus(
                     recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
                     body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
-                          "item_count": len(items), "parse_trace": {}, "payload": envelope},
+                          "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                          # Reader check RD1: the models whose sentences sit in
+                          # these records as notes, recorded where the records are.
+                          "note_models": paired_review_mod.note_models(items),
+                          # Reader check round 3 (item 2): every judging call this
+                          # agent made, kept note or not.
+                          "judging_calls": judging_calls_by_agent.get(agent, [])},
                     constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
                                         "resolution": "computed in code from the unit's own "
                                                       "figures; no model judged these values"})
@@ -2784,7 +2825,27 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
                             "parsed": envelope, "raw_text": "", "contract_missing": [],
                             "error": None, "item_count": len(items),
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python",
+                            "note_models": paired_review_mod.note_models(items)})
+
+    # Reader check round 3 (item 2): an agent whose judging calls produced no
+    # computed finding has no computed post to carry them, so they are posted on
+    # their own (no finding, no envelope: a record of calls and their outcomes).
+    for agent, calls in judging_calls_by_agent.items():
+        if computed_items_by_agent.get(agent) or not calls:
+            continue
+        try:
+            _build_wrapper(agent, orch, keys).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "PAIRED_JUDGING_CALLS", "backend": "paired", "model": "python",
+                      "doc_id": str(doc["id"]), "judging_calls": calls},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "judging calls recorded with their outcomes; "
+                                                  "no computed finding on these pairs"})
+        except Exception as e:  # a bus that refuses must not take the review down
+            log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                            f"error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     # D, option 2: the model's judged absence findings, stamped with the unit and
     # rule Python knows by construction and with absence_path=judged, posted under
@@ -2835,7 +2896,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": default_agent,
                             "ok": True, "parsed": envelope, "raw_text": "",
                             "contract_missing": [], "error": None, "item_count": 0,
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python", "note_models": []})
     return out_results
 
 
@@ -3026,12 +3087,16 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     own: two places to look means one of them goes unread. Omitted entirely when
     there are no external rules, which is every installation today, so the
     ordinary run summary is byte-for-byte what it was."""
+    # Imported here, not only at module level: the localization gate executes this
+    # function's own definition in an isolated namespace.
+    import finding_record
+    import summary_generators
     deliv_dir = Path(deliv_dir)
     deliv_dir.mkdir(parents=True, exist_ok=True)
     total_amendments = sum((deliverables.get(d["id"]) or {}).get("amendment_count", 0)
                            for d in op_docs)
     lines = [
-        f'{localization.text('# Run summary (')}{task})',
+        f'{localization.text('# Run summary (')}{localization.label(task)})',
         "",
     ]
     if (question or "").strip():
@@ -3052,12 +3117,23 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         switch = None
     if not isinstance(switch, dict):
         lines.append(localization.text('- INST_FINDER: setting not recorded for this summary'))
+    # Reader check round 3 (item 9): the setting in plain words; the setting's
+    # internal name stays in audit/agent_switches.json.
     elif switch.get("switched_off"):
-        lines.append(f'{localization.text('- INST_FINDER: switched off by the ratified SHIMMER_INST_FINDER setting, amendment ')}{switch.get('ratified_by')}')
+        lines.append(f'{localization.text('- INST_FINDER: switched off for this run by the operator, as ratified in amendment ')}{switch.get('ratified_by')}')
     elif switch.get("setting") == "off":
-        lines.append(localization.text('- INST_FINDER: SHIMMER_INST_FINDER=off without a ratified amendment; the run refused to start'))
+        lines.append(localization.text('- INST_FINDER: switched off without a ratified amendment, so the run refused to start'))
     else:
-        lines.append(localization.text('- INST_FINDER: on (SHIMMER_INST_FINDER is not off)'))
+        lines.append(localization.text('- INST_FINDER: switched on for this run'))
+        try:
+            _states = json.loads((deliv_dir.parent / "audit" / "agent_activation.json")
+                                 .read_text(encoding="utf-8")).get("agent_states") or []
+        except (OSError, ValueError):
+            _states = None
+        _inst = next((r for r in (_states or []) if r.get("agent") == "INST_FINDER"), None)
+        if _inst is not None:
+            lines.append(f"{localization.text('- INST_FINDER model calls in this run: ')}{_inst.get('actual_calls', 0)}"
+                         + (localization.text(' (it produced no output)') if not _inst.get('actual_calls') else ""))
     lines += [
         "",
         localization.text('## Documents'),
@@ -3076,7 +3152,15 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
             absent = info.get("prior_absent_count", 0)
             if absent:
                 suffix += f', {absent}{localization.text(' absent since it')}'
+        # S2a, item 1: the run report names the model findings that were not
+        # promoted, with the same mark every other deliverable carries.
+        unpromoted = info.get("model_findings_not_promoted", 0)
+        if unpromoted:
+            suffix += (f', {unpromoted}{localization.text(' model finding(s) not promoted')}'
+                       f' ({localization.text(finding_record.MODEL_FINDING_MARK)})')
         lines.append(f'- [{doc['name']}]({doc['id']}/): {n}{localization.text(' amendment(s)')}{suffix}')
+    # S2a, item 7: relations Python computed, apart from relations only a model reported.
+    lines += summary_generators.relation_report_lines(deliverables, op_docs)
 
     # THREE-D: the refused pairs, on the surface the operator already reads.
     # Nothing is emitted when no external rules were supplied, so a run without
@@ -3166,13 +3250,37 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
     # and returns (doc_id, info); the deliverables map is assembled from the returns.
     # The cross-doc steps above (WEB-REF minting, verifiability gate) stay serial.
     async def _process_doc(doc):
+        # S2a: every item is stamped with who wrote it, read off the envelope it was
+        # posted under (finding_record.written_by), BEFORE any copy is made: the
+        # promoter's input, the withheld list, the summaries, the master and the run
+        # summary all read that one stamp, so no file can call a model's finding
+        # computed or Python's finding a model's. (The identity test that used to
+        # decide _withheld below compared copies and counted computed findings as
+        # model findings in the run log.)
+        upstream_findings = {
+            name: _stamp_source_rule_ids(finding_record.stamp_written_by(
+                results, _items_for(results, name, doc_id=doc["id"]) or []), convention_registry)
+            for name, results in (("PRACTICE_AUDITOR", conv_review), ("STYLE_GUARDIAN", conv_review),
+                                  ("VERIFIER", audit), ("FACT_CHECKER", audit),
+                                  ("LEGAL_ANALYST", production))}
         # Findings first: they determine the topical scope for context_summary too.
-        pa_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]) or [], convention_registry)
-        sg_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]) or [], convention_registry)
+        pa_findings = upstream_findings["PRACTICE_AUDITOR"]
+        sg_findings = upstream_findings["STYLE_GUARDIAN"]
+        # Reader check RC6/RC7: a model's record reaches the deliverables without
+        # the fields that would make it read as checked, and says whether the unit
+        # it names states its figures at all.
+        _doc_units = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
+        _doc_unit_refs = paired_review_mod.unit_passage_refs(_doc_units, reference_index.entries, doc["id"])
+        model_findings = [finding_record.model_finding_for_reader(dict(
+                              f, agent=f.get("agent") or name,
+                              figures_in_unit=paired_review_mod.figures_in_unit(f, _doc_units),
+                              reader_notes=paired_review_mod.model_item_notes(
+                                  f, _doc_units, _doc_unit_refs, doc.get("_pairing"))))
+                          for name, group in upstream_findings.items() for f in group
+                          if finding_record.is_finding(f) and finding_record.is_model_written(f)]
         findings = []
         categories_with_findings = set()
+        _rule_words = {c.get("id"): c.get("rule") for c in convention_registry.get("conventions", [])}
         for agent, raw_findings in (("PRACTICE_AUDITOR", pa_findings),
                                      ("STYLE_GUARDIAN", sg_findings)):
             for f in raw_findings:
@@ -3180,6 +3288,13 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                 normalized = _normalize_finding(f)
                 normalized["category"] = cat
                 normalized["agent"] = agent
+                # Reader check round 3 (item 7): the summaries format a figure with
+                # the same formatter and the same written numbers as the comment.
+                normalized["_written_tokens"] = paired_review_mod.written_tokens(f, _doc_units, _rule_words)
+                if finding_record.is_model_written(normalized):
+                    normalized["figures_in_unit"] = paired_review_mod.figures_in_unit(f, _doc_units)
+                    normalized["reader_notes"] = paired_review_mod.model_item_notes(
+                        f, _doc_units, _doc_unit_refs, doc.get("_pairing"))
                 findings.append(normalized)
                 categories_with_findings.add(cat)
 
@@ -3192,11 +3307,23 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         ) or _filter_context_refs_for_doc(all_context_refs, doc["text"])
         topics = sorted(categories_with_findings) if categories_with_findings \
             else list(conventions_by_category.keys())
-        ctx_body = (
-            f"This document was reviewed against {n_total_conventions} conventions. "
-            f"{len(findings)} findings were produced by PRACTICE_AUDITOR and STYLE_GUARDIAN. "
-            f"The context references below are filtered for topical relevance to {doc['name']}."
-        )
+        # Reader check RC16: a topic is shown with its rules' ids and words, not
+        # as the bare category slug.
+        topics = [summary_generators.topic_line(t, conventions_by_category.get(t, []))
+                  for t in topics]
+        # S2a, item 2: the producer sentence is generated from what happened in this
+        # run: who wrote each finding (the stamp above) and which agents' model
+        # replies carried one. It used to name PRACTICE_AUDITOR and STYLE_GUARDIAN
+        # as producers whatever ran, including when STYLE_GUARDIAN never ran and
+        # Python computed every finding. The same counts go to the run log.
+        _judging_calls = (doc.get("_pairing") or {}).get("judging_calls") or []
+        provenance = summary_generators.findings_provenance(findings, judging_calls=_judging_calls)
+        log_event(_LOG, f"findings_provenance computed={provenance['computed']} "
+                        f"model={provenance['model']} "
+                        f"model_agents={','.join(provenance['model_agents']) or 'none'}",
+                  run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+        ctx_body = summary_generators.context_findings_sentence(
+            n_total_conventions, provenance, doc["name"])
         # BP-16: every artifact for this doc goes into deliverables/<doc_id>/,
         # with the doc-name prefix stripped from the filename.
         doc_dir = orch.run_context.doc_deliverables_dir(doc["id"])
@@ -3212,9 +3339,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         op_summary = render_operative_summary(
             document_id=doc["id"], document_name=doc["name"],
             conventions_by_category=conventions_by_category, findings=findings,
-            body_text="Findings are produced by PRACTICE_AUDITOR and STYLE_GUARDIAN in PHASE 5.5 "
-                       "against the convention registry. Each finding cites the convention ID and "
-                       "the operational reference ID(s).",
+            body_text=summary_generators.operative_findings_sentence(provenance),
             question=question, prior_refusals=_prior_refusals_for(doc),
             prior_orphans=_prior_orphans_for(doc),
         )
@@ -3248,18 +3373,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # largest prefill, and two local runs died inside it or beside it to a
             # GPU engine timeout. Removing it removes that exposure. It does not
             # remove TDR, which also hit a Phi-3.5 generation with no swap at all.
-            upstream_findings = {
-                "PRACTICE_AUDITOR": _stamp_source_rule_ids(
-                    _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]), convention_registry),
-                "STYLE_GUARDIAN": _stamp_source_rule_ids(
-                    _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]), convention_registry),
-                "VERIFIER": _stamp_source_rule_ids(
-                    _items_for(audit, "VERIFIER", doc_id=doc["id"]), convention_registry),
-                "FACT_CHECKER": _stamp_source_rule_ids(
-                    _items_for(audit, "FACT_CHECKER", doc_id=doc["id"]), convention_registry),
-                "LEGAL_ANALYST": _stamp_source_rule_ids(
-                    _items_for(production, "LEGAL_ANALYST", doc_id=doc["id"]), convention_registry),
-            }
+            # (upstream_findings is built once, stamped, at the top of _process_doc.)
             # refine R2: NO amendment is ever taken from the model. The template
             # builds every one of them from the typed Findings below, so an
             # amendment the arithmetic did not produce cannot exist by
@@ -3336,10 +3450,12 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # the PROMOTER's input that narrows, which is what makes "no
             # amendment is ever taken from the model" true by construction.
             _promotable = [f for f in computed_findings if finding_record.is_finding(f)]
+            # S2a: decided by the written_by stamp, not by object identity, which
+            # never held once the items above were copied.
             _withheld = [f for f in all_upstream
                          if finding_record.is_finding(f)
                          and str(f.get("record_verdict") or "").lower() == "irregular"
-                         and not any(f is c for c in computed_findings)]
+                         and finding_record.is_model_written(f)]
             if _withheld:
                 log_event(_LOG,
                           f"model_findings_not_promoted count={len(_withheld)} "
@@ -3347,9 +3463,14 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                           run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
                 reply_records.mark_not_promoted(orch.run_context, (production, audit, conv_review),
                                                 _withheld, doc_id=doc["id"])
+            # S2a, item 5: where Python can place a unit's own passage in the
+            # reference index, an absence amendment points there.
+            _unit_refs = paired_review_mod.unit_passage_refs(
+                _unit_texts, reference_index.entries, doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, _promotable, unit_texts=_unit_texts,
-                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
+                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id,
+                unit_refs=_unit_refs)
             # Never silently drop a finding this function could not turn into
             # an amendment: a real, irregular finding a model wrote under a
             # field name this pipeline did not yet recognise is not an error
@@ -3414,14 +3535,21 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # R6 / INFRA-044: the comparison with the earlier version travels in the
             # MASTER too, so review_data.json and review_findings.md carry it in its
             # own section. Never an amendment: every such record is ok-verdict.
+            # S2 checker A4: a model can write `provenance`; only Python's own
+            # records (by the post they travelled in) enter the comparison.
             _prior_records = [f for f in all_upstream
                               if f.get("relation") in finding_record.PRIOR_RELATIONS
-                              and f.get("provenance") == "computed"]
+                              and f.get("provenance") == "computed"
+                              and not finding_record.is_model_written(f)]
             amendments_payload = {"document_id": doc["id"], "amendments": raw_amendments,
                                   "prior_comparisons": _prior_records,
                                   "prior_refusals": _prior_refusals_for(doc),
                                   "prior_orphans": _prior_orphans_for(doc)}
 
+        # S2a, item 1: every finding a model wrote for this document travels in the
+        # master, labelled by the renders, never removed from view and never an
+        # amendment (only computed findings are promoted).
+        amendments_payload[amendment_render.MODEL_FINDINGS_KEY] = model_findings
         # INFRA-042: in the empty-registry state the CONV-* requirement is relaxed (an amendment
         # grounds on >=1 REF-* or >=1 WEB-REF-*); when conventions exist the rule holds unchanged.
         ok_payload, errs = validate_amendment_payload(
@@ -3445,7 +3573,14 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 
         # Per-agent deliverable (the reviewed document record)
         per_agent_path = doc_dir / names["per_agent_deliverable"]
-        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review),
+        try:
+            _activation = json.loads((orch.run_context.audit_dir() / "agent_activation.json")
+                                     .read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            _activation = None
+        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review,
+                                                       activation=_activation, unit_refs=_doc_unit_refs,
+                                                       judging_calls=_judging_calls),
                                   encoding="utf-8")
 
         # The dict KEYS below are internal identifiers consumed by the redaction stage and
@@ -3463,10 +3598,31 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             "prior_absent_count": sum(
                 1 for f in (amendments_payload.get("prior_comparisons") or [])
                 if f.get("relation") == "absent_since_prior"),
+            # S2a, items 1 and 7: what the run summary reports, from the stamps.
+            "model_findings_not_promoted": len(model_findings),
+            "context_refs_cited": [str(r.get("ref_id")) for r in ctx_refs if r.get("ref_id")],
+            "relations_computed": summary_generators.relation_counts(
+                [f for g in upstream_findings.values() for f in g
+                 if finding_record.is_finding(f) and not finding_record.is_model_written(f)]),
+            "relations_model_only": summary_generators.relation_counts(model_findings),
         }
 
     for doc_id, info in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         deliverables[doc_id] = info
+    # Reader check RD11: the reference index records which deliverable cites each
+    # passage, so it agrees with the files a reader follows.
+    try:
+        for doc_id, info in deliverables.items():
+            master = json.loads(Path(info["amendments_json"]).read_text(encoding="utf-8"))
+            for amendment in master.get("amendments") or []:
+                for ref in amendment.get("ref_ids") or []:
+                    reference_index.cite(ref, "amendment")
+            for ref in info.get("context_refs_cited") or []:
+                reference_index.cite(ref, "grounding_summary")
+        reference_index.save()
+    except Exception as e:  # a citation record must not take synthesis down (type only)
+        log_event(_LOG, f"reference_cited_by_error error_type={type(e).__name__}",
+                  run_id=_run_id_of(orch), phase="6")
     return deliverables
 
 
@@ -3722,7 +3878,9 @@ def _append_board_to_deliverable(info, consolidated):
     if not p or not Path(p).exists():
         return
     try:
-        lines = ["", "## Editorial review board (advisory)", ""]
+        # S2a: the board's observations are model output; the heading says so.
+        lines = ["", "## Editorial review board (advisory: written by models, "
+                     "not promoted to amendments, not checked by Python)", ""]
         if not consolidated:
             lines.append("_(no observations)_")
         for c in consolidated:
@@ -3883,26 +4041,101 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
 
 
 @localization.presentation
-def _render_per_agent_md(doc, production, audit, conv_review):
-    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable')}', "",
+def _render_per_agent_md(doc, production, audit, conv_review, activation=None, unit_refs=None,
+                         judging_calls=None):
+    # Reader check RC17/RD18: the title says what the file holds (each agent's raw
+    # reply for this document). The file name stays as it is (renaming it changes
+    # run_context.DELIVERABLE_FILENAMES, routes and docs; deferred).
+    import agent_activation
+    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable (each agent\'s raw reply for this document, a technical record)')}', "",
              f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}']
     all_results = (production + audit + conv_review)
     by_agent = {}
     for r in all_results:
         if r.get("doc_id") == doc["id"]:
             by_agent.setdefault(r["agent"], []).append(r)
+    # Reader check round 3 (item 2): every judging call an agent made, by agent.
+    calls_by_agent = {}
+    for call in judging_calls or []:
+        if isinstance(call, dict):
+            calls_by_agent.setdefault(call.get("agent"), []).append(call)
+    units = None
+    notes_by_agent = {}
     for agent in ("PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST",
                   "VERIFIER", "FACT_CHECKER",
                   "PRACTICE_AUDITOR", "STYLE_GUARDIAN"):
         lines.append(f"\n## {agent}")
-        if agent not in by_agent:
+        if agent not in by_agent and not calls_by_agent.get(agent):
             lines.append(localization.text('_(agent did not run)_')); continue
-        for r in by_agent[agent]:
+        for r in by_agent.get(agent, []):
             if not r.get("ok"):
                 lines.append(f'{localization.text('_(failed: ')}{r.get('error')})_'); continue
+            # S2a, item 1: each reply says who wrote it, and every model finding in
+            # it carries the mark, before its JSON. Nothing is removed.
+            import finding_record
+            if finding_record.written_by(r.get("backend"), r.get("model")) == finding_record.WRITTEN_BY_PYTHON:
+                # Reader check RC5: the backend and model as recorded, and what the
+                # label means: the figures are Python's; a model asked to explain a
+                # disagreement wrote only the sentence marked as a model's note.
+                # Reader check RD1: exactly what the run log records for these
+                # records (backend and model of the post), and the models the
+                # records name as writers of their notes, or that none is recorded.
+                # Reader check round 3 (item 6): the absences Python checked in code
+                # are counted apart from the findings computed from figures.
+                records = [i for i in decode_items(r.get("parsed")) if isinstance(i, dict)]
+                # S2 checker round 3 (item 2): the notes kept, counted as every file counts them.
+                import paired_review as _pr
+                notes_by_agent[agent] = notes_by_agent.get(agent, 0) + _pr.notes_on_python_findings(
+                    [dict(i, written_by=finding_record.WRITTEN_BY_PYTHON) for i in records])
+                writers = sorted({str(i.get("explanation_model") or localization.text("not recorded"))
+                                  for i in records
+                                  if i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
+                checked = sum(1 for i in records if i.get("relation") in finding_record.ABSENCE_RELATIONS)
+                lines.append('_' + localization.text(
+                                 "Written by Python: {figures} computed from the document's own figures, "
+                                 "{checked} required field(s) checked in code and found absent.",
+                                 figures=len(records) - checked, checked=checked)
+                             + f'{localization.text(' Backend ')}`{r.get('backend') or '?'}`'
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`.'
+                             + (f'{localization.text(' Notes written by a model, not checked by Python: ')}'
+                                + ", ".join(f"`{w}`" for w in writers) + "." if writers else "") + "_")
+            else:
+                import paired_review as _pr
+                if units is None:
+                    units = _pr.unit_texts_for(doc.get("text") or "", doc["id"])
+                lines.append(f'{localization.text('_Written by a model: backend ')}`{r.get('backend') or '?'}`'
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`._')
+                for item in decode_items(r.get("parsed")):
+                    if finding_record.is_finding(item):
+                        lines.append(f'- {finding_record.reader_line(dict(item, written_by=finding_record.WRITTEN_BY_MODEL))} '
+                                     f'({localization.text(finding_record.MODEL_FINDING_MARK)})')
+                        # Reader check round 3 (item 5): what Python can say about
+                        # the item, the same notes every other file shows.
+                        for note in _pr.model_item_notes(item, units, unit_refs or {}, doc.get("_pairing")):
+                            lines.append(f"  - {localization.message(note)}")
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")
+        calls = calls_by_agent.get(agent) or []
+        if calls:
+            import paired_review as _pr
+            lines += ["", localization.text(
+                "Judging calls this agent made on this document: {calls}; {counts}.", calls=len(calls),
+                counts=summary_generators.calls_and_notes_text(calls, notes_by_agent.get(agent, 0)))]
+            lines += [f"- {_pr.judging_call_line(c)}" for c in calls]
+    # Reader check RD13: every registered agent, with the state the run recorded
+    # for it, so the list above (the agents that review one document) is never
+    # read as the whole run. Round 3 (item 9): the state in words, never the code.
+    states = (activation or {}).get("agent_states") or []
+    if states:
+        lines += ["", localization.text("## Every registered agent in this run"), ""]
+        for row in states:
+            calls = calls_by_agent.get(row.get("agent")) or []
+            kept = (localization.text("; judging calls: {calls}; {counts}", calls=len(calls),
+                                      counts=summary_generators.calls_and_notes_text(
+                                          calls, notes_by_agent.get(row.get("agent"), 0))) if calls else "")
+            lines.append(f"- {row.get('agent')}: {agent_activation.state_words(row.get('state'))}"
+                         f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}{kept}")
     return "\n".join(lines)
 
 
@@ -4246,8 +4479,12 @@ def main(argv=None):
 
     import final_models
     if final_models.mode() == 'final':
-        if args.multi_round or args.multi_round_manifest or args.task != 'review':
-            parser.error('Frozen final models are limited to ordinary Review')
+        # D-011 choice 1: the frozen adapters also serve a DECLARED multi-round
+        # Review (the flag and its case manifest together; the manifest is then
+        # validated below exactly as in base mode). Anything else stays refused:
+        # Draft, a flag without a manifest, a manifest without the flag.
+        if args.task != 'review' or bool(args.multi_round) != bool(args.multi_round_manifest):
+            parser.error('Frozen final models are limited to Review: ordinary, or multi-round with a declared case manifest')
         if args.backend_profile != 'local':
             parser.error('Frozen final models require explicit --backend-profile local')
         for role in ('producer', 'auditor'):

@@ -182,7 +182,7 @@ class RecommendationChecks(unittest.TestCase):
         records={}; events=[]
         scope=dict(semantic_waves=waves,paired_review_mod=paired_review,plan=dict(kind="band",checks=[check]),
                    checks=[check],unit={"unit_id":"u01-fixture"},rule={"id":"CONV-1234"},agent="PRACTICE_AUDITOR",
-                   computed_items_by_agent=records,source_rule_id="fixture-rule",refs=["REF-1234"],
+                   computed_items_by_agent=records,source_rule_id="fixture-rule",refs=["REF-1234"],finding_refs=["REF-1234"],
                    agent_activation=SimpleNamespace(not_called=lambda *a,**k:events.append(k)),
                    orch=SimpleNamespace(run_context=self.ctx),doc={"id":"fixture"},plan_index=0)
         with patch.object(waves,"enabled",return_value=True):exec(compile(ast.fix_missing_locations(tree),"live_exact_branch","exec"),scope)

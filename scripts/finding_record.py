@@ -176,6 +176,224 @@ def validate_finding(item, *, registry_ids=None) -> tuple[bool, list]:
     return (not errors, errors)
 
 
+# ---------------------------------------------------------------------------
+# S2a (honest deliverables): who wrote a finding, said the same way everywhere.
+#
+# The discriminator is the one paired_review.computed_finding_items already
+# uses, read off the result envelope a finding was posted under: Python's own
+# records go out under backend "paired" (paired review) or "computed" (the
+# comparison with an earlier version) with a model id starting "python". Every
+# other backend is a model's reply, whatever agent name it carries. Nothing
+# here reads an agent name, and an unknown provenance is never called computed.
+COMPUTED_BACKENDS = ("paired", "computed")
+WRITTEN_BY_PYTHON = "python"
+WRITTEN_BY_MODEL = "model"
+# The mark a reader sees beside every model finding that did not become an
+# amendment. A model finding never becomes one (check 269), so the mark is
+# true of every model finding. Plain words, one sentence per fact.
+MODEL_FINDING_MARK = ("Written by a model. Not promoted to an amendment. "
+                      "Not checked by Python.")
+COMPUTED_FINDING_MARK = "Computed by Python from the document's own figures."
+# Reader check RD14: an absence is checked, not computed from figures.
+CHECKED_ABSENCE_MARK = "Checked in code: the field is absent from this unit's text."
+# The relations that say a field is absent (the one copy; paired_review reads it).
+ABSENCE_RELATIONS = ("missing_field", "licence_missing")
+# Reader check RD1/RD4/RD6: what a model's note says when no record names the model
+# that wrote it (the one copy; paired_review and summary_generators read it).
+NOTE_MODEL_NOT_RECORDED = "not recorded"
+# Reader check RD9: how a relation READS in a deliverable. The relation names are
+# the Finding record's vocabulary and stay exactly as they are everywhere else;
+# only the words a reader sees change (the irregular reading, then the ok one).
+RELATION_WORDS = {
+    "above_band": ("above the allowed range", "inside the allowed range"),
+    "below_band": ("below the allowed range", "inside the allowed range"),
+    "ratio_out_of_range": ("ratio outside the allowed range", "ratio inside the allowed range"),
+    "sum_mismatch": ("total does not match its parts", "total matches its parts"),
+    "product_mismatch": ("product does not match the stated figure", "product matches the stated figure"),
+    "missing_field": ("required field missing", "required field present"),
+    "date_window": ("dates further apart than allowed", "dates within the allowed gap"),
+    "licence_missing": ("required reference missing", "required reference present"),
+    "changed_from_prior": ("changed since the earlier version", "changed since the earlier version"),
+    "unchanged_from_prior": ("unchanged since the earlier version", "unchanged since the earlier version"),
+    "moved_toward": ("moved toward the allowed range", "moved toward the allowed range"),
+    "moved_away": ("moved away from the allowed range", "moved away from the allowed range"),
+    "absent_since_prior": ("absent since the earlier version", "absent since the earlier version"),
+}
+
+
+@localization.presentation
+def relation_words(relation, verdict="irregular") -> str:
+    """A relation in a reader's words, in the run's output language."""
+    words = RELATION_WORDS.get(str(relation))
+    if not words:
+        return str(relation)
+    return localization.text(words[0] if str(verdict or "irregular").lower() != "ok" else words[1])
+
+
+def written_by(backend, model) -> str:
+    """"python" when the envelope is Python's own record, else "model"."""
+    if str(backend or "") in COMPUTED_BACKENDS and str(model or "").startswith("python"):
+        return WRITTEN_BY_PYTHON
+    return WRITTEN_BY_MODEL
+
+
+def stamp_written_by(results, items):
+    """Copies of `items`, each stamped with `written_by`, decided from the
+    result envelope the item object was posted under (by object identity, so a
+    copy made later cannot change the answer). An item no envelope claims is
+    stamped "model": provenance that cannot be shown is never called computed."""
+    owner = {}
+    for result in results or []:
+        if not isinstance(result, dict):
+            continue
+        parsed = result.get("parsed")
+        found = parsed.get("items") if isinstance(parsed, dict) else None
+        who = written_by(result.get("backend"), result.get("model"))
+        for item in found or []:
+            if isinstance(item, dict):
+                owner[id(item)] = who
+    out = []
+    for item in items or []:
+        if isinstance(item, dict):
+            who = owner.get(id(item), WRITTEN_BY_MODEL)
+            stamped = dict(item, written_by=who)
+            if who == WRITTEN_BY_MODEL:
+                # S2 checker A4: `provenance` is Python's claim about its own
+                # record; a model that writes it does not get to make that claim.
+                stamped.pop("provenance", None)
+            out.append(stamped)
+        else:
+            out.append(item)
+    return out
+
+
+def is_model_written(item) -> bool:
+    """True unless the item was stamped as Python's own record."""
+    return not (isinstance(item, dict) and item.get("written_by") == WRITTEN_BY_PYTHON)
+
+
+@localization.presentation
+def provenance_mark(item) -> str:
+    """The reader-facing mark for one finding, in the run's output language."""
+    if is_model_written(item):
+        return localization.text(MODEL_FINDING_MARK)
+    if item.get("relation") in ABSENCE_RELATIONS:
+        return localization.text(CHECKED_ABSENCE_MARK)
+    return localization.text(COMPUTED_FINDING_MARK)
+
+
+# Reader check round 1 (RC7): the fields that make a record read as checked. A
+# model's record keeps its claim, but these are never shown on it as if they
+# described a checked finding; the model's own verdict travels as
+# `model_claimed_verdict`, and its confidence is not carried into a deliverable.
+CHECKED_SOUNDING_FIELDS = ("confidence", "record_verdict", "verdict")
+
+
+def model_finding_for_reader(item) -> dict:
+    """A model-written record as the deliverables carry it: its claim and figures,
+    marked unchecked, without the fields that would make it read as checked."""
+    out = {k: v for k, v in dict(item).items() if k not in CHECKED_SOUNDING_FIELDS and k != "provenance"}
+    claimed = item.get("record_verdict") or item.get("verdict")
+    if claimed:
+        out["model_claimed_verdict"] = claimed
+    out.update(written_by=WRITTEN_BY_MODEL, promoted=False, checked_by_python=False)
+    return out
+
+
+def written_form(value, tokens):
+    """Reader check RD18: `value` as one of `tokens` (numbers as a text writes
+    them) writes it, or None when none does."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    for token in tokens or ():
+        try:
+            if float(token) == float(value):
+                return token
+        except ValueError:
+            continue
+    return None
+
+
+def figure_text(value, unit, tokens=None) -> str:
+    """Reader check round 3 (item 7): THE figure formatter, used by every file a
+    reader receives (the amendment comment, the summaries, the evidence line). A
+    figure the unit's own text writes is shown as written ("61", not "61.0"); a
+    figure it does not write keeps the record's own format ("16.0", which checks
+    171 and 172 hold). The unit follows, except a bare ratio's unit "1"."""
+    unit = str(unit or "").strip()
+    shown = written_form(value, tokens) or "%s" % (value,)
+    return ("%s %s" % (shown, unit)) if unit and unit != "1" else shown
+
+
+def value_a_text(item, tokens=None) -> str:
+    """A record's first figure through the one formatter. A sum of addends the text
+    writes as whole numbers is written the same way ("8 kg" for 3 + 5 kg, not
+    "8.0 kg"), whether or not the total itself is written anywhere."""
+    a = item.get("value_a")
+    addends = item.get("addends")
+    if item.get("relation") == "sum_mismatch" and isinstance(addends, list) and addends \
+            and isinstance(a, float) and a.is_integer() and not written_form(a, tokens):
+        shown = [written_form(v, tokens) for v in addends]
+        if all(shown) and all("." not in t for t in shown):
+            return figure_text(int(a), item.get("unit_a"))
+    return figure_text(a, item.get("unit_a"), tokens)
+
+
+def addends_text(item, tokens=None):
+    """The addends a sum record names ("3 + 5 kg"), each as the text writes it,
+    or None when the record names none (reader check round 3, item 7)."""
+    addends = item.get("addends") if isinstance(item, dict) else None
+    if not isinstance(addends, list) or not addends:
+        return None
+    shown = [written_form(v, tokens) or "%s" % (v,) for v in addends]
+    return figure_text(" + ".join(shown), item.get("unit_a"))
+
+
+def _shown(value, unit, tokens):
+    return figure_text(value, unit, tokens)
+
+
+@localization.presentation
+def reader_line(item) -> str:
+    """One finding as a READER sees it (deliverables only; prompts keep
+    typed_line). The relation is named in words, a declared field the unit lacks
+    is said as such rather than as "0 values against 1 required", and a model's
+    line carries no verdict (RC6, RC12, RC13)."""
+    if not isinstance(item, dict):
+        return str(item)
+    parts = []
+    rule = resolved_rule_id(item)
+    if rule:
+        src = item.get("source_rule_id")
+        parts.append(f"{rule} ({src})" if src and src != rule else str(rule))
+    if item.get("unit_id"):
+        parts.append(localization.text("unit ") + str(item["unit_id"]))
+    relation = item.get("relation")
+    if relation:
+        # RD9: in words; a model's item reads as what the model claimed.
+        claimed = item.get("record_verdict") or item.get("model_claimed_verdict") or "irregular"
+        parts.append(relation_words(relation, claimed))
+    if relation == "missing_field" and str(item.get("unit_b") or "") == "required":
+        parts.append(localization.text("required field: ") + str(item.get("field_label") or "?")
+                     + localization.text("; found: none"))
+    else:
+        tokens = item.get("_written_tokens")
+        if item.get("value_a") is not None:
+            shown = localization.text("figure: ") + value_a_text(item, tokens)
+            # Reader check round 3 (item 7): a sum names the values it added.
+            added = addends_text(item, tokens) if relation == "sum_mismatch" else None
+            if added:
+                shown += " " + localization.text("(the sum of '{field}': {values})",
+                                                 field=item.get("addend_field") or "?", values=added)
+            parts.append(shown)
+        if item.get("value_b") is not None:
+            parts.append(localization.text("compared with: ") + _shown(item["value_b"], item.get("unit_b"), tokens))
+    refs = item.get("source_refs") or item.get("ref_ids")
+    if isinstance(refs, list) and refs:
+        parts.append(localization.text("cites ") + ", ".join(str(r) for r in refs[:4]))
+    return "; ".join(parts)
+
+
 def strip_reasoning(items):
     """Project items for an INTER-AGENT payload: every prose field removed.
 
@@ -417,8 +635,12 @@ def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
     declared renders byte-identically to before. No heading here may contain the
     token "Amendment ", which amendment_render's drift guard counts.
     """
+    # Adversarial round 2 (a): only a record stamped as Python's own enters; an
+    # UNSTAMPED record (provenance that cannot be shown) is never called computed,
+    # whatever `provenance` it carries (is_model_written, the one test).
     prior = [f for f in findings or []
-             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"]
+             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"
+             and not is_model_written(f)]
     refusals, orphans, outside = list(refusals or []), list(orphans or []), list(outside or [])
     if not prior and not refusals and not orphans and not outside:
         return []
