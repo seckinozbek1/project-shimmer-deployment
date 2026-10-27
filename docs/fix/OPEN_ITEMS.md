@@ -262,3 +262,14 @@ covered, and S1 had used its three checker rounds (D-016).
 **What would settle it.** Refusing any archive with trailing data after its last compressed
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
+
+## 12 (closed at loop S2). The execution seal and FINAL_STATUS now handle the INST_FINDER setting
+
+- **Closed.** Both halves landed in S2c (plan revision R11): `tools/prepare_ordinary_final_run.py` refuses to seal an unratified `SHIMMER_INST_FINDER=off`, using the pipeline's own ratification test, and the run report written by `tools/analyze_ordinary_final_run.py` states the setting. Proofs in `tools/ordinary_final_controller_checks.py` (`test_unratified_inst_finder_off_refuses_to_seal`, `test_report_states_every_11_12_field`). The entry above is kept as written.
+
+## 18. Em and en dashes remain in 32 files under scripts/, tools/ and config/ (found at loop S2)
+
+- **What it is.** The repository's hard rule is no em dashes anywhere. S2 removed them from every file it changed that reaches a reader (`amendment_render.py`, `summary_generators.py`, `audit_synthesizer.py`, two catalog keys). 32 files under `scripts/`, `tools/` and `config/` still hold em or en dashes (for example `scripts/preflight.py`, `scripts/snapshot_manager.py`, `scripts/agent_wrapper.py`, `scripts/sensitivity_layer/rules.py`), and `config/constitution.json` holds 16.
+- **Evidence.** `git grep -c` for U+2014 and U+2013 over `scripts tools config` at `loop/s02`.
+- **Why it was left.** None of these files is changed by S2 (P16). `config/constitution.json` is append-only and its existing entries are never edited (H9), so its dashes stay. One catalog key in `scripts/ui/localization_catalog.js` keeps a dash because it must match an agent description in `config/agent_registry.json` word for word.
+- **What would settle it.** An S6 sweep over the other files (each reader-facing string checked against its catalog row), and a registry edit with its catalog key together.

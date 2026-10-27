@@ -41,7 +41,8 @@ class Checks(unittest.TestCase):
     def sealed(self):
         root = self.root / 'bundle'
         root.mkdir()
-        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99})
+        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99,
+                                              'soft_budget_usd': 5, 'absolute_budget_usd': 10})
         write_json(root / 'operator_readiness.json', {'ssh_public_key_sha256': 'fixture'})
         write_json(root / 'runtime.json', preparation.RUNTIME)
         (root / 'runtime_contract.py').write_bytes((ROOT / 'tools/runtime_contract.py').read_bytes())
@@ -246,14 +247,38 @@ class Checks(unittest.TestCase):
             verify_bundle(root)
 
     def test_budget_from_billing_start(self):
-        value = budget_deadlines(1.99, 1000)
+        value = budget_deadlines(1.99, 1000, soft_usd=5, hard_usd=10)
         self.assertAlmostEqual(value['soft_epoch'] - 1000, 5 / 1.99 * 3600)
         self.assertAlmostEqual(value['ceiling_epoch'] - value['terminate_epoch'], 120)
 
     def test_invalid_budget_rejected(self):
         for rate in [0, -1, float('nan'), float('inf'), True]:
             with self.assertRaises(ValueError):
-                budget_deadlines(rate, 1000)
+                budget_deadlines(rate, 1000, soft_usd=5, hard_usd=10)
+
+    def test_budget_caps_are_the_callers(self):
+        """R3: the caps are parameters; each caller passes its own sealed values."""
+        value = budget_deadlines(1.99, 1000, soft_usd=2, hard_usd=3)
+        self.assertAlmostEqual(value['soft_epoch'] - 1000, 2 / 1.99 * 3600)
+        self.assertAlmostEqual(value['ceiling_epoch'] - 1000, 3 / 1.99 * 3600)
+        for soft, hard in [(3, 2), (0, 3), (2, float('inf')), (True, 3)]:
+            with self.assertRaises(ValueError):
+                budget_deadlines(1.99, 1000, soft_usd=soft, hard_usd=hard)
+        with self.assertRaises(TypeError):
+            budget_deadlines(1.99, 1000)  # no cap is a code default
+        plan_value = plan(self.sealed(), 'ubuntu@203.0.113.1', 1000)
+        self.assertAlmostEqual(plan_value['budget']['ceiling_epoch'] - 1000, 10 / 1.99 * 3600)
+        self.assertEqual((plan_value['soft_usd'], plan_value['hard_usd']), (5, 10))
+
+    def test_multi_round_declaration_on_the_dag_path_is_refused_by_the_topology_rule(self):
+        """S2b item 1 on the older path: multi-round is checked against the declaration; this
+        path seals dependency_dag, so a declaration can never be valid here (D-011 choice 3)."""
+        files = {'scripts/' + n + '.py': (ROOT / 'scripts' / (n + '.py')).read_bytes()
+                 for n in ('pipeline', 'agent_activation', 'execution_scheduler', 'execution_topology')}
+        with self.assertRaisesRegex(ValueError, 'reference_serial'):
+            behavioral_proof(files, self.root / 'declared', multi_round_declared=True)
+        proof = behavioral_proof(files, self.root / 'undeclared')
+        self.assertEqual((proof['multi_round_declared'], proof['multi_round_inactive'], len(proof['guards'])), (False, True, 3))
 
     def test_watchdog_ceiling_and_verified_termination(self):
         provider = SimpleNamespace(terminated=False, calls=0)
@@ -262,7 +287,7 @@ class Checks(unittest.TestCase):
         def terminate(instance_id):
             provider.calls += 1; provider.terminated = True
         provider.instance, provider.terminate = instance, terminate
-        watch(provider, 'a'*32, 1.99, 1000, self.root, sleep=lambda seconds: None, now=lambda: 100000)
+        watch(provider, 'a'*32, 1.99, 1000, self.root, soft_usd=5, hard_usd=10, sleep=lambda seconds: None, now=lambda: 100000)
         self.assertEqual(provider.calls, 1)
         self.assertTrue((self.root / 'TERMINATION_VERIFIED.json').is_file())
 
@@ -275,7 +300,7 @@ class Checks(unittest.TestCase):
                 if self.calls == 1:
                     raise RuntimeError('synthetic confidential response')
                 return {'instance_id': instance_id, 'status': 'terminated'}
-        watch(Provider(), 'a'*32, 1.99, 1000, self.root, sleep=lambda seconds: None, now=lambda: 1001)
+        watch(Provider(), 'a'*32, 1.99, 1000, self.root, soft_usd=5, hard_usd=10, sleep=lambda seconds: None, now=lambda: 1001)
         self.assertNotIn('synthetic confidential response', (self.root / 'TERMINATION_RETRY.json').read_text())
 
     def test_transport_mock_ssh(self):
@@ -338,6 +363,7 @@ class Checks(unittest.TestCase):
         local = args.collection / 'fixture'
         calls = []
         def popen(command, **kwargs):
+            self.watch_command = list(command)
             write_json(local / 'WATCHDOG_ARMED.json', {'fixture': True})
             return SimpleNamespace(poll=lambda: None)
         def runner(command, **kwargs):
@@ -370,6 +396,9 @@ class Checks(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(status['benchmark_valid'])
         self.assertEqual(sum('cloud_run_remote.py' in command[-1] for command in calls), 1)
+        # R3: the watchdog is armed with the experiment's own sealed caps, never a default.
+        command = self.watch_command
+        self.assertEqual((command[command.index('--soft-usd') + 1], command[command.index('--hard-usd') + 1]), ('5', '10'))
 
     def test_incompatible_mock_remote_runtime_never_transfers_source(self):
         code, calls, status = self.mocked_deploy(fail_runtime=True)

@@ -104,6 +104,17 @@ the setting in its `audit/agent_switches.json` and its run summary.
 Every amendment is rendered from a finding Python computed from the document's own
 figures; a finding a model wrote stays on the bus and in the console but never
 becomes an amendment, and each amendment states which of the two it came from.
+Model findings are never hidden: every reader-facing file (the summaries,
+`reviewed_document.md`, the run summary and the console) marks each one "Written by
+a model. Not promoted to an amendment. Not checked by Python.", and
+`review_data.json` keeps them apart under `model_findings_not_promoted`, without a
+confidence or verdict field (the model's own verdict is kept as
+`model_claimed_verdict`). The sentence naming who produced a document's findings is
+generated from what actually ran, and Python findings and model items are counted
+separately. An amendment opens with one plain sentence naming the unit, the rule,
+both figures with their units and the relation, quotes the rule, and sits at the
+unit's own passage in the reference index; when Python cannot place the unit, the
+amendment says so and sits at document level.
 
 The console exposes findings, source excerpts, amendment refusals, contract
 violations, agent activity and completion evidence. An operator may withhold a
@@ -129,7 +140,12 @@ Explicit multi-round positioning analyzes declared rounds, actors, issues and
 evidence histories. Recommendations require a separate opt-in. This case mode
 has its own artifacts and does not produce ordinary review amendments. Its
 contracts have deterministic fixture validation; real-model quality, runtime and
-scaling remain unverified. See the
+scaling remain unverified. Before its model calls, a case run reviews each declared
+round in Python; a later round recomputes only the units that changed and records
+the reuse in `audit/round_reuse.json`. A term that vanished while its section states
+a new term in the same unit of measure is refused as a possible rename, never
+reported as withdrawn. The frozen final models also serve a declared multi-round
+Review (the flag and its case manifest together). See the
 [multi-round guide](docs/fix/MULTI_ROUND_IMPLEMENTATION.md).
 
 `reference_serial` is the default execution topology. `dependency_dag` supports
@@ -164,7 +180,14 @@ For a controlled single-GPU experiment, the
 [cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md) covers source and model
 pinning, local validation, an explicit existing SSH identity, deployment dry-run,
 manual provisioning and budgeted teardown. This is a separate experiment workflow
-from the provider-backed Cloud option in the console.
+from the provider-backed Cloud option in the console. The sealed ordinary final
+controller (`tools/ordinary_final_bound_cloud.py`) launches only as a budgeted loop
+launch: it reads the loop ledger, lets `tools/loop_budget_guard.py` refuse a launch
+the budget cannot carry, names the instance `shimmer-loop-...` and writes the
+launch and termination lines. It can run detached, run several bundles in one
+session, run a sealed test that prints counts only, and write a `RUN_REPORT.md`
+per run; the [cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)
+describes it.
 
 ## Development and validation
 

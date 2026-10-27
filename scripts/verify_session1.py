@@ -12677,32 +12677,30 @@ def check_184_a_text_column_with_one_incidental_figure_is_not_a_measurement_colu
 
 
 def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
-    """G2 (docs/fix/STEP_F1..F3, STEP_G1..G2): absent_checks used to decide a
-    prior-version field was withdrawn by exact label-tuple membership alone, with
-    no fallback: a rewording that kept the same figure was indistinguishable from
-    a genuine withdrawal, and both were minted as ok-verdict absent_since_prior
-    records with full citations and rule attribution. The fix adds a value-
-    proximity corroboration pass, scoped to this unit's own newly-appearing
-    labels, before the mint: a vanished label is refused rather than minted when
-    some label this unit states that the earlier version did not carries a value
-    within rename_tolerance() of the vanished label's value, in the same unit.
+    """G2 (docs/fix/STEP_F1..F3, STEP_G1..G2), extended by S2b item 5 (loop stage S2):
+    absent_checks used to decide a prior-version field was withdrawn by exact
+    label-tuple membership alone. G2 added a value-proximity corroboration pass
+    (a newcomer in the same unit within rename_tolerance() refuses the mint). S2b
+    item 5 closes the edge G2 accepted: a label renamed between rounds whose VALUE
+    ALSO MOVED was still minted as withdrawn. A vanished label is now refused, not
+    minted, while its section states an unclaimed newcomer in the same unit of
+    measure (paired_review.possible_successor); whether that newcomer is the same
+    term is a word-meaning decision measured in S5, so until then the structure
+    refuses. A label with no possible successor still mints.
 
     Asserted, executed on the real functions with no model call:
-      - a label kept identical still round-trips as unchanged_from_prior, and a
-        field with no successor at all still correctly mints absent_since_prior
-        (the fix must not regress the true case);
-      - a label reworded by one content word, value UNCHANGED, produces NO
-        absent_since_prior record and instead a refusal naming both labels and
-        both values, while a true withdrawal in the same run still mints;
-      - a label reworded, value drifted PAST the tolerance, still mints
-        absent_since_prior: nothing corroborates the rename, so minting is the
-        honest answer, not a defect (the accepted edge of the design);
-      - the pre-existing citation-only refusal path is unaffected by the new
-        check (regression guard);
+      - a label kept identical still round-trips, and a field with no successor
+        (the only newcomer is in another unit of measure) still mints
+        absent_since_prior;
+      - a same-measure newcomer makes the withdrawal unconfirmed: refused as a
+        possible rename with a moved value, never minted;
+      - a label reworded, value unchanged, is refused naming both labels and both
+        values, and a true withdrawal beside it still mints;
+      - a label reworded, value drifted PAST rename_tolerance(), is refused (the
+        S2b change; G2 minted it);
+      - the citation-only refusal path is unaffected;
       - NEUTRALISE AND RESTORE: calling absent_checks with no scalars/hits (the
-        pre-fix call shape) brings the false absent_since_prior record back,
-        proving the corroboration pass, not some other change, is the mechanism;
-        the real call shape restores the refusal.
+        pre-fix shape, no newcomer pool) brings the false record back.
     """
     import pairing_map as _pm
     import paired_review as _pr
@@ -12713,9 +12711,9 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     def _ref(_i):
         return "REF-0001"
 
-    def _drive(v2_beta_label, v2_beta_value, *, with_corroboration=True):
-        v2 = ("## Section One\n\nAlpha count: 42 units\n%s: %s units\n"
-              "Delta share: 3 units\n" % (v2_beta_label, v2_beta_value))
+    def _drive(v2_beta_label, v2_beta_value, *, newcomer="Delta share: 3 kg", with_corroboration=True):
+        v2 = ("## Section One\n\nAlpha count: 42 units\n%s: %s units\n%s\n"
+              % (v2_beta_label, v2_beta_value, newcomer))
         index = _pr.prior_index(v1, _ref, known_units=set())
         units_v2 = _pm.split_units(v2, document_id="v2")
         present_all = set()
@@ -12729,15 +12727,20 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
             return _pr.absent_checks(index, present_all, slug, scalars=scalars, hits=hits)
         return _pr.absent_checks(index, present_all, slug)
 
-    # --- baseline: label unchanged, true withdrawal still fires -----------------------
     absent, refused = _drive("Beta level", 17)
     fields = {c["stated_field"]: c["relation"] for c in absent}
     if fields.get("gamma total") != "absent_since_prior":
-        return _fail(f"a genuinely withdrawn field must still mint absent_since_prior: {fields!r}")
+        return _fail(f"a field with no possible successor must still mint absent_since_prior: {fields!r}")
     if "beta level" in fields or refused:
         return _fail(f"an unchanged label must not be touched: absent={fields!r} refused={refused!r}")
 
-    # --- reworded, value unchanged: refuse, not mint -----------------------------------
+    absent_s, refused_s = _drive("Beta level", 17, newcomer="Delta share: 3 units")
+    if any(c["stated_field"] == "gamma total" for c in absent_s):
+        return _fail("a same-measure newcomer leaves the withdrawal unconfirmed; it must not mint")
+    hit_s = next((r for r in refused_s if r["label"] == "gamma total"), None)
+    if hit_s is None or not hit_s["reason"].startswith("possible rename with a moved value"):
+        return _fail(f"the unconfirmed withdrawal must be refused with its reason: {refused_s!r}")
+
     absent2, refused2 = _drive("Beta score", 17)
     fields2 = {c["stated_field"]: c["relation"] for c in absent2}
     if "beta level" in fields2:
@@ -12748,21 +12751,18 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     if hit is None or "beta score" not in hit["reason"] or "17" not in hit["reason"]:
         return _fail(f"the refusal must name both labels and both values: {refused2!r}")
 
-    # --- reworded, value drifted past tolerance: mint is the honest answer ------------
     tol = _pr.rename_tolerance()
     far_value = round(17 * (1 + tol) * 1.5, 2)
     absent3, refused3 = _drive("Beta score", far_value)
-    fields3 = {c["stated_field"]: c["relation"] for c in absent3}
-    if fields3.get("beta level") != "absent_since_prior":
-        return _fail(f"a rename drifted past tolerance ({tol!r}) must still mint, since nothing "
-                     f"corroborates the rename: absent={fields3!r} refused={refused3!r}")
+    if any(c["stated_field"] == "beta level" for c in absent3):
+        return _fail(f"a rename whose value moved past tolerance ({tol!r}) must not be reported "
+                     f"as withdrawn: absent={absent3!r}")
+    hit3 = next((r for r in refused3 if r["label"] == "beta level"), None)
+    if hit3 is None or "beta score" not in hit3["reason"]:
+        return _fail(f"the moved rename must be refused naming both labels: {refused3!r}")
 
-    # --- citation-only refusal path is unaffected --------------------------------------
-    def _ref_none(_i):
-        return ""
-    v1_uncited = v1
-    index_u = _pr.prior_index(v1_uncited, _ref_none, known_units=set())
-    v2_u = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nDelta share: 3 units\n"
+    index_u = _pr.prior_index(v1, lambda _i: "", known_units=set())
+    v2_u = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nDelta share: 3 kg\n"
     units_u = _pm.split_units(v2_u, document_id="v2u")
     present_u = set()
     for u in units_u:
@@ -12771,87 +12771,25 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     scalars_u, _, _ = _pr.extract_fields(unit_u.get("text", ""), known_units=set())
     slug_u = unit_u["unit_id"].split("-", 1)[1] if "-" in unit_u["unit_id"] else ""
     hits_u, _ = _pr.prior_lookup(index_u, scalars_u, slug_u)
-    absent_u, refused_u = _pr.absent_checks(index_u, present_u, slug_u,
-                                            scalars=scalars_u, hits=hits_u)
+    absent_u, refused_u = _pr.absent_checks(index_u, present_u, slug_u, scalars=scalars_u, hits=hits_u)
     if absent_u or not any(r["reason"] == "no citation on file for the earlier statement"
                            for r in refused_u):
         return _fail(f"the citation-only refusal path must be unaffected: "
                      f"absent={absent_u!r} refused={refused_u!r}")
 
-    # --- NEUTRALISE AND RESTORE ---------------------------------------------------------
-    absent_neutral, refused_neutral = _drive("Beta score", 17, with_corroboration=False)
-    fields_neutral = {c["stated_field"]: c["relation"] for c in absent_neutral}
-    if fields_neutral.get("beta level") != "absent_since_prior":
-        return _fail("NEUTRALISE: calling absent_checks without scalars/hits must bring back "
-                     f"the false absent_since_prior record; got {fields_neutral!r}")
+    absent_neutral, _ = _drive("Beta score", 17, with_corroboration=False)
+    if {c["stated_field"]: c["relation"] for c in absent_neutral}.get("beta level") != "absent_since_prior":
+        return _fail("NEUTRALISE: absent_checks without scalars/hits must bring back the false record")
     absent_restored, refused_restored = _drive("Beta score", 17)
-    fields_restored = {c["stated_field"]: c["relation"] for c in absent_restored}
-    if "beta level" in fields_restored or not any(r["label"] == "beta level" for r in refused_restored):
-        return _fail(f"RESTORE: the corroboration pass no longer refuses the rename: "
-                     f"absent={fields_restored!r} refused={refused_restored!r}")
+    if any(c["stated_field"] == "beta level" for c in absent_restored) or \
+            not any(r["label"] == "beta level" for r in refused_restored):
+        return _fail("RESTORE: the corroboration pass no longer refuses the rename")
 
-    return _ok("a rewording with the same value refuses (naming both labels and both values) "
-               "instead of minting absent_since_prior, a true withdrawal alongside it still "
-               "mints, a rename drifted past rename_tolerance() still mints as the honest "
-               "answer, the pre-existing citation-only refusal is unaffected, and calling "
-               "absent_checks with no scalars/hits (the pre-fix shape) brings the false "
-               "record back, proving the corroboration pass is the mechanism")
-
-
-class _BlockingLinePopen:
-    """Stands in for subprocess.Popen inside _run_job (S1: no real pipeline is
-    ever spawned). Unlike _FakePopen (empty stdout, immediate exit), this one
-    yields exactly one [progress] line, then BLOCKS the calling thread's `for
-    line in proc.stdout` on a threading.Event before yielding StopIteration,
-    so the background worker thread genuinely parks with job["status"] ==
-    "running" until the test releases it -- proving "running" is a real,
-    independently-observable state, not an assumption about timing."""
-
-    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
-        self.returncode = returncode
-        self._release = threading.Event()
-        self.stdout = self._lines(progress_line)
-
-    def _lines(self, progress_line):
-        yield progress_line
-        self._release.wait(timeout=10)
-
-    def release(self):
-        self._release.set()
-
-    def wait(self):
-        return self.returncode
-
-
-class _CancellableBlockingPopen(_BlockingLinePopen):
-    """_BlockingLinePopen plus terminate()/kill()/wait(timeout=), the three
-    calls POST /runs/{run_id}/cancel makes on a RUNNING job's subprocess
-    handle (api STEP B2). terminate() and kill() both release the blocked
-    stdout generator (a real terminated/killed process closes its stdout,
-    which is exactly what unblocks _run_job's `for line in proc.stdout` loop
-    today), simulating the child actually exiting in response to the signal
-    rather than the test cheating past _run_job's real control flow.
-    returncode is set to a negative number on terminate/kill (matching a
-    POSIX-signalled process; the exact sign is never asserted on, only that
-    it is NOT run through _status_for_exit_code's table)."""
-
-    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
-        super().__init__(*a, returncode=returncode, progress_line=progress_line, **k)
-        self.terminated = False
-        self.killed = False
-
-    def terminate(self):
-        self.terminated = True
-        self.returncode = -15
-        self._release.set()
-
-    def kill(self):
-        self.killed = True
-        self.returncode = -9
-        self._release.set()
-
-    def wait(self, timeout=None):
-        return self.returncode
+    return _ok("a field with no possible successor still mints absent_since_prior; a same-measure "
+               "newcomer, a rewording with the same value and a rewording whose value moved past "
+               "rename_tolerance() are all refused (naming both labels and values), never minted; "
+               "the citation-only refusal is unaffected; and calling absent_checks with no "
+               "scalars/hits brings the false record back")
 
 
 def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state():
@@ -24793,6 +24731,37 @@ def check_277_inst_finder_switch_needs_a_ratified_amendment():
     return check()
 
 
+def check_278_honest_deliverables():
+    """Loop of 2026-10-27, S2a: every model finding is marked, kept apart and never
+    promoted in every reader-facing deliverable (both languages); the producer sentence
+    is generated from what ran; one plain sentence per relation names the unit, the
+    rule, both figures and the addends; an amendment sits at its unit's own passage;
+    the audit synthesis does not present audit patterns as findings; relations only a
+    model reported are listed apart; the reader-check round 1 items stay closed."""
+    from honest_output_checks import check
+    return check()
+
+
+def check_279_multi_round_rounds():
+    """Loop of 2026-10-27, S2b: later multi-round rounds reuse unchanged units through
+    a Python-only per-round review, every model call saves one reply record, a rename
+    whose value moved is refused, and check 261's stripped statements stay pinned."""
+    from multi_round_rounds_checks import check
+    return check()
+
+
+def check_280_multi_round_launch_end_to_end():
+    """R2 (loop S2): a declared multi-round Review sealed by the sealer, admitted by the
+    instance, launched by the real controller against fakes, admitted by pipeline main()
+    in final mode (Draft, flag alone, manifest alone refused) and assessed only on
+    outcome reviewed and activation activated."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from multi_round_launch_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25151,6 +25120,12 @@ CHECKS = [
      check_276_every_model_reply_is_saved_once_with_its_outcome),
     ("277 the INST_FINDER switch is honoured only under a ratified amendment",
      check_277_inst_finder_switch_needs_a_ratified_amendment),
+    ("278 model findings are marked and never promoted in every deliverable",
+     check_278_honest_deliverables),
+    ("279 later multi-round rounds reuse unchanged units and refuse moved renames",
+     check_279_multi_round_rounds),
+    ("280 a declared multi-round Review is sealed, launched, admitted in final mode and assessed",
+     check_280_multi_round_launch_end_to_end),
 ]
 
 

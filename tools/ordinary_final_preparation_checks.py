@@ -10,6 +10,10 @@ from unittest.mock import Mock, patch
 
 import ordinary_final_run as run
 import ordinary_final_watchdog as watch
+import loop_budget_guard as guard
+
+A10=dict(metadata=dict(type='gpu_1x_a10',gpu_type='A10 (24 GB PCIe)',gpu_count=1,cpu=30,ram_gib=200,
+                       storage_gib=1400,hourly_rate=1.29),architecture='x86_64',regions=['us-east-1'])
 
 
 class PreparationChecks(unittest.TestCase):
@@ -23,7 +27,8 @@ class PreparationChecks(unittest.TestCase):
             argv=run.ARGV,topology=run.TOPOLOGY,source_commit='f'*40,soft_budget_usd=5,
             environment=dict(SHIMMER_MODEL_MODE='final',SHIMMER_BACKEND_PROFILE='local',
                 HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',CUBLAS_WORKSPACE_CONFIG=':4096:8'),
-            hard_ceiling_usd=7,max_hourly_rate=1.29,project_files={
+            hard_ceiling_usd=7,max_hourly_rate=1.29,instance_candidates=guard.instance_candidates([A10],1.29),
+            a10_reference_rate=1.29,workload_stop_reserve_seconds=900,termination_reserve_seconds=180,project_files={
             'input/context/fixture.md':run.sha(self.base/'project/input/context/fixture.md')},support_files={})
         self.seal()
     def seal(self):
@@ -32,8 +37,15 @@ class PreparationChecks(unittest.TestCase):
     def permit(self):
         return dict(operator_authorized=True,action='one-ordinary-final-cloud-run',
             execution_manifest_sha256=run.sha(self.base/'execution_manifest.json'),seal_sha256=run.sha(self.base/'seal.json'),
-            source_commit=self.m['source_commit'],soft_budget_usd=5,hard_ceiling_usd=7,
-            provider='Lambda',instance_type='gpu_1x_a10',instance_id='a'*32,region='us-east-1',hourly_rate=1.29,active_start_epoch=1000)
+            source_commit=self.m['source_commit'],soft_budget_usd=5,hard_ceiling_usd=7,multi_round=False,
+            provider='Lambda',instance_type='gpu_1x_a10',instance_candidate=self.m['instance_candidates'][0],
+            instance_id='a'*32,region='us-east-1',hourly_rate=1.29,active_start_epoch=1000)
+    def case(self):
+        return dict(schema_version=1,case_id='fixture-case',fixture=False,
+            rounds=[dict(round_id='r1',sequence=1,document_ids=['one']),dict(round_id='r2',sequence=2,document_ids=['two'])],
+            actors=[dict(actor_id='a')],issues=[dict(issue_id='i')],
+            sources=[dict(source_id='s',round_id='r1',actor_id='a',issue_id='i',document_id='one',unit_id='u01',
+                          char_start=0,char_end=3,quote='One',state='accepted')])
     def test_seal_and_exact_tree(self):
         self.assertEqual(run.verify(self.base),self.m)
         (self.base/'project/input/context/unapproved.md').write_text('extra')
@@ -44,18 +56,37 @@ class PreparationChecks(unittest.TestCase):
     def test_changed_manifest(self):
         (self.base/'execution_manifest.json').write_text('{}')
         with self.assertRaises(RuntimeError):run.verify(self.base)
-    def test_multiround_and_flags_rejected_even_if_resealed(self):
-        for key,value in [('multi_round',True),('protected_test',True),('argv',run.ARGV+['--multi-round']),('max_runs',2)]:
+    def test_undeclared_or_unsealed_workloads_rejected_and_a_declared_multi_round_admitted(self):
+        """S2b item 1 (flipped from 'multi-round rejected even if resealed'): each workload
+        must equal its sealed declaration. Undeclared multi-round flags, a declaration without
+        its sealed case manifest, a protected test in an exposed run and a second run are
+        still refused; a declared, sealed and valid multi-round Review is admitted."""
+        for key,value in [('multi_round',True),('protected_test',True),('argv',run.ARGV+['--multi-round']),
+                          ('argv',run.MULTI_ROUND_ARGV),('max_runs',2)]:
             old=self.m[key];self.m[key]=value;self.seal()
             with self.assertRaises(RuntimeError):run.verify(self.base)
             self.m[key]=old
+        run.write(self.base/run.CASE_MANIFEST,self.case())
+        digest=run.sha(self.base/run.CASE_MANIFEST)
+        self.m.update(multi_round=True,argv=run.MULTI_ROUND_ARGV,support_files={run.CASE_MANIFEST:digest},
+                      case_manifest_sha256=digest)
+        self.seal()
+        self.assertTrue(run.verify(self.base)['multi_round'])
+        run.write(self.base/run.CASE_MANIFEST,dict(self.case(),fixture=True))
+        with self.assertRaises(RuntimeError):run.verify(self.base)
     def test_authorization_not_inherited(self):
         p=self.permit();run.authorization(self.base,self.m,p,now=1100)
-        for key,value in [('operator_authorized',False),('action','auditor-final-training-evaluation'),('source_commit','0'*40),('hourly_rate',2),('hard_ceiling_usd',10),('region','us-west-1')]:
+        for key,value in [('operator_authorized',False),('action','auditor-final-training-evaluation'),('source_commit','0'*40),
+                          ('hourly_rate',2),('hard_ceiling_usd',10),('region','not a region'),('instance_type','gpu_1x_h100'),
+                          ('instance_candidate',dict(self.m['instance_candidates'][0],max_hourly_rate=9)),('multi_round',True)]:
             changed=dict(p);changed[key]=value
             with self.assertRaises(RuntimeError):run.authorization(self.base,self.m,changed,now=1100)
         with self.assertRaises(RuntimeError):run.authorization(self.base,self.m,p,now=100000)
+        # Another region is admissible under the IV.3 type rule; the price cap still holds.
+        run.authorization(self.base,self.m,dict(p,region='us-west-1'),now=1100)
     def test_actual_parser_ordinary_flags(self):
+        """The ordinary flags stay an ordinary Review; the sealed multi-round flags (flipped
+        expectation, S2b item 1) parse as a declared multi-round Review under reference_serial."""
         import argparse
         sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
         import agent_activation
@@ -66,6 +97,9 @@ class PreparationChecks(unittest.TestCase):
         args=scope['_build_arg_parser']().parse_args(run.ARGV)
         self.assertFalse(args.multi_round);self.assertIsNone(args.multi_round_manifest)
         self.assertEqual((args.execution_topology,args.activation_profile,args.review_mode),('report_optimized','dense','paired'))
+        args=scope['_build_arg_parser']().parse_args(run.MULTI_ROUND_ARGV)
+        self.assertTrue(args.multi_round);self.assertEqual(args.multi_round_manifest,run.CASE_MANIFEST)
+        self.assertEqual((args.execution_topology,args.topology_config,args.task),('reference_serial',None,'review'))
     def raw(self):
         return [dict(event='pipeline_start'),dict(event='pipeline_end'),dict(event='model_call',adapter_checkpoint=168)]
     def completion(self):return dict(state='completed',reached_end=True,exit_code=0)
@@ -86,16 +120,20 @@ class PreparationChecks(unittest.TestCase):
         self.assertEqual(run.assess(self.completion(),raw)['failed_backend_attempts'],1)
         self.assertFalse(run.assess(dict(state='stopped'),raw)['execution_integrity_passed'])
     def test_cost_and_reserves(self):
-        limits=watch.deadlines(1000,1.29,5,7)
+        limits=watch.manifest_deadlines(self.m,self.permit())
         self.assertAlmostEqual((limits['ceiling']-1000)*1.29/3600,7)
         self.assertEqual(limits['ceiling']-limits['stop'],900)
         self.assertEqual(limits['ceiling']-limits['terminate'],180)
         for rate in [0,-1,float('nan'),float('inf'),2]:
-            with self.assertRaises(RuntimeError):watch.deadlines(1000,rate,5,7)
+            with self.assertRaises(RuntimeError):watch.deadlines(1000,rate,5,7,1.29,900,180)
+        # The caps, the rate cap and the reserves are the manifest's own, not typed ones.
+        limits=watch.manifest_deadlines(dict(self.m,soft_budget_usd=2,hard_ceiling_usd=3,workload_stop_reserve_seconds=600),self.permit())
+        self.assertAlmostEqual((limits['soft']-1000)*1.29/3600,2)
+        self.assertEqual(limits['ceiling']-limits['stop'],600)
     def test_watchdog_terminates_only_named_instance(self):
         provider=Mock();provider.instance.side_effect=[dict(status='active'),dict(status='terminated')]
         p=self.permit();p['instance_id']='test-instance'
-        current=watch.deadlines(1000,1.29,5,7)['terminate']
+        current=watch.manifest_deadlines(self.m,p)['terminate']
         watch.watch(self.base,provider,p,self.m,now=lambda:current,sleep=lambda _:None)
         provider.terminate.assert_called_once_with('test-instance')
         self.assertTrue((self.base/'TERMINATION_VERIFIED.json').is_file())
@@ -127,10 +165,14 @@ class PreparationChecks(unittest.TestCase):
         torch=NS(cuda=NS(device_count=lambda:1,get_device_properties=lambda _:NS(name='NVIDIA A10'),
                         mem_get_info=lambda _:(23*2**30,24*2**30)))
         psutil=NS(cpu_count=lambda:30,virtual_memory=lambda:NS(total=200*2**30,available=180*2**30))
+        candidate=self.m['instance_candidates'][0]
         with patch.object(run.shutil,'disk_usage',return_value=NS(free=40*2**30)):
-            self.assertEqual(run.hardware_admission(self.base,torch,psutil)['gpu_name'],'NVIDIA A10')
+            self.assertEqual(run.hardware_admission(self.base,torch,psutil,candidate)['gpu_name'],'NVIDIA A10')
+            torch.cuda.get_device_properties=lambda _:NS(name='NVIDIA A100-SXM4-40GB')
+            with self.assertRaises(RuntimeError):run.hardware_admission(self.base,torch,psutil,candidate)
+            torch.cuda.get_device_properties=lambda _:NS(name='NVIDIA A10')
             torch.cuda.device_count=lambda:2
-            with self.assertRaises(RuntimeError):run.hardware_admission(self.base,torch,psutil)
+            with self.assertRaises(RuntimeError):run.hardware_admission(self.base,torch,psutil,candidate)
 
 
 if __name__=='__main__':

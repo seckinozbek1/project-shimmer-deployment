@@ -137,6 +137,19 @@ is the amendment master, `review_findings.md` and `tracked_changes.docx` are its
 renders, and summaries plus `reviewed_document.md` provide supporting views.
 Draft also preserves `memo.md`; `_run_summary.md` indexes the run's deliverables.
 
+Only findings Python computed from the document's own figures become amendments.
+A finding a model wrote stays visible in every deliverable and in the console,
+marked "Written by a model. Not promoted to an amendment. Not checked by Python.";
+`review_data.json` lists such findings apart under `model_findings_not_promoted`
+with the model's verdict kept as `model_claimed_verdict`, and the findings route
+says who wrote each record (`written_by`). Read a model's item as a lead to check
+by hand, never as a verified finding. Each amendment comment names the unit, the
+rule, both figures with their units and the relation in one sentence, quotes the
+rule, and points to the unit's own passage; when it says it is placed at document
+level, Python could not find that unit's passage, so locate it yourself. A
+multi-round run also records in `audit/round_reuse.json` which units a later
+round reused unchanged and which it recomputed.
+
 Whole-run and per-document downloads contain files already present. Document
 "done" means its folder contains a file; it is not a stage-completion or privacy
 certificate. The whole-run ZIP marks partial based on server outcome. A successful
@@ -216,6 +229,36 @@ automatic resume; private-document quality; fresh-clone startup; and a complete
 review inside the unmounted image. The
 [cloud preparation guide](CLOUD_RUN_PREPARATION.md) describes the separate single-GPU
 experiment workflow; it does not certify fresh-clone desktop startup.
+
+## Ordinary final cloud runs
+
+A rented-GPU run of the frozen final models is a loop launch, never an ad hoc
+launch. In order:
+
+1. Seal the bundle with `tools/prepare_ordinary_final_run.py`, giving the loop
+   ledger (`--ledger`), the measured basis (`--forecast-minutes`) and the storage
+   forecast (`--storage-forecast-usd`). Add `--workload` for a test other than the
+   clinical workload; a workload with `case_manifest.json` is sealed as a declared
+   multi-round Review. A sealed test (`--exposure sealed --test-manifest ...`) is
+   built outside the repository.
+2. Run the existing asset verification, the bound local reverification and the
+   live preflight.
+3. Launch with `tools/ordinary_final_bound_cloud.py --bundle ... --ledger ...
+   --purpose "..." --forecast-minutes ... --storage-forecast-usd ...`, adding
+   `--forecast-includes-upload` unless an asset-copy declaration for this bundle
+   applies, `--test-manifest` and `--frozen-tag` for a sealed run, `--batch` for
+   several bundles in one session, and `--detach` to let the controller outlive the
+   session. The budget guard may refuse in one line before any instance exists:
+   read the figure it names, and reseal or wait rather than editing a cap.
+4. Analyse with `tools/analyze_ordinary_final_run.py --bundle RUN_FOLDER`
+   (`--batch` for a batch session) and read `RUN_REPORT.md`, which states the
+   purpose, sealed or exposed, the settings, the cost and what the run does not
+   show. It makes no quality claim; scoring belongs to the scorer.
+
+A sealed run prints only `phase N at S s` lines. Every bundle sealed before loop
+S2 refuses with `Controller source changed` and must be sealed again. The flag
+tables and the budget rule are in
+[cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches).
 
 
 ## Report Recommendations local comparison
