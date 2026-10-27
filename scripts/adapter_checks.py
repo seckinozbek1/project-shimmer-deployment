@@ -161,7 +161,7 @@ class BuildChecks(_Case):
         _build("contradoc", self.root / "cut", max_context=198, output_allowance=10,
                token_counter=WordCounter(100))
         parts = {d["source_document_id"]: d for d in _json(self.root / "cut" / "parts.json")["documents"]}
-        doc = parts[101]
+        doc = parts["101"]
         self.assertEqual((doc["cut"]["budget"], doc["cut"]["prompt_overhead"]), (56, 100))
         # ContraDoc document 101: parts of 16, 18 and 12 words (46 in all). The rendered
         # document adds the title (2 words), and per part a heading (2) and the label
@@ -173,7 +173,7 @@ class BuildChecks(_Case):
         text = (self.root / "cut" / doc["document_id"] / "context" / (doc["document_id"] + ".md")).read_text(encoding="utf-8")
         self.assertTrue(text.endswith("sits here.\n[Document cut. The remaining 12 of 46 words are not shown.]\n"))
         self.assertEqual([p["part"] for p in doc["parts_beyond_cut"]], [3])
-        self.assertFalse(parts[409]["cut"]["cut"], "a document that fits is not cut")
+        self.assertFalse(parts["409"]["cut"]["cut"], "a document that fits is not cut")
         # Evidence units are read on the kept text: the evidence sentence of 101 was in the
         # cut third part, its reference sentence in the first part, which is kept.
         answer = _json(self.root / "cut" / doc["document_id"] / "answer_key.json")["items"][0]
@@ -183,10 +183,10 @@ class BuildChecks(_Case):
         # the line is 32; three words and the line are 2 + 4 + 3 + 11 = 20. The evidence
         # sentence was in the cut tail, so its unit is no longer an evidence unit.
         source = self.root / "one.json"
-        source.write_text(json.dumps([{"unique id": 501, "label": "contradictory",
-                                       "text": "Alpha one two three four five six seven. "
-                                               "The orchard has no trees at all.",
-                                       "evidence": "The orchard has no trees at all."}]), encoding="utf-8")
+        source.write_text(json.dumps({"pos": {"501": {
+            "unique id": "501", "text": "Alpha one two three four five six seven. "
+                                        "The orchard has no trees at all.",
+            "evidence": "The orchard has no trees at all."}}}), encoding="utf-8")
         _build("contradoc", self.root / "tail", source, max_context=162, output_allowance=10,
                token_counter=WordCounter(100))
         record = _json(self.root / "tail" / "parts.json")["documents"][0]
@@ -251,13 +251,41 @@ class BuildChecks(_Case):
                          (["u02-p-00002"], False))
         self.assertEqual(answers["nda-11"]["gold"], "not mentioned")
 
+    def test_contradoc_reads_the_release_shape(self):
+        # The release (confirmed on the B-dev development items) is {"pos": {...}, "neg":
+        # {...}}: gold comes from the container, and `ref sentences` is a string, a list of
+        # strings, or absent. 101's evidence is in part 3 and its reference (a list) in part
+        # 1; 205's evidence is in part 3 and its reference (a string) in part 2.
+        _build("contradoc", self.root / "b")
+        ids_ = _common()["ids"]
+        answers = {}
+        for source in ("101", "102", "205", "409"):
+            doc = ids_.opaque_document_id("contradoc", source)
+            answers[source] = _json(self.root / "b" / doc / "answer_key.json")["items"][0]
+        self.assertEqual({s: a["gold"] for s, a in answers.items()},
+                         {"101": "contradictory", "102": "not contradictory",
+                          "205": "contradictory", "409": "not contradictory"})
+        self.assertEqual(answers["101"]["evidence_unit_ids"], ["u01-p-00001", "u03-p-00003"])
+        self.assertEqual(answers["205"]["evidence_unit_ids"], ["u02-p-00002", "u03-p-00003"])
+        self.assertEqual([answers[s]["location_measurable"] for s in ("101", "102", "205", "409")],
+                         [True, False, True, False])
+        adapter = _adapter("contradoc")
+        for bad, message in (([{"unique id": "1", "text": "x"}], "expected an object"),
+                             ({"pos": {"1": {"unique id": "2", "text": "x"}}}, "carries unique id"),
+                             ({"pos": {"1": {"unique id": "1", "text": "x"}},
+                               "neg": {"1": {"unique id": "1", "text": "y"}}}, "in both containers")):
+            source = self.root / "bad.json"
+            source.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, message):
+                adapter.read_source(source)
+
     def test_empty_document_is_skipped_and_listed(self):
         records = _json(_fixture("contradoc", "synthetic_items.json"))
-        records.append({"unique id": 777, "text": "  \n\n \n", "label": "not contradictory"})
+        records["neg"]["777"] = {"unique id": "777", "text": "  \n\n \n"}
         source = self.root / "with_empty.json"
         source.write_text(json.dumps(records), encoding="utf-8")
         summary = _build("contradoc", self.root / "b", source)
-        self.assertEqual([s["source_document_id"] for s in summary["skipped_documents"]], [777])
+        self.assertEqual([s["source_document_id"] for s in summary["skipped_documents"]], ["777"])
         self.assertEqual(summary["documents"], 4)
         self.assertEqual(len(_json(self.root / "b" / "parts.json")["skipped"]), 1)
 
@@ -277,7 +305,7 @@ class SplitChecks(_Case):
     def _expected_keys(self, name):
         source = _json(_fixture(name, "synthetic_items.json"))
         if name == "contradoc":  # 101 and 102 share 6 of 7 sentences: one group, key 101
-            return {101: "101", 102: "101", 205: "205", 409: "409"}
+            return {"101": "101", "102": "101", "205": "205", "409": "409"}
         if name == "scitab":
             return {r["table_id"]: r["paper_id"] for r in source}
         if name == "cuad":
@@ -322,7 +350,7 @@ class SplitChecks(_Case):
                                                "--out", str(assignment)])
         self.assertEqual(code, 0)
         sample = self.root / "sample.json"
-        sample.write_text(json.dumps([r for r in records if r["unique id"] == 102]), encoding="utf-8")
+        sample.write_text(json.dumps({"neg": {"102": records["neg"]["102"]}}), encoding="utf-8")
         budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
         _build("contradoc", self.root / "b", sample, development=False, side="holdout",
                assignment=assignment, **budget)
@@ -336,6 +364,33 @@ class SplitChecks(_Case):
                    assignment=assignment, **budget)
         with self.assertRaisesRegex(ValueError, "needs --assignment"):
             _build("contradoc", self.root / "e", sample, development=False, side="holdout", **budget)
+
+    def test_contradoc_reads_the_split_file_b_dev_wrote(self):
+        # B-dev froze the groups with its own implementation of section 1, in the shape
+        # {"assignments": {unique id: {"group", "side"}}}. The build reads it as it reads the
+        # adapter's own `split --out` file, and refuses a side that is not the hash rule on
+        # the group key.
+        rows = _adapter("contradoc").split_rows(_adapter("contradoc").read_source(
+            _fixture("contradoc", "synthetic_items.json")))
+        frozen = {"benchmark": "contradoc", "assignments": {
+            r["source_document_id"]: {"group": r["split_key"], "side": r["side"]} for r in rows}}
+        assignment = self.root / "bdev_split.json"
+        assignment.write_text(json.dumps(frozen), encoding="utf-8")
+        records = _json(_fixture("contradoc", "synthetic_items.json"))
+        sample = self.root / "sample.json"
+        sample.write_text(json.dumps({"neg": {"102": records["neg"]["102"]}}), encoding="utf-8")
+        side = _independent_side("101")
+        budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+        _build("contradoc", self.root / "b", sample, development=False, side=side,
+               assignment=assignment, **budget)
+        record = _json(self.root / "b" / "parts.json")
+        self.assertEqual([(d["cluster"], d["side"], d["groups_from"]) for d in record["documents"]],
+                         [("101", side, "assignment")])
+        frozen["assignments"]["102"]["side"] = "holdout" if side == "development" else "development"
+        assignment.write_text(json.dumps(frozen), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "not the hash rule on their group key: 102"):
+            _build("contradoc", self.root / "c", sample, development=False, side=side,
+                   assignment=assignment, **budget)
 
     def test_contractnli_official_split(self):
         # The dev split is development, the test split the holdout pool: the side is the

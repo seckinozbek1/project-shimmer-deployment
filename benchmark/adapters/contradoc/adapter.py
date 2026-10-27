@@ -11,7 +11,9 @@ document's group and side from it (a document it does not list is refused), so a
 from a sample never regroups. Only `build --development` may compute groups over its own
 input, and parts.json records which was done.
 
-Developed on hand-written synthetic items only (D-019): no ContraDoc data was opened.
+Written on hand-written synthetic items (D-019); the source schema below was then
+confirmed on the B-dev development items (S4c item 4). `--assignment` also reads the
+split file B-dev wrote with its own implementation of section 1.
 
 Usage:
     py -3.12 benchmark/adapters/contradoc/adapter.py build --input <file> --out <folder>
@@ -39,14 +41,16 @@ RULE_TEXT = ("No passage of the document may contain a statement that cannot be 
 GROUP_SHARE = 0.8
 
 # --- source schema --------------------------------------------------------------------
-DOCUMENT_ID_FIELD = "unique id"   # documented (SELECTION.md)
-TEXT_FIELD = "text"               # named by the preregistration (section 5.6)
-LABEL_FIELD = "label"             # PROVISIONAL: not documented outside the data
-GOLD_VALUES = {"contradictory": "contradictory",           # PROVISIONAL: stored values
-               "not contradictory": "not contradictory"}
-EVIDENCE_FIELD = "evidence"       # PROVISIONAL: the marked evidence sentence
-REFERENCE_FIELD = "reference"     # PROVISIONAL: the marked reference sentence or sentences
-# PROVISIONAL: the file holds a JSON list of records, or a JSON object whose values are records.
+# Confirmed on the B-dev development items (184 documents), unless marked otherwise.
+DOCUMENT_ID_FIELD = "unique id"   # documented; stored as a string in every record
+TEXT_FIELD = "text"               # confirmed: a string in every record
+# The file is a JSON object of two containers, each an object {unique id: record}; the
+# container gives the gold label (there is no label field in any record). The key of each
+# record equals its `unique id`.
+GOLD_CONTAINERS = {"pos": "contradictory", "neg": "not contradictory"}   # confirmed
+EVIDENCE_FIELD = "evidence"       # confirmed: one string, in every `pos` record, none in `neg`
+REFERENCE_FIELD = "ref sentences" # confirmed: a string or a list of strings, absent in some
+                                  # `pos` records and in every `neg` record
 # ---------------------------------------------------------------------------------------
 
 SPEC = mapping.Spec(
@@ -58,11 +62,30 @@ SPEC = mapping.Spec(
     s2=True)
 
 
+CONTAINER_KEY = "__container__"   # the adapter's own note on each record read, never a source field
+
+
 def read_source(path) -> list:
+    """Every record of both containers, in file order, each a copy carrying the name of
+    its container under CONTAINER_KEY. Refuses another shape, a record whose key is not its
+    `unique id`, and an id found in both containers."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    records = list(data.values()) if isinstance(data, dict) else data
-    if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
-        raise ValueError("expected a list of records or an object of records")
+    if not isinstance(data, dict) or not data or set(data) - set(GOLD_CONTAINERS):
+        raise ValueError("expected an object whose keys are %s" % " and ".join(sorted(GOLD_CONTAINERS)))
+    records, seen = [], set()
+    for container in data:
+        entries = data[container]
+        if not isinstance(entries, dict) or not all(isinstance(r, dict) for r in entries.values()):
+            raise ValueError("the %r container is not an object of records" % container)
+        for key, record in entries.items():
+            if CONTAINER_KEY in record:
+                raise ValueError("a record carries the adapter's own key " + CONTAINER_KEY)
+            if ids.key_string(record.get(DOCUMENT_ID_FIELD)) != key:
+                raise ValueError("record %r carries %s %r" % (key, DOCUMENT_ID_FIELD, record.get(DOCUMENT_ID_FIELD)))
+            if key in seen:
+                raise ValueError("unique id %s is in both containers" % key)
+            seen.add(key)
+            records.append(dict(record, **{CONTAINER_KEY: container}))
     return records
 
 
@@ -108,25 +131,40 @@ def groups(records) -> dict:
 
 
 def _gold(record) -> str:
-    value = record.get(LABEL_FIELD)
-    if value not in GOLD_VALUES:
-        raise ValueError("unrecognised %s value %r for %s" % (LABEL_FIELD, value, record.get(DOCUMENT_ID_FIELD)))
-    return GOLD_VALUES[value]
+    return GOLD_CONTAINERS[record[CONTAINER_KEY]]
 
 
 def _texts(value) -> list:
+    """A field held as a string or as a list of strings, as a list (empty when absent)."""
     if value is None:
         return []
-    return [value] if isinstance(value, str) else [str(v) for v in value]
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list) and all(isinstance(v, str) for v in value):
+        return list(value)
+    raise ValueError("expected a string or a list of strings, not " + type(value).__name__)
 
 
 def read_assignment(path) -> dict:
-    """{key string of a unique id: (group key, side)} from a frozen `split --out` file."""
+    """{key string of a unique id: (group key, side)} from a frozen split file: the one
+    `split --out` writes (`documents`, a list of rows), or the one B-dev wrote with its own
+    implementation of section 1 (`assignments`, {unique id: {group, side}}). Either way a
+    side that is not the hash rule on its group key is refused."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    if data.get("benchmark") != BENCHMARK:
+    if not isinstance(data, dict) or str(data.get("benchmark", "")).lower() != BENCHMARK:
         raise ValueError("the assignment file is not a ContraDoc split file")
-    return {ids.key_string(r["source_document_id"]): (r["split_key"], r["side"])
-            for r in data["documents"]}
+    if isinstance(data.get("documents"), list):
+        rows = {ids.key_string(r["source_document_id"]): (r["split_key"], r["side"])
+                for r in data["documents"]}
+    elif isinstance(data.get("assignments"), dict):
+        rows = {ids.key_string(sid): (r["group"], r["side"]) for sid, r in data["assignments"].items()}
+    else:
+        raise ValueError("the assignment file holds neither `documents` nor `assignments`")
+    wrong = sorted(sid for sid, (group, side) in rows.items() if ids.split_side(group) != side)
+    if wrong:
+        raise ValueError("assignment sides that are not the hash rule on their group key: "
+                         + ", ".join(wrong[:10]))
+    return rows
 
 
 def documents(records, options=None) -> list:
