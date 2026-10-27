@@ -7,6 +7,7 @@ import uuid
 import bounded_extraction as extraction
 import final_models
 import model_telemetry as telemetry
+import reply_records
 
 VERSION = 1
 RELATIONS = ('MATCH', 'DIVERGENCE', 'OMISSION', 'ADDITION')
@@ -165,23 +166,44 @@ def validate(record):
         raise ValueError('Auditor pair identity mismatch')
 
 
-def predict(pair, context):
+def predict(pair, context, call_id=None, sensitive=None):
+    """One Auditor896 classification. Its label is saved through the same
+    function as every generated reply (reply_records.write), once per call,
+    under the caller's call id; nothing is written with no run context."""
     pair['_forward_attempted'] = False
     record = pair['record']
-    validate(record)
-    value = dict(role='auditor', production_contract='semantic-task-v1',
-        source_spans=[dict(alias='s0', text=pair['source_text'])], context_only_spans=[],
-        extraction=json.dumps(pair['producer_item'], sort_keys=True, ensure_ascii=False),
-        supplied_refs=record['source_ref_ids'], required_refs=record['source_ref_ids'],
-        delivery_complete=True, routed_rules=[])
-    messages, _ = final_models.classifier_messages(value)
-    tokenizer, classifier = final_models.resident('auditor', context)
-    ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
-    if len(ids) > classifier.model.config.max_position_embeddings:
-        raise ValueError('Auditor pair exceeds context; no truncation')
-    directory = context.audit_dir()/'feature_admission'/record['pair_id'] if context else None
-    pair['_forward_attempted'] = True
-    return classifier.predict(ids, directory), len(ids)
+    sent, label, failure, classifier = {}, None, '', None
+    try:
+        validate(record)
+        value = dict(role='auditor', production_contract='semantic-task-v1',
+            source_spans=[dict(alias='s0', text=pair['source_text'])], context_only_spans=[],
+            extraction=json.dumps(pair['producer_item'], sort_keys=True, ensure_ascii=False),
+            supplied_refs=record['source_ref_ids'], required_refs=record['source_ref_ids'],
+            delivery_complete=True, routed_rules=[])
+        messages, _ = final_models.classifier_messages(value)
+        sent = dict(payload=json.dumps(messages, sort_keys=True, ensure_ascii=False, separators=(',', ':')),
+                    form='classifier_messages_json')
+        tokenizer, classifier = final_models.resident('auditor', context)
+        ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
+        if len(ids) > classifier.model.config.max_position_embeddings:
+            raise ValueError('Auditor pair exceeds context; no truncation')
+        directory = context.audit_dir()/'feature_admission'/record['pair_id'] if context else None
+        pair['_forward_attempted'] = True
+        label = classifier.predict(ids, directory)
+        return label, len(ids)
+    except Exception as exc:
+        failure = type(exc).__name__
+        raise
+    finally:
+        identity = getattr(classifier, '_shimmer_identity', None) or {}
+        reply_records.write(context, agent='AUDITOR896', call_id=call_id,
+            backend='local_auditor_classifier', model_id=identity.get('model_id'),
+            model_mode=identity.get('model_mode'), payload=sent.get('payload'),
+            payload_form=sent.get('form'), reply=label if isinstance(label, str) else None,
+            ok=not failure, error=failure,
+            decoding=dict(invocation='classification_head', generation=None,
+                          forward_attempted=pair['_forward_attempted']),
+            sensitive=bool(sensitive), phase='5', doc_id=record.get('document_id') or '')
 
 
 def eligible(wrapper, payload):
@@ -209,7 +231,8 @@ def prepare_context(wrapper, payload):
                 context._active_model_calls = getattr(context,'_active_model_calls',0)+1
         try:
             validate(record)
-            relation, tokens = predict(pair, context)
+            relation, tokens = predict(pair, context, call_id=call_id,
+                                       sensitive=getattr(wrapper, 'sensitive', None))
             if relation not in RELATIONS:
                 raise ValueError('Invalid classifier relation')
             record.update(auditor_relation=relation, classifier_status='classified')
@@ -220,6 +243,9 @@ def prepare_context(wrapper, payload):
             with telemetry.LOCK:
                 if context is not None:
                     context._active_model_calls -= 1
+        if '_forward_attempted' in pair:  # predict was reached, so its record exists
+            reply_records.write_outcome(context, call_id, 'classifier_failed' if failure else 'classified',
+                                        source='auditor_pairs', pair_id=record['pair_id'])
         end = time.perf_counter()
         record['classifier_call_id'] = call_id
         record['forward_attempted'] = pair.get('_forward_attempted')
