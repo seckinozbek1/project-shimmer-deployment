@@ -20,3 +20,8 @@ durable/
 input/
 output/
 docs/publish/
+
+# Third-party benchmark data, raw or converted, and its manifests (loop S4b).
+# Never committed; only adapters, the selection, the preregistration and
+# synthetic gate fixtures are tracked.
+/external/

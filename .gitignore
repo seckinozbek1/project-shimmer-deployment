@@ -195,3 +195,8 @@ seals/
 # committed, even force-added: `guard_secrets.py --staged` refuses the segment,
 # also inside a staged archive.
 **/audit/model_replies/
+
+# Third-party benchmark data, raw or converted, and its manifests (loop S4b).
+# Never committed; only adapters, the selection, the preregistration and
+# synthetic gate fixtures are tracked.
+/external/

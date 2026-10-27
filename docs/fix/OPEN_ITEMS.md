@@ -262,3 +262,10 @@ covered, and S1 had used its three checker rounds (D-016).
 **What would settle it.** Refusing any archive with trailing data after its last compressed
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
+
+## 15. Converted SummEdits data is tracked in the repository (found at loop S4)
+
+- **What it is.** `tuning/auditor_external_relation_v1/` tracks files built from the SummEdits and SummExecEdit releases (for example `examples.jsonl`, `document_registry.jsonl`), from a task before the loop. The loop's rule for third-party data (S4b) says never commit third-party data, raw or converted.
+- **Evidence.** `git ls-files tuning/auditor_external_relation_v1`; `docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md`; `docs/fix/AUDITOR_EXTERNAL_DATA_ATTRIBUTION.md` (CC BY 4.0 attribution).
+- **Why it was left.** The files predate the rule, carry their attribution and licence, and are a frozen record of a quarantined experiment (TCR-010). Removing them from the tree does not remove them from history, and deleting a frozen record is not the loop's call (H12). SummEdits is rejected for sealed use instead (D-019).
+- **What would settle it.** The operator's decision: keep as an attributed record, or remove from the tree and include the paths in the S13 history-rewrite rules.
