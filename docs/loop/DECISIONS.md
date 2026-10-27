@@ -93,3 +93,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Rules.** P3 (keep past tools as they ran), P16 (change only what the stage needs; the spec says frozen tools stay as they are), P13.
 - **Choice.** Option 2. They are listed in the S1 report with the note "frozen by function, no binding record".
 - **Reverse.** A later stage may change any of them if it is ever run again.
+
+## D-011. Decisions before the first multi-round run (S1 Part 6, question 7)
+
+- **When, stage.** 2026-10-27, S1 Part 6.
+- **Fork.** `docs/fix/MULTI_ROUND_READINESS.md` section 7 lists twelve decisions needed before the first multi-round run. Each was classified by III.2.
+- **Classification.** All twelve are Class R (reversible, inside the repository, or set by the spec's own budget and type rules). None needs Seckin: none is a push, publication, contact, DELTA, default-model change or cloud resource.
+- **Choices.** (1) frozen adapters, final mode admits a declared multi-round Review; (2) checkpoint suitability measured in the first development run; (3) `reference_serial`; (4) the synthetic S3 case and, if a manifest can be written, the anonymised negotiation material, both exposed development cases; (5) the builder writes exposed case manifests, role B writes sealed ones; (6) `trajectory_only`, recommendations off; (7) `protected_test` false for exposed cases; (8) output outside the repository for sealed runs; (9) caps from the live price and the IV.3 formula; (10) the IV.3 type rule; (11) run health = outcome `reviewed` and activation `activated`, quality reported separately; (12) pinned-baseline amendments recorded, never hidden.
+- **Rules.** P1, P4, P13, P15, IV.3, B.1, H17 for (5).
+- **Reverse.** Each is a code or configuration choice a later commit can change.
