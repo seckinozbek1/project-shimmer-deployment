@@ -1,0 +1,10 @@
+{
+  "suite": "long-range corpus",
+  "format": "input-format-v1-draft",
+  "regenerate": "py -3.12 benchmark/generators/generate.py suite long_range",
+  "tests": [
+    {"family": "f5", "seed": 7101, "long_range": true},
+    {"family": "f5", "seed": 7102, "long_range": true},
+    {"family": "f5", "seed": 7103, "long_range": true}
+  ]
+}

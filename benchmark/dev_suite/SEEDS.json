@@ -1,0 +1,19 @@
+{
+  "suite": "development suite",
+  "format": "input-format-v1-draft",
+  "regenerate": "py -3.12 benchmark/generators/generate.py suite dev",
+  "tests": [
+    {"family": "f1", "seed": 1101},
+    {"family": "f1", "seed": 1102},
+    {"family": "f2", "seed": 2101},
+    {"family": "f2", "seed": 2102},
+    {"family": "f3", "seed": 3101},
+    {"family": "f3", "seed": 3102},
+    {"family": "f4", "seed": 4101},
+    {"family": "f4", "seed": 4102},
+    {"family": "f5", "seed": 5101},
+    {"family": "f5", "seed": 5102},
+    {"family": "f6", "seed": 6101},
+    {"family": "f6", "seed": 6102}
+  ]
+}
