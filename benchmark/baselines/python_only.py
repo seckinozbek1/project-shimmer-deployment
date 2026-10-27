@@ -22,6 +22,9 @@ plan with nothing computable produce no record here and are listed in the pairin
 map under ``ablation_not_asked``. A computed, band or duration plan yields the same
 typed records the pipeline mints from Python's numbers (the model there supplies
 only the explanation sentence, so the records here carry Python's default sentence).
+Each record carries the provenance the pipeline gives Python's findings: its envelope
+backend "paired" and model "python", and the WRITTEN-BY-A stamp `written_by: python`
+decided from them, so the adapters report the catch layer as Python's.
 The earlier-version comparison (a manifest ``prior``) is not run and is reported.
 
 It writes the pipeline's completion record, audit/run_completion.json (schema 1, state
@@ -88,6 +91,38 @@ def pipeline_literal(name, source=PIPELINE_SOURCE):
 CONVENTION_REVIEW_AGENTS = tuple(pipeline_literal("CONVENTION_REVIEW_AGENTS"))
 COMPUTED_KINDS = ("computed", "band", "duration")
 NOT_ASKED_KINDS = ("absence_judged", "uncomputable")
+
+# Provenance, as the pipeline marks Python's own findings. The paired review posts its
+# computed records under backend "paired" and model "python" (pipeline
+# `_paired_convention_review`), and WRITTEN-BY-A stamps each record `written_by` from the
+# post that carried it: "python" only for backend `paired` or `computed` with a model id
+# starting "python", "model" for everything else (`finding_record.written_by`). Every
+# record B2 writes is Python's, so each envelope carries that backend and model and each
+# record the stamp decided from them.
+POST_BACKEND = "paired"
+POST_MODEL = "python"
+WRITTEN_BY_FIELD = "written_by"
+_COMPUTED_BACKENDS = ("paired", "computed")
+
+
+def written_by(backend, model) -> str:
+    """`finding_record.written_by` where the repository has it (WRITTEN-BY-A); on a
+    commit without it, the same rule, stated once here."""
+    rule = getattr(finding_record, "written_by", None)
+    if rule is not None:
+        return rule(backend, model)
+    if str(backend or "") in _COMPUTED_BACKENDS and str(model or "").startswith("python"):
+        return "python"
+    return "model"
+
+
+def stamp_envelope(envelope, backend=POST_BACKEND, model=POST_MODEL):
+    """The envelope as the pipeline posts Python's records: `backend` and `model` on it, and
+    each item a copy stamped `written_by` from them."""
+    who = written_by(backend, model)
+    items = [dict(item, **{WRITTEN_BY_FIELD: who}) if isinstance(item, dict) else item
+             for item in envelope.get("items") or []]
+    return dict(envelope, items=items, backend=backend, model=model)
 
 
 def _now():
@@ -345,7 +380,8 @@ def review_document(doc, registry, context_refs, refs_excerpt, assignment, *, pa
              "source_rule_id": finding_record.source_rule_id_for(s["rule_id"], registry),
              "detail": s["detail"]} for s in suspensions]
         pairing["suspended_count"] = len(suspensions)
-    envelopes = [agent_wrapper.make_envelope(agent, str(doc["id"]), paired_review.dedupe(items))
+    envelopes = [stamp_envelope(agent_wrapper.make_envelope(agent, str(doc["id"]),
+                                                            paired_review.dedupe(items)))
                  for agent, items in by_agent.items()]
     return pairing, envelopes
 
@@ -433,7 +469,9 @@ def run(bundle, out, *, pairs_per_unit=None, root=ROOT):
                              if str(f.get("record_verdict") or "").lower() == "irregular"),
             "amendments": len(amendments), "amendment_refusals": len(refusals),
             "not_asked": pairing["ablation_not_asked_count"],
-            "not_judged": pairing["not_judged_count"], "model_calls": 0}
+            "not_judged": pairing["not_judged_count"], "model_calls": 0,
+            "posts": [{"agent": env["agent"], "backend": env["backend"], "model": env["model"],
+                       "items": len(env["items"])} for env in envelopes]}
     _write_json(out / "audit" / "pairing_map.json", pairing_file)
     status = {"ablation": ABLATION_TEXT, "arm": ARM, "state": "completed", "finished_at": _now(),
               "bundle": Path(bundle).name, "model_calls": 0, "documents": documents,
