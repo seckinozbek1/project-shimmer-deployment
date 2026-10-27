@@ -186,3 +186,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Evidence.** Before: 41 tests, 1 error, ORDINARY_SAFE_GATE FAIL 1. After: 41 tests OK, PASS 50, FAIL 0; final-integration exit 0.
 - **Rule learned.** Every lane that changes `scripts/pipeline.py` runs all six side gates before reporting, not only its own modules.
 - **Rules.** P1, IV.6, H9.
+
+## D-026. S2 checker round 1: lead record corrections
+
+- **When, stage.** 2026-10-27 11:46 +0300 (system clock), S2, after checker round 1 (completeness 61 items, adversarial 17, claims and hygiene 19; reports kept privately).
+- **D-022 corrected.** D-022 says "The controller lane's proofs live in the controller gate, not the main gate". Check 280 (`tools/multi_round_launch_checks.py`, the R2 end-to-end proof) runs in the main gate; it was registered in `22d8955`. D-022 also says check 185 was "replaced"; the function was rewritten to assert the S2b behaviour and keeps every other case, which its docstring calls "extended by S2b item 5". Both words describe the same change.
+- **The pinned-baseline tool is committed.** Every amendment so far was written by a lead tool kept outside the repository; it is now `tools/loop/amend_pinned_baselines.py` (same code, repository-relative root), so the amendments can be reproduced.
+- **Fixes in progress.** The controller lane takes the budget, ledger, binding and launch items (A1-A3, A6, A7, A11-A17, H1, H2 controller half, H11, H17-H19, C12, C25, C31, C34, C39); the pipeline lane takes the deliverable and multi-round items (A4, A5, A8-A10, H3-H5, H8-H10, H12-H14, C3, C51). Open items 12, 18 and 19 are corrected below by the lead (H15, H16).
+- **Rules.** P1, P10, IV.4, IV.8.
