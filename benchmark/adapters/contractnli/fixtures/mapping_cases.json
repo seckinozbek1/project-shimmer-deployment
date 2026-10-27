@@ -1,5 +1,5 @@
 {
-  "description": "Hand-written synthetic run outputs for ContractNLI (section 5.2): irregular is Contradiction, a refusal is NotMentioned, an ok record or silence is Entailment, a run failure is ABSTAIN (never NotMentioned), and S-2 does not apply. Materialised as the ContraDoc cases are.",
+  "description": "Hand-written synthetic run outputs for ContractNLI (section 5.2): irregular is Contradiction, a refusal is NotMentioned, an ok record or silence is Entailment, a run failure is ABSTAIN (never NotMentioned), and S-2 does not apply. An ok record on one unit and a refusal on another (n-c) is Entailment in the primary analysis and NotMentioned under S-5, the earlier order. Materialised as the ContraDoc cases are.",
   "items": [
     {"item_id": "n-a", "document_id": "c-run", "rule_id": "CONV-CNLI-NDA-1", "benchmark": "contractnli"},
     {"item_id": "n-b", "document_id": "c-run", "rule_id": "CONV-CNLI-NDA-2", "benchmark": "contractnli"},
@@ -13,7 +13,8 @@
       "review_data": {"findings": [
         {"item_id": "rec-a", "source_rule_id": "CONV-CNLI-NDA-1", "unit_id": "u02-p-00002", "relation": "", "record_verdict": "irregular", "model": "fixture-reader"},
         {"item_id": "rec-b", "source_rule_id": "CONV-CNLI-NDA-2", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"},
-        {"item_id": "rec-c", "source_rule_id": "conv-cnli-nda-11", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"}
+        {"item_id": "rec-c", "source_rule_id": "conv-cnli-nda-11", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"},
+        {"item_id": "rec-c2", "source_rule_id": "CONV-CNLI-NDA-11", "unit_id": "u02-p-00002", "relation": "", "record_verdict": "ok", "confidence": "UNCERTAIN"}
       ]}
     },
     "c-fail": {
@@ -43,6 +44,13 @@
       "n-d": ["CLEAR", "entailment", "silent"],
       "n-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
+    "B2 S-5": {
+      "n-a": ["FLAG", "contradiction", "irregular"],
+      "n-b": ["UNDECIDED", "not mentioned", "refusal"],
+      "n-c": ["UNDECIDED", "not mentioned", "refusal"],
+      "n-d": ["CLEAR", "entailment", "silent"],
+      "n-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
     "B1": {
       "n-a": ["FLAG", "contradiction", "b1_label"],
       "n-b": ["UNDECIDED", "not mentioned", "b1_label"],
@@ -55,6 +63,7 @@
     "B2": {"n-a": {"layer": "judged", "cited_unit_ids": ["u02-p-00002"]}}
   },
   "expected_counts": {
-    "B2": {"items": 5, "silent": 1, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1}
+    "B2": {"items": 5, "silent": 1, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1,
+           "items_with_refusal_and_ok": 1, "items_decided_by_ok_over_refusal": 1, "items_with_irregular_and_ok": 0}
   }
 }

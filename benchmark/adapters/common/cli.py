@@ -7,16 +7,18 @@
          or, for development work only, --development (no budget needed, recorded in
          parts.json; a holdout document is refused unless --side holdout is also given)
   split  --input <benchmark file> [--out F] [--exclude <file>]   the side of every document
-  bands  --input <benchmark file> [--out F] [--exclude <file>]   every document's words and
-         length band (section 5.6, Words) over a whole input, no build needed
+  bands  --input <benchmark file> [--out F] [--exclude <file>] [--testmini <file>]
+         [--assignment <file>] [the adapter's own options]   every document's words, length
+         band and side (section 5.6, Words) over a whole input, no build needed; band totals
+         for the holdout pool alone and for the development side apart
   label  --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
   score  --labels <labels.json> --bundles <build folder> --out <metrics.json>
 
 The cut budget is computed per document (section 5.3) from the bundle's own conventions
 with the B1 prompt (common/prompt.py). A token counter file defines `count(text) -> int`
 and `count_prompt(system, user) -> int` with the main reading agent's own tokenizer and
-chat template. `label` writes the primary labels and the S-1, S-2 and S-3 analyses in one
-file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
+chat template. `label` writes the primary labels and the S-1, S-2, S-3 and S-5 analyses in
+one file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
 evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
 document, named the same way. B3 and B4 are refused while the typed-record key of the
@@ -162,32 +164,75 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
                                 refuse_holdout=declared is None and not lifted)
 
 
-def bands(adapter, input_path, *, exclude=None, **adapter_options) -> dict:
-    """Every document's words and length band by the one word rule (section 5.6, Words),
-    over a whole input with no build: what role B stratifies the holdout sample by and
-    writes S8's B_SIZES.json from (D-039 item 7). Per band: documents, decisions (items)
-    and the median word count. No side is read or checked, and no text is written."""
-    _own_options(adapter, adapter_options)
-    options = {"side": None, "development": True, "input_path": str(input_path)}
-    options.update({k: v for k, v in adapter_options.items() if v is not None})
-    documents = adapter.documents(adapter.read_source(input_path), options)
-    documents, excluded = apply_exclusions(documents, exclude)
-    rows = []
-    for doc in sorted(documents, key=lambda d: d["document_id"]):
-        if bundle.is_empty(doc):
-            continue
-        words = sum(int(p["words"]) if "words" in p else ids.word_count(p["text"]) for p in doc["parts"])
-        rows.append({"document_id": doc["document_id"],
-                     "source_document_id": ids.key_string(doc["source_document_id"]),
-                     "words": words, "length_band": ids.length_band(words), "items": len(doc["items"])})
+REMOVED_OVERLAP = "removed_overlap"
+
+
+def _band_totals(rows) -> dict:
     per_band = {}
     for name, _lower in ids.LENGTH_BANDS:
         mine = [r for r in rows if r["length_band"] == name]
         per_band[name] = {"documents": len(mine), "items": sum(r["items"] for r in mine),
                           "median_words": statistics.median([r["words"] for r in mine]) if mine else None}
-    return {"benchmark": adapter.BENCHMARK, "input_sha256": _sha(input_path),
-            "word_rule": "preregistration section 5.6, Words", "bands": per_band,
-            "excluded_documents": excluded, "documents": rows}
+    return per_band
+
+
+def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
+          **adapter_options) -> dict:
+    """Every document's words, length band and side by the one word rule (section 5.6,
+    Words), over a whole input with no build: what role B stratifies the holdout sample by
+    and writes S8's B_SIZES.json from (D-039 item 7). Each document carries its side as a
+    build would record it (the hash rule, ContraDoc's `--assignment` when given, FinDVer's
+    official split, ContractNLI's frozen file, checked as a build checks it); a FinDVer
+    holdout filing that `--testmini` also holds is `removed_overlap`, and a holdout input
+    of FinDVer needs `--testmini`. Per band, the documents, decisions (items) and median
+    words are totalled for the holdout pool alone (`holdout_pool_bands`, what B_SIZES.json
+    is written from) and for the development side apart (`development_bands`); a document
+    on neither (an overlap, or a side no build could declare) is in neither total. No
+    text is written."""
+    _own_options(adapter, adapter_options)
+    overlap_of = getattr(adapter, "overlapping_documents", None)
+    if testmini and overlap_of is None:
+        raise ValueError("options this adapter does not take: testmini")
+    options = {"side": None, "development": True, "input_path": str(input_path),
+               "assignment": assignment}
+    options.update({k: v for k, v in adapter_options.items() if v is not None})
+    extra = {}
+    check_input = getattr(adapter, "check_input", None)
+    if check_input is not None:
+        declared = ids.HOLDOUT if options.get("frozen_sha256") else None
+        extra["input_check"] = check_input(input_path, declared, options)
+        options["frozen_for"] = extra["input_check"]["frozen_for"]
+    documents = adapter.documents(adapter.read_source(input_path), options)
+    documents, excluded = apply_exclusions(documents, exclude)
+    overlap = set(overlap_of(testmini)) if testmini else set()
+    if overlap_of is not None and not testmini and any(d["side"] == ids.HOLDOUT for d in documents):
+        raise ValueError("the holdout pool of %s needs --testmini (section 1 removes overlapping "
+                         "documents)" % adapter.BENCHMARK)
+    rows = []
+    for doc in sorted(documents, key=lambda d: d["document_id"]):
+        if bundle.is_empty(doc):
+            continue
+        source = ids.key_string(doc["source_document_id"])
+        side = doc["side"]
+        if side == ids.HOLDOUT and source in overlap:
+            side = REMOVED_OVERLAP
+        words = sum(int(p["words"]) if "words" in p else ids.word_count(p["text"]) for p in doc["parts"])
+        rows.append({"document_id": doc["document_id"], "source_document_id": source,
+                     "side": side, "words": words, "length_band": ids.length_band(words),
+                     "items": len(doc["items"])})
+    sides = {}
+    for r in rows:
+        sides[r["side"]] = sides.get(r["side"], 0) + 1
+    for name, path in (("testmini_sha256", testmini), ("assignment_sha256", assignment),
+                       ("exclusion_sha256", exclude)):
+        if path:
+            extra[name] = _sha(path)
+    return dict({"benchmark": adapter.BENCHMARK, "input_sha256": _sha(input_path),
+                 "word_rule": "preregistration section 5.6, Words",
+                 "holdout_pool_bands": _band_totals([r for r in rows if r["side"] == ids.HOLDOUT]),
+                 "development_bands": _band_totals([r for r in rows if r["side"] == ids.DEVELOPMENT]),
+                 "documents_by_side": dict(sorted(sides.items())),
+                 "excluded_documents": excluded, "documents": rows}, **extra)
 
 
 def label(adapter, items_path, arm, runs_root=None) -> dict:
@@ -210,7 +255,8 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
         raise ValueError("unknown arm " + repr(arm))
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),
             "S-2": mapping.sensitivity_s2(adapter.SPEC, primary),
-            "S-3": mapping.sensitivity_s3(adapter.SPEC, primary)}
+            "S-3": mapping.sensitivity_s3(adapter.SPEC, primary),
+            "S-5": mapping.sensitivity_s5(adapter.SPEC, primary)}
 
 
 def score(adapter, labels: dict, bundles_dir) -> dict:
@@ -264,6 +310,9 @@ def main(adapter, argv=None) -> int:
     bd.add_argument("--input", required=True)
     bd.add_argument("--out")
     bd.add_argument("--exclude", help="as for build: a listed document is left out")
+    bd.add_argument("--testmini", help="FinDVer: the testmini file; a holdout report it also "
+                                       "holds is removed_overlap and in no total")
+    bd.add_argument("--assignment", help="ContraDoc: the frozen split file, as for build")
     for name, help_text in getattr(adapter, "BUILD_OPTIONS", ()):
         bd.add_argument(name, help=help_text)
     lab = sub.add_parser("label")
@@ -304,12 +353,15 @@ def main(adapter, argv=None) -> int:
                 print(json.dumps(rows, indent=2, ensure_ascii=False))
             return 0
         if args.command == "bands":
-            result = bands(adapter, args.input, exclude=args.exclude,
+            result = bands(adapter, args.input, exclude=args.exclude, testmini=args.testmini,
+                           assignment=args.assignment,
                            **{_dest(n): getattr(args, _dest(n))
                               for n, _h in getattr(adapter, "BUILD_OPTIONS", ())})
             if args.out:
                 _write(args.out, result)
-            print(json.dumps({"benchmark": result["benchmark"], "bands": result["bands"]}, indent=2))
+            print(json.dumps({k: result[k] for k in ("benchmark", "documents_by_side",
+                                                     "holdout_pool_bands", "development_bands")},
+                             indent=2))
             return 0
         if args.command == "label":
             if args.arm != "B0" and not args.runs:

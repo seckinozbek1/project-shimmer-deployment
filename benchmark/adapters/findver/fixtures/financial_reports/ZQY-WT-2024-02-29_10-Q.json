@@ -1,5 +1,5 @@
 {
-  "url": "https://www.sec.gov/Archives/edgar/data/1000002/000100000224000002/zqy-10q.htm",
+  "url": "https://filings.example.invalid/Archives/edgar/data/9990000002/999000000224000002/zqy-10q.htm",
   "report_type": "10-Q",
   "context": [
     {"id": 0, "context": "The filing covers one quarter.", "type": "paragraph"},

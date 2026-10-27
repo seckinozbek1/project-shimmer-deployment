@@ -23,7 +23,8 @@ another document. It must load and verify the model once before the first item a
 stop, generating nothing, when the load fails, the loaded identity differs from the
 recorded values, a prompt plus the allowance exceeds the context, or a reply record
 cannot be written. It records, per item and per benchmark, a reply whose length reached
-the output allowance, and flags a parse rate below the 95 percent development floor.
+the output allowance, and pools the parse rate per benchmark over every document's
+summary, deciding the 95 percent development floor on the pooled rate (section 5.4).
 Its parser (escape repair, UNCERTAIN), its prompt (revision 3, word for word against the
 preregistration, rendered by benchmark/adapters/common/prompt.py, with the undecided
 invitation only where the rule template asks for UNCERTAIN, and with the bundle's
@@ -40,6 +41,7 @@ benchmark/baselines/ absent every case is SKIPPED with the reason, never failed.
 """
 import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -311,6 +313,30 @@ class BareModelChecks(unittest.TestCase):
             self.assertGreater(sum(1 for v in reached.values() if v), 0, "a fixture reply reaches the allowance")
             self.assertEqual(self.tool.length_reached({"text": "x"}, 64), None)
 
+    def test_parse_rate_floor_is_decided_on_the_pooled_rate(self):
+        # Adversarial round 3, item 7: the 95 percent floor (section 5.4) is a benchmark's,
+        # read on the rate pooled over all its development documents, not on any one
+        # document's b1_summary.json. Here one benchmark has a document below the floor yet
+        # pools to exactly 0.95 (not below), and another pools below it.
+        docs = {"d1": {"findver": (30, 29)}, "d2": {"findver": (10, 9)},
+                "d3": {"contradoc": (10, 10)}, "d4": {"contradoc": (10, 8)}}
+        with tempfile.TemporaryDirectory(prefix="b1_pool_") as tmp:
+            root = Path(tmp) / "runs"
+            for doc, benches in docs.items():
+                (root / doc).mkdir(parents=True)
+                rows = {b: {"items": n, "parsed": p, "parse_rate": p / n,
+                            "below_parse_rate_floor": p / n < 0.95} for b, (n, p) in benches.items()}
+                (root / doc / "b1_summary.json").write_text(json.dumps({"benchmarks": rows}), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = self.tool.main(["pool", "--runs", str(root)])
+            self.assertEqual(code, 0)
+            pooled = json.loads((root / "b1_parse_rates.json").read_text(encoding="utf-8"))
+            self.assertEqual(pooled["documents"], 4)
+            got = {b: (r["items"], r["parsed"], r["below_parse_rate_floor"]) for b, r in pooled["benchmarks"].items()}
+            self.assertEqual(got, {"findver": (40, 38, False), "contradoc": (20, 18, True)})
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(self.tool.main(["pool", "--runs", str(Path(tmp) / "empty")]), 4)
+
     def test_setup_failures_stop_before_anything_is_generated(self):
         import reply_records
         replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
@@ -508,7 +534,8 @@ def check_bare_model():
                     "document, prepares and verifies its model once and stops before generating on "
                     "a load, identity, context or record failure, parses the final-line JSON label "
                     "(escape repair, UNCERTAIN) or abstains, records replies that reach the output "
-                    "allowance and flags a parse rate below 95 percent, sends the preregistered "
+                    "allowance, decides the 95 percent parse-rate floor on the rate pooled per "
+                    "benchmark over every document, sends the preregistered "
                     "prompt (revision 3: the undecided invitation only where the rule asks for "
                     "UNCERTAIN) with the reference material, uses the one cut rule in "
                     "common/cut.py, and reads its model and decoding policy from the tracked "
@@ -521,8 +548,8 @@ def check():
                              "pipeline's completion record and marks its output an ablation on each "
                              "file's first line; B1 verifies its model once and stops before "
                              "generating on any setup failure, writes one reply record per item, "
-                             "parses (with escape repair) or abstains, records truncation and the "
-                             "parse-rate floor, sends the preregistered prompt (revision 3) with "
+                             "parses (with escape repair) or abstains, records truncation, pools the "
+                             "parse rate per benchmark for its floor, sends the preregistered prompt (revision 3) with "
                              "reference material, and uses the one cut rule and prompt renderer")
 
 
