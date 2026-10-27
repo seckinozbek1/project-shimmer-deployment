@@ -53,8 +53,9 @@ ONTOLOGY_PART = {
 }
 
 # Part 8 (fires at all): traced per-agent group against scripts/pipeline.py directly,
-# not assumed. Six distinct firing shapes exist in this codebase today: production
-# and audit agents (unconditional), the two convention-review agents (the W3 firing
+# not assumed. Seven distinct firing shapes exist in this codebase today: production
+# and audit agents (unconditional), INST_FINDER (unconditional unless switched off
+# by the ratified operator setting), the two convention-review agents (the W3 firing
 # gate and the subject-chosen paired judging agent), LEGAL_ANALYST (production plus
 # the D6 pass-two calls under the local profile), REDACTOR (layer-gated),
 # AMENDMENT_DRAFTER (bus-dedup-gated) and the editorial board (parsimony escalation).
@@ -67,6 +68,28 @@ FIRES_UNCONDITIONALLY = {
              "audit agent has no per-agent gate: it produces the material the "
              "convention review consumes, so gating it on rules would starve "
              "the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3).",
+}
+# INST_FINDER fires like any corpus-level production agent, unless the operator
+# switched it off for the run with SHIMMER_INST_FINDER=off, which the pipeline
+# honours only under a ratified constitution amendment naming both. Switched off is
+# a declared state recorded in audit/agent_activation.json, never a failure.
+FIRES_INST_FINDER = {
+    "summary": "Runs once per review in its scheduled stage, unless you switch it "
+               "off for the run with the SHIMMER_INST_FINDER setting, which is "
+               "honoured only after you ratify the amendment that allows it. A "
+               "switched-off run records it as not called, with the reason.",
+    "condition": "Once in phase 3-4 as a corpus-level production agent, unless "
+                 "SHIMMER_INST_FINDER=off and config/constitution.json holds an "
+                 "operator-approved amendment whose change names INST_FINDER and "
+                 "SHIMMER_INST_FINDER; then it is not dispatched and is recorded "
+                 "as not called (state switched_off, reason 'switched off by "
+                 "operator setting'). Without that amendment a run with the "
+                 "setting off refuses to start. Any other value, or none, keeps it on.",
+    "where": "scripts/pipeline.py: PRODUCTION_AGENTS_CORPUS_LEVEL (it stays in the "
+             "list), _inst_finder_switch, _inst_finder_startup_guard (main) and the "
+             "corpus loop of phase_3_4_content_production; the setting is saved "
+             "in <run>/audit/agent_switches.json. Gate check 277 "
+             "(scripts/inst_finder_switch_checks.py).",
 }
 FIRES_CONVENTION_REVIEW = {
     "summary": "In whole-document review, runs when it receives a matching rule "
@@ -152,7 +175,7 @@ AGENT_FIRING = {
     "SPEECH_ACT_TAGGER": FIRES_UNCONDITIONALLY,
     "LEGAL_ANALYST": FIRES_LEGAL_ANALYST,
     "ARCHIVIST": FIRES_UNCONDITIONALLY,
-    "INST_FINDER": FIRES_UNCONDITIONALLY,
+    "INST_FINDER": FIRES_INST_FINDER,
     "CITATION_RESOLVER": FIRES_UNCONDITIONALLY,
     "VERIFIER": FIRES_UNCONDITIONALLY,
     "FACT_CHECKER": FIRES_UNCONDITIONALLY,

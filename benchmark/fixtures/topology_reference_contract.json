@@ -16,7 +16,7 @@
     "_emit_progress": "904718efcb3a53cd0bc5b475ecaea719836438ef1e930d1f9954e43dd4523d52",
     "_emit_local_progress": "85c8da750d9ddbf45ff8d104d91f319b5130e7752b16a5e5e566f611f4902d1e",
     "_local_progress_reset": "c445be7906ba2d82de25c8d155ec43a2b593ce4a6e78c9e76a4f7d5f89327880",
-    "_local_progress_baseline": "97c2f6b2b0fb52b863355cfab999f4733e38fa9f220df725e1f171ce7b98de47",
+    "_local_progress_baseline": "1d9ea0ef85458a6d4c220f9b1d455b6f4dba1eccbde7a83c3e02b93ae2db7741",
     "_local_progress_bump_expected": "0893425ec9e0651ce360018512d08df4746dcba49a55a33ffbc600c6aaded333",
     "_local_contract_outcome": "f9e5201851ec447febd6f0aa55a55f969ea3a80847f1d8ec232d9dbe2300fbbe",
     "_local_progress_memory_sampler": "e131bea3eb4e5d332b932931e6d356fcc67457be51753fca9cde645dd350e6f7",
@@ -42,7 +42,7 @@
     "_run_one": "2090d175f6a463271cb991aa2be51b1186e249b32d1ab557fc36c5f3d8e17338",
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
-    "phase_3_4_content_production": "6b6624b26c1284f73f9c8879d23b8bd702d4efd066b73868f5fdb5b3d0b0695b",
+    "phase_3_4_content_production": "9bcf3e9d8ebd73b9038506bfa7a8f93fc3a9dd290adb5dd72ddfba4a306a3842",
     "phase_5_audit": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
@@ -63,7 +63,7 @@
     "_structural_inventory": "336876ba2164ad5f3a6d19e2d24016a25b66f4091e5cb66811325cb6f105cd1d",
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
-    "write_deliverables_run_summary": "5e2c58f726f084150828312cea3063dca145f1d24dbbc8a6a9072a0cdfdc119b",
+    "write_deliverables_run_summary": "bfbd01eb57a7334da3236e0da8e7fecefb30e5cb2267c90bd21ac7b74a898db1",
     "phase_6_synthesis": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329",
     "_prior_refusals_for": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
@@ -85,12 +85,14 @@
     "_record_operator_decision": "02c069f918bfd2b3da4f05acf31f46a63f0c088aecee6e6d1a5dff91cc1ce2b3",
     "_make_file_operator_handler": "631d0b86500dd41183daf116e52ed0fa3b953dcaf99ed35f47a63ea5fc8e9bb3",
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
-    "_cost_projection": "b470a481f0ed1b4875b2b19a0fe985b4529bee827a6ccbc6d1f1e1b6e19db924",
+    "_cost_projection": "35825e354e1946c08f802736aeed19b8953d86f17931e755cb59dbb493bcb211",
     "_build_arg_parser": "9d7a8bd8150f50df8ce3398cb03515eb9f80394375a80fbaa3b35e93a69c802d",
-    "main": "435c3bbe0e77be59b9412c681c4e045fd12247927f0dcd7c4c1f49d555998061",
+    "main": "68af325e7f52e4c0afb1c74ca15d10685addb954815226834377df15ee5d4155",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
-    "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3"
+    "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
+    "_inst_finder_startup_guard": "428211885568447fe8c66e4ada55e60e6b5760b5f5acb7683e23f47d4c18dfa0",
+    "_inst_finder_switch": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87"
   },
   "reference_amendments": [
     {
@@ -161,6 +163,41 @@
         "phase_6_synthesis": {
           "from": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701",
           "to": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S01: an operator setting SHIMMER_INST_FINDER (default on) can switch the corpus-level agent INST_FINDER off, honoured only under an operator-approved constitution amendment naming INST_FINDER and SHIMMER_INST_FINDER; otherwise main refuses the run at start (exit 9). New _inst_finder_switch and _inst_finder_startup_guard; main calls the guard after saving the run options; phase_3_4_content_production skips a switched-off agent inside the unchanged loop, records it not_called, and labels results from the dispatched list; _local_progress_baseline and _cost_projection count only dispatched corpus agents; write_deliverables_run_summary states the setting. INST_FINDER stays in PRODUCTION_AGENTS_CORPUS_LEVEL and the registry; LAW-III checks unchanged.",
+      "document": "docs/loop/stages/S01_REPORT.md",
+      "functions": {
+        "_cost_projection": {
+          "from": "b470a481f0ed1b4875b2b19a0fe985b4529bee827a6ccbc6d1f1e1b6e19db924",
+          "to": "35825e354e1946c08f802736aeed19b8953d86f17931e755cb59dbb493bcb211"
+        },
+        "_inst_finder_startup_guard": {
+          "from": null,
+          "to": "428211885568447fe8c66e4ada55e60e6b5760b5f5acb7683e23f47d4c18dfa0"
+        },
+        "_inst_finder_switch": {
+          "from": null,
+          "to": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87"
+        },
+        "_local_progress_baseline": {
+          "from": "97c2f6b2b0fb52b863355cfab999f4733e38fa9f220df725e1f171ce7b98de47",
+          "to": "1d9ea0ef85458a6d4c220f9b1d455b6f4dba1eccbde7a83c3e02b93ae2db7741"
+        },
+        "main": {
+          "from": "435c3bbe0e77be59b9412c681c4e045fd12247927f0dcd7c4c1f49d555998061",
+          "to": "68af325e7f52e4c0afb1c74ca15d10685addb954815226834377df15ee5d4155"
+        },
+        "phase_3_4_content_production": {
+          "from": "6b6624b26c1284f73f9c8879d23b8bd702d4efd066b73868f5fdb5b3d0b0695b",
+          "to": "9bcf3e9d8ebd73b9038506bfa7a8f93fc3a9dd290adb5dd72ddfba4a306a3842"
+        },
+        "write_deliverables_run_summary": {
+          "from": "5e2c58f726f084150828312cea3063dca145f1d24dbbc8a6a9072a0cdfdc119b",
+          "to": "bfbd01eb57a7334da3236e0da8e7fecefb30e5cb2267c90bd21ac7b74a898db1"
         }
       }
     }

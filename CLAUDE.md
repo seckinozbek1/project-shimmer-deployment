@@ -244,6 +244,14 @@ processing swarm governed by an append-only constitution.
   rather than carrying a second copy. `explanation` is for the human reader and is stripped
   from any payload travelling to another agent (`strip_reasoning`).
 
+- INST-SWITCH-A (loop S1, 2026-10-27): `SHIMMER_INST_FINDER=off` is honoured only under an
+  operator-approved constitution amendment whose change names INST_FINDER and
+  SHIMMER_INST_FINDER (no amendment id in code); otherwise the run refuses at start (exit 9),
+  never ignoring the setting. The amendment is DRAFTED, not ratified
+  (`docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); agents never ratify it. INST_FINDER stays in
+  `PRODUCTION_AGENTS_CORPUS_LEVEL` and the registry; the loop (header unchanged) skips it,
+  records `not_called` with state `switched_off`, and labels results from the dispatched list.
+  The setting is saved in `audit/agent_switches.json` and the run summary. Check 277.
 - REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
   through `reply_records.write`, inside the backend function that holds the raw text
   (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in

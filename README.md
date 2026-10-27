@@ -92,6 +92,13 @@ reply, the exact payload sent, the model and the decoding settings, plus an
 `outcomes.jsonl` that says what became of each reply (for example posted, advisory,
 or not promoted). In a run with redaction enabled only SHA-256 hashes and byte
 lengths are kept. These records are never committed.
+
+The corpus-level agent INST_FINDER can be switched off for a run with
+`SHIMMER_INST_FINDER=off`. Because switching an agent off changes how the agents
+check each other, it takes effect only after the operator ratifies the amendment
+drafted in `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`; until then a run with that
+setting refuses to start (exit code 9). Unset, the agent stays on. Each run records
+the setting in its `audit/agent_switches.json` and its run summary.
 Every amendment is rendered from a finding Python computed from the document's own
 figures; a finding a model wrote stays on the bus and in the console but never
 becomes an amendment, and each amendment states which of the two it came from.

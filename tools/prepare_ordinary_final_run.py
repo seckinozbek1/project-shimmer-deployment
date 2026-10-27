@@ -197,7 +197,11 @@ def prepare(output, source_commit='HEAD', reuse_assets=None):
         argv=ARGV,topology=TOPOLOGY,provider='Lambda',region='us-east-1',instance=selected,
         provider_observed_at=provider['observed_at'],image=provider['images'][0],max_hourly_rate=1.29,
         soft_budget_usd=5,hard_ceiling_usd=7,workload_stop_reserve_seconds=900,termination_reserve_seconds=180,
+        # SHIMMER_INST_FINDER is written explicitly so the instance runs the setting the
+        # operator prepared with (default on), never an ambient value. `off` is honoured
+        # by the pipeline only under a ratified amendment in the bound constitution.
         environment=dict(SHIMMER_MODEL_MODE='final',SHIMMER_BACKEND_PROFILE='local',
+            SHIMMER_INST_FINDER=('off' if os.environ.get('SHIMMER_INST_FINDER')=='off' else 'on'),
             CUBLAS_WORKSPACE_CONFIG=':4096:8',PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True',
             HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HUB_DISABLE_TELEMETRY='1',
             HF_HUB_DISABLE_IMPLICIT_TOKEN='1',PYTHONNOUSERSITE='1',PYTHONDONTWRITEBYTECODE='1',
