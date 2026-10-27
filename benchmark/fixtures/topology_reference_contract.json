@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "ef96ca5366e63bd40daa7a60e0777dfd6adcd65b562ed931ba274a229ccffddd",
-    "_paired_convention_review": "7700b2c4e467113b5cc05846c533598770fc03662f377f03abdef346505b12ee",
+    "_paired_convention_review": "35fbba0b74b6e8d52ed143f6d60029671b13924939a9add118ef6c363983573c",
     "_stamped_judged_items": "d1bbf7395103fd3cb2dd24ba3e5d046c3ab59a8af7995c53d4c07fcc4741e28f",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -64,7 +64,7 @@
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
     "write_deliverables_run_summary": "3f3a03f2fce407840cab8aaa692f57372529f8648765640211ee59e8efb261fd",
-    "phase_6_synthesis": "a8c60e625e866d5ea2665105d03495690936c617afb97a593a604c23fb84ca73",
+    "phase_6_synthesis": "0f3a84c1a403e65172d9c08ad7a3c0bb13d6c8f9b1a1d9d4a91a2ecc93798d48",
     "_prior_refusals_for": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
     "_category_for_conv": "0b36fc194a24a4028716d0f25c0e84af97ade28a9b7d564cf30ca1592ab21617",
@@ -280,6 +280,21 @@
         "write_deliverables_run_summary": {
           "from": "b3fd8136e5316669b7e0ff2769371f47f75682a461b6833665bc811b57c54a4d",
           "to": "3f3a03f2fce407840cab8aaa692f57372529f8648765640211ee59e8efb261fd"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2 checker round 1 fixes (model items kept out of the prior and band sections, unplaced units cite nothing of another unit, round findings posted on the bus)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "7700b2c4e467113b5cc05846c533598770fc03662f377f03abdef346505b12ee",
+          "to": "35fbba0b74b6e8d52ed143f6d60029671b13924939a9add118ef6c363983573c"
+        },
+        "phase_6_synthesis": {
+          "from": "a8c60e625e866d5ea2665105d03495690936c617afb97a593a604c23fb84ca73",
+          "to": "0f3a84c1a403e65172d9c08ad7a3c0bb13d6c8f9b1a1d9d4a91a2ecc93798d48"
         }
       }
     }

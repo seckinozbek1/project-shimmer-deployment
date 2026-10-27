@@ -178,8 +178,13 @@ computation reads changed: its own text, the full rules paired to it, the
 document's field labels or the units of measure the document writes. An unchanged
 unit's findings are reused from the earliest round that computed them, under this
 round's unit id, and the reuse is recorded in `audit/round_reuse.json`; a plan that
-would need a model is recorded as `needs_model` and not asked. A failure of this
-review is recorded in the case master and never takes the case phase down. Every
+would need a model is recorded as `needs_model` (rebased onto the new unit id when
+reused) and not asked. The round findings are posted on the run bus, channel
+`multi_round`, backend `paired`, model `python`, one envelope per round document with
+an item id naming the round, so `GET /runs/{run_id}/findings` serves them as
+Python's; nothing in the case phase reads them. The case master's `round_review`
+records the availability and the number of envelopes posted. A failure of this
+review, or of the post, is recorded there and never takes the case phase down. Every
 model call of a case run saves its reply like any other call, with outcome
 `advisory_not_record` (or `refused` for a refusal).
 
@@ -187,8 +192,11 @@ In a prior-version comparison, a term that vanished while its section states a
 newly stated term in the same unit of measure that no value-corroborated rename
 claims is refused ("possible rename with a moved value, not a confirmed
 withdrawal", `paired_review.possible_successor`), never minted as
-`absent_since_prior`. The rule is structural; whether the new term is the same
-term is a word-meaning decision left to a later measured ensemble rule.
+`absent_since_prior`. Two figures with no unit count as the same measure here: the
+unit cannot tell them apart, so the withdrawal is refused under its own reason
+("possible rename of a figure with no unit, not a confirmed withdrawal"). The rule
+is structural; whether the new term is the same term is a word-meaning decision
+left to a later measured ensemble rule.
 
 With `SHIMMER_MODEL_MODE=final`, the frozen final models serve ordinary Review and
 a declared multi-round Review (`--multi-round` and `--multi-round-manifest`
@@ -250,6 +258,8 @@ multi-round run also writes `audit/round_reuse.json` (see above).
 **Who wrote a finding.** Every finding is stamped `written_by` from the bus post it
 travelled in: `python` only for Python's own records (backend `paired` or
 `computed` with a model id starting `python`), `model` for everything else. A
+`provenance` field a model writes is removed when its item is stamped, so only
+Python's records enter the earlier-version comparison and its band list. A
 model-written finding never becomes an amendment and is never hidden: the master
 keeps it apart under `model_findings_not_promoted` (rendered in
 `review_findings.md` under "Written by a model: not checked by Python, not

@@ -374,10 +374,11 @@ ASSESSMENT_CASES = {
     'phase_not_completed': (None, True),
     'reviewed_not_activated': ('reviewed', False),
     'no_case_record': ('absent', False),
+    'reviewed_round_review_failed': ('reviewed', True, 'failed'),
 }
 
 
-def saved_case_record(folder, outcome, activated):
+def saved_case_record(folder, outcome, activated, round_review='recorded'):
     """A run folder holding the case record multi_round itself writes, read back the way
     runner.execute reads it (multi_round.read_saved)."""
     ctx = for_run_dir(ROOT, Path(folder))
@@ -396,6 +397,7 @@ def saved_case_record(folder, outcome, activated):
         record['activation'] = mr.activation(True, eligible=False, reason='sensitive_multi_round_unavailable')
     if outcome is not None:
         record['outcome'] = outcome
+    record['round_review'] = {'availability': round_review}
     mr.write_record(ctx, record)
     return mr.read_saved(ctx.run_dir, ctx.run_id)
 
@@ -404,9 +406,9 @@ def observe_assessment():
     completion = dict(state='completed', reached_end=True, exit_code=0)
     raw = [dict(event='pipeline_start'), dict(event='model_call', adapter_checkpoint=168), dict(event='pipeline_end')]
     result = {}
-    for name, (outcome, activated) in ASSESSMENT_CASES.items():
+    for name, case in ASSESSMENT_CASES.items():
         with tempfile.TemporaryDirectory() as folder:
-            saved = saved_case_record(Path(folder) / 'run', outcome, activated)
+            saved = saved_case_record(Path(folder) / 'run', *case)
             verdict = runner.assess(completion, raw, saved)
             result[name] = [verdict['execution_integrity_passed'], verdict['reasons']]
     ordinary = runner.assess(completion, raw, None)
@@ -419,6 +421,7 @@ ASSESSED = {'reviewed_and_activated': [True, []],
             'phase_not_completed': [False, ['multi_round_not_reviewed']],
             'reviewed_not_activated': [False, ['multi_round_not_activated']],
             'no_case_record': [False, ['multi_round_not_reviewed', 'multi_round_not_activated']],
+            'reviewed_round_review_failed': [False, ['multi_round_round_review_not_recorded']],
             'ordinary_run': [True, []]}
 
 

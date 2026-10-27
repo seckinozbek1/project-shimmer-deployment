@@ -150,9 +150,10 @@ model's sentence (the model is named, or "not recorded"); the figures before it 
 Python's. Each amendment comment names the unit, the
 rule, both figures with their units and the relation in one sentence, quotes the
 rule, and points to the unit's own passage; when it says it is placed at document
-level, Python could not find that unit's passage, so locate it yourself. A
-multi-round run also records in `audit/round_reuse.json` which units a later
-round reused unchanged and which it recomputed.
+level, Python could not find that unit's passage, so locate it yourself (it then
+cites no passage of its own). A multi-round run also records in
+`audit/round_reuse.json` which units a later round reused unchanged and which it
+recomputed, and posts each round's computed findings on the run bus.
 
 Whole-run and per-document downloads contain files already present. Document
 "done" means its folder contains a file; it is not a stage-completion or privacy

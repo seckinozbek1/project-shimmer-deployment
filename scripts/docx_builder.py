@@ -329,7 +329,7 @@ class AmendmentDocxBuilder:
         loc = amendment.get("location") or "REF-????"
         action = amendment.get("action", "flag")
         severity = amendment.get("severity", "advisory")
-        finding_type = amendment.get("finding_type", "—")
+        finding_type = amendment.get("finding_type") or "unspecified"
         body = localization.message((amendment.get("comment") or "").strip())
         context_refs = amendment.get("context_refs") or []
         # Genesis Part XXV: uncertain margin comments are explicitly

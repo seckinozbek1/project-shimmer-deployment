@@ -104,9 +104,11 @@ the setting in its `audit/agent_switches.json` and its run summary.
 Every amendment is rendered from a finding Python computed from the document's own
 figures; a finding a model wrote stays on the bus and in the console but never
 becomes an amendment, and each amendment states which of the two it came from.
-Model findings are never hidden: every reader-facing file (the summaries,
-`reviewed_document.md`, the run summary and the console) marks each one "Written by
-a model. Not promoted to an amendment. Not checked by Python.", and
+Model findings are never hidden: the summaries, `reviewed_document.md`,
+`review_findings.md`, the run summary and the console mark each one "Written by
+a model. Not promoted to an amendment. Not checked by Python." (the tracked-changes
+document carries amendments only), only Python's records enter the comparison with
+an earlier version, and
 `review_data.json` keeps them apart under `model_findings_not_promoted`, without a
 confidence or verdict field (the model's own verdict is kept as
 `model_claimed_verdict`). The sentence naming who produced a document's findings is
@@ -114,12 +116,15 @@ generated from what actually ran, and Python findings and model items are counte
 separately. An amendment opens with one plain sentence naming the unit, the rule,
 both figures with their units and the relation, quotes the rule, and sits at the
 unit's own passage in the reference index; when Python cannot place the unit, the
-amendment says so and sits at document level. A sentence a judging model added to a
+amendment says so, sits at document level and cites no other passage as its own. A sentence a judging model added to a
 Python finding is quoted as that model's note and names the model the call recorded
 ("not recorded" when none is), and such notes are counted apart from both kinds of
 finding. A model's own item also says, in words, when it cites another unit's passage,
 when Python's pairing map found its rule does not apply to its unit, and when its unit
-does not state its figures.
+does not state its figures. A relation only a model reported is listed apart from the
+relations Python found, marked, in the run summary and in the corpus scorer.
+`audit_synthesis.md` counts audit-trail patterns (once per distinct escalation topic
+and content), not findings about the document.
 
 The console exposes findings, source excerpts, amendment refusals, contract
 violations, agent activity and completion evidence. An operator may withhold a
@@ -146,10 +151,13 @@ evidence histories. Recommendations require a separate opt-in. This case mode
 has its own artifacts and does not produce ordinary review amendments. Its
 contracts have deterministic fixture validation; real-model quality, runtime and
 scaling remain unverified. Before its model calls, a case run reviews each declared
-round in Python; a later round recomputes only the units that changed and records
-the reuse in `audit/round_reuse.json`. A term that vanished while its section states
-a new term in the same unit of measure is refused as a possible rename, never
-reported as withdrawn. The frozen final models also serve a declared multi-round
+round in Python; a later round recomputes only the units whose text, rules,
+field labels or units of measure changed, records the reuse in
+`audit/round_reuse.json` and posts the round findings on the run bus as Python's.
+Nothing reads them yet: the case phase's model calls take the case evidence, so the
+reuse saves no model call. A term that vanished while its section states a new term
+in the same unit of measure (or, with no unit on either, any new term) is refused as
+a possible rename, never reported as withdrawn. The frozen final models also serve a declared multi-round
 Review (the flag and its case manifest together). See the
 [multi-round guide](docs/fix/MULTI_ROUND_IMPLEMENTATION.md).
 
