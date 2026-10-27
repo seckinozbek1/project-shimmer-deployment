@@ -2493,19 +2493,29 @@ JUDGING_OUTCOMES = {
     "no_finding_to_attach": "Python found no disagreement on this unit and rule, so its note was not kept",
     "advisory_not_kept": ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
                           "and was kept neither as a finding nor as a note"),
-    "reply_failed": "the call failed, so no note was kept",
-    "judged_absence": "its answer is a judged absence, listed as a model's item",
+    "reply_failed": "the call failed, so nothing from its reply was kept",
+    "judged_absence": ("judged absence: {listed} listed as a model's items, {refused} refused by Python"),
 }
+# S2 checker round 3 (item 1): a judging call's plan kind that asks for a judged
+# absence, never for a note on Python's findings.
+JUDGED_ABSENCE_PLAN = "absence_judged"
 
 
-def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note):
+def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note,
+                        absence_listed=0, absence_refused=0):
     """One judging call as a flat record (scalars only): who was asked, about
-    what, and what became of the reply. Nothing from the reply's text."""
+    what, and what became of the reply. Nothing from the reply's text.
+
+    S2 checker round 3 (item 1): the outcome is decided in this order. A failed
+    call is a failed call whatever it was asked; a judged-absence call that
+    returned is recorded with the count of its claims Python listed as a model's
+    items and the count it refused, which the caller passes once its items are
+    known; only then the note outcomes of a call asked for a note."""
     ok = isinstance(reply, dict) and reply.get("ok") is not False
-    if plan_kind == "absence_judged":
-        outcome = "judged_absence"
-    elif not ok:
+    if not ok:
         outcome = "reply_failed"
+    elif plan_kind == JUDGED_ABSENCE_PLAN:
+        outcome = "judged_absence"
     elif notes_kept:
         outcome = "note_kept"
     elif plan_kind == "uncomputable":
@@ -2519,18 +2529,44 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
             "unit_id": str(unit_id or ""), "rule_id": str(rule_id or ""),
             "plan_kind": str(plan_kind or ""), "backend": str(reply.get("backend") or ""),
             "model": str(reply.get("model") or ""), "notes_kept": int(notes_kept or 0),
+            "absence_listed": int(absence_listed or 0), "absence_refused": int(absence_refused or 0),
             "outcome": outcome}
+
+
+def judging_call_counts(calls) -> dict:
+    """S2 checker round 3 (item 2): the judging calls split by what they were
+    asked. A judged-absence call is never asked for a note on Python's findings,
+    so it is counted apart from the calls that could carry one."""
+    calls = [c for c in calls or [] if isinstance(c, dict)]
+    absence = sum(1 for c in calls if c.get("plan_kind") == JUDGED_ABSENCE_PLAN)
+    return {"calls": len(calls), "note_calls": len(calls) - absence, "absence_calls": absence}
+
+
+def notes_on_python_findings(records) -> int:
+    """S2 checker round 3 (item 2): THE count of model notes kept on Python's
+    findings, one per record that carries one. Every file counts with this, so a
+    call whose sentence sits on two findings counts two notes everywhere."""
+    return sum(1 for r in records or [] if isinstance(r, dict)
+               and not finding_record.is_model_written(r)
+               and r.get("explanation_by") == finding_record.WRITTEN_BY_MODEL)
 
 
 @localization.presentation
 def judging_call_line(record) -> str:
     """One judging call in a reader's words, in the run's output language."""
+    outcome = record.get("outcome")
+    if outcome == "judged_absence":
+        said = localization.text(JUDGING_OUTCOMES["judged_absence"],
+                                 listed=int(record.get("absence_listed") or 0),
+                                 refused=int(record.get("absence_refused") or 0))
+    else:
+        said = localization.text(JUDGING_OUTCOMES.get(outcome, str(outcome)))
     return localization.text(
         "Judging call {call} on unit {unit} under rule {rule} (model: {model}): {outcome}.",
         call=record.get("call_id") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
         unit=record.get("unit_id") or "?", rule=record.get("rule_id") or "?",
         model=record.get("model") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
-        outcome=localization.text(JUDGING_OUTCOMES.get(record.get("outcome"), str(record.get("outcome")))))
+        outcome=said)
 
 
 def note_models(items):

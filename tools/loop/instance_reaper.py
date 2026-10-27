@@ -16,12 +16,19 @@ What it does on every run:
    is allowed (the budget guard refuses one), so every loop instance found is terminated.
 4. Closes every launch the ledger still holds open past its recorded deadline when no
    instance of that name is listed: an intent whose launch created no instance
-   (``intent_without_instance``) or a launch whose instance is gone
-   (``instance_not_listed``), charged to its deadline. An open launch accrues spend only to
-   its recorded deadline.
+   (reason ``intent_without_instance``) or a launch whose instance is gone (reason
+   ``instance_not_listed_charged_to_deadline``). An open launch accrues spend only to its
+   recorded deadline, and the closing line's ``actual_cost`` is that same charge: the price
+   times the minutes from the launch request to the deadline. It is a CEILING, not a
+   measurement (the instance may have cost less, or nothing), counted as actual spend and
+   never refunded; its reason says it was charged that way.
 5. Appends one ledger line per termination or closure and writes ``reaper_status.json``. A
-   line it writes carries only declared ledger fields
-   (``tools/loop_budget_guard.LEDGER_FIELDS``, which declares its ``by`` and ``reason``).
+   line for a launch a ledger records goes to EVERY ledger file that holds a launch line for
+   that launch (the private ledger, R's, or both for a copied line), so a launch recorded
+   only in R's ledger is closed where R's guard reads it; a line for a listed loop instance
+   no ledger records goes to the append ledger (by default the private one). A line it
+   writes carries only declared ledger fields (``tools/loop_budget_guard.LEDGER_FIELDS``,
+   which declares its ``by`` and ``reason``).
 
 It never touches an instance without the loop prefix, and it never prints a key: every
 provider error is reduced to its class name before it reaches output.
@@ -31,6 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -192,12 +200,57 @@ def accrued(rec, until, to_deadline=False):
     return float(price) * minutes / 60
 
 
+def _same_file(a, b):
+    try:
+        return os.path.normcase(str(Path(a).resolve())) == os.path.normcase(str(Path(b).resolve()))
+    except OSError:
+        return str(a) == str(b)
+
+
+def _request_time(row):
+    return row.get('launch_requested_utc') or row.get('time_utc')
+
+
+def holders(rec, rows_by_path):
+    """The ledger files that hold a launch line (an intent or a launch) for this launch: one
+    carrying its instance id, or its name with the same launch request time (a later launch
+    reusing a name is another launch). Each file once, in reading order."""
+    out = []
+    for path, rows in rows_by_path:
+        for row in rows:
+            if row.get('event') not in ('launch_intent', 'launch'):
+                continue
+            same_id = bool(rec.get('instance_id')) and row.get('instance_id') == rec.get('instance_id')
+            same_name = (row.get('instance_name') == rec.get('instance_name')
+                         and _request_time(row) is not None and _request_time(row) == _request_time(rec))
+            if same_id or same_name:
+                out.append(path)
+                break
+    return out
+
+
+def write_line(paths, line):
+    for path in paths:
+        with open(path, 'a', encoding='utf-8') as handle:
+            handle.write(json.dumps(line, sort_keys=True) + '\n')
+
+
 def reap(provider, ledger_paths, append_path, now=None):
-    """One reaper pass. Returns a status dict with no key material."""
+    """One reaper pass. Returns a status dict with no key material.
+
+    A line about a launch a ledger records is written to every ledger file holding it
+    (``holders``); `append_path` receives a line only for a listed loop instance no ledger
+    records."""
     now = now or utc_now()
     rows = []
+    rows_by_path = []
     for path in ledger_paths:
-        rows.extend(read_ledger(path))
+        if any(_same_file(path, seen) for seen, _ in rows_by_path):
+            continue
+        read = read_ledger(path)
+        rows_by_path.append((Path(path), read))
+        rows.extend(read)
+    targets = lambda rec: (holders(rec, rows_by_path) if rec is not None else []) or [Path(append_path)]
     by_name, closed, spend = ledger_view(rows, now)
     budget, hard_stop = budget_figures(rows)
     listed = provider.request('instances')['data']
@@ -228,14 +281,15 @@ def reap(provider, ledger_paths, append_path, now=None):
                 'instance_id': item['instance_id'], 'instance_name': name, 'reason': reason,
                 'type': item.get('type'), 'region': item.get('region'),
                 'actual_minutes': minutes, 'actual_cost': cost}
-        with open(append_path, 'a', encoding='utf-8') as handle:
-            handle.write(json.dumps(line, sort_keys=True) + '\n')
+        write_line(targets(rec), line)
         terminated.append({'instance_name': name, 'reason': reason})
     # A launch still open in the ledger past its recorded deadline, with no instance of its
     # name listed, is closed here: an intent whose launch created no instance (the
     # controller died between the intent line and the launch reply), or a launch whose
     # instance is already gone. Left open, it would keep the guard refusing every launch as
-    # "another loop instance". Its line is charged to the deadline, which overstates it.
+    # "another loop instance". Its line is charged to the deadline: a ceiling, counted as
+    # actual and never refunded, which its reason names. It is written to every ledger file
+    # that holds the launch, so R's guard, which reads R's ledger, sees it closed too.
     listed_names = {item['name'] for item in running}
     closed_now = []
     for name, rec in by_name.items():
@@ -243,7 +297,8 @@ def reap(provider, ledger_paths, append_path, now=None):
         if (rec['ident'] in closed or name in listed_names or deadline is None or now < deadline
                 or not (rec.get('event') == 'launch' or rec.get('launch_requested_utc'))):
             continue
-        reason = 'intent_without_instance' if rec.get('event') == 'launch_intent' else 'instance_not_listed'
+        reason = ('intent_without_instance' if rec.get('event') == 'launch_intent'
+                  else 'instance_not_listed_charged_to_deadline')
         start = rec.get('launch_requested_utc') or rec.get('time_utc')
         minutes = cost = None
         if start and rec.get('price_usd_per_hour') is not None:
@@ -253,8 +308,7 @@ def reap(provider, ledger_paths, append_path, now=None):
                 'instance_id': rec.get('instance_id'), 'instance_name': name, 'reason': reason,
                 'type': rec.get('type'), 'region': rec.get('region'),
                 'actual_minutes': minutes, 'actual_cost': cost}
-        with open(append_path, 'a', encoding='utf-8') as handle:
-            handle.write(json.dumps(line, sort_keys=True) + '\n')
+        write_line(targets(rec), line)
         closed_now.append({'instance_name': name, 'reason': reason})
     return {'last_run_utc': now.isoformat(), 'listed': len(listed),
             'loop_running': len(running), 'terminated': terminated, 'closed_without_instance': closed_now,
@@ -301,7 +355,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Terminate loop instances past their deadline.')
     parser.add_argument('--mock-state', help='JSON file standing in for the provider (proofs only)')
     parser.add_argument('--ledger', action='append', help='ledger to read (repeatable); default: private and R ledgers')
-    parser.add_argument('--append-to', help='ledger that receives termination lines; default: the private ledger')
+    parser.add_argument('--append-to', help='ledger that receives a line for a loop instance no ledger records '
+                                            '(a recorded launch is closed in every ledger holding it); '
+                                            'default: the private ledger')
     parser.add_argument('--status', help='status file; default: docs/loop/private/reaper_status.json')
     parser.add_argument('--now', help='ISO time to use instead of the clock (proofs only)')
     args = parser.parse_args(argv)

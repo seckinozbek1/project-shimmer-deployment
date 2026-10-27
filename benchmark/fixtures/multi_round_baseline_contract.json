@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "ef96ca5366e63bd40daa7a60e0777dfd6adcd65b562ed931ba274a229ccffddd",
-    "_paired_convention_review": "a7790a3906e28e05a8cce6a608e9f70b1fc1d3f482af6e614690815dc1f80d79",
+    "_paired_convention_review": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
     "_stamped_judged_items": "d1bbf7395103fd3cb2dd24ba3e5d046c3ab59a8af7995c53d4c07fcc4741e28f",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -79,7 +79,7 @@
     "_consolidate_board": "774b18e957e3672ebacd2337a9fc5b27d5b8b539febbbb99dc9325fee3610130",
     "_append_board_to_deliverable": "1db47c3adfbf82521f6dfe4f7b8021d9ac55714c89bcf55424265b4435e5fe28",
     "phase_6_5_editorial_review": "ce22294f2979d2818257bc65082d8f12469d3e58d7552690636d30cfa0d30d19",
-    "_render_per_agent_md": "cde44a1d2eee11fd9d2e701f8af056ecf433e3d1f0d508f0d70d76ec7dbd3433",
+    "_render_per_agent_md": "d1dfc74de3c9db37b142bb5b9adbf0ff56701d31cc2cba0c4ab19e8f03aed3f6",
     "_build_reference_index": "6600c0486d8382f44be8677c28e4b56d2270c02477a008553cd05e5b3455a493",
     "_interactive_handler": "da48abcc3f5f217ff34bad242ca8d35f2ff9a4121cbd3a9c5c1c1dd81760adf5",
     "_record_operator_decision": "02c069f918bfd2b3da4f05acf31f46a63f0c088aecee6e6d1a5dff91cc1ce2b3",
@@ -318,6 +318,21 @@
         "write_deliverables_run_summary": {
           "from": "3f3a03f2fce407840cab8aaa692f57372529f8648765640211ee59e8efb261fd",
           "to": "13246a48f2db809788abd3ff8ec59d465fa46ccaff653fdfaa9c4bd3777ee9a0"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2 checker round 3 fixes (a failed judged-absence call recorded as failed with its claims listed and refused, one count of notes kept on Python findings, judged-absence calls counted apart)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "a7790a3906e28e05a8cce6a608e9f70b1fc1d3f482af6e614690815dc1f80d79",
+          "to": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349"
+        },
+        "_render_per_agent_md": {
+          "from": "cde44a1d2eee11fd9d2e701f8af056ecf433e3d1f0d508f0d70d76ec7dbd3433",
+          "to": "d1dfc74de3c9db37b142bb5b9adbf0ff56701d31cc2cba0c4ab19e8f03aed3f6"
         }
       }
     }

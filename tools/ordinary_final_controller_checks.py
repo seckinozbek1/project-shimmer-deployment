@@ -2396,7 +2396,8 @@ class ControllerChecks(unittest.TestCase):
         ledger2 = self.root / 'r2i3' / 'gone.jsonl'
         write_lines(ledger2, [opening, gone])
         status = instance_reaper.reap(provider, [ledger2], ledger2, now=now)
-        self.assertEqual(status['closed_without_instance'], [dict(instance_name='shimmer-loop-gone', reason='instance_not_listed')])
+        self.assertEqual(status['closed_without_instance'],
+                         [dict(instance_name='shimmer-loop-gone', reason='instance_not_listed_charged_to_deadline')])
         self.assertEqual(ledger_rows(ledger2)[-1]['instance_id'], 'c' * 32)
         # A listed instance past its deadline is terminated, and only that line is written.
         write(state, dict(instances=[dict(instance_id='d' * 32, name='shimmer-loop-lost', status='active')]))
@@ -2407,6 +2408,63 @@ class ControllerChecks(unittest.TestCase):
                          ([dict(instance_name='shimmer-loop-lost', reason='deadline_passed')], []))
         self.assertEqual(read(state)['instances'][0]['status'], 'terminated')
         self.assertEqual([r['event'] for r in ledger_rows(ledger3)], ['budget_open', 'launch_intent', 'termination'])
+
+    def test_a_closing_line_goes_to_the_ledger_that_holds_the_launch(self):
+        """Round 3 items 3 and 5: the reaper reads the private ledger and R's. A launch recorded
+        only in R's ledger is closed IN R's ledger (R's guard reads R's ledger and its own
+        clone's private one, never this one), a launch only in the private ledger in the
+        private one, and a launch copied into both (`copied_from`) in both, once each; a listed
+        loop instance no ledger records goes to the append ledger. Each closing line is charged
+        to the deadline and its reason says so; the guard reading either ledger set then admits
+        a launch."""
+        from datetime import datetime, timedelta, timezone
+        now = datetime(2026, 10, 27, 12, 0, tzinfo=timezone.utc)
+        opening = dict(self.OPEN_LINE, storage_usd_per_day=0.0)
+        base = dict(event='launch_intent', time_utc='2026-10-27T10:00:00+00:00', launch_requested_utc='2026-10-27T10:00:00+00:00',
+                    type='gpu_1x_a10', region='us-east-1', price_usd_per_hour=1.29, cap_usd=2.0,
+                    deadline_utc='2026-10-27T11:30:00+00:00', purpose='fixture')
+        r_only = dict(base, instance_name='shimmer-loop-r-only')
+        r_gone = dict(base, event='launch', instance_id='e' * 32, instance_name='shimmer-loop-r-gone',
+                      launch_requested_utc='2026-10-27T10:05:00+00:00')
+        private_only = dict(base, instance_name='shimmer-loop-private-only', launch_requested_utc='2026-10-27T10:10:00+00:00')
+        both = dict(base, instance_name='shimmer-loop-both', launch_requested_utc='2026-10-27T10:15:00+00:00')
+        private = self.root / 'r3i3' / 'private.jsonl'
+        r_ledger = self.root / 'r3i3' / 'R_ledger.jsonl'
+        unrecorded = self.root / 'r3i3' / 'append.jsonl'
+        write_lines(private, [opening, private_only, dict(both, copied_from='R_ledger')])
+        write_lines(r_ledger, [opening, r_only, r_gone, both])
+        state = self.root / 'r3i3' / 'state.json'
+        write(state, dict(instances=[dict(instance_id='f' * 32, name='shimmer-loop-stray', status='active')]))
+        status = instance_reaper.reap(instance_reaper.MockProvider(state), [private, r_ledger], unrecorded, now=now)
+        self.assertEqual(sorted(c['instance_name'] for c in status['closed_without_instance']),
+                         ['shimmer-loop-both', 'shimmer-loop-private-only', 'shimmer-loop-r-gone', 'shimmer-loop-r-only'])
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-stray', reason='no_recorded_deadline')])
+        closing = lambda path: {r['instance_name']: r for r in ledger_rows(path) if r['event'] == 'termination'}
+        self.assertEqual(sorted(closing(r_ledger)), ['shimmer-loop-both', 'shimmer-loop-r-gone', 'shimmer-loop-r-only'])
+        self.assertEqual(sorted(closing(private)), ['shimmer-loop-both', 'shimmer-loop-private-only'])
+        self.assertEqual(sorted(closing(unrecorded)), ['shimmer-loop-stray'])
+        for path in (private, r_ledger):
+            for line in closing(path).values():
+                self.assertLessEqual(set(line), set(guard.LEDGER_FIELDS))
+        self.assertEqual((closing(r_ledger)['shimmer-loop-r-only']['reason'], closing(r_ledger)['shimmer-loop-r-gone']['reason']),
+                         ('intent_without_instance', 'instance_not_listed_charged_to_deadline'))
+        # Charged to the deadline: 90 minutes from 10:00, 85 from 10:05.
+        self.assertEqual((closing(r_ledger)['shimmer-loop-r-only']['actual_cost'], closing(r_ledger)['shimmer-loop-r-gone']['actual_cost']),
+                         (round(1.29 * 90 / 60, 4), round(1.29 * 85 / 60, 4)))
+        # R's guard (R's ledger and a private ledger of its own clone) and this one both see
+        # every launch closed; the launch in both ledgers is counted once.
+        r_clone_private = self.root / 'r3i3' / 'r_clone_private.jsonl'
+        write_lines(r_clone_private, [opening])
+        self.assertEqual(guard.ledger_state([r_clone_private, r_ledger], now.timestamp())[1], [])
+        self.assertEqual(guard.ledger_state([private, r_ledger], now.timestamp())[1], [])
+        guard.check(ledgers=[r_ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0, now_epoch=now.timestamp(),
+                    reserve_minutes=15, reaped=[r_clone_private])
+        self.assertAlmostEqual(guard.ledger_state([private, r_ledger], now.timestamp())[0],
+                               sum(round(1.29 * m / 60, 4) for m in (90, 85, 80, 75)), places=6)
+        # A second pass writes nothing more anywhere.
+        sizes = [len(ledger_rows(p)) for p in (private, r_ledger, unrecorded)]
+        instance_reaper.reap(instance_reaper.MockProvider(state), [private, r_ledger], unrecorded, now=now + timedelta(minutes=5))
+        self.assertEqual([len(ledger_rows(p)) for p in (private, r_ledger, unrecorded)], sizes)
 
     def test_the_cap_ceiling_is_the_ledgers_hard_stop(self):
         """Round 2 item 4: cap = min(1.5 x forecast, hard stop - spend - running caps - storage),
@@ -2434,6 +2492,34 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(decision['hard_stop_usd'], 69.0)
         self.assertAlmostEqual(decision['cap_usd'], min(1.5 * forecast, 70.0 - decision['spend_usd'] - 3.9 - 1.0), places=3)
         self.assertAlmostEqual(guard.per_run_cap(2.0, 10.0, 1.0, 3.9, 69.0), min(3.0, 70.0 - 10.0 - 1.0 - 3.9 - 1.0))
+
+    def test_a_hard_stop_at_the_budget_keeps_the_one_dollar_margin(self):
+        """Round 3 item 4: the cap's ceiling is min(hard stop, budget - 1). A budget line whose
+        hard stop equals the budget (budget_figures admits any stop up to the budget) keeps
+        IV.3's one-dollar margin: the cap is budget - 1 - spend - storage, and a forecast that
+        fits only inside that last dollar is refused."""
+        now = 1_000_000.0 + 3600
+        ledger = self.root / 'r3i4' / 'ledger.jsonl'
+        open_ledger(ledger)
+        write_lines(ledger, [dict(event='launch', instance_id='a' * 32, instance_name='shimmer-loop-old', price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now - 7200)),
+                             dict(event='termination', instance_id='a' * 32, instance_name='shimmer-loop-old', actual_cost=62.0),
+                             dict(event='budget_change', time_utc=guard.utc(now - 60), budget_usd=70.0, hard_stop_usd=70.0)])
+        self.assertEqual(instance_reaper.budget_figures(ledger_rows(ledger)), (70.0, 70.0))
+        decide = lambda minutes: guard.check(ledgers=[ledger], forecast_minutes=minutes, hourly_rate=1.29,
+                                             storage_forecast_usd=3.9, now_epoch=now, reserve_minutes=15, reaped=[])
+        decision = decide(100)
+        self.assertEqual((decision['budget_usd'], decision['hard_stop_usd'], decision['cap_ceiling_usd']), (70.0, 70.0, 69.0))
+        self.assertAlmostEqual(decision['cap_usd'], 69.0 - decision['spend_usd'] - 3.9, places=3)
+        self.assertLessEqual(decision['spend_usd'] + decision['cap_usd'] + 3.9, 69.0 + 1e-9)
+        # A forecast that fits under the 70 dollar stop but not under 69 is refused.
+        room = 70.0 - decision['spend_usd'] - 3.9
+        minutes = (room - 0.5) / 1.29 / guard.FORECAST_FACTOR * 60
+        self.assertGreater(70.0 - decision['spend_usd'] - 3.9, guard.forecast_usd(minutes, 1.29))
+        with self.assertRaisesRegex(guard.GuardRefusal, 'leaves less than the forecast'):
+            decide(minutes)
+        self.assertEqual(guard.cap_ceiling(70.0, 62.0), 62.0)
+        self.assertEqual(guard.cap_ceiling(70.0, 70.0), 69.0)
 
     def test_the_guard_refuses_a_budget_line_it_cannot_read(self):
         """Round 2 item 5: a budget_open line with no readable budget_usd is refused by the
@@ -3057,6 +3143,14 @@ NEUTRALIZATIONS = [
     # Item 11: the A10 price from the opening line only.
     ('test_the_a10_reference_price_is_the_latest_recorded_on_any_budget_line', guard, 'a10_reference_rate',
      a10_rate_from_the_opening_line),
+    # S2 checker round 3, one mechanism per proof.
+    # Item 3: no ledger file found holding a launch, so every closing line goes to the append
+    # ledger alone and a launch recorded in R's ledger stays open for R.
+    ('test_a_closing_line_goes_to_the_ledger_that_holds_the_launch', instance_reaper, 'holders',
+     lambda rec, rows_by_path: []),
+    # Item 4: the cap's ceiling the hard stop alone, so a stop at the budget drops the margin.
+    ('test_a_hard_stop_at_the_budget_keeps_the_one_dollar_margin', guard, 'cap_ceiling',
+     lambda budget, hard_stop: hard_stop),
 ]
 
 
