@@ -1,5 +1,6 @@
-"""CUAD v1 adapter (preregistration sections 1, 3, 5.2, 5.5, 5.6). PROVISIONAL as a whole
-until its schema is confirmed (section 9 of the preregistration).
+"""CUAD v1 adapter (preregistration sections 1, 3, 5.2, 5.5, 5.6). Its schema and the
+category spellings in the QA ids are confirmed on the B-dev development items; the
+category descriptions stay PROVISIONAL until freeze.
 
 One item per contract and category (41 per contract), one rule per category
 (CONV-CUAD-NN for row cuad-NN). The document is the contract's `context` string, one
@@ -8,7 +9,8 @@ which is also its split key; contracts with identical text are merged first, kee
 the copy whose title sorts first. FLAG is absence: gold absent when the category's QA
 entry has an empty answers list.
 
-Developed on hand-written synthetic items only (D-019): no CUAD data was opened.
+Written on hand-written synthetic items (D-019), then confirmed on the B-dev development
+items (S4c item 4).
 
 Usage: as the ContraDoc adapter (build, split, label, score).
 """
@@ -28,14 +30,16 @@ BENCHMARK = "cuad"
 RULE_NAME = "Category"
 RULE_TEMPLATE = "The document must contain, in at least one passage, a clause of this category: {name}. {description}"
 
-# --- source schema: every name PROVISIONAL (SQuAD-style CUAD_v1.json, not confirmed) ---
-DATA_FIELD = "data"               # PROVISIONAL
-TITLE_FIELD = "title"             # PROVISIONAL: the copy's source id when texts are merged
-PARAGRAPHS_FIELD = "paragraphs"   # PROVISIONAL: exactly one entry per contract
-CONTEXT_FIELD = "context"         # named by the preregistration, PROVISIONAL
-QAS_FIELD = "qas"                 # PROVISIONAL
-QA_ID_FIELD = "id"                # PROVISIONAL: ends in `__<Category>`
-ANSWERS_FIELD = "answers"         # named by the preregistration, PROVISIONAL
+# --- source schema: SQuAD-style CUAD_v1.json, confirmed on the B-dev development items ---
+# (96 contracts; B-dev's counts over the whole file: 510 entries, one paragraph each,
+# 41 QA entries per contract).
+DATA_FIELD = "data"               # confirmed: {version, data}
+TITLE_FIELD = "title"             # confirmed: a string; the QA ids start with it
+PARAGRAPHS_FIELD = "paragraphs"   # confirmed: exactly one entry per contract
+CONTEXT_FIELD = "context"         # confirmed: the whole contract text
+QAS_FIELD = "qas"                 # confirmed: 41 per contract
+QA_ID_FIELD = "id"                # confirmed: `<title>__<category spelling>`, one `__`
+ANSWERS_FIELD = "answers"         # confirmed: empty exactly when `is_impossible` is true
 QA_ID_SEPARATOR = "__"
 # ---------------------------------------------------------------------------------------
 
@@ -54,11 +58,32 @@ CATEGORIES = (
     "Cap on Liability", "Liquidated Damages", "Warranty Duration", "Insurance",
     "Covenant Not to Sue", "Third Party Beneficiary",
 )
-# PROVISIONAL: the spelling of a category in the data's QA ids where it differs from the
-# name above, by row ("cuad-NN": "spelling"). Recorded at freeze; empty until confirmed.
-DATA_SPELLING = {}
+# The spelling of a category in the data's QA ids where it differs from the name above, by
+# row ("cuad-NN": "spelling"), confirmed on the B-dev development items (every one of the
+# 96 contracts carries exactly these 41 spellings; B-dev lists the same 41 over the whole
+# file). The name above stays in the rule text (section 5.5); the QA entry is matched by
+# the data's own spelling, as the end of its id after `__`.
+DATA_SPELLING = {
+    "cuad-07": "Notice Period To Terminate Renewal",
+    "cuad-12": "No-Solicit Of Customers",
+    "cuad-14": "No-Solicit Of Employees",
+    "cuad-16": "Termination For Convenience",
+    "cuad-17": "Rofr/Rofo/Rofn",
+    "cuad-18": "Change Of Control",
+    "cuad-21": "Price Restrictions",
+    "cuad-24": "Ip Ownership Assignment",
+    "cuad-25": "Joint Ip Ownership",
+    "cuad-28": "Affiliate License-Licensor",
+    "cuad-29": "Affiliate License-Licensee",
+    "cuad-30": "Unlimited/All-You-Can-Eat-License",
+    "cuad-31": "Irrevocable Or Perpetual License",
+    "cuad-36": "Cap On Liability",
+    "cuad-40": "Covenant Not To Sue",
+}
 # PROVISIONAL: the descriptions of the category list distributed with CUAD v1, copied
-# verbatim at freeze, by row. Empty until then: the template uses the name alone.
+# verbatim at freeze, by row. Empty until then: the template uses the name alone. The
+# release's CUAD_v1_README.txt holds the list ("CATEGORY LIST", one Category and one
+# Description line per category); copying it is the freeze step of section 5.5.
 DESCRIPTIONS = {}
 
 SPEC = mapping.Spec(
@@ -105,8 +130,13 @@ def merged(records):
     return kept, len(records) - len(kept)
 
 
+def data_spelling(index: int) -> str:
+    """The category's spelling in the data's QA ids for row `index`."""
+    return DATA_SPELLING.get(row_name(index), CATEGORIES[index - 1])
+
+
 def _qa(contract, index):
-    spelling = DATA_SPELLING.get(row_name(index), CATEGORIES[index - 1])
+    spelling = data_spelling(index)
     hits = [q for q in contract["qas"] if str(q[QA_ID_FIELD]).endswith(QA_ID_SEPARATOR + spelling)]
     if len(hits) != 1:
         raise ValueError("%d QA entries for category %r in %s (one expected)"

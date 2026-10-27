@@ -2,9 +2,10 @@
 by the verify gate (scripts/verify_session1.py) through check(); check_group(name) runs one
 group, and `py -3.12 -X utf8 scripts/adapter_checks.py [group ...]` runs them by hand.
 
-Every case runs on small synthetic items in each benchmark's documented schema (the
-fixtures beside each adapter: hand-written, CUAD's 41 QA entries per contract expanded by
-the tracked benchmark/adapters/cuad/fixtures/make_synthetic_items.py), in temporary
+Every case runs on small synthetic items in each benchmark's release schema, as confirmed
+on the B-dev development items (the fixtures beside each adapter: hand-written, CUAD's 41
+QA entries per contract expanded by the tracked
+benchmark/adapters/cuad/fixtures/make_synthetic_items.py), in temporary
 folders; nothing under config/, durable/, ontology/ or output/ is read or written, and no
 benchmark data under external/ is ever needed. benchmark/ is not shipped in the container
 image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
@@ -95,11 +96,22 @@ def _fixture(name, file_name):
     return ADAPTERS / name / "fixtures" / file_name
 
 
+# FinDVer's fixture is laid out as the release is: an items file under data/ and the
+# filings under financial_reports/ beside it.
+_SOURCES = {"findver": "data/testmini.json"}
+
+
+def _source(name):
+    """The synthetic items file of one adapter."""
+    return _fixture(name, _SOURCES.get(name, "synthetic_items.json"))
+
+
 def _build(name, out, source=None, **options):
     """A build of the synthetic items; --development unless the caller says otherwise."""
     options.setdefault("development", True)
-    return _common()["cli"].build(_adapter(name), source or _fixture(name, "synthetic_items.json"),
-                                  out, **options)
+    if name == "findver" and source is not None:
+        options.setdefault("reports", _fixture("findver", "financial_reports"))
+    return _common()["cli"].build(_adapter(name), source or _source(name), out, **options)
 
 
 class WordCounter:
@@ -161,7 +173,7 @@ class BuildChecks(_Case):
         _build("contradoc", self.root / "cut", max_context=198, output_allowance=10,
                token_counter=WordCounter(100))
         parts = {d["source_document_id"]: d for d in _json(self.root / "cut" / "parts.json")["documents"]}
-        doc = parts[101]
+        doc = parts["101"]
         self.assertEqual((doc["cut"]["budget"], doc["cut"]["prompt_overhead"]), (56, 100))
         # ContraDoc document 101: parts of 16, 18 and 12 words (46 in all). The rendered
         # document adds the title (2 words), and per part a heading (2) and the label
@@ -173,7 +185,7 @@ class BuildChecks(_Case):
         text = (self.root / "cut" / doc["document_id"] / "context" / (doc["document_id"] + ".md")).read_text(encoding="utf-8")
         self.assertTrue(text.endswith("sits here.\n[Document cut. The remaining 12 of 46 words are not shown.]\n"))
         self.assertEqual([p["part"] for p in doc["parts_beyond_cut"]], [3])
-        self.assertFalse(parts[409]["cut"]["cut"], "a document that fits is not cut")
+        self.assertFalse(parts["409"]["cut"]["cut"], "a document that fits is not cut")
         # Evidence units are read on the kept text: the evidence sentence of 101 was in the
         # cut third part, its reference sentence in the first part, which is kept.
         answer = _json(self.root / "cut" / doc["document_id"] / "answer_key.json")["items"][0]
@@ -183,10 +195,10 @@ class BuildChecks(_Case):
         # the line is 32; three words and the line are 2 + 4 + 3 + 11 = 20. The evidence
         # sentence was in the cut tail, so its unit is no longer an evidence unit.
         source = self.root / "one.json"
-        source.write_text(json.dumps([{"unique id": 501, "label": "contradictory",
-                                       "text": "Alpha one two three four five six seven. "
-                                               "The orchard has no trees at all.",
-                                       "evidence": "The orchard has no trees at all."}]), encoding="utf-8")
+        source.write_text(json.dumps({"pos": {"501": {
+            "unique id": "501", "text": "Alpha one two three four five six seven. "
+                                        "The orchard has no trees at all.",
+            "evidence": "The orchard has no trees at all."}}}), encoding="utf-8")
         _build("contradoc", self.root / "tail", source, max_context=162, output_allowance=10,
                token_counter=WordCounter(100))
         record = _json(self.root / "tail" / "parts.json")["documents"][0]
@@ -224,13 +236,66 @@ class BuildChecks(_Case):
         self.assertFalse((self.root / "b").exists() and any((self.root / "b").iterdir()),
                          "a refused build writes nothing")
         # FinDVer: a holdout build needs testmini and refuses a report testmini holds.
-        records = _json(_fixture("findver", "synthetic_items.json"))
+        records = _json(_source("findver"))
         mini = self.root / "mini.json"
         mini.write_text(json.dumps([records[0]]), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "needs --testmini"):
             _build("findver", self.root / "c", development=False, side="holdout", **budget)
         with self.assertRaisesRegex(ValueError, "also appear in testmini"):
             _build("findver", self.root / "d", development=False, side="holdout", testmini=mini, **budget)
+        # An item whose own `split` names the other official split is refused: the testmini
+        # items are not holdout, even with no report in common with the testmini file given.
+        other = self.root / "other_mini.json"
+        other.write_text(json.dumps([dict(records[0], report="SYN-NONE-2024-01-01_10-K.json")]),
+                         encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "official split is not the declared side holdout: syn-ex-1"):
+            _build("findver", self.root / "e", development=False, side="holdout", testmini=other, **budget)
+
+    def test_findver_reads_claims_and_filings_apart(self):
+        # The release (confirmed on the B-dev development items) keeps the claims in
+        # data/<split>.json and each filing in financial_reports/<report>: `statement` is the
+        # claim, `entailment_label` a boolean (true is entailed), `relevant_context` the
+        # integer ids of the filing's entries, from 0. A table entry is pipe rows with no
+        # separator row; it is written with one after its first row (section 5.6, as
+        # SciTab's), and its words are its cell words.
+        _build("findver", self.root / "b")
+        ids_ = _common()["ids"]
+        doc = ids_.opaque_document_id("findver", "SYNA-2024-01-31_10-K.json")
+        record = next(d for d in _json(self.root / "b" / "parts.json")["documents"] if d["document_id"] == doc)
+        # 5 words; 6 + 6 cell words + 5 (pipes not counted); `#` is a word, 2 + 5.
+        self.assertEqual([p["words"] for p in record["parts"]], [5, 17, 7])
+        self.assertEqual([p["source"] for p in record["parts"]],
+                         [{"context_index": 0, "kind": "paragraph"}, {"context_index": 1, "kind": "table"},
+                          {"context_index": 2, "kind": "paragraph"}])
+        self.assertEqual((record["issuer_cik"], record["context_index_base"]), (1000001, 0))
+        self.assertEqual(record["report_sha256"], hashlib.sha256(
+            _fixture("findver", "financial_reports/SYNA-2024-01-31_10-K.json").read_bytes()).hexdigest())
+        text = (self.root / "b" / doc / "context" / (doc + ".md")).read_text(encoding="utf-8")
+        self.assertIn("Units by quarter are shown below.\n\n| Quarter | Units |\n|---|---|\n"
+                      "| First | 120 |\n| Second | 140 |\n\nUnits are counted when shipped.", text)
+        answers = {a["item_id"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
+        gold = {s: answers[ids_.opaque_item_id("findver", s)] for s in ("syn-ex-1", "syn-ex-2", "syn-ex-3")}
+        self.assertEqual([(g["gold"], g["subset"], g["evidence_unit_ids"], g["location_measurable"])
+                          for g in gold.values()],
+                         [("entailed", "ie", ["u02-p-00002"], False),
+                          ("refuted", "numeric", ["u02-p-00002"], True),
+                          ("refuted", "ie", ["u01-p-00001"], True)])
+        rules = (self.root / "b" / doc / "conventions" / "rules.md").read_text(encoding="utf-8")
+        self.assertIn("Claim about the filing: The company sells two products. The claim must agree "
+                      "with the passages of the filing.", rules)
+        # A label that is not a boolean, and a filing whose entry ids are not 0, 1, 2 ..., are
+        # refused rather than read.
+        adapter = _adapter("findver")
+        with self.assertRaisesRegex(ValueError, "not a boolean"):
+            adapter._gold({"example_id": "x", "entailment_label": "true"})
+        folder = self.root / "reports"
+        folder.mkdir()
+        (folder / "X-2024-01-01_10-K.json").write_text(json.dumps(
+            {"url": "", "context": [{"id": 1, "context": "a", "type": "paragraph"}]}), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "does not carry id 0"):
+            adapter.read_filing(folder, "X-2024-01-01_10-K.json")
+        with self.assertRaisesRegex(ValueError, "a report name is a file name"):
+            adapter.read_filing(folder, "../X-2024-01-01_10-K.json")
 
     def test_contractnli_items_rules_and_evidence(self):
         # 2 agreements x 3 hypotheses; one rule per hypothesis with the hypothesis as its
@@ -251,13 +316,93 @@ class BuildChecks(_Case):
                          (["u02-p-00002"], False))
         self.assertEqual(answers["nda-11"]["gold"], "not mentioned")
 
+    def test_contradoc_reads_the_release_shape(self):
+        # The release (confirmed on the B-dev development items) is {"pos": {...}, "neg":
+        # {...}}: gold comes from the container, and `ref sentences` is a string, a list of
+        # strings, or absent. 101's evidence is in part 3 and its reference (a list) in part
+        # 1; 205's evidence is in part 3 and its reference (a string) in part 2.
+        _build("contradoc", self.root / "b")
+        ids_ = _common()["ids"]
+        answers = {}
+        for source in ("101", "102", "205", "409"):
+            doc = ids_.opaque_document_id("contradoc", source)
+            answers[source] = _json(self.root / "b" / doc / "answer_key.json")["items"][0]
+        self.assertEqual({s: a["gold"] for s, a in answers.items()},
+                         {"101": "contradictory", "102": "not contradictory",
+                          "205": "contradictory", "409": "not contradictory"})
+        self.assertEqual(answers["101"]["evidence_unit_ids"], ["u01-p-00001", "u03-p-00003"])
+        self.assertEqual(answers["205"]["evidence_unit_ids"], ["u02-p-00002", "u03-p-00003"])
+        self.assertEqual([answers[s]["location_measurable"] for s in ("101", "102", "205", "409")],
+                         [True, False, True, False])
+        adapter = _adapter("contradoc")
+        for bad, message in (([{"unique id": "1", "text": "x"}], "expected an object"),
+                             ({"pos": {"1": {"unique id": "2", "text": "x"}}}, "carries unique id"),
+                             ({"pos": {"1": {"unique id": "1", "text": "x"}},
+                               "neg": {"1": {"unique id": "1", "text": "y"}}}, "in both containers")):
+            source = self.root / "bad.json"
+            source.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, message):
+                adapter.read_source(source)
+
+    def test_cuad_matches_the_data_spelling(self):
+        # The QA ids spell 15 categories differently from the paper's list (confirmed on the
+        # B-dev development items): the item is found by the data's spelling at the end of
+        # its id, and the rule text keeps the paper's name (section 5.5).
+        _build("cuad", self.root / "b")
+        ids_ = _common()["ids"]
+        source = _json(_fixture("cuad", "synthetic_items.json"))
+        alpha = next(e for e in source["data"] if e["title"] == "SYN-AARDVARK-COPY")
+        doc = ids_.opaque_document_id("cuad", hashlib.sha256(
+            alpha["paragraphs"][0]["context"].encode("utf-8")).hexdigest())
+        answers = {a["category_row"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
+        self.assertEqual(answers["cuad-16"]["item_id"], ids_.opaque_item_id(
+            "cuad", "SYN-AARDVARK-COPY__Termination For Convenience"))
+        self.assertEqual((answers["cuad-16"]["gold"], answers["cuad-07"]["gold"]), ("present", "absent"))
+        rules = (self.root / "b" / doc / "conventions" / "rules.md").read_text(encoding="utf-8")
+        self.assertIn("## CONV-CUAD-16 Category [required] [conformance]\n\nThe document must contain, "
+                      "in at least one passage, a clause of this category: Termination for "
+                      "Convenience.\n", rules)
+        # A QA id spelled as the paper spells it matches no row: the build is refused, never
+        # guessed.
+        changed = json.loads(json.dumps(source))
+        entry = next(e for e in changed["data"] if e["title"] == "SYN-AARDVARK-COPY")
+        qa = next(q for q in entry["paragraphs"][0]["qas"] if q["id"].endswith("Terminate Renewal"))
+        qa["id"] = "SYN-AARDVARK-COPY__Notice to Terminate Renewal"
+        path = self.root / "wrong.json"
+        path.write_text(json.dumps(changed), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "0 QA entries for category 'Notice Period To Terminate Renewal'"):
+            _build("cuad", self.root / "w", path)
+
+    def test_scitab_table_stored_differently_by_its_claims(self):
+        # On the B-dev development items one table's claims store different cells. The build
+        # is not refused: the document is the table as its first claim in file order stores
+        # it, and parts.json names every claim whose table differs, with the fields. Claims
+        # of one table naming different papers are still refused (the paper is the split key).
+        records = _json(_fixture("scitab", "synthetic_items.json"))
+        variant = json.loads(json.dumps(records[1]))
+        variant["table_content_values"] = [["A", "71.2", "64.0"], ["B", "73.5", "65.9"]]
+        source = self.root / "variants.json"
+        source.write_text(json.dumps([records[0], variant] + records[2:]), encoding="utf-8")
+        _build("scitab", self.root / "b", source)
+        record = next(d for d in _json(self.root / "b" / "parts.json")["documents"]
+                      if d["source_document_id"] == "syn-tab-1")
+        self.assertEqual((record["table_from_claim"], record["table_variants"]),
+                         ("9001", [{"source_item_id": "9002", "fields": ["table_content_values"]}]))
+        text = (self.root / "b" / record["document_id"] / "context" / (record["document_id"] + ".md")).read_text(encoding="utf-8")
+        self.assertIn("| B | 73.5 | 63.1 |", text)
+        self.assertNotIn("65.9", text)
+        variant["paper_id"] = "syn-paper-other"
+        source.write_text(json.dumps([records[0], variant]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "disagree on paper_id"):
+            _build("scitab", self.root / "c", source)
+
     def test_empty_document_is_skipped_and_listed(self):
         records = _json(_fixture("contradoc", "synthetic_items.json"))
-        records.append({"unique id": 777, "text": "  \n\n \n", "label": "not contradictory"})
+        records["neg"]["777"] = {"unique id": "777", "text": "  \n\n \n"}
         source = self.root / "with_empty.json"
         source.write_text(json.dumps(records), encoding="utf-8")
         summary = _build("contradoc", self.root / "b", source)
-        self.assertEqual([s["source_document_id"] for s in summary["skipped_documents"]], [777])
+        self.assertEqual([s["source_document_id"] for s in summary["skipped_documents"]], ["777"])
         self.assertEqual(summary["documents"], 4)
         self.assertEqual(len(_json(self.root / "b" / "parts.json")["skipped"]), 1)
 
@@ -275,9 +420,9 @@ def _independent_side(key) -> str:
 class SplitChecks(_Case):
     # the documented split key of each hash-split benchmark, read from the source record
     def _expected_keys(self, name):
-        source = _json(_fixture(name, "synthetic_items.json"))
+        source = _json(_source(name))
         if name == "contradoc":  # 101 and 102 share 6 of 7 sentences: one group, key 101
-            return {101: "101", 102: "101", 205: "205", 409: "409"}
+            return {"101": "101", "102": "101", "205": "205", "409": "409"}
         if name == "scitab":
             return {r["table_id"]: r["paper_id"] for r in source}
         if name == "cuad":
@@ -305,7 +450,7 @@ class SplitChecks(_Case):
                 by_doc.setdefault(item["document_id"], set()).add(side_of[item["document_id"]])
                 differs += _independent_side(item["source_item_id"]) != side_of[item["document_id"]]
             self.assertTrue(all(len(s) == 1 for s in by_doc.values()), name)
-            rows = _adapter(name).split_rows(_adapter(name).read_source(_fixture(name, "synthetic_items.json")))
+            rows = _adapter(name).split_rows(_adapter(name).read_source(_source(name)))
             for row in rows:
                 self.assertEqual(row["side"], _independent_side(row["split_key"]), name)
         self.assertGreater(differs, 0, "no fixture item whose own id would fall on another side")
@@ -322,7 +467,7 @@ class SplitChecks(_Case):
                                                "--out", str(assignment)])
         self.assertEqual(code, 0)
         sample = self.root / "sample.json"
-        sample.write_text(json.dumps([r for r in records if r["unique id"] == 102]), encoding="utf-8")
+        sample.write_text(json.dumps({"neg": {"102": records["neg"]["102"]}}), encoding="utf-8")
         budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
         _build("contradoc", self.root / "b", sample, development=False, side="holdout",
                assignment=assignment, **budget)
@@ -336,6 +481,33 @@ class SplitChecks(_Case):
                    assignment=assignment, **budget)
         with self.assertRaisesRegex(ValueError, "needs --assignment"):
             _build("contradoc", self.root / "e", sample, development=False, side="holdout", **budget)
+
+    def test_contradoc_reads_the_split_file_b_dev_wrote(self):
+        # B-dev froze the groups with its own implementation of section 1, in the shape
+        # {"assignments": {unique id: {"group", "side"}}}. The build reads it as it reads the
+        # adapter's own `split --out` file, and refuses a side that is not the hash rule on
+        # the group key.
+        rows = _adapter("contradoc").split_rows(_adapter("contradoc").read_source(
+            _fixture("contradoc", "synthetic_items.json")))
+        frozen = {"benchmark": "contradoc", "assignments": {
+            r["source_document_id"]: {"group": r["split_key"], "side": r["side"]} for r in rows}}
+        assignment = self.root / "bdev_split.json"
+        assignment.write_text(json.dumps(frozen), encoding="utf-8")
+        records = _json(_fixture("contradoc", "synthetic_items.json"))
+        sample = self.root / "sample.json"
+        sample.write_text(json.dumps({"neg": {"102": records["neg"]["102"]}}), encoding="utf-8")
+        side = _independent_side("101")
+        budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+        _build("contradoc", self.root / "b", sample, development=False, side=side,
+               assignment=assignment, **budget)
+        record = _json(self.root / "b" / "parts.json")
+        self.assertEqual([(d["cluster"], d["side"], d["groups_from"]) for d in record["documents"]],
+                         [("101", side, "assignment")])
+        frozen["assignments"]["102"]["side"] = "holdout" if side == "development" else "development"
+        assignment.write_text(json.dumps(frozen), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "not the hash rule on their group key: 102"):
+            _build("contradoc", self.root / "c", sample, development=False, side=side,
+                   assignment=assignment, **budget)
 
     def test_contractnli_official_split(self):
         # The dev split is development, the test split the holdout pool: the side is the
@@ -355,12 +527,13 @@ class SplitChecks(_Case):
 
     def test_findver_official_split_drops_testmini_reports(self):
         adapter = _adapter("findver")
-        records = adapter.read_source(_fixture("findver", "synthetic_items.json"))
+        records = adapter.read_source(_source("findver"))
         mini = self.root / "mini.json"
         mini.write_text(json.dumps([records[0]]), encoding="utf-8")
         args = type("A", (), {"official": "holdout", "testmini": str(mini)})()
         rows = {r["source_document_id"]: r["side"] for r in adapter.split_rows(records, args)}
-        self.assertEqual(rows, {"SYN-FILING-ONE": "removed_overlap", "SYN-FILING-TWO": "holdout"})
+        self.assertEqual(rows, {"SYNA-2024-01-31_10-K.json": "removed_overlap",
+                                "SYNB-WT-2024-02-29_10-Q.json": "holdout"})
 
 
 # ---------------------------------------------------------------------------
@@ -380,11 +553,12 @@ class OpaqueChecks(_Case):
                     ("document:%s:%s" % (name, item["source_document_id"])).encode("utf-8")).hexdigest()[:12])
                 sources.update({str(item["source_item_id"]), str(item["source_document_id"])})
             if name == "cuad":
-                sources.update(e["title"] for e in _json(_fixture(name, "synthetic_items.json"))["data"])
+                sources.update(e["title"] for e in _json(_source(name))["data"])
             if name == "scitab":
-                sources.update(r["paper_id"] for r in _json(_fixture(name, "synthetic_items.json")))
+                sources.update(r[k] for r in _json(_source(name))
+                               for k in ("paper_id", "paper"))
             if name == "contractnli":
-                sources.update(d["file_name"] for d in _json(_fixture(name, "synthetic_items.json"))["documents"])
+                sources.update(d["file_name"] for d in _json(_source(name))["documents"])
             patterns = [re.compile(r"(?<![0-9A-Za-z])" + re.escape(s) + r"(?![0-9A-Za-z])") for s in sources]
             bundles = [p for p in (self.root / name).iterdir() if p.is_dir()]
             self.assertEqual(sorted(p.name for p in bundles), sorted({i["document_id"] for i in items}))
@@ -634,16 +808,16 @@ class MetricChecks(_Case):
         self.assertAlmostEqual(h["macro_f1"], 0.5)
         self.assertEqual(h["zero_denominators"], 3)
         # FinDVer. accuracy 2/4 (ABSTAIN wrong), coverage 3/4, accuracy on answered 2/3;
-        # FDV-IE 1/2, FDV-MATH 1/2 with coverage 1/2.
+        # ie (FDV-IE) 1/2, numeric (FDV-MATH) 1/2 with coverage 1/2, by the stored spellings.
         e, f = "entailed", "refuted"
         pairs = [(f, f), (e, f), (A, e), (e, e)]
-        answers = {str(i): {"subset": "FDV-IE" if i < 2 else "FDV-MATH"} for i in range(4)}
+        answers = {str(i): {"subset": "ie" if i < 2 else "numeric"} for i in range(4)}
         h = _adapter("findver").headline(pairs, [{"item_id": str(i)} for i in range(4)], answers)
         self.assertAlmostEqual(h["accuracy"]["accuracy"], 0.5)
         self.assertAlmostEqual(h["coverage"]["coverage"], 0.75)
         self.assertAlmostEqual(h["coverage"]["accuracy_on_answered"], 2 / 3)
-        self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["accuracy"]["accuracy"], 0.5)
-        self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["coverage"]["coverage"], 0.5)
+        self.assertAlmostEqual(h["per_subset"]["numeric"]["accuracy"]["accuracy"], 0.5)
+        self.assertAlmostEqual(h["per_subset"]["numeric"]["coverage"]["coverage"], 0.5)
         # ContractNLI. (pred, gold): 3 of 6 correct (ABSTAIN wrong): accuracy 1/2.
         # contradiction: tp 1, fp 1, fn 1 -> F1 2/(2+1+1) = 1/2; entailment: tp 1, fp 1,
         # fn 2 (ABSTAIN and contradiction) -> P 1/2, R 1/3, F1 2/(2+1+2) = 2/5.
@@ -738,7 +912,8 @@ GROUPS = {
                            "document from its own conventions; the cut keeps whole parts with the "
                            "hand-counted cut line and evidence read on the kept text; no budget, "
                            "an off-side document or a testmini report is refused; empty documents "
-                           "are skipped and listed"),
+                           "are skipped and listed; each release's schema is read as the B-dev "
+                           "development items showed it"),
     "split": (SplitChecks, "the split key is the documented document key, its SHA-256 mod 5 "
                            "recomputed independently, every item of a document on its side, "
                            "ContraDoc groups read from the frozen assignment, FinDVer's testmini "

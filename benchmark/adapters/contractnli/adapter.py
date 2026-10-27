@@ -8,8 +8,10 @@ is not used. FLAG = Contradiction, UNDECIDED = NotMentioned (a refusal: the agre
 does not settle the hypothesis), CLEAR = Entailment (an ok record or silence); a run
 failure is ABSTAIN, never NotMentioned.
 
-Developed on hand-written synthetic items only (H17): no ContractNLI data was opened.
-The operator accepted the download terms (D-S3); only role B downloads.
+Written on hand-written synthetic items (H17), then confirmed on the B-dev development
+items (S4c item 4). The operator accepted the download terms (D-S3); only role B
+downloads. On the development items no agreement's text holds a blank line, so each
+agreement is one part under the section 5.6 rule.
 
 Usage: as the ContraDoc adapter (build, label, score), and
     py -3.12 benchmark/adapters/contractnli/adapter.py split --input <file> --official development|holdout
@@ -33,19 +35,23 @@ RULE_TEMPLATE = ("Hypothesis about the agreement: {hypothesis} The hypothesis mu
                  "passages of the agreement. If the agreement does not settle the hypothesis, emit "
                  "UNCERTAIN.")
 
-# --- source schema: every name PROVISIONAL (the release's JSON, not confirmed) ---------
-DOCUMENTS_FIELD = "documents"           # PROVISIONAL: the list of agreements
-DOCUMENT_ID_FIELD = "id"                # PROVISIONAL: the document id (the split's unit)
-TEXT_FIELD = "text"                     # PROVISIONAL: the agreement's text
-SPANS_FIELD = "spans"                   # PROVISIONAL: [[start, end], ...] character spans
-ANNOTATION_SETS_FIELD = "annotation_sets"   # PROVISIONAL: the first set is used
-ANNOTATIONS_FIELD = "annotations"       # PROVISIONAL: {hypothesis key: {choice, spans}}
-CHOICE_FIELD = "choice"                 # PROVISIONAL
-EVIDENCE_FIELD = "spans"                # PROVISIONAL: indices into the document's spans
-LABELS_FIELD = "labels"                 # PROVISIONAL: {hypothesis key: {hypothesis, ...}}
-HYPOTHESIS_FIELD = "hypothesis"         # PROVISIONAL
-GOLD_VALUES = {"Entailment": "entailment", "Contradiction": "contradiction",   # PROVISIONAL
+# --- source schema: the release's JSON, confirmed on the B-dev development items -------
+# (dev.json: 61 agreements, 17 hypotheses, 1,037 items.)
+DOCUMENTS_FIELD = "documents"           # confirmed: the list of agreements
+DOCUMENT_ID_FIELD = "id"                # confirmed: an integer, unique across the splits
+TEXT_FIELD = "text"                     # confirmed: the agreement's text
+SPANS_FIELD = "spans"                   # confirmed: [[start, end], ...] character spans that
+                                        # segment the text; none crosses a line break
+ANNOTATION_SETS_FIELD = "annotation_sets"   # confirmed: one set per agreement; the first is used
+ANNOTATIONS_FIELD = "annotations"       # confirmed: {hypothesis key: {choice, spans}}, all 17 keys
+CHOICE_FIELD = "choice"                 # confirmed
+EVIDENCE_FIELD = "spans"                # confirmed: integer indices into the document's spans,
+                                        # present on every Contradiction, empty on NotMentioned
+LABELS_FIELD = "labels"                 # confirmed: {hypothesis key: {short_description, hypothesis}}
+HYPOTHESIS_FIELD = "hypothesis"         # confirmed
+GOLD_VALUES = {"Entailment": "entailment", "Contradiction": "contradiction",   # confirmed
                "NotMentioned": "not mentioned"}
+# The hypothesis keys are `nda-1` ... `nda-20` (17 of them), so rule ids read CONV-CNLI-NDA-1.
 # ---------------------------------------------------------------------------------------
 SPLIT_OPTIONS = (("--official", "development (the dev split) or holdout (the test split)"),)
 

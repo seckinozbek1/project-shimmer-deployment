@@ -9,7 +9,9 @@
         "nda-1": {"choice": "Entailment", "spans": [0]},
         "nda-2": {"choice": "Contradiction", "spans": [1]},
         "nda-11": {"choice": "NotMentioned", "spans": []}
-      }}]
+      }}],
+      "document_type": "search-pdf",
+      "url": "https://example.invalid/syn-nda-alpha.pdf"
     },
     {
       "id": 7102,
@@ -20,7 +22,9 @@
         "nda-1": {"choice": "Entailment", "spans": [0]},
         "nda-2": {"choice": "NotMentioned", "spans": []},
         "nda-11": {"choice": "Contradiction", "spans": [1]}
-      }}]
+      }}],
+      "document_type": "sec-text",
+      "url": "https://example.invalid/syn-nda-beta.txt"
     }
   ],
   "labels": {

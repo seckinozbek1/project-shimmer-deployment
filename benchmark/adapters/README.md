@@ -14,14 +14,17 @@ What they implement, from `docs/benchmarks/PREREGISTRATION.md`:
 
 What they do not implement is listed at the end.
 
-## Developed on synthetic items only
+## Written on synthetic items, confirmed on development items
 
-No benchmark data was downloaded, opened or searched to write these adapters (hard limit H17, decision D-019). B-dev, the role that would pass on development items, could not run in loop stage S4. Each adapter was written from the schemas documented in `SELECTION.md` and the preregistration, and was checked only on synthetic items in those schemas (`<name>/fixtures/synthetic_items.json`).
+No benchmark data was downloaded, opened or searched to write these adapters (hard limit H17, decision D-019). Each adapter was written from the schemas documented in `SELECTION.md` and the preregistration, and was checked on synthetic items in those schemas.
+
+In loop stage S4c item 4 the adapters were then run on the development items B-dev passed on (development side only). Each named constant was checked against them, every one the data confirmed is marked so in a comment (no document text is quoted), and the faults the data showed were fixed (per adapter below). The fixtures were rewritten in the release's own schema and stay hand-written synthetic items: no real item is copied into them.
 
 - The items are hand-written.
 - CUAD's 41 QA entries per contract are expanded by the tracked script `cuad/fixtures/make_synthetic_items.py` from hand-written contract texts and answer choices. The script reproduces the fixture byte for byte.
+- FinDVer's fixture is laid out as the release is: `findver/fixtures/data/testmini.json` and the filings under `findver/fixtures/financial_reports/`.
 
-Where a field name or a stored value is not documented outside the data, the adapter takes it from a named constant marked PROVISIONAL, kept in one block at the top of the adapter. Nothing is inferred from data. Every PROVISIONAL constant must be confirmed on development items in S5 before freeze (preregistration section 12, item 5). Until then, results from these adapters on real items are not evidence.
+Where a field name or a stored value could not be confirmed on development items, it stays a named constant marked PROVISIONAL, kept in one block at the top of the adapter (section 12 of the preregistration, item 5). Nothing is inferred from data at run time.
 
 ## Layout
 
@@ -37,7 +40,8 @@ benchmark/adapters/
     metrics.py       section 3 measures, with ABSTAIN and zero division as section 4 says
     cli.py           the commands below
   contradoc/  cuad/  scitab/  findver/  contractnli/      adapter.py and fixtures/
-  <name>/fixtures/synthetic_items.json   synthetic items in the documented schema
+  <name>/fixtures/synthetic_items.json   synthetic items in the release's schema (FinDVer:
+                                         fixtures/data/testmini.json and fixtures/financial_reports/)
   <name>/fixtures/mapping_cases.json     synthetic run outputs with the expected labels
 ```
 
@@ -52,7 +56,7 @@ Standard library only. Nothing imports the repository's `scripts/`. Copy `benchm
 Every adapter has the same four commands:
 
 ```
-py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F]
+py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F] [--reports D]
 py -3.12 benchmark/adapters/<name>/adapter.py build --input <file> --out <folder> --development     (synthetic or development work only)
 py -3.12 benchmark/adapters/<name>/adapter.py split --input <benchmark file> [--out <file>]
 py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
@@ -101,31 +105,29 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - The computed-layer markers.
 - The deliverables path.
 
-**ContraDoc.** `unique id` is documented; `text` is named by section 5.6. These are PROVISIONAL:
+**ContraDoc.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now:
 
-- `label`, with the stored values `contradictory` and `not contradictory`;
-- `evidence` and `reference`;
-- the file shape.
+- the file is an object of two containers, `pos` and `neg`, each `{unique id: record}`; the container is the gold (`pos` contradictory, `neg` not contradictory) and no record has a label field;
+- `unique id` is a string; `text` a string;
+- `evidence` is one string in every `pos` record; `ref sentences` is a string, a list of strings, or absent.
 
-**CUAD.** PROVISIONAL as a whole: the SQuAD-style container, the `__<Category>` QA-id suffix, the data's category spellings, the category descriptions (empty until freeze), and `title` as the tie-break between duplicate copies.
+`--assignment` reads the adapter's own `split --out` file and the frozen file B-dev wrote with its own implementation of section 1 (`assignments`: `{unique id: {group, side}}`), and refuses a side that is not the hash rule on its group key. On the 184 development documents the adapter's own grouping equals B-dev's (125 groups).
 
-**SciTab.** `id`, `table_id`, `paper_id` and `label` are documented. These are PROVISIONAL:
+**CUAD.** Confirmed on the B-dev development items (S4c item 4): the SQuAD-style container (`{version, data}`, one paragraph per contract, 41 QA entries), the `<title>__<category>` QA id, `answers` empty exactly when `is_impossible` is true, `title` as the tie-break between duplicate copies, and the data's own category spellings (`DATA_SPELLING`: 15 of the 41 differ from the paper's names, which stay in the rule text). Still PROVISIONAL: the category descriptions, empty until they are copied at freeze from the release's `CUAD_v1_README.txt` category list.
 
-- the label spellings;
-- `claim`, `table_caption`, `table_column_names` and `table_content_values`;
-- the file shape;
-- `DEMONSTRATION_TABLE_IDS`, which is empty, pending B-dev.
+**SciTab.** Confirmed on the B-dev development items (S4c item 4): the file is a list of claim records; `id`, `table_id`, `paper_id`, `claim` and `table_caption` are strings; `table_column_names` is a list of strings and `table_content_values` a list of rows as wide as it; the labels are spelled `supports` and `refutes`. Where the claims of one table store different cells (one development table, two of its eight claims), the document is the table as its first claim in file order stores it and `parts.json` lists the other claims under `table_variants`; claims of one table naming different papers are refused. Still PROVISIONAL:
 
-**FinDVer.** `example_id` and `report` are documented. These are PROVISIONAL:
+- the spelling `not enough info`: no development claim carries that class;
+- `DEMONSTRATION_TABLE_IDS`, empty: B-dev matched four of the five tables by caption (all in the holdout pool) but could not identify the fifth or the 25 claims, so section 1 excludes nothing.
 
-- `claim` and `label` with its values;
-- `context`, a list in index order;
-- `CONTEXT_INDEX_BASE`;
-- `relevant_context` and `subset`.
+**FinDVer.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now. The release keeps claims and filings apart:
 
-The issuer is not derived.
+- the items file (`data/testmini.json`, `data/test.json`) is a list of claims: `example_id`, `statement` (the claim), `entailment_label` (a boolean, true is entailed), `relevant_context` (integer entry ids), `subset` (`ie`, `numeric`, `knowledge`), `split` (`testmini` or `test`) and `report`, the filing's file name;
+- the filing is `financial_reports/<report>`, an object whose `context` lists the entries `{id, context, type}` in id order from 0 (`CONTEXT_INDEX_BASE` 0); `type` is `paragraph` or `table`, and a table's text is pipe rows with no separator row between lines of text.
 
-**ContractNLI.** PROVISIONAL as a whole: `documents`, `id`, `text`, `spans`, `annotation_sets` (the first set is used), `annotations`, `choice` with its values, `labels` and `hypothesis`. The hypothesis keys also feed the rule ids.
+`build --reports <folder>` names the filings' folder; by default it is `financial_reports` beside the items file's folder, as the release lays it out. A table entry is written with a separator row after the first row of its pipe rows (section 5.6, as SciTab's table is; Shimmer reads a table's header only when a separator row follows it), and its words are its cell words. An item whose `split` names the other official split is refused. `parts.json` records per filing its SHA-256 and `issuer_cik`, the number after `/edgar/data/` in the filing's `url`, for the issuer bootstrap.
+
+**ContractNLI.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now: `documents`, `id` (an integer), `text`, `spans` (character spans that segment the text, none crossing a line break), `annotation_sets` (one per agreement; the first is used), `annotations`, `choice` with the values `Entailment`, `Contradiction`, `NotMentioned`, `labels` and `hypothesis`; the hypothesis keys are `nda-1` to `nda-20` (17 keys). No development agreement's text holds a blank line, so under section 5.6 every agreement is one part (61 of 61), and location is not measurable in the sense of section 3.2.
 
 ## Readings
 
@@ -139,4 +141,4 @@ Where the preregistration left a choice, the adapters made one. The list of read
 - The 5.3 report figures: the share of words removed across a benchmark, and the uncut-only comparison. `parts.json` holds the numbers they are computed from.
 - The single-claim analysis of section 7. It is computed from `items.json` and the labels.
 - The real budget inputs and tokenizer. These are pending VERSIONS.md.
-- The SciTab demonstration tables and the CUAD descriptions. These are pending B-dev and freeze.
+- The SciTab demonstration tables (B-dev could not identify them) and the CUAD descriptions. These are pending freeze.
