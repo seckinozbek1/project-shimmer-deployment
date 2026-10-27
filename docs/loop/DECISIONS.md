@@ -151,3 +151,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Two limits kept, recorded as open item 13.** Bytes after a valid bz2 or xz stream are skipped by Python's decompressors; compression formats outside the guard's list (`.lz`, `.lzma`, `.Z`) are neither read nor refused. Options: more reader code now, unreviewed; or record for the S6 open-item sweep. Chosen: record (the realistic case, the controller's `.tar.gz` evidence archive, is fully covered; three checker rounds are used). Listed for the operator as an overrulable deferral.
 - **Rules.** P1, P9, P10, P16, IV.4.
 - **Reverse.** The open item can be taken up in S6.
+
+## D-017. S2 plan: the asset-copy declaration and the controller binding
+
+- **When, stage.** 2026-10-27 09:31 +03:00 (system clock), S2 plan, after plan check 1.
+- **Asset copy for new bundles (S2c item 14).** The operator's declaration (`asset_copy_declaration.json`, `operator_authorized: true`) is written by `tools/declare_asset_copy.py` into one bundle and tied to that bundle's own archive digest (`CLAUDE.md`, ASSET-COPY-A). Options: (1) let a new bundle reuse an existing declaration by digest; (2) leave the rule as it is, so a bundle the loop prepares has no declaration and runs the upload path, and tell the operator. Rules: P12 (an operator authorisation is his; widening what counts as one is not the loop's to decide), IV.3 ("the loop never writes an operator declaration"). Choice: (2). Every S5 forecast includes the 37-minute upload unless the operator declares a new bundle himself; recorded in `FOR_SECKIN.md`.
+- **`scripts/agent_wrapper.py` and the controller binding (S1 report note).** Options: (1) add it to the seven pinned controller files; (2) leave the binding as the spec describes it (seven `tools/` files, T13). Rules: P13, P16. Choice: (2): the controller binding pins the operator-side tools; the bundle's own seal already pins the runtime files it carries, `scripts/agent_wrapper.py` among them; the resolver's choice is proven by the S1 controller checks.
+- **Reverse.** Either can be changed by a later decision; (1) of the first fork needs the operator.
