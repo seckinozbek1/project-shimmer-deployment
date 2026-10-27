@@ -230,8 +230,13 @@ output/runs/<run folder>/
 **Paired judging calls.** Every model call the paired review makes to judge a unit
 is recorded with its outcome by `paired_review.judging_call_record`: under the key
 `judging_calls` on the computed bus post and in `audit/pairing_map.json`, and, when
-no computed finding carries it, on a `PAIRED_JUDGING_CALLS` bus post of its own. The
-deliverables state how many calls were made and how many model notes were kept.
+no computed finding carries it, on a `PAIRED_JUDGING_CALLS` bus post of its own. A
+failed call is recorded as `reply_failed` whatever it was asked; a judged-absence call
+that returned carries `absence_listed` and `absence_refused`, the counts of its claims
+listed as a model's items and refused by Python. The deliverables state how many calls
+were made, how many of them could carry a note and how many were judged-absence calls
+(never asked for one), and how many model notes were kept on Python's findings, counted
+one per finding carrying one, the same count in every file.
 
 **Saved model replies.** Every model call writes exactly one record into
 `audit/model_replies/`, from inside the backend function that holds the raw text

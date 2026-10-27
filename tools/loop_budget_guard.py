@@ -11,17 +11,18 @@ refuses a launch, in one line, when:
   * another loop instance runs (an open launch in a ledger, or a `shimmer-loop-` name
     in the provider inventory the caller listed);
   * the per-run cap formula leaves less than the forecast:
-        cap = min(1.5 x forecast, hard stop - spend - caps of running loop instances
-                  - storage forecast),
-    where the hard stop is read from the ledgers' latest `budget_open` or
+        cap = min(1.5 x forecast, ceiling - spend - caps of running loop instances
+                  - storage forecast),  ceiling = min(hard stop, budget - 1),
+    where the budget and the hard stop are read from the ledgers' latest `budget_open` or
     `budget_change` line (`instance_reaper.budget_figures`: its `hard_stop_usd`, else its
     `budget_usd` less the one-dollar margin), never from a number in this file; with no
-    hard stop on the line this is the IV.3 formula `budget - spend - caps - storage - 1`;
+    hard stop on the line, or one above the budget less the margin, this is the IV.3
+    formula `budget - spend - caps - storage - 1`;
   * the capped run time (cap / live price) does not cover the forecast time plus the
     run's stop reserve (the runner stops its workload that long before the ceiling).
 "Spend + forecast + storage passes the budget" needs no refusal of its own: the cap rule
-already keeps it at or below the hard stop, the spend at which the reaper ends every loop
-instance. Spend is counted once per launch by instance id or name across
+already keeps it at or below the ceiling, which is at most the budget less one dollar and
+at most the hard stop, the spend at which the reaper ends every loop instance. Spend is counted once per launch by instance id or name across
 every ledger read (the reaper's own reading, so a line copied from R's ledger with
 `copied_from` is not counted twice). The forecast is the measured basis in minutes times
 the live price times 1.3.
@@ -104,13 +105,21 @@ def forecast_usd(minutes, hourly_rate):
     return number(minutes, 'forecast minutes') / 60 * number(hourly_rate, 'hourly rate') * FORECAST_FACTOR
 
 
-def per_run_cap(forecast, spend, running_caps, storage_forecast, hard_stop):
-    """IV.3: min(1.5 x forecast, hard stop - spend - running caps - storage forecast).
+def per_run_cap(forecast, spend, running_caps, storage_forecast, ceiling):
+    """IV.3: min(1.5 x forecast, ceiling - spend - running caps - storage forecast).
 
-    `hard_stop` is the ledger's (`instance_reaper.budget_figures`); where the budget line
-    names none it is the budget less the one-dollar margin, so this is then exactly
+    `ceiling` is `cap_ceiling(budget, hard stop)`, never more than the budget less the
+    one-dollar margin, so this is at most
     min(1.5 x forecast, budget - spend - running caps - storage forecast - 1)."""
-    return min(CAP_FACTOR * forecast, hard_stop - spend - running_caps - storage_forecast)
+    return min(CAP_FACTOR * forecast, ceiling - spend - running_caps - storage_forecast)
+
+
+def cap_ceiling(budget, hard_stop):
+    """The cap's ceiling: min(hard stop, budget - 1). The hard stop is the ledger's
+    (`instance_reaper.budget_figures`, which admits any stop up to the budget); a line
+    naming a stop above the budget less IV.3's one-dollar margin never removes that
+    margin from the cap."""
+    return min(hard_stop, budget - RESERVE_USD)
 
 
 def reaper_ledgers():
@@ -199,7 +208,8 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
                'Forecast %.2f dollars exceeds the allocation left %.2f dollars' % (forecast, r['allocation_left_usd']))
     others = sorted(n for n in provider_names if str(n).startswith(PREFIX))
     refuse(not running and not others, 'Another loop instance is running; at most one at a time')
-    cap = per_run_cap(forecast, spend, running_caps, storage, hard_stop)
+    ceiling = cap_ceiling(budget, hard_stop)
+    cap = per_run_cap(forecast, spend, running_caps, storage, ceiling)
     if r_inputs is not None:
         cap = min(cap, number(r['cap_usd'], 'R cap'))
     refuse(cap >= forecast, 'Per-run cap %.2f dollars leaves less than the forecast %.2f dollars' % (cap, forecast))
@@ -209,7 +219,7 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
            % (capped_minutes, forecast_minutes, reserve))
     return dict(forecast_usd=round(forecast, 4), cap_usd=round(cap, 4), capped_minutes=round(capped_minutes, 2),
                 spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage,
-                budget_usd=budget, hard_stop_usd=hard_stop)
+                budget_usd=budget, hard_stop_usd=hard_stop, cap_ceiling_usd=ceiling)
 
 
 def require_purpose(purpose):

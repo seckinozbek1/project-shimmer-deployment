@@ -16,6 +16,8 @@ Steps, each checked:
 8. With no budget line at all, every loop instance is terminated.
 9. An intent whose launch created no instance is left open before its deadline and closed
    once after it (reason ``intent_without_instance``), charged to the deadline.
+10. With two ledgers (the private one and R's), each such intent is closed in the ledger that
+   holds it, so a launch recorded only in R's ledger is closed where R's guard reads it.
 7. A provider error that carries a key-shaped string never reaches the reaper's output.
 """
 import json
@@ -193,6 +195,28 @@ def main(work):
         and lines[-1]['reason'] == 'intent_without_instance' and lines[-1]['actual_minutes'] == 30)
     code, out = run_reaper(lost, deadline + timedelta(minutes=10))
     results['9_closed_once'] = code == 0 and len((lost / 'ledger.jsonl').read_text(encoding='utf-8').splitlines()) == 3
+
+    # 10. Two ledgers, as the scheduled reaper reads them (the private ledger and R's): an
+    # intent recorded only in R's ledger is closed in R's ledger, one recorded only in the
+    # private ledger in the private one, each once, charged to its deadline.
+    two = work / 'two'
+    two.mkdir()
+    (two / 'mock_state.json').write_text(json.dumps({'instances': []}), encoding='utf-8')
+    intent = lambda name: {'event': 'launch_intent', 'time_utc': iso(now), 'instance_name': name,
+                           'launch_requested_utc': iso(now), 'deadline_utc': iso(deadline), 'price_usd_per_hour': 1.29}
+    private, r_ledger = two / 'private.jsonl', two / 'R_ledger.jsonl'
+    private.write_text('\n'.join(json.dumps(r) for r in [budget_line('budget_open', 70.0, now - timedelta(hours=1)),
+                                                          intent('shimmer-loop-proof-private')]) + '\n', encoding='utf-8')
+    r_ledger.write_text(json.dumps(intent('shimmer-loop-proof-r')) + '\n', encoding='utf-8')
+    args = [sys.executable, str(REAPER), '--mock-state', str(two / 'mock_state.json'), '--ledger', str(private),
+            '--ledger', str(r_ledger), '--append-to', str(private), '--status', str(two / 'reaper_status.json'),
+            '--now', iso(deadline + timedelta(seconds=1))]
+    code = subprocess.run(args, capture_output=True, text=True, timeout=60).returncode
+    ends = lambda path: [(r['instance_name'], r['reason'], r['actual_minutes'])
+                         for r in map(json.loads, path.read_text(encoding='utf-8').splitlines()) if r['event'] == 'termination']
+    results['10_closed_in_the_ledger_that_holds_it'] = (
+        code == 0 and ends(r_ledger) == [('shimmer-loop-proof-r', 'intent_without_instance', 30)]
+        and ends(private) == [('shimmer-loop-proof-private', 'intent_without_instance', 30)])
 
     leak = work / 'leak'
     leak.mkdir()

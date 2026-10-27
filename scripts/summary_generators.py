@@ -45,19 +45,23 @@ def findings_provenance(findings, judging_calls=None) -> dict:
     models the records name for them (RD4), and the judging calls that were asked
     for those notes (round 3 item 2: every call, including one whose note was not
     kept)."""
+    import paired_review
     findings = [f for f in findings or [] if isinstance(f, dict)]
     model = [f for f in findings if finding_record.is_model_written(f)]
     python = [f for f in findings if not finding_record.is_model_written(f)]
     checked = [f for f in python if f.get("relation") in finding_record.ABSENCE_RELATIONS]
     notes = [f for f in python if f.get("explanation_by") == finding_record.WRITTEN_BY_MODEL]
-    calls = [c for c in judging_calls or [] if isinstance(c, dict)]
+    # S2 checker round 3 (item 2): the calls that could carry a note are counted apart
+    # from the judged-absence calls, which are never asked for one.
+    calls = paired_review.judging_call_counts(judging_calls)
     return {"total": len(findings), "computed": len(python),
             "from_figures": len(python) - len(checked), "checked_absent": len(checked),
             "model": len(model),
             "model_agents": sorted({str(f.get("agent") or "?") for f in model}),
-            "notes": len(notes),
+            "notes": paired_review.notes_on_python_findings(findings),
             "note_models": sorted({str(f.get("explanation_model") or finding_record.NOTE_MODEL_NOT_RECORDED) for f in notes}),
-            "judging_calls": len(calls)}
+            "judging_calls": calls["calls"], "note_calls": calls["note_calls"],
+            "absence_calls": calls["absence_calls"]}
 
 
 def _agents_text(provenance):
@@ -75,9 +79,33 @@ def _python_counts(provenance):
             provenance.get("checked_absent", 0))
 
 
+# S2 checker round 3 (item 2): ONE count of notes (one per Python finding that carries
+# a model's note, paired_review.notes_on_python_findings) under ONE label, and the
+# judging calls split by what they were asked, in every file that states them: the
+# document summary, the grounding summary and reviewed_document.md.
+NOTES_KEPT_LABEL = "model-written notes kept on Python's findings"
+CALL_COUNTS_TEXT = ("judging calls that could carry a note: {note_calls}; "
+                    "judged-absence calls, never asked for a note: {absence_calls}")
+CALLS_AND_NOTES_TEXT = CALL_COUNTS_TEXT + "; " + NOTES_KEPT_LABEL + ": {notes}"
+
+
 def _notes_text(provenance):
-    """Round 3 (item 2): the notes kept, out of the judging calls asked for them."""
-    return "%d kept from %d judging call(s)" % (provenance.get("notes", 0), provenance.get("judging_calls", 0))
+    """Round 3 (item 2) and S2 checker round 3 (item 2): the notes kept on Python's
+    findings, then the judging calls that could carry a note, then the judged-absence
+    calls, which are never asked for one."""
+    return "%d; %s" % (provenance.get("notes", 0), CALL_COUNTS_TEXT.format(
+        note_calls=provenance.get("note_calls", provenance.get("judging_calls", 0)),
+        absence_calls=provenance.get("absence_calls", 0)))
+
+
+@localization.presentation
+def calls_and_notes_text(calls, notes) -> str:
+    """The same counts for one agent (reviewed_document.md): its judging calls split
+    by what they were asked, and the notes kept on its Python findings."""
+    import paired_review
+    counts = paired_review.judging_call_counts(calls)
+    return localization.text(CALLS_AND_NOTES_TEXT, note_calls=counts["note_calls"],
+                             absence_calls=counts["absence_calls"], notes=int(notes or 0))
 
 
 def context_findings_sentence(n_conventions, provenance, document_name) -> str:
@@ -87,7 +115,7 @@ def context_findings_sentence(n_conventions, provenance, document_name) -> str:
     return ("This document was reviewed against %d conventions. Findings computed by Python "
             "from the document's figures: %d. Required fields Python checked in code and found "
             "absent: %d. Items written by a model (%s), not checked by "
-            "Python and not promoted: %d. Model-written notes attached to Python's findings "
+            "Python and not promoted: %d. Model-written notes kept on Python's findings "
             "(model: %s), not checked by Python: %s. The context references below are filtered "
             "for topical relevance to %s." % (n_conventions, figures, checked,
                                               _agents_text(provenance), provenance["model"],
@@ -156,7 +184,7 @@ def operative_findings_sentence(provenance) -> str:
     return ("Findings below come from the convention review. Computed by Python from the "
             "document's figures: %d. Required fields Python checked in code and found absent: "
             "%d. Written by a model (%s), not checked by Python and not "
-            "promoted, listed apart under each category: %d. Model-written notes attached to "
+            "promoted, listed apart under each category: %d. Model-written notes kept on "
             "Python's findings (model: %s), not checked by Python: %s. Each finding cites the "
             "convention ID and the reference ID(s) and says who wrote it."
             % (figures, checked, _agents_text(provenance), provenance["model"],

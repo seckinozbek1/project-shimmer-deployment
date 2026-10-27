@@ -256,8 +256,17 @@ def main(argv=None):
             # Even a local prerequisite discovered AFTER provisioning triggers
             # termination. Never leave a paid instance idle while repairing setup.
             from cloud_run_watchdog import LambdaTermination, terminate_now
-            emergency = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
-            emergency.mkdir(parents=True)
+            # A fresh folder per emergency. Two in the same clock tick (the Windows
+            # clock is coarse) get a numbered suffix instead of failing the cleanup.
+            base = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
+            emergency, suffix = base, 1
+            while True:
+                try:
+                    emergency.mkdir(parents=True)
+                    break
+                except FileExistsError:
+                    suffix += 1
+                    emergency = base.with_name(base.name + '_' + str(suffix))
             try:
                 # The epoch only dates the cost estimate on the termination record; a timestamp
                 # that does not parse (the failure being handled may be exactly that) must not
