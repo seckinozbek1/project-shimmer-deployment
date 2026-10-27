@@ -201,9 +201,11 @@ output/runs/<run folder>/
 (taken under a lock), call id, run id, agent, backend, model id and mode as resolved
 at run time, timestamp, phase, document id, decoding settings, and the payload and
 reply, each with its SHA-256 and byte length and, in a run without redaction, its
-full text. For the two local backends the payload is the exact rendered prompt
-given to the model; for the two cloud backends it is a canonical JSON form of the
-messages list sent (sorted keys, compact separators), not the SDK's own wire bytes. With redaction enabled the text is never stored. The outcome is appended
+full text. For the two local backend functions (`call_qwen`, `call_local`, serving
+the `qwen_local`, `local_producer` and `local_auditor` backends) the payload is the
+exact rendered prompt given to the model; for the two cloud backend functions it is
+a canonical JSON form of the messages list sent (sorted keys, compact separators),
+not the SDK's own wire bytes; for Auditor896 it is the classifier's input messages. With redaction enabled the text is never stored. The outcome is appended
 later to `outcomes.jsonl` by call id (`accepted_to_bus`, `advisory_not_record`,
 `not_promoted`, `contract_violation`, `refused`, `backend_failure`, `classified`,
 `classifier_failed`, `free_text`); a later line for the same call wins, and a call

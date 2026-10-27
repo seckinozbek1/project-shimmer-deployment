@@ -134,3 +134,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **The operator's own name in loop records (claims item 9).** The records name the operator, who wrote the spec, as the person who decides; this is not a third party's name (H6 covers party and collaborator names). Earlier entries stay as written (append-only). New prose says "the operator" where it reads as well; the private file name `FOR_SECKIN.md` is kept, as the spec names it.
 - **Rules.** P1, P10 (corrections recorded, nothing dropped), P16, IV.8 (append-only).
 - **Reverse.** Each reading can be changed by a later entry.
+
+## D-015. S1 checker round 2: corrections and the push hook
+
+- **When, stage.** 2026-10-27, S1, after checker round 2 (time read from the clock at commit; see the commit).
+- **D-014 wording corrected.** D-014 says "Every run report states it: the pipeline's run summary does; `FINAL_STATUS.json` ... deferred". Read it as: the pipeline's run summary states the setting; `FINAL_STATUS.json` does not yet, and stating it there is deferred to S2c (open item 12).
+- **The round-1 fix amendment's reason text.** The pinned-baseline amendment appended in `c746c31` starts "Operator-directed, 2026-10-27, loop stage S01 (checker round 1 fix):", not exactly the prescribed "Operator-directed, <date>, loop stage S<NN>:". The entry is left as written (earlier entries are never edited); this note records the difference.
+- **The local pre-push hook.** It now matches the refused path segments case-insensitively (proven: a pushed range adding `Seals/m.json` and `run/Audit/Model_Replies/r.json` is refused, exit 1, even with the operator's push variable set). It still checks path names only, not archive members. Options: (1) teach the shell hook to open archives; (2) keep the hook as a backstop and rely on `guard_secrets.py --staged`, which inspects staged archives and which the loop runs before every commit. Chosen: (2) (P13); the operator is told in the push instructions to run `py -3.12 scripts/guard_secrets.py --staged` before committing by hand.
+- **Rules.** P1, P10, P13, IV.8 (append-only).
