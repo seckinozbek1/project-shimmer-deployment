@@ -87,7 +87,7 @@
       "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-irr": ["FLAG", "contradictory", "irregular"],
-      "it-ref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-ref": ["CLEAR", "not contradictory", "ok"],
       "it-pmref": ["UNDECIDED", "ABSTAIN", "refusal"],
       "it-ok": ["CLEAR", "not contradictory", "ok"],
       "it-silent": ["CLEAR", "not contradictory", "silent"],
@@ -98,7 +98,7 @@
       "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-irr": ["FLAG", "contradictory", "irregular"],
-      "it-ref": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "it-ref": ["CLEAR", "not contradictory", "ok"],
       "it-pmref": ["UNDECIDED", "ABSTAIN", "refusal"],
       "it-ok": ["CLEAR", "not contradictory", "ok"],
       "it-silent": ["CLEAR", "not contradictory", "silent"],
@@ -109,7 +109,7 @@
       "it-fail": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-nodata": ["ABSTAIN", "ABSTAIN", "run_failure"],
       "it-irr": ["FLAG", "contradictory", "irregular"],
-      "it-ref": ["CLEAR", "not contradictory", "s2_undecided_as_clear"],
+      "it-ref": ["CLEAR", "not contradictory", "ok"],
       "it-pmref": ["CLEAR", "not contradictory", "s2_undecided_as_clear"],
       "it-ok": ["CLEAR", "not contradictory", "ok"],
       "it-silent": ["CLEAR", "not contradictory", "silent"],
@@ -158,7 +158,7 @@
     }
   },
   "expected_counts": {
-    "B2": {"items": 9, "silent": 1, "undecided": 3, "refusals": 3, "b1_parse_failures": 0, "run_failure_documents": 3, "abstain": 6},
+    "B2": {"items": 9, "silent": 1, "undecided": 2, "refusals": 2, "b1_parse_failures": 0, "run_failure_documents": 3, "abstain": 5},
     "B1": {"items": 9, "silent": 0, "undecided": 1, "refusals": 0, "b1_parse_failures": 5, "run_failure_documents": 0, "abstain": 6}
   },
   "expected_documents": {

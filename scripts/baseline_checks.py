@@ -10,7 +10,8 @@ the reply-record writer are replaced by mocks that fail when touched. It must st
 find the planted product mismatch, list the plan a model would have been asked under
 ``ablation_not_asked``, write the pipeline's completion record (read back by
 scripts/run_completion.read as completed), and mark every file it writes as an
-ablation on its first line (text) or in its first key (JSON). Every record it writes
+ablation on its first line (a JSON file's first key on the line of its opening brace,
+D-039 item 17). Every record it writes
 carries the provenance the pipeline gives Python's findings (envelope backend paired,
 model python; the WRITTEN-BY-A stamp ``written_by: python``), and the adapters' mapping
 reads the catch layer of its FLAG as computed.
@@ -21,9 +22,12 @@ typed label by call id, including the item whose call fails, and never ask an it
 another document. It must load and verify the model once before the first item and
 stop, generating nothing, when the load fails, the loaded identity differs from the
 recorded values, a prompt plus the allowance exceeds the context, or a reply record
-cannot be written. Its parser (escape repair, UNCERTAIN), its prompt (word for word
-against the preregistration, rendered by benchmark/adapters/common/prompt.py, with the
-bundle's reference material), its use of the one cut rule (benchmark/adapters/common/
+cannot be written. It records, per item and per benchmark, a reply whose length reached
+the output allowance, and flags a parse rate below the 95 percent development floor.
+Its parser (escape repair, UNCERTAIN), its prompt (revision 3, word for word against the
+preregistration, rendered by benchmark/adapters/common/prompt.py, with the undecided
+invitation only where the rule template asks for UNCERTAIN, and with the bundle's
+reference material), its use of the one cut rule (benchmark/adapters/common/
 cut.py; it carries none of its own) and its reading of the reading agent's model and
 decoding policy from the tracked configuration are checked beside it.
 
@@ -96,10 +100,15 @@ class FakeBackend:
         item_id = next(i for i in self.replies if ("Item id: %s\n" % i) in user)
         self.asked.append(item_id)
         self.users[item_id] = user
+        self.systems = getattr(self, "systems", {})
+        self.systems[item_id] = system
         if self.replies[item_id].get("raise"):
             raise RuntimeError("fixture failure")
-        return {"text": self.replies[item_id]["reply"], "payload": system + "\n" + user,
-                "form": "fixture_messages"}
+        reply = self.replies[item_id]["reply"]
+        # one token per word, unless the case states the length (a reply cut at the allowance)
+        tokens = self.replies[item_id].get("output_tokens", len(reply.split()))
+        return {"text": reply, "payload": system + "\n" + user, "form": "fixture_messages",
+                "output_tokens": tokens}
 
 
 _SUBPROCESS = r"""
@@ -184,8 +193,11 @@ class PythonOnlyChecks(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
                 if path.suffix == ".json":
                     self.assertEqual(next(iter(json.loads(text))), "ablation", path.name)
+                    self.assertTrue(text.splitlines()[0].startswith('{"ablation": "ABLATION'), path.name)
                 else:
                     self.assertTrue(text.splitlines()[0].startswith("ABLATION"), path.name)
+            with self.assertRaisesRegex(ValueError, "starts with its ablation statement"):
+                self.tool._write_json(Path(tmp) / "x.json", {"state": "completed", "ablation": "x"})
             data = json.loads((out / "deliverables" / "dq4" / "review_data.json").read_text(encoding="utf-8"))
             irregular = [f for f in data["findings"] if f.get("record_verdict") == "irregular"]
             self.assertEqual([(f["relation"], f["source_rule_id"], f["value_a"], f["value_b"])
@@ -284,7 +296,20 @@ class BareModelChecks(unittest.TestCase):
             self.assertIn("CONV-QA-01 Total [required] [conformance]: The line total must equal", sent)
             rates = {k: v["parse_rate"] for k, v in summary["benchmarks"].items()}
             self.assertEqual(sorted(rates.values()), [0.0, 0.0, 1.0, 1.0])
+            self.assertEqual({k: v["below_parse_rate_floor"] for k, v in summary["benchmarks"].items()},
+                             {k: r < 0.95 for k, r in rates.items()})
             self.assertEqual(summary["verified_against"], ["decoding", "digest", "model_id"])
+            # A reply whose length reached the allowance (64) is recorded, per item and counted.
+            reached = {item_id: label["length_reached_allowance"] for item_id, label in labels.items()}
+            for item_id, entry in replies.items():
+                if entry.get("raise"):
+                    self.assertIsNone(reached[item_id], item_id)
+                else:
+                    self.assertEqual(reached[item_id], entry.get("output_tokens", 0) >= 64, item_id)
+            self.assertEqual(sum(v["length_reached_allowance"] for v in summary["benchmarks"].values()),
+                             sum(1 for e in replies.values() if e.get("output_tokens", 0) >= 64))
+            self.assertGreater(sum(1 for v in reached.values() if v), 0, "a fixture reply reaches the allowance")
+            self.assertEqual(self.tool.length_reached({"text": "x"}, 64), None)
 
     def test_setup_failures_stop_before_anything_is_generated(self):
         import reply_records
@@ -355,6 +380,30 @@ class BareModelChecks(unittest.TestCase):
                              (first, True, "a \\| b \\ c \\cite"), key)
             self.assertEqual(parse('{"label": "UNCERTAIN"}', bench)["label"], bench["undecided"], key)
 
+    def test_undecided_invitation_only_where_the_rule_asks_for_uncertain(self):
+        # Revision 3 (D-039 item 5): the system turn invites the undecided label only on the
+        # benchmarks whose rule template asks for UNCERTAIN (SciTab, ContractNLI); on the
+        # others the undecided label stays listed and parsed but is not invited. Every
+        # system turn says the headings and label lines are markup, not content.
+        invitation = self.spec["undecided_invitation"]
+        for key in self.spec["benchmarks"]:
+            system = self.tool.render_system(self.spec, key)
+            self.assertNotIn("{", system.split("JSON object")[0], key)
+            self.assertEqual(invitation in system, key in ("scitab", "contractnli"), key)
+            self.assertIn("are markup that divides it into passages, not content", system)
+            self.assertNotIn("{undecided_invitation}", system)
+            user = self.tool.render_user(self.spec, key, document="d", conventions=[], item={
+                "item_id": "x", "rule_id": "CONV-X"})
+            self.assertIn("The undecided label is: " + self.spec["benchmarks"][key]["undecided"], user)
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        backend = FakeBackend(replies)
+        with tempfile.TemporaryDirectory(prefix="b1_inv_") as tmp:
+            self.tool.run(BUNDLE, ITEMS, Path(tmp) / "out", backend=backend, reader=self._reader(),
+                          expected=EXPECTED)
+        items = {r["item_id"]: r["benchmark"] for r in json.loads(ITEMS.read_text(encoding="utf-8"))["items"]}
+        for item_id, system in backend.systems.items():
+            self.assertEqual(system, self.tool.render_system(self.spec, items[item_id]), item_id)
+
     def test_prompt_is_the_preregistered_text(self):
         if not PREREGISTRATION.is_file():
             self.skipTest("docs/benchmarks/PREREGISTRATION.md is not present here")
@@ -362,7 +411,9 @@ class BareModelChecks(unittest.TestCase):
         start = prereg.index("### 5.4")
         section = prereg[start:prereg.index("\n### ", start + 1)]
         self.assertIn(self.spec["source"], ("docs/benchmarks/PREREGISTRATION.md section 5.4",))
-        self.assertIn("```\n" + self.spec["system"] + "\n```", section)
+        system = self.spec["system"].replace("{undecided_invitation}", "{undecided invitation}")
+        self.assertIn("```\n" + system + "\n```", section)
+        self.assertIn("Undecided invitation: `%s`" % self.spec["undecided_invitation"], section)
         template = self.spec["user_template"]
         for slot, written in (("{document}", "{document, after the cut rule, as it stands in the bundle}"),
                               ("{conventions}", "{every convention in the bundle as written in it, one per line: its heading without the leading # characters, a colon, a space, then its text}"),
@@ -376,7 +427,8 @@ class BareModelChecks(unittest.TestCase):
         for bench in self.spec["benchmarks"].values():
             self.assertIn("Question: `%s`" % bench["question"], section)
             self.assertIn("Labels: " + " / ".join("`%s`" % line for line in bench["labels"]), section)
-            self.assertIn("Undecided label: `%s`." % bench["undecided"], section)
+            self.assertIn("Undecided label: `%s`. Invited: %s." % (
+                bench["undecided"], "yes" if bench["invite_undecided"] else "no"), section)
 
     def test_one_cut_rule_and_one_renderer(self):
         for name in ("cut_document", "cut_budget", "cut_note", "prompt_overhead", "conventions_block"):
@@ -391,7 +443,7 @@ class BareModelChecks(unittest.TestCase):
         count = lambda system, user: len(system.split()) + len(user.split())  # noqa: E731
         items = [{"item_id": "x", "rule_id": "CONV-X", "benchmark": key} for key in self.spec["benchmarks"]]
         conventions = [("CONV-X Name [required] [conformance]", "text")]
-        longest = max(count(self.spec["system"], self.tool.render_user(
+        longest = max(count(self.tool.render_system(self.spec, i["benchmark"]), self.tool.render_user(
             self.spec, i["benchmark"], document="", conventions=conventions, item=i)) for i in items)
         self.assertEqual(prompt.overhead(self.spec, items, conventions, count), longest)
 
@@ -455,19 +507,23 @@ def check_bare_model():
                     "call included) joined to one typed label by call id, asks no item of another "
                     "document, prepares and verifies its model once and stops before generating on "
                     "a load, identity, context or record failure, parses the final-line JSON label "
-                    "(escape repair, UNCERTAIN) or abstains, sends the preregistered prompt with the "
-                    "reference material, uses the one cut rule in common/cut.py, and reads its "
-                    "model and decoding policy from the tracked configuration")
+                    "(escape repair, UNCERTAIN) or abstains, records replies that reach the output "
+                    "allowance and flags a parse rate below 95 percent, sends the preregistered "
+                    "prompt (revision 3: the undecided invitation only where the rule asks for "
+                    "UNCERTAIN) with the reference material, uses the one cut rule in "
+                    "common/cut.py, and reads its model and decoding policy from the tracked "
+                    "configuration")
 
 
 def check():
     results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(AbsentChecks)]
     return _verdict(results, "B2 makes no model call, imports no model library, writes the "
-                             "pipeline's completion record and marks its output an ablation; B1 "
-                             "verifies its model once and stops before generating on any setup "
-                             "failure, writes one reply record per item, parses (with escape "
-                             "repair) or abstains, sends the preregistered prompt with reference "
-                             "material, and uses the one cut rule and prompt renderer")
+                             "pipeline's completion record and marks its output an ablation on each "
+                             "file's first line; B1 verifies its model once and stops before "
+                             "generating on any setup failure, writes one reply record per item, "
+                             "parses (with escape repair) or abstains, records truncation and the "
+                             "parse-rate floor, sends the preregistered prompt (revision 3) with "
+                             "reference material, and uses the one cut rule and prompt renderer")
 
 
 if __name__ == "__main__":

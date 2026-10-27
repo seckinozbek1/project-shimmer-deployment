@@ -72,7 +72,7 @@ SPEC = mapping.Spec(
     BENCHMARK,
     labels={mapping.FLAG: "refuted", mapping.CLEAR: "entailed", mapping.UNDECIDED: None},
     b1_labels={"refuted": mapping.FLAG, "entailed": mapping.CLEAR, "undecided": mapping.UNDECIDED},
-    s2=True)
+    s2=True, unit_evidence=True)
 
 
 def read_source(path) -> list:
@@ -110,7 +110,7 @@ def read_filing(folder, report) -> tuple:
 
 
 def _pipe_row(line: str) -> bool:
-    return line.lstrip().startswith("|")
+    return ids.is_pipe_row(line)
 
 
 def _separator(line: str) -> bool:
@@ -137,9 +137,10 @@ def table_text(text: str) -> str:
 
 def entry_text(entry):
     """(part text, kind, words) for one context entry. Words follow the one word rule
-    (section 5.6, Words; `ids.word_count`) on the entry's string as the release stores it,
-    so a table's words are its cell words (pipes not counted), for the band and the cut
-    line alike."""
+    (section 5.6, Words; `ids.word_count`) on the entry's string as the release stores it:
+    on its pipe rows (table text) a token made only of `-`, `:` and `|` is not a word, so
+    a table's words are its cell words and the lines of text around them, for the band
+    and the cut line alike."""
     text, kind = entry[ENTRY_TEXT_FIELD], entry.get(ENTRY_KIND_FIELD)
     if kind == TABLE_KIND:
         return table_text(text), "table", ids.word_count(text)
@@ -185,6 +186,12 @@ def documents(records, options=None) -> list:
     folder = reports_folder(options.get("input_path", "."), options.get("reports"))
     out = []
     for report, claims in sorted(_reports(records).items()):
+        doc_side = side
+        if side not in (ids.DEVELOPMENT, ids.HOLDOUT):
+            # no side declared: the filing's side is its items' own official split, when
+            # they agree, so a development build can refuse a holdout filing
+            sides = {OFFICIAL_SPLITS.get(c.get(SPLIT_FIELD)) for c in claims}
+            doc_side = sides.pop() if len(sides) == 1 and None not in sides else side
         entries, digest, url = read_filing(folder, report)
         parts = []
         for offset, entry in enumerate(entries):
@@ -214,7 +221,7 @@ def documents(records, options=None) -> list:
         out.append({"document_id": ids.opaque_document_id(BENCHMARK, claims[0][REPORT_FIELD]),
                     "source_document_id": claims[0][REPORT_FIELD], "split_key": claims[0][REPORT_FIELD],
                     "cluster": claims[0][REPORT_FIELD], "parts": parts,
-                    "rules": rules, "items": items, "side": side,
+                    "rules": rules, "items": items, "side": doc_side,
                     "record_extra": {"context_index_base": CONTEXT_INDEX_BASE,
                                      "report_sha256": digest,
                                      "issuer_cik": int(cik.group(1)) if cik else None}})
@@ -244,7 +251,10 @@ def headline(pairs, rows, answers, unit_text=None) -> dict:
     by_subset = {}
     for pair, row in zip(pairs, rows):
         by_subset.setdefault(str(answers[row["item_id"]].get("subset")), []).append(pair)
-    return {"accuracy": metrics.accuracy(pairs), "coverage": metrics.coverage(pairs),
+    accuracy = metrics.accuracy(pairs)
+    return {"headline_measure": "accuracy over all items, ABSTAIN counted wrong",
+            "headline_value": accuracy["accuracy"],
+            "accuracy": accuracy, "coverage": metrics.coverage(pairs),
             "per_subset": {name: {"accuracy": metrics.accuracy(p), "coverage": metrics.coverage(p)}
                            for name, p in sorted(by_subset.items())}}
 

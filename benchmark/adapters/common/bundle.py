@@ -111,7 +111,9 @@ def render_table(header, rows) -> str:
 
 
 def table_words(header, rows) -> int:
-    return sum(ids.word_count("" if c is None else str(c)) for row in [header, *rows] for c in row)
+    """The words of a table's column names and cells, each cell counted on its own as
+    table text (section 5.6, Words)."""
+    return sum(ids.cell_word_count("" if c is None else str(c)) for row in [header, *rows] for c in row)
 
 
 def escape_line(line: str) -> str:
@@ -239,12 +241,15 @@ def write_text(path: Path, text: str) -> None:
 # the writer
 
 
-def _evidence_units(item, part_texts, unit_ids):
+def _evidence_units(item, part_texts, unit_ids, whole_parts=None):
     """Units holding the item's evidence: by part index, or by whitespace-normalised
-    containment of each evidence text in a part's source text."""
+    containment of each evidence text in a part's source text. An index names evidence
+    only in a part kept whole (`whole_parts`, all of them when None): a part cut mid-text
+    is not evidence for an index (section 5.3), since what it marks may be in the tail."""
     found = set()
+    whole = len(unit_ids) if whole_parts is None else min(int(whole_parts), len(unit_ids))
     for index in item.get("evidence_parts") or ():
-        if 1 <= index <= len(unit_ids):
+        if 1 <= index <= whole:
             found.add(unit_ids[index - 1])
     for sentence in item.get("evidence_texts") or ():
         needle = normalise_space(sentence)
@@ -288,13 +293,14 @@ def build_document(benchmark: str, doc: dict, cut=None):
     for item in sorted(doc["items"], key=lambda i: i["item_id"]):
         everywhere = _evidence_units(item, source_texts, all_ids)
         # evidence units are read on the text as kept: a part cut mid-text holds only
-        # the evidence that survived the cut
-        evidence = _evidence_units(item, texts, unit_ids)
+        # the evidence that survived the cut, and for an index none at all
+        evidence = _evidence_units(item, texts, unit_ids, info.get("whole_parts_kept"))
         answers.append(dict({
             "item_id": item["item_id"], "rule_id": item["rule_id"], "gold": item["gold"],
             "location_measurable": bool(item.get("location_measurable")),
             "evidence_unit_ids": evidence,
             "evidence_beyond_cut": len(everywhere) > len(evidence),
+            "document_units": len(unit_ids),
         }, **(item.get("extra") or {})))
     parts = [{"part": k, "unit_id": unit_ids[k - 1], "words": part_words[k - 1],
               "source": doc["parts"][k - 1]["source"]} for k in range(1, len(texts) + 1)]
@@ -313,17 +319,22 @@ def build_document(benchmark: str, doc: dict, cut=None):
         "parts": parts,
         "parts_beyond_cut": dropped,
         "items": [a["item_id"] for a in answers],
+        # the items whose marked evidence lies, in whole or in part, beyond the cut: the
+        # cut sensitivity S-4 (section 5.3) leaves them out, read from here before any run
+        "items_evidence_beyond_cut": [a["item_id"] for a in answers if a["evidence_beyond_cut"]],
     }
     record.update(doc.get("record_extra") or {})
     return text, record, answers
 
 
 def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=None,
-                  build_extra=None) -> dict:
+                  build_extra=None, refuse_holdout=False) -> dict:
     """Write one bundle per document under `out_dir`, the item table and the parts
     record beside them. Refuses a non-empty `out_dir`, and refuses the whole build
-    (writing nothing) when a document's recorded side differs from `declared_side`.
-    A document with no text is skipped and listed. Returns the summary."""
+    (writing nothing) when a document's recorded side differs from `declared_side`, or,
+    with `refuse_holdout` (a development build that declares no side), when a document
+    is on the holdout side. A document with no text is skipped and listed. Returns the
+    summary."""
     out = Path(out_dir)
     if out.exists() and any(out.iterdir()):
         raise ValueError("the output folder is not empty: " + str(out))
@@ -334,6 +345,11 @@ def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=No
         if wrong:
             raise ValueError("documents not on the declared side %s: %s"
                              % (declared_side, ", ".join(wrong[:10])))
+    elif refuse_holdout:
+        held = [ids.key_string(d["source_document_id"]) for d in documents if d["side"] == ids.HOLDOUT]
+        if held:
+            raise ValueError("a development build refuses holdout documents unless --side holdout "
+                             "is given: " + ", ".join(held[:10]))
     seen_docs, seen_items, table, records, skipped = set(), set(), [], [], []
     for doc in documents:
         doc_id = doc["document_id"]

@@ -7,7 +7,7 @@
     "explanation": "The table shows 120 units in the first quarter and 140 in the second.",
     "entailment_label": true,
     "relevant_context": [1],
-    "report": "SYNA-2024-01-31_10-K.json"
+    "report": "ZQX-2024-01-31_10-K.json"
   },
   {
     "example_id": "syn-ex-2",
@@ -19,7 +19,7 @@
     "execution_result": 260,
     "entailment_label": false,
     "relevant_context": [1],
-    "report": "SYNA-2024-01-31_10-K.json"
+    "report": "ZQX-2024-01-31_10-K.json"
   },
   {
     "example_id": "syn-ex-3",
@@ -29,7 +29,7 @@
     "explaination": "The filing says the company sells one product.",
     "entailment_label": false,
     "relevant_context": [0],
-    "report": "SYNA-2024-01-31_10-K.json"
+    "report": "ZQX-2024-01-31_10-K.json"
   },
   {
     "example_id": "syn-ex-4",
@@ -40,6 +40,6 @@
     "knowledge": "Holding steady means not changing.",
     "entailment_label": true,
     "relevant_context": [2],
-    "report": "SYNB-WT-2024-02-29_10-Q.json"
+    "report": "ZQY-WT-2024-02-29_10-Q.json"
   }
 ]

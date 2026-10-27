@@ -16,7 +16,7 @@
     "k-run": {
       "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": {"findings": [
-        {"item_id": "rec-01", "source_rule_id": "CONV-CUAD-01", "unit_id": "u01-p-00001", "relation": "missing_field", "record_verdict": "irregular", "absence_path": "computed", "model": "python"},
+        {"item_id": "rec-01", "source_rule_id": "CONV-CUAD-01", "unit_id": "u01-p-00001", "relation": "missing_field", "record_verdict": "irregular", "absence_path": "computed", "model": "python", "written_by": "python"},
         {"item_id": "rec-02a", "source_rule_id": "CONV-CUAD-02", "unit_id": "u02-p-00002", "relation": "missing_field", "record_verdict": "irregular", "absence_path": "judged", "model": "fixture-reader"},
         {"item_id": "rec-02b", "source_rule_id": "CONV-CUAD-02", "unit_id": "u03-p-00003", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python"},
         {"item_id": "rec-03", "source_rule_id": "CONV-CUAD-03", "unit_id": "u01-p-00001", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python"},
@@ -87,6 +87,6 @@
     }
   },
   "expected_counts": {
-    "B2": {"items": 10, "silent": 1, "undecided": 2, "refusals": 2, "run_failure_documents": 1, "abstain": 3, "missing_field_and_other_relation": 1, "judged_irregular_without_relation": 1}
+    "B2": {"items": 10, "silent": 1, "undecided": 2, "refusals": 2, "run_failure_documents": 1, "abstain": 3, "missing_field_and_other_relation": 1, "judged_irregular_without_relation": 1, "missing_field_by_layer": {"computed": 1, "judged": 1}}
   }
 }
