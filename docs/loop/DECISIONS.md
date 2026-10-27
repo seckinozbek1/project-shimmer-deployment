@@ -67,3 +67,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Rules.** Spec lines 82, 312 and 491 ("continue with every stage that does not depend on it"); Part V outranks P19 (I.2). Running S12 before S8 would also reverse the freeze-then-release-candidate order S8a item 4 and S14 item 5 assume. P18 (evaluation integrity before speed).
 - **Choice.** Option 2. Status BLOCKED, never DONE: DONE would remove the pointer's effect and let the pre-push hook allow a push while the history still holds the collaborator's name (11.13).
 - **Reverse.** Once Seckin installs the settings and a later session proves the deny rules, role sessions unblock S4c, S5 item 10 and S8, and S9 to S14 follow.
+
+## D-008. Corrections to earlier entries (appended; earlier text left as written)
+
+- **When, stage.** 2026-10-27 06:48 +03:00 (system clock), S0 close, after the second completeness checker.
+- **Times.** Several times in D-001 ("Revision (06:45)"), D-002 ("Revised 07:00"), D-004 ("revised 06:35") and D-007 ("06:45") were written by hand and are wrong: those texts are in commits `7c6d132` (06:30:02 +03:00) and `30a42f0` (06:43:07 +03:00), so they were written before those times. Commit times are the reliable record. From now on every recorded time is read from the system clock.
+- **D-002 wording.** Its option (2) says "run complete searches"; the choice made in its revision keeps the spec's "incomplete" label, completed so it stays true. The choice is what applies.
+- **D-004 measurement at the branch tip.** At 06:46:55 +03:00, with the loop branch at `30a42f0` (ahead of `main`), a worktree made by `git worktree add --detach .claude/worktrees/wtproof2 loop/2026-10-27` started at `30a42f0`; it was then removed. A subagent's isolation worktree had started at `939da2c`. This confirms the fallback is needed and works.
+- **Rules.** P1, P10 (corrections are recorded, nothing is dropped). Append-only record (IV.8).

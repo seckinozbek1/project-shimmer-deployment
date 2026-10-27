@@ -1,6 +1,6 @@
 # Loop budget
 
-The Lambda budget for this loop is 50 USD in total (Part II, H3), counted from the start of S0 (2026-10-27 03:16 UTC). This file shows the running total, the forecast against the actual cost of every run, and what remains. It never holds an instance id. The private ledger (`docs/loop/private/budget_ledger.jsonl`) holds the detail.
+The Lambda budget for this loop is 50 USD in total (Part II, H3), counted from the start of S0, taken as the ledger's opening line (2026-10-27 03:16 UTC; the session started at 03:00 UTC and nothing was spent before the ledger opened). This file shows the running total, the forecast against the actual cost of every run, and what remains. It never holds an instance id. The private ledger (`docs/loop/private/budget_ledger.jsonl`) holds the detail.
 
 ## Running total
 
