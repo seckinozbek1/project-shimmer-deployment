@@ -262,3 +262,10 @@ covered, and S1 had used its three checker rounds (D-016).
 **What would settle it.** Refusing any archive with trailing data after its last compressed
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
+
+## 14. No per-test settings are read from a test bundle (found at loop S3)
+
+- **What it is.** The test-preparation plan lists per-test settings among a bundle's parts, and `docs/INPUT_FORMAT.md` section 8 says none is read: the date cutoff, the withheld audit agents, the 2% rename tolerance and the review mode are repository-wide.
+- **Evidence.** `scripts/role_resolution.py` reads the manifest and `config/review_scope.json`; no bundle-level settings file is opened by the pipeline or by `tools/score_corpus.py`.
+- **Why it was left.** A new reader is a product change outside S3; the manifest already removes the one per-test dependency (the date cutoff) when it names every file. Decision D-018.
+- **What would settle it.** A test that genuinely needs a different value for one of these settings; then a reader, a gate check and a format version bump.

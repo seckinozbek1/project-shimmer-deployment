@@ -13,3 +13,4 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 
 | What | Version | SHA-256 | Recorded |
 |---|---|---|---|
+| `docs/INPUT_FORMAT.md` | `input-format-v1-draft` | `1875bf8e576f28ec10f3abfe722460027234cb8df44e3ad6e24aa01046b62f26` | 2026-10-27 09:46 +03:00, loop/s03 (D-018) |
