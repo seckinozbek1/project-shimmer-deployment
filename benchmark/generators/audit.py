@@ -14,9 +14,12 @@ is exactly what Shimmer would read. It implements, from docs/INPUT_FORMAT.md alo
   every computed absence;
 - attribution of each finding to an operator rule (section 9), refusing a winner that
   depends on how the word overlap is counted;
-- the change records of section 6 (for two-version tests), with the rename refusal of
-  S2b item 5: a vanished label is refused, not withdrawn, while its section states an
-  unclaimed newcomer in the same measure.
+- the change records of section 6 (for two-version tests) for every label both versions
+  state, and the FACTS about every label the later version no longer states (its unit,
+  its earlier figure, the newcomers in that unit in the same measure). The audit never
+  decides whether a vanished label was renamed or withdrawn: that is the family's own
+  ground truth (it planted the rename or the withdrawal), and the validator checks the
+  facts against it. Shimmer's own refusal rule is never restated here (D-042).
 
 Nothing here imports Shimmer. The arithmetic is plain float arithmetic rounded to six
 places, with the section 6 tolerance.
@@ -31,7 +34,6 @@ HEADING = re.compile(r"^(#{1,6}) (.*)$")
 RULE_ID = re.compile(r"CONV-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", re.I)
 LIST_START = re.compile(r"^\s*(?:[-*+] |\d+[.)] )")
 NL = chr(10)
-RENAME_TOLERANCE = 0.02   # the repository-wide rename tolerance of INPUT_FORMAT section 8
 BOUND_SENTENCE =re.compile(r"^The [a-z ]+ is \d+ (?:days|hours)\.$")
 SEVERITIES = ("required", "recommended", "advisory")
 
@@ -652,7 +654,7 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
             errors.append("%s: a %s finding with no rule" % (f["unit"], f["relation"]))
     return {"doc": doc, "prior": prior, "rules": rules, "pairing": pairing,
             "findings": findings, "errors": errors, "parse_errors": parse_errors,
-            "sentences": sentences}
+            "sentences": sentences, "bands": bands}
 
 
 def _compare(u, r, figs, lo, hi, powers, key_heads, from_table, add):
@@ -699,11 +701,13 @@ def _compare(u, r, figs, lo, hi, powers, key_heads, from_table, add):
 
 
 def prior_records(result):
-    """Section 6 change records and refusals, from an audit() result with a prior."""
+    """Section 6 change records for labels both versions state, the structural refusals,
+    and the facts about vanished labels, from an audit() result with a prior:
+    (records, refusals, vanished)."""
     doc, prior, rules, pairing = result["doc"], result["prior"], result["rules"], result["pairing"]
     records, refusals = [], []
     if prior is None:
-        return records, refusals
+        return records, refusals, []
     by_slug_t = {u["id"][4:]: u for u in doc["units"]}
     earlier = {}
     for pu in prior["units"]:
@@ -785,33 +789,15 @@ def prior_records(result):
         then_m = pl["kind"][2] if pl["kind"][0] == "figure" else ""
         return then_v, then_m
 
+    vanished = []
     for pu in prior["units"]:
         tu = by_slug_t.get(pu["id"][4:])
         # The labels new in this unit of the target, in reading order: new unless the
-        # earlier version states it, anywhere, with a successful lookup.
+        # earlier version states it, anywhere, with a successful lookup. A fact only.
         newcomers = []
         if tu is not None:
             newcomers = [tl for tl in tu["lines"] if tl["kind"][0] == "figure"
                          and lookup(tl["norm"], tu["id"][4:])[0] is None]
-
-        def value_rename(then_v, then_m):
-            """The first newcomer in the same non-empty measure within 2% of the larger
-            of the two figures in absolute value, 2% included; None when there is none."""
-            if not then_m:
-                return None
-            for tl in newcomers:
-                if tr.measure_powers(tl["kind"][2]) != tr.measure_powers(then_m):
-                    continue
-                scale = max(abs(tl["kind"][1]), abs(then_v), 1e-12)
-                if abs(tl["kind"][1] - then_v) <= RENAME_TOLERANCE * scale:
-                    return tl["norm"]
-            return None
-
-        vanished = [pl for pl in pu["lines"] if pl["kind"][0] in ("figure", "date")
-                    and tu is not None and pl["norm"] not in target_labels]
-        # A newcomer a value-corroborated rename accounts for is that label's successor
-        # and cannot also stand in for another vanished label.
-        claimed = {value_rename(*then_of(pl)) for pl in vanished} - {None}
         for pl in pu["lines"]:
             if pl["kind"][0] not in ("figure", "date"):
                 continue
@@ -821,30 +807,32 @@ def prior_records(result):
             if pl["norm"] in target_labels:
                 continue
             then_v, then_m = then_of(pl)
-            if value_rename(then_v, then_m) is not None:
-                refusals.append(("possible rename", pl["norm"]))
-                continue
-            if possible_successor(newcomers, claimed, then_m):
-                refusals.append(("possible successor", pl["norm"]))
-                continue
             citing = [r for r in rules if pl["norm"] in set(_named_any(r, pl["norm"]))]
             if not citing and not pairing[tu["id"]]:
                 refusals.append(("no rule", pl["norm"]))
                 continue
-            records.append({"field_label": pl["norm"], "relation": "absent_since_prior",
-                            "value_a": None, "value_b": tr.r6(then_v), "unit": then_m,
-                            "unit_id": tu["id"]})
-    return records, refusals
+            # A vanished label: whether it was withdrawn or renamed is the family's
+            # ground truth, never decided here.
+            vanished.append({
+                "field_label": pl["norm"], "unit_id": tu["id"], "prior_unit_id": pu["id"],
+                "value_b": tr.r6(then_v), "unit": then_m,
+                "newcomers_same_measure": sorted(
+                    tl["norm"] for tl in newcomers
+                    if tr.measure_powers(tl["kind"][2]) == tr.measure_powers(then_m))})
+    return records, refusals, vanished
 
 
-def possible_successor(newcomers, claimed, measure):
-    """S2b item 5 (the rename refusal, general form): a label new in this unit of the
-    target, in the same measure as the vanished label (two figures with no measure count
-    as the same), that no value-corroborated rename has claimed. While one exists the
-    withdrawal is not confirmed: it is refused, never minted as absent_since_prior."""
-    return any(tl["norm"] not in claimed
-               and tr.measure_powers(tl["kind"][2]) == tr.measure_powers(measure)
-               for tl in newcomers)
+def new_labels(result):
+    """{label: (target unit id, figure, measure)} for every label-line figure of the
+    target that the earlier version does not state anywhere (section 6, "new")."""
+    doc, prior = result["doc"], result["prior"]
+    stated = {ln["norm"] for pu in (prior or {"units": []})["units"] for ln in pu["lines"]}
+    out = {}
+    for u in doc["units"]:
+        for ln in u["lines"]:
+            if ln["kind"][0] == "figure" and ln["norm"] not in stated:
+                out[ln["norm"]] = (u["id"], ln["kind"][1], ln["kind"][2])
+    return out
 
 
 def _named_any(rule, label):

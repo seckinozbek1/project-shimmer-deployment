@@ -3,9 +3,13 @@
 Each entry is one sample: a parameter, a result in mg/L, the analyst, and a table of
 aliquot volumes in mL, most with a stated total. Bands come from a reference table
 keyed by parameter. Planted kinds: a result above its range, a result below it, a
-total volume that does not add up, a missing analyst (computed absence), and a blank
-aliquot cell. Clean distractors: results exactly on a bound, and totals in decimals
-that do add up.
+total volume that does not add up, a missing analyst (computed absence), a blank
+aliquot cell, and a unit mismatch: a result written in g/L against a reference range in
+mg/L, or a total volume written in L against a volume column in mL (the figure, read in
+the right measure, is correct: only the measure is wrong). Python compares nothing in
+another measure, so the unit mismatches are keyed from this family's own ground truth
+and found again by the ground-truth scanner (ground_truth.py), not by the audit.
+Clean distractors: results exactly on a bound, and totals in decimals that do add up.
 """
 from . import model as md
 from . import textrules as tr
@@ -26,6 +30,10 @@ RULES = [
             scope=["parameter"], requires=["analyst"]),
 ]
 ORDINALS = ["First", "Second", "Third", "Fourth"]
+# The conversions a unit mismatch is planted with, and read back by the scanner.
+CONVERSIONS = [["g/L", "mg/L", 1000], ["L", "mL", 1000]]
+GROUND_TRUTH = [{"check": "measure", "kind": "unit_mismatch", "conversions": CONVERSIONS,
+                 "rule_for": {"reference": "CONV-SA", "column": "CONV-SB"}}]
 
 
 def _fmt2(x):
@@ -48,7 +56,8 @@ def build(seed):
     rng.shuffle(slots)
     plan = {}
     kinds = (["band_above"] * 3 + ["band_below"] * 2 + ["total_mismatch"] * 3
-             + ["missing_required_field"] * 2 + ["blank_cell"] * 2)
+             + ["missing_required_field"] * 2 + ["blank_cell"] * 2
+             + ["unit_mismatch_result", "unit_mismatch_total"])
     for k, s in zip(kinds, slots):
         plan[s] = k
     rest = slots[len(kinds):]
@@ -62,7 +71,8 @@ def build(seed):
             result = hi
         elif distract.get(i) == "at_low_bound":
             result = lo
-        has_total = kind != "blank_cell" and (kind == "total_mismatch" or distract.get(i) == "decimal_total"
+        has_total = kind != "blank_cell" and (kind in ("total_mismatch", "unit_mismatch_total")
+                                              or distract.get(i) == "decimal_total"
                                               or rng.random() < 0.6)
         rows = rng.randint(3, 4)
         tenths = [rng.randint(20, 95) for _ in range(rows)]
@@ -105,6 +115,20 @@ def build(seed):
             flawed.blocks[1][2][r][1] = ""
             planted.append({"unit": i, "rule": "CONV-SC", "relation": "missing_field", "kind": kind,
                             "field_label": "volume", "value_a": rows - 1, "value_b": rows})
+        elif kind == "unit_mismatch_result":
+            # the right result, written in g/L: 45.23 mg/L as 0.04523 g/L
+            flawed.set_line("Result", "%s g/L" % tr.format_number(result / 1000.0, 5))
+            planted.append({"unit": i, "rule": "CONV-SA", "relation": "unit_mismatch",
+                            "kind": "unit_mismatch", "field_label": "result",
+                            "value_a": round(result / 1000.0, 6), "value_b": result,
+                            "unit_a": "g/L", "unit_b": "mg/L", "extra": {"compared_with": "reference"}})
+        elif kind == "unit_mismatch_total":
+            # the right total, written in L: 12.3 mL as 0.0123 L
+            flawed.set_line("Total volume", "%s L" % tr.format_number(total / 1000.0, 4))
+            planted.append({"unit": i, "rule": "CONV-SB", "relation": "unit_mismatch",
+                            "kind": "unit_mismatch", "field_label": "total volume",
+                            "value_a": round(total / 1000.0, 6), "value_b": round(total, 6),
+                            "unit_a": "L", "unit_b": "mL", "extra": {"compared_with": "column"}})
         if i in distract:
             clean.append(i)
         doc_units.append(flawed)
@@ -121,16 +145,18 @@ def build(seed):
     sums = [p for p in planted if p["kind"] == "total_mismatch"]
     reform_unit = sums[0]["unit"]
     stated_total = doc_units[reform_unit].line_value("Total volume")
-    clean_plain = [i for i in range(n) if i not in plan and i not in distract]
+    above = [p for p in planted if p["kind"] == "band_above"][0]
     return {
         "family": FAMILY, "family_name": NAME, "seed": seed, "mode": "single",
         "doc": doc, "twin": twin, "conventions": conv, "references": [reference],
         "planted": planted, "clean": sorted(clean), "doc_stem": "sheet", "conv_stem": "rules",
+        "ground_truth_checks": GROUND_TRUTH,
         "task": "Review the sampling sheet against the sampling conventions, grounded in the reference ranges.",
         "probes": {
             "reword": {"old": "Total volume", "new": "Combined volume"},
             "reorder": wl.reorder(n, rng),
-            "term": {"unit": clean_plain[0], "label": "Result"},
+            # probe 3: the term only in the later version carries a keyed flaw
+            "term": {"unit": above["unit"], "label": "Result"},
             "reformat": {"unit": reform_unit, "label": "Total volume",
                          "text": stated_total.replace(" mL", "0 mL")},
         },

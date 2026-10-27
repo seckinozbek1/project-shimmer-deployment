@@ -2,7 +2,7 @@
 
 Version: `output-format-v1-draft`
 
-This document tells you what a Shimmer run writes and what each file means. It is written for whoever writes a scorer, without reading Shimmer's code. Every rule here describes what the code does today (branch `loop/s03`, commit `990ed88`). All examples are invented. A source note, hidden in each section and collected in the "Sources" list at the end, names the code each statement was taken from.
+This document tells you what a Shimmer run writes and what each file means. It is written for whoever writes a scorer, without reading Shimmer's code. Every rule here describes what the code does today (branch `loop/s03`, commit `990ed88`, and the typed refusal kind of section 7.1 added by the S3 fix lane). All examples are invented. A source note, hidden in each section and collected in the "Sources" list at the end, names the code each statement was taken from.
 
 It is a draft. It is kept current until it is frozen as `output-format-v1`. From the final run of the scorer's own calibration until the freeze, it changes only by additions that a scorer does not read. A change to a file or field a scorer reads is recorded as a defect to fix after the freeze, not made here.
 
@@ -187,10 +187,10 @@ Other `body.event` values carry no findings:
 
 ### 5.3 Finding a run's findings
 
-Read every line. For each line whose `body.payload.items` is a list, every item that has a `relation` from the list in section 6.2 and has a `record_verdict` field is a finding. Nothing else is.
+Read every line. For each line whose `body.payload.items` is a list, every item that has a `relation` from the list in section 6.2 and has a `record_verdict` field is a finding. Nothing else is. Whether a scorer counts a model's findings, and a judged absence's two copies, is the input format's rule (its section 9, "Which findings count").
 
 - The envelope's `doc_id` says which document the finding is about. Findings themselves do not carry it.
-- Every item also carries `item_id` (string), `revision` (integer, 1 unless superseded) and `ts` (time). An item with the same `item_id` and a higher `revision` supersedes the earlier one. Python posts each of its own envelopes once per document per step.
+- Every item also carries `item_id` (string), `revision` (integer, 1 unless superseded) and `ts` (time). An item supersedes an earlier one only within the same agent and document: the same envelope `agent`, the same envelope `doc_id` and the same `item_id`, with a higher `revision` (a later `ts` breaks a tie). Items with the same `item_id` under another agent or another document are different items. Python posts each of its own envelopes once per document per step.
 
 ### 5.4 Who wrote a finding
 
@@ -251,7 +251,7 @@ A judging call never changes a figure. Its reply's own items are withheld from t
 | Field | Type | Meaning |
 |---|---|---|
 | `rule_id` | string | The **registry id** of the rule, `CONV-` followed by digits (`CONV-001`). Required. A model-written item may name its rule under `procedure_id`, `conv_id` or `convention_ref` instead; read them in that order when `rule_id` is missing. |
-| `source_rule_id` | string, optional | The **operator's own id** of the rule, in upper case (`CONV-P01`), as written on its heading. Use this one to compare with an answer key. Present on every Python finding of an ordinary review whose rule has an operator's own id. Absent on multi-round round findings (section 10.2). |
+| `source_rule_id` | string, optional | The **operator's own id** of the rule, in upper case (`CONV-P01`), as written on its heading. Use this one to compare with an answer key. Present on every Python finding of an ordinary review whose rule has an operator's own id. Left out (absent, never `""`) on multi-round round findings (section 10.2). |
 | `unit_id` | string | The unit id (input format, section 2): `u00-...` for the preamble, `u01-...` and so on. Required. On a model-written item it is whatever the model wrote. |
 | `relation` | string | The kind of finding (section 6.2). Required. |
 | `record_verdict` | string | `irregular` (a problem) or `ok` (information only). Required. Python writes it in lower case; compare without case. A model may write another value. |
@@ -365,12 +365,29 @@ One JSON object per document:
 | `document_id` | string | The document id. |
 | `amendments` | list | The amendments (section 7.2). |
 | `prior_comparisons` | list of findings | Python's change records for this document (section 6.5), each stamped `written_by: "python"`. Only records stamped as Python's enter; a record that carries `provenance: "computed"` but was not posted as Python's is left out. Empty when no earlier version was declared. |
-| `prior_refusals` | list | Change records Python refused: `{"unit_id", "label", "reason"}`. |
-| `prior_orphans` | list | Earlier-version labels whose heading has no counterpart now: `{"label", "unit_slug", "reason"}`. |
+| `prior_refusals` | list | Change records Python refused: `{"unit_id", "label", "reason", "reason_kind"}`. |
+| `prior_orphans` | list | Earlier-version labels whose heading has no counterpart now: `{"label", "unit_slug", "reason", "reason_kind"}`, `reason_kind` always `orphan`. |
 | `model_findings_not_promoted` | list | Every finding a model wrote for this document (section 7.4). |
 | `_validator_errors` | list of strings | Problems the amendment check found. Normally empty. |
 
-`label` in these lists is a normalised label. `reason` is a sentence for a human.
+`label` in these lists is a normalised label (empty when a whole table of the earlier version was refused). `reason` is a sentence for a human: do not parse it. `reason_kind` is the typed kind of the refusal, one of:
+
+| `reason_kind` | Why the comparison was refused (input format, section 6) |
+|---|---|
+| `possible_rename` | The label vanished and a label new in its section has a figure within 2% in the same non-empty measure. |
+| `possible_successor` | The label vanished and a label new in its section, in the same measure, is not claimed by a rename. |
+| `possible_successor_no_unit` | The same, where neither figure has a measure. |
+| `tie` | The earlier version states the label with differing figures, even under the heading with the same slug; or two table rows match it. |
+| `reverse_tie` | Several labels of the document match one row of an earlier table. |
+| `no_citation` | The earlier statement has no REF id (past the indexed paragraphs). |
+| `unit_mismatch` | The two figures' measures differ, or one is empty. |
+| `disagreeing_bands` | Two or more distinct bands orient the change (the record is still written, as `changed_from_prior` or `unchanged_from_prior`). |
+| `no_key_column` | An earlier table has no key column identifying its rows. |
+| `value_column_count` | An earlier table does not have exactly one value column. |
+| `no_rule` | No paired rule can be cited for the comparison. |
+| `orphan` | In `prior_orphans` only: the earlier heading has no counterpart. |
+
+An answer key's `expected_refusals` (input format, section 9) names the kind it expects. A run older than the S3 fix lane has no `reason_kind`.
 
 ### 7.2 Amendments
 
@@ -400,7 +417,7 @@ An amendment is built by Python from one of **its own** irregular findings. A mo
 | `severity` | string | Always the fixed value `required`, whatever the rule's severity (section 13, point 3). Do not read a rule's severity from it. |
 | `finding_type` | string | Always `factual`. Not the relation. |
 | `ref`, `kind`, `confidence` | strings | Bookkeeping: the location again, `amendment`, and normally `CONFIDENT`. |
-| `unit_id_repaired_to` | string, optional | Present when the finding's unit id matched no unit and Python found it written inside exactly one unit. |
+| `unit_id_repaired_to` | string, optional | Present when the finding's unit id matched no unit and Python found it written inside exactly one unit. The amendment then sits on this unit (its `original_text` is this unit's text): read it as the location instead of `finding_unit_id`. The repository's scorer does not read it; it matches a key's unit against `finding_unit_id` and `original_text`. |
 
 The amendment built from the finding in section 6.4 carries, among its other fields:
 
@@ -441,7 +458,10 @@ In the Markdown files every such finding carries the sentence "Written by a mode
 
 ### 8.1 `audit/pairing_map.json`
 
-Written in every ordinary review, before any agent is asked. One object keyed by document id. The document fields from `not_judged` to `judging_calls`, and each unit's `band_conditions`, are added by the paired review only. For each document:
+Written in every ordinary review, before any agent is asked. One object keyed by document id.
+
+**Which review mode ran.** No field of the run folder names the review mode. A paired run's pairing map carries the paired-review fields below (`calls_made`, `judging_calls`); a wide run's does not. A server run also names it in `status.json` (`review_mode`). A cloud run is always paired: the cloud tool passes `--review-mode paired`.
+ The document fields from `not_judged` to `judging_calls`, and each unit's `band_conditions`, are added by the paired review only. For each document:
 
 | Field | Meaning |
 |---|---|
@@ -567,7 +587,7 @@ Python's round review.
 | `availability`, `reason` | As in `round_review` above; `reason` only when unavailable. |
 | `rounds` | One entry per round, in `sequence` order: `round_id`, `sequence`, `documents`. |
 
-A document entry is `{"document_id", "availability": "missing_document"}` for a missing document, or `{"document_id", "units", "pairs_computed", "units_reused", "units_computed", "findings"}`. `findings` lists the document's Python findings in this round, in the shape of section 6, with `provenance: "computed"`, and `absence_path: "computed"` on a declared absence. These findings cite no REF id and carry no `source_rule_id`: only the registry id. A multi-round run folder holds no map from registry ids to operator's own ids. Registry ids are numbered `CONV-001`, `CONV-002`, ... in reading order of the conventions (input format, section 3), so the map can be rebuilt from the bundle's conventions.
+A document entry is `{"document_id", "availability": "missing_document"}` for a missing document, or `{"document_id", "units", "pairs_computed", "units_reused", "units_computed", "findings"}`. `findings` lists the document's Python findings in this round, in the shape of section 6, with `provenance: "computed"`, and `absence_path: "computed"` on a declared absence. These findings cite no REF id and carry no `source_rule_id`: only the registry id. A multi-round run folder holds no map from registry ids to operator's own ids. Registry ids are numbered `CONV-001`, `CONV-002`, ... in reading order of the conventions (input format, section 3, where a dropped short rule still uses up a number), so the map can be rebuilt from the bundle's conventions. An answer key travels without them: a scorer that checks the rule of a multi-round finding must be given the case's sealed conventions files too.
 
 What the round review computes: sums, products, blank cells, bands the rule states itself, and declared absences. It does not compute reference-table or labelled-sentence bands, date windows, change records or the "no rule applies" finding.
 
@@ -632,7 +652,7 @@ The code does not decide these. Each names the code it concerns.
 1. **How a sealed run's folder reaches the scorer.** A sealed cloud run keeps its session folder outside the repository and prints counts only (`tools/ordinary_final_bound_cloud.py`, `run_folder`; `tools/ordinary_final_cloud.py`, `execute`). Nothing in the code hands `downloaded/evidence/run/` to the scorer. The repository's own scorer also looks for a twin's run only under `output/runs/` (`tools/score_corpus.py`, `twin_findings`), where no cloud run folder lands.
 2. **Counting a judged absence once.** The model's raw judged-absence reply stays on the bus beside Python's stamped copy, including answers Python refused (section 5.5; `scripts/pipeline.py`, `_paired_convention_review`, `advisory = plan.get("kind") != "absence_judged"`). The repository's scorer counts every bus finding (`tools/score_corpus.py`, `_load_bus_findings`), so a refused answer can locate a planted flaw. Whether a scorer should read only the stamped copy is not decided.
 3. **`severity` on an amendment** is the fixed string `required` (`scripts/paired_review.py`, `amendment_from_finding`), even under a `[recommended]` rule. Whether that is intended, or a defect to record, is not decided.
-4. **Multi-round scoring.** No answer key format exists for a multi-round case. Round findings cite no REF id and carry no operator's own id, and the run folder holds no registry map (section 10.2; `scripts/multi_round_rounds.py`, `_findings_for_plans`; `scripts/pipeline.py`, `main`). The round review's scope (section 10.2; `PYTHON_PLAN_KINDS`, `review_document`) is what the code does; whether it is the intended scope for the first multi-round test is not decided.
+4. **Multi-round scoring.** The input format's section 9 now defines a multi-round key (entries scoped by round and document, scored on the round findings), but no scorer reads it yet. Round findings cite no REF id and carry no operator's own id, and the run folder holds no registry map (section 10.2; `scripts/multi_round_rounds.py`, `_findings_for_plans`; `scripts/pipeline.py`, `main`). The round review's scope (section 10.2; `PYTHON_PLAN_KINDS`, `review_document`) is what the code does; whether it is the intended scope for the first multi-round test is not decided.
 
 ## Sources
 
@@ -643,8 +663,11 @@ All files at branch `loop/s03`, commit `990ed88`, unless noted.
 - `scripts/pipeline.py`: `main` (decorators, `--output-dir`, final-mode block, multi-round branch and its return before the convention assignment, every early return and exit code, rename at end only without `--output-dir`, `completion.reached_end`), `_load_corpus`, `_review_slug`, `_slug_from_question`, `_inst_finder_switch`, `_inst_finder_startup_guard`, `_inst_finder_decision`, `_prior_comparison`, `_paired_convention_review` (`consume_judgment`, the advisory flag, `judging_calls_by_agent`, computed post with `judging_calls`, `PAIRED_JUDGING_CALLS` post, stamped judged post, `pairing` fields), `_stamped_judged_items`, `_stamp_source_rule_ids`, `phase_6_synthesis` (`_process_doc`), `_harvest_amendment_payloads_from_bus` (called once, before any per-document step), `_polish_findings`, `_prior_refusals_for`, `_prior_orphans_for`, `_draft_generate_with_evidence`, `_render_per_agent_md`.
 - `scripts/finding_record.py`: module docstring, `_FALLBACK`, `schema`, `is_finding`, `validate_finding`, `COMPUTED_BACKENDS`, `written_by`, `stamp_written_by`, `is_model_written`, `MODEL_FINDING_MARK`, `CHECKED_SOUNDING_FIELDS`, `model_finding_for_reader`, `RULE_ID_FIELD_ALIASES`, `resolved_rule_id`, `source_rule_id_for`, `PRIOR_RELATIONS`, `ABSENCE_RELATIONS`, `render_prior_comparison`, `figure_text`.
 - `config/agent_contracts.json`: `finding_record` (fields, required, relations, verdicts, says), `envelope`.
-- `scripts/paired_review.py`: `REL_TOLERANCE`, `ABS_TOLERANCE`, `unit_exponents`, `_unit_str`, `compute_checks`, `_close`, `disagreements`, `RELATION_DETAIL_FIELDS`, `finding_from_check`, `_default_explanation`, `dedupe`, `_absence_check`, `absence_plans`, `plan_calls` (plan kinds), `_rule_for_check`, `prior_checks`, `absent_checks`, `prior_findings`, `computed_finding_items`, `amendment_from_finding`, `stamp_note_writer`, `JUDGING_OUTCOMES`, `JUDGED_ABSENCE_PLAN`, `judging_call_record`, `judging_call_counts`, `notes_on_python_findings`, `note_models`, `computed_sentence`, `COMPUTED_PROVENANCE_WITH_NOTE`, `ABSENCE_PROVENANCE_WITH_NOTE`, `model_item_notes`, `_severity_makes_amendment`, `ensure_amendments_for_findings`, `figures_in_unit`, `unit_passage_refs`, `opens_with`.
+- `scripts/paired_review.py`: `REL_TOLERANCE`, `ABS_TOLERANCE`, `unit_exponents`, `_unit_str`, `compute_checks`, `_close`, `disagreements`, `RELATION_DETAIL_FIELDS`, `finding_from_check`, `_default_explanation`, `dedupe`, `_absence_check`, `absence_plans`, `plan_calls` (plan kinds), `_rule_for_check`, `prior_checks`, `absent_checks`, `PRIOR_REFUSAL_KINDS`, `prior_findings`, `computed_finding_items`, `amendment_from_finding`, `stamp_note_writer`, `JUDGING_OUTCOMES`, `JUDGED_ABSENCE_PLAN`, `judging_call_record`, `judging_call_counts`, `notes_on_python_findings`, `note_models`, `computed_sentence`, `COMPUTED_PROVENANCE_WITH_NOTE`, `ABSENCE_PROVENANCE_WITH_NOTE`, `model_item_notes`, `_severity_makes_amendment`, `ensure_amendments_for_findings`, `figures_in_unit`, `unit_passage_refs`, `opens_with`.
 - `scripts/pairing_map.py`: `pair_units`, `unmatched_findings`, `build_pairing_map`, `write_pairing_map`.
+- `scripts/reference_tables.py`: `prior_values_for_scalars` (its refusals and their `reason_kind`).
+- `scripts/agent_wrapper.py`, `current_items`, and `scripts/pipeline.py`, `_items_for`: supersession by `item_id` within one agent's results for one document.
+- `scripts/pipeline.py`, `resolve_review_mode`; `tools/ordinary_final_run.py`, `ARGV` and `MULTI_ROUND_ARGV` (`--review-mode paired`).
 - `scripts/amendment_render.py`: `CANONICAL_CONTENT_KEYS`, `MODEL_FINDINGS_KEY`, `render_model_findings`, `write_amendment_deliverables`.
 - `scripts/docx_builder.py`: `comment_author`, `COMPUTED_AUTHOR`, `anchor_span`, `AmendmentDocxBuilder`.
 - `scripts/message_bus.py`: `VALID_TYPES`, `VALID_ROLES`, `MessageBus.post`, `_validate`.
