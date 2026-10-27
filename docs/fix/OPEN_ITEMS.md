@@ -149,3 +149,54 @@ targeted one.
 **Included here deliberately.** This is the one item that is also recorded in CLAUDE.md. It is
 repeated because a future session looking for "what did we decide not to do" will look in this
 file, and a rule-shaped bullet in an operating contract does not read as an open question.
+
+---
+
+## 7. Gate check 252 fails on the Dockerfile's own text (found at loop S0, 2026-10-27)
+
+**What it is.** Check 252 requires the exact Dockerfile line `RUN python scripts/ship_gate.py`.
+`Dockerfile:153` reads `RUN /opt/shimmer-runtime/bin/python scripts/ship_gate.py`, so the check
+fails on the host whatever the interpreter. Inside the image there is no Dockerfile, so the check
+passes there.
+
+**Evidence.** The loop's S0 baseline (`docs/loop/GATE_BASELINE.md`), and the check's source
+(`scripts/verify_session1.py`, `check_252_document_dates_have_an_executed_shipping_ruling`). The
+earlier comparison record put this red down to the missing `fastapi`; it is not.
+
+**Why it was left.** S0 changes no product file. The Dockerfile is changed in S10 or S11.
+
+**What would settle it.** In the stage that changes the Dockerfile, either restore the exact line
+(if the image's `python` resolves to the runtime environment) or correct the check under the
+loop's evidence rule for gate checks, with its own neutralise, fail, restore, pass proof.
+
+---
+
+## 8. Gate check 112 fails on a real log-event name in agent_wrapper.py (found at loop S0)
+
+**What it is.** `scripts/agent_wrapper.py:1783` logs `'prompt_structure_write_error error_type=' +
+type(exc).__name__`. The event name contains the word `prompt`, which check 112 treats as a
+content-bearing name. The value interpolated is only an exception class name.
+
+**Evidence.** The loop's S0 baseline, check 112's printed reason.
+
+**Why it was left.** S0 changes no product file. S1 Part 4 changes `agent_wrapper.py` and fixes
+it there (P16).
+
+**What would settle it.** A content-free event name for that line, with check 112 passing.
+
+---
+
+## 9. The final-integration side gate rewrites a tracked file (found at loop S0)
+
+**What it is.** `scripts/final_integration_no_generation_gate.py:32` writes
+`docs/fix/final_model_integration/no_generation_tests.log`, which is tracked. Running the side
+gate changes the working tree (one line differed at S0, a timing figure). Gates are meant to be
+non-mutating.
+
+**Evidence.** `git status` after the S0 side-gate run; restored with `git checkout`.
+
+**Why it was left.** It changes no product behaviour, and the loop restores the file after every
+side-gate run. Changing the gate's output location is a test-infrastructure change.
+
+**What would settle it.** The gate writing its log to a temporary or ignored folder, with the
+tracked log kept as the historical record it is.

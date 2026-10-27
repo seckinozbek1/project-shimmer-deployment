@@ -1,3 +1,5 @@
+For the lead session only, started by Seckin in the main checkout: if `docs/loop/private/LOOP_STATE.md` exists and its status is not DONE, read `prompts/SHIMMER_AUTONOMOUS_LOOP_2026-10-27.md`, then that state file, then the newest file in `docs/loop/private/handoff/`, before doing anything else, and continue the loop from the step it names. Subagents, teammates, checkers, lanes, role sessions and clones ignore this line and do only the task they were given.
+
 # Project Shimmer, agent operating contract
 
 This file is the operating contract for an AI coding agent (Claude Code) working in
