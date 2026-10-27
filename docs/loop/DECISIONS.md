@@ -337,3 +337,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Options.** Refresh by hand at each step (rejected: item 6 asks for at least every 20 minutes while work runs, including while the lead waits on agents), or the hooks plus a scheduled task (chosen; P13: two small mechanisms, no subagent, no run).
 - **Reverse and cleanup.** S14 removes the task (`Unregister-ScheduledTask -TaskName ShimmerLoopProgress -Confirm:$false`) beside the reaper task; the hooks live in the private folder and stop with it.
 - **Rules.** Annex D (D-S10 items 1 and 6), P13.
+
+## D-045. D-S10 rewritten (16:25): the progress file is written only on request
+
+- **When, stage.** 2026-10-27 16:25 +0300 (system clock), at the operator's rewrite of D-S10 items 1, 5, 6 and 7, read in the specification file itself.
+- **Removed (item 6), replacing D-044 and the script of D-035.** The `post-commit` and `post-merge` hooks (they held only the progress refresh, so both files are gone; the `pre-push` hook stays), the scheduled task `ShimmerLoopProgress` (unregistered; none remains), and `docs/loop/private/progress_update.py`. Nothing polls. The marker file `docs/loop/private/SPEC_UPDATE` was deleted as instructed.
+- **From now on.** `PROGRESS.json` is written only when asked: when the operator asks where things stand in this session (item 5: recompute in full, fresh usage reading, answer with the code block only, continue), or when the operator's `PostToolUse` hook reports `docs/loop/private/PROGRESS_REQUEST` (item 7: recompute every figure from the real state, write it with a `recomputed` time, delete the request file, continue). The weights of D-035 stand.
+- **Rules.** Annex D (D-S10 items 1, 5, 6, 7).
