@@ -24,6 +24,8 @@ typed records the pipeline mints from Python's numbers (the model there supplies
 only the explanation sentence, so the records here carry Python's default sentence).
 The earlier-version comparison (a manifest ``prior``) is not run and is reported.
 
+It writes the pipeline's completion record, audit/run_completion.json (schema 1, state
+completed, reached_end true, exit_code 0), so the adapters read B2 and B3 by one rule.
 Every file written says on its first line (Markdown) or in its first key (JSON)
 that it is an ablation, not a review. Nothing is written under the repository's
 output/ unless --out names it.
@@ -34,6 +36,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import shutil
 import sys
@@ -63,9 +66,26 @@ from run_context import DELIVERABLE_FILENAMES  # noqa: E402
 ARM = "B2"
 ABLATION_TEXT = ("ABLATION B2 (Python only): Shimmer's computing layer with no model call. "
                  "This is not a review.")
-# The pipeline's own paired-mode default reviewers (pipeline.CONVENTION_REVIEW_AGENTS).
-# Read here as data: importing the pipeline would load its whole run machinery.
-CONVENTION_REVIEW_AGENTS = ("PRACTICE_AUDITOR", "STYLE_GUARDIAN")
+PIPELINE_SOURCE = SCRIPTS / "pipeline.py"
+COMPLETION_NAME = "run_completion.json"   # the pipeline's completion record (run_completion.py)
+
+
+def pipeline_literal(name, source=PIPELINE_SOURCE):
+    """The first top-level assignment of `name` in the pipeline source whose value is a
+    literal, read with ast: importing the pipeline would load its whole run machinery."""
+    tree = ast.parse(Path(source).read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == name for t in node.targets):
+            try:
+                return ast.literal_eval(node.value)
+            except ValueError:
+                continue
+    raise KeyError(name + " is not a literal assignment in " + Path(source).name)
+
+
+# The pipeline's own paired-mode default reviewers, read from its source at import.
+CONVENTION_REVIEW_AGENTS = tuple(pipeline_literal("CONVENTION_REVIEW_AGENTS"))
 COMPUTED_KINDS = ("computed", "band", "duration")
 NOT_ASKED_KINDS = ("absence_judged", "uncomputable")
 
@@ -143,11 +163,11 @@ def load_bundle(bundle):
     }
 
 
-def reference_index(context_docs, op_docs, registry):
-    """pipeline._build_reference_index, held in memory: the index file path points into
-    a directory that does not exist and save() is never called."""
-    idx = ReferenceIndex.open(Path(tempfile.gettempdir()),
-                              index_path=Path(tempfile.gettempdir()) / "b2_unsaved" / "index.json")
+def reference_index(context_docs, op_docs, registry, scratch):
+    """pipeline._build_reference_index, held in memory: the index file path points into a
+    fresh, empty temporary folder (`scratch`), so no earlier index can be loaded, and
+    save() is never called."""
+    idx = ReferenceIndex.open(Path(scratch), index_path=Path(scratch) / "unsaved" / "index.json")
     for d in context_docs:
         idx.index_document(input_type="context", document_id=d["id"], document_name=d["name"],
                            text=d["text"], max_paragraphs=120)
@@ -364,12 +384,25 @@ def _write_json(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def write_completion(out, run_id, started_at, *, document_count, amendment_count):
+    """The completion record in the pipeline's own schema (scripts/run_completion.py,
+    schema_version 1), so the adapters read B2 and B3 runs by the same rule. B2 writes it
+    only after its work is done: reached_end true, exit_code 0, state completed."""
+    _write_json(Path(out) / "audit" / COMPLETION_NAME, {
+        "ablation": ABLATION_TEXT, "schema_version": 1, "run_id": run_id, "state": "completed",
+        "started_at": started_at, "finished_at": _now(), "reached_end": True, "exit_code": 0,
+        "document_count": document_count, "amendment_count": amendment_count,
+        "error_type": None})
+
+
 def run(bundle, out, *, pairs_per_unit=None, root=ROOT):
     """Run B2 on one bundle into `out`. Returns the summary written to FINAL_STATUS.json."""
     out = Path(out)
+    started_at = _now()
     data = load_bundle(bundle)
     registry = data["registry"]
-    idx = reference_index(data["context_docs"], data["targets"], registry)
+    with tempfile.TemporaryDirectory(prefix="b2_index_") as scratch:
+        idx = reference_index(data["context_docs"], data["targets"], registry, scratch)
     context_refs = [e.as_dict() for e in idx.entries if e.input_type == "context"]
     assignment = assignment_for(registry, root)
     pairing_file = {"ablation": ABLATION_TEXT}
@@ -412,6 +445,8 @@ def run(bundle, out, *, pairs_per_unit=None, root=ROOT):
                   "refs_excerpt": "the document's own first 30 index entries "
                                   "(the pipeline's fallback when no embedding store is open)"}}
     _write_json(out / "FINAL_STATUS.json", status)
+    write_completion(out, "b2-" + Path(bundle).name, started_at, document_count=len(documents),
+                     amendment_count=sum(d["amendments"] for d in documents.values()))
     return status
 
 

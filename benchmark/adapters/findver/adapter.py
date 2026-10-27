@@ -87,19 +87,29 @@ def _gold(record) -> str:
     return GOLD_VALUES[value]
 
 
-def documents(records) -> list:
+def documents(records, options=None) -> list:
+    """The filings. The side is the declared official split; with --testmini on a
+    holdout build, a report that also appears in testmini is refused (section 1)."""
+    options = options or {}
+    side = options.get("side") or "official (undeclared, development build)"
+    if options.get("testmini") and side == ids.HOLDOUT:
+        overlap = {ids.key_string(r[REPORT_FIELD]) for r in read_source(options["testmini"])}
+        found = sorted({ids.key_string(r[REPORT_FIELD]) for r in records} & overlap)
+        if found:
+            raise ValueError("holdout reports that also appear in testmini: " + ", ".join(found[:10]))
+    elif side == ids.HOLDOUT and not options.get("development"):
+        raise ValueError("a FinDVer holdout build needs --testmini (section 1 removes overlapping reports)")
     claim_ids = [ids.key_string(r[ITEM_ID_FIELD]) for r in records]
     if len(set(claim_ids)) != len(claim_ids):
         raise ValueError("duplicate example id")
     out = []
     for report, claims in sorted(_reports(records).items()):
         context = claims[0][CONTEXT_FIELD]
-        parts, words = [], 0
+        parts = []
         for offset, entry in enumerate(context):
             text, kind, count = entry_text(entry)
-            words += count
-            parts.append({"text": text, "source": {"context_index": offset + CONTEXT_INDEX_BASE,
-                                                   "kind": kind}})
+            parts.append({"text": text, "words": count,
+                          "source": {"context_index": offset + CONTEXT_INDEX_BASE, "kind": kind}})
         rules, items = [], []
         for claim in claims:
             item_id = ids.opaque_item_id(BENCHMARK, claim[ITEM_ID_FIELD])
@@ -119,8 +129,8 @@ def documents(records) -> list:
                           "extra": {"subset": claim.get(SUBSET_FIELD)}})
         out.append({"document_id": ids.opaque_document_id(BENCHMARK, claims[0][REPORT_FIELD]),
                     "source_document_id": claims[0][REPORT_FIELD], "split_key": claims[0][REPORT_FIELD],
-                    "cluster": claims[0][REPORT_FIELD], "source_words": words, "parts": parts,
-                    "rules": rules, "items": items, "hash_split": False, "side": "official",
+                    "cluster": claims[0][REPORT_FIELD], "parts": parts,
+                    "rules": rules, "items": items, "side": side,
                     "record_extra": {"context_index_base": CONTEXT_INDEX_BASE}})
     return out
 

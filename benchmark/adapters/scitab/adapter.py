@@ -93,7 +93,7 @@ def _gold(record) -> str:
     return GOLD_VALUES[value]
 
 
-def documents(records) -> list:
+def documents(records, options=None) -> list:
     claim_ids = [ids.key_string(r[ID_FIELD]) for r in records]
     if len(set(claim_ids)) != len(claim_ids):
         raise ValueError("duplicate claim id")
@@ -112,9 +112,10 @@ def documents(records) -> list:
             "document_id": ids.opaque_document_id(BENCHMARK, first[TABLE_ID_FIELD]),
             "source_document_id": first[TABLE_ID_FIELD],
             "split_key": first[PAPER_ID_FIELD], "cluster": first[PAPER_ID_FIELD],
-            "source_words": ids.word_count(str(first[CAPTION_FIELD]))
-            + bundle.table_words(first[HEADER_FIELD], first[ROWS_FIELD]),
-            "parts": [{"text": part_text(first), "source": {"part": "caption and table"}}],
+            "side": ids.split_side(first[PAPER_ID_FIELD]),
+            "parts": [{"text": part_text(first), "source": {"part": "caption and table"},
+                       "words": ids.word_count(caption_line(first[CAPTION_FIELD]))
+                       + bundle.table_words(first[HEADER_FIELD], first[ROWS_FIELD])}],
             "rules": rules, "items": items})
     return out
 

@@ -173,3 +173,23 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **The subagent's own choices** (rule ids written as `CONV-...`; a `Passage` label so every rule pairs with every unit; a refusal is the UNCERTAIN marker, since `record_verdict` holds only ok or irregular; gold stays in the bundle's answer key as the input format requires; the cut text is the same for B1 and B3; six design questions listed as open before freeze) are accepted.
 - **Rules.** P1, P9, P13; S4e, S4f, S8c.
 - **Reverse.** A fresh checker attacks the completed version at the end of S5 (S4e item 11); every item open before freeze is settled there or its benchmark is dropped before sampling.
+
+## D-029. S4 checker round 1 closed; ContractNLI added; checks 282 and 283
+
+- **When, stage.** 2026-10-27 12:33 +0300 (system clock), S4, merging the adapters lane's round-1 fixes and the ContractNLI adapter.
+- **Round 1.** Completeness 92 items, claims and hygiene 25, adversarial 25 (1 CRITICAL: the run-output names fitted B2's output, not the pipeline's, so every B3 item would have been ABSTAIN). Every CRITICAL and SERIOUS item closed by the lane with neutralise-fail-restore-pass proofs (44, each in a fresh subprocess with a fresh bytecode cache); the rest fixed or reworded; reports kept privately.
+- **Accepted by the profile (no operator question, Annex D):**
+  1. The document-level hash (the split key) replaces S4c item 0's item-id rule for B-dev; `PREREGISTRATION.md` section 1 says so, and it overrides the spec text copied into `ROLE_BDEV.md`, which stays mechanical (P13: a document's decisions on one side is what the clustered statistics need).
+  2. Run failure is read from `audit/run_completion.json` (the pipeline's own completion record, valid only when it reached the end with exit code 0); B2 writes the same record; labelling B3 and B4 is refused until the typed-record key is settled (section 12 item 9).
+  3. B1 prompt revision 2 (before any development item): a rule that says to emit UNCERTAIN means the undecided label; a reference-material slot; conventions as written; JSON escape repair; the ContractNLI lines.
+  4. Cut rule: a per-document budget, the cut line without a colon, build refused without a budget unless marked development, B1 stops on overflow.
+  5. Sides enforced at build: ContraDoc's frozen group file computed once by B-dev with its hash recorded; FinDVer holdout builds refuse testmini reports.
+  6. INFRA-037 supersession before classifying (section 5.1).
+  7. Location: the denominator is measurable FLAG items; B1 by any one quoted sentence; unit ids compared without case.
+  8. CUAD duplicates kept by `title`; S8 aims at three benchmarks in priority order and records why if fewer qualify; `B_SIZES.json` contents stated in section 2; B1 base versus tuned checkpoint settled in S5 (section 12 item 12).
+  9. The preregistration additions after D-021 (section 5.7 items 16 to 18, section 7's single-claim analysis, section 9's limitations, section 12 items 10 to 12).
+  10. ContractNLI under D-S3: official dev split is development, test the holdout pool, train unused; irregular is Contradiction, a refusal NotMentioned, ok or silence Entailment, run failure ABSTAIN; S-2 does not apply; accuracy with F1 for Contradiction and Entailment as the headline; its evidence measures replaced by location recall, labelled not official.
+  11. D-019's wording corrected: every adapter has PROVISIONAL fields (named in section 12 item 5), not only CUAD.
+  12. Named extras: `benchmark/adapters/` and `benchmark/baselines/` join the cloud archive's list at the S4 merge into the loop branch, after S2 brings the list.
+- **Checks.** Registered as 282 (baseline arms) and 283 (adapters), numbered after S2's 278 to 280 and S3's generator check (281) in stage-merge order; both PASS when run alone. The S4 plan's text about five adapters and SummEdits predates D-019 and D-S3; this entry supersedes it.
+- **Rules.** P1, P13, Annex D, IV.6.

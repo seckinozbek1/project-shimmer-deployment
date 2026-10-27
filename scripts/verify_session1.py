@@ -24793,6 +24793,30 @@ def check_277_inst_finder_switch_needs_a_ratified_amendment():
     return check()
 
 
+def check_282_baseline_arms_hold_their_contracts():
+    """Loop stage S4f: B2 (benchmark/baselines/python_only.py) makes no model call,
+    imports no model library (fresh subprocess), writes the pipeline's completion
+    record and marks every file an ablation; B1 (bare_model.py) verifies its model once
+    and stops before generating on a load, identity, context or record failure, writes
+    one reply record per item, parses with escape repair or abstains, and sends the
+    preregistered prompt through the one renderer. SKIP when benchmark/baselines/ is
+    absent."""
+    from baseline_checks import check
+    return check()
+
+
+def check_283_benchmark_adapters_follow_the_preregistration():
+    """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
+    items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
+    budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
+    no source id in a bundle; bundles read back as input-format-v1-draft and as
+    pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 refused until section 12 item 9); the
+    metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
+    from adapter_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25151,6 +25175,10 @@ CHECKS = [
      check_276_every_model_reply_is_saved_once_with_its_outcome),
     ("277 the INST_FINDER switch is honoured only under a ratified amendment",
      check_277_inst_finder_switch_needs_a_ratified_amendment),
+    ("282 the baseline arms: B2 calls and imports no model, B1 verifies once and records every reply",
+     check_282_baseline_arms_hold_their_contracts),
+    ("283 the benchmark adapters build, cut, split, map and score as the preregistration says",
+     check_283_benchmark_adapters_follow_the_preregistration),
 ]
 
 
