@@ -2,11 +2,14 @@
 
 The Lambda budget for this loop is 50 USD in total (Part II, H3), counted from the start of S0, taken as the ledger's opening line (2026-10-27 03:16 UTC; the session started at 03:00 UTC and nothing was spent before the ledger opened). This file shows the running total, the forecast against the actual cost of every run, and what remains. It never holds an instance id. The private ledger (`docs/loop/private/budget_ledger.jsonl`) holds the detail.
 
+> Note (2026-10-27 13:23 +0300): since the operator's decision D-S9 (09:34 UTC) the budget is 70 USD with a 69 USD hard stop; see the allocation table from 09:34 UTC below and DECISIONS.md D-030 and D-031.
+
 ## Running total
 
 | Date (UTC) | Event | Instance minutes | Instance cost (USD) | Storage share to date (USD) | Total spent (USD) | Remaining (USD) |
 |---|---|---|---|---|---|---|
 | 2026-10-27 03:16 | Budget opened at S0. No instance running, no orphan. | 0 | 0.00 | 0.00 | 0.00 | 50.00 |
+| 2026-10-27 09:34 | Budget raised to 70 USD by the operator (D-S9); reaper hard stop 69 USD; seven-day launch limit 95%. No instance has run. | 0 | 0.00 | 0.03 | 0.03 | 69.97 |
 
 ## Allocations (IV.3)
 
@@ -49,3 +52,18 @@ v10 and v11 have no `cost.json` on this laptop. The v12 phases, from its local `
 | Run | Purpose | Forecast (USD) | Cap (USD) | Actual (USD) | Variance |
 |---|---|---|---|---|---|
 | (none yet) | | | | | |
+
+## Allocation from 2026-10-27 09:34 UTC (operator decision D-S9; supersedes the table above)
+
+| Allocation | USD | Notes |
+|---|---|---|
+| S5 development runs | 24.00 | S6 may spend only what S5 leaves unused. |
+| S8 sealed evaluation | 36.00 | Reserve pays only infrastructure re-runs in S8. S4e item 2's sizing rule is re-run with this figure when the preregistration is completed at the end of S5. |
+| Smoke runs (S12 item 8) | 3.00 | |
+| Reserve | 7.00 | Storage share is charged here first (forecast 3.90 USD to the loop's end). Unused allocation rolls forward. |
+
+The reaper's hard stop is 69 USD and the controller's budget guard counts against 70 USD; both read the budget from the ledger's latest budget line since commit `addf658` (merged `e1ca581`, D-031); the scheduled reaper's first run after the merge, at 2026-10-27 10:06:59 UTC, reported budget 70 and hard stop 69. No new launch while five-hour usage is at or above 70 percent or seven-day usage at or above 95 percent.
+
+## How a launch is capped (since S2 checker round 2, 2026-10-27)
+
+The per-run cap is min(1.5 x forecast, ceiling - spend - caps of running loop instances - storage forecast), where the ceiling is min(hard stop, budget - 1), both read from the ledger's latest budget line (69 USD now); a line whose hard stop equals its budget still keeps the one-dollar margin. An open launch accrues spend only up to its recorded deadline; past it, with no instance of its name listed, the reaper closes it with one termination line (reason `intent_without_instance`, or `instance_not_listed_charged_to_deadline` when the instance is gone), charged to the deadline. That charge is a ceiling, counted as actual spend and never refunded. The line goes to every ledger file that holds the launch, so a launch recorded only in R's ledger is closed in R's ledger.

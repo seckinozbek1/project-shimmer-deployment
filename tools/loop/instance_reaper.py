@@ -9,8 +9,26 @@ What it does on every run:
    never launch anything).
 3. Terminates every instance whose name starts with ``shimmer-loop-`` that is past its
    recorded deadline, or that has no recorded deadline, and every loop instance once
-   total loop spend reaches the hard stop (49 USD).
-4. Appends one ledger line per termination and writes ``reaper_status.json``.
+   total loop spend reaches the hard stop. The budget and the hard stop are read from the
+   ledger's latest ``budget_open`` or ``budget_change`` line (``budget_figures``), never
+   from a number in this file: the hard stop is that line's ``hard_stop_usd``, else its
+   ``budget_usd`` less the one-dollar margin. With no budget line at all, no loop launch
+   is allowed (the budget guard refuses one), so every loop instance found is terminated.
+4. Closes every launch the ledger still holds open past its recorded deadline when no
+   instance of that name is listed: an intent whose launch created no instance
+   (reason ``intent_without_instance``) or a launch whose instance is gone (reason
+   ``instance_not_listed_charged_to_deadline``). An open launch accrues spend only to its
+   recorded deadline, and the closing line's ``actual_cost`` is that same charge: the price
+   times the minutes from the launch request to the deadline. It is a CEILING, not a
+   measurement (the instance may have cost less, or nothing), counted as actual spend and
+   never refunded; its reason says it was charged that way.
+5. Appends one ledger line per termination or closure and writes ``reaper_status.json``. A
+   line for a launch a ledger records goes to EVERY ledger file that holds a launch line for
+   that launch (the private ledger, R's, or both for a copied line), so a launch recorded
+   only in R's ledger is closed where R's guard reads it; a line for a listed loop instance
+   no ledger records goes to the append ledger (by default the private one). A line it
+   writes carries only declared ledger fields (``tools/loop_budget_guard.LEDGER_FIELDS``,
+   which declares its ``by`` and ``reason``).
 
 It never touches an instance without the loop prefix, and it never prints a key: every
 provider error is reduced to its class name before it reaches output.
@@ -20,13 +38,17 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = 'shimmer-loop-'
-HARD_STOP_USD = 49.0
+# The margin between the budget and the hard stop when a budget line names no hard stop
+# (IV.3's one dollar). The budget itself is never a code constant.
+MARGIN_USD = 1.0
+BUDGET_EVENTS = ('budget_open', 'budget_change')
 PRIVATE_LEDGER = ROOT / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl'
 R_LEDGER = Path.home() / 'local' / 'shimmer-roles' / '_handoff' / 'R_ledger.jsonl'
 STATUS = ROOT / 'docs' / 'loop' / 'private' / 'reaper_status.json'
@@ -60,15 +82,17 @@ def read_ledger(path):
 
 
 def ledger_view(rows, now):
-    """Return per-instance records keyed by name, and total spend counted once per launch.
+    """Return per-instance records keyed by name, the closed launches (launch key to the
+    termination line that closed it), and total spend counted once per launch.
 
     A launch is identified by its instance id when known, else by its name. Each launch is
     counted once across both ledgers: a closed launch by its recorded actual cost, an open
-    one by its price times the minutes since the launch request (rounded up, which
-    overstates slightly and is safe). The storage share accrues from the loop's start.
+    one by its price times the minutes since the launch request, never past its recorded
+    deadline (rounded up, which overstates slightly and is safe). The storage share accrues
+    from the loop's start.
     """
     launches = {}
-    closed = {}
+    terminations = []
     storage_rate = 0.0
     loop_start = None
     for row in rows:
@@ -87,9 +111,27 @@ def ledger_view(rows, now):
             merged.update(launches.get(ident, {}))
             merged.update(row)
             launches[ident] = merged
-        elif event == 'termination':
-            ident = row.get('instance_id') or row.get('instance_name')
-            if ident:
+        elif event == 'termination' and (row.get('instance_id') or row.get('instance_name')):
+            terminations.append(row)
+    # A termination closes a launch when it names the launch's instance id OR its instance
+    # name. An intent whose launch line was never written (the request succeeded but its
+    # reply was lost, or the controller died before writing it) is keyed by its name, while
+    # the termination that ends it (the controller's recovery, or this reaper) carries the
+    # id: matching on either keeps such a launch from staying open, and charged, for good.
+    # A name match counts only for a termination at or after the launch request, so a later
+    # launch reusing a name is never closed by an earlier termination.
+    closed = {}
+    for ident, rec in launches.items():
+        for row in terminations:
+            by_id = row.get('instance_id') and row.get('instance_id') in (ident, rec.get('instance_id'))
+            by_name = row.get('instance_name') and row.get('instance_name') == rec.get('instance_name')
+            if by_name and not by_id:
+                start = rec.get('launch_requested_utc') or rec.get('time_utc')
+                try:
+                    by_name = not start or not row.get('time_utc') or parse_time(row['time_utc']) >= parse_time(start)
+                except (ValueError, TypeError):
+                    by_name = False
+            if by_id or by_name:
                 closed[ident] = row
     spend = 0.0
     by_name = {}
@@ -100,29 +142,117 @@ def ledger_view(rows, now):
         elif ident in closed:
             spend += accrued(rec, parse_time(closed[ident].get('time_utc', now.isoformat())))
         elif rec.get('event') == 'launch' or rec.get('launch_requested_utc'):
-            spend += accrued(rec, now)
+            # An open launch accrues only to its recorded deadline: an intent whose launch
+            # created no instance would otherwise accrue for ever. Charging to the deadline
+            # overstates such an intent (it cost nothing), which is the safe side; an
+            # instance still running past it is ended, and charged its real minutes, by the
+            # reaper's next pass.
+            spend += accrued(rec, now, to_deadline=True)
     if loop_start and storage_rate:
         days = max(0.0, (now - parse_time(loop_start)).total_seconds() / 86400)
         spend += storage_rate * days
     return by_name, closed, spend
 
 
-def accrued(rec, until):
+def budget_figures(rows):
+    """(budget_usd, hard_stop_usd) from the latest budget line, or (None, None).
+
+    Lines are ordered by their own ``time_utc`` (read order breaks a tie). A line with no
+    readable time, or whose figures are not finite positive numbers with the stop at or
+    below the budget, is skipped."""
+    timed = []
+    for index, row in enumerate(rows):
+        if row.get('event') not in BUDGET_EVENTS:
+            continue
+        try:
+            budget = float(row['budget_usd'])
+            stop = float(row['hard_stop_usd']) if row.get('hard_stop_usd') is not None else budget - MARGIN_USD
+            moment = parse_time(row['time_utc'])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if math.isfinite(budget) and math.isfinite(stop) and 0 < stop <= budget:
+            timed.append((moment, index, budget, stop))
+    if timed:
+        latest = max(timed, key=lambda item: (item[0], item[1]))
+        return latest[2], latest[3]
+    return None, None
+
+
+def recorded_deadline(rec):
+    """The record's deadline as a time, or None when it has none or it does not parse."""
+    try:
+        return parse_time(rec['deadline_utc']) if rec.get('deadline_utc') else None
+    except (TypeError, ValueError):
+        return None
+
+
+def accrued(rec, until, to_deadline=False):
+    """Price times the minutes from the launch request to `until` (rounded up); with
+    `to_deadline`, never past the record's own deadline."""
     start = rec.get('launch_requested_utc') or rec.get('time_utc')
     price = rec.get('price_usd_per_hour')
     if not start or price is None:
         return 0.0
+    deadline = recorded_deadline(rec) if to_deadline else None
+    if deadline is not None and deadline < until:
+        until = deadline
     minutes = max(0, math.ceil((until - parse_time(start)).total_seconds() / 60))
     return float(price) * minutes / 60
 
 
-def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD):
-    """One reaper pass. Returns a status dict with no key material."""
+def _same_file(a, b):
+    try:
+        return os.path.normcase(str(Path(a).resolve())) == os.path.normcase(str(Path(b).resolve()))
+    except OSError:
+        return str(a) == str(b)
+
+
+def _request_time(row):
+    return row.get('launch_requested_utc') or row.get('time_utc')
+
+
+def holders(rec, rows_by_path):
+    """The ledger files that hold a launch line (an intent or a launch) for this launch: one
+    carrying its instance id, or its name with the same launch request time (a later launch
+    reusing a name is another launch). Each file once, in reading order."""
+    out = []
+    for path, rows in rows_by_path:
+        for row in rows:
+            if row.get('event') not in ('launch_intent', 'launch'):
+                continue
+            same_id = bool(rec.get('instance_id')) and row.get('instance_id') == rec.get('instance_id')
+            same_name = (row.get('instance_name') == rec.get('instance_name')
+                         and _request_time(row) is not None and _request_time(row) == _request_time(rec))
+            if same_id or same_name:
+                out.append(path)
+                break
+    return out
+
+
+def write_line(paths, line):
+    for path in paths:
+        with open(path, 'a', encoding='utf-8') as handle:
+            handle.write(json.dumps(line, sort_keys=True) + '\n')
+
+
+def reap(provider, ledger_paths, append_path, now=None):
+    """One reaper pass. Returns a status dict with no key material.
+
+    A line about a launch a ledger records is written to every ledger file holding it
+    (``holders``); `append_path` receives a line only for a listed loop instance no ledger
+    records."""
     now = now or utc_now()
     rows = []
+    rows_by_path = []
     for path in ledger_paths:
-        rows.extend(read_ledger(path))
+        if any(_same_file(path, seen) for seen, _ in rows_by_path):
+            continue
+        read = read_ledger(path)
+        rows_by_path.append((Path(path), read))
+        rows.extend(read)
+    targets = lambda rec: (holders(rec, rows_by_path) if rec is not None else []) or [Path(append_path)]
     by_name, closed, spend = ledger_view(rows, now)
+    budget, hard_stop = budget_figures(rows)
     listed = provider.request('instances')['data']
     running = [item for item in listed
                if str(item.get('name') or '').startswith(PREFIX)
@@ -131,7 +261,9 @@ def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD)
     for item in running:
         name = item['name']
         rec = by_name.get(name)
-        if spend >= hard_stop:
+        if hard_stop is None:
+            reason = 'no_budget_recorded'
+        elif spend >= hard_stop:
             reason = 'hard_stop_spend_reached'
         elif rec is None or not rec.get('deadline_utc'):
             reason = 'no_recorded_deadline'
@@ -149,12 +281,38 @@ def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD)
                 'instance_id': item['instance_id'], 'instance_name': name, 'reason': reason,
                 'type': item.get('type'), 'region': item.get('region'),
                 'actual_minutes': minutes, 'actual_cost': cost}
-        with open(append_path, 'a', encoding='utf-8') as handle:
-            handle.write(json.dumps(line, sort_keys=True) + '\n')
+        write_line(targets(rec), line)
         terminated.append({'instance_name': name, 'reason': reason})
+    # A launch still open in the ledger past its recorded deadline, with no instance of its
+    # name listed, is closed here: an intent whose launch created no instance (the
+    # controller died between the intent line and the launch reply), or a launch whose
+    # instance is already gone. Left open, it would keep the guard refusing every launch as
+    # "another loop instance". Its line is charged to the deadline: a ceiling, counted as
+    # actual and never refunded, which its reason names. It is written to every ledger file
+    # that holds the launch, so R's guard, which reads R's ledger, sees it closed too.
+    listed_names = {item['name'] for item in running}
+    closed_now = []
+    for name, rec in by_name.items():
+        deadline = recorded_deadline(rec)
+        if (rec['ident'] in closed or name in listed_names or deadline is None or now < deadline
+                or not (rec.get('event') == 'launch' or rec.get('launch_requested_utc'))):
+            continue
+        reason = ('intent_without_instance' if rec.get('event') == 'launch_intent'
+                  else 'instance_not_listed_charged_to_deadline')
+        start = rec.get('launch_requested_utc') or rec.get('time_utc')
+        minutes = cost = None
+        if start and rec.get('price_usd_per_hour') is not None:
+            minutes = max(0, math.ceil((deadline - parse_time(start)).total_seconds() / 60))
+            cost = round(float(rec['price_usd_per_hour']) * minutes / 60, 4)
+        line = {'event': 'termination', 'by': 'reaper', 'time_utc': now.isoformat(),
+                'instance_id': rec.get('instance_id'), 'instance_name': name, 'reason': reason,
+                'type': rec.get('type'), 'region': rec.get('region'),
+                'actual_minutes': minutes, 'actual_cost': cost}
+        write_line(targets(rec), line)
+        closed_now.append({'instance_name': name, 'reason': reason})
     return {'last_run_utc': now.isoformat(), 'listed': len(listed),
-            'loop_running': len(running), 'terminated': terminated,
-            'total_spend_usd': round(spend, 4), 'hard_stop_usd': hard_stop, 'error': None}
+            'loop_running': len(running), 'terminated': terminated, 'closed_without_instance': closed_now,
+            'total_spend_usd': round(spend, 4), 'budget_usd': budget, 'hard_stop_usd': hard_stop, 'error': None}
 
 
 class MockProvider:
@@ -197,7 +355,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Terminate loop instances past their deadline.')
     parser.add_argument('--mock-state', help='JSON file standing in for the provider (proofs only)')
     parser.add_argument('--ledger', action='append', help='ledger to read (repeatable); default: private and R ledgers')
-    parser.add_argument('--append-to', help='ledger that receives termination lines; default: the private ledger')
+    parser.add_argument('--append-to', help='ledger that receives a line for a loop instance no ledger records '
+                                            '(a recorded launch is closed in every ledger holding it); '
+                                            'default: the private ledger')
     parser.add_argument('--status', help='status file; default: docs/loop/private/reaper_status.json')
     parser.add_argument('--now', help='ISO time to use instead of the clock (proofs only)')
     args = parser.parse_args(argv)

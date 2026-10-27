@@ -110,8 +110,13 @@ def _load_bus_findings(run_dir):
             continue
         body = msg.get("body")
         payload = body.get("payload") if isinstance(body, dict) else None
+        # S2a, item 7: who wrote each record, read off the post it travelled in,
+        # kept beside the record (underscore: the scorer's own annotation).
+        who = finding_record.written_by(body.get("backend"), body.get("model")) \
+            if isinstance(body, dict) else finding_record.WRITTEN_BY_MODEL
         for item in (payload.get("items") if isinstance(payload, dict) else None) or []:
             if finding_record.is_finding(item):
+                item["_written_by"] = who
                 out.append(item)
     return out
 
@@ -137,8 +142,14 @@ def _load_assignment(run_dir):
     return by_rule if isinstance(by_rule, dict) else None
 
 
-def _print_relation_breakdown(findings):
+def _print_relation_breakdown(findings, confirmed=()):
     """Every relation the run's typed findings actually carry, counted.
+
+    S2a, item 7: "relations found" counts only a relation Python computed or the
+    key confirmed (`confirmed`: model findings whose stated reason matched a
+    planted entry's claim). A relation only a model's unconfirmed finding carries
+    is printed on its own line and marked, so a model's "sum_mismatch" is never
+    read as a sum the run found wrong.
 
     Named from the data, not from a list in this file: when a relation is
     appended to the Finding record (date_window, the duration comparison, was
@@ -148,14 +159,21 @@ def _print_relation_breakdown(findings):
     computed, posted and scored toward recall, while every per-relation view
     in this file could only see the two band relations.
     """
-    counts = {}
+    counts, model_only = {}, {}
+    confirmed_ids = {id(f) for f in confirmed}
     for f in findings:
         rel = str(f.get("relation") or "(none)")
-        counts[rel] = counts.get(rel, 0) + 1
-    if not counts:
+        python_made = f.get("_written_by", "model") == "python"
+        target = counts if (python_made or id(f) in confirmed_ids) else model_only
+        target[rel] = target.get(rel, 0) + 1
+    if not counts and not model_only:
         return
-    print("relations found : %s" % ", ".join(
-        "%s=%d" % (rel, n) for rel, n in sorted(counts.items())))
+    print("relations found : %s" % (", ".join(
+        "%s=%d" % (rel, n) for rel, n in sorted(counts.items())) or "(none)"))
+    if model_only:
+        print("model-only relations (written by a model, not confirmed by Python or "
+              "the key; not counted above): %s" % ", ".join(
+                  "%s=%d" % (rel, n) for rel, n in sorted(model_only.items())))
 
 
 def _completeness_note(run_dir, amendments):
@@ -590,6 +608,7 @@ def score(corpus, run_dir):
 
     found, attributed, how, review_states = [], [], [], []
     reason_ok, reason_why = [], []
+    confirmed_hits = []
     for p in planted:
         unit, rule = str(p["unit"]).lower(), str(p["rule"]).upper()
         relation = str(p.get("relation") or "")
@@ -622,6 +641,8 @@ def score(corpus, run_dir):
                        if str(a.get("source_convention_ref") or "").upper() == rule
                        and a.get("finding_relation")]
         ok, why = _reason_matches(p.get("claim"), bus_hits + amend_typed)
+        if ok:
+            confirmed_hits.extend(bus_hits)
         if is_found and ok is None and via_rule and not via_bus and p.get("claim"):
             # Located through an older AMENDMENT without typed reason fields.
             # Its coarse finding_type alone cannot establish the reason.
@@ -721,7 +742,7 @@ def score(corpus, run_dir):
     print("false positives : %d" % len(false_pos))
     print("distractor hits : %d" % len(distractor))
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
-    _print_relation_breakdown(findings)
+    _print_relation_breakdown(findings, confirmed_hits)
     _print_twin_check(corpus, key, findings)
     print()
     print("  planted      rule      kind                  found  reason  attributed  review state        matched via")

@@ -60,15 +60,23 @@ def main(bundle):
             require(git('show', binding['source_commit'] + ':' + name).replace(b'\r\n', b'\n') == data,
                     'Archived runtime differs from sealed commit: ' + name)
             compared += 1
+    sealed = seal.get('exposure') == 'sealed'
     generated = sorted(n for n in members if n not in tree)
     for name in generated:
-        require(name.startswith('input/') or name.startswith('docs/fix/'), 'Unexpected non-committed archive member: ' + name)
+        # A generated member is the run's input (the workload, or a sealed test's documents)
+        # or the evidence folder of the development path; nothing else.
+        require(name.startswith('input/') or name.startswith('docs/fix/'),
+                'Unexpected non-committed archive member: ' + ('a test file' if sealed else name))
+    # HEAD may move after sealing, but never in a file that launches or seals the run: the
+    # archived runtime, the bound controller and the preparation sources. (The run's evidence
+    # no longer has to live under docs/fix/: an external run folder is the sealed default.)
     moved = git('diff', '--name-only', binding['source_commit'], 'HEAD').decode().splitlines()
-    require(all(n.startswith('docs/fix/') for n in moved),
-            'HEAD changed runtime files after the sealed commit: ' + str([n for n in moved if not n.startswith('docs/fix/')]))
+    pinned = set(members) | set(m['local_control_hashes']) | set(m['preparation_source_hashes'])
+    runtime_moved = [n for n in moved if n in pinned]
+    require(not runtime_moved, 'HEAD changed runtime files after the sealed commit: ' + str(runtime_moved))
     receipt.update(project_tree_verified=True, archive_members=len(members), members_compared_to_sealed_commit=compared,
-                   generated_members=generated, head_commit=git('rev-parse', 'HEAD').decode().strip(),
-                   head_moved_by_evidence_only=moved, sealed_runtime_is_what_launches=True)
+                   generated_members=len(generated) if sealed else generated, head_commit=git('rev-parse', 'HEAD').decode().strip(),
+                   head_moved_outside_the_runtime=len(moved) if sealed else moved, sealed_runtime_is_what_launches=True)
     with tempfile.TemporaryDirectory() as folder:
         root = Path(folder)
         for name in [decoding_policy.DECLARATION] + [n for n in members if n.startswith('tuning/')]:

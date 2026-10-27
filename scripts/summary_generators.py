@@ -18,6 +18,179 @@ import finding_record
 def _now(): return datetime.now(timezone.utc).isoformat()
 
 
+# S2a, item 2: the sentences that name who produced a document's findings are
+# generated from the findings themselves (each stamped `written_by` from the
+# envelope it was posted under), never from a fixed list of agent names. Both
+# sentences have a rendering in the second output language (tr) in
+# scripts/ui/localization_catalog.js.
+NO_MODEL_AGENT = "no model agent"
+# Reader check RD1/RD4: a model's note beside Python's figures names the model the
+# record says wrote it; with none recorded, it says so
+# (finding_record.NOTE_MODEL_NOT_RECORDED).
+NO_NOTE_MODEL = "none"
+RULES_APPLIED_HEADING = "## Rules applied"
+RULE_TEXT_LABEL = "rule text: "
+
+
+def model_note_line(text, model=None) -> str:
+    return (localization.text("A model's note (model: ") + str(model or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED))
+            + localization.text("), not checked by Python: ") + '"' + str(text) + '"')
+
+
+def findings_provenance(findings, judging_calls=None) -> dict:
+    """Counts by who wrote them: Python's findings (those computed from the
+    document's figures apart from the absences Python checked in code, reader
+    check round 3 item 6), the items a model wrote (and the agents whose replies
+    carried them), the model-written NOTES attached to Python's findings with the
+    models the records name for them (RD4), and the judging calls that were asked
+    for those notes (round 3 item 2: every call, including one whose note was not
+    kept)."""
+    import paired_review
+    findings = [f for f in findings or [] if isinstance(f, dict)]
+    model = [f for f in findings if finding_record.is_model_written(f)]
+    python = [f for f in findings if not finding_record.is_model_written(f)]
+    checked = [f for f in python if f.get("relation") in finding_record.ABSENCE_RELATIONS]
+    notes = [f for f in python if f.get("explanation_by") == finding_record.WRITTEN_BY_MODEL]
+    # S2 checker round 3 (item 2): the calls that could carry a note are counted apart
+    # from the judged-absence calls, which are never asked for one.
+    calls = paired_review.judging_call_counts(judging_calls)
+    return {"total": len(findings), "computed": len(python),
+            "from_figures": len(python) - len(checked), "checked_absent": len(checked),
+            "model": len(model),
+            "model_agents": sorted({str(f.get("agent") or "?") for f in model}),
+            "notes": paired_review.notes_on_python_findings(findings),
+            "note_models": sorted({str(f.get("explanation_model") or finding_record.NOTE_MODEL_NOT_RECORDED) for f in notes}),
+            "judging_calls": calls["calls"], "note_calls": calls["note_calls"],
+            "absence_calls": calls["absence_calls"]}
+
+
+def _agents_text(provenance):
+    return ", ".join(provenance["model_agents"]) or NO_MODEL_AGENT
+
+
+def _note_models_text(provenance):
+    return ", ".join(provenance.get("note_models") or []) or NO_NOTE_MODEL
+
+
+def _python_counts(provenance):
+    """Reader check round 3 (item 6): the findings Python computed from figures and
+    the absences it checked in code are counted apart, never as one number."""
+    return (provenance.get("from_figures", provenance["computed"]),
+            provenance.get("checked_absent", 0))
+
+
+# S2 checker round 3 (item 2): ONE count of notes (one per Python finding that carries
+# a model's note, paired_review.notes_on_python_findings) under ONE label, and the
+# judging calls split by what they were asked, in every file that states them: the
+# document summary, the grounding summary and reviewed_document.md.
+NOTES_KEPT_LABEL = "model-written notes kept on Python's findings"
+CALL_COUNTS_TEXT = ("judging calls that could carry a note: {note_calls}; "
+                    "judged-absence calls, never asked for a note: {absence_calls}")
+CALLS_AND_NOTES_TEXT = CALL_COUNTS_TEXT + "; " + NOTES_KEPT_LABEL + ": {notes}"
+
+
+def _notes_text(provenance):
+    """Round 3 (item 2) and S2 checker round 3 (item 2): the notes kept on Python's
+    findings, then the judging calls that could carry a note, then the judged-absence
+    calls, which are never asked for one."""
+    return "%d; %s" % (provenance.get("notes", 0), CALL_COUNTS_TEXT.format(
+        note_calls=provenance.get("note_calls", provenance.get("judging_calls", 0)),
+        absence_calls=provenance.get("absence_calls", 0)))
+
+
+@localization.presentation
+def calls_and_notes_text(calls, notes) -> str:
+    """The same counts for one agent (reviewed_document.md): its judging calls split
+    by what they were asked, and the notes kept on its Python findings."""
+    import paired_review
+    counts = paired_review.judging_call_counts(calls)
+    return localization.text(CALLS_AND_NOTES_TEXT, note_calls=counts["note_calls"],
+                             absence_calls=counts["absence_calls"], notes=int(notes or 0))
+
+
+def context_findings_sentence(n_conventions, provenance, document_name) -> str:
+    # Reader check RC10/RD4: no bare total that mixes the kinds; the model-written
+    # notes on Python's findings are counted and their models named apart.
+    figures, checked = _python_counts(provenance)
+    return ("This document was reviewed against %d conventions. Findings computed by Python "
+            "from the document's figures: %d. Required fields Python checked in code and found "
+            "absent: %d. Items written by a model (%s), not checked by "
+            "Python and not promoted: %d. Model-written notes kept on Python's findings "
+            "(model: %s), not checked by Python: %s. The context references below are filtered "
+            "for topical relevance to %s." % (n_conventions, figures, checked,
+                                              _agents_text(provenance), provenance["model"],
+                                              _note_models_text(provenance), _notes_text(provenance),
+                                              document_name))
+
+
+def topic_line(category, conventions) -> str:
+    """Reader check RC16/RD12/RD16: a rule group named by its rules and their
+    quoted words, labelled as the rule's own text."""
+    rules = [c for c in conventions or [] if isinstance(c, dict) and c.get("id")]
+    if not rules:
+        return str(category)
+    shown = "; ".join('%s, %s"%s"' % (c["id"], localization.text(RULE_TEXT_LABEL),
+                                       " ".join(str(c.get("rule") or "").split())[:120])
+                      for c in rules[:3])
+    return "%s (%s)" % (category, shown)
+
+
+def relation_counts(findings) -> dict:
+    """{relation: count} over typed Finding records, named from the data."""
+    counts = {}
+    for f in findings or []:
+        # A model's record reaches the deliverables without record_verdict
+        # (model_finding_for_reader), so the relation is what counts it.
+        if isinstance(f, dict) and f.get("relation") in finding_record.relations():
+            rel = str(f.get("relation"))
+            counts[rel] = counts.get(rel, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+RELATIONS_FOUND_HEADING = "## Relations found (computed by Python)"
+RELATIONS_MODEL_HEADING = "## Relations a model reported (written by a model, not checked by Python)"
+
+
+@localization.presentation
+def relation_report_lines(deliverables, op_docs) -> list:
+    """S2a, item 7: the run report's relations, in two lists that cannot mix.
+
+    A relation reaches "Relations found" only from a finding Python computed. A
+    relation that only a model's finding carries is listed apart and marked, so
+    "sum_mismatch" written by a model is never read as a sum Python found wrong."""
+    computed, model_only = {}, {}
+    for doc in op_docs or []:
+        info = (deliverables or {}).get(doc["id"]) or {}
+        for rel, n in (info.get("relations_computed") or {}).items():
+            computed[rel] = computed.get(rel, 0) + n
+        for rel, n in (info.get("relations_model_only") or {}).items():
+            model_only[rel] = model_only.get(rel, 0) + n
+    if not computed and not model_only:
+        return []
+    lines = ["", localization.text(RELATIONS_FOUND_HEADING), ""]
+    lines += ([f"- {finding_record.relation_words(rel)}: {n}" for rel, n in sorted(computed.items())]
+              or [localization.text('- (none)')])
+    lines += ["", localization.text(RELATIONS_MODEL_HEADING), ""]
+    if model_only:
+        mark = localization.text(finding_record.MODEL_FINDING_MARK)
+        lines += [f"- {finding_record.relation_words(rel)}: {n} ({mark})" for rel, n in sorted(model_only.items())]
+    else:
+        lines.append(localization.text('- (none)'))
+    return lines
+
+
+def operative_findings_sentence(provenance) -> str:
+    figures, checked = _python_counts(provenance)
+    return ("Findings below come from the convention review. Computed by Python from the "
+            "document's figures: %d. Required fields Python checked in code and found absent: "
+            "%d. Written by a model (%s), not checked by Python and not "
+            "promoted, listed apart under each category: %d. Model-written notes kept on "
+            "Python's findings (model: %s), not checked by Python: %s. Each finding cites the "
+            "convention ID and the reference ID(s) and says who wrote it."
+            % (figures, checked, _agents_text(provenance), provenance["model"],
+               _note_models_text(provenance), _notes_text(provenance)))
+
+
 @localization.presentation
 def render_context_summary(
     *,
@@ -28,31 +201,39 @@ def render_context_summary(
     body_text: str = "",
 ) -> str:
     topics = topics or []
-    lines = [f'# {document_name}{localization.text(' — Context summary')}', "",
+    lines = [f'# {document_name}{localization.text(': Context summary')}', "",
              f'{localization.text('- generated: ')}{_now()}',
              f'{localization.text('- document id: ')}{document_id}',
              f'{localization.text('- context references cited: ')}{len(context_refs)}',
              "",
-             localization.text("## What the reference corpus establishes about this document's topics"),
              ""]
+    # Reader check RD12: the list is the operator's rule book, said so; the
+    # reference corpus has its own section below.
     if topics:
-        lines.append(localization.text('**Topics addressed:**'))
+        lines += [localization.text(RULES_APPLIED_HEADING), ""]
         for t in topics:
             lines.append(f"- {t}")
         lines.append("")
     if body_text.strip():
         lines.append(localization.message(body_text.strip()))
         lines.append("")
-    lines.append(localization.text('## Reference citations (from context corpus)'))
+    lines.append(localization.text('## Reference corpus passages cited'))
     lines.append("")
     if not context_refs:
         lines.append(localization.text('_no context references cited_'))
     else:
         for ref in context_refs:
             loc = ref.get("location", {}) or {}
-            page = loc.get("page", "?"); para = loc.get("paragraph", "?")
+            # Reader check RC15/RC13: a position part that is not on record is left
+            # out rather than shown as "?", and the passage is shown as a quotation.
+            where = ""
+            if loc.get("page") is not None:
+                where += f'{localization.text(' (p')}{loc['page']}'
+                if loc.get("paragraph") is not None:
+                    where += f'{localization.text(', para ')}{loc['paragraph']}'
+                where += ")"
             lines.append(
-                f'- **[{ref.get('ref_id')}]** {ref.get('document_name', '?')}{localization.text(' (p')}{page}{localization.text(', para ')}{para}): {ref.get('text_excerpt', '')[:240]}'
+                f'- **[{ref.get('ref_id')}]** {ref.get('document_name', '?')}{where}: "{ref.get('text_excerpt', '')[:240]}"'
             )
     return "\n".join(lines)
 
@@ -80,11 +261,25 @@ def render_operative_summary(
     render loop below iterates the UNION instead, and the two counts in the
     header/body are asserted equal, not merely hoped equal: a RuntimeError beats
     a silently incomplete deliverable."""
-    lines = [f'# {document_name}{localization.text(' — Operative summary')}', "",
+    stamped = any(isinstance(f, dict) and "written_by" in f for f in findings)
+    count_lines = [f'{localization.text('- findings: ')}{len(findings)}']
+    if stamped:
+        # Reader check RC10: never one total that mixes Python's findings with
+        # items a model wrote.
+        # Reader check round 3 (item 6): the absences Python checked in code are
+        # counted apart from the findings it computed from figures.
+        n_model = sum(1 for f in findings if finding_record.is_model_written(f))
+        n_checked = sum(1 for f in findings if not finding_record.is_model_written(f)
+                        and f.get("relation") in finding_record.ABSENCE_RELATIONS)
+        count_lines = [f'{localization.text('- findings computed by Python from the document\'s figures: ')}'
+                       f'{len(findings) - n_model - n_checked}',
+                       f'{localization.text('- required fields Python checked in code and found absent: ')}{n_checked}',
+                       f'{localization.text('- items written by a model (not checked by Python): ')}{n_model}']
+    lines = [f'# {document_name}{localization.text(': Operative summary')}', "",
              f'{localization.text('- generated: ')}{_now()}',
              f'{localization.text('- document id: ')}{document_id}',
              f'{localization.text('- convention categories evaluated: ')}{len(conventions_by_category)}',
-             f'{localization.text('- findings: ')}{len(findings)}',
+             *count_lines,
              ""]
     # R6: the operator's framing question for a review run is echoed, never parsed.
     if (question or "").strip():
@@ -97,17 +292,56 @@ def render_operative_summary(
     rendered_count = 0
     for category in sorted(categories):
         conventions = conventions_by_category.get(category, [])
-        lines.append(f"### {category}")
+        # Reader check RD18: the heading says what the slug is (the operator's
+        # own rule group id); the rules and their words follow.
+        lines.append(f"### {localization.text('Rule group ')}{category}" if stamped else f"### {category}")
         lines.append("")
         if conventions:
             for c in conventions:
-                lines.append(f"- **[{c.get('id')}]** ({c.get('severity', '?')}/{c.get('action', '?')}): "
+                # Reader check RC15: a part the registry does not carry is left out,
+                # never shown as "?"; the rule's own words are quoted.
+                declared = "/".join(localization.label(str(c[k])) for k in ("severity", "action") if c.get(k))
+                lines.append(f"- **[{c.get('id')}]**" + (f" ({declared})" if declared else "")
+                             + f': {localization.text(RULE_TEXT_LABEL)}"{c.get('rule', '')[:240]}"' if stamped else
+                             f"- **[{c.get('id')}]** ({c.get('severity', '?')}/{c.get('action', '?')}): "
                              f"{c.get('rule', '')[:240]}")
         else:
             lines.append(localization.text('_no conventions in this category_'))
             lines.append("")
         category_findings = [f for f in findings if (f.get("category") or "unclassified") == category]
-        if category_findings:
+        if category_findings and stamped:
+            # Reader check RC6: Python's findings and a model's items are listed
+            # apart, in plain fields, the model's without a verdict, its sentence
+            # quoted as the model's, and with a note when the unit it names does
+            # not state its figures.
+            computed = [f for f in category_findings if not finding_record.is_model_written(f)]
+            model = [f for f in category_findings if finding_record.is_model_written(f)]
+            if computed:
+                lines += ["", localization.text('**Findings computed by Python:**')]
+                for f in computed:
+                    lines.append(f"- {finding_record.reader_line(f)} ({finding_record.provenance_mark(f)})")
+                    prose = str(f.get("explanation") or f.get("reasoning") or "")[:240]
+                    if prose and f.get("explanation_by") == finding_record.WRITTEN_BY_MODEL:
+                        # The judging model's sentence beside Python's figures is the
+                        # model's, said so and quoted (reader check RC5).
+                        lines.append("  - " + model_note_line(prose, f.get("explanation_model")))
+                    elif prose:
+                        lines.append(f"  - {localization.message(prose)}")
+                    rendered_count += 1
+            if model:
+                lines += ["", localization.text('**Written by a model, not checked by Python, not promoted:**')]
+                for f in model:
+                    lines.append(f"- {finding_record.reader_line(f)} ({finding_record.provenance_mark(f)})")
+                    prose = str(f.get("explanation") or f.get("reasoning") or "").strip()[:240]
+                    if prose:
+                        lines.append(f'  - {localization.text("The model wrote: ")}"{prose}"')
+                    # Reader check RD2: what Python can say about the item, in words.
+                    for note in f.get("reader_notes") or []:
+                        lines.append(f"  - {localization.message(note)}")
+                    if f.get("figures_in_unit") is False and not f.get("reader_notes"):
+                        lines.append(f'  - {localization.text("The unit it names does not state these figures.")}')
+                    rendered_count += 1
+        elif category_findings:
             lines.append("")
             lines.append(localization.text('**Findings:**'))
             for f in category_findings:
@@ -117,26 +351,40 @@ def render_operative_summary(
                 # free-text field happened to survive normalisation. A finding that
                 # is not a typed record renders exactly as it did before.
                 typed = finding_record.typed_line(f) if finding_record.is_finding(f) else ""
+                # S2a: every finding says who wrote it. A model's finding is never
+                # removed from view; it is labelled, in this file as in every other.
+                mark = finding_record.provenance_mark(f) if "written_by" in f else ""
                 if typed:
                     prose = (f.get("explanation") or f.get("reasoning") or "")[:240]
-                    lines.append(f"- {typed}")
+                    if prose and not finding_record.is_model_written(f):
+                        # Python's own sentence has a catalog rendering; a model's
+                        # sentence is source content and stays exactly as written.
+                        prose = localization.message(prose)
+                    lines.append(f"- {typed}" + (f" ({mark})" if mark else ""))
                     if prose:
                         lines.append(f"  - {prose}")
                 else:
-                    lines.append(f'- {f.get('verdict', '?')}{localization.text(' on [')}{f.get('conv_id', '?')}{localization.text('] at refs [')}{refs}]: {f.get('reasoning', '')[:240]}')
+                    lines.append(f'- {f.get('verdict', '?')}{localization.text(' on [')}{f.get('conv_id', '?')}{localization.text('] at refs [')}{refs}]: {f.get('reasoning', '')[:240]}'
+                                 + (f" ({mark})" if mark else ""))
                 rendered_count += 1
         lines.append("")
     # R6 / INFRA-044: the comparison with the operator-declared earlier version, an
     # UNCOUNTED section (every prior record is already rendered once above under its
     # category, so the header count still equals the rendered count). Rendered only
     # when there is a comparison to show, so every existing caller is byte-stable.
+    # Adversarial round 2 (a): an UNSTAMPED record is never Python's here
+    # (finding_record.is_model_written, the one test), whatever it carries.
     has_prior = (prior_refusals or prior_orphans or any(
         f.get("relation") in finding_record.PRIOR_RELATIONS and f.get("provenance") == "computed"
+        and not finding_record.is_model_written(f)
         for f in findings))
     if has_prior:
+        # S2 checker A5: a model's band claim is listed (marked) under the model
+        # items, never here, where every line is Python's.
         outside = [f for f in findings
                    if f.get("relation") in finding_record.OUTSIDE_BAND_RELATIONS
-                   and str(f.get("record_verdict") or "").lower() == "irregular"]
+                   and str(f.get("record_verdict") or "").lower() == "irregular"
+                   and not finding_record.is_model_written(f)]
         lines.extend(finding_record.render_prior_comparison(
             findings, refusals=prior_refusals, orphans=prior_orphans, outside=outside,
             heading=localization.text('## Compared with the earlier version')))

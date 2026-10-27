@@ -47,7 +47,7 @@
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
     "_prior_comparison": "e79d78b21b90a8a1275ac4023b8d7a0267b943e6da590701edf31ae29bc2a340",
-    "phase_5_5_convention_review": "82852bf054695e976288c8d4af685ee1b3dc9c1f36e540cd6bf5787698250a5d",
+    "phase_5_5_convention_review": "fd2849c8b5befb8b88a7ea77556867acda8bd4dab8c29a4f81f4f0398c7f71d5",
     "_polish_findings": "d9c06410375fa71398f0c2d09803cf05ffad7dd99261f0cac536e3fb0c6b6828",
     "_paired_judging_agent": "a4db160f3ef81f07cef62071460e51b3566644aacd42a84b9cf6d9752d2c2002",
     "_not_judged_reason": "cb61288d8267573f588404c07577a9fe5261032eb9b7a6a99b996fe0ed419da4",
@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "ef96ca5366e63bd40daa7a60e0777dfd6adcd65b562ed931ba274a229ccffddd",
-    "_paired_convention_review": "f3e8c89cc236f355cf49fd137a782b99ef7b36a01c25ccfcd73e0582ca38a625",
+    "_paired_convention_review": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
     "_stamped_judged_items": "d1bbf7395103fd3cb2dd24ba3e5d046c3ab59a8af7995c53d4c07fcc4741e28f",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -63,8 +63,8 @@
     "_structural_inventory": "336876ba2164ad5f3a6d19e2d24016a25b66f4091e5cb66811325cb6f105cd1d",
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
-    "write_deliverables_run_summary": "bfbd01eb57a7334da3236e0da8e7fecefb30e5cb2267c90bd21ac7b74a898db1",
-    "phase_6_synthesis": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329",
+    "write_deliverables_run_summary": "13246a48f2db809788abd3ff8ec59d465fa46ccaff653fdfaa9c4bd3777ee9a0",
+    "phase_6_synthesis": "ad5de80128999f7643624ce31dedacde8d2a2c8f69d54c3edccbb6d97ec74e5a",
     "_prior_refusals_for": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
     "_category_for_conv": "0b36fc194a24a4028716d0f25c0e84af97ade28a9b7d564cf30ca1592ab21617",
@@ -77,9 +77,9 @@
     "_rank_run_objectives": "2a8e7be00813c43155a4d963746c3e402706af27157acdc25471da6d13dc25e4",
     "_dispatch_rank": "4b2dcf19a9fea056c8a7a7684fcf6d644ae3c8c930e92563646063778cc40b7b",
     "_consolidate_board": "774b18e957e3672ebacd2337a9fc5b27d5b8b539febbbb99dc9325fee3610130",
-    "_append_board_to_deliverable": "3cddcb6029ca8a55dde480f87c017353c0727cf3ceb9f2334bf0a42d5f40f2a7",
+    "_append_board_to_deliverable": "1db47c3adfbf82521f6dfe4f7b8021d9ac55714c89bcf55424265b4435e5fe28",
     "phase_6_5_editorial_review": "ce22294f2979d2818257bc65082d8f12469d3e58d7552690636d30cfa0d30d19",
-    "_render_per_agent_md": "ca60d4673fc323ea11957b47e1912dcb44b8c896a8bb9a8e8c4ab25d79fee602",
+    "_render_per_agent_md": "d1dfc74de3c9db37b142bb5b9adbf0ff56701d31cc2cba0c4ab19e8f03aed3f6",
     "_build_reference_index": "6600c0486d8382f44be8677c28e4b56d2270c02477a008553cd05e5b3455a493",
     "_interactive_handler": "da48abcc3f5f217ff34bad242ca8d35f2ff9a4121cbd3a9c5c1c1dd81760adf5",
     "_record_operator_decision": "02c069f918bfd2b3da4f05acf31f46a63f0c088aecee6e6d1a5dff91cc1ce2b3",
@@ -226,6 +226,113 @@
         "phase_3_4_content_production": {
           "from": "9bcf3e9d8ebd73b9038506bfa7a8f93fc3a9dd290adb5dd72ddfba4a306a3842",
           "to": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2a honest deliverables and S2b multi-round rounds (model findings marked and never promoted, sentence templates, amendments at the unit's own passage, Python-only per-round review, moved renames refused)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_append_board_to_deliverable": {
+          "from": "3cddcb6029ca8a55dde480f87c017353c0727cf3ceb9f2334bf0a42d5f40f2a7",
+          "to": "1db47c3adfbf82521f6dfe4f7b8021d9ac55714c89bcf55424265b4435e5fe28"
+        },
+        "_paired_convention_review": {
+          "from": "f3e8c89cc236f355cf49fd137a782b99ef7b36a01c25ccfcd73e0582ca38a625",
+          "to": "1545a2ef7cf1483612cc5ad8f4cbfbd30aa47d6bbdeeddf43d69ee569888dbc2"
+        },
+        "_render_per_agent_md": {
+          "from": "ca60d4673fc323ea11957b47e1912dcb44b8c896a8bb9a8e8c4ab25d79fee602",
+          "to": "2ebcafc6317aafe7230fc13246020a87569823fce7b0ef1206255d64b8a6043f"
+        },
+        "phase_5_5_convention_review": {
+          "from": "82852bf054695e976288c8d4af685ee1b3dc9c1f36e540cd6bf5787698250a5d",
+          "to": "fd2849c8b5befb8b88a7ea77556867acda8bd4dab8c29a4f81f4f0398c7f71d5"
+        },
+        "phase_6_synthesis": {
+          "from": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329",
+          "to": "08f088d8cd0e27c8603829b317885372ab99e434578bb90f9f3641fc3772a12c"
+        },
+        "write_deliverables_run_summary": {
+          "from": "bfbd01eb57a7334da3236e0da8e7fecefb30e5cb2267c90bd21ac7b74a898db1",
+          "to": "b3fd8136e5316669b7e0ff2769371f47f75682a461b6833665bc811b57c54a4d"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2a reader check round 3 (note-writing model recorded and named, model items described, escalation copies not counted as patterns, every registered agent listed, figures as written)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "1545a2ef7cf1483612cc5ad8f4cbfbd30aa47d6bbdeeddf43d69ee569888dbc2",
+          "to": "7700b2c4e467113b5cc05846c533598770fc03662f377f03abdef346505b12ee"
+        },
+        "_render_per_agent_md": {
+          "from": "2ebcafc6317aafe7230fc13246020a87569823fce7b0ef1206255d64b8a6043f",
+          "to": "51613496ca560279dfa1a1407f984a111549365033cc97cc334981250ee79830"
+        },
+        "phase_6_synthesis": {
+          "from": "08f088d8cd0e27c8603829b317885372ab99e434578bb90f9f3641fc3772a12c",
+          "to": "a8c60e625e866d5ea2665105d03495690936c617afb97a593a604c23fb84ca73"
+        },
+        "write_deliverables_run_summary": {
+          "from": "b3fd8136e5316669b7e0ff2769371f47f75682a461b6833665bc811b57c54a4d",
+          "to": "3f3a03f2fce407840cab8aaa692f57372529f8648765640211ee59e8efb261fd"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2 checker round 1 fixes (model items kept out of the prior and band sections, unplaced units cite nothing of another unit, round findings posted on the bus)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "7700b2c4e467113b5cc05846c533598770fc03662f377f03abdef346505b12ee",
+          "to": "35fbba0b74b6e8d52ed143f6d60029671b13924939a9add118ef6c363983573c"
+        },
+        "phase_6_synthesis": {
+          "from": "a8c60e625e866d5ea2665105d03495690936c617afb97a593a604c23fb84ca73",
+          "to": "0f3a84c1a403e65172d9c08ad7a3c0bb13d6c8f9b1a1d9d4a91a2ecc93798d48"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2 checker round 2 fixes (judging calls recorded, reader notes, absence counted apart, one figure formatter, plain run summary)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "35fbba0b74b6e8d52ed143f6d60029671b13924939a9add118ef6c363983573c",
+          "to": "a7790a3906e28e05a8cce6a608e9f70b1fc1d3f482af6e614690815dc1f80d79"
+        },
+        "_render_per_agent_md": {
+          "from": "51613496ca560279dfa1a1407f984a111549365033cc97cc334981250ee79830",
+          "to": "cde44a1d2eee11fd9d2e701f8af056ecf433e3d1f0d508f0d70d76ec7dbd3433"
+        },
+        "phase_6_synthesis": {
+          "from": "0f3a84c1a403e65172d9c08ad7a3c0bb13d6c8f9b1a1d9d4a91a2ecc93798d48",
+          "to": "ad5de80128999f7643624ce31dedacde8d2a2c8f69d54c3edccbb6d97ec74e5a"
+        },
+        "write_deliverables_run_summary": {
+          "from": "3f3a03f2fce407840cab8aaa692f57372529f8648765640211ee59e8efb261fd",
+          "to": "13246a48f2db809788abd3ff8ec59d465fa46ccaff653fdfaa9c4bd3777ee9a0"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S02: S2 checker round 3 fixes (a failed judged-absence call recorded as failed with its claims listed and refused, one count of notes kept on Python findings, judged-absence calls counted apart)",
+      "document": "docs/loop/stages/S02_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "a7790a3906e28e05a8cce6a608e9f70b1fc1d3f482af6e614690815dc1f80d79",
+          "to": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349"
+        },
+        "_render_per_agent_md": {
+          "from": "cde44a1d2eee11fd9d2e701f8af056ecf433e3d1f0d508f0d70d76ec7dbd3433",
+          "to": "d1dfc74de3c9db37b142bb5b9adbf0ff56701d31cc2cba0c4ab19e8f03aed3f6"
         }
       }
     }
