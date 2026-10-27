@@ -100,7 +100,7 @@ class AuditSynthesizer:
                                                              "action": "add_amendment", "topic": topic,
                                                              "draft_text": (f"Codify default ruling for "
                                                                             f"recurring escalations on {topic!r}."),
-                                                             "reason": f"operator interrupted {count} times"}))
+                                                             "reason": f"{count} escalation messages on this topic"}))
 
         charter_proposals = [m for m in bus_messages if m.get("type") == "CHARTER_PROPOSE"]
         mission_counts = {}
@@ -152,7 +152,7 @@ class AuditSynthesizer:
         # Master-and-derived (Part XXVII §E / INFRA-033): both files are views of
         # the single `summary` dict computed in synthesize(). audit_synthesis.md is
         # the human-readable view; delta_proposals.json is the machine view of its
-        # delta_proposals. Neither is an independent source — both render from
+        # delta_proposals. Neither is an independent source: both render from
         # `summary`, so they cannot disagree.
         if self.run_context is not None:
             synthesis_path = self.run_context.audit_synthesis_path()
@@ -183,23 +183,51 @@ def _count_disputed_by_source(findings):
     return out
 
 
+AUDIT_COUNT_NOTE = (" (patterns in this run's audit trail, such as repeated escalations; "
+                    "not findings about the document under review, which are in each "
+                    "document's document_summary.md)")
+# Reader check RC9: how a governance proposal and its priority READ in this file.
+# The kinds and actions themselves (propose_amendment, add_amendment, ...) are the
+# governance vocabulary and stay exactly as they are in delta_proposals.json; only
+# the words a reader sees here change, so "amendment" never collides with the
+# document amendments in review_findings.md.
+KIND_WORDS = {"propose_amendment": "rule-book (constitution) change proposal",
+              "append_project_rule": "project rule proposal",
+              "codify_tf_law": "task-force law proposal",
+              "reduce_ttl": "verification cache proposal",
+              "tighten_processor_prompt": "extraction prompt proposal"}
+ACTION_WORDS = {"add_amendment": "add a constitution amendment (the operator decides)",
+                "append_rule": "add a project rule (the operator decides)",
+                "codify_pattern": "write the pattern down as a task-force law (the operator decides)",
+                "reduce_for_source": "shorten how long this source's checks are cached",
+                "add_completeness_check": "add a completeness check to the extraction prompt"}
+
+
 @localization.presentation
 def _render_md(summary):
+    # S2a, item 6: the count here is of PATTERNS in the run's audit trail (repeated
+    # escalations, repeated verdicts, repeated proposals), never of findings about
+    # the document under review, and it says so where the number is shown.
     lines = [localization.text('# Audit synthesis'), "", f'{localization.text('- generated: ')}{summary['generated_at']}',
              f'{localization.text('- bus messages: ')}{summary['bus_messages']}',
-             f'{localization.text('- findings: ')}{len(summary['findings'])}',
-             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "", localization.text('## Findings')]
-    if not summary["findings"]: lines.append(localization.text('_no findings this run_'))
+             f'{localization.text('- audit-trail patterns: ')}{len(summary['findings'])}{localization.text(AUDIT_COUNT_NOTE)}',
+             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "",
+             localization.text('## Audit-trail patterns (not document findings)')]
+    if not summary["findings"]: lines.append(localization.text('_no audit-trail patterns this run_'))
     else:
         for f in summary["findings"]:
-            lines.append(f"- [{f['severity'].upper()}] ({f['category']}) {localization.message(f['summary'])}")
+            lines.append(f"- {localization.text('pattern priority: ')}{localization.label(str(f['severity']))}; "
+                         f"{localization.text('area: ')}{localization.label(str(f['category']))}; "
+                         f"{localization.message(f['summary'])}")
     lines.append(localization.text('\n## DELTA proposals'))
     if not summary["delta_proposals"]: lines.append(localization.text('_no DELTAs proposed this run_'))
     else:
         for d in summary["delta_proposals"]:
-            lines.append(f"### {d['id']} — {d['kind']}")
+            kind, action = d['kind'], d['proposed_change'].get('action')
+            lines.append(f"### {d['id']}: {localization.text(KIND_WORDS.get(kind, kind))}")
             lines.append(f'{localization.text('- trigger: ')}{localization.message(d['trigger'])}')
-            lines.append(f'{localization.text('- proposed change: ')}{d['proposed_change'].get('action')}')
+            lines.append(f'{localization.text('- proposed change: ')}{localization.text(ACTION_WORDS.get(action, str(action)))}')
             lines.append(f'{localization.text('- target: ')}{d['proposed_change'].get('target')}')
-            lines.append(f'{localization.text('- requires operator approval: ')}{d['requires_operator_approval']}\n')
+            lines.append(f'{localization.text('- requires operator approval: ')}'
+                         f'{localization.text('yes' if d['requires_operator_approval'] else 'no')}\n')
     return "\n".join(lines)

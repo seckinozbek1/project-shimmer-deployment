@@ -407,6 +407,39 @@ class SchedulerChecks(unittest.TestCase):
         self.assertEqual(assigned["worker"], "b")
 
 
+_FINAL_MODE_TEST = None   # a neutralisation may replace the refusal's test expression
+
+
+def _final_mode_admits(task, multi_round, manifest):
+    """Execute main's own `if final_models.mode() == 'final':` block with stub
+    collaborators; True when it admits the arguments, False when parser.error
+    refuses. No model, no environment, no parser construction."""
+    tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+    main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    block = copy.deepcopy(next(s for s in main.body if isinstance(s, ast.If)
+                               and ast.unparse(s.test) == "final_models.mode() == 'final'"))
+    refusal = next(s for s in block.body if isinstance(s, ast.If) and "parser.error" in ast.unparse(s.body[0]))
+    if _FINAL_MODE_TEST is not None:
+        refusal.test = copy.deepcopy(_FINAL_MODE_TEST)
+
+    class Refused(Exception):
+        pass
+
+    def error(message):
+        raise Refused(message)
+    scope = {"final_models": SimpleNamespace(mode=lambda: "final", verify=lambda role: None,
+                                             admit_ordinary=lambda: None),
+             "parser": SimpleNamespace(error=error),
+             "args": SimpleNamespace(task=task, multi_round=multi_round, multi_round_manifest=manifest,
+                                     backend_profile="local")}
+    try:
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[block], type_ignores=[])), "final_mode", "exec"),
+             scope)
+    except Refused:
+        return False
+    return True
+
+
 class AdapterChecks(unittest.TestCase):
     def test_shutdown_failure_cannot_leave_completed_evidence(self):
         from run_context import for_run_dir
@@ -479,6 +512,25 @@ class AdapterChecks(unittest.TestCase):
         dag = parser.parse_args(["--execution-topology", "dependency_dag", "--activation-profile", "sparse"])
         self.assertFalse(dag.multi_round)
         self.assertEqual(dag.execution_topology, "dependency_dag")
+
+    def test_final_mode_admits_a_declared_multi_round_review_only(self):
+        """R2 / D-011 choice 1: final mode admits ordinary Review and a DECLARED
+        multi-round Review (flag and manifest together); Draft, a flag without a
+        manifest and a manifest without the flag stay refused. Executes main's own
+        final-mode block; the topology rule (reference_serial for multi-round) is
+        untouched. Proven by neutralise (the old condition), fail, restore, pass."""
+        from effect_proof import prove_effect
+        import sys as _sys
+        module = _sys.modules[__name__]
+        cases = [("review", False, None), ("review", True, "case.json"), ("draft", False, None),
+                 ("review", True, None), ("review", False, "case.json"), ("draft", True, "case.json")]
+        expected = [True, True, False, False, False, False]
+        observe = lambda: [module._final_mode_admits(*c) for c in cases]
+        check = lambda: ("PASS" if observe() == expected else "FAIL", "final-mode admission")
+        old = ast.parse("args.multi_round or args.multi_round_manifest or args.task != 'review'", mode="eval").body
+        prove_effect(name="final_mode_multi_round_admission", validate=lambda: len(cases) == len(expected),
+                     observe=observe, check=check,
+                     neutralise=lambda: patch.object(module, "_FINAL_MODE_TEST", old))
 
     def test_reference_factory_is_identity_and_noop_mutation(self):
         wrapper = SimpleNamespace()
