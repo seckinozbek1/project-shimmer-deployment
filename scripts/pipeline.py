@@ -2465,9 +2465,6 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     judging_calls_by_agent: dict = {}
     def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
         if plan.get("kind") == "absence_judged":
-            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
-                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
-                plan_kind=plan.get("kind"), notes_kept=0, has_note=False))
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
             # A judged answer claiming a field is MISSING from a unit whose own
             # parsed fields carry it is refused, not posted. The unit is in
@@ -2509,6 +2506,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     doc["id"], plan_index, "returned", raw=judged, kept=kept,
                     refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
                     response_ok=isinstance(r, dict) and r.get("ok") is True)
+            # S2 checker round 3 (item 1): recorded once its items are known, with
+            # the claims listed and the claims refused; a failed call says so.
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                absence_listed=len(paired_review_mod.dedupe(kept)),
+                absence_refused=len(refused_judged) - refusal_start))
             judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
@@ -4056,6 +4060,7 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None, u
         if isinstance(call, dict):
             calls_by_agent.setdefault(call.get("agent"), []).append(call)
     units = None
+    notes_by_agent = {}
     for agent in ("PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST",
                   "VERIFIER", "FACT_CHECKER",
                   "PRACTICE_AUDITOR", "STYLE_GUARDIAN"):
@@ -4078,6 +4083,10 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None, u
                 # Reader check round 3 (item 6): the absences Python checked in code
                 # are counted apart from the findings computed from figures.
                 records = [i for i in decode_items(r.get("parsed")) if isinstance(i, dict)]
+                # S2 checker round 3 (item 2): the notes kept, counted as every file counts them.
+                import paired_review as _pr
+                notes_by_agent[agent] = notes_by_agent.get(agent, 0) + _pr.notes_on_python_findings(
+                    [dict(i, written_by=finding_record.WRITTEN_BY_PYTHON) for i in records])
                 writers = sorted({str(i.get("explanation_model") or localization.text("not recorded"))
                                   for i in records
                                   if i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
@@ -4111,8 +4120,8 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None, u
         if calls:
             import paired_review as _pr
             lines += ["", localization.text(
-                "Judging calls this agent made on this document: {calls}; notes kept on Python's findings: {kept}.",
-                calls=len(calls), kept=sum(int(c.get("notes_kept") or 0) > 0 for c in calls))]
+                "Judging calls this agent made on this document: {calls}; {counts}.", calls=len(calls),
+                counts=summary_generators.calls_and_notes_text(calls, notes_by_agent.get(agent, 0)))]
             lines += [f"- {_pr.judging_call_line(c)}" for c in calls]
     # Reader check RD13: every registered agent, with the state the run recorded
     # for it, so the list above (the agents that review one document) is never
@@ -4122,9 +4131,9 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None, u
         lines += ["", localization.text("## Every registered agent in this run"), ""]
         for row in states:
             calls = calls_by_agent.get(row.get("agent")) or []
-            kept = (localization.text("; judging calls with a note kept: {kept} of {calls}",
-                                      kept=sum(int(c.get("notes_kept") or 0) > 0 for c in calls),
-                                      calls=len(calls)) if calls else "")
+            kept = (localization.text("; judging calls: {calls}; {counts}", calls=len(calls),
+                                      counts=summary_generators.calls_and_notes_text(
+                                          calls, notes_by_agent.get(row.get("agent"), 0))) if calls else "")
             lines.append(f"- {row.get('agent')}: {agent_activation.state_words(row.get('state'))}"
                          f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}{kept}")
     return "\n".join(lines)
