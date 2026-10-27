@@ -347,11 +347,16 @@ or R's); the guard always reads both of those beside any `--read-ledger`, needs 
 its decision through the intent line, reading the provider inventory again just
 before it. It refuses, in one line, when another loop instance is running (an
 open launch in a ledger, or a `shimmer-loop-` name in the provider inventory),
-when the per-run cap `min(1.5 x forecast, 50 - spend - caps of running loop
+when the per-run cap `min(1.5 x forecast, budget - spend - caps of running loop
 instances - storage forecast - 1)` is below the forecast (measured minutes times
 the live price times 1.3), or when the capped run time does not cover the forecast
 time plus the run's stop reserve. The cap rule alone keeps spend plus forecast plus
-storage at or below 49 dollars. Spend is counted once per launch across every
+storage at or below the budget less one dollar, which is the reaper's hard stop.
+The budget is not a number in the code: the guard and the reaper read it from the
+latest `budget_open` or `budget_change` line in the ledgers (the hard stop is that
+line's `hard_stop_usd`, or the budget less one dollar when the line names none). A
+launch with no readable budget line is refused, and the reaper terminates every loop
+instance while it can read none. Spend is counted once per launch across every
 ledger read; a termination closes a launch by its instance id or its name. The controller also refuses when the sealed hard cap no longer fits
 under the cap at the live price; reseal in that case.
 
@@ -395,7 +400,10 @@ The provider-side asset copy is used only when the bundle carries the operator's
 `asset_copy_declaration.json` with `operator_authorized: true` and this bundle's
 own `assets_sha256` (`tools/declare_asset_copy.py` writes it from the bundle's
 digest). A declaration for another archive is refused, the controller never
-writes one, and a launch outside `us-east-1` does not use it. Without a MATCH the
+writes one (for the autonomous loop of 27 October 2026 only, the operator
+authorised the loop to write declarations for the bundles it runs and to replace
+the filesystem's archive after recording the old digest; `docs/loop/DECISIONS.md`
+D-028), and a launch outside `us-east-1` does not use it. Without a MATCH the
 archive is uploaded, and the launch plan must say the forecast includes that
 upload. A new bundle has no declaration, so its forecast includes the upload.
 

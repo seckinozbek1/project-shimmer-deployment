@@ -53,6 +53,8 @@ A10_TYPE = dict(metadata=dict(type='gpu_1x_a10', gpu_type='A10 (24 GB PCIe)', gp
                 architecture='x86_64', regions=['us-east-1', 'us-west-1'])
 FORECAST_MINUTES = 120
 STORAGE_USD = 3.9
+# The budget every fixture ledger opens with (its own figure; the guard reads it from the ledger).
+FIXTURE_BUDGET_USD = 50.0
 LOOP_NAME = 'shimmer-loop-fixture'
 
 
@@ -61,7 +63,7 @@ def fixture_budget(types=None, reference=1.29):
     the soft (forecast) and hard (per-run cap) figures from the guard's own formula."""
     candidates = guard.instance_candidates(types or [A10_TYPE], reference)
     forecast = guard.forecast_usd(FORECAST_MINUTES, candidates[0]['max_hourly_rate'])
-    cap = guard.per_run_cap(forecast, 0.0, 0.0, STORAGE_USD)
+    cap = guard.per_run_cap(forecast, 0.0, 0.0, STORAGE_USD, FIXTURE_BUDGET_USD)
     return dict(instance_candidates=candidates, a10_reference_rate=reference, max_hourly_rate=candidates[0]['max_hourly_rate'],
                 region='us-east-1', soft_budget_usd=forecast, hard_ceiling_usd=cap, per_run_cap_usd=cap,
                 forecast_minutes=FORECAST_MINUTES, workload_stop_reserve_seconds=900, termination_reserve_seconds=180)
@@ -101,7 +103,7 @@ def reseal(base, assets, **seal_fields):
 
 
 def open_ledger(path, start=1_000_000.0):
-    write_lines(path, [dict(event='budget_open', time_utc=guard.utc(start), loop_start_utc=guard.utc(start), budget_usd=50.0,
+    write_lines(path, [dict(event='budget_open', time_utc=guard.utc(start), loop_start_utc=guard.utc(start), budget_usd=FIXTURE_BUDGET_USD,
                             storage_usd_per_day=0.13, a10_reference_price_usd_per_hour=1.29)])
 
 
@@ -1222,6 +1224,50 @@ class ControllerChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Loop launch plan required'):
             self.execute(plan={})
         self.assertIsNone(FakeProvider.state)
+
+    def test_budget_and_hard_stop_are_read_from_the_latest_ledger_line(self):
+        """D-S9 item 3: the guard's budget and the reaper's hard stop come from the ledgers'
+        latest budget_open or budget_change line, never from a code constant. 45 dollars spent
+        refuses under a 50 dollar opening line and is allowed once a 70 dollar change follows;
+        the reaper leaves a loop instance inside its deadline alone at 55 dollars under that
+        change (69 dollar stop) and terminates it once spend reaches 69."""
+        now = 1_000_000.0 + 3600
+        ledger = self.root / 'ds9' / 'ledger.jsonl'
+        open_ledger(ledger)
+        write_lines(ledger, [dict(event='launch', instance_id='a' * 32, instance_name='shimmer-loop-old', price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now - 7200)),
+                             dict(event='termination', instance_id='a' * 32, instance_name='shimmer-loop-old', actual_cost=45.0)])
+        decide = lambda: guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=3.9,
+                                     now_epoch=now, reserve_minutes=15, reaped=[])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'leaves less than the forecast'):
+            decide()
+        write_lines(ledger, [dict(event='budget_change', time_utc=guard.utc(now - 60), budget_usd=70.0, previous_budget_usd=50.0,
+                                  hard_stop_usd=69.0, previous_hard_stop_usd=49.0)])
+        decision = decide()
+        self.assertEqual(decision['budget_usd'], 70.0)
+        self.assertAlmostEqual(decision['cap_usd'], 1.5 * guard.forecast_usd(60, 1.29))
+        self.assertEqual(instance_reaper.budget_figures(ledger_rows(ledger)), (70.0, 69.0))
+        # An earlier-dated line read later never wins; a change with no hard stop keeps the margin.
+        self.assertEqual(instance_reaper.budget_figures([dict(event='budget_change', time_utc=guard.utc(now), budget_usd=60.0),
+                                                         dict(event='budget_open', time_utc=guard.utc(now - 10), budget_usd=50.0)]),
+                         (60.0, 59.0))
+        self.assertEqual(instance_reaper.budget_figures([]), (None, None))
+        state = self.root / 'ds9' / 'mock_state.json'
+        write(state, dict(instances=[dict(instance_id='b' * 32, name=LOOP_NAME, status='active')]))
+        write_lines(ledger, [dict(event='launch', instance_id='b' * 32, instance_name=LOOP_NAME, price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now), deadline_utc=guard.utc(now + 3600)),
+                             dict(event='launch', instance_id='c' * 32, instance_name='shimmer-loop-old2', price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now - 7200)),
+                             dict(event='termination', instance_id='c' * 32, instance_name='shimmer-loop-old2', actual_cost=10.0)])
+        provider = instance_reaper.MockProvider(state)
+        moment = instance_reaper.parse_time(guard.utc(now + 60))
+        status = instance_reaper.reap(provider, [ledger], ledger, now=moment)
+        self.assertEqual((status['terminated'], status['hard_stop_usd']), ([], 69.0))
+        write_lines(ledger, [dict(event='launch', instance_id='d' * 32, instance_name='shimmer-loop-old3', price_usd_per_hour=1.29,
+                                  launch_requested_utc=guard.utc(now - 7200)),
+                             dict(event='termination', instance_id='d' * 32, instance_name='shimmer-loop-old3', actual_cost=14.0)])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=moment)
+        self.assertEqual(status['terminated'], [dict(instance_name=LOOP_NAME, reason='hard_stop_spend_reached')])
 
     def test_the_reaper_ends_a_launch_the_controller_recorded_once_its_deadline_passes(self):
         """R5: tools/loop/instance_reaper.py, over the lines this controller wrote, leaves the
