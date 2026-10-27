@@ -730,11 +730,13 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
         # leaves the table with no key column at all: refused whole, and said so.
         return {}, [{"label": "", "ref_id": table["ref_id"],
                      "reason": "no key column identifies the rows (a duplicated or empty "
-                               "key cell leaves none)"}]
+                               "key cell leaves none)",
+                     "reason_kind": "no_key_column"}]
     if len(values) != 1:
         return {}, [{"label": "", "ref_id": table["ref_id"],
                      "reason": "table has %d value column(s); exactly one is required"
-                               % len(values)}]
+                               % len(values),
+                     "reason_kind": "value_column_count"}]
     col = values[0]
     hits, refused, by_row = {}, [], {}
     for label in sorted(scalars):
@@ -745,7 +747,7 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
             continue
         if len(rows) > 1:
             refused.append({"label": " ".join(label), "ref_id": table["ref_id"],
-                            "reason": "tie between %d rows" % len(rows)})
+                            "reason": "tie between %d rows" % len(rows), "reason_kind": "tie"})
             continue
         ri = rows[0]
         row = table["rows"][ri]
@@ -771,7 +773,8 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
             for label in labels:
                 refused.append({"label": " ".join(label), "ref_id": table["ref_id"],
                                 "reason": "reverse tie: %d document labels match one row"
-                                          % len(labels)})
+                                          % len(labels),
+                                "reason_kind": "reverse_tie"})
                 hits.pop(label, None)
     return hits, refused
 
