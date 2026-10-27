@@ -186,3 +186,68 @@ def format_number(x, decimals=0, grouped=False):
         groups.insert(0, whole)
         s = ("-" if neg else "") + ",".join(groups) + (("." + frac) if frac else "")
     return s
+
+
+# ---- plain string reading of a rendered file (no audit), for the reference readings ----
+
+def _table_cells(line):
+    """The cells of a table line, or None for the separator line under a header."""
+    cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    if all(c and set(c) <= set("-: ") for c in cells):
+        return None
+    return cells
+
+
+def plain_table(text):
+    """(header labels with any measure in parentheses dropped, rows of cells) of the first
+    table in a text, read line by line."""
+    header, rows = None, []
+    for ln in text.split("\n"):
+        if not ln.startswith("|"):
+            if header is not None:
+                break
+            continue
+        cells = _table_cells(ln)
+        if cells is None:
+            continue
+        if header is None:
+            header = [c.split(" (", 1)[0] for c in cells]
+        else:
+            rows.append(cells)
+    return header or [], rows
+
+
+def plain_units(text):
+    """Every `## ` unit of a rendered document, read with plain string handling: its unit
+    id (section 2), heading, `Label: value` lines and its table (header labels, rows)."""
+    out = []
+    for pos, block in enumerate(text.split("\n## ")[1:], start=1):
+        heading, _, body = block.partition("\n")
+        lines = {}
+        for ln in body.split("\n"):
+            label, sep, value = ln.partition(": ")
+            if sep and label and not ln.startswith("|"):
+                lines[label] = value.strip()
+        header, rows = plain_table(body)
+        out.append({"id": unit_id(pos, heading), "heading": heading, "lines": lines,
+                    "header": header, "rows": rows})
+    return out
+
+
+def leading_figure(value):
+    """The number a value starts with (comma groups allowed), or None."""
+    m = re.match(NUMBER, (value or "").strip())
+    return to_number(m.group(0)) if m else None
+
+
+def reference_sentences(text):
+    """The prose sentences of a rendered reference file: every paragraph that is not a
+    heading or a table, its runs of spaces joined, split after each full stop that a
+    space follows."""
+    out = []
+    for para in text.split("\n\n"):
+        p = " ".join(para.split())
+        if not p or p.startswith("#") or p.startswith("|"):
+            continue
+        out.extend(s for s in re.split(r"(?<=\.) ", p) if s)
+    return out

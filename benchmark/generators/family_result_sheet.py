@@ -48,6 +48,18 @@ RULE_STATEMENTS = {
     "unit_mismatch": ("must be written in the measure in which its parameter's range is given",
                       "each total in the measure of the column it adds up"),
 }
+
+
+def _every_sample_ranged(units, _m, label, reference):
+    """The samples whose parameter has no row in the reference file's range table."""
+    keys = {r[0] for r in tr.plain_table(reference)[1] if r}
+    return {u["id"] for u in units if u["lines"].get(label("Parameter")) not in keys}
+
+
+# How each sentence of the reference file is read (bundle.check_reference_texts).
+REFERENCE_READINGS = (
+    (r"These ranges apply to every sample of the round\.", _every_sample_ranged),
+)
 ORDINALS = ["First", "Second", "Third", "Fourth"]
 # The conversions a unit mismatch is planted with, and read back by the scanner.
 CONVERSIONS = [["g/L", "mg/L", 1000], ["L", "mL", 1000]]

@@ -153,6 +153,70 @@ def _date(offset):
     return (BASE_DATE + datetime.timedelta(days=offset)).isoformat()
 
 
+# ---- how each sentence of a schedule is read (bundle.check_reference_texts) -----------
+# A reader names the units breaking its sentence; a sentence that states no condition on
+# a unit is declared with the reason instead.
+WINDOW_LABELS = {"notice": ("Filed", "Notice"), "answer": ("Received", "Answered")}
+
+
+def _window_kept(units, m, label, _reference):
+    """'The standard <notice|answer> window is N days': the units whose gap between the
+    two dates of that window is more than N days."""
+    first, second = (label(x) for x in WINDOW_LABELS[m.group(1)])
+    out = set()
+    for u in units:
+        a, b = u["lines"].get(first), u["lines"].get(second)
+        if a and b:
+            gap = (datetime.date.fromisoformat(b) - datetime.date.fromisoformat(a)).days
+            if gap > int(m.group(2)):
+                out.add(u["id"])
+    return out
+
+
+def _placed_per_track(units, _m, _label, _reference):
+    """The units stating a window that are not a definition naming a track (or procedure),
+    and the units with a fee band column that are not a fee table naming a track (or
+    procedure)."""
+    out = set()
+    for u in units:
+        ln = u["lines"]
+        track = "Track" in ln or "Procedure" in ln
+        if any(w in ln for w in (PLAIN_WORDS["window"], OTHER_WORDS["window"])):
+            if "Defined term" not in ln or not track:
+                out.add(u["id"])
+        if any(w in u["header"] for w in (PLAIN_WORDS["fee"], OTHER_WORDS["fee"])):
+            if ln.get("Provision type") != "Fee table" or not track:
+                out.add(u["id"])
+    return out
+
+
+def _procedures_named(units, m, _label, _reference):
+    """'The <a> procedure is the <X> track and the <b> procedure is the <Y> track': the
+    units naming a procedure that is neither of the two."""
+    named = {m.group(1).lower(), m.group(3).lower()}
+    return {u["id"] for u in units if "Procedure" in u["lines"] and u["lines"]["Procedure"].lower() not in named}
+
+
+NO_UNIT_CONDITION = "states no condition on a unit"
+REFERENCE_READINGS = (
+    (r"This schedule sets the standard windows and the fee bands\.",
+     "names what the schedule holds; " + NO_UNIT_CONDITION),
+    (r"The standard (notice|answer) window is (\d+) days\.", _window_kept),
+)
+LONG_REFERENCE_READINGS = (
+    (r"This schedule explains how the provisions are read\.",
+     "says what the schedule is for; " + NO_UNIT_CONDITION),
+    (r"Each window is stated in the provision that defines it for a track, and each fee band "
+     r"in the fee table of a track\.", _placed_per_track),
+    (r"Some provisions name their track as a procedure\.",
+     "says only that some do (the next sentence names the procedures and is read); " + NO_UNIT_CONDITION),
+    (r"The (\w+) procedure is the (\w+) track and the (\w+) procedure is the (\w+) track\.",
+     _procedures_named),
+    (r"A period allowed is a window length, and a charge range is a fee range\.",
+     "says two labels mean the same; " + NO_UNIT_CONDITION),
+)
+
+
 BASELINES = ("first_4", "first_k", "label_nearest", "label_first", "track_term")
 
 

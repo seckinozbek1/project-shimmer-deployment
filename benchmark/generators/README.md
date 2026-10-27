@@ -255,6 +255,16 @@ the written files. A test that fails writes nothing. It checks:
   what that entry's kind breaks (each family's `RULE_STATEMENTS`): a rule reworded back
   to something the planted flaw does not break (a duty "on the summed line values", a
   carry of "the closing quantity" where the column sum is what is carried) is caught;
+- every prose sentence of every reference file is read as its family declares (each
+  family's `REFERENCE_READINGS`: a pattern the whole sentence matches, and a reader that
+  names the units breaking it by plain string handling, or the reason the sentence states
+  no condition on a unit), and no unit the key plants no flaw in breaks one
+  (`bundle.check_reference_texts`); a sentence no reading declares is refused. f6's count
+  procedure states CONV-LA's column-sum reading (each count opens with the sum of the
+  quantity column of the count before it, and closes at the sum of its own); it used to
+  say each count opens with the closing quantity of the count before it, which the clean
+  count after every carry_out and carry_in breaks, and the gate check restores that
+  sentence to show it caught;
 - at least one clean distractor; the twin exists, plants nothing, names the test, and
   neither its audit nor the ground-truth scanners find any flaw in it; all four probes
   are present, probe 3's term carries a keyed flaw, and each probe differs from the test
