@@ -12237,7 +12237,10 @@ def check_181_the_comparison_is_rendered_in_both_deliverables_and_is_never_an_am
                    "### Moved toward the mandate", "alpha rate: 30kes -> 45kes (delta +15) band distance -10",
                    "### Unchanged", "total declared extent: 25zed -> 25zed", "### Absent since the earlier version",
                    "eta rate: 50kes -> (not stated)", "### Outside a stated band now", "above_band",
-                   "### Not comparable", "delta span: units differ", "theta: no counterpart", "- items written by a model (not checked by Python): 1"):
+                   "### Not comparable", "delta span: units differ", "theta: no counterpart",
+                   "- findings computed by Python from the document's figures: 4",
+                   "- required fields Python checked in code and found absent: 0",
+                   "- items written by a model (not checked by Python): 1"):
         if needle not in text:
             return _fail(f"document_summary render lacks {needle!r}")
     section = text.split("## Compared with the earlier version", 1)[1]
