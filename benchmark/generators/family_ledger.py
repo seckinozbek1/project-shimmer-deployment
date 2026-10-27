@@ -6,7 +6,9 @@ shrinkage in percent and the counter. CONV-LA says exactly what is computed (S3 
 round 3): the closing quantity equals the sum of the quantity column, and the opening
 row carries the sum of the quantity column of the count before. Every keyed unit breaks
 that text as written and every other unit keeps it; `units_breaking_carry_rule` reads it
-a second time from the rendered text with plain string handling.
+a second time from the rendered text with plain string handling. The count procedure
+(the reference file, REFERENCE_PROSE) states the same column-sum reading, and its
+sentences are read against every unit too (REFERENCE_READINGS, S3 tie-break item 1).
 
 Neighbour-dependent kinds (each with `depends_on_unit`, the neighbour it depends on):
 - carry_in: the opening row was mis-carried from the count before (it is not that
@@ -55,6 +57,70 @@ RULE_STATEMENTS = {
     "shrinkage_below": ("the shrinkage must lie between 0.5% and 3%",),
     "missing_counter": ("must state who counted it",),
 }
+
+
+# The count procedure, the family's reference file (a grounding file), one paragraph per
+# sentence. It states what CONV-LA states, in the column-sum reading (S3 tie-break item
+# 1): it used to say "Each count opens with the closing quantity of the count before
+# it", which the clean count after every carry_out and carry_in contradicts.
+REFERENCE_PROSE = (
+    "Each count opens with the sum of the quantity column of the count before it.",
+    "The closing quantity of each count is the sum of its own quantity column.",
+    "An issued quantity is written as a negative movement, or as zero when nothing was issued.",
+)
+
+
+def _column(u):
+    return [int(r[1]) for r in u["rows"] if len(r) == 2 and r[1].lstrip("-").isdigit()]
+
+
+def _as_label(words):
+    return words[:1].upper() + words[1:]
+
+
+def _opens_with(units, m, label, _reference):
+    """'Each count opens with the <figure> of the count before it': the figure is the sum
+    of the count's quantity column, or a line the count states (the sentence's words as
+    its label). The counts whose opening row is not that figure of the count before."""
+    figure, out, before = m.group(1), set(), None
+    for u in units:
+        column = _column(u)
+        if not column:
+            before = None
+            continue
+        if before is not None and column[0] != before:
+            out.add(u["id"])
+        if figure == "sum of the quantity column":
+            before = sum(column)
+        else:
+            before = tr.leading_figure(u["lines"].get(label(_as_label(figure))))
+    return out
+
+
+def _closes_at(units, m, label, _reference):
+    """'The <line> of each count is the sum of its own quantity column': the counts whose
+    stated line is missing or is not the sum of their quantity column."""
+    out = set()
+    for u in units:
+        column = _column(u)
+        if column and tr.leading_figure(u["lines"].get(label(_as_label(m.group(1))))) != sum(column):
+            out.add(u["id"])
+    return out
+
+
+def _issued(units, _m, _label, _reference):
+    """The counts with an issued row above zero."""
+    return {u["id"] for u in units for r in u["rows"]
+            if len(r) == 2 and r[0] == "Issued" and r[1].lstrip("-").isdigit() and int(r[1]) > 0}
+
+
+# How each sentence of the reference file is read (bundle.check_reference_texts): a
+# pattern the whole sentence matches, and the reader that names the units breaking it.
+REFERENCE_READINGS = (
+    (r"Each count opens with the (.+) of the count before it\.", _opens_with),
+    (r"The (.+) of each count is the sum of its own quantity column\.", _closes_at),
+    (r"An issued quantity is written as a negative movement, or as zero when nothing was issued\.", _issued),
+)
 
 
 def units_breaking_carry_rule(text, closing_label="Closing quantity"):
@@ -223,10 +289,7 @@ def build(seed, attempt=0):
     preamble = "This record lists the successive stock counts of one store, each carried into the next."
     doc = md.Doc(title, preamble, doc_units)
     twin = md.Doc(title, preamble, twin_units)
-    reference = ("procedure", "Count procedure", [
-        ("prose", "Each count opens with the closing quantity of the count before it."),
-        ("prose", "Issued quantities are written as negative movements."),
-    ])
+    reference = ("procedure", "Count procedure", [("prose", s) for s in REFERENCE_PROSE])
     conv = md.Conventions("Count conventions", "These rules govern the stock count record.", RULES)
     keep = []
     for p in planted:
