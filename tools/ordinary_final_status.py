@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 from ordinary_final_run import read
 
-CREDENTIAL = Path('C:/Users/secki/local/api_keys/config.py')
 PHASE_DEADLINES = dict(ssh_ready=20, python_gate=30, fresh_directory=30, support_transfer=300, assets_transfer=10800,
                        archive_integrity=300, extract_payload=900, create_environment=180, install_pinned_wheels=1800,
                        dependency_closure=120, gpu_metadata=30, watchdog_receipt_transfer=30, stop_workload=30,
@@ -70,11 +69,20 @@ def main(bundle, stage, use_provider):
     state = 'unknown'
     if use_provider and launch:
         try:
-            from lambda_experiment_provider import LambdaExperiment
-            found = [x for x in LambdaExperiment(CREDENTIAL).request('instances')['data'] if x.get('instance_id') == launch['instance_id']]
-            state = 'listed, ' + (found[0].get('status') or 'status not projected') if found else 'not in inventory (terminated or never listed)'
+            # Located at the moment of use, through the controller's own resolver.
+            from ordinary_final_cloud import credential_path
+            credential = credential_path()
+        except RuntimeError as exc:
+            credential, state = None, 'unknown (' + str(exc) + ')'
         except Exception as exc:
-            state = 'unknown (provider query failed: ' + type(exc).__name__ + ')'
+            credential, state = None, 'unknown (credential lookup failed: ' + type(exc).__name__ + ')'
+        if credential is not None:
+            try:
+                from lambda_experiment_provider import LambdaExperiment
+                found = [x for x in LambdaExperiment(credential).request('instances')['data'] if x.get('instance_id') == launch['instance_id']]
+                state = 'listed, ' + (found[0].get('status') or 'status not projected') if found else 'not in inventory (terminated or never listed)'
+            except Exception as exc:
+                state = 'unknown (provider query failed: ' + type(exc).__name__ + ')'
     elif not launch:
         state = 'no instance'
     lines.append('instance (provider): ' + state)

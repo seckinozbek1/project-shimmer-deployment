@@ -14,8 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 from ordinary_final_run import read, write, require, sha
 from lambda_experiment_provider import LambdaExperiment
-
-CREDENTIAL = Path('C:/Users/secki/local/api_keys/config.py')
+from ordinary_final_cloud import credential_path
 
 
 def main(bundle):
@@ -23,7 +22,7 @@ def main(bundle):
     binding = read(base / 'authorization_binding.json')
     require(sha(base / 'execution_manifest.json') == binding['manifest_sha256'], 'Manifest differs from the binding')
     m = read(base / 'execution_manifest.json')
-    provider = LambdaExperiment(CREDENTIAL)
+    provider = LambdaExperiment(credential_path())
     instances = provider.request('instances')['data']
     require(instances == [], 'Provider inventory not empty')
     types = provider.request('instance-types')['data']

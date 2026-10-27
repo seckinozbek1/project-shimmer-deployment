@@ -14,15 +14,15 @@ BASE = ROOT / 'docs/fix/ordinary_final_cloud_run_v3'
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 from ordinary_final_run import read, write, require, sha
 from lambda_experiment_provider import LambdaExperiment
+from ordinary_final_cloud import credential_path
 
-CREDENTIAL = Path('C:/Users/secki/local/api_keys/config.py')
 MANIFEST = 'a2a8be14f3d9822fcf5dd2b5beb50bfd6e6586f78d5c1dc0aa219534a3d88bd7'
 
 
 def main():
     require(sha(BASE / 'execution_manifest.json') == MANIFEST, 'Manifest differs from the authorization')
     m = read(BASE / 'execution_manifest.json')
-    provider = LambdaExperiment(CREDENTIAL)
+    provider = LambdaExperiment(credential_path())
     instances = provider.request('instances')['data']
     require(instances == [], 'Provider inventory not empty')
     types = provider.request('instance-types')['data']

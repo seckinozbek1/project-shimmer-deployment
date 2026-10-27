@@ -4,7 +4,8 @@ The real controller execute() runs its own command strings, in its own order, th
 its own detached-phase transport, against a local Ubuntu (WSL) standing in for the
 instance: every `ssh host cmd` becomes `bash -c cmd` on that Ubuntu, one shell layer as
 sshd runs it, and every `scp` becomes a copy across the Windows and Linux mounts. The
-provider is mocked (no instance exists), the watchdog is a local heartbeat thread and
+provider is mocked (no instance exists, and no credential file is located or read),
+the watchdog is a local heartbeat thread and
 the temporary ssh identity is real. The sealed project archive, the runner, the
 observer, the install lock and the wheels are the real sealed ones; the asset archive
 is a rehearsal build with the same wheels and Hub refs but no model weights, because
@@ -24,6 +25,7 @@ import hashlib
 import io
 import json
 import os
+import posixpath
 import re
 import shlex
 import shutil
@@ -46,14 +48,52 @@ from prepare_ordinary_final_assets import build_assets
 SOURCE_BUNDLE = ROOT / 'docs/fix/ordinary_final_cloud_run_v4'
 WORK = ROOT / '.tmp/rehearsal'
 WHEELS = ROOT / 'output/cloud_wheels/ordinary_final_cp312'
-LINUX_ROOT = '/home/seckinozbek/shimmer-rehearsal'
-REMOTE = LINUX_ROOT + '/shimmer-ordinary-final'
+REHEARSAL_FOLDER = 'shimmer-rehearsal'
 DISTRO = 'Ubuntu'
 
 
 def linux(command, timeout=600, stdin=None):
     """One command through exactly one Linux shell, as sshd runs `ssh host cmd`."""
     return subprocess.run(['wsl.exe', '-d', DISTRO, '-e', 'bash', '-c', command], capture_output=True, timeout=timeout, input=stdin)
+
+
+# The Linux folder the rehearsal works in is <the Linux side's own home>/shimmer-rehearsal,
+# read at run time through linux(), never written into this file and never looked up
+# at import. Every rm -rf the rehearsal issues goes through remove_command(), which
+# refuses any target that is not that folder or a path below it.
+def rehearsal_root(home):
+    """<home>/shimmer-rehearsal, for an absolute, normalised home that is not the root."""
+    home = home.strip() if isinstance(home, str) else ''
+    trimmed = home.rstrip('/')
+    require(home.startswith('/') and trimmed != '' and posixpath.normpath(trimmed) == trimmed
+            and not any(c.isspace() or ord(c) < 32 for c in trimmed),
+            'Linux home unusable for the rehearsal (empty, the root, or not an absolute path)')
+    return trimmed + '/' + REHEARSAL_FOLDER
+
+
+def linux_home():
+    """The Linux side's home folder, as its own shell reports it."""
+    r = linux('printf %s "$HOME"', timeout=60)
+    require(r.returncode == 0, 'Linux home lookup failed')
+    return r.stdout.decode('utf8', 'replace')
+
+
+def resolve_layout():
+    """Every Linux path the rehearsal uses, under the one folder resolved now."""
+    root = rehearsal_root(linux_home())
+    remote = root + '/shimmer-ordinary-final'
+    return SimpleNamespace(root=root, remote=remote, phases=controller.phases_dir(remote), mount=root + '/nfs')
+
+
+def remove_command(layout, *targets):
+    """rm -rf of the named targets, each the rehearsal folder itself or a path below it."""
+    require(targets, 'Nothing named for removal')
+    for target in targets:
+        parts = target.split('/')
+        require((target == layout.root or target.startswith(layout.root + '/'))
+                and not any(p in ('', '.', '..') for p in parts[1:]),
+                'Removal outside the rehearsal folder refused')
+    return 'rm -rf ' + ' '.join(shlex.quote(t) for t in targets)
 
 
 def to_linux(path):
@@ -156,22 +196,27 @@ def make_bundle(name, assets, models):
     return base
 
 
-def run_controller(base, remote_root_present):
+def no_credential():
+    """The provider is mocked, so no credential is located or read."""
+    return Path('rehearsal-no-credential')
+
+
+def run_controller(base, remote_root_present, layout):
     """Execute the real controller against the Linux target; return the console lines and failure."""
-    linux('rm -rf ' + shlex.quote(REMOTE) + ' ' + shlex.quote(controller.phases_dir(REMOTE)) + '; mkdir -p ' + shlex.quote(LINUX_ROOT)
-          + ('; mkdir -p ' + shlex.quote(REMOTE) if remote_root_present else ''))
+    linux(remove_command(layout, layout.remote, layout.phases) + '; mkdir -p ' + shlex.quote(layout.root)
+          + ('; mkdir -p ' + shlex.quote(layout.remote) if remote_root_present else ''))
     FakeProvider.state = None
     transport = LinuxTransport(base)
     fake_subprocess = SimpleNamespace(run=transport.run, Popen=transport.popen, TimeoutExpired=subprocess.TimeoutExpired,
                                       CompletedProcess=subprocess.CompletedProcess, DEVNULL=subprocess.DEVNULL,
                                       DETACHED_PROCESS=8, CREATE_NEW_PROCESS_GROUP=512, CREATE_NO_WINDOW=0)
     console = io.StringIO()
-    with patch.object(controller, 'BASE', base), patch.object(controller, 'REMOTE', REMOTE), \
+    with patch.object(controller, 'BASE', base), patch.object(controller, 'REMOTE', layout.remote), \
             patch.object(controller, 'MANIFEST', sha(base / 'execution_manifest.json')), \
             patch.object(controller, 'SEAL', sha(base / 'seal.json')), \
             patch.object(controller, 'PREPARATION', 'rehearsal'), patch.object(controller, 'INSTANCE_NAME', 'shimmer-rehearsal'), \
             patch.object(controller, 'LambdaExperiment', FakeProvider), patch.object(controller, 'subprocess', fake_subprocess), \
-            contextlib.redirect_stdout(console):
+            patch.object(controller, 'credential_path', no_credential), contextlib.redirect_stdout(console):
         controller.execute()
     failure = base / 'controller_failure.json'
     return transport, console.getvalue().splitlines(), (read(failure) if failure.exists() else None)
@@ -205,7 +250,9 @@ def main(out):
     WORK.mkdir(parents=True, exist_ok=True)
     started = time.time()
     require(linux('echo ready').stdout.strip() == b'ready', 'Linux target unavailable')
-    source = read(SOURCE_BUNDLE / 'execution_manifest.json')
+    layout = resolve_layout()
+    remote = layout.remote
+    source =read(SOURCE_BUNDLE / 'execution_manifest.json')
     assets, models = rehearsal_assets(source)
     report = dict(passed=False, target=dict(distro=linux('. /etc/os-release; echo $PRETTY_NAME').stdout.decode().strip(),
                                             python=linux('/usr/bin/python3.12 -c "import sys;print(sys.version.split()[0])"').stdout.decode().strip(),
@@ -215,7 +262,7 @@ def main(out):
 
     # Polarity 1: absent remote root; the full sequence through the workload's admission refusal and teardown.
     base = make_bundle('absent_root', assets, models)
-    transport, console, failure = run_controller(base, remote_root_present=False)
+    transport, console, failure = run_controller(base, remote_root_present=False, layout=layout)
     phases = phase_receipts(base)
     workload = read(base / 'workload_return.json') if (base / 'workload_return.json').exists() else None
     stderr_text = ''
@@ -242,24 +289,24 @@ def main(out):
     if intent:
         write(base / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=os.getpid(), heartbeat_epoch=time.time(),
                                                  execution_manifest_sha256=sha(base / 'execution_manifest.json')))
-        linux('cp ' + shlex.quote(to_linux(base / 'WATCHDOG_ARMED.json')) + ' ' + shlex.quote(REMOTE + '/WATCHDOG_ARMED.json'))
+        linux('cp ' + shlex.quote(to_linux(base / 'WATCHDOG_ARMED.json')) + ' ' + shlex.quote(remote + '/WATCHDOG_ARMED.json'))
         second = linux(intent['command'] + ' 2>&1', timeout=300)
         text = second.stdout.decode('utf8', 'replace')
         report['preconditions']['single_workload_claim'] = dict(
-            first_invocation_claimed=(linux('test -f ' + shlex.quote(REMOTE + '/RUN_CLAIMED') + ' && echo yes || echo no').stdout.strip() == b'yes'),
+            first_invocation_claimed=(linux('test -f ' + shlex.quote(remote + '/RUN_CLAIMED') + ' && echo yes || echo no').stdout.strip() == b'yes'),
             second_invocation_exit=second.returncode, second_invocation_refused='FileExistsError' in text and 'RUN_CLAIMED' in text)
 
     # Precondition: archive integrity, second polarity (a corrupted archive fails sha256sum -c).
-    corrupt = linux('cd ' + shlex.quote(REMOTE) + ' && cp assets.tar assets.corrupt && printf x | dd of=assets.corrupt bs=1 seek=100 conv=notrunc 2>/dev/null; '
+    corrupt = linux('cd ' + shlex.quote(remote) + ' && cp assets.tar assets.corrupt && printf x | dd of=assets.corrupt bs=1 seek=100 conv=notrunc 2>/dev/null; '
                     + "printf '%s\\n' " + shlex.quote(assets['sha256'] + '  assets.corrupt') + ' | sha256sum -c -')
-    good = linux('cd ' + shlex.quote(REMOTE) + " && printf '%s\\n' " + shlex.quote(source['source_archive_sha256'] + '  project.tar.gz') + ' '
+    good = linux('cd ' + shlex.quote(remote) + " && printf '%s\\n' " + shlex.quote(source['source_archive_sha256'] + '  project.tar.gz') + ' '
                  + shlex.quote(assets['sha256'] + '  assets.tar') + ' | sha256sum -c -')
     report['preconditions']['archive_integrity'] = dict(intact_exit=good.returncode, corrupted_exit=corrupt.returncode,
                                                         controller_phase_exit=phases.get('archive_integrity', {}).get('returncode'))
 
     # Polarity 2: present remote root; the controller must refuse at fresh_directory and tear down.
     base2 = make_bundle('present_root', assets, models)
-    transport2, console2, failure2 = run_controller(base2, remote_root_present=True)
+    transport2, console2, failure2 = run_controller(base2, remote_root_present=True, layout=layout)
     phases2 = phase_receipts(base2)
     report['polarities']['present_remote_root'] = dict(
         console=console2, controller_failure=failure2,
@@ -273,15 +320,15 @@ def main(out):
     # matching copy is used and nothing is uploaded; a corrupt copy is refused, the
     # upload runs and the copy is left untouched; a missing copy is uploaded and
     # then seeded under its hash-keyed name only after archive_integrity passed.
-    mount = LINUX_ROOT + '/nfs'
+    mount = layout.mount
     copy_path = mount + '/assets-' + assets['sha256'] + '.tar'
     source_copy = shlex.quote(to_linux(WORK / 'assets.tar'))
 
     def copy_polarity(name, prepare):
         base_c = make_bundle(name, assets, models)
         write(base_c / 'asset_copy_declaration.json', dict(filesystem_name='rehearsal-fs', mount=mount, operator_authorized=True))
-        linux('rm -rf ' + shlex.quote(mount) + ' && mkdir -p ' + shlex.quote(mount) + (' && ' + prepare if prepare else ''))
-        transport_c, console_c, failure_c = run_controller(base_c, remote_root_present=False)
+        linux(remove_command(layout, mount) + ' && mkdir -p ' + shlex.quote(mount) + (' && ' + prepare if prepare else ''))
+        transport_c, console_c, failure_c = run_controller(base_c, remote_root_present=False, layout=layout)
         phases_c = phase_receipts(base_c)
         receipt = read(base_c / 'asset_copy_receipt.json') if (base_c / 'asset_copy_receipt.json').exists() else None
         digest_after = linux('test -f ' + shlex.quote(copy_path) + ' && sha256sum ' + shlex.quote(copy_path)
@@ -306,7 +353,7 @@ def main(out):
     FakeProvider.state = None
     with patch.object(controller, 'BASE', base3), patch.object(controller, 'MANIFEST', sha(base3 / 'execution_manifest.json')), \
             patch.object(controller, 'SEAL', sha(base3 / 'seal.json')), patch.object(controller, 'LambdaExperiment', FakeProvider), \
-            contextlib.redirect_stdout(io.StringIO()):
+            patch.object(controller, 'credential_path', no_credential), contextlib.redirect_stdout(io.StringIO()):
         try:
             controller.execute()
             key_refusal = None
@@ -363,8 +410,8 @@ def main(out):
         and report['preconditions']['temporary_key_path']['launches'] == 0
         and copy_ok)
     report['seconds'] = round(time.time() - started, 1)
-    linux('rm -rf ' + shlex.quote(LINUX_ROOT))
-    report['linux_target_cleaned'] = linux('test -e ' + shlex.quote(LINUX_ROOT) + ' && echo present || echo absent').stdout.strip() == b'absent'
+    linux(remove_command(layout, layout.root))
+    report['linux_target_cleaned'] = linux('test -e ' + shlex.quote(layout.root) + ' && echo present || echo absent').stdout.strip() == b'absent'
     (out / 'rehearsal.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf8')
     summary = {k: report[k] for k in ('passed', 'seconds', 'target', 'preconditions', 'unrehearsed')}
     summary['absent_root_phases'] = a['phases']

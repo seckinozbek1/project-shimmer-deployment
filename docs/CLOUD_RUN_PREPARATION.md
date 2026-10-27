@@ -108,6 +108,37 @@ a `LAMBDA_API_KEY` assignment, or the supported environment variable. The loader
 parses that assignment without executing the file. Credential values, private keys
 and passphrases must never enter source, bundle contents or diagnostics.
 
+### How the ordinary final tools find the credential file
+
+The ordinary final controller (`tools/ordinary_final_cloud.py`), its status reader
+(`tools/ordinary_final_status.py`) and the two live preflights
+(`tools/ordinary_final_bound_preflight.py`, `tools/ordinary_final_v3_preflight.py`)
+carry no credential path. Each one asks the repository's single resolver,
+`resolve_config_path()` in `scripts/agent_wrapper.py`, through the controller's
+`credential_path()`, and uses the first file that exists, in this order:
+
+1. the file (or the folder holding `config.py`) named by `SHIMMER_CONFIG_PATH`;
+2. the sibling `../api_keys/config.py`, one level above the repository root;
+3. the path written in the repository-root `.env_path` pointer.
+
+The lookup happens at the moment of use, never at import: importing these tools
+locates nothing. The controller looks just before its first provider call, after
+the seal and controller checks, and hands the same path to the watchdog process
+and to the independent cleanup check. If no candidate exists, the tool stops with
+one line, `No provider credential file found; set SHIMMER_CONFIG_PATH to the
+operator credential file`, before any provider call, instance, key or launch
+intent. The status reader prints that line as the instance state instead. The
+file is only located here; reading it stays with the provider adapter.
+
+### Where the rehearsal works on the Linux side
+
+`tools/ordinary_final_rehearsal.py` asks the local Linux shell (WSL) for its own
+home folder when the rehearsal starts, never at import, and works only in
+`<that home>/shimmer-rehearsal`. It refuses an empty home, the root `/`, or a path
+that is not absolute and normalised. Every `rm -rf` it issues is built by one
+function that refuses any target other than that folder or a path below it. The
+rehearsal mocks the provider, so it locates no credential file at all.
+
 ## Prepare locally
 
 Use a new experiment ID and replace the placeholder paths below with existing
