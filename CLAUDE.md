@@ -91,7 +91,14 @@ processing swarm governed by an append-only constitution.
   (`Controller source changed`) with no instance, key or launch intent created. Before this the
   seal pinned the runtime the controller carries but not the controller; only the launch
   receipt recorded its hash, after the instance existed. Proven both ways with a neutralization
-  that drops the controller from the binding (controller gate).
+  that drops the controller from the binding (controller gate). The controller carries no
+  credential path (loop S1, 2026-10-27): `credential_path()` calls
+  `agent_wrapper.resolve_config_path()` just before the first provider call, never at import,
+  and with nothing found refuses in one line naming `SHIMMER_CONFIG_PATH` before any provider
+  call, instance, key or launch intent. The watchdog argument and the independent cleanup use
+  the same path; the status reader and both live preflights use the same function. This edit
+  changed the bound controller file, so every bundle sealed before it (v12 included) refuses
+  with `Controller source changed` and must be re-sealed; past results are unaffected.
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
   operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
@@ -111,7 +118,11 @@ processing swarm governed by an append-only constitution.
   `tools/ordinary_final_controller_checks.py` (states MATCH, MISSING, MISMATCH, UNREACHABLE;
   a copy under another digest never matches; the fallback argv equals the v9 argv; no seed
   without integrity; a neutralised probe that stops hashing is caught) and the rehearsal runs
-  three copy polarities through a real shell. No run has used it; it is unauthorized until the
+  three copy polarities through a real shell. The rehearsal works only in
+  `<Linux home>/shimmer-rehearsal`, read through its own shell at run time; it refuses an
+  empty, root or relative home, and builds every `rm -rf` through one guard that refuses
+  anything outside that folder (checked in `tools/ordinary_final_controller_checks.py`).
+  No run has used the asset copy; it is unauthorized until the
   operator says otherwise, and it changes nothing when undeclared.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before

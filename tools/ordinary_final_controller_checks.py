@@ -11,9 +11,12 @@ as completed, never failed, and the workload must then run.
 import base64
 import contextlib
 import hashlib
+import importlib.util
 import io
 import json
+import os
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -25,8 +28,9 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
+import agent_wrapper
 import ordinary_final_cloud as controller
-from ordinary_final_run import write, sha
+from ordinary_final_run import read, write, sha
 
 INSTANCE = 'a' * 32
 KEY_ID = 'b' * 32
@@ -59,8 +63,10 @@ class FakeProvider:
 
     def __init__(self, credential=None):
         if FakeProvider.state is None:
-            FakeProvider.state = dict(instances=[], keys=[], launches=0, terminate_calls=0, status={})
+            FakeProvider.state = dict(instances=[], keys=[], launches=0, terminate_calls=0, status={}, credentials=[])
         self.s = FakeProvider.state
+        # The path the controller handed over, never its contents: nothing is read.
+        self.s.setdefault('credentials', []).append(credential)
 
     def request(self, endpoint, body=None, method=None):
         s = self.s
@@ -211,6 +217,7 @@ class FakeTransport:
                 files[digest] = digest
 
     def popen(self, argv, **kwargs):
+        self.popen_argv = list(argv)
         write(self.base / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=777, heartbeat_epoch=controller.time.time(),
                                                       execution_manifest_sha256=sha(self.base / 'execution_manifest.json')))
         return SimpleNamespace(pid=777, poll=lambda: None)
@@ -234,6 +241,10 @@ class ControllerChecks(unittest.TestCase):
               manifest_sha256=sha(self.base / 'execution_manifest.json'), bytes=14))
         FakeProvider.state = None
         self.clock = FakeClock(self.base)
+        # A stand-in operator file the resolver can find. It holds no key and is never
+        # read: the provider is mocked, and the controller only passes its path on.
+        self.credential = self.root / 'operator_provider_access.txt'
+        self.credential.write_text('placeholder, not a key\n', encoding='utf8')
 
     def declare_copy(self, mount='/lambda/nfs/fixture'):
         write(self.base / 'asset_copy_declaration.json', dict(filesystem_name='fixture-fs', mount=mount, operator_authorized=True))
@@ -253,6 +264,7 @@ class ControllerChecks(unittest.TestCase):
                 patch.object(controller, 'LambdaExperiment', FakeProvider), \
                 patch.object(controller, 'subprocess', fake_subprocess), \
                 patch.object(controller, 'time', self.clock), \
+                patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}), \
                 contextlib.redirect_stdout(console):
             controller.execute()
         failure = self.base / 'controller_failure.json'
@@ -744,6 +756,146 @@ class ControllerChecks(unittest.TestCase):
         finally:
             linux('rm -rf ' + shlex_quote(root) + ' ' + shlex_quote(phases))
 
+    # ---- the credential is located at use, never at import, never from a written path -----
+
+    def unresolvable(self):
+        """Every resolver candidate points at a file that does not exist, and the
+        environment variable is unset: the state of a machine with no operator file."""
+        absent = [(agent_wrapper.CONFIG_ENV_VAR, self.root / 'absent' / 'a.txt'),
+                  ('sibling', self.root / 'absent' / 'b.txt'), ('.env_path pointer', self.root / 'absent' / 'c.txt')]
+        environment = {k: v for k, v in os.environ.items() if k != agent_wrapper.CONFIG_ENV_VAR}
+        return absent, environment
+
+    def test_credential_resolves_from_shimmer_config_path_at_the_moment_of_use(self):
+        """(a) The controller's resolver returns the file SHIMMER_CONFIG_PATH names, and
+        that same path, and no other, reaches every provider handle and the watchdog."""
+        with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+            self.assertEqual(controller.credential_path(), self.credential)
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        # The launch handle and the independent cleanup handle, both given the resolved path.
+        self.assertGreaterEqual(len(FakeProvider.state['credentials']), 2)
+        self.assertEqual(set(map(str, FakeProvider.state['credentials'])), {str(self.credential)})
+        argv = transport.popen_argv
+        self.assertEqual(argv[argv.index('--credential-file') + 1], str(self.credential))
+        self.assert_torn_down()
+
+    def test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path(self):
+        """(b) With nothing to find, every live reader refuses in one line naming
+        SHIMMER_CONFIG_PATH, before any provider handle exists."""
+        absent, environment = self.unresolvable()
+        with patch.object(agent_wrapper, 'candidate_config_paths', lambda: list(absent)), \
+                patch.dict(os.environ, environment, clear=True):
+            self.assertIsNone(agent_wrapper.resolve_config_path())
+            with self.assertRaises(RuntimeError) as caught:
+                controller.credential_path()
+            message = str(caught.exception)
+            self.assertIn('SHIMMER_CONFIG_PATH', message)
+            self.assertNotIn('\n', message)
+            self.assertEqual(message, controller.CREDENTIAL_REFUSAL)
+            # The controller itself: refused before the provider, an instance or a launch intent.
+            with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                self.execute()
+            self.assertIsNone(FakeProvider.state)
+            self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+            # The status reader reports the refusal as the instance line, and queries nothing.
+            import ordinary_final_status as status
+            write(self.base / 'launch.json', dict(instance_id=INSTANCE, epoch=1.0, hourly_rate=1.29))
+            out = io.StringIO()
+            with patch('lambda_experiment_provider.LambdaExperiment', side_effect=AssertionError('provider reached')), \
+                    contextlib.redirect_stdout(out):
+                status.main(self.base, 'T', True)
+            self.assertIn('instance (provider): unknown (' + controller.CREDENTIAL_REFUSAL + ')', out.getvalue())
+            # The two preflights refuse at the same line, before any provider handle.
+            import ordinary_final_bound_preflight as bound_preflight
+            import ordinary_final_v3_preflight as v3_preflight
+            write(self.base / 'authorization_binding.json', dict(manifest_sha256=sha(self.base / 'execution_manifest.json')))
+            for module, call in ((bound_preflight, lambda: bound_preflight.main(self.base)), (v3_preflight, v3_preflight.main)):
+                with self.subTest(reader=module.__name__), \
+                        patch.object(module, 'LambdaExperiment', side_effect=AssertionError('provider reached')), \
+                        patch.object(v3_preflight, 'BASE', self.base), \
+                        patch.object(v3_preflight, 'MANIFEST', sha(self.base / 'execution_manifest.json')):
+                    with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                        call()
+            self.assertFalse((self.base / 'authorized_live_preflight.json').exists())
+
+    def test_importing_the_controller_tools_resolves_nothing(self):
+        """(c) Loading each live tool runs its module code and nothing locates a
+        credential or starts a process: resolution belongs to the moment of use."""
+        calls = []
+        saved = list(sys.path)
+
+        def recorder(name):
+            def record(*args, **kwargs):
+                calls.append(name)
+                raise AssertionError(name + ' called at import')
+            return record
+        names = ('ordinary_final_cloud', 'ordinary_final_status', 'ordinary_final_bound_preflight',
+                 'ordinary_final_v3_preflight', 'ordinary_final_rehearsal')
+        loaded = {}
+        try:
+            with patch.object(agent_wrapper, 'resolve_config_path', recorder('resolve_config_path')), \
+                    patch.object(agent_wrapper, 'candidate_config_paths', recorder('candidate_config_paths')), \
+                    patch.object(subprocess, 'run', recorder('subprocess.run')), \
+                    patch.object(subprocess, 'Popen', recorder('subprocess.Popen')):
+                for name in names:
+                    spec = importlib.util.spec_from_file_location('_import_probe_' + name, ROOT / 'tools' / (name + '.py'))
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    loaded[name] = module
+        finally:
+            sys.path[:] = saved
+        self.assertEqual(calls, [])
+        self.assertEqual(sorted(loaded), sorted(names))
+        for name, module in loaded.items():
+            self.assertFalse(hasattr(module, 'CREDENTIAL'), name + ' still fixes a credential path at import')
+        self.assertFalse(hasattr(loaded['ordinary_final_rehearsal'], 'LINUX_ROOT'))
+
+    def test_rehearsal_removes_only_its_own_folder_under_the_linux_home(self):
+        """(d) The rehearsal's folder is <Linux home>/shimmer-rehearsal, read at run time,
+        and every rm -rf it computes targets that folder or a path below it."""
+        import ordinary_final_rehearsal as rehearsal
+        commands = []
+        home = dict(value='/home/fixture')
+
+        def fake_linux(command, timeout=600, stdin=None):
+            commands.append(command)
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout=home['value'].encode(), stderr=b'')
+        root = '/home/fixture/shimmer-rehearsal'
+        with patch.object(rehearsal, 'linux', fake_linux):
+            layout = rehearsal.resolve_layout()
+            self.assertEqual(commands, ['printf %s "$HOME"'])  # one lookup, through the Linux shell
+            self.assertEqual(layout.root, root)
+            for path in (layout.remote, layout.phases, layout.mount):
+                self.assertTrue(path.startswith(root + '/'), path)
+            # The removal the rehearsal issues before each controller run, executed.
+            commands.clear()
+            with patch.object(controller, 'execute', lambda: None):
+                rehearsal.run_controller(self.base, True, layout)
+            targets = []
+            for command in commands:
+                for segment in re.split(r';|&&', command):
+                    words = shlex.split(segment)
+                    if words[:2] == ['rm', '-rf']:
+                        targets.extend(words[2:])
+            self.assertEqual(sorted(targets), sorted([layout.remote, layout.phases]))
+            for path in (layout.root, layout.remote, layout.phases, layout.mount):
+                self.assertEqual(shlex.split(rehearsal.remove_command(layout, path)), ['rm', '-rf', path])
+            for target in targets:
+                self.assertTrue(target == root or target.startswith(root + '/'), target)
+            # A parent, the root, a sibling or an escape is refused.
+            for bad in ('/home/fixture', '/home', '/', '', root + '-other', root + '/../x', root + '/./x', root + '//x'):
+                with self.assertRaisesRegex(RuntimeError, 'Removal outside the rehearsal folder refused'):
+                    rehearsal.remove_command(layout, bad)
+            # An empty, root or relative home is refused before any folder is named.
+            for value in ('', '/', '//', ' ', 'home/fixture', '/home/../', '/home/fix ture'):
+                home['value'] = value
+                with self.assertRaisesRegex(RuntimeError, 'Linux home unusable'):
+                    rehearsal.resolve_layout()
+        # Every rm -rf in the rehearsal is built by remove_command and nowhere else.
+        source = Path(rehearsal.__file__).read_text(encoding='utf-8')
+        self.assertEqual(source.count("'rm -rf "), 1)
+
 
 def shlex_quote(value):
     import shlex
@@ -806,6 +958,10 @@ def read_without_the_controller_binding(path):
     return value
 
 
+# Imported here, after FakeProvider and INSTANCE exist, because the rehearsal imports them.
+import ordinary_final_rehearsal as rehearsal
+
+
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
@@ -817,6 +973,15 @@ NEUTRALIZATIONS = [
     # A seal that does not bind the controller: a changed controller launches.
     ('test_controller_binding_a_changed_controller_refuses_before_any_instance', controller, 'read',
      read_without_the_controller_binding),
+    # A credential path fixed in the file instead of resolved: SHIMMER_CONFIG_PATH is ignored.
+    ('test_credential_resolves_from_shimmer_config_path_at_the_moment_of_use', controller, 'credential_path',
+     lambda: Path('fixed-when-written.txt')),
+    # The refusal dropped: an unresolvable credential reaches the provider as None.
+    ('test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path', controller, 'credential_path',
+     lambda: agent_wrapper.resolve_config_path()),
+    # A widened removal target: the Linux home itself instead of the rehearsal folder under it.
+    ('test_rehearsal_removes_only_its_own_folder_under_the_linux_home', rehearsal, 'rehearsal_root',
+     lambda home: home.strip().rstrip('/') or '/'),
 ]
 
 
