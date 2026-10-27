@@ -67,3 +67,7 @@ The reaper's hard stop is 69 USD and the controller's budget guard counts agains
 ## How a launch is capped (since S2 checker round 2, 2026-10-27)
 
 The per-run cap is min(1.5 x forecast, ceiling - spend - caps of running loop instances - storage forecast), where the ceiling is min(hard stop, budget - 1), both read from the ledger's latest budget line (69 USD now); a line whose hard stop equals its budget still keeps the one-dollar margin. An open launch accrues spend only up to its recorded deadline; past it, with no instance of its name listed, the reaper closes it with one termination line (reason `intent_without_instance`, or `instance_not_listed_charged_to_deadline` when the instance is gone), charged to the deadline. That charge is a ceiling, counted as actual spend and never refunded. The line goes to every ledger file that holds the launch, so a launch recorded only in R's ledger is closed in R's ledger.
+
+## Stage boundary: S2 closed (2026-10-27 15:23 +0300)
+
+Spend so far: 0.00 USD on instances; the storage share is 0.05 USD (the reaper's reading at 12:21:59 UTC). Running loop instances: none (the reaper's provider listing at 12:21:59 UTC listed 0). Storage forecast to the loop's end: about 0.13 USD a day; pace so far is about 28 percent of the work in 9.5 hours, so the 30-day placeholder stays until S5's pace can be measured.
