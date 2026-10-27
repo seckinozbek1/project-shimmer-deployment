@@ -227,6 +227,12 @@ output/runs/<run folder>/
   audit/model_replies/         <sequence>_<call_id>.json per call, outcomes.jsonl
 ```
 
+**Paired judging calls.** Every model call the paired review makes to judge a unit
+is recorded with its outcome by `paired_review.judging_call_record`: under the key
+`judging_calls` on the computed bus post and in `audit/pairing_map.json`, and, when
+no computed finding carries it, on a `PAIRED_JUDGING_CALLS` bus post of its own. The
+deliverables state how many calls were made and how many model notes were kept.
+
 **Saved model replies.** Every model call writes exactly one record into
 `audit/model_replies/`, from inside the backend function that holds the raw text
 (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and from Auditor896's

@@ -106,7 +106,10 @@ processing swarm governed by an append-only constitution.
   added four files the controller imports to decide and record a launch to the binding
   (`tools/loop_budget_guard.py`, `tools/loop/instance_reaper.py`, `tools/loop/keep_awake.py`,
   `tools/run_remote_experiment.py`), so every bundle sealed before S2 refuses the same way and
-  cannot be re-executed; a new seal carries the new hashes. `scripts/agent_wrapper.py` is not
+  cannot be re-executed; a new seal carries the new hashes. S2 checker round 2 changed
+  `tools/ordinary_final_cloud.py`, `tools/ordinary_final_bound_cloud.py`,
+  `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` again, so bundles sealed
+  before it refuse the same way and must be re-sealed. `scripts/agent_wrapper.py` is not
   in the controller binding: the seal already pins it among the runtime files the bundle
   carries.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
@@ -118,15 +121,21 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
   decision through the intent line and reading the provider inventory again just before it:
   it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
-  in the inventory), when the per-run cap `min(1.5 x forecast, budget - spend - running caps -
-  storage forecast - 1)` is below the forecast (measured minutes x live price x 1.3), or when
+  in the inventory), when the per-run cap `min(1.5 x forecast, hard stop - spend - running
+  caps - storage forecast)` is below the forecast (measured minutes x live price x 1.3), or when
   the capped run time does not cover the forecast time plus the run's stop reserve (the cap
-  rule alone keeps spend + forecast + storage at or below the budget less one dollar, the
-  reaper's hard stop). The budget is never a code constant (D-S9): the guard and the reaper
-  read it from the ledgers' latest `budget_open` or `budget_change` line
-  (`instance_reaper.budget_figures`; the hard stop is that line's `hard_stop_usd`, else the
-  budget less the margin), a launch with no readable budget line is refused, and the reaper
-  terminates every loop instance while no budget line can be read. Spend is counted once per
+  rule alone keeps spend + forecast + storage at or below the reaper's hard stop). The budget is
+  never a code constant (D-S9): the guard and the reaper read it from the ledgers' latest
+  `budget_open` or `budget_change` line (`instance_reaper.budget_figures`; the hard stop is that
+  line's `hard_stop_usd`, else the budget less the one-dollar margin), a launch with no readable
+  budget line is refused, and the reaper terminates every loop instance while no budget line can
+  be read. The type rule's A10 reference is the latest `a10_reference_price_usd_per_hour` on any
+  budget line. An open launch accrues spend only up to its recorded deadline; past it, with no
+  instance of its name listed, the reaper closes it with one termination line
+  (`intent_without_instance`, or `instance_not_listed` for a launch whose instance is gone),
+  charged to the deadline. The ledger lock holds its pid and creation time; a held lock is
+  refused in one line naming its age, its pid and whether that pid runs, and no tool removes it.
+  `--purpose` is checked in `launch_plan()` before any provider call. Spend is counted once per
   launch across ledgers, a termination closing a launch by its instance id or its name (a
   `copied_from` line is not counted twice). The instance name always starts `shimmer-loop-`
   and the `launch_intent` line, with its `deadline_utc`, is written before the request;
@@ -155,7 +164,8 @@ processing swarm governed by an append-only constitution.
   controller holds `SetThreadExecutionState` through `tools/loop/keep_awake.py`, and the ledger
   deadline is what `tools/loop/instance_reaper.py` acts on if the controller dies. A bundle is
   launched once: `RUN_FOLDER.json` is written into it only after the launch intent, and either
-  marker refuses a second launch with or without `--output-dir`; a run folder left by an
+  marker refuses a second launch with or without `--output-dir`, for the session bundle and
+  for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
@@ -163,7 +173,12 @@ processing swarm governed by an append-only constitution.
   the controller requires the same test manifest and `--frozen-tag`, the bundle hash and the
   tag's commit to equal the seal's, and a run folder outside the repository. It prints counts
   and timings only (`phase N at S s`), attaches no provider storage, and writes nothing in the
-  repository except ledger lines. `protected_test` is sealable only on a sealed bundle; an
+  repository except ledger lines. `--frozen-tag` resolves `refs/tags/<name>` only (annotated or
+  lightweight); a commit id, branch, HEAD or revision expression is refused. A sealed bundle
+  inside the repository is refused before any write, with or without `--output-dir` or
+  `--detach`. The sealer LF-normalises only plain-text and HTML workload members (the
+  extensions `scripts/text_extract.py` reads as text); binary members and the case manifest
+  keep their bytes. `protected_test` is sealable only on a sealed bundle; an
   exposed run behaves as before. `--batch` runs several bundles in one instance session
   item by item (B3 then B1 per item), each with its own run folder under `batch/`, seal entry,
   authorization and evidence, so a stop leaves every finished pair complete. The analyser
@@ -457,7 +472,18 @@ processing swarm governed by an append-only constitution.
   computed bus post's `note_models`), "not recorded" otherwise, and notes are counted apart.
   A model item carries `reader_notes` (`paired_review.model_item_notes`: another unit's
   passage cited, the pairing map's rejection of its rule, no addends named, figures not in its
-  unit). None of the markdown deliverables, `_run_summary.md` or `audit_synthesis.md` carries an
+  unit). Every paired judging call is recorded with its outcome
+  (`paired_review.judging_call_record`) on the computed bus post (`judging_calls`), on a
+  `PAIRED_JUDGING_CALLS` post when no computed finding carries it, and in the pairing map; the
+  deliverables state the calls made and the notes kept. A docx comment's author is read from the
+  amendment's provenance (`docx_builder.comment_author`), never a fixed agent name. Figures go
+  through one formatter (`finding_record.figure_text`). A record without a `written_by` stamp is
+  never Python's in any section (`finding_record.is_model_written`). An escalation naming an agent
+  the run did not register is counted apart in `audit_synthesis.md`, with the names listed. The
+  run summary states the INST_FINDER setting as "switched on/off for this run"; its internal name
+  stays in `audit/agent_switches.json`. `review_data.json` and `delta_proposals.json` stay
+  canonical English in a Turkish run (the Turkish reader gets the `.md` and `.docx` renders).
+  None of the markdown deliverables, `_run_summary.md` or `audit_synthesis.md` carries an
   em dash. Check 278.
 
 ## Document role resolution and task modes
@@ -527,8 +553,10 @@ processing swarm governed by an append-only constitution.
   (`paired_review.unit_passage_refs`); a figure compared from elsewhere (a reference table, a
   bound) is cited as such (`compared_with_refs`), never as the location; a unit Python cannot
   place sits at document level, its finding and amendment cite no other unit's or the corpus's
-  passage, and the amendment says so. A heading places a unit only where it opens a passage as
-  a whole line (`paired_review.opens_with`).
+  passage, and the amendment says so. A heading places a unit only at a passage whose first
+  line it is, exactly (`paired_review.opens_with`). A comment that ends with a model's note says
+  the figures were computed in code and only the quoted note is a model's
+  (`COMPUTED_PROVENANCE_WITH_NOTE`).
 
 ## The sensitivity boundary
 

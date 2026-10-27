@@ -314,8 +314,43 @@ def written_form(value, tokens):
     return None
 
 
+def figure_text(value, unit, tokens=None) -> str:
+    """Reader check round 3 (item 7): THE figure formatter, used by every file a
+    reader receives (the amendment comment, the summaries, the evidence line). A
+    figure the unit's own text writes is shown as written ("61", not "61.0"); a
+    figure it does not write keeps the record's own format ("16.0", which checks
+    171 and 172 hold). The unit follows, except a bare ratio's unit "1"."""
+    unit = str(unit or "").strip()
+    shown = written_form(value, tokens) or "%s" % (value,)
+    return ("%s %s" % (shown, unit)) if unit and unit != "1" else shown
+
+
+def value_a_text(item, tokens=None) -> str:
+    """A record's first figure through the one formatter. A sum of addends the text
+    writes as whole numbers is written the same way ("8 kg" for 3 + 5 kg, not
+    "8.0 kg"), whether or not the total itself is written anywhere."""
+    a = item.get("value_a")
+    addends = item.get("addends")
+    if item.get("relation") == "sum_mismatch" and isinstance(addends, list) and addends \
+            and isinstance(a, float) and a.is_integer() and not written_form(a, tokens):
+        shown = [written_form(v, tokens) for v in addends]
+        if all(shown) and all("." not in t for t in shown):
+            return figure_text(int(a), item.get("unit_a"))
+    return figure_text(a, item.get("unit_a"), tokens)
+
+
+def addends_text(item, tokens=None):
+    """The addends a sum record names ("3 + 5 kg"), each as the text writes it,
+    or None when the record names none (reader check round 3, item 7)."""
+    addends = item.get("addends") if isinstance(item, dict) else None
+    if not isinstance(addends, list) or not addends:
+        return None
+    shown = [written_form(v, tokens) or "%s" % (v,) for v in addends]
+    return figure_text(" + ".join(shown), item.get("unit_a"))
+
+
 def _shown(value, unit, tokens):
-    return f"{written_form(value, tokens) or value} {unit or ''}".strip()
+    return figure_text(value, unit, tokens)
 
 
 @localization.presentation
@@ -344,7 +379,13 @@ def reader_line(item) -> str:
     else:
         tokens = item.get("_written_tokens")
         if item.get("value_a") is not None:
-            parts.append(localization.text("figure: ") + _shown(item["value_a"], item.get("unit_a"), tokens))
+            shown = localization.text("figure: ") + value_a_text(item, tokens)
+            # Reader check round 3 (item 7): a sum names the values it added.
+            added = addends_text(item, tokens) if relation == "sum_mismatch" else None
+            if added:
+                shown += " " + localization.text("(the sum of '{field}': {values})",
+                                                 field=item.get("addend_field") or "?", values=added)
+            parts.append(shown)
         if item.get("value_b") is not None:
             parts.append(localization.text("compared with: ") + _shown(item["value_b"], item.get("unit_b"), tokens))
     refs = item.get("source_refs") or item.get("ref_ids")
@@ -594,9 +635,12 @@ def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
     declared renders byte-identically to before. No heading here may contain the
     token "Amendment ", which amendment_render's drift guard counts.
     """
+    # Adversarial round 2 (a): only a record stamped as Python's own enters; an
+    # UNSTAMPED record (provenance that cannot be shown) is never called computed,
+    # whatever `provenance` it carries (is_model_written, the one test).
     prior = [f for f in findings or []
              if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"
-             and f.get("written_by") != WRITTEN_BY_MODEL]
+             and not is_model_written(f)]
     refusals, orphans, outside = list(refusals or []), list(orphans or []), list(outside or [])
     if not prior and not refusals and not orphans and not outside:
         return []

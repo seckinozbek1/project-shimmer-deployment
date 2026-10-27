@@ -89,11 +89,22 @@ class AuditSynthesizer:
         # topic or no payload says nothing to recur on, so it is counted apart and
         # never becomes a pattern or a proposal. What a pattern or a proposal IS
         # stays exactly as it was; nothing here is ever applied.
+        # Reader check round 3 (item 11): an escalation about an agent this run did
+        # not register (the BOOT message's own list) is not evidence about this
+        # run's agents, so it is counted apart, like an empty one, and never
+        # becomes a pattern or a proposal. With no BOOT record the test is not made.
+        registered = registered_agents(bus_messages)
         topic_counts, content_free, seen = {}, 0, set()
+        unregistered, unregistered_names = 0, set()
         for m in escalations:
             key = escalation_key(m.get("body"))
             if key is None:
                 content_free += 1
+                continue
+            named = escalation_agent(m.get("body"))
+            if registered is not None and named is not None and named not in registered:
+                unregistered += 1
+                unregistered_names.add(named)
                 continue
             if key in seen:
                 continue
@@ -148,6 +159,8 @@ class AuditSynthesizer:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "bus_messages": len(bus_messages),
             "content_free_escalations": content_free,
+            "unregistered_agent_escalations": unregistered,
+            "unregistered_agents_named": sorted(unregistered_names),
             "findings": [f.__dict__ for f in findings],
             "delta_proposals": [d.as_dict() for d in deltas],
             "stats": {
@@ -190,6 +203,23 @@ def escalation_key(body):
     if not topic or payload in (None, "", {}, []):
         return None
     return (str(topic), json.dumps(payload, sort_keys=True, default=str))
+
+
+def registered_agents(bus_messages):
+    """The agents this run registered, read off its BOOT message, or None when the
+    bus carries no BOOT record (the test is then not made)."""
+    for m in bus_messages or []:
+        body = m.get("body") if isinstance(m, dict) else None
+        if isinstance(body, dict) and body.get("event") == "BOOT" and isinstance(body.get("agents_registered"), list):
+            return {str(a) for a in body["agents_registered"]}
+    return None
+
+
+def escalation_agent(body):
+    """The agent an escalation's payload names (its `agent` field), or None."""
+    payload = (body or {}).get("payload") if isinstance(body, dict) else None
+    agent = payload.get("agent") if isinstance(payload, dict) else None
+    return str(agent) if isinstance(agent, str) and agent.strip() else None
 
 
 def _count_disputed_by_source(findings):
@@ -236,7 +266,12 @@ def _render_md(summary):
              f'{localization.text('- audit-trail patterns: ')}{len(summary['findings'])}{localization.text(AUDIT_COUNT_NOTE)}',
              f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}',
              *([f"{localization.text('- escalation messages with no topic or no content (not counted as a pattern): ')}"
-                f"{summary['content_free_escalations']}"] if summary.get('content_free_escalations') else []), "",
+                f"{summary['content_free_escalations']}"] if summary.get('content_free_escalations') else []),
+             *([localization.text("- escalation messages naming an agent this run did not register "
+                                  "(not counted as a pattern): {n} ({agents})",
+                                  n=summary['unregistered_agent_escalations'],
+                                  agents=", ".join(summary.get('unregistered_agents_named') or []))]
+               if summary.get('unregistered_agent_escalations') else []), "",
              localization.text('## Audit-trail patterns (not document findings)')]
     if not summary["findings"]: lines.append(localization.text('_no audit-trail patterns this run_'))
     else:

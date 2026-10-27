@@ -14,9 +14,14 @@ What it does on every run:
    from a number in this file: the hard stop is that line's ``hard_stop_usd``, else its
    ``budget_usd`` less the one-dollar margin. With no budget line at all, no loop launch
    is allowed (the budget guard refuses one), so every loop instance found is terminated.
-4. Appends one ledger line per termination and writes ``reaper_status.json``. A line it
-   writes carries only declared ledger fields (``tools/loop_budget_guard.LEDGER_FIELDS``,
-   which declares its ``by`` and ``reason``).
+4. Closes every launch the ledger still holds open past its recorded deadline when no
+   instance of that name is listed: an intent whose launch created no instance
+   (``intent_without_instance``) or a launch whose instance is gone
+   (``instance_not_listed``), charged to its deadline. An open launch accrues spend only to
+   its recorded deadline.
+5. Appends one ledger line per termination or closure and writes ``reaper_status.json``. A
+   line it writes carries only declared ledger fields
+   (``tools/loop_budget_guard.LEDGER_FIELDS``, which declares its ``by`` and ``reason``).
 
 It never touches an instance without the loop prefix, and it never prints a key: every
 provider error is reduced to its class name before it reaches output.
@@ -74,8 +79,9 @@ def ledger_view(rows, now):
 
     A launch is identified by its instance id when known, else by its name. Each launch is
     counted once across both ledgers: a closed launch by its recorded actual cost, an open
-    one by its price times the minutes since the launch request (rounded up, which
-    overstates slightly and is safe). The storage share accrues from the loop's start.
+    one by its price times the minutes since the launch request, never past its recorded
+    deadline (rounded up, which overstates slightly and is safe). The storage share accrues
+    from the loop's start.
     """
     launches = {}
     terminations = []
@@ -128,7 +134,12 @@ def ledger_view(rows, now):
         elif ident in closed:
             spend += accrued(rec, parse_time(closed[ident].get('time_utc', now.isoformat())))
         elif rec.get('event') == 'launch' or rec.get('launch_requested_utc'):
-            spend += accrued(rec, now)
+            # An open launch accrues only to its recorded deadline: an intent whose launch
+            # created no instance would otherwise accrue for ever. Charging to the deadline
+            # overstates such an intent (it cost nothing), which is the safe side; an
+            # instance still running past it is ended, and charged its real minutes, by the
+            # reaper's next pass.
+            spend += accrued(rec, now, to_deadline=True)
     if loop_start and storage_rate:
         days = max(0.0, (now - parse_time(loop_start)).total_seconds() / 86400)
         spend += storage_rate * days
@@ -159,11 +170,24 @@ def budget_figures(rows):
     return None, None
 
 
-def accrued(rec, until):
+def recorded_deadline(rec):
+    """The record's deadline as a time, or None when it has none or it does not parse."""
+    try:
+        return parse_time(rec['deadline_utc']) if rec.get('deadline_utc') else None
+    except (TypeError, ValueError):
+        return None
+
+
+def accrued(rec, until, to_deadline=False):
+    """Price times the minutes from the launch request to `until` (rounded up); with
+    `to_deadline`, never past the record's own deadline."""
     start = rec.get('launch_requested_utc') or rec.get('time_utc')
     price = rec.get('price_usd_per_hour')
     if not start or price is None:
         return 0.0
+    deadline = recorded_deadline(rec) if to_deadline else None
+    if deadline is not None and deadline < until:
+        until = deadline
     minutes = max(0, math.ceil((until - parse_time(start)).total_seconds() / 60))
     return float(price) * minutes / 60
 
@@ -207,8 +231,33 @@ def reap(provider, ledger_paths, append_path, now=None):
         with open(append_path, 'a', encoding='utf-8') as handle:
             handle.write(json.dumps(line, sort_keys=True) + '\n')
         terminated.append({'instance_name': name, 'reason': reason})
+    # A launch still open in the ledger past its recorded deadline, with no instance of its
+    # name listed, is closed here: an intent whose launch created no instance (the
+    # controller died between the intent line and the launch reply), or a launch whose
+    # instance is already gone. Left open, it would keep the guard refusing every launch as
+    # "another loop instance". Its line is charged to the deadline, which overstates it.
+    listed_names = {item['name'] for item in running}
+    closed_now = []
+    for name, rec in by_name.items():
+        deadline = recorded_deadline(rec)
+        if (rec['ident'] in closed or name in listed_names or deadline is None or now < deadline
+                or not (rec.get('event') == 'launch' or rec.get('launch_requested_utc'))):
+            continue
+        reason = 'intent_without_instance' if rec.get('event') == 'launch_intent' else 'instance_not_listed'
+        start = rec.get('launch_requested_utc') or rec.get('time_utc')
+        minutes = cost = None
+        if start and rec.get('price_usd_per_hour') is not None:
+            minutes = max(0, math.ceil((deadline - parse_time(start)).total_seconds() / 60))
+            cost = round(float(rec['price_usd_per_hour']) * minutes / 60, 4)
+        line = {'event': 'termination', 'by': 'reaper', 'time_utc': now.isoformat(),
+                'instance_id': rec.get('instance_id'), 'instance_name': name, 'reason': reason,
+                'type': rec.get('type'), 'region': rec.get('region'),
+                'actual_minutes': minutes, 'actual_cost': cost}
+        with open(append_path, 'a', encoding='utf-8') as handle:
+            handle.write(json.dumps(line, sort_keys=True) + '\n')
+        closed_now.append({'instance_name': name, 'reason': reason})
     return {'last_run_utc': now.isoformat(), 'listed': len(listed),
-            'loop_running': len(running), 'terminated': terminated,
+            'loop_running': len(running), 'terminated': terminated, 'closed_without_instance': closed_now,
             'total_spend_usd': round(spend, 4), 'budget_usd': budget, 'hard_stop_usd': hard_stop, 'error': None}
 
 
