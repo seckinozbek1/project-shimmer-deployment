@@ -18,6 +18,7 @@ Stage S1 of the autonomous loop of 27 October 2026, on branch `loop/s01` (create
 
 | `8b0819f` | records (C3, D-012) | not needed |
 | `7f5dd9d` (C4) | Part 7, merge of `lane/s01-instfinder` (`e416281`) plus the check 277 registration, pinned-baseline amendments, docs and open items 10 to 12 | main PASS 247, WARN 1, SKIP 3, FAIL or ERROR 27, the C3 non-pass set (new check 277 passes); side gates execution topology, report recommendations, final integration and localization pass; cloud-run checks and the controller gate did not run: Claude Code stopped the run for low memory (D-013) |
+| `ee57586` (C5) | Parts 2 and 6 reports (and records) | run in the foreground with 5.6 to 6.0 GB free: main PASS 247, WARN 1, SKIP 3, FAIL or ERROR 27, same as C4; all six side gates pass (cloud-run checks 83 of 83; controller gate passed). C5 adds only two documents, so this also covers C4's tree |
 
 ## Part 3. The credential path out of the code
 
