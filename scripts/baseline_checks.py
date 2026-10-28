@@ -1,4 +1,4 @@
-﻿"""Checks for the two baseline arms under benchmark/baselines/ (loop stage S4f), run by
+"""Checks for the two baseline arms under benchmark/baselines/ (loop stage S4f), run by
 the verify gate (scripts/verify_session1.py) through check(); check_python_only() and
 check_bare_model() run one arm, and `py -3.12 -X utf8 scripts/baseline_checks.py` runs
 them by hand.
