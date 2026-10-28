@@ -7,7 +7,9 @@ import inspect
 import math
 import json
 from pathlib import Path
+import decoding_policy
 import generation_observation
+import reply_records
 
 import bounded_extraction as extraction
 import execution_topology as topology
@@ -172,6 +174,29 @@ def call_kwargs(plan):
                 items_are_advisory=a["items_are_advisory"], activation=a["activation"])
 
 
+RETRY_SKIPPED_DETERMINISTIC = "retry_skipped_deterministic"
+
+
+def skip_deterministic_retry(runtime, wrapper, result, reason):
+    """D-061 (c), P13: a failed partition whose call decoded deterministically (greedy, one
+    beam: decoding_policy.deterministic on the kwargs the call recorded) is not retried, since
+    the same request can only repeat the same reply (L2: 9 of 9 retries reproduced their request
+    and reply bytes). The skip is recorded on the generation observation and as the call's reply
+    outcome, `retry_skipped_deterministic`, with the reason the retry would have had; the
+    partition's failure stands. Returns True when the retry is skipped."""
+    kwargs = (result.get("generation") or {}).get("decoding_kwargs")
+    if not decoding_policy.deterministic(kwargs):
+        return False
+    context = getattr(runtime, "run_context", None) or getattr(wrapper, "run_context", None)
+    generation_observation.append(context, dict(
+        event="partition_retry_skipped", outcome=RETRY_SKIPPED_DETERMINISTIC, retry_skipped_deterministic=True,
+        retry_reason=reason, call_id=result.get("call_id"), agent=getattr(wrapper, "name", None),
+        doc_id=result.get("doc_id") or getattr(wrapper, "_cost_doc_id", "") or ""))
+    reply_records.write_outcome(context, result.get("call_id"), RETRY_SKIPPED_DETERMINISTIC,
+                                source="semantic_waves", retry_reason=reason)
+    return True
+
+
 async def execute_plans(plans):
     runtime = topology.ACTIVE.get()
     calls, groups = [], []
@@ -229,8 +254,11 @@ async def execute_plans(plans):
         if isinstance(r.get("parsed"),dict) and r["parsed"].get("items") == []:
             continue
         if r.get("truncated") is True or r.get("error") == "contract_violation":
+            reason = "truncation" if r.get("truncated") else "malformed_contract"
+            if skip_deterministic_retry(runtime, w, r, reason):
+                continue
             w._partition_attempt = 1
-            w._partition_retry_reason = "truncation" if r.get("truncated") else "malformed_contract"
+            w._partition_retry_reason = reason
             results[i] = (await asyncio.to_thread(run_wave,runtime,[(w,k)],"failed_partition_only"))[0]
             retries+=1
     out = []

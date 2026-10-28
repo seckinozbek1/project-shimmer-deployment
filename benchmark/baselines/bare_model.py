@@ -59,28 +59,31 @@ In base mode only ``base`` exists (the reference loader, a PROVISIONAL snapshot 
 Each checkpoint runs in its own process into its own output folder (one reply record per
 item per checkpoint).
 
-Attention (docs/loop/DECISIONS.md D-056, conditions 1 to 4). B1, both checkpoints, every
-item, generates with the model's attention set to sdpa inside
-``torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION])``: the memory-efficient
-kernel only, so a refused kernel raises instead of falling back to the quadratic math
-kernel. The model is loaded eager, as scripts/final_models.py loads it for B3; B1 switches
-the resident model's attention setting around each call (b1_attention) and restores it in a
-finally, so a B3 call in the same process still runs eager. The attention B1 declares
-(attention_record) is compared with what the backend loaded (verify_identity) and with what
-each call observed inside the switch; it is written into every reply record and into
-b1_summary.json. An out-of-memory error, or a refused kernel, stops the run as a SETUP
-FAILURE: the call's reply record is written, then ``b1_setup_failure.json`` (counts only),
-and no label is written for that item, so it is never an abstention. The fallback, chunked
-prefill (the prompt fed through the KV cache in fixed chunks under the same kernel,
-chunked_prefill), is OFF unless ``--prefill-chunk`` is given with ``--prefill-decision``
-naming the recorded decision that adopted it; both are sealed arguments.
+Attention and prefill (docs/loop/DECISIONS.md D-056, superseded for the kernel by D-060 and
+D-061: B1 follows the producer). B1, both checkpoints, every item, generates under the
+producer's attention, eager, the kernel scripts/final_models.py loads the producer with for B3,
+and prefills the prompt in chunks (E): the prompt is fed through the KV cache in fixed chunks of
+512 tokens (the sealed chunk size, decision D-061), leaving 2 tokens to generate() itself,
+through the ONE generate helper B3's producer calls use (final_models.generate_with_prefill).
+So the primary comparison has no kernel or prefill difference. B1 switches the resident
+model's attention setting around each call (b1_attention) and restores it in a finally to what
+it was, so a B3 call in the same process runs under the producer's own setting again. The
+attention and prefill B1 declares (attention_record) are compared with what the backend loaded
+(verify_identity) and with what each call observed inside the switch; they are written into
+every reply record and into b1_summary.json, with what each call's prefill measured (chunks,
+tail tokens, prefill seconds; summed and maximised in b1_summary.json ``prefill_time``). An
+out-of-memory error, or a refused kernel, stops the run as a SETUP FAILURE: the call's reply
+record is written, then ``b1_setup_failure.json`` (counts only), and no label is written for
+that item, so it is never an abstention.
 
-A measurement pass (D-056 condition 6) may run eager instead: ``--attention eager`` is
-accepted only together with ``--attention-decision D-NNN``, the recorded decision that asks
-for the measurement, and ``--attention-decision`` only with eager. The eager pass sets the
-model's attention setting to eager for its calls (no sdpa backend is pinned) and records
-``attention_implementation`` eager and its ``attention_decision`` in every reply record,
-label and b1_summary.json, exactly where the sdpa pass records sdpa (decision null).
+A measurement pass (D-056 condition 6, D-061 item 4) may run otherwise, each only with the
+recorded decision that asks for it: ``--attention sdpa --attention-decision D-NNN`` runs sdpa
+inside ``torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION])`` (the memory-efficient
+kernel only, so a refused kernel raises instead of falling back to the quadratic math kernel);
+``--prefill-chunk one_shot --prefill-decision D-NNN`` prefills in one shot; ``--prefill-chunk N
+--prefill-decision D-NNN`` uses another chunk size. A decision without its setting, or a
+setting without its decision, is refused. Every reply record, label and b1_summary.json records
+the attention, the backend, the prefill and their decisions.
 
 Peak GPU memory per pass (D-056 condition 6): once the model is loaded and verified, the
 peak counters of torch.cuda are reset, and after the last item they are read, the peak
@@ -100,14 +103,15 @@ or a label.
 In-process entry, for a runner that imports this file (benchmark/baselines on sys.path):
     run_b1(bundle, items, out, checkpoint, *, expected=None, development=False,
            agent=READING_AGENT, max_new_tokens=None, sensitive=False, run_id=None,
-           prefill_chunk=None, prefill_decision=None, attention="sdpa",
+           prefill_chunk=None, prefill_decision=None, attention="eager",
            attention_decision=None) -> dict
 It returns the b1_summary.json content and raises on any setup failure (nothing generated).
 
 Usage (loads a local model; for the rented machine, never this laptop):
     py -3.12 benchmark/baselines/bare_model.py --bundle <bundle> --items <items.json> --out <dir>
         --checkpoint tuned|base --agent <AGENT> --expect-model-id <id> --expect-digest <digest>
-        --expect-decoding '<json>' [--attention eager --attention-decision D-NNN]
+        --expect-decoding '<json>' [--attention sdpa --attention-decision D-NNN]
+        [--prefill-chunk one_shot|N --prefill-decision D-NNN]
     py -3.12 benchmark/baselines/bare_model.py pool --runs <folder> [--out <file>]   (no model)
     py -3.12 benchmark/baselines/bare_model.py compare --a <dir> --b <dir> --out <file>   (no model)
 """
@@ -157,15 +161,21 @@ PARSE_RATE_FLOOR = 0.95
 TUNED, BASE = "tuned", "base"
 CHECKPOINTS = (TUNED, BASE)
 FINAL_ROLE = "producer"
-# D-056 condition 1: B1's attention, and the memory-efficient sdpa backend pinned for it.
-B1_ATTENTION = "sdpa"
-B1_SDPA_BACKEND = "EFFICIENT_ATTENTION"
-# What scripts/final_models.py loads the model with, and what B3 keeps (condition 2). B1
-# never changes it outside its own calls.
-B3_ATTENTION = "eager"
-# The attentions a pass may declare: sdpa (D-056, the default), or eager for a measurement
-# pass adopted by a recorded decision (condition 6).
-ATTENTIONS = (B1_ATTENTION, B3_ATTENTION)
+# What scripts/final_models.py loads the producer with by default, and what B3 runs under:
+# eager (D-060: L2's evidence kept it). B1 never changes the resident setting outside its own
+# calls.
+B3_ATTENTION = final_models.PRODUCER_ATTENTION_DEFAULT
+# B1's attention follows the producer's (D-060, D-061: no kernel difference in the primary
+# comparison; D-056's sdpa rule for B1 is superseded).
+B1_ATTENTION = B3_ATTENTION
+EAGER, SDPA = final_models.EAGER, final_models.SDPA
+# The memory-efficient sdpa backend pinned for an sdpa measurement pass (D-056 condition 1).
+B1_SDPA_BACKEND = final_models.SDPA_BACKEND
+# The attentions a pass may declare: eager (the default), or sdpa for a measurement pass
+# adopted by a recorded decision (D-056 condition 6, D-061 item 4).
+ATTENTIONS = (EAGER, SDPA)
+# The prefill fields of the declared attention record (final_models.prefill_setting).
+PREFILL_FIELDS = ("prefill", "prefill_chunk_tokens", "prefill_decision")
 # What the peak GPU memory of a pass covers (b1_summary.json gpu_memory).
 GPU_MEMORY_WINDOW = ("torch.cuda peak counters reset after the model was loaded and verified, "
                      "read after the last item; everything on the device is counted")
@@ -355,7 +365,7 @@ def load_base_checkpoint(device="cuda:0", *, spec=None, libs=None):
     model = libs.AutoModelForCausalLM.from_pretrained(
         str(path), local_files_only=True, trust_remote_code=False,
         device_map={"": int(device.split(":")[1])}, torch_dtype=torch.bfloat16,
-        attn_implementation="eager")
+        attn_implementation=final_models.load_attention(FINAL_ROLE))
     final_models.require(model.config.model_type == "qwen2" and model.is_loaded_in_4bit,
                          "Frozen architecture mismatch")
     quant = model.config.quantization_config
@@ -376,8 +386,8 @@ def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_t
                    checkpoint=None, prefill_chunk=None, prefill_decision=None,
                    attention=B1_ATTENTION, attention_decision=None):
     """The reading agent's backend, model, decoding policy, output allowance, checkpoint and
-    B1's attention (D-056; chunked prefill only with its recorded decision, eager only with
-    its recorded decision)."""
+    B1's attention and prefill (D-060, D-061: eager and chunked by default; sdpa, one-shot or
+    another chunk size only with its recorded decision)."""
     root = Path(root)
     attention = attention_record(prefill_chunk, prefill_decision, attention, attention_decision)
     registry = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
@@ -422,36 +432,31 @@ def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_t
 
 def attention_record(prefill_chunk=None, prefill_decision=None, attention=B1_ATTENTION,
                      attention_decision=None):
-    """B1's declared attention: sdpa with the memory-efficient backend pinned (D-056), or
-    eager for a measurement pass, only with `attention_decision`, the recorded decision
-    (D-NNN) that asks for it, which is refused with sdpa; and how the prompt is prefilled (one
-    shot, or in chunks of `prefill_chunk` tokens adopted by the decision `prefill_decision`).
-    Chunked prefill is off unless both are given."""
+    """B1's declared attention and prefill (D-060, D-061): the producer's eager attention and
+    E, chunked prefill at the sealed 512-token chunk under D-061, by default. sdpa (pinned to
+    the memory-efficient backend) only with `attention_decision`, the recorded decision
+    (D-NNN) that asks for the measurement pass, which is refused with eager; one-shot prefill
+    or another chunk size only with `prefill_decision` (final_models.prefill_setting, the one
+    rule B3's producer setting is read by)."""
     if attention not in ATTENTIONS:
         raise ValueError("--attention is one of " + ", ".join(ATTENTIONS))
-    if (attention == B3_ATTENTION) != (attention_decision is not None):
-        raise ValueError("--attention eager needs --attention-decision (the recorded decision "
+    if (attention == SDPA) != (attention_decision is not None):
+        raise ValueError("--attention sdpa needs --attention-decision (the recorded decision "
                          "that asks for the measurement pass), and --attention-decision needs "
-                         "--attention eager")
+                         "--attention sdpa")
     if attention_decision is not None and not DECISION_ID.fullmatch(str(attention_decision)):
         raise ValueError("--attention-decision names a recorded decision (D-NNN)")
-    if (prefill_chunk is None) != (prefill_decision is None):
-        raise ValueError("chunked prefill needs both --prefill-chunk and --prefill-decision "
-                         "(the recorded decision that adopted it)")
-    if prefill_chunk is not None:
-        if type(prefill_chunk) is not int or prefill_chunk < 1:
-            raise ValueError("--prefill-chunk is a positive number of tokens")
-        if not DECISION_ID.fullmatch(str(prefill_decision)):
-            raise ValueError("--prefill-decision names a recorded decision (D-NNN)")
+    try:
+        prefill = final_models.prefill_setting(prefill_chunk, prefill_decision)
+    except RuntimeError as exc:
+        raise ValueError("--prefill-chunk/--prefill-decision: " + str(exc)) from None
     return {"attention_implementation": attention,
-            "sdpa_backend": B1_SDPA_BACKEND if attention == B1_ATTENTION else None,
-            "attention_decision": attention_decision,
-            "prefill": "chunked" if prefill_chunk else "one_shot",
-            "prefill_chunk_tokens": prefill_chunk, "prefill_decision": prefill_decision}
+            "sdpa_backend": B1_SDPA_BACKEND if attention == SDPA else None,
+            "attention_decision": attention_decision, **prefill}
 
 
 def declared_attention(reader):
-    """The attention a run declares: the reader's, or the default (one-shot prefill)."""
+    """The attention a run declares: the reader's, or the default (eager, chunked prefill)."""
     return dict((reader or {}).get("attention") or attention_record())
 
 
@@ -478,14 +483,14 @@ def enabled_sdpa_backends(torch):
 
 @contextlib.contextmanager
 def b1_attention(model, backends=None, implementation=B1_ATTENTION):
-    """B1's attention for the calls inside the block (D-056 conditions 1 and 2): the model's
-    attention setting switched to sdpa and the memory-efficient sdpa backend pinned, so a
-    refused kernel raises rather than falling back; the setting is restored in a finally to
-    what it was (eager, as scripts/final_models.py loads it), whatever the block raised.
-    `implementation` eager (a measurement pass, condition 6) sets the setting to eager and
-    pins no sdpa backend. Yields observe(), which reads the setting and the enabled backends
-    as they stand inside (no backend for eager). `backends` (SDPBackend names) is for the
-    checks' CPU model only."""
+    """B1's attention for the calls inside the block (D-056 conditions 1 and 2, D-060): the
+    model's attention setting switched to the pass's (eager by default, the producer's own)
+    and restored in a finally to what it was (the producer's sealed attention as
+    scripts/final_models.py loads it), whatever the block raised. `implementation` sdpa (a
+    measurement pass) also pins the memory-efficient sdpa backend, so a refused kernel raises
+    rather than falling back. Yields observe(), which reads the setting and the enabled
+    backends as they stand inside (no backend for eager). `backends` (SDPBackend names) is for
+    the checks' CPU model only."""
     import torch
     from torch.nn.attention import SDPBackend, sdpa_kernel
     if implementation not in ATTENTIONS:
@@ -494,7 +499,7 @@ def b1_attention(model, backends=None, implementation=B1_ATTENTION):
     if not configs:
         raise SetupError("the model carries no attention setting to switch")
     before = [c._attn_implementation for c in configs]
-    sdpa = implementation == B1_ATTENTION
+    sdpa = implementation == SDPA
     chosen = [getattr(SDPBackend, name) for name in (backends or (B1_SDPA_BACKEND,))]
 
     def observe():
@@ -512,48 +517,17 @@ def b1_attention(model, backends=None, implementation=B1_ATTENTION):
             config._attn_implementation = value
 
 
-def chunked_prefill(model, input_ids, chunk_tokens, *, cache=None):
-    """The fallback of D-056 condition 4: every prompt token but the last fed through the
-    model in chunks of `chunk_tokens`, filling a KV cache, under whatever attention the
-    caller set (b1_attention). generate() then reads only the last token from the prompt,
-    so its next-token scores equal one-shot prefill's (checked on a tiny CPU model)."""
-    import torch
-    if cache is None:
-        from transformers import DynamicCache
-        cache = DynamicCache()
-    total = int(input_ids.shape[1]) - 1
-    for start in range(0, total, int(chunk_tokens)):
-        end = min(start + int(chunk_tokens), total)
-        model(input_ids=input_ids[:, start:end],
-              attention_mask=torch.ones((input_ids.shape[0], end), dtype=torch.long, device=input_ids.device),
-              past_key_values=cache, use_cache=True,
-              cache_position=torch.arange(start, end, device=input_ids.device), logits_to_keep=1)
-    return cache
-
-
-def generate_ids(model, inputs, *, max_new_tokens, decoding_kwargs, prefill_chunk=None, **extra):
-    """model.generate on the rendered prompt: one-shot prefill, or chunked prefill first
-    when `prefill_chunk` is set. `extra` is for the checks (scores)."""
-    if not prefill_chunk:
-        return model.generate(**inputs, max_new_tokens=max_new_tokens, **decoding_kwargs, **extra)
-    cache = chunked_prefill(model, inputs["input_ids"], prefill_chunk)
-    return model.generate(**inputs, past_key_values=cache, max_new_tokens=max_new_tokens,
-                          **decoding_kwargs, **extra)
+def prefill_of(attention):
+    """The prefill setting inside a declared attention record (final_models.prefill_setting)."""
+    return {k: attention.get(k) for k in PREFILL_FIELDS}
 
 
 def setup_failure_kind(exc):
     """The kind of a call failure that stops the run (D-056 condition 3), or None for an
-    ordinary generation failure (a failed call, ABSTAIN). torch.cuda.OutOfMemoryError is
-    read by its class name, so this module imports no model library."""
-    if any(cls.__name__ == "OutOfMemoryError" for cls in type(exc).__mro__):
-        return "out_of_memory"
-    text = str(exc)
-    if isinstance(exc, RuntimeError):
-        if "out of memory" in text.lower():
-            return "out_of_memory"
-        if "No available kernel" in text or "No viable backend for scaled_dot_product_attention" in text:
-            return "attention_kernel_refused"
-    return None
+    ordinary generation failure (a failed call, ABSTAIN). One classifier with B3's local
+    generate calls (final_models.generation_failure_kind, D-058): torch.cuda.OutOfMemoryError
+    is read by its class name, so this module imports no model library."""
+    return final_models.generation_failure_kind(exc)
 
 
 class LocalBackend:
@@ -622,14 +596,15 @@ class LocalBackend:
         prompt = self._render(system, user)
         inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
         attention = declared_attention(self.reader)
-        # D-056: sdpa with the memory-efficient backend pinned for this call only (eager for
-        # a measurement pass); the resident model is eager again when the block ends,
-        # whatever it raised.
+        # D-060, D-061: the pass's attention for this call only (eager, the producer's own, or
+        # sdpa pinned for a measurement pass); the resident model is back on its own setting
+        # when the block ends, whatever it raised. The prompt is prefilled through the one
+        # generate helper B3's producer calls use, under the pass's prefill setting.
         with torch.no_grad(), b1_attention(mdl, implementation=attention["attention_implementation"]) as observe:
             observed = observe()
-            out = generate_ids(mdl, inputs, max_new_tokens=max_new_tokens,
-                               decoding_kwargs=self.reader["decoding"]["kwargs"],
-                               prefill_chunk=attention["prefill_chunk_tokens"])
+            out, measured = final_models.generate_with_prefill(
+                mdl, inputs, max_new_tokens=max_new_tokens,
+                decoding_kwargs=self.reader["decoding"]["kwargs"], prefill=prefill_of(attention))
         start = int(inputs["input_ids"].shape[1])
         generated = int(out[0].shape[0]) - start
         text = tok.decode(out[0][start:], skip_special_tokens=True)
@@ -637,7 +612,7 @@ class LocalBackend:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return {"text": text, "payload": prompt, "form": "rendered_prompt",
-                "output_tokens": generated, "attention": dict(attention, **observed)}
+                "output_tokens": generated, "attention": dict(attention, **observed), "prefill": measured}
 
     def release(self):
         """Drop this backend's hold on the model when its pass ends, so the next pass's peak
@@ -743,6 +718,20 @@ def read_gpu_memory(cuda, at_start):
             "measured": measured, "window": GPU_MEMORY_WINDOW if measured else "no CUDA: not measured"}
 
 
+def prefill_summary(measured, items):
+    """A pass's prefill, from what each call measured (D-061 item 4): calls measured, chunks,
+    the summed and the largest prefill seconds, and the largest prompt. Counts and seconds only;
+    seconds null when no call measured them (a mocked backend)."""
+    seconds = [m["prefill_seconds"] for m in measured if isinstance(m.get("prefill_seconds"), (int, float))]
+    return {"items": items, "calls_measured": len(measured),
+            "calls_chunked": sum(1 for m in measured if (m.get("chunks") or 0) > 0),
+            "chunks_total": sum(int(m.get("chunks") or 0) for m in measured),
+            "prompt_tokens_max": max((int(m.get("prompt_tokens") or 0) for m in measured), default=None),
+            "seconds_measured": len(seconds),
+            "seconds_total": round(sum(seconds), 6) if seconds else None,
+            "seconds_max": max(seconds) if seconds else None}
+
+
 def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMPT_PATH,
         run_id=None, expected=None, development=False, sensitive=False):
     """Run B1 on one bundle (see _run). A backend built here (the LocalBackend) is released
@@ -804,7 +793,7 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
                     max_new_tokens=reader["max_new_tokens"])
     # D-056 condition 6: the pass's peak GPU memory, from here to after the last item.
     cuda, at_start = start_gpu_memory()
-    summary, written = {}, []
+    summary, written, prefill_times = {}, [], []
     for item in items:
         bench_key = str(item["benchmark"]).lower()
         bench = spec["benchmarks"][bench_key]
@@ -823,12 +812,16 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
         # a backend that observes nothing (a failed call) is recorded under the declared one.
         observed = result.get("attention") if isinstance(result.get("attention"), dict) else None
         call_attention = observed or attention
+        # What the call's prefill measured (D-061 item 4), counts and seconds only.
+        measured = result.get("prefill") if isinstance(result.get("prefill"), dict) else None
+        if measured is not None:
+            prefill_times.append(measured)
         call_id = reply_records.write(
             context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
             model_mode=reader["model_mode"], payload=result.get("payload"),
             payload_form=result.get("form"), reply=reply, ok=not error, error=error,
             decoding=decoding, sensitive=sensitive, phase=ARM, doc_id=doc["id"],
-            attention=call_attention)
+            attention=call_attention, prefill=measured)
         if not call_id:
             raise SetupError("the reply record for item %s could not be written" % item["item_id"])
         written.append(call_id)
@@ -893,6 +886,7 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
                                                     "max_new_tokens_source")},
               "checkpoint": loaded.get("checkpoint") or {"checkpoint": reader.get("checkpoint")},
               "attention": attention, "gpu_memory": gpu_memory,
+              "prefill_time": prefill_summary(prefill_times, len(items)),
               "loaded": loaded, "verified_against": sorted(set(expected or {}) | {"attention"}),
               "development": bool(development), "sensitive": bool(sensitive),
               "reference_material": bool(reference), "decoding": decoding, "benchmarks": summary}
@@ -977,7 +971,9 @@ def _pass_identity(folder, summary):
             "checkpoint": (summary.get("reader") or {}).get("checkpoint"),
             "digest": (summary.get("loaded") or {}).get("digest"),
             "attention_implementation": attention.get("attention_implementation"),
-            "attention_decision": attention.get("attention_decision")}
+            "attention_decision": attention.get("attention_decision"),
+            "prefill": attention.get("prefill"), "prefill_chunk_tokens": attention.get("prefill_chunk_tokens"),
+            "prefill_decision": attention.get("prefill_decision")}
 
 
 def compare_passes(a, b, out):
@@ -1099,16 +1095,17 @@ def build_parser():
                         help="development run: the recorded values may be omitted (recorded)")
     parser.add_argument("--sensitive", action="store_true",
                         help="keep only hashes of prompts, replies, evidence and reason")
-    parser.add_argument("--prefill-chunk", type=int, default=None,
-                        help="D-056 fallback, off by default: prefill the prompt in chunks of this "
-                             "many tokens; only with --prefill-decision")
+    parser.add_argument("--prefill-chunk", default=None,
+                        help="E (D-061): chunked at %d tokens by default; another chunk size, or "
+                             "one_shot for a measurement pass, only with --prefill-decision"
+                             % final_models.PREFILL_CHUNK_DEFAULT)
     parser.add_argument("--prefill-decision", default=None,
-                        help="the recorded decision (D-NNN) that adopted chunked prefill")
+                        help="the recorded decision (D-NNN) that asks for that prefill")
     parser.add_argument("--attention", choices=list(ATTENTIONS), default=B1_ATTENTION,
-                        help="sdpa (D-056, the default) or eager for a measurement pass; eager "
-                             "only with --attention-decision")
+                        help="eager (the producer's, D-060, the default) or sdpa for a measurement "
+                             "pass; sdpa only with --attention-decision")
     parser.add_argument("--attention-decision", default=None,
-                        help="the recorded decision (D-NNN) that asks for the eager measurement pass")
+                        help="the recorded decision (D-NNN) that asks for the sdpa measurement pass")
     return parser
 
 

@@ -309,13 +309,22 @@ def compare(wrapper, result):
     records = getattr(wrapper, '_auditor_pair_state', None)
     if records is None:
         return
-    parsed = (result or {}).get('parsed') or {}
+    parsed = (result or {}).get('parsed')
+    parsed = {} if parsed is None else parsed
     try:
         wire=json.loads((result or {}).get('raw_text',''))
     except (ValueError,TypeError):
         wire={}
+    # D-061 (a): a VERIFIER reply that is not a JSON object, or whose items are not a list of
+    # objects, is a recorded contract failure (the call's contract_valid false on its
+    # model_call telemetry, and the reason on the join event), never a crash. L2 entry 06 crashed
+    # here calling .get on such a reply.
+    contract_failure = verifier_contract_failure(parsed)
+    if contract_failure is not None:
+        wrapper._observed_contract_valid = False
+        parsed = parsed if isinstance(parsed, dict) else {}
     refused=parsed.get('status')=='refused' or isinstance(wire,dict) and wire.get('status')=='refused'
-    findings = parsed.get('items', [])
+    findings = [f for f in parsed.get('items', []) if isinstance(f, dict)] if isinstance(parsed.get('items', []), list) else []
     joins = []
     for item in findings:
         pair = finding_pair(item, records) if result.get('ok') else None
@@ -325,8 +334,23 @@ def compare(wrapper, result):
             agreement=('agree' if pair['auditor_relation']==item['finding'] else 'disagree') if comparable else 'not_comparable'))
     telemetry.emit(wrapper.run_context, 'auditor_verifier_join', verifier_call_id=(result or {}).get('call_id'),
         pair_ids=[r['pair_id'] for r in records], findings=joins, finding_count=len(findings),
-        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')))
+        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')),
+        contract_failure=contract_failure)
     # Do not modify parsed findings, acceptance, refusal or the bus contract.
+
+
+def verifier_contract_failure(parsed):
+    """None for a VERIFIER reply compare() can read (a JSON object whose `items`, when present,
+    is a list of objects), else the reason: 'reply_not_object', 'items_not_list' or
+    'item_not_object' (D-061 (a))."""
+    if not isinstance(parsed, dict):
+        return 'reply_not_object'
+    items = parsed.get('items', [])
+    if not isinstance(items, list):
+        return 'items_not_list'
+    if any(not isinstance(item, dict) for item in items):
+        return 'item_not_object'
+    return None
 
 
 def contract_self_check():

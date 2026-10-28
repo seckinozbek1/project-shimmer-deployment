@@ -74,15 +74,28 @@ B1_DIGESTS, B1_MODEL_ID = b1_checkpoint_digests()
 # which bare_model.py's own parser takes and its own verify_identity checks.
 B1_CHECKPOINTS = [dict(name=name, args=['--expect-model-id', B1_MODEL_ID, '--expect-digest', B1_DIGESTS[name]])
                   for name in ('base', 'tuned')]
-# The L2 measurement passes (D-056 condition 6): eager against sdpa for both checkpoints and one
-# repeat of the tuned sdpa pass, each a free name and the checkpoint it loads. `base` and `tuned`
-# are sealed without `checkpoint` (the name is the checkpoint, as before), the others with it.
-B1_EAGER = ['--attention', 'eager', '--attention-decision', 'D-056']
+# The E evidence passes (D-056 condition 6 as D-060 and D-061 amend it): the run proper (eager,
+# chunked prefill) against sdpa (one shot, the D-058 option) for both checkpoints, the tuned
+# checkpoint one-shot eager, and one repeat of the tuned run proper, each a free name and the
+# checkpoint it loads. `base` and `tuned` are sealed without `checkpoint` (the name is the
+# checkpoint, as before), the others with it. Every measurement pass names its decision.
+B1_ONE_SHOT = ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061']
+B1_SDPA = ['--attention', 'sdpa', '--attention-decision', 'D-061'] + B1_ONE_SHOT
 B1_L2_PASSES = [B1_CHECKPOINTS[0],
-                dict(name='base_eager', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_EAGER),
+                dict(name='base_sdpa', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_SDPA),
                 B1_CHECKPOINTS[1],
-                dict(name='tuned_eager', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_EAGER),
+                dict(name='tuned_one_shot', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_ONE_SHOT),
+                dict(name='tuned_sdpa', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_SDPA),
                 dict(name='tuned_repeat', checkpoint='tuned', args=list(B1_CHECKPOINTS[1]['args']))]
+
+
+def b1_pass_attention(name):
+    """(attention, attention decision, prefill, prefill decision) a fixture pass declares."""
+    if name.endswith('_sdpa'):
+        return 'sdpa', 'D-061', 'one_shot', 'D-061'
+    if name.endswith('_one_shot'):
+        return 'eager', None, 'one_shot', 'D-061'
+    return 'eager', None, 'chunked', 'D-061'
 B1_FIXTURES =ROOT / 'benchmark' / 'baselines' / 'fixtures'
 # The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
 # bare_model.py and replaces ONLY its model backend by one that answers from the canned replies
@@ -123,6 +136,50 @@ class Backend:
 
 
 real.LocalBackend = Backend
+main = real.main
+
+
+def __getattr__(name):
+    # Everything else is the real bare_model's (replay_prompts.py imports it by this name).
+    return getattr(real, name)
+'''
+# The sealed project's benchmark/baselines/replay_prompts.py in the replay check (D-061 item 4):
+# the REAL replay_prompts.py with ONLY its model backend replaced (no model load). Its reply is
+# a JSON object naming the prompt's word count; a prompt of 1,538 words or more is reported
+# prefilled in three chunks under a chunked path.
+REPLAY_STAND_IN = '''import importlib.util
+from pathlib import Path
+_spec = importlib.util.spec_from_file_location('replay_prompts_real', Path(%(real)r))
+real = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(real)
+asked = []
+
+
+class Backend:
+    def __init__(self, reader, context):
+        self.reader = reader
+
+    def prepare(self):
+        return {'model_id': self.reader['model_id'], 'digest': 'fixture-digest', 'checkpoint': {'checkpoint': 'tuned'}}
+
+    def count(self, prompt):
+        return len(prompt.split())
+
+    def max_context(self):
+        return 10 ** 6
+
+    def generate(self, prompt, attention, max_new_tokens):
+        words = len(prompt.split())
+        asked.append((attention['attention_implementation'], attention['prefill']))
+        chunks = 3 if attention['prefill'] == 'chunked' and words >= 1538 else 0
+        return {'text': '{"words": %%d}' %% words, 'output_tokens': 1, 'attention': attention,
+                'prefill': {'prompt_tokens': words, 'chunks': chunks, 'prefill_seconds': 0.25}}
+
+    def release(self):
+        pass
+
+
+real.ReplayBackend = Backend
 main = real.main
 '''
 
@@ -1808,25 +1865,27 @@ class ControllerChecks(unittest.TestCase):
                       (self.root / 'analysis_b1_missing' / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
     def test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory(self):
-        """D-056 condition 6: the analyser reports every sealed pass by its name, the checkpoint
-        it loaded where the name differs, its attention (an eager pass with its decision) and
-        its peak GPU memory, allocated and reserved, as its b1_summary.json recorded them (not
-        measured on a CPU), in RUN_REPORT.md and FINAL_STATUS.json."""
+        """D-056 condition 6 and D-061: the analyser reports every sealed pass by its name, the
+        checkpoint it loaded where the name differs, its attention and prefill (a measurement
+        pass with its decision), its longest prefill and its peak GPU memory, allocated and
+        reserved, as its b1_summary.json recorded them (not measured on a CPU), in RUN_REPORT.md
+        and FINAL_STATUS.json."""
         gib = 2 ** 30
-        memory = {'base': (10, 11), 'base_eager': (12, 13), 'tuned': (14, 15), 'tuned_eager': (16, 17)}
+        memory = {'base': (10, 11), 'base_sdpa': (12, 13), 'tuned': (14, 15), 'tuned_sdpa': (16, 17)}
         evidence = {'evidence/result.json': json.dumps(dict(
             execution_integrity_passed=True, reasons=[], arm='B1', pipeline_exit_code=None,
             checkpoints={p['name']: dict(items=4, reply_records=4, items_without_one_record=[], summary_written=True,
                                          exit_code=0) for p in B1_L2_PASSES})).encode()}
         for entry in B1_L2_PASSES:
             name, checkpoint = entry['name'], entry.get('checkpoint', entry['name'])
-            eager = name.endswith('_eager')
+            attention, decision, prefill, prefill_decision = b1_pass_attention(name)
             peak = memory.get(name)
             evidence['evidence/b1/%s/b1_summary.json' % name] = json.dumps(dict(
                 arm='B1', document_id='dq4', loaded=dict(model_id=B1_MODEL_ID, digest=B1_DIGESTS[checkpoint]),
                 reader=dict(checkpoint=checkpoint), checkpoint=dict(checkpoint=checkpoint, adapter_applied=checkpoint == 'tuned'),
-                attention=dict(attention_implementation='eager' if eager else 'sdpa',
-                               attention_decision='D-056' if eager else None),
+                attention=dict(attention_implementation=attention, attention_decision=decision, prefill=prefill,
+                               prefill_chunk_tokens=512 if prefill == 'chunked' else None, prefill_decision=prefill_decision),
+                prefill_time=dict(seconds_measured=4, seconds_max=2.5) if name == 'tuned' else None,
                 gpu_memory=dict(peak_allocated_bytes=peak[0] * gib, peak_reserved_bytes=peak[1] * gib, measured=True)
                 if peak else dict(peak_allocated_bytes=None, peak_reserved_bytes=None, measured=False),
                 benchmarks=dict(contradoc=dict(items=4, parsed=4, abstain=0, undecided=0, backend_failures=0,
@@ -1838,17 +1897,22 @@ class ControllerChecks(unittest.TestCase):
             analysis.analyze(folder)
         status = read(folder / 'FINAL_STATUS.json')
         self.assertEqual(status['status'], 'ORDINARY_FINAL_CLOUD_RUN_COMPLETED')
-        self.assertEqual(list(status['b1_checkpoints']), [p['name'] for p in B1_L2_PASSES])
-        self.assertEqual(status['b1_checkpoints']['tuned_eager']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
+        self.assertEqual(list(status['b1_checkpoints']), sorted(p['name'] for p in B1_L2_PASSES))
+        self.assertEqual(status['b1_checkpoints']['tuned_sdpa']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
         text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
-        self.assertIn('base_eager (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('base_sdpa (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
         self.assertIn('tuned_repeat (checkpoint tuned): %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
-        self.assertIn('length reached allowance 0, attention sdpa, peak GPU memory 10.00 GiB allocated, 11.00 GiB reserved', text)
-        self.assertIn('tuned_eager (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
-                      'length reached allowance 0, attention eager (measurement pass, D-056), peak GPU memory 16.00 GiB '
-                      'allocated, 17.00 GiB reserved', text)
-        self.assertIn('tuned_repeat (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
-                      'length reached allowance 0, attention sdpa, peak GPU memory not measured (no CUDA)', text)
+        self.assertIn('length reached allowance 0, attention eager, chunked prefill of 512 tokens (D-061), peak GPU memory '
+                      '10.00 GiB allocated, 11.00 GiB reserved', text)
+        self.assertIn('tuned (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager, chunked prefill of 512 tokens (D-061), longest prefill '
+                      '2.5 s, peak GPU memory 14.00 GiB', text)
+        self.assertIn('tuned_sdpa (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention sdpa (measurement pass, D-061), one-shot prefill (D-061), '
+                      'peak GPU memory 16.00 GiB allocated, 17.00 GiB reserved', text)
+        self.assertIn('tuned_one_shot (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager, one-shot prefill (D-061), peak GPU memory not measured '
+                      '(no CUDA)', text)
 
     # ---- S2c items 8 and 9: the sealed run ------------------------------------------------
 
@@ -2228,12 +2292,12 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
 
     def test_b1_passes_run_by_name_and_load_their_sealed_checkpoint(self):
-        """D-056 condition 6: the L2 measurement passes (base, base_eager, tuned, tuned_eager,
-        tuned_repeat) are sealed as {name, checkpoint, args}; the runner passes each pass's
-        checkpoint to the real bare_model.main as --checkpoint and writes it into
-        evidence/b1/<name>, so two passes of one checkpoint never share a folder; the eager
-        passes run eager with their decision recorded, the others sdpa; the assessment and the
-        progress total count passes by name."""
+        """D-056 condition 6 and D-061 item 4: the E evidence passes (base, base_sdpa, tuned,
+        tuned_one_shot, tuned_sdpa, tuned_repeat) are sealed as {name, checkpoint, args}; the
+        runner passes each pass's checkpoint to the real bare_model.main as --checkpoint and
+        writes it into evidence/b1/<name>, so two passes of one checkpoint never share a folder;
+        each measurement pass runs with its decision recorded, the others eager with chunked
+        prefill; the assessment and the progress total count passes by name."""
         project = self.root / 'project'
         shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
         stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
@@ -2257,9 +2321,9 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(code, 0, (result, errors.getvalue()[-400:]))
         self.assertTrue(result['execution_integrity_passed'], result)
         names = [p['name'] for p in B1_L2_PASSES]
-        self.assertEqual(asked, ['base', 'base', 'tuned', 'tuned', 'tuned'])
+        self.assertEqual(asked, ['base', 'base', 'tuned', 'tuned', 'tuned', 'tuned'])
         self.assertEqual(list(result['checkpoints']), sorted(names))
-        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '20')
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '24')
         self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), sorted(names + ['expected_records']))
         for entry in B1_L2_PASSES:
             folder = evidence / 'b1' / entry['name']
@@ -2268,17 +2332,126 @@ class ControllerChecks(unittest.TestCase):
             checkpoint = entry.get('checkpoint', entry['name'])
             self.assertEqual((summary['reader']['checkpoint'], summary['loaded']['digest']),
                              (checkpoint, B1_DIGESTS[checkpoint]), entry['name'])
-            eager = entry['name'].endswith('_eager')
-            self.assertEqual((summary['attention']['attention_implementation'], summary['attention']['attention_decision']),
-                             ('eager', 'D-056') if eager else ('sdpa', None), entry['name'])
+            declared = summary['attention']
+            self.assertEqual((declared['attention_implementation'], declared['attention_decision'], declared['prefill'],
+                              declared['prefill_decision']), b1_pass_attention(entry['name']), entry['name'])
             self.assertIn('gpu_memory', summary)
+            self.assertIn('prefill_time', summary)
+
+    def test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths(self):
+        """D-061 item 4: B3's own rendered producer prompts are extracted from an earlier run's
+        reply records (payloads only: a sensitive run's records and a key folder are refused,
+        other backends skipped), sealed as replay_prompts.json beside a B1 bundle with a replay
+        pass, and the runner runs the REAL replay_prompts.py on them (only its model backend
+        stood in) through the four paths, one reply record per prompt per path, the measurement
+        holding counts, hashes and seconds, never a prompt's or a reply's text."""
+        import reply_records
+        spec = importlib.util.spec_from_file_location('replay_prompts_check', ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py')
+        replay = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(replay)
+        # the runner states the tool's paths, its measurement rule and its run options exactly
+        self.assertEqual(runner.REPLAY_PATHS, {k: v['measurement'] for k, v in replay.PATHS.items()})
+        self.assertEqual(runner.REPLAY_DEFAULT_PATHS, replay.DEFAULT_PATHS)
+        run_parser = replay.build_parser()._subparsers._group_actions[0].choices['run']
+        options = {s: a.nargs != 0 for a in run_parser._actions for s in a.option_strings if s not in ('-h', '--help')}
+        self.assertEqual(set(options), set(runner.REPLAY_RUNNER_ARGS) | set(runner.REPLAY_SEALED_ARGS))
+        self.assertEqual({k: options[k] for k in runner.REPLAY_SEALED_ARGS}, runner.REPLAY_SEALED_ARGS)
+        # extract: two producer prompts (one of three chunks and the tail), a non-producer call skipped
+        records = self.root / 'b3_run'
+        context = SimpleNamespace(run_dir=str(records), run_id='b3-fixture')
+        long_prompt = ' '.join(['w'] * 1538)
+        for backend, payload in (('local_producer', 'short prompt words'), ('local_auditor', 'verifier prompt'),
+                                 ('local_producer', long_prompt)):
+            reply_records.write(context, agent='PROCESSOR', backend=backend, model_id='m', payload=payload,
+                                payload_form='rendered_prompt', reply='SECRET REPLY TEXT', decoding={'max_new_tokens': 64},
+                                doc_id='doc-r')
+        prompts_file = self.root / 'replay_prompts.json'
+        extracted = replay.extract([records / 'audit' / 'model_replies'], prompts_file)
+        self.assertEqual((extracted['prompt_count'], [p['agent'] for p in extracted['prompts']]), (2, ['PROCESSOR'] * 2))
+        self.assertNotIn('SECRET REPLY TEXT', prompts_file.read_text(encoding='utf8'))
+        hashed = self.root / 'b3_sensitive'
+        reply_records.write(SimpleNamespace(run_dir=str(hashed), run_id='s'), agent='PROCESSOR', backend='local_producer',
+                            model_id='m', payload='p', payload_form='rendered_prompt', reply='r', sensitive=True)
+        with self.assertRaisesRegex(ValueError, 'hashes only'):
+            replay.extract([hashed / 'audit' / 'model_replies'], self.root / 'x.json')
+        with self.assertRaisesRegex(ValueError, 'key folder'):
+            replay.extract([ROOT / 'benchmark' / 'keys' / 'any'], self.root / 'x.json')
+        # sealing: a replay pass needs the sealed prompts, and a measurement path needs its decision
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        declaration = sealer.replay_declaration(prompts_file.read_bytes())
+        passes = [B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--decision', 'D-061'])]
+        for bad, declared, reason in (
+                (passes, None, 'needs the sealed replay prompts'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=[])], declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'e,e_repeat', '--decision', 'D-061'])],
+                 declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'e,flash'])], declaration, 'paths once each'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--out', 'x', '--decision', 'D-061'])],
+                 declaration, 'argument the runner sets'),
+                ([B1_CHECKPOINTS[1]], declaration, 'without a replay pass')):
+            with self.assertRaisesRegex(RuntimeError, reason):
+                sealer.b1_fields(items, targets, bad, declared)
+        # the run: the real bare_model (stand-in backend) for `tuned`, the real replay tool for `replay`
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        tools = project / 'benchmark' / 'baselines'
+        tools.mkdir(parents=True)
+        (tools / 'bare_model.py').write_text(BARE_MODEL_STAND_IN % dict(
+            real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'), replies=str(B1_FIXTURES / 'b1_replies.json')),
+            encoding='utf8')
+        (tools / 'replay_prompts.py').write_text(REPLAY_STAND_IN % dict(
+            real=str(ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        (base / 'items.json').write_bytes(items)
+        shutil.copy(prompts_file, base / 'replay_prompts.json')
+        b1 = sealer.b1_fields(items, targets, passes, declaration)
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={
+            'items.json': sha(base / 'items.json'), 'replay_prompts.json': sha(base / 'replay_prompts.json')})
+        self.assertEqual(runner.arm_declaration(manifest), 'B1')
+        with self.assertRaisesRegex(RuntimeError, 'development material'):
+            runner.admit_workload(dict(manifest, protected_test=False, argv=list(runner.ARGV), test_archive_sha256='a' * 64,
+                                       source_commit='c'),
+                                  dict(exposure='sealed', test_manifest_sha256='b' * 64, test_archive_sha256='a' * 64,
+                                       code_commit='c'))
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        sys.modules.pop('replay_prompts', None)
+        with pipeline_import_watch() as imports, contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: None))
+            asked = list(getattr(sys.modules.get('replay_prompts'), 'asked', []))
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-600:]))
+        self.assertEqual(imports, [])
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), str(4 + 2 * 4))
+        self.assertEqual(asked, [('eager', 'chunked')] * 2 + [('eager', 'one_shot')] * 2 + [('sdpa', 'one_shot')] * 2
+                         + [('eager', 'chunked')] * 2)
+        folder = evidence / 'b1' / 'replay'
+        self.assertEqual(len(list((folder / 'audit' / 'model_replies').glob('*.json'))), 8)
+        text = (folder / 'replay_measurement.json').read_text(encoding='utf8')
+        self.assertNotIn('short prompt words', text)
+        self.assertNotIn('"words"', text)
+        measurement = json.loads(text)
+        self.assertEqual(measurement['comparisons']['e_vs_one_shot']['all']['byte_identical'], 2)
+        self.assertEqual(measurement['comparisons']['e_vs_e_repeat']['three_chunks_or_more']['compared'], 1)
+        self.assertEqual(measurement['paths']['sdpa']['attention_decision'], 'D-061')
+        self.assertEqual(result['checkpoints']['replay']['reply_records'], 8)
+        # the analyser reports the replay pass from its measurement
+        status = analysis.replay_pass_status(folder / 'replay_measurement.json', 'replay', result)
+        line = analysis.replay_text('replay', status)
+        self.assertIn('replay (exit 0): replay of 2 B3 producer prompts under decision D-061', line)
+        self.assertIn('e_vs_one_shot 2 of 2 byte-identical (1 of 1 at three chunks or more)', line)
 
     def test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts(self):
-        """D-056 condition 6, at sealing: a pass is {name, args} or {name, checkpoint, args};
-        its name is lower case, digits and underscores; the checkpoint it loads (its
-        `checkpoint`, else its name) is one bare_model.py loads; eager comes only with its
-        decision and a decision only with eager. The sealer refuses each case bare_model would
-        refuse on the instance, and bare_model's own attention_record refuses the same pairs."""
+        """D-056 condition 6 and D-061, at sealing: a pass is {name, args} or {name, checkpoint,
+        args}; its name is lower case, digits and underscores; the checkpoint it loads (its
+        `checkpoint`, else its name) is one bare_model.py loads; sdpa comes only with its
+        decision and a decision only with sdpa; one-shot or another chunk size only with a
+        prefill decision. The sealer refuses each case bare_model would refuse on the instance,
+        and on a table of attention and prefill arguments the runner's rule and bare_model's own
+        attention_record agree case by case."""
         items = (B1_FIXTURES / 'items_q4.json').read_bytes()
         targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
         pin = B1_CHECKPOINTS[0]['args']
@@ -2294,26 +2467,46 @@ class ControllerChecks(unittest.TestCase):
         cases = [
             ([dict(name='large', args=pin)], 'names no checkpoint'),
             ([dict(name='base_x', checkpoint='large', args=pin)], 'names no checkpoint'),
-            ([dict(name='base-eager', checkpoint='base', args=pin)], 'needs a name'),
+            ([dict(name='base-sdpa', checkpoint='base', args=pin)], 'needs a name'),
             ([dict(name='Base', checkpoint='base', args=pin)], 'needs a name'),
             ([dict(name='base', checkpoint='base', args=pin, extra=1)], 'needs a name'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'eager'])], 'only with --attention-decision'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-056'])], 'only with --attention-decision'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa', '--attention-decision=D-056'])],
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'sdpa'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-061'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention=eager', '--attention-decision=D-061'])],
              'only with --attention-decision'),
             ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'flash'])], 'attention bare_model does not take'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'one_shot'])], 'only with --prefill-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-decision', 'D-099'])], 'prefill decision only with'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'half', '--prefill-decision', 'D-099'])],
+             'prefill chunk bare_model does not take'),
             ([dict(name='a', checkpoint='base', args=pin), dict(name='a', checkpoint='tuned', args=pin)], 'names repeat'),
         ]
         for passes, reason in cases:
             self.assertIn(reason, refusal(passes) or 'admitted', passes)
-        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=eager',
-                                                                                  '--attention-decision=D-056'])]))
+        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa',
+                                                                                  '--attention-decision=D-061'])]))
         spec = importlib.util.spec_from_file_location('bare_model_pairs', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
         bare = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bare)
-        for attention, decision in (('eager', None), ('sdpa', 'D-056')):
-            with self.assertRaises(ValueError):
-                bare.attention_record(attention=attention, attention_decision=decision)
+        # the runner's stated rule and bare_model's own, case by case
+        table = [[], ['--attention', 'sdpa'], ['--attention', 'sdpa', '--attention-decision', 'D-061'],
+                 ['--attention', 'eager', '--attention-decision', 'D-061'], ['--attention-decision', 'D-061'],
+                 ['--attention', 'sdpa', '--attention-decision', 'decided'],
+                 ['--prefill-chunk', 'one_shot'], ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061'],
+                 ['--prefill-chunk', '512'], ['--prefill-chunk', '512', '--prefill-decision', 'D-061'],
+                 ['--prefill-chunk', '512', '--prefill-decision', 'D-099'], ['--prefill-chunk', '256'],
+                 ['--prefill-chunk', '256', '--prefill-decision', 'D-099'], ['--prefill-chunk', '0', '--prefill-decision', 'D-099'],
+                 ['--prefill-decision', 'D-061'], ['--prefill-decision', 'D-099'],
+                 ['--prefill-chunk', 'one_shot', '--prefill-decision', 'decided']]
+        for args in table:
+            values = runner.b1_option_values(args)
+            try:
+                bare.attention_record(values.get('--prefill-chunk'), values.get('--prefill-decision'),
+                                      values.get('--attention', 'eager'), values.get('--attention-decision'))
+                bare_admits = True
+            except ValueError:
+                bare_admits = False
+            self.assertEqual(runner.b1_attention_error(args) is None, bare_admits, args)
 
     def test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes(self):
         """S5 join: the options a sealed B1 checkpoint may carry (the runner's B1_SEALED_ARGS)
@@ -2354,7 +2547,7 @@ class ControllerChecks(unittest.TestCase):
         every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
                  '--expect-digest=d', '--expect-decoding', '{}', '--sensitive',
                  '--prefill-chunk', '4096', '--prefill-decision', 'D-056',
-                 '--attention', 'eager', '--attention-decision', 'D-056']
+                 '--attention', 'sdpa', '--attention-decision', 'D-056']
         cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
                  ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
                  ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]
@@ -2384,6 +2577,18 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(passed['reasons'], [])
         # The same evidence assessed as B3 fails on the pipeline markers B1 never writes.
         self.assertIn('pipeline_not_completed', runner.assess(None, [])['reasons'])
+        # D-061 (b): a pipeline that reached its end with exit 0 but semantically incomplete is
+        # reported as semantic_incomplete, never as pipeline_not_completed.
+        incomplete = dict(state='stopped', reached_end=True, exit_code=0, semantic_complete=False)
+        self.assertEqual([r for r in runner.assess(incomplete, [])['reasons']
+                          if r in ('semantic_incomplete', 'pipeline_not_completed')], ['semantic_incomplete'])
+        for stopped in (dict(incomplete, exit_code=1), dict(incomplete, reached_end=False),
+                        dict(state='stopped', reached_end=True, exit_code=0)):
+            self.assertEqual([r for r in runner.assess(stopped, [])['reasons']
+                              if r in ('semantic_incomplete', 'pipeline_not_completed')], ['pipeline_not_completed'], stopped)
+        complete = dict(state='completed', reached_end=True, exit_code=0)
+        self.assertNotIn('pipeline_not_completed', runner.assess(complete, [])['reasons'])
+        self.assertNotIn('semantic_incomplete', runner.assess(complete, [])['reasons'])
         # One record gone from one checkpoint: that checkpoint fails, the other does not.
         next((evidence / 'tuned' / 'audit' / 'model_replies').glob('*.json')).unlink()
         failed = runner.assess(None, [], arm='B1', b1=seen())
@@ -2498,7 +2703,8 @@ class ControllerChecks(unittest.TestCase):
 
     def test_unratified_inst_finder_off_refuses_to_seal(self):
         files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
-                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes()}
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
         self.assertEqual(sealer.seal_environment(files, None)['SHIMMER_INST_FINDER'], 'on')
         self.assertEqual(sealer.seal_environment(files, 'on')['SHIMMER_INST_FINDER'], 'on')
         with self.assertRaisesRegex(RuntimeError, 'Refuse to seal SHIMMER_INST_FINDER=off'):
@@ -2508,6 +2714,141 @@ class ControllerChecks(unittest.TestCase):
             id='FIXTURE', operator_approved=True, change='INST_FINDER switched off through SHIMMER_INST_FINDER')]
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
+
+    # ---- D-058, D-060, D-061: the producer's attention and prefill are sealed ---------------
+
+    def test_the_producer_attention_is_sealed_and_eager_only_with_its_decision(self):
+        """D-058 item (iv) as D-060 and D-061 amend it: the settings the instance's final_models
+        reads at load travel in the sealed environment: eager and chunks of 512 tokens under
+        D-061 when the operator names none; sdpa, one-shot or another chunk size only with the
+        recorded decision (D-NNN) that asks for it, so a measurement run can be sealed. The seal
+        evaluates the BOUND final_models' own rules and refuses what the instance would refuse;
+        the runner's environment, built from the manifest, is what final_models reads."""
+        import final_models
+        files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
+        default = sealer.seal_environment(files, None)
+        self.assertEqual({k: default.get(k) for k in ('SHIMMER_PRODUCER_ATTENTION', 'SHIMMER_PRODUCER_ATTENTION_DECISION',
+                                                      'SHIMMER_PRODUCER_PREFILL_CHUNK', 'SHIMMER_PRODUCER_PREFILL_DECISION')},
+                         {'SHIMMER_PRODUCER_ATTENTION': 'eager', 'SHIMMER_PRODUCER_ATTENTION_DECISION': None,
+                          'SHIMMER_PRODUCER_PREFILL_CHUNK': '512', 'SHIMMER_PRODUCER_PREFILL_DECISION': 'D-061'})
+        measurement = sealer.seal_environment(files, None, 'sdpa', 'D-061', 'one_shot', 'D-061')
+        self.assertEqual((measurement['SHIMMER_PRODUCER_ATTENTION'], measurement['SHIMMER_PRODUCER_ATTENTION_DECISION'],
+                          measurement['SHIMMER_PRODUCER_PREFILL_CHUNK'], measurement['SHIMMER_PRODUCER_PREFILL_DECISION']),
+                         ('sdpa', 'D-061', 'one_shot', 'D-061'))
+        for attention, decision in (('sdpa', None), ('eager', 'D-061'), ('sdpa', 'decided'), ('flash', None)):
+            with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer attention', msg=(attention, decision)):
+                sealer.seal_environment(files, None, attention, decision)
+        for chunk, decision in (('one_shot', None), ('256', None), (None, 'D-099'), ('half', 'D-099')):
+            with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer prefill', msg=(chunk, decision)):
+                sealer.seal_environment(files, None, None, None, chunk, decision)
+        # what the instance reads: the runner replaces every SHIMMER_ variable with the sealed ones
+        for sealed, expected in ((default, ('eager', None, 'chunked', 512)), (measurement, ('sdpa', 'D-061', 'one_shot', None))):
+            with patch.dict(os.environ, sealed):
+                if 'SHIMMER_PRODUCER_ATTENTION_DECISION' not in sealed:
+                    os.environ.pop('SHIMMER_PRODUCER_ATTENTION_DECISION', None)
+                read_back = final_models.producer_attention()
+                prefill = final_models.producer_prefill()
+            self.assertEqual((read_back['attention_implementation'], read_back['attention_decision'],
+                              prefill['prefill'], prefill['prefill_chunk_tokens']), expected)
+        # a bound final_models from before D-058, or before D-061, has no such setting and is refused
+        older = dict(files, **{'scripts/final_models.py': b'def require(ok, reason):\n    pass\n'})
+        with self.assertRaisesRegex(RuntimeError, 'predates D-058'):
+            sealer.seal_environment(older, None)
+        before = (ROOT / 'scripts/final_models.py').read_text(encoding='utf8').replace('def producer_prefill(', 'def _gone(')
+        with self.assertRaisesRegex(RuntimeError, 'predates D-061'):
+            sealer.seal_environment(dict(files, **{'scripts/final_models.py': before.encode()}), None)
+
+    def test_the_report_states_the_producer_attention_and_prompts_over_the_context(self):
+        """D-058 items (v) and (vi): the backend field names the producer's sealed attention
+        (sdpa: the fixed sentence; none: sealed before D-058, eager), and the over-context row
+        counts the B3 calls refused for exceeding the model's context, by document."""
+        import analyze_ordinary_final_run as analysis
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        over = [dict(event='prompt_over_context', call_id='c%d' % k, agent=agent, doc_id='doc-a', prompt_tokens=31000,
+                     max_new_tokens=2048, model_context=32768) for k, agent in ((2, 'PROCESSOR'), (3, 'VERIFIER'))]
+        run = 'evidence/run/r1/'
+        evidence = {run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+                    run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in [call] + over).encode(),
+                    run + 'audit/execution_topology.jsonl': b'',
+                    'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()}
+        folder = self.root / 'analysis_attention'
+        self.analysis_folder(folder, evidence=evidence,
+                             environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
+                      'producer eager', text)
+        self.assertIn('- **B3 prompts over the model context.** 2 calls on 1 documents (doc-a)', text)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([r['call_id'] for r in status['b3_prompts_over_context']], ['c2', 'c3'])
+        # sealed before D-058: the producer ran eager; no over-context event: none
+        older = self.root / 'analysis_attention_older'
+        self.analysis_folder(older, evidence=dict(evidence, **{run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode()}))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(older)
+        text = (older / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager (sealed before D-058 named the producer attention', text)
+        self.assertIn('- **B3 prompts over the model context.** none: every B3 prompt fit', text)
+        # an eager measurement run names its decision
+        eager = self.root / 'analysis_attention_eager'
+        self.analysis_folder(eager, environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager',
+                                                     SHIMMER_PRODUCER_ATTENTION_DECISION='D-058'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(eager)
+        text = (eager / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager under decision D-058', text)
+        self.assertIn('- **B3 prompts over the model context.** not determined: the pipeline did not start', text)
+        # D-060, D-061: the run proper, eager with chunked prefill, and an sdpa one-shot measurement run
+        sealed_e = self.root / 'analysis_attention_e'
+        self.analysis_folder(sealed_e, evidence=evidence, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager', SHIMMER_PRODUCER_PREFILL_CHUNK='512',
+            SHIMMER_PRODUCER_PREFILL_DECISION='D-061'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(sealed_e)
+        text = (sealed_e / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer eager, the kernel it was trained and evaluated with (D-060), prefilled in '
+                      'chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, D-061)', text)
+        self.assertIn('- **Execution assessment.** passed', text)
+        measured = self.root / 'analysis_attention_sdpa'
+        self.analysis_folder(measured, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa', SHIMMER_PRODUCER_ATTENTION_DECISION='D-061',
+            SHIMMER_PRODUCER_PREFILL_CHUNK='one_shot', SHIMMER_PRODUCER_PREFILL_DECISION='D-061'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(measured)
+        self.assertIn('producer sdpa (memory-efficient, pinned) under decision D-061 (a measurement run), prefilled in one '
+                      'shot under decision D-061', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def test_a_semantically_incomplete_run_is_reported_as_such(self):
+        """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
+        semantic work incomplete is assessed `semantic_incomplete` by the runner, and the
+        analyser's report says so in words, never `pipeline_not_completed`."""
+        import analyze_ordinary_final_run as analysis
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), call, dict(event='pipeline_end', monotonic_s=3.0)]
+        completion = dict(state='stopped', reached_end=True, exit_code=0, semantic_complete=False)
+        result = runner.assess(completion, rows)
+        self.assertEqual(result['reasons'], ['semantic_incomplete'])
+        run = 'evidence/run/r1/'
+        evidence = {run + 'audit/run_completion.json': json.dumps(dict(completion, schema_version=1, run_id='r1',
+                                                                       finished_at='2026-10-28T00:00:00+00:00')).encode(),
+                    run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in rows).encode(),
+                    run + 'audit/execution_topology.jsonl': b'',
+                    'evidence/result.json': json.dumps(dict(result, pipeline_exit_code=0)).encode()}
+        folder = self.root / 'analysis_incomplete'
+        self.analysis_folder(folder, evidence=evidence)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('- **Execution assessment.** failed: semantic_incomplete (the pipeline reached its end with exit '
+                      'code 0, and its completion record marks the semantic work incomplete', text)
+        self.assertNotIn('pipeline_not_completed', text)
+        self.assertEqual(read(folder / 'FINAL_STATUS.json')['report']['Execution assessment'][:27],
+                         'failed: semantic_incomplete')
 
     # ---- S2 checker round 1 ---------------------------------------------------------------
 
@@ -3682,6 +4023,9 @@ def archive_names_ignoring_extras(names, extra=(), extras=None):
 
 
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
+# The runner's own attention and prefill rule, kept for the mutant that drops only its prefill half.
+runner_b1_attention_error = runner.b1_attention_error
+
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
@@ -3848,15 +4192,44 @@ NEUTRALIZATIONS = [
     # D-056 condition 6: any checkpoint admitted at sealing, whatever bare_model loads.
     ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_pass_checkpoint',
      lambda entry: entry.get('checkpoint', entry.get('name'))),
-    # D-056 condition 6: eager sealed without its decision (bare_model would refuse it on the instance).
+    # D-056 condition 6: sdpa sealed without its decision (bare_model would refuse it on the instance).
     ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
      lambda args: None),
-    # D-056 condition 6: a pass's attention and peak memory not read from its summary.
+    # D-056 condition 6, D-061: a pass's attention, prefill and peak memory not read from its summary.
     ('test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory', analysis, 'b1_pass_measures',
      lambda summary: dict(checkpoint=None, attention_implementation=None, attention_decision=None, gpu_memory=None)),
     # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
     ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
      schedule_ignoring_exposure),
+    # D-058 (iv), D-061: sdpa or one-shot sealed without its decision (the instance's final_models would refuse it).
+    ('test_the_producer_attention_is_sealed_and_eager_only_with_its_decision', sealer, 'producer_attention_setting',
+     lambda files, attention=None, decision=None, chunk=None, prefill_decision=None: {
+         'SHIMMER_PRODUCER_ATTENTION': attention or 'eager', 'SHIMMER_PRODUCER_PREFILL_CHUNK': chunk or '512',
+         'SHIMMER_PRODUCER_PREFILL_DECISION': prefill_decision or 'D-061'}),
+    # D-061 (b): a semantically incomplete run reported as one that did not complete.
+    ('test_a_semantically_incomplete_run_is_reported_as_such', runner, 'semantic_incomplete',
+     lambda completion: False),
+    # D-061 (b): the report's execution row without the reason's meaning.
+    ('test_a_semantically_incomplete_run_is_reported_as_such', analysis, 'assessment_text',
+     lambda result: 'failed' if not (result or {}).get('execution_integrity_passed') else 'passed'),
+    # D-061: the report's backend field without the producer's prefill.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'producer_prefill_text',
+     lambda environment: 'prefill not stated'),
+    # D-061 item 4: a replay pass run as a bare_model pass.
+    ('test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths', runner, 'is_replay',
+     lambda entry: False),
+    # D-061 item 4: a replay pass whose measurement path runs without its decision.
+    ('test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths', runner, 'replay_error',
+     lambda args: None),
+    # D-061: the runner's prefill rule not held to bare_model's (one-shot sealed without its decision).
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
+     lambda args: None if '--prefill-chunk' in args else runner_b1_attention_error(args)),
+    # D-058 (vi): the backend field without the producer's attention.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'producer_attention_text',
+     lambda manifest: 'producer attention not stated'),
+    # D-058 (v): over-context calls not counted.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'over_context_text',
+     lambda arm, status, events: 'none'),
     # R18: the per-entry collection refused past the soft budget, as before S5.
     ('test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder', controller, 'soft_budget_exempt',
      lambda label: label in {'stop_workload', 'pack_evidence', 'evidence_hash', 'final_gpu_state'}),

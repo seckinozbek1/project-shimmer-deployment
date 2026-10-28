@@ -3,12 +3,15 @@
 Explicit SHIMMER_MODEL_MODE=final selects the frozen pair; base preserves the
 reference runtime. No training/evaluation datasets or cloud clients are imported.
 """
+import contextlib
 import hashlib
+import importlib
 import importlib.metadata
 import json
 import os
 from pathlib import Path
 import platform
+import re
 import sys
 import threading
 
@@ -23,6 +26,41 @@ PINS = {
                 'head': '6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a',
                 'mean': '370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5',
                 'std': '1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a'}}
+
+# D-058, D-060 and D-061 (docs/loop/DECISIONS.md): the producer's attention, fixed at load from
+# a setting that travels in the sealed manifest's environment. Exactly two values: eager, the
+# default (the kernel the producer was trained and evaluated with and ran from v5 to v12; L2's
+# evidence kept it, D-060), and sdpa, under which every producer generate call runs pinned to
+# the memory-efficient sdpa backend (pinned_attention), accepted only with the recorded
+# decision (D-NNN) that asks for it, for a measurement pass. The Auditor896 classifier is never
+# governed by this setting: it loads eager, as its runtime contract says. The models _load_qwen
+# loads (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR) run sdpa, pinned the same way.
+PRODUCER_ATTENTION_ENV = 'SHIMMER_PRODUCER_ATTENTION'
+PRODUCER_ATTENTION_DECISION_ENV = 'SHIMMER_PRODUCER_ATTENTION_DECISION'
+EAGER = 'eager'
+SDPA = 'sdpa'
+PRODUCER_ATTENTION_DEFAULT = EAGER
+PRODUCER_ATTENTIONS = (EAGER, SDPA)
+SDPA_BACKEND = 'EFFICIENT_ATTENTION'
+DECISION_ID = re.compile(r'D-\d{3}')
+# D-060 and D-061: E, chunked prefill. Every producer generate call (B3) and every B1 call feeds
+# its prompt through the KV cache in fixed chunks of PREFILL_CHUNK_DEFAULT tokens under the
+# producer's attention (eager), leaving GENERATE_TAIL_TOKENS prompt tokens to generate() itself,
+# so the first generated token is computed by the same kernel path as one-shot prefill. The
+# chunk size is a sealed setting like the attention: 512 under D-061 unless a recorded decision
+# names another size or one-shot prefill (`one_shot`, a measurement pass). A prompt of at most
+# one chunk plus the tail is prefilled by generate() in one step: chunking it would change
+# nothing about its memory.
+PRODUCER_PREFILL_ENV = 'SHIMMER_PRODUCER_PREFILL_CHUNK'
+PRODUCER_PREFILL_DECISION_ENV = 'SHIMMER_PRODUCER_PREFILL_DECISION'
+PREFILL_CHUNK_DEFAULT = 512
+PREFILL_DECISION_DEFAULT = 'D-061'
+ONE_SHOT = 'one_shot'
+CHUNKED = 'chunked'
+GENERATE_TAIL_TOKENS = 2
+# torch.backends.cuda's switch for each sdpa backend, by SDPBackend name.
+SDPA_SWITCHES = {'FLASH_ATTENTION': 'flash_sdp_enabled', 'EFFICIENT_ATTENTION': 'mem_efficient_sdp_enabled',
+                 'MATH': 'math_sdp_enabled', 'CUDNN_ATTENTION': 'cudnn_sdp_enabled'}
 
 
 def require(ok, reason):
@@ -73,6 +111,254 @@ def identity(role, spec=None):
                 runtime_engine='transformers/peft/bitsandbytes', limitations=spec.get('limitations'))
 
 
+def producer_attention(environ=None):
+    """The producer's attention as the sealed environment sets it (D-058, D-060):
+    {attention_implementation, sdpa_backend, attention_decision}. Unset is eager. sdpa is
+    accepted only with SHIMMER_PRODUCER_ATTENTION_DECISION naming a recorded decision
+    (D-NNN), for a measurement pass; a decision with eager, or any other value, is refused,
+    never ignored."""
+    environ = os.environ if environ is None else environ
+    value = environ.get(PRODUCER_ATTENTION_ENV)
+    value = PRODUCER_ATTENTION_DEFAULT if value is None else value
+    decision = environ.get(PRODUCER_ATTENTION_DECISION_ENV)
+    require(value in PRODUCER_ATTENTIONS, PRODUCER_ATTENTION_ENV + ' is eager or sdpa; no other attention is admitted')
+    require((value == SDPA) == (decision is not None),
+            PRODUCER_ATTENTION_ENV + '=sdpa needs ' + PRODUCER_ATTENTION_DECISION_ENV
+            + ' (the recorded decision that asks for it), and a decision is accepted only with sdpa')
+    require(decision is None or bool(DECISION_ID.fullmatch(decision)),
+            PRODUCER_ATTENTION_DECISION_ENV + ' names a recorded decision (D-NNN)')
+    return dict(attention_implementation=value, sdpa_backend=SDPA_BACKEND if value == SDPA else None,
+                attention_decision=decision)
+
+
+def prefill_setting(chunk=None, decision=None):
+    """How a producer prompt is prefilled (D-060, D-061), one rule for B3 and B1:
+    {prefill, prefill_chunk_tokens, prefill_decision}. With nothing named it is chunked at
+    PREFILL_CHUNK_DEFAULT tokens under PREFILL_DECISION_DEFAULT. Another chunk size (a positive
+    whole number) or `one_shot` (no chunking, a measurement pass) is accepted only with the
+    recorded decision (D-NNN) that asks for it; a decision naming the default is accepted
+    only when it is the default's own. Anything else is refused, never ignored."""
+    if isinstance(chunk, str) and chunk != ONE_SHOT:
+        require(chunk.isdigit(), 'The prefill chunk is a positive number of tokens or one_shot')
+        chunk = int(chunk)
+    require(chunk is None or chunk == ONE_SHOT or (type(chunk) is int and chunk > 0),
+            'The prefill chunk is a positive number of tokens or one_shot')
+    require(decision is None or bool(DECISION_ID.fullmatch(str(decision))),
+            'The prefill decision names a recorded decision (D-NNN)')
+    default = chunk is None or chunk == PREFILL_CHUNK_DEFAULT
+    if default:
+        require(decision in (None, PREFILL_DECISION_DEFAULT),
+                'A prefill decision is named only with another chunk size or one_shot')
+        return dict(prefill=CHUNKED, prefill_chunk_tokens=PREFILL_CHUNK_DEFAULT,
+                    prefill_decision=PREFILL_DECISION_DEFAULT)
+    require(decision is not None, 'A prefill chunk other than %d, or one_shot, needs the recorded decision '
+            'that asks for it' % PREFILL_CHUNK_DEFAULT)
+    if chunk == ONE_SHOT:
+        return dict(prefill=ONE_SHOT, prefill_chunk_tokens=None, prefill_decision=decision)
+    return dict(prefill=CHUNKED, prefill_chunk_tokens=chunk, prefill_decision=decision)
+
+
+def producer_prefill(environ=None):
+    """The producer's prefill as the sealed environment sets it (prefill_setting):
+    SHIMMER_PRODUCER_PREFILL_CHUNK and SHIMMER_PRODUCER_PREFILL_DECISION, both unset by
+    default (chunked at 512 under D-061)."""
+    environ = os.environ if environ is None else environ
+    return prefill_setting(environ.get(PRODUCER_PREFILL_ENV), environ.get(PRODUCER_PREFILL_DECISION_ENV))
+
+
+# What a call not governed by the producer's prefill setting records (a _load_qwen model's
+# call: VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR): one-shot, no decision.
+NOT_GOVERNED_PREFILL = dict(prefill=ONE_SHOT, prefill_chunk_tokens=None, prefill_decision=None)
+
+
+def _forward_owner(model):
+    """The module whose forward() generate() calls once per step: the one holding lm_head
+    directly (a PEFT wrapper reaches it through attribute forwarding, never as its own
+    child), else the model itself. None for a stand-in model that is no torch module."""
+    module_type = getattr(getattr(sys.modules.get('torch'), 'nn', None), 'Module', None)
+    if not isinstance(module_type, type) or not isinstance(model, module_type):
+        return None
+    for module in model.modules():
+        if 'lm_head' in module._modules:
+            return module
+    return model
+
+
+def chunked_prefill(model, input_ids, chunk_tokens, *, cache=None):
+    """E (D-060, D-061): every prompt token but the last GENERATE_TAIL_TOKENS fed through the
+    model in chunks of `chunk_tokens`, filling a KV cache, under whatever attention the model
+    carries (eager for the producer). Returns (cache, chunks)."""
+    torch = importlib.import_module('torch')
+    if cache is None:
+        cache = importlib.import_module('transformers').DynamicCache()
+    total = int(input_ids.shape[1]) - GENERATE_TAIL_TOKENS
+    chunks = 0
+    for start in range(0, max(total, 0), int(chunk_tokens)):
+        end = min(start + int(chunk_tokens), total)
+        model(input_ids=input_ids[:, start:end],
+              attention_mask=torch.ones((input_ids.shape[0], end), dtype=torch.long, device=input_ids.device),
+              past_key_values=cache, use_cache=True,
+              cache_position=torch.arange(start, end, device=input_ids.device), logits_to_keep=1)
+        chunks += 1
+    return cache, chunks
+
+
+def generate_with_prefill(model, inputs, *, max_new_tokens, decoding_kwargs, prefill, **extra):
+    """The ONE generate helper of every producer call (agent_wrapper) and every B1 call
+    (bare_model), D-061 item 6. `prefill` is a prefill_setting record. One-shot, or a prompt of
+    at most one chunk plus the tail, is plain generate(); otherwise chunked_prefill fills the
+    cache first and generate() prefills the last GENERATE_TAIL_TOKENS tokens itself. Returns
+    (output, measured): measured = {prompt_tokens, chunks, chunked_tokens, tail_tokens,
+    prefill_seconds}, prefill_seconds being the time from the call's start to the end of the
+    forward step that produced the first generated token's scores (CUDA synchronized there),
+    None for a stand-in model without forward hooks. `extra` is for the checks (scores)."""
+    import time
+    prompt_tokens = int(inputs['input_ids'].shape[1])
+    chunk = prefill.get('prefill_chunk_tokens') if prefill.get('prefill') == CHUNKED else None
+    chunked = bool(chunk) and prompt_tokens > int(chunk) + GENERATE_TAIL_TOKENS
+    owner = _forward_owner(model)
+    seen = dict(forwards=0, at=None, target=None)
+    started = time.perf_counter()
+
+    def timer(module, args, output):
+        seen['forwards'] += 1
+        if seen['at'] is None and seen['forwards'] == seen['target']:
+            torch = sys.modules.get('torch')
+            cuda = getattr(torch, 'cuda', None)
+            try:
+                if cuda is not None and cuda.is_available() and cuda.is_initialized():
+                    cuda.synchronize()
+            except Exception:
+                pass
+            seen['at'] = time.perf_counter()
+    handle = owner.register_forward_hook(timer) if owner is not None else None
+    try:
+        if not chunked:
+            seen['target'] = 1
+            out = model.generate(**inputs, max_new_tokens=max_new_tokens, **decoding_kwargs, **extra)
+            chunks = 0
+        else:
+            cache, chunks = chunked_prefill(model, inputs['input_ids'], chunk)
+            seen['target'] = chunks + 1
+            out = model.generate(**inputs, past_key_values=cache, max_new_tokens=max_new_tokens,
+                                 **decoding_kwargs, **extra)
+            del cache
+    finally:
+        if handle is not None:
+            handle.remove()
+    # The tokens generate() prefilled itself: the tail after chunking, else the whole prompt.
+    tail = GENERATE_TAIL_TOKENS if chunked else prompt_tokens
+    return out, dict(prompt_tokens=prompt_tokens, chunks=chunks,
+                     chunked_tokens=prompt_tokens - tail, tail_tokens=tail,
+                     prefill_seconds=None if seen['at'] is None else round(seen['at'] - started, 6))
+
+
+def load_attention(role, spec=None):
+    """The attn_implementation a frozen role is loaded with: the producer's sealed setting
+    (producer_attention); the Auditor896 classifier eager, read from its runtime contract,
+    which must say eager (D-058 condition iii)."""
+    if role == 'auditor':
+        spec = spec or specification('auditor')
+        value = spec['runtime']['attn_implementation']
+        require(value == EAGER, 'The Auditor896 classifier runs eager, as its runtime contract says')
+        return value
+    require(role == 'producer', 'Unknown frozen role')
+    return producer_attention()['attention_implementation']
+
+
+def attention_of(model):
+    """The attention setting a loaded model carries (its config's _attn_implementation), or
+    None when it carries none (a stand-in model)."""
+    value = getattr(getattr(model, 'config', None), '_attn_implementation', None)
+    return value if isinstance(value, str) else None
+
+
+def enabled_sdpa_backends(torch):
+    """The sdpa backends torch currently allows, by SDPBackend name, joined with `+`."""
+    switches = torch.backends.cuda
+    return '+'.join(name for name, switch in sorted(SDPA_SWITCHES.items()) if getattr(switches, switch)())
+
+
+@contextlib.contextmanager
+def pinned_attention(model, decision=None):
+    """One local generate call's attention (D-058 conditions ii and iii). A model whose
+    attention is sdpa on a CUDA device runs inside
+    torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION]): only the memory-efficient
+    kernel, so a refused kernel raises (AttentionKernelRefused below) instead of falling back
+    to the quadratic math kernel. An eager model, or one on the CPU (which has no
+    memory-efficient kernel), runs unpinned and says so. Yields the record written into the
+    call's reply record: the attention, the sdpa backends enabled inside the block, the
+    decision that set it and whether the backend was pinned. torch is imported only to pin."""
+    implementation = attention_of(model)
+    device = str(getattr(model, 'device', '') or '')
+    pinned = implementation == SDPA and device.startswith('cuda')
+    record = dict(attention_implementation=implementation, sdpa_backend=None,
+                  attention_decision=decision, pinned=pinned)
+    if not pinned:
+        yield record
+        return
+    torch = importlib.import_module('torch')
+    attention = importlib.import_module('torch.nn.attention')
+    with attention.sdpa_kernel([getattr(attention.SDPBackend, SDPA_BACKEND)]):
+        record['sdpa_backend'] = enabled_sdpa_backends(torch)
+        yield record
+
+
+class GenerationFailure(RuntimeError):
+    """A local generate call that failed for want of memory or of its pinned kernel (D-058
+    condition ii): one recorded failure, named by `kind`, never retried (P13)."""
+    kind = 'generation_failure'
+
+    def __init__(self, cause):
+        super().__init__('%s: %s' % (self.kind, cause))
+
+
+class GenerationOutOfMemory(GenerationFailure):
+    kind = 'out_of_memory'
+
+
+class AttentionKernelRefused(GenerationFailure):
+    kind = 'attention_kernel_refused'
+
+
+def generation_failure_kind(exc):
+    """'out_of_memory', 'attention_kernel_refused', or None for any other failure.
+    torch.cuda.OutOfMemoryError is read by its class name, so no model library is imported."""
+    if isinstance(exc, GenerationFailure):
+        return exc.kind
+    if any(cls.__name__ == 'OutOfMemoryError' for cls in type(exc).__mro__):
+        return GenerationOutOfMemory.kind
+    if isinstance(exc, RuntimeError):
+        text = str(exc)
+        if 'out of memory' in text.lower():
+            return GenerationOutOfMemory.kind
+        if 'No available kernel' in text or 'No viable backend for scaled_dot_product_attention' in text:
+            return AttentionKernelRefused.kind
+    return None
+
+
+def named_generation_failure(exc):
+    """The named failure to raise for `exc`, or None when it is an ordinary failure."""
+    kind = generation_failure_kind(exc)
+    if kind is None:
+        return None
+    if isinstance(exc, GenerationFailure):
+        return exc
+    return (GenerationOutOfMemory if kind == GenerationOutOfMemory.kind else AttentionKernelRefused)(
+        type(exc).__name__)
+
+
+def context_record(model, prompt_tokens, max_new_tokens):
+    """Whether one local call fits its model's context (D-058 condition v): the prompt's
+    tokens plus the call's output allowance against max_position_embeddings, the test B1
+    applies to every item (section 5.3). Counts only. `over_context` is None when the model
+    states no context (a stand-in model)."""
+    limit = getattr(getattr(model, 'config', None), 'max_position_embeddings', None)
+    limit = limit if type(limit) is int else None
+    return dict(prompt_tokens=int(prompt_tokens), max_new_tokens=int(max_new_tokens), model_context=limit,
+                over_context=None if limit is None else int(prompt_tokens) + int(max_new_tokens) > limit)
+
+
 def verify_runtime():
     contract = specification('auditor')['runtime']
     require(sys.platform == 'linux' and platform.machine() == 'x86_64' and
@@ -104,6 +390,12 @@ def base_path(role, spec):
 
 def load(role, device):
     spec, paths = verify(role)
+    # D-058, D-060: the producer's attention is its sealed setting (eager unless a recorded
+    # decision asks for sdpa); the classifier stays eager, as its runtime contract says. The
+    # producer's prefill setting (D-061) is read here too, so an unadmitted one refuses before
+    # any weight is read.
+    attention = load_attention(role, spec)
+    prefill = producer_prefill() if role == 'producer' else None
     torch = verify_runtime()
     require(device.startswith('cuda:'), 'Frozen inference requires CUDA')
     from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -112,9 +404,10 @@ def load(role, device):
     tokenizer = AutoTokenizer.from_pretrained(str(path), local_files_only=True, trust_remote_code=False)
     model = AutoModelForCausalLM.from_pretrained(str(path), local_files_only=True,
         trust_remote_code=False, device_map={'': int(device.split(':')[1])},
-        torch_dtype=torch.bfloat16, attn_implementation='eager')
+        torch_dtype=torch.bfloat16, attn_implementation=attention)
     expected = 'qwen2' if role == 'producer' else 'llama'
     require(model.config.model_type == expected and model.is_loaded_in_4bit, 'Frozen architecture mismatch')
+    require(attention_of(model) == attention, 'Frozen attention mismatch: ' + role)
     quant = model.config.quantization_config
     quant = quant.to_dict() if hasattr(quant, 'to_dict') else quant
     require(quant['bnb_4bit_quant_type'] == 'nf4' and quant['bnb_4bit_compute_dtype'] == 'bfloat16', 'Frozen quantization mismatch')
@@ -127,6 +420,9 @@ def load(role, device):
     model.gradient_checkpointing_disable()
     model.config.use_cache = role == 'producer'
     model._shimmer_identity = identity(role, spec)
+    if role == 'producer':
+        model._shimmer_attention = producer_attention()
+        model._shimmer_prefill = prefill
     if role == 'auditor':
         return tokenizer, Classifier(torch, model, paths, spec)
     return tokenizer, model
@@ -272,6 +568,11 @@ def admit_ordinary():
             raise RuntimeError('Auditor pairing contract not admitted')
         verify('producer')
         verify('auditor')
+        # D-058, D-061: an unadmitted attention or prefill setting refuses the run here,
+        # before any load.
+        producer_attention()
+        producer_prefill()
+        load_attention('auditor')
         # Every local generate site decodes under the frozen evaluation policy;
         # a drifted protocol or an unsound declaration refuses the run here,
         # before verify_runtime turns strict determinism on and before any load.

@@ -24856,6 +24856,33 @@ def check_282_baseline_arms_hold_their_contracts():
     return check()
 
 
+def check_288_b3_local_attention_is_pinned_and_recorded():
+    """Loop stage S5, D-058, D-060 and D-061: B3 ran out of GPU memory on a ContraDoc document
+    (INC-015). L2's evidence kept the producer eager (D-060), so E replaces the kernel change:
+    the producer loads with a sealed attention setting (eager by default, sdpa only with a
+    recorded decision) and a sealed prefill setting (chunked at 512 tokens under D-061, one-shot
+    or another size only with a recorded decision); every producer call is prefilled in chunks
+    through the one shared generate helper, leaving 2 tokens to generate(); every _load_qwen
+    call runs pinned to the memory-efficient sdpa backend on CUDA; each records its kernel and
+    prefill in its reply record; the Auditor896 classifier stays eager as its runtime contract
+    says; out of memory or a refused kernel is one named failure never retried; a prompt over
+    the model's context is refused and recorded, never truncated. Mocked models and one tiny
+    CPU model built in the check (three chunks and the tail reply byte for byte as one-shot)."""
+    from local_attention_checks import check
+    return check()
+
+
+def check_289_l2_diagnosis_fixes_hold():
+    """Loop stage S5, D-061 (a), (b) and (c), from the L2 diagnosis: a VERIFIER reply that is not
+    a JSON object is a recorded contract failure in auditor_pairs, never a crash (L2 entry 06); the
+    runner reports a run that reached its end with exit 0 but semantically incomplete as
+    `semantic_incomplete`, not `pipeline_not_completed`; a failed producer partition under
+    deterministic decoding is not retried (it can only repeat itself, P13) and is recorded
+    `retry_skipped_deterministic` on the observation and the reply outcome. Fixtures only."""
+    from l2_diagnosis_checks import check
+    return check()
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25276,6 +25303,10 @@ CHECKS = [
      check_286_negotiation_dev_case_is_a_valid_live_case),
     ("287 built benchmark bundles stage as the sealer's workload with no key file",
      check_287_built_bundles_stage_as_the_sealers_workload),
+    ("288 B3's producer runs eager with sealed chunked prefill (E), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061)",
+     check_288_b3_local_attention_is_pinned_and_recorded),
+    ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
+     check_289_l2_diagnosis_fixes_hold),
 ]
 
 
