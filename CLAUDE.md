@@ -449,6 +449,19 @@ processing swarm governed by an append-only constitution.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
   `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+- UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
+  comparison), the model's answer is kept as a model-written Finding record, never discarded:
+  stamped by Python with the judged-absence stamping and the PLAN's rule
+  (`paired_review.stamp_from_plan`; a rule id the reply names is replaced), screened by the shared
+  refusals (`paired_review.judged_item_refusal`: quote not in the unit and the three absence-claim
+  refusals; listed in the pairing map under `uncomputable_refused`), kept only from a reply that is
+  ok and did not refuse (why it gave none in `uncomputable_judged`), and posted once as Python's
+  stamped copy (`stamped_by: python`, `judged_path: uncomputable`) under the model's backend and
+  model, so written by `model`; the call's own post still withholds its items. Outcome
+  `judged_uncomputable` (`judged_listed`, `judged_refused`); `advisory_not_kept` names runs before
+  D-068. Never promoted (check 269), marked wherever model findings are shown. Check 290. The
+  benchmark adapters label a semantically incomplete run from its records (D-066), report
+  completeness per document and arm, and add sensitivity S-6.
 - WRITTEN-BY-A (loop S2): who wrote a finding is read off the bus post it travelled in
   (`finding_record.written_by`): `python` only for `backend` `paired`/`computed` with a model
   id starting `python`, `model` for everything else, including an item no envelope claims.

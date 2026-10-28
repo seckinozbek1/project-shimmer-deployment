@@ -401,3 +401,10 @@ open-item sweep.
 - **Evidence.** `python_only.py` docstring (around line 28) and its status record `not_reproduced.prior_comparison: true`.
 - **Why it was left.** The comparison is the pipeline's, not a baseline arm's; adding it to B2 is outside S5's items (P16, P9 reason c).
 - **What would settle it.** A decision that B2 must cover change records; then B2 calls the pipeline's own prior-comparison functions with a check.
+
+## 29. Five gaps left by D-068 (found at loop S5)
+
+- **What it is.** (1) `paired_review.judging_call_counts` still counts uncomputable calls among calls that could carry a note on a Python finding; they cannot. (2) The judged-absence stamping keeps a rule id the model wrote, while the D-068 path replaces it with the plan's. (3) D-068 keeps only items with the Finding record's shape; an item carrying only an UNCERTAIN marker or no declared relation is dropped and counted (`not_finding_shaped`). (4) A D-068 call's reply-record outcome stays `advisory_not_record` and `mark_not_promoted` does not mark it. (5) The reading that `item_calls_failed` (D-066) replaces only silence is for the final preregistration checker to attack; item 12.11 decides whether it is applied.
+- **Evidence.** lane/s05-defect report (commits d18cf93, 0e77433, 7e9f16f); `scripts/paired_review.py`; `benchmark/adapters/common/mapping.py`.
+- **Why it was left.** Each is outside D-068's declared scope or needs the verification run's counts first (P16, P9 reason e until measured).
+- **What would settle it.** (1) count them apart in the summaries and the tr catalog, with check 278 updated; (2) apply the plan's rule to judged absences, with a pinned amendment; (3) the verification run's `not_finding_shaped` count, then a decision; (4) carry the call id on the stamped result; (5) the final preregistration attack.
