@@ -194,6 +194,15 @@ processing swarm governed by an append-only constitution.
   own `items.json` outside it. It never copies `answer_key.json` or build records, and
   refuses the whole staging when a file under `context/` or `conventions/` is named like a
   key. Check 287.
+- B1-ATTENTION-A (loop S5, D-056): B1 (`benchmark/baselines/bare_model.py`), both checkpoints,
+  every item, generates under sdpa inside `sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION])`, so a
+  refused kernel raises instead of falling back to the quadratic one. The resident model is
+  loaded eager by `scripts/final_models.py`, switched for each B1 call and restored in a
+  finally, so B3 stays eager in the same process. The attention is checked by `verify_identity`
+  and recorded in every reply record (`reply_records.write` `attention`) and `b1_summary.json`.
+  Out of memory or a refused kernel stops B1 as a setup failure (`b1_setup_failure.json`), never
+  an abstention. Chunked prefill is off unless `--prefill-chunk` comes with
+  `--prefill-decision D-NNN`; both are sealed (`B1_SEALED_ARGS`).
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch

@@ -24862,7 +24862,7 @@ def check_283_benchmark_adapters_follow_the_preregistration():
     budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
     no source id in a bundle; bundles read back as input-format-v1-draft and as
     pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
-    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 refused until section 12 item 9); the
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 read from the run's bus, adopted in D-056); the
     metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
     from adapter_checks import check
     return check()
