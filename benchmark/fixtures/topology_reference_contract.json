@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "ef96ca5366e63bd40daa7a60e0777dfd6adcd65b562ed931ba274a229ccffddd",
-    "_paired_convention_review": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
+    "_paired_convention_review": "ea86ffc165c153260e8ae50a266acba8c943fb8110d03ff3a4941a0076f76fe3",
     "_stamped_judged_items": "d1bbf7395103fd3cb2dd24ba3e5d046c3ab59a8af7995c53d4c07fcc4741e28f",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -348,6 +348,17 @@
         "_prior_refusals_for": {
           "from": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
           "to": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417"
+        }
+      }
+    },
+    {
+      "date": "2026-10-29",
+      "reason": "Operator-directed, 2026-10-29, loop stage S05: D-068, a model's answer on a paired plan Python could compute nothing for is kept as a stamped, model-written, never-promoted Finding record instead of being discarded; the judged-answer refusals are read through one helper",
+      "document": "docs/loop/stages/S05_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
+          "to": "ea86ffc165c153260e8ae50a266acba8c943fb8110d03ff3a4941a0076f76fe3"
         }
       }
     }

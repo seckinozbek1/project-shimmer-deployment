@@ -24884,6 +24884,19 @@ def check_289_l2_diagnosis_fixes_hold():
     return check()
 
 
+def check_290_uncomputable_judgment_is_kept_as_a_model_record():
+    """Loop stage S5, D-068: where Python's checks produce no comparison for a unit and a
+    rule, the model's answer used to be discarded (judging-call outcome advisory_not_kept),
+    so a rule only reading can decide had no answer in the run. It is kept now as a
+    model-written Finding record: unit and rule stamped from the plan, never the reply; the
+    judged-absence refusals and the quote check applied, refusals listed; a failed or refused
+    reply keeps nothing and says why; posted once with the model's backend, marked in the
+    deliverables, never promoted. Real phase 5.5 and phase 6 on a mocked run, no model;
+    neutralise, fail, restore, pass for each property."""
+    from uncomputable_judgment_checks import check
+    return check()
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25308,6 +25321,8 @@ CHECKS = [
      check_288_b3_local_attention_is_pinned_and_recorded),
     ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
      check_289_l2_diagnosis_fixes_hold),
+    ("290 a model's answer where Python could compute nothing is kept as a stamped, model-written, never-promoted record (D-068)",
+     check_290_uncomputable_judgment_is_kept_as_a_model_record),
 ]
 
 

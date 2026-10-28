@@ -1836,7 +1836,14 @@ class AgentWrapper:
         With this set the envelope is still posted, with its item_count,
         parse_trace and truncated intact, so nothing about the call is hidden:
         only the ITEMS are withheld from the bus, because a caller that mints
-        its own records is the author of the record."""
+        its own records is the author of the record.
+
+        D-068: on a plan where Python could compute nothing, the caller keeps the
+        reply's items as a MODEL's records, but only after stamping them itself
+        (unit and rule from its plan, never from the reply) and refusing any that
+        quote text the unit does not contain; it posts that stamped copy on its
+        own. This post still withholds the raw items, so no unstamped item reaches
+        the bus and a kept answer is counted once."""
         situation = {"agent": self.name, "action": "execute_task",
                      "tags": ["task_execution", self.spec.get("category", "")]}
         check = self.check_constitution(situation)
