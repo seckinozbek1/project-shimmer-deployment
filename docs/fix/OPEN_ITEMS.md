@@ -77,6 +77,8 @@ ignoring it or fixing something at random.
 and probably the shared condition. Failing that, an instrumented version of the check that
 records its inputs on every run, so the next failure arrives with its own evidence.
 
+**Second occurrence (loop S5, 2026-10-28).** The full gate at `loop/s05` `1c4daac` (worktree) failed check 256 with the same message; the check alone on the same tree passed. Reading the check (`scripts/startup_readiness_checks.py`, lines 85 to 157): `forbidden` grows whenever any thread calls `socket.create_connection` or `subprocess.Popen` inside the window, and the message names a model probe whatever the operation was. So the likely shared condition is a thread left running by an earlier check. The instrumented version (operation, thread and caller recorded) is the S6 sweep's.
+
 ---
 
 ## 4. The filesystem must be deleted by hand, and the procedure is recorded but untested (issue #4)
@@ -385,3 +387,17 @@ open-item sweep.
 - **Evidence.** `benchmark/generators/bundle.py`, `multi_round_key` and `_check_multi_round_key`; `benchmark/generators/family_terms.py`, `build` (the twin's values, the prior shared). The gate check `scripts/generator_checks.py` (`test_multi_round_keys_in_the_round_form`).
 - **Why it was left.** A twin clean in every round needs earlier versions of its own, which changes the ordinary twin's prior and its change records; no scorer reads a multi-round key yet (item 17), so nothing measures the difference today.
 - **What would settle it.** A family 4 multi-round twin with its own repaired earlier versions (a seventh bundle, or the twin's prior repaired with its plan recomputed), named in `multi_round.twin_of`, before any multi-round case is scored.
+
+## 27. The general cloud path's score command cannot find its key (found at loop S5)
+
+- **What it is.** `tools/prepare_cloud_run.py` (around line 437) writes `score.sh` with a relative `--corpus project/benchmark/corpora/clinical_reference`; `tools/score_corpus.py` joins that under its own corpora folder, so the command looks for `.../corpora/project/benchmark/corpora/...` and finds no key.
+- **Evidence.** The S5 cases lane (lane/s05-cases) found it while keeping `--corpus` unchanged; the join is `CORPORA / corpus` in `tools/score_corpus.py`.
+- **Why it was left.** It predates the loop, sits on the general cloud path the loop does not use for its runs, and `--corpus` was to stay unchanged (R21). P9 reason (c): outside S5's items.
+- **What would settle it.** Write `--key` (R21) into `score.sh` with the bundle's own key path, with a check that the generated command scores a fixture; S6 sweep.
+
+## 28. B2 does not run the comparison with an earlier version (found at loop S5)
+
+- **What it is.** `benchmark/baselines/python_only.py` reads a manifest's `prior` but does not run the earlier-version comparison, so B2 cannot measure the rename probes or any change record (S5 plan R4, R11).
+- **Evidence.** `python_only.py` docstring (around line 28) and its status record `not_reproduced.prior_comparison: true`.
+- **Why it was left.** The comparison is the pipeline's, not a baseline arm's; adding it to B2 is outside S5's items (P16, P9 reason c).
+- **What would settle it.** A decision that B2 must cover change records; then B2 calls the pipeline's own prior-comparison functions with a check.
