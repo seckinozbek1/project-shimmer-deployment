@@ -197,28 +197,36 @@ processing swarm governed by an append-only constitution.
   own `items.json` outside it. It never copies `answer_key.json` or build records, and
   refuses the whole staging when a file under `context/` or `conventions/` is named like a
   key. Check 287.
-- PREFILL-E (loop S5, D-056, D-058, D-060, D-061): the producer loads eager
-  (`SHIMMER_PRODUCER_ATTENTION`, sdpa only with a decision id) and every producer call and
-  every B1 call (`benchmark/baselines/bare_model.py`, both checkpoints, every item) prefills
-  through `final_models.generate_with_prefill` in chunks of `SHIMMER_PRODUCER_PREFILL_CHUNK`
-  (512 under D-061; one shot or another size only with `SHIMMER_PRODUCER_PREFILL_DECISION`),
-  leaving 2 tokens to generate(), so the producer and B1 share one kernel and memory grows with
-  chunk x prompt instead of prompt squared. The `_load_qwen` models run sdpa pinned to the
-  memory-efficient backend, one shot; the Auditor896 classifier stays eager (its runtime
-  contract says so). Every reply record carries `attention` (kernel, prefill setting, decision)
-  and `prefill` (chunks, tail, seconds). Out of memory or a refused kernel is written once and
-  raised as a named failure, never retried; a prompt whose tokens plus the output allowance
-  exceed the model's positions is refused before generating, recorded (`context`,
+- PREFILL-E (loop S5, D-056, D-058, D-060, D-061, D-063): with nothing set, the producer loads
+  sdpa (`SHIMMER_PRODUCER_ATTENTION`) and every producer call and every B1 call
+  (`benchmark/baselines/bare_model.py`, both checkpoints, every item) runs pinned per call to the
+  memory-efficient sdpa backend and prefilled in one shot through `final_models.generate_with_prefill`,
+  both recorded as decision D-063 (D-061's declared fallback: E missed its threshold; sdpa one shot
+  was byte-identical to one-shot eager on 12 of 12 replayed B3 prompts, E on 8 of 12). Eager
+  (one shot or chunked) and chunked prefill (`SHIMMER_PRODUCER_PREFILL_CHUNK`, E is
+  `E_CHUNK_TOKENS` 512, 2 tokens left to generate()) are measurement settings, each accepted only
+  with its decision id (`SHIMMER_PRODUCER_ATTENTION_DECISION`, `SHIMMER_PRODUCER_PREFILL_DECISION`);
+  a decision named with the default is accepted only when it is D-063. One rule each:
+  `final_models.attention_setting` and `prefill_setting`. The producer and B1 share one kernel.
+  The `_load_qwen` models run sdpa pinned the same way, one shot; the Auditor896 classifier stays
+  eager (its runtime contract says so). Every reply record carries `attention` (kernel, prefill
+  setting, decisions) and `prefill` (chunks, tail, seconds). Out of memory or a refused kernel is
+  written once and raised as a named failure, never retried; a prompt whose tokens plus the output
+  allowance exceed the model's positions is refused before generating, recorded (`context`,
   `prompt_over_context`, a RUN_REPORT row) and is a declared exclusion of B3. B1 measurement
-  passes may run sdpa or one shot only with a decision id (`attention_decision`); each pass
-  records its peak GPU memory, and `bare_model.py compare --a --b --out` counts byte-identical
-  replies and agreeing labels. `benchmark/baselines/replay_prompts.py` replays B3 producer
-  prompts (payloads only) as an exposed-only replay pass for E's evidence. The sealer evaluates
-  the bound rules, and the runner's B1 rule is held equal to bare_model's. Also from D-061: a
-  VERIFIER reply that is not an object is a recorded contract failure; `semantic_incomplete`
-  is its own assessment reason; no partition retry under deterministic decoding
-  (`retry_skipped_deterministic`). The producer was trained and evaluated eager one shot, so
-  its 102-of-102 DEV figure is a one-shot eager figure. Checks 282, 288, 289.
+  passes (`--attention eager`, `--prefill-chunk N`) need a decision id; each pass records its peak
+  GPU memory, and `bare_model.py compare --a --b --out` counts byte-identical replies and agreeing
+  labels. `benchmark/baselines/replay_prompts.py` replays B3 producer prompts (payloads only) as an
+  exposed-only replay pass; its `e`, `one_shot` and `e_repeat` paths are measurement paths, `sdpa`
+  is the run proper's. The sealer evaluates the bound rules, and the runner's B1 rule is held equal
+  to bare_model's. The analyser states "producer and B1 sdpa, prefilled in one shot,
+  memory-efficient backend pinned (D-063); differs from v5 to v12, which ran the producer eager".
+  Also from D-061: a VERIFIER reply that is not an object is a recorded contract failure;
+  `semantic_incomplete` is its own assessment reason; no partition retry under deterministic
+  decoding (`retry_skipped_deterministic`). The producer was trained and evaluated eager one shot,
+  so its 102-of-102 DEV figure is a one-shot eager figure; the difference is a preregistration
+  section 9 limitation. Loop S5 changed `tools/ordinary_final_run.py` several times (D-061, D-063),
+  so bundles sealed before S5's merge refuse with `Controller source changed`. Checks 282, 288, 289.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
