@@ -37,11 +37,18 @@ class Checks(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='shimmer-cloud-check-')
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        # The loop's real ledgers are never read here: the reaper's paths point at fixtures.
+        import instance_reaper
+        for name in ('PRIVATE_LEDGER', 'R_LEDGER'):
+            patcher = patch.object(instance_reaper, name, self.root / ('absent_' + name.lower() + '.jsonl'))
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def sealed(self):
         root = self.root / 'bundle'
         root.mkdir()
-        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99})
+        write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99,
+                                              'soft_budget_usd': 5, 'absolute_budget_usd': 10})
         write_json(root / 'operator_readiness.json', {'ssh_public_key_sha256': 'fixture'})
         write_json(root / 'runtime.json', preparation.RUNTIME)
         (root / 'runtime_contract.py').write_bytes((ROOT / 'tools/runtime_contract.py').read_bytes())
@@ -246,14 +253,38 @@ class Checks(unittest.TestCase):
             verify_bundle(root)
 
     def test_budget_from_billing_start(self):
-        value = budget_deadlines(1.99, 1000)
+        value = budget_deadlines(1.99, 1000, soft_usd=5, hard_usd=10)
         self.assertAlmostEqual(value['soft_epoch'] - 1000, 5 / 1.99 * 3600)
         self.assertAlmostEqual(value['ceiling_epoch'] - value['terminate_epoch'], 120)
 
     def test_invalid_budget_rejected(self):
         for rate in [0, -1, float('nan'), float('inf'), True]:
             with self.assertRaises(ValueError):
-                budget_deadlines(rate, 1000)
+                budget_deadlines(rate, 1000, soft_usd=5, hard_usd=10)
+
+    def test_budget_caps_are_the_callers(self):
+        """R3: the caps are parameters; each caller passes its own sealed values."""
+        value = budget_deadlines(1.99, 1000, soft_usd=2, hard_usd=3)
+        self.assertAlmostEqual(value['soft_epoch'] - 1000, 2 / 1.99 * 3600)
+        self.assertAlmostEqual(value['ceiling_epoch'] - 1000, 3 / 1.99 * 3600)
+        for soft, hard in [(3, 2), (0, 3), (2, float('inf')), (True, 3)]:
+            with self.assertRaises(ValueError):
+                budget_deadlines(1.99, 1000, soft_usd=soft, hard_usd=hard)
+        with self.assertRaises(TypeError):
+            budget_deadlines(1.99, 1000)  # no cap is a code default
+        plan_value = plan(self.sealed(), 'ubuntu@203.0.113.1', 1000)
+        self.assertAlmostEqual(plan_value['budget']['ceiling_epoch'] - 1000, 10 / 1.99 * 3600)
+        self.assertEqual((plan_value['soft_usd'], plan_value['hard_usd']), (5, 10))
+
+    def test_multi_round_declaration_on_the_dag_path_is_refused_by_the_topology_rule(self):
+        """S2b item 1 on the older path: multi-round is checked against the declaration; this
+        path seals dependency_dag, so a declaration can never be valid here (D-011 choice 3)."""
+        files = {'scripts/' + n + '.py': (ROOT / 'scripts' / (n + '.py')).read_bytes()
+                 for n in ('pipeline', 'agent_activation', 'execution_scheduler', 'execution_topology')}
+        with self.assertRaisesRegex(ValueError, 'reference_serial'):
+            behavioral_proof(files, self.root / 'declared', multi_round_declared=True)
+        proof = behavioral_proof(files, self.root / 'undeclared')
+        self.assertEqual((proof['multi_round_declared'], proof['multi_round_inactive'], len(proof['guards'])), (False, True, 3))
 
     def test_watchdog_ceiling_and_verified_termination(self):
         provider = SimpleNamespace(terminated=False, calls=0)
@@ -262,7 +293,7 @@ class Checks(unittest.TestCase):
         def terminate(instance_id):
             provider.calls += 1; provider.terminated = True
         provider.instance, provider.terminate = instance, terminate
-        watch(provider, 'a'*32, 1.99, 1000, self.root, sleep=lambda seconds: None, now=lambda: 100000)
+        watch(provider, 'a'*32, 1.99, 1000, self.root, soft_usd=5, hard_usd=10, sleep=lambda seconds: None, now=lambda: 100000)
         self.assertEqual(provider.calls, 1)
         self.assertTrue((self.root / 'TERMINATION_VERIFIED.json').is_file())
 
@@ -275,7 +306,7 @@ class Checks(unittest.TestCase):
                 if self.calls == 1:
                     raise RuntimeError('synthetic confidential response')
                 return {'instance_id': instance_id, 'status': 'terminated'}
-        watch(Provider(), 'a'*32, 1.99, 1000, self.root, sleep=lambda seconds: None, now=lambda: 1001)
+        watch(Provider(), 'a'*32, 1.99, 1000, self.root, soft_usd=5, hard_usd=10, sleep=lambda seconds: None, now=lambda: 1001)
         self.assertNotIn('synthetic confidential response', (self.root / 'TERMINATION_RETRY.json').read_text())
 
     def test_transport_mock_ssh(self):
@@ -317,10 +348,13 @@ class Checks(unittest.TestCase):
         self.assertFalse(json.loads(output.getvalue())['network_contacted'])
 
     def test_unready_deploy_never_calls_ssh(self):
+        # The instance's name is resolved first (round 2 item 9), then the unready bundle refuses.
         args = SimpleNamespace(bundle=self.root, host='ubuntu@203.0.113.1',
-                               running_since='2026-09-14T00:00:00Z', execute=True)
+                               running_since='2026-09-14T00:00:00Z', execute=True, instance_id='a' * 32)
+        provider = SimpleNamespace(instance=lambda identity: {'instance_id': identity, 'name': 'operator-manual'})
         with self.assertRaises(FileNotFoundError):
-            execute(args, runner=lambda *a, **k: self.fail('transport for unready bundle'))
+            execute(args, runner=lambda *a, **k: self.fail('transport for unready bundle'), provider=provider)
+        self.assertEqual(args.resolved_name, 'operator-manual')
 
     def test_failed_transport_propagates(self):
         import subprocess
@@ -338,6 +372,7 @@ class Checks(unittest.TestCase):
         local = args.collection / 'fixture'
         calls = []
         def popen(command, **kwargs):
+            self.watch_command = list(command)
             write_json(local / 'WATCHDOG_ARMED.json', {'fixture': True})
             return SimpleNamespace(poll=lambda: None)
         def runner(command, **kwargs):
@@ -370,6 +405,73 @@ class Checks(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(status['benchmark_valid'])
         self.assertEqual(sum('cloud_run_remote.py' in command[-1] for command in calls), 1)
+        # R3: the watchdog is armed with the experiment's own sealed caps, never a default.
+        command = self.watch_command
+        self.assertEqual((command[command.index('--soft-usd') + 1], command[command.index('--hard-usd') + 1]), ('5', '10'))
+
+    def test_general_deploy_never_terminates_a_loop_or_unidentified_instance(self):
+        """A7: the name is resolved first; a loop instance is refused and never terminated, an
+        instance whose name cannot be read is never terminated, and a known non-loop instance
+        still is when a later step fails."""
+        import deploy_cloud_run
+        import cloud_run_watchdog
+        bundle = self.sealed()
+        terminated = []
+        def args(**changes):
+            value = SimpleNamespace(bundle=bundle, host='ubuntu@203.0.113.1', execute=True, running_since='2000-01-01T00:00:00Z',
+                                    hourly_rate=1.99, instance_id='a' * 32, collection=self.root / 'collected', credential_file=None,
+                                    identity_file=self.root / 'fixture_identity', interactive_ssh=False, upload_timeout_seconds=10)
+            value.__dict__.update(changes)
+            return value
+        def run(name=None, fail=False, plan_fails=False, **changes):
+            def instance(identity):
+                if fail:
+                    raise RuntimeError('transport')
+                return {'instance_id': identity, 'name': name, 'status': 'active'}
+            provider = SimpleNamespace(instance=instance, terminate=lambda i: terminated.append(i))
+            parsed = args(**changes)
+            real_plan = deploy_cloud_run.plan
+            def planned(*a, **k):
+                if plan_fails:
+                    raise RuntimeError('plan fixture failure')
+                return real_plan(*a, **k)
+            with patch.object(cloud_run_watchdog, 'LambdaTermination', lambda *a, **k: provider), \
+                    patch.object(cloud_run_watchdog, 'operator_preflight', return_value={'ssh_public_key_sha256': 'fixture'}), \
+                    patch.object(cloud_run_watchdog, 'terminate_now', lambda p, i, *a, **k: terminated.append(i)), \
+                    patch.object(deploy_cloud_run, 'plan', planned), \
+                    patch.object(deploy_cloud_run.time, 'sleep', lambda s: None), \
+                    patch.object(deploy_cloud_run.argparse.ArgumentParser, 'parse_args', lambda self, argv=None: parsed), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                code = deploy_cloud_run.main([])
+            return code, json.loads(out.getvalue().strip().splitlines()[-1])
+        code, report = run(name='shimmer-loop-running')
+        self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
+        code, report = run(fail=True)
+        self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
+        code, report = run(name='operator-manual')
+        self.assertEqual((code, terminated), (2, ['a' * 32]))  # the stale timestamp fails after the name is known
+        # Round 2 item 9: the name is resolved before the timestamp parse and plan(), so a
+        # failure in either still ends the known non-loop instance, and never a loop one.
+        for case in (dict(plan_fails=True), dict(running_since='not a timestamp')):
+            with self.subTest(case=case):
+                terminated.clear()
+                code, report = run(name='operator-manual', **case)
+                self.assertEqual((code, terminated, report.get('termination_verified')), (2, ['a' * 32], True))
+                terminated.clear()
+                code, report = run(name='shimmer-loop-running', **case)
+                self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
+
+    def test_general_path_refuses_while_the_loop_budget_is_open(self):
+        """A11: a loop ledger opened and not closed stops the general path from launching."""
+        import instance_reaper
+        import loop_budget_guard
+        ledger = self.root / 'loop_ledger.jsonl'
+        ledger.write_text(json.dumps({'event': 'budget_open'}) + chr(10), encoding='utf-8')
+        with patch.object(instance_reaper, 'PRIVATE_LEDGER', ledger):
+            with self.assertRaisesRegex(loop_budget_guard.GuardRefusal, 'loop budget is open'):
+                loop_budget_guard.refuse_while_loop_open()
+            ledger.write_text(ledger.read_text() + json.dumps({'event': 'budget_close'}) + chr(10), encoding='utf-8')
+            loop_budget_guard.refuse_while_loop_open()
 
     def test_incompatible_mock_remote_runtime_never_transfers_source(self):
         code, calls, status = self.mocked_deploy(fail_runtime=True)
@@ -489,7 +591,7 @@ class Checks(unittest.TestCase):
                  'config/local_models.json': (ROOT / 'config/local_models.json').read_bytes(),
                  'benchmark/corpora/clinical_reference/context/result_sheet.md': b'synthetic\n'}
         args = SimpleNamespace(experiment_id='fixture', expected_commit=preparation.BASELINE,
-                               hourly_rate=1.99, output=output, wheelhouse=wh, model_cache=self.root)
+                               hourly_rate=1.99, soft_usd=5, hard_usd=10, output=output, wheelhouse=wh, model_cache=self.root)
         mock_models = [{'model': n, 'revision': r, 'files': {}} for n, r in json.loads((preparation.ASSETS / 'models.json').read_text()).items()]
         test_result = SimpleNamespace(returncode=0, stdout=json.dumps({'passed': True, 'tests_run': 1}).encode())
         with patch.object(preparation, 'resolve', return_value={'executable': sys.executable, 'profile': 'experiment'}), \

@@ -40,7 +40,7 @@ def _apply_para_direction(paragraph_or_pe, text: str) -> None:
     """Set right-to-left base direction on a paragraph when its text is RTL.
     Adds <w:bidi/> and right justification to the paragraph properties. LTR text
     is left untouched (Word default). Direction is decided from the content's own
-    script — no hardcoded language assumption."""
+    script, with no hardcoded language assumption."""
     if language_detect.text_direction(text) != "rtl":
         return
     pe = getattr(paragraph_or_pe, "_p", paragraph_or_pe)
@@ -77,6 +77,27 @@ def _apply_run_direction(r, text: str) -> None:
 
 _AUTHOR = "Shimmer / AMENDMENT_DRAFTER"
 _INITIALS = "AD"
+# Reader check round 3 (item 1): a comment's author says what wrote the amendment
+# it carries, read off the master (derived_from), never a fixed agent name. An
+# amendment built from Python's own finding is Python's, whatever agent posted the
+# finding and whether or not a model's note is quoted in it (the comment labels the
+# note as the model's). Only an amendment a model wrote names the model agent.
+COMPUTED_AUTHOR = "Shimmer / computed by Python"
+COMPUTED_INITIALS = "PY"
+
+
+def comment_author(amendment) -> tuple:
+    """(author, initials) for one amendment's comment, from its own provenance."""
+    amendment = amendment if isinstance(amendment, dict) else {}
+    if amendment.get("derived_from") == "computed_finding":
+        return COMPUTED_AUTHOR, COMPUTED_INITIALS
+    if amendment.get("derived_from") == "model_finding" and amendment.get("agent"):
+        # Built from a model's own record: the agent whose record it is.
+        return "Shimmer / " + str(amendment["agent"]), _INITIALS
+    # Otherwise the amendment came from the drafter's own payload on the bus.
+    return _AUTHOR, _INITIALS
+
+
 _COMMENTS_PART_NAME = "/word/comments.xml"
 _COMMENTS_CONTENT_TYPE = (
     "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"
@@ -113,7 +134,9 @@ class AmendmentDocxBuilder:
     """Builds the tracked-changes + comments docx for one operational document."""
 
     def __init__(self, *, title: str, body_text: str, amendments: list[dict],
-                 author: str = _AUTHOR, initials: str = _INITIALS):
+                 author: str | None = None, initials: str | None = None):
+        # author None (every caller): each comment's author comes from its own
+        # amendment (comment_author); a caller naming one keeps it for all.
         self.title = title
         self.body_text = body_text
         self.amendments = list(amendments or [])
@@ -199,13 +222,18 @@ class AmendmentDocxBuilder:
             return
         self._comments_part._blob = _serialize(self._comments_root)
 
-    def _new_comment(self, text: str) -> int:
+    def _author_for(self, amendment) -> tuple:
+        author, initials = comment_author(amendment)
+        return self.author or localization.text(author), self.initials or initials
+
+    def _new_comment(self, text: str, amendment=None) -> int:
         cid = self._next_id
         self._next_id += 1
+        author, initials = self._author_for(amendment)
         c = OxmlElement("w:comment")
         c.set(qn("w:id"), str(cid))
-        c.set(qn("w:author"), self.author)
-        c.set(qn("w:initials"), self.initials)
+        c.set(qn("w:author"), author)
+        c.set(qn("w:initials"), initials)
         c.set(qn("w:date"), _now_iso())
         for line in text.splitlines():
             p = OxmlElement("w:p")
@@ -235,10 +263,10 @@ class AmendmentDocxBuilder:
         _apply_run_direction(r, text)
         return r
 
-    def _make_ins_run(self, text: str) -> "OxmlElement":
+    def _make_ins_run(self, text: str, amendment=None) -> "OxmlElement":
         ins = OxmlElement("w:ins")
         ins.set(qn("w:id"), str(self._next_id))
-        ins.set(qn("w:author"), self.author)
+        ins.set(qn("w:author"), self._author_for(amendment)[0])
         ins.set(qn("w:date"), _now_iso())
         self._next_id += 1
         r = OxmlElement("w:r")
@@ -250,10 +278,10 @@ class AmendmentDocxBuilder:
         ins.append(r)
         return ins
 
-    def _make_del_run(self, text: str) -> "OxmlElement":
+    def _make_del_run(self, text: str, amendment=None) -> "OxmlElement":
         d = OxmlElement("w:del")
         d.set(qn("w:id"), str(self._next_id))
-        d.set(qn("w:author"), self.author)
+        d.set(qn("w:author"), self._author_for(amendment)[0])
         d.set(qn("w:date"), _now_iso())
         self._next_id += 1
         r = OxmlElement("w:r")
@@ -290,7 +318,7 @@ class AmendmentDocxBuilder:
         proposed = amendment.get("proposed_text")
         action = amendment.get("action", "flag")
         comment_text = self._format_comment_body(amendment)
-        cid = self._new_comment(comment_text)
+        cid = self._new_comment(comment_text, amendment)
 
         p = self.doc.add_paragraph()
         pe = p._p  # the w:p element
@@ -311,11 +339,11 @@ class AmendmentDocxBuilder:
         pe.append(self._make_comment_range_start(cid))
 
         if action == "rephrase" and proposed:
-            pe.append(self._make_del_run(original))
-            pe.append(self._make_ins_run(proposed))
+            pe.append(self._make_del_run(original, amendment))
+            pe.append(self._make_ins_run(proposed, amendment))
         elif action == "reject":
-            pe.append(self._make_del_run(original))
-        else:  # flag | annotate — keep the text but anchor a comment + insertion of empty marker
+            pe.append(self._make_del_run(original, amendment))
+        else:  # flag | annotate: keep the text and anchor a comment on it
             pe.append(self._make_run(original))
 
         pe.append(self._make_comment_range_end(cid))
@@ -324,12 +352,38 @@ class AmendmentDocxBuilder:
         if after:
             pe.append(self._make_run(after))
 
+    def _paragraphs_with_amendment(self, paragraph_texts: list, amendment: dict) -> None:
+        """Reader check round 3 (item 4): an amendment whose passage spans several
+        body paragraphs (a unit's heading, its lines and its table) is anchored on
+        those paragraphs in the body, its comment range running from the first to
+        the last, instead of being repeated under a heading that says no anchor
+        was found."""
+        proposed = amendment.get("proposed_text")
+        action = amendment.get("action", "flag")
+        cid = self._new_comment(self._format_comment_body(amendment), amendment)
+        last = len(paragraph_texts) - 1
+        for n, text in enumerate(paragraph_texts):
+            p = self.doc.add_paragraph()
+            pe = p._p
+            _apply_para_direction(pe, text)
+            if n == 0:
+                pe.append(self._make_comment_range_start(cid))
+            if action in ("rephrase", "reject") and (proposed or action == "reject"):
+                pe.append(self._make_del_run(text, amendment))
+                if n == last and action == "rephrase":
+                    pe.append(self._make_ins_run(proposed, amendment))
+            else:
+                pe.append(self._make_run(text))
+            if n == last:
+                pe.append(self._make_comment_range_end(cid))
+                pe.append(self._make_comment_reference(cid))
+
     def _format_comment_body(self, amendment: dict) -> str:
         conv = amendment.get("convention_ref") or "CONV-???"
         loc = amendment.get("location") or "REF-????"
         action = amendment.get("action", "flag")
         severity = amendment.get("severity", "advisory")
-        finding_type = amendment.get("finding_type", "—")
+        finding_type = amendment.get("finding_type") or "unspecified"
         body = localization.message((amendment.get("comment") or "").strip())
         context_refs = amendment.get("context_refs") or []
         # Genesis Part XXV: uncertain margin comments are explicitly
@@ -359,21 +413,28 @@ class AmendmentDocxBuilder:
         paragraphs = _split_body(self.body_text)
         unattached = list(self.amendments)
         self._ensure_comments_part()
-        for para_text in paragraphs:
-            attached = None
+        i = 0
+        while i < len(paragraphs):
+            para_text = paragraphs[i]
+            attached, span = None, 1
             for a in unattached:
-                ot = (a.get("original_text") or "").strip()
-                if ot and ot in para_text:
+                span = anchor_span(paragraphs, i, a)
+                if span:
                     attached = a
                     break
             if attached is not None:
                 unattached.remove(attached)
-                self._paragraph_with_amendment(para_text, attached)
-            else:
-                p = self.doc.add_paragraph()
-                _apply_para_direction(p, para_text)
-                if para_text:
-                    p._p.append(self._make_run(para_text))
+                if span == 1:
+                    self._paragraph_with_amendment(para_text, attached)
+                else:
+                    self._paragraphs_with_amendment(paragraphs[i:i + span], attached)
+                i += span
+                continue
+            p = self.doc.add_paragraph()
+            _apply_para_direction(p, para_text)
+            if para_text:
+                p._p.append(self._make_run(para_text))
+            i += 1
         # Any amendments that didn't anchor in the body get appended as standalone paragraphs.
         if unattached:
             self._add_header(localization.text('Additional amendments (no anchor found in source body)'))
@@ -399,6 +460,20 @@ _PARA_SPLIT_RE = re.compile(r"\n\s*\n+")
 def _split_body(text: str) -> list[str]:
     paras = [p.strip() for p in _PARA_SPLIT_RE.split(text or "") if p.strip()]
     return paras or [""]
+
+
+def anchor_span(paragraphs, index, amendment) -> int:
+    """How many body paragraphs, from `index`, the amendment's passage covers: 1
+    when its passage sits inside that paragraph, N when it is exactly the next N
+    paragraphs in order (reader check round 3, item 4: a unit's heading, lines and
+    table are several paragraphs), 0 when it does not start there."""
+    ot = (amendment.get("original_text") or "").strip() if isinstance(amendment, dict) else ""
+    if not ot or index >= len(paragraphs):
+        return 0
+    if ot in paragraphs[index]:
+        return 1
+    parts = _split_body(ot)
+    return len(parts) if len(parts) > 1 and paragraphs[index:index + len(parts)] == parts else 0
 
 
 @localization.presentation

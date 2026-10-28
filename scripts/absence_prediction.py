@@ -106,14 +106,44 @@ def read_report(run_dir):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+# Reader check round 3 (item 8): each result of the quote check in one plain
+# sentence. The status codes stay exactly as recorded in the audit file; only the
+# words a reader sees change ("**PASS**" stays the word check 253 reads).
+STATUS_SENTENCES = {
+    "PASS": "Result: **PASS**. Every absence a model claimed quoted the unit's own words or was refused.",
+    "FAIL": "Result: **FAIL**. At least one absence a model claimed was kept without a quote from the unit.",
+    "not_exercised": "Result: **not exercised**. No model claimed a field absent, so there was no quote to check.",
+    "incomplete": "Result: **incomplete**. Not every question about an absent field was answered, so the check is not settled.",
+    "not_applicable": "Result: **not applicable**. This run did not use the paired review, where these questions are asked.",
+}
+COMPARISON_WORDS = {"matches": "so the counts match", "differs": "so the counts differ",
+                    "pending": "and the counts are not final yet"}
+
+
 @localization.presentation
 def summary_lines(report):
     if not report:
         return []
     counts, expected = report["counts"], report["prediction"]
-    return ["", localization.text('## Absence quote prediction'), "",
-            f'{localization.text('Quote-or-refusal check: **')}{report['status']}**. {counts['claims']}{localization.text(' judged absence claim(s): ')}{counts['quoted']}{localization.text(' quoted, ')}{counts['refused']}{localization.text(' refused, ')}{counts['violations']}{localization.text(' violation(s).')}',
-            f'{localization.text('Judged questions: ')}{counts['judged_plans']}{localization.text(' planned, ')}{counts['returned']}{localization.text(' returned, ')}{counts['successful']}{localization.text(' successful, ')}{counts['no_consumer']}{localization.text(' without a consumer, ')}{counts['empty_answers']}{localization.text(' empty successful answer(s).')}',
-            f'{localization.text('Historical forecast: ')}{expected['expected_judged_plans']}{localization.text(' judged and ')}{expected['expected_computed_plans']}{localization.text(' computed plans; observed counts ')}{report['count_comparison']}{localization.text('. Computed: ')}{counts['computed_plans']}{localization.text(' planned, ')}{counts['computed_completed']}{localization.text(' completed, no quote required.')}',
-            localization.text('PASS checks emitted claims only. Empty or non-absence answers do not confirm the forecast of fourteen claims. A matching count does not establish the same cohort.'),
-            localization.text('Quotes establish text presence, not that an absence conclusion is true. See [the run audit](../audit/absence_quote_prediction.json) for per-question outcomes.')]
+    t = localization.text
+    status = str(report.get("status"))
+    return ["", t('## Absence quote check'), "",
+            t(STATUS_SENTENCES[status]) if status in STATUS_SENTENCES else f"**{status}**",
+            t("Absence claims a model made: {claims}; {quoted} quoted the unit, {refused} were refused, "
+              "{violations} were kept without a quote.", claims=counts['claims'], quoted=counts['quoted'],
+              refused=counts['refused'], violations=counts['violations']),
+            t("Questions a model was asked about an absent field: {planned} planned, {returned} answered, "
+              "{successful} answered successfully, {no_consumer} with no agent to ask, {empty} answered "
+              "with nothing.", planned=counts['judged_plans'], returned=counts['returned'],
+              successful=counts['successful'], no_consumer=counts['no_consumer'], empty=counts['empty_answers']),
+            t("Absences Python checked itself: {planned} planned, {completed} completed (these need no quote).",
+              planned=counts['computed_plans'], completed=counts['computed_completed']),
+            t("The earlier runs this check was set up from planned {judged} judged and {computed} computed "
+              "absence questions; this run planned {now_judged} and {now_computed}, {comparison}. "
+              "These are counts of questions, not of claims, and a matching count does not show the same "
+              "questions were asked.", judged=expected['expected_judged_plans'],
+              computed=expected['expected_computed_plans'], now_judged=counts['judged_plans'],
+              now_computed=counts['computed_plans'],
+              comparison=t(COMPARISON_WORDS.get(report.get('count_comparison'), str(report.get('count_comparison'))))),
+            t('A quote shows the words are in the unit; it does not show the absence conclusion is right. '
+              'Per-question outcomes are in [the run audit](../audit/absence_quote_prediction.json).')]

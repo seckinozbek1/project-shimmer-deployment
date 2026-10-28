@@ -84,10 +84,32 @@ class AuditSynthesizer:
                                                              "reason": "repeated PRACTICE_AUDITOR verdict"}))
 
         escalations = [m for m in bus_messages if m.get("type") == "ESCALATE"]
-        topic_counts = {}
+        # Reader check RD3: a recurrence is a DISTINCT escalation (topic and its
+        # payload), never a repeated copy of one message; an escalation with no
+        # topic or no payload says nothing to recur on, so it is counted apart and
+        # never becomes a pattern or a proposal. What a pattern or a proposal IS
+        # stays exactly as it was; nothing here is ever applied.
+        # Reader check round 3 (item 11): an escalation about an agent this run did
+        # not register (the BOOT message's own list) is not evidence about this
+        # run's agents, so it is counted apart, like an empty one, and never
+        # becomes a pattern or a proposal. With no BOOT record the test is not made.
+        registered = registered_agents(bus_messages)
+        topic_counts, content_free, seen = {}, 0, set()
+        unregistered, unregistered_names = 0, set()
         for m in escalations:
-            topic = (m.get("body") or {}).get("topic", "unknown")
-            topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            key = escalation_key(m.get("body"))
+            if key is None:
+                content_free += 1
+                continue
+            named = escalation_agent(m.get("body"))
+            if registered is not None and named is not None and named not in registered:
+                unregistered += 1
+                unregistered_names.add(named)
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            topic_counts[key[0]] = topic_counts.get(key[0], 0) + 1
         for topic, count in topic_counts.items():
             if count >= 3:
                 findings.append(AuditFinding("governance", "high",
@@ -100,7 +122,7 @@ class AuditSynthesizer:
                                                              "action": "add_amendment", "topic": topic,
                                                              "draft_text": (f"Codify default ruling for "
                                                                             f"recurring escalations on {topic!r}."),
-                                                             "reason": f"operator interrupted {count} times"}))
+                                                             "reason": f"{count} escalation messages on this topic"}))
 
         charter_proposals = [m for m in bus_messages if m.get("type") == "CHARTER_PROPOSE"]
         mission_counts = {}
@@ -136,6 +158,9 @@ class AuditSynthesizer:
         summary = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "bus_messages": len(bus_messages),
+            "content_free_escalations": content_free,
+            "unregistered_agent_escalations": unregistered,
+            "unregistered_agents_named": sorted(unregistered_names),
             "findings": [f.__dict__ for f in findings],
             "delta_proposals": [d.as_dict() for d in deltas],
             "stats": {
@@ -152,7 +177,7 @@ class AuditSynthesizer:
         # Master-and-derived (Part XXVII §E / INFRA-033): both files are views of
         # the single `summary` dict computed in synthesize(). audit_synthesis.md is
         # the human-readable view; delta_proposals.json is the machine view of its
-        # delta_proposals. Neither is an independent source — both render from
+        # delta_proposals. Neither is an independent source: both render from
         # `summary`, so they cannot disagree.
         if self.run_context is not None:
             synthesis_path = self.run_context.audit_synthesis_path()
@@ -169,6 +194,34 @@ class AuditSynthesizer:
                        indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def escalation_key(body):
+    """(topic, payload) of one escalation, or None when it carries no topic or no
+    payload (reader check RD3: nothing to recur on). Repeated copies of one
+    escalation share a key, so they are counted once."""
+    body = body if isinstance(body, dict) else {}
+    topic, payload = body.get("topic"), body.get("payload")
+    if not topic or payload in (None, "", {}, []):
+        return None
+    return (str(topic), json.dumps(payload, sort_keys=True, default=str))
+
+
+def registered_agents(bus_messages):
+    """The agents this run registered, read off its BOOT message, or None when the
+    bus carries no BOOT record (the test is then not made)."""
+    for m in bus_messages or []:
+        body = m.get("body") if isinstance(m, dict) else None
+        if isinstance(body, dict) and body.get("event") == "BOOT" and isinstance(body.get("agents_registered"), list):
+            return {str(a) for a in body["agents_registered"]}
+    return None
+
+
+def escalation_agent(body):
+    """The agent an escalation's payload names (its `agent` field), or None."""
+    payload = (body or {}).get("payload") if isinstance(body, dict) else None
+    agent = payload.get("agent") if isinstance(payload, dict) else None
+    return str(agent) if isinstance(agent, str) and agent.strip() else None
+
+
 def _count_disputed_by_source(findings):
     from urllib.parse import urlparse
     out = {}
@@ -183,23 +236,58 @@ def _count_disputed_by_source(findings):
     return out
 
 
+AUDIT_COUNT_NOTE = (" (patterns in this run's audit trail, such as repeated escalations; "
+                    "not findings about the document under review, which are in each "
+                    "document's document_summary.md)")
+# Reader check RC9: how a governance proposal and its priority READ in this file.
+# The kinds and actions themselves (propose_amendment, add_amendment, ...) are the
+# governance vocabulary and stay exactly as they are in delta_proposals.json; only
+# the words a reader sees here change, so "amendment" never collides with the
+# document amendments in review_findings.md.
+KIND_WORDS = {"propose_amendment": "rule-book (constitution) change proposal",
+              "append_project_rule": "project rule proposal",
+              "codify_tf_law": "task-force law proposal",
+              "reduce_ttl": "verification cache proposal",
+              "tighten_processor_prompt": "extraction prompt proposal"}
+ACTION_WORDS = {"add_amendment": "add a constitution amendment (the operator decides)",
+                "append_rule": "add a project rule (the operator decides)",
+                "codify_pattern": "write the pattern down as a task-force law (the operator decides)",
+                "reduce_for_source": "shorten how long this source's checks are cached",
+                "add_completeness_check": "add a completeness check to the extraction prompt"}
+
+
 @localization.presentation
 def _render_md(summary):
+    # S2a, item 6: the count here is of PATTERNS in the run's audit trail (repeated
+    # escalations, repeated verdicts, repeated proposals), never of findings about
+    # the document under review, and it says so where the number is shown.
     lines = [localization.text('# Audit synthesis'), "", f'{localization.text('- generated: ')}{summary['generated_at']}',
              f'{localization.text('- bus messages: ')}{summary['bus_messages']}',
-             f'{localization.text('- findings: ')}{len(summary['findings'])}',
-             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "", localization.text('## Findings')]
-    if not summary["findings"]: lines.append(localization.text('_no findings this run_'))
+             f'{localization.text('- audit-trail patterns: ')}{len(summary['findings'])}{localization.text(AUDIT_COUNT_NOTE)}',
+             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}',
+             *([f"{localization.text('- escalation messages with no topic or no content (not counted as a pattern): ')}"
+                f"{summary['content_free_escalations']}"] if summary.get('content_free_escalations') else []),
+             *([localization.text("- escalation messages naming an agent this run did not register "
+                                  "(not counted as a pattern): {n} ({agents})",
+                                  n=summary['unregistered_agent_escalations'],
+                                  agents=", ".join(summary.get('unregistered_agents_named') or []))]
+               if summary.get('unregistered_agent_escalations') else []), "",
+             localization.text('## Audit-trail patterns (not document findings)')]
+    if not summary["findings"]: lines.append(localization.text('_no audit-trail patterns this run_'))
     else:
         for f in summary["findings"]:
-            lines.append(f"- [{f['severity'].upper()}] ({f['category']}) {localization.message(f['summary'])}")
+            lines.append(f"- {localization.text('pattern priority: ')}{localization.label(str(f['severity'])).lower()}; "
+                         f"{localization.text('area: ')}{localization.label(str(f['category'])).lower()}; "
+                         f"{localization.message(f['summary'])}")
     lines.append(localization.text('\n## DELTA proposals'))
     if not summary["delta_proposals"]: lines.append(localization.text('_no DELTAs proposed this run_'))
     else:
         for d in summary["delta_proposals"]:
-            lines.append(f"### {d['id']} — {d['kind']}")
+            kind, action = d['kind'], d['proposed_change'].get('action')
+            lines.append(f"### {d['id']}: {localization.text(KIND_WORDS.get(kind, kind))}")
             lines.append(f'{localization.text('- trigger: ')}{localization.message(d['trigger'])}')
-            lines.append(f'{localization.text('- proposed change: ')}{d['proposed_change'].get('action')}')
+            lines.append(f'{localization.text('- proposed change: ')}{localization.text(ACTION_WORDS.get(action, str(action)))}')
             lines.append(f'{localization.text('- target: ')}{d['proposed_change'].get('target')}')
-            lines.append(f'{localization.text('- requires operator approval: ')}{d['requires_operator_approval']}\n')
+            lines.append(f'{localization.text('- requires operator approval: ')}'
+                         f'{localization.text('yes' if d['requires_operator_approval'] else 'no')}\n')
     return "\n".join(lines)
