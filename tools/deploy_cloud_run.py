@@ -17,6 +17,7 @@ import time
 
 from cloud_run_common import budget_deadlines, digest, require, safe_metadata, verify_bundle, verify_files, write_json
 from runtime_contract import load_contract, remote_resolver_command, compatible
+from loop_budget_guard import GuardRefusal, PREFIX, refuse_general_path, refuse_while_loop_open
 
 
 def host_value(value):
@@ -38,9 +39,10 @@ def plan(bundle, host, running_epoch):
     require(exp['max_runs'] == 1 and exp['source_commit'] == ready['source_commit'], 'invalid experiment identity')
     require(exp['experiment_id'] == ready['experiment_id'] and re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', exp['experiment_id']), 'unsafe experiment ID')
     remote = '/home/ubuntu/shimmer_experiments/' + exp['experiment_id']
-    limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch)
+    limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch, soft_usd=exp['soft_budget_usd'],
+                              hard_usd=exp['absolute_budget_usd'])
     return {'host': host, 'remote_directory': remote, 'experiment_id': exp['experiment_id'], 'hourly_rate': exp['hourly_rate_usd'],
-            'max_runs': 1, 'budget': limits, 'steps': ['arm independent local termination watchdog',
+            'max_runs': 1, 'budget': limits, 'soft_usd': exp['soft_budget_usd'], 'hard_usd': exp['absolute_budget_usd'], 'steps': ['arm independent local termination watchdog',
             'verify manually provisioned instance identity and IP', 'first SSH success',
             'resolve absolute compatible Python before transfer', 'verify A100 identity/VRAM', 'create exclusive experiment directory',
             'transfer sealed bundle', 'verify transfer/source hashes', 'compile and import source before dependencies',
@@ -96,8 +98,31 @@ def transport_plan(host, bundle, remote, identity_file=None, known_hosts=None, i
             'ssh': ssh, 'options': options}
 
 
+def resolve_instance_name(provider, instance_id, attempts=3, pause=2):
+    """The instance's provider name ('' for an unnamed one), with retries; a refusal, never a
+    guess, when it cannot be read."""
+    for attempt in range(attempts):
+        try:
+            return str(provider.instance(instance_id).get('name') or '')
+        except Exception:
+            if attempt + 1 < attempts:
+                time.sleep(pause)
+    raise GuardRefusal('Instance name could not be resolved; nothing deployed and nothing terminated by this tool')
+
+
 def execute(args, runner=subprocess.run, provider=None):
     from cloud_run_watchdog import LambdaTermination, operator_preflight
+    if args.execute:
+        # First, before any other step that can fail (A7), the timestamp parse and plan()
+        # included: who is this instance? The name is resolved with retries; a loop instance
+        # is refused, and only an instance whose name is known and is not a loop name is
+        # ever terminated by this tool on a failure.
+        require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
+        provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
+        args.resolved_name = resolve_instance_name(provider, args.instance_id)
+        refuse_general_path(names=[args.resolved_name])
+        # Not a loop launch path, and it spends outside the loop's ledger (A11).
+        refuse_while_loop_open()
     bundle = args.bundle.resolve()
     timestamp = datetime.fromisoformat(args.running_since.replace('Z', '+00:00'))
     require(timestamp.tzinfo is not None, 'running-since must include UTC offset')
@@ -125,7 +150,8 @@ def execute(args, runner=subprocess.run, provider=None):
     write_json(local / 'deployment_plan.json', config)
     watch_cmd = [sys.executable, str(Path(__file__).with_name('cloud_run_watchdog.py')), '--arm',
                  '--instance-id', args.instance_id, '--hourly-rate', str(config['hourly_rate']),
-                 '--running-epoch', str(epoch), '--directory', str(local)]
+                 '--running-epoch', str(epoch), '--directory', str(local),
+                 '--soft-usd', str(config['soft_usd']), '--hard-usd', str(config['hard_usd'])]
     if getattr(args, 'credential_file', None):
         watch_cmd += ['--credential-file', str(args.credential_file.resolve())]
     flags = (getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
@@ -138,7 +164,6 @@ def execute(args, runner=subprocess.run, provider=None):
             break
         time.sleep(0.1)
     require((local / 'WATCHDOG_ARMED.json').is_file(), 'watchdog arm timed out')
-    provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
     success = False
     remote = config['remote_directory']
     interactive = getattr(args, 'interactive_ssh', False)
@@ -203,6 +228,7 @@ def execute(args, runner=subprocess.run, provider=None):
 
 
 def main(argv=None):
+    refuse_general_path(argv=sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', required=True)
     parser.add_argument('--bundle', type=Path, required=True)
@@ -221,20 +247,44 @@ def main(argv=None):
         return execute(args)
     except Exception as exc:
         report = {'deployment_refused': True, 'error_type': type(exc).__name__}
-        if args.execute and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id):
+        # Only an instance whose name was resolved and is not a loop name is ended here: a
+        # loop instance is the guarded controller's and the reaper's to end, and an instance
+        # this tool could not identify is left to the operator (A7).
+        name = getattr(args, 'resolved_name', None)
+        if (args.execute and name is not None and not name.startswith(PREFIX)
+                and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id)):
             # Even a local prerequisite discovered AFTER provisioning triggers
             # termination. Never leave a paid instance idle while repairing setup.
-            from cloud_run_watchdog import LambdaTermination, watch
-            emergency = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
-            emergency.mkdir(parents=True)
-            (emergency / 'TERMINATE_REQUEST').touch()
+            from cloud_run_watchdog import LambdaTermination, terminate_now
+            # A fresh folder per emergency. Two in the same clock tick (the Windows
+            # clock is coarse) get a numbered suffix instead of failing the cleanup.
+            base = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
+            emergency, suffix = base, 1
+            while True:
+                try:
+                    emergency.mkdir(parents=True)
+                    break
+                except FileExistsError:
+                    suffix += 1
+                    emergency = base.with_name(base.name + '_' + str(suffix))
             try:
-                epoch = datetime.fromisoformat(args.running_since.replace('Z', '+00:00')).timestamp()
-                watch(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, epoch, emergency)
+                # The epoch only dates the cost estimate on the termination record; a timestamp
+                # that does not parse (the failure being handled may be exactly that) must not
+                # stop the termination, so the estimate then starts now.
+                try:
+                    epoch = datetime.fromisoformat(args.running_since.replace('Z', '+00:00')).timestamp()
+                except (AttributeError, TypeError, ValueError):
+                    epoch = time.time()
+                # Termination is requested at once, so no budget cap is read or assumed.
+                terminate_now(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, epoch, emergency)
                 report['termination_verified'] = True
             except Exception as stop_error:
                 report.update(termination_verified=False, termination_error_type=type(stop_error).__name__,
                               operator_action='Terminate the specified instance immediately and verify provider status.')
+        elif args.execute:
+            report.update(termination_verified=False, terminated_by_this_tool=False,
+                          operator_action='Not terminated here: the instance was not identified, or it is a loop '
+                                          'instance the guarded controller and the reaper end.')
         print(json.dumps(report))
         return 2
 

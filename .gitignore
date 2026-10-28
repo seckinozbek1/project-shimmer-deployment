@@ -200,3 +200,6 @@ seals/
 # Never committed; only adapters, the selection, the preregistration and
 # synthetic gate fixtures are tracked.
 /external/
+# Generated development suite and long-range corpus: exposed by construction, regenerated from committed seeds.
+/benchmark/dev_suite/generated/
+/benchmark/long_range/generated/

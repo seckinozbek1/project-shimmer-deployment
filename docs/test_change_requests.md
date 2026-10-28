@@ -35,7 +35,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 
 ## Requests
 
-### TCR-001. `negotiation_r2_to_r3`: the key and the labels measure the corpus, not the capability
+### TCR-001. `negotiation_r2_to_r3`: the key and the labels measure the corpus, not the capability (issue #14)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/negotiation_r2_to_r3`, as at commit `f31eff4`.
@@ -46,7 +46,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: write a new version whose labels and key are prepared independently of the mechanism (or retire this version in place if no new version is made). It shares one document with TCR-002.
 - **Decision**:
 
-### TCR-002. `negotiation_r3_to_r4`: same defects as TCR-001, shared material
+### TCR-002. `negotiation_r3_to_r4`: same defects as TCR-001, shared material (issue #15)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/negotiation_r3_to_r4`, as at commit `f31eff4`.
@@ -57,7 +57,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: decide together with TCR-001; if both are kept, count them as one test, never as two independent ones.
 - **Decision**:
 
-### TCR-003. `clinical_reference`: a convention was changed after results were seen
+### TCR-003. `clinical_reference`: a convention was changed after results were seen (issue #16)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/clinical_reference`, the version used from run v8 on.
@@ -68,7 +68,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: keep as a development and regression test, with its version history stated wherever its results are quoted; no sealed use.
 - **Decision**:
 
-### TCR-004. `device_log_review`: edited in place after a run
+### TCR-004. `device_log_review`: edited in place after a run (issue #17)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/device_log_review`, as changed by commit `139083a`.
@@ -79,7 +79,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: write a new version (or retire this one in place), so that the results before and after the edit are not read as one test.
 - **Decision**:
 
-### TCR-005. `device_log_review_clean`: the clean twin was edited in place after a run
+### TCR-005. `device_log_review_clean`: the clean twin was edited in place after a run (issue #18)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/device_log_review_clean`.
@@ -90,7 +90,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: decide together with TCR-004; the flawed document and its clean twin change version together.
 - **Decision**:
 
-### TCR-006. `catalogue_records`: not run on current code since 10 September
+### TCR-006. `catalogue_records`: not run on current code since 10 September (issue #19)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/catalogue_records`.
@@ -101,7 +101,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: keep; run it as a regression test on current code (the loop's S5 regression list includes it).
 - **Decision**:
 
-### TCR-007. `producer_coverage_amendment_v1`: superseded and recorded as NOT_READY
+### TCR-007. `producer_coverage_amendment_v1`: superseded and recorded as NOT_READY (issue #20)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/producer_coverage_amendment_v1`.
@@ -112,7 +112,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: keep as a frozen record, and list it as superseded in a retired-tests register rather than adding a file inside a folder whose contents may be hash-bound.
 - **Decision**:
 
-### TCR-008. `producer_coverage_amendment_v2`: superseded, all labels quarantined
+### TCR-008. `producer_coverage_amendment_v2`: superseded, all labels quarantined (issue #21)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/producer_coverage_amendment_v2`.
@@ -123,7 +123,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: as TCR-007.
 - **Decision**:
 
-### TCR-009. `machine_adjudication_v1`: superseded by v2
+### TCR-009. `machine_adjudication_v1`: superseded by v2 (issue #22)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/machine_adjudication_v1`.
@@ -134,7 +134,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: as TCR-007.
 - **Decision**:
 
-### TCR-010. `tuning/auditor_external_relation_v1`: superseded by v2
+### TCR-010. `tuning/auditor_external_relation_v1`: superseded by v2 (issue #23)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `tuning/auditor_external_relation_v1`.
@@ -145,7 +145,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: as TCR-007, after confirming from the v2 report that v1 is superseded.
 - **Decision**:
 
-### TCR-011. `tuning/second_tuning_eval_runtime_v2`: superseded by v2.1
+### TCR-011. `tuning/second_tuning_eval_runtime_v2`: superseded by v2.1 (issue #24)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `tuning/second_tuning_eval_runtime_v2`.
@@ -154,4 +154,15 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Who noticed it**: the loop lead, from the records.
 - **From a run's output?**: no.
 - **Proposal**: as TCR-007.
+- **Decision**:
+
+### TCR-012. `negotiation_r2_to_r3` and `negotiation_r3_to_r4`: completeness rules carry no scope or requirement declaration
+
+- **Date**: 2026-10-27.
+- **Test and version**: `benchmark/corpora/negotiation_r2_to_r3` and `benchmark/corpora/negotiation_r3_to_r4`, `conventions/mandate_conventions.md`, as at tag `loop-s01-v1`.
+- **What was noticed**: `docs/INPUT_FORMAT.md` section 5 asks that a rule saying fields must be present declare `[scope: ...]` and `[requires: ...]`. These mandates were written before that rule; three rules in the first are worded as completeness rules and no rule in either carries a declaration, so a term missing from a later offer is caught only when its rule happens to pair by wording. The comparison records (`absent_since_prior`) are unaffected.
+- **Evidence**: no `[scope:` or `[requires:` bracket in either mandate file (the only such brackets under `benchmark/corpora/` are in `device_log_review`, `device_log_review_clean` and `clinical_reference`).
+- **Who noticed it**: the loop lead, writing the input format (S3a, D-018).
+- **From a run's output?**: no.
+- **Proposal**: decide together with TCR-001 and TCR-002; any new version follows section 5.
 - **Decision**:

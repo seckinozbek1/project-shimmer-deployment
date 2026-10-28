@@ -1,30 +1,43 @@
 """Operator-side budget watchdog for one authorized ordinary final run; cannot launch."""
 import argparse
+import json
 import math
 import os
 from pathlib import Path
 import time
 
-from ordinary_final_run import authorization, read, require, sha, write
+from ordinary_final_run import authorization, read, require, selected_candidate, sha, write
 
 
-def deadlines(start, rate, soft, hard):
-    require(all(isinstance(v,(float,int)) and math.isfinite(v) for v in (start,rate,soft,hard)), 'Invalid budget')
-    require(start>0 and 0<rate<=1.29 and 0<soft<hard, 'Invalid budget bounds')
-    return dict(soft=start+soft/rate*3600, stop=start+hard/rate*3600-900,
-                terminate=start+hard/rate*3600-180, ceiling=start+hard/rate*3600)
+def deadlines(start, rate, soft, hard, rate_cap, stop_reserve, terminate_reserve):
+    """Turn the manifest's caps into deadlines. Every figure is a sealed manifest value or
+    the selected candidate's sealed rate cap; none is typed here."""
+    values=(start,rate,soft,hard,rate_cap,stop_reserve,terminate_reserve)
+    require(all(isinstance(v,(float,int)) and not isinstance(v,bool) and math.isfinite(v) for v in values), 'Invalid budget')
+    require(start>0 and 0<rate<=rate_cap and 0<soft<hard and 0<terminate_reserve<stop_reserve<hard/rate*3600,
+            'Invalid budget bounds')
+    return dict(soft=start+soft/rate*3600, stop=start+hard/rate*3600-stop_reserve,
+                terminate=start+hard/rate*3600-terminate_reserve, ceiling=start+hard/rate*3600)
+
+
+def manifest_deadlines(manifest, permit):
+    return deadlines(permit['active_start_epoch'],permit['hourly_rate'],manifest['soft_budget_usd'],
+                     manifest['hard_ceiling_usd'],selected_candidate(manifest,permit)['max_hourly_rate'],
+                     manifest['workload_stop_reserve_seconds'],manifest['termination_reserve_seconds'])
 
 
 def watch(base, provider, permit, manifest, now=time.time, sleep=time.sleep):
     base=Path(base)
-    limits=deadlines(permit['active_start_epoch'],permit['hourly_rate'],
-                     manifest['soft_budget_usd'],manifest['hard_ceiling_usd'])
+    limits=manifest_deadlines(manifest,permit)
     identity=permit['instance_id']
     requested=False
+    # A batch session guards every bundle of the batch; the controller lists them before arming.
+    batch=read(base/'batch_manifests.json') if (base/'batch_manifests.json').exists() else []
     while True:
         current=now()
         write(base/'WATCHDOG_ARMED.json',dict(instance_id=identity,pid=os.getpid(),
-            heartbeat_epoch=current,execution_manifest_sha256=sha(base/'execution_manifest.json')))
+            heartbeat_epoch=current,execution_manifest_sha256=sha(base/'execution_manifest.json'),
+            batch_manifest_sha256s=batch))
         write(base/'cost.json',dict(active_start_epoch=permit['active_start_epoch'],observed_epoch=current,
             estimated_infrastructure_usd=max(0,current-permit['active_start_epoch'])*permit['hourly_rate']/3600,
             hourly_rate=permit['hourly_rate'],invoice=False))
@@ -37,8 +50,14 @@ def watch(base, provider, permit, manifest, now=time.time, sleep=time.sleep):
             try:
                 state=provider.instance(identity)
                 if state['status']=='terminated':
-                    write(base/'TERMINATION_VERIFIED.json',dict(instance_id=identity,
-                        confirmed_epoch=now(),provider='Lambda',status='terminated'))
+                    # Written only if absent: the controller's own termination record (with its
+                    # `epoch`) is never overwritten by this one (`confirmed_epoch`).
+                    try:
+                        with (base/'TERMINATION_VERIFIED.json').open('x',encoding='utf8') as stream:
+                            json.dump(dict(instance_id=identity,confirmed_epoch=now(),provider='Lambda',
+                                           status='terminated'),stream,indent=2,sort_keys=True)
+                    except FileExistsError:
+                        pass
                     return
                 provider.terminate(identity)
             except Exception as exc:

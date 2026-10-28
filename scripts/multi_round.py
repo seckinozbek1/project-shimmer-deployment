@@ -281,6 +281,7 @@ def read_saved(run_dir, run_id):
             strategic = {"availability": "invalid", "state": "recommendation_unavailable", "layers": [], "quality": "UNVERIFIED"}
         return {"recorded": True, "run_id": run_id, "activation": a, "fixture": r["fixture"], "view": view,
                 "strategic_support": strategic,
-                "availability": "recorded", "outcome": r.get("outcome", "phase_not_completed"), "baseline_commit": BASELINE}
+                "availability": "recorded", "outcome": r.get("outcome", "phase_not_completed"), "baseline_commit": BASELINE,
+                "round_review": r.get("round_review")}
     except (OSError, ValueError, KeyError, TypeError):
         return {"recorded": False, "availability": "invalid", "activation": activation(True, eligible=False, reason="invalid_saved_state")}
