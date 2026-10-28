@@ -2169,7 +2169,7 @@ class ControllerChecks(unittest.TestCase):
             # arguments: the base without the adapter, the tuned producer with it.
             summary = read(folder / 'b1_summary.json')
             self.assertEqual(summary['loaded']['digest'], B1_DIGESTS[name])
-            self.assertEqual(summary['verified_against'], ['digest', 'model_id'])
+            self.assertEqual(summary['verified_against'], ['attention', 'digest', 'model_id'])
             self.assertEqual((summary['reader']['checkpoint'], summary['checkpoint']['adapter_applied']),
                              (name, name == 'tuned'))
             self.assertEqual(result['checkpoints'][name]['exit_code'], 0)
