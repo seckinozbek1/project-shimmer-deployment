@@ -69,6 +69,18 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              stamped copy with the raw copy listed apart; every mapping fixture moved
              onto a bus gives the same labels as its review_data.json form, and the
              label command labels B3 and B4 from a fixture bus (BUS_READER_ADOPTED)
+  incomplete D-066 and D-068: a run that reached its end with exit code 0 and
+             semantic_complete false is not a run failure and is labelled from its
+             records (a stopped run that did not reach its end still is one); S-6
+             makes every item of such a document ABSTAIN; an item no record decides
+             whose rule's judging calls all failed is ABSTAIN item_calls_failed once
+             the registry id map is adopted, and until then the row says it was not
+             applied and whether it would have been; completeness per document (the
+             PROCESSOR calls accepted against made, a partial delivery, the pairs made
+             from it, the items a record of it decided); the items a band record
+             flagged (section 12 item 3); a D-068 kept answer on the
+             bus decides its rule's item as a model's record. Each by neutralise,
+             fail, restore, pass
   dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
              opaque id only; sorted by words then id; evenly spaced positions; each
              replacement listed), the build restricted to chosen documents, B2 on it,
@@ -1315,7 +1327,7 @@ class MappingChecks(_Case):
         cases = _json(_fixture("contractnli", "mapping_cases.json"))
         items, runs, b1 = _materialise(cases, self.root / "s5")
         b2 = c["cli"].label(_adapter("contractnli"), items, "B2", runs)
-        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "primary"])
+        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
         for arm, folder in (("B1", b1), ("B0", None)):
             labels = c["cli"].label(_adapter("contractnli"), items, arm, folder)
             self.assertEqual([r["class"] for r in labels["S-5"]["labels"]],
@@ -1545,7 +1557,7 @@ class MetricChecks(_Case):
                token_counter=WordCounter(100))
         items = self.root / "cut" / "items.json"
         result = c["cli"].score(adapter, c["cli"].label(adapter, items, "B0"), self.root / "cut")
-        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "primary"])
+        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "primary"])
         self.assertEqual((result["primary"]["decisions"], result["S-4"]["decisions"]), (4, 3))
         self.assertEqual((result["primary"]["items_evidence_beyond_cut"],
                           result["S-4"]["items_evidence_beyond_cut"]), (1, 0))
@@ -1896,10 +1908,235 @@ class RecordReaderChecks(_Case):
                 by_bus = c["cli"].label(_adapter(name), items, arm, bus_runs)
                 self.assertEqual(_label_view(by_bus["primary"]), _label_view(by_review["primary"]), name + " " + arm)
                 self.assertTrue(by_bus["primary"]["labels"], name)
-                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "primary"])
+                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
             with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
                 with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
                     c["cli"].label(_adapter(name), items, "B3", bus_runs)
+
+
+# ---------------------------------------------------------------------------
+# D-066 (incomplete runs, completeness, S-6, item_calls_failed) and D-068 records
+
+
+_DONE = "2026-10-29T00:00:00+00:00"
+
+
+def _incomplete_run(root, doc, *, completion, bus_lines, pairing=None, rule_map=None,
+                    observation=None, telemetry=None):
+    """One synthetic B3 run folder: its completion record, bus, pairing map, rule map and
+    the two telemetry files the completeness report reads (absent when None)."""
+    run = Path(root) / doc
+    (run / "audit").mkdir(parents=True)
+    (run / "logs").mkdir()
+    (run / "audit" / "run_completion.json").write_text(json.dumps(completion), encoding="utf-8")
+    (run / "logs" / "agent_bus.jsonl").write_text("\n".join(bus_lines) + "\n", encoding="utf-8")
+    if pairing is not None:
+        (run / "audit" / "pairing_map.json").write_text(json.dumps({doc: pairing}), encoding="utf-8")
+    if rule_map is not None:
+        (run / "audit" / "convention_assignment.json").write_text(json.dumps({"by_rule": {
+            k: {"source_rule_id": v} for k, v in rule_map.items()}}), encoding="utf-8")
+    for name, rows in (("generation_observation.jsonl", observation), ("model_telemetry.jsonl", telemetry)):
+        if rows is not None:
+            (run / "logs" / name).write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    return run
+
+
+def _completion(state="completed", **extra):
+    return dict({"schema_version": 1, "state": state, "reached_end": True, "exit_code": 0,
+                 "finished_at": _DONE}, **extra)
+
+
+def _rec(item_id, rule, verdict, unit="u01-p-00001", **extra):
+    return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": unit, "relation": "date_window",
+                 "record_verdict": verdict}, **extra)
+
+
+class IncompleteRunChecks(_Case):
+    """D-066 and D-068 in the adapters, each property by neutralise, fail, restore, pass."""
+
+    def _items(self, doc, rules):
+        return [{"item_id": "i-%s-%d" % (doc, k), "document_id": doc, "rule_id": rule, "benchmark": "contractnli"}
+                for k, rule in enumerate(rules)]
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def test_a_semantically_incomplete_end_is_labelled_from_its_records(self):
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2", "CONV-CNLI-NDA-3"]
+        lines = [_bus_line("A", "dinc", [_rec("r1", rules[0], "irregular"), _rec("r2", rules[1], "ok")],
+                           "paired", "python")]
+        root = self.root / "inc"
+        _incomplete_run(root, "dinc", completion=_completion("stopped", semantic_complete=False), bus_lines=lines)
+        # a stopped run that did not reach its end, and one with exit code 2, are still run failures
+        _incomplete_run(root, "dstop", completion=_completion("stopped", reached_end=False, semantic_complete=False),
+                        bus_lines=[_bus_line("A", "dstop", [_rec("r1", rules[0], "irregular")], "paired", "python")])
+        _incomplete_run(root, "dexit", completion=_completion("stopped", exit_code=2, semantic_complete=False),
+                        bus_lines=[_bus_line("A", "dexit", [_rec("r1", rules[0], "irregular")], "paired", "python")])
+        items = self._items("dinc", rules) + self._items("dstop", rules[:1]) + self._items("dexit", rules[:1])
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            got = {r["item_id"]: (r["class"], r["basis"]) for r in out["labels"]}
+            want = {"i-dinc-0": ("FLAG", "irregular"), "i-dinc-1": ("CLEAR", "ok"), "i-dinc-2": ("CLEAR", "silent"),
+                    "i-dstop-0": ("ABSTAIN", "run_failure"), "i-dexit-0": ("ABSTAIN", "run_failure")}
+            docs = {d["document_id"]: (d["run_failure"], d["semantic_incomplete"]) for d in out["documents"]}
+            problems = [] if got == want else ["labels %s" % got]
+            if docs != {"dinc": (False, True), "dstop": (True, False), "dexit": (True, False)}:
+                problems.append("documents %s" % docs)
+            if (out["counts"]["semantic_incomplete_documents"], out["counts"]["items_in_semantic_incomplete_documents"]) != (1, 3):
+                problems.append("counts %s" % out["counts"])
+            # S-6: every item of the semantically incomplete document ABSTAIN, the rest unchanged
+            s6 = {r["item_id"]: (r["class"], r["basis"]) for r in m.sensitivity_s6(spec, out)["labels"]}
+            want6 = dict(want, **{k: ("ABSTAIN", "s6_semantic_incomplete") for k in want if k.startswith("i-dinc")})
+            if s6 != want6:
+                problems.append("S-6 %s" % s6)
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "semantically_incomplete_end", lambda c: False))
+        self._proof(body, lambda: mock.patch.object(
+            m, "sensitivity_s6", lambda spec, result: m._relabel(spec, result, "S-6", lambda r: None)))
+        # through the label command: S-6 beside the other analyses, B0 and B1 unchanged by it
+        c = _common()
+        path = self.root / "items.json"
+        path.write_text(json.dumps({"items": items}), encoding="utf-8")
+        labels = c["cli"].label(_adapter("contractnli"), path, "B3", root)
+        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
+        b0 = c["cli"].label(_adapter("contractnli"), path, "B0")
+        self.assertEqual([r["class"] for r in b0["S-6"]["labels"]], [r["class"] for r in b0["primary"]["labels"]])
+
+    def test_item_calls_failed_waits_for_the_rule_map(self):
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2", "CONV-CNLI-NDA-3"]
+        failed = {"outcome": "reply_failed", "plan_kind": "uncomputable"}
+        pairing = {"judging_calls": [dict(failed, rule_id="CONV-001", call_id="a" * 32),
+                                     dict(failed, rule_id="CONV-001", call_id="b" * 32),
+                                     dict(failed, rule_id="CONV-002", call_id="c" * 32),
+                                     {"outcome": "judged_uncomputable", "rule_id": "CONV-002", "call_id": "d" * 32},
+                                     dict(failed, rule_id="CONV-003", call_id="e" * 32)]}
+        rule_map = {"CONV-001": rules[0], "CONV-002": rules[1], "CONV-003": rules[2]}
+        lines = [_bus_line("A", "dcall", [_rec("r3", rules[2], "irregular")], "paired", "python")]
+        root = self.root / "calls"
+        _incomplete_run(root, "dcall", completion=_completion(), bus_lines=lines, pairing=pairing, rule_map=rule_map)
+        _incomplete_run(root, "dnomap", completion=_completion(), bus_lines=[_bus_line("A", "dnomap", [], "paired", "python")],
+                        pairing=pairing)
+        items = self._items("dcall", rules) + self._items("dnomap", rules[:1])
+
+        def view():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            return ({r["item_id"]: (r["class"], r["basis"], r["item_calls_failed"]) for r in out["labels"]},
+                    out["counts"]["item_calls_failed"], out["counts"]["item_calls_failed_not_applied"])
+
+        def unsettled():
+            got = view()
+            want = ({"i-dcall-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dcall-1": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dcall-2": ("FLAG", "irregular", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled")}, 0, 2)
+            return [] if got == want else ["unsettled %s" % (got,)]
+
+        def adopted():
+            with mock.patch.object(m, "RULE_ID_MAP_ADOPTED", True):
+                got = view()
+            # all calls failed and no record decides: ABSTAIN; a record still decides; a
+            # rule with one returned call is silent; no map in the run: says so
+            want = ({"i-dcall-0": ("ABSTAIN", "item_calls_failed", "applied"),
+                     "i-dcall-1": ("CLEAR", "silent", None),
+                     "i-dcall-2": ("FLAG", "irregular", "applied"),
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_no_rule_map")}, 1, 0)
+            return [] if got == want else ["adopted %s" % (got,)]
+        self.assertFalse(m.RULE_ID_MAP_ADOPTED, "open point 12.11 is not settled: the exception is not applied")
+        self._proof(unsettled, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+        self._proof(adopted, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+
+    def test_completeness_is_reported_per_document(self):
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2"]
+        observation = [
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p1", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p2", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p3", "accepted_semantic_output": False},
+            {"agent": "VERIFIER", "doc_id": "dpart", "call_id": "v1", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "other", "call_id": "p9", "accepted_semantic_output": True},
+            {"event": "extraction_merge", "doc_id": "dpart", "complete": False, "item_count": 2,
+             "missing_partitions": [2], "partition_calls": ["p1", "p2", "p3"]}]
+        telemetry = [{"event": "auditor_pair", "delivery": "partial"}, {"event": "auditor_pair", "delivery": "partial"},
+                     {"event": "auditor_pair", "delivery": "complete"}, {"event": "model_call", "agent": "PROCESSOR"}]
+        lines = [_bus_line("VERIFIER", "dpart", [_rec("v1", rules[0], "irregular")], "local_auditor", "m"),
+                 _bus_line("PRACTICE_AUDITOR", "dpart", [_rec("p1", rules[1], "ok")], "paired", "python")]
+        root = self.root / "part"
+        _incomplete_run(root, "dpart", completion=_completion("stopped", semantic_complete=False), bus_lines=lines,
+                        observation=observation, telemetry=telemetry)
+        _incomplete_run(root, "dnone", completion=_completion(), bus_lines=[_bus_line("A", "dnone", [], "paired", "python")])
+        items = self._items("dpart", rules) + self._items("dnone", rules[:1])
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            docs = {d["document_id"]: d["completeness"] for d in out["documents"]}
+            want = {"dpart": {"semantic_complete": False, "processor_calls_made": 3, "processor_calls_accepted": 2,
+                              "processor_delivery_partial": True, "partial_delivery_pairs": 2},
+                    "dnone": {"semantic_complete": True, "processor_calls_made": None, "processor_calls_accepted": None,
+                              "processor_delivery_partial": None, "partial_delivery_pairs": None}}
+            marked = {r["item_id"]: r["decided_by_partial_delivery_record"] for r in out["labels"]}
+            problems = [] if docs == want else ["completeness %s" % docs]
+            if marked != {"i-dpart-0": True, "i-dpart-1": False, "i-dnone-0": False}:
+                problems.append("marked %s" % marked)
+            if out["counts"]["items_decided_by_partial_delivery_record"] != 1:
+                problems.append("count %s" % out["counts"]["items_decided_by_partial_delivery_record"])
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "DRAFT_READERS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "PRODUCER_AGENT", "NOBODY"))
+
+    def test_items_flagged_by_a_band_record_are_counted(self):
+        # Preregistration section 12 item 3: a claim's figures read as a band (from the
+        # rule's own text) can decide a FLAG; the items so decided are counted per arm.
+        m = _common()["mapping"]
+        rules = ["CONV-T-1", "CONV-T-2", "CONV-T-3"]
+        lines = [_bus_line("A", "dband", [_rec("b1", rules[0], "irregular", relation="below_band"),
+                                          _rec("b2", rules[1], "irregular"),
+                                          _rec("b3", rules[2], "ok", relation="above_band")], "paired", "python")]
+        root = self.root / "band"
+        _incomplete_run(root, "dband", completion=_completion(), bus_lines=lines)
+        items = self._items("dband", rules)
+
+        def body():
+            problems = []
+            for name, flagged in (("contractnli", 1), ("scitab", 1), ("cuad", 0)):
+                out = m.label_pipeline_arm(_adapter(name).SPEC, items, root, arm="B3")
+                got = [r["flagged_by_band"] for r in out["labels"]]
+                want = [True, False, False] if flagged else [False, False, False]
+                if got != want or out["counts"]["items_flagged_by_band"] != flagged:
+                    problems.append("%s %s %s" % (name, got, out["counts"]["items_flagged_by_band"]))
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "BAND_RELATIONS", ()))
+
+    def test_a_kept_uncomputable_answer_decides_its_rule_as_a_models_record(self):
+        # D-068 on the bus as the pipeline posts it: the call's own post withholds its items,
+        # Python's stamped copy (stamped_by python, judged_path uncomputable) carries the kept
+        # answer under the model's backend; it is read once, written by model, and decides.
+        m, rec = _common()["mapping"], _common()["records"]
+        spec = _adapter("contractnli").SPEC
+        rule = "CONV-CNLI-NDA-1"
+        kept = _rec("PRACTICE_AUDITOR:finding:u02-p-00002:CONV-001:0", rule, "irregular", unit="u02-p-00002",
+                    relation="missing_field", judged_path="uncomputable", revision=1)
+        lines = [_bus_line("PRACTICE_AUDITOR", "dkept", [], "local_auditor", "m", call_id="f" * 32,
+                           items_withheld=1),
+                 _bus_line("PRACTICE_AUDITOR", "dkept", [kept], "local_auditor", "m", stamped_by="python",
+                           judged_path="uncomputable")]
+        pairing = {"judging_calls": [{"call_id": "f" * 32, "plan_kind": "uncomputable", "rule_id": "CONV-001",
+                                      "outcome": "judged_uncomputable", "judged_listed": 1}]}
+        root = self.root / "kept"
+        run = _incomplete_run(root, "dkept", completion=_completion(), bus_lines=lines, pairing=pairing)
+        read = rec.read_records(run, "dkept", rec.BUS)
+        self.assertEqual([(r["item_id"], r["written_by"]) for r in read["records"]], [(kept["item_id"], "model")])
+        self.assertEqual(read["raw_judged_absence"], [])
+        row = m.classify(spec, rule, m.read_run(run, "dkept", rec.BUS))
+        self.assertEqual((row["class"], row["basis"], row["layer"]), ("FLAG", "irregular", "judged"))
 
 
 # ---------------------------------------------------------------------------
@@ -2269,6 +2506,12 @@ GROUPS = {
                                     "bus reading is adopted (D-056): the label command labels B3 "
                                     "and B4 from a fixture bus as B2 from review_data.json, and "
                                     "refuses with the flag off"),
+    "incomplete": (IncompleteRunChecks, "a run that reached its end with exit 0 and semantic_complete "
+                                        "false is labelled from its records, S-6 makes its items ABSTAIN, "
+                                        "item_calls_failed waits for the registry id map (reported as not "
+                                        "applied until then), completeness is reported per document, and a "
+                                        "kept D-068 answer decides its rule as a model's record (D-066, "
+                                        "D-068; neutralise, fail, restore, pass)"),
     "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
                              "sorts by words then id, takes evenly spaced positions (the median "
                              "for one) and lists each replacement; the restricted build holds only "
@@ -2295,7 +2538,7 @@ def check():
                              "back as the input format and as Shimmer splits them, cut per document, "
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
-                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5; B3 refused "
+                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6; B3 refused "
                              "until the bus reading is adopted), read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "

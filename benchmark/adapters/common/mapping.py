@@ -1,15 +1,21 @@
-"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2, S-3 and S-5.
+"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2, S-3, S-5 and S-6.
 
 An item is a claim about the whole document judged unit by unit, so a settled answer on
 any unit beats a refusal on another (decision D-039 item 1). For each item, the first
 matching line wins:
   1. run failure                                   -> ABSTAIN (every item of the document)
+     (D-066: a run that reached its end with exit code 0 and semantic_complete false is
+     not a run failure; its items are labelled by lines 2 to 5)
   2. an irregular record that is not a refusal,    -> FLAG (CUAD: FLAG only when one has
      on any unit                                      relation missing_field, else CLEAR)
   3. an ok record that is not a refusal,           -> CLEAR
      on any unit
   4. a refusal                                     -> UNDECIDED
-  5. no record at all (silent)                     -> CLEAR
+  5. no record at all (silent)                     -> CLEAR, except (D-066) ABSTAIN with
+     basis item_calls_failed when the pairing map records at least one judging call for
+     the item's rule and every one has outcome reply_failed (applied only once the
+     registry id to operator id map is adopted, open point 12.11; until then the row
+     says why it was not applied)
 
 The records are read by the one record reader (common/records.py): B2's from
 review_data.json, B3's and B4's from the run's bus, stamped written_by from the line that
@@ -26,7 +32,13 @@ are counted as unattached (section 5.1); S-3 attributes them as the record says.
 model-written record always decides the item of the rule it was posted for. UNDECIDED
 becomes the benchmark's undecided label where it has one (SciTab: not enough info;
 ContractNLI: not mentioned) and ABSTAIN elsewhere. S-5 applies the earlier order, a
-refusal before an ok record, to every pipeline arm (section 5.1).
+refusal before an ok record, to every pipeline arm (section 5.1). S-6 (D-066) makes
+every item of a semantically incomplete document ABSTAIN, for every pipeline arm.
+
+Completeness is reported per document and arm (D-066): semantic_complete, the PROCESSOR
+calls accepted against made, whether the PROCESSOR delivery was partial, the auditor pairs
+made from a partial delivery, and per item whether a record of a partial delivery decided
+it. These counts decide no label.
 
 Where the run output's exact names are not settled yet they are named constants here,
 marked PROVISIONAL, in one place (preregistration section 12, items 1 and 9).
@@ -81,6 +93,23 @@ WRITTEN_BY_PYTHON = "python"              # "python" or "model", decided from th
 B1_LABELS_DIR = "labels"                  # bare_model.py: <out>/labels/<item id>.json
 DELIVERABLE_FILES = ("review_data.json", "review_findings.md", "tracked_changes.docx",
                      "document_summary.md")
+# D-066, the item-level exception: a judging call's outcome when the call failed, and where
+# the run maps a registry id (CONV-001, the id a judging call names) to the operator's own
+# id (the item's rule id). The map is the run's own record (docs/OUTPUT_FORMAT.md section
+# 8.2), but which map section 5.1 reads is open point 12.11 of the preregistration; until
+# the lead adopts it, the exception is computed, reported as not applied, and changes no label.
+JUDGING_CALL_FAILED = "reply_failed"
+RULE_ID_MAP_FILE = ("audit", "convention_assignment.json")   # PROVISIONAL
+RULE_ID_MAP_ADOPTED = False                                   # open point 12.11
+# D-066, completeness: payload-free telemetry the run writes (docs/OUTPUT_FORMAT.md section
+# 12: files a scorer must not depend on). Read for the completeness report only; no label
+# depends on them.
+GENERATION_OBSERVATION_FILE = ("logs", "generation_observation.jsonl")   # PROVISIONAL
+MODEL_TELEMETRY_FILE = ("logs", "model_telemetry.jsonl")                 # PROVISIONAL
+PRODUCER_AGENT = "PROCESSOR"                                              # PROVISIONAL
+# The agents whose records rest on the PROCESSOR's delivery: the producer itself and the
+# two phase-5 auditors that read its draft (CLAUDE.md, VERIFIER-A).
+DRAFT_READERS = ("PROCESSOR", "VERIFIER", "FACT_CHECKER")                 # PROVISIONAL
 # ---------------------------------------------------------------------------------------
 
 
@@ -179,20 +208,91 @@ def read_completion(run_dir):
     return record
 
 
+def semantically_incomplete_end(completion) -> bool:
+    """D-066: a valid completion record of a run that reached its end with exit code 0 and
+    marks its semantic work incomplete (state `stopped`, `reached_end` true, an integer
+    `exit_code` of 0, a `finished_at` timestamp, `semantic_complete` false). Such a run is
+    not a run failure."""
+    return (isinstance(completion, dict) and completion.get("state") == "stopped"
+            and completion.get("reached_end") is True and type(completion.get("exit_code")) is int
+            and completion["exit_code"] == 0 and isinstance(completion.get("finished_at"), str)
+            and bool(completion["finished_at"]) and completion.get("semantic_complete") is False)
+
+
+def _jsonl(path: Path):
+    """The objects of a JSON Lines file, or None when it is absent or unreadable."""
+    if not path.is_file():
+        return None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, ValueError):
+        return None
+    out = []
+    for line in lines:
+        try:
+            row = json.loads(line) if line.strip() else None
+        except ValueError:
+            continue
+        if isinstance(row, dict):
+            out.append(row)
+    return out
+
+
+def completeness(run_dir, document_id, completion) -> dict:
+    """D-066: how complete one document's run is, read from the run's own records. Counts
+    only; no label depends on it. A value the run did not record is None."""
+    run = Path(run_dir)
+    out = {"semantic_complete": None if completion is None else completion.get("semantic_complete") is not False,
+           "processor_calls_made": None, "processor_calls_accepted": None,
+           "processor_delivery_partial": None, "partial_delivery_pairs": None}
+    observed = _jsonl(run.joinpath(*GENERATION_OBSERVATION_FILE))
+    if observed is not None:
+        mine = [r for r in observed if str(r.get("doc_id") or document_id) == str(document_id)]
+        calls = [r for r in mine if r.get("agent") == PRODUCER_AGENT and "event" not in r]
+        out["processor_calls_made"] = len(calls)
+        out["processor_calls_accepted"] = sum(1 for r in calls if r.get("accepted_semantic_output") is True)
+        merges = [r for r in mine if r.get("event") == "extraction_merge"]
+        out["processor_delivery_partial"] = any(r.get("complete") is False and bool(r.get("missing_partitions"))
+                                                and int(r.get("item_count") or 0) > 0 for r in merges)
+    telemetry = _jsonl(run.joinpath(*MODEL_TELEMETRY_FILE))
+    if telemetry is not None:
+        out["partial_delivery_pairs"] = sum(1 for r in telemetry if r.get("event") == "auditor_pair"
+                                            and r.get("delivery") == "partial")
+    return out
+
+
+def read_rule_map(run_dir) -> dict:
+    """The run's own registry id to operator id map ({} when absent or unreadable), keys
+    and values folded for comparison."""
+    path = Path(run_dir).joinpath(*RULE_ID_MAP_FILE)
+    data, _ = _read_json(path) if path.is_file() else (None, "missing")
+    by_rule = data.get("by_rule") if isinstance(data, dict) else None
+    if not isinstance(by_rule, dict):
+        return {}
+    return {_fold(k): _fold(v.get("source_rule_id")) for k, v in by_rule.items()
+            if isinstance(v, dict) and v.get("source_rule_id")}
+
+
 def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
     """{failure, failure_reasons, records, raw_judged_absence, pairing_refusals, faults,
-    source} for one document's run, its typed records read by the one record reader
-    (common/records.py) from `source`: `review_data` (B2) or `bus` (B3, B4). A run failure
-    (section 0) is a completion record that is absent, invalid or not `completed`, or a
-    record source that is missing or unreadable (review_data.json for B2, the bus for B3)."""
+    source, semantic_incomplete, judging_calls, rule_map, completeness} for one document's
+    run, its typed records read by the one record reader (common/records.py) from
+    `source`: `review_data` (B2) or `bus` (B3, B4). A run failure (section 0) is a
+    completion record that is absent, invalid or not `completed`, or a record source that
+    is missing or unreadable (review_data.json for B2, the bus for B3), except (D-066) a
+    run that reached its end with exit code 0 and semantic_complete false."""
     run = Path(run_dir)
     out = {"failure": False, "failure_reasons": [], "records": [], "pairing_refusals": [],
-           "faults": [], "raw_judged_absence": [], "source": source}
+           "faults": [], "raw_judged_absence": [], "source": source, "semantic_incomplete": False,
+           "judging_calls": [], "rule_map": read_rule_map(run)}
     completion = read_completion(run)
     if completion is None:
         out["failure_reasons"].append("completion_record_missing_or_invalid")
+    elif semantically_incomplete_end(completion):
+        out["semantic_incomplete"] = True
     elif completion["state"] != "completed":
         out["failure_reasons"].append("completion_state:" + completion["state"])
+    out["completeness"] = completeness(run, document_id, completion)
     read = records.read_records(run, document_id, source)
     out["failure_reasons"].extend(read["failure_reasons"])
     out["faults"].extend(read["faults"])
@@ -209,6 +309,7 @@ def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
                 for entry in mine.get(key) or []:
                     if isinstance(entry, dict):
                         out["pairing_refusals"].append(entry)
+            out["judging_calls"] = [c for c in mine.get("judging_calls") or [] if isinstance(c, dict)]
         else:
             out["faults"].append("pairing_map_unreadable")
     return out
@@ -262,12 +363,44 @@ def _layer(records) -> str:
 # the mapping
 
 
+def item_calls_failed(rule_id: str, run: dict):
+    """D-066: (applies, reason). True when the run's pairing map records at least one
+    judging call for the item's rule and every one has outcome reply_failed. A judging call
+    names the registry id, so it is matched to the item's operator id through the run's own
+    map; while that map is not adopted (open point 12.11) the answer is False with the
+    reason, and the reason says whether it would have applied."""
+    calls = run.get("judging_calls") or []
+    if not calls:
+        return False, None
+    rid = _fold(rule_id)
+    rule_map = run.get("rule_map") or {}
+    mine = [c for c in calls if rule_map.get(_fold(c.get("rule_id"))) == rid]
+    all_failed = bool(mine) and all(c.get("outcome") == JUDGING_CALL_FAILED for c in mine)
+    if not RULE_ID_MAP_ADOPTED:
+        return False, ("not_applied_rule_map_unsettled:would_apply" if all_failed
+                       else "not_applied_rule_map_unsettled")
+    if not rule_map:
+        return False, "not_applied_no_rule_map"
+    return (True, "applied") if all_failed else (False, None)
+
+
+def _from_partial_delivery(run, deciding) -> bool:
+    """D-066: a deciding record posted by an agent that reads the PROCESSOR's delivery, in a
+    run whose delivery was partial."""
+    if not (run.get("completeness") or {}).get("processor_delivery_partial"):
+        return False
+    return any(str(r.get(records.ENVELOPE_AGENT_FIELD) or r.get("agent") or "") in DRAFT_READERS
+               for r in deciding)
+
+
 def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
              attribute_figure_audit: bool = False, refusal_first: bool = False) -> dict:
     """The class of one item from one document's run (sections 5.1, 5.2). `rule_count` is
     the number of rules in the item's bundle; with more than one, Python's figure-audit
     records attributed by shared words decide nothing unless `attribute_figure_audit`
-    (sensitivity S-3). `refusal_first` is sensitivity S-5: a refusal before an ok record."""
+    (sensitivity S-3). `refusal_first` is sensitivity S-5: a refusal before an ok record.
+    D-066: an item no record decides is ABSTAIN (`item_calls_failed`) instead of silent
+    when every judging call for its rule failed (item_calls_failed above)."""
     rid = _fold(rule_id)
     mine = [r for r in run["records"] if _fold(r.get("source_rule_id")) == rid]
     faults = []
@@ -293,9 +426,12 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
            # per-unit records that disagree (section 12 item 2): reported, never a label
            "refusal_and_ok": bool(refusals) and bool(oks),
            "irregular_and_ok": bool(irregular) and bool(oks),
-           "ok_over_refusal": False}
+           "ok_over_refusal": False, "item_calls_failed": None,
+           "decided_by_partial_delivery_record": False, "flagged_by_band": False}
     if run["failure"]:
         return dict(row, **{"class": ABSTAIN, "basis": "run_failure"})
+    applies, reason = item_calls_failed(rule_id, run)
+    row["item_calls_failed"] = reason
     # counted only once the run has not failed: a failed run decides nothing by an ok
     row["ok_over_refusal"] = not irregular and bool(refusals) and bool(oks)
     if irregular:
@@ -314,17 +450,26 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
         row["cited_unit_ids"] = sorted({str(r.get("unit_id")).casefold()
                                         for r in deciding if r.get("unit_id")})
         row["layer"] = _layer(deciding)
+        row["decided_by_partial_delivery_record"] = _from_partial_delivery(run, deciding)
+        # section 12 item 3: a FLAG decided by a band record (a band read from the rule's text)
+        row["flagged_by_band"] = cls == FLAG and any(str(r.get("relation") or "") in BAND_RELATIONS
+                                                     for r in deciding)
         return dict(row, **{"class": cls, "basis": basis})
     # a settled answer on any unit beats a refusal on another (D-039 item 1); S-5 keeps
     # the earlier order, a refusal on any unit before an ok record
     if refusal_first and refusals:
+        row["decided_by_partial_delivery_record"] = _from_partial_delivery(run, refusals)
         return dict(row, **{"class": UNDECIDED, "basis": "refusal"})
     if oks:
+        row["decided_by_partial_delivery_record"] = _from_partial_delivery(run, oks)
         return dict(row, **{"class": CLEAR, "basis": "ok"})
     if refusals:
+        row["decided_by_partial_delivery_record"] = _from_partial_delivery(run, refusals)
         return dict(row, **{"class": UNDECIDED, "basis": "refusal"})
     if unknown:
         return dict(row, **{"class": CLEAR, "basis": "unrecognised_record"})
+    if applies:
+        return dict(row, **{"class": ABSTAIN, "basis": "item_calls_failed"})
     return dict(row, **{"class": CLEAR, "basis": "silent"})
 
 
@@ -409,7 +554,10 @@ def _row(spec, item, arm, result):
             "figure_audit_set_aside": result.get("figure_audit_set_aside", 0),
             "refusal_and_ok": result.get("refusal_and_ok", False),
             "irregular_and_ok": result.get("irregular_and_ok", False),
-            "ok_over_refusal": result.get("ok_over_refusal", False)}
+            "ok_over_refusal": result.get("ok_over_refusal", False),
+            "item_calls_failed": result.get("item_calls_failed"),
+            "decided_by_partial_delivery_record": result.get("decided_by_partial_delivery_record", False),
+            "flagged_by_band": result.get("flagged_by_band", False)}
 
 
 def by_document(items):
@@ -443,6 +591,10 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
         documents.append({"document_id": doc_id, "run_failure": run["failure"],
                           "failure_reasons": run["failure_reasons"], "faults": run["faults"],
                           "record_source": source,
+                          # D-066: completeness, per document and arm; decides no label
+                          "semantic_incomplete": run["semantic_incomplete"],
+                          "completeness": run["completeness"],
+                          "rule_map_adopted": RULE_ID_MAP_ADOPTED,
                           # a judged absence's raw model copy: listed, never counted
                           "raw_judged_absence_records": len(run["raw_judged_absence"]),
                           "rules": count, "figure_audit_set_aside": aside,
@@ -504,6 +656,18 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         "unattached_figure_audit": sum((d.get("unattached") or {}).get("figure_audit", 0)
                                        for d in documents),
         "raw_judged_absence_records": sum(d.get("raw_judged_absence_records", 0) for d in documents),
+        # D-066
+        "semantic_incomplete_documents": sum(1 for d in documents if d.get("semantic_incomplete")),
+        "items_in_semantic_incomplete_documents": sum(
+            1 for r in rows if r["document_id"] in {d["document_id"] for d in documents
+                                                    if d.get("semantic_incomplete")}),
+        "item_calls_failed": sum(1 for r in rows if r["basis"] == "item_calls_failed"),
+        "item_calls_failed_not_applied": sum(1 for r in rows
+                                             if str(r.get("item_calls_failed") or "").endswith(":would_apply")),
+        "items_decided_by_partial_delivery_record": sum(1 for r in rows
+                                                        if r.get("decided_by_partial_delivery_record")),
+        # section 12 item 3
+        "items_flagged_by_band": sum(1 for r in rows if r.get("flagged_by_band") and r["class"] == FLAG),
     }
     if spec.absence_flag:
         counts["missing_field_and_other_relation"] = sum(1 for r in rows if r["missing_field_and_other"])
@@ -564,6 +728,15 @@ def sensitivity_s5(spec: Spec, result: dict) -> dict:
     """S-5: the earlier order of section 5.1, a refusal on any unit before an ok record
     (irregular still first), for every pipeline arm; B0 and B1 rows are unchanged."""
     return _alternative(spec, result, "s5", "S-5", result["documents"])
+
+
+def sensitivity_s6(spec: Spec, result: dict) -> dict:
+    """S-6 (D-066): every item of a semantically incomplete document ABSTAIN, for every
+    pipeline arm; B0 and B1 rows, and every complete document, unchanged. The primary
+    comparison restricted to complete documents reads `semantic_incomplete` per document."""
+    incomplete = {d["document_id"] for d in result["documents"] if d.get("semantic_incomplete")}
+    return _relabel(spec, result, "S-6", lambda r: (ABSTAIN, "s6_semantic_incomplete")
+                    if r["arm"] in PIPELINE_ARMS + ("B2",) and r["document_id"] in incomplete else None)
 
 
 def read_items(path) -> list:
