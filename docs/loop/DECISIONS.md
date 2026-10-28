@@ -508,3 +508,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **BUS_READER_ADOPTED (DS5-8).** The plan checker's attack on DS5-8 is recorded in D-055 and its recommended reading was built (R22); the flag is set to True in the same lane, so B3 labels can be read from L2 on. The final preregistration checker attacks the section 5.1 text again before freeze.
 - **How to reverse.** Revert the lane's commits; B1 then runs eager and the over-bound documents fail.
 - **Rules.** III.2 step 3, S4d, S4e item 5, P11, P15, P18.
+
+## D-057. Re-forecast after L1, and L2's content
+
+- **When, stage.** 2026-10-28 14:53 +0300 (system clock), S5, before L2 (re-forecast gate, R17).
+- **Measured at L1.** 23 billed minutes, 0.49 USD; asset copy MATCH; overhead without the upload 15.4 minutes (it replaces the 13.9 estimate); workload 7.6 minutes on the clinical sheet.
+- **L2.** ContraDoc 5 and SciTab 5 development documents (the content-blind choice, `external/s05_dryrun/dryrun_choice.json`), one paired batch, B3 then B1 per document; B1 runs five passes for D-056 condition 6 (base, base_eager, tuned, tuned_eager, tuned_repeat). Forecast: 15.4 + 10 x 7.6 (B3) + 10 x 7 (B1, five model loads and 21 items over five passes, estimate) + 20 x 2 (per-entry overhead, estimate) = 201 minutes at 1.29 USD an hour x 1.3 = 5.62 USD; cap 1.5 x F = 8.43 USD. S5 actual spend 0.49 + 5.62 = 6.11 USD, within 24 (R17). H3: the cap's second term is about 68 USD.
+- **Options considered.** (a) Five-pass B1 on all ten documents (chosen: the eager comparison needs enough items, 21, and short documents are where eager fits); (b) measurement passes on two documents only (cheaper by about 1 USD, but 3 to 9 items per comparison).
+- **Rules.** P6, IV.3, R17, D-056.
+- **Also recorded.** Check 256 failed a second time in the full gate at `1c4daac` and passed alone (INC-013, open item 3); the full gate at `1c4daac` is otherwise the worktree baseline.
