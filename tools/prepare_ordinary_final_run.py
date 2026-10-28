@@ -152,9 +152,10 @@ def inst_finder_setting(files, value):
 
 def producer_attention_setting(files, attention=None, decision=None, prefill_chunk=None, prefill_decision=None):
     """SHIMMER_PRODUCER_ATTENTION and SHIMMER_PRODUCER_PREFILL_CHUNK (and their decisions) as
-    the BOUND final_models reads them (D-058, D-060, D-061): eager and chunks of 512 tokens
-    under D-061 when the operator names none; sdpa, one-shot or another chunk size only with
-    the recorded decision (D-NNN) that asks for it, a measurement run. The rules are not
+    the BOUND final_models reads them (D-058, D-061, D-063): sdpa pinned to the memory-efficient
+    backend and one-shot prefill, both under D-063, when the operator names none; eager or
+    chunked prefill only with the recorded decision (D-NNN) that asks for it, a measurement
+    run. The rules are not
     copied: `producer_attention` and `producer_prefill` are read from the bound
     scripts/final_models.py and evaluated, so the seal refuses exactly what the instance would
     refuse. Both settings are written explicitly so the instance never runs an ambient value;
@@ -162,10 +163,11 @@ def producer_attention_setting(files, attention=None, decision=None, prefill_chu
     require('scripts/final_models.py' in files, 'Frozen model source absent from the bound commit: scripts/final_models.py')
     source = files['scripts/final_models.py'].decode('utf-8-sig')
     tree = ast.parse(source)
-    names = {'producer_attention', 'producer_prefill', 'prefill_setting', 'require', 'PRODUCER_ATTENTION_ENV',
-             'PRODUCER_ATTENTION_DECISION_ENV', 'PRODUCER_ATTENTION_DEFAULT', 'EAGER', 'SDPA', 'PRODUCER_ATTENTIONS',
-             'SDPA_BACKEND', 'DECISION_ID', 'PRODUCER_PREFILL_ENV', 'PRODUCER_PREFILL_DECISION_ENV',
-             'PREFILL_CHUNK_DEFAULT', 'PREFILL_DECISION_DEFAULT', 'ONE_SHOT', 'CHUNKED'}
+    names = {'producer_attention', 'attention_setting', 'producer_prefill', 'prefill_setting', 'require',
+             'PRODUCER_ATTENTION_ENV', 'PRODUCER_ATTENTION_DECISION_ENV', 'PRODUCER_ATTENTION_DEFAULT',
+             'ATTENTION_DECISION_DEFAULT', 'EAGER', 'SDPA', 'PRODUCER_ATTENTIONS', 'SDPA_BACKEND', 'DECISION_ID',
+             'PRODUCER_PREFILL_ENV', 'PRODUCER_PREFILL_DECISION_ENV', 'PREFILL_CHUNK_DEFAULT', 'PREFILL_DEFAULT',
+             'PREFILL_DECISION_DEFAULT', 'E_CHUNK_TOKENS', 'ONE_SHOT', 'CHUNKED'}
     keep = [n for n in tree.body if (isinstance(n, ast.FunctionDef) and n.name in names) or
             (isinstance(n, ast.Assign) and all(isinstance(t, ast.Name) and t.id in names for t in n.targets))]
     defined = {n.name for n in keep if isinstance(n, ast.FunctionDef)}
@@ -376,9 +378,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             'Compact extraction prompt declaration absent from the bound commit')
     decoding = {b: dict(status=p['status'],source=p['source'],sha256=p['sha256'],kwargs=p['kwargs'])
                 for b, p in decoding_policy.summary(ROOT).items()}
-    # D-058, D-060, D-061: the producer's attention (eager) and prefill (chunks of 512 under
-    # D-061) unless the operator seals sdpa, one-shot or another chunk size with the recorded
-    # decision that asks for it (a measurement run), read from the environment at sealing.
+    # D-058, D-063: the producer's attention (sdpa, memory-efficient backend pinned) and prefill
+    # (one shot), both under D-063, unless the operator seals eager or a chunk size with the
+    # recorded decision that asks for it (a measurement run), read from the environment at sealing.
     environment = seal_environment(files, os.environ.get('SHIMMER_INST_FINDER'),
                                    os.environ.get('SHIMMER_PRODUCER_ATTENTION'),
                                    os.environ.get('SHIMMER_PRODUCER_ATTENTION_DECISION'),

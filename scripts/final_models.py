@@ -27,36 +27,41 @@ PINS = {
                 'mean': '370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5',
                 'std': '1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a'}}
 
-# D-058, D-060 and D-061 (docs/loop/DECISIONS.md): the producer's attention, fixed at load from
-# a setting that travels in the sealed manifest's environment. Exactly two values: eager, the
-# default (the kernel the producer was trained and evaluated with and ran from v5 to v12; L2's
-# evidence kept it, D-060), and sdpa, under which every producer generate call runs pinned to
-# the memory-efficient sdpa backend (pinned_attention), accepted only with the recorded
-# decision (D-NNN) that asks for it, for a measurement pass. The Auditor896 classifier is never
-# governed by this setting: it loads eager, as its runtime contract says. The models _load_qwen
-# loads (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR) run sdpa, pinned the same way.
+# D-058, D-060, D-061 and D-063 (docs/loop/DECISIONS.md): the producer's attention, fixed at
+# load from a setting that travels in the sealed manifest's environment. Exactly two values:
+# sdpa, the default under D-063 (D-061's declared fallback: on the replay of B3's own prompts sdpa
+# one shot was byte-identical to one-shot eager on 12 of 12, E on 8 of 12), under which every
+# producer generate call runs pinned to the memory-efficient sdpa backend (pinned_attention);
+# and eager, the kernel the producer was trained and evaluated with and ran from v5 to v12,
+# now a measurement setting accepted only with the recorded decision (D-NNN) that asks for it.
+# The default records its own decision, D-063. The Auditor896 classifier is never governed by
+# this setting: it loads eager, as its runtime contract says. The models _load_qwen loads
+# (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR) run sdpa, pinned the same way.
 PRODUCER_ATTENTION_ENV = 'SHIMMER_PRODUCER_ATTENTION'
 PRODUCER_ATTENTION_DECISION_ENV = 'SHIMMER_PRODUCER_ATTENTION_DECISION'
 EAGER = 'eager'
 SDPA = 'sdpa'
-PRODUCER_ATTENTION_DEFAULT = EAGER
+PRODUCER_ATTENTION_DEFAULT = SDPA
+ATTENTION_DECISION_DEFAULT = 'D-063'
 PRODUCER_ATTENTIONS = (EAGER, SDPA)
 SDPA_BACKEND = 'EFFICIENT_ATTENTION'
 DECISION_ID = re.compile(r'D-\d{3}')
-# D-060 and D-061: E, chunked prefill. Every producer generate call (B3) and every B1 call feeds
-# its prompt through the KV cache in fixed chunks of PREFILL_CHUNK_DEFAULT tokens under the
-# producer's attention (eager), leaving GENERATE_TAIL_TOKENS prompt tokens to generate() itself,
-# so the first generated token is computed by the same kernel path as one-shot prefill. The
-# chunk size is a sealed setting like the attention: 512 under D-061 unless a recorded decision
-# names another size or one-shot prefill (`one_shot`, a measurement pass). A prompt of at most
-# one chunk plus the tail is prefilled by generate() in one step: chunking it would change
-# nothing about its memory.
+# D-060, D-061 and D-063: the producer's prefill. By default (D-063) every producer generate
+# call (B3) and every B1 call prefills its prompt in one shot. E, chunked prefill (D-060,
+# D-061), is kept as a measurement setting: the prompt is fed through the KV cache in fixed
+# chunks (E_CHUNK_TOKENS, 512, the size D-061 declared, or another size) under the producer's
+# attention, leaving GENERATE_TAIL_TOKENS prompt tokens to generate() itself, so the first
+# generated token is computed by the same kernel path as one-shot prefill. Any chunk size is
+# accepted only with the recorded decision that asks for it. A prompt of at most one chunk
+# plus the tail is prefilled by generate() in one step: chunking it would change nothing
+# about its memory.
 PRODUCER_PREFILL_ENV = 'SHIMMER_PRODUCER_PREFILL_CHUNK'
 PRODUCER_PREFILL_DECISION_ENV = 'SHIMMER_PRODUCER_PREFILL_DECISION'
-PREFILL_CHUNK_DEFAULT = 512
-PREFILL_DECISION_DEFAULT = 'D-061'
 ONE_SHOT = 'one_shot'
 CHUNKED = 'chunked'
+PREFILL_DEFAULT = ONE_SHOT
+PREFILL_DECISION_DEFAULT = 'D-063'
+E_CHUNK_TOKENS = 512
 GENERATE_TAIL_TOKENS = 2
 # torch.backends.cuda's switch for each sdpa backend, by SDPBackend name.
 SDPA_SWITCHES = {'FLASH_ATTENTION': 'flash_sdp_enabled', 'EFFICIENT_ATTENTION': 'mem_efficient_sdp_enabled',
@@ -111,33 +116,46 @@ def identity(role, spec=None):
                 runtime_engine='transformers/peft/bitsandbytes', limitations=spec.get('limitations'))
 
 
-def producer_attention(environ=None):
-    """The producer's attention as the sealed environment sets it (D-058, D-060):
-    {attention_implementation, sdpa_backend, attention_decision}. Unset is eager. sdpa is
-    accepted only with SHIMMER_PRODUCER_ATTENTION_DECISION naming a recorded decision
-    (D-NNN), for a measurement pass; a decision with eager, or any other value, is refused,
-    never ignored."""
-    environ = os.environ if environ is None else environ
-    value = environ.get(PRODUCER_ATTENTION_ENV)
+def attention_setting(value=None, decision=None):
+    """The producer's attention (D-058, D-063), one rule for B3 and B1:
+    {attention_implementation, sdpa_backend, attention_decision}. With nothing named it is sdpa
+    pinned to the memory-efficient backend under ATTENTION_DECISION_DEFAULT (D-063). eager (a
+    measurement setting) is accepted only with the recorded decision (D-NNN) that asks for it;
+    a decision named with sdpa is accepted only when it is the default's own. Any other value
+    is refused, never ignored."""
     value = PRODUCER_ATTENTION_DEFAULT if value is None else value
-    decision = environ.get(PRODUCER_ATTENTION_DECISION_ENV)
-    require(value in PRODUCER_ATTENTIONS, PRODUCER_ATTENTION_ENV + ' is eager or sdpa; no other attention is admitted')
-    require((value == SDPA) == (decision is not None),
-            PRODUCER_ATTENTION_ENV + '=sdpa needs ' + PRODUCER_ATTENTION_DECISION_ENV
-            + ' (the recorded decision that asks for it), and a decision is accepted only with sdpa')
-    require(decision is None or bool(DECISION_ID.fullmatch(decision)),
-            PRODUCER_ATTENTION_DECISION_ENV + ' names a recorded decision (D-NNN)')
+    require(value in PRODUCER_ATTENTIONS, 'The producer attention is eager or sdpa; no other attention is admitted')
+    require(decision is None or bool(DECISION_ID.fullmatch(str(decision))),
+            'The attention decision names a recorded decision (D-NNN)')
+    if value == PRODUCER_ATTENTION_DEFAULT:
+        require(decision in (None, ATTENTION_DECISION_DEFAULT),
+                'An attention decision is named only with eager (a measurement setting)')
+        decision = ATTENTION_DECISION_DEFAULT
+    else:
+        require(decision is not None, 'eager attention needs the recorded decision that asks for it '
+                '(a measurement setting; sdpa is the default under %s)' % ATTENTION_DECISION_DEFAULT)
     return dict(attention_implementation=value, sdpa_backend=SDPA_BACKEND if value == SDPA else None,
                 attention_decision=decision)
 
 
+def producer_attention(environ=None):
+    """The producer's attention as the sealed environment sets it (attention_setting):
+    SHIMMER_PRODUCER_ATTENTION and SHIMMER_PRODUCER_ATTENTION_DECISION, both unset by default
+    (sdpa, memory-efficient backend pinned, under D-063)."""
+    environ = os.environ if environ is None else environ
+    try:
+        return attention_setting(environ.get(PRODUCER_ATTENTION_ENV), environ.get(PRODUCER_ATTENTION_DECISION_ENV))
+    except RuntimeError as exc:
+        raise RuntimeError(PRODUCER_ATTENTION_ENV + '/' + PRODUCER_ATTENTION_DECISION_ENV + ': ' + str(exc)) from None
+
+
 def prefill_setting(chunk=None, decision=None):
-    """How a producer prompt is prefilled (D-060, D-061), one rule for B3 and B1:
-    {prefill, prefill_chunk_tokens, prefill_decision}. With nothing named it is chunked at
-    PREFILL_CHUNK_DEFAULT tokens under PREFILL_DECISION_DEFAULT. Another chunk size (a positive
-    whole number) or `one_shot` (no chunking, a measurement pass) is accepted only with the
-    recorded decision (D-NNN) that asks for it; a decision naming the default is accepted
-    only when it is the default's own. Anything else is refused, never ignored."""
+    """How a producer prompt is prefilled (D-060, D-061, D-063), one rule for B3 and B1:
+    {prefill, prefill_chunk_tokens, prefill_decision}. With nothing named it is one shot under
+    PREFILL_DECISION_DEFAULT (D-063). A chunk size (a positive whole number; E_CHUNK_TOKENS is
+    E's) is a measurement setting accepted only with the recorded decision (D-NNN) that asks
+    for it; a decision named with one_shot is accepted only when it is the default's own.
+    Anything else is refused, never ignored."""
     if isinstance(chunk, str) and chunk != ONE_SHOT:
         require(chunk.isdigit(), 'The prefill chunk is a positive number of tokens or one_shot')
         chunk = int(chunk)
@@ -145,23 +163,19 @@ def prefill_setting(chunk=None, decision=None):
             'The prefill chunk is a positive number of tokens or one_shot')
     require(decision is None or bool(DECISION_ID.fullmatch(str(decision))),
             'The prefill decision names a recorded decision (D-NNN)')
-    default = chunk is None or chunk == PREFILL_CHUNK_DEFAULT
-    if default:
+    if chunk is None or chunk == PREFILL_DEFAULT:
         require(decision in (None, PREFILL_DECISION_DEFAULT),
-                'A prefill decision is named only with another chunk size or one_shot')
-        return dict(prefill=CHUNKED, prefill_chunk_tokens=PREFILL_CHUNK_DEFAULT,
-                    prefill_decision=PREFILL_DECISION_DEFAULT)
-    require(decision is not None, 'A prefill chunk other than %d, or one_shot, needs the recorded decision '
-            'that asks for it' % PREFILL_CHUNK_DEFAULT)
-    if chunk == ONE_SHOT:
-        return dict(prefill=ONE_SHOT, prefill_chunk_tokens=None, prefill_decision=decision)
+                'A prefill decision is named only with a chunk size (a measurement setting)')
+        return dict(prefill=ONE_SHOT, prefill_chunk_tokens=None, prefill_decision=PREFILL_DECISION_DEFAULT)
+    require(decision is not None, 'Chunked prefill needs the recorded decision that asks for it '
+            '(a measurement setting; one shot is the default under %s)' % PREFILL_DECISION_DEFAULT)
     return dict(prefill=CHUNKED, prefill_chunk_tokens=chunk, prefill_decision=decision)
 
 
 def producer_prefill(environ=None):
     """The producer's prefill as the sealed environment sets it (prefill_setting):
     SHIMMER_PRODUCER_PREFILL_CHUNK and SHIMMER_PRODUCER_PREFILL_DECISION, both unset by
-    default (chunked at 512 under D-061)."""
+    default (one shot under D-063)."""
     environ = os.environ if environ is None else environ
     return prefill_setting(environ.get(PRODUCER_PREFILL_ENV), environ.get(PRODUCER_PREFILL_DECISION_ENV))
 
@@ -187,7 +201,8 @@ def _forward_owner(model):
 def chunked_prefill(model, input_ids, chunk_tokens, *, cache=None):
     """E (D-060, D-061): every prompt token but the last GENERATE_TAIL_TOKENS fed through the
     model in chunks of `chunk_tokens`, filling a KV cache, under whatever attention the model
-    carries (eager for the producer). Returns (cache, chunks)."""
+    carries (sdpa for the producer by default, D-063; E itself is a measurement setting).
+    Returns (cache, chunks)."""
     torch = importlib.import_module('torch')
     if cache is None:
         cache = importlib.import_module('transformers').DynamicCache()
@@ -390,10 +405,10 @@ def base_path(role, spec):
 
 def load(role, device):
     spec, paths = verify(role)
-    # D-058, D-060: the producer's attention is its sealed setting (eager unless a recorded
-    # decision asks for sdpa); the classifier stays eager, as its runtime contract says. The
-    # producer's prefill setting (D-061) is read here too, so an unadmitted one refuses before
-    # any weight is read.
+    # D-058, D-063: the producer's attention is its sealed setting (sdpa unless a recorded
+    # decision asks for eager); the classifier stays eager, as its runtime contract says. The
+    # producer's prefill setting (one shot unless a recorded decision asks for chunks) is read
+    # here too, so an unadmitted one refuses before any weight is read.
     attention = load_attention(role, spec)
     prefill = producer_prefill() if role == 'producer' else None
     torch = verify_runtime()
@@ -568,7 +583,7 @@ def admit_ordinary():
             raise RuntimeError('Auditor pairing contract not admitted')
         verify('producer')
         verify('auditor')
-        # D-058, D-061: an unadmitted attention or prefill setting refuses the run here,
+        # D-058, D-063: an unadmitted attention or prefill setting refuses the run here,
         # before any load.
         producer_attention()
         producer_prefill()

@@ -74,7 +74,8 @@ LOCAL_MAX_OUTPUT_TOKENS = 8192
 # PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR and the base-mode producer) is loaded with sdpa
 # named, not left to the library's default, and each generate call runs pinned to the
 # memory-efficient sdpa backend on CUDA (final_models.pinned_attention), recorded per call. The
-# frozen producer is not among them: final_models loads it eager (D-060).
+# frozen producer is not among them: final_models loads it under its sealed setting (sdpa by
+# default under D-063, pinned the same way; eager only with a recorded decision).
 LOCAL_ATTENTION = final_models.SDPA
 
 
@@ -747,9 +748,10 @@ class AgentWrapper:
         telemetry event, never truncated and never dropped silently; the document is then a
         declared exclusion of the B3 arm. Otherwise generate runs inside the model's pinned
         attention (final_models.pinned_attention: sdpa on CUDA only through the
-        memory-efficient backend; the eager producer unpinned) through the one shared generate
-        helper (final_models.generate_with_prefill): a producer call (`prefill`, its sealed
-        setting) is prefilled in chunks (E), any other call in one shot. The reply record
+        memory-efficient backend; a producer sealed eager unpinned) through the one shared
+        generate helper (final_models.generate_with_prefill): a producer call (`prefill`, its
+        sealed setting: one shot under D-063, chunks (E) only with a recorded decision) and any
+        other call in one shot. The reply record
         carries the kernel and the prefill setting (`attention`) and what the prefill measured
         (`prefill`: chunks, tail, seconds). Out of memory or a refused kernel is raised once as
         a named failure (final_models.GenerationFailure), never retried. Returns (output ids,
@@ -1110,11 +1112,12 @@ class AgentWrapper:
                      decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        # D-058, D-060: the tuned producer runs under its sealed attention (eager unless a
-        # recorded decision sealed sdpa, then pinned to the memory-efficient backend), and the
-        # decision travels into the reply record; the _load_qwen models run pinned sdpa.
-        # D-061: every producer call (backend local_producer, final or base mode) is prefilled
-        # in chunks under its sealed prefill setting; any other call in one shot.
+        # D-058, D-063: the tuned producer runs under its sealed attention (sdpa pinned to the
+        # memory-efficient backend unless a recorded decision sealed eager), and the decision
+        # travels into the reply record; the _load_qwen models run pinned sdpa. Every producer
+        # call (backend local_producer, final or base mode) is prefilled under its sealed
+        # prefill setting (one shot under D-063; chunks only with a recorded decision); any
+        # other call in one shot.
         sealed = getattr(mdl, "_shimmer_attention", None)
         decision = sealed.get("attention_decision") if isinstance(sealed, dict) else None
         prefill = None

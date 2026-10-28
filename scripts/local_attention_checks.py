@@ -1,16 +1,17 @@
-"""Checks for B3's local attention and prefill (docs/loop/DECISIONS.md D-058, D-060 and D-061),
-run by the verify gate (scripts/verify_session1.py check 288) through check(); `py -3.12 -X utf8
-scripts/local_attention_checks.py` runs them by hand and `--prove` runs the neutralise, fail,
-restore, pass proofs alone.
+"""Checks for B3's local attention and prefill (docs/loop/DECISIONS.md D-058, D-060, D-061 and
+D-063), run by the verify gate (scripts/verify_session1.py check 288) through check();
+`py -3.12 -X utf8 scripts/local_attention_checks.py` runs them by hand and `--prove` runs the
+neutralise, fail, restore, pass proofs alone.
 
 On mocked models (no weights, no download, no device: a model "on CUDA" is a device name), with
 the real torch for the sdpa backend switches, and on one tiny randomly built CPU Qwen2 model
 (2 layers, built in the check, no download):
 
-  - the producer's attention is a sealed setting with exactly two values: eager by default
-    (D-060), sdpa only with a recorded decision (D-NNN); anything else refuses;
-  - the producer's prefill is a sealed setting (D-061): chunked at 512 tokens under D-061 by
-    default; one-shot or another chunk size only with a recorded decision; anything else refuses;
+  - the producer's attention is a sealed setting with exactly two values: sdpa by default,
+    recorded under D-063; eager only with a recorded decision (D-NNN); anything else refuses;
+  - the producer's prefill is a sealed setting: one shot by default, recorded under D-063;
+    chunked (E at 512 tokens, or another chunk size) only with a recorded decision; anything
+    else refuses;
   - final_models.load loads the tuned producer with its attention and prefill and the
     Auditor896 classifier eager, which its runtime contract (config/final_models.json and
     tuning/auditor_final/runtime_contract.json) still says; a contract naming another
@@ -18,13 +19,14 @@ the real torch for the sdpa backend switches, and on one tiny randomly built CPU
   - _load_qwen (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR, the base-mode producer)
     names sdpa on every one of its three loads;
   - every producer call through agent_wrapper.call_local runs under the producer's attention
-    (eager, unpinned; an sdpa measurement producer pinned) with its sealed prefill, and every
-    _load_qwen model's call through call_local and call_qwen runs inside
-    torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION]) in one shot; each reply
-    record carries the kernel, the backend, the decision, the pin and the prefill setting,
-    and what the prefill measured;
-  - on the tiny CPU model, a producer call of three full chunks and the 2-token tail through
-    call_local gives byte for byte the reply the same call gives prefilled in one shot;
+    (sdpa pinned to the memory-efficient backend; an eager measurement producer unpinned)
+    with its sealed prefill, and every _load_qwen model's call through call_local and
+    call_qwen runs inside torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION]) in
+    one shot; each reply record carries the kernel, the backend, the decision, the pin and the
+    prefill setting, and what the prefill measured;
+  - on the tiny CPU model, an eager producer call of three full chunks and the 2-token tail
+    (E, a measurement setting) through call_local gives byte for byte the reply the same call
+    gives prefilled in one shot;
   - out of memory, or a refused kernel, is one recorded failure raised under its own name
     (final_models.GenerationOutOfMemory, AttentionKernelRefused), generate called once;
   - a prompt that does not fit the model's context with the call's output allowance is
@@ -53,12 +55,20 @@ import final_models  # noqa: E402
 
 ENV_KEYS = (final_models.PRODUCER_ATTENTION_ENV, final_models.PRODUCER_ATTENTION_DECISION_ENV,
             final_models.PRODUCER_PREFILL_ENV, final_models.PRODUCER_PREFILL_DECISION_ENV)
+# D-063: the producer's default prefill, one shot under D-063; E (D-061) is a measurement setting.
+DEFAULT_PREFILL = {"prefill": "one_shot", "prefill_chunk_tokens": None, "prefill_decision": "D-063"}
 E = {"prefill": "chunked", "prefill_chunk_tokens": 512, "prefill_decision": "D-061"}
+# What a call the producer's prefill setting does not govern records (a _load_qwen model's).
 ONE_SHOT = {"prefill": "one_shot", "prefill_chunk_tokens": None, "prefill_decision": None}
 PINNED = dict({"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
                "attention_decision": None, "pinned": True}, **ONE_SHOT)
-PRODUCER = dict({"attention_implementation": "eager", "sdpa_backend": None, "attention_decision": None,
-                 "pinned": False}, **E)
+# The producer's default call record (D-063): sdpa pinned to the memory-efficient backend, one shot.
+PRODUCER = dict({"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                 "attention_decision": "D-063", "pinned": True}, **DEFAULT_PREFILL)
+# An eager measurement producer under E (the D-061 path), unpinned.
+EAGER_E = dict({"attention_implementation": "eager", "sdpa_backend": None, "attention_decision": "D-061",
+                "pinned": False}, **E)
+EAGER_MEASUREMENT = {final_models.PRODUCER_ATTENTION_ENV: "eager", final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-061"}
 
 
 def _torch():
@@ -121,8 +131,9 @@ class _Model:
 
 def _tiny_producer():
     """A tiny randomly built CPU Qwen2 (2 layers, no download), eager, as final_models loads the
-    producer, carrying the sealed producer settings the way final_models.load sets them. Its
-    vocabulary covers the frozen decoding policy's stop and pad ids."""
+    producer for an eager measurement run (the CPU has no memory-efficient sdpa kernel),
+    carrying the sealed producer settings the way final_models.load sets them. Its vocabulary
+    covers the frozen decoding policy's stop and pad ids."""
     torch = _torch()
     from transformers import Qwen2Config, Qwen2ForCausalLM
     torch.manual_seed(0)
@@ -131,7 +142,7 @@ def _tiny_producer():
                          sliding_window=None, use_sliding_window=False, attn_implementation="eager")
     model = Qwen2ForCausalLM(config).eval()
     model._shimmer_identity = {"model_mode": "final", "adapter_checkpoint": 168}
-    model._shimmer_attention = final_models.producer_attention({})
+    model._shimmer_attention = final_models.producer_attention(EAGER_MEASUREMENT)
     return model
 
 
@@ -158,44 +169,45 @@ class LocalAttentionChecks(unittest.TestCase):
 
     # ---- the settings --------------------------------------------------------------------
 
-    def test_the_producer_attention_defaults_to_eager_and_sdpa_needs_a_decision(self):
-        self.assertEqual(final_models.producer_attention({}),
-                         {"attention_implementation": "eager", "sdpa_backend": None, "attention_decision": None})
-        self.assertEqual(final_models.load_attention("producer"), "eager")
-        sdpa = {final_models.PRODUCER_ATTENTION_ENV: "sdpa", final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-061"}
-        self.assertEqual(final_models.producer_attention(sdpa),
-                         {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
-                          "attention_decision": "D-061"})
-        for value, decision in (("sdpa", None), ("eager", "D-061"), ("sdpa", "decided"), ("flash", None),
-                                ("", None), ("SDPA", "D-061")):
-            environ = {final_models.PRODUCER_ATTENTION_ENV: value}
+    def test_the_producer_attention_defaults_to_sdpa_and_eager_needs_a_decision(self):
+        default = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                   "attention_decision": "D-063"}
+        self.assertEqual(final_models.producer_attention({}), default)
+        self.assertEqual(final_models.load_attention("producer"), "sdpa")
+        # the default's own decision may be named with it
+        self.assertEqual(final_models.producer_attention({final_models.PRODUCER_ATTENTION_ENV: "sdpa",
+                                                          final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-063"}), default)
+        self.assertEqual(final_models.producer_attention(EAGER_MEASUREMENT),
+                         {"attention_implementation": "eager", "sdpa_backend": None, "attention_decision": "D-061"})
+        for value, decision in (("eager", None), ("sdpa", "D-061"), ("eager", "decided"), ("flash", None),
+                                ("", None), ("EAGER", "D-061"), (None, "D-061")):
+            environ = {} if value is None else {final_models.PRODUCER_ATTENTION_ENV: value}
             if decision is not None:
                 environ[final_models.PRODUCER_ATTENTION_DECISION_ENV] = decision
             with self.assertRaises(RuntimeError, msg=(value, decision)):
                 final_models.producer_attention(environ)
-        with mock.patch.dict(os.environ, {final_models.PRODUCER_ATTENTION_ENV: "sdpa"}):
+        with mock.patch.dict(os.environ, {final_models.PRODUCER_ATTENTION_ENV: "eager"}):
             with self.assertRaisesRegex(RuntimeError, "recorded decision"):
                 final_models.load_attention("producer")
 
-    def test_the_producer_prefill_is_chunked_and_one_shot_needs_a_decision(self):
-        self.assertEqual(final_models.producer_prefill({}), E)
-        self.assertEqual(final_models.prefill_setting(), E)
-        self.assertEqual(final_models.prefill_setting(512, "D-061"), E)
-        self.assertEqual(final_models.producer_prefill({final_models.PRODUCER_PREFILL_ENV: "one_shot",
-                                                        final_models.PRODUCER_PREFILL_DECISION_ENV: "D-061"}),
-                         dict(ONE_SHOT, prefill_decision="D-061"))
+    def test_the_producer_prefill_is_one_shot_and_chunks_need_a_decision(self):
+        self.assertEqual(final_models.producer_prefill({}), DEFAULT_PREFILL)
+        self.assertEqual(final_models.prefill_setting(), DEFAULT_PREFILL)
+        self.assertEqual(final_models.prefill_setting("one_shot", "D-063"), DEFAULT_PREFILL)
+        self.assertEqual(final_models.producer_prefill({final_models.PRODUCER_PREFILL_ENV: "512",
+                                                        final_models.PRODUCER_PREFILL_DECISION_ENV: "D-061"}), E)
         self.assertEqual(final_models.producer_prefill({final_models.PRODUCER_PREFILL_ENV: "1024",
                                                         final_models.PRODUCER_PREFILL_DECISION_ENV: "D-099"}),
                          {"prefill": "chunked", "prefill_chunk_tokens": 1024, "prefill_decision": "D-099"})
-        for chunk, decision in (("one_shot", None), ("1024", None), (None, "D-099"), ("512", "D-099"),
+        for chunk, decision in (("512", None), ("1024", None), (None, "D-099"), ("one_shot", "D-099"),
                                 ("0", "D-099"), ("-5", "D-099"), ("half", "D-099"), ("1024", "decided"),
-                                ("ONE_SHOT", "D-061")):
+                                ("ONE_SHOT", "D-063")):
             environ = {} if chunk is None else {final_models.PRODUCER_PREFILL_ENV: chunk}
             if decision is not None:
                 environ[final_models.PRODUCER_PREFILL_DECISION_ENV] = decision
             with self.assertRaises(RuntimeError, msg=(chunk, decision)):
                 final_models.producer_prefill(environ)
-        self.assertEqual(final_models.GENERATE_TAIL_TOKENS, 2)
+        self.assertEqual((final_models.E_CHUNK_TOKENS, final_models.GENERATE_TAIL_TOKENS), (512, 2))
 
     def test_the_classifier_stays_eager_as_its_runtime_contract_says(self):
         # The tuning record is not in the container image (it copies scripts/, config/ and a few
@@ -206,9 +218,9 @@ class LocalAttentionChecks(unittest.TestCase):
         self.assertEqual(final_models.specification("auditor")["runtime"]["attn_implementation"], "eager")
         self.assertEqual(final_models.load_attention("auditor"), "eager")
         # the producer's setting never reaches the classifier
-        with mock.patch.dict(os.environ, {final_models.PRODUCER_ATTENTION_ENV: "sdpa",
-                                          final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-061"}):
-            self.assertEqual(final_models.load_attention("auditor"), "eager")
+        for environ in ({}, EAGER_MEASUREMENT):
+            with mock.patch.dict(os.environ, environ):
+                self.assertEqual(final_models.load_attention("auditor"), "eager")
         spec = json.loads((ROOT / "config/final_models.json").read_text(encoding="utf8"))["auditor"]
         spec["runtime"]["attn_implementation"] = "sdpa"
         with self.assertRaisesRegex(RuntimeError, "classifier runs eager"):
@@ -255,20 +267,22 @@ class LocalAttentionChecks(unittest.TestCase):
 
     def test_final_models_loads_the_producer_with_its_settings_and_the_classifier_eager(self):
         kwargs, model = self._load("producer")
-        self.assertEqual(kwargs["attn_implementation"], "eager")
-        self.assertEqual((model._shimmer_attention["attention_implementation"], model._shimmer_prefill), ("eager", E))
-        measurement = {final_models.PRODUCER_ATTENTION_ENV: "sdpa", final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-061",
-                       final_models.PRODUCER_PREFILL_ENV: "one_shot", final_models.PRODUCER_PREFILL_DECISION_ENV: "D-061"}
+        self.assertEqual(kwargs["attn_implementation"], "sdpa")
+        self.assertEqual((model._shimmer_attention, model._shimmer_prefill),
+                         ({"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                           "attention_decision": "D-063"}, DEFAULT_PREFILL))
+        measurement = dict(EAGER_MEASUREMENT, **{final_models.PRODUCER_PREFILL_ENV: "512",
+                                                 final_models.PRODUCER_PREFILL_DECISION_ENV: "D-061"})
         kwargs, model = self._load("producer", measurement)
         self.assertEqual((kwargs["attn_implementation"], model._shimmer_attention["attention_decision"],
-                          model._shimmer_prefill["prefill"]), ("sdpa", "D-061", "one_shot"))
+                          model._shimmer_prefill), ("eager", "D-061", E))
         kwargs, model = self._load("auditor", measurement)
         self.assertEqual(kwargs["attn_implementation"], "eager")
         self.assertFalse(hasattr(model, "_shimmer_attention") or hasattr(model, "_shimmer_prefill"))
         with self.assertRaisesRegex(RuntimeError, "recorded decision"):
-            self._load("producer", {final_models.PRODUCER_ATTENTION_ENV: "sdpa"})
+            self._load("producer", {final_models.PRODUCER_ATTENTION_ENV: "eager"})
         with self.assertRaisesRegex(RuntimeError, "recorded decision"):
-            self._load("producer", {final_models.PRODUCER_PREFILL_ENV: "one_shot"})
+            self._load("producer", {final_models.PRODUCER_PREFILL_ENV: "512"})
 
     def test_load_qwen_names_sdpa_on_every_load(self):
         import agent_wrapper
@@ -331,20 +345,22 @@ class LocalAttentionChecks(unittest.TestCase):
     def test_every_local_call_runs_its_attention_and_prefill_and_records_them(self):
         everything = _enabled_backends()
         self.assertNotEqual(everything, "EFFICIENT_ATTENTION")
-        # the frozen producer: eager, unpinned, chunked prefill (E) under D-061
-        model = _Model(attention="eager", sealed=final_models.producer_attention({}), prefill=E)
+        # the frozen producer (D-063): sdpa pinned to the memory-efficient backend, one shot
+        model = _Model(attention="sdpa", sealed=final_models.producer_attention({}),
+                       prefill=final_models.producer_prefill({}))
         with self._resident(model):
             self.assertTrue(self._wrapper("local_producer").call_local("a fixture prompt", max_new_tokens=2).ok)
-        self.assertEqual(model.calls, [("eager", everything)])
+        self.assertEqual(model.calls, [("sdpa", "EFFICIENT_ATTENTION")])
         record = self._records()[-1]
         self.assertEqual(record["attention"], PRODUCER)
         self.assertEqual({k: record["prefill"][k] for k in ("prompt_tokens", "chunks", "chunked_tokens", "tail_tokens")},
                          {"prompt_tokens": 3, "chunks": 0, "chunked_tokens": 0, "tail_tokens": 3})
         self.assertEqual(record["context"],
                          {"prompt_tokens": 3, "max_new_tokens": 2, "model_context": 10 ** 6, "over_context": False})
-        # the base-mode producer (_load_qwen, sdpa): pinned, and still a producer call, so chunked
-        # under the sealed prefill setting; the _load_qwen agents and REDACTOR: pinned, one shot
-        sites = (("base", "local_producer", "call_local", dict(PINNED, **E)),
+        # the base-mode producer (_load_qwen, sdpa): pinned, and still a producer call, so under
+        # the sealed prefill setting (one shot, D-063); the _load_qwen agents and REDACTOR:
+        # pinned, one shot, no prefill decision
+        sites = (("base", "local_producer", "call_local", dict(PINNED, **DEFAULT_PREFILL)),
                  ("base", "local_auditor", "call_local", PINNED), ("base", "qwen_local", "call_qwen", PINNED))
         for mode, backend, site, expected in sites:
             model = _Model()
@@ -354,14 +370,14 @@ class LocalAttentionChecks(unittest.TestCase):
             self.assertEqual(model.calls, [("sdpa", "EFFICIENT_ATTENTION")], (mode, backend))
             self.assertEqual(self._records()[-1]["attention"], expected, (mode, backend))
         self.assertEqual(_enabled_backends(), everything, "the pin ends with the call")
-        # a producer sealed sdpa for a measurement runs pinned and records its decision
-        sealed = final_models.producer_attention({final_models.PRODUCER_ATTENTION_ENV: "sdpa",
-                                                  final_models.PRODUCER_ATTENTION_DECISION_ENV: "D-061"})
-        model = _Model(attention="sdpa", sealed=sealed, prefill=E)
+        # a producer sealed eager with chunked prefill for a measurement runs unpinned and
+        # records its decisions
+        sealed = final_models.producer_attention(EAGER_MEASUREMENT)
+        model = _Model(attention="eager", sealed=sealed, prefill=E)
         with self._resident(model):
             self.assertTrue(self._wrapper("local_producer").call_local("a fixture prompt", max_new_tokens=2).ok)
-        self.assertEqual(model.calls, [("sdpa", "EFFICIENT_ATTENTION")])
-        self.assertEqual(self._records()[-1]["attention"], dict(PINNED, attention_decision="D-061", **E))
+        self.assertEqual(model.calls, [("eager", everything)])
+        self.assertEqual(self._records()[-1]["attention"], EAGER_E)
         # on a CPU, which has no memory-efficient kernel, a call runs unpinned and says so
         model = _Model(device="cpu")
         with self._resident(model, "base"):
@@ -369,16 +385,17 @@ class LocalAttentionChecks(unittest.TestCase):
         self.assertEqual((model.calls, self._records()[-1]["attention"]["pinned"]), ([("sdpa", everything)], False))
 
     def test_a_producer_call_in_chunks_replies_as_one_shot_on_a_tiny_cpu_model(self):
-        """D-061 items 3 and 6 end to end: call_local on the resident producer (final mode), a
-        prompt of three full 512-token chunks and the 2-token tail, the frozen decoding policy;
-        the reply is byte for byte the one the same call gives prefilled in one shot, and each
-        reply record says how it was prefilled."""
+        """D-061 items 3 and 6 end to end (E, a measurement setting under D-063): call_local on
+        the resident producer (final mode, sealed eager for the measurement), a prompt of three
+        full 512-token chunks and the 2-token tail, the frozen decoding policy; the reply is byte
+        for byte the one the same call gives prefilled in one shot, and each reply record says
+        how it was prefilled."""
         torch = _torch()
         model = _tiny_producer()
         words = [str(int(i)) for i in torch.randint(1, 5000, (3 * 512 + 2,), generator=torch.Generator().manual_seed(3))]
         prompt = " ".join(words)
         replies = {}
-        for name, prefill in (("e", E), ("one_shot", final_models.prefill_setting("one_shot", "D-061"))):
+        for name, prefill in (("e", E), ("one_shot", final_models.prefill_setting())):
             model._shimmer_prefill = prefill
             with self._resident(model):
                 result = self._wrapper("local_producer").call_local(prompt, max_new_tokens=4)
@@ -387,8 +404,8 @@ class LocalAttentionChecks(unittest.TestCase):
         (e_text, e_record), (one_text, one_record) = replies["e"], replies["one_shot"]
         self.assertEqual(e_text, one_text, "the chunked reply differs from the one-shot reply")
         self.assertEqual(e_record["reply"]["sha256"], one_record["reply"]["sha256"])
-        self.assertEqual(e_record["attention"], PRODUCER)
-        self.assertEqual(one_record["attention"], dict(PRODUCER, prefill="one_shot", prefill_chunk_tokens=None))
+        self.assertEqual(e_record["attention"], EAGER_E)
+        self.assertEqual(one_record["attention"], dict(EAGER_E, **DEFAULT_PREFILL))
         self.assertEqual({k: e_record["prefill"][k] for k in ("prompt_tokens", "chunks", "chunked_tokens", "tail_tokens")},
                          {"prompt_tokens": 1538, "chunks": 3, "chunked_tokens": 1536, "tail_tokens": 2})
         self.assertEqual((one_record["prefill"]["chunks"], one_record["prefill"]["tail_tokens"]), (0, 1538))
@@ -463,21 +480,21 @@ def _pin_that_pins_nothing(original):
 
 
 def _attention_without_its_decision(original):
-    """The setting without the rule that sdpa needs its recorded decision."""
+    """The setting without the rule that eager needs its recorded decision."""
     def setting(environ=None):
         environ = os.environ if environ is None else environ
-        value = environ.get(final_models.PRODUCER_ATTENTION_ENV) or "eager"
-        return dict(attention_implementation=value, sdpa_backend=None,
-                    attention_decision=environ.get(final_models.PRODUCER_ATTENTION_DECISION_ENV))
+        value = environ.get(final_models.PRODUCER_ATTENTION_ENV) or "sdpa"
+        return dict(attention_implementation=value, sdpa_backend="EFFICIENT_ATTENTION" if value == "sdpa" else None,
+                    attention_decision=environ.get(final_models.PRODUCER_ATTENTION_DECISION_ENV) or "D-063")
     return setting
 
 
 def _prefill_without_its_decision(original):
-    """The prefill rule taking one-shot or any chunk size as asked, without its decision."""
+    """The prefill rule taking any chunk size as asked, without its decision."""
     def setting(chunk=None, decision=None):
-        if chunk == "one_shot":
-            return dict(prefill="one_shot", prefill_chunk_tokens=None, prefill_decision=decision)
-        return original(None if decision is None else chunk, decision)
+        if chunk is not None and chunk != "one_shot" and decision is None:
+            return dict(prefill="chunked", prefill_chunk_tokens=int(chunk), prefill_decision=None)
+        return original(chunk, decision)
     return setting
 
 
@@ -500,14 +517,15 @@ def _prefill_leaving_one_token(original):
 # built from the original; prove_neutralizations() runs the check, then with the mutant in
 # place (it must fail and the mutant must have been called), then restored.
 NEUTRALIZATIONS = [
-    ("test_the_producer_attention_defaults_to_eager_and_sdpa_needs_a_decision", final_models,
+    ("test_the_producer_attention_defaults_to_sdpa_and_eager_needs_a_decision", final_models,
      "producer_attention", _attention_without_its_decision),
-    ("test_the_producer_prefill_is_chunked_and_one_shot_needs_a_decision", final_models,
+    ("test_the_producer_prefill_is_one_shot_and_chunks_need_a_decision", final_models,
      "prefill_setting", _prefill_without_its_decision),
     ("test_the_classifier_stays_eager_as_its_runtime_contract_says", final_models, "load_attention",
      lambda original: (lambda role, spec=None: "sdpa")),
+    # D-063: every role loaded eager (the D-060 producer default) instead of the producer's sdpa.
     ("test_final_models_loads_the_producer_with_its_settings_and_the_classifier_eager", final_models,
-     "load_attention", lambda original: (lambda role, spec=None: "sdpa")),
+     "load_attention", lambda original: (lambda role, spec=None: "eager")),
     ("test_load_qwen_names_sdpa_on_every_load", None, "LOCAL_ATTENTION", None),
     ("test_every_local_call_runs_its_attention_and_prefill_and_records_them", final_models, "pinned_attention",
      _pin_that_pins_nothing),
@@ -578,15 +596,16 @@ def check():
                if not (p["baseline_pass"] and p["neutralized_fail"] and p["restored_pass"])]
         return ("FAIL", "a neutralise, fail, restore, pass proof did not hold: " + ", ".join(bad))
     return ("PASS", "%d cases and %d neutralise/fail/restore/pass proofs: the producer's attention is "
-            "eager by default and sdpa only with a recorded decision (D-060); its prefill is chunked at "
-            "512 tokens under D-061 and one-shot or another size only with a recorded decision; "
-            "final_models loads the producer with both and the Auditor896 classifier eager (its runtime "
-            "contract); _load_qwen names sdpa on every load; every producer call runs eager through the "
-            "one shared generate helper with its sealed prefill, every _load_qwen call pinned to the "
-            "memory-efficient sdpa backend on CUDA in one shot, each recorded; a producer call of three "
-            "chunks and the 2-token tail replies byte for byte as one-shot on a tiny CPU model; out of "
-            "memory or a refused kernel is one named failure, never retried; a prompt over the context is "
-            "refused and recorded, never truncated (D-058, D-061)"
+            "sdpa by default under D-063 and eager only with a recorded decision; its prefill is one "
+            "shot under D-063 and chunked (E at 512 tokens, or another size) only with a recorded "
+            "decision; final_models loads the producer with both and the Auditor896 classifier eager "
+            "(its runtime contract); _load_qwen names sdpa on every load; every producer call runs "
+            "sdpa pinned to the memory-efficient backend on CUDA through the one shared generate helper "
+            "with its sealed prefill, every _load_qwen call pinned the same way in one shot, each "
+            "recorded; an eager producer call of three chunks and the 2-token tail replies byte for "
+            "byte as one-shot on a tiny CPU model; out of memory or a refused kernel is one named "
+            "failure, never retried; a prompt over the context is refused and recorded, never "
+            "truncated (D-058, D-061, D-063)"
             % (result.testsRun, len(proofs["proofs"])))
 
 

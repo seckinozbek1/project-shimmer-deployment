@@ -19,12 +19,13 @@ An evaluation tool, not a review and not an arm. Two commands:
       py -3.12 benchmark/baselines/replay_prompts.py run --prompts replay_prompts.json --out <dir>
           [--paths e,one_shot,sdpa,e_repeat] [--decision D-NNN] [--max-new-tokens N]
     Runs every prompt through each path, in order, on the same resident model:
-      e         eager, chunked at 512 tokens under D-061: the run proper's setting (E)
+      e         eager, chunked at 512 tokens (E, D-061; a measurement path)
       one_shot  eager, prefilled in one shot (a measurement path)
-      sdpa      sdpa pinned to the memory-efficient backend, one shot (a measurement path)
-      e_repeat  E again, for determinism
-    one_shot and sdpa are measurement paths and need --decision, the recorded decision that
-    asks for them. Every call goes through the one shared generate helper
+      sdpa      sdpa pinned to the memory-efficient backend, one shot: the run proper's
+                setting under D-063
+      e_repeat  E again, for determinism (a measurement path)
+    e, one_shot and e_repeat are measurement paths and need --decision, the recorded decision
+    that asks for them. Every call goes through the one shared generate helper
     (final_models.generate_with_prefill) under the frozen decoding policy, with the prompt's
     own output allowance (or --max-new-tokens). Per path it records the peak GPU memory
     (counters reset before the path, read after it) and per prompt the reply's SHA-256 and
@@ -70,11 +71,13 @@ AGENT_LABEL = "E_EVIDENCE_REPLAY"
 PHASE = "E_EVIDENCE"
 PRODUCER_BACKEND = "local_producer"
 # The paths, in the order run() takes them by default. A measurement path needs its decision.
+# Under D-063 sdpa one shot is the run proper's setting; eager (one shot or chunked) is a
+# measurement setting.
 PATHS = {
-    "e": {"attention": final_models.EAGER, "prefill_chunk": None, "measurement": False},
-    "one_shot": {"attention": final_models.EAGER, "prefill_chunk": final_models.ONE_SHOT, "measurement": True},
-    "sdpa": {"attention": final_models.SDPA, "prefill_chunk": final_models.ONE_SHOT, "measurement": True},
-    "e_repeat": {"attention": final_models.EAGER, "prefill_chunk": None, "measurement": False},
+    "e": {"attention": final_models.EAGER, "prefill_chunk": final_models.E_CHUNK_TOKENS, "measurement": True},
+    "one_shot": {"attention": final_models.EAGER, "prefill_chunk": None, "measurement": True},
+    "sdpa": {"attention": final_models.SDPA, "prefill_chunk": None, "measurement": False},
+    "e_repeat": {"attention": final_models.EAGER, "prefill_chunk": final_models.E_CHUNK_TOKENS, "measurement": True},
 }
 DEFAULT_PATHS = ("e", "one_shot", "sdpa", "e_repeat")
 PAIRS = (("e", "one_shot"), ("e", "e_repeat"), ("sdpa", "one_shot"), ("e", "sdpa"))
@@ -176,10 +179,10 @@ def path_record(name, decision=None):
     spec = PATHS[name]
     if spec["measurement"] and decision is None:
         raise ValueError("path %s is a measurement path and needs --decision (the recorded decision)" % name)
-    sdpa = spec["attention"] == final_models.SDPA
+    eager = spec["attention"] == final_models.EAGER
     chunk = spec["prefill_chunk"]
     return bare_model.attention_record(prefill_chunk=chunk, prefill_decision=decision if chunk else None,
-                                       attention=spec["attention"], attention_decision=decision if sdpa else None)
+                                       attention=spec["attention"], attention_decision=decision if eager else None)
 
 
 class ReplayBackend:

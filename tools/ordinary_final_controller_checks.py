@@ -74,28 +74,29 @@ B1_DIGESTS, B1_MODEL_ID = b1_checkpoint_digests()
 # which bare_model.py's own parser takes and its own verify_identity checks.
 B1_CHECKPOINTS = [dict(name=name, args=['--expect-model-id', B1_MODEL_ID, '--expect-digest', B1_DIGESTS[name]])
                   for name in ('base', 'tuned')]
-# The E evidence passes (D-056 condition 6 as D-060 and D-061 amend it): the run proper (eager,
-# chunked prefill) against sdpa (one shot, the D-058 option) for both checkpoints, the tuned
-# checkpoint one-shot eager, and one repeat of the tuned run proper, each a free name and the
-# checkpoint it loads. `base` and `tuned` are sealed without `checkpoint` (the name is the
-# checkpoint, as before), the others with it. Every measurement pass names its decision.
-B1_ONE_SHOT = ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061']
-B1_SDPA = ['--attention', 'sdpa', '--attention-decision', 'D-061'] + B1_ONE_SHOT
+# The measurement passes (D-056 condition 6 as D-061 and D-063 amend it): the run proper (sdpa,
+# memory-efficient backend pinned, one shot, D-063) against one-shot eager (the kernel the
+# producer was trained with) for both checkpoints, the tuned checkpoint under E (eager, chunks
+# of 512), and one repeat of the tuned run proper, each a free name and the checkpoint it loads.
+# `base` and `tuned` are sealed without `checkpoint` (the name is the checkpoint, as before),
+# the others with it. Every measurement pass names its decision.
+B1_EAGER = ['--attention', 'eager', '--attention-decision', 'D-061']
+B1_E = B1_EAGER + ['--prefill-chunk', '512', '--prefill-decision', 'D-061']
 B1_L2_PASSES = [B1_CHECKPOINTS[0],
-                dict(name='base_sdpa', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_SDPA),
+                dict(name='base_eager', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_EAGER),
                 B1_CHECKPOINTS[1],
-                dict(name='tuned_one_shot', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_ONE_SHOT),
-                dict(name='tuned_sdpa', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_SDPA),
+                dict(name='tuned_eager', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_EAGER),
+                dict(name='tuned_e', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_E),
                 dict(name='tuned_repeat', checkpoint='tuned', args=list(B1_CHECKPOINTS[1]['args']))]
 
 
 def b1_pass_attention(name):
     """(attention, attention decision, prefill, prefill decision) a fixture pass declares."""
-    if name.endswith('_sdpa'):
-        return 'sdpa', 'D-061', 'one_shot', 'D-061'
-    if name.endswith('_one_shot'):
-        return 'eager', None, 'one_shot', 'D-061'
-    return 'eager', None, 'chunked', 'D-061'
+    if name.endswith('_eager'):
+        return 'eager', 'D-061', 'one_shot', 'D-063'
+    if name.endswith('_e'):
+        return 'eager', 'D-061', 'chunked', 'D-061'
+    return 'sdpa', 'D-063', 'one_shot', 'D-063'
 B1_FIXTURES =ROOT / 'benchmark' / 'baselines' / 'fixtures'
 # The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
 # bare_model.py and replaces ONLY its model backend by one that answers from the canned replies
@@ -1871,7 +1872,7 @@ class ControllerChecks(unittest.TestCase):
         reserved, as its b1_summary.json recorded them (not measured on a CPU), in RUN_REPORT.md
         and FINAL_STATUS.json."""
         gib = 2 ** 30
-        memory = {'base': (10, 11), 'base_sdpa': (12, 13), 'tuned': (14, 15), 'tuned_sdpa': (16, 17)}
+        memory = {'base': (10, 11), 'base_eager': (12, 13), 'tuned': (14, 15), 'tuned_e': (16, 17)}
         evidence = {'evidence/result.json': json.dumps(dict(
             execution_integrity_passed=True, reasons=[], arm='B1', pipeline_exit_code=None,
             checkpoints={p['name']: dict(items=4, reply_records=4, items_without_one_record=[], summary_written=True,
@@ -1898,21 +1899,21 @@ class ControllerChecks(unittest.TestCase):
         status = read(folder / 'FINAL_STATUS.json')
         self.assertEqual(status['status'], 'ORDINARY_FINAL_CLOUD_RUN_COMPLETED')
         self.assertEqual(list(status['b1_checkpoints']), sorted(p['name'] for p in B1_L2_PASSES))
-        self.assertEqual(status['b1_checkpoints']['tuned_sdpa']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
+        self.assertEqual(status['b1_checkpoints']['tuned_e']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
         text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
-        self.assertIn('base_sdpa (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('base_eager (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
         self.assertIn('tuned_repeat (checkpoint tuned): %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
-        self.assertIn('length reached allowance 0, attention eager, chunked prefill of 512 tokens (D-061), peak GPU memory '
-                      '10.00 GiB allocated, 11.00 GiB reserved', text)
+        self.assertIn('length reached allowance 0, attention sdpa (memory-efficient backend pinned, D-063), one-shot '
+                      'prefill (D-063), peak GPU memory 10.00 GiB allocated, 11.00 GiB reserved', text)
         self.assertIn('tuned (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
-                      'length reached allowance 0, attention eager, chunked prefill of 512 tokens (D-061), longest prefill '
-                      '2.5 s, peak GPU memory 14.00 GiB', text)
-        self.assertIn('tuned_sdpa (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
-                      'length reached allowance 0, attention sdpa (measurement pass, D-061), one-shot prefill (D-061), '
-                      'peak GPU memory 16.00 GiB allocated, 17.00 GiB reserved', text)
-        self.assertIn('tuned_one_shot (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
-                      'length reached allowance 0, attention eager, one-shot prefill (D-061), peak GPU memory not measured '
-                      '(no CUDA)', text)
+                      'length reached allowance 0, attention sdpa (memory-efficient backend pinned, D-063), one-shot '
+                      'prefill (D-063), longest prefill 2.5 s, peak GPU memory 14.00 GiB', text)
+        self.assertIn('tuned_e (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager (measurement pass, D-061), chunked prefill of 512 '
+                      'tokens (D-061), peak GPU memory 16.00 GiB allocated, 17.00 GiB reserved', text)
+        self.assertIn('tuned_eager (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager (measurement pass, D-061), one-shot prefill (D-063), '
+                      'peak GPU memory not measured (no CUDA)', text)
 
     # ---- S2c items 8 and 9: the sealed run ------------------------------------------------
 
@@ -2292,12 +2293,12 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
 
     def test_b1_passes_run_by_name_and_load_their_sealed_checkpoint(self):
-        """D-056 condition 6 and D-061 item 4: the E evidence passes (base, base_sdpa, tuned,
-        tuned_one_shot, tuned_sdpa, tuned_repeat) are sealed as {name, checkpoint, args}; the
+        """D-056 condition 6, D-061 item 4 and D-063: the measurement passes (base, base_eager,
+        tuned, tuned_eager, tuned_e, tuned_repeat) are sealed as {name, checkpoint, args}; the
         runner passes each pass's checkpoint to the real bare_model.main as --checkpoint and
         writes it into evidence/b1/<name>, so two passes of one checkpoint never share a folder;
-        each measurement pass runs with its decision recorded, the others eager with chunked
-        prefill; the assessment and the progress total count passes by name."""
+        each measurement pass runs with its decision recorded, the others sdpa in one shot under
+        D-063; the assessment and the progress total count passes by name."""
         project = self.root / 'project'
         shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
         stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
@@ -2384,7 +2385,9 @@ class ControllerChecks(unittest.TestCase):
         for bad, declared, reason in (
                 (passes, None, 'needs the sealed replay prompts'),
                 ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=[])], declaration, 'names --decision exactly'),
-                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'e,e_repeat', '--decision', 'D-061'])],
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'sdpa', '--decision', 'D-061'])],
+                 declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'sdpa,e'])],
                  declaration, 'names --decision exactly'),
                 ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'e,flash'])], declaration, 'paths once each'),
                 ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--out', 'x', '--decision', 'D-061'])],
@@ -2436,7 +2439,12 @@ class ControllerChecks(unittest.TestCase):
         measurement = json.loads(text)
         self.assertEqual(measurement['comparisons']['e_vs_one_shot']['all']['byte_identical'], 2)
         self.assertEqual(measurement['comparisons']['e_vs_e_repeat']['three_chunks_or_more']['compared'], 1)
-        self.assertEqual(measurement['paths']['sdpa']['attention_decision'], 'D-061')
+        # D-063: sdpa one shot is the run proper's setting and records D-063; the eager paths
+        # are measurement paths and record the pass's decision
+        self.assertEqual({p: (measurement['paths'][p]['attention_decision'], measurement['paths'][p]['prefill_decision'])
+                          for p in ('e', 'one_shot', 'sdpa', 'e_repeat')},
+                         {'e': ('D-061', 'D-061'), 'one_shot': ('D-061', 'D-063'), 'sdpa': ('D-063', 'D-063'),
+                          'e_repeat': ('D-061', 'D-061')})
         self.assertEqual(result['checkpoints']['replay']['reply_records'], 8)
         # the analyser reports the replay pass from its measurement
         status = analysis.replay_pass_status(folder / 'replay_measurement.json', 'replay', result)
@@ -2447,9 +2455,10 @@ class ControllerChecks(unittest.TestCase):
     def test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts(self):
         """D-056 condition 6 and D-061, at sealing: a pass is {name, args} or {name, checkpoint,
         args}; its name is lower case, digits and underscores; the checkpoint it loads (its
-        `checkpoint`, else its name) is one bare_model.py loads; sdpa comes only with its
-        decision and a decision only with sdpa; one-shot or another chunk size only with a
-        prefill decision. The sealer refuses each case bare_model would refuse on the instance,
+        `checkpoint`, else its name) is one bare_model.py loads; eager comes only with its
+        decision and a decision with sdpa only when it is D-063's own; a chunk size only with a
+        prefill decision, and a decision with one_shot only when it is D-063's own (D-063). The
+        sealer refuses each case bare_model would refuse on the instance,
         and on a table of attention and prefill arguments the runner's rule and bare_model's own
         attention_record agree case by case."""
         items = (B1_FIXTURES / 'items_q4.json').read_bytes()
@@ -2470,12 +2479,14 @@ class ControllerChecks(unittest.TestCase):
             ([dict(name='base-sdpa', checkpoint='base', args=pin)], 'needs a name'),
             ([dict(name='Base', checkpoint='base', args=pin)], 'needs a name'),
             ([dict(name='base', checkpoint='base', args=pin, extra=1)], 'needs a name'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'sdpa'])], 'only with --attention-decision'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-061'])], 'only with --attention-decision'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--attention=eager', '--attention-decision=D-061'])],
-             'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'eager'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-061'])], 'attention decision only with eager'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa', '--attention-decision=D-061'])],
+             'attention decision only with eager'),
             ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'flash'])], 'attention bare_model does not take'),
-            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'one_shot'])], 'only with --prefill-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', '512'])], 'only with --prefill-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061'])],
+             'prefill decision only with'),
             ([dict(name='e', checkpoint='base', args=pin + ['--prefill-decision', 'D-099'])], 'prefill decision only with'),
             ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'half', '--prefill-decision', 'D-099'])],
              'prefill chunk bare_model does not take'),
@@ -2483,16 +2494,22 @@ class ControllerChecks(unittest.TestCase):
         ]
         for passes, reason in cases:
             self.assertIn(reason, refusal(passes) or 'admitted', passes)
-        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa',
+        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=eager',
                                                                                   '--attention-decision=D-061'])]))
+        self.assertIsNone(refusal([dict(name='a', checkpoint='base', args=pin + [
+            '--attention', 'sdpa', '--attention-decision', 'D-063', '--prefill-chunk', 'one_shot',
+            '--prefill-decision', 'D-063'])]))
         spec = importlib.util.spec_from_file_location('bare_model_pairs', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
         bare = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bare)
         # the runner's stated rule and bare_model's own, case by case
         table = [[], ['--attention', 'sdpa'], ['--attention', 'sdpa', '--attention-decision', 'D-061'],
+                 ['--attention', 'sdpa', '--attention-decision', 'D-063'], ['--attention', 'eager'],
                  ['--attention', 'eager', '--attention-decision', 'D-061'], ['--attention-decision', 'D-061'],
+                 ['--attention-decision', 'D-063'], ['--attention', 'eager', '--attention-decision', 'decided'],
                  ['--attention', 'sdpa', '--attention-decision', 'decided'],
                  ['--prefill-chunk', 'one_shot'], ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061'],
+                 ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-063'], ['--prefill-decision', 'D-063'],
                  ['--prefill-chunk', '512'], ['--prefill-chunk', '512', '--prefill-decision', 'D-061'],
                  ['--prefill-chunk', '512', '--prefill-decision', 'D-099'], ['--prefill-chunk', '256'],
                  ['--prefill-chunk', '256', '--prefill-decision', 'D-099'], ['--prefill-chunk', '0', '--prefill-decision', 'D-099'],
@@ -2502,7 +2519,7 @@ class ControllerChecks(unittest.TestCase):
             values = runner.b1_option_values(args)
             try:
                 bare.attention_record(values.get('--prefill-chunk'), values.get('--prefill-decision'),
-                                      values.get('--attention', 'eager'), values.get('--attention-decision'))
+                                      values.get('--attention', 'sdpa'), values.get('--attention-decision'))
                 bare_admits = True
             except ValueError:
                 bare_admits = False
@@ -2547,7 +2564,7 @@ class ControllerChecks(unittest.TestCase):
         every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
                  '--expect-digest=d', '--expect-decoding', '{}', '--sensitive',
                  '--prefill-chunk', '4096', '--prefill-decision', 'D-056',
-                 '--attention', 'sdpa', '--attention-decision', 'D-056']
+                 '--attention', 'eager', '--attention-decision', 'D-056']
         cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
                  ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
                  ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]
@@ -2715,15 +2732,16 @@ class ControllerChecks(unittest.TestCase):
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
 
-    # ---- D-058, D-060, D-061: the producer's attention and prefill are sealed ---------------
+    # ---- D-058, D-061, D-063: the producer's attention and prefill are sealed ---------------
 
     def test_the_producer_attention_is_sealed_and_eager_only_with_its_decision(self):
-        """D-058 item (iv) as D-060 and D-061 amend it: the settings the instance's final_models
-        reads at load travel in the sealed environment: eager and chunks of 512 tokens under
-        D-061 when the operator names none; sdpa, one-shot or another chunk size only with the
-        recorded decision (D-NNN) that asks for it, so a measurement run can be sealed. The seal
-        evaluates the BOUND final_models' own rules and refuses what the instance would refuse;
-        the runner's environment, built from the manifest, is what final_models reads."""
+        """D-058 item (iv) as D-061 and D-063 amend it: the settings the instance's final_models
+        reads at load travel in the sealed environment: sdpa (memory-efficient backend pinned)
+        and one-shot prefill, both under D-063, when the operator names none; eager or a chunk
+        size only with the recorded decision (D-NNN) that asks for it, so a measurement run can
+        be sealed. The seal evaluates the BOUND final_models' own rules and refuses what the
+        instance would refuse; the runner's environment, built from the manifest, is what
+        final_models reads."""
         import final_models
         files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
                  'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
@@ -2731,20 +2749,20 @@ class ControllerChecks(unittest.TestCase):
         default = sealer.seal_environment(files, None)
         self.assertEqual({k: default.get(k) for k in ('SHIMMER_PRODUCER_ATTENTION', 'SHIMMER_PRODUCER_ATTENTION_DECISION',
                                                       'SHIMMER_PRODUCER_PREFILL_CHUNK', 'SHIMMER_PRODUCER_PREFILL_DECISION')},
-                         {'SHIMMER_PRODUCER_ATTENTION': 'eager', 'SHIMMER_PRODUCER_ATTENTION_DECISION': None,
-                          'SHIMMER_PRODUCER_PREFILL_CHUNK': '512', 'SHIMMER_PRODUCER_PREFILL_DECISION': 'D-061'})
-        measurement = sealer.seal_environment(files, None, 'sdpa', 'D-061', 'one_shot', 'D-061')
+                         {'SHIMMER_PRODUCER_ATTENTION': 'sdpa', 'SHIMMER_PRODUCER_ATTENTION_DECISION': 'D-063',
+                          'SHIMMER_PRODUCER_PREFILL_CHUNK': 'one_shot', 'SHIMMER_PRODUCER_PREFILL_DECISION': 'D-063'})
+        measurement = sealer.seal_environment(files, None, 'eager', 'D-061', '512', 'D-061')
         self.assertEqual((measurement['SHIMMER_PRODUCER_ATTENTION'], measurement['SHIMMER_PRODUCER_ATTENTION_DECISION'],
                           measurement['SHIMMER_PRODUCER_PREFILL_CHUNK'], measurement['SHIMMER_PRODUCER_PREFILL_DECISION']),
-                         ('sdpa', 'D-061', 'one_shot', 'D-061'))
-        for attention, decision in (('sdpa', None), ('eager', 'D-061'), ('sdpa', 'decided'), ('flash', None)):
+                         ('eager', 'D-061', '512', 'D-061'))
+        for attention, decision in (('eager', None), ('sdpa', 'D-061'), ('eager', 'decided'), ('flash', None)):
             with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer attention', msg=(attention, decision)):
                 sealer.seal_environment(files, None, attention, decision)
-        for chunk, decision in (('one_shot', None), ('256', None), (None, 'D-099'), ('half', 'D-099')):
+        for chunk, decision in (('512', None), ('256', None), (None, 'D-099'), ('one_shot', 'D-061'), ('half', 'D-099')):
             with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer prefill', msg=(chunk, decision)):
                 sealer.seal_environment(files, None, None, None, chunk, decision)
         # what the instance reads: the runner replaces every SHIMMER_ variable with the sealed ones
-        for sealed, expected in ((default, ('eager', None, 'chunked', 512)), (measurement, ('sdpa', 'D-061', 'one_shot', None))):
+        for sealed, expected in ((default, ('sdpa', 'D-063', 'one_shot', None)), (measurement, ('eager', 'D-061', 'chunked', 512))):
             with patch.dict(os.environ, sealed):
                 if 'SHIMMER_PRODUCER_ATTENTION_DECISION' not in sealed:
                     os.environ.pop('SHIMMER_PRODUCER_ATTENTION_DECISION', None)
@@ -2762,7 +2780,9 @@ class ControllerChecks(unittest.TestCase):
 
     def test_the_report_states_the_producer_attention_and_prompts_over_the_context(self):
         """D-058 items (v) and (vi): the backend field names the producer's sealed attention
-        (sdpa: the fixed sentence; none: sealed before D-058, eager), and the over-context row
+        (D-063's default: the producer and B1 sdpa one shot, memory-efficient backend pinned,
+        and v5 to v12 ran the producer eager; sdpa without a decision: the fixed sentence of
+        D-058; none: sealed before D-058, eager), and the over-context row
         counts the B3 calls refused for exceeding the model's context, by document."""
         import analyze_ordinary_final_run as analysis
         call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
@@ -2802,7 +2822,18 @@ class ControllerChecks(unittest.TestCase):
         text = (eager / 'RUN_REPORT.md').read_text(encoding='utf8')
         self.assertIn('producer eager under decision D-058', text)
         self.assertIn('- **B3 prompts over the model context.** not determined: the pipeline did not start', text)
-        # D-060, D-061: the run proper, eager with chunked prefill, and an sdpa one-shot measurement run
+        # D-063: the run proper, the producer and B1 sdpa one shot, memory-efficient backend pinned
+        proper = self.root / 'analysis_attention_d063'
+        self.analysis_folder(proper, evidence=evidence, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa', SHIMMER_PRODUCER_ATTENTION_DECISION='D-063',
+            SHIMMER_PRODUCER_PREFILL_CHUNK='one_shot', SHIMMER_PRODUCER_PREFILL_DECISION='D-063'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(proper)
+        text = (proper / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer and B1 sdpa, prefilled in one shot, memory-efficient backend pinned (D-063); '
+                      'differs from v5 to v12, which ran the producer eager', text)
+        self.assertIn('- **Execution assessment.** passed', text)
+        # D-060, D-061: a run sealed under D-061 (eager with chunked prefill), and an E measurement run
         sealed_e = self.root / 'analysis_attention_e'
         self.analysis_folder(sealed_e, evidence=evidence, environment=dict(
             SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager', SHIMMER_PRODUCER_PREFILL_CHUNK='512',
@@ -2810,17 +2841,18 @@ class ControllerChecks(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             analysis.analyze(sealed_e)
         text = (sealed_e / 'RUN_REPORT.md').read_text(encoding='utf8')
-        self.assertIn('us-east-1; producer eager, the kernel it was trained and evaluated with (D-060), prefilled in '
-                      'chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, D-061)', text)
-        self.assertIn('- **Execution assessment.** passed', text)
-        measured = self.root / 'analysis_attention_sdpa'
+        self.assertIn('us-east-1; producer eager, the kernel it was trained and evaluated with (D-060, the default before '
+                      'D-063), prefilled in chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, '
+                      'D-061, the default before D-063)', text)
+        measured = self.root / 'analysis_attention_eager_e'
         self.analysis_folder(measured, environment=dict(
-            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa', SHIMMER_PRODUCER_ATTENTION_DECISION='D-061',
-            SHIMMER_PRODUCER_PREFILL_CHUNK='one_shot', SHIMMER_PRODUCER_PREFILL_DECISION='D-061'))
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager', SHIMMER_PRODUCER_ATTENTION_DECISION='D-064',
+            SHIMMER_PRODUCER_PREFILL_CHUNK='1024', SHIMMER_PRODUCER_PREFILL_DECISION='D-064'))
         with contextlib.redirect_stdout(io.StringIO()):
             analysis.analyze(measured)
-        self.assertIn('producer sdpa (memory-efficient, pinned) under decision D-061 (a measurement run), prefilled in one '
-                      'shot under decision D-061', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
+        self.assertIn('producer eager under decision D-064 (a measurement run; eager is the kernel the producer was '
+                      'trained with, and v5 to v12 ran it eager), prefilled in chunks of 1024 tokens under decision D-064 '
+                      '(a measurement run)', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
     def test_a_semantically_incomplete_run_is_reported_as_such(self):
         """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
@@ -4192,7 +4224,7 @@ NEUTRALIZATIONS = [
     # D-056 condition 6: any checkpoint admitted at sealing, whatever bare_model loads.
     ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_pass_checkpoint',
      lambda entry: entry.get('checkpoint', entry.get('name'))),
-    # D-056 condition 6: sdpa sealed without its decision (bare_model would refuse it on the instance).
+    # D-056 condition 6, D-063: eager sealed without its decision (bare_model would refuse it on the instance).
     ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
      lambda args: None),
     # D-056 condition 6, D-061: a pass's attention, prefill and peak memory not read from its summary.
@@ -4201,11 +4233,12 @@ NEUTRALIZATIONS = [
     # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
     ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
      schedule_ignoring_exposure),
-    # D-058 (iv), D-061: sdpa or one-shot sealed without its decision (the instance's final_models would refuse it).
+    # D-058 (iv), D-063: eager or a chunk size sealed without its decision (the instance's
+    # final_models would refuse it); the D-063 default is still sealed as it should be.
     ('test_the_producer_attention_is_sealed_and_eager_only_with_its_decision', sealer, 'producer_attention_setting',
      lambda files, attention=None, decision=None, chunk=None, prefill_decision=None: {
-         'SHIMMER_PRODUCER_ATTENTION': attention or 'eager', 'SHIMMER_PRODUCER_PREFILL_CHUNK': chunk or '512',
-         'SHIMMER_PRODUCER_PREFILL_DECISION': prefill_decision or 'D-061'}),
+         'SHIMMER_PRODUCER_ATTENTION': attention or 'sdpa', 'SHIMMER_PRODUCER_ATTENTION_DECISION': decision or 'D-063',
+         'SHIMMER_PRODUCER_PREFILL_CHUNK': chunk or 'one_shot', 'SHIMMER_PRODUCER_PREFILL_DECISION': prefill_decision or 'D-063'}),
     # D-061 (b): a semantically incomplete run reported as one that did not complete.
     ('test_a_semantically_incomplete_run_is_reported_as_such', runner, 'semantic_incomplete',
      lambda completion: False),
@@ -4221,7 +4254,7 @@ NEUTRALIZATIONS = [
     # D-061 item 4: a replay pass whose measurement path runs without its decision.
     ('test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths', runner, 'replay_error',
      lambda args: None),
-    # D-061: the runner's prefill rule not held to bare_model's (one-shot sealed without its decision).
+    # D-061, D-063: the runner's prefill rule not held to bare_model's (a chunk size sealed without its decision).
     ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
      lambda args: None if '--prefill-chunk' in args else runner_b1_attention_error(args)),
     # D-058 (vi): the backend field without the producer's attention.

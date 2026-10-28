@@ -28,46 +28,60 @@ DOES_NOT_SHOW=('This report shows run health and cost only. It shows no quality:
                'greedy repeat of the same run measures nothing (11.11).')
 
 
-# D-058 condition vi as D-060 and D-061 amend it: the producer's attention and prefill, stated in
-# every report's backend field.
+# D-058 condition vi as D-060, D-061 and D-063 amend it: the producer's attention and prefill,
+# stated in every report's backend field.
 PRODUCER_SDPA_TEXT=('producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
                     'producer eager')
+# D-063, the default from D-063 on: the producer and B1 both run it.
+DEFAULT_DECISION='D-063'
+PRODUCER_DEFAULT_TEXT=('producer and B1 sdpa, prefilled in one shot, memory-efficient backend pinned (D-063); '
+                       'differs from v5 to v12, which ran the producer eager')
 OVER_CONTEXT_EVENT='prompt_over_context'
 
 
 def producer_prefill_text(environment):
-    """The producer's prefill as the sealed environment set it (D-061)."""
+    """The producer's prefill as the sealed environment set it (D-061, D-063)."""
     chunk=environment.get('SHIMMER_PRODUCER_PREFILL_CHUNK')
     decision=environment.get('SHIMMER_PRODUCER_PREFILL_DECISION')
     if chunk is None:
         return 'prefilled in one shot (sealed before D-061 named the prefill)'
     if chunk=='one_shot':
+        if decision==DEFAULT_DECISION:
+            return 'prefilled in one shot (D-063)'
         return 'prefilled in one shot under decision %s (a measurement run)'%decision
     if decision=='D-061' and chunk=='512':
-        return ('prefilled in chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, D-061); '
-                'differs from v5 to v12, which prefilled in one shot')
+        return ('prefilled in chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, D-061, '
+                'the default before D-063); differs from v5 to v12, which prefilled in one shot')
     return 'prefilled in chunks of %s tokens under decision %s (a measurement run)'%(chunk,decision)
 
 
 def producer_attention_text(manifest):
     """The producer's attention and prefill as the sealed environment set them (D-058, D-060,
-    D-061): eager with chunked prefill by default from D-061; sdpa only under a recorded
-    decision; a manifest without the attention setting was sealed before D-058 and its
-    producer ran eager, as v5 to v12 did, in one shot."""
+    D-061, D-063): from D-063 on, sdpa pinned to the memory-efficient backend and one-shot
+    prefill by default, for the producer and B1; eager or chunked prefill only under a recorded
+    decision (a measurement run). Earlier manifests read as they were sealed: eager with
+    chunked prefill under D-061; a manifest without the attention setting was sealed before
+    D-058 and its producer ran eager, as v5 to v12 did, in one shot."""
     environment=manifest.get('environment') or {}
     value=environment.get('SHIMMER_PRODUCER_ATTENTION')
     prefill=producer_prefill_text(environment)
     if value=='sdpa':
         decision=environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION')
+        if decision==DEFAULT_DECISION:
+            if (environment.get('SHIMMER_PRODUCER_PREFILL_CHUNK'),
+                    environment.get('SHIMMER_PRODUCER_PREFILL_DECISION'))==('one_shot',DEFAULT_DECISION):
+                return PRODUCER_DEFAULT_TEXT
+            return PRODUCER_SDPA_TEXT+' (D-063), %s'%prefill
         if decision:
             return 'producer sdpa (memory-efficient, pinned) under decision %s (a measurement run), %s'%(decision,prefill)
         return PRODUCER_SDPA_TEXT+' (sealed under D-058, before D-060 returned the producer to eager)'
     if value=='eager':
         decision=environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION')
         if decision:
-            return ('producer eager under decision %s (sealed under D-058, when eager was the measurement run; '
-                    'v5 to v12 also ran the producer eager), %s'%(decision,prefill))
-        return 'producer eager, the kernel it was trained and evaluated with (D-060), %s'%prefill
+            return ('producer eager under decision %s (a measurement run; eager is the kernel the producer was '
+                    'trained with, and v5 to v12 ran it eager), %s'%(decision,prefill))
+        return ('producer eager, the kernel it was trained and evaluated with (D-060, the default before D-063), '
+                '%s'%prefill)
     if value is None:
         return 'producer eager (sealed before D-058 named the producer attention; v5 to v12 also ran it eager), '+prefill
     return 'producer attention %r: not one the runtime admits'%value
@@ -137,7 +151,9 @@ def b1_measures_text(seen):
     """A pass's attention, prefill, peak GPU memory and prefill time (D-056 condition 6, D-061),
     as its summary recorded them."""
     attention=seen.get('attention_implementation') or 'not recorded'
-    if seen.get('attention_decision'):
+    if seen.get('attention_implementation')=='sdpa' and seen.get('attention_decision')==DEFAULT_DECISION:
+        attention+=' (memory-efficient backend pinned, D-063)'
+    elif seen.get('attention_decision'):
         attention+=' (measurement pass, %s)'%seen['attention_decision']
     prefill=seen.get('prefill')
     if prefill=='chunked':
