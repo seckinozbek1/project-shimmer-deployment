@@ -75,3 +75,7 @@ Spend so far: 0.00 USD on instances; the storage share is 0.05 USD (the reaper's
 ## Stage boundary: S3 closed (2026-10-28 11:32 +0300)
 
 Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's reading at 08:31:59 UTC on 28 October: total 0.1585 USD). Running loop instances: none (the same provider listing listed 0; the reaper's last run was under 10 minutes old). Storage forecast to the loop's end, now from a measured pace: S0 to S2 and most of S3 and S4 (about 31 percent of the weighted work, D-035 weights) took about 13 working hours on 27 October, with an overnight shutdown of about 16 hours; at that pace, with the cloud waits of S5 and S8 and one more lost day as margin, the loop ends in about 4.5 days, so the storage forecast is 0.13 x 4.5 = 0.59 USD (estimate), charged to the reserve first. This replaces the 30-day placeholder (3.90 USD).
+
+## Stage boundary: S4 closed (2026-10-28 12:31 +0300)
+
+Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's reading at 09:27:00 UTC: total 0.1635 USD). Running loop instances: none (the same listing listed 0; the reaper's last run under 10 minutes old). Storage forecast to the loop's end: unchanged from the S3 boundary this morning, 0.59 USD (estimate).
