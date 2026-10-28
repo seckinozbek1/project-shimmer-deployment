@@ -67,6 +67,10 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              (agent, document, item_id), a judged absence counted only by Python's
              stamped copy with the raw copy listed apart; every mapping fixture moved
              onto a bus gives the same labels as its review_data.json form
+  dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
+             opaque id only; sorted by words then id; evenly spaced positions; each
+             replacement listed), the build restricted to chosen documents, B2 on it,
+             the B1 prompt tokens and R24's memory bound computed by hand
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -1870,6 +1874,127 @@ class RecordReaderChecks(_Case):
 
 
 # ---------------------------------------------------------------------------
+# the dry-run document choice and free measurements (benchmark/dryrun; S5 items 0.6, 0.7)
+
+
+DRYRUN = ROOT / "benchmark" / "dryrun"
+
+
+def _dryrun(name):
+    """A benchmark/dryrun module, loaded with sys.path restored afterwards."""
+    key = "dryrun_" + name
+    if key not in _MODULES:
+        _common()
+        before = list(sys.path)
+        try:
+            sys.path.insert(0, str(DRYRUN))
+            sys.path.insert(0, str(ADAPTERS))
+            spec = importlib.util.spec_from_file_location("benchmark_dryrun_" + name, DRYRUN / (name + ".py"))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        finally:
+            sys.path[:] = before
+        _MODULES[key] = module
+    return _MODULES[key]
+
+
+class _GuardedRow(dict):
+    """A bands row that fails when any field but words, band, side and opaque id is read."""
+
+    def _allowed(self, key):
+        if key not in ("document_id", "words", "length_band", "side"):
+            raise AssertionError("the choice read " + str(key))
+
+    def __getitem__(self, key):
+        self._allowed(key)
+        return dict.__getitem__(self, key)
+
+    def get(self, key, default=None):
+        self._allowed(key)
+        return dict.get(self, key, default)
+
+
+class DryRunChecks(_Case):
+    """Item 0.6: the content-blind choice reads words, band, side and opaque id only, sorts
+    by words then opaque id, takes evenly spaced positions (the median for one) and lists
+    each choice's replacement. Item 0.7 and R24: the build restricted to chosen documents,
+    B2 on it, the B1 prompt tokens and the memory bound, on a synthetic build with a
+    stand-in counter."""
+
+    def setUp(self):
+        super().setUp()
+        if not DRYRUN.is_dir():
+            self.skipTest("benchmark/dryrun/ is not present here")
+
+    def test_positions_and_choice(self):
+        choose = _dryrun("choose")
+        self.assertEqual(choose.positions(5, 1), [2])
+        self.assertEqual(choose.positions(4, 1), [1])
+        self.assertEqual(choose.positions(132, 3), [32, 65, 98])
+        self.assertEqual(choose.positions(3, 3), [0, 1, 2])
+        with self.assertRaises(ValueError):
+            choose.positions(2, 3)
+        rows = [_GuardedRow(document_id=i, words=w, length_band=b, side=s, gold="x",
+                            source_document_id="src-" + i)
+                for i, w, b, s in (("d5", 300, "A", "development"), ("d1", 100, "A", "development"),
+                                   ("d3", 200, "A", "development"), ("d2", 200, "A", "development"),
+                                   ("d4", 250, "A", "holdout"), ("d6", 1500, "B", "development"),
+                                   ("d7", 1200, "B", "development"))]
+        got = choose.choose("x", rows, plan={"A": 1, "B": 1}, fallback={})
+        # band A development order: d1 100, d2 200, d3 200 (tie by id), d5 300: lower median d2
+        self.assertEqual([(r["band"], r["document_id"], r["position"], r["band_size"]) for r in got],
+                         [("A", "d2", 2, 4), ("B", "d7", 1, 2)])
+        self.assertEqual([r["replacement"]["document_id"] for r in got], ["d3", "d6"])
+        two = choose.choose("x", rows, plan={"A": 2}, fallback={"B": 1})
+        # n = 4, k = 2: 1-based positions floor(5/3) = 1 and floor(10/3) = 3
+        self.assertEqual([(r["role"], r["document_id"]) for r in two],
+                         [("chosen", "d1"), ("chosen", "d3"), ("fallback", "d7")])
+        self.assertEqual(two[1]["replacement"]["document_id"], "d5")
+        self.assertNotIn("src-", json.dumps(got + two))
+        self.assertEqual(set(choose.PLAN), set(NAMES))
+
+    def test_memory_bound_by_hand(self):
+        measure = _dryrun("measure")
+        dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
+                "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
+        bound = measure.memory_bound(3, dims)
+        self.assertEqual(bound["bytes"], {"weights": 100, "kv_cache": 48, "attention": 180,
+                                          "activations": 204, "logits": 40, "runtime": 1 << 30})
+        self.assertEqual(bound["total_bytes"], 572 + (1 << 30))
+        self.assertFalse(bound["over_limit"])
+        big = dict(dims, num_attention_heads=28, hidden_size=3584, num_hidden_layers=28)
+        self.assertTrue(measure.memory_bound(32768, big)["over_limit"])
+
+    def test_restricted_build_b2_and_b1_tokens(self):
+        measure = _dryrun("measure")
+        c = _common()
+        adapter = _adapter("scitab")
+        every = {d["document_id"] for d in adapter.documents(adapter.read_source(_source("scitab")),
+                                                              {"development": True})}
+        wanted = sorted(every)[0]
+        out = self.root / "build"
+        c["cli"].build(measure.Only(adapter, [wanted]), _source("scitab"), out, development=True,
+                       synthetic=True, max_context=4096, output_allowance=64,
+                       token_counter=measure.StandIn)
+        record = _json(out / "parts.json")["documents"]
+        self.assertEqual([d["document_id"] for d in record], [wanted], "only the chosen document is built")
+        items = [i for i in _json(out / "items.json")["items"] if i["document_id"] == wanted]
+        sys.path.insert(0, str(ROOT / "benchmark" / "baselines"))
+        try:
+            row = measure.measure_document("scitab", out / wanted, items, record[0], self.root / "b2",
+                                           measure.StandIn, measure._stand_in_dims(), 64)
+        finally:
+            sys.path.remove(str(ROOT / "benchmark" / "baselines"))
+        pairing = _json(self.root / "b2" / "audit" / "pairing_map.json")[wanted]
+        self.assertEqual((row["units"], row["plans_not_asked"], row["b2_model_calls"]),
+                         (len(pairing["units"]), pairing["ablation_not_asked_count"], 0))
+        self.assertEqual(row["b1_prompt_tokens"]["items"], len(items))
+        self.assertGreaterEqual(row["b1_prompt_tokens"]["max"], row["b1_prompt_tokens"]["document_tokens"])
+        self.assertEqual(row["memory_bound"]["tokens"], row["b1_prompt_tokens"]["max"] + 64)
+        self.assertEqual(row["words"], record[0]["source_words"])
+
+
+# ---------------------------------------------------------------------------
 # the B-dev development items (counts only; skipped when external/ does not hold them)
 
 
@@ -2068,6 +2193,11 @@ GROUPS = {
                                     "another document's lines ignored; the same records in both "
                                     "forms give the same labels on every mapping fixture; B3 "
                                     "refused until the bus reading is adopted"),
+    "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
+                             "sorts by words then id, takes evenly spaced positions (the median "
+                             "for one) and lists each replacement; the restricted build holds only "
+                             "the chosen document; B2 on it, the B1 prompt tokens and the memory "
+                             "bound (computed by hand) agree"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "
