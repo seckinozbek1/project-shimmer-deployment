@@ -187,7 +187,10 @@ processing swarm governed by an append-only constitution.
   checkpoint. A batch entry's plan arm must equal its sealed arm; a batch file may say
   `"form": "b3_only"` (exposed bundles only, each item once, unpaired). Past the soft budget
   a batch entry's `batch_pack_evidence` and `batch_evidence_hash` still run. The analyser
-  reports a B1 entry from `evidence/result.json` and each checkpoint's `b1_summary.json`.
+  reports a B1 entry from `evidence/result.json` and each checkpoint's `b1_summary.json`. A sealed
+  B1 pass is `{name, checkpoint, args}` (D-056 condition 6): `name` is a free label (lower case,
+  digits, underscore; unique) naming `evidence/b1/<name>`, `checkpoint` (tuned or base) is
+  passed as `--checkpoint`, and a pass without `checkpoint` loads the checkpoint its name names.
 - STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
   sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
   and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
@@ -202,7 +205,12 @@ processing swarm governed by an append-only constitution.
   and recorded in every reply record (`reply_records.write` `attention`) and `b1_summary.json`.
   Out of memory or a refused kernel stops B1 as a setup failure (`b1_setup_failure.json`), never
   an abstention. Chunked prefill is off unless `--prefill-chunk` comes with
-  `--prefill-decision D-NNN`; both are sealed (`B1_SEALED_ARGS`).
+  `--prefill-decision D-NNN`; both are sealed (`B1_SEALED_ARGS`). A measurement pass may run
+  eager only with `--attention eager --attention-decision D-NNN`, recorded as
+  `attention_decision`; every run proper is sdpa. Each pass records its peak GPU memory in
+  `b1_summary.json` (`gpu_memory`; base passes are sealed before tuned ones because the counters
+  cover the whole device), and `bare_model.py compare --a --b --out` counts byte-identical
+  replies and agreeing labels per item.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
