@@ -102,13 +102,16 @@ def _now():
 
 def write(run_context, *, agent, call_id=None, backend, model_id, model_mode=None,
           payload=None, payload_form=None, reply=None, ok=True, error="",
-          decoding=None, sensitive=False, phase="", doc_id="", attention=None):
+          decoding=None, sensitive=False, phase="", doc_id="", attention=None, context=None):
     """Save one call's reply. Returns the call id (minted when none was given), or
     None when nothing was written (no run context, or the write failed).
 
     ``attention``, when given, is the attention kernel and backend the call ran under
-    (B1, docs/loop/DECISIONS.md D-056); it is not a decoding value, so it has its own
-    field. A record written without it carries no such field, as before.
+    (B1, docs/loop/DECISIONS.md D-056; every local B3 generate call, D-058); it is not a
+    decoding value, so it has its own field. ``context``, when given, is whether a local
+    call fits its model's context (prompt tokens, output allowance, the model's positions,
+    over_context; counts only, kept under a sensitive run too, D-058 condition v). A record
+    written without either carries no such field, as before.
 
     ``payload`` is the exact text sent to the backend after any outbound masking
     (None when the call ended before a request was built); its SHA-256 is taken
@@ -157,6 +160,8 @@ def write(run_context, *, agent, call_id=None, backend, model_id, model_mode=Non
                     record["reply"]["text"] = reply
             if attention is not None:
                 record["attention"] = dict(attention)
+            if context is not None:
+                record["context"] = dict(context)
             target = path / f"{sequence:06d}_{call_id}.json"
             with target.open("x", encoding="utf-8") as stream:
                 json.dump(record, stream, ensure_ascii=False, sort_keys=True, indent=1, default=str)

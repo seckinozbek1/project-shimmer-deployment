@@ -3,12 +3,15 @@
 Explicit SHIMMER_MODEL_MODE=final selects the frozen pair; base preserves the
 reference runtime. No training/evaluation datasets or cloud clients are imported.
 """
+import contextlib
 import hashlib
+import importlib
 import importlib.metadata
 import json
 import os
 from pathlib import Path
 import platform
+import re
 import sys
 import threading
 
@@ -23,6 +26,24 @@ PINS = {
                 'head': '6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a',
                 'mean': '370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5',
                 'std': '1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a'}}
+
+# D-058 (docs/loop/DECISIONS.md): the producer's attention, fixed at load from a setting that
+# travels in the sealed manifest's environment. Exactly two values: sdpa, the default from
+# D-058, under which every producer generate call runs pinned to the memory-efficient sdpa
+# backend (pinned_attention), and eager, the kernel the producer was trained and evaluated
+# with and ran from v5 to v12, accepted only with the recorded decision (D-NNN) that asks for
+# it, for a measurement run. The Auditor896 classifier is never governed by this setting: it
+# loads eager, as its runtime contract says.
+PRODUCER_ATTENTION_ENV = 'SHIMMER_PRODUCER_ATTENTION'
+PRODUCER_ATTENTION_DECISION_ENV = 'SHIMMER_PRODUCER_ATTENTION_DECISION'
+PRODUCER_ATTENTION_DEFAULT = 'sdpa'
+EAGER = 'eager'
+PRODUCER_ATTENTIONS = (PRODUCER_ATTENTION_DEFAULT, EAGER)
+SDPA_BACKEND = 'EFFICIENT_ATTENTION'
+DECISION_ID = re.compile(r'D-\d{3}')
+# torch.backends.cuda's switch for each sdpa backend, by SDPBackend name.
+SDPA_SWITCHES = {'FLASH_ATTENTION': 'flash_sdp_enabled', 'EFFICIENT_ATTENTION': 'mem_efficient_sdp_enabled',
+                 'MATH': 'math_sdp_enabled', 'CUDNN_ATTENTION': 'cudnn_sdp_enabled'}
 
 
 def require(ok, reason):
@@ -73,6 +94,131 @@ def identity(role, spec=None):
                 runtime_engine='transformers/peft/bitsandbytes', limitations=spec.get('limitations'))
 
 
+def producer_attention(environ=None):
+    """The producer's attention as the sealed environment sets it (D-058):
+    {attention_implementation, sdpa_backend, attention_decision}. Unset is sdpa. eager is
+    accepted only with SHIMMER_PRODUCER_ATTENTION_DECISION naming a recorded decision
+    (D-NNN); a decision with sdpa, or any other value, is refused, never ignored."""
+    environ = os.environ if environ is None else environ
+    value = environ.get(PRODUCER_ATTENTION_ENV)
+    value = PRODUCER_ATTENTION_DEFAULT if value is None else value
+    decision = environ.get(PRODUCER_ATTENTION_DECISION_ENV)
+    require(value in PRODUCER_ATTENTIONS, PRODUCER_ATTENTION_ENV + ' is sdpa or eager; no other attention is admitted')
+    require((value == EAGER) == (decision is not None),
+            PRODUCER_ATTENTION_ENV + '=eager needs ' + PRODUCER_ATTENTION_DECISION_ENV
+            + ' (the recorded decision that asks for it), and a decision is accepted only with eager')
+    require(decision is None or bool(DECISION_ID.fullmatch(decision)),
+            PRODUCER_ATTENTION_DECISION_ENV + ' names a recorded decision (D-NNN)')
+    return dict(attention_implementation=value, sdpa_backend=SDPA_BACKEND if value != EAGER else None,
+                attention_decision=decision)
+
+
+def load_attention(role, spec=None):
+    """The attn_implementation a frozen role is loaded with: the producer's sealed setting
+    (producer_attention); the Auditor896 classifier eager, read from its runtime contract,
+    which must say eager (D-058 condition iii)."""
+    if role == 'auditor':
+        spec = spec or specification('auditor')
+        value = spec['runtime']['attn_implementation']
+        require(value == EAGER, 'The Auditor896 classifier runs eager, as its runtime contract says')
+        return value
+    require(role == 'producer', 'Unknown frozen role')
+    return producer_attention()['attention_implementation']
+
+
+def attention_of(model):
+    """The attention setting a loaded model carries (its config's _attn_implementation), or
+    None when it carries none (a stand-in model)."""
+    value = getattr(getattr(model, 'config', None), '_attn_implementation', None)
+    return value if isinstance(value, str) else None
+
+
+def enabled_sdpa_backends(torch):
+    """The sdpa backends torch currently allows, by SDPBackend name, joined with `+`."""
+    switches = torch.backends.cuda
+    return '+'.join(name for name, switch in sorted(SDPA_SWITCHES.items()) if getattr(switches, switch)())
+
+
+@contextlib.contextmanager
+def pinned_attention(model, decision=None):
+    """One local generate call's attention (D-058 conditions ii and iii). A model whose
+    attention is sdpa on a CUDA device runs inside
+    torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION]): only the memory-efficient
+    kernel, so a refused kernel raises (AttentionKernelRefused below) instead of falling back
+    to the quadratic math kernel. An eager model, or one on the CPU (which has no
+    memory-efficient kernel), runs unpinned and says so. Yields the record written into the
+    call's reply record: the attention, the sdpa backends enabled inside the block, the
+    decision that set it and whether the backend was pinned. torch is imported only to pin."""
+    implementation = attention_of(model)
+    device = str(getattr(model, 'device', '') or '')
+    pinned = implementation == PRODUCER_ATTENTION_DEFAULT and device.startswith('cuda')
+    record = dict(attention_implementation=implementation, sdpa_backend=None,
+                  attention_decision=decision, pinned=pinned)
+    if not pinned:
+        yield record
+        return
+    torch = importlib.import_module('torch')
+    attention = importlib.import_module('torch.nn.attention')
+    with attention.sdpa_kernel([getattr(attention.SDPBackend, SDPA_BACKEND)]):
+        record['sdpa_backend'] = enabled_sdpa_backends(torch)
+        yield record
+
+
+class GenerationFailure(RuntimeError):
+    """A local generate call that failed for want of memory or of its pinned kernel (D-058
+    condition ii): one recorded failure, named by `kind`, never retried (P13)."""
+    kind = 'generation_failure'
+
+    def __init__(self, cause):
+        super().__init__('%s: %s' % (self.kind, cause))
+
+
+class GenerationOutOfMemory(GenerationFailure):
+    kind = 'out_of_memory'
+
+
+class AttentionKernelRefused(GenerationFailure):
+    kind = 'attention_kernel_refused'
+
+
+def generation_failure_kind(exc):
+    """'out_of_memory', 'attention_kernel_refused', or None for any other failure.
+    torch.cuda.OutOfMemoryError is read by its class name, so no model library is imported."""
+    if isinstance(exc, GenerationFailure):
+        return exc.kind
+    if any(cls.__name__ == 'OutOfMemoryError' for cls in type(exc).__mro__):
+        return GenerationOutOfMemory.kind
+    if isinstance(exc, RuntimeError):
+        text = str(exc)
+        if 'out of memory' in text.lower():
+            return GenerationOutOfMemory.kind
+        if 'No available kernel' in text or 'No viable backend for scaled_dot_product_attention' in text:
+            return AttentionKernelRefused.kind
+    return None
+
+
+def named_generation_failure(exc):
+    """The named failure to raise for `exc`, or None when it is an ordinary failure."""
+    kind = generation_failure_kind(exc)
+    if kind is None:
+        return None
+    if isinstance(exc, GenerationFailure):
+        return exc
+    return (GenerationOutOfMemory if kind == GenerationOutOfMemory.kind else AttentionKernelRefused)(
+        type(exc).__name__)
+
+
+def context_record(model, prompt_tokens, max_new_tokens):
+    """Whether one local call fits its model's context (D-058 condition v): the prompt's
+    tokens plus the call's output allowance against max_position_embeddings, the test B1
+    applies to every item (section 5.3). Counts only. `over_context` is None when the model
+    states no context (a stand-in model)."""
+    limit = getattr(getattr(model, 'config', None), 'max_position_embeddings', None)
+    limit = limit if type(limit) is int else None
+    return dict(prompt_tokens=int(prompt_tokens), max_new_tokens=int(max_new_tokens), model_context=limit,
+                over_context=None if limit is None else int(prompt_tokens) + int(max_new_tokens) > limit)
+
+
 def verify_runtime():
     contract = specification('auditor')['runtime']
     require(sys.platform == 'linux' and platform.machine() == 'x86_64' and
@@ -104,6 +250,9 @@ def base_path(role, spec):
 
 def load(role, device):
     spec, paths = verify(role)
+    # D-058: the producer's attention is its sealed setting (sdpa unless a recorded
+    # decision asks for eager); the classifier stays eager, as its runtime contract says.
+    attention = load_attention(role, spec)
     torch = verify_runtime()
     require(device.startswith('cuda:'), 'Frozen inference requires CUDA')
     from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -112,9 +261,10 @@ def load(role, device):
     tokenizer = AutoTokenizer.from_pretrained(str(path), local_files_only=True, trust_remote_code=False)
     model = AutoModelForCausalLM.from_pretrained(str(path), local_files_only=True,
         trust_remote_code=False, device_map={'': int(device.split(':')[1])},
-        torch_dtype=torch.bfloat16, attn_implementation='eager')
+        torch_dtype=torch.bfloat16, attn_implementation=attention)
     expected = 'qwen2' if role == 'producer' else 'llama'
     require(model.config.model_type == expected and model.is_loaded_in_4bit, 'Frozen architecture mismatch')
+    require(attention_of(model) == attention, 'Frozen attention mismatch: ' + role)
     quant = model.config.quantization_config
     quant = quant.to_dict() if hasattr(quant, 'to_dict') else quant
     require(quant['bnb_4bit_quant_type'] == 'nf4' and quant['bnb_4bit_compute_dtype'] == 'bfloat16', 'Frozen quantization mismatch')
@@ -127,6 +277,8 @@ def load(role, device):
     model.gradient_checkpointing_disable()
     model.config.use_cache = role == 'producer'
     model._shimmer_identity = identity(role, spec)
+    if role == 'producer':
+        model._shimmer_attention = producer_attention()
     if role == 'auditor':
         return tokenizer, Classifier(torch, model, paths, spec)
     return tokenizer, model
@@ -272,6 +424,9 @@ def admit_ordinary():
             raise RuntimeError('Auditor pairing contract not admitted')
         verify('producer')
         verify('auditor')
+        # D-058: an unadmitted attention setting refuses the run here, before any load.
+        producer_attention()
+        load_attention('auditor')
         # Every local generate site decodes under the frozen evaluation policy;
         # a drifted protocol or an unsound declaration refuses the run here,
         # before verify_runtime turns strict determinism on and before any load.

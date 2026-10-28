@@ -63,9 +63,12 @@ Attention (docs/loop/DECISIONS.md D-056, conditions 1 to 4). B1, both checkpoint
 item, generates with the model's attention set to sdpa inside
 ``torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION])``: the memory-efficient
 kernel only, so a refused kernel raises instead of falling back to the quadratic math
-kernel. The model is loaded eager, as scripts/final_models.py loads it for B3; B1 switches
-the resident model's attention setting around each call (b1_attention) and restores it in a
-finally, so a B3 call in the same process still runs eager. The attention B1 declares
+kernel. The model is loaded with the producer's sealed attention, as scripts/final_models.py
+loads it for B3: sdpa since D-058 (B3's producer calls are pinned to the same memory-efficient
+backend by agent_wrapper), eager only for a run sealed with SHIMMER_PRODUCER_ATTENTION=eager and
+its recorded decision. B1 switches the resident model's attention setting around each call
+(b1_attention) and restores it in a finally to what it was, so a B3 call in the same process
+runs under the producer's own setting again. The attention B1 declares
 (attention_record) is compared with what the backend loaded (verify_identity) and with what
 each call observed inside the switch; it is written into every reply record and into
 b1_summary.json. An out-of-memory error, or a refused kernel, stops the run as a SETUP
@@ -160,12 +163,16 @@ FINAL_ROLE = "producer"
 # D-056 condition 1: B1's attention, and the memory-efficient sdpa backend pinned for it.
 B1_ATTENTION = "sdpa"
 B1_SDPA_BACKEND = "EFFICIENT_ATTENTION"
-# What scripts/final_models.py loads the model with, and what B3 keeps (condition 2). B1
-# never changes it outside its own calls.
-B3_ATTENTION = "eager"
+# What scripts/final_models.py loads the producer with by default, and what B3 runs under:
+# sdpa, pinned to the memory-efficient backend for every producer call (D-058, which
+# supersedes D-056 condition 2, "B3 stays eager"). B1 never changes the resident setting
+# outside its own calls.
+B3_ATTENTION = final_models.PRODUCER_ATTENTION_DEFAULT
+# The kernel of an eager measurement pass (D-056 condition 6): the producer's training kernel.
+EAGER = final_models.EAGER
 # The attentions a pass may declare: sdpa (D-056, the default), or eager for a measurement
 # pass adopted by a recorded decision (condition 6).
-ATTENTIONS = (B1_ATTENTION, B3_ATTENTION)
+ATTENTIONS = (B1_ATTENTION, EAGER)
 # What the peak GPU memory of a pass covers (b1_summary.json gpu_memory).
 GPU_MEMORY_WINDOW = ("torch.cuda peak counters reset after the model was loaded and verified, "
                      "read after the last item; everything on the device is counted")
@@ -355,7 +362,7 @@ def load_base_checkpoint(device="cuda:0", *, spec=None, libs=None):
     model = libs.AutoModelForCausalLM.from_pretrained(
         str(path), local_files_only=True, trust_remote_code=False,
         device_map={"": int(device.split(":")[1])}, torch_dtype=torch.bfloat16,
-        attn_implementation="eager")
+        attn_implementation=final_models.load_attention(FINAL_ROLE))
     final_models.require(model.config.model_type == "qwen2" and model.is_loaded_in_4bit,
                          "Frozen architecture mismatch")
     quant = model.config.quantization_config
@@ -429,7 +436,7 @@ def attention_record(prefill_chunk=None, prefill_decision=None, attention=B1_ATT
     Chunked prefill is off unless both are given."""
     if attention not in ATTENTIONS:
         raise ValueError("--attention is one of " + ", ".join(ATTENTIONS))
-    if (attention == B3_ATTENTION) != (attention_decision is not None):
+    if (attention == EAGER) != (attention_decision is not None):
         raise ValueError("--attention eager needs --attention-decision (the recorded decision "
                          "that asks for the measurement pass), and --attention-decision needs "
                          "--attention eager")
@@ -481,7 +488,8 @@ def b1_attention(model, backends=None, implementation=B1_ATTENTION):
     """B1's attention for the calls inside the block (D-056 conditions 1 and 2): the model's
     attention setting switched to sdpa and the memory-efficient sdpa backend pinned, so a
     refused kernel raises rather than falling back; the setting is restored in a finally to
-    what it was (eager, as scripts/final_models.py loads it), whatever the block raised.
+    what it was (the producer's sealed attention as scripts/final_models.py loads it: sdpa
+    since D-058, eager for a run sealed eager), whatever the block raised.
     `implementation` eager (a measurement pass, condition 6) sets the setting to eager and
     pins no sdpa backend. Yields observe(), which reads the setting and the enabled backends
     as they stand inside (no backend for eager). `backends` (SDPBackend names) is for the
@@ -543,17 +551,10 @@ def generate_ids(model, inputs, *, max_new_tokens, decoding_kwargs, prefill_chun
 
 def setup_failure_kind(exc):
     """The kind of a call failure that stops the run (D-056 condition 3), or None for an
-    ordinary generation failure (a failed call, ABSTAIN). torch.cuda.OutOfMemoryError is
-    read by its class name, so this module imports no model library."""
-    if any(cls.__name__ == "OutOfMemoryError" for cls in type(exc).__mro__):
-        return "out_of_memory"
-    text = str(exc)
-    if isinstance(exc, RuntimeError):
-        if "out of memory" in text.lower():
-            return "out_of_memory"
-        if "No available kernel" in text or "No viable backend for scaled_dot_product_attention" in text:
-            return "attention_kernel_refused"
-    return None
+    ordinary generation failure (a failed call, ABSTAIN). One classifier with B3's local
+    generate calls (final_models.generation_failure_kind, D-058): torch.cuda.OutOfMemoryError
+    is read by its class name, so this module imports no model library."""
+    return final_models.generation_failure_kind(exc)
 
 
 class LocalBackend:
@@ -623,7 +624,7 @@ class LocalBackend:
         inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
         attention = declared_attention(self.reader)
         # D-056: sdpa with the memory-efficient backend pinned for this call only (eager for
-        # a measurement pass); the resident model is eager again when the block ends,
+        # a measurement pass); the resident model is back on its own setting when the block ends,
         # whatever it raised.
         with torch.no_grad(), b1_attention(mdl, implementation=attention["attention_implementation"]) as observe:
             observed = observe()

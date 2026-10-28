@@ -24856,6 +24856,18 @@ def check_282_baseline_arms_hold_their_contracts():
     return check()
 
 
+def check_288_b3_local_attention_is_pinned_and_recorded():
+    """Loop stage S5, D-058: B3 ran out of GPU memory on a 1,349-word ContraDoc document
+    (INC-015) with the producer under eager attention. The producer now loads with a sealed
+    attention setting (sdpa by default, eager only with a recorded decision), every local
+    generate call runs pinned to the memory-efficient sdpa backend on CUDA and records the
+    kernel in its reply record, the Auditor896 classifier stays eager as its runtime contract
+    says, out of memory or a refused kernel is one named failure never retried, and a prompt
+    over the model's context is refused and recorded, never truncated. Mocked models only."""
+    from local_attention_checks import check
+    return check()
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25276,6 +25288,8 @@ CHECKS = [
      check_286_negotiation_dev_case_is_a_valid_live_case),
     ("287 built benchmark bundles stage as the sealer's workload with no key file",
      check_287_built_bundles_stage_as_the_sealers_workload),
+    ("288 B3's local attention is sealed, pinned per call and recorded; the classifier stays eager (D-058)",
+     check_288_b3_local_attention_is_pinned_and_recorded),
 ]
 
 
