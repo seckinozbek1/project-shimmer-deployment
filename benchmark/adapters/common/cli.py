@@ -21,8 +21,9 @@ chat template. `label` writes the primary labels and the S-1, S-2, S-3 and S-5 a
 one file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
 evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
-document, named the same way. B3 and B4 are refused while the typed-record key of the
-pipeline's output is not settled (preregistration section 12 item 9).
+document, named the same way. B2's typed records are read from review_data.json, B3's and
+B4's from the run's bus (common/records.py); B3 and B4 are refused until that reading
+(decision DS5-8, preregistration section 12 item 9) is attacked and recorded.
 """
 from __future__ import annotations
 
@@ -248,11 +249,11 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
     elif arm == "B1":
         primary = mapping.label_b1(adapter.SPEC, items, runs_root)
     elif arm in mapping.ARMS:
-        if arm in mapping.PIPELINE_ARMS and not mapping.TYPED_RECORDS_SETTLED:
+        if arm in mapping.PIPELINE_ARMS and not mapping.BUS_READER_ADOPTED:
             raise mapping.Refused(
-                "arm %s is refused: the key that carries the pipeline's typed records in "
-                "review_data.json is not settled (preregistration section 12 item 9); the "
-                "provisional key %r is what B2 writes" % (arm, mapping.TYPED_RECORDS_KEY))
+                "arm %s is refused: reading the pipeline's typed records from the run's bus "
+                "(common/records.py, decision DS5-8, preregistration section 12 item 9) "
+                "takes effect only after its checker attack is recorded" % arm)
         primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm)
     else:
         raise ValueError("unknown arm " + repr(arm))

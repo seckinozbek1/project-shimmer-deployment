@@ -37,9 +37,33 @@ pipeline is never imported), its checkpoint through final_models in final mode, 
 decoding policy through scripts/decoding_policy.py, and its output allowance from the
 pipeline's PROCESSOR budget (PRODUCTION_MAX_TOKENS) unless --max-new-tokens overrides it.
 
+Two checkpoints (preregistration section 12 item 12; loop plan S5 revisions R3 and R20).
+In final mode (SHIMMER_MODEL_MODE=final) ``--checkpoint`` selects which one is loaded:
+
+  tuned   the tuned producer, through final_models.resident exactly as the pipeline loads
+          it: the pinned 4-bit base at its revision with the checkpoint 168 adapter
+  base    the SAME pinned 4-bit base at the same revision, read through
+          final_models.base_path (which checks every base_hashes entry), prepared as the
+          tuned producer's base is prepared, and WITHOUT the adapter: no adapter file is
+          read and PeftModel is never called, so the comparison isolates the adapter
+
+Each checkpoint is recorded in b1_summary.json under ``checkpoint`` (its name, model id,
+revision, the model.safetensors SHA-256 from base_hashes, the adapter SHA-256 or null, and
+whether an adapter was applied); its digest is ``<revision>:<model.safetensors sha256>``
+for the base and that followed by ``+adapter:<adapter sha256>`` for the tuned producer.
+In base mode only ``base`` exists (the reference loader, a PROVISIONAL snapshot digest).
+Each checkpoint runs in its own process into its own output folder (one reply record per
+item per checkpoint).
+
+In-process entry, for a runner that imports this file (benchmark/baselines on sys.path):
+    run_b1(bundle, items, out, checkpoint, *, expected=None, development=False,
+           agent=READING_AGENT, max_new_tokens=None, sensitive=False, run_id=None) -> dict
+It returns the b1_summary.json content and raises on any setup failure (nothing generated).
+
 Usage (loads a local model; for the rented machine, never this laptop):
     py -3.12 benchmark/baselines/bare_model.py --bundle <bundle> --items <items.json> --out <dir>
-        --agent <AGENT> --expect-model-id <id> --expect-digest <sha256> --expect-decoding '<json>'
+        --checkpoint tuned|base --agent <AGENT> --expect-model-id <id> --expect-digest <digest>
+        --expect-decoding '<json>'
     py -3.12 benchmark/baselines/bare_model.py pool --runs <folder> [--out <file>]   (no model)
 """
 from __future__ import annotations
@@ -82,6 +106,11 @@ UNCERTAIN_LABEL = "uncertain"
 # development items (pool_parse_rates), is below this floor has its prompt and parser
 # revised before the freeze, at most three times.
 PARSE_RATE_FLOOR = 0.95
+# The two checkpoints of section 12 item 12 (R20): the tuned producer, and the pinned base it
+# is built on without its adapter. Final mode offers both; base mode only the base.
+TUNED, BASE = "tuned", "base"
+CHECKPOINTS = (TUNED, BASE)
+FINAL_ROLE = "producer"
 
 
 class SetupError(Exception):
@@ -202,8 +231,76 @@ def parse_reply(reply, bench, item_id=None):
 pipeline_literal = python_only.pipeline_literal  # one ast reader of the pipeline source
 
 
-def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_tokens=None):
-    """The reading agent's backend, model, decoding policy and output allowance."""
+def resolve_checkpoint(mode, checkpoint=None):
+    """The checkpoint to load: `tuned` by default in final mode, `base` in base mode. A tuned
+    checkpoint outside final mode, or a name not in CHECKPOINTS, is refused."""
+    chosen = checkpoint or (TUNED if mode == "final" else BASE)
+    if chosen not in CHECKPOINTS:
+        raise ValueError("unknown checkpoint %r (one of %s)" % (chosen, ", ".join(CHECKPOINTS)))
+    if chosen == TUNED and mode != "final":
+        raise ValueError("the tuned checkpoint exists only in final mode (SHIMMER_MODEL_MODE=final)")
+    return chosen
+
+
+def checkpoint_record(checkpoint, spec):
+    """(record, digest) of a final-mode checkpoint, from the pinned specification: the
+    revision and model.safetensors SHA-256 base_path checks at load, and for the tuned
+    producer the adapter SHA-256 final_models.verify checks (R20)."""
+    weights = spec["base_hashes"]["model.safetensors"]
+    adapter = spec["files"]["adapter"]["sha256"] if checkpoint == TUNED else None
+    record = {"checkpoint": checkpoint, "model_id": spec["model_id"], "revision": spec["revision"],
+              "model_safetensors_sha256": weights, "adapter_sha256": adapter,
+              "adapter_applied": checkpoint == TUNED,
+              "adapter_checkpoint": spec.get("checkpoint") if checkpoint == TUNED else None}
+    digest = "%s:%s" % (spec["revision"], weights)
+    if adapter:
+        digest += "+adapter:" + adapter
+    return record, digest
+
+
+def load_base_checkpoint(device="cuda:0", *, spec=None, libs=None):
+    """The pinned 4-bit base of the tuned producer WITHOUT its adapter (R20). The same
+    path, checks and preparation as final_models.load gives the producer's base, up to the
+    adapter: final_models.verify_runtime, final_models.base_path (every base_hashes entry
+    checked; a mismatch refuses), the same from_pretrained arguments, architecture and
+    quantization checks, prepare_model_for_kbit_training, eval and the cache on. No adapter
+    file is read and PeftModel is never called. `libs` (AutoTokenizer, AutoModelForCausalLM,
+    prepare_model_for_kbit_training) is for the checks' mocked model; None imports the
+    real libraries."""
+    spec = spec or final_models.specification(FINAL_ROLE)
+    torch = final_models.verify_runtime()
+    final_models.require(device.startswith("cuda:"), "Frozen inference requires CUDA")
+    path = final_models.base_path(FINAL_ROLE, spec)
+    if libs is None:
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+        from peft import prepare_model_for_kbit_training
+        libs = SimpleNamespace(AutoTokenizer=AutoTokenizer, AutoModelForCausalLM=AutoModelForCausalLM,
+                               prepare_model_for_kbit_training=prepare_model_for_kbit_training)
+    tokenizer = libs.AutoTokenizer.from_pretrained(str(path), local_files_only=True,
+                                                   trust_remote_code=False)
+    model = libs.AutoModelForCausalLM.from_pretrained(
+        str(path), local_files_only=True, trust_remote_code=False,
+        device_map={"": int(device.split(":")[1])}, torch_dtype=torch.bfloat16,
+        attn_implementation="eager")
+    final_models.require(model.config.model_type == "qwen2" and model.is_loaded_in_4bit,
+                         "Frozen architecture mismatch")
+    quant = model.config.quantization_config
+    quant = quant.to_dict() if hasattr(quant, "to_dict") else quant
+    final_models.require(quant["bnb_4bit_quant_type"] == "nf4"
+                         and quant["bnb_4bit_compute_dtype"] == "bfloat16",
+                         "Frozen quantization mismatch")
+    model = libs.prepare_model_for_kbit_training(
+        model, use_gradient_checkpointing=True, gradient_checkpointing_kwargs={"use_reentrant": True})
+    model.requires_grad_(False)
+    model.eval()
+    model.gradient_checkpointing_disable()
+    model.config.use_cache = True
+    return tokenizer, model
+
+
+def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_tokens=None,
+                   checkpoint=None):
+    """The reading agent's backend, model, decoding policy, output allowance and checkpoint."""
     root = Path(root)
     registry = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
     entry = registry["agents"][agent]
@@ -225,13 +322,17 @@ def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_t
     declared, _ = decoding_policy.declaration(root)
     role = declared["backends"][backend].get("role")
     mode = final_models.mode()
-    if mode == "final" and backend == "local_producer":
-        model_id = final_models.specification("producer", root)["model_id"]
+    frozen = mode == "final" and backend == "local_producer"
+    # The two checkpoints exist for the frozen producer only; anywhere else the reference
+    # loader runs and only `base` is accepted.
+    chosen = resolve_checkpoint("final" if frozen else "base", checkpoint)
+    if frozen:
+        model_id = final_models.specification(FINAL_ROLE, root)["model_id"]
         sources["model"] = "config/final_models.json producer"
     allowance = (int(max_new_tokens) if max_new_tokens is not None
                  else int(pipeline_literal("PRODUCTION_MAX_TOKENS", root / "scripts" / "pipeline.py")))
     return {"agent": agent, "agent_source": "placeholder" if agent == READING_AGENT else "argument",
-            "backend": backend, "model_id": model_id, "model_mode": mode,
+            "backend": backend, "model_id": model_id, "model_mode": mode, "checkpoint": chosen,
             "role": role, "decoding": decoding, "max_new_tokens": allowance,
             "max_new_tokens_source": "argument" if max_new_tokens is not None
             else "pipeline PRODUCTION_MAX_TOKENS", "sources": sources}
@@ -243,26 +344,36 @@ class LocalBackend:
     model's own chat template with a system and a user turn, the frozen decoding kwargs.
     prepare() loads it once; nothing generates before that."""
 
-    def __init__(self, reader, run_context):
-        self.reader, self.run_context = reader, run_context
+    def __init__(self, reader, run_context, *, libs=None):
+        self.reader, self.run_context, self.libs = reader, run_context, libs
         self._tok = self._mdl = None
 
     def prepare(self):
-        """Load and verify; returns {model_id, digest, decoding} of what was loaded."""
+        """Load and verify; returns {model_id, digest, decoding, checkpoint} of what was
+        loaded. In final mode the reader's checkpoint decides: `tuned` through
+        final_models.resident (base plus adapter), `base` through load_base_checkpoint (the
+        same base, no adapter)."""
+        checkpoint = self.reader.get("checkpoint") or TUNED
         if self.reader["model_mode"] == "final" and self.reader["backend"] == "local_producer":
-            final_models.verify_runtime()
-            self._tok, self._mdl = final_models.resident("producer", self.run_context)
-            ident = final_models.identity("producer")
-            digest = ident["adapter_sha256"]
+            spec = final_models.specification(FINAL_ROLE)
+            record, digest = checkpoint_record(checkpoint, spec)
+            if checkpoint == TUNED:
+                final_models.verify_runtime()
+                self._tok, self._mdl = final_models.resident(FINAL_ROLE, self.run_context)
+            else:
+                self._tok, self._mdl = load_base_checkpoint(spec=spec, libs=self.libs)
         else:
             import agent_wrapper
             from huggingface_hub import snapshot_download
             self._tok, self._mdl = agent_wrapper._load_qwen(self.reader["model_id"])
-            # PROVISIONAL: a base checkpoint is identified by its local snapshot revision
+            # PROVISIONAL: a base-mode checkpoint is identified by its local snapshot revision
             snapshot = Path(snapshot_download(self.reader["model_id"], local_files_only=True))
             digest = "snapshot:" + snapshot.name
+            record = {"checkpoint": BASE, "model_id": self.reader["model_id"],
+                      "revision": snapshot.name, "model_safetensors_sha256": None,
+                      "adapter_sha256": None, "adapter_applied": False, "adapter_checkpoint": None}
         return {"model_id": self.reader["model_id"], "digest": digest,
-                "decoding": dict(self.reader["decoding"]["kwargs"])}
+                "decoding": dict(self.reader["decoding"]["kwargs"]), "checkpoint": record}
 
     def _loaded(self):
         if self._tok is None:
@@ -306,6 +417,19 @@ class LocalBackend:
 
 # ---------------------------------------------------------------------------
 # the run
+
+
+class RunContext:
+    """The run context B1 hands to the write paths it shares with the pipeline:
+    reply_records.write reads `run_dir` and `run_id`, and final_models.resident's load
+    telemetry (model_telemetry.emit) writes under `logs_dir()`, as on the pipeline's own
+    RunContext. A bare namespace without logs_dir() made the tuned load raise."""
+
+    def __init__(self, run_dir, run_id):
+        self.run_dir, self.run_id = str(run_dir), run_id
+
+    def logs_dir(self):
+        return Path(self.run_dir) / "logs"
 
 
 def load_items(path, document_id):
@@ -372,7 +496,7 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     if unknown:
         raise ValueError("no prompt for benchmark " + ", ".join(unknown))
     reader = reader or resolve_reader()
-    context = SimpleNamespace(run_dir=str(out), run_id=run_id or ("b1-" + uuid.uuid4().hex[:12]))
+    context = RunContext(out, run_id or ("b1-" + uuid.uuid4().hex[:12]))
     backend = backend or LocalBackend(reader, context)
     conventions = b1_prompt.conventions_from_bundle(bundle)
     reference = b1_prompt.reference_from_bundle(bundle)
@@ -429,7 +553,8 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
             "length_reached_allowance": reached}, **texts, **{
             "reply_item_id": parsed["reply_item_id"], "item_id_matches": parsed["item_id_matches"],
             "call_id": call_id, "backend_ok": not error, "reading_agent": reader["agent"],
-            "model_id": reader["model_id"], "model_mode": reader["model_mode"]}))
+            "model_id": reader["model_id"], "model_mode": reader["model_mode"],
+            "checkpoint": reader.get("checkpoint")}))
         row = summary.setdefault(bench_key, {"items": 0, "parsed": 0, "undecided": 0,
                                              "abstain": 0, "backend_failures": 0, "repaired": 0,
                                              "length_reached_allowance": 0,
@@ -451,13 +576,29 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     result = {"baseline": BASELINE_TEXT, "arm": ARM, "finished_at": _now(), "run_id": context.run_id,
               "bundle": Path(bundle).name, "document_id": doc["id"],
               "prompt": {"source": spec.get("source"), "status": spec.get("status")},
-              "reader": {k: reader[k] for k in ("agent", "agent_source", "backend", "model_id",
-                                                "model_mode", "max_new_tokens", "max_new_tokens_source")},
+              "reader": {k: reader.get(k) for k in ("agent", "agent_source", "backend", "model_id",
+                                                    "model_mode", "checkpoint", "max_new_tokens",
+                                                    "max_new_tokens_source")},
+              "checkpoint": loaded.get("checkpoint") or {"checkpoint": reader.get("checkpoint")},
               "loaded": loaded, "verified_against": sorted((expected or {}).keys()),
               "development": bool(development), "sensitive": bool(sensitive),
               "reference_material": bool(reference), "decoding": decoding, "benchmarks": summary}
     _write_json(out / "b1_summary.json", result)
     return result
+
+
+def run_b1(bundle, items, out, checkpoint, *, expected=None, development=False,
+           agent=READING_AGENT, max_new_tokens=None, sensitive=False, run_id=None,
+           backend=None, profile="local"):
+    """The one public entry for a runner that imports this file: B1 on one bundle with one
+    checkpoint (`tuned` or `base`), into `out` (a folder of its own per checkpoint). The
+    reader is resolved from the tracked configuration as the command line resolves it; a
+    real model is loaded unless `backend` is given (the checks' mocked model). Returns the
+    b1_summary.json content; raises on any setup failure, before anything is generated."""
+    reader = resolve_reader(agent=agent, profile=profile, max_new_tokens=max_new_tokens,
+                            checkpoint=checkpoint)
+    return run(bundle, items, out, backend=backend, reader=reader, expected=expected,
+               development=development, sensitive=sensitive, run_id=run_id)
 
 
 def pool_parse_rates(runs_root, out=None) -> dict:
@@ -511,6 +652,9 @@ def main(argv=None):
     parser.add_argument("--agent", default=READING_AGENT,
                         help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
     parser.add_argument("--profile", choices=["local", "registry"], default="local")
+    parser.add_argument("--checkpoint", choices=list(CHECKPOINTS), default=None,
+                        help="final mode: the tuned producer (default) or its pinned base without "
+                             "the adapter; base mode: base only")
     parser.add_argument("--max-new-tokens", type=int, default=None)
     parser.add_argument("--expect-model-id")
     parser.add_argument("--expect-digest")
@@ -528,10 +672,10 @@ def main(argv=None):
     if args.expect_decoding:
         expected["decoding"] = json.loads(args.expect_decoding)
     try:
-        reader = resolve_reader(agent=args.agent, profile=args.profile,
-                                max_new_tokens=args.max_new_tokens)
-        result = run(args.bundle, args.items, args.out, reader=reader, expected=expected,
-                     development=args.development, sensitive=args.sensitive)
+        result = run_b1(args.bundle, args.items, args.out, args.checkpoint, expected=expected,
+                        development=args.development, agent=args.agent,
+                        max_new_tokens=args.max_new_tokens, sensitive=args.sensitive,
+                        profile=args.profile)
     except Exception as exc:  # setup, load, verification or record failure: stop, non-zero
         print("B1 stopped before or during the run: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
         return 4

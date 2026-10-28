@@ -59,9 +59,18 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              benchmark (band records decide their rule's item, a model-written record
              always decides, a computed blank-cell record on a CUAD-shaped bundle does
              not); S-5 puts a refusal before an ok record, and a failed run decides no
-             item by ok over refusal; B3 is refused while the
-             typed-record key is unsettled; the catch layer is read from the
+             item by ok over refusal; B3 is refused until the bus reading
+             (decision DS5-8) is adopted; the catch layer is read from the
              WRITTEN-BY-A stamp alone, compared exactly
+  records    one record reader (common/records.py): B2 from review_data.json, B3 from
+             the run's bus, written_by stamped from the line, supersession within
+             (agent, document, item_id), a judged absence counted only by Python's
+             stamped copy with the raw copy listed apart; every mapping fixture moved
+             onto a bus gives the same labels as its review_data.json form
+  dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
+             opaque id only; sorted by words then id; evenly spaced positions; each
+             replacement listed), the build restricted to chosen documents, B2 on it,
+             the B1 prompt tokens and R24's memory bound computed by hand
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -108,7 +117,7 @@ def _common():
         try:
             _MODULES["common"] = {m: importlib.import_module("common." + m)
                                   for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli",
-                                            "prompt")}
+                                            "prompt", "records")}
         finally:
             sys.path.remove(str(ADAPTERS))
     return _MODULES["common"]
@@ -1677,6 +1686,315 @@ class CliChecks(_Case):
 
 
 # ---------------------------------------------------------------------------
+# the one record reader (common/records.py; loop plan S5, R22 and item 0.8)
+
+
+_MODEL_BACKEND, _MODEL_ID = "local_producer", "fixture-reader"
+
+
+def _bus_line(agent, doc_id, items, backend, model, **body):
+    return json.dumps({"timestamp": "2026-10-28T00:00:00+00:00", "sender": agent,
+                       "sender_role": "agent", "recipient": "ORCHESTRATOR", "channel": "main",
+                       "type": "INFORM", "uncertain": False,
+                       "body": dict({"event": "AGENT_OUTPUT", "backend": backend, "model": model,
+                                     "item_count": len(items),
+                                     "payload": {"agent": agent, "doc_id": doc_id, "items": items}},
+                                    **body)})
+
+
+def _as_bus(run_dir, doc_id, judged_raw=None):
+    """Move one run folder's review_data.json findings onto a bus, as the pipeline posts
+    them: Python's records (stamped python) in one paired/python line, every other record
+    in one model line with a call id; no item keeps its own `written_by`. A judged-absence
+    raw copy, if given, goes in a line whose call id the pairing map names as a judged-absence
+    call, and a record for another document in a line of its own. The review_data.json is
+    removed, so only the bus holds the records."""
+    path = Path(run_dir) / "deliverables" / doc_id / "review_data.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    path.unlink(missing_ok=True)
+    bus = Path(run_dir) / "logs" / "agent_bus.jsonl"
+    if not isinstance(data, dict):
+        return 0      # unreadable or missing: no bus either, a run failure both ways
+    bus.parent.mkdir(parents=True, exist_ok=True)
+    if not isinstance(data.get("findings"), list):
+        bus.write_text("", encoding="utf-8")
+        return 0      # no typed records: silent both ways
+    strip = lambda r: {k: v for k, v in r.items() if k != "written_by"}  # noqa: E731
+    python = [strip(r) for r in data["findings"] if r.get("written_by") == "python"]
+    model = [strip(r) for r in data["findings"] if r.get("written_by") != "python"]
+    lines = [_bus_line("PRACTICE_AUDITOR", doc_id, python, "paired", "python"),
+             _bus_line("PRACTICE_AUDITOR", doc_id, model, _MODEL_BACKEND, _MODEL_ID,
+                       call_id="c" * 32),
+             _bus_line("PRACTICE_AUDITOR", "another-document",
+                       [dict(r, record_verdict="irregular") for r in data["findings"]],
+                       _MODEL_BACKEND, _MODEL_ID)]
+    if judged_raw:
+        lines.append(_bus_line("PRACTICE_AUDITOR", doc_id, judged_raw, _MODEL_BACKEND, _MODEL_ID,
+                               call_id="a" * 32))
+        pairing_path = Path(run_dir) / "audit" / "pairing_map.json"
+        pairing_path.parent.mkdir(exist_ok=True)
+        pairing = json.loads(pairing_path.read_text(encoding="utf-8")) if pairing_path.is_file() else {}
+        mine = pairing.setdefault(doc_id, {})
+        mine.setdefault("judging_calls", []).append(
+            {"call_id": "a" * 32, "agent": "PRACTICE_AUDITOR", "plan_kind": "absence_judged",
+             "outcome": "judged_absence"})
+        pairing_path.write_text(json.dumps(pairing), encoding="utf-8")
+    bus.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return len(judged_raw or [])
+
+
+def _label_view(result):
+    return {r["item_id"]: (r["class"], r["label"], r["basis"], r["cited_unit_ids"], r["layer"],
+                           r["figure_audit_set_aside"], r["s3"]["class"], r["s5"]["class"])
+            for r in result["labels"]}
+
+
+class RecordReaderChecks(_Case):
+    """R22: one record reader for both forms. B2 is read from review_data.json, B3 from the
+    run's bus; the bus stamps written_by from the line, supersedes within (agent, document,
+    item_id) on the highest revision, counts a judged absence only by Python's stamped copy
+    and lists the raw model copy apart. The same records in both forms give the same labels."""
+
+    def test_same_records_in_both_forms_give_the_same_labels(self):
+        c = _common()
+        m, rec = c["mapping"], c["records"]
+        compared = 0
+        for name in NAMES:
+            adapter = _adapter(name)
+            cases = _json(_fixture(name, "mapping_cases.json"))
+            items, runs, _ = _materialise(cases, self.root / name / "rd")
+            _ignored, bus_runs, _ = _materialise(cases, self.root / name / "bus")
+            listed = 0
+            for doc in cases["runs"]:
+                rules = sorted({i["rule_id"] for i in cases["items"] if i["document_id"] == doc})
+                # a raw judged-absence copy saying every rule's field is absent: never counted
+                raw = [{"item_id": "raw-%d" % k, "source_rule_id": rule, "unit_id": "u01-p-00001",
+                        "relation": "missing_field", "record_verdict": "irregular",
+                        "absence_path": "judged"} for k, rule in enumerate(rules)]
+                listed += _as_bus(bus_runs / doc, doc, judged_raw=raw)
+            rows = m.read_items(items)
+            by_review = m.label_pipeline_arm(adapter.SPEC, rows, runs, arm="B2")
+            by_bus = m.label_pipeline_arm(adapter.SPEC, rows, bus_runs, arm="B3")
+            self.assertEqual(_label_view(by_bus), _label_view(by_review), name)
+            self.assertEqual({d["document_id"]: d["run_failure"] for d in by_bus["documents"]},
+                             {d["document_id"]: d["run_failure"] for d in by_review["documents"]}, name)
+            self.assertEqual({d["record_source"] for d in by_bus["documents"]}, {rec.BUS}, name)
+            self.assertEqual({d["record_source"] for d in by_review["documents"]}, {rec.REVIEW_DATA}, name)
+            self.assertGreater(listed, 0, name)
+            self.assertEqual(by_bus["counts"]["raw_judged_absence_records"], listed, name)
+            self.assertEqual(by_review["counts"]["raw_judged_absence_records"], 0, name)
+            compared += len(by_bus["labels"])
+        self.assertGreater(compared, 20)
+
+    def test_bus_rules(self):
+        rec, m = _common()["records"], _common()["mapping"]
+        spec = _adapter("cuad").SPEC
+        doc, rule = "dx", "CONV-X-01"
+        run = self.root / "run"
+        (run / "audit").mkdir(parents=True)
+        (run / "audit" / "run_completion.json").write_text(json.dumps({
+            "schema_version": 1, "state": "completed", "reached_end": True, "exit_code": 0,
+            "finished_at": "2026-10-28T00:00:00+00:00"}), encoding="utf-8")
+        (run / "audit" / "pairing_map.json").write_text(json.dumps({doc: {"judging_calls": [
+            {"call_id": "a" * 32, "plan_kind": "absence_judged"},
+            {"call_id": "e" * 32, "plan_kind": "uncomputable"}]}}), encoding="utf-8")
+
+        def r(item_id, verdict="irregular", **extra):
+            return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": "u01-p-00001",
+                         "relation": "sum_mismatch", "record_verdict": verdict}, **extra)
+        lines = [
+            # written_by from the line: an item's own stamp is replaced
+            _bus_line("A1", doc, [r("p1", written_by="model")], "paired", "python"),
+            _bus_line("A1", doc, [r("m1", written_by="python")], "local_producer", "qwen"),
+            _bus_line("A1", doc, [r("p2")], "computed", "python-x"),
+            _bus_line("A1", doc, [r("m2")], "paired", "qwen"),
+            # supersession within (agent, document, item_id): highest revision, then ts, then line
+            _bus_line("A1", doc, [r("s1", "irregular", revision=2)], "paired", "python"),
+            _bus_line("A1", doc, [r("s1", "ok", revision=1)], "paired", "python"),
+            _bus_line("A2", doc, [r("s1", "ok", revision=1)], "paired", "python"),
+            _bus_line("A1", doc, [r("t1", "ok", revision=1, ts="2026-10-28T02:00:00")], "paired", "python"),
+            _bus_line("A1", doc, [r("t1", "irregular", revision=1, ts="2026-10-28T01:00:00")], "paired", "python"),
+            _bus_line("A1", doc, [r("l1", "irregular")], "paired", "python"),
+            _bus_line("A1", doc, [r("l1", "ok")], "paired", "python"),
+            # a judged absence: the raw copy (call named by the pairing map, or by a bus
+            # line's judging_calls) listed apart; Python's stamped copy counted
+            _bus_line("J", doc, [r("raw1", relation="missing_field", absence_path="judged")],
+                      "local_producer", "qwen", call_id="a" * 32),
+            _bus_line("J", doc, [r("raw2", relation="missing_field")], "local_producer", "qwen",
+                      call_id="b" * 32),
+            json.dumps({"body": {"event": "PAIRED_JUDGING_CALLS", "backend": "paired", "model": "python",
+                                 "doc_id": doc, "judging_calls": [{"call_id": "b" * 32,
+                                                                   "plan_kind": "absence_judged"}]}}),
+            _bus_line("J", doc, [r("J:finding:u01-p-00001:CONV-001:1", relation="missing_field",
+                                   absence_path="judged", revision=1)], "local_producer", "qwen",
+                      stamped_by="python", absence_path="judged"),
+            # a model reply to another judging call is a model's record like any other
+            _bus_line("J", doc, [r("u1", "ok")], "local_producer", "qwen", call_id="e" * 32),
+            # not records: no record_verdict and no refusal; another document; a broken line
+            _bus_line("A1", doc, [{"item_id": "x1", "source_rule_id": rule, "claim": "c"}], "qwen", "qwen"),
+            _bus_line("A1", "other", [r("o1")], "paired", "python"),
+            "{not json",
+            # a refusal with no relation that names its rule is a record
+            _bus_line("A3", doc, [{"item_id": "f1", "source_rule_id": rule, "confidence": "uncertain"}],
+                      "local_producer", "qwen"),
+        ]
+        (run / "logs").mkdir()
+        (run / "logs" / "agent_bus.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        read = rec.read_records(run, doc, rec.BUS)
+        got = {(r.get("item_id"), r.get("record_verdict"), r["written_by"]) for r in read["records"]}
+        self.assertEqual(got, {
+            ("p1", "irregular", "python"), ("m1", "irregular", "model"),
+            ("p2", "irregular", "python"), ("m2", "irregular", "model"),
+            ("s1", "irregular", "python"), ("s1", "ok", "python"),
+            ("t1", "ok", "python"), ("l1", "ok", "python"),
+            ("J:finding:u01-p-00001:CONV-001:1", "irregular", "model"),
+            ("u1", "ok", "model"), ("f1", None, "model")})
+        self.assertEqual(sorted(r["item_id"] for r in read["raw_judged_absence"]), ["raw1", "raw2"])
+        self.assertEqual(read["faults"], ["bus_lines_unreadable:1"])
+        self.assertEqual(read["failure_reasons"], [])
+        # the stamped judged copy decides CUAD's absent class; the raw copies decide nothing
+        run_view = m.read_run(run, doc, rec.BUS)
+        absent = [x for x in run_view["records"] if x.get("relation") == "missing_field"]
+        self.assertEqual([x["item_id"] for x in absent], ["J:finding:u01-p-00001:CONV-001:1"])
+        self.assertEqual(m.classify(spec, rule, run_view, rule_count=41)["basis"], "irregular_missing_field")
+        # a missing bus is a run failure; review_data.json is not read for B3
+        (run / "logs" / "agent_bus.jsonl").unlink()
+        self.assertEqual(m.read_run(run, doc, rec.BUS)["failure_reasons"], ["bus_missing"])
+        with self.assertRaises(ValueError):
+            rec.read_records(run, doc, "elsewhere")
+
+    def test_label_command_refuses_b3_until_the_bus_reading_is_adopted(self):
+        c = _common()
+        self.assertFalse(c["mapping"].BUS_READER_ADOPTED)
+        self.assertEqual(c["mapping"].RECORD_SOURCE, {"B2": "review_data", "B3": "bus", "B4": "bus"})
+        cases = _json(_fixture("scitab", "mapping_cases.json"))
+        items, runs, _ = _materialise(cases, self.root / "refuse")
+        with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
+            c["cli"].label(_adapter("scitab"), items, "B3", runs)
+
+
+# ---------------------------------------------------------------------------
+# the dry-run document choice and free measurements (benchmark/dryrun; S5 items 0.6, 0.7)
+
+
+DRYRUN = ROOT / "benchmark" / "dryrun"
+
+
+def _dryrun(name):
+    """A benchmark/dryrun module, loaded with sys.path restored afterwards."""
+    key = "dryrun_" + name
+    if key not in _MODULES:
+        _common()
+        before = list(sys.path)
+        try:
+            sys.path.insert(0, str(DRYRUN))
+            sys.path.insert(0, str(ADAPTERS))
+            spec = importlib.util.spec_from_file_location("benchmark_dryrun_" + name, DRYRUN / (name + ".py"))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        finally:
+            sys.path[:] = before
+        _MODULES[key] = module
+    return _MODULES[key]
+
+
+class _GuardedRow(dict):
+    """A bands row that fails when any field but words, band, side and opaque id is read."""
+
+    def _allowed(self, key):
+        if key not in ("document_id", "words", "length_band", "side"):
+            raise AssertionError("the choice read " + str(key))
+
+    def __getitem__(self, key):
+        self._allowed(key)
+        return dict.__getitem__(self, key)
+
+    def get(self, key, default=None):
+        self._allowed(key)
+        return dict.get(self, key, default)
+
+
+class DryRunChecks(_Case):
+    """Item 0.6: the content-blind choice reads words, band, side and opaque id only, sorts
+    by words then opaque id, takes evenly spaced positions (the median for one) and lists
+    each choice's replacement. Item 0.7 and R24: the build restricted to chosen documents,
+    B2 on it, the B1 prompt tokens and the memory bound, on a synthetic build with a
+    stand-in counter."""
+
+    def setUp(self):
+        super().setUp()
+        if not DRYRUN.is_dir():
+            self.skipTest("benchmark/dryrun/ is not present here")
+
+    def test_positions_and_choice(self):
+        choose = _dryrun("choose")
+        self.assertEqual(choose.positions(5, 1), [2])
+        self.assertEqual(choose.positions(4, 1), [1])
+        self.assertEqual(choose.positions(132, 3), [32, 65, 98])
+        self.assertEqual(choose.positions(3, 3), [0, 1, 2])
+        with self.assertRaises(ValueError):
+            choose.positions(2, 3)
+        rows = [_GuardedRow(document_id=i, words=w, length_band=b, side=s, gold="x",
+                            source_document_id="src-" + i)
+                for i, w, b, s in (("d5", 300, "A", "development"), ("d1", 100, "A", "development"),
+                                   ("d3", 200, "A", "development"), ("d2", 200, "A", "development"),
+                                   ("d4", 250, "A", "holdout"), ("d6", 1500, "B", "development"),
+                                   ("d7", 1200, "B", "development"))]
+        got = choose.choose("x", rows, plan={"A": 1, "B": 1}, fallback={})
+        # band A development order: d1 100, d2 200, d3 200 (tie by id), d5 300: lower median d2
+        self.assertEqual([(r["band"], r["document_id"], r["position"], r["band_size"]) for r in got],
+                         [("A", "d2", 2, 4), ("B", "d7", 1, 2)])
+        self.assertEqual([r["replacement"]["document_id"] for r in got], ["d3", "d6"])
+        two = choose.choose("x", rows, plan={"A": 2}, fallback={"B": 1})
+        # n = 4, k = 2: 1-based positions floor(5/3) = 1 and floor(10/3) = 3
+        self.assertEqual([(r["role"], r["document_id"]) for r in two],
+                         [("chosen", "d1"), ("chosen", "d3"), ("fallback", "d7")])
+        self.assertEqual(two[1]["replacement"]["document_id"], "d5")
+        self.assertNotIn("src-", json.dumps(got + two))
+        self.assertEqual(set(choose.PLAN), set(NAMES))
+
+    def test_memory_bound_by_hand(self):
+        measure = _dryrun("measure")
+        dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
+                "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
+        bound = measure.memory_bound(3, dims)
+        self.assertEqual(bound["bytes"], {"weights": 100, "kv_cache": 48, "attention": 180,
+                                          "activations": 204, "logits": 40, "runtime": 1 << 30})
+        self.assertEqual(bound["total_bytes"], 572 + (1 << 30))
+        self.assertFalse(bound["over_limit"])
+        big = dict(dims, num_attention_heads=28, hidden_size=3584, num_hidden_layers=28)
+        self.assertTrue(measure.memory_bound(32768, big)["over_limit"])
+
+    def test_restricted_build_b2_and_b1_tokens(self):
+        measure = _dryrun("measure")
+        c = _common()
+        adapter = _adapter("scitab")
+        every = {d["document_id"] for d in adapter.documents(adapter.read_source(_source("scitab")),
+                                                              {"development": True})}
+        wanted = sorted(every)[0]
+        out = self.root / "build"
+        c["cli"].build(measure.Only(adapter, [wanted]), _source("scitab"), out, development=True,
+                       synthetic=True, max_context=4096, output_allowance=64,
+                       token_counter=measure.StandIn)
+        record = _json(out / "parts.json")["documents"]
+        self.assertEqual([d["document_id"] for d in record], [wanted], "only the chosen document is built")
+        items = [i for i in _json(out / "items.json")["items"] if i["document_id"] == wanted]
+        sys.path.insert(0, str(ROOT / "benchmark" / "baselines"))
+        try:
+            row = measure.measure_document("scitab", out / wanted, items, record[0], self.root / "b2",
+                                           measure.StandIn, measure._stand_in_dims(), 64)
+        finally:
+            sys.path.remove(str(ROOT / "benchmark" / "baselines"))
+        pairing = _json(self.root / "b2" / "audit" / "pairing_map.json")[wanted]
+        self.assertEqual((row["units"], row["plans_not_asked"], row["b2_model_calls"]),
+                         (len(pairing["units"]), pairing["ablation_not_asked_count"], 0))
+        self.assertEqual(row["b1_prompt_tokens"]["items"], len(items))
+        self.assertGreaterEqual(row["b1_prompt_tokens"]["max"], row["b1_prompt_tokens"]["document_tokens"])
+        self.assertEqual(row["memory_bound"]["tokens"], row["b1_prompt_tokens"]["max"] + 64)
+        self.assertEqual(row["words"], record[0]["source_words"])
+
+
+# ---------------------------------------------------------------------------
 # the B-dev development items (counts only; skipped when external/ does not hold them)
 
 
@@ -1864,9 +2182,22 @@ GROUPS = {
                                "the other way), never counted in a failed run; one figure-audit definition for every benchmark "
                                "(relation and python stamp; bands decide their rule, blank-cell, "
                                "sum and product records only in a one-rule bundle, model records "
-                               "always); B3 and B4 refused while "
-                               "the typed-record key is unsettled; the catch layer read from the "
+                               "always); B3 and B4 refused until "
+                               "the bus reading is adopted; the catch layer read from the "
                                "written_by stamp alone, exactly"),
+    "records": (RecordReaderChecks, "one record reader for both forms: B2 from review_data.json, "
+                                    "B3 from the run's bus with written_by stamped from the line, "
+                                    "supersession within (agent, document, item_id) by revision, "
+                                    "then ts, then line, a judged absence counted only by "
+                                    "Python's stamped copy and the raw model copy listed apart, "
+                                    "another document's lines ignored; the same records in both "
+                                    "forms give the same labels on every mapping fixture; B3 "
+                                    "refused until the bus reading is adopted"),
+    "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
+                             "sorts by words then id, takes evenly spaced positions (the median "
+                             "for one) and lists each replacement; the restricted build holds only "
+                             "the chosen document; B2 on it, the B1 prompt tokens and the memory "
+                             "bound (computed by hand) agree"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "
@@ -1887,7 +2218,8 @@ def check():
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5; B3 refused "
-                             "until the typed-record key is settled), score tiny examples as computed "
+                             "until the bus reading is adopted), read B2 and B3 records by one "
+                             "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")
 

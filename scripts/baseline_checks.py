@@ -1,4 +1,4 @@
-"""Checks for the two baseline arms under benchmark/baselines/ (loop stage S4f), run by
+﻿"""Checks for the two baseline arms under benchmark/baselines/ (loop stage S4f), run by
 the verify gate (scripts/verify_session1.py) through check(); check_python_only() and
 check_bare_model() run one arm, and `py -3.12 -X utf8 scripts/baseline_checks.py` runs
 them by hand.
@@ -32,6 +32,13 @@ reference material), its use of the one cut rule (benchmark/adapters/common/
 cut.py; it carries none of its own) and its reading of the reading agent's model and
 decoding policy from the tracked configuration are checked beside it.
 
+B1's two checkpoints in final mode (loop plan S5, R20), on a mocked model and a fixture
+base folder, no model load: `base` loads the pinned base through final_models.base_path
+(base_hashes checked) and never applies the adapter nor reads an adapter file; `tuned`
+goes through final_models.resident and applies it; a base hash mismatch refuses before
+any model is loaded; each records its digest (revision plus model.safetensors SHA-256,
+plus the adapter's for tuned), and run_b1, the in-process entry, records the checkpoint.
+
 Neither tool may import a model library: that is checked in a fresh subprocess, so a
 library the gate process already imported cannot hide an import.
 
@@ -50,6 +57,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -488,6 +496,191 @@ class BareModelChecks(unittest.TestCase):
         self.assertEqual(plain["max_new_tokens_source"], "pipeline PRODUCTION_MAX_TOKENS")
 
 
+class _FakeModel:
+    """A mocked 4-bit model: records what was done to it, loads nothing."""
+
+    def __init__(self):
+        self.config = SimpleNamespace(model_type="qwen2", use_cache=False, quantization_config={
+            "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": "bfloat16"})
+        self.is_loaded_in_4bit = True
+        self.prepared_for_kbit = False
+
+    def requires_grad_(self, flag):
+        return self
+
+    def eval(self):
+        return self
+
+    def gradient_checkpointing_disable(self):
+        return self
+
+
+class _FakeLibs:
+    """transformers and peft stand-ins: count every load and every adapter application."""
+
+    def __init__(self):
+        self.calls = {"tokenizer": [], "model": [], "kbit": 0, "adapter": []}
+        libs = self
+
+        class AutoTokenizer:
+            @staticmethod
+            def from_pretrained(path, **kw):
+                libs.calls["tokenizer"].append(path)
+                return SimpleNamespace(path=path)
+
+        class AutoModelForCausalLM:
+            @staticmethod
+            def from_pretrained(path, **kw):
+                libs.calls["model"].append(path)
+                return _FakeModel()
+
+        class PeftModel:
+            @staticmethod
+            def from_pretrained(model, adapter_dir, **kw):
+                libs.calls["adapter"].append(adapter_dir)
+                wrapped = _FakeModel()
+                wrapped.base = model
+                return wrapped
+
+        def prepare_model_for_kbit_training(model, **kw):
+            libs.calls["kbit"] += 1
+            model.prepared_for_kbit = True
+            return model
+
+        self.AutoTokenizer, self.AutoModelForCausalLM = AutoTokenizer, AutoModelForCausalLM
+        self.PeftModel, self.prepare_model_for_kbit_training = PeftModel, prepare_model_for_kbit_training
+
+    def modules(self):
+        """sys.modules entries for the real final_models.load (the tuned path)."""
+        transformers = SimpleNamespace(AutoTokenizer=self.AutoTokenizer,
+                                       AutoModelForCausalLM=self.AutoModelForCausalLM)
+        peft = SimpleNamespace(PeftModel=self.PeftModel,
+                               prepare_model_for_kbit_training=self.prepare_model_for_kbit_training)
+        return {"transformers": transformers, "peft": peft}
+
+
+class CheckpointChecks(unittest.TestCase):
+    """R20: in final mode B1 loads the tuned producer (base plus adapter, through
+    final_models as the pipeline does) or the same pinned base WITHOUT the adapter, read
+    through final_models.base_path with its base_hashes check. On a mocked model and a
+    fixture base folder (no model load): base never applies the adapter and reads no adapter
+    file; tuned does; a base hash mismatch refuses before any model is loaded; each records
+    its digest (revision plus model.safetensors SHA-256, plus the adapter's for tuned)."""
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.fm = final_models = self.tool.final_models
+        self.tmp = tempfile.TemporaryDirectory(prefix="b1_ckpt_")
+        root = Path(self.tmp.name)
+        self.base = root / "base"
+        self.base.mkdir()
+        hashes = {}
+        for name, text in (("config.json", "{}"), ("model.safetensors", "fixture weights")):
+            (self.base / name).write_text(text, encoding="utf-8")
+            hashes[name] = final_models.sha(self.base / name)
+        adapter_dir = root / "adapter"
+        adapter_dir.mkdir()
+        for name in ("adapter_model.safetensors", "adapter_config.json"):
+            (adapter_dir / name).write_text("fixture adapter", encoding="utf-8")
+        self.adapter_dir = adapter_dir
+        self.spec = {"checkpoint": 168, "model_id": "fixture/base-4bit", "revision": "rev-fixture",
+                     "base_hashes": hashes,
+                     "files": {"adapter": {"path": "x", "sha256": "a" * 64},
+                               "adapter_config": {"path": "y", "sha256": "b" * 64}}}
+        self.paths = {"adapter": adapter_dir / "adapter_model.safetensors",
+                      "adapter_config": adapter_dir / "adapter_config.json"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _reader(self, checkpoint):
+        with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+            return self.tool.resolve_reader(ROOT, max_new_tokens=64, checkpoint=checkpoint)
+
+    @contextlib.contextmanager
+    def _mocked(self, libs, *, verify_adapter=True):
+        fake_torch = SimpleNamespace(bfloat16="bfloat16")
+        verify = (mock.patch.object(self.fm, "verify", return_value=(self.spec, self.paths))
+                  if verify_adapter else
+                  mock.patch.object(self.fm, "verify", side_effect=AssertionError("adapter files read")))
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.dict(os.environ, {"SHIMMER_PRODUCER_BASE_PATH": str(self.base),
+                                                             "SHIMMER_MODEL_MODE": "final"}))
+            stack.enter_context(mock.patch.dict(sys.modules, libs.modules()))
+            stack.enter_context(mock.patch.dict(self.fm._RESIDENTS, clear=True))
+            stack.enter_context(mock.patch.object(self.fm, "verify_runtime", return_value=fake_torch))
+            stack.enter_context(mock.patch.object(self.fm, "specification", return_value=self.spec))
+            stack.enter_context(verify)
+            yield
+
+    def _backend(self, checkpoint, libs):
+        context = self.tool.RunContext(self.tmp.name, "b1-ckpt")
+        return self.tool.LocalBackend(self._reader(checkpoint), context, libs=libs)
+
+    def test_checkpoint_choice_by_mode(self):
+        self.assertEqual(self.tool.resolve_checkpoint("final"), "tuned")
+        self.assertEqual(self.tool.resolve_checkpoint("final", "base"), "base")
+        self.assertEqual(self.tool.resolve_checkpoint("base"), "base")
+        for mode, name in (("base", "tuned"), ("final", "other")):
+            with self.assertRaises(ValueError, msg=mode + " " + name):
+                self.tool.resolve_checkpoint(mode, name)
+        self.assertEqual(self._reader("base")["checkpoint"], "base")
+        self.assertEqual(self._reader(None)["checkpoint"], "tuned")
+
+    def test_base_never_applies_the_adapter(self):
+        libs = _FakeLibs()
+        resident = mock.patch.object(self.fm, "resident", side_effect=AssertionError("tuned loader"))
+        with self._mocked(libs, verify_adapter=False), resident:
+            backend = self._backend("base", libs)
+            loaded = backend.prepare()
+        self.assertEqual(libs.calls["adapter"], [], "the base checkpoint applied an adapter")
+        self.assertEqual((libs.calls["model"], libs.calls["kbit"]), ([str(self.base)], 1))
+        record = loaded["checkpoint"]
+        self.assertEqual((record["checkpoint"], record["adapter_applied"], record["adapter_sha256"]),
+                         ("base", False, None))
+        weights = self.spec["base_hashes"]["model.safetensors"]
+        self.assertEqual(loaded["digest"], "rev-fixture:" + weights)
+        self.assertEqual(record["model_safetensors_sha256"], weights)
+        self.assertTrue(backend._mdl.config.use_cache)
+
+    def test_tuned_applies_the_adapter(self):
+        libs = _FakeLibs()
+        with self._mocked(libs):
+            loaded = self._backend("tuned", libs).prepare()
+        self.assertEqual([Path(p) for p in libs.calls["adapter"]], [self.adapter_dir],
+                         "the tuned checkpoint did not apply its adapter")
+        self.assertEqual(libs.calls["model"], [str(self.base)])
+        self.assertEqual(loaded["checkpoint"]["adapter_applied"], True)
+        self.assertEqual(loaded["digest"], "rev-fixture:%s+adapter:%s" % (
+            self.spec["base_hashes"]["model.safetensors"], "a" * 64))
+
+    def test_base_hash_mismatch_refuses(self):
+        (self.base / "model.safetensors").write_text("other weights", encoding="utf-8")
+        for checkpoint in ("base", "tuned"):
+            libs = _FakeLibs()
+            with self._mocked(libs, verify_adapter=checkpoint == "tuned"):
+                with self.assertRaisesRegex(RuntimeError, "Base asset mismatch", msg=checkpoint):
+                    self._backend(checkpoint, libs).prepare()
+            self.assertEqual((libs.calls["model"], libs.calls["adapter"]), ([], []), checkpoint)
+
+    def test_entry_records_the_checkpoint(self):
+        # run_b1, the in-process entry, resolves the reader with the checkpoint and records it
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        for checkpoint in ("base", "tuned"):
+            identity = dict(EXPECTED, checkpoint={"checkpoint": checkpoint})
+            with tempfile.TemporaryDirectory(prefix="b1_entry_") as tmp, \
+                    mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                summary = self.tool.run_b1(BUNDLE, ITEMS, Path(tmp) / checkpoint, checkpoint,
+                                           expected=EXPECTED, max_new_tokens=64,
+                                           backend=FakeBackend(replies, identity=identity))
+                label = json.loads(next((Path(tmp) / checkpoint / "labels").glob("*.json"))
+                                   .read_text(encoding="utf-8"))
+            self.assertEqual((summary["reader"]["checkpoint"], summary["checkpoint"]["checkpoint"],
+                              label["checkpoint"]), (checkpoint, checkpoint, checkpoint))
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="b_absent_") as tmp:
@@ -528,7 +721,7 @@ def check_python_only():
 
 
 def check_bare_model():
-    return _verdict([_run(BareModelChecks), _run(AbsentChecks)],
+    return _verdict([_run(BareModelChecks), _run(CheckpointChecks), _run(AbsentChecks)],
                     "B1 with a mocked backend writes exactly one reply record per item (a failed "
                     "call included) joined to one typed label by call id, asks no item of another "
                     "document, prepares and verifies its model once and stops before generating on "
@@ -539,18 +732,24 @@ def check_bare_model():
                     "prompt (revision 3: the undecided invitation only where the rule asks for "
                     "UNCERTAIN) with the reference material, uses the one cut rule in "
                     "common/cut.py, and reads its model and decoding policy from the tracked "
-                    "configuration")
+                    "configuration; in final mode its base checkpoint (the pinned base, "
+                    "base_hashes checked, no adapter) never applies the adapter, its tuned "
+                    "checkpoint does, a base hash mismatch refuses before any load, and each "
+                    "records its digest (mocked model)")
 
 
 def check():
-    results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(AbsentChecks)]
+    results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(CheckpointChecks),
+               _run(AbsentChecks)]
     return _verdict(results, "B2 makes no model call, imports no model library, writes the "
                              "pipeline's completion record and marks its output an ablation on each "
                              "file's first line; B1 verifies its model once and stops before "
                              "generating on any setup failure, writes one reply record per item, "
                              "parses (with escape repair) or abstains, records truncation, pools the "
                              "parse rate per benchmark for its floor, sends the preregistered prompt (revision 3) with "
-                             "reference material, and uses the one cut rule and prompt renderer")
+                             "reference material, and uses the one cut rule and prompt renderer; "
+                             "its base checkpoint never applies the adapter, its tuned one does, "
+                             "and a base hash mismatch refuses (mocked model)")
 
 
 if __name__ == "__main__":
