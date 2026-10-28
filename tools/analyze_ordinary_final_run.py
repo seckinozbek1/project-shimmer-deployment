@@ -37,6 +37,47 @@ DEFAULT_DECISION='D-063'
 PRODUCER_DEFAULT_TEXT=('producer and B1 sdpa, prefilled in one shot, memory-efficient backend pinned (D-063); '
                        'differs from v5 to v12, which ran the producer eager')
 OVER_CONTEXT_EVENT='prompt_over_context'
+# D-067, D-068: what became of the judging calls on plans Python could compute nothing for.
+UNCOMPUTABLE_PLAN='uncomputable'
+UNCOMPUTABLE_DOES_NOT_SHOW=("What this does not show: a kept record is a model's answer, not checked by Python and "
+                            "never promoted to an amendment; these counts say nothing about whether any answer is "
+                            "right, and a score on the items such records decide measures the model's reading, "
+                            "not a computation by Python.")
+
+
+def uncomputable_judging(run_dir):
+    """Per run, from audit/pairing_map.json: the judging calls on plans Python could compute
+    nothing for, by outcome, and the answers D-068 kept and refused (counts only), or None
+    when the run left no pairing map."""
+    path=Path(run_dir)/'audit'/'pairing_map.json'
+    if not path.is_file():
+        return None
+    pairing=read(path)
+    calls=[c for entry in (pairing.values() if isinstance(pairing,dict) else []) if isinstance(entry,dict)
+           for c in entry.get('judging_calls') or [] if isinstance(c,dict) and c.get('plan_kind')==UNCOMPUTABLE_PLAN]
+    return dict(calls=len(calls),
+                advisory_not_kept=sum(c.get('outcome')=='advisory_not_kept' for c in calls),
+                judged_uncomputable=sum(c.get('outcome')=='judged_uncomputable' for c in calls),
+                reply_failed=sum(c.get('outcome')=='reply_failed' for c in calls),
+                kept_model_records=sum(int(c.get('judged_listed') or 0) for c in calls),
+                refused=sum(int(c.get('judged_refused') or 0) for c in calls))
+
+
+def uncomputable_text(arm, status):
+    """The report row for D-067 and D-068: the calls discarded as advisory, the D-068 records
+    kept, and what the counts do not show."""
+    if arm=='B1':
+        return 'not applicable: B1 makes no paired judging call'
+    if not status.get('pipeline_started'):
+        return 'not determined: the pipeline did not start'
+    counts=status.get('uncomputable_judging')
+    if counts is None:
+        return 'not determined: the run left no audit/pairing_map.json (a multi-round run writes none)'
+    return ('%d judging calls on plans Python could compute nothing for: %d discarded as advisory '
+            '(advisory_not_kept, the outcome before D-068); %d returned under D-068, keeping %d answers as a '
+            "model's records and refusing %d; %d failed. %s"%(
+                counts['calls'],counts['advisory_not_kept'],counts['judged_uncomputable'],
+                counts['kept_model_records'],counts['refused'],counts['reply_failed'],UNCOMPUTABLE_DOES_NOT_SHOW))
 
 
 def producer_prefill_text(environment):
@@ -338,6 +379,7 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Backend and machine','local open-weight models on one rented GPU; %s in %s; %s'%(launch.get('instance_type','gpu_1x_a10'),
             launch.get('region','us-east-1'),producer_attention_text(manifest))),
         ('B3 prompts over the model context',over_context_text(arm,status,status.get('b3_prompts_over_context') or [])),
+        ('Judging calls Python could compute nothing for',uncomputable_text(arm,status)),
         ('Execution assessment',assessment_text(status.get('remote_result'))),
         ('Instance type and price','%s at %s dollars an hour'%(launch.get('instance_type','gpu_1x_a10'),launch['hourly_rate'])),
         ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)%s'
@@ -413,13 +455,14 @@ def analyze(bundle=BASE):
     if manifest.get('arm','B3')=='B1':
         require(not completions,'A B1 entry never runs the pipeline')
         return analyze_b1(BASE,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure)
-    summary=None;raw=[];scheduler=[];completion=None
+    summary=None;raw=[];scheduler=[];completion=None;uncomputable=None
     sys.path.insert(0,str(ROOT/'scripts'))
     import model_telemetry
     if completions:
         completion=read(completions[0]);directory=completions[0].parent.parent
         raw=rows(directory/'logs/model_telemetry.jsonl');scheduler=rows(directory/'audit/execution_topology.jsonl')
         summary=model_telemetry.summarize(raw+[record,api],scheduler)
+        uncomputable=uncomputable_judging(directory)
         write(analysis/'model_telemetry_summary.json',summary)
         write(analysis/'ordinary_final_summary.json',supplement(raw,scheduler))
     summary=summary if completions else {}
@@ -439,6 +482,7 @@ def analyze(bundle=BASE):
         protected_data_accessed=bool(manifest.get('protected_test')) and bool(completions),
         multi_round_declared=bool(manifest.get('multi_round')),
         multi_round_executed=bool(manifest.get('multi_round')) and bool(list(target.rglob('audit/multi_round.json'))),
+        uncomputable_judging=uncomputable,
         b3_prompts_over_context=[{k:r.get(k) for k in ('call_id','agent','doc_id','prompt_tokens','max_new_tokens','model_context')}
                                  for r in raw if r.get('event')==OVER_CONTEXT_EVENT],
         inventory_empty=True,temporary_ssh_removed=True,
