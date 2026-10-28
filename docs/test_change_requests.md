@@ -155,3 +155,14 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **From a run's output?**: no.
 - **Proposal**: as TCR-007.
 - **Decision**:
+
+### TCR-012. `negotiation_r2_to_r3` and `negotiation_r3_to_r4`: completeness rules carry no scope or requirement declaration
+
+- **Date**: 2026-10-27.
+- **Test and version**: `benchmark/corpora/negotiation_r2_to_r3` and `benchmark/corpora/negotiation_r3_to_r4`, `conventions/mandate_conventions.md`, as at tag `loop-s01-v1`.
+- **What was noticed**: `docs/INPUT_FORMAT.md` section 5 asks that a rule saying fields must be present declare `[scope: ...]` and `[requires: ...]`. These mandates were written before that rule; three rules in the first are worded as completeness rules and no rule in either carries a declaration, so a term missing from a later offer is caught only when its rule happens to pair by wording. The comparison records (`absent_since_prior`) are unaffected.
+- **Evidence**: no `[scope:` or `[requires:` bracket in either mandate file (the only such brackets under `benchmark/corpora/` are in `device_log_review`, `device_log_review_clean` and `clinical_reference`).
+- **Who noticed it**: the loop lead, writing the input format (S3a, D-018).
+- **From a run's output?**: no.
+- **Proposal**: decide together with TCR-001 and TCR-002; any new version follows section 5.
+- **Decision**:
