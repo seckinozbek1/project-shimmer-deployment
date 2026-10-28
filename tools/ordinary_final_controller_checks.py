@@ -97,7 +97,8 @@ class Backend:
 
     def prepare(self):
         record, digest = real.checkpoint_record(self.reader['checkpoint'], real.final_models.specification(real.FINAL_ROLE))
-        return {'model_id': self.reader['model_id'], 'digest': digest, 'decoding': {}, 'checkpoint': record}
+        return {'model_id': self.reader['model_id'], 'digest': digest, 'decoding': {}, 'checkpoint': record,
+                'attention': real.declared_attention(self.reader)}
 
     def count_prompt(self, system, user):
         return 1
@@ -2208,7 +2209,8 @@ class ControllerChecks(unittest.TestCase):
             except RuntimeError:
                 return False
         every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
-                 '--expect-digest=d', '--expect-decoding', '{}', '--sensitive']
+                 '--expect-digest=d', '--expect-decoding', '{}', '--sensitive',
+                 '--prefill-chunk', '4096', '--prefill-decision', 'D-056']
         cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
                  ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
                  ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]

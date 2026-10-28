@@ -59,18 +59,23 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              benchmark (band records decide their rule's item, a model-written record
              always decides, a computed blank-cell record on a CUAD-shaped bundle does
              not); S-5 puts a refusal before an ok record, and a failed run decides no
-             item by ok over refusal; B3 is refused until the bus reading
-             (decision DS5-8) is adopted; the catch layer is read from the
+             item by ok over refusal; B3 and B4 are read from the bus (decision
+             DS5-8, adopted by D-056), so a run with no bus is a run failure, and
+             with the flag off they are refused; the catch layer is read from the
              WRITTEN-BY-A stamp alone, compared exactly
   records    one record reader (common/records.py): B2 from review_data.json, B3 from
              the run's bus, written_by stamped from the line, supersession within
              (agent, document, item_id), a judged absence counted only by Python's
              stamped copy with the raw copy listed apart; every mapping fixture moved
-             onto a bus gives the same labels as its review_data.json form
+             onto a bus gives the same labels as its review_data.json form, and the
+             label command labels B3 and B4 from a fixture bus (BUS_READER_ADOPTED)
   dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
              opaque id only; sorted by words then id; evenly spaced positions; each
              replacement listed), the build restricted to chosen documents, B2 on it,
-             the B1 prompt tokens and R24's memory bound computed by hand
+             the B1 prompt tokens and the memory bound computed by hand (D-056
+             condition 8: float32 non-4-bit weights, activations and KV cache; sdpa
+             with no T x T term; the eager reference squared over the prompt only),
+             and its recomputation from a written summary
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -1125,8 +1130,12 @@ class MappingChecks(_Case):
             arms = {"B2": c["cli"].label(adapter, items, "B2", runs),
                     "B1": c["cli"].label(adapter, items, "B1", b1)}
             for arm in ("B3", "B4"):
-                with self.assertRaises(c["mapping"].Refused, msg=name + " " + arm):
-                    c["cli"].label(adapter, items, arm, runs)
+                # B3 and B4 are read from the bus (D-056): these runs carry review_data.json
+                # only, so each is a run failure (no bus) and every item ABSTAIN, never
+                # labelled from review_data.json
+                pipeline = c["cli"].label(adapter, items, arm, runs)["primary"]
+                self.assertEqual({r["class"] for r in pipeline["labels"]}, {"ABSTAIN"}, name + " " + arm)
+                self.assertTrue(all(d["run_failure"] for d in pipeline["documents"]), name + " " + arm)
             for arm, labels in arms.items():
                 for variant in ("", " S-1", " S-2", " S-3", " S-5"):
                     key = arm + variant
@@ -1153,9 +1162,15 @@ class MappingChecks(_Case):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B2",
                                                        "--runs", str(runs), "--out", str(self.root / "l.json")])
-            refused = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
-                                                          "--runs", str(runs), "--out", str(self.root / "m.json")])
-        self.assertEqual((code, refused), (3, 4))
+            # B3 is labelled from the bus (D-056); these runs have none, so every item is a
+            # run failure (ABSTAIN), not a fault; with the bus reading not adopted it refuses
+            bus_arm = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+                                                          "--runs", str(runs), "--out", str(self.root / "b.json")])
+            with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
+                refused = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+                                                              "--runs", str(runs), "--out", str(self.root / "m.json")])
+        self.assertEqual((code, bus_arm, refused), (3, 0, 4))
+        self.assertEqual({r["class"] for r in _json(self.root / "b.json")["primary"]["labels"]}, {"ABSTAIN"})
         self.assertFalse((self.root / "m.json").exists(), "a refused arm writes no labels")
 
     def test_a_settled_answer_on_any_unit_beats_a_refusal(self):
@@ -1863,14 +1878,28 @@ class RecordReaderChecks(_Case):
         with self.assertRaises(ValueError):
             rec.read_records(run, doc, "elsewhere")
 
-    def test_label_command_refuses_b3_until_the_bus_reading_is_adopted(self):
+    def test_label_command_labels_b3_from_the_bus_once_adopted(self):
+        # D-056: the bus reading is adopted, so the label command labels B3 (and B4) from a
+        # run's bus, giving the labels the same records give B2 from review_data.json; with
+        # the flag off it still refuses, as before the adoption.
         c = _common()
-        self.assertFalse(c["mapping"].BUS_READER_ADOPTED)
+        self.assertTrue(c["mapping"].BUS_READER_ADOPTED)
         self.assertEqual(c["mapping"].RECORD_SOURCE, {"B2": "review_data", "B3": "bus", "B4": "bus"})
-        cases = _json(_fixture("scitab", "mapping_cases.json"))
-        items, runs, _ = _materialise(cases, self.root / "refuse")
-        with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
-            c["cli"].label(_adapter("scitab"), items, "B3", runs)
+        for name in NAMES:
+            cases = _json(_fixture(name, "mapping_cases.json"))
+            items, runs, _ = _materialise(cases, self.root / name / "rd")
+            _ignored, bus_runs, _ = _materialise(cases, self.root / name / "bus")
+            for doc in cases["runs"]:
+                _as_bus(bus_runs / doc, doc)
+            by_review = c["cli"].label(_adapter(name), items, "B2", runs)
+            for arm in ("B3", "B4"):
+                by_bus = c["cli"].label(_adapter(name), items, arm, bus_runs)
+                self.assertEqual(_label_view(by_bus["primary"]), _label_view(by_review["primary"]), name + " " + arm)
+                self.assertTrue(by_bus["primary"]["labels"], name)
+                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "primary"])
+            with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
+                with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
+                    c["cli"].label(_adapter(name), items, "B3", bus_runs)
 
 
 # ---------------------------------------------------------------------------
@@ -1954,16 +1983,58 @@ class DryRunChecks(_Case):
         self.assertEqual(set(choose.PLAN), set(NAMES))
 
     def test_memory_bound_by_hand(self):
+        # D-056 condition 8, computed by hand: L 2, H 2, Hkv 1, h 4 (d 2), m 6, V 10, a 100-byte
+        # file; prompt P 3, allowance 2, so T 5. Non-4-bit parameters 2*10*4 + 2*2*4 + 4 +
+        # 2*(4 + 2*1*2) = 116, doubled from bf16 to float32: weights 100 + 2*116 = 332. KV cache
+        # 2*2*1*2*5*4 = 160 (float32). sdpa: 2*2*2*5*4 + 2*3*4 = 184, no T x T term; eager:
+        # 2*3*3*8 + 3*3*4 = 180, over the prompt only. Activations 3*(16 + 18)*4 = 408 (float32),
+        # dequantized 6*4*2 = 48, logits 40.
         measure = _dryrun("measure")
         dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
                 "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
-        bound = measure.memory_bound(3, dims)
-        self.assertEqual(bound["bytes"], {"weights": 100, "kv_cache": 48, "attention": 180,
-                                          "activations": 204, "logits": 40, "runtime": 1 << 30})
-        self.assertEqual(bound["total_bytes"], 572 + (1 << 30))
+        self.assertEqual(measure.non_4bit_parameters(dims), 116)
+        self.assertEqual(measure.non_4bit_parameters(dict(dims, tie_word_embeddings=True)), 76)
+        common = {"weights": 332, "kv_cache": 160, "activations": 408, "dequantized": 48, "logits": 40,
+                  "runtime": 1 << 30}
+        bound = measure.memory_bound(3, 2, dims)
+        self.assertEqual((bound["attention"], bound["prompt_tokens"], bound["tokens"]), ("sdpa", 3, 5))
+        self.assertEqual(bound["bytes"], dict(common, attention=184))
+        self.assertEqual(bound["total_bytes"], 1172 + (1 << 30))
         self.assertFalse(bound["over_limit"])
-        big = dict(dims, num_attention_heads=28, hidden_size=3584, num_hidden_layers=28)
-        self.assertTrue(measure.memory_bound(32768, big)["over_limit"])
+        eager = measure.memory_bound(3, 2, dims, "eager")
+        self.assertEqual(eager["bytes"], dict(common, attention=180))
+        # eager's square is over the prompt only: the allowance moves only the KV cache and sdpa
+        longer = measure.memory_bound(3, 20, dims, "eager")
+        self.assertEqual(longer["bytes"]["attention"], 180)
+        self.assertEqual(longer["bytes"]["kv_cache"], 2 * 2 * 1 * 2 * 23 * 4)
+        with self.assertRaises(ValueError):
+            measure.memory_bound(3, 2, dims, "flash")
+        # Qwen2.5-7B's shape at a full-length prompt (context 32,768 less a 2,048 allowance): the
+        # eager square alone is 215 GB; sdpa has none, and its bound sits just over the 22 GB
+        # limit, mostly one-shot prefill's float32 activations (8.7 GB)
+        big = {"num_hidden_layers": 28, "num_attention_heads": 28, "num_key_value_heads": 4, "hidden_size": 3584,
+               "intermediate_size": 18944, "vocab_size": 152064, "weights_file_bytes": 5547254622}
+        full = measure.memory_bound(32768 - 2048, 2048, big)
+        self.assertEqual((full["total_gb"], full["bytes"]["activations"]), (22.38, 30720 * 71168 * 4))
+        self.assertEqual(measure.memory_bound(32768 - 2048, 2048, big, "eager")["total_gb"], 236.61)
+
+    def test_recompute_from_a_written_summary(self):
+        measure = _dryrun("measure")
+        dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
+                "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
+        summary = {"model_dimensions": dims, "output_allowance": 2, "memory_formula": "old",
+                   "documents": [{"benchmark": "findver", "part_rule": None, "document_id": "d1", "role": "chosen",
+                                  "band": "A", "b1_prompt_tokens": {"max": 3},
+                                  "memory_bound": {"total_gb": 9.0, "over_limit": False}}]}
+        path = self.root / "summary.json"
+        path.write_text(json.dumps(summary), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(measure.main(["recompute", "--summary", str(path), "--out",
+                                           str(self.root / "again.json")]), 0)
+        row = _json(self.root / "again.json")["documents"][0]
+        self.assertEqual((row["prompt_tokens"], row["tokens"], row["recorded_bound_gb"]), (3, 5, 9.0))
+        self.assertEqual((sum(row["sdpa_bytes"].values()), sum(row["eager_bytes"].values())),
+                         (1172 + (1 << 30), 1168 + (1 << 30)))
 
     def test_restricted_build_b2_and_b1_tokens(self):
         measure = _dryrun("measure")
@@ -1991,6 +2062,9 @@ class DryRunChecks(_Case):
         self.assertEqual(row["b1_prompt_tokens"]["items"], len(items))
         self.assertGreaterEqual(row["b1_prompt_tokens"]["max"], row["b1_prompt_tokens"]["document_tokens"])
         self.assertEqual(row["memory_bound"]["tokens"], row["b1_prompt_tokens"]["max"] + 64)
+        self.assertEqual((row["memory_bound"]["attention"], row["memory_bound_eager"]["attention"]),
+                         ("sdpa", "eager"))
+        self.assertEqual(row["memory_bound"]["prompt_tokens"], row["b1_prompt_tokens"]["max"])
         self.assertEqual(row["words"], record[0]["source_words"])
 
 
@@ -2182,8 +2256,8 @@ GROUPS = {
                                "the other way), never counted in a failed run; one figure-audit definition for every benchmark "
                                "(relation and python stamp; bands decide their rule, blank-cell, "
                                "sum and product records only in a one-rule bundle, model records "
-                               "always); B3 and B4 refused until "
-                               "the bus reading is adopted; the catch layer read from the "
+                               "always); B3 and B4 read from the bus (a run with no bus a run "
+                               "failure), refused with the bus reading not adopted; the catch layer read from the "
                                "written_by stamp alone, exactly"),
     "records": (RecordReaderChecks, "one record reader for both forms: B2 from review_data.json, "
                                     "B3 from the run's bus with written_by stamped from the line, "
@@ -2191,13 +2265,17 @@ GROUPS = {
                                     "then ts, then line, a judged absence counted only by "
                                     "Python's stamped copy and the raw model copy listed apart, "
                                     "another document's lines ignored; the same records in both "
-                                    "forms give the same labels on every mapping fixture; B3 "
-                                    "refused until the bus reading is adopted"),
+                                    "forms give the same labels on every mapping fixture; the "
+                                    "bus reading is adopted (D-056): the label command labels B3 "
+                                    "and B4 from a fixture bus as B2 from review_data.json, and "
+                                    "refuses with the flag off"),
     "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
                              "sorts by words then id, takes evenly spaced positions (the median "
                              "for one) and lists each replacement; the restricted build holds only "
                              "the chosen document; B2 on it, the B1 prompt tokens and the memory "
-                             "bound (computed by hand) agree"),
+                             "bound (computed by hand; float32 non-4-bit weights, activations and "
+                             "KV cache, sdpa with no T x T term, eager squared over the prompt "
+                             "only, D-056) agree, and a written summary is recomputed"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "

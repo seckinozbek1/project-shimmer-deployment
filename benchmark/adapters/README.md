@@ -95,7 +95,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
   - For B1, `--runs` holds one `bare_model.py` output folder per document, named the same way, with `labels/<item id>.json` inside.
   - B0 needs no run.
   - Typed records are read by one reader, `common/records.py`: B2's from `review_data.json` (`findings`), B3's and B4's from the run's bus (`logs/agent_bus.jsonl`), stamped `written_by` from the line that carried them, superseded within one agent and document, a judged absence counted only by Python's stamped copy and the raw model copy listed apart (preregistration section 5.1, draft).
-  - B3 and B4 are refused (exit 4) until that bus reading (decision DS5-8, section 12 item 9) has been attacked by a checker and recorded (`mapping.BUS_READER_ADOPTED`).
+  - That bus reading (decision DS5-8, section 12 item 9) has been attacked by a checker and recorded (`docs/loop/DECISIONS.md` D-055 and D-056), so `mapping.BUS_READER_ADOPTED` is True and B3 and B4 are labelled from the bus; a run with no readable bus is a run failure. With the flag False they are refused (exit 4).
   - The output file holds the primary labels and the S-1, S-2, S-3 and S-5 analyses.
   - The command exits 3 when it records an adapter fault (a prior relation, a missing typed-record key, an unrecognised verdict).
 - **score** scores each analysis, and S-4 (the primary labels without the items `parts.json` lists as having their evidence beyond the cut). It reads gold from the bundles' `answer_key.json` and units from the bundle documents. It refuses when a labelled document has a gold item with no label. Every result carries the statement that it is not comparable with published numbers, and names its headline measure.
@@ -105,7 +105,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 **All adapters (run output, `common/mapping.py`).** These are PROVISIONAL until `docs/OUTPUT_FORMAT.md` settles them (section 12, items 1 and 9). Its draft, `output-format-v1-draft`, is on branch `loop/s03` since 5fca716; its section 7.3 (Python's irregular findings are on the bus, not in `review_data.json`) conflicts with section 5.1's reading of `review_data.json` alone, recorded in section 12 item 9.
 
 - The completion record `<run>/audit/run_completion.json` is the pipeline's own (`scripts/run_completion.py`), read with the validity rules of its `read()`; B2 writes the same record.
-- The typed-record key `findings` is what B2 writes; the pipeline's records are read from its bus (`common/records.py`), and B3 and B4 stay refused until that reading is adopted.
+- The typed-record key `findings` is what B2 writes; the pipeline's records are read from its bus (`common/records.py`), a reading adopted by D-056.
 - The UNCERTAIN marker is tested as `scripts/verifiability_gate.py` tests it.
 - Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11).
 - The record id `item_id` and its `revision` (INFRA-037 supersession).
