@@ -56,3 +56,8 @@ Every later side-gate run is compared with these figures.
   - `s01-replies` (base `b761171`): checks 21, 100, 112, 120, 242, 269 and 275 pass; 118, 121, 126 and 146 fail exactly as at the base (missing `fastapi`, `uvicorn`, or ignored and untracked files a worktree does not have).
   - `s01-instfinder` (base `f8d0087`): checks 03, 04, 10, 87, 116, 127, 195, 258 and 260 pass; 108 and 259 error on the missing `fastapi`, as at the base; 252 fails on the Dockerfile line (open item 7), as in the main checkout.
   These are the worktree baseline for those checks.
+
+## Environment 2, main gate (first full run in a worktree, S3 tip `5ac15f3`, 2026-10-28)
+
+- `.claude/worktrees/s03-lead`, same interpreter as the main checkout (`py -3.12`, `KMP_DUPLICATE_LIB_OK=TRUE`, stdin closed). 283 checks: PASS 250, WARN 1, SKIP 3, FAIL or ERROR 29.
+- Non-pass set: the main checkout's 31 (01, 38, 91, 96, 101, 108, 110, 117, 118, 121, 126, 129, 140, 145, 146, 193, 196, 203, 210, 213, 214, 246, 247, 248, 250, 251, 252, 255, 257, 259, 261) plus 28 ("input/ missing") and 31 ("input/context/ missing"): a worktree holds tracked files only, and `input/` is gitignored runtime state. This is the worktree baseline for the main gate.

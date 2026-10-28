@@ -399,3 +399,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **D-S11 applied.** From 28 October 2026 the lead, every subagent, lane, checker and role session run on Opus at medium effort (CLAUDE_CODE_EFFORT_LEVEL=medium, --effort medium where a flag is passed). Every stage report from now on states "Opus, medium effort from 28 October 2026". Not recorded as a departure (D-S11).
 - **Usage at restart.** Five-hour 1 percent, seven-day 0 percent (status file 08:19 UTC); reaper ran 08:16 UTC, 0 instances, budget 70, hard stop 69.
 - **Rules.** IV.2, I.3, Annex D D-S11.
+
+## D-053. S3 commits not named in D-048 or D-050, and the S3 close commit, gated only at the tip
+
+- **When, stage.** 2026-10-28 11:27 +0300 (system clock), S3 close.
+- **PROCESS-DEPARTURE (IV.7).** Besides the commits D-048 and D-050 name, these S3 commits had no full gate run of their own: lane commits `8683d63`, `1b7cc06`, `8ef5322`, `1e6f938`, `a9f3bd4`, `2a26632`, and the document-only commits `e094a74`, `5bf6fa7`, `d4398ad`, `04b7e24`, `5fca716`. The S3 close commit (report, `VERSION` 0.1.0.dev3, `CHANGELOG.md`) is not gated on `loop/s03` either: it changes no file a check reads for behaviour, and the full gate on the loop branch after the S3 merge covers its tree.
+- **Gate at the S3 tip `5ac15f3`** (worktree, 2026-10-28 08:20 to 08:27 UTC): PASS 250, WARN 1, SKIP 3, FAIL or ERROR 29 of 283 checks. The non-pass set is the main checkout's 31 plus checks 28 and 31, which fail only because a worktree has no ignored `input/` folder (environment 2, `docs/loop/GATE_BASELINE.md`). New checks 281 and 284 pass. No regression.
+- **How the product still obeys its rules.** Every one of these trees is the tree gated at the tip or at the loop-branch merge; no product rule was bypassed.
+- **Rules.** IV.7, P8.
