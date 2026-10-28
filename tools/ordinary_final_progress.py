@@ -136,8 +136,9 @@ B1_ROOT = 'evidence/b1'
 
 
 def b1_workload(context, phase):
-    """A B1 entry (S5 R19): bare_model.py writes one reply record per item per checkpoint under
-    evidence/b1/<checkpoint>/audit/model_replies, and the runner writes the total it expects
+    """A B1 entry (S5 R19): bare_model.py writes one reply record per item per sealed pass under
+    evidence/b1/<pass name>/audit/model_replies (every pass's folder is counted, whatever
+    checkpoint it loads), and the runner writes the total it expects (items times passes)
     beside them first. None when the workload is not a B1 run (the pipeline's reading applies)
     or the instance did not answer (the pipeline's own observation then says so)."""
     raw = context['look'](
@@ -150,7 +151,7 @@ def b1_workload(context, phase):
         return None
     done, total = digits(lines[1]), digits(lines[2])
     return count_reading(phase, done, total or None, context['elapsed'], 'reply records',
-                         'one reply record per item per checkpoint, all written')
+                         'one reply record per item per pass, all written')
 
 
 def ordinary_workload(context):

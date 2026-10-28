@@ -87,9 +87,12 @@ def _absent(base=None):
 EXPECTED = {"model_id": "fixture-model", "digest": "fixture-digest", "decoding": {}}
 # D-056 condition 1, written out here so the checks hold the tool to it: B1 generates under
 # sdpa with the memory-efficient backend pinned, prefilling in one shot unless a recorded
-# decision adopts chunked prefill.
+# decision adopts chunked prefill. No measurement decision: an sdpa pass names none.
 B1_ATTENTION = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                "attention_decision": None,
                 "prefill": "one_shot", "prefill_chunk_tokens": None, "prefill_decision": None}
+# D-056 condition 6: an eager measurement pass, with the decision that asks for it.
+B1_EAGER = dict(B1_ATTENTION, attention_implementation="eager", sdpa_backend=None, attention_decision="D-056")
 
 
 class FakeBackend:
@@ -982,6 +985,307 @@ class AttentionChecks(unittest.TestCase):
         self.assertTrue(torch.equal(eager.sequences, one.sequences))
 
 
+GIB = 2 ** 30
+
+
+class _FakeCuda:
+    """torch.cuda's peak-memory counters, mocked (no device touched): `events` records each
+    reset, read and generate in order; bump() is what a generate call allocates."""
+
+    def __init__(self, available=True, initialized=True):
+        self.available, self.initialized = available, initialized
+        self.events, self.allocated, self.peak, self.reserved = [], 5 * GIB, 0, 0
+
+    def is_available(self):
+        return self.available
+
+    def is_initialized(self):
+        return self.initialized
+
+    def reset_peak_memory_stats(self):
+        self.events.append("reset")
+        self.peak, self.reserved = self.allocated, self.allocated + GIB
+
+    def memory_allocated(self):
+        return self.allocated
+
+    def max_memory_allocated(self):
+        self.events.append("read")
+        return self.peak
+
+    def max_memory_reserved(self):
+        return self.reserved
+
+    def empty_cache(self):
+        self.events.append("empty_cache")
+
+    def bump(self, size):
+        self.peak = max(self.peak, self.allocated + size)
+        self.reserved = max(self.reserved, self.allocated + size + GIB)
+
+
+class _MeasuredBackend(FakeBackend):
+    """The mocked model on a mocked CUDA device: each call allocates one more GiB than the last."""
+
+    def __init__(self, replies, cuda, **kwargs):
+        super().__init__(replies, **kwargs)
+        self.cuda = cuda
+
+    def generate(self, system, user, max_new_tokens):
+        self.cuda.events.append("generate")
+        self.cuda.bump(GIB * (len(self.asked) + 1))
+        return super().generate(system, user, max_new_tokens)
+
+
+class MeasurementChecks(unittest.TestCase):
+    """D-056 condition 6 on mocked models (no model load, no device touched): an eager
+    measurement pass is accepted only with its recorded decision and runs eager, recorded in
+    every reply record, label and the summary; each pass's peak GPU memory (allocated and
+    reserved) is reset after the load and read after the last item, null without CUDA, and a
+    model the pass loaded is released when it ends; two pass folders are compared item by item
+    for byte-identical replies and agreeing labels, counts only."""
+
+    _resident = AttentionChecks._resident
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.fm = self.tool.final_models
+        self.tmp = tempfile.TemporaryDirectory(prefix="b1_measure_")
+        self.spec = {"checkpoint": 168, "model_id": "fixture/base-4bit", "revision": "rev-fixture",
+                     "base_hashes": {"model.safetensors": "c" * 64},
+                     "files": {"adapter": {"path": "x", "sha256": "a" * 64}}}
+        self.replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _reader(self, **kwargs):
+        with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "base"}):
+            return self.tool.resolve_reader(ROOT, max_new_tokens=64, **kwargs)
+
+    def test_eager_measurement_pass_needs_its_decision_and_is_recorded(self):
+        for attention, decision in (("eager", None), ("sdpa", "D-056"), ("eager", "decided"), ("flash", None)):
+            with self.assertRaises(ValueError, msg=(attention, decision)):
+                self.tool.attention_record(attention=attention, attention_decision=decision)
+        self.assertEqual(self.tool.attention_record(attention="eager", attention_decision="D-056"), B1_EAGER)
+        parsed = self.tool.build_parser().parse_args(["--bundle", "b", "--items", "i", "--out", "o"])
+        self.assertEqual((parsed.attention, parsed.attention_decision), ("sdpa", None))
+        out = Path(self.tmp.name) / "refused"
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            code = self.tool.main(["--bundle", str(BUNDLE), "--items", str(ITEMS), "--out", str(out),
+                                   "--attention", "eager", "--development"])
+        self.assertEqual(code, 4)
+        self.assertIn("--attention-decision", err.getvalue())
+        self.assertFalse(out.exists(), "a refused eager pass wrote something")
+        # the eager pass on the shared resident model: eager for every call, no sdpa backend
+        # pinned, recorded in every reply record, label and the summary
+        torch = _torch_or_skip(self)
+        import reply_records
+        model = _AttentionModel()
+        out = Path(self.tmp.name) / "tuned_eager"
+        with self._resident(model):
+            with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned",
+                                                  attention="eager", attention_decision="D-056")
+            backend = self.tool.LocalBackend(reader, self.tool.RunContext(out, "b1-eager"))
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
+        self.assertEqual(model.calls, [("eager", _enabled_backends(torch))] * 4)
+        self.assertEqual(model.config._attn_implementation, "eager")
+        records = reply_records.records(out / "audit" / "model_replies")
+        self.assertEqual([r["attention"] for r in records], [B1_EAGER] * 4)
+        labels = [json.loads(p.read_text(encoding="utf-8")) for p in (out / "labels").glob("*.json")]
+        self.assertEqual([l["attention"] for l in labels], [B1_EAGER] * 4)
+        self.assertEqual((summary["attention"], summary["loaded"]["attention"]), (B1_EAGER, B1_EAGER))
+
+    def test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda(self):
+        cuda = _FakeCuda()
+        out = Path(self.tmp.name) / "measured"
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=_MeasuredBackend(self.replies, cuda),
+                                    reader=self._reader(), expected=EXPECTED)
+        # reset once after the load and before the first item, read after the last
+        self.assertEqual([e for e in cuda.events if e != "read"], ["reset"] + ["generate"] * 4)
+        self.assertEqual(cuda.events[-1], "read")
+        memory = summary["gpu_memory"]
+        self.assertEqual((memory["peak_allocated_bytes"], memory["peak_reserved_bytes"],
+                          memory["allocated_at_start_bytes"], memory["measured"]),
+                         (9 * GIB, 10 * GIB, 5 * GIB, True))
+        written = json.loads((out / "b1_summary.json").read_text(encoding="utf-8"))
+        self.assertEqual(written["gpu_memory"], memory)
+        # no CUDA, CUDA not in use, or no torch at all: every value null
+        nulls = {"peak_allocated_bytes": None, "peak_reserved_bytes": None, "allocated_at_start_bytes": None,
+                 "measured": False}
+        for name, modules in (("cpu", {"torch": SimpleNamespace(cuda=_FakeCuda(available=False))}),
+                              ("idle", {"torch": SimpleNamespace(cuda=_FakeCuda(initialized=False))}),
+                              ("absent", {"torch": None})):
+            with mock.patch.dict(sys.modules, modules):
+                summary = self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / name, backend=FakeBackend(self.replies),
+                                        reader=self._reader(), expected=EXPECTED)
+            self.assertEqual({k: summary["gpu_memory"][k] for k in nulls}, nulls, name)
+        # a call that stops the run records the peak so far in b1_setup_failure.json
+        cuda = _FakeCuda()
+        stopped = Path(self.tmp.name) / "stopped"
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            with self.assertRaises(self.tool.SetupFailure):
+                self.tool.run(BUNDLE, ITEMS, stopped, reader=self._reader(), expected=EXPECTED,
+                              backend=_MeasuredBackend(self.replies, cuda, raise_for={
+                                  "a2": RuntimeError("CUDA error: out of memory")}))
+        failure = json.loads((stopped / self.tool.SETUP_FAILURE_FILE).read_text(encoding="utf-8"))
+        self.assertEqual(failure["gpu_memory"]["peak_allocated_bytes"], 7 * GIB)
+
+    def test_a_model_the_pass_loaded_is_released_when_it_ends(self):
+        released = []
+        replies = self.replies
+
+        class Built(FakeBackend):
+            def __init__(self, reader, context, identity=None):
+                super().__init__(replies, identity=identity)
+
+            def release(self):
+                released.append(1)
+        with mock.patch.object(self.tool, "LocalBackend", Built):
+            self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "built", reader=self._reader(), expected=EXPECTED)
+            self.assertEqual(released, [1])
+            with mock.patch.object(self.tool, "LocalBackend",
+                                   lambda reader, context: Built(reader, context, dict(EXPECTED, digest="other"))):
+                with self.assertRaises(self.tool.SetupError):
+                    self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "refused", reader=self._reader(),
+                                  expected=EXPECTED)
+            self.assertEqual(released, [1, 1], "a pass that stops still releases its model")
+        # a backend handed in is the caller's: never released by the run
+        handed = Built(None, None)
+        self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "handed", backend=handed, reader=self._reader(),
+                      expected=EXPECTED)
+        self.assertEqual(released, [1, 1])
+        # the real release drops the model and empties the CUDA cache
+        cuda = _FakeCuda()
+        backend = self.tool.LocalBackend(self._reader(), self.tool.RunContext(self.tmp.name, "b1-release"))
+        backend._tok, backend._mdl = object(), object()
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            backend.release()
+        self.assertEqual((backend._tok, backend._mdl, cuda.events), (None, None, ["empty_cache"]))
+
+    def _pass(self, name, replies, **kwargs):
+        out = Path(self.tmp.name) / name
+        self.tool.run(BUNDLE, ITEMS, out, backend=FakeBackend(replies), reader=self._reader(),
+                      expected=EXPECTED, **kwargs)
+        return out
+
+    def test_two_passes_are_compared_for_byte_identical_replies_and_agreeing_labels(self):
+        import copy
+        a = self._pass("tuned", self.replies)
+        b = self._pass("tuned_repeat", self.replies)
+        hashed = self._pass("tuned_hashed", self.replies, sensitive=True)
+        changed = copy.deepcopy(self.replies)
+        changed["a1"]["reply"] += " "                       # one byte more, the same label
+        changed["a3"]["reply"] = "No label this time."      # another reply, and an abstention
+        c = self._pass("tuned_eager", changed)
+        out = Path(self.tmp.name) / "compare"
+        same = self.tool.compare_passes(a, b, out / "same.json")["counts"]
+        self.assertEqual({k: same[k] for k in ("items", "in_both", "replies_compared", "replies_byte_identical",
+                                               "replies_differ", "reply_missing", "labels_agree", "labels_differ",
+                                               "both_abstained")},
+                         {"items": 4, "in_both": 4, "replies_compared": 3, "replies_byte_identical": 3,
+                          "replies_differ": 0, "reply_missing": 1, "labels_agree": 4, "labels_differ": 0,
+                          "both_abstained": 2})
+        # a sensitive pass keeps only hashes, and is compared on them
+        self.assertEqual(self.tool.compare_passes(a, hashed, out / "hashed.json")["counts"]["replies_byte_identical"], 3)
+        result = self.tool.compare_passes(a, c, out / "changed.json")
+        self.assertEqual({k: result["counts"][k] for k in ("replies_byte_identical", "replies_differ",
+                                                           "labels_agree", "labels_differ", "both_abstained")},
+                         {"replies_byte_identical": 1, "replies_differ": 2, "labels_agree": 3, "labels_differ": 1,
+                          "both_abstained": 2})
+        self.assertEqual({r["item_id"]: (r["reply_byte_identical"], r["label_agrees"]) for r in result["items"]},
+                         {"a1": (False, True), "a2": (True, True), "a3": (False, False), "a4": (None, True)})
+        self.assertEqual((result["a"]["folder"], result["b"]["folder"]), ("tuned", "tuned_eager"))
+        # an item missing on one side is counted, never compared
+        (c / "labels" / "a2.json").unlink()
+        missing = self.tool.compare_passes(a, c, out / "missing.json")["counts"]
+        self.assertEqual((missing["items"], missing["in_both"], missing["missing_in_b"]), (4, 3, 1))
+        # the command: counts only in its output, never a reply's text or a label
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = self.tool.main(["compare", "--a", str(a), "--b", str(c), "--out", str(out / "cli.json")])
+        self.assertEqual(code, 0)
+        text = (out / "cli.json").read_text(encoding="utf-8")
+        for secret in ("Line total", "refuted", "not enough info", "No label this time"):
+            self.assertNotIn(secret, text)
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(self.tool.main(["compare", "--a", str(a), "--b", str(out / "none"),
+                                             "--out", str(out / "x.json")]), 4)
+
+
+def _attention_ignoring_eager(original):
+    """B1's switch always to sdpa, whatever the pass declared."""
+    def switch(model, backends=None, implementation="sdpa"):
+        return original(model, backends)
+    return switch
+
+
+def _attention_record_without_its_decision(original):
+    """The declared attention built without the rule that eager needs its decision."""
+    def record(prefill_chunk=None, prefill_decision=None, attention="sdpa", attention_decision=None):
+        return dict(original(prefill_chunk, prefill_decision), attention_implementation=attention,
+                    sdpa_backend=None if attention == "eager" else "EFFICIENT_ATTENTION",
+                    attention_decision=attention_decision)
+    return record
+
+
+# Neutralize, fail, restore, pass (D-056 condition 6): each entry names a check, the
+# bare_model.py function it holds, and a mutant built from the original; prove_neutralizations()
+# runs the check, then with the mutant in place (it must fail and the mutant must have been
+# called), then restored. `py -3.12 -X utf8 scripts/baseline_checks.py --prove`.
+NEUTRALIZATIONS = [
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "b1_attention",
+     _attention_ignoring_eager),
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "attention_record",
+     _attention_record_without_its_decision),
+    (MeasurementChecks, "test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda", "start_gpu_memory",
+     lambda original: (lambda: (None, None))),
+    (MeasurementChecks, "test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda", "gpu_memory_probe",
+     lambda original: (lambda: getattr(sys.modules.get("torch"), "cuda", None))),
+    (MeasurementChecks, "test_two_passes_are_compared_for_byte_identical_replies_and_agreeing_labels",
+     "reply_identity", lambda original: (lambda record: "same")),
+]
+
+
+def prove_neutralizations():
+    """{passed, proofs}: every NEUTRALIZATIONS entry passes, fails with its mutant in place
+    (which was called), and passes again restored."""
+    module = sys.modules[__name__]
+    loader = module._load
+    proofs = []
+
+    def single(case, name):
+        result = unittest.TestResult()
+        case(name).run(result)
+        return result.wasSuccessful() and not result.skipped
+
+    for case, name, attribute, mutant in NEUTRALIZATIONS:
+        invocations = []
+
+        def mutated(module_name, _attribute=attribute, _mutant=mutant):
+            tool = loader(module_name)
+            if module_name == "bare_model":
+                replacement = _mutant(getattr(tool, _attribute))
+
+                def counted(*args, **kwargs):
+                    invocations.append(1)
+                    return replacement(*args, **kwargs)
+                setattr(tool, _attribute, counted)
+            return tool
+        before = single(case, name)
+        with mock.patch.object(module, "_load", mutated):
+            failed = not single(case, name)
+        after = single(case, name)
+        proofs.append({"check": name, "neutralized": "bare_model." + attribute, "baseline_pass": before,
+                       "neutralized_fail": failed and bool(invocations), "restored_pass": after,
+                       "mutated_branch_invocations": len(invocations)})
+    passed = all(p["baseline_pass"] and p["neutralized_fail"] and p["restored_pass"] for p in proofs)
+    return {"passed": passed, "proofs": proofs}
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="b_absent_") as tmp:
@@ -1022,7 +1326,8 @@ def check_python_only():
 
 
 def check_bare_model():
-    return _verdict([_run(BareModelChecks), _run(CheckpointChecks), _run(AttentionChecks), _run(AbsentChecks)],
+    return _verdict([_run(BareModelChecks), _run(CheckpointChecks), _run(AttentionChecks),
+                     _run(MeasurementChecks), _run(AbsentChecks)],
                     "B1 with a mocked backend writes exactly one reply record per item (a failed "
                     "call included) joined to one typed label by call id, asks no item of another "
                     "document, prepares and verifies its model once and stops before generating on "
@@ -1042,12 +1347,16 @@ def check_bare_model():
                     "record and the summary, stops on an out-of-memory error or a refused kernel "
                     "as a setup failure (never an abstention), and keeps chunked prefill off "
                     "unless a recorded decision adopts it, where it gives one-shot prefill's "
-                    "next-token scores on a tiny CPU model built in the check")
+                    "next-token scores on a tiny CPU model built in the check; D-056 condition 6: "
+                    "an eager measurement pass only with its recorded decision, recorded in every "
+                    "reply record, label and summary, each pass's peak GPU memory (null without "
+                    "CUDA), and a comparison of two passes counting byte-identical replies and "
+                    "agreeing labels")
 
 
 def check():
     results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(CheckpointChecks),
-               _run(AttentionChecks), _run(AbsentChecks)]
+               _run(AttentionChecks), _run(MeasurementChecks), _run(AbsentChecks)]
     return _verdict(results, "B2 makes no model call, imports no model library, writes the "
                              "pipeline's completion record and marks its output an ablation on each "
                              "file's first line; B1 verifies its model once and stops before "
@@ -1059,8 +1368,15 @@ def check():
                              "and a base hash mismatch refuses (mocked model); it runs sdpa with "
                              "the memory-efficient backend pinned while B3 stays eager in the same "
                              "process, stops on out of memory as a setup failure, and keeps "
-                             "chunked prefill off unless a recorded decision adopts it (D-056)")
+                             "chunked prefill off unless a recorded decision adopts it (D-056); "
+                             "an eager measurement pass needs its recorded decision, each pass "
+                             "records its peak GPU memory, and two passes are compared for "
+                             "byte-identical replies and agreeing labels (D-056 condition 6)")
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--prove"]:
+        receipt = prove_neutralizations()
+        print(json.dumps(receipt, indent=2))
+        sys.exit(0 if receipt["passed"] else 1)
     print(check())

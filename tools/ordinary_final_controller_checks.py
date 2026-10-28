@@ -74,7 +74,16 @@ B1_DIGESTS, B1_MODEL_ID = b1_checkpoint_digests()
 # which bare_model.py's own parser takes and its own verify_identity checks.
 B1_CHECKPOINTS = [dict(name=name, args=['--expect-model-id', B1_MODEL_ID, '--expect-digest', B1_DIGESTS[name]])
                   for name in ('base', 'tuned')]
-B1_FIXTURES = ROOT / 'benchmark' / 'baselines' / 'fixtures'
+# The L2 measurement passes (D-056 condition 6): eager against sdpa for both checkpoints and one
+# repeat of the tuned sdpa pass, each a free name and the checkpoint it loads. `base` and `tuned`
+# are sealed without `checkpoint` (the name is the checkpoint, as before), the others with it.
+B1_EAGER = ['--attention', 'eager', '--attention-decision', 'D-056']
+B1_L2_PASSES = [B1_CHECKPOINTS[0],
+                dict(name='base_eager', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_EAGER),
+                B1_CHECKPOINTS[1],
+                dict(name='tuned_eager', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_EAGER),
+                dict(name='tuned_repeat', checkpoint='tuned', args=list(B1_CHECKPOINTS[1]['args']))]
+B1_FIXTURES =ROOT / 'benchmark' / 'baselines' / 'fixtures'
 # The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
 # bare_model.py and replaces ONLY its model backend by one that answers from the canned replies
 # (no model load). Every argument the runner passes, --checkpoint included, reaches the real
@@ -1798,6 +1807,49 @@ class ControllerChecks(unittest.TestCase):
         self.assertIn('tuned (exit 0): no b1_summary.json collected',
                       (self.root / 'analysis_b1_missing' / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
+    def test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory(self):
+        """D-056 condition 6: the analyser reports every sealed pass by its name, the checkpoint
+        it loaded where the name differs, its attention (an eager pass with its decision) and
+        its peak GPU memory, allocated and reserved, as its b1_summary.json recorded them (not
+        measured on a CPU), in RUN_REPORT.md and FINAL_STATUS.json."""
+        gib = 2 ** 30
+        memory = {'base': (10, 11), 'base_eager': (12, 13), 'tuned': (14, 15), 'tuned_eager': (16, 17)}
+        evidence = {'evidence/result.json': json.dumps(dict(
+            execution_integrity_passed=True, reasons=[], arm='B1', pipeline_exit_code=None,
+            checkpoints={p['name']: dict(items=4, reply_records=4, items_without_one_record=[], summary_written=True,
+                                         exit_code=0) for p in B1_L2_PASSES})).encode()}
+        for entry in B1_L2_PASSES:
+            name, checkpoint = entry['name'], entry.get('checkpoint', entry['name'])
+            eager = name.endswith('_eager')
+            peak = memory.get(name)
+            evidence['evidence/b1/%s/b1_summary.json' % name] = json.dumps(dict(
+                arm='B1', document_id='dq4', loaded=dict(model_id=B1_MODEL_ID, digest=B1_DIGESTS[checkpoint]),
+                reader=dict(checkpoint=checkpoint), checkpoint=dict(checkpoint=checkpoint, adapter_applied=checkpoint == 'tuned'),
+                attention=dict(attention_implementation='eager' if eager else 'sdpa',
+                               attention_decision='D-056' if eager else None),
+                gpu_memory=dict(peak_allocated_bytes=peak[0] * gib, peak_reserved_bytes=peak[1] * gib, measured=True)
+                if peak else dict(peak_allocated_bytes=None, peak_reserved_bytes=None, measured=False),
+                benchmarks=dict(contradoc=dict(items=4, parsed=4, abstain=0, undecided=0, backend_failures=0,
+                                               repaired=0, length_reached_allowance=0)))).encode()
+        folder = self.root / 'analysis_b1_l2'
+        self.analysis_folder(folder, evidence=evidence, arm='B1',
+                             b1=dict(checkpoints=B1_L2_PASSES, item_ids=['a1', 'a2', 'a3', 'a4'], items_sha256='e' * 64))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual(status['status'], 'ORDINARY_FINAL_CLOUD_RUN_COMPLETED')
+        self.assertEqual(list(status['b1_checkpoints']), [p['name'] for p in B1_L2_PASSES])
+        self.assertEqual(status['b1_checkpoints']['tuned_eager']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('base_eager (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('tuned_repeat (checkpoint tuned): %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
+        self.assertIn('length reached allowance 0, attention sdpa, peak GPU memory 10.00 GiB allocated, 11.00 GiB reserved', text)
+        self.assertIn('tuned_eager (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager (measurement pass, D-056), peak GPU memory 16.00 GiB '
+                      'allocated, 17.00 GiB reserved', text)
+        self.assertIn('tuned_repeat (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention sdpa, peak GPU memory not measured (no CUDA)', text)
+
     # ---- S2c items 8 and 9: the sealed run ------------------------------------------------
 
     def git_repo(self):
@@ -2175,6 +2227,94 @@ class ControllerChecks(unittest.TestCase):
             self.assertEqual(result['checkpoints'][name]['exit_code'], 0)
         self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
 
+    def test_b1_passes_run_by_name_and_load_their_sealed_checkpoint(self):
+        """D-056 condition 6: the L2 measurement passes (base, base_eager, tuned, tuned_eager,
+        tuned_repeat) are sealed as {name, checkpoint, args}; the runner passes each pass's
+        checkpoint to the real bare_model.main as --checkpoint and writes it into
+        evidence/b1/<name>, so two passes of one checkpoint never share a folder; the eager
+        passes run eager with their decision recorded, the others sdpa; the assessment and the
+        progress total count passes by name."""
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
+        stand_in.parent.mkdir(parents=True)
+        stand_in.write_text(BARE_MODEL_STAND_IN % dict(real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'),
+                                                       replies=str(B1_FIXTURES / 'b1_replies.json')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        (base / 'items.json').write_bytes(items)
+        b1 = sealer.b1_fields(items, (project / 'input' / 'context' / '_review_targets.json').read_bytes(), B1_L2_PASSES)
+        self.assertEqual(b1['checkpoints'], B1_L2_PASSES)
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={'items.json': sha(base / 'items.json')})
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        with pipeline_import_watch(), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: None))
+            asked = list(getattr(sys.modules.get('bare_model'), 'checkpoints', []))
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-400:]))
+        self.assertTrue(result['execution_integrity_passed'], result)
+        names = [p['name'] for p in B1_L2_PASSES]
+        self.assertEqual(asked, ['base', 'base', 'tuned', 'tuned', 'tuned'])
+        self.assertEqual(list(result['checkpoints']), sorted(names))
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '20')
+        self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), sorted(names + ['expected_records']))
+        for entry in B1_L2_PASSES:
+            folder = evidence / 'b1' / entry['name']
+            self.assertEqual(len(list((folder / 'audit' / 'model_replies').glob('*.json'))), 4, entry['name'])
+            summary = read(folder / 'b1_summary.json')
+            checkpoint = entry.get('checkpoint', entry['name'])
+            self.assertEqual((summary['reader']['checkpoint'], summary['loaded']['digest']),
+                             (checkpoint, B1_DIGESTS[checkpoint]), entry['name'])
+            eager = entry['name'].endswith('_eager')
+            self.assertEqual((summary['attention']['attention_implementation'], summary['attention']['attention_decision']),
+                             ('eager', 'D-056') if eager else ('sdpa', None), entry['name'])
+            self.assertIn('gpu_memory', summary)
+
+    def test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts(self):
+        """D-056 condition 6, at sealing: a pass is {name, args} or {name, checkpoint, args};
+        its name is lower case, digits and underscores; the checkpoint it loads (its
+        `checkpoint`, else its name) is one bare_model.py loads; eager comes only with its
+        decision and a decision only with eager. The sealer refuses each case bare_model would
+        refuse on the instance, and bare_model's own attention_record refuses the same pairs."""
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        pin = B1_CHECKPOINTS[0]['args']
+
+        def refusal(passes):
+            try:
+                sealer.b1_fields(items, targets, passes)
+                return None
+            except RuntimeError as exc:
+                return str(exc)
+        self.assertIsNone(refusal(B1_L2_PASSES))
+        self.assertIsNone(refusal([dict(name='base', checkpoint='base', args=pin)]))
+        cases = [
+            ([dict(name='large', args=pin)], 'names no checkpoint'),
+            ([dict(name='base_x', checkpoint='large', args=pin)], 'names no checkpoint'),
+            ([dict(name='base-eager', checkpoint='base', args=pin)], 'needs a name'),
+            ([dict(name='Base', checkpoint='base', args=pin)], 'needs a name'),
+            ([dict(name='base', checkpoint='base', args=pin, extra=1)], 'needs a name'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'eager'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-056'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa', '--attention-decision=D-056'])],
+             'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'flash'])], 'attention bare_model does not take'),
+            ([dict(name='a', checkpoint='base', args=pin), dict(name='a', checkpoint='tuned', args=pin)], 'names repeat'),
+        ]
+        for passes, reason in cases:
+            self.assertIn(reason, refusal(passes) or 'admitted', passes)
+        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=eager',
+                                                                                  '--attention-decision=D-056'])]))
+        spec = importlib.util.spec_from_file_location('bare_model_pairs', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
+        bare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bare)
+        for attention, decision in (('eager', None), ('sdpa', 'D-056')):
+            with self.assertRaises(ValueError):
+                bare.attention_record(attention=attention, attention_decision=decision)
+
     def test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes(self):
         """S5 join: the options a sealed B1 checkpoint may carry (the runner's B1_SEALED_ARGS)
         and the ones the runner sets (B1_RUNNER_ARGS) are together exactly the options of
@@ -2190,7 +2330,10 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(set(options), set(runner.B1_RUNNER_ARGS) | set(runner.B1_SEALED_ARGS))
         self.assertFalse(set(runner.B1_RUNNER_ARGS) & set(runner.B1_SEALED_ARGS))
         self.assertEqual({k: options[k] for k in runner.B1_SEALED_ARGS}, runner.B1_SEALED_ARGS)
-        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        # The checkpoints a pass may load are the ones bare_model's --checkpoint takes.
+        choices = next(a.choices for a in parser._actions if '--checkpoint' in a.option_strings)
+        self.assertEqual(set(runner.B1_CHECKPOINT_NAMES), set(choices))
+        items =(B1_FIXTURES / 'items_q4.json').read_bytes()
         targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
         runner_args = ['--bundle', 'b', '--items', 'i', '--out', 'o', '--checkpoint', 'base']
 
@@ -2210,7 +2353,8 @@ class ControllerChecks(unittest.TestCase):
                 return False
         every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
                  '--expect-digest=d', '--expect-decoding', '{}', '--sensitive',
-                 '--prefill-chunk', '4096', '--prefill-decision', 'D-056']
+                 '--prefill-chunk', '4096', '--prefill-decision', 'D-056',
+                 '--attention', 'eager', '--attention-decision', 'D-056']
         cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
                  ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
                  ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]
@@ -3456,6 +3600,19 @@ def b1_argv_without_the_checkpoint(base, project, out, checkpoint):
     return argv[:k] + argv[k + 2:]
 
 
+def b1_argv_with_the_pass_name_as_checkpoint(base, project, out, checkpoint):
+    """The pre-condition-6 argument list: the pass's name passed as --checkpoint, its sealed
+    `checkpoint` ignored."""
+    argv = _ORIGINAL_B1_ARGV(base, project, out, checkpoint)
+    k = argv.index('--checkpoint')
+    return argv[:k + 1] + [checkpoint['name']] + argv[k + 2:]
+
+
+def b1_argv_into_the_checkpoint_folder(base, project, out, checkpoint):
+    """Each pass written into its checkpoint's folder, so two passes of one checkpoint share it."""
+    return _ORIGINAL_B1_ARGV(base, project, Path(out).parent / checkpoint.get('checkpoint', checkpoint['name']), checkpoint)
+
+
 def b1_observation_counting_files_only(folder, item_ids):
     """A B1 assessment that trusts a file count and never asks which item has its record."""
     return dict(items=len(item_ids), reply_records=len(item_ids), items_without_one_record=[], summary_written=True)
@@ -3682,6 +3839,21 @@ NEUTRALIZATIONS = [
     # R19 (v): a B1 assessment that counts files and so passes a missing record.
     ('test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker', runner, 'b1_observation',
      b1_observation_counting_files_only),
+    # D-056 condition 6: the pass's name passed as its checkpoint (base_eager is refused by bare_model).
+    ('test_b1_passes_run_by_name_and_load_their_sealed_checkpoint', runner, 'b1_argv',
+     b1_argv_with_the_pass_name_as_checkpoint),
+    # D-056 condition 6: two passes of one checkpoint written into one folder.
+    ('test_b1_passes_run_by_name_and_load_their_sealed_checkpoint', runner, 'b1_argv',
+     b1_argv_into_the_checkpoint_folder),
+    # D-056 condition 6: any checkpoint admitted at sealing, whatever bare_model loads.
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_pass_checkpoint',
+     lambda entry: entry.get('checkpoint', entry.get('name'))),
+    # D-056 condition 6: eager sealed without its decision (bare_model would refuse it on the instance).
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
+     lambda args: None),
+    # D-056 condition 6: a pass's attention and peak memory not read from its summary.
+    ('test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory', analysis, 'b1_pass_measures',
+     lambda summary: dict(checkpoint=None, attention_implementation=None, attention_decision=None, gpu_memory=None)),
     # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
     ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
      schedule_ignoring_exposure),
