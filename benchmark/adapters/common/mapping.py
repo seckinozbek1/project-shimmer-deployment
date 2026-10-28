@@ -56,9 +56,12 @@ DELIVERABLES_DIR = records.DELIVERABLES_DIR     # PROVISIONAL: <run>/deliverable
 # what B3 and B4 are read from (Python's included; a judged absence counted once, by
 # Python's stamped copy). The bus reading is a changed evaluation measure (decision DS5-8):
 # it takes effect only once a checker has attacked it and the lead has recorded it, and
-# until then the label command refuses B3 and B4. The lead sets this True in that record.
+# until then the label command refuses B3 and B4. Recorded: the plan checker's attack on
+# DS5-8 and the reading it recommended (R22) are in docs/loop/DECISIONS.md D-055, and D-056
+# sets this True so B3 labels are read from the bus from L2 on; the final preregistration
+# checker attacks section 5.1 again before freeze.
 RECORD_SOURCE = {"B2": records.REVIEW_DATA, "B3": records.BUS, "B4": records.BUS}
-BUS_READER_ADOPTED = False
+BUS_READER_ADOPTED = True
 COMPLETION_FILE = ("audit", "run_completion.json")    # PROVISIONAL: the pipeline's completion record
 COMPLETION_SCHEMA_VERSION = 1             # PROVISIONAL
 COMPLETION_STATES = ("running", "completed", "stopped", "interrupted", "failed")

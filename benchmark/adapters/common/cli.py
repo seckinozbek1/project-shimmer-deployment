@@ -22,8 +22,9 @@ one file; `score` scores each of them, and S-4 from the primary labels (the item
 evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
 document, named the same way. B2's typed records are read from review_data.json, B3's and
-B4's from the run's bus (common/records.py); B3 and B4 are refused until that reading
-(decision DS5-8, preregistration section 12 item 9) is attacked and recorded.
+B4's from the run's bus (common/records.py). That reading (decision DS5-8, preregistration
+section 12 item 9) was attacked and recorded (docs/loop/DECISIONS.md D-055, D-056), so
+mapping.BUS_READER_ADOPTED is True; with it False, B3 and B4 are refused.
 """
 from __future__ import annotations
 
