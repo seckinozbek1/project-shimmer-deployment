@@ -70,11 +70,12 @@ _QWEN_LOAD_LOCK = threading.Lock()      # guards first-load so a concurrent firs
 # 32768, Phi 131072 positions) are far larger, so this is not a model limit.
 LOCAL_MAX_OUTPUT_TOKENS = 8192
 
-# D-058 condition iii: every model _load_qwen loads (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER,
-# REDACTOR and the base-mode producer) is loaded with sdpa named, not left to the library's
-# default, and each generate call runs pinned to the memory-efficient sdpa backend on CUDA
-# (final_models.pinned_attention), recorded per call.
-LOCAL_ATTENTION = final_models.PRODUCER_ATTENTION_DEFAULT
+# D-058 condition iii and D-061 item 8: every model _load_qwen loads (VERIFIER,
+# PRACTICE_AUDITOR, FACT_CHECKER, REDACTOR and the base-mode producer) is loaded with sdpa
+# named, not left to the library's default, and each generate call runs pinned to the
+# memory-efficient sdpa backend on CUDA (final_models.pinned_attention), recorded per call. The
+# frozen producer is not among them: final_models loads it eager (D-060).
+LOCAL_ATTENTION = final_models.SDPA
 
 
 def _evict_generation_models(keep_model_id=None):
@@ -736,18 +737,23 @@ class AgentWrapper:
             ok=r.ok, error=r.error, decoding=sent.get("decoding"),
             sensitive=bool(getattr(self, "sensitive", False)),
             phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""),
-            attention=sent.get("attention"), context=sent.get("context"))
+            attention=sent.get("attention"), context=sent.get("context"), prefill=sent.get("prefill"))
 
-    def _local_generate(self, backend, mdl, inputs, max_new_tokens, decoding, sent, model_id, decision=None):
-        """One local generate call (call_qwen, call_local), D-058. The prompt must fit the
-        model's context with the call's output allowance, or the call is refused before
+    def _local_generate(self, backend, mdl, inputs, max_new_tokens, decoding, sent, model_id, decision=None,
+                        prefill=None):
+        """One local generate call (call_qwen, call_local), D-058 and D-061. The prompt must
+        fit the model's context with the call's output allowance, or the call is refused before
         generating: recorded in its reply record (`context`) and as a `prompt_over_context`
         telemetry event, never truncated and never dropped silently; the document is then a
         declared exclusion of the B3 arm. Otherwise generate runs inside the model's pinned
         attention (final_models.pinned_attention: sdpa on CUDA only through the
-        memory-efficient backend), recorded in the reply record (`attention`). Out of memory
-        or a refused kernel is raised once as a named failure (final_models.GenerationFailure),
-        never retried. Returns (output ids, None) or (None, the refused CallResult)."""
+        memory-efficient backend; the eager producer unpinned) through the one shared generate
+        helper (final_models.generate_with_prefill): a producer call (`prefill`, its sealed
+        setting) is prefilled in chunks (E), any other call in one shot. The reply record
+        carries the kernel and the prefill setting (`attention`) and what the prefill measured
+        (`prefill`: chunks, tail, seconds). Out of memory or a refused kernel is raised once as
+        a named failure (final_models.GenerationFailure), never retried. Returns (output ids,
+        None) or (None, the refused CallResult)."""
         prompt_tokens = int(inputs["input_ids"].shape[1])
         sent["context"] = final_models.context_record(mdl, prompt_tokens, max_new_tokens)
         if sent["context"]["over_context"]:
@@ -762,10 +768,13 @@ class AgentWrapper:
                 "model's %d positions; not truncated, not generated (D-058, a declared exclusion)"
                 % (fit["prompt_tokens"], fit["max_new_tokens"], fit["model_context"])))
         torch = importlib.import_module("torch")
+        setting = dict(prefill or final_models.NOT_GOVERNED_PREFILL)
         try:
             with torch.no_grad(), final_models.pinned_attention(mdl, decision) as attention:
-                sent["attention"] = attention
-                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+                sent["attention"] = dict(attention, **setting)
+                out, sent["prefill"] = final_models.generate_with_prefill(
+                    mdl, inputs, max_new_tokens=max_new_tokens, decoding_kwargs=decoding["kwargs"],
+                    prefill=setting)
         except Exception as exc:
             named = final_models.named_generation_failure(exc)
             # A raised generation is still a call: its record says so, then it raises on.
@@ -1006,7 +1015,9 @@ class AgentWrapper:
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
         # D-058: refused before generating when over the model's context, otherwise run
-        # inside the pinned attention; a named failure raises once, recorded.
+        # inside the pinned attention; a named failure raises once, recorded. No producer
+        # reaches call_qwen (the producer's backend is local_producer, call_local), so this
+        # call is prefilled in one shot through the same helper and records that (D-061).
         out, refused = self._local_generate("qwen_local", mdl, inputs, max_new_tokens, decoding, _sent, model_id)
         if refused is not None:
             _record_cost(refused); return refused
@@ -1099,13 +1110,19 @@ class AgentWrapper:
                      decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        # D-058: the tuned producer runs under its sealed attention (sdpa pinned to the
-        # memory-efficient backend unless a recorded decision sealed eager), and the decision
-        # travels into the reply record; the _load_qwen models run pinned the same way.
+        # D-058, D-060: the tuned producer runs under its sealed attention (eager unless a
+        # recorded decision sealed sdpa, then pinned to the memory-efficient backend), and the
+        # decision travels into the reply record; the _load_qwen models run pinned sdpa.
+        # D-061: every producer call (backend local_producer, final or base mode) is prefilled
+        # in chunks under its sealed prefill setting; any other call in one shot.
         sealed = getattr(mdl, "_shimmer_attention", None)
         decision = sealed.get("attention_decision") if isinstance(sealed, dict) else None
+        prefill = None
+        if self.backend == "local_producer":
+            prefill = getattr(mdl, "_shimmer_prefill", None)
+            prefill = prefill if isinstance(prefill, dict) else final_models.producer_prefill()
         out, refused = self._local_generate(self.backend, mdl, inputs, max_new_tokens, decoding, _sent,
-                                            model_id, decision)
+                                            model_id, decision, prefill)
         if refused is not None:
             _record_cost(refused); return refused
         generation_ended = time.perf_counter()
