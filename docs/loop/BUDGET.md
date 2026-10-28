@@ -79,3 +79,9 @@ Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's
 ## Stage boundary: S4 closed (2026-10-28 12:31 +0300)
 
 Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's reading at 09:27:00 UTC: total 0.1635 USD). Running loop instances: none (the same listing listed 0; the reaper's last run under 10 minutes old). Storage forecast to the loop's end: unchanged from the S3 boundary this morning, 0.59 USD (estimate).
+
+## S5 launches: forecast before, actual after (P6)
+
+| Launch | Purpose | Forecast basis | Forecast F (USD) | Cap (USD) | Actual minutes | Actual (USD) |
+|---|---|---|---|---|---|---|
+| L1 (2026-10-28 12:51 +0300) | dev-smoke, clinical sheet, exposed | 55 minutes (setup 4.9, upload 37.4, attach probe 3.0, workload 6.3, collection 3.0; the upload kept until a MATCH is measured), A10 us-east-1 at 1.29 USD an hour (live, 09:49 UTC), times 1.3 | 1.54 | 2.31 | 23 (ledger); workload 7.6, asset-copy probe 3.2 and use 0.3, wheels 1.3, support transfer 1.1 (phase timings) | 0.49 (ledger; the run report estimates 0.48). Variance: actual 32 percent of forecast, because the asset copy was a MATCH (first measured MATCH: no 37-minute upload). Overhead without the upload measured at 15.4 minutes (billed minus workload), against the 13.9 estimate; later forecasts use 15.4 |
