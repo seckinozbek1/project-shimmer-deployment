@@ -11,9 +11,11 @@ matching line wins:
   4. a refusal                                     -> UNDECIDED
   5. no record at all (silent)                     -> CLEAR
 
-A record belongs to an item when its source_rule_id equals the item's rule id, compared
-without regard to case. Before anything is classified, a record superseded by a higher
-`revision` of the same `item_id` (INFRA-037) is dropped. A figure-audit record is one
+The records are read by the one record reader (common/records.py): B2's from
+review_data.json, B3's and B4's from the run's bus, stamped written_by from the line that
+carried them, a judged absence counted once by Python's stamped copy, superseded within one
+agent and document by the highest `revision` (INFRA-037). A record belongs to an item when
+its source_rule_id equals the item's rule id, compared without regard to case. A figure-audit record is one
 whose relation is missing_field, below_band, above_band, sum_mismatch or
 product_mismatch AND whose written_by stamp is exactly `python` (section 0), one
 definition for every benchmark. A band record (below_band, above_band) belongs to the
@@ -35,6 +37,8 @@ import json
 import zipfile
 from pathlib import Path
 
+from . import records
+
 FLAG, CLEAR, UNDECIDED, ABSTAIN = "FLAG", "CLEAR", "UNDECIDED", "ABSTAIN"
 ARMS = ("B0", "B1", "B2", "B3", "B4")
 PIPELINE_ARMS = ("B3", "B4")
@@ -44,10 +48,17 @@ PIPELINE_ARMS = ("B3", "B4")
 # output-format-v1-draft, is on branch loop/s03 since 5fca716; preregistration section 12
 # item 9 records where it and this block differ). The completion record is the pipeline's own (scripts/run_completion.py),
 # read with the same validity rules as its read(); B2 writes the same record.
-TYPED_RECORDS_KEY = "findings"            # PROVISIONAL: key of the typed records in review_data.json
-TYPED_RECORDS_SETTLED = False             # the pipeline does not emit that key yet: B3/B4 refused
-REVIEW_DATA_FILE = "review_data.json"     # PROVISIONAL
-DELIVERABLES_DIR = "deliverables"         # PROVISIONAL: <run>/deliverables/<document id>/
+TYPED_RECORDS_KEY = records.TYPED_RECORDS_KEY   # B2's key in review_data.json
+REVIEW_DATA_FILE = records.REVIEW_DATA_FILE     # PROVISIONAL
+DELIVERABLES_DIR = records.DELIVERABLES_DIR     # PROVISIONAL: <run>/deliverables/<document id>/
+# Where each arm's typed records are read (common/records.py; loop plan S5, R22): B2 writes
+# them under `findings` in review_data.json; the pipeline posts them on its bus, which is
+# what B3 and B4 are read from (Python's included; a judged absence counted once, by
+# Python's stamped copy). The bus reading is a changed evaluation measure (decision DS5-8):
+# it takes effect only once a checker has attacked it and the lead has recorded it, and
+# until then the label command refuses B3 and B4. The lead sets this True in that record.
+RECORD_SOURCE = {"B2": records.REVIEW_DATA, "B3": records.BUS, "B4": records.BUS}
+BUS_READER_ADOPTED = False
 COMPLETION_FILE = ("audit", "run_completion.json")    # PROVISIONAL: the pipeline's completion record
 COMPLETION_SCHEMA_VERSION = 1             # PROVISIONAL
 COMPLETION_STATES = ("running", "completed", "stopped", "interrupted", "failed")
@@ -141,8 +152,7 @@ def _read_json(path: Path):
         return None, type(exc).__name__
 
 
-def review_data_path(run_dir, document_id) -> Path:
-    return Path(run_dir) / DELIVERABLES_DIR / document_id / REVIEW_DATA_FILE
+review_data_path = records.review_data_path
 
 
 def read_completion(run_dir):
@@ -166,33 +176,25 @@ def read_completion(run_dir):
     return record
 
 
-def read_run(run_dir, document_id) -> dict:
-    """{failure, failure_reasons, records, pairing_refusals, faults} for one document's
-    run. A run failure (section 0) is a missing or unreadable review_data.json, or a
-    completion record that is absent, invalid, or not `completed`."""
+def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
+    """{failure, failure_reasons, records, raw_judged_absence, pairing_refusals, faults,
+    source} for one document's run, its typed records read by the one record reader
+    (common/records.py) from `source`: `review_data` (B2) or `bus` (B3, B4). A run failure
+    (section 0) is a completion record that is absent, invalid or not `completed`, or a
+    record source that is missing or unreadable (review_data.json for B2, the bus for B3)."""
     run = Path(run_dir)
     out = {"failure": False, "failure_reasons": [], "records": [], "pairing_refusals": [],
-           "faults": []}
+           "faults": [], "raw_judged_absence": [], "source": source}
     completion = read_completion(run)
     if completion is None:
         out["failure_reasons"].append("completion_record_missing_or_invalid")
     elif completion["state"] != "completed":
         out["failure_reasons"].append("completion_state:" + completion["state"])
-    data_path = review_data_path(run, document_id)
-    if not data_path.is_file():
-        out["failure_reasons"].append("review_data_missing")
-    else:
-        data, _error = _read_json(data_path)
-        if data is None or not isinstance(data, dict):
-            out["failure_reasons"].append("review_data_unreadable")
-        elif TYPED_RECORDS_KEY not in data:
-            out["faults"].append("typed_records_key_absent:" + TYPED_RECORDS_KEY)
-        else:
-            records = data[TYPED_RECORDS_KEY]
-            if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
-                out["faults"].append("typed_records_not_a_list_of_objects")
-            else:
-                out["records"] = current_revisions(records)
+    read = records.read_records(run, document_id, source)
+    out["failure_reasons"].extend(read["failure_reasons"])
+    out["faults"].extend(read["faults"])
+    out["records"] = read["records"]
+    out["raw_judged_absence"] = read["raw_judged_absence"]
     out["failure"] = bool(out["failure_reasons"])
     pairing_path = run.joinpath(*PAIRING_MAP_FILE)
     if pairing_path.is_file():
@@ -207,27 +209,6 @@ def read_run(run_dir, document_id) -> dict:
         else:
             out["faults"].append("pairing_map_unreadable")
     return out
-
-
-def _revision(record) -> int:
-    try:
-        return int(record.get(REVISION_FIELD) or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
-def current_revisions(records) -> list:
-    """INFRA-037: of the records sharing an item_id, only the highest revision is kept
-    (the later one on a tie); a record with no item_id is kept as it is. Order is kept."""
-    best = {}
-    for index, record in enumerate(records):
-        key = record.get(RECORD_ID_FIELD)
-        if key in (None, ""):
-            continue
-        if key not in best or _revision(record) >= _revision(records[best[key]]):
-            best[key] = index
-    return [r for i, r in enumerate(records)
-            if r.get(RECORD_ID_FIELD) in (None, "") or best[r.get(RECORD_ID_FIELD)] == i]
 
 
 def _fold(value) -> str:
@@ -436,13 +417,15 @@ def by_document(items):
 
 
 def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
-    """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder. Each
+    """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder, its
+    typed records read from RECORD_SOURCE[arm] by the one record reader. Each
     row also carries its sensitivity S-3 class (figure-audit records attributed) and its
     S-5 class (a refusal before an ok record)."""
     rows, documents = [], []
+    source = RECORD_SOURCE.get(arm, records.REVIEW_DATA)
     for doc_id, doc_items in by_document(items).items():
         run_dir = Path(runs_root) / doc_id
-        run = read_run(run_dir, doc_id)
+        run = read_run(run_dir, doc_id, source)
         rules = [i["rule_id"] for i in doc_items]
         count = len({_fold(r) for r in rules})
         for item in doc_items:
@@ -456,6 +439,9 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
         aside = set_aside(spec, count)
         documents.append({"document_id": doc_id, "run_failure": run["failure"],
                           "failure_reasons": run["failure_reasons"], "faults": run["faults"],
+                          "record_source": source,
+                          # a judged absence's raw model copy: listed, never counted
+                          "raw_judged_absence_records": len(run["raw_judged_absence"]),
                           "rules": count, "figure_audit_set_aside": aside,
                           "unattached": unattached(run, rules, run_dir, doc_id, aside),
                           "unattached_s3": unattached(run, rules, run_dir, doc_id, False),
@@ -514,6 +500,7 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         "items_decided_by_ok_over_refusal": sum(1 for r in rows if r.get("ok_over_refusal")),
         "unattached_figure_audit": sum((d.get("unattached") or {}).get("figure_audit", 0)
                                        for d in documents),
+        "raw_judged_absence_records": sum(d.get("raw_judged_absence_records", 0) for d in documents),
     }
     if spec.absence_flag:
         counts["missing_field_and_other_relation"] = sum(1 for r in rows if r["missing_field_and_other"])
