@@ -300,9 +300,11 @@ bundle's seal says `exposed, no manifest`. The sealer refuses to seal
 `SHIMMER_INST_FINDER=off` unless the bound constitution holds a ratified amendment
 naming INST_FINDER and SHIMMER_INST_FINDER, using the pipeline's own test read
 from the bound source. Paths outside the runtime prefixes enter the source
-archive only when listed in `ARCHIVE_EXTRAS` in the sealer; a listed path the
-bound commit lacks fails the build in one line, and test material never travels
-inside the source archive.
+archive only when listed in `ARCHIVE_EXTRAS` in the sealer (today
+`benchmark/adapters/` and `benchmark/baselines/`, so the B1 and B2 tools and the
+adapters they import reach the instance; their `fixtures/` folders and `*_checks.py`
+files stay out); a listed path the bound commit lacks fails the build in one line,
+and test material never travels inside the source archive.
 
 A workload carrying `case_manifest.json` is sealed as a declared multi-round
 Review. The case manifest must be the live schema (schema version 1, the live
