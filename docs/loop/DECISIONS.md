@@ -391,3 +391,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Remaining weakness, recorded.** The reference readers for families 1, 2 and the long-range layout only check coverage; no mutation shows they can fail (the lane says so). Recorded in the S3 report; not a confirmed defect.
 - **The checker rounds of S3 are closed.** Next: the gate at the tip, the report and the close.
 - **Rules.** IV.4, P10.
+
+## D-052. Restart on 28 October; Annex D D-S11 applied
+
+- **When, stage.** 2026-10-28 11:20 +0300 (system clock), between S3 close and S4 close.
+- **What happened.** The laptop was shut down overnight; the operator released the lead lock at 11:08 +0300. This session (id 757d835b) took the released lock (S0 step 2, IV.2), re-read the whole specification including Annex D, the state file and the newest handoff, and started a fresh restart checker (I.3 step 6).
+- **D-S11 applied.** From 28 October 2026 the lead, every subagent, lane, checker and role session run on Opus at medium effort (CLAUDE_CODE_EFFORT_LEVEL=medium, --effort medium where a flag is passed). Every stage report from now on states "Opus, medium effort from 28 October 2026". Not recorded as a departure (D-S11).
+- **Usage at restart.** Five-hour 1 percent, seven-day 0 percent (status file 08:19 UTC); reaper ran 08:16 UTC, 0 instances, budget 70, hard stop 69.
+- **Rules.** IV.2, I.3, Annex D D-S11.
