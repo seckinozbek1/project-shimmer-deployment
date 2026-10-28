@@ -57,14 +57,30 @@ STORAGE_USD = 3.9
 # The budget every fixture ledger opens with (its own figure; the guard reads it from the ledger).
 FIXTURE_BUDGET_USD = 50.0
 LOOP_NAME = 'shimmer-loop-fixture'
-# A B1 bundle's sealed checkpoints (S5 R2): base then tuned, each pinned by its own argument.
-B1_CHECKPOINTS = [dict(name='base', args=['--expect-digest', 'digest-base']),
-                  dict(name='tuned', args=['--expect-digest', 'digest-tuned'])]
+def b1_checkpoint_digests():
+    """The two final-mode checkpoint digests bare_model.py computes (benchmark/baselines/
+    bare_model.py checkpoint_record), read from the pinned config/final_models.json producer
+    entry: `<revision>:<model.safetensors sha256>` for the base, plus `+adapter:<sha256>` for
+    the tuned producer. The fixture seals exactly these, so `--expect-digest` is checked by
+    bare_model's own verify_identity against what its own code says the checkpoint is."""
+    import final_models
+    spec = final_models.specification('producer', ROOT)
+    base = '%s:%s' % (spec['revision'], spec['base_hashes']['model.safetensors'])
+    return dict(base=base, tuned=base + '+adapter:' + spec['files']['adapter']['sha256']), spec['model_id']
+
+
+B1_DIGESTS, B1_MODEL_ID = b1_checkpoint_digests()
+# A B1 bundle's sealed checkpoints (S5 R2): base then tuned, each pinned by its own arguments,
+# which bare_model.py's own parser takes and its own verify_identity checks.
+B1_CHECKPOINTS = [dict(name=name, args=['--expect-model-id', B1_MODEL_ID, '--expect-digest', B1_DIGESTS[name]])
+                  for name in ('base', 'tuned')]
 B1_FIXTURES = ROOT / 'benchmark' / 'baselines' / 'fixtures'
 # The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
-# bare_model.py, replaces only its model backend by one that answers from the canned replies
-# (no model load), and takes the checkpoint argument the runner passes (the interface the
-# benchmarks lane adds), recording it and handing every other argument to the real main().
+# bare_model.py and replaces ONLY its model backend by one that answers from the canned replies
+# (no model load). Every argument the runner passes, --checkpoint included, reaches the real
+# main() untouched; the backend reports the checkpoint the real resolve_reader chose and the
+# digest the real checkpoint_record gives it, so a checkpoint name lost on the way is caught by
+# bare_model's own identity check.
 BARE_MODEL_STAND_IN = '''import importlib.util, json
 from pathlib import Path
 _spec = importlib.util.spec_from_file_location('bare_model_real', Path(%(real)r))
@@ -77,9 +93,11 @@ checkpoints = []
 class Backend:
     def __init__(self, reader, context):
         self.reader = reader
+        checkpoints.append(reader['checkpoint'])
 
     def prepare(self):
-        return {'model_id': self.reader['model_id'], 'digest': 'digest-' + checkpoints[-1], 'decoding': {}}
+        record, digest = real.checkpoint_record(self.reader['checkpoint'], real.final_models.specification(real.FINAL_ROLE))
+        return {'model_id': self.reader['model_id'], 'digest': digest, 'decoding': {}, 'checkpoint': record}
 
     def count_prompt(self, system, user):
         return 1
@@ -95,13 +113,7 @@ class Backend:
 
 
 real.LocalBackend = Backend
-
-
-def main(argv):
-    argv = list(argv)
-    k = argv.index('--checkpoint')
-    checkpoints.append(argv[k + 1])
-    return real.main(argv[:k] + argv[k + 2:])
+main = real.main
 '''
 
 
@@ -1640,23 +1652,26 @@ class ControllerChecks(unittest.TestCase):
 
     # ---- S2c item 3: the 11.12 report ------------------------------------------------------
 
-    def analysis_folder(self, folder, exposure='exposed', copy_used=False):
+    def analysis_folder(self, folder, exposure='exposed', copy_used=False, evidence=None, **manifest_changes):
+        """A collected run folder for the analyser. `evidence` maps further collected member
+        names (as the instance packs them, e.g. evidence/result.json) to their bytes."""
         import tarfile as tar_module
         folder.mkdir(parents=True)
         manifest = fixture_manifest(self.base / 'project.tar.gz', self.root / 'assets.tar',
                                     models=[dict(model_id='fixture/producer', revision='1' * 40)],
-                                    decoding_policy=dict(local_producer=dict(status='restored')))
+                                    decoding_policy=dict(local_producer=dict(status='restored')), **manifest_changes)
         write(folder / 'execution_manifest.json', manifest)
         scope = json.dumps(dict(withheld_audit_agents=['FACT_CHECKER'])).encode()
         with tar_module.open(folder / 'project.tar.gz', 'w:gz') as archive:
             info = tar_module.TarInfo('config/review_scope.json'); info.size = len(scope)
             archive.addfile(info, io.BytesIO(scope))
-        member = (folder / 'execution_manifest.json').read_bytes()
+        members = {'execution_manifest.json': (folder / 'execution_manifest.json').read_bytes(), **(evidence or {})}
         with tar_module.open(folder / 'collected_evidence.tar.gz', 'w:gz') as archive:
-            info = tar_module.TarInfo('execution_manifest.json'); info.size = len(member)
-            archive.addfile(info, io.BytesIO(member))
-        write(folder / 'remote_collection_manifest.json', {'execution_manifest.json': dict(sha256=sha(folder / 'execution_manifest.json'),
-                                                                                        bytes=len(member))})
+            for name, member in members.items():
+                info = tar_module.TarInfo(name); info.size = len(member)
+                archive.addfile(info, io.BytesIO(member))
+        write(folder / 'remote_collection_manifest.json', {name: dict(sha256=hashlib.sha256(member).hexdigest(), bytes=len(member))
+                                                           for name, member in members.items()})
         write(folder / 'collection_integrity.json', dict(sha256=sha(folder / 'collected_evidence.tar.gz')))
         write(folder / 'independent_inventory_confirmation.json', dict(instances=[], temporary_ssh_registration_absent=True,
               local_key_material_absent=True, epoch=1_003_600.0))
@@ -1709,6 +1724,78 @@ class ControllerChecks(unittest.TestCase):
                       'system (Annex A, 11.2 options not in place; Annex B.11).', '\n'.join(lines))
         self.assertIn('MATCH: the sealed archive was read from the operator-declared copy', '\n'.join(lines))
         self.assertIn('d' * 64, '\n'.join(lines))
+
+    def test_the_analyser_reads_a_completed_pipeline_run_through_its_telemetry(self):
+        """S5 join: analyze() on a collected run that reached the pipeline's end reads its
+        telemetry and scheduler logs with the imported rows() reader. A local named `rows` in
+        analyze() shadowed that reader, so every real run raised UnboundLocalError there (the S5
+        smoke run); the fixture reaches that line and the analysis completes."""
+        folder = self.root / 'analysis_pipeline'
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        run = 'evidence/run/r1/'
+        self.analysis_folder(folder, evidence={
+            run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+            run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode(),
+            run + 'audit/execution_topology.jsonl': b'',
+            'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()})
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual((status['status'], status['pipeline_started']), ('ORDINARY_FINAL_CLOUD_RUN_COMPLETED', True))
+        self.assertEqual((status['semantic_call_receipts'], status['producer168_receipts']), (1, 1))
+        self.assertTrue((folder / 'analysis' / 'model_telemetry_summary.json').is_file())
+        self.assertIn('- **Arm.** B3: the full pipeline', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def b1_analysis_evidence(self, summaries=('base', 'tuned'), passed=True):
+        """The collected evidence of a B1 entry: the runner's assessment and one b1_summary.json
+        per checkpoint named in `summaries` (counts only, as bare_model writes them)."""
+        evidence = {'evidence/result.json': json.dumps(dict(
+            execution_integrity_passed=passed, reasons=[] if passed else ['b1_checkpoint_failed:tuned'], arm='B1',
+            pipeline_exit_code=None, checkpoints={n: dict(items=4, reply_records=4, items_without_one_record=[],
+                                                          summary_written=n in summaries, exit_code=0 if passed else 4)
+                                                  for n in ('base', 'tuned')})).encode()}
+        for name in summaries:
+            evidence['evidence/b1/%s/b1_summary.json' % name] = json.dumps(dict(
+                arm='B1', document_id='dq4', loaded=dict(model_id=B1_MODEL_ID, digest=B1_DIGESTS[name]),
+                checkpoint=dict(checkpoint=name, adapter_applied=name == 'tuned'),
+                benchmarks=dict(contradoc=dict(items=4, parsed=3, abstain=1, undecided=0, backend_failures=0, repaired=1,
+                                               length_reached_allowance=0)))).encode()
+        return evidence
+
+    def test_a_b1_entry_is_reported_from_its_checkpoint_summaries(self):
+        """S5 join: a B1 entry never writes run_completion.json, so the analyser reports it from
+        the runner's arm-aware assessment and each checkpoint's b1_summary.json: COMPLETED only
+        when the assessment passed AND every sealed checkpoint's summary was collected, with the
+        arm, each checkpoint's model, digest and adapter, and its counts in RUN_REPORT.md and
+        FINAL_STATUS.json. A missing summary or a failed assessment reads FAILED."""
+        b1 = dict(arm='B1', b1=dict(checkpoints=B1_CHECKPOINTS, item_ids=['a1', 'a2', 'a3', 'a4'], items_sha256='e' * 64))
+        folder = self.root / 'analysis_b1'
+        self.analysis_folder(folder, evidence=self.b1_analysis_evidence(), **b1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual((status['status'], status['arm'], status['pipeline_started']),
+                         ('ORDINARY_FINAL_CLOUD_RUN_COMPLETED', 'B1', False))
+        self.assertEqual(list(status['b1_checkpoints']), ['base', 'tuned'])
+        self.assertEqual(status['b1_checkpoints']['tuned']['counts']['parsed'], 3)
+        self.assertEqual(status['b1_reply_records'], 8)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('- **Arm.** B1: the bare-model baseline', text)
+        self.assertIn('base: %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('tuned: %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
+        self.assertIn('tuned (exit 0): items 4, parsed 3, abstain 1, undecided 0, backend failures 0, repaired 1, '
+                      'length reached allowance 0', text)
+        self.assertEqual(status['report']['Multi-round'], 'not applicable: no multi-round run was declared')
+        # One checkpoint's summary not collected, or the runner's assessment failed: FAILED.
+        for name, evidence in (('analysis_b1_missing', self.b1_analysis_evidence(summaries=('base',))),
+                               ('analysis_b1_failed', self.b1_analysis_evidence(passed=False))):
+            self.analysis_folder(self.root / name, evidence=evidence, **b1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(self.root / name)
+            self.assertEqual(read(self.root / name / 'FINAL_STATUS.json')['status'], 'ORDINARY_FINAL_CLOUD_RUN_FAILED', name)
+        self.assertIn('tuned (exit 0): no b1_summary.json collected',
+                      (self.root / 'analysis_b1_missing' / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
     # ---- S2c items 8 and 9: the sealed run ------------------------------------------------
 
@@ -2037,8 +2124,10 @@ class ControllerChecks(unittest.TestCase):
         """R19 (ii) to (iv), item 0.2: the runner's B1 path loads the sealed project's
         bare_model.py in its own process (so os._exit(124) and the cleanup's process pattern stop
         it), runs it once per sealed checkpoint, in order, each into its own folder with one
-        reply record per item, and never imports the pipeline. The real bare_model.py runs; only
-        its model backend answers from the canned replies."""
+        reply record per item, and never imports the pipeline. The real bare_model.py runs, in
+        final mode as the sealed environment sets it, with every argument the runner builds
+        (--checkpoint and the sealed --expect-model-id and --expect-digest included); only its
+        model backend answers from the canned replies (S5 join)."""
         project = self.root / 'project'
         shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
         stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
@@ -2057,7 +2146,7 @@ class ControllerChecks(unittest.TestCase):
         evidence.mkdir()
         closed = []
         with pipeline_import_watch() as imports, contextlib.redirect_stdout(io.StringIO()), \
-                contextlib.redirect_stderr(io.StringIO()) as errors:
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
             code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: closed.append(1)))
             pipeline_loaded = 'pipeline' in sys.modules
             asked = list(getattr(sys.modules.get('bare_model'), 'checkpoints', []))
@@ -2075,10 +2164,59 @@ class ControllerChecks(unittest.TestCase):
             records = sorted((folder / 'audit' / 'model_replies').glob('*.json'))
             self.assertEqual(len(records), 4, name)
             self.assertEqual(sorted(p.stem for p in (folder / 'labels').glob('*.json')), ['a1', 'a2', 'a3', 'a4'])
-            # Each checkpoint was verified against its own sealed argument.
-            self.assertEqual(read(folder / 'b1_summary.json')['loaded']['digest'], 'digest-' + name)
+            # Each checkpoint was verified by bare_model's own identity check against its sealed
+            # arguments: the base without the adapter, the tuned producer with it.
+            summary = read(folder / 'b1_summary.json')
+            self.assertEqual(summary['loaded']['digest'], B1_DIGESTS[name])
+            self.assertEqual(summary['verified_against'], ['digest', 'model_id'])
+            self.assertEqual((summary['reader']['checkpoint'], summary['checkpoint']['adapter_applied']),
+                             (name, name == 'tuned'))
             self.assertEqual(result['checkpoints'][name]['exit_code'], 0)
         self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
+
+    def test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes(self):
+        """S5 join: the options a sealed B1 checkpoint may carry (the runner's B1_SEALED_ARGS)
+        and the ones the runner sets (B1_RUNNER_ARGS) are together exactly the options of
+        bare_model.py's own parser, with the same value-or-flag shape; the sealer admits an
+        argument list only when that parser takes it, and refuses at sealing what it would
+        refuse on the instance (an unknown option, an abbreviation, a missing value, a valued
+        flag)."""
+        spec = importlib.util.spec_from_file_location('bare_model_parser', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
+        bare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bare)
+        parser = bare.build_parser()
+        options = {s: a.nargs != 0 for a in parser._actions for s in a.option_strings if s not in ('-h', '--help')}
+        self.assertEqual(set(options), set(runner.B1_RUNNER_ARGS) | set(runner.B1_SEALED_ARGS))
+        self.assertFalse(set(runner.B1_RUNNER_ARGS) & set(runner.B1_SEALED_ARGS))
+        self.assertEqual({k: options[k] for k in runner.B1_SEALED_ARGS}, runner.B1_SEALED_ARGS)
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        runner_args = ['--bundle', 'b', '--items', 'i', '--out', 'o', '--checkpoint', 'base']
+
+        def bare_takes(args):
+            try:
+                with contextlib.redirect_stderr(io.StringIO()):
+                    parser.parse_args(runner_args + args)
+                return True
+            except SystemExit:
+                return False
+
+        def sealer_takes(args):
+            try:
+                sealer.b1_fields(items, targets, [dict(name='base', args=args)])
+                return True
+            except RuntimeError:
+                return False
+        every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
+                 '--expect-digest=d', '--expect-decoding', '{}', '--sensitive']
+        cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
+                 ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
+                 ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]
+        verdicts = [(sealer_takes(args), bare_takes(args)) for args in cases]
+        self.assertEqual(verdicts, [(True, True)] * 4 + [(False, False)] * 6)
+        # The sealed fixture reaches bare_model as the values its identity check compares.
+        parsed = parser.parse_args(runner_args + B1_CHECKPOINTS[1]['args'])
+        self.assertEqual((parsed.expect_digest, parsed.expect_model_id), (B1_DIGESTS['tuned'], B1_MODEL_ID))
 
     def test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker(self):
         """R19 (v): a B1 entry passes on exactly one reply record per item per checkpoint, with
@@ -3300,6 +3438,22 @@ def b1_argv_into_one_folder(base, project, out, checkpoint):
     return _ORIGINAL_B1_ARGV(base, project, Path(out).parent / 'shared', checkpoint)
 
 
+def b1_status_without_reading_the_summaries(manifest, target, result):
+    """Every sealed checkpoint counted as collected because the runner's assessment says it ran,
+    without reading its b1_summary.json from the collected evidence."""
+    return {e['name']: dict(summary_written=True, exit_code=0, model_id=None, digest=None, adapter_applied=None,
+                            counts={k: 0 for k in analysis.B1_COUNTS})
+            for e in manifest['b1']['checkpoints']}
+
+
+def b1_argv_without_the_checkpoint(base, project, out, checkpoint):
+    """The runner's argument list with --checkpoint and its name dropped (the stand-in's old
+    stripping): bare_model then loads its final-mode default for every checkpoint."""
+    argv = _ORIGINAL_B1_ARGV(base, project, out, checkpoint)
+    k = argv.index('--checkpoint')
+    return argv[:k] + argv[k + 2:]
+
+
 def b1_observation_counting_files_only(folder, item_ids):
     """A B1 assessment that trusts a file count and never asks which item has its record."""
     return dict(items=len(item_ids), reply_records=len(item_ids), items_without_one_record=[], summary_written=True)
@@ -3514,6 +3668,15 @@ NEUTRALIZATIONS = [
     # R19 (iv): the checkpoints share one output folder.
     ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'b1_argv',
      b1_argv_into_one_folder),
+    # S5 join: the checkpoint name not passed to bare_model, so both runs load its default.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'b1_argv',
+     b1_argv_without_the_checkpoint),
+    # S5 join: a B1 entry's checkpoints taken as collected on the runner's word alone.
+    ('test_a_b1_entry_is_reported_from_its_checkpoint_summaries', analysis, 'b1_checkpoint_status',
+     b1_status_without_reading_the_summaries),
+    # S5 join: any sealed argument admitted, whatever bare_model's parser takes.
+    ('test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes', runner, 'b1_argument_error',
+     lambda args: None),
     # R19 (v): a B1 assessment that counts files and so passes a missing record.
     ('test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker', runner, 'b1_observation',
      b1_observation_counting_files_only),

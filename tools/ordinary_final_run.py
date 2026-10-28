@@ -145,6 +145,30 @@ B1_ITEMS = 'items.json'
 B1_NAME = re.compile(r'[a-z0-9][a-z0-9_-]{0,31}')
 # Arguments the runner sets itself for every checkpoint; a sealed checkpoint never carries them.
 B1_RUNNER_ARGS = ('--bundle', '--items', '--out', '--checkpoint', '--development')
+# Every other option bare_model.py's parser takes (benchmark/baselines/bare_model.py
+# build_parser), and whether it takes a value: a sealed checkpoint carries only these, so the
+# seal admits exactly what bare_model accepts. A controller check holds this table and
+# B1_RUNNER_ARGS equal to the parser's own options (S5 join).
+B1_SEALED_ARGS = {'--agent': True, '--profile': True, '--max-new-tokens': True, '--expect-model-id': True,
+                  '--expect-digest': True, '--expect-decoding': True, '--sensitive': False}
+
+
+def b1_argument_error(args):
+    """None when `args` is a run of B1_SEALED_ARGS options, each value-taking one followed by
+    its value (or written `--option=value`) and each flag alone; otherwise a one-line reason."""
+    k = 0
+    while k < len(args):
+        option, joined, _ = args[k].partition('=')
+        if option not in B1_SEALED_ARGS:
+            return 'A B1 checkpoint carries an argument bare_model does not take'
+        if B1_SEALED_ARGS[option] and not joined:
+            if k + 1 >= len(args) or args[k + 1].startswith('--'):
+                return 'A B1 checkpoint option has no value'
+            k += 1
+        elif not B1_SEALED_ARGS[option] and joined:
+            return 'A B1 checkpoint flag carries a value'
+        k += 1
+    return None
 
 
 def arm_of(manifest):
@@ -165,6 +189,8 @@ def b1_checkpoints(manifest):
                 and all(isinstance(a, str) for a in entry['args']), 'B1 checkpoint needs a name and its arguments')
         require(not any(a.split('=', 1)[0] in B1_RUNNER_ARGS for a in entry['args']),
                 'A B1 checkpoint carries an argument the runner sets')
+        error = b1_argument_error(entry['args'])
+        require(error is None, error or '')
         names.append(entry['name'])
     require(len(set(names)) == len(names), 'B1 checkpoint names repeat')
     return b1['checkpoints']

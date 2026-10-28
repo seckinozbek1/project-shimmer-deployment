@@ -28,6 +28,83 @@ DOES_NOT_SHOW=('This report shows run health and cost only. It shows no quality:
                'greedy repeat of the same run measures nothing (11.11).')
 
 
+ARM_TEXT={'B3':'B3: the full pipeline',
+          'B1':'B1: the bare-model baseline (benchmark/baselines/bare_model.py), one fixed prompt per item, no pipeline'}
+# The counts a B1 report row carries per checkpoint, read from its b1_summary.json (no text).
+B1_COUNTS=('items','parsed','abstain','undecided','backend_failures','repaired','length_reached_allowance')
+
+
+def b1_models(status):
+    """The B1 'Models and checkpoints' row: each sealed checkpoint's model, digest and adapter."""
+    parts=[]
+    for name,seen in status['b1_checkpoints'].items():
+        if not seen['summary_written']:
+            parts.append('%s: no b1_summary.json collected'%name)
+            continue
+        parts.append('%s: %s, digest %s, adapter %s'%(name,seen['model_id'],seen['digest'],
+                     'applied' if seen['adapter_applied'] else 'not applied'))
+    return '; '.join(parts) or 'no checkpoint sealed'
+
+
+def b1_counts(status):
+    """The B1 'B1 checkpoints' row: per checkpoint, the runner's exit code and the counts."""
+    parts=[]
+    for name,seen in status['b1_checkpoints'].items():
+        counts=', '.join('%s %s'%(k.replace('_',' '),seen['counts'].get(k)) for k in B1_COUNTS) if seen['summary_written'] \
+            else 'no b1_summary.json collected'
+        parts.append('%s (exit %s): %s'%(name,seen['exit_code'],counts))
+    return '; '.join(parts) or 'no checkpoint sealed'
+
+
+def b1_checkpoint_status(manifest,target,result):
+    """Per sealed checkpoint, in sealed order: its exit code from the runner's assessment and
+    the counts of its collected b1_summary.json, summed over the benchmarks it holds."""
+    seen={}
+    for entry in (manifest.get('b1') or {}).get('checkpoints') or []:
+        name=entry['name']
+        path=target/'evidence'/'b1'/name/'b1_summary.json'
+        summary=read(path) if path.is_file() else None
+        per_benchmark=list(((summary or {}).get('benchmarks') or {}).values())
+        loaded=(summary or {}).get('loaded') or {}
+        checkpoint=(summary or {}).get('checkpoint') or {}
+        seen[name]=dict(summary_written=summary is not None,
+            exit_code=(((result or {}).get('checkpoints') or {}).get(name) or {}).get('exit_code'),
+            model_id=loaded.get('model_id'),digest=loaded.get('digest'),adapter_applied=checkpoint.get('adapter_applied'),
+            counts={k:sum(int(r.get(k) or 0) for r in per_benchmark) for k in B1_COUNTS})
+    return seen
+
+
+def analyze_b1(base,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure):
+    """A B1 entry's status and report. B1 never runs the pipeline, so there is no
+    run_completion.json or model telemetry to read: the entry completed when the runner's own
+    arm-aware assessment (evidence/result.json, arm B1) passed and every sealed checkpoint left
+    its b1_summary.json; its report rows come from those summaries."""
+    sys.path.insert(0,str(ROOT/'scripts'))
+    import model_telemetry
+    stages={p.stem.removesuffix('_timing'):read(p) for p in base.glob('*_timing.json')}
+    write(analysis/'stages.json',stages)
+    checkpoints=b1_checkpoint_status(manifest,target,result)
+    completed=bool(result and result.get('arm')=='B1' and result.get('execution_integrity_passed') and checkpoints
+                   and all(c['summary_written'] for c in checkpoints.values()))
+    costs=model_telemetry.cost([record,api])
+    status=dict(status='ORDINARY_FINAL_CLOUD_RUN_COMPLETED' if completed else 'ORDINARY_FINAL_CLOUD_RUN_FAILED',
+        arm='B1',pipeline_started=False,pipeline_completion=None,remote_result=result,terminal_error=failure,
+        b1_checkpoints=checkpoints,b1_reply_records=sum(int(c.get('reply_records') or 0)
+                                                        for c in ((result or {}).get('checkpoints') or {}).values()),
+        semantic_call_receipts=None,producer168_receipts=None,auditor896_receipts=None,
+        cost_estimates=costs,within_hard_ceiling=costs['combined_estimate']<=manifest['hard_ceiling_usd'],
+        exactly_one_instance=True,maximum_one_workload_invocation=True,full_run_retried=False,
+        protected_data_accessed=bool(manifest.get('protected_test')),
+        multi_round_declared=False,multi_round_executed=False,
+        inventory_empty=True,temporary_ssh_removed=True,
+        evidence_verified=True,quality_claim=None,subsequent_roadmap_work_started=False)
+    report_rows=report_fields(base,manifest,run_record,launch,status,copy_receipt)
+    status['report']={k:v for k,v in report_rows}
+    write(base/'FINAL_STATUS.json',status)
+    write_report(base,report_rows)
+    print(json.dumps(status,indent=2))
+
+
 def withheld_agents(bundle):
     """The audit agents the bundle's OWN review scope withholds, read from its project archive."""
     archive=Path(bundle)/'project.tar.gz'
@@ -59,6 +136,7 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
     else:
         fact_checker='FACT_CHECKER ran: not withheld in this bundle\'s config/review_scope.json'
     authors=report.get('authors') or {}
+    arm=manifest.get('arm','B3')
     from datetime import datetime, timezone
     rows=[
         ('Purpose',record.get('purpose') or 'not recorded: the launch predates the S2 launch record'),
@@ -69,8 +147,11 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Test manifest hash',record.get('test_manifest_sha256') or EXPOSED_NO_MANIFEST),
         ('Authors (test, key, scorer)',', '.join(str(authors.get(k) or 'not declared at launch') for k in ('test','key','scorer'))),
         ('Scorer version',report.get('scorer_version') or NOT_SCORED),
-        ('Models and checkpoints','; '.join(m['model_id']+'@'+m['revision'][:12] for m in manifest.get('models',[]))
+        ('Arm',ARM_TEXT[arm]),
+        ('Models and checkpoints',b1_models(status) if arm=='B1' else
+            '; '.join(m['model_id']+'@'+m['revision'][:12] for m in manifest.get('models',[]))
             +'; adapter receipts: Producer 168 x%s, Auditor 896 x%s'%(status['producer168_receipts'],status['auditor896_receipts'])),
+        ('B1 checkpoints',b1_counts(status) if arm=='B1' else 'not applicable: a B3 entry runs the pipeline, not bare_model.py'),
         ('Decoding settings','; '.join('%s: %s'%(k,v.get('status')) for k,v in sorted((manifest.get('decoding_policy') or {}).items()))
             or 'not recorded in the manifest'),
         ('Backend and machine','local open-weight models on one rented GPU; %s in %s'%(launch.get('instance_type','gpu_1x_a10'),
@@ -146,6 +227,9 @@ def analyze(bundle=BASE):
     require(len(completions)<=1,'More than one pipeline run observed')
     result=read(target/'evidence/result.json') if (target/'evidence/result.json').exists() else None
     failure=read(target/'evidence/terminal_error.json') if (target/'evidence/terminal_error.json').exists() else None
+    if manifest.get('arm','B3')=='B1':
+        require(not completions,'A B1 entry never runs the pipeline')
+        return analyze_b1(BASE,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure)
     summary=None;raw=[];scheduler=[];completion=None
     sys.path.insert(0,str(ROOT/'scripts'))
     import model_telemetry
@@ -174,10 +258,12 @@ def analyze(bundle=BASE):
         multi_round_executed=bool(manifest.get('multi_round')) and bool(list(target.rglob('audit/multi_round.json'))),
         inventory_empty=True,temporary_ssh_removed=True,
         evidence_verified=True,quality_claim=None,subsequent_roadmap_work_started=False)
-    rows=report_fields(BASE,manifest,run_record,launch,status,copy_receipt)
-    status['report']={k:v for k,v in rows}
+    # Named apart from the imported rows() reader: one local `rows` in this function would make
+    # every use of the reader above it an unbound local (the S5 smoke run's UnboundLocalError).
+    report_rows=report_fields(BASE,manifest,run_record,launch,status,copy_receipt)
+    status['report']={k:v for k,v in report_rows}
     write(BASE/'FINAL_STATUS.json',status)
-    write_report(BASE,rows)
+    write_report(BASE,report_rows)
     print(json.dumps(status,indent=2))
 
 
