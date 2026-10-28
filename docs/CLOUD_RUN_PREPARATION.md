@@ -287,7 +287,7 @@ python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger L
 | `--ledger` (repeatable), `--forecast-minutes`, `--storage-forecast-usd` | The IV.3 inputs. All three are required. |
 | `--arm` | `B3` (default, the full pipeline) or `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`). Written into every manifest as `arm`. |
 | `--items` | B1 only: the adapter's `items.json` (item ids, no gold), sealed as a support file. |
-| `--b1-checkpoints` | B1 only: a JSON list of `{"name", "args"}`, run in that order, each into its own folder. |
+| `--b1-checkpoints` | B1 only: a JSON list of `{"name", "args"}`, run in that order, each into its own folder. Each `args` list may hold only options `bare_model.py` itself takes (see below). |
 
 The sealer writes the budget into the manifest from the live price in the
 provider inventory and the loop ledger: the ordered instance candidates (the
@@ -327,7 +327,22 @@ item ids of the bundle's one document (the items in `items.json` whose
 `document_id` is the stem of the one target in `_review_targets.json`) and the
 digest of `items.json`, which travels as a support file and never inside the test
 archive. A checkpoint may not carry `--bundle`, `--items`, `--out`,
-`--checkpoint` or `--development`, which the runner sets itself. A B1 bundle is
+`--checkpoint` or `--development`, which the runner sets itself. Everything else
+it carries must be one of the options `bare_model.py`'s own parser takes
+(`--agent`, `--profile`, `--max-new-tokens`, `--expect-model-id`,
+`--expect-digest`, `--expect-decoding`, each followed by its value or written
+`--option=value`, and the flag `--sensitive` alone), spelled in full: the parser
+takes no abbreviation, and the sealer refuses an unknown option, a missing value or
+a flag with a value, so a checkpoint the instance would refuse is refused at
+sealing instead. The runner's `B1_SEALED_ARGS` lists these options, and a
+controller check holds it, with the runner's own options, equal to the parser's.
+The `--checkpoint <name>` the runner passes is the checkpoint's sealed name, so a
+B1 bundle's checkpoints are named `base` and `tuned`, the two `bare_model.py`
+loads in final mode. Its `--expect-digest` is the digest `bare_model.py` computes
+for that checkpoint, `<revision>:<model.safetensors sha256>` for the base and that
+followed by `+adapter:<adapter sha256>` for the tuned producer (both from
+`config/final_models.json`, recorded in `docs/loop/VERSIONS.md`); a run whose
+loaded digest differs stops before its first item. A B1 bundle is
 never multi-round. A B3 bundle carries none of these fields; a manifest sealed
 before S5 has no `arm` and is a B3 bundle.
 
@@ -448,6 +463,79 @@ of that exemption, so an entry that finishes past the soft budget is still
 collected into its own run folder; the next entry is then refused and the session
 evidence is collected as before.
 
+### Stage, seal and launch a batch of benchmark bundles
+
+A benchmark build is not yet a workload. The adapters (`benchmark/adapters`) and
+the generators (`benchmark/generators`) write each bundle as `context/` (with
+`_review_targets.json` inside it), `conventions/` and `answer_key.json`, and an
+adapter writes the item table `items.json` beside its bundles. The sealer wants
+the targets file at the top of the workload folder and refuses anything but
+`context/`, `conventions/`, `_review_targets.json` and `case_manifest.json`.
+`tools/stage_workload.py` makes the one from the other:
+
+```powershell
+python tools/stage_workload.py --build BUILD_FOLDER --out STAGED_FOLDER
+python tools/stage_workload.py --bundle BUILD_FOLDER/BUNDLE --out WORKLOAD_FOLDER --items-out ITEMS.json
+```
+
+With `--build` every bundle of the build is staged: `STAGED_FOLDER/<bundle>/workload/`
+is the sealer's `--workload`, and, when the build has an `items.json`,
+`STAGED_FOLDER/<bundle>/items.json` is the sealer's `--items` for that bundle's B1
+twin. The tool copies `context/`, `conventions/` and `case_manifest.json` byte for
+byte (the sealer normalises line endings, not the staging) and moves the targets
+file to the top. It never copies the answer key, `parts.json` or any other build
+record, and a file under `context/` or `conventions/` whose name reads like a key
+(`answer`, `key` or `gold` as a word of its name) refuses the whole staging before
+anything is written. The item table holds only the bundle's own document's items,
+with the four fields `bare_model.py` reads (`item_id`, `document_id`, `rule_id`,
+`benchmark`), and is written outside the workload folder. The tool prints counts
+only. A generator build has no `items.json`, so its bundles are staged for B3 only.
+Third-party documents are staged only under the ignored `external/<name>/s05/`
+(H17), never inside a tracked folder. Gate check 287 holds this on a synthetic
+fixture.
+
+Then seal one B3 and one B1 bundle per item from the same staged workload, all
+binding the same asset archive (the first bundle builds or reuses it, the others
+pass `--reuse-assets` with it), with the same ledger and forecast inputs:
+
+```powershell
+python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/ITEM_B3 --workload STAGED_FOLDER/ITEM/workload --reuse-assets ASSET_BUNDLE --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/ITEM_B1 --workload STAGED_FOLDER/ITEM/workload --arm B1 --items STAGED_FOLDER/ITEM/items.json --b1-checkpoints B1_CHECKPOINTS.json --reuse-assets ASSET_BUNDLE --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+```
+
+`B1_CHECKPOINTS.json` names the base checkpoint first and the tuned one second,
+each pinned by its recorded model id and digest:
+
+```json
+[{"name": "base", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256"]},
+ {"name": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]}]
+```
+
+The batch file lists every item's B3 and B1 bundles, the first item's B3 first
+(it is the bundle the session is launched with):
+
+```json
+{"form": "paired", "entries": [
+  {"item": "ITEM1", "arm": "B3", "bundle": "external/NAME/s05/ITEM1_B3"},
+  {"item": "ITEM1", "arm": "B1", "bundle": "external/NAME/s05/ITEM1_B1"},
+  {"item": "ITEM2", "arm": "B3", "bundle": "external/NAME/s05/ITEM2_B3"},
+  {"item": "ITEM2", "arm": "B1", "bundle": "external/NAME/s05/ITEM2_B1"}]}
+```
+
+and the launch names the first B3 bundle and the batch file, with the run folder
+outside the repository:
+
+```powershell
+python tools/ordinary_final_bound_cloud.py --bundle external/NAME/s05/ITEM1_B3 --batch BATCH.json --output-dir external/NAME/s05/runs --ledger LEDGER.jsonl --purpose dev-NAME --forecast-minutes MINUTES --storage-forecast-usd DOLLARS --forecast-includes-upload --detach
+```
+
+On the instance each B1 entry runs `bare_model.py` once per checkpoint, base then
+tuned, into `evidence/b1/base/` and `evidence/b1/tuned/`, each holding one reply
+record and one label per item and its `b1_summary.json`. Afterwards
+`tools/analyze_ordinary_final_run.py --bundle RUN_FOLDER --batch` writes one report
+per entry. For bundles with no B1 twin (a generator build, regression bundles,
+multi-round cases) use `"form": "b3_only"` with B3 entries only.
+
 ### Asset copy
 
 The provider-side asset copy is used only when the bundle carries the operator's
@@ -478,12 +566,25 @@ so), agents withheld (FACT_CHECKER with both of its reasons), the
 separation for a sealed run, and what the result does not show. A field that
 does not apply says why. `--batch` writes one report per batch run folder.
 
+Every report also names the entry's arm. A B1 entry never runs the pipeline and
+so never writes `run_completion.json` or model telemetry; the analyser reports it
+from the runner's own assessment (`evidence/result.json`) and each sealed
+checkpoint's collected `b1_summary.json`. Its status is
+`ORDINARY_FINAL_CLOUD_RUN_COMPLETED` only when that assessment passed and every
+sealed checkpoint's summary was collected. Its "Models and checkpoints" row gives
+each checkpoint's model, digest and whether the adapter was applied, and its "B1
+checkpoints" row gives each checkpoint's exit code and its counts (items, parsed,
+abstained, undecided, backend failures, repaired replies, replies that reached the
+output allowance); `FINAL_STATUS.json` carries the same under `b1_checkpoints`.
+Counts only: no label, evidence or reply text enters the report.
+
 The controller is bound to the bundle it was sealed with. Loop S2 changed six of
 the seven bound files (`tools/cloud_run_common.py`, `tools/cloud_run_watchdog.py`,
 `tools/ordinary_final_bound_cloud.py`, `tools/ordinary_final_cloud.py`,
 `tools/ordinary_final_run.py`, `tools/ordinary_final_watchdog.py`), so every bundle
 sealed before S2 refuses with `Controller source changed` and must be sealed
-again.
+again. The S5 join changed `tools/ordinary_final_run.py` once more (the sealed B1
+argument check), so every bundle sealed before it refuses the same way.
 
 The rehearsal (`tools/ordinary_final_rehearsal.py`) launches the same way against
 its mocked provider: each rehearsal bundle gets a fresh ledger of its own,

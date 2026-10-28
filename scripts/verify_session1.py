@@ -24868,6 +24868,36 @@ def check_283_benchmark_adapters_follow_the_preregistration():
     return check()
 
 
+def check_285_scorer_reads_a_key_and_twin_by_path():
+    """Loop stage S5, item 0.10 (R5, R21): tools/score_corpus.py scores a bundle outside
+    benchmark/corpora/ by an explicit --key path, and its clean twin by --twin-key and
+    --twin-run; the --corpus name and the absolute path the cloud caller passes are
+    unchanged. Each case is proven by neutralise, fail, restore, pass. SKIP when
+    benchmark/generators/ is absent."""
+    from scorer_path_checks import check
+    return check()
+
+
+def check_286_negotiation_dev_case_is_a_valid_live_case():
+    """Loop stage S5, item 0.9 (DS5-10): the negotiation multi-round development case under
+    benchmark/dev_cases/ is read by the sealer's own reader, accepted by the controller's
+    validate_live_case_manifest and bound span by span by multi_round.bind_sources, and is
+    exactly its builder's output from the anonymised corpus files. Each case is proven by
+    neutralise, fail, restore, pass. SKIP when benchmark/dev_cases/ is absent."""
+    from dev_case_checks import check
+    return check()
+
+
+def check_287_built_bundles_stage_as_the_sealers_workload():
+    """Loop stage S5 join, item 3: tools/stage_workload.py stages an adapter build and a
+    multi-round generator bundle into the folder the sealer's --workload reads (accepted by
+    workload_members, no key file, every source byte kept) and writes each B1 bundle's own
+    item table for --items; a file named like a key refuses the staging. Each case is proven
+    by neutralise, fail, restore, pass."""
+    from stage_workload_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25240,6 +25270,12 @@ CHECKS = [
      check_283_benchmark_adapters_follow_the_preregistration),
     ("284 every refused change record carries a typed reason_kind kept in review_data.json",
      check_284_prior_refusal_kinds),
+    ("285 the scorer reads a key and a clean twin by explicit path, the corpus path unchanged",
+     check_285_scorer_reads_a_key_and_twin_by_path),
+    ("286 the negotiation development case is a valid live multi-round case",
+     check_286_negotiation_dev_case_is_a_valid_live_case),
+    ("287 built benchmark bundles stage as the sealer's workload with no key file",
+     check_287_built_bundles_stage_as_the_sealers_workload),
 ]
 
 
