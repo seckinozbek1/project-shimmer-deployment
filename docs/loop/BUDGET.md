@@ -71,3 +71,7 @@ The per-run cap is min(1.5 x forecast, ceiling - spend - caps of running loop in
 ## Stage boundary: S2 closed (2026-10-27 15:23 +0300)
 
 Spend so far: 0.00 USD on instances; the storage share is 0.05 USD (the reaper's reading at 12:21:59 UTC). Running loop instances: none (the reaper's provider listing at 12:21:59 UTC listed 0). Storage forecast to the loop's end: about 0.13 USD a day; pace so far is about 28 percent of the work in 9.5 hours, so the 30-day placeholder stays until S5's pace can be measured.
+
+## Stage boundary: S3 closed (2026-10-28 11:32 +0300)
+
+Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's reading at 08:31:59 UTC on 28 October: total 0.1585 USD). Running loop instances: none (the same provider listing listed 0; the reaper's last run was under 10 minutes old). Storage forecast to the loop's end, now from a measured pace: S0 to S2 and most of S3 and S4 (about 31 percent of the weighted work, D-035 weights) took about 13 working hours on 27 October, with an overnight shutdown of about 16 hours; at that pace, with the cloud waits of S5 and S8 and one more lost day as margin, the loop ends in about 4.5 days, so the storage forecast is 0.13 x 4.5 = 0.59 USD (estimate), charged to the reserve first. This replaces the 30-day placeholder (3.90 USD).
