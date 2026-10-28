@@ -52,6 +52,7 @@ OUTCOMES = (
     "classified",            # auditor_pairs.prepare_context: Auditor896 returned a relation
     "classifier_failed",     # auditor_pairs.prepare_context: Auditor896 failed
     "free_text",             # pipeline._draft_generate_with_evidence: the draft memo
+    "retry_skipped_deterministic",  # semantic_waves: a failed partition under deterministic decoding, not retried (D-061)
     "not_decided",           # read-side default when no outcome line exists
 )
 

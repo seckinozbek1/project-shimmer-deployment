@@ -160,53 +160,119 @@ B1_SEALED_ARGS = {'--agent': True, '--profile': True, '--max-new-tokens': True, 
                   '--attention': True, '--attention-decision': True}
 
 
-def b1_option_values(args):
+def b1_option_values(args, table=None):
     """{option: value} of a well-formed sealed argument list (b1_argument_error is None)."""
+    table = B1_SEALED_ARGS if table is None else table
     values, k = {}, 0
     while k < len(args):
         option, joined, value = args[k].partition('=')
-        if B1_SEALED_ARGS.get(option) and not joined:
+        if table.get(option) and not joined:
             value, k = args[k + 1], k + 1
-        values[option] = value if B1_SEALED_ARGS.get(option) else True
+        values[option] = value if table.get(option) else True
         k += 1
     return values
 
 
+# D-060 and D-061: B1's run proper is eager with chunked prefill at 512 tokens under D-061
+# (bare_model.attention_record, final_models.prefill_setting); sdpa, one-shot prefill or
+# another chunk size is a measurement pass and needs its recorded decision. Stated here so the
+# seal refuses what the instance would without importing the model code; a controller check
+# holds this rule equal to bare_model's on a table of cases.
+B1_PREFILL_DEFAULT = ('512', 'D-061')
+B1_DECISION = re.compile(r'D-\d{3}')
+
+
 def b1_attention_error(args):
-    """None, or a one-line reason when a pass's attention would be refused by bare_model
-    (attention_record): eager only with --attention-decision, and --attention-decision only
-    with eager (D-056 condition 6), so the seal refuses what the instance would."""
+    """None, or a one-line reason when a pass's attention or prefill would be refused by
+    bare_model (attention_record): sdpa only with --attention-decision, and
+    --attention-decision only with sdpa (D-056 condition 6 as D-060 amends it); one-shot or
+    another chunk size only with --prefill-decision, and a --prefill-decision naming the
+    default chunk only when it is the default's own (D-061), so the seal refuses what the
+    instance would."""
     values = b1_option_values(args)
-    if values.get('--attention', 'sdpa') not in ('sdpa', 'eager'):
-        return 'A B1 pass names an attention bare_model does not take (sdpa or eager)'
-    eager = values.get('--attention') == 'eager'
-    if eager != ('--attention-decision' in values):
-        return 'A B1 pass runs eager only with --attention-decision, and names a decision only when eager'
+    if values.get('--attention', 'eager') not in ('sdpa', 'eager'):
+        return 'A B1 pass names an attention bare_model does not take (eager or sdpa)'
+    sdpa = values.get('--attention') == 'sdpa'
+    if sdpa != ('--attention-decision' in values):
+        return 'A B1 pass runs sdpa only with --attention-decision, and names a decision only with sdpa'
+    if sdpa and not B1_DECISION.fullmatch(str(values['--attention-decision'])):
+        return 'A B1 pass names an attention decision that is no recorded decision (D-NNN)'
+    chunk, decision = values.get('--prefill-chunk'), values.get('--prefill-decision')
+    if chunk is not None and chunk != 'one_shot' and not (chunk.isdigit() and int(chunk) > 0):
+        return 'A B1 pass names a prefill chunk bare_model does not take (a positive number of tokens or one_shot)'
+    if decision is not None and not B1_DECISION.fullmatch(str(decision)):
+        return 'A B1 pass names a prefill decision that is no recorded decision (D-NNN)'
+    default = chunk is None or (chunk.isdigit() and int(chunk) == int(B1_PREFILL_DEFAULT[0]))
+    if default and decision not in (None, B1_PREFILL_DEFAULT[1]):
+        return 'A B1 pass names a prefill decision only with one_shot or another chunk size'
+    if not default and decision is None:
+        return 'A B1 pass prefills in one shot or another chunk size only with --prefill-decision'
     return None
 
 
 def b1_pass_checkpoint(entry):
     """The checkpoint a sealed pass loads: its `checkpoint`, or its name for a pass sealed
     without one (the meaning every pass had before D-056 condition 6). Refused unless it is one
-    bare_model.py loads."""
+    bare_model.py loads. A replay pass loads the tuned producer."""
+    if entry.get('replay') is True:
+        return 'tuned'
     checkpoint = entry.get('checkpoint', entry.get('name'))
     require(checkpoint in B1_CHECKPOINT_NAMES, 'A B1 pass names no checkpoint bare_model loads (tuned or base)')
     return checkpoint
 
 
-def b1_argument_error(args):
-    """None when `args` is a run of B1_SEALED_ARGS options, each value-taking one followed by
-    its value (or written `--option=value`) and each flag alone; otherwise a one-line reason."""
+# D-061 item 4: a replay pass runs benchmark/baselines/replay_prompts.py on the sealed
+# replay_prompts.json (B3's own rendered producer prompts from an earlier run) instead of
+# bare_model.py. The runner sets its prompts file and output folder; the seal carries only these
+# options. Its paths and their rule are stated here as replay_prompts.py states them (a controller
+# check holds the two equal): a measurement path needs --decision, and --decision needs one.
+REPLAY_TOOL = 'benchmark/baselines/replay_prompts.py'
+REPLAY_PROMPTS = 'replay_prompts.json'
+REPLAY_MEASUREMENT = 'replay_measurement.json'
+REPLAY_RUNNER_ARGS = ('--prompts', '--out')
+REPLAY_SEALED_ARGS = {'--paths': True, '--decision': True, '--max-new-tokens': True}
+REPLAY_PATHS = {'e': False, 'one_shot': True, 'sdpa': True, 'e_repeat': False}
+REPLAY_DEFAULT_PATHS = ('e', 'one_shot', 'sdpa', 'e_repeat')
+
+
+def replay_paths(args):
+    """The paths a well-formed replay pass runs, in order."""
+    values = b1_option_values(args, REPLAY_SEALED_ARGS)
+    return [p for p in values.get('--paths', ','.join(REPLAY_DEFAULT_PATHS)).split(',') if p]
+
+
+def replay_error(args):
+    """None, or a one-line reason when replay_prompts.py would refuse a replay pass's options."""
+    error = b1_argument_error(args, REPLAY_SEALED_ARGS)
+    if error:
+        return error
+    values = b1_option_values(args, REPLAY_SEALED_ARGS)
+    paths = replay_paths(args)
+    if not paths or len(set(paths)) != len(paths) or any(p not in REPLAY_PATHS for p in paths):
+        return 'A replay pass names its paths once each, from ' + ', '.join(REPLAY_PATHS)
+    measurement = any(REPLAY_PATHS[p] for p in paths)
+    if measurement != ('--decision' in values):
+        return 'A replay pass names --decision exactly when it runs a measurement path (one_shot or sdpa)'
+    if measurement and not B1_DECISION.fullmatch(str(values['--decision'])):
+        return 'A replay pass names a decision that is no recorded decision (D-NNN)'
+    return None
+
+
+def b1_argument_error(args, table=None):
+    """None when `args` is a run of B1_SEALED_ARGS options (or `table`'s), each value-taking
+    one followed by its value (or written `--option=value`) and each flag alone; otherwise a
+    one-line reason."""
+    table = B1_SEALED_ARGS if table is None else table
     k = 0
     while k < len(args):
         option, joined, _ = args[k].partition('=')
-        if option not in B1_SEALED_ARGS:
+        if option not in table:
             return 'A B1 checkpoint carries an argument bare_model does not take'
-        if B1_SEALED_ARGS[option] and not joined:
+        if table[option] and not joined:
             if k + 1 >= len(args) or args[k + 1].startswith('--'):
                 return 'A B1 checkpoint option has no value'
             k += 1
-        elif not B1_SEALED_ARGS[option] and joined:
+        elif not table[option] and joined:
             return 'A B1 checkpoint flag carries a value'
         k += 1
     return None
@@ -226,19 +292,38 @@ def b1_checkpoints(manifest):
     require(isinstance(b1, dict) and isinstance(b1.get('checkpoints'), list) and b1['checkpoints'],
             'B1 declared without its sealed checkpoints')
     names = []
+    replay = b1.get('replay')
     for entry in b1['checkpoints']:
-        require(isinstance(entry, dict) and set(entry) in ({'name', 'args'}, {'name', 'checkpoint', 'args'})
+        require(isinstance(entry, dict) and set(entry) in ({'name', 'args'}, {'name', 'checkpoint', 'args'},
+                                                            {'name', 'replay', 'args'})
                 and isinstance(entry['name'], str)
                 and B1_NAME.fullmatch(entry['name']) and isinstance(entry['args'], list)
                 and all(isinstance(a, str) for a in entry['args']), 'B1 checkpoint needs a name and its arguments')
-        b1_pass_checkpoint(entry)
-        require(not any(a.split('=', 1)[0] in B1_RUNNER_ARGS for a in entry['args']),
-                'A B1 checkpoint carries an argument the runner sets')
-        error = b1_argument_error(entry['args']) or b1_attention_error(entry['args'])
+        if 'replay' in entry:
+            # D-061 item 4: a replay pass, only in a bundle that sealed its prompts.
+            require(entry['replay'] is True and isinstance(replay, dict), 'A replay pass needs the sealed replay prompts')
+            require(not any(a.split('=', 1)[0] in REPLAY_RUNNER_ARGS for a in entry['args']),
+                    'A replay pass carries an argument the runner sets')
+            error = replay_error(entry['args'])
+        else:
+            b1_pass_checkpoint(entry)
+            require(not any(a.split('=', 1)[0] in B1_RUNNER_ARGS for a in entry['args']),
+                    'A B1 checkpoint carries an argument the runner sets')
+            error = b1_argument_error(entry['args']) or b1_attention_error(entry['args'])
         require(error is None, error or '')
         names.append(entry['name'])
     require(len(set(names)) == len(names), 'B1 checkpoint names repeat')
+    if replay is not None:
+        require(isinstance(replay, dict) and set(replay) == {'prompts_sha256', 'prompt_count'}
+                and isinstance(replay['prompts_sha256'], str) and re.fullmatch(HEX64, replay['prompts_sha256'])
+                and type(replay['prompt_count']) is int and replay['prompt_count'] > 0,
+                'B1 replay declared without its prompts digest and count')
+        require(any(e.get('replay') is True for e in b1['checkpoints']), 'Replay prompts sealed without a replay pass')
     return b1['checkpoints']
+
+
+def is_replay(entry):
+    return entry.get('replay') is True
 
 
 def b1_item_ids(manifest):
@@ -259,8 +344,14 @@ def arm_declaration(manifest):
         require(manifest.get('multi_round') is False, 'A B1 bundle is never multi-round')
         require(isinstance(support.get(B1_ITEMS), str) and support[B1_ITEMS] == manifest['b1'].get('items_sha256'),
                 'B1 declared without its sealed items.json')
+        replay = manifest['b1'].get('replay')
+        if replay is None:
+            require(REPLAY_PROMPTS not in support, 'Replay prompts sealed without a replay declaration')
+        else:
+            require(support.get(REPLAY_PROMPTS) == replay['prompts_sha256'], 'Replay declared without its sealed prompts')
     else:
-        require('b1' not in manifest and B1_ITEMS not in support, 'B1 fields sealed in a B3 bundle')
+        require('b1' not in manifest and B1_ITEMS not in support and REPLAY_PROMPTS not in support,
+                'B1 fields sealed in a B3 bundle')
     return arm
 
 
@@ -308,6 +399,9 @@ def admit_workload(manifest, seal, base=None):
                 'Case manifest sealed without a multi-round declaration')
     require(manifest['argv'] == argv_for(manifest), 'Run flags changed')
     arm = arm_declaration(manifest)
+    # D-061 item 4: replayed B3 prompts are development material, never part of a sealed run.
+    require(not (arm == 'B1' and manifest['b1'].get('replay') is not None and exposure == 'sealed'),
+            'Replay prompts are development material: a sealed run carries none')
     return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure, arm=arm)
 
 
@@ -411,6 +505,26 @@ def b1_observation(folder, item_ids):
                 summary_written=(folder/'b1_summary.json').is_file())
 
 
+def replay_observation(folder, prompt_count, paths):
+    """What one replay pass left in its own folder (D-061 item 4): one reply record per prompt
+    per path, and its replay_measurement.json. Counts only, in b1_observation's shape, so the
+    entry's assessment holds a replay pass to the same one-record-per-call rule."""
+    folder = Path(folder)
+    replies = folder/'audit'/'model_replies'
+    records = len(list(replies.glob('*.json'))) if replies.is_dir() else 0
+    expected = prompt_count*len(paths)
+    return dict(items=expected, reply_records=records, items_without_one_record=[] if records == expected else ['replay'],
+                summary_written=(folder/REPLAY_MEASUREMENT).is_file(), replay=True)
+
+
+def pass_observation(base_evidence, manifest, entry):
+    """The observation of one sealed pass, a bare_model pass or a replay pass."""
+    folder = Path(base_evidence)/'b1'/entry['name']
+    if is_replay(entry):
+        return replay_observation(folder, manifest['b1']['replay']['prompt_count'], replay_paths(entry['args']))
+    return b1_observation(folder, b1_item_ids(manifest))
+
+
 def assess_b1(checkpoints):
     """A B1 entry's health: every sealed checkpoint returned 0 and left exactly one reply record
     per item in its own folder, and no other record. No pipeline marker is asked for."""
@@ -427,6 +541,14 @@ def assess_b1(checkpoints):
     return {'execution_integrity_passed': not reasons, 'reasons': reasons, 'arm': 'B1',
             'checkpoints': checkpoints or {}, 'failed_backend_attempts': None,
             'collection_and_teardown_pending': True, 'quality_claim': None}
+
+
+def semantic_incomplete(completion):
+    """True when the pipeline reached its end with exit code 0 and its completion record marks
+    the semantic work incomplete (scripts/run_completion.py: semantic_complete false, state
+    stopped)."""
+    return bool(completion and completion.get('reached_end') is True and completion.get('exit_code') == 0
+                and completion.get('semantic_complete') is False)
 
 
 def assess(completion, raw, multi_round=None, arm='B3', b1=None):
@@ -447,8 +569,14 @@ def assess(completion, raw, multi_round=None, arm='B3', b1=None):
                 (multi_round.get('round_review') or {}).get('availability') != 'recorded'):
             # S2 checker A10: a reviewed run whose Python round review failed is not healthy.
             reasons.append('multi_round_round_review_not_recorded')
-    if not (completion and completion.get('state') == 'completed' and
-            completion.get('reached_end') is True and completion.get('exit_code') == 0):
+    if semantic_incomplete(completion):
+        # D-061 (b): the pipeline reached its end with exit 0 and its completion record says the
+        # semantic work was incomplete (PAIRING-A: a partition or a delivery failed its contract;
+        # run_completion records it as state stopped). That is its own reason, not a pipeline
+        # that did not complete.
+        reasons.append('semantic_incomplete')
+    elif not (completion and completion.get('state') == 'completed' and
+              completion.get('reached_end') is True and completion.get('exit_code') == 0):
         reasons.append('pipeline_not_completed')
     if not (sum(r['event']=='pipeline_start' for r in raw)==1 and
             sum(r['event']=='pipeline_end' for r in raw)==1 and
@@ -554,13 +682,40 @@ def load_bare_model(project):
     return module
 
 
+def load_replay(project):
+    """benchmark/baselines/replay_prompts.py of the sealed project, imported in THIS process, as
+    load_bare_model imports bare_model (D-061 item 4)."""
+    path = (Path(project)/REPLAY_TOOL).resolve()
+    loaded = sys.modules.get('replay_prompts')
+    if loaded is not None and Path(getattr(loaded, '__file__', '')).resolve() == path:
+        return loaded
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('replay_prompts', path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules['replay_prompts'] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def b1_argv(base, project, out, checkpoint):
     """bare_model.main's arguments for one sealed pass: the bundle is the sealed workload as the
     pipeline would read it (project/input: context/ with its targets file, and conventions/),
     the item table is the sealed items.json, the output is the pass's own folder, then the
-    checkpoint the pass loads (b1_pass_checkpoint) and the arguments sealed with it."""
+    checkpoint the pass loads (b1_pass_checkpoint) and the arguments sealed with it. A replay
+    pass runs replay_prompts.py on the sealed replay_prompts.json into its own folder."""
+    if is_replay(checkpoint):
+        return ['run', '--prompts', str(Path(base)/REPLAY_PROMPTS), '--out', str(out), *checkpoint['args']]
     return ['--bundle', str(Path(project)/'input'), '--items', str(Path(base)/B1_ITEMS), '--out', str(out),
             '--checkpoint', b1_pass_checkpoint(checkpoint), *checkpoint['args']]
+
+
+def expected_records(manifest):
+    """One reply record per item per bare_model pass, and per prompt per path per replay pass."""
+    total = 0
+    for entry in b1_checkpoints(manifest):
+        total += (manifest['b1']['replay']['prompt_count']*len(replay_paths(entry['args'])) if is_replay(entry)
+                  else len(b1_item_ids(manifest)))
+    return total
 
 
 def run_b1(base, manifest, project, evidence):
@@ -570,14 +725,16 @@ def run_b1(base, manifest, project, evidence):
     checkpoints = b1_checkpoints(manifest)
     root = Path(evidence)/'b1'
     root.mkdir(exist_ok=False)
-    # The progress reader's total (PROGRESS-A): one reply record per item per checkpoint.
-    (root/'expected_records').write_text('%d\n' % (len(b1_item_ids(manifest))*len(checkpoints)), encoding='utf8')
+    # The progress reader's total (PROGRESS-A): one reply record per item per checkpoint, and
+    # per prompt per path of a replay pass.
+    (root/'expected_records').write_text('%d\n' % expected_records(manifest), encoding='utf8')
     codes = {}
     for checkpoint in checkpoints:
         out = root/checkpoint['name']
         require(not out.exists(), 'B1 checkpoint folder already exists')
         try:
-            code = module.main(b1_argv(base, project, out, checkpoint))
+            runner = load_replay(project) if is_replay(checkpoint) else module
+            code = runner.main(b1_argv(base, project, out, checkpoint))
         except SystemExit as exc:
             code = exc.code if isinstance(exc.code, int) else 1
         except Exception as exc:
@@ -598,8 +755,7 @@ def execute_b1(base, manifest, project, evidence, rec):
         write(evidence/'terminal_error.json', failure_identity(exc, project))
     finally:
         rec.close()
-        ids = b1_item_ids(manifest)
-        seen = {c['name']: dict(b1_observation(evidence/'b1'/c['name'], ids), exit_code=codes.get(c['name']))
+        seen = {c['name']: dict(pass_observation(evidence, manifest, c), exit_code=codes.get(c['name']))
                 for c in b1_checkpoints(manifest)}
         result = assess(None, [], arm='B1', b1=seen)
         result['pipeline_exit_code'] = None

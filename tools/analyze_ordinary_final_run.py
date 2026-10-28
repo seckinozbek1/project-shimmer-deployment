@@ -28,26 +28,68 @@ DOES_NOT_SHOW=('This report shows run health and cost only. It shows no quality:
                'greedy repeat of the same run measures nothing (11.11).')
 
 
-# D-058 condition vi: the producer's attention, stated in every report's backend field.
+# D-058 condition vi as D-060 and D-061 amend it: the producer's attention and prefill, stated in
+# every report's backend field.
 PRODUCER_SDPA_TEXT=('producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
                     'producer eager')
 OVER_CONTEXT_EVENT='prompt_over_context'
 
 
+def producer_prefill_text(environment):
+    """The producer's prefill as the sealed environment set it (D-061)."""
+    chunk=environment.get('SHIMMER_PRODUCER_PREFILL_CHUNK')
+    decision=environment.get('SHIMMER_PRODUCER_PREFILL_DECISION')
+    if chunk is None:
+        return 'prefilled in one shot (sealed before D-061 named the prefill)'
+    if chunk=='one_shot':
+        return 'prefilled in one shot under decision %s (a measurement run)'%decision
+    if decision=='D-061' and chunk=='512':
+        return ('prefilled in chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, D-061); '
+                'differs from v5 to v12, which prefilled in one shot')
+    return 'prefilled in chunks of %s tokens under decision %s (a measurement run)'%(chunk,decision)
+
+
 def producer_attention_text(manifest):
-    """The producer's attention as the sealed environment set it (D-058): sdpa by default from
-    D-058, eager only under a recorded decision; a manifest without the setting was sealed
-    before D-058 and its producer ran eager, as v5 to v12 did."""
+    """The producer's attention and prefill as the sealed environment set them (D-058, D-060,
+    D-061): eager with chunked prefill by default from D-061; sdpa only under a recorded
+    decision; a manifest without the attention setting was sealed before D-058 and its
+    producer ran eager, as v5 to v12 did, in one shot."""
     environment=manifest.get('environment') or {}
     value=environment.get('SHIMMER_PRODUCER_ATTENTION')
+    prefill=producer_prefill_text(environment)
     if value=='sdpa':
-        return PRODUCER_SDPA_TEXT
+        decision=environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION')
+        if decision:
+            return 'producer sdpa (memory-efficient, pinned) under decision %s (a measurement run), %s'%(decision,prefill)
+        return PRODUCER_SDPA_TEXT+' (sealed under D-058, before D-060 returned the producer to eager)'
     if value=='eager':
-        return ('producer eager under decision %s (a measurement run sealed eager; v5 to v12 also ran the '
-                'producer eager)'%environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION'))
+        decision=environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION')
+        if decision:
+            return ('producer eager under decision %s (sealed under D-058, when eager was the measurement run; '
+                    'v5 to v12 also ran the producer eager), %s'%(decision,prefill))
+        return 'producer eager, the kernel it was trained and evaluated with (D-060), %s'%prefill
     if value is None:
-        return 'producer eager (sealed before D-058 named the producer attention; v5 to v12 also ran it eager)'
+        return 'producer eager (sealed before D-058 named the producer attention; v5 to v12 also ran it eager), '+prefill
     return 'producer attention %r: not one the runtime admits'%value
+
+
+# D-061 (b): what each assessment reason means, stated in the report's execution row.
+REASON_TEXT={
+    'semantic_incomplete':('the pipeline reached its end with exit code 0, and its completion record marks the '
+                           'semantic work incomplete (a producer partition or a delivery failed its contract; '
+                           'PAIRING-A): the run finished, its output is incomplete'),
+    'pipeline_not_completed':'the pipeline did not reach its end with exit code 0',
+}
+
+
+def assessment_text(result):
+    """The runner's execution assessment (evidence/result.json) in words: passed, or each reason."""
+    if not isinstance(result,dict):
+        return 'not determined: no assessment collected'
+    if result.get('execution_integrity_passed'):
+        return 'passed'
+    reasons=result.get('reasons') or []
+    return 'failed: '+'; '.join('%s (%s)'%(r,REASON_TEXT[r]) if r in REASON_TEXT else r for r in reasons)
 
 
 def over_context_text(arm, status, events):
@@ -75,6 +117,9 @@ def b1_models(status):
     the checkpoint it loaded when the pass's name is not that checkpoint's)."""
     parts=[]
     for name,seen in status['b1_checkpoints'].items():
+        if seen.get('replay'):
+            parts.append('%s: replay of B3 prompts on the tuned producer'%name)
+            continue
         if not seen['summary_written']:
             parts.append('%s: no b1_summary.json collected'%name)
             continue
@@ -89,10 +134,19 @@ def gib(value):
 
 
 def b1_measures_text(seen):
-    """A pass's attention and peak GPU memory (D-056 condition 6), as its summary recorded them."""
+    """A pass's attention, prefill, peak GPU memory and prefill time (D-056 condition 6, D-061),
+    as its summary recorded them."""
     attention=seen.get('attention_implementation') or 'not recorded'
     if seen.get('attention_decision'):
         attention+=' (measurement pass, %s)'%seen['attention_decision']
+    prefill=seen.get('prefill')
+    if prefill=='chunked':
+        attention+=', chunked prefill of %s tokens (%s)'%(seen.get('prefill_chunk_tokens'),seen.get('prefill_decision'))
+    elif prefill=='one_shot':
+        attention+=', one-shot prefill (%s)'%(seen.get('prefill_decision') or 'sealed before D-061')
+    timing=seen.get('prefill_time') or {}
+    if timing.get('seconds_measured'):
+        attention+=', longest prefill %s s'%timing.get('seconds_max')
     memory=seen.get('gpu_memory')
     if not isinstance(memory,dict):
         peak='peak GPU memory not recorded'
@@ -109,6 +163,9 @@ def b1_counts(status):
     attention and the peak GPU memory."""
     parts=[]
     for name,seen in status['b1_checkpoints'].items():
+        if seen.get('replay'):
+            parts.append(replay_text(name,seen))
+            continue
         counts=', '.join('%s %s'%(k.replace('_',' '),seen['counts'].get(k)) for k in B1_COUNTS)+', '+b1_measures_text(seen) \
             if seen['summary_written'] else 'no b1_summary.json collected'
         parts.append('%s (exit %s): %s'%(name,seen['exit_code'],counts))
@@ -122,7 +179,41 @@ def b1_pass_measures(summary):
     attention=summary.get('attention') or {}
     return dict(checkpoint=(summary.get('reader') or {}).get('checkpoint') or (summary.get('checkpoint') or {}).get('checkpoint'),
                 attention_implementation=attention.get('attention_implementation'),
-                attention_decision=attention.get('attention_decision'),gpu_memory=summary.get('gpu_memory'))
+                attention_decision=attention.get('attention_decision'),gpu_memory=summary.get('gpu_memory'),
+                prefill=attention.get('prefill'),prefill_chunk_tokens=attention.get('prefill_chunk_tokens'),
+                prefill_decision=attention.get('prefill_decision'),prefill_time=summary.get('prefill_time'))
+
+
+def replay_pass_status(path,name,result):
+    """A replay pass (D-061 item 4), from its replay_measurement.json: per path the peak GPU
+    memory and prefill seconds, the failures, and per pair of paths the byte-identical counts.
+    Counts, hashes and seconds only."""
+    measurement=read(path) if path.is_file() else None
+    exit_code=(((result or {}).get('checkpoints') or {}).get(name) or {}).get('exit_code')
+    if measurement is None:
+        return dict(replay=True,summary_written=False,exit_code=exit_code)
+    return dict(replay=True,summary_written=True,exit_code=exit_code,prompts=measurement.get('prompts'),
+                paths=list(measurement.get('paths') or {}),decision=measurement.get('decision'),
+                gpu_memory=measurement.get('gpu_memory'),prefill_seconds=measurement.get('prefill_seconds'),
+                failures=measurement.get('failures'),comparisons=measurement.get('comparisons'))
+
+
+def replay_text(name,seen):
+    """One replay pass in the report's B1 row."""
+    if not seen['summary_written']:
+        return '%s (exit %s): replay, no replay_measurement.json collected'%(name,seen['exit_code'])
+    parts=[]
+    for path in seen['paths']:
+        memory=(seen.get('gpu_memory') or {}).get(path) or {}
+        peak=gib(memory['peak_allocated_bytes']) if memory.get('measured') else 'not measured'
+        seconds=((seen.get('prefill_seconds') or {}).get(path) or {}).get('max')
+        parts.append('%s peak %s, longest prefill %s s, failures %s'%(path,peak,seconds,(seen.get('failures') or {}).get(path)))
+    pairs=['%s %s of %s byte-identical (%s of %s at three chunks or more)'%(
+        pair,(c.get('all') or {}).get('byte_identical'),(c.get('all') or {}).get('compared'),
+        (c.get('three_chunks_or_more') or {}).get('byte_identical'),(c.get('three_chunks_or_more') or {}).get('compared'))
+        for pair,c in (seen.get('comparisons') or {}).items()]
+    return '%s (exit %s): replay of %s B3 producer prompts under decision %s; %s; %s'%(
+        name,seen['exit_code'],seen.get('prompts'),seen.get('decision'),'; '.join(parts),'; '.join(pairs))
 
 
 def b1_checkpoint_status(manifest,target,result):
@@ -132,6 +223,9 @@ def b1_checkpoint_status(manifest,target,result):
     seen={}
     for entry in (manifest.get('b1') or {}).get('checkpoints') or []:
         name=entry['name']
+        if entry.get('replay') is True:
+            seen[name]=replay_pass_status(target/'evidence'/'b1'/name/'replay_measurement.json',name,result)
+            continue
         path=target/'evidence'/'b1'/name/'b1_summary.json'
         summary=read(path) if path.is_file() else None
         per_benchmark=list(((summary or {}).get('benchmarks') or {}).values())
@@ -228,6 +322,7 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Backend and machine','local open-weight models on one rented GPU; %s in %s; %s'%(launch.get('instance_type','gpu_1x_a10'),
             launch.get('region','us-east-1'),producer_attention_text(manifest))),
         ('B3 prompts over the model context',over_context_text(arm,status,status.get('b3_prompts_over_context') or [])),
+        ('Execution assessment',assessment_text(status.get('remote_result'))),
         ('Instance type and price','%s at %s dollars an hour'%(launch.get('instance_type','gpu_1x_a10'),launch['hourly_rate'])),
         ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)%s'
             %(status['cost_estimates']['combined_estimate'],
