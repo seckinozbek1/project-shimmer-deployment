@@ -132,8 +132,33 @@ def install_pinned_wheels(context):
             '(not one to one), %.1f min elapsed, %.1f entries/min' % (done, total, elapsed / 60, rate * 60))
 
 
+B1_ROOT = 'evidence/b1'
+
+
+def b1_workload(context, phase):
+    """A B1 entry (S5 R19): bare_model.py writes one reply record per item per checkpoint under
+    evidence/b1/<checkpoint>/audit/model_replies, and the runner writes the total it expects
+    beside them first. None when the workload is not a B1 run (the pipeline's reading applies)
+    or the instance did not answer (the pipeline's own observation then says so)."""
+    raw = context['look'](
+        "cd %s && if [ -d %s ]; then echo B1; (find %s -path '*/audit/model_replies/*.json' 2>/dev/null | wc -l); "
+        "(cat %s/expected_records 2>/dev/null || echo 0); else echo PIPELINE; fi" % (REMOTE_ROOT, B1_ROOT, B1_ROOT, B1_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', '', ''])[:3]
+    if lines[0].strip() != 'B1':
+        return None
+    done, total = digits(lines[1]), digits(lines[2])
+    return count_reading(phase, done, total or None, context['elapsed'], 'reply records',
+                         'one reply record per item per checkpoint, all written')
+
+
 def ordinary_workload(context):
-    """The run itself: count the telemetry records it writes as it goes."""
+    """The run itself: count the telemetry records it writes as it goes (a B1 entry: its
+    reply records, b1_workload)."""
+    b1 = b1_workload(context, 'ordinary_workload')
+    if b1 is not None:
+        return b1
     raw = context['look'](
         "cd %s && (grep -c '\"event\": \"model_call\"' %s 2>/dev/null || echo 0); "
         "(grep -c '\"event\": \"auditor_pair\"' %s 2>/dev/null || echo 0); "

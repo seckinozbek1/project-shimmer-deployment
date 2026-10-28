@@ -285,6 +285,9 @@ python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger L
 | `--test-manifest` | Role B's seal manifest, for a sealed bundle. |
 | `--protected-test` | Only on a sealed bundle prepared by role B. |
 | `--ledger` (repeatable), `--forecast-minutes`, `--storage-forecast-usd` | The IV.3 inputs. All three are required. |
+| `--arm` | `B3` (default, the full pipeline) or `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`). Written into every manifest as `arm`. |
+| `--items` | B1 only: the adapter's `items.json` (item ids, no gold), sealed as a support file. |
+| `--b1-checkpoints` | B1 only: a JSON list of `{"name", "args"}`, run in that order, each into its own folder. |
 
 The sealer writes the budget into the manifest from the live price in the
 provider inventory and the loop ledger: the ordered instance candidates (the
@@ -317,6 +320,34 @@ when it is declared, sealed and valid, and its assessment passes a multi-round
 run only when the saved case record shows outcome `reviewed` and activation
 `activated`.
 
+A B1 bundle (`--arm B1`) is sealed from the same workload as its B3 twin. Its
+manifest carries `arm: B1` and `b1`: the checkpoints (each a short name and the
+`bare_model.py` arguments that pin it, for example its `--expect-digest`), the
+item ids of the bundle's one document (the items in `items.json` whose
+`document_id` is the stem of the one target in `_review_targets.json`) and the
+digest of `items.json`, which travels as a support file and never inside the test
+archive. A checkpoint may not carry `--bundle`, `--items`, `--out`,
+`--checkpoint` or `--development`, which the runner sets itself. A B1 bundle is
+never multi-round. A B3 bundle carries none of these fields; a manifest sealed
+before S5 has no `arm` and is a B3 bundle.
+
+On the instance the same runner, `ordinary_final_run.py`, runs both arms and keeps
+every guard for both: the authorization (which must name the arm the bundle was
+sealed with; an authorization naming no arm is a B3 one), `RUN_CLAIMED`, the
+budget-stop thread with its `os._exit(124)`, the sealed model cache, the pinned
+runtime and the network denial. For a B1 bundle it then loads the sealed
+project's `benchmark/baselines/bare_model.py` in its own process, never imports
+the pipeline, and calls its `main()` once per sealed checkpoint, in order, with
+`--bundle <project>/input --items <bundle>/items.json --out
+evidence/b1/<checkpoint> --checkpoint <name>` followed by that checkpoint's
+sealed arguments. It writes `evidence/b1/expected_records` (items times
+checkpoints) first, for the progress reader. The assessment in
+`evidence/result.json` passes a B1 entry only when every checkpoint returned 0
+and left exactly one reply record per item in its own folder (each item's label
+naming one record's call id) and no other record; no pipeline marker is asked
+for, and `pipeline_exit_code` is null. The controller's cleanup stops a B1 run
+exactly as it stops a B3 run, by the runner's name.
+
 ### Launch
 
 The bundle then goes through the existing steps (asset verification, the bound
@@ -339,7 +370,7 @@ python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGE
 | `--forecast-includes-upload` | States that the forecast includes the asset upload. Required whenever no asset-copy declaration applies to this bundle. |
 | `--output-dir` | Run in a fresh folder `<output-dir>/<bundle name>` instead of in the bundle; the asset archive is read where it is. |
 | `--test-manifest`, `--frozen-tag` | Required for a sealed run. |
-| `--batch` | A batch file `{"entries": [{"item", "arm", "bundle"}]}`. |
+| `--batch` | A batch file `{"entries": [{"item", "arm", "bundle"}], "form": "paired"}`; `form` is `paired` (the default) or `b3_only` (exposed bundles only). |
 | `--test-version`, `--test-author`, `--key-author`, `--scorer-author`, `--scorer-version` | Report fields for `RUN_REPORT.md`. |
 | `--detach` | Start the controller as a detached process and return; its output goes to `controller_detached.log` in the bundle and its pid to `controller_process.json`. |
 
@@ -399,7 +430,23 @@ then arm B1 before the next item starts, the first scheduled entry (the first
 item's B3) must be the bundle the session was launched with, and the bundles share one environment, one asset archive and one sealed budget.
 Each entry gets its own run folder under `batch/`, its own seal entry,
 authorization and collected evidence, so a stop leaves every finished pair
-complete.
+complete. Each entry's `arm` in the batch file must equal the `arm` its bundle
+was sealed with (refused before any launch otherwise), and the controller writes
+it into the entry's authorization, which the runner checks again on the instance.
+
+A batch file with `"form": "b3_only"` carries exposed bundles that have no B1
+arm (regression bundles, multi-round cases, the development suite): every entry
+is B3, each item appears once, the entries run in the order given and are paired
+with nothing (`paired_with` is null in each seal entry). A sealed run refuses
+this form before any provider call; the paired form still refuses a batch
+without its B1 entries.
+
+Past the soft budget the controller starts no new remote work except stopping the
+workload and collecting evidence. A batch entry's own collection (its
+`batch_pack_evidence` and `batch_evidence_hash` phases, then the download) is part
+of that exemption, so an entry that finishes past the soft budget is still
+collected into its own run folder; the next entry is then refused and the session
+evidence is collected as before.
 
 ### Asset copy
 

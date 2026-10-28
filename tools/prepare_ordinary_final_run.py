@@ -242,8 +242,32 @@ def test_seal(exposure, test_manifest, test_archive, source):
                 code_commit=source, scorer_sha256=value.get('scorer_sha256'))
 
 
+def b1_fields(items, targets, checkpoints):
+    """The sealed B1 declaration (S5 R2): the checkpoints, the items of the bundle's ONE
+    document (its target's file stem, the id bare_model.py reads it under), and the items.json
+    digest. `items` is the bytes of the adapter's items.json, `targets` the workload's
+    _review_targets.json bytes, `checkpoints` [{name, args}]. Nothing of an item but its id."""
+    targets = json.loads(targets.decode('utf-8')).get('targets') or []
+    require(len(targets) == 1, 'A B1 bundle names exactly one document under review')
+    document = Path(targets[0]).stem
+    rows = json.loads(items.decode('utf-8'))
+    rows = rows.get('items') if isinstance(rows, dict) else rows
+    require(isinstance(rows, list), 'items.json holds no item table')
+    ids = sorted(str(r['item_id']) for r in rows if isinstance(r, dict) and str(r.get('document_id')) == document
+                 and r.get('item_id'))
+    require(ids, 'items.json holds no item for the document under review')
+    value = dict(checkpoints=checkpoints, item_ids=ids, items_sha256=hashlib.sha256(items).hexdigest())
+    # The runner's own validation, so the seal refuses exactly what the instance would.
+    runner_b1 = dict(b1=value)
+    from ordinary_final_run import b1_checkpoints, b1_item_ids
+    b1_checkpoints(runner_b1)
+    b1_item_ids(runner_b1)
+    return value
+
+
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
-            test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None):
+            test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
+            b1_checkpoints=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -254,6 +278,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle must be prepared outside the repository')
         require(workload is not None and Path(workload).is_file(), 'A sealed bundle is built from the test archive')
     require(not protected_test or sealed, 'Only a sealed bundle may set protected_test')
+    require(arm in ('B3', 'B1'), 'Arm is B3 or B1')
+    require((b1_items is not None and b1_checkpoints is not None) == (arm == 'B1'),
+            'A B1 bundle needs its items.json and its checkpoints; a B3 bundle takes neither')
     require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
     OUT.mkdir(parents=True,exist_ok=True)
     source_inputs = Path(inputs_from).resolve() if inputs_from else original
@@ -298,6 +325,13 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         files['input/'+name] = data
         workload_hashes[name] = hashlib.sha256(data).hexdigest()
     multi_round = case is not None
+    b1 = None
+    if arm == 'B1':
+        require(not multi_round, 'A B1 bundle is never multi-round')
+        items = Path(b1_items).read_bytes()
+        b1 = b1_fields(items, members['_review_targets.json'], b1_checkpoints)
+        # Carried as a support file, never inside the test archive (S5 item 0.2): ids, no gold.
+        (OUT/'items.json').write_bytes(items)
     if multi_round:
         # The documents bind_sources will see on the instance, by the bound pipeline's own rules.
         documents = case_corpus_documents({n[len('context/'):]: d for n, d in members.items() if n.startswith('context/')},
@@ -355,6 +389,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     support_names = ['topology.json','ordinary_final_run.py','ordinary_final_summary.py','cloud_run_observer.py','install.lock']
     if multi_round:
         support_names.append(CASE_MANIFEST)
+    if b1:
+        support_names.append('items.json')
     support = {n:sha(OUT/n) for n in support_names}
     provider = read(OUT/'provider_inventory.json')
     require(provider['instances']==[], 'Provider inventory not empty')
@@ -373,7 +409,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                     'no benchmark workload substitution']
     manifest = dict(schema_version=1,source_commit=source,source_archive_sha256=sha(OUT/'project.tar.gz'),
         classification='PREPARED_NOT_AUTHORIZED',max_runs=1,model_mode='final',multi_round=multi_round,
-        protected_test=protected_test,workload=workload_record,
+        protected_test=protected_test,arm=arm,workload=workload_record,
         decoding_policy=decoding,
         project_files={n:hashlib.sha256(d).hexdigest() for n,d in sorted(files.items())},
         # The CONTROLLER itself is bound here, with the wrapper that launches it and
@@ -408,6 +444,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         known_auditor_limitations=spec['auditor']['limitations'])
     if multi_round:
         manifest['case_manifest_sha256'] = support[CASE_MANIFEST]
+    if b1:
+        manifest['b1'] = b1
     if sealed:
         manifest['test_archive_sha256'] = seal_fields['test_archive_sha256']
     write(OUT/'execution_manifest.json', manifest)
@@ -447,9 +485,14 @@ if __name__ == '__main__':
     parser.add_argument('--ledger',type=Path,action='append',required=True,help='loop ledger(s) the IV.3 cap reads')
     parser.add_argument('--forecast-minutes',type=float,required=True,help='measured basis in minutes (docs/loop/BUDGET.md)')
     parser.add_argument('--storage-forecast-usd',type=float,required=True)
+    parser.add_argument('--arm',choices=('B3','B1'),default='B3',help='the arm this bundle runs (B1: bare_model.py)')
+    parser.add_argument('--items',type=Path,default=None,help="B1: the adapter's items.json (ids, no gold)")
+    parser.add_argument('--b1-checkpoints',type=Path,default=None,
+                        help='B1: JSON list of {"name", "args"}, run in order, each into its own folder')
     args = parser.parse_args()
     prepare(args.output_dir, args.source_commit, args.reuse_assets,
             budget=dict(ledgers=args.ledger, forecast_minutes=args.forecast_minutes,
                         storage_forecast_usd=args.storage_forecast_usd),
             workload=args.workload, exposure=args.exposure, test_manifest=args.test_manifest,
-            protected_test=args.protected_test, inputs_from=args.inputs_from)
+            protected_test=args.protected_test, inputs_from=args.inputs_from, arm=args.arm, b1_items=args.items,
+            b1_checkpoints=read(args.b1_checkpoints) if args.b1_checkpoints else None)
