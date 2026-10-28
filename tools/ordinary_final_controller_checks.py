@@ -1872,7 +1872,11 @@ class ControllerChecks(unittest.TestCase):
         for test_path in ('benchmark/corpora/clinical_reference/', 'input/context/', 'seals/'):
             with self.subTest(path=test_path), self.assertRaisesRegex(RuntimeError, 'external bundle path'):
                 sealer.archive_names(names + [test_path + 'x'], extras=(test_path,))
-        self.assertEqual(sealer.ARCHIVE_EXTRAS, ())
+        self.assertEqual(sealer.ARCHIVE_EXTRAS, ('benchmark/adapters/', 'benchmark/baselines/'))
+        real = sealer.archive_names(['benchmark/adapters/cuad/adapter.py', 'benchmark/adapters/cuad/fixtures/x.json',
+                                     'benchmark/baselines/bare_model.py', 'benchmark/generators/bundle.py',
+                                     'benchmark/corpora/clinical_reference/doc.md'])
+        self.assertEqual(real, ['benchmark/adapters/cuad/adapter.py', 'benchmark/baselines/bare_model.py'])
 
     # ---- S2c item 14: asset copy only with this bundle's own declaration -----------------
 

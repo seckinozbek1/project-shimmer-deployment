@@ -196,6 +196,10 @@ seals/
 # also inside a staged archive.
 **/audit/model_replies/
 
+# Third-party benchmark data, raw or converted, and its manifests (loop S4b).
+# Never committed; only adapters, the selection, the preregistration and
+# synthetic gate fixtures are tracked.
+/external/
 # Generated development suite and long-range corpus: exposed by construction, regenerated from committed seeds.
 /benchmark/dev_suite/generated/
 /benchmark/long_range/generated/

@@ -1,0 +1,78 @@
+{
+  "description": "Hand-written synthetic run outputs for SciTab (section 5.2): refusal is not enough info, a run failure is ABSTAIN, S-2 does not apply. A band record Python stamps belongs to the rule that produced it and decides that rule's item (s-a); a blank-cell missing_field record Python stamps in this several-rule bundle decides no item and is unattached (s-c), and S-3 attributes it.",
+  "items": [
+    {"item_id": "s-a", "document_id": "t-run", "rule_id": "CONV-aaaaaaaaaaaa", "benchmark": "scitab"},
+    {"item_id": "s-b", "document_id": "t-run", "rule_id": "CONV-bbbbbbbbbbbb", "benchmark": "scitab"},
+    {"item_id": "s-c", "document_id": "t-run", "rule_id": "CONV-cccccccccccc", "benchmark": "scitab"},
+    {"item_id": "s-d", "document_id": "t-run", "rule_id": "CONV-dddddddddddd", "benchmark": "scitab"},
+    {"item_id": "s-e", "document_id": "t-fail", "rule_id": "CONV-eeeeeeeeeeee", "benchmark": "scitab"}
+  ],
+  "runs": {
+    "t-run": {
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
+      "review_data": {"findings": [
+        {"item_id": "rec-a", "source_rule_id": "CONV-AAAAAAAAAAAA", "unit_id": "u01-p-00001", "relation": "above_band", "record_verdict": "irregular", "model": "python", "written_by": "python"},
+        {"item_id": "rec-b", "source_rule_id": "CONV-bbbbbbbbbbbb", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"},
+        {"item_id": "rec-c", "source_rule_id": "CONV-cccccccccccc", "unit_id": "u01-p-00001", "relation": "missing_field", "record_verdict": "irregular", "model": "python", "written_by": "python"},
+        {"item_id": "rec-d", "source_rule_id": "CONV-dddddddddddd", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"}
+      ]}
+    },
+    "t-fail": {
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "stopped", "reached_end": false, "exit_code": 6, "finished_at": "2026-10-27T00:00:00+00:00"},
+      "review_data": {"findings": []}
+    }
+  },
+  "b1": {
+    "t-run": {
+      "s-a": {"label": "refutes", "abstain": false},
+      "s-b": {"label": "Not Enough Info (undecided)", "abstain": false},
+      "s-c": {"label": "supports", "abstain": false},
+      "s-d": {"label": "neutral", "abstain": false}
+    }
+  },
+  "expected": {
+    "B2": {
+      "s-a": ["FLAG", "refutes", "irregular"],
+      "s-b": ["UNDECIDED", "not enough info", "refusal"],
+      "s-c": ["CLEAR", "supports", "silent"],
+      "s-d": ["CLEAR", "supports", "ok"],
+      "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B2 S-2": {
+      "s-a": ["FLAG", "refutes", "irregular"],
+      "s-b": ["UNDECIDED", "not enough info", "refusal"],
+      "s-c": ["CLEAR", "supports", "silent"],
+      "s-d": ["CLEAR", "supports", "ok"],
+      "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B2 S-3": {
+      "s-a": ["FLAG", "refutes", "irregular"],
+      "s-b": ["UNDECIDED", "not enough info", "refusal"],
+      "s-c": ["FLAG", "refutes", "irregular"],
+      "s-d": ["CLEAR", "supports", "ok"],
+      "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B1": {
+      "s-a": ["FLAG", "refutes", "b1_label"],
+      "s-b": ["UNDECIDED", "not enough info", "b1_label"],
+      "s-c": ["CLEAR", "supports", "b1_label"],
+      "s-d": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "s-e": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"]
+    },
+    "B1 S-1": {
+      "s-a": ["FLAG", "refutes", "b1_label"],
+      "s-b": ["UNDECIDED", "not enough info", "b1_label"],
+      "s-c": ["CLEAR", "supports", "b1_label"],
+      "s-d": ["CLEAR", "supports", "s1_parse_failure_as_clear"],
+      "s-e": ["CLEAR", "supports", "s1_parse_failure_as_clear"]
+    }
+  },
+  "expected_detail": {
+    "B2": {"s-a": {"figure_audit_set_aside": 0, "layer": "computed", "cited_unit_ids": ["u01-p-00001"]},
+           "s-c": {"figure_audit_set_aside": 1, "cited_unit_ids": []}},
+    "B2 S-3": {"s-c": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}}
+  },
+  "expected_counts": {
+    "B2": {"items": 5, "silent": 1, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1, "items_with_figure_audit_set_aside": 1, "unattached_figure_audit": 1}
+  }
+}

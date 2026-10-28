@@ -1,0 +1,45 @@
+[
+  {
+    "example_id": "syn-ex-1",
+    "subset": "ie",
+    "split": "testmini",
+    "statement": "Units sold rose from the first to the second quarter.",
+    "explanation": "The table shows 120 units in the first quarter and 140 in the second.",
+    "entailment_label": true,
+    "relevant_context": [1],
+    "report": "ZQX-2024-01-31_10-K.json"
+  },
+  {
+    "example_id": "syn-ex-2",
+    "subset": "numeric",
+    "split": "testmini",
+    "statement": "Units sold in the two quarters total 300.",
+    "explanation": "The two quarters total 260 units.",
+    "python_calculation": "first = 120\nsecond = 140\nanswer = first + second",
+    "execution_result": 260,
+    "entailment_label": false,
+    "relevant_context": [1],
+    "report": "ZQX-2024-01-31_10-K.json"
+  },
+  {
+    "example_id": "syn-ex-3",
+    "subset": "ie",
+    "split": "testmini",
+    "statement": "The company sells two products.",
+    "explaination": "The filing says the company sells one product.",
+    "entailment_label": false,
+    "relevant_context": [0],
+    "report": "ZQX-2024-01-31_10-K.json"
+  },
+  {
+    "example_id": "syn-ex-4",
+    "subset": "knowledge",
+    "split": "testmini",
+    "statement": "Staff numbers did not change over the quarter.",
+    "explanation": "The filing says staff numbers held steady.",
+    "knowledge": "Holding steady means not changing.",
+    "entailment_label": true,
+    "relevant_context": [2],
+    "report": "ZQY-WT-2024-02-29_10-Q.json"
+  }
+]

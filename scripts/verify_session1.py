@@ -12798,6 +12798,62 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
                "scalars/hits brings the false record back")
 
 
+class _BlockingLinePopen:
+    """Stands in for subprocess.Popen inside _run_job (S1: no real pipeline is
+    ever spawned). Unlike _FakePopen (empty stdout, immediate exit), this one
+    yields exactly one [progress] line, then BLOCKS the calling thread's `for
+    line in proc.stdout` on a threading.Event before yielding StopIteration,
+    so the background worker thread genuinely parks with job["status"] ==
+    "running" until the test releases it -- proving "running" is a real,
+    independently-observable state, not an assumption about timing."""
+
+    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
+        self.returncode = returncode
+        self._release = threading.Event()
+        self.stdout = self._lines(progress_line)
+
+    def _lines(self, progress_line):
+        yield progress_line
+        self._release.wait(timeout=10)
+
+    def release(self):
+        self._release.set()
+
+    def wait(self):
+        return self.returncode
+
+
+class _CancellableBlockingPopen(_BlockingLinePopen):
+    """_BlockingLinePopen plus terminate()/kill()/wait(timeout=), the three
+    calls POST /runs/{run_id}/cancel makes on a RUNNING job's subprocess
+    handle (api STEP B2). terminate() and kill() both release the blocked
+    stdout generator (a real terminated/killed process closes its stdout,
+    which is exactly what unblocks _run_job's `for line in proc.stdout` loop
+    today), simulating the child actually exiting in response to the signal
+    rather than the test cheating past _run_job's real control flow.
+    returncode is set to a negative number on terminate/kill (matching a
+    POSIX-signalled process; the exact sign is never asserted on, only that
+    it is NOT run through _status_for_exit_code's table)."""
+
+    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
+        super().__init__(*a, returncode=returncode, progress_line=progress_line, **k)
+        self.terminated = False
+        self.killed = False
+
+    def terminate(self):
+        self.terminated = True
+        self.returncode = -15
+        self._release.set()
+
+    def kill(self):
+        self.killed = True
+        self.returncode = -9
+        self._release.set()
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+
 def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state():
     """api STEP B1: GET /runs/{run_id} (and GET /runs, its list twin) report the
     new run-resource shape end to end, with NO real pipeline subprocess ever
@@ -24788,6 +24844,30 @@ def check_284_prior_refusal_kinds():
     from prior_refusal_checks import check
     return check()
 
+def check_282_baseline_arms_hold_their_contracts():
+    """Loop stage S4f: B2 (benchmark/baselines/python_only.py) makes no model call,
+    imports no model library (fresh subprocess), writes the pipeline's completion
+    record and marks every file an ablation; B1 (bare_model.py) verifies its model once
+    and stops before generating on a load, identity, context or record failure, writes
+    one reply record per item, parses with escape repair or abstains, and sends the
+    preregistered prompt through the one renderer. SKIP when benchmark/baselines/ is
+    absent."""
+    from baseline_checks import check
+    return check()
+
+
+def check_283_benchmark_adapters_follow_the_preregistration():
+    """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
+    items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
+    budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
+    no source id in a bundle; bundles read back as input-format-v1-draft and as
+    pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 refused until section 12 item 9); the
+    metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
+    from adapter_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25154,6 +25234,10 @@ CHECKS = [
      check_280_multi_round_launch_end_to_end),
     ("281 the synthetic generators validate against their own ground truth, and family 4's case manifests agree with the controller",
      check_281_synthetic_generators),
+    ("282 the baseline arms: B2 calls and imports no model, B1 verifies once and records every reply",
+     check_282_baseline_arms_hold_their_contracts),
+    ("283 the benchmark adapters build, cut, split, map and score as the preregistration says",
+     check_283_benchmark_adapters_follow_the_preregistration),
     ("284 every refused change record carries a typed reason_kind kept in review_data.json",
      check_284_prior_refusal_kinds),
 ]

@@ -2,6 +2,14 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## 0.1.0.dev4 (2026-10-28)
+
+- **Adapters for five external benchmarks** (`benchmark/adapters/`: ContractNLI, CUAD, ContraDoc, SciTab, FinDVer), written and labelled by third parties on real documents. Each turns a benchmark item into a test bundle in the published input format, maps Shimmer's run output to the benchmark's label by one written rule, and computes the benchmark's own metric, or the closest honest measure with the reason when Shimmer's output cannot produce it. Standard library only; they run from a copied tree. No benchmark data is committed: it stays in the ignored `external/` folder.
+- **Two baseline tools for the evaluation** (`benchmark/baselines/`). `python_only.py` (B2) runs Shimmer's computing layer with no model call and marks every file it writes as an ablation, not a review. `bare_model.py` (B1) sends the same model one fixed, preregistered prompt per item with the same document and rules, saves every reply, and records one typed label per item.
+- **A preregistration draft and a benchmark selection** (`docs/benchmarks/PREREGISTRATION.md`, `docs/benchmarks/SELECTION.md`): splits, sampling, measures, comparisons and statistics fixed before any holdout is drawn; sample sizes wait for the development runs.
+- **The adapters and baselines now travel to a cloud instance** as named extras of the source archive; their fixtures and checks stay out.
+- Gate checks 282 (the baseline arms) and 283 (the adapters) added.
+
 ## 0.1.0.dev3 (2026-10-28)
 
 - **A published input format and output format (drafts).** `docs/INPUT_FORMAT.md` tells a test preparer everything needed to write a test bundle: documents and units, conventions and their machine directives, the one rule for applying directives, the reference corpus, the answer key with typed reasons, the clean twin, the perturbation probes and how a multi-round case is declared. `docs/OUTPUT_FORMAT.md` tells a scorer what a run folder holds and what each file means. Both are drafts until the sealed evaluation freezes them; every change to a draft is hashed in `docs/loop/VERSIONS.md`.

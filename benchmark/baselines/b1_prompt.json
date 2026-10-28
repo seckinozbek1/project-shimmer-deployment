@@ -1,0 +1,61 @@
+{
+  "source": "docs/benchmarks/PREREGISTRATION.md section 5.4",
+  "status": "draft",
+  "note": "Copied word for word from section 5.4 (revision 3, S4 checker round 2, decision D-039 item 5; revision 2 was checker round 1). Slots are written {name}; the renderer (benchmark/adapters/common/prompt.py) fills each slot once, so text inside a filled slot is never filled again. {undecided_invitation} in the system turn is a space and undecided_invitation for a benchmark whose invite_undecided is true (its rule template asks for UNCERTAIN), and empty for the others. convention_line writes one convention as its heading without the leading # characters, a colon, and its text on one line.",
+  "system": "You are reviewing a document against written rules. You will receive the document, the rules (conventions) that apply to it, any reference material, one item to decide, and the labels you may use. Use the material given; you may use general knowledge to interpret it. In the document, the heading lines (starting with #) and the lines reading Passage: part are markup that divides it into passages, not content; a backslash before a # only keeps a line from being read as a heading, and the bracketed tags after a rule's id only label the rule.\n\nWork through the item first: quote the passages of the document that bear on it, and do any calculation step by step. Then decide which label applies.\n\nEnd your reply with one line holding one JSON object, and write nothing after it:\n{\"item_id\": \"<the item id>\", \"evidence\": \"<the exact sentence or sentences of the document your decision rests on, copied from it>\", \"reason\": \"<one or two sentences naming the part of the material your decision rests on>\", \"label\": \"<one label name from the list>\"}\n\nCopy the label name exactly as it is written before the colon in its line.{undecided_invitation} A rule that says to emit UNCERTAIN means: use the undecided label.",
+  "undecided_invitation": "If the material does not let you decide, use the undecided label named below the list.",
+  "user_template": "DOCUMENT\n{document}\n\nCONVENTIONS\n{conventions}\n\nREFERENCE MATERIAL\n{reference_material}\n\nITEM\nItem id: {item_id}\nRule id: {rule_id}\n{question}\n\nLABELS\n{label_lines}\nThe undecided label is: {undecided_label}",
+  "convention_line": "{heading}: {rule_text}",
+  "benchmarks": {
+    "contradoc": {
+      "question": "Decide whether the document contradicts itself: whether two statements in it cannot both be true.",
+      "labels": [
+        "contradictory: two statements in the document cannot both be true.",
+        "not_contradictory: no two statements in the document conflict.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided",
+      "invite_undecided": false
+    },
+    "cuad": {
+      "question": "Decide whether the document contains a clause of the category this rule describes.",
+      "labels": [
+        "present: the document contains such a clause.",
+        "absent: the document contains no such clause.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided",
+      "invite_undecided": false
+    },
+    "scitab": {
+      "question": "Decide whether the table and its caption support the claim in this rule.",
+      "labels": [
+        "supports: the table and caption show the claim is true.",
+        "refutes: the table and caption show the claim is false.",
+        "not enough info: the table and caption do not settle the claim."
+      ],
+      "undecided": "not enough info",
+      "invite_undecided": true
+    },
+    "findver": {
+      "question": "Decide whether the filing supports the claim in this rule.",
+      "labels": [
+        "entailed: the filing shows the claim is true.",
+        "refuted: the filing shows the claim is false.",
+        "undecided: the material does not let you decide."
+      ],
+      "undecided": "undecided",
+      "invite_undecided": false
+    },
+    "contractnli": {
+      "question": "Decide whether the agreement supports, contradicts or does not settle the hypothesis in this rule.",
+      "labels": [
+        "entailment: the agreement shows the hypothesis is true.",
+        "contradiction: the agreement shows the hypothesis is false.",
+        "not mentioned: the agreement does not settle the hypothesis."
+      ],
+      "undecided": "not mentioned",
+      "invite_undecided": true
+    }
+  }
+}

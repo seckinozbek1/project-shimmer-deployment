@@ -1,0 +1,10 @@
+{
+  "url": "https://filings.example.invalid/Archives/edgar/data/9990000001/999000000124000001/zqx-10k.htm",
+  "report_type": "10-K",
+  "context": [
+    {"id": 0, "context": "The company sells one product.", "type": "paragraph"},
+    {"id": 1, "context": "Units by quarter are shown below.\n\n| Quarter | Units |\n| First | 120 |\n| Second | 140 |\n\nUnits are counted when shipped.", "type": "table"},
+    {"id": 2, "context": "# Outlook\nThe company expects steady demand.", "type": "paragraph"}
+  ],
+  "html_tables": ["<table><tr><td>Quarter</td><td>Units</td></tr><tr><td>First</td><td>120</td></tr><tr><td>Second</td><td>140</td></tr></table>"]
+}
