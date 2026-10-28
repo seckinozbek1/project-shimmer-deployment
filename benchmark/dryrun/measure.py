@@ -32,7 +32,8 @@ hidden states and the key-value cache, are float32.
   attention    sdpa, memory-efficient (B1): no T x T term; one layer's keys and values
                repeated to H heads before the kernel, 2 * H * d * T * 4, and the kernel's
                log-sum-exp, H * P * 4
-               eager (reference only, B3's kernel): H * P * P * (4 + 4) + P * P * 4, one
+               eager (reference only; the producer's training kernel, a measurement setting
+               under D-063, when B1 and B3 both run sdpa): H * P * P * (4 + 4) + P * P * 4, one
                layer's float32 scores and their float32 softmax over the PROMPT (prefill is
                the largest square; a generated token's row is 1 x T), and the float32 mask
   activations  P * (4 * h + 3 * m) * 4                      (hidden states, q/k/v/o and the

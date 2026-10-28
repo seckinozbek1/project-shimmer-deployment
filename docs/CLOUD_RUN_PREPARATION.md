@@ -305,35 +305,38 @@ bundle's seal says `exposed, no manifest`. The sealer refuses to seal
 naming INST_FINDER and SHIMMER_INST_FINDER, using the pipeline's own test read
 from the bound source.
 
-The producer's attention and prefill (D-058, D-060, D-061) are sealed the same way,
+The producer's attention and prefill (D-058, D-061, D-063) are sealed the same way,
 in the manifest's `environment`, and the runner replaces every `SHIMMER_` variable
 with the sealed ones, so the instance's `scripts/final_models.py` loads the producer
 with exactly the sealed values. With nothing set at sealing they are
-`SHIMMER_PRODUCER_ATTENTION=eager`, `SHIMMER_PRODUCER_PREFILL_CHUNK=512` and
-`SHIMMER_PRODUCER_PREFILL_DECISION=D-061` (E): every producer call runs eager and
-feeds its prompt through the KV cache in chunks of 512 tokens, leaving 2 tokens to
-generation, through the one generate helper (`final_models.generate_with_prefill`).
-The models `_load_qwen` loads run sdpa pinned to the memory-efficient backend, one
-shot. Each reply record names the kernel, the chunk size and the decision, and what
-the prefill measured (chunks, tail tokens, prefill seconds). A measurement run is
+`SHIMMER_PRODUCER_ATTENTION=sdpa`, `SHIMMER_PRODUCER_ATTENTION_DECISION=D-063`,
+`SHIMMER_PRODUCER_PREFILL_CHUNK=one_shot` and `SHIMMER_PRODUCER_PREFILL_DECISION=D-063`
+(option A, adopted by D-061's declared fallback in D-063): every producer call runs
+sdpa pinned to the memory-efficient backend and prefills its prompt in one shot,
+through the one generate helper (`final_models.generate_with_prefill`). B1 runs the
+same. The models `_load_qwen` loads run sdpa pinned the same way, one shot. Each
+reply record names the kernel, the prefill and the decisions, and what the prefill
+measured (chunks, tail tokens, prefill seconds). v5 to v12 ran the producer eager
+in one shot, the kernel it was trained and evaluated with. A measurement run is
 sealed otherwise by setting the variables in the sealing shell, each with the
-recorded decision that asks for it, for example sdpa in one shot (D-058's option A):
+recorded decision that asks for it, for example E (eager, chunks of 512 tokens
+through the KV cache, 2 tokens left to generation; D-061):
 
 ```powershell
-$env:SHIMMER_PRODUCER_ATTENTION = 'sdpa'
+$env:SHIMMER_PRODUCER_ATTENTION = 'eager'
 $env:SHIMMER_PRODUCER_ATTENTION_DECISION = 'D-061'
-$env:SHIMMER_PRODUCER_PREFILL_CHUNK = 'one_shot'
+$env:SHIMMER_PRODUCER_PREFILL_CHUNK = '512'
 $env:SHIMMER_PRODUCER_PREFILL_DECISION = 'D-061'
 python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
 Remove-Item Env:SHIMMER_PRODUCER_ATTENTION, Env:SHIMMER_PRODUCER_ATTENTION_DECISION, Env:SHIMMER_PRODUCER_PREFILL_CHUNK, Env:SHIMMER_PRODUCER_PREFILL_DECISION
 ```
 
 The sealer evaluates the bound `final_models.producer_attention` and
-`final_models.producer_prefill` and refuses, in one line, sdpa without a decision,
-an attention decision with eager, one-shot or a chunk size other than 512 without a
-prefill decision, a prefill decision with the default chunk other than D-061, a
-decision that is not `D-NNN`, or any other value; a bound `final_models` from
-before D-061 is refused. The Auditor896 classifier is not governed by these
+`final_models.producer_prefill` (through `attention_setting` and `prefill_setting`)
+and refuses, in one line, eager without a decision, an attention decision with sdpa
+other than D-063, a chunk size without a prefill decision, a prefill decision with
+`one_shot` other than D-063, a decision that is not `D-NNN`, or any other value; a
+bound `final_models` from before D-061 is refused. The Auditor896 classifier is not governed by these
 settings: it loads eager, as its runtime contract says. The report's backend field
 states the sealed attention and prefill (section "Report and binding").
 
@@ -373,15 +376,16 @@ takes no abbreviation, and the sealer refuses an unknown option, a missing value
 a flag with a value, so a checkpoint the instance would refuse is refused at
 sealing instead. The runner's `B1_SEALED_ARGS` lists these options, and a
 controller check holds it, with the runner's own options, equal to the parser's.
-B1 follows the producer (D-060, D-061): its run proper is eager with chunked
-prefill at 512 tokens under D-061, and needs neither option. `--attention` is
-`eager` (the default) or `sdpa`; `sdpa` is accepted only together with
-`--attention-decision D-NNN`, the recorded decision that asks for the measurement
-pass, and `--attention-decision` only with `sdpa`. `--prefill-chunk` is a positive
-number of tokens or `one_shot`; one-shot or a size other than 512 is accepted only
-together with `--prefill-decision D-NNN`, and a `--prefill-decision` with the
-default chunk only when it is `D-061`. The sealer refuses each case `bare_model.py`
-would refuse (a controller check holds the two rules equal case by case).
+B1 follows the producer (D-061, D-063): its run proper is sdpa pinned to the
+memory-efficient backend with one-shot prefill under D-063, and needs neither
+option. `--attention` is `sdpa` (the default) or `eager`; `eager` is accepted only
+together with `--attention-decision D-NNN`, the recorded decision that asks for the
+measurement pass, and `--attention-decision` with `sdpa` only when it is `D-063`.
+`--prefill-chunk` is `one_shot` (the default) or a positive number of tokens (E is
+512); a chunk size is accepted only together with `--prefill-decision D-NNN`, and a
+`--prefill-decision` with `one_shot` only when it is `D-063`. The sealer refuses
+each case `bare_model.py` would refuse (a controller check holds the two rules
+equal case by case).
 
 A pass's `name` is a free label: lower case letters, digits and underscores,
 unique in the bundle. It names the pass's output folder `evidence/b1/<name>`.
@@ -581,37 +585,42 @@ counters were reset, `allocated_at_start_bytes`, which shows it):
 `MODEL_ID`, `REVISION`, `WEIGHTS_SHA256` and `ADAPTER_SHA256` are the producer's
 `model_id`, `revision`, `base_hashes["model.safetensors"]` and
 `files.adapter.sha256` in `config/final_models.json`. L2 was sealed before D-060:
-its passes ran sdpa by default and eager as the measurement. A bundle sealed from
-D-061 on refuses that file (eager is now the default and takes no decision); the
-E evidence run below replaces it. In final mode `scripts/final_models.py` sets
-strict determinism for the whole process, so a `_repeat` pass measures whether a
-pass is byte-identical when run again.
+its passes ran sdpa by default and eager as the measurement. A bundle sealed under
+D-061 refused that file (eager was then the default and took no decision); from
+D-063 on it is admitted again, its unpinned sdpa default now the pinned, one-shot
+default recorded under D-063. In final mode `scripts/final_models.py` sets strict
+determinism for the whole process, so a `_repeat` pass measures whether a pass is
+byte-identical when run again.
 
-#### The E evidence run (D-061 item 4)
+#### The E evidence run (D-061 item 4) and the measurement passes from D-063 on
 
-E is adopted for S8 only on its own evidence (D-060's thresholds: at least 90
-percent of the tuned checkpoint's replies byte-identical with one-shot eager and at
-least 95 percent of labels agreeing). One exposed B1 bundle per development
-document carries the four tuned passes, in this order, and the first bundle also
-carries a replay pass over B3's own producer prompts from the L2 reply records:
+E (eager, chunked prefill) was to be adopted for S8 only on its own evidence
+(D-060's thresholds: at least 90 percent of the tuned checkpoint's replies
+byte-identical with one-shot eager and at least 95 percent of labels agreeing). L3e
+ran it, sealed under D-061 with E as the run proper, and E missed the threshold;
+D-061's declared fallback adopted option A (D-063). A bundle sealed from D-063 on
+refuses L3e's pass file (its one-shot and sdpa passes name decisions the defaults
+no longer take). The same measurements are sealed from D-063 on as one exposed B1
+bundle carrying the four tuned passes, in this order, and a replay pass over B3's
+own producer prompts:
 
 ```json
 [{"name": "tuned", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]},
- {"name": "tuned_one_shot", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--prefill-chunk", "one_shot", "--prefill-decision", "D-061"]},
- {"name": "tuned_sdpa", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "sdpa", "--attention-decision", "D-061", "--prefill-chunk", "one_shot", "--prefill-decision", "D-061"]},
+ {"name": "tuned_eager", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "eager", "--attention-decision", "D-061"]},
+ {"name": "tuned_e", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "eager", "--attention-decision", "D-061", "--prefill-chunk", "512", "--prefill-decision", "D-061"]},
  {"name": "tuned_repeat", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]},
  {"name": "replay", "replay": true, "args": ["--decision", "D-061"]}]
 ```
 
-`tuned` is the run proper (E), `tuned_one_shot` the one-shot eager reference,
-`tuned_sdpa` D-058's option A (sdpa, one shot) for the fallback rule, and
-`tuned_repeat` the determinism check. Each pass records its peak GPU memory and,
-per call, the prefill (chunks, tail tokens, prefill seconds; summed and maximised
-in `b1_summary.json` under `prefill_time`). Compare with `bare_model.py compare`
-(`tuned` against `tuned_one_shot`, `tuned` against `tuned_repeat`, `tuned_sdpa`
-against `tuned_one_shot`). The items of the short documents are under 1,536
-tokens, so the evidence on prompts of at least three chunks comes from the replay
-pass and from the long documents.
+`tuned` is the run proper (option A: sdpa, memory-efficient backend pinned, one
+shot, D-063), `tuned_eager` the one-shot eager reference (the kernel the producer
+was trained with), `tuned_e` E, and `tuned_repeat` the determinism check. Each pass
+records its peak GPU memory and, per call, the prefill (chunks, tail tokens,
+prefill seconds; summed and maximised in `b1_summary.json` under `prefill_time`).
+Compare with `bare_model.py compare` (`tuned` against `tuned_eager`, `tuned`
+against `tuned_repeat`, `tuned_e` against `tuned_eager`). The items of the short
+documents are under 1,536 tokens, so the evidence on prompts of at least three
+chunks comes from the replay pass and from the long documents.
 
 The replay pass runs `benchmark/baselines/replay_prompts.py` on a sealed
 `replay_prompts.json`, written beforehand on the laptop from an earlier run's
@@ -629,8 +638,8 @@ a support file (`replay_prompts.json`, its digest and prompt count in the
 manifest's `b1.replay`), never in the source archive, and the runner refuses a
 replay pass in a sealed run. A replay pass is `{"name", "replay": true, "args"}`;
 its `args` may hold only `--paths` (default `e,one_shot,sdpa,e_repeat`),
-`--decision` (required exactly when a measurement path, `one_shot` or `sdpa`, is
-run) and `--max-new-tokens` (default: each prompt's own recorded allowance); the
+`--decision` (required exactly when a measurement path, `e`, `one_shot` or
+`e_repeat`, is run; `sdpa` is the run proper's setting under D-063) and `--max-new-tokens` (default: each prompt's own recorded allowance); the
 runner sets `--prompts` and `--out`. On the instance it loads the tuned producer
 once and runs every prompt through each path, writing one reply record per prompt
 per path (hashes only) and `evidence/b1/replay/replay_measurement.json`: per path
@@ -719,12 +728,12 @@ separation for a sealed run, and what the result does not show. A field that
 does not apply says why. `--batch` writes one report per batch run folder.
 
 The backend field names the producer's sealed attention and prefill (D-058,
-D-060, D-061): for the default, "producer eager, the kernel it was trained and
-evaluated with (D-060), prefilled in chunks of 512 tokens through the KV cache, 2
-tokens left to generation (E, D-061); differs from v5 to v12, which prefilled in
-one shot"; the decision for a measurement run (sdpa, one-shot or another chunk
-size); "sealed under D-058" for a bundle sealed sdpa by default before D-060; and
-"sealed before D-058" (eager, one shot) for an older bundle. The row "Execution
+D-060, D-061, D-063): for the default, "producer and B1 sdpa, prefilled in one
+shot, memory-efficient backend pinned (D-063); differs from v5 to v12, which ran
+the producer eager"; the decision for a measurement run (eager, or a chunk size);
+"the default before D-063" for a bundle sealed under D-061 (eager, chunks of 512);
+"sealed under D-058" for a bundle sealed sdpa by default before D-060; and "sealed
+before D-058" (eager, one shot) for an older bundle. The row "Execution
 assessment" states the runner's assessment: passed, or each reason in words; a
 run that reached its end with exit 0 but whose completion record marks the
 semantic work incomplete is `semantic_incomplete` (D-061 (b)), never
@@ -763,7 +772,9 @@ condition 6 changed it again (passes with a checkpoint, the attention options), 
 every bundle sealed before that change refuses the same way too. D-061 changed it
 again (eager by default, the prefill options, replay passes, `semantic_incomplete`),
 so every bundle sealed before D-061, L2's included, refuses the same way and must be
-sealed again.
+sealed again. D-063 changed it again (the B1 rule and the replay paths follow the
+sdpa one-shot default), so every bundle sealed before D-063, L3e's included,
+refuses the same way and must be sealed again.
 
 The rehearsal (`tools/ordinary_final_rehearsal.py`) launches the same way against
 its mocked provider: each rehearsal bundle gets a fresh ledger of its own,

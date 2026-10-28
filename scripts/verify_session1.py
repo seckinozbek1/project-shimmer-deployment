@@ -24857,17 +24857,18 @@ def check_282_baseline_arms_hold_their_contracts():
 
 
 def check_288_b3_local_attention_is_pinned_and_recorded():
-    """Loop stage S5, D-058, D-060 and D-061: B3 ran out of GPU memory on a ContraDoc document
-    (INC-015). L2's evidence kept the producer eager (D-060), so E replaces the kernel change:
-    the producer loads with a sealed attention setting (eager by default, sdpa only with a
-    recorded decision) and a sealed prefill setting (chunked at 512 tokens under D-061, one-shot
-    or another size only with a recorded decision); every producer call is prefilled in chunks
-    through the one shared generate helper, leaving 2 tokens to generate(); every _load_qwen
-    call runs pinned to the memory-efficient sdpa backend on CUDA; each records its kernel and
-    prefill in its reply record; the Auditor896 classifier stays eager as its runtime contract
-    says; out of memory or a refused kernel is one named failure never retried; a prompt over
-    the model's context is refused and recorded, never truncated. Mocked models and one tiny
-    CPU model built in the check (three chunks and the tail reply byte for byte as one-shot)."""
+    """Loop stage S5, D-058, D-060, D-061 and D-063: B3 ran out of GPU memory on a ContraDoc
+    document (INC-015). E (eager, chunked prefill) missed its declared threshold and D-061's
+    declared fallback adopted option A (D-063): the producer loads with a sealed attention
+    setting (sdpa by default under D-063, eager only with a recorded decision) and a sealed
+    prefill setting (one shot by default under D-063, chunked only with a recorded decision);
+    every producer call runs through the one shared generate helper, pinned to the
+    memory-efficient sdpa backend on CUDA, as every _load_qwen call does; each records its
+    kernel and prefill in its reply record; the Auditor896 classifier stays eager as its
+    runtime contract says; out of memory or a refused kernel is one named failure never
+    retried; a prompt over the model's context is refused and recorded, never truncated. Mocked
+    models and one tiny CPU model built in the check (an eager measurement call of three chunks
+    and the tail replies byte for byte as one-shot)."""
     from local_attention_checks import check
     return check()
 
@@ -25303,7 +25304,7 @@ CHECKS = [
      check_286_negotiation_dev_case_is_a_valid_live_case),
     ("287 built benchmark bundles stage as the sealer's workload with no key file",
      check_287_built_bundles_stage_as_the_sealers_workload),
-    ("288 B3's producer runs eager with sealed chunked prefill (E), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061)",
+    ("288 B3's producer runs sdpa pinned with sealed one-shot prefill (D-063), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061, D-063)",
      check_288_b3_local_attention_is_pinned_and_recorded),
     ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
      check_289_l2_diagnosis_fixes_hold),

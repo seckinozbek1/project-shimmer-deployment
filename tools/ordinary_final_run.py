@@ -173,40 +173,44 @@ def b1_option_values(args, table=None):
     return values
 
 
-# D-060 and D-061: B1's run proper is eager with chunked prefill at 512 tokens under D-061
-# (bare_model.attention_record, final_models.prefill_setting); sdpa, one-shot prefill or
-# another chunk size is a measurement pass and needs its recorded decision. Stated here so the
-# seal refuses what the instance would without importing the model code; a controller check
-# holds this rule equal to bare_model's on a table of cases.
-B1_PREFILL_DEFAULT = ('512', 'D-061')
+# D-063 (D-061's declared fallback): B1's run proper is sdpa, pinned to the memory-efficient
+# backend, prefilled in one shot, both under D-063 (bare_model.attention_record,
+# final_models.attention_setting and prefill_setting); eager or chunked prefill is a
+# measurement pass and needs its recorded decision. Stated here so the seal refuses what the
+# instance would without importing the model code; a controller check holds this rule equal
+# to bare_model's on a table of cases.
+B1_ATTENTION_DEFAULT = ('sdpa', 'D-063')
+B1_PREFILL_DEFAULT = ('one_shot', 'D-063')
 B1_DECISION = re.compile(r'D-\d{3}')
 
 
 def b1_attention_error(args):
     """None, or a one-line reason when a pass's attention or prefill would be refused by
-    bare_model (attention_record): sdpa only with --attention-decision, and
-    --attention-decision only with sdpa (D-056 condition 6 as D-060 amends it); one-shot or
-    another chunk size only with --prefill-decision, and a --prefill-decision naming the
-    default chunk only when it is the default's own (D-061), so the seal refuses what the
-    instance would."""
+    bare_model (attention_record): eager only with --attention-decision, and an
+    --attention-decision with sdpa only when it is the default's own (D-063); chunked prefill
+    only with --prefill-decision, and a --prefill-decision with one_shot only when it is the
+    default's own (D-063), so the seal refuses what the instance would."""
     values = b1_option_values(args)
-    if values.get('--attention', 'eager') not in ('sdpa', 'eager'):
+    attention = values.get('--attention', B1_ATTENTION_DEFAULT[0])
+    if attention not in ('sdpa', 'eager'):
         return 'A B1 pass names an attention bare_model does not take (eager or sdpa)'
-    sdpa = values.get('--attention') == 'sdpa'
-    if sdpa != ('--attention-decision' in values):
-        return 'A B1 pass runs sdpa only with --attention-decision, and names a decision only with sdpa'
-    if sdpa and not B1_DECISION.fullmatch(str(values['--attention-decision'])):
+    attention_decision = values.get('--attention-decision')
+    if attention_decision is not None and not B1_DECISION.fullmatch(str(attention_decision)):
         return 'A B1 pass names an attention decision that is no recorded decision (D-NNN)'
+    if attention == B1_ATTENTION_DEFAULT[0] and attention_decision not in (None, B1_ATTENTION_DEFAULT[1]):
+        return 'A B1 pass names an attention decision only with eager'
+    if attention != B1_ATTENTION_DEFAULT[0] and attention_decision is None:
+        return 'A B1 pass runs eager only with --attention-decision'
     chunk, decision = values.get('--prefill-chunk'), values.get('--prefill-decision')
     if chunk is not None and chunk != 'one_shot' and not (chunk.isdigit() and int(chunk) > 0):
         return 'A B1 pass names a prefill chunk bare_model does not take (a positive number of tokens or one_shot)'
     if decision is not None and not B1_DECISION.fullmatch(str(decision)):
         return 'A B1 pass names a prefill decision that is no recorded decision (D-NNN)'
-    default = chunk is None or (chunk.isdigit() and int(chunk) == int(B1_PREFILL_DEFAULT[0]))
+    default = chunk is None or chunk == B1_PREFILL_DEFAULT[0]
     if default and decision not in (None, B1_PREFILL_DEFAULT[1]):
-        return 'A B1 pass names a prefill decision only with one_shot or another chunk size'
+        return 'A B1 pass names a prefill decision only with a chunk size'
     if not default and decision is None:
-        return 'A B1 pass prefills in one shot or another chunk size only with --prefill-decision'
+        return 'A B1 pass prefills in chunks only with --prefill-decision'
     return None
 
 
@@ -231,7 +235,7 @@ REPLAY_PROMPTS = 'replay_prompts.json'
 REPLAY_MEASUREMENT = 'replay_measurement.json'
 REPLAY_RUNNER_ARGS = ('--prompts', '--out')
 REPLAY_SEALED_ARGS = {'--paths': True, '--decision': True, '--max-new-tokens': True}
-REPLAY_PATHS = {'e': False, 'one_shot': True, 'sdpa': True, 'e_repeat': False}
+REPLAY_PATHS = {'e': True, 'one_shot': True, 'sdpa': False, 'e_repeat': True}
 REPLAY_DEFAULT_PATHS = ('e', 'one_shot', 'sdpa', 'e_repeat')
 
 
@@ -252,7 +256,7 @@ def replay_error(args):
         return 'A replay pass names its paths once each, from ' + ', '.join(REPLAY_PATHS)
     measurement = any(REPLAY_PATHS[p] for p in paths)
     if measurement != ('--decision' in values):
-        return 'A replay pass names --decision exactly when it runs a measurement path (one_shot or sdpa)'
+        return 'A replay pass names --decision exactly when it runs a measurement path (e, one_shot or e_repeat)'
     if measurement and not B1_DECISION.fullmatch(str(values['--decision'])):
         return 'A replay pass names a decision that is no recorded decision (D-NNN)'
     return None
