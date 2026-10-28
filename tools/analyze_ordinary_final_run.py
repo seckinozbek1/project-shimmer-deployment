@@ -35,30 +35,64 @@ B1_COUNTS=('items','parsed','abstain','undecided','backend_failures','repaired',
 
 
 def b1_models(status):
-    """The B1 'Models and checkpoints' row: each sealed checkpoint's model, digest and adapter."""
+    """The B1 'Models and checkpoints' row: each sealed pass's model, digest and adapter (and
+    the checkpoint it loaded when the pass's name is not that checkpoint's)."""
     parts=[]
     for name,seen in status['b1_checkpoints'].items():
         if not seen['summary_written']:
             parts.append('%s: no b1_summary.json collected'%name)
             continue
-        parts.append('%s: %s, digest %s, adapter %s'%(name,seen['model_id'],seen['digest'],
+        label=name if seen.get('checkpoint') in (None,name) else '%s (checkpoint %s)'%(name,seen['checkpoint'])
+        parts.append('%s: %s, digest %s, adapter %s'%(label,seen['model_id'],seen['digest'],
                      'applied' if seen['adapter_applied'] else 'not applied'))
     return '; '.join(parts) or 'no checkpoint sealed'
 
 
+def gib(value):
+    return '%.2f GiB'%(value/2**30)
+
+
+def b1_measures_text(seen):
+    """A pass's attention and peak GPU memory (D-056 condition 6), as its summary recorded them."""
+    attention=seen.get('attention_implementation') or 'not recorded'
+    if seen.get('attention_decision'):
+        attention+=' (measurement pass, %s)'%seen['attention_decision']
+    memory=seen.get('gpu_memory')
+    if not isinstance(memory,dict):
+        peak='peak GPU memory not recorded'
+    elif not memory.get('measured'):
+        peak='peak GPU memory not measured (no CUDA)'
+    else:
+        peak='peak GPU memory %s allocated, %s reserved'%(gib(memory['peak_allocated_bytes']),
+                                                          gib(memory['peak_reserved_bytes']))
+    return 'attention %s, %s'%(attention,peak)
+
+
 def b1_counts(status):
-    """The B1 'B1 checkpoints' row: per checkpoint, the runner's exit code and the counts."""
+    """The B1 'B1 checkpoints' row: per sealed pass, the runner's exit code, the counts, the
+    attention and the peak GPU memory."""
     parts=[]
     for name,seen in status['b1_checkpoints'].items():
-        counts=', '.join('%s %s'%(k.replace('_',' '),seen['counts'].get(k)) for k in B1_COUNTS) if seen['summary_written'] \
-            else 'no b1_summary.json collected'
+        counts=', '.join('%s %s'%(k.replace('_',' '),seen['counts'].get(k)) for k in B1_COUNTS)+', '+b1_measures_text(seen) \
+            if seen['summary_written'] else 'no b1_summary.json collected'
         parts.append('%s (exit %s): %s'%(name,seen['exit_code'],counts))
     return '; '.join(parts) or 'no checkpoint sealed'
 
 
+def b1_pass_measures(summary):
+    """What a pass's b1_summary.json says it loaded and measured: the checkpoint, the attention
+    (and the decision of a measurement pass) and the peak GPU memory. Counts and names only."""
+    summary=summary or {}
+    attention=summary.get('attention') or {}
+    return dict(checkpoint=(summary.get('reader') or {}).get('checkpoint') or (summary.get('checkpoint') or {}).get('checkpoint'),
+                attention_implementation=attention.get('attention_implementation'),
+                attention_decision=attention.get('attention_decision'),gpu_memory=summary.get('gpu_memory'))
+
+
 def b1_checkpoint_status(manifest,target,result):
-    """Per sealed checkpoint, in sealed order: its exit code from the runner's assessment and
-    the counts of its collected b1_summary.json, summed over the benchmarks it holds."""
+    """Per sealed pass, in sealed order and by its name: its exit code from the runner's
+    assessment, the counts of its collected b1_summary.json, summed over the benchmarks it
+    holds, and what the summary measured (b1_pass_measures)."""
     seen={}
     for entry in (manifest.get('b1') or {}).get('checkpoints') or []:
         name=entry['name']
@@ -70,7 +104,8 @@ def b1_checkpoint_status(manifest,target,result):
         seen[name]=dict(summary_written=summary is not None,
             exit_code=(((result or {}).get('checkpoints') or {}).get(name) or {}).get('exit_code'),
             model_id=loaded.get('model_id'),digest=loaded.get('digest'),adapter_applied=checkpoint.get('adapter_applied'),
-            counts={k:sum(int(r.get(k) or 0) for r in per_benchmark) for k in B1_COUNTS})
+            counts={k:sum(int(r.get(k) or 0) for r in per_benchmark) for k in B1_COUNTS},
+            **b1_pass_measures(summary))
     return seen
 
 

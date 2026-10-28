@@ -138,11 +138,16 @@ def argv_for(manifest):
 # The arm a bundle runs (S5 R2, R19): B3 is the full pipeline, B1 the bare-model baseline
 # (benchmark/baselines/bare_model.py) on the same document. The sealer writes `arm` into every
 # manifest; a manifest sealed before it carries none and is a B3 bundle. A B1 bundle carries
-# `b1`: its sealed checkpoints (each a name and the bare_model arguments that pin it) and the
-# item ids of its one document, read from the sealed items.json.
+# `b1`: its sealed passes (each a name, optionally the checkpoint it loads, and the bare_model
+# arguments that pin it) and the item ids of its one document, read from the sealed items.json.
+# A pass's name is a free label (lower case, digits, underscore; unique in the bundle) and its
+# output folder; a pass sealed without `checkpoint` loads the checkpoint its name names, as
+# every pass did before D-056 condition 6 (so `base` and `tuned` keep their meaning).
 ARMS = ('B3', 'B1')
 B1_ITEMS = 'items.json'
-B1_NAME = re.compile(r'[a-z0-9][a-z0-9_-]{0,31}')
+B1_NAME = re.compile(r'[a-z0-9][a-z0-9_]{0,31}')
+# The checkpoints bare_model.py loads (its --checkpoint choices; a controller check holds them equal).
+B1_CHECKPOINT_NAMES = ('tuned', 'base')
 # Arguments the runner sets itself for every checkpoint; a sealed checkpoint never carries them.
 B1_RUNNER_ARGS = ('--bundle', '--items', '--out', '--checkpoint', '--development')
 # Every other option bare_model.py's parser takes (benchmark/baselines/bare_model.py
@@ -151,7 +156,42 @@ B1_RUNNER_ARGS = ('--bundle', '--items', '--out', '--checkpoint', '--development
 # B1_RUNNER_ARGS equal to the parser's own options (S5 join).
 B1_SEALED_ARGS = {'--agent': True, '--profile': True, '--max-new-tokens': True, '--expect-model-id': True,
                   '--expect-digest': True, '--expect-decoding': True, '--sensitive': False,
-                  '--prefill-chunk': True, '--prefill-decision': True}
+                  '--prefill-chunk': True, '--prefill-decision': True,
+                  '--attention': True, '--attention-decision': True}
+
+
+def b1_option_values(args):
+    """{option: value} of a well-formed sealed argument list (b1_argument_error is None)."""
+    values, k = {}, 0
+    while k < len(args):
+        option, joined, value = args[k].partition('=')
+        if B1_SEALED_ARGS.get(option) and not joined:
+            value, k = args[k + 1], k + 1
+        values[option] = value if B1_SEALED_ARGS.get(option) else True
+        k += 1
+    return values
+
+
+def b1_attention_error(args):
+    """None, or a one-line reason when a pass's attention would be refused by bare_model
+    (attention_record): eager only with --attention-decision, and --attention-decision only
+    with eager (D-056 condition 6), so the seal refuses what the instance would."""
+    values = b1_option_values(args)
+    if values.get('--attention', 'sdpa') not in ('sdpa', 'eager'):
+        return 'A B1 pass names an attention bare_model does not take (sdpa or eager)'
+    eager = values.get('--attention') == 'eager'
+    if eager != ('--attention-decision' in values):
+        return 'A B1 pass runs eager only with --attention-decision, and names a decision only when eager'
+    return None
+
+
+def b1_pass_checkpoint(entry):
+    """The checkpoint a sealed pass loads: its `checkpoint`, or its name for a pass sealed
+    without one (the meaning every pass had before D-056 condition 6). Refused unless it is one
+    bare_model.py loads."""
+    checkpoint = entry.get('checkpoint', entry.get('name'))
+    require(checkpoint in B1_CHECKPOINT_NAMES, 'A B1 pass names no checkpoint bare_model loads (tuned or base)')
+    return checkpoint
 
 
 def b1_argument_error(args):
@@ -179,18 +219,22 @@ def arm_of(manifest):
 
 
 def b1_checkpoints(manifest):
-    """The sealed B1 checkpoints, validated: [{name, args}], at least one, names unique."""
+    """The sealed B1 passes, validated: [{name, checkpoint?, args}], at least one, names
+    unique, each loading a checkpoint bare_model loads (b1_pass_checkpoint) with arguments
+    bare_model takes and an attention it accepts."""
     b1 = manifest.get('b1')
     require(isinstance(b1, dict) and isinstance(b1.get('checkpoints'), list) and b1['checkpoints'],
             'B1 declared without its sealed checkpoints')
     names = []
     for entry in b1['checkpoints']:
-        require(isinstance(entry, dict) and set(entry) == {'name', 'args'} and isinstance(entry['name'], str)
+        require(isinstance(entry, dict) and set(entry) in ({'name', 'args'}, {'name', 'checkpoint', 'args'})
+                and isinstance(entry['name'], str)
                 and B1_NAME.fullmatch(entry['name']) and isinstance(entry['args'], list)
                 and all(isinstance(a, str) for a in entry['args']), 'B1 checkpoint needs a name and its arguments')
+        b1_pass_checkpoint(entry)
         require(not any(a.split('=', 1)[0] in B1_RUNNER_ARGS for a in entry['args']),
                 'A B1 checkpoint carries an argument the runner sets')
-        error = b1_argument_error(entry['args'])
+        error = b1_argument_error(entry['args']) or b1_attention_error(entry['args'])
         require(error is None, error or '')
         names.append(entry['name'])
     require(len(set(names)) == len(names), 'B1 checkpoint names repeat')
@@ -511,17 +555,17 @@ def load_bare_model(project):
 
 
 def b1_argv(base, project, out, checkpoint):
-    """bare_model.main's arguments for one checkpoint: the bundle is the sealed workload as the
+    """bare_model.main's arguments for one sealed pass: the bundle is the sealed workload as the
     pipeline would read it (project/input: context/ with its targets file, and conventions/),
-    the item table is the sealed items.json, the output is the checkpoint's own folder, then the
-    checkpoint's name and the arguments sealed with it."""
+    the item table is the sealed items.json, the output is the pass's own folder, then the
+    checkpoint the pass loads (b1_pass_checkpoint) and the arguments sealed with it."""
     return ['--bundle', str(Path(project)/'input'), '--items', str(Path(base)/B1_ITEMS), '--out', str(out),
-            '--checkpoint', checkpoint['name'], *checkpoint['args']]
+            '--checkpoint', b1_pass_checkpoint(checkpoint), *checkpoint['args']]
 
 
 def run_b1(base, manifest, project, evidence):
-    """Run B1 once per sealed checkpoint, in order, each into evidence/b1/<name>; returns
-    {name: exit code}. A checkpoint that raises is recorded and the next one still runs."""
+    """Run B1 once per sealed pass, in order, each into evidence/b1/<name>; returns
+    {name: exit code}. A pass that raises is recorded and the next one still runs."""
     module = load_bare_model(project)
     checkpoints = b1_checkpoints(manifest)
     root = Path(evidence)/'b1'

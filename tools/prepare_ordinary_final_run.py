@@ -246,7 +246,8 @@ def b1_fields(items, targets, checkpoints):
     """The sealed B1 declaration (S5 R2): the checkpoints, the items of the bundle's ONE
     document (its target's file stem, the id bare_model.py reads it under), and the items.json
     digest. `items` is the bytes of the adapter's items.json, `targets` the workload's
-    _review_targets.json bytes, `checkpoints` [{name, args}]. Nothing of an item but its id."""
+    _review_targets.json bytes, `checkpoints` the passes [{name, checkpoint?, args}] (a pass
+    without `checkpoint` loads the one its name names). Nothing of an item but its id."""
     targets = json.loads(targets.decode('utf-8')).get('targets') or []
     require(len(targets) == 1, 'A B1 bundle names exactly one document under review')
     document = Path(targets[0]).stem
@@ -488,7 +489,8 @@ if __name__ == '__main__':
     parser.add_argument('--arm',choices=('B3','B1'),default='B3',help='the arm this bundle runs (B1: bare_model.py)')
     parser.add_argument('--items',type=Path,default=None,help="B1: the adapter's items.json (ids, no gold)")
     parser.add_argument('--b1-checkpoints',type=Path,default=None,
-                        help='B1: JSON list of {"name", "args"}, run in order, each into its own folder')
+                        help='B1: JSON list of passes {"name", "checkpoint", "args"} ("checkpoint" tuned or base, '
+                             'the name when omitted), run in order, each into evidence/b1/<name>')
     args = parser.parse_args()
     prepare(args.output_dir, args.source_commit, args.reuse_assets,
             budget=dict(ledgers=args.ledger, forecast_minutes=args.forecast_minutes,
