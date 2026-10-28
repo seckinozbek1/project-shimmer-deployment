@@ -645,25 +645,7 @@ def main(argv=None):
             return 4
         print(json.dumps(result["benchmarks"], indent=2))
         return 0
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--bundle", required=True)
-    parser.add_argument("--items", required=True, help="items.json written beside the bundle")
-    parser.add_argument("--out", required=True)
-    parser.add_argument("--agent", default=READING_AGENT,
-                        help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
-    parser.add_argument("--profile", choices=["local", "registry"], default="local")
-    parser.add_argument("--checkpoint", choices=list(CHECKPOINTS), default=None,
-                        help="final mode: the tuned producer (default) or its pinned base without "
-                             "the adapter; base mode: base only")
-    parser.add_argument("--max-new-tokens", type=int, default=None)
-    parser.add_argument("--expect-model-id")
-    parser.add_argument("--expect-digest")
-    parser.add_argument("--expect-decoding", help="the decoding kwargs as a JSON object")
-    parser.add_argument("--development", action="store_true",
-                        help="development run: the recorded values may be omitted (recorded)")
-    parser.add_argument("--sensitive", action="store_true",
-                        help="keep only hashes of prompts, replies, evidence and reason")
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
     expected = {}
     if args.expect_model_id:
         expected["model_id"] = args.expect_model_id
@@ -681,6 +663,32 @@ def main(argv=None):
         return 4
     print(json.dumps(result["benchmarks"], indent=2))
     return 0
+
+
+def build_parser():
+    """The run's argument parser, the one main() parses with. The ordinary final runner seals
+    a checkpoint's arguments against exactly these options (tools/ordinary_final_run.py
+    B1_RUNNER_ARGS and B1_SEALED_ARGS; a controller check holds the two equal). No option is
+    taken by an abbreviation, so a sealed argument means here exactly what the seal admitted."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], allow_abbrev=False)
+    parser.add_argument("--bundle", required=True)
+    parser.add_argument("--items", required=True, help="items.json written beside the bundle")
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--agent", default=READING_AGENT,
+                        help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
+    parser.add_argument("--profile", choices=["local", "registry"], default="local")
+    parser.add_argument("--checkpoint", choices=list(CHECKPOINTS), default=None,
+                        help="final mode: the tuned producer (default) or its pinned base without "
+                             "the adapter; base mode: base only")
+    parser.add_argument("--max-new-tokens", type=int, default=None)
+    parser.add_argument("--expect-model-id")
+    parser.add_argument("--expect-digest")
+    parser.add_argument("--expect-decoding", help="the decoding kwargs as a JSON object")
+    parser.add_argument("--development", action="store_true",
+                        help="development run: the recorded values may be omitted (recorded)")
+    parser.add_argument("--sensitive", action="store_true",
+                        help="keep only hashes of prompts, replies, evidence and reason")
+    return parser
 
 
 if __name__ == "__main__":
