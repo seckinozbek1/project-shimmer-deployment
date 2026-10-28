@@ -135,6 +135,71 @@ def argv_for(manifest):
     return MULTI_ROUND_ARGV if manifest.get('multi_round') is True else ARGV
 
 
+# The arm a bundle runs (S5 R2, R19): B3 is the full pipeline, B1 the bare-model baseline
+# (benchmark/baselines/bare_model.py) on the same document. The sealer writes `arm` into every
+# manifest; a manifest sealed before it carries none and is a B3 bundle. A B1 bundle carries
+# `b1`: its sealed checkpoints (each a name and the bare_model arguments that pin it) and the
+# item ids of its one document, read from the sealed items.json.
+ARMS = ('B3', 'B1')
+B1_ITEMS = 'items.json'
+B1_NAME = re.compile(r'[a-z0-9][a-z0-9_-]{0,31}')
+# Arguments the runner sets itself for every checkpoint; a sealed checkpoint never carries them.
+B1_RUNNER_ARGS = ('--bundle', '--items', '--out', '--checkpoint', '--development')
+
+
+def arm_of(manifest):
+    arm = manifest.get('arm', 'B3')
+    require(arm in ARMS, 'Unknown arm in the manifest')
+    return arm
+
+
+def b1_checkpoints(manifest):
+    """The sealed B1 checkpoints, validated: [{name, args}], at least one, names unique."""
+    b1 = manifest.get('b1')
+    require(isinstance(b1, dict) and isinstance(b1.get('checkpoints'), list) and b1['checkpoints'],
+            'B1 declared without its sealed checkpoints')
+    names = []
+    for entry in b1['checkpoints']:
+        require(isinstance(entry, dict) and set(entry) == {'name', 'args'} and isinstance(entry['name'], str)
+                and B1_NAME.fullmatch(entry['name']) and isinstance(entry['args'], list)
+                and all(isinstance(a, str) for a in entry['args']), 'B1 checkpoint needs a name and its arguments')
+        require(not any(a.split('=', 1)[0] in B1_RUNNER_ARGS for a in entry['args']),
+                'A B1 checkpoint carries an argument the runner sets')
+        names.append(entry['name'])
+    require(len(set(names)) == len(names), 'B1 checkpoint names repeat')
+    return b1['checkpoints']
+
+
+def b1_item_ids(manifest):
+    ids = (manifest.get('b1') or {}).get('item_ids')
+    require(isinstance(ids, list) and ids and all(isinstance(i, str) and i for i in ids) and len(set(ids)) == len(ids),
+            'B1 declared without its item ids')
+    return ids
+
+
+def arm_declaration(manifest):
+    """The arm, or a one-line refusal: a B1 bundle carries its checkpoints, its item ids and
+    the sealed items.json and is never multi-round; a B3 bundle carries none of them."""
+    arm = arm_of(manifest)
+    support = manifest.get('support_files', {})
+    if arm == 'B1':
+        b1_checkpoints(manifest)
+        b1_item_ids(manifest)
+        require(manifest.get('multi_round') is False, 'A B1 bundle is never multi-round')
+        require(isinstance(support.get(B1_ITEMS), str) and support[B1_ITEMS] == manifest['b1'].get('items_sha256'),
+                'B1 declared without its sealed items.json')
+    else:
+        require('b1' not in manifest and B1_ITEMS not in support, 'B1 fields sealed in a B3 bundle')
+    return arm
+
+
+def admit_arm(manifest, permit):
+    """The arm the launch plan ran this bundle as (written into its authorization by the
+    controller) must equal the arm it was sealed with; an authorization naming no arm is a B3
+    authorization, so a B1 bundle is never run on one."""
+    require(permit.get('arm', 'B3') == arm_of(manifest), 'Arm authorization mismatch')
+
+
 def admit_workload(manifest, seal, base=None):
     """Replaces the old blanket refusal ('Excluded workload') of multi-round and protected
     tests: each is admitted exactly when it is DECLARED in the manifest, SEALED (bound by a
@@ -171,7 +236,8 @@ def admit_workload(manifest, seal, base=None):
         require('case_manifest_sha256' not in manifest and CASE_MANIFEST not in support,
                 'Case manifest sealed without a multi-round declaration')
     require(manifest['argv'] == argv_for(manifest), 'Run flags changed')
-    return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure)
+    arm = arm_declaration(manifest)
+    return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure, arm=arm)
 
 
 def verify(base):
@@ -234,6 +300,7 @@ def authorization(base, manifest, permit, now=None):
     require(permit.get('soft_budget_usd') == manifest['soft_budget_usd'] and
             permit.get('hard_ceiling_usd') == manifest['hard_ceiling_usd'], 'Budget authorization mismatch')
     require(permit.get('multi_round') == manifest['multi_round'], 'Workload authorization mismatch')
+    admit_arm(manifest, permit)
     candidate = selected_candidate(manifest, permit)
     require(permit.get('provider') == 'Lambda' and isinstance(permit.get('region'), str)
             and re.fullmatch(r'[a-z]+-[a-z]+-[0-9]+', permit['region']), 'Instance authorization mismatch')
@@ -246,11 +313,59 @@ def authorization(base, manifest, permit, now=None):
             'Insufficient execution/collection reserve')
 
 
-def assess(completion, raw, multi_round=None):
+def b1_observation(folder, item_ids):
+    """What one B1 checkpoint left in its own output folder: its reply records
+    (audit/model_replies, one file per call, reply_records.write) and its labels (one per item,
+    each naming the call id of its reply). Counts and ids only, never a reply's text."""
+    folder = Path(folder)
+    records = {}
+    replies = folder/'audit'/'model_replies'
+    if replies.is_dir():
+        for path in sorted(replies.glob('*.json')):
+            try:
+                call = read(path).get('call_id')
+            except (OSError, ValueError, AttributeError):
+                call = None
+            records[path.name] = call
+    calls = [c for c in records.values() if c]
+    missing = []
+    for item in item_ids:
+        try:
+            call = read(folder/'labels'/(item+'.json')).get('call_id')
+        except (OSError, ValueError, AttributeError):
+            call = None
+        if not call or calls.count(call) != 1:
+            missing.append(item)
+    return dict(items=len(item_ids), reply_records=len(records), items_without_one_record=missing,
+                summary_written=(folder/'b1_summary.json').is_file())
+
+
+def assess_b1(checkpoints):
+    """A B1 entry's health: every sealed checkpoint returned 0 and left exactly one reply record
+    per item in its own folder, and no other record. No pipeline marker is asked for."""
+    reasons = []
+    if not checkpoints:
+        reasons.append('b1_no_checkpoint_ran')
+    for name, seen in sorted((checkpoints or {}).items()):
+        if seen.get('exit_code') != 0:
+            reasons.append('b1_checkpoint_failed:'+name)
+        if seen.get('items_without_one_record') or not seen.get('items'):
+            reasons.append('b1_reply_record_missing:'+name)
+        if seen.get('reply_records') != seen.get('items'):
+            reasons.append('b1_reply_record_count:'+name)
+    return {'execution_integrity_passed': not reasons, 'reasons': reasons, 'arm': 'B1',
+            'checkpoints': checkpoints or {}, 'failed_backend_attempts': None,
+            'collection_and_teardown_pending': True, 'quality_claim': None}
+
+
+def assess(completion, raw, multi_round=None, arm='B3', b1=None):
     """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
     record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
     reviewed, a Python round review recorded (`round_review.availability`);
-    quality is reported separately and is never a pass."""
+    quality is reported separately and is never a pass. A B1 entry is assessed on its own
+    records (assess_b1, `b1` maps each checkpoint to its observation and exit code)."""
+    if arm == 'B1':
+        return assess_b1(b1)
     reasons = []
     if multi_round is not None:
         if not (isinstance(multi_round, dict) and multi_round.get('outcome') == 'reviewed'):
@@ -349,6 +464,78 @@ def hardware_admission(base, torch, psutil, candidate):
     return value
 
 
+BARE_MODEL = 'benchmark/baselines/bare_model.py'
+
+
+def load_bare_model(project):
+    """benchmark/baselines/bare_model.py of the sealed project, imported in THIS process, so the
+    budget stop's os._exit(124) and the controller's cleanup (which stops processes named
+    ordinary_final_run.py) stop it as they stop the pipeline. The pipeline is never imported."""
+    path = (Path(project)/BARE_MODEL).resolve()
+    loaded = sys.modules.get('bare_model')
+    if loaded is not None and Path(getattr(loaded, '__file__', '')).resolve() == path:
+        return loaded
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('bare_model', path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules['bare_model'] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def b1_argv(base, project, out, checkpoint):
+    """bare_model.main's arguments for one checkpoint: the bundle is the sealed workload as the
+    pipeline would read it (project/input: context/ with its targets file, and conventions/),
+    the item table is the sealed items.json, the output is the checkpoint's own folder, then the
+    checkpoint's name and the arguments sealed with it."""
+    return ['--bundle', str(Path(project)/'input'), '--items', str(Path(base)/B1_ITEMS), '--out', str(out),
+            '--checkpoint', checkpoint['name'], *checkpoint['args']]
+
+
+def run_b1(base, manifest, project, evidence):
+    """Run B1 once per sealed checkpoint, in order, each into evidence/b1/<name>; returns
+    {name: exit code}. A checkpoint that raises is recorded and the next one still runs."""
+    module = load_bare_model(project)
+    checkpoints = b1_checkpoints(manifest)
+    root = Path(evidence)/'b1'
+    root.mkdir(exist_ok=False)
+    # The progress reader's total (PROGRESS-A): one reply record per item per checkpoint.
+    (root/'expected_records').write_text('%d\n' % (len(b1_item_ids(manifest))*len(checkpoints)), encoding='utf8')
+    codes = {}
+    for checkpoint in checkpoints:
+        out = root/checkpoint['name']
+        require(not out.exists(), 'B1 checkpoint folder already exists')
+        try:
+            code = module.main(b1_argv(base, project, out, checkpoint))
+        except SystemExit as exc:
+            code = exc.code if isinstance(exc.code, int) else 1
+        except Exception as exc:
+            out.mkdir(parents=True, exist_ok=True)
+            write(out/'terminal_error.json', failure_identity(exc, project))
+            code = 1
+        codes[checkpoint['name']] = code if isinstance(code, int) else 1
+    return codes
+
+
+def execute_b1(base, manifest, project, evidence, rec):
+    """The B1 arm after every guard execute() applies: no pipeline import, one bare_model run
+    per sealed checkpoint, then the arm-aware assessment written to evidence/result.json."""
+    codes = {}
+    try:
+        codes = run_b1(base, manifest, project, evidence)
+    except BaseException as exc:
+        write(evidence/'terminal_error.json', failure_identity(exc, project))
+    finally:
+        rec.close()
+        ids = b1_item_ids(manifest)
+        seen = {c['name']: dict(b1_observation(evidence/'b1'/c['name'], ids), exit_code=codes.get(c['name']))
+                for c in b1_checkpoints(manifest)}
+        result = assess(None, [], arm='B1', b1=seen)
+        result['pipeline_exit_code'] = None
+        write(evidence/'result.json', result)
+    return 0 if result['execution_integrity_passed'] else 2
+
+
 def execute(base):
     base = Path(base).resolve()
     manifest = verify(base)
@@ -403,6 +590,10 @@ def execute(base):
     evidence.mkdir(exist_ok=False)
     rec = Recorder(evidence/'network.jsonl')
     deny_network(rec)
+    if arm_of(manifest) == 'B1':
+        # Every guard above holds for B1 as for B3 (authorization with its arm, RUN_CLAIMED,
+        # the budget stop thread, the sealed cache, the pinned runtime, the network denial).
+        return execute_b1(base, manifest, project, evidence, rec)
     # Every inherited runtime flag was removed; only the manifest flags survive.
     argv = list(argv_for(manifest))
     if '--topology-config' in argv:

@@ -19,6 +19,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -56,6 +57,94 @@ STORAGE_USD = 3.9
 # The budget every fixture ledger opens with (its own figure; the guard reads it from the ledger).
 FIXTURE_BUDGET_USD = 50.0
 LOOP_NAME = 'shimmer-loop-fixture'
+# A B1 bundle's sealed checkpoints (S5 R2): base then tuned, each pinned by its own argument.
+B1_CHECKPOINTS = [dict(name='base', args=['--expect-digest', 'digest-base']),
+                  dict(name='tuned', args=['--expect-digest', 'digest-tuned'])]
+B1_FIXTURES = ROOT / 'benchmark' / 'baselines' / 'fixtures'
+# The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
+# bare_model.py, replaces only its model backend by one that answers from the canned replies
+# (no model load), and takes the checkpoint argument the runner passes (the interface the
+# benchmarks lane adds), recording it and handing every other argument to the real main().
+BARE_MODEL_STAND_IN = '''import importlib.util, json
+from pathlib import Path
+_spec = importlib.util.spec_from_file_location('bare_model_real', Path(%(real)r))
+real = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(real)
+REPLIES = json.loads(Path(%(replies)r).read_text(encoding='utf-8'))['replies']
+checkpoints = []
+
+
+class Backend:
+    def __init__(self, reader, context):
+        self.reader = reader
+
+    def prepare(self):
+        return {'model_id': self.reader['model_id'], 'digest': 'digest-' + checkpoints[-1], 'decoding': {}}
+
+    def count_prompt(self, system, user):
+        return 1
+
+    def max_context(self):
+        return 10 ** 6
+
+    def generate(self, system, user, max_new_tokens):
+        item = next(k for k in REPLIES if ('Item id: %%s\\n' %% k) in user)
+        if REPLIES[item].get('raise'):
+            raise RuntimeError('fixture failure')
+        return {'text': REPLIES[item]['reply'], 'payload': user, 'form': 'fixture', 'output_tokens': 1}
+
+
+real.LocalBackend = Backend
+
+
+def main(argv):
+    argv = list(argv)
+    k = argv.index('--checkpoint')
+    checkpoints.append(argv[k + 1])
+    return real.main(argv[:k] + argv[k + 2:])
+'''
+
+
+@contextlib.contextmanager
+def pipeline_import_watch():
+    """Every import of `pipeline` attempted inside the block, recorded and refused. The
+    project's own modules (scripts/, benchmark/) are dropped from sys.modules first, so each
+    one the block uses is executed afresh and its imports are seen; sys.modules is restored
+    after, so no other check sees a module this block loaded."""
+    import builtins
+    seen = []
+    original = builtins.__import__
+
+    def watching(name, globals=None, locals=None, fromlist=(), level=0):
+        if level == 0 and name.split('.')[0] == 'pipeline':
+            seen.append(name)
+            raise ImportError('pipeline import refused by the B1 check')
+        return original(name, globals, locals, fromlist, level)
+
+    class Finder:
+        @staticmethod
+        def find_spec(name, path=None, target=None):
+            if name.split('.')[0] == 'pipeline':
+                seen.append(name)
+                raise ImportError('pipeline import refused by the B1 check')
+            return None
+
+    snapshot = dict(sys.modules)
+    roots = [str((ROOT / 'scripts').resolve()), str((ROOT / 'benchmark').resolve())]
+    for key, module in list(sys.modules.items()):
+        where = getattr(module, '__file__', None) or ''
+        if key in ('pipeline', 'bare_model') or any(os.path.abspath(where).startswith(r) for r in roots if where):
+            del sys.modules[key]
+    builtins.__import__ = watching
+    sys.meta_path.insert(0, Finder)
+    try:
+        yield seen
+    finally:
+        builtins.__import__ = original
+        sys.meta_path.remove(Finder)
+        for key in set(sys.modules) - set(snapshot):
+            del sys.modules[key]
+        sys.modules.update(snapshot)
 
 
 def fixture_budget(types=None, reference=1.29):
@@ -1803,22 +1892,30 @@ class ControllerChecks(unittest.TestCase):
 
     # ---- S2c item 11: batches -----------------------------------------------------------
 
-    def batch_bundles(self):
+    def batch_bundles(self, pairs=(('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1'))):
+        """The session bundle (i1, B3) and one bundle per other (item, arm), each sealed with its
+        arm; a B1 bundle carries its items.json and its sealed checkpoints."""
         runner_file = {'ordinary_final_run.py': b'# sealed runner fixture\n', 'install.lock': b'fixture==1.0\n'}
         (self.base / 'ordinary_final_run.py').write_bytes(runner_file['ordinary_final_run.py'])
         (self.base / 'install.lock').write_bytes(runner_file['install.lock'])
-        self.remanifest(support_files={n: sha(self.base / n) for n in runner_file})
+        self.remanifest(support_files={n: sha(self.base / n) for n in runner_file}, arm='B3')
         bundles = {('i1', 'B3'): self.base}
-        for item, arm in (('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1')):
+        for item, arm in pairs:
             folder = self.root / ('bundle_%s_%s' % (item, arm))
+            support, extra = dict(runner_file), {}
+            if arm == 'B1':
+                items = json.dumps(dict(items=[dict(item_id=item + '-a', document_id='doc', rule_id='CONV-1',
+                                                    benchmark='contradoc')])).encode()
+                support['items.json'] = items
+                extra['b1'] = sealer.b1_fields(items, json.dumps(dict(targets=['doc.md'])).encode(), B1_CHECKPOINTS)
             with patch.object(controller, 'ROOT', self.root):
                 make_bundle(folder, self.root / 'assets.tar', project=('project %s %s' % (item, arm)).encode(),
-                            support=runner_file)
+                            support=support, arm=arm, **extra)
             bundles[(item, arm)] = folder
         # Items keep the order they are first named in (the preparer's order); arms are
         # deliberately listed out of order.
         order = [('i1', 'B1'), ('i2', 'B1'), ('i1', 'B3'), ('i2', 'B3')]
-        return bundles, [dict(item=i, arm=a, bundle=bundles[(i, a)]) for i, a in order]
+        return bundles, [dict(item=i, arm=a, bundle=bundles[(i, a)]) for i, a in order if (i, a) in bundles]
 
     def test_batch_runs_b3_and_b1_item_by_item_and_a_stop_leaves_pairs(self):
         """S2c item 11: several bundles in one instance session, each with its own run folder,
@@ -1853,6 +1950,220 @@ class ControllerChecks(unittest.TestCase):
         done = [p.name for p in sorted((self.base / 'batch').iterdir()) if (p / 'collection_integrity.json').exists()]
         self.assertEqual(done, ['00_i1_B3', '01_i1_B1'])
         self.assertFalse((self.base / 'batch' / '02_i2_B3' / 'workload_return.json').exists())
+        self.assert_torn_down()
+
+    # ---- S5: the B1 arm inside the runner (R2, R19), B3-only batches (0.4), R18 ----------
+
+    def test_the_sealer_records_the_arm_and_a_b1_bundle_carries_its_items_and_checkpoints(self):
+        """R2, item 0.2: the sealer's own prepare() writes `arm` into every manifest; a B1
+        bundle also carries its sealed checkpoints, the item ids of its one document and
+        items.json as a support file, and the instance-side verify admits it."""
+        import multi_round_launch_checks as mr_checks
+        workload = self.root / 'workload'
+        (workload / 'context').mkdir(parents=True)
+        (workload / 'conventions').mkdir()
+        (workload / 'context' / 'doc.md').write_text('# Doc\n\nA statement.\n', encoding='utf-8', newline='\n')
+        (workload / 'conventions' / 'rules.md').write_text(mr_checks.CONVENTIONS, encoding='utf-8', newline='\n')
+        write(workload / '_review_targets.json', dict(source='operator', targets=['doc.md'], grounding=[], prior=[]))
+        items = self.root / 'items.json'
+        write(items, dict(items=[dict(item_id='x2', document_id='doc', rule_id='CONV-1', benchmark='contradoc'),
+                                 dict(item_id='x1', document_id='doc', rule_id='CONV-2', benchmark='contradoc'),
+                                 dict(item_id='y1', document_id='other', rule_id='CONV-1', benchmark='contradoc')]))
+        inputs = self.root / 'inputs'
+        inputs.mkdir()
+        (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
+        write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[A10_TYPE], images=[dict(IMAGE)],
+                                                       observed_at='fixture'))
+
+        def seal(name, **arm):
+            with mr_checks.sealing_stand_ins():
+                sealer.prepare(self.root / name, budget=dict(ledgers=[self.ledger], forecast_minutes=FORECAST_MINUTES,
+                                                             storage_forecast_usd=STORAGE_USD, reaped=[self.ledger]),
+                               workload=workload, inputs_from=inputs, now_epoch=FakeClock().now, **arm)
+            return self.root / name, read(self.root / name / 'execution_manifest.json')
+        bundle, b3 = seal('b3')
+        self.assertEqual(b3['arm'], 'B3')
+        self.assertNotIn('b1', b3)
+        self.assertNotIn('items.json', b3['support_files'])
+        self.assertEqual(mr_checks.instance_verify(bundle)['arm'], 'B3')
+        bundle, b1 = seal('b1', arm='B1', b1_items=items, b1_checkpoints=B1_CHECKPOINTS)
+        self.assertEqual(b1['arm'], 'B1')
+        self.assertEqual(b1['b1']['checkpoints'], B1_CHECKPOINTS)
+        self.assertEqual(b1['b1']['item_ids'], ['x1', 'x2'])
+        self.assertEqual(b1['support_files']['items.json'], sha(items))
+        self.assertEqual(b1['b1']['items_sha256'], sha(items))
+        self.assertEqual((bundle / 'items.json').read_bytes(), items.read_bytes())
+        self.assertEqual(mr_checks.instance_verify(bundle)['arm'], 'B1')
+        # Refusals: a B1 bundle without its items or checkpoints, and a checkpoint argument the runner sets.
+        with self.assertRaisesRegex(RuntimeError, 'needs its items.json and its checkpoints'):
+            seal('b1_bare', arm='B1')
+        with self.assertRaisesRegex(RuntimeError, 'argument the runner sets'):
+            seal('b1_out', arm='B1', b1_items=items, b1_checkpoints=[dict(name='base', args=['--out', 'x'])])
+
+    def test_a_b1_entry_runs_only_on_an_authorization_naming_its_sealed_arm(self):
+        """R19 (i): the controller writes each entry's plan arm into its authorization, and the
+        runner admits a bundle only on an authorization naming the arm it was sealed with; a
+        plan arm that differs from the sealed arm is refused before any launch."""
+        bundles, entries = self.batch_bundles()
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries))
+        self.assertIsNone(failure, failure)
+        order = [('i1', 'B3'), ('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1')]
+        for k, (item, arm) in enumerate(order):
+            folder = self.base / 'batch' / ('%02d_%s_%s' % (k, item, arm))
+            # Entry 0 runs on the session authorization the instance received; later entries
+            # on their own, both naming the plan arm.
+            permit = read((self.base if k == 0 else folder) / 'operator_authorization.json')
+            manifest = read(bundles[(item, arm)] / 'execution_manifest.json')
+            self.assertEqual((permit['arm'], manifest['arm']), (arm, arm))
+            runner.authorization(bundles[(item, arm)], manifest, permit, now=permit['active_start_epoch'] + 1)
+            other = dict(permit, arm='B3' if arm == 'B1' else 'B1')
+            with self.assertRaisesRegex(RuntimeError, 'Arm authorization mismatch'):
+                runner.authorization(bundles[(item, arm)], manifest, other, now=permit['active_start_epoch'] + 1)
+        # An authorization naming no arm is a B3 one: never enough for a B1 bundle.
+        b1 = bundles[('i1', 'B1')]
+        permit = {k: v for k, v in read(self.base / 'batch' / '01_i1_B1' / 'operator_authorization.json').items() if k != 'arm'}
+        with self.assertRaisesRegex(RuntimeError, 'Arm authorization mismatch'):
+            runner.authorization(b1, read(b1 / 'execution_manifest.json'), permit, now=permit['active_start_epoch'] + 1)
+        # The plan names an arm its bundle was not sealed with: refused locally, nothing launched.
+        self.setUp()
+        bundles, entries = self.batch_bundles()
+        swapped = [dict(e, bundle=bundles[(e['item'], 'B3' if e['arm'] == 'B1' else 'B1')]) if e['item'] == 'i2' else e
+                   for e in entries]
+        with self.assertRaisesRegex(RuntimeError, 'Batch arm differs from the sealed arm'):
+            self.execute(plan=fixture_plan(self.ledger, batch=swapped))
+        self.assertIsNone(FakeProvider.state)
+
+    def test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline(self):
+        """R19 (ii) to (iv), item 0.2: the runner's B1 path loads the sealed project's
+        bare_model.py in its own process (so os._exit(124) and the cleanup's process pattern stop
+        it), runs it once per sealed checkpoint, in order, each into its own folder with one
+        reply record per item, and never imports the pipeline. The real bare_model.py runs; only
+        its model backend answers from the canned replies."""
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
+        stand_in.parent.mkdir(parents=True)
+        stand_in.write_text(BARE_MODEL_STAND_IN % dict(real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'),
+                                                       replies=str(B1_FIXTURES / 'b1_replies.json')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        (base / 'items.json').write_bytes(items)
+        b1 = sealer.b1_fields(items, (project / 'input' / 'context' / '_review_targets.json').read_bytes(), B1_CHECKPOINTS)
+        self.assertEqual(b1['item_ids'], ['a1', 'a2', 'a3', 'a4'])     # dother's item is not this bundle's
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={'items.json': sha(base / 'items.json')})
+        self.assertEqual(runner.arm_declaration(manifest), 'B1')
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        closed = []
+        with pipeline_import_watch() as imports, contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors:
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: closed.append(1)))
+            pipeline_loaded = 'pipeline' in sys.modules
+            asked = list(getattr(sys.modules.get('bare_model'), 'checkpoints', []))
+        self.assertEqual(imports, [], 'the B1 path imported the pipeline')
+        self.assertFalse(pipeline_loaded)
+        self.assertEqual(closed, [1])
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-400:]))
+        self.assertTrue(result['execution_integrity_passed'], result)
+        self.assertEqual((result['arm'], result['pipeline_exit_code']), ('B1', None))
+        self.assertEqual(asked, ['base', 'tuned'])
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '8')
+        for name in ('base', 'tuned'):
+            folder = evidence / 'b1' / name
+            records = sorted((folder / 'audit' / 'model_replies').glob('*.json'))
+            self.assertEqual(len(records), 4, name)
+            self.assertEqual(sorted(p.stem for p in (folder / 'labels').glob('*.json')), ['a1', 'a2', 'a3', 'a4'])
+            # Each checkpoint was verified against its own sealed argument.
+            self.assertEqual(read(folder / 'b1_summary.json')['loaded']['digest'], 'digest-' + name)
+            self.assertEqual(result['checkpoints'][name]['exit_code'], 0)
+        self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
+
+    def test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker(self):
+        """R19 (v): a B1 entry passes on exactly one reply record per item per checkpoint, with
+        no pipeline marker required, and fails on a missing record."""
+        evidence = self.root / 'b1'
+        ids = ['a1', 'a2']
+        for name in ('base', 'tuned'):
+            for n, item in enumerate(ids):
+                call = '%s%d' % (name, n)
+                for sub in ('audit/model_replies', 'labels'):
+                    (evidence / name / sub).mkdir(parents=True, exist_ok=True)
+                write(evidence / name / 'audit' / 'model_replies' / ('%06d_%s.json' % (n + 1, call)), dict(call_id=call))
+                write(evidence / name / 'labels' / (item + '.json'), dict(item_id=item, call_id=call))
+
+        def seen():
+            return {name: dict(runner.b1_observation(evidence / name, ids), exit_code=0) for name in ('base', 'tuned')}
+        passed = runner.assess(None, [], arm='B1', b1=seen())
+        self.assertTrue(passed['execution_integrity_passed'], passed)
+        self.assertEqual(passed['reasons'], [])
+        # The same evidence assessed as B3 fails on the pipeline markers B1 never writes.
+        self.assertIn('pipeline_not_completed', runner.assess(None, [])['reasons'])
+        # One record gone from one checkpoint: that checkpoint fails, the other does not.
+        next((evidence / 'tuned' / 'audit' / 'model_replies').glob('*.json')).unlink()
+        failed = runner.assess(None, [], arm='B1', b1=seen())
+        self.assertFalse(failed['execution_integrity_passed'])
+        self.assertEqual(failed['reasons'], ['b1_reply_record_missing:tuned', 'b1_reply_record_count:tuned'])
+        # A checkpoint that did not return 0, and no checkpoint at all, fail too.
+        self.assertIn('b1_checkpoint_failed:base',
+                      runner.assess(None, [], arm='B1', b1=dict(seen(), base=dict(seen()['base'], exit_code=4)))['reasons'])
+        self.assertEqual(runner.assess(None, [], arm='B1', b1={})['reasons'], ['b1_no_checkpoint_ran'])
+
+    def test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused(self):
+        """Item 0.4, DS5-2: exposed bundles with no B1 arm run as a B3-only batch, every entry
+        once, in the order given, each with its own run folder; the paired form still refuses
+        them, and a sealed run refuses the B3-only form before any launch."""
+        bundles, _ = self.batch_bundles(pairs=(('i2', 'B3'), ('i3', 'B3')))
+        entries = [dict(item=i, arm='B3', bundle=bundles[(i, 'B3')]) for i in ('i1', 'i2', 'i3')]
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries, batch_form='b3_only'))
+        self.assertIsNone(failure, failure)
+        self.assertEqual([s for s in transport.started if s.startswith('batch_workload_')],
+                         ['batch_workload_0', 'batch_workload_1', 'batch_workload_2'])
+        for k, item in enumerate(('i1', 'i2', 'i3')):
+            folder = self.base / 'batch' / ('%02d_%s_B3' % (k, item))
+            self.assertEqual((read(folder / 'seal_entry.json')['arm'], read(folder / 'seal_entry.json')['paired_with']),
+                             ('B3', None))
+            self.assertEqual(read(folder / 'workload_return.json')['exit_code'], 0)
+            self.assertTrue((folder / 'collection_integrity.json').exists())
+        self.assertEqual(read(self.base / 'run_record.json')['batch_form'], 'b3_only')
+        self.assert_torn_down()
+        # The paired form refuses the same entries, as before.
+        self.setUp()
+        bundles, _ = self.batch_bundles(pairs=(('i2', 'B3'), ('i3', 'B3')))
+        entries = [dict(item=i, arm='B3', bundle=bundles[(i, 'B3')]) for i in ('i1', 'i2', 'i3')]
+        with self.assertRaisesRegex(RuntimeError, 'Every batch item runs B3 and B1 exactly once'):
+            self.execute(plan=fixture_plan(self.ledger, batch=entries))
+        self.assertIsNone(FakeProvider.state)
+        # The same B3-only file for a sealed bundle: refused before any provider call.
+        self.setUp()
+        repo, commit, _ = self.git_repo()
+        bundle, manifest = self.sealed_bundle(commit)
+        plan = fixture_plan(self.ledger, test_manifest=manifest, frozen_tag='loop-s08-frozen', batch_form='b3_only',
+                            batch=[dict(item='i1', arm='B3', bundle=bundle)])
+        with self.assertRaisesRegex(RuntimeError, 'A B3-only batch is for exposed bundles only'):
+            self.execute(root=repo, base=bundle, plan=plan)
+        self.assertIsNone(FakeProvider.state)
+        with self.assertRaisesRegex(RuntimeError, 'B3 entries only'):
+            controller.batch_schedule([dict(item='i1', arm='B1', bundle=bundle)], 'b3_only')
+
+    def test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder(self):
+        """R18: past the soft budget no new remote work starts, but a batch entry that finishes
+        there is still packed, hashed and downloaded into its own run folder; the next entry is
+        then refused and the session evidence collected as before."""
+        bundles, entries = self.batch_bundles()
+        m = read(self.base / 'execution_manifest.json')
+        soft_seconds = m['soft_budget_usd'] / 1.29 * 3600
+        polls = {'batch_workload_0': ['RUNNING'] * int(soft_seconds / controller.POLL_INTERVAL + 10)}
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries), polls=polls)
+        self.assertEqual(failure['message'], 'Soft budget reached before next phase')
+        self.assertEqual(read(self.base / 'soft_budget_assessment.json')['phase'], 'batch_park')
+        first = self.base / 'batch' / '00_i1_B3'
+        self.assertEqual(read(first / 'collection_integrity.json')['sha256'], hashlib.sha256(EVIDENCE).hexdigest())
+        self.assertTrue((first / 'collected_evidence.tar.gz').exists())
+        self.assertLess(transport.started.index('batch_workload_0'), transport.started.index('batch_pack_evidence_0'))
+        self.assertFalse((self.base / 'batch' / '01_i1_B1' / 'workload_return.json').exists())
+        self.assertTrue((self.base / 'collection_integrity.json').exists())
         self.assert_torn_down()
 
     # ---- S2c item 13: named extras of the cloud source archive ----------------------------
@@ -2953,10 +3264,45 @@ def admit_as_exposed(m, seal, plan, base):
     return dict(_ORIGINAL_ADMIT(m, seal, plan, base), exposure='exposed')
 
 
-def arm_major_schedule(entries):
+def arm_major_schedule(entries, form='paired', sealed=False):
     """Every B3 first, then every B1: a stop part way leaves no pair."""
-    value = sorted(_ORIGINAL_SCHEDULE(entries), key=lambda e: (controller.BATCH_ARMS.index(e['arm']), e['index']))
+    value = sorted(_ORIGINAL_SCHEDULE(entries, form, sealed), key=lambda e: (controller.BATCH_ARMS.index(e['arm']), e['index']))
     return [dict(e, index=k) for k, e in enumerate(value)]
+
+
+def schedule_ignoring_exposure(entries, form='paired', sealed=False):
+    """The reading before S5 item 0.4's refusal: a B3-only batch admitted for a sealed run."""
+    return _ORIGINAL_SCHEDULE(entries, form, False)
+
+
+_ORIGINAL_B1_FIELDS = sealer.b1_fields
+
+
+def b1_fields_for_every_document(items, targets, checkpoints):
+    """Every item of items.json sealed into the bundle, whatever document it belongs to."""
+    value = _ORIGINAL_B1_FIELDS(items, targets, checkpoints)
+    rows = json.loads(items.decode('utf-8'))['items']
+    return dict(value, item_ids=sorted(r['item_id'] for r in rows))
+
+
+_ORIGINAL_LOAD_BARE_MODEL = runner.load_bare_model
+_ORIGINAL_B1_ARGV = runner.b1_argv
+
+
+def load_bare_model_with_the_pipeline(project):
+    """A B1 runner that pulls the pipeline in beside the baseline (what R19 (iii) forbids)."""
+    import pipeline  # noqa: F401
+    return _ORIGINAL_LOAD_BARE_MODEL(project)
+
+
+def b1_argv_into_one_folder(base, project, out, checkpoint):
+    """Every checkpoint written into one shared folder instead of its own (R19 (iv))."""
+    return _ORIGINAL_B1_ARGV(base, project, Path(out).parent / 'shared', checkpoint)
+
+
+def b1_observation_counting_files_only(folder, item_ids):
+    """A B1 assessment that trusts a file count and never asks which item has its record."""
+    return dict(items=len(item_ids), reply_records=len(item_ids), items_without_one_record=[], summary_written=True)
 
 
 def declaration_for_any_bundle(base, digest):
@@ -3155,6 +3501,28 @@ NEUTRALIZATIONS = [
     # Item 4: the cap's ceiling the hard stop alone, so a stop at the budget drops the margin.
     ('test_a_hard_stop_at_the_budget_keeps_the_one_dollar_margin', guard, 'cap_ceiling',
      lambda budget, hard_stop: hard_stop),
+    # S5, one mechanism per proof.
+    # R2, item 0.2: the sealed item ids taken from every document in items.json, not the bundle's one.
+    ('test_the_sealer_records_the_arm_and_a_b1_bundle_carries_its_items_and_checkpoints', sealer, 'b1_fields',
+     b1_fields_for_every_document),
+    # R19 (i): the runner no longer compares the authorization's arm with the sealed arm.
+    ('test_a_b1_entry_runs_only_on_an_authorization_naming_its_sealed_arm', runner, 'admit_arm',
+     lambda manifest, permit: None),
+    # R19 (iii): the B1 runner imports the pipeline.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'load_bare_model',
+     load_bare_model_with_the_pipeline),
+    # R19 (iv): the checkpoints share one output folder.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'b1_argv',
+     b1_argv_into_one_folder),
+    # R19 (v): a B1 assessment that counts files and so passes a missing record.
+    ('test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker', runner, 'b1_observation',
+     b1_observation_counting_files_only),
+    # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
+    ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
+     schedule_ignoring_exposure),
+    # R18: the per-entry collection refused past the soft budget, as before S5.
+    ('test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder', controller, 'soft_budget_exempt',
+     lambda label: label in {'stop_workload', 'pack_evidence', 'evidence_hash', 'final_gpu_state'}),
 ]
 
 
