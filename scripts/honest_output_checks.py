@@ -145,7 +145,7 @@ def prior_case_items(doc_id="batch_sheet"):
 
 
 def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False,
-               text=None, rules=None, absence_reply=None, plan_calls=None):
+               text=None, rules=None, absence_reply=None, plan_calls=None, other_reply=None):
     """One mocked run, faithful to a real one where it matters: the computed
     findings come from the REAL phase 5.5 paired review (pairing map, planner,
     arithmetic, mint, bus post under paired/python); only the judging model's
@@ -155,7 +155,9 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
 
     S2 checker round 3: `rules` replaces the rule set, `absence_reply(payload,
     call_id)` authors the reply to a judged-absence question (a failed call or
-    claims Python refuses), and `plan_calls` wraps the real planner."""
+    claims Python refuses), and `plan_calls` wraps the real planner. D-068:
+    `other_reply(payload, call_id, kwargs)` authors the reply to any other judging
+    call, or returns None to leave it to the default authored sentence."""
     import pipeline as pl
     import reference_builder as rb
     import run_options
@@ -197,6 +199,10 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
         record_call(wrapper.name, call_id, "5.5")
         if absence_reply is not None and "absence_question" in payload:
             return absence_reply(payload, call_id)
+        if other_reply is not None and "absence_question" not in payload:
+            authored = other_reply(payload, call_id, kwargs)
+            if authored is not None:
+                return authored
         return {"ok": True, "backend": "local_auditor", "model": "fixture-auditor",
                 "call_id": call_id, "raw_text": "", "item_count": 1,
                 "parsed": {"agent": wrapper.name, "doc_id": doc["id"],
@@ -976,8 +982,10 @@ def observe_round3():
             "calls_stated": (("Judging calls this agent made on this document: 3; judging calls that could carry a "
                               "note: 3; judged-absence calls, never asked for a note: 0; model-written notes kept on "
                               "Python's findings: 2.") in files["reviewed_document.md"]
-                             and ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
-                                  "and was kept neither as a finding nor as a note") in files["reviewed_document.md"]
+                             # D-068: the uncomputable call's outcome line (before D-068 it said
+                             # the reply was advisory and kept neither as a finding nor a note)
+                             and ("judged with no comparison Python could compute: 0 kept as a model's records, "
+                                  "0 refused by Python") in files["reviewed_document.md"]
                              and ("not checked by Python: 2; judging calls that could carry a note: 3; judged-absence "
                                   "calls, never asked for a note: 0.") in files["document_summary.md"]
                              and ("not checked by Python: 2; judging calls that could carry a note: 3; judged-absence "
@@ -1044,7 +1052,9 @@ def check_round3():
     bad = []
     expect = {
         "authors": ["Shimmer / computed by Python"], "tr_authors": ["Shimmer / Python tarafından hesaplandı"],
-        "zero_call_agents_named": [], "bus_outcomes": ["advisory_not_kept", "note_kept", "note_kept"],
+        # D-068: the uncomputable call that returned is now `judged_uncomputable`
+        # (its reply carries no Finding-shaped item here, so nothing is kept).
+        "zero_call_agents_named": [], "bus_outcomes": ["judged_uncomputable", "note_kept", "note_kept"],
         "calls_stated": True, "note_beside_not_judged": [], "note_sentence": 2, "unanchored_heading": False,
         "docx_model_text": [], "per_agent_notes": True, "tr_per_agent_notes": True, "counted_apart": True,
         "figures_as_written": True, "quote_section": True, "internal_names": [], "states_in_words": True,

@@ -17,7 +17,7 @@
 The cut budget is computed per document (section 5.3) from the bundle's own conventions
 with the B1 prompt (common/prompt.py). A token counter file defines `count(text) -> int`
 and `count_prompt(system, user) -> int` with the main reading agent's own tokenizer and
-chat template. `label` writes the primary labels and the S-1, S-2, S-3 and S-5 analyses in
+chat template. `label` writes the primary labels and the S-1, S-2, S-3, S-5 and S-6 analyses in
 one file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
 evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
@@ -261,7 +261,8 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),
             "S-2": mapping.sensitivity_s2(adapter.SPEC, primary),
             "S-3": mapping.sensitivity_s3(adapter.SPEC, primary),
-            "S-5": mapping.sensitivity_s5(adapter.SPEC, primary)}
+            "S-5": mapping.sensitivity_s5(adapter.SPEC, primary),
+            "S-6": mapping.sensitivity_s6(adapter.SPEC, primary)}
 
 
 def score(adapter, labels: dict, bundles_dir) -> dict:

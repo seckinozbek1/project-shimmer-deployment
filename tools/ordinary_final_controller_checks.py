@@ -1767,7 +1767,8 @@ class ControllerChecks(unittest.TestCase):
                       'Instance type and price', 'Cost', 'Location and reason-confirmed recall', 'Attribution',
                       'False positives in every deliverable', 'Clean-twin result', 'Layer that produced each catch',
                       'Catches that depended on a directive', 'Model-text review verdicts', 'Agents withheld or settings changed',
-                      'SHIMMER_INST_FINDER', 'Multi-round', 'Asset copy', 'Role separation', 'What the result does not show'):
+                      'SHIMMER_INST_FINDER', 'Multi-round', 'Asset copy', 'Role separation', 'What the result does not show',
+                      'Judging calls Python could compute nothing for'):
             self.assertIn('- **' + label + '.**', text)
         self.assertIn('exposed, no manifest', text)
         self.assertIn('- **SHIMMER_INST_FINDER.** on', text)
@@ -1814,6 +1815,48 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual((status['semantic_call_receipts'], status['producer168_receipts']), (1, 1))
         self.assertTrue((folder / 'analysis' / 'model_telemetry_summary.json').is_file())
         self.assertIn('- **Arm.** B3: the full pipeline', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def test_the_analyser_counts_discarded_and_kept_uncomputable_judgments(self):
+        """D-067 and D-068: per run, the judging calls on plans Python could compute nothing
+        for, discarded as advisory (advisory_not_kept, before D-068) or returned under D-068
+        with the answers kept as a model's records and refused, read from the run's own
+        pairing map, with the line saying what the counts do not show. Neutralise (the
+        pairing map not read), fail, restore, pass."""
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        run = 'evidence/run/r1/'
+        judging = [dict(plan_kind='uncomputable', outcome='advisory_not_kept', judged_listed=0, judged_refused=0),
+                   dict(plan_kind='uncomputable', outcome='judged_uncomputable', judged_listed=2, judged_refused=1),
+                   dict(plan_kind='uncomputable', outcome='judged_uncomputable', judged_listed=1, judged_refused=0),
+                   dict(plan_kind='uncomputable', outcome='reply_failed', judged_listed=0, judged_refused=0),
+                   dict(plan_kind='computed', outcome='note_kept')]
+        pairing = {'d1': dict(judging_calls=judging[:3]), 'd2': dict(judging_calls=judging[3:])}
+
+        def report(name):
+            folder = self.root / name
+            self.analysis_folder(folder, evidence={
+                run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+                run + 'audit/pairing_map.json': json.dumps(pairing).encode(),
+                run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode(),
+                run + 'audit/execution_topology.jsonl': b'',
+                'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()})
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            return read(folder / 'FINAL_STATUS.json')
+
+        want = dict(calls=4, advisory_not_kept=1, judged_uncomputable=2, reply_failed=1, kept_model_records=3, refused=1)
+        line = ('4 judging calls on plans Python could compute nothing for: 1 discarded as advisory (advisory_not_kept, '
+                "the outcome before D-068); 2 returned under D-068, keeping 3 answers as a model's records and refusing 1; "
+                '1 failed. ' + analysis.UNCOMPUTABLE_DOES_NOT_SHOW)
+        status = report('uncomputable_shipped')
+        self.assertEqual(status['uncomputable_judging'], want)
+        self.assertEqual(status['report']['Judging calls Python could compute nothing for'], line)
+        with patch.object(analysis, 'uncomputable_judging', lambda run_dir: None):
+            neutralised = report('uncomputable_neutralised')
+        self.assertNotEqual(neutralised['report']['Judging calls Python could compute nothing for'], line)
+        self.assertIsNone(neutralised['uncomputable_judging'])
+        restored = report('uncomputable_restored')
+        self.assertEqual(restored['report']['Judging calls Python could compute nothing for'], line)
 
     def b1_analysis_evidence(self, summaries=('base', 'tuned'), passed=True):
         """The collected evidence of a B1 entry: the runner's assessment and one b1_summary.json

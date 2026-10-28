@@ -8,7 +8,7 @@ What they implement, from `docs/benchmarks/PREREGISTRATION.md`:
 - section 1: the hash split rule and the official splits, enforced at build (ContractNLI by its frozen files); the exclusion of demonstration documents; the length band of every document (`bands`);
 - section 3: the official metric or the closest honest measure (each benchmark's headline named in its score), location recall, false positives (item level and unattached), refusals, and the catch layer;
 - section 4: ABSTAIN and zero division in every F1-type measure;
-- section 5.1 and 5.2: the output-to-label mapping (a settled answer on any unit beats a refusal; a figure-audit record is a figure-audit relation stamped `written_by: python`, one definition for all five benchmarks: a band record decides its own rule's item, Python's `missing_field`, `sum_mismatch` and `product_mismatch` records decide only in a one-rule bundle, and a model-written record always decides its rule's item), with S-1, S-2, S-3 and S-5 (the earlier order, a refusal before an ok record);
+- section 5.1 and 5.2: the output-to-label mapping (a settled answer on any unit beats a refusal; a figure-audit record is a figure-audit relation stamped `written_by: python`, one definition for all five benchmarks: a band record decides its own rule's item, Python's `missing_field`, `sum_mismatch` and `product_mismatch` records decide only in a one-rule bundle, and a model-written record always decides its rule's item), with S-1, S-2, S-3, S-5 (the earlier order, a refusal before an ok record) and S-6 (every item of a semantically incomplete document ABSTAIN, D-066);
 - section 5.3: the cut rule, with a per-document budget, and S-4;
 - sections 5.5 and 5.6: the rule templates and the document text and units, with ContractNLI's merged-span fallback.
 
@@ -96,7 +96,9 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
   - B0 needs no run.
   - Typed records are read by one reader, `common/records.py`: B2's from `review_data.json` (`findings`), B3's and B4's from the run's bus (`logs/agent_bus.jsonl`), stamped `written_by` from the line that carried them, superseded within one agent and document, a judged absence counted only by Python's stamped copy and the raw model copy listed apart (preregistration section 5.1, draft).
   - That bus reading (decision DS5-8, section 12 item 9) has been attacked by a checker and recorded (`docs/loop/DECISIONS.md` D-055 and D-056), so `mapping.BUS_READER_ADOPTED` is True and B3 and B4 are labelled from the bus; a run with no readable bus is a run failure. With the flag False they are refused (exit 4).
-  - The output file holds the primary labels and the S-1, S-2, S-3 and S-5 analyses.
+  - The output file holds the primary labels and the S-1, S-2, S-3, S-5 and S-6 analyses.
+  - D-066 (draft): a run that reached its end with exit code 0 and `semantic_complete` false is not a run failure; its items are labelled from its records, and S-6 makes them ABSTAIN. Each document row carries `semantic_incomplete` and `completeness` (PROCESSOR calls accepted against made, a partial delivery, the auditor pairs made from it); each item row carries `item_calls_failed`, `decided_by_partial_delivery_record` and `flagged_by_band`. The item-level exception `item_calls_failed` waits for section 12 item 11 (`mapping.RULE_ID_MAP_ADOPTED`, False): until then every row it would affect says so.
+  - D-068: a model's answer kept on a pair Python could compute nothing for is on the bus once, in Python's stamped copy (`judged_path` `uncomputable`), written by `model`; it decides its rule's item like any model-written record.
   - The command exits 3 when it records an adapter fault (a prior relation, a missing typed-record key, an unrecognised verdict).
 - **score** scores each analysis, and S-4 (the primary labels without the items `parts.json` lists as having their evidence beyond the cut). It reads gold from the bundles' `answer_key.json` and units from the bundle documents. It refuses when a labelled document has a gold item with no label. Every result carries the statement that it is not comparable with published numbers, and names its headline measure.
 
@@ -107,7 +109,8 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - The completion record `<run>/audit/run_completion.json` is the pipeline's own (`scripts/run_completion.py`), read with the validity rules of its `read()`; B2 writes the same record.
 - The typed-record key `findings` is what B2 writes; the pipeline's records are read from its bus (`common/records.py`), a reading adopted by D-056.
 - The UNCERTAIN marker is tested as `scripts/verifiability_gate.py` tests it.
-- Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11).
+- Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11). The D-068 refusals (`uncomputable_refused`) are not refusals and are not read.
+- The completeness counts read `logs/generation_observation.jsonl` and `logs/model_telemetry.jsonl`, which the output format lists as files a scorer must not depend on: they decide no label, and a missing file reads as not recorded (None).
 - The record id `item_id` and its `revision` (INFRA-037 supersession).
 - The deliverables path.
 

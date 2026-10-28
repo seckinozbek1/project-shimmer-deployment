@@ -7,7 +7,10 @@ writes them in (preregistration section 5.1; loop plan S5, R22 and item 0.8).
                 record (below) is copied and stamped ``written_by`` from the line that
                 carried it: ``python`` exactly when ``body.backend`` is ``paired`` or
                 ``computed`` and ``body.model`` starts with ``python``, ``model`` otherwise
-                (section 5.4); a ``written_by`` the item carries itself is replaced.
+                (section 5.4); a ``written_by`` the item carries itself is replaced. Each
+                record is also stamped ``envelope_agent``, the envelope's ``agent``, so a
+                reader can tell which agent's post carried it (D-066: a record from a
+                partial delivery is marked).
                 Supersession is within one agent and document: of the records with the same
                 envelope ``agent``, the same ``doc_id`` and the same ``item_id``, only the
                 highest ``revision`` is kept, a later ``ts`` and then the later line winning
@@ -17,7 +20,10 @@ writes them in (preregistration section 5.1; loop plan S5, R22 and item 0.8).
                 bus line's ``body.judging_calls``), and, if Python kept the answer, Python's
                 stamped copy (``body.stamped_by`` ``python``). Only the stamped copy is
                 counted; the raw copy's records are listed apart (``raw_judged_absence``)
-                and decide nothing.
+                and decide nothing. D-068: a kept answer on a plan Python could compute
+                nothing for has one copy only, Python's stamped copy (``body.stamped_by``
+                ``python``, ``body.judged_path`` ``uncomputable``); the model's own post of
+                that call withholds its items. It is counted like any model's record.
   review_data   B2: ``deliverables/<document id>/review_data.json`` under its typed-record
                 key ``findings``, each record carrying the ``written_by`` stamp B2 writes.
                 Supersession by ``item_id`` alone (the file holds one document and no agent),
@@ -52,6 +58,7 @@ RECORD_ID_FIELD = "item_id"
 REVISION_FIELD = "revision"
 TIME_FIELD = "ts"
 WRITTEN_BY_FIELD = "written_by"
+ENVELOPE_AGENT_FIELD = "envelope_agent"   # the agent of the envelope that carried a bus record
 UNCERTAIN_FIELD, UNCERTAIN_VALUE, UNCERTAIN_FLAG_FIELD = "confidence", "UNCERTAIN", "uncertain"
 # ---------------------------------------------------------------------------------------
 
@@ -167,14 +174,14 @@ def read_bus(run_dir, document_id) -> dict:
     entries = []
     for body, payload in posts:
         stamp = written_by(body.get("backend"), body.get("model"))
-        records = [dict(item, **{WRITTEN_BY_FIELD: stamp})
+        agent = payload.get("agent")
+        records = [dict(item, **{WRITTEN_BY_FIELD: stamp, ENVELOPE_AGENT_FIELD: str(agent or "")})
                    for item in payload["items"] if is_typed_record(item)]
         raw = (not body.get("stamped_by") and body.get("call_id")
                and str(body["call_id"]) in absence_calls)
         if raw:
             out["raw_judged_absence"].extend(records)
             continue
-        agent = payload.get("agent")
         entries.extend((_record_key(r, agent, document_id), r) for r in records)
     out["records"] = supersede(entries)
     return out
