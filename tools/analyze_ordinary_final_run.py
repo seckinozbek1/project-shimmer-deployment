@@ -28,6 +28,42 @@ DOES_NOT_SHOW=('This report shows run health and cost only. It shows no quality:
                'greedy repeat of the same run measures nothing (11.11).')
 
 
+# D-058 condition vi: the producer's attention, stated in every report's backend field.
+PRODUCER_SDPA_TEXT=('producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
+                    'producer eager')
+OVER_CONTEXT_EVENT='prompt_over_context'
+
+
+def producer_attention_text(manifest):
+    """The producer's attention as the sealed environment set it (D-058): sdpa by default from
+    D-058, eager only under a recorded decision; a manifest without the setting was sealed
+    before D-058 and its producer ran eager, as v5 to v12 did."""
+    environment=manifest.get('environment') or {}
+    value=environment.get('SHIMMER_PRODUCER_ATTENTION')
+    if value=='sdpa':
+        return PRODUCER_SDPA_TEXT
+    if value=='eager':
+        return ('producer eager under decision %s (a measurement run sealed eager; v5 to v12 also ran the '
+                'producer eager)'%environment.get('SHIMMER_PRODUCER_ATTENTION_DECISION'))
+    if value is None:
+        return 'producer eager (sealed before D-058 named the producer attention; v5 to v12 also ran it eager)'
+    return 'producer attention %r: not one the runtime admits'%value
+
+
+def over_context_text(arm, status, events):
+    """D-058 condition v: B3 calls whose prompt and output allowance exceeded the model's
+    context, refused before generating; each such document is a declared exclusion."""
+    if arm=='B1':
+        return 'not applicable: B1 checks every prompt against the context before generating (section 5.3)'
+    if not status.get('pipeline_started'):
+        return 'not determined: the pipeline did not start'
+    if not events:
+        return "none: every B3 prompt fit its model's context with its output allowance"
+    documents=sorted({str(e.get('doc_id') or 'no document id') for e in events})
+    return ('%d calls on %d documents (%s), refused before generating, never truncated: each such document is '
+            'a declared exclusion of B3, counted and never scored (D-058)'%(len(events),len(documents),', '.join(documents)))
+
+
 ARM_TEXT={'B3':'B3: the full pipeline',
           'B1':'B1: the bare-model baseline (benchmark/baselines/bare_model.py), one fixed prompt per item, no pipeline'}
 # The counts a B1 report row carries per checkpoint, read from its b1_summary.json (no text).
@@ -189,8 +225,9 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('B1 checkpoints',b1_counts(status) if arm=='B1' else 'not applicable: a B3 entry runs the pipeline, not bare_model.py'),
         ('Decoding settings','; '.join('%s: %s'%(k,v.get('status')) for k,v in sorted((manifest.get('decoding_policy') or {}).items()))
             or 'not recorded in the manifest'),
-        ('Backend and machine','local open-weight models on one rented GPU; %s in %s'%(launch.get('instance_type','gpu_1x_a10'),
-            launch.get('region','us-east-1'))),
+        ('Backend and machine','local open-weight models on one rented GPU; %s in %s; %s'%(launch.get('instance_type','gpu_1x_a10'),
+            launch.get('region','us-east-1'),producer_attention_text(manifest))),
+        ('B3 prompts over the model context',over_context_text(arm,status,status.get('b3_prompts_over_context') or [])),
         ('Instance type and price','%s at %s dollars an hour'%(launch.get('instance_type','gpu_1x_a10'),launch['hourly_rate'])),
         ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)%s'
             %(status['cost_estimates']['combined_estimate'],
@@ -291,6 +328,8 @@ def analyze(bundle=BASE):
         protected_data_accessed=bool(manifest.get('protected_test')) and bool(completions),
         multi_round_declared=bool(manifest.get('multi_round')),
         multi_round_executed=bool(manifest.get('multi_round')) and bool(list(target.rglob('audit/multi_round.json'))),
+        b3_prompts_over_context=[{k:r.get(k) for k in ('call_id','agent','doc_id','prompt_tokens','max_new_tokens','model_context')}
+                                 for r in raw if r.get('event')==OVER_CONTEXT_EVENT],
         inventory_empty=True,temporary_ssh_removed=True,
         evidence_verified=True,quality_claim=None,subsequent_roadmap_work_started=False)
     # Named apart from the imported rows() reader: one local `rows` in this function would make

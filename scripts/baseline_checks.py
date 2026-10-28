@@ -524,11 +524,13 @@ class BareModelChecks(unittest.TestCase):
 
 
 class _FakeModel:
-    """A mocked 4-bit model: records what was done to it, loads nothing."""
+    """A mocked 4-bit model: records what was done to it, loads nothing. Its config carries
+    the attention it was loaded with, as transformers sets it from attn_implementation."""
 
-    def __init__(self):
+    def __init__(self, attention=None):
         self.config = SimpleNamespace(model_type="qwen2", use_cache=False, quantization_config={
-            "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": "bfloat16"})
+            "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": "bfloat16"},
+            _attn_implementation=attention)
         self.is_loaded_in_4bit = True
         self.prepared_for_kbit = False
 
@@ -546,7 +548,7 @@ class _FakeLibs:
     """transformers and peft stand-ins: count every load and every adapter application."""
 
     def __init__(self):
-        self.calls = {"tokenizer": [], "model": [], "kbit": 0, "adapter": []}
+        self.calls = {"tokenizer": [], "model": [], "kbit": 0, "adapter": [], "attention": []}
         libs = self
 
         class AutoTokenizer:
@@ -559,7 +561,8 @@ class _FakeLibs:
             @staticmethod
             def from_pretrained(path, **kw):
                 libs.calls["model"].append(path)
-                return _FakeModel()
+                libs.calls["attention"].append(kw.get("attn_implementation"))
+                return _FakeModel(kw.get("attn_implementation"))
 
         class PeftModel:
             @staticmethod
@@ -664,6 +667,7 @@ class CheckpointChecks(unittest.TestCase):
             loaded = backend.prepare()
         self.assertEqual(libs.calls["adapter"], [], "the base checkpoint applied an adapter")
         self.assertEqual((libs.calls["model"], libs.calls["kbit"]), ([str(self.base)], 1))
+        self.assertEqual(libs.calls["attention"], ["sdpa"], "the base loads with the producer's attention (D-058)")
         record = loaded["checkpoint"]
         self.assertEqual((record["checkpoint"], record["adapter_applied"], record["adapter_sha256"]),
                          ("base", False, None))
@@ -679,6 +683,7 @@ class CheckpointChecks(unittest.TestCase):
         self.assertEqual([Path(p) for p in libs.calls["adapter"]], [self.adapter_dir],
                          "the tuned checkpoint did not apply its adapter")
         self.assertEqual(libs.calls["model"], [str(self.base)])
+        self.assertEqual(libs.calls["attention"], ["sdpa"], "the tuned producer loads sdpa (D-058)")
         self.assertEqual(loaded["checkpoint"]["adapter_applied"], True)
         self.assertEqual(loaded["digest"], "rev-fixture:%s+adapter:%s" % (
             self.spec["base_hashes"]["model.safetensors"], "a" * 64))
@@ -752,14 +757,15 @@ class _AttentionTokenizer:
 
 
 class _AttentionModel:
-    """The shared resident model, mocked: its config carries `_attn_implementation` (eager,
-    as scripts/final_models.py loads it) and generate() records the attention setting and
+    """The shared resident model, mocked: its config carries `_attn_implementation` (sdpa,
+    as scripts/final_models.py loads the producer since D-058), it sits on a CUDA device
+    (a name only: nothing is moved there), and generate() records the attention setting and
     the enabled sdpa backends at the moment it is called. `fail` is raised by generate."""
 
     def __init__(self):
-        self.config = SimpleNamespace(_attn_implementation="eager", max_position_embeddings=10 ** 6,
+        self.config = SimpleNamespace(_attn_implementation="sdpa", max_position_embeddings=10 ** 6,
                                       model_type="qwen2")
-        self.device, self.calls, self.fail = "cpu", [], None
+        self.device, self.calls, self.fail = "cuda:0", [], None
         self.generation_config = SimpleNamespace(eos_token_id=None)
         self._shimmer_identity = {"model_mode": "final", "adapter_checkpoint": 168}
 
@@ -773,8 +779,10 @@ class _AttentionModel:
 
 class AttentionChecks(unittest.TestCase):
     """D-056 conditions 1 to 4 on mocked models (no model load) and a tiny randomly built
-    CPU model (no download): B1 runs sdpa with the memory-efficient backend pinned while B3,
-    on the same resident model in the same process, runs eager; the attention is recorded in
+    CPU model (no download): B1 runs sdpa with the memory-efficient backend pinned, and so
+    does B3 on the same resident model in the same process (D-058, which superseded D-056
+    condition 2: until D-058 this check held B3 eager, the setting final_models loaded the
+    producer with); the attention is recorded in
     every reply record and the summary and checked against what each call observed; an
     out-of-memory error or a refused kernel stops B1 as a setup failure, never an abstention;
     chunked prefill is off unless a recorded decision adopts it, and gives one-shot
@@ -807,21 +815,32 @@ class AttentionChecks(unittest.TestCase):
 
     def _b3_call(self):
         """One B3 call as the pipeline makes it: agent_wrapper.AgentWrapper.call_local on the
-        resident tuned producer (final mode), with its cost and reply writers stubbed."""
+        resident tuned producer (final mode), with its cost and reply writers stubbed. Returns
+        the attention its reply record would carry."""
         import agent_wrapper
-        caller = SimpleNamespace(backend="local_producer", model=self.spec["model_id"], run_context=None,
-                                 name="PROCESSOR", _optimized_semantics=False,
-                                 _record_cost=lambda r, **kw: None, _write_reply=lambda r, sent: None)
-        result = agent_wrapper.AgentWrapper.call_local(caller, "a fixture prompt", max_new_tokens=2)
+        caller = object.__new__(agent_wrapper.AgentWrapper)
+        written = []
+        caller.backend, caller.model, caller.run_context = "local_producer", self.spec["model_id"], None
+        caller.name, caller._optimized_semantics = "PROCESSOR", False
+        caller._record_cost = lambda r, **kw: None
+        caller._write_reply = lambda r, sent: written.append(dict(sent))
+        result = caller.call_local("a fixture prompt", max_new_tokens=2)
         self.assertTrue(result.ok, result.error)
+        return written[-1]["attention"]
 
-    def test_b1_runs_sdpa_and_b3_stays_eager_in_one_process(self):
+    def test_b1_and_b3_run_sdpa_pinned_in_one_process(self):
+        """D-058 (amending D-056 condition 2): the resident producer is sdpa, B3's call runs
+        pinned to the memory-efficient backend and records it, B1's calls likewise, and the
+        resident model is sdpa after B1, whatever a B1 call raised."""
         torch = _torch_or_skip(self)
         import reply_records
+        self.assertEqual(self.tool.B3_ATTENTION, "sdpa")
         model = _AttentionModel()
         everything = _enabled_backends(torch)
+        b3_record = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                     "attention_decision": None, "pinned": True}
         with self._resident(model):
-            self._b3_call()
+            self.assertEqual(self._b3_call(), b3_record)
             with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
                 reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned")
             context = self.tool.RunContext(Path(self.tmp.name) / "b1", "b1-attn")
@@ -834,16 +853,16 @@ class AttentionChecks(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 backend.generate("s", "u", 2)
             model.fail = None
-            self._b3_call()
-        b1 = ("sdpa", "EFFICIENT_ATTENTION")
-        b3 = ("eager", everything)
-        self.assertNotEqual(everything, "EFFICIENT_ATTENTION", "every backend is enabled outside B1")
-        self.assertEqual(model.calls, [b3] + [b1] * 4 + [b3, b1, b3])
-        self.assertEqual(model.config._attn_implementation, "eager", "the resident model is eager after B1")
+            self.assertEqual(self._b3_call(), b3_record)
+        pinned = ("sdpa", "EFFICIENT_ATTENTION")
+        self.assertNotEqual(everything, "EFFICIENT_ATTENTION", "every backend is enabled outside a call")
+        self.assertEqual(_enabled_backends(torch), everything, "the pin ends with the call")
+        self.assertEqual(model.calls, [pinned] * 8)
+        self.assertEqual(model.config._attn_implementation, "sdpa", "the resident model is sdpa after B1")
         records = reply_records.records(out / "audit" / "model_replies")
         self.assertEqual(len(records), 4)
         for record in records:
-            self.assertEqual((record["attention"]["attention_implementation"], record["attention"]["sdpa_backend"]), b1)
+            self.assertEqual((record["attention"]["attention_implementation"], record["attention"]["sdpa_backend"]), pinned)
         self.assertEqual(summary["attention"], B1_ATTENTION)
         self.assertEqual(summary["loaded"]["attention"], B1_ATTENTION)
 
@@ -893,7 +912,7 @@ class AttentionChecks(unittest.TestCase):
             with self.assertRaises(self.tool.SetupFailure):
                 self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
         self.assertEqual(model.calls, [("sdpa", "EFFICIENT_ATTENTION")])
-        self.assertEqual(model.config._attn_implementation, "eager")
+        self.assertEqual(model.config._attn_implementation, "sdpa")
 
     def _reader(self):
         with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "base"}):
@@ -1079,8 +1098,9 @@ class MeasurementChecks(unittest.TestCase):
         self.assertEqual(code, 4)
         self.assertIn("--attention-decision", err.getvalue())
         self.assertFalse(out.exists(), "a refused eager pass wrote something")
-        # the eager pass on the shared resident model: eager for every call, no sdpa backend
-        # pinned, recorded in every reply record, label and the summary
+        # the eager pass on the shared resident model (sdpa since D-058): eager for every
+        # call, no sdpa backend pinned, recorded in every reply record, label and the summary;
+        # the resident model is sdpa again afterwards and B3's next call runs pinned
         torch = _torch_or_skip(self)
         import reply_records
         model = _AttentionModel()
@@ -1091,8 +1111,10 @@ class MeasurementChecks(unittest.TestCase):
                                                   attention="eager", attention_decision="D-056")
             backend = self.tool.LocalBackend(reader, self.tool.RunContext(out, "b1-eager"))
             summary = self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
-        self.assertEqual(model.calls, [("eager", _enabled_backends(torch))] * 4)
-        self.assertEqual(model.config._attn_implementation, "eager")
+            self.assertEqual(model.config._attn_implementation, "sdpa", "the eager pass restores sdpa")
+            self.assertEqual(AttentionChecks._b3_call(self)["attention_implementation"], "sdpa")
+        self.assertEqual(model.calls, [("eager", _enabled_backends(torch))] * 4 + [("sdpa", "EFFICIENT_ATTENTION")])
+        self.assertEqual(model.config._attn_implementation, "sdpa")
         records = reply_records.records(out / "audit" / "model_replies")
         self.assertEqual([r["attention"] for r in records], [B1_EAGER] * 4)
         labels = [json.loads(p.read_text(encoding="utf-8")) for p in (out / "labels").glob("*.json")]
@@ -1232,11 +1254,44 @@ def _attention_record_without_its_decision(original):
     return record
 
 
-# Neutralize, fail, restore, pass (D-056 condition 6): each entry names a check, the
-# bare_model.py function it holds, and a mutant built from the original; prove_neutralizations()
-# runs the check, then with the mutant in place (it must fail and the mutant must have been
-# called), then restored. `py -3.12 -X utf8 scripts/baseline_checks.py --prove`.
+def _attention_without_restore(original):
+    """B1's switch that leaves the resident model on the pass's attention when it ends."""
+    def switch(model, backends=None, implementation="sdpa"):
+        inner = original(model, backends, implementation)
+
+        @contextlib.contextmanager
+        def kept():
+            with inner as observe:
+                yield observe
+            for config in {id(c): c for c in [model.config]}.values():
+                config._attn_implementation = implementation
+        return kept()
+    return switch
+
+
+def _pin_that_pins_nothing(original):
+    """B3's per-call pin that records the memory-efficient backend but never pins it."""
+    @contextlib.contextmanager
+    def pin(model, decision=None):
+        yield {"attention_implementation": getattr(model.config, "_attn_implementation", None),
+               "sdpa_backend": "EFFICIENT_ATTENTION", "attention_decision": decision, "pinned": True}
+    return pin
+
+
+# Neutralize, fail, restore, pass (D-056 condition 6; D-058 for the amended attention checks):
+# each entry names a check, the function it holds (in bare_model.py unless a module is named
+# fifth), and a mutant built from the original; prove_neutralizations() runs the check, then
+# with the mutant in place (it must fail and the mutant must have been called), then restored.
+# `py -3.12 -X utf8 scripts/baseline_checks.py --prove`.
 NEUTRALIZATIONS = [
+    (AttentionChecks, "test_b1_and_b3_run_sdpa_pinned_in_one_process", "pinned_attention",
+     _pin_that_pins_nothing, "final_models"),
+    (CheckpointChecks, "test_tuned_applies_the_adapter", "load_attention",
+     lambda original: (lambda role, spec=None: "eager"), "final_models"),
+    (AttentionChecks, "test_out_of_memory_stops_b1_as_a_setup_failure", "setup_failure_kind",
+     lambda original: (lambda exc: None)),
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "b1_attention",
+     _attention_without_restore),
     (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "b1_attention",
      _attention_ignoring_eager),
     (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "attention_record",
@@ -1262,24 +1317,35 @@ def prove_neutralizations():
         case(name).run(result)
         return result.wasSuccessful() and not result.skipped
 
-    for case, name, attribute, mutant in NEUTRALIZATIONS:
+    for entry in NEUTRALIZATIONS:
+        case, name, attribute, mutant = entry[:4]
+        owner = entry[4] if len(entry) > 4 else "bare_model"
         invocations = []
 
-        def mutated(module_name, _attribute=attribute, _mutant=mutant):
-            tool = loader(module_name)
-            if module_name == "bare_model":
-                replacement = _mutant(getattr(tool, _attribute))
+        def counting(original, _mutant=mutant):
+            replacement = _mutant(original)
 
-                def counted(*args, **kwargs):
-                    invocations.append(1)
-                    return replacement(*args, **kwargs)
-                setattr(tool, _attribute, counted)
+            def counted(*args, **kwargs):
+                invocations.append(1)
+                return replacement(*args, **kwargs)
+            return counted
+
+        def mutated(module_name, _attribute=attribute):
+            tool = loader(module_name)
+            if module_name == "bare_model" and owner == "bare_model":
+                setattr(tool, _attribute, counting(getattr(tool, _attribute)))
             return tool
         before = single(case, name)
-        with mock.patch.object(module, "_load", mutated):
-            failed = not single(case, name)
+        if owner == "bare_model":
+            with mock.patch.object(module, "_load", mutated):
+                failed = not single(case, name)
+        else:
+            import importlib
+            shared = importlib.import_module(owner)
+            with mock.patch.object(shared, attribute, counting(getattr(shared, attribute))):
+                failed = not single(case, name)
         after = single(case, name)
-        proofs.append({"check": name, "neutralized": "bare_model." + attribute, "baseline_pass": before,
+        proofs.append({"check": name, "neutralized": owner + "." + attribute, "baseline_pass": before,
                        "neutralized_fail": failed and bool(invocations), "restored_pass": after,
                        "mutated_branch_invocations": len(invocations)})
     passed = all(p["baseline_pass"] and p["neutralized_fail"] and p["restored_pass"] for p in proofs)
@@ -1341,15 +1407,16 @@ def check_bare_model():
                     "configuration; in final mode its base checkpoint (the pinned base, "
                     "base_hashes checked, no adapter) never applies the adapter, its tuned "
                     "checkpoint does, a base hash mismatch refuses before any load, and each "
-                    "records its digest (mocked model); D-056: B1 generates under sdpa with the "
-                    "memory-efficient backend pinned while B3 on the same resident model in the "
-                    "same process stays eager, records and verifies the attention in every reply "
-                    "record and the summary, stops on an out-of-memory error or a refused kernel "
+                    "records its digest (mocked model); D-056 and D-058: B1 generates under sdpa "
+                    "with the memory-efficient backend pinned, and so does B3 on the same resident "
+                    "model in the same process (loaded sdpa), records and verifies the attention in "
+                    "every reply record and the summary, stops on an out-of-memory error or a refused kernel "
                     "as a setup failure (never an abstention), and keeps chunked prefill off "
                     "unless a recorded decision adopts it, where it gives one-shot prefill's "
                     "next-token scores on a tiny CPU model built in the check; D-056 condition 6: "
                     "an eager measurement pass only with its recorded decision, recorded in every "
-                    "reply record, label and summary, each pass's peak GPU memory (null without "
+                    "reply record, label and summary, the resident model restored to sdpa after it, "
+                    "each pass's peak GPU memory (null without "
                     "CUDA), and a comparison of two passes counting byte-identical replies and "
                     "agreeing labels")
 
@@ -1366,10 +1433,11 @@ def check():
                              "reference material, and uses the one cut rule and prompt renderer; "
                              "its base checkpoint never applies the adapter, its tuned one does, "
                              "and a base hash mismatch refuses (mocked model); it runs sdpa with "
-                             "the memory-efficient backend pinned while B3 stays eager in the same "
-                             "process, stops on out of memory as a setup failure, and keeps "
-                             "chunked prefill off unless a recorded decision adopts it (D-056); "
-                             "an eager measurement pass needs its recorded decision, each pass "
+                             "the memory-efficient backend pinned, as B3 does on the same resident "
+                             "model in the same process (D-058), stops on out of memory as a setup "
+                             "failure, and keeps chunked prefill off unless a recorded decision "
+                             "adopts it (D-056); an eager measurement pass needs its recorded "
+                             "decision and restores sdpa after it, each pass "
                              "records its peak GPU memory, and two passes are compared for "
                              "byte-identical replies and agreeing labels (D-056 condition 6)")
 

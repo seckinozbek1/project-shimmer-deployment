@@ -70,6 +70,12 @@ _QWEN_LOAD_LOCK = threading.Lock()      # guards first-load so a concurrent firs
 # 32768, Phi 131072 positions) are far larger, so this is not a model limit.
 LOCAL_MAX_OUTPUT_TOKENS = 8192
 
+# D-058 condition iii: every model _load_qwen loads (VERIFIER, PRACTICE_AUDITOR, FACT_CHECKER,
+# REDACTOR and the base-mode producer) is loaded with sdpa named, not left to the library's
+# default, and each generate call runs pinned to the memory-efficient sdpa backend on CUDA
+# (final_models.pinned_attention), recorded per call.
+LOCAL_ATTENTION = final_models.PRODUCER_ATTENTION_DEFAULT
+
 
 def _evict_generation_models(keep_model_id=None):
     """Remove every generation model from _QWEN_MODELS except keep_model_id.
@@ -204,7 +210,8 @@ def _load_qwen(model_id):
                     # see _checkpoint_is_prequantised). device_map pins it to GPU 0 as
                     # before; compute dtype comes from the checkpoint's own config.
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        checkpoint_path, device_map={"": 0}, local_files_only=True)
+                        checkpoint_path, device_map={"": 0}, local_files_only=True,
+                        attn_implementation=LOCAL_ATTENTION)
                 else:
                     # Quantise on the fly (the original path, unchanged except for
                     # double quant): reads the full fp16 checkpoint through host RAM.
@@ -217,13 +224,14 @@ def _load_qwen(model_id):
                         bnb_4bit_use_double_quant=True)
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
                         checkpoint_path, quantization_config=bnb, device_map={"": 0},
-                        local_files_only=True)
+                        local_files_only=True, attn_implementation=LOCAL_ATTENTION)
             else:
                 # No CUDA: unchanged fallback, except torch_dtype. Without it the model
                 # materialises at the fp32 default (a 7B is ~30 GB), which cannot
                 # complete on a 16 GB machine and dies after committing all of it.
                 mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                    checkpoint_path, torch_dtype=torch.float16, local_files_only=True)
+                    checkpoint_path, torch_dtype=torch.float16, local_files_only=True,
+                    attn_implementation=LOCAL_ATTENTION)
             # Log the ACTUAL device every run, so a CPU fallback is never silent.
             try:
                 dev = next(mdl.parameters()).device
@@ -727,7 +735,49 @@ class AgentWrapper:
             reply=r.raw_text if (r.ok or r.raw_text) else None,
             ok=r.ok, error=r.error, decoding=sent.get("decoding"),
             sensitive=bool(getattr(self, "sensitive", False)),
-            phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""))
+            phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""),
+            attention=sent.get("attention"), context=sent.get("context"))
+
+    def _local_generate(self, backend, mdl, inputs, max_new_tokens, decoding, sent, model_id, decision=None):
+        """One local generate call (call_qwen, call_local), D-058. The prompt must fit the
+        model's context with the call's output allowance, or the call is refused before
+        generating: recorded in its reply record (`context`) and as a `prompt_over_context`
+        telemetry event, never truncated and never dropped silently; the document is then a
+        declared exclusion of the B3 arm. Otherwise generate runs inside the model's pinned
+        attention (final_models.pinned_attention: sdpa on CUDA only through the
+        memory-efficient backend), recorded in the reply record (`attention`). Out of memory
+        or a refused kernel is raised once as a named failure (final_models.GenerationFailure),
+        never retried. Returns (output ids, None) or (None, the refused CallResult)."""
+        prompt_tokens = int(inputs["input_ids"].shape[1])
+        sent["context"] = final_models.context_record(mdl, prompt_tokens, max_new_tokens)
+        if sent["context"]["over_context"]:
+            fit = sent["context"]
+            model_telemetry.emit(self.run_context, "prompt_over_context",
+                call_id=getattr(self, "_cost_call_id", None), agent=self.name, backend=backend,
+                doc_id=getattr(self, "_cost_doc_id", "") or "", phase=getattr(self, "_cost_phase", "") or "",
+                prompt_tokens=fit["prompt_tokens"], max_new_tokens=fit["max_new_tokens"],
+                model_context=fit["model_context"])
+            return None, CallResult(backend, model_id, "", ok=False, error=(
+                "prompt_over_context: %d prompt tokens and an output allowance of %d exceed the "
+                "model's %d positions; not truncated, not generated (D-058, a declared exclusion)"
+                % (fit["prompt_tokens"], fit["max_new_tokens"], fit["model_context"])))
+        torch = importlib.import_module("torch")
+        try:
+            with torch.no_grad(), final_models.pinned_attention(mdl, decision) as attention:
+                sent["attention"] = attention
+                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+        except Exception as exc:
+            named = final_models.named_generation_failure(exc)
+            # A raised generation is still a call: its record says so, then it raises on.
+            self._write_reply(CallResult(backend, model_id, "", ok=False,
+                                         error=named.kind if named else type(exc).__name__), sent)
+            if named is None:
+                raise
+            model_telemetry.emit(self.run_context, "generation_failure",
+                call_id=getattr(self, "_cost_call_id", None), agent=self.name, backend=backend,
+                kind=named.kind, attention=sent.get("attention"), prompt_tokens=prompt_tokens)
+            raise named from exc
+        return out, None
 
     @staticmethod
     def _messages_text(messages):
@@ -955,13 +1005,11 @@ class AgentWrapper:
                      decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        try:
-            with torch.no_grad():
-                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
-        except Exception as exc:
-            # A raised generation is still a call: its record says so, then it raises on.
-            self._write_reply(CallResult("qwen_local", model_id, "", ok=False, error=type(exc).__name__), _sent)
-            raise
+        # D-058: refused before generating when over the model's context, otherwise run
+        # inside the pinned attention; a named failure raises once, recorded.
+        out, refused = self._local_generate("qwen_local", mdl, inputs, max_new_tokens, decoding, _sent, model_id)
+        if refused is not None:
+            _record_cost(refused); return refused
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
@@ -1051,13 +1099,15 @@ class AgentWrapper:
                      decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        try:
-            with torch.no_grad():
-                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
-        except Exception as exc:
-            # A raised generation is still a call: its record says so, then it raises on.
-            self._write_reply(CallResult(self.backend, model_id, "", ok=False, error=type(exc).__name__), _sent)
-            raise
+        # D-058: the tuned producer runs under its sealed attention (sdpa pinned to the
+        # memory-efficient backend unless a recorded decision sealed eager), and the decision
+        # travels into the reply record; the _load_qwen models run pinned the same way.
+        sealed = getattr(mdl, "_shimmer_attention", None)
+        decision = sealed.get("attention_decision") if isinstance(sealed, dict) else None
+        out, refused = self._local_generate(self.backend, mdl, inputs, max_new_tokens, decoding, _sent,
+                                            model_id, decision)
+        if refused is not None:
+            _record_cost(refused); return refused
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
