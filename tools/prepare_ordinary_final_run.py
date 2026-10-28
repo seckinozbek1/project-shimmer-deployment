@@ -41,9 +41,9 @@ WORKLOAD_STOP_RESERVE_SECONDS = 900
 TERMINATION_RESERVE_SECONDS = 180
 
 # Named extras of the cloud source archive: paths outside the runtime prefixes that later
-# stages add (S4f adds 'benchmark/baselines/', S4c its adapter code). A directory ends in
-# '/'. A listed path the bound commit does not hold fails the build in one line.
-ARCHIVE_EXTRAS = ()
+# stages add (S4f's baseline tools, S4c's adapters, which the baselines import). A directory
+# ends in '/'. A listed path the bound commit does not hold fails the build in one line.
+ARCHIVE_EXTRAS = ('benchmark/adapters/', 'benchmark/baselines/')
 # Test material never travels inside the source archive: a test reaches the instance by
 # the external bundle path only.
 NEVER_IN_SOURCE_ARCHIVE = ('input/', 'benchmark/corpora/', 'benchmark/keys/', 'seals/', '_xfer/', 'external/',
