@@ -152,6 +152,34 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Rules.** P1, P9, P10, P16, IV.4.
 - **Reverse.** The open item can be taken up in S6.
 
+## D-018. The input format draft: four readings
+
+- **When, stage.** 2026-10-27 09:46 +03:00 (system clock), S3a, writing `docs/INPUT_FORMAT.md` (`input-format-v1-draft`). The text was drafted by a read-only subagent from `scripts/convention_parser.py`, `scripts/pairing_map.py`, `scripts/role_resolution.py`, `scripts/reference_tables.py`, `scripts/paired_review.py`, `tools/score_corpus.py` and `corpus_ingest/`, and written by the lead.
+- **Per-test settings (section 8).** The plan lists per-test settings among the format's parts. The code reads no settings file from a bundle; the values that look per-test (the date cutoff, the withheld audit agents, the 2% rename tolerance, the review mode) are repository-wide. Options: (1) build a per-test settings reader now; (2) state that none is read, list the repository-wide values, and have generators write no settings file. Chosen: (2) (P13, P16: a new reader is a product change S3 does not own, and the manifest already removes the only per-test dependency, the date cutoff). Recorded as open item 14.
+- **Probe declaration (section 11).** The scorer has no probe support. Chosen: a top-level `probe` field in the key, documented as a convention the scorer ignores, so a probe bundle is scored like any bundle. Reverse: a later scorer change can read it.
+- **The shipped negotiation mandates do not follow section 5.** Their completeness-worded rules carry no `[scope: ...]`/`[requires: ...]`. They are sealed test material (H11 forbids editing a test after results), so they are not changed; the request is recorded as TCR-012 for the operator. New bundles follow section 5.
+- **Clean-twin naming (section 10).** The scorer finds a twin's run by the document file name, so a twin's document gets a different neutral name and its own `document` field, and unscoped clean units would draw "no rule applies" findings; section 5 item 4 (coverage) is the rule that prevents it. Documented, nothing changed in code.
+- **Rules.** P1, P9, P13, P16, H11.
+- **Reverse.** Each reading can be changed by a later entry; the draft is frozen as `input-format-v1` only after the code-blind check and before any sealed test is written.
+
+## D-020. The input format after the code-blind check
+
+- **When, stage.** 2026-10-27 10:16 +03:00 (system clock), S3a item 4.
+- **What happened.** The code-blind checker (a fresh `Plan` agent given only `docs/INPUT_FORMAT.md`) wrote a small test and listed 52 guesses (10 BLOCKING), 5 contradicting examples, 8 rules that could not be followed and 15 undefined terms (81 items). A subagent settled every item from the code, verifying behaviour on invented strings through the pure functions only (no pipeline, gate or model); the lead reviewed the full text and changed one rule: bundles need not sit in `benchmark/corpora/`; the document now says the repository's scorer reads only from there (open item 17).
+- **Format choices made in settling.** `[scope: ...]` without `[requires: ...]` is forbidden for preparers (it hands each unit in scope to the model, whose answers vary); every rule names a document label or declares a scope (a rule naming none switches off the "no rule applies" finding on every unit); every number in a value counts as a figure, so identifiers carry letters only; the complete stop-word list is printed; single-version tests with a prior keep `planted` and `clean`.
+- **Defects.** Ten product defects found on the way are recorded, not fixed (open item 16; P16: none in a file S3 changes).
+- **New draft hash.** `991c25f6a6a121be6cccd9d39392f1e0ebb13576085b453d1909195016352f92` (VERSIONS.md). The closure table is kept privately until S03_REPORT.md is written.
+- **Rules.** P1, P9, P13, P16.
+- **Reverse.** Each format choice can be changed in a later draft before the freeze; every change is re-hashed and the generators and checks re-run (S3a item 3).
+
+## D-025. The input format after the generators' 13 questions
+
+- **When, stage.** 2026-10-27 11:34 +0300 (system clock), S3a item 3 (a draft change).
+- **What happened.** The generators lane reported 13 points where the format was silent and it chose a reading. A read-only agent settled each from the code with probes on invented strings (no pipeline, gate or model): 10 readings right, 2 wrong (what a "sentence" is for the date-window bound search: Shimmer joins a paragraph's lines and splits after . ? !, so joined label lines can beat the intended bound; the 2% rename window is 2% of the larger figure, inclusive), 1 right only by luck (a document table cell's own measure word wins over the header; in a reference table the header wins). The riskiest, the low side of a band the rule states itself, is firm (that path never sets `conditional_on`), as the lane assumed.
+- **Change.** 17 edits to `docs/INPUT_FORMAT.md` stating each settled point (format policy: `[unless: ...]` is not used in tests; a probe key carries no `twin_of`; neighbour-dependent flaws are keyed in the unit where Python sees them, with the neighbour named in an extra field the scorer ignores). New draft hash `c2723037d73a3f855721c48a8b6f67831db6afae277aa37b0aad414a9deb982f`.
+- **Follow-up (S3a item 3).** Merge `loop/s03` into the generators lane, correct the lane's sentence reader, rename window and attribution scoring, regenerate the development suite and the long-range corpus, re-run the generator checks, record the hash.
+- **Defect found.** `reference_tables.band_conditions_for_unit` reports a firm low-side comparison as conditional in the pairing map's `band_conditions` (findings and amendments are unaffected): open item 20.
+- **Rules.** P1, P9, P13, S3a item 3.
 ## D-017. S2 plan: the asset-copy declaration and the controller binding
 
 - **When, stage.** 2026-10-27 09:31 +03:00 (system clock), S2 plan, after plan check 1.
@@ -407,3 +435,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Gate at the S3 tip `5ac15f3`** (worktree, 2026-10-28 08:20 to 08:27 UTC): PASS 250, WARN 1, SKIP 3, FAIL or ERROR 29 of 283 checks. The non-pass set is the main checkout's 31 plus checks 28 and 31, which fail only because a worktree has no ignored `input/` folder (environment 2, `docs/loop/GATE_BASELINE.md`). New checks 281 and 284 pass. No regression.
 - **How the product still obeys its rules.** Every one of these trees is the tree gated at the tip or at the loop-branch merge; no product rule was bypassed.
 - **Rules.** IV.7, P8.
+## D-041. S3 after the S2 merge: the format drafts and an open-item number
+
+- **When, stage.** 2026-10-27 15:46 +0300 (system clock), S3.
+- **Merge.** The loop branch (S2 tagged) merged into `loop/s03` in its own commit (`990ed88`, IV.1). The one conflict, in `docs/fix/OPEN_ITEMS.md`, was two different items numbered 20 (S3's pairing-map item and S2's frozen launchers, which already has issue #25). Both kept; S3's became item 22, with a note in the item (D-025 names it 20; append-only, so this entry records the change).
+- **Formats.** `docs/OUTPUT_FORMAT.md` (`output-format-v1-draft`) and section 12 of `docs/INPUT_FORMAT.md` were drafted by a read-only subagent from the code at `990ed88` and placed by the lead (the S3 plan: only the lead writes these files). Its open points stay in OUTPUT_FORMAT section 13 (who hands a sealed run's evidence to the scorer; whether a judged absence is counted once; amendment severity always `required`; no multi-round key format yet). Draft hashes in `VERSIONS.md`.
+- **The bundle layout conflict.** `tools/prepare_ordinary_final_run.py` accepts only `context/`, `conventions/`, a top-level `_review_targets.json` and `case_manifest.json`; the draft's section 1 put the manifest in `context/` and the key beside it. Options: (a) change the tool, (b) describe two forms of one test. Chosen (b), no code change: a sealed **test archive** (manifest at the top, no key; the key goes to the scorer, Annex B.3) and a **working folder** for local runs and the repository's scorer (manifest in `context/`, as `tools/stage_corpus.py` needs). Both give Shimmer the same input. Rules: P13, Annex B.3.
+- **Rules.** IV.1, P3, P13.

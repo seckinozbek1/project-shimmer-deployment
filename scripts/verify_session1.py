@@ -24769,6 +24769,25 @@ def check_280_multi_round_launch_end_to_end():
     return check()
 
 
+
+def check_281_synthetic_generators():
+    """Loop of 2026-10-27, S3 items 8 to 10, revised by D-042: the generators' self-validation
+    against their own ground truth (figure audit and ground-truth scanners), determinism and
+    catches; family 4's case manifests agree with the controller's published rules. No case
+    compares a key with Shimmer's output; agreement is generator_checks.report_agreement,
+    never a gate."""
+    from generator_checks import check
+    return check()
+
+
+def check_284_prior_refusal_kinds():
+    """Loop of 2026-10-27, S3 round 1 (D-042 decision 10): every refusal of a change record
+    carries a typed reason_kind from paired_review.PRIOR_REFUSAL_KINDS, written where it is
+    made and kept in review_data.json's prior_refusals. Numbered 284 because loop/s04 holds
+    282 and 283 (D-047)."""
+    from prior_refusal_checks import check
+    return check()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25133,6 +25152,10 @@ CHECKS = [
      check_279_multi_round_rounds),
     ("280 a declared multi-round Review is sealed, launched, admitted in final mode and assessed",
      check_280_multi_round_launch_end_to_end),
+    ("281 the synthetic generators validate against their own ground truth, and family 4's case manifests agree with the controller",
+     check_281_synthetic_generators),
+    ("284 every refused change record carries a typed reason_kind kept in review_data.json",
+     check_284_prior_refusal_kinds),
 ]
 
 

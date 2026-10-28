@@ -2,6 +2,14 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## 0.1.0.dev3 (2026-10-28)
+
+- **A published input format and output format (drafts).** `docs/INPUT_FORMAT.md` tells a test preparer everything needed to write a test bundle: documents and units, conventions and their machine directives, the one rule for applying directives, the reference corpus, the answer key with typed reasons, the clean twin, the perturbation probes and how a multi-round case is declared. `docs/OUTPUT_FORMAT.md` tells a scorer what a run folder holds and what each file means. Both are drafts until the sealed evaluation freezes them; every change to a draft is hashed in `docs/loop/VERSIONS.md`.
+- **Seeded synthetic test generators** (`benchmark/generators/`, standard library only, never importing Shimmer) for six document families: result sheets, declarations with arithmetic, financial statements, contract terms across versions, regulation-style provisions (with a long-range layout) and neighbour-dependent stock counts. Each test comes with its clean twin and four perturbation probes, at least ten planted flaws with typed reasons, and keys that state ground truth, not Shimmer's output. Generation checks its own figures before it writes anything.
+- **A development suite and a long-range corpus** are regenerated from committed seeds (`benchmark/dev_suite/SEEDS.json`, `benchmark/long_range/SEEDS.json`) into ignored folders. Both are exposed by construction and are for development only.
+- **Every refused change record carries a typed `reason_kind`** (for example `possible_rename`, `tie`, `unit_mismatch`) beside its sentence, in the pairing map and in `review_data.json`'s `prior_refusals`, so a scorer reads the kind, never the wording.
+- Gate checks 281 (the generators) and 284 (refusal kinds) added.
+
 ## 0.1.0.dev2 (2026-10-27)
 
 - **Model findings are marked, never hidden and never promoted.** The markdown deliverables, the run summary and the console mark a finding a model wrote as "Written by a model. Not promoted to an amendment. Not checked by Python." `review_data.json` lists them apart under `model_findings_not_promoted`, without a confidence or verdict field, and `GET /runs/{run_id}/findings` says who wrote each record (`written_by`). Only Python's records enter the comparison with an earlier version and its band list. The sentence naming who produced the findings is generated from what actually ran.
