@@ -150,7 +150,8 @@ B1_RUNNER_ARGS = ('--bundle', '--items', '--out', '--checkpoint', '--development
 # seal admits exactly what bare_model accepts. A controller check holds this table and
 # B1_RUNNER_ARGS equal to the parser's own options (S5 join).
 B1_SEALED_ARGS = {'--agent': True, '--profile': True, '--max-new-tokens': True, '--expect-model-id': True,
-                  '--expect-digest': True, '--expect-decoding': True, '--sensitive': False}
+                  '--expect-digest': True, '--expect-decoding': True, '--sensitive': False,
+                  '--prefill-chunk': True, '--prefill-decision': True}
 
 
 def b1_argument_error(args):
