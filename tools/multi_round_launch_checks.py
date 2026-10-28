@@ -68,8 +68,9 @@ FINAL_MODE_REFUSAL = 'Frozen final models are limited to Review'
 # The runtime files the stand-in source carries: the pipeline the seal reads the
 # INST_FINDER switch from, the constitution it is evaluated against, and the files the
 # sealer requires by name.
+# scripts/final_models.py: the sealer reads the producer's attention rule from it (D-058).
 RUNTIME_SAMPLE = ('scripts/pipeline.py', 'scripts/multi_round.py', 'scripts/decoding_policy.py',
-                  'config/constitution.json', 'config/compact_extraction_prompt.json')
+                  'scripts/final_models.py', 'config/constitution.json', 'config/compact_extraction_prompt.json')
 DOCS = {'round_one': '# Round one\n\nThe first statement of the case.\n',
         'round_two': '# Round two\n\nThe second statement of the case.\n'}
 CONVENTIONS = '# Conventions\n\n## Named sources [severity: low]\nEvery statement names its source.\n'

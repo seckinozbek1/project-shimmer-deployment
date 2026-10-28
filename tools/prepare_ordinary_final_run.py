@@ -150,13 +150,48 @@ def inst_finder_setting(files, value):
         return scope['_inst_finder_switch'](folder)
 
 
-def seal_environment(files, value):
-    """The runtime environment sealed into the manifest; an unratified `off` refuses here."""
+def producer_attention_setting(files, attention=None, decision=None):
+    """SHIMMER_PRODUCER_ATTENTION (and its decision) as the BOUND final_models reads it
+    (D-058): sdpa when the operator names none, eager only with the recorded decision
+    (D-NNN) that asks for it. The rule is not copied: `producer_attention` is read from the
+    bound scripts/final_models.py and evaluated, so the seal refuses exactly what the
+    instance would refuse. The setting is written explicitly so the instance never runs an
+    ambient value; the runner replaces every SHIMMER_ variable with the sealed ones."""
+    require('scripts/final_models.py' in files, 'Frozen model source absent from the bound commit: scripts/final_models.py')
+    source = files['scripts/final_models.py'].decode('utf-8-sig')
+    tree = ast.parse(source)
+    names = {'producer_attention', 'require', 'PRODUCER_ATTENTION_ENV', 'PRODUCER_ATTENTION_DECISION_ENV',
+             'PRODUCER_ATTENTION_DEFAULT', 'EAGER', 'PRODUCER_ATTENTIONS', 'SDPA_BACKEND', 'DECISION_ID'}
+    keep = [n for n in tree.body if (isinstance(n, ast.FunctionDef) and n.name in names) or
+            (isinstance(n, ast.Assign) and all(isinstance(t, ast.Name) and t.id in names for t in n.targets))]
+    require(any(isinstance(n, ast.FunctionDef) and n.name == 'producer_attention' for n in keep),
+            'The bound final_models has no producer attention setting (it predates D-058)')
+    scope = dict(os=os, re=re)
+    exec(compile(ast.Module(body=keep, type_ignores=[]), 'bound_final_models_attention', 'exec'), scope)
+    environ = {}
+    if attention is not None:
+        environ[scope['PRODUCER_ATTENTION_ENV']] = attention
+    if decision is not None:
+        environ[scope['PRODUCER_ATTENTION_DECISION_ENV']] = decision
+    try:
+        record = scope['producer_attention'](environ)
+    except RuntimeError as exc:
+        raise RuntimeError('Refuse to seal the producer attention: ' + str(exc)) from None
+    sealed = {scope['PRODUCER_ATTENTION_ENV']: record['attention_implementation']}
+    if record['attention_decision'] is not None:
+        sealed[scope['PRODUCER_ATTENTION_DECISION_ENV']] = record['attention_decision']
+    return sealed
+
+
+def seal_environment(files, value, attention=None, attention_decision=None):
+    """The runtime environment sealed into the manifest; an unratified `off` refuses here, and
+    so does a producer attention the bound final_models would refuse (D-058)."""
     record = inst_finder_setting(files, value)
     require(not record['refusal'], 'Refuse to seal SHIMMER_INST_FINDER=off: no ratified amendment in the bound '
             'constitution names INST_FINDER and SHIMMER_INST_FINDER')
     return dict(SHIMMER_MODEL_MODE='final',SHIMMER_BACKEND_PROFILE='local',
         SHIMMER_INST_FINDER=record['setting'],
+        **producer_attention_setting(files, attention, attention_decision),
         CUBLAS_WORKSPACE_CONFIG=':4096:8',PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True',
         HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HUB_DISABLE_TELEMETRY='1',
         HF_HUB_DISABLE_IMPLICIT_TOKEN='1',PYTHONNOUSERSITE='1',PYTHONDONTWRITEBYTECODE='1',
@@ -309,7 +344,11 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             'Compact extraction prompt declaration absent from the bound commit')
     decoding = {b: dict(status=p['status'],source=p['source'],sha256=p['sha256'],kwargs=p['kwargs'])
                 for b, p in decoding_policy.summary(ROOT).items()}
-    environment = seal_environment(files, os.environ.get('SHIMMER_INST_FINDER'))
+    # D-058: the producer's attention, sdpa unless the operator seals eager with the recorded
+    # decision that asks for it (a measurement run), read from the environment at sealing.
+    environment = seal_environment(files, os.environ.get('SHIMMER_INST_FINDER'),
+                                   os.environ.get('SHIMMER_PRODUCER_ATTENTION'),
+                                   os.environ.get('SHIMMER_PRODUCER_ATTENTION_DECISION'))
     # Only the explicitly selected input files may enter this bundle; named extras stay.
     files = {n:d for n,d in files.items() if not n.startswith('benchmark/') or any(named(n, p) for p in ARCHIVE_EXTRAS)}
     if workload is None:

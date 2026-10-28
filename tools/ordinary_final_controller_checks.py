@@ -2498,7 +2498,8 @@ class ControllerChecks(unittest.TestCase):
 
     def test_unratified_inst_finder_off_refuses_to_seal(self):
         files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
-                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes()}
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
         self.assertEqual(sealer.seal_environment(files, None)['SHIMMER_INST_FINDER'], 'on')
         self.assertEqual(sealer.seal_environment(files, 'on')['SHIMMER_INST_FINDER'], 'on')
         with self.assertRaisesRegex(RuntimeError, 'Refuse to seal SHIMMER_INST_FINDER=off'):
@@ -2508,6 +2509,82 @@ class ControllerChecks(unittest.TestCase):
             id='FIXTURE', operator_approved=True, change='INST_FINDER switched off through SHIMMER_INST_FINDER')]
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
+
+    # ---- D-058: the producer's attention is sealed, sdpa unless a decision asks for eager ---
+
+    def test_the_producer_attention_is_sealed_and_eager_only_with_its_decision(self):
+        """D-058 item (iv): the setting the instance's final_models reads at load travels in the
+        sealed environment: sdpa when the operator names none, eager only with the recorded
+        decision (D-NNN) that asks for it, so a measurement run can be sealed eager. The seal
+        evaluates the BOUND final_models' own rule and refuses what the instance would refuse;
+        the runner's environment, built from the manifest, is what final_models reads."""
+        import final_models
+        files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
+        default = sealer.seal_environment(files, None)
+        self.assertEqual(default['SHIMMER_PRODUCER_ATTENTION'], 'sdpa')
+        self.assertNotIn('SHIMMER_PRODUCER_ATTENTION_DECISION', default)
+        eager = sealer.seal_environment(files, None, 'eager', 'D-058')
+        self.assertEqual((eager['SHIMMER_PRODUCER_ATTENTION'], eager['SHIMMER_PRODUCER_ATTENTION_DECISION']),
+                         ('eager', 'D-058'))
+        for attention, decision in (('eager', None), ('sdpa', 'D-058'), ('eager', 'decided'), ('flash', None)):
+            with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer attention', msg=(attention, decision)):
+                sealer.seal_environment(files, None, attention, decision)
+        # what the instance reads: the runner replaces every SHIMMER_ variable with the sealed ones
+        for sealed, expected in ((default, ('sdpa', None)), (eager, ('eager', 'D-058'))):
+            with patch.dict(os.environ, sealed):
+                if 'SHIMMER_PRODUCER_ATTENTION_DECISION' not in sealed:
+                    os.environ.pop('SHIMMER_PRODUCER_ATTENTION_DECISION', None)
+                read_back = final_models.producer_attention()
+            self.assertEqual((read_back['attention_implementation'], read_back['attention_decision']), expected)
+        # a bound final_models from before D-058 has no such setting and is refused
+        older = dict(files, **{'scripts/final_models.py': b'def require(ok, reason):\n    pass\n'})
+        with self.assertRaisesRegex(RuntimeError, 'predates D-058'):
+            sealer.seal_environment(older, None)
+
+    def test_the_report_states_the_producer_attention_and_prompts_over_the_context(self):
+        """D-058 items (v) and (vi): the backend field names the producer's sealed attention
+        (sdpa: the fixed sentence; none: sealed before D-058, eager), and the over-context row
+        counts the B3 calls refused for exceeding the model's context, by document."""
+        import analyze_ordinary_final_run as analysis
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        over = [dict(event='prompt_over_context', call_id='c%d' % k, agent=agent, doc_id='doc-a', prompt_tokens=31000,
+                     max_new_tokens=2048, model_context=32768) for k, agent in ((2, 'PROCESSOR'), (3, 'VERIFIER'))]
+        run = 'evidence/run/r1/'
+        evidence = {run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+                    run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in [call] + over).encode(),
+                    run + 'audit/execution_topology.jsonl': b'',
+                    'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()}
+        folder = self.root / 'analysis_attention'
+        self.analysis_folder(folder, evidence=evidence,
+                             environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
+                      'producer eager', text)
+        self.assertIn('- **B3 prompts over the model context.** 2 calls on 1 documents (doc-a)', text)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([r['call_id'] for r in status['b3_prompts_over_context']], ['c2', 'c3'])
+        # sealed before D-058: the producer ran eager; no over-context event: none
+        older = self.root / 'analysis_attention_older'
+        self.analysis_folder(older, evidence=dict(evidence, **{run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode()}))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(older)
+        text = (older / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager (sealed before D-058 named the producer attention', text)
+        self.assertIn('- **B3 prompts over the model context.** none: every B3 prompt fit', text)
+        # an eager measurement run names its decision
+        eager = self.root / 'analysis_attention_eager'
+        self.analysis_folder(eager, environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager',
+                                                     SHIMMER_PRODUCER_ATTENTION_DECISION='D-058'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(eager)
+        text = (eager / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager under decision D-058', text)
+        self.assertIn('- **B3 prompts over the model context.** not determined: the pipeline did not start', text)
 
     # ---- S2 checker round 1 ---------------------------------------------------------------
 
@@ -3857,6 +3934,15 @@ NEUTRALIZATIONS = [
     # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
     ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
      schedule_ignoring_exposure),
+    # D-058 (iv): eager sealed without its decision (the instance's final_models would refuse it).
+    ('test_the_producer_attention_is_sealed_and_eager_only_with_its_decision', sealer, 'producer_attention_setting',
+     lambda files, attention=None, decision=None: {'SHIMMER_PRODUCER_ATTENTION': attention or 'sdpa'}),
+    # D-058 (vi): the backend field without the producer's attention.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'producer_attention_text',
+     lambda manifest: 'producer attention not stated'),
+    # D-058 (v): over-context calls not counted.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'over_context_text',
+     lambda arm, status, events: 'none'),
     # R18: the per-entry collection refused past the soft budget, as before S5.
     ('test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder', controller, 'soft_budget_exempt',
      lambda label: label in {'stop_workload', 'pack_evidence', 'evidence_hash', 'final_gpu_state'}),

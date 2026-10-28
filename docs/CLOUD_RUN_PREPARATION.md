@@ -302,7 +302,32 @@ archive hash and the code commit, and the sealer prints counts only; an exposed
 bundle's seal says `exposed, no manifest`. The sealer refuses to seal
 `SHIMMER_INST_FINDER=off` unless the bound constitution holds a ratified amendment
 naming INST_FINDER and SHIMMER_INST_FINDER, using the pipeline's own test read
-from the bound source. Paths outside the runtime prefixes enter the source
+from the bound source.
+
+The producer's attention (D-058) is sealed the same way, in the manifest's
+`environment`, and the runner replaces every `SHIMMER_` variable with the sealed
+ones, so the instance's `scripts/final_models.py` loads the producer with exactly
+the sealed value. With nothing set at sealing it is `SHIMMER_PRODUCER_ATTENTION=sdpa`:
+every producer call, and every call of the models `_load_qwen` loads, runs pinned
+to the memory-efficient sdpa backend, and each reply record names the kernel. A
+measurement run (D-058 condition iv, for a comparison with the eager runs v5 to v12
+and L1) is sealed eager by setting both variables in the sealing shell, the second
+naming the recorded decision that asks for it:
+
+```powershell
+$env:SHIMMER_PRODUCER_ATTENTION = 'eager'
+$env:SHIMMER_PRODUCER_ATTENTION_DECISION = 'D-058'
+python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+Remove-Item Env:SHIMMER_PRODUCER_ATTENTION, Env:SHIMMER_PRODUCER_ATTENTION_DECISION
+```
+
+The sealer evaluates the bound `final_models.producer_attention` and refuses, in
+one line, eager without a decision, a decision with sdpa, a decision that is not
+`D-NNN`, or any other value. The Auditor896 classifier is not governed by this
+setting: it loads eager, as its runtime contract says. The report's backend field
+states the sealed attention (section "Report and binding").
+
+Paths outside the runtime prefixes enter the source
 archive only when listed in `ARCHIVE_EXTRAS` in the sealer (today
 `benchmark/adapters/` and `benchmark/baselines/`, so the B1 and B2 tools and the
 adapters they import reach the instance; their `fixtures/` folders and `*_checks.py`
@@ -617,6 +642,15 @@ so), agents withheld (FACT_CHECKER with both of its reasons), the
 `SHIMMER_INST_FINDER` value, multi-round, asset copy MATCH or not, role
 separation for a sealed run, and what the result does not show. A field that
 does not apply says why. `--batch` writes one report per batch run folder.
+
+The backend field names the producer's sealed attention (D-058): "producer sdpa
+(memory-efficient, pinned); differs from v5 to v12, which ran the producer eager"
+for the default, the decision for a run sealed eager, and "sealed before D-058"
+(eager) for an older bundle. The row "B3 prompts over the model context" counts
+the B3 calls refused before generating because their prompt and output allowance
+exceeded the model's context (the `prompt_over_context` telemetry events, also
+listed under `b3_prompts_over_context` in `FINAL_STATUS.json`), with the documents
+they belong to: each such document is a declared exclusion of B3, never scored.
 
 Every report also names the entry's arm. A B1 entry never runs the pipeline and
 so never writes `run_completion.json` or model telemetry; the analyser reports it
