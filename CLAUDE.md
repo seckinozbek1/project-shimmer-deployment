@@ -111,7 +111,10 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` again, so bundles sealed
   before it refuse the same way and must be re-sealed. `scripts/agent_wrapper.py` is not
   in the controller binding: the seal already pins it among the runtime files the bundle
-  carries.
+  carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
+  and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
+  evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
+  S5's merge refuse the same way and must be re-sealed.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
@@ -172,6 +175,25 @@ processing swarm governed by an append-only constitution.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
+- B1-ARM-A (loop S5): the sealer writes `arm` (B3 or B1) into every manifest; a manifest
+  without one is B3. A B1 manifest carries `b1` (its sealed checkpoints `{name, args}`, the
+  item ids of its one document, the `items.json` digest) and `items.json` as a support file;
+  a sealed checkpoint carries only the options `benchmark/baselines/bare_model.py`'s parser
+  takes (`ordinary_final_run.B1_SEALED_ARGS`, refused at sealing otherwise; that parser takes
+  no abbreviations). `tools/ordinary_final_run.py` keeps every guard for both arms, refuses an
+  authorization whose `arm` differs from the sealed one (none means B3), and for B1 loads the
+  sealed `bare_model.py` in its own process, never imports `pipeline`, runs `main()` once per
+  checkpoint into `evidence/b1/<name>`, and passes only on one reply record per item per
+  checkpoint. A batch entry's plan arm must equal its sealed arm; a batch file may say
+  `"form": "b3_only"` (exposed bundles only, each item once, unpaired). Past the soft budget
+  a batch entry's `batch_pack_evidence` and `batch_evidence_hash` still run. The analyser
+  reports a B1 entry from `evidence/result.json` and each checkpoint's `b1_summary.json`.
+- STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
+  sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
+  and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
+  own `items.json` outside it. It never copies `answer_key.json` or build records, and
+  refuses the whole staging when a file under `context/` or `conventions/` is named like a
+  key. Check 287.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
@@ -254,6 +276,10 @@ processing swarm governed by an append-only constitution.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
+  A key outside `benchmark/corpora/` is scored with `tools/score_corpus.py --key <answer_key.json>
+  --run <run>`, and its twin with `--twin-key` and `--twin-run`; the scorer refuses a twin the key
+  does not name and a run that is not of the twin's document. Development cases built from
+  repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline
 
