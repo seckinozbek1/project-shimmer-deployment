@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 
-from cloud_run_common import InvalidPreparation, require, safe_metadata
+from cloud_run_common import InvalidPreparation, no_window, require, safe_metadata
 from cloud_run_watchdog import LambdaTermination, load_credential
 
 
@@ -74,7 +74,8 @@ class LambdaExperiment(LambdaTermination):
             args=[executable,'--disable','--silent','--proto','=https','--connect-timeout','10','--max-time','20','--config','-','--write-out','\n%{http_code}']
             if method:args+=['--request',method]
             if body is not None:args+=['--header','Content-Type: application/json','--data-binary',json.dumps(body)]
-            response=subprocess.run(args+['https://cloud.lambda.ai/api/v1/'+endpoint],input=config,capture_output=True,text=True,timeout=25)
+            response=subprocess.run(args+['https://cloud.lambda.ai/api/v1/'+endpoint],input=config,capture_output=True,text=True,timeout=25,
+                                    creationflags=no_window())
             payload,sep,status=response.stdout.rpartition('\n')
             require(response.returncode==0 and sep and status in ('200','201','204'), 'provider request failed')
             if status=='204':return {'data': {}}

@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 from ordinary_final_run import read
+from cloud_run_common import no_window
 
 PHASE_DEADLINES = dict(ssh_ready=20, python_gate=30, fresh_directory=30, support_transfer=300, assets_transfer=10800,
                        archive_integrity=300, extract_payload=900, create_environment=180, install_pinned_wheels=1800,
@@ -92,7 +93,8 @@ def main(bundle, stage, use_provider):
     alive = 'unknown'
     if process:
         try:
-            out = subprocess.run(['tasklist', '/FI', 'PID eq %d' % process['pid']], capture_output=True, text=True, timeout=20).stdout
+            out = subprocess.run(['tasklist', '/FI', 'PID eq %d' % process['pid']], capture_output=True, text=True, timeout=20,
+                                 creationflags=no_window()).stdout
             alive = 'alive' if str(process['pid']) in out else 'exited'
         except Exception:
             alive = 'unknown'

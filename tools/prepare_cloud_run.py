@@ -22,7 +22,7 @@ from email.parser import BytesParser
 from pathlib import Path
 
 from cloud_run_common import (InvalidPreparation, credential_locations, digest,
-    extract_source, json_bytes, require, safe_name, write_json)
+    extract_source, json_bytes, no_window, require, safe_name, write_json)
 from cloud_run_watchdog import operator_preflight
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -42,16 +42,17 @@ ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense', '--review
 def git(root, *args):
     # The staged scan is mandatory BEFORE every git operation, including reads.
     scan = subprocess.run(['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMRT', '-z'],
-                          cwd=root, capture_output=True, check=True)
+                          cwd=root, capture_output=True, check=True, creationflags=no_window())
     for name in scan.stdout.decode('utf-8').split('\0'):
         if not name:
             continue
         staged = subprocess.run(['git', 'show', ':' + name], cwd=root,
-                                capture_output=True, check=True)
+                                capture_output=True, check=True, creationflags=no_window())
         hits = credential_locations(staged.stdout, name)
         require(not hits, 'possible staged credential: ' + name +
                 (':' + str(hits[0]['line']) if hits else '') + '; stop without printing values')
-    result = subprocess.run(['git', *args], cwd=root, capture_output=True, check=True, timeout=30)
+    result = subprocess.run(['git', *args], cwd=root, capture_output=True, check=True, timeout=30,
+                            creationflags=no_window())
     return result.stdout
 
 
@@ -441,7 +442,8 @@ def prepare(args):
         'teardown_required': ['instance_id', 'termination_requested_utc', 'termination_verified_utc', 'status', 'hourly_rate'],
         'completion_requires': 'exit zero, one finished run, scoring, collected hashes, provider termination verified'})
     def tests():
-        result = subprocess.run([sys.executable, str(ROOT / 'tools/cloud_run_checks.py'), '--json'], cwd=ROOT, capture_output=True)
+        result = subprocess.run([sys.executable, str(ROOT / 'tools/cloud_run_checks.py'), '--json'], cwd=ROOT, capture_output=True,
+                                creationflags=no_window())
         require(result.returncode == 0, 'offline preparation/deployment tests failed (run tools/cloud_run_checks.py for counts)')
         value = json.loads(result.stdout)
         require(value['passed'] and value['tests_run'] > 0, 'invalid test report')
@@ -479,8 +481,10 @@ def main(argv=None):
     selected = resolve(root=ROOT)
     if os.path.normcase(os.path.abspath(sys.executable)) != os.path.normcase(selected['executable']):
         # Sealing parses repository ASTs in-process, so bootstrap must hand off too.
+        # A foreground re-exec writes to the operator's console, so it keeps it (D-079).
         return subprocess.run([selected['executable'], '-B', str(Path(__file__).absolute()),
-                               *(sys.argv[1:] if argv is None else argv)], check=False).returncode
+                               *(sys.argv[1:] if argv is None else argv)], check=False,
+                              creationflags=no_window(keep_console=True)).returncode
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--experiment-id', required=True)
     parser.add_argument('--expected-commit', required=True)

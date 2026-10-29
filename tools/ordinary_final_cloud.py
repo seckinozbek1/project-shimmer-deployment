@@ -27,7 +27,7 @@ import time
 
 from ordinary_final_run import read, write, sha, require
 import ordinary_final_run as runner
-from cloud_run_common import credential_locations
+from cloud_run_common import credential_locations, no_window
 from lambda_experiment_provider import LambdaExperiment
 from run_remote_experiment import poll_state, termination
 import loop_budget_guard as guard
@@ -82,7 +82,7 @@ def frozen_commit(tag):
     require(isinstance(tag,str) and FROZEN_TAG.fullmatch(tag) is not None and '..' not in tag
             and not tag.endswith(('.','.lock')),'Frozen tag not found')
     result=process.run(['git','rev-parse','--verify','--quiet','refs/tags/'+tag+'^{commit}'],cwd=ROOT,
-                       capture_output=True,timeout=30)
+                       capture_output=True,timeout=30,creationflags=no_window())
     require(result.returncode==0,'Frozen tag not found')
     return result.stdout.decode().strip()
 
@@ -471,7 +471,7 @@ def execute():
         folder=BASE if into is None else into
         timeout=bounded(timeout)
         begin=time.time()
-        try:r=subprocess.run(argv,capture_output=True,timeout=timeout)
+        try:r=subprocess.run(argv,capture_output=True,timeout=timeout,creationflags=no_window())
         except subprocess.TimeoutExpired:
             if tolerate_timeout:
                 # A poll that hangs is an unreachable poll, not a phase result.
@@ -614,7 +614,8 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         collect('batch_',folder,tag)
     try:
         phase('temporary_ssh_identity')
-        r=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',name],capture_output=True)
+        r=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',name],capture_output=True,
+                         creationflags=no_window())
         require(r.returncode==0,'Temporary SSH generation failed')
         registration=provider.request('ssh-keys',dict(name=name,public_key=Path(str(identity)+'.pub').read_text().strip()))['data'][0]
         save('ssh_registration.json',registration)
@@ -663,7 +664,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
         watchdog=subprocess.Popen([sys.executable,str(ROOT/'tools/ordinary_final_watchdog.py'),'--bundle',str(BASE),
             '--credential-file',str(CREDENTIAL),'--arm'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,creationflags=flags)
+            stderr=subprocess.DEVNULL,creationflags=no_window(flags))
         save('watchdog_process.json',dict(pid=watchdog.pid))
         for _ in range(30):
             if (BASE/'WATCHDOG_ARMED.json').exists():break
