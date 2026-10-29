@@ -408,3 +408,24 @@ open-item sweep.
 - **Evidence.** lane/s05-defect report (commits d18cf93, 0e77433, 7e9f16f); `scripts/paired_review.py`; `benchmark/adapters/common/mapping.py`.
 - **Why it was left.** Each is outside D-068's declared scope or needs the verification run's counts first (P16, P9 reason e until measured).
 - **What would settle it.** (1) count them apart in the summaries and the tr catalog, with check 278 updated; (2) apply the plan's rule to judged absences, with a pinned amendment; (3) the verification run's `not_finding_shaped` count, then a decision; (4) carry the call id on the stamped result; (5) the final preregistration attack.
+
+## 30. The reading agent's claim slot needs claim ids that real documents never carry (found at loop S5, item 7 diagnostics)
+
+- **What it is.** The compact extraction contract accepts a claim only by an id written in the span text (`scripts/compact_contracts.py` around line 64). No development document under review carries such ids, so every PROCESSOR reply that writes a claim is refused as "Ungrounded claim id" and the accepted extractions are empty spans. Downstream, the classifier pairs an empty extraction with its source, so the clinical sheet's pairs are all labelled OMISSION.
+- **Evidence.** Saved replies of L1, L4a and L5v (development, exposed): refusals for an ungrounded claim id in 5 calls on the device log, 3 on its clean twin, 2 and 1 on two L4a documents; not one source span carries a claim id; classifier labels OMISSION on every pair whose extraction was empty. Recorded in the S5 report, item 7.
+- **Why it was left.** Placing claim ids in spans by Python (as EXTRACTION-B does for reference ids) changes the input the frozen Producer checkpoint was evaluated on; it needs its own evidence run and is a product change for S6a, not a dry-run fix (P16, P11).
+- **What would settle it.** A general rule for where claim ids come from (placed by Python, or not required), measured on development tests that are not benchmarks before any benchmark use.
+
+## 31. An amendment with no reference id raises validator errors, and amendments carry no agent (found at loop S5, item 7 diagnostics)
+
+- **What it is.** Amendments built from computed findings in L1 and L5v carry an empty `ref_ids` list in some cases, which leaves `_validator_errors` on them (the comment then lacks a CONV and REF id), and every amendment's `agent` field is null.
+- **Evidence.** L5v device log 4 validator errors, L5v clinical sheet 2, L1 2 (saved `review_data.json`).
+- **Why it was left.** Found by a read-only diagnostic during S5's cloud runs; the fix belongs to the amendment path (S6a), after the dry runs (P16).
+- **What would settle it.** Trace why a computed finding reaches amendments with no REF id (the unit's passage placement, `paired_review.unit_passage_refs`), fix generally, and hold it with a check.
+
+## 32. The scorer's twin comparison cannot read a Python-only run (found at loop S5)
+
+- **What it is.** `tools/score_corpus.py --twin-run` reads the twin run's bus (`logs/agent_bus.jsonl`). B2 (`benchmark/baselines/python_only.py`) writes no bus, so a B2 twin cannot be passed; S5 scored each B2 twin as its own run (false positives counted) instead.
+- **Evidence.** S5 B2 runs on the development suite (`external/s05/B2_suite/`, ignored): "no bus at ...".
+- **Why it was left.** A scorer change is attacked by a checker before use (III.2); the workaround gives the same false-positive count (P16).
+- **What would settle it.** Read the twin's findings from `review_data.json` when the run has no bus, with a check.
