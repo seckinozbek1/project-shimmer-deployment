@@ -73,27 +73,38 @@ decide scope, or replace conditional interpretation or independent auditing.
     return any(c.get("agrees") is False for c in plan["checks"])
 
 
-def run_wave(runtime, calls, reason):
+def _admissible(calls):
+    if len({id(w) for w,k in calls}) != len(calls):
+        raise ValueError("A wave requires distinct wrapper instances")
+    if any(w.backend not in {"local_producer", "local_auditor"} for w,k in calls):
+        raise ValueError("Optimized waves are local only")
+    live = calls[0][0].bus
+    if any(w.bus is not live for w,k in calls):
+        raise ValueError("Wave calls must share one run bus")
+    return live
+
+
+def _parents(runtime):
+    return getattr(runtime, "frontier", ()) or ((runtime.previous,) if runtime.previous else ())
+
+
+def run_wave(runtime, calls, reason, snapshot=None, parents=None):
     """A complete sibling group, one wrapper per call, no shared model replicas.
 
 Governance checks still run in every wrapper. No sibling consumes another's
 output. Source and parent results are supplied explicitly before admission.
 All receipts, including failures, publish in source order after the wave drains.
+A chunk of a larger gather passes the gather's own snapshot and parents (run_waves);
+with neither passed both are read here, as for every wave below the bound.
 """
     if not calls:
         return []
-    if len({id(w) for w,k in calls}) != len(calls):
-        raise ValueError("A wave requires distinct wrapper instances")
-    if any(w.backend not in {"local_producer", "local_auditor"} for w,k in calls):
-        raise ValueError("Optimized waves are local only")
     with runtime.lock:
-        live = calls[0][0].bus
-        if any(w.bus is not live for w,k in calls):
-            raise ValueError("Wave calls must share one run bus")
-        snapshot = live.read_all()
+        live = _admissible(calls)
+        snapshot = live.read_all() if snapshot is None else snapshot
         start = len(runtime.scheduler.tasks)
         wave_id = "wave-%06d" % start
-        parents = getattr(runtime, "frontier", ()) or ((runtime.previous,) if runtime.previous else ())
+        parents = _parents(runtime) if parents is None else parents
         tasks, proxies = [], []
         for offset, (wrapper, kwargs) in enumerate(calls):
             task_id = "task-%06d" % (start + offset)
@@ -133,6 +144,29 @@ All receipts, including failures, publish in source order after the wave drains.
                     raise result.exception
                 raise RuntimeError("Semantic wave task " + result.state)
             results.append(result.value)
+        return results
+
+
+def run_waves(runtime, calls, reason):
+    """D-076 (INC-019): a gather over the scheduler's bound runs as consecutive waves
+of at most max_pending calls, in source order, never refused. Every chunk shares the
+ONE snapshot and the ONE parent set read before the first, so no sibling in any chunk
+sees another sibling's posts. Each chunk's posts publish after it drains, so the bus
+still receives them in source order; the next wave depends on every chunk's tasks.
+A gather at or below the bound is exactly one run_wave, as before.
+"""
+    bound = runtime.scheduler.max_pending
+    if len(calls) <= bound:
+        return run_wave(runtime, calls, reason)
+    with runtime.lock:
+        snapshot = _admissible(calls).read_all()
+        parents = _parents(runtime)
+        results, frontier = [], ()
+        for begin in range(0, len(calls), bound):
+            results += run_wave(runtime, calls[begin:begin+bound], reason, snapshot, parents)
+            frontier += runtime.frontier
+        runtime.frontier = frontier
+        runtime.write()
         return results
 
 
@@ -242,10 +276,9 @@ async def execute_plans(plans):
         else:
             calls.append((w,k))
         groups.append((begin,len(calls),w.name,base.get("document_id", "")))
-    # Scheduler admission is bounded. Keep one shared snapshot per admitted wave.
-    if len(calls) > runtime.scheduler.max_pending:
-        raise ValueError("Extraction exceeds bounded wave admission; no source silently omitted")
-    results = await asyncio.to_thread(run_wave, runtime, calls, "explicit_parent_results_and_wave_snapshot")
+    # Scheduler admission is bounded: an over-bound gather runs as consecutive waves
+    # sharing one snapshot and one parent set, every call admitted once (D-076).
+    results = await asyncio.to_thread(run_waves, runtime, calls, "explicit_parent_results_and_wave_snapshot")
     # Retry a technical partition failure once; never retry semantic refusal/empty.
     retries=0
     for i, ((w,k),r) in enumerate(zip(calls,results)):
