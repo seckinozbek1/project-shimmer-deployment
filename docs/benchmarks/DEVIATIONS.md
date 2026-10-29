@@ -153,3 +153,12 @@ Each entry has these fields, in this order:
 - **Holdout result seen**: no.
 - **Development scores existing when decided**: B1, B2 and B3 development scores exist; the primary analysis is not changed.
 - **Status**: draft; the adapters compute it before C0 (lane), and C implements it from this text.
+
+### DEV-013. The ContractNLI part rule after the span-part measurement
+
+- **Entered**: 2026-10-29 20:45 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-083.
+- **What changes**: preregistration section 2, the trigger: recorded as undecided (the span-part run failed out of memory after 9.1 minutes; no complete cost and no lower bound above 0.46 USD), so the merged-part fallback applies, by the route the S5 plan declared before the measurement (R17). Arms: all.
+- **Decided from**: run health and cost of one development agreement; no score.
+- **Holdout result seen**: no.
+- **Status**: draft.

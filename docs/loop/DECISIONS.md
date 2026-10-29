@@ -713,3 +713,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Result (development, run health).** Both cases (the synthetic family 4 case and the negotiation case) reached the multi-round phase with activation `activated` and were refused there (`agent_output_unavailable`, exit 8): the reading agent's reply to the phase's long free-form prompt ran to its 4,096-token cap (INC-023). The do-not-recompute rule held on real execution (round 2 reused 8 of 11 units of the synthetic case). S5 item 2's run happened; its health criterion (outcome `reviewed`) is not met.
 - **Options.** (a) Fix now (a new call shape for the phase, measured on both cases) and re-run: a design decision and about 2.8 USD more than S5 has after L6s2 (P9 b); (b) record, report, and give it to S6a with open item 35. Chosen (b): the S5 exit criterion "multi-round run done" is met as an execution with a recorded failure, and the fix belongs to the open-item sweep, paid from S5's unused allocation if any remains (IV.3), else recorded under P9 (b). FOR_SECKIN.md lists it.
 - **Rules.** P9, P16, P1, IV.6 (design gap).
+
+## D-083. L6s2: the span-part run failed out of memory; the merged-part route applies; S5 spend closed
+
+- **When, stage.** 2026-10-29 20:45 +0300 (system clock), S5 item 5 and item 10a.
+- **Result.** L6s2 (26 billed minutes, 0.56 USD): the B3 run on agreement `04f58368963d` with span parts failed with `GenerationOutOfMemory` (`agent_wrapper.py:790`) after 9.1 minutes of workload. No complete cost and no lower bound above 0.46 USD; by R17 the trigger is recorded as undecided and section 2 uses merged parts (DEV-013). Span parts on the A10 are reported as not runnable on this agreement (development, one document).
+- **S5 spend.** 20.64 USD of 24 (L1 0.49, L2 3.18, L3e 3.38, L4a 2.60, L5v 1.31, L4b 4.39, L6 3.74, L6m 0.99, L6s2 0.56); 3.36 unused, the only money S6 may spend (IV.3).
+- **C0.** Run 1 agreed on every label set it could check; run 2 (with the B2 run folders run 1 lacked) reports full agreement on every label set of ContractNLI, ContraDoc and SciTab, primary and S-1 to S-8. The scorer hash of the last run is `bf6c9292544ac721433842605c0bb84763600643851a3a794193dd3cec071c84`.
+- **Rules.** R17, IV.3, P1, S5 item 10.
