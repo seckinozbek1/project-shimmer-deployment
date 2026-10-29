@@ -73,14 +73,24 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              semantic_complete false is not a run failure and is labelled from its
              records (a stopped run that did not reach its end still is one); S-6
              makes every item of such a document ABSTAIN; an item no record decides
-             whose rule's judging calls all failed is ABSTAIN item_calls_failed once
-             the registry id map is adopted, and until then the row says it was not
-             applied and whether it would have been; completeness per document (the
+             whose rule's judging calls all failed is ABSTAIN item_calls_failed through
+             the run's own registry id map (adopted, D-078; a missing, unreadable or
+             many-to-one map is not used, the row says why, the document is counted;
+             with the switch off the row says whether it would have applied); a
+             pairing-map refusal naming a registry id refuses its operator id's item;
+             completeness per document (the
              PROCESSOR calls accepted against made, a partial delivery, the pairs made
              from it, the items a record of it decided); the items a band record
              flagged (section 12 item 3); a D-068 kept answer on the
              bus decides its rule's item as a model's record. Each by neutralise,
              fail, restore, pass
+  overcontext  section 5.3 and open point 12.14 (D-078): a B3 document whose run has a
+             reply record with context.over_context true is excluded (basis
+             over_context_excluded, listed and counted), left out of every scored
+             analysis but S-7, which scores its items ABSTAIN, and out of the paired
+             view (score --paired-with) for both arms; reply records that fit change no
+             label; B4 is not checked; the saved L4b FinDVer run reads 3 such calls where
+             external/ holds it (skipped otherwise). Each by neutralise, fail, restore, pass
   dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
              opaque id only; sorted by words then id; evenly spaced positions; each
              replacement listed), the build restricted to chosen documents, B2 on it,
@@ -1327,7 +1337,7 @@ class MappingChecks(_Case):
         cases = _json(_fixture("contractnli", "mapping_cases.json"))
         items, runs, b1 = _materialise(cases, self.root / "s5")
         b2 = c["cli"].label(_adapter("contractnli"), items, "B2", runs)
-        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
+        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
         for arm, folder in (("B1", b1), ("B0", None)):
             labels = c["cli"].label(_adapter("contractnli"), items, arm, folder)
             self.assertEqual([r["class"] for r in labels["S-5"]["labels"]],
@@ -1557,7 +1567,7 @@ class MetricChecks(_Case):
                token_counter=WordCounter(100))
         items = self.root / "cut" / "items.json"
         result = c["cli"].score(adapter, c["cli"].label(adapter, items, "B0"), self.root / "cut")
-        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "primary"])
+        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "primary"])
         self.assertEqual((result["primary"]["decisions"], result["S-4"]["decisions"]), (4, 3))
         self.assertEqual((result["primary"]["items_evidence_beyond_cut"],
                           result["S-4"]["items_evidence_beyond_cut"]), (1, 0))
@@ -1908,7 +1918,7 @@ class RecordReaderChecks(_Case):
                 by_bus = c["cli"].label(_adapter(name), items, arm, bus_runs)
                 self.assertEqual(_label_view(by_bus["primary"]), _label_view(by_review["primary"]), name + " " + arm)
                 self.assertTrue(by_bus["primary"]["labels"], name)
-                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
+                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
             with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
                 with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
                     c["cli"].label(_adapter(name), items, "B3", bus_runs)
@@ -2004,11 +2014,16 @@ class IncompleteRunChecks(_Case):
         path = self.root / "items.json"
         path.write_text(json.dumps({"items": items}), encoding="utf-8")
         labels = c["cli"].label(_adapter("contractnli"), path, "B3", root)
-        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "primary"])
+        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
         b0 = c["cli"].label(_adapter("contractnli"), path, "B0")
         self.assertEqual([r["class"] for r in b0["S-6"]["labels"]], [r["class"] for r in b0["primary"]["labels"]])
 
-    def test_item_calls_failed_waits_for_the_rule_map(self):
+    def test_item_calls_failed_applies_through_the_rule_map(self):
+        # Open point 12.11, adopted (D-078): a judging call names the registry id; the run's
+        # own audit/convention_assignment.json (by_rule, source_rule_id) takes it to the
+        # item's operator id, and an item no record decides whose rule's calls all failed is
+        # ABSTAIN item_calls_failed. A map that is missing, unreadable or not one to one is
+        # not used on that document: the row says why and the document is counted.
         m = _common()["mapping"]
         spec = _adapter("contractnli").SPEC
         rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2", "CONV-CNLI-NDA-3"]
@@ -2022,36 +2037,95 @@ class IncompleteRunChecks(_Case):
         lines = [_bus_line("A", "dcall", [_rec("r3", rules[2], "irregular")], "paired", "python")]
         root = self.root / "calls"
         _incomplete_run(root, "dcall", completion=_completion(), bus_lines=lines, pairing=pairing, rule_map=rule_map)
-        _incomplete_run(root, "dnomap", completion=_completion(), bus_lines=[_bus_line("A", "dnomap", [], "paired", "python")],
-                        pairing=pairing)
-        items = self._items("dcall", rules) + self._items("dnomap", rules[:1])
+        empty = lambda doc: [_bus_line("A", doc, [], "paired", "python")]  # noqa: E731
+        _incomplete_run(root, "dnomap", completion=_completion(), bus_lines=empty("dnomap"), pairing=pairing)
+        # two registry ids naming one operator id: not one to one, not used
+        _incomplete_run(root, "dtwo", completion=_completion(), bus_lines=empty("dtwo"), pairing=pairing,
+                        rule_map={"CONV-001": rules[0], "CONV-002": rules[0].lower(), "CONV-003": rules[2]})
+        bad = _incomplete_run(root, "dbad", completion=_completion(), bus_lines=empty("dbad"), pairing=pairing)
+        (bad / "audit" / "convention_assignment.json").write_text("{not json", encoding="utf-8")
+        items = (self._items("dcall", rules) + self._items("dnomap", rules[:1])
+                 + self._items("dtwo", rules[:1]) + self._items("dbad", rules[:1]))
 
         def view():
             out = m.label_pipeline_arm(spec, items, root, arm="B3")
             return ({r["item_id"]: (r["class"], r["basis"], r["item_calls_failed"]) for r in out["labels"]},
-                    out["counts"]["item_calls_failed"], out["counts"]["item_calls_failed_not_applied"])
+                    out["counts"]["item_calls_failed"], out["counts"]["item_calls_failed_not_applied"],
+                    out["counts"]["documents_rule_map_unusable"],
+                    {d["document_id"]: d["rule_map_status"] for d in out["documents"]})
 
-        def unsettled():
-            got = view()
-            want = ({"i-dcall-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled:would_apply"),
-                     "i-dcall-1": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
-                     "i-dcall-2": ("FLAG", "irregular", "not_applied_rule_map_unsettled:would_apply"),
-                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled")}, 0, 2)
-            return [] if got == want else ["unsettled %s" % (got,)]
+        statuses = {"dcall": "ok", "dnomap": "missing", "dtwo": "not_one_to_one", "dbad": "unreadable"}
 
         def adopted():
-            with mock.patch.object(m, "RULE_ID_MAP_ADOPTED", True):
-                got = view()
+            got = view()
             # all calls failed and no record decides: ABSTAIN; a record still decides; a
-            # rule with one returned call is silent; no map in the run: says so
+            # rule with one returned call is silent; a missing, unreadable or many-to-one
+            # map: not applied, says why, the document counted
             want = ({"i-dcall-0": ("ABSTAIN", "item_calls_failed", "applied"),
                      "i-dcall-1": ("CLEAR", "silent", None),
                      "i-dcall-2": ("FLAG", "irregular", "applied"),
-                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_no_rule_map")}, 1, 0)
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_no_rule_map"),
+                     "i-dtwo-0": ("CLEAR", "silent", "not_applied_rule_map_not_one_to_one"),
+                     "i-dbad-0": ("CLEAR", "silent", "not_applied_rule_map_unreadable")}, 1, 0, 3, statuses)
             return [] if got == want else ["adopted %s" % (got,)]
-        self.assertFalse(m.RULE_ID_MAP_ADOPTED, "open point 12.11 is not settled: the exception is not applied")
-        self._proof(unsettled, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+
+        def unsettled():
+            # the switch off (the S4 state): computed, reported, never applied
+            with mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False):
+                got = view()
+            want = ({"i-dcall-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dcall-1": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dcall-2": ("FLAG", "irregular", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dtwo-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dbad-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled")}, 0, 2, 3, statuses)
+            return [] if got == want else ["unsettled %s" % (got,)]
+
+        def loose(run_dir):
+            # a reader that takes the map as written, one to one or not
+            path = Path(run_dir) / "audit" / "convention_assignment.json"
+            try:
+                by_rule = json.loads(path.read_text(encoding="utf-8"))["by_rule"]
+            except (OSError, ValueError, KeyError):
+                return {}, "ok"
+            return {k.casefold(): v["source_rule_id"].casefold() for k, v in by_rule.items()}, "ok"
+        self.assertTrue(m.RULE_ID_MAP_ADOPTED, "open point 12.11 is settled (D-078): the exception is applied")
+        self._proof(adopted, lambda: mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False))
         self._proof(adopted, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+        self._proof(adopted, lambda: mock.patch.object(m, "read_rule_map", loose))
+        self._proof(unsettled, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+
+    def test_a_registry_id_refusal_maps_to_the_operator_id(self):
+        # Open point 12.11 (D-078): a pairing-map refusal (absence_refused) names the
+        # registry id under `rule_id`, as scripts/pipeline.py writes it; through the run's own
+        # map it is a refusal for the item of that operator id (UNDECIDED: ContractNLI's
+        # NotMentioned), and with no map in the run it matches no item (silent).
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2"]
+        refusal = {"unit_id": "u01-p-00001", "rule_id": "CONV-002", "relation": "missing_field",
+                   "reason": "absence claim supplies no quote"}
+        pairing = {"absence_refused": [refusal]}
+        root = self.root / "refused"
+        _incomplete_run(root, "dmap", completion=_completion(), bus_lines=[_bus_line("A", "dmap", [], "paired", "python")],
+                        pairing=pairing, rule_map={"CONV-001": rules[0], "CONV-002": rules[1]})
+        _incomplete_run(root, "dnomap", completion=_completion(),
+                        bus_lines=[_bus_line("A", "dnomap", [], "paired", "python")], pairing=pairing)
+        items = self._items("dmap", rules) + self._items("dnomap", rules)
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            got = {r["item_id"]: (r["class"], r["label"], r["basis"]) for r in out["labels"]}
+            want = {"i-dmap-0": ("CLEAR", "entailment", "silent"),
+                    "i-dmap-1": ("UNDECIDED", "not mentioned", "refusal"),
+                    "i-dnomap-0": ("CLEAR", "entailment", "silent"),
+                    "i-dnomap-1": ("CLEAR", "entailment", "silent")}
+            problems = [] if got == want else ["labels %s" % got]
+            if out["counts"]["refusals"] != 1:
+                problems.append("refusals %s" % out["counts"]["refusals"])
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False))
+        self._proof(body, lambda: mock.patch.object(m, "PAIRING_RULE_FIELDS", ("source_rule_id",)))
 
     def test_completeness_is_reported_per_document(self):
         m = _common()["mapping"]
@@ -2137,6 +2211,186 @@ class IncompleteRunChecks(_Case):
         self.assertEqual(read["raw_judged_absence"], [])
         row = m.classify(spec, rule, m.read_run(run, "dkept", rec.BUS))
         self.assertEqual((row["class"], row["basis"], row["layer"]), ("FLAG", "irregular", "judged"))
+
+
+# ---------------------------------------------------------------------------
+# section 5.3 and open point 12.14 (D-078): B3 documents with a call over the model's context
+
+
+def _reply_record(run_dir, sequence, agent, context):
+    """One reply record as scripts/reply_records.py writes it (counts only, no text):
+    `<run>/audit/model_replies/<sequence>_<call id>.json`, with `context` when given."""
+    folder = Path(run_dir) / "audit" / "model_replies"
+    folder.mkdir(parents=True, exist_ok=True)
+    call_id = ("%032x" % sequence)
+    record = {"schema_version": 1, "sequence": sequence, "call_id": call_id, "agent": agent,
+              "backend": "local_producer", "model_id": "stand-in", "backend_ok": context is None
+              or context.get("over_context") is not True, "payload": None, "reply": None}
+    if context is not None:
+        record["context"] = context
+    (folder / ("%06d_%s.json" % (sequence, call_id))).write_text(json.dumps(record), encoding="utf-8")
+
+
+def _ctx(prompt_tokens, limit, allowance=2048):
+    return {"prompt_tokens": prompt_tokens, "max_new_tokens": allowance, "model_context": limit,
+            "over_context": None if limit is None else prompt_tokens + allowance > limit}
+
+
+class OverContextChecks(_Case):
+    """Section 5.3 (D-058 condition v) and open point 12.14 (D-078), on a hand-written B3 run
+    per document of a synthetic ContractNLI build: a document whose run has one reply record
+    with `context.over_context` true is excluded from B3 (basis over_context_excluded,
+    listed and counted), every analysis but S-7 leaves it out, S-7 scores its items ABSTAIN,
+    and the paired view drops it for both arms; without the flag the labels are those of
+    the same run with no reply records at all. Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _setup(self):
+        c = _common()
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = c["mapping"].read_items(items_path)
+        docs = sorted({i["document_id"] for i in items})
+        self.assertGreaterEqual(len(docs), 2, "the synthetic build needs two documents")
+        by_doc = c["mapping"].by_document(items)
+        over, fits = docs[0], docs[1:]
+        runs = {}
+        for name in ("flag", "noflag", "bare"):
+            root = self.root / name
+            for doc in docs:
+                rules = [i["rule_id"] for i in by_doc[doc]]
+                # one irregular and one ok record, so every document has decided items
+                recs = [_rec("x1", rules[0], "irregular")] + ([_rec("x2", rules[1], "ok")] if len(rules) > 1 else [])
+                run = _incomplete_run(root, doc, completion=_completion(),
+                                      bus_lines=[_bus_line("A", doc, recs, "paired", "python")])
+                if name == "bare":
+                    continue
+                _reply_record(run, 1, "PROCESSOR", _ctx(3000, 32768))
+                _reply_record(run, 2, "VERIFIER", _ctx(1000, None))      # no stated context
+                _reply_record(run, 3, "SPEECH_ACT_TAGGER", None)          # an older record
+                if name == "flag" and doc == over:
+                    _reply_record(run, 4, "SPEECH_ACT_TAGGER", _ctx(35340, 32768))
+                    _reply_record(run, 5, "LEGAL_ANALYST", _ctx(36413, 32768))
+                    _reply_record(run, 6, "LEGAL_ANALYST", _ctx(36413, 32768))
+            runs[name] = root
+        return c, adapter, items_path, by_doc, over, fits, runs
+
+    def test_an_over_context_document_is_excluded_from_b3(self):
+        c, adapter, items_path, by_doc, over, fits, runs = self._setup()
+        m, cli = c["mapping"], c["cli"]
+        n_over = len(by_doc[over])
+        n_all = sum(len(v) for v in by_doc.values())
+
+        def body():
+            problems = []
+            labels = cli.label(adapter, items_path, "B3", runs["flag"])
+            primary = labels["primary"]
+            mine = [r for r in primary["labels"] if r["document_id"] == over]
+            if {(r["class"], r["basis"]) for r in mine} != {("ABSTAIN", "over_context_excluded")}:
+                problems.append("excluded rows %s" % {(r["class"], r["basis"]) for r in mine})
+            others = [r for r in primary["labels"] if r["document_id"] != over]
+            if any(r["basis"] == "over_context_excluded" for r in others):
+                problems.append("a fitting document was excluded")
+            counts = primary["counts"]
+            if (counts["over_context_excluded_documents"], counts["items_over_context_excluded"]) != (1, n_over):
+                problems.append("counts %s" % counts)
+            listed = primary["over_context"]
+            if (listed["checked"], listed["documents"], listed["items"]) != (True, 1, n_over) or [
+                    (d["document_id"], d["over_context_calls"], d["over_context_by_agent"])
+                    for d in listed["excluded_documents"]] != [
+                    (over, 3, {"LEGAL_ANALYST": 2, "SPEECH_ACT_TAGGER": 1})]:
+                problems.append("listed %s" % listed)
+            # every sensitivity keeps the exclusion except S-7, which makes it ABSTAIN
+            for name in ("S-1", "S-2", "S-3", "S-5", "S-6"):
+                if {r["basis"] for r in labels[name]["labels"] if r["document_id"] == over} != {"over_context_excluded"}:
+                    problems.append(name + " lost the exclusion")
+            s7 = {(r["class"], r["basis"]) for r in labels["S-7"]["labels"] if r["document_id"] == over}
+            if s7 != {("ABSTAIN", "s7_over_context_abstain")}:
+                problems.append("S-7 %s" % s7)
+            # scored: the excluded document is in no analysis but S-7
+            scored = cli.score(adapter, labels, self.root / "b")
+            for name, result in scored.items():
+                want = (len(fits) + 1, n_all) if name == "S-7" else (len(fits), n_all - n_over)
+                if name == "S-4":
+                    want = (want[0], result["decisions"])     # S-4 drops its own items
+                if (result["documents"], result["decisions"]) != want:
+                    problems.append("%s scored %s" % (name, (result["documents"], result["decisions"])))
+            if scored["S-7"]["coverage"]["answered"] != n_all - n_over:
+                problems.append("S-7 answered %s" % scored["S-7"]["coverage"])
+            # the paired view: B0 against B3 and B3 against B0 both drop it; B0 alone keeps all
+            b0 = cli.label(adapter, items_path, "B0")
+            with_b3 = cli.score(adapter, b0, self.root / "b", paired_with=labels)
+            if with_b3["primary"]["documents"] != len(fits) + 1:
+                problems.append("B0 alone %s" % with_b3["primary"]["documents"])
+            paired = with_b3["paired"]
+            if (paired["documents"], paired["left_out_over_context"]["other_arm"],
+                    paired["analyses"]["primary"]["documents"], sorted(paired["analyses"])) != (
+                    len(fits), [over], len(fits), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "primary"]):
+                problems.append("B0 paired %s" % {k: v for k, v in paired.items() if k != "analyses"})
+            back = cli.score(adapter, labels, self.root / "b", paired_with=b0)["paired"]
+            if (back["documents"], back["left_out_over_context"]["this_arm"],
+                    back["analyses"]["primary"]["decisions"]) != (len(fits), [over], n_all - n_over):
+                problems.append("B3 paired %s" % {k: v for k, v in back.items() if k != "analyses"})
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_FIELD", "never_written"))
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "scored_view", lambda spec, result: result))
+        self._proof(body, lambda: mock.patch.object(m, "over_context_excluded", lambda result: set()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s7", m.sensitivity_s1))
+
+    def test_without_the_flag_b3_is_labelled_as_before(self):
+        # Reply records whose context fits (or states none, or is absent) change nothing:
+        # every analysis equals that of the same runs with no reply records at all, and B1,
+        # B2 and B4 are never checked for it.
+        c, adapter, items_path, by_doc, over, fits, runs = self._setup()
+        m, cli = c["mapping"], c["cli"]
+
+        def view(result):
+            return sorted((r["item_id"], r["class"], r["basis"]) for r in result["labels"])
+
+        def body():
+            problems = []
+            fit = cli.label(adapter, items_path, "B3", runs["noflag"])
+            bare = cli.label(adapter, items_path, "B3", runs["bare"])
+            for name in fit:
+                if view(fit[name]) != view(bare[name]):
+                    problems.append(name + " differs")
+            if fit["primary"]["over_context"]["documents"] or fit["primary"]["counts"]["items_over_context_excluded"]:
+                problems.append("excluded %s" % fit["primary"]["over_context"])
+            # B4 reads the same runs and is not checked: nothing excluded, even with the flag
+            b4 = cli.label(adapter, items_path, "B4", runs["flag"])
+            if b4["primary"]["over_context"]["checked"] or any(
+                    r["basis"] == "over_context_excluded" for r in b4["primary"]["labels"]):
+                problems.append("B4 excluded")
+            if cli.score(adapter, fit, self.root / "b")["primary"]["decisions"] != sum(len(v) for v in by_doc.values()):
+                problems.append("fit scored on fewer items")
+            return problems
+        # neutralised: a reader that takes any record with a context object as over it
+        loose = lambda run_dir: {"reply_records": 1, "records_with_context": 1, "over_context_calls": 1,  # noqa: E731
+                                 "over_context_by_agent": {"X": 1}, "unreadable_records": 0}
+        self._proof(body, lambda: mock.patch.object(m, "read_over_context", loose))
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_ARMS", ("B3", "B4")))
+
+    def test_the_development_findver_run_is_excluded(self):
+        # Counts only, on the saved L4b FinDVer B3 run where external/ holds it (skipped
+        # otherwise): the three calls over their model's context the draft of section 12
+        # item 14 lists (SPEECH_ACT_TAGGER, LEGAL_ANALYST, VERIFIER).
+        run = EXTERNAL / "s05" / "labels" / "_runs" / "B3" / "findver" / "L4b" / "e61777d6327c"
+        if not (run / "audit" / "model_replies").is_dir():
+            self.skipTest("external/ does not hold the S5 development runs")
+        m = _common()["mapping"]
+        over = m.read_over_context(run)
+        self.assertEqual((over["over_context_calls"], over["over_context_by_agent"], over["unreadable_records"]),
+                         (3, {"LEGAL_ANALYST": 1, "SPEECH_ACT_TAGGER": 1, "VERIFIER": 1}, 0))
+        with mock.patch.object(m, "OVER_CONTEXT_FIELD", "never_written"):
+            self.assertEqual(m.read_over_context(run)["over_context_calls"], 0)
 
 
 # ---------------------------------------------------------------------------
@@ -2508,10 +2762,18 @@ GROUPS = {
                                     "refuses with the flag off"),
     "incomplete": (IncompleteRunChecks, "a run that reached its end with exit 0 and semantic_complete "
                                         "false is labelled from its records, S-6 makes its items ABSTAIN, "
-                                        "item_calls_failed waits for the registry id map (reported as not "
-                                        "applied until then), completeness is reported per document, and a "
-                                        "kept D-068 answer decides its rule as a model's record (D-066, "
-                                        "D-068; neutralise, fail, restore, pass)"),
+                                        "item_calls_failed applies through the run's own registry id map "
+                                        "(D-078; a missing, unreadable or many-to-one map not used, says "
+                                        "why and is counted), a pairing-map refusal naming a registry id "
+                                        "refuses its operator id's item, completeness is reported per "
+                                        "document, and a kept D-068 answer decides its rule as a model's "
+                                        "record (D-066, D-068; neutralise, fail, restore, pass)"),
+    "overcontext": (OverContextChecks, "a B3 document whose run has a reply record with "
+                                       "context.over_context true is excluded (listed, counted, left "
+                                       "out of every analysis but S-7, which scores it ABSTAIN, and out "
+                                       "of the paired view for both arms); without the flag B3 is "
+                                       "labelled as with no reply records; B4 is not checked "
+                                       "(section 5.3, D-078; neutralise, fail, restore, pass)"),
     "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
                              "sorts by words then id, takes evenly spaced positions (the median "
                              "for one) and lists each replacement; the restricted build holds only "
@@ -2538,8 +2800,8 @@ def check():
                              "back as the input format and as Shimmer splits them, cut per document, "
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
-                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6; B3 refused "
-                             "until the bus reading is adopted), read B2 and B3 records by one "
+                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7; B3 "
+                             "excluded on a call over the model's context), read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")

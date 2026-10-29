@@ -13,9 +13,18 @@ matching line wins:
   4. a refusal                                     -> UNDECIDED
   5. no record at all (silent)                     -> CLEAR, except (D-066) ABSTAIN with
      basis item_calls_failed when the pairing map records at least one judging call for
-     the item's rule and every one has outcome reply_failed (applied only once the
-     registry id to operator id map is adopted, open point 12.11; until then the row
-     says why it was not applied)
+     the item's rule and every one has outcome reply_failed (a judging call names the
+     registry id, matched to the item's operator id through the run's own
+     audit/convention_assignment.json, adopted under open point 12.11, D-078; with that
+     map missing, unreadable or not one to one the exception is not applied on the
+     document and the row says why)
+
+Before any line, section 5.3 (D-058 condition v; open point 12.14, D-078): a B3 document
+whose run made at least one model call over its model's context (a reply record under
+audit/model_replies/ whose `context.over_context` is true, as scripts/reply_records.py
+writes it) is excluded from B3: every item of it carries basis over_context_excluded, is
+listed and counted, and is never scored; sensitivity S-7 scores those items ABSTAIN.
+A pairing-map refusal names its rule by the registry id too, and is matched the same way.
 
 The records are read by the one record reader (common/records.py): B2's from
 review_data.json, B3's and B4's from the run's bus, stamped written_by from the line that
@@ -33,7 +42,9 @@ model-written record always decides the item of the rule it was posted for. UNDE
 becomes the benchmark's undecided label where it has one (SciTab: not enough info;
 ContractNLI: not mentioned) and ABSTAIN elsewhere. S-5 applies the earlier order, a
 refusal before an ok record, to every pipeline arm (section 5.1). S-6 (D-066) makes
-every item of a semantically incomplete document ABSTAIN, for every pipeline arm.
+every item of a semantically incomplete document ABSTAIN, for every pipeline arm. S-7
+(section 5.3, D-078) makes every item of a B3 document excluded for a call over its
+model's context ABSTAIN; every other analysis leaves those items out.
 
 Completeness is reported per document and arm (D-066): semantic_complete, the PROCESSOR
 calls accepted against made, whether the PROCESSOR delivery was partial, the auditor pairs
@@ -93,14 +104,6 @@ WRITTEN_BY_PYTHON = "python"              # "python" or "model", decided from th
 B1_LABELS_DIR = "labels"                  # bare_model.py: <out>/labels/<item id>.json
 DELIVERABLE_FILES = ("review_data.json", "review_findings.md", "tracked_changes.docx",
                      "document_summary.md")
-# D-066, the item-level exception: a judging call's outcome when the call failed, and where
-# the run maps a registry id (CONV-001, the id a judging call names) to the operator's own
-# id (the item's rule id). The map is the run's own record (docs/OUTPUT_FORMAT.md section
-# 8.2), but which map section 5.1 reads is open point 12.11 of the preregistration; until
-# the lead adopts it, the exception is computed, reported as not applied, and changes no label.
-JUDGING_CALL_FAILED = "reply_failed"
-RULE_ID_MAP_FILE = ("audit", "convention_assignment.json")   # PROVISIONAL
-RULE_ID_MAP_ADOPTED = False                                   # open point 12.11
 # D-066, completeness: payload-free telemetry the run writes (docs/OUTPUT_FORMAT.md section
 # 12: files a scorer must not depend on). Read for the completeness report only; no label
 # depends on them.
@@ -111,6 +114,30 @@ PRODUCER_AGENT = "PROCESSOR"                                              # PROV
 # two phase-5 auditors that read its draft (CLAUDE.md, VERIFIER-A).
 DRAFT_READERS = ("PROCESSOR", "VERIFIER", "FACT_CHECKER")                 # PROVISIONAL
 # ---------------------------------------------------------------------------------------
+
+# D-066, the item-level exception: a judging call's outcome when the call failed, and where
+# the run maps a registry id (CONV-001, the id a judging call and a pairing-map refusal
+# name) to the operator's own id (the item's rule id): the run's own record
+# (docs/OUTPUT_FORMAT.md section 8.2), `by_rule` -> `source_rule_id`. Adopted: open point
+# 12.11 of the preregistration, settled by the lead (D-078). The map is used on a document
+# only when it is readable and one to one; otherwise the exception is not applied there,
+# the row says why, and the document is counted (`documents_rule_map_unusable`).
+JUDGING_CALL_FAILED = "reply_failed"
+RULE_ID_MAP_FILE = ("audit", "convention_assignment.json")
+RULE_ID_MAP_ADOPTED = True                                    # open point 12.11, D-078
+RULE_MAP_OK, RULE_MAP_MISSING = "ok", "missing"
+RULE_MAP_UNREADABLE, RULE_MAP_NOT_ONE_TO_ONE = "unreadable", "not_one_to_one"
+# Section 5.3 (D-058 condition v) and open point 12.14 (D-078): a B3 document whose run made
+# a model call over its model's context is excluded from B3. The call is read from its reply
+# record exactly as scripts/reply_records.py writes it: `<run>/audit/model_replies/*.json`,
+# the field `context`, its key `over_context` true (a boolean, compared with `is True`;
+# scripts/final_models.context_record writes None where the model states no context).
+REPLY_RECORDS_DIR = ("audit", "model_replies")
+REPLY_CONTEXT_FIELD = "context"
+OVER_CONTEXT_FIELD = "over_context"
+OVER_CONTEXT_ARMS = ("B3",)   # section 5.3 names B3 (B4 is not run where B3's text does not fit)
+OVER_CONTEXT_BASIS = "over_context_excluded"
+S7_BASIS = "s7_over_context_abstain"
 
 
 class Refused(Exception):
@@ -261,30 +288,70 @@ def completeness(run_dir, document_id, completion) -> dict:
     return out
 
 
-def read_rule_map(run_dir) -> dict:
-    """The run's own registry id to operator id map ({} when absent or unreadable), keys
-    and values folded for comparison."""
+def read_rule_map(run_dir) -> tuple:
+    """(map, status): the run's own registry id to operator id map, keys and values folded
+    for comparison, and whether it can be used. Status `missing` (no file), `unreadable`
+    (not JSON, or no `by_rule` object), `not_one_to_one` (two registry ids, compared without
+    regard to case, name one operator id, or one registry id is listed twice) or `ok`. The
+    map is {} unless the status is `ok` (open point 12.11, D-078)."""
     path = Path(run_dir).joinpath(*RULE_ID_MAP_FILE)
-    data, _ = _read_json(path) if path.is_file() else (None, "missing")
+    if not path.is_file():
+        return {}, RULE_MAP_MISSING
+    data, _ = _read_json(path)
     by_rule = data.get("by_rule") if isinstance(data, dict) else None
     if not isinstance(by_rule, dict):
-        return {}
-    return {_fold(k): _fold(v.get("source_rule_id")) for k, v in by_rule.items()
-            if isinstance(v, dict) and v.get("source_rule_id")}
+        return {}, RULE_MAP_UNREADABLE
+    pairs = [(_fold(k), _fold(v.get("source_rule_id"))) for k, v in by_rule.items()
+             if isinstance(v, dict) and v.get("source_rule_id")]
+    keys = [k for k, _v in pairs]
+    values = [v for _k, v in pairs]
+    if len(set(keys)) != len(keys) or len(set(values)) != len(values):
+        return {}, RULE_MAP_NOT_ONE_TO_ONE
+    return dict(pairs), RULE_MAP_OK
+
+
+def read_over_context(run_dir) -> dict:
+    """Section 5.3 (D-058 condition v; open point 12.14): the run's model calls over their
+    model's context, read from every reply record under audit/model_replies/ (one JSON file
+    per call, scripts/reply_records.py). Counts only: the reply records read, those that
+    carry a `context` object, those whose `context.over_context` is true, those by agent,
+    and the files that could not be read (an adapter fault, never a silent zero)."""
+    folder = Path(run_dir).joinpath(*REPLY_RECORDS_DIR)
+    out = {"reply_records": 0, "records_with_context": 0, "over_context_calls": 0,
+           "over_context_by_agent": {}, "unreadable_records": 0}
+    if not folder.is_dir():
+        return out
+    for path in sorted(folder.glob("*.json")):
+        record, _error = _read_json(path)
+        if not isinstance(record, dict):
+            out["unreadable_records"] += 1
+            continue
+        out["reply_records"] += 1
+        context = record.get(REPLY_CONTEXT_FIELD)
+        if not isinstance(context, dict):
+            continue
+        out["records_with_context"] += 1
+        if context.get(OVER_CONTEXT_FIELD) is True:
+            out["over_context_calls"] += 1
+            agent = str(record.get("agent") or "")
+            out["over_context_by_agent"][agent] = out["over_context_by_agent"].get(agent, 0) + 1
+    out["over_context_by_agent"] = dict(sorted(out["over_context_by_agent"].items()))
+    return out
 
 
 def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
     """{failure, failure_reasons, records, raw_judged_absence, pairing_refusals, faults,
-    source, semantic_incomplete, judging_calls, rule_map, completeness} for one document's
+    source, semantic_incomplete, judging_calls, rule_map, rule_map_status, completeness} for one document's
     run, its typed records read by the one record reader (common/records.py) from
     `source`: `review_data` (B2) or `bus` (B3, B4). A run failure (section 0) is a
     completion record that is absent, invalid or not `completed`, or a record source that
     is missing or unreadable (review_data.json for B2, the bus for B3), except (D-066) a
     run that reached its end with exit code 0 and semantic_complete false."""
     run = Path(run_dir)
+    rule_map, rule_map_status = read_rule_map(run)
     out = {"failure": False, "failure_reasons": [], "records": [], "pairing_refusals": [],
            "faults": [], "raw_judged_absence": [], "source": source, "semantic_incomplete": False,
-           "judging_calls": [], "rule_map": read_rule_map(run)}
+           "judging_calls": [], "rule_map": rule_map, "rule_map_status": rule_map_status}
     completion = read_completion(run)
     if completion is None:
         out["failure_reasons"].append("completion_record_missing_or_invalid")
@@ -367,8 +434,10 @@ def item_calls_failed(rule_id: str, run: dict):
     """D-066: (applies, reason). True when the run's pairing map records at least one
     judging call for the item's rule and every one has outcome reply_failed. A judging call
     names the registry id, so it is matched to the item's operator id through the run's own
-    map; while that map is not adopted (open point 12.11) the answer is False with the
-    reason, and the reason says whether it would have applied."""
+    map (open point 12.11, adopted by D-078). Where the run's map is missing the reason is
+    `not_applied_no_rule_map`; unreadable or not one to one, `not_applied_rule_map_<status>`;
+    with the switch off, `not_applied_rule_map_unsettled`, with `:would_apply` where it
+    would have applied."""
     calls = run.get("judging_calls") or []
     if not calls:
         return False, None
@@ -380,8 +449,23 @@ def item_calls_failed(rule_id: str, run: dict):
         return False, ("not_applied_rule_map_unsettled:would_apply" if all_failed
                        else "not_applied_rule_map_unsettled")
     if not rule_map:
-        return False, "not_applied_no_rule_map"
+        status = run.get("rule_map_status") or RULE_MAP_MISSING
+        return False, ("not_applied_no_rule_map" if status in (RULE_MAP_MISSING, RULE_MAP_OK)
+                       else "not_applied_rule_map_" + status)
     return (True, "applied") if all_failed else (False, None)
+
+
+def names_rule(entry: dict, rid: str, run: dict) -> bool:
+    """Whether a pairing-map entry names the item's rule (`rid`, folded): by an operator id
+    it carries itself (PAIRING_RULE_FIELDS), or, with the map adopted (open point 12.11,
+    D-078), by a registry id the run's own map takes to that operator id."""
+    named = [_fold(entry.get(f)) for f in PAIRING_RULE_FIELDS if entry.get(f)]
+    if rid in named:
+        return True
+    if not RULE_ID_MAP_ADOPTED:
+        return False
+    rule_map = run.get("rule_map") or {}
+    return any(rule_map.get(n) == rid for n in named)
 
 
 def _from_partial_delivery(run, deciding) -> bool:
@@ -414,8 +498,7 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
         mine = [r for r in mine if not attributed_by_words(r)]
     irregular = [r for r in mine if verdict(r) == "irregular" and not is_refusal(r)]
     refusals = [r for r in mine if is_refusal(r)] + [
-        e for e in run["pairing_refusals"]
-        if any(_fold(e.get(f)) == rid for f in PAIRING_RULE_FIELDS if e.get(f))]
+        e for e in run["pairing_refusals"] if names_rule(e, rid, run)]
     oks = [r for r in mine if verdict(r) == "ok" and not is_refusal(r)]
     unknown = [r for r in mine if verdict(r) not in ("ok", "irregular") and not is_refusal(r)]
     if unknown:
@@ -571,15 +654,29 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
     """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder, its
     typed records read from RECORD_SOURCE[arm] by the one record reader. Each
     row also carries its sensitivity S-3 class (figure-audit records attributed) and its
-    S-5 class (a refusal before an ok record)."""
+    S-5 class (a refusal before an ok record). For B3 (OVER_CONTEXT_ARMS) a document whose
+    run made a model call over its model's context is excluded (section 5.3, open point
+    12.14): every item of it carries basis over_context_excluded in every analysis but S-7,
+    which scores it ABSTAIN."""
     rows, documents = [], []
     source = RECORD_SOURCE.get(arm, records.REVIEW_DATA)
     for doc_id, doc_items in by_document(items).items():
         run_dir = Path(runs_root) / doc_id
         run = read_run(run_dir, doc_id, source)
+        over = read_over_context(run_dir) if arm in OVER_CONTEXT_ARMS else None
+        excluded = bool(over and over["over_context_calls"])
+        faults = list(run["faults"])
+        if over and over["unreadable_records"]:
+            faults.append("reply_record_unreadable:%d" % over["unreadable_records"])
         rules = [i["rule_id"] for i in doc_items]
         count = len({_fold(r) for r in rules})
         for item in doc_items:
+            if excluded:
+                gone = {"class": ABSTAIN, "basis": OVER_CONTEXT_BASIS}
+                row = dict(_row(spec, item, arm, gone), s3=dict(gone, cited_unit_ids=[], layer=""),
+                           s5=dict(gone, cited_unit_ids=[], layer=""))
+                rows.append(row)
+                continue
             row = _row(spec, item, arm, classify(spec, item["rule_id"], run, count))
             for key, options in (("s3", {"attribute_figure_audit": True}),
                                  ("s5", {"refusal_first": True})):
@@ -589,12 +686,16 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
             rows.append(row)
         aside = set_aside(spec, count)
         documents.append({"document_id": doc_id, "run_failure": run["failure"],
-                          "failure_reasons": run["failure_reasons"], "faults": run["faults"],
+                          "failure_reasons": run["failure_reasons"], "faults": faults,
                           "record_source": source,
+                          # section 5.3, open point 12.14: None where the arm is not checked
+                          "over_context": over, "over_context_excluded": excluded,
+                          "items": len(doc_items),
                           # D-066: completeness, per document and arm; decides no label
                           "semantic_incomplete": run["semantic_incomplete"],
                           "completeness": run["completeness"],
                           "rule_map_adopted": RULE_ID_MAP_ADOPTED,
+                          "rule_map_status": run["rule_map_status"],
                           # a judged absence's raw model copy: listed, never counted
                           "raw_judged_absence_records": len(run["raw_judged_absence"]),
                           "rules": count, "figure_audit_set_aside": aside,
@@ -646,7 +747,14 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         "refusals": sum(1 for r in rows if r["basis"] == "refusal"),
         "b1_parse_failures": sum(1 for r in rows if r["basis"] == "b1_parse_failure"),
         "run_failure_documents": sum(1 for d in documents if d["run_failure"]),
-        "abstain": sum(1 for r in rows if r["label"] == ABSTAIN),
+        # an item excluded for a call over the model's context is not scored, so not an abstention
+        "abstain": sum(1 for r in rows if r["label"] == ABSTAIN and r["basis"] != OVER_CONTEXT_BASIS),
+        # section 5.3, open point 12.14 (D-078)
+        "over_context_excluded_documents": sum(1 for d in documents if d.get("over_context_excluded")),
+        "items_over_context_excluded": sum(1 for r in rows if r["basis"] == OVER_CONTEXT_BASIS),
+        "items_s7_over_context_abstain": sum(1 for r in rows if r["basis"] == S7_BASIS),
+        "documents_rule_map_unusable": sum(1 for d in documents
+                                           if d.get("rule_map_status") not in (None, RULE_MAP_OK)),
         "item_faults": sum(1 for r in rows if r["faults"]),
         "document_faults": sum(1 for d in documents if d["faults"]),
         "items_with_figure_audit_set_aside": sum(1 for r in rows if r.get("figure_audit_set_aside")),
@@ -675,8 +783,17 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         counts["missing_field_by_layer"] = {layer: sum((d.get("missing_field_by_layer") or {}).get(layer, 0)
                                                        for d in documents)
                                             for layer in ("computed", "judged")}
+    excluded = [d for d in documents if d.get("over_context_excluded")]
+    over_context = {
+        "checked": arm in OVER_CONTEXT_ARMS,
+        "documents": len(excluded),
+        "items": sum(int(d.get("items") or 0) for d in excluded),
+        "excluded_documents": [{"document_id": d["document_id"], "items": d.get("items"),
+                                "over_context_calls": (d.get("over_context") or {}).get("over_context_calls"),
+                                "over_context_by_agent": (d.get("over_context") or {}).get("over_context_by_agent")}
+                               for d in excluded]}
     return {"benchmark": spec.name, "arm": arm, "analysis": analysis, "counts": counts,
-            "labels": rows, "documents": documents}
+            "over_context": over_context, "labels": rows, "documents": documents}
 
 
 def _relabel(spec, result, analysis, change):
@@ -736,7 +853,45 @@ def sensitivity_s6(spec: Spec, result: dict) -> dict:
     comparison restricted to complete documents reads `semantic_incomplete` per document."""
     incomplete = {d["document_id"] for d in result["documents"] if d.get("semantic_incomplete")}
     return _relabel(spec, result, "S-6", lambda r: (ABSTAIN, "s6_semantic_incomplete")
-                    if r["arm"] in PIPELINE_ARMS + ("B2",) and r["document_id"] in incomplete else None)
+                    if r["arm"] in PIPELINE_ARMS + ("B2",) and r["document_id"] in incomplete
+                    and r["basis"] != OVER_CONTEXT_BASIS else None)
+
+
+def sensitivity_s7(spec: Spec, result: dict) -> dict:
+    """S-7 (section 5.3, open point 12.14, D-078): every item of a B3 document excluded for a
+    model call over its model's context is scored ABSTAIN, so B3 is reported on all
+    documents; every other item, and every other arm, unchanged."""
+    return _relabel(spec, result, "S-7", lambda r: (ABSTAIN, S7_BASIS)
+                    if r["basis"] == OVER_CONTEXT_BASIS else None)
+
+
+def over_context_excluded(result: dict) -> set:
+    """The documents of one arm's labels excluded for a call over the model's context."""
+    return {d["document_id"] for d in result.get("documents") or [] if d.get("over_context_excluded")}
+
+
+def restrict(spec: Spec, result: dict, gone, analysis=None) -> dict:
+    """One arm's labels without the documents in `gone` (rows and document rows), counts
+    recomputed; the documents left out are listed."""
+    gone = set(gone)
+    rows = [r for r in result["labels"] if r["document_id"] not in gone]
+    documents = [d for d in result.get("documents") or [] if d["document_id"] not in gone]
+    out = _labels(spec, result["arm"], rows, documents, analysis or result.get("analysis", "primary"))
+    for key in ("left_out_items",):
+        if key in result:
+            out[key] = result[key]
+    out["documents_left_out"] = sorted(gone & {r["document_id"] for r in result["labels"]})
+    return out
+
+
+def scored_view(spec: Spec, result: dict) -> dict:
+    """What is scored of one analysis: every analysis but S-7 leaves out the items of a
+    document excluded for a call over the model's context (section 5.3); S-7 keeps them,
+    as ABSTAIN."""
+    if result.get("analysis") == "S-7":
+        return result
+    gone = over_context_excluded(result)
+    return restrict(spec, result, gone) if gone else result
 
 
 def read_items(path) -> list:
