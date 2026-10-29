@@ -22743,18 +22743,21 @@ def check_222_launcher_server_url_and_token_handshake():
     if neutralised == original:
         return _fail("could not neutralise: the console URL line was not found in "
                      "shimmer.sh as this check expects it")
+    # The launcher's exact bytes are kept and put back, so a run of the gate leaves the
+    # tree unchanged (text mode on Windows would write CRLF over the LF the repo pins).
+    original_bytes = sh.read_bytes()
     try:
-        sh.write_text(neutralised, encoding="utf-8")
+        sh.write_bytes(neutralised.encode("utf-8"))
         body = sh.read_text(encoding="utf-8", errors="replace")
         still_bad = "http://localhost:8000 ..." in body
     finally:
-        sh.write_text(original, encoding="utf-8")
+        sh.write_bytes(original_bytes)
     if not still_bad:
         return _fail("neutralise did not reintroduce the bare URL; the check is not "
                      "reading the real launcher")
-    # RESTORE verified.
-    if "http://localhost:8000 ..." in sh.read_text(encoding="utf-8", errors="replace"):
-        return _fail("restore failed: shimmer.sh still carries the bare URL")
+    # RESTORE verified, byte for byte.
+    if sh.read_bytes() != original_bytes:
+        return _fail("restore failed: shimmer.sh differs from its bytes before the check")
 
     return _ok("both launchers point at /console and /health on SHIMMER_PORT (the app "
                "registers no bare / route), and generate the token, hold the hash and "
