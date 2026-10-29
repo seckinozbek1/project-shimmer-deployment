@@ -48,3 +48,13 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | Attention and prefill (item 13, D-063) | sdpa pinned to the memory-efficient backend, prefilled in one shot |
 | Recorded | 2026-10-29 15:34 +0300, loop/s05, before any holdout sample |
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: the reply record `context` row, D-078) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-29 16:06 +0300, loop/s05 (D-078) |
+
+## Preregistration frozen (S5 item 10f, D-085)
+
+| Item | SHA-256 | Recorded |
+|---|---|---|
+| `docs/benchmarks/PREREGISTRATION.md` (frozen; LF-normalised) | `f759527572ab7c9eca8bad2a5d8fd9100281387e5834a28c0b217d43f2f033f7` | 2026-10-29 22:09 +0300, loop/s05 at `fc02e1d`, before any holdout sample |
+| C's scorer (C0 run 3, the last; `c-scorer-c0-3`; hash of SCORER_MANIFEST.txt) | `049ae32b1a837e9bc4ecaf1947e32da19d465422ac845eec1641b9dd864b2a7f` | 2026-10-29 22:09 +0300, from `_handoff/C_SCORER.json` |
+| `docs/OUTPUT_FORMAT.md` read by C0 (draft `output-format-v1-draft`) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-29 22:09 +0300 |
+| `docs/INPUT_FORMAT.md` read by C0 (draft `input-format-v1-draft`) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-29 22:09 +0300 |
+| `ROLE_C0.md` (runs 1 to 3, the same text) | `5804490377df6ec9932744c8af022c2969bf4867c333e01df8f638ce2a6b861d` | 2026-10-29 22:09 +0300 |
