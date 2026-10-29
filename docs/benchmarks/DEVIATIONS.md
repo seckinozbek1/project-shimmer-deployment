@@ -266,3 +266,15 @@ Each entry has these fields, in this order:
 ### Dated note (2026-10-29 23:39 +0300, D-089): reporting duties on B's synthetic tests, entered before any sample is drawn
 
 No rule of the frozen text changes. The S8 report adds, beside the preregistered measures and labelled as reporting duties: location recall on rules with exactly one planted flaw, for every arm; B3's attributed count beside B1's located count; the count of B1 FLAG items whose quotes locate no unit and of quotes matching several units; the count of B1 synthetic location disagreements between C and the adapter with the unit-text reading reported; and an exploratory B1 location under section 3.2's two-way containment, labelled not preregistered.
+
+### DEV-021. Version 2: the S8 allocation is 60 USD and section 2 is re-sized
+
+- **Entered**: 2026-10-30 00:13 (system clock, +0300), loop stage S5, reopened under the operator's decision D-S12.
+- **Decision**: D-090 (D-S12 items 4 and 5).
+- **What changes**: preregistration version 2. Section 0: the S8 allocation A is 60 USD (it was 36 USD). Section 2: S4e item 2's rule, unchanged, re-run with A = 60 USD and the unchanged S5 measurements: B's synthetic tests set aside first (about 10.4 USD, unchanged); about 49.6 USD left; ContractNLI's minimum (about 55 USD) still does not fit, so ContractNLI stays a pilot, now about 1,675 minutes of documents, 25 to 26 documents (about 425 to 442 decisions); SciTab and ContraDoc still get nothing; H1 is still not tested in S8. A short version statement at the top. No other sentence changes.
+- **Why**: the operator raised the Lambda budget to 100 USD and the S8 allocation to 60 USD (D-S12), and asked that the larger allocation be used through a new version while one is allowed.
+- **Allowed**: no holdout sample had been drawn and no sealed result existed when the version was written (role B draws in S8).
+- **Decided from**: S5's measured minutes per band and the pool's counts per band, as version 1; no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read. The cost per correct FLAG item on development items (open item 40, D-S12 item 1) is computed only after this version is frozen.
+- **Status**: draft; applied at version 2's freeze, after C0's run on it and a fresh checker's attack (D-S12 item 5).
