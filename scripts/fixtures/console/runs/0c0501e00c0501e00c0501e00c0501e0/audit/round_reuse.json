@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "case_id": "fixture-case",
+  "rule": "a later round re-runs only what changed; an unchanged unit's computed findings are reused from the round that computed them",
+  "availability": "recorded",
+  "rounds": [
+    {
+      "round_id": "r1",
+      "sequence": 1,
+      "documents": [
+        {
+          "document_id": "ledger_round_1",
+          "pairs_computed": 3,
+          "units_reused": 0,
+          "units_computed": 2,
+          "findings": [],
+          "units": [
+            {
+              "unit_id": "u01-zone-alpha",
+              "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "status": "computed",
+              "pairs": 2,
+              "pairs_computed": 2,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-zone-beta",
+              "signature": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "status": "computed",
+              "pairs": 1,
+              "pairs_computed": 1,
+              "findings": 0,
+              "needs_model": [
+                {
+                  "unit_id": "u02-zone-beta",
+                  "rule_id": "CONV-003",
+                  "kind": "judged"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round_id": "r2",
+      "sequence": 2,
+      "documents": [
+        {
+          "document_id": "ledger_round_2",
+          "pairs_computed": 1,
+          "units_reused": 1,
+          "units_computed": 1,
+          "findings": [],
+          "units": [
+            {
+              "unit_id": "u01-zone-alpha",
+              "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "status": "reused",
+              "reused_from": {
+                "round_id": "r1",
+                "document_id": "ledger_round_1",
+                "unit_id": "u01-zone-alpha"
+              },
+              "pairs": 2,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-zone-beta",
+              "signature": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "status": "computed",
+              "pairs": 1,
+              "pairs_computed": 1,
+              "findings": 0,
+              "needs_model": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

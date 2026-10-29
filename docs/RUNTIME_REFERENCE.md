@@ -359,13 +359,18 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. |
 | `GET` | `/harness` | token | Generated current agent description; not run-scoped or cluster-quality proof. |
 | `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. |
-| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. |
+| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. Also `round_reuse`: `audit/round_reuse.json` as a rounds table (units reused and computed). Sealed run: recorded, availability, outcome and the reuse counts only. |
 | `GET` | `/runs/{run_id}/references` | token | Run reference excerpts; optional ref_id, unknown ID 404, missing index explicitly absent. |
+| `GET` | `/runs/{run_id}/replies` | token | Saved model replies as metadata only: per call sequence, agent, backend, model id and mode, call id, phase, document, time, backend result, payload and reply sizes and latest outcome; counts by outcome. Never reply or payload text. Sealed run: counts and first and last call time only. |
+| `GET` | `/runs/{run_id}/model-findings` | token | Each document master's `model_findings_not_promoted`, every item carrying `finding_record.MODEL_FINDING_MARK`, with producer counts from the bus. Not checked by Python, not promoted. Sealed run: counts only. |
+| `GET` | `/runs/{run_id}/switches` | token | INST_FINDER setting saved for the run (on; off and ratified; off and refused; not recorded) and FACT_CHECKER withholding with both Annex B.4 reasons, from the run's activation record, else from the current review scope, said so. |
+| `GET` | `/runs/{run_id}/report` | token | Annex A 11.12 rows of a `FINAL_STATUS.json` in the run folder or up to three parent folders, else no cloud report; cost from it or from the run's own cost lines; budget from an `execution_manifest.json` on that path, else not known. Estimates, not an invoice. Sealed run: allowlisted rows only. |
+| `GET` | `/test-change-requests` | token | `docs/test_change_requests.md` entries as rows, read-only; "not present in this installation" when the file is absent. |
 | `GET` | `/ontology` | token | Cross-run provision provenance summary; not a review-agent retrieval path. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | Revisions/provenance for one provision; unknown ID 404. |
 | `GET` | `/ontology/gnn` | token | Persisted structural state; learned_relevance=false, tier2_signal empty. |
 | `GET` | `/ontology/candidates` | token | Structural candidate pairs, not model-confirmed relationships; top_k 1-50. |
-| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. |
+| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. Refuses a sealed run (403). |
 | `POST` | `/ontology/conflicts/{conflict_id}/answer` | token | Persist rule/store/refuse answer; no production review feedback loop is wired to this endpoint. |
 | `GET` | `/ontology/relations` | token | Stored relation summaries, preserving mechanisms and agreement. |
 | `GET` | `/ontology/conflicts` | token | Recorded ontology conflict answers and qualified override counts; not proof a review consumed them. |
@@ -374,6 +379,8 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/health` | none | Liveness, current backend/default review mode and layer posture; no model execution or readiness proof. |
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
+
+A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7, and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 292).
 
 The route table is checked against the actual registered application routes.
 `/status`, `/queue`, `/results`, unscoped `/findings` or `/pairs`, and

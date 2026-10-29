@@ -24868,6 +24868,87 @@ def check_283_benchmark_adapters_follow_the_preregistration():
     return check()
 
 
+def check_285_console_replies_route():
+    """Loop stage S7 (console): the replies route serves metadata and outcomes, never reply text. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_replies_route
+    return check_replies_route()
+
+
+def check_286_console_model_findings_route():
+    """Loop stage S7 (console): the model-findings route carries the mark on every model finding. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_model_findings_route
+    return check_model_findings_route()
+
+
+def check_287_console_switches_route():
+    """Loop stage S7 (console): the switches route reads INST_FINDER and the shared B.4 reasons. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_switches_route
+    return check_switches_route()
+
+
+def check_288_console_report_route():
+    """Loop stage S7 (console): the report route reads the cloud report rows, else the run folder's cost lines. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_report_route
+    return check_report_route()
+
+
+def check_289_console_test_change_requests_route():
+    """Loop stage S7 (console): the test-change-requests route lists the log or says it is not present. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_test_change_requests_route
+    return check_test_change_requests_route()
+
+
+def check_290_console_multi_round_reuse_route():
+    """Loop stage S7 (console): the multi-round route carries the round reuse table. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_multi_round_reuse_route
+    return check_multi_round_reuse_route()
+
+
+def check_291_console_sealed_filter():
+    """Loop stage S7 (console): a sealed run shows counts and timings only, and per-flaw routes refuse it. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_sealed_filter
+    return check_sealed_filter()
+
+
+def check_292_every_route_needs_a_token_but_health_and_console():
+    """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_all_routes_need_a_token
+    return check_all_routes_need_a_token()
+
+
+def check_293_console_views_render_and_mark():
+    """Loop stage S7 (console): the console's new views render in both languages with the model-finding mark. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_console_views
+    return check_console_views()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25240,6 +25321,24 @@ CHECKS = [
      check_283_benchmark_adapters_follow_the_preregistration),
     ("284 every refused change record carries a typed reason_kind kept in review_data.json",
      check_284_prior_refusal_kinds),
+    ("285 the replies route serves metadata and outcomes, never reply text",
+     check_285_console_replies_route),
+    ("286 the model-findings route carries the mark on every model finding",
+     check_286_console_model_findings_route),
+    ("287 the switches route reads INST_FINDER and the shared B.4 reasons",
+     check_287_console_switches_route),
+    ("288 the report route reads the cloud report rows, else the run folder's cost lines",
+     check_288_console_report_route),
+    ("289 the test-change-requests route lists the log or says it is not present",
+     check_289_console_test_change_requests_route),
+    ("290 the multi-round route carries the round reuse table",
+     check_290_console_multi_round_reuse_route),
+    ("291 a sealed run shows counts and timings only, and per-flaw routes refuse it",
+     check_291_console_sealed_filter),
+    ("292 every route answers 401 without a token except exactly /health and /console",
+     check_292_every_route_needs_a_token_but_health_and_console),
+    ("293 the console's new views render in both languages with the model-finding mark",
+     check_293_console_views_render_and_mark),
 ]
 
 
