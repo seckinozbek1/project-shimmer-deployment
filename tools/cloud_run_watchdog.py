@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import time
 
-from cloud_run_common import budget_deadlines, require, safe_metadata, write_json, provider_instance
+from cloud_run_common import budget_deadlines, no_window, require, safe_metadata, write_json, provider_instance
 
 
 def load_credential(credential_file=None):
@@ -55,7 +55,8 @@ def operator_preflight(credential_file=None, identity_file=None):
         from cloud_run_common import InvalidPreparation
         raise InvalidPreparation('SSH public key encoding invalid') from None
     require(bool(public_bytes), 'SSH public key is empty')
-    validation = subprocess.run(['ssh-keygen', '-l', '-f', str(public)], capture_output=True, timeout=10)
+    validation = subprocess.run(['ssh-keygen', '-l', '-f', str(public)], capture_output=True, timeout=10,
+                                creationflags=no_window())
     require(validation.returncode == 0, 'SSH public key is not valid for provisioning')
     return {'ssh_available': True, 'scp_available': True, 'curl_available': True, 'credential_loaded': loaded,
             'ssh_private_file_exists': True, 'ssh_public_file_exists': True, 'ssh_public_key_validated': True,
@@ -98,7 +99,7 @@ class LambdaTermination:
         args += ['https://cloud.lambda.ai/api/v1/' + path]
         try:
             response = subprocess.run(args, input=config, capture_output=True,
-                                      text=True, timeout=25, check=False)
+                                      text=True, timeout=25, check=False, creationflags=no_window())
         except Exception:
             from cloud_run_common import InvalidPreparation
             raise InvalidPreparation('provider transport failed') from None

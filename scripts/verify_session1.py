@@ -24946,6 +24946,50 @@ def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
     return wave_admission_check()
 
 
+def check_292_every_controller_path_child_process_starts_without_a_window():
+    """Loop stage S5, D-079: the detached controller and its watchdog have no console, and a
+    console program (ssh, scp, ssh-keygen, curl, git, python) started from such a process
+    opens a visible window on Windows; they kept popping up on the operator's screen. Every
+    child-process start in the operator-side controller files and every file under
+    tools/loop/ passes its creation flags through cloud_run_common.no_window (the Windows
+    no-window flag ORed with any flags it had; nothing changes elsewhere, and a child that
+    must keep the operator's console says so with keep_console). Runs the controller check's
+    two legs (an AST scan of every start; the real controller, adapter, termination client
+    and progress reader executed against fakes that record each start's flags), then
+    neutralises each in turn (one start's flag dropped from the source; the helper adding no
+    flag), requires a failure, restores and requires a pass."""
+    import io
+    import os
+    import unittest
+    from unittest.mock import patch
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import cloud_run_common
+    import ordinary_final_controller_checks as checks
+    name = 'test_every_child_process_on_the_controller_path_starts_without_a_window'
+
+    def passes():
+        result = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(checks.ControllerChecks(name))
+        return result.wasSuccessful()
+    if not passes():
+        return "FAIL", 'a child process on the controller path starts without no_window (run %s)' % name
+    if os.name != 'nt':
+        return "SKIP", 'the scan passed; the executed leg proves the flag only on Windows'
+    proofs = []
+    for owner, attribute, mutant in ((checks, 'hidden_path_sources', checks.sources_with_one_flag_dropped),
+                                     (cloud_run_common, 'windows', lambda: False)):
+        with patch.object(owner, attribute, mutant):
+            failed = not passes()
+        restored = passes()
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (owner.__name__, attribute, failed, restored)
+        proofs.append(attribute)
+    return "PASS", ('every child-process start on the controller path passes no_window (AST scan and an executed '
+                    'controller run, adapter, termination client and progress reader); neutralised, failed, '
+                    'restored, passed: ' + ', '.join(proofs))
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25374,6 +25418,8 @@ CHECKS = [
      check_290_uncomputable_judgment_is_kept_as_a_model_record),
     ("291 a gather over the scheduler's bound runs as waves sharing one snapshot and one parent set (D-076)",
      check_291_over_bound_gather_runs_as_shared_snapshot_waves),
+    ("292 every child process the controller path starts runs with no window (D-079)",
+     check_292_every_controller_path_child_process_starts_without_a_window),
 ]
 
 

@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools')]
 from ordinary_final_run import read
+from cloud_run_common import no_window
 
 # The phases worth a reading, with what each one's total is and where its work can be seen.
 REMOTE_ROOT = '/home/ubuntu/shimmer-ordinary-final'
@@ -55,7 +56,7 @@ def observe(bundle, host, command, timeout=40):
     argv = ['ssh', '-i', str(bundle / 'ssh_identity'), *SSH_OPTIONS,
             '-o', 'UserKnownHostsFile=' + str(bundle / 'known_hosts'), host, command]
     try:
-        result = subprocess.run(argv, capture_output=True, timeout=timeout)
+        result = subprocess.run(argv, capture_output=True, timeout=timeout, creationflags=no_window())
     except (subprocess.TimeoutExpired, OSError):
         return None
     if result.returncode != 0:

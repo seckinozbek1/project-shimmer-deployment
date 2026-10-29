@@ -10,6 +10,7 @@ instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
 remote work completes while the connection carrying it dies must be recognised
 as completed, never failed, and the workload must then run.
 """
+import ast
 import base64
 import contextlib
 import hashlib
@@ -383,6 +384,7 @@ class FakeCurl:
     raw shape, so the adapter's own projection runs. Nothing reaches the network."""
     def __init__(self):
         self.instances, self.keys, self.launches, self.argvs, self.stdins = [], [], 0, [], []
+        self.flags = []
 
     @staticmethod
     def raw_type():
@@ -419,6 +421,7 @@ class FakeCurl:
     def run(self, args, input=None, **kwargs):
         self.argvs.append(list(args))
         self.stdins.append(input)
+        self.flags.append(kwargs.get('creationflags'))
         endpoint = args[-1].split('/api/v1/', 1)[1]
         method = args[args.index('--request') + 1] if '--request' in args else None
         body = json.loads(args[args.index('--data-binary') + 1]) if '--data-binary' in args else None
@@ -445,6 +448,8 @@ class FakeTransport:
         self.outputs = dict(outputs or {})
         self.progress = list(progress or [])
         self.started, self.polled, self.calls = [], [], []
+        # D-079: the creation flags of every process start, in order (run and Popen).
+        self.flags = []
         # The remote filesystem as far as preconditions go: every directory a launch
         # command creates is recorded, so a phase whose command requires a path to be
         # absent answers from that record instead of an unconditional 0 (run v4).
@@ -465,8 +470,9 @@ class FakeTransport:
         self.created.update({remote, remote + '/project'})
         return 0
 
-    def run(self, argv, capture_output=True, timeout=None):
+    def run(self, argv, capture_output=True, timeout=None, creationflags=None):
         self.calls.append((list(argv), timeout))
+        self.flags.append(('run', argv[0], creationflags))
         done = lambda rc, out=b'': subprocess.CompletedProcess(args=argv, returncode=rc, stdout=out, stderr=b'')
         if argv[0] == 'ssh-keygen':
             identity = Path(argv[argv.index('-f') + 1])
@@ -552,6 +558,7 @@ class FakeTransport:
 
     def popen(self, argv, **kwargs):
         self.popen_argv = list(argv)
+        self.flags.append(('Popen', 'python', kwargs.get('creationflags')))
         folder = Path(argv[argv.index('--bundle') + 1])
         write(folder / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=777, heartbeat_epoch=controller.time.time(),
                                                    execution_manifest_sha256=sha(folder / 'execution_manifest.json')))
@@ -715,6 +722,55 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(progress, ['[progress] phase=3/9 status=running', '[local-progress] event=memory'])
         self.assertEqual(transport.started.count('ordinary_workload'), 1)
         self.assert_torn_down()
+
+    def test_every_child_process_on_the_controller_path_starts_without_a_window(self):
+        """D-079: a console program started from a process with no console (the detached
+        controller, its watchdog) opens a visible window on Windows. Two legs. The AST of
+        every operator-side file on the controller path (HIDDEN_PATH and every file under
+        tools/loop/) is read for every child-process start (subprocess run, Popen, call,
+        check_call, check_output under any alias, a runner parameter defaulting to one,
+        os.system, os.popen, os.startfile, os.spawn*, os.exec*, asyncio subprocesses), and
+        each must pass creationflags through cloud_run_common.no_window. Then the real
+        controller runs end to end with the real provider adapter (only curl, ssh, scp,
+        ssh-keygen and the watchdog process replaced), the termination client and the
+        progress reader each make a call, and every start they made must carry the
+        no-window flag on Windows (none elsewhere, where nothing changes)."""
+        starts = {name: child_process_starts(source) for name, source in hidden_path_sources().items()}
+        unhidden = ['%s:%d %s' % (name, line, verdict) for name, found in starts.items()
+                    for line, verdict in found if verdict != 'hidden']
+        self.assertEqual(unhidden, [], 'child-process starts without no_window')
+        # Not vacuous: the starts this check was written against are all still seen.
+        self.assertGreaterEqual(sum(len(found) for found in starts.values()), 30)
+        for name in ('tools/ordinary_final_cloud.py', 'tools/lambda_experiment_provider.py', 'tools/cloud_run_watchdog.py',
+                     'tools/ordinary_final_bound_cloud.py', 'tools/ordinary_final_progress.py', 'tools/loop/reaper_proof.py'):
+            self.assertTrue(starts[name], name + ' has no start to check')
+        expected = cloud_run_common.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        # The real adapter loads a fixture value from the operator file (as the key test does).
+        self.enterContext(patch.dict(os.environ))
+        os.environ.pop('LAMBDA_API_KEY', None)
+        self.credential.write_text('LAMBDA_API_KEY = ' + repr('shimmer' + '0' * 32 + 'fixture') + '\n', encoding='utf8')
+        curl = FakeCurl()
+        with curl.installed(), contextlib.redirect_stdout(io.StringIO()):
+            transport, console, failure = self.execute(provider=provider_adapter.LambdaExperiment)
+            self.assertIsNone(failure, failure)
+            cloud_run_watchdog.LambdaTermination(self.credential).request('instances')
+        self.assertEqual({kind for kind, _, _ in transport.flags}, {'run', 'Popen'})
+        self.assertTrue({program for _, program, _ in transport.flags} >= {'ssh', 'scp', 'ssh-keygen', 'python'})
+        import ordinary_final_progress as progress
+        seen = []
+
+        def observed(argv, **kwargs):
+            seen.append(kwargs.get('creationflags'))
+            return subprocess.CompletedProcess(argv, 0, b'1\n', b'')
+        with patch.object(progress.subprocess, 'run', observed):
+            progress.observe(self.base, 'ubuntu@10.0.0.2', 'true')
+        self.assertTrue(curl.flags and seen)
+        flags = [f for _, _, f in transport.flags] + curl.flags + seen
+        self.assertEqual([f for f in flags if f is None or (f & cloud_run_common.CREATE_NO_WINDOW) != expected], [],
+                         'a start without the no-window flag')
+        # The detached watchdog keeps its own flags beside the new one.
+        popen = [f for kind, _, f in transport.flags if kind == 'Popen'][0]
+        self.assertEqual(popen & 8, 8 if os.name == 'nt' else 0)
 
     def test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root(self):
         """Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent."""
@@ -3851,11 +3907,11 @@ class FileProvider:
 class HangingTransport(FakeTransport):
     """The instance never answers ssh: the controller blocks after its launch, as one would
     whose session or machine stopped, until something kills it."""
-    def run(self, argv, capture_output=True, timeout=None):
+    def run(self, argv, capture_output=True, timeout=None, creationflags=None):
         if argv[0] == 'ssh' and argv[-1] == 'true':
             while True:
                 time_module.sleep(1)
-        return super().run(argv, capture_output, timeout)
+        return super().run(argv, capture_output, timeout, creationflags)
 
 
 def child_fixture(work):
@@ -4101,6 +4157,84 @@ def archive_names_ignoring_extras(names, extra=(), extras=None):
 # The runner's own attention and prefill rule, kept for the mutant that drops only its prefill half.
 runner_b1_attention_error = runner.b1_attention_error
 
+# D-079: every operator-side file on the controller path. Each child process one of them
+# starts runs with no window; every file under tools/loop/ is added at read time, so a new
+# loop tool is covered without being listed. The instance-side files (ordinary_final_run.py,
+# cloud_run_observer.py, the pipeline) run on Linux, where the flag does not exist.
+HIDDEN_PATH = ('tools/ordinary_final_cloud.py', 'tools/ordinary_final_bound_cloud.py', 'tools/ordinary_final_watchdog.py',
+               'tools/cloud_run_common.py', 'tools/cloud_run_watchdog.py', 'tools/lambda_experiment_provider.py',
+               'tools/loop_budget_guard.py', 'tools/run_remote_experiment.py', 'tools/deploy_cloud_run.py',
+               'tools/prepare_cloud_run.py', 'tools/ordinary_final_progress.py', 'tools/ordinary_final_status.py',
+               'tools/analyze_ordinary_final_run.py', 'tools/declare_asset_copy.py')
+START_NAMES = {'run', 'Popen', 'call', 'check_call', 'check_output', 'getoutput', 'getstatusoutput'}
+OS_STARTS = {'system', 'popen', 'startfile'}
+
+
+def read_hidden_path_sources():
+    files = [ROOT / name for name in HIDDEN_PATH] + sorted((ROOT / 'tools/loop').glob('*.py'))
+    return {path.relative_to(ROOT).as_posix(): path.read_text(encoding='utf8') for path in files}
+
+
+def hidden_path_sources():
+    return read_hidden_path_sources()
+
+
+def sources_with_one_flag_dropped():
+    sources = read_hidden_path_sources()
+    name = 'tools/ordinary_final_cloud.py'
+    changed = sources[name].replace('timeout=timeout,creationflags=no_window())', 'timeout=timeout)', 1)
+    assert changed != sources[name], 'the neutralised flag is not in the controller any more'
+    sources[name] = changed
+    return sources
+
+
+def carries_no_window(call):
+    for keyword in call.keywords:
+        if keyword.arg == 'creationflags':
+            return any(isinstance(n, ast.Call) and getattr(n.func, 'id', getattr(n.func, 'attr', None)) == 'no_window'
+                       for n in ast.walk(keyword.value))
+    return False
+
+
+def child_process_starts(source):
+    """[(line, verdict)] for every child-process start in one file's AST: 'hidden' when its
+    creationflags call no_window, otherwise 'unflagged' (or 'cannot carry a flag' for the os
+    starts, which take none and so are refused on this path outright)."""
+    tree = ast.parse(source)
+    modules, direct = set(), set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.update(a.asname or a.name for a in node.names if a.name == 'subprocess')
+        elif isinstance(node, ast.ImportFrom) and node.module == 'subprocess':
+            direct.update(a.asname or a.name for a in node.names if a.name in START_NAMES)
+    # A parameter defaulting to a start (runner=subprocess.run) is a start wherever it is called.
+    runners = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            positional = node.args.posonlyargs + node.args.args
+            pairs = list(zip(positional[len(positional) - len(node.args.defaults):], node.args.defaults))
+            pairs += list(zip(node.args.kwonlyargs, node.args.kw_defaults))
+            for argument, default in pairs:
+                if isinstance(default, ast.Attribute) and default.attr in START_NAMES \
+                        and isinstance(default.value, ast.Name) and default.value.id in modules:
+                    runners.add(argument.arg)
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
+            if f.value.id in modules and f.attr in START_NAMES:
+                found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+            elif f.value.id == 'os' and (f.attr in OS_STARTS or f.attr.startswith(('spawn', 'exec'))):
+                found.append((node.lineno, 'cannot carry a flag'))
+            elif f.value.id == 'asyncio' and f.attr.startswith('create_subprocess'):
+                found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+        elif isinstance(f, ast.Name) and (f.id in direct or f.id in runners):
+            found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+    return sorted(found)
+
+
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
@@ -4309,6 +4443,12 @@ NEUTRALIZATIONS = [
     # R18: the per-entry collection refused past the soft budget, as before S5.
     ('test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder', controller, 'soft_budget_exempt',
      lambda label: label in {'stop_workload', 'pack_evidence', 'evidence_hash', 'final_gpu_state'}),
+    # D-079: one start on the path loses its no-window flag (the controller's transport).
+    ('test_every_child_process_on_the_controller_path_starts_without_a_window', sys.modules[__name__],
+     'hidden_path_sources', sources_with_one_flag_dropped),
+    # D-079: the helper no longer adds the flag, so every executed start would show a window.
+    ('test_every_child_process_on_the_controller_path_starts_without_a_window', cloud_run_common, 'windows',
+     lambda: False),
 ]
 
 

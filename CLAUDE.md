@@ -757,6 +757,18 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
+  controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
+  wrappers, the progress and status readers, and every file under `tools/loop/`) passes its
+  creation flags through `cloud_run_common.no_window`, which ORs in the Windows no-window
+  flag and changes nothing elsewhere; a child that must keep the operator's console says so
+  with `keep_console` (an interactive ssh passphrase, the sealer's foreground re-exec), and a
+  `runner` defaulting to `subprocess.run` is given `cloud_run_common.hidden_run`. Measured,
+  not preferred: the detached controller has no console, so each ssh, scp, ssh-keygen and
+  curl it started opened a visible window on the operator's screen. The controller check and
+  gate check 292 scan every start's AST and run the controller, adapter, termination client
+  and progress reader against fakes that record each start's flags. This changed six bound
+  controller files, so bundles sealed before it refuse with `Controller source changed`.
 - WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
   `max_pending` (256) runs as consecutive waves of at most that many calls
   (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and

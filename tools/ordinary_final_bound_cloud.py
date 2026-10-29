@@ -24,6 +24,7 @@ import sys
 import ordinary_final_cloud as controller
 import ordinary_final_run as run
 from ordinary_final_run import read, write, sha, require
+from cloud_run_common import no_window
 import loop_budget_guard as guard
 
 DETACH_LOG = 'controller_detached.log'
@@ -42,12 +43,12 @@ def spawn_detached(argv, log):
             for extra in (getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000), 0):
                 try:
                     return subprocess.Popen(base, stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
-                                            creationflags=flags | extra, close_fds=True).pid
+                                            creationflags=no_window(flags | extra), close_fds=True).pid
                 except OSError:
                     if not extra:
                         raise
         return subprocess.Popen(base, stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
-                                start_new_session=True, close_fds=True).pid
+                                start_new_session=True, close_fds=True, creationflags=no_window()).pid
     finally:
         stream.close()
 
