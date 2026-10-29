@@ -21500,31 +21500,51 @@ def check_233_absence_claim_requires_a_quote():
     if "MUST set" not in psrc:
         return _fail("the absence question does not tell the model the quote is required")
 
-    # NEUTRALISE on the real file.
-    pr_path = ROOT / "scripts" / "paired_review.py"
-    original = pr_path.read_text(encoding="utf-8")
-    neutralised = original.replace(
-        '    if not str(item.get("quote") or "").strip():\n',
-        '    if False:\n', 1)
-    if neutralised == original:
-        return _fail("could not neutralise: the quote requirement was not found")
+    # EXECUTED on the real phase 5.5: both judged paths (a judged absence, and D-068's
+    # uncomputable plan) refuse an absence claim with no quote, or a blank one, through
+    # paired_review.judged_item_refusal.
     try:
-        pr_path.write_text(neutralised, encoding="utf-8")
-        gone = '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8")
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the requirement itself, FAIL, RESTORE, PASS. The neutralised function is
+    # compiled from the real paired_review.py with only the no-quote test inside
+    # refuses_judged_absence replaced, read and never written. (This used to write the
+    # real file, replacing the first textual copy of that line, and then only confirm the
+    # text had changed; D-068 added a second copy in judged_item_refusal, so the
+    # confirmation failed, and nothing was ever executed under the neutralisation.)
+    neutral_fn = _jrc.refuses_judged_absence_without_quote_test()
+    if neutral_fn is None:
+        return _fail("could not neutralise: the quote requirement was not found in "
+                     "paired_review.refuses_judged_absence")
+    original = _pr.refuses_judged_absence
+    _pr.refuses_judged_absence = neutral_fn
+    try:
+        neutral_unit = neutral_fn({"relation": "missing_field",
+                                   "stated_field": "calibration authority signature"},
+                                  rule, present)
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
     finally:
-        pr_path.write_text(original, encoding="utf-8")
-    if not gone:
-        return _fail("neutralise did not take effect on the real file")
-    if '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8"):
-        return _fail("restore failed: the quote requirement is gone")
+        _pr.refuses_judged_absence = original
+    if neutral_unit is not False:
+        return _fail("neutralise did not take effect: a claim with no quote is still refused")
+    if neutralised[0] != "FAIL":
+        return _fail("with the quote requirement neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("an absence claim with no quote, or an empty one, is refused; one with a "
                "quote naming a field the unit lacks passes; a non-absence relation is "
                "untouched; the contract does NOT require the field, so no past run "
                "becomes a violation and the requirement applies from this commit "
-               "forward; the model is told it is required; neutralise/restore proved")
+               "forward; the model is told it is required; the real phase 5.5 %s; "
+               "neutralise/fail/restore/pass proved on that path" % shipped[1])
 
 
 def check_232_typed_amendment_and_bounded_deepening():
@@ -21918,32 +21938,45 @@ def check_229_quoted_span_must_appear_in_the_unit():
                     {"quote": "next calibration visit logged"}, real) is not False:
                 return _fail("the real VETCH entry refuses a span it actually contains")
 
-    # WIRED: the paired path checks it, and the model is asked for it.
+    # The model is asked for it.
     src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
-    if "quote_not_in_unit" not in src:
-        return _fail("pipeline.py never calls quote_not_in_unit, so nothing checks a quote")
     if "`quote`" not in src and "quote`" not in src:
         return _fail("the absence question does not ask the model for a quote")
 
-    # NEUTRALISE: accept any quote.
+    # WIRED, EXECUTED: the real phase 5.5 refuses a quote the unit lacks on BOTH judged
+    # paths (a judged absence, and D-068's uncomputable plan), through
+    # paired_review.judged_item_refusal. (This used to look for the name
+    # quote_not_in_unit in pipeline.py, which D-068 moved into the helper.)
+    try:
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the real enforcement (accept any quote), FAIL, RESTORE, PASS.
     original = _pr.quote_not_in_unit
     _pr.quote_not_in_unit = lambda _i, _t: False
     try:
-        if _pr.quote_not_in_unit({"quote": "not in the unit"}, unit):
-            return _fail("neutralise did not take effect")
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
     finally:
         _pr.quote_not_in_unit = original
-    if _pr.quote_not_in_unit({"quote": "the next calibration visit is not stated"},
-                             unit) is not True:
-        return _fail("restore failed: a hallucinated span is accepted again")
+    if neutralised[0] != "FAIL":
+        return _fail("with quote_not_in_unit neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("a finding quoting words the unit does not contain is refused, including "
                "the real VETCH span from the corpus; a quote the unit carries passes "
                "through folded whitespace and case; no quote and an empty quote are never "
-               "refused because the field is optional by measurement (requiring it would "
-               "have made all 62 findings of the two saved runs violations at once); the "
-               "contract carries `quote` unrequired and the absence question asks for it; "
-               "neutralise/restore proved")
+               "refused by this test because the field is optional by measurement (requiring "
+               "it would have made all 62 findings of the two saved runs violations at once); "
+               "the contract carries `quote` unrequired and the absence question asks for it; "
+               "the real phase 5.5 %s; neutralise/fail/restore/pass proved on that path"
+               % shipped[1])
 
 
 def check_228_scorer_checks_the_reason_not_only_the_location():
