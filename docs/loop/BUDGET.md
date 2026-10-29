@@ -113,3 +113,11 @@ Instance spend in S5: 20.64 USD (ledger: L1 0.49, L2 3.18, L3e 3.38, L4a 2.60, L
 | Reserve | 7.00 | Storage share is charged here first. Unused allocation rolls forward. |
 
 The reaper's hard stop is 99 USD and the guard counts against 100 USD, both read from the ledger's latest budget line (no figure in code, D-S9 item 3). Proven on the mocked provider (`tools/loop/reaper_proof.py` step 6, extended to a 49, 69, 99 chain: spend 69.1 leaves the instance alone, 99.1 terminates it), with neutralise (stop clamped to 69 in `budget_figures`), fail (step 6 false), restore, pass (D-090). Usage limits unchanged: no launch at five-hour 70 percent or seven-day 95 percent.
+
+## Budget from 2026-10-29 21:26 UTC (operator decision D-S12 as revised at 00:20 +03:00; supersedes the 100 USD section above)
+
+| Date (UTC) | Event | Instance minutes | Instance cost (USD) | Storage share to date (USD) | Total spent (USD) | Remaining (USD) |
+|---|---|---|---|---|---|---|
+| 2026-10-29 21:26 | Budget raised to 200 USD by the operator (D-S12 revised 00:20, replacing the 00:10 version applied at 21:10); reaper hard stop 199 USD; `budget_change` line appended at 21:26:33 UTC; the reaper's `budget_figures` reads (200.0, 199.0). No instance running. | 0 | 20.64 (S5 so far) | 0.35 (S5 closing reading) | 20.99 | 179.01 |
+
+The allocation of D-S12 item 4 (S5's brought-back work and the first sweep's findings, then S6, S9, S10 and smoke runs, a 10 USD reserve, S8 the rest and never less than 60 USD) is computed after the first sweep and recorded here in its own table. The 100 USD table above is void. Reaper proof (`tools/loop/reaper_proof.py` step 6): the chain is now 49, 69, 199; spend 69.1 leaves the instance alone, 199.1 terminates it; neutralised (stop clamped to 99 in `budget_figures`) step 6 fails; restored, it passes (D-091).
