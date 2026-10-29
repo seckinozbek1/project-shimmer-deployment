@@ -78,3 +78,5 @@ Version 1's rows above stay as they are. From this freeze, version 2's hash is t
 | `docs/OUTPUT_FORMAT.md` read by C0 run 4 (draft `output-format-v1-draft`, unchanged) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-30 01:03 +0300 |
 | `docs/INPUT_FORMAT.md` read by C0 run 4 (draft `input-format-v1-draft`, unchanged) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-30 01:03 +0300 |
 | `ROLE_C0_4.md` (run 4; the sections of run 1 to 3's text plus Annex D's D-S12) | `e3dc763fc1309f699f23ff21b5a31b68f1d85c66c0408afe8893d3f60a2fed25` | 2026-10-30 01:03 +0300 |
+
+| `docs/INPUT_FORMAT.md` (draft `input-format-v1-draft`; only the repository scorer's sentences changed, D-098) | `5a0400fa9532bf69addd7ef71833e961f262032e98b0811065f184fc72c8a463` | 2026-10-30 02:3x +0300, loop/s05 at `260d466`; C0 run 4 read `47904fae...` |
