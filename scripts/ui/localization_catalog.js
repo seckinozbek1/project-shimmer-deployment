@@ -2032,7 +2032,7 @@ var SHIMMER_TR = {
   "From a run's output?": "Bir çalışmanın çıktısından mı?",
   "Proposal": "Öneri",
   "Decision": "Karar",
-  "Sealed test: counts and timings only. Finding text, unit ids, rule ids, reasons and per-flaw results are withheld (Annex B.8).": "Mühürlü test: yalnızca sayılar ve süreler. Bulgu metni, birim kimlikleri, kural kimlikleri, gerekçeler ve kusur bazındaki sonuçlar gösterilmez (Ek B.8).",
+  "Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results, and are shown.": "Mühürlü test: yalnızca sayılar ve süreler. Gösterilmeyenler: bulgu metni, birim kimlikleri, kural kimlikleri, bulgular için verilen gerekçeler ve kusur bazındaki sonuçlar (Ek B.8). FACT_CHECKER'ın devre dışı bırakılmasına ilişkin Ek B.4 gerekçeleri sonuç değil, kalıcı ajan politikasıdır ve gösterilir.",
   " dollars": " dolar",
   "not known": "bilinmiyor",
   "Model replies": "Model yanıtları",

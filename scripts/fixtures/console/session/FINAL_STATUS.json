@@ -1,0 +1,18 @@
+{
+  "report": {
+    "Purpose": "console fixture",
+    "Sealed or exposed": "Sealed test",
+    "Date and time (UTC)": "2026-10-29T09:00:00+00:00",
+    "Code commit": "ffffffffffffffffffffffffffffffffffffffff",
+    "Location and reason-confirmed recall": "recall row value",
+    "Attribution": "recall row value",
+    "Cost": "0.1234 dollars estimated",
+    "Role separation": "fixture sentence"
+  },
+  "within_hard_ceiling": true,
+  "cost_estimates": {
+    "infrastructure_estimate": 0.1234,
+    "model_api_estimate": 0,
+    "combined_estimate": 0.1234
+  }
+}

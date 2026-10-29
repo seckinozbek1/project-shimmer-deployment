@@ -592,6 +592,11 @@ table.s7-table th { color: var(--quiet-text); font-weight: 500; }
 @media (max-width: 640px) {
   .kv-table td:first-child { width: 7rem; }
   .masthead-nav { flex-wrap: wrap; }
+  table.s7-stack, table.s7-stack tbody, table.s7-stack tr, table.s7-stack td { display: block; width: 100%; }
+  table.s7-stack tr:first-child { display: none; }
+  table.s7-stack tr { border-bottom: 1px solid var(--hairline); padding: 0.35rem 0; }
+  table.s7-stack td { border-bottom: none; padding: 0.1rem 0; overflow-wrap: anywhere; }
+  table.s7-stack td::before { content: attr(data-label) ": "; color: var(--quiet-text); font-family: inherit; }
 }
 
 [hidden] { display: none !important; }
@@ -2141,7 +2146,7 @@ var REPLY_OUTCOME_LABELS = {
 };
 var TCR_FIELD_LABELS = ["Date", "Test and version", "What was noticed", "Evidence", "Who noticed it",
   "From a run's output?", "Proposal", "Decision"];
-var SEALED_NOTE_TEXT = "Sealed test: counts and timings only. Finding text, unit ids, rule ids, reasons and per-flaw results are withheld (Annex B.8).";
+var SEALED_NOTE_TEXT = "Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results, and are shown.";
 
 function sealedNoteHtml(data) {
   if (!data || data.exposure !== "sealed") return "";
@@ -2167,13 +2172,20 @@ function repliesHtml(data) {
   if (data.unreadable_records) out += '<p class="notice warn">' + escapeHtml(String(data.unreadable_records)) + ui(" saved reply records could not be read.") + '</p>';
   if (data.first_call_at) out += '<p class="muted">' + ui("First call: ") + escapeHtml(data.first_call_at) + ui("; last call: ") + escapeHtml(data.last_call_at) + '</p>';
   if (Array.isArray(data.calls) && data.calls.length) {
-    out += '<details><summary>' + ui("Every saved call") + '</summary><div class="s7-scroll"><table class="s7-table"><tr><th>#</th><th>' +
+    // At phone width each call row stacks into labelled lines (table.s7-stack), so
+    // every column stays readable without sideways scrolling.
+    var cell = function (label, html, cls) {
+      return '<td' + (cls ? ' class="' + cls + '"' : '') + ' data-label="' + escapeHtml(label) + '">' + html + '</td>';
+    };
+    out += '<details><summary>' + ui("Every saved call") + '</summary><div class="s7-scroll"><table class="s7-table s7-stack"><tr><th>#</th><th>' +
       ui("Agent") + '</th><th>' + ui("Model") + '</th><th>' + ui("Phase") + '</th><th>' + ui("Outcome") + '</th><th>' +
       ui("Payload bytes") + '</th><th>' + ui("Reply bytes") + '</th></tr>' + data.calls.map(function (c) {
-        return '<tr><td>' + escapeHtml(c.sequence) + '</td><td>' + escapeHtml(c.agent) + '</td><td class="mono">' + escapeHtml(c.model_id) +
-          (c.model_mode ? ' (' + escapeHtml(c.model_mode) + ')' : '') + '</td><td>' + escapeHtml(c.phase) + '</td><td>' +
-          escapeHtml(ui(REPLY_OUTCOME_LABELS[c.outcome] || c.outcome)) + (c.backend_ok === false ? ' (' + ui("backend error") + ')' : '') +
-          '</td><td>' + escapeHtml(c.payload_bytes == null ? "-" : c.payload_bytes) + '</td><td>' + escapeHtml(c.reply_bytes == null ? "-" : c.reply_bytes) + '</td></tr>';
+        return '<tr>' + cell("#", escapeHtml(c.sequence)) + cell(ui("Agent"), escapeHtml(c.agent)) +
+          cell(ui("Model"), escapeHtml(c.model_id) + (c.model_mode ? ' (' + escapeHtml(c.model_mode) + ')' : ''), "mono") +
+          cell(ui("Phase"), escapeHtml(c.phase)) +
+          cell(ui("Outcome"), escapeHtml(ui(REPLY_OUTCOME_LABELS[c.outcome] || c.outcome)) + (c.backend_ok === false ? ' (' + ui("backend error") + ')' : '')) +
+          cell(ui("Payload bytes"), escapeHtml(c.payload_bytes == null ? "-" : c.payload_bytes)) +
+          cell(ui("Reply bytes"), escapeHtml(c.reply_bytes == null ? "-" : c.reply_bytes)) + '</tr>';
       }).join("") + '</table></div></details>';
   }
   return out;
