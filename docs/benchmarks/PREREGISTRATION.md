@@ -67,16 +67,16 @@ The benchmarks, their sources and licences are in `docs/benchmarks/SELECTION.md`
 
 ## 2. Sample sizes and the benchmark priority list
 
-**Sample sizes: [pending S5 measurements]. Priority list: ContractNLI, then ContraDoc and SciTab.**
+**Sample sizes: filled by the rule below from S5's measurements (this section, "Sizing from S5"); the final n per length band is computed at S8c from `_handoff/B_SIZES.json`. Priority list: ContractNLI, then SciTab, then ContraDoc.**
 
-The priority list holds three benchmarks: ContractNLI, ContraDoc and SciTab. Fit comes first: ContractNLI is High, so it is first; ContraDoc and SciTab are both Medium, and their order is set by measured cost per scored decision, cheapest first: [pending S5 measurements]. Two of the five selected benchmarks left the list in S5, before B draws any sample:
+The priority list holds three benchmarks: ContractNLI, ContraDoc and SciTab. Fit comes first: ContractNLI is High, so it is first; ContraDoc and SciTab are both Medium, and their order is set by measured cost per scored decision, cheapest first: SciTab (about 2.3 minutes of instance time per scored decision on its two current-code development documents) before ContraDoc (about 9.8 minutes per decision; one decision per document). Two of the five selected benchmarks left the list in S5, before B draws any sample:
 
 - **CUAD** (D-073): it has no B3 or B1 development output and no measured cost, so it could not be sized and C0 would have nothing to check on it.
 - **FinDVer** (D-078): B3 runs over its model's context on long filings, so section 5.3 would exclude most of them, and B1 failed the 95 percent parse floor at full length, which a prompt revision chosen after both checkpoints' scores are known could not settle honestly within S5's money.
 
 Neither choice read a score. Three benchmarks is the minimum S8 aims for (section 2, end). The text below still names CUAD and FinDVer where it defines rules for all five; those rules apply to no S8 run.
 
-Fit grades from `SELECTION.md`, the first key of the priority list: ContractNLI High; FinDVer Medium-high; CUAD, ContraDoc, SciTab Medium. (SummEdits is rejected as exposed, D-019.) The second key, measured cost per scored decision: [pending S5 measurements]. Fit is the first key, so ContractNLI is first and cannot move down the list by cost; D-038's remark that its cost "may move ContractNLI down the cost-ordered priority list" is corrected here (D-039 item 2). Its cost is met instead by the fallback below.
+Fit grades from `SELECTION.md`, the first key of the priority list: ContractNLI High; FinDVer Medium-high; CUAD, ContraDoc, SciTab Medium. (SummEdits is rejected as exposed, D-019.) The second key, measured cost per scored decision: ContractNLI about 3.7, SciTab about 2.3, ContraDoc about 9.8 minutes per decision (below). Fit is the first key, so ContractNLI is first and cannot move down the list by cost; D-038's remark that its cost "may move ContractNLI down the cost-ordered priority list" is corrected here (D-039 item 2). Its cost is met instead by the fallback below.
 
 The rule, written now and applied at the end of S5:
 
@@ -103,6 +103,25 @@ Documents for each benchmark are taken as a prefix of B's seeded order (section 
 3. if the design still does not fit, shorten every remaining benchmark to the same fraction, by taking the first n documents of B's seeded order (section 1), so that the shortened set is itself a stratified random sample.
 
 The resulting n per benchmark is written down before the runner starts, and every cut is reported. S8 aims to seal at least three benchmarks, in priority order. If these rules leave fewer than three that qualify (at least 30 documents and 100 scored decisions), the number sealed is what they give, the reason is recorded, and the shortfall is met together with B's synthetic tests.
+
+### Sizing from S5 (development measurements; D-081)
+
+Measured on the A10 (us-east-1, 1.29 USD an hour, the live price at every S5 launch), current code (L4b and L6; the producer and B1 on sdpa one shot, D-063; D-068 and D-076 in force), workload minutes per document, B3 plus B1 with the tuned checkpoint only (half of the measured two-checkpoint B1 entry) plus about 2 minutes per batch entry for each arm:
+
+| Benchmark | Band | Documents measured | Minutes per document | Decisions per document |
+|---|---|---|---|---|
+| ContractNLI (merged parts) | A | 1 | 37.2 | 17 |
+| ContractNLI (merged parts) | B | 2 | 59.0 and 90.6 | 17 |
+| SciTab | A | 2 | 7.1 and 13.9 | 1 and 8 |
+| ContraDoc | A, B | 2 | 8.4 and 11.2 | 1 |
+
+A sealed session pays the asset upload (sealed runs attach no provider storage): 48.3 minutes of overhead per session (BUDGET.md, measured v5 to v12). The forecast factor is 1.3 (IV.3), so one minute costs about 0.0280 USD. A, the S8 allocation, is 36 USD (D-S9); S5's unused allocation goes to S6 (IV.3), so nothing rolls forward to S8.
+
+1. B's synthetic tests first (S4e item 2): three tests, each a flawed document, its clean twin and four perturbation probes, six bundles a test, every arm; measured cost per exposed test bundle on current code about 15 minutes for B3 (L5v) and about 3 minutes for B1: 18 bundles x 18 minutes + 48.3 = 372 minutes, about 10.4 USD. Left for the benchmarks: about 25.6 USD.
+2. ContractNLI's minimum (30 documents; 30 x 17 = 510 decisions) at the measured mean of 62.3 minutes a document is 30 x 62.3 + 48.3 x 2 = 1,966 minutes, about 55 USD, more than what is left. So ContractNLI gets what is left and is reported as a pilot: about (25.6 / 0.0280 - 2 x 48.3) / 62.3, about 13 documents (about 220 decisions) at the development band mix, recomputed at S8c from B's counts per band with the band's own measured minutes (band A 37.2, band B 74.8, the mean of the two band B documents; a band with development documents but no measured document takes the highest measured band's minutes, never a lower figure). SciTab and ContraDoc get nothing, by the rule.
+3. The result is a pilot (fewer than 30 documents). Annex A 11.11.3's three independently prepared tests are met by B's three synthetic tests together with the ContractNLI pilot.
+4. The ContractNLI part rule: merged parts unless S5's span-part measurement (L6s) shows C_span at or below 0.46 USD a document; [the L6s result is written here before the freeze].
+
 
 ## 3. Primary measures
 
