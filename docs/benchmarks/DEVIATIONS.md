@@ -43,3 +43,102 @@ Each entry has these fields, in this order:
 - **Holdout result seen**: no.
 - **Development scores existing when decided**: B1 development scores, and B3 development labels that equal B0's on four benchmarks; neither was read to shape the fix.
 - **Status**: draft. Proven on fixtures (gate check 290, check 269, check 278; no model). Its first run with a model is to be on tests that are not benchmarks (the device-log twins' uncomputable calls and the clinical sheet), clean-twin false alarms counted, before the freeze. If S5's re-forecast cannot pay for that run, the change is deferred under the loop's rule P9 (b) and recorded in `docs/fix/OPEN_ITEMS.md` and the operator's notes, and this entry gets a successor saying so.
+
+### DEV-003. DEV-001's status: the item-level exception is now applied (corrects DEV-001's status line)
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a, lane `lane/s05-prereg`.
+- **Decision**: D-078 (`docs/loop/DECISIONS.md`), section 12 item 11.
+- **What changes**: nothing beyond DEV-001 and DEV-008. DEV-001's status line says the item-level exception `item_calls_failed` is not applied until section 12 item 11 is settled (`mapping.RULE_ID_MAP_ADOPTED` False). That is stale: item 11 is settled, and the exception is applied from commit `5716d90` (D-078). DEV-001 is left as written, because an entry is never edited; this entry replaces its status line.
+- **Why**: the adapter lane `lane/s05-adapt2` adopted the rule-id map (DEV-008).
+- **Decided from**: gold-free counts (DEV-008).
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 and B3 development scores; not read.
+- **Status**: draft. DEV-001's status is now: draft, with the item-level exception applied from `5716d90` (D-078).
+
+### DEV-004. B1 and B3 run the producer under sdpa, prefilled in one shot; general fixes from the L2 diagnosis
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a. Entered late: the changes were made on 28 October (D-061, D-063) and had no entry here (D-078).
+- **Decision**: D-061 (the general fixes, and E made buildable) and D-063 (D-061's declared fallback: option A).
+- **What changes**: what B1 and B3 run. The producer in B3 and the model in B1 use sdpa attention pinned to the memory-efficient backend, with the prompt prefilled in one shot (sealed settings `SHIMMER_PRODUCER_ATTENTION` and `SHIMMER_PRODUCER_PREFILL_CHUNK`; `final_models.generate_with_prefill`; `benchmark/baselines/bare_model.py`). The models `agent_wrapper._load_qwen` loads run sdpa pinned the same way. Chunked prefill under eager (E) stays built as a measurement path. General fixes (D-061): `auditor_pairs` records a VERIFIER reply that is not an object as a contract failure, not a crash; the runner's assessment reports `semantic_incomplete` as its own reason; the contract retry is skipped under deterministic decoding (`retry_skipped_deterministic`). Preregistration sections 4, 9 and 12 item 13. Arms: B1, B3, B4.
+- **Why**: one-shot eager did not fit the instance's memory on long prompts (INC-015). E missed its declared threshold (8 of 12 replies byte-identical to one-shot eager, 5 of 9 on long prompts, against 90 percent); sdpa one shot was byte-identical on 12 of 12 and 9 of 9, so D-061's declared fallback chose it. The producer was trained and evaluated eager; that is a section 9 limitation. Under greedy decoding a contract retry can only repeat itself (9 of 9 identical in L2).
+- **Decided from**: gold-free measurements (byte identity of replies, GPU memory, prefill time) on development items, under a rule declared before the comparison was read.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 development scores from L2; not read for the choice.
+- **Status**: draft. Built and merged (`5452a76`, `72df4c2`).
+
+### DEV-005. DEV-002's change was verified with a model and kept
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a. Successor to DEV-002.
+- **Decision**: D-069 (the verification run L5v, with its acceptance declared before it), D-070 (verified: D-068 stays), D-071 (D-068's own entry, merge `8ac7a60`).
+- **What changes**: nothing beyond DEV-002. DEV-002's status said its first run with a model was still to come. That run (L5v) used tests that are not benchmarks: the clinical sheet, the device-log flawed document and its clean twin. Clinical sheet: location recall 5 of 5, reason confirmed 4 of 5, false positives 0 (L1: 4 of 5, 4 of 5, 0). Clean twin: false positives 0. D-069's declared acceptance held, so D-068 stays.
+- **Why**: DEV-002 required this run before the freeze.
+- **Decided from**: the scorer's counts on tests that are not benchmarks, against an acceptance declared before the run. No benchmark output was read.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 development scores; not read.
+- **Status**: draft. DEV-002 is verified; its change stays (merge `8ac7a60`).
+
+### DEV-006. CUAD leaves the design; which development outputs count; the ContractNLI span-part trigger route
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a. Entered late (D-078).
+- **Decision**: D-073 (re-forecast of S5) and D-077 (L6 and L6s content).
+- **What changes**: (1) CUAD leaves the S8 priority list (preregistration section 2). (2) B3 development outputs made before D-068 (merge `8ac7a60`: L2, L3e, L4a) count for cost, not for labels. C0 receives every development output, each labelled with its commit and whether it predates D-068; C0's mapping check counts only current-code outputs. S8 sizing uses only current-code runs. (3) The ContractNLI span-part trigger (section 2) is decided from L6s's measured B3 cost per agreement with span parts, run as its own launch: a complete measurement, or a measured lower bound that decides the trigger only if it passes 0.46 USD; otherwise the trigger is recorded as undecided, and section 2 says which. Arms: all.
+- **Why**: CUAD has no B3 or B1 development output and no measured cost, so it cannot be sized and C0 has nothing to check on it; S5's money did not pay for it after the earlier items (DS5-4: least fitting, then costliest). D-068 changed what B3 writes on text-only claims, so earlier B3 labels are not labels of the current code. A batch cannot stop one entry early, so the span-part agreement runs alone.
+- **Decided from**: cost and budget, and the commit of each output. No score was read.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 development scores and pre-D-068 B3 labels; not read.
+- **Status**: draft. The trigger outcome is written into section 2 by the lead.
+
+### DEV-007. B3 and B4 run an over-bound phase as waves
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a. Entered late (D-078).
+- **Decision**: D-076 (INC-019).
+- **What changes**: pipeline behaviour of B3 and B4. A gather with more planned calls than the scheduler bound (`max_pending`) used to refuse the run; it now runs as consecutive waves of at most `max_pending` calls sharing one snapshot and one parent set (merge `8c2392d`, gate check 291). A gather at or below the bound runs exactly as before. Arms: B3, B4.
+- **Why**: a phase with more planned calls than the scheduler admits refused the run (ContractNLI band B in L4b; all of CUAD is above the bound too). An arm that cannot finish a class of documents is a fault in the evaluation, not a cost.
+- **Decided from**: the refusal in L4b (run health, no score) and fixtures.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 development scores; not read.
+- **Status**: draft. Built and merged; verified on fixtures, and on a second document class in L6 (the ContractNLI band B re-run).
+
+### DEV-008. The registry-id map is adopted; `item_calls_failed` is applied
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-078, section 12 item 11.
+- **What changes**: preregistration section 5.1 (line 5's exception; the per-arm counts) and section 12 item 11. Code: `benchmark/adapters/common/mapping.py` (`RULE_ID_MAP_ADOPTED` True, `read_rule_map` returning a status, `names_rule`), with checks in `scripts/adapter_checks.py` (commit `5716d90`). A judging call and a pairing-map refusal are matched to an item through the run's own `audit/convention_assignment.json`; where the map is missing, unreadable or not one to one, the exception is not applied on that document, the row says why and the document is counted. Arms: B2, B3, B4.
+- **Why**: every B3 development run folder (20 of 20) holds a one-to-one map, so the switch can be turned on.
+- **Decided from**: gold-free counts. On every development output the exception applied to 0 items, so no development label changed.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 and B3 development scores; not read.
+- **Status**: draft.
+
+### DEV-009. B1's checkpoint pool is the three benchmarks that stay
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-078, section 12 item 12.
+- **What changes**: preregistration section 12 item 12. Its rule named the pool as the five benchmarks, or those that survive C0. The pool is now ContractNLI, ContraDoc and SciTab, the benchmarks left on the S8 priority list after CUAD (D-073) and FinDVer (D-078) left it. The choice is tuned. Over the four benchmarks pooled before FinDVer left: parse rates tied (72 of 73), headline tuned 0.305 against base 0.233. Over the three that stay: headline tuned 0.407 against base 0.311. FinDVer's 0 of 1 parse is outside the pool now. Arms: B1.
+- **Why**: a benchmark that is not run in S8 cannot be in the pool that chooses B1's checkpoint for S8.
+- **Decided from**: the benchmarks' removal, for cost (CUAD) and for context and the parse floor (FinDVer), not for a score. The pool was narrowed after B1 development scores existed; both readings choose the same checkpoint.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 development scores for both checkpoints, read by item 12's rule as that rule requires; the pool change did not read them.
+- **Status**: draft.
+
+### DEV-010. B3 documents with a call over the model's context are excluded, and S-7
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-078, section 12 item 14.
+- **What changes**: preregistration section 4 (S-7 in the sensitivity list), section 5.1 (the per-arm counts), section 5.3 (the exclusion read from reply records; comparisons with B3 on documents excluded for neither arm; S-7), section 12 item 14. Code: `benchmark/adapters/common/mapping.py` (`read_over_context`, `OVER_CONTEXT_ARMS`, basis `over_context_excluded`, `sensitivity_s7`, `scored_view`, `over_context_excluded`, `restrict`) and `benchmark/adapters/common/cli.py` (`score --paired-with`), with checks (commit `5716d90`). Arms: B3 (B4 is not checked).
+- **Why**: section 5.3 already excluded such documents from B3, but the adapters did not apply it: FinDVer `e61777d6327c` had three calls over the context in L3e and in L4b and was scored. Those two B3 figures are void and are not reported.
+- **Decided from**: counts of over-context calls in the reply records, with no score read.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 and B3 development scores, including the two void B3 FinDVer scores; not read.
+- **Status**: draft.
+
+### DEV-011. FinDVer leaves the S8 priority list
+
+- **Entered**: 2026-10-29 15:54 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-078.
+- **What changes**: preregistration section 2 (the priority list holds ContractNLI, ContraDoc and SciTab) and section 12 item 12 (DEV-009). Arms: all.
+- **Why**: (1) B3 runs over its model's context on long filings: whole-document agents add their own text to a document cut to about 30,500 tokens, so section 5.3 excludes such documents, and 209 of 255 development filings are cut (inferred from one filing, not counted). (2) B1 failed the 95 percent parse floor at full length (both checkpoints reached the output allowance, 0 of 1). Section 5.4 would then require a prompt revision chosen after both checkpoints' scores are known, measured by a B1 run that S5's money no longer pays.
+- **Decided from**: counts and cost, by section 12's rule for an item that cannot be settled. No FinDVer score enters it.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1 and B3 development scores; not read.
+- **Status**: draft. Five benchmarks were selected; three stay, the minimum S8 aims for.

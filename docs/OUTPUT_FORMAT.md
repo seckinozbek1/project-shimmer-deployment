@@ -548,6 +548,7 @@ Every model call writes exactly one record here, whatever path it took. A run wi
 | `sensitive` | boolean | `true` in a run with redaction on: then `text` is left out below. |
 | `payload` | object or null | What was sent: `sha256`, `length_bytes`, `form` (`anthropic_messages_json`, `openai_messages_json`, `rendered_prompt` or `classifier_messages_json`) and `text`. |
 | `reply` | object or null | What came back: `sha256`, `length_bytes` and `text`. For the classifier, the label. |
+| `context` | object, optional | Written for a local generate call: `prompt_tokens`, `max_new_tokens` (the call's output allowance), `model_context` (the model's positions, null when the model states none) and `over_context` (true when prompt tokens plus the allowance exceed the context; null when the context is not stated). Counts only, kept in a sensitive run too. A call over its context is refused before generating (D-058 condition v). The benchmark adapters exclude a B3 document from scoring when any of its records has `over_context` true (preregistration section 5.3). |
 
 **`outcomes.jsonl`**: what happened to each reply, one line per decision: `{"call_id", "outcome", "source", "timestamp", ...}`, sometimes with `item_count`, `findings_withheld` or `pair_id`. A later line for the same `call_id` replaces an earlier one. A call with no line has the outcome `not_decided`.
 
