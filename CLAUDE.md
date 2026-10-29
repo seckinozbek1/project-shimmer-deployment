@@ -312,8 +312,9 @@ processing swarm governed by an append-only constitution.
   A key outside `benchmark/corpora/` is scored with `tools/score_corpus.py --key <answer_key.json>
   --run <run>`, and its twin with `--twin-key` and `--twin-run`; the scorer refuses a twin the key
   does not name and a run that is not of the twin's document. It reads `expected_refusals` by
-  refusal kind (a matched rename is no false positive), scores a run holding
-  `audit/multi_round.json` per round and document from Python's round findings only, and reports
+  refusal kind (a rename Python matched is no false positive; one only a model's record matches
+  satisfies nothing), scores a run holding `audit/multi_round.json` per round and document from
+  Python's round findings only (a round-scoped key is refused on any other run), and reports
   the four relations Python never writes apart, located only by a marked model-written record
   (check 293). Development cases built from
   repository material live in `benchmark/dev_cases/`: exposed, development only.

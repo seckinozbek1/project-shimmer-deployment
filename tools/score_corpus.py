@@ -82,15 +82,22 @@ states, and nothing else changes for a key that carries none of them:
   expected_refusals  (a negotiation-style key) each renamed term is satisfied by a
                 refusal in prior_refusals on its earlier label and unit (reason_kind
                 not null), reported as the expected kind or as another kind, or by a
-                matched rename (a change record on the later label, not
+                matched rename (a change record Python wrote on the later label, not
                 absent_since_prior, with the row's figures and measure), which is then
-                no false positive; an absent_since_prior on the earlier label is a
-                fabricated withdrawal and stays a false positive; a refusal or orphan
-                of a listed label is not a stray refusal.
+                no false positive; the same record written by a model satisfies nothing,
+                is reported apart and stays a false positive; an absent_since_prior on
+                the earlier label is a fabricated withdrawal and stays a false positive;
+                a refusal where none is expected, a refusal on another unit and an
+                orphan are counted and satisfy nothing; a refusal or orphan of a listed
+                label is not a stray refusal.
   multi-round   a run holding audit/multi_round.json is scored against the key's
                 multi-round entries (its `multi_round` object, else planted and clean
                 entries carrying round_id): only Python's round findings on bus channel
-                multi_round count, each for the entry of its own round and document.
+                multi_round count, each for the entry of its own round and document. A
+                key with top-level round-scoped entries is refused on any other run
+                (input format section 12, item 4). No twin check is run on a multi-round
+                run, `twin_of` inside `multi_round` is not read, and no key's `archives`
+                is checked.
   relations Python never writes  a planted relation the Finding record does not
                 declare (unit_mismatch, rate_mismatch, copy_mismatch, carry_mismatch)
                 is reported in its own section: located only by a model-written record,
@@ -674,36 +681,51 @@ def _load_review_data(run_dir):
             for field in ("amendments", "prior_comparisons", "prior_refusals", "prior_orphans")}
 
 
-def read_expected_refusals(rows, prior_refusals, prior, norm_label, norm_unit, close):
+def python_written(record):
+    """True for a record whose bus post was Python's (finding_record.written_by, kept by
+    _load_bus_findings as `_written_by`). Only such a change record can match a rename."""
+    return record.get("_written_by") == "python"
+
+
+def read_expected_refusals(rows, prior_refusals, prior, norm_label, norm_unit, close,
+                           prior_orphans=()):
     """Each `expected_refusals` row of a negotiation-style key, as section 9 counts it.
 
     A REFUSAL satisfies the row when the row's reason_kind is not null and
     prior_refusals holds an entry whose label normalises to the row's field_label and
     whose unit_id is the row's unit_id; its kind is reported beside it, and a refusal of
     another kind still satisfies the row but is never counted as the expected kind. A
-    MATCHED RENAME satisfies the row whatever its reason_kind: a computed change record on
-    later_field_label, any relation but absent_since_prior, whose value_a and value_b are
-    the row's within the comparison tolerance, in the row's measure. An absent_since_prior
-    on field_label is a FABRICATED WITHDRAWAL. A refusal where the key expects none
-    (reason_kind null) satisfies nothing.
+    MATCHED RENAME satisfies the row whatever its reason_kind: a computed change record
+    WRITTEN BY PYTHON on later_field_label, any relation but absent_since_prior, whose
+    value_a and value_b are the row's within the comparison tolerance, in the row's
+    measure. The same record written by a model satisfies nothing: it is reported apart,
+    marked as a model's, and stays a false positive. An absent_since_prior on field_label
+    is a FABRICATED WITHDRAWAL. Counted and named, never satisfying: a refusal where the
+    key expects none (reason_kind null), a refusal of field_label on another unit, and an
+    orphan (prior_orphans) of field_label.
 
-    Returns (results, matched): one dict per row, and the change records matched as
-    renames, which the caller does not count as false positives."""
+    Returns (results, matched): one dict per row, and the Python change records matched
+    as renames, which the caller does not count as false positives."""
     results, matched = [], []
     for r in rows:
         if not isinstance(r, dict) or not r.get("field_label") or not r.get("later_field_label"):
             raise SystemExit("every expected_refusals row needs field_label and later_field_label")
         label, later = norm_label(r["field_label"]), norm_label(r["later_field_label"])
         want = r.get("reason_kind")
-        refused = [x for x in prior_refusals if isinstance(x, dict)
-                   and norm_label(x.get("label")) == label
-                   and str(x.get("unit_id") or "") == str(r.get("unit_id") or "")]
+        on_label = [x for x in prior_refusals if isinstance(x, dict)
+                    and norm_label(x.get("label")) == label]
+        refused = [x for x in on_label if str(x.get("unit_id") or "") == str(r.get("unit_id") or "")]
+        elsewhere = [x for x in on_label if str(x.get("unit_id") or "") != str(r.get("unit_id") or "")]
+        orphaned = [x for x in prior_orphans if isinstance(x, dict)
+                    and norm_label(x.get("label")) == label]
         got = sorted({str(x.get("reason_kind")) for x in refused})
-        renames = [f for f in prior if norm_label(f.get("field_label")) == later
-                   and f.get("relation") != "absent_since_prior"
-                   and close(f.get("value_a"), r.get("value_a"))
-                   and close(f.get("value_b"), r.get("value_b"))
-                   and norm_unit(f.get("unit_b")) == norm_unit(r.get("unit"))]
+        candidates = [f for f in prior if norm_label(f.get("field_label")) == later
+                      and f.get("relation") != "absent_since_prior"
+                      and close(f.get("value_a"), r.get("value_a"))
+                      and close(f.get("value_b"), r.get("value_b"))
+                      and norm_unit(f.get("unit_b")) == norm_unit(r.get("unit"))]
+        renames = [f for f in candidates if python_written(f)]
+        model_renames = [f for f in candidates if not python_written(f)]
         withdrawn = [f for f in prior if norm_label(f.get("field_label")) == label
                      and f.get("relation") == "absent_since_prior"]
         by_refusal = want is not None and bool(refused)
@@ -714,25 +736,44 @@ def read_expected_refusals(rows, prior_refusals, prior, norm_label, norm_unit, c
                           else "refused as %s, OTHER KIND (key: %s)" % ("/".join(got), want))
         elif refused:
             status.append("refused as %s, key expects none" % "/".join(got))
+        if elsewhere:
+            status.append("refused on another unit (%s)"
+                          % ",".join(sorted({str(x.get("unit_id") or "") for x in elsewhere})))
+        if orphaned:
+            status.append("orphaned")
         if renames:
             status.append("matched rename")
+        if model_renames:
+            status.append("rename matched by a model's record only (not counted)")
         if withdrawn:
             status.append("FABRICATED WITHDRAWAL")
         matched.extend(renames)
         results.append({"row": r, "want": want, "satisfied": by_refusal or bool(renames),
                         "by_refusal": by_refusal, "kind_ok": kind_ok, "renamed": bool(renames),
+                        "refused_none": want is None and bool(refused),
+                        "other_unit": bool(elsewhere), "orphaned": bool(orphaned),
+                        "model_renamed": len(model_renames),
                         "fabricated": len(withdrawn), "status": "; ".join(status) or "missing"})
     return results, matched
 
 
-def _print_expected_refusals(results):
+def listed_labels(results, norm_label):
+    """The earlier labels expected_refusals lists: their refusals and orphans are not stray."""
+    return {norm_label(x["row"]["field_label"]) for x in results}
+
+
+def _print_expected_refusals(results, mark):
     satisfied = sum(x["satisfied"] for x in results)
     print("expected refusals : %d/%d satisfied (%d refused with the expected kind, %d refused "
           "with another kind, %d matched renames); %d fabricated withdrawal(s) "
-          "(absent_since_prior on a renamed term's earlier label, counted in false positives)"
+          "(absent_since_prior on a renamed term's earlier label, counted in false positives); "
+          "not satisfying: %d refused where none is expected, %d refused on another unit, "
+          "%d orphaned"
           % (satisfied, len(results), sum(x["kind_ok"] for x in results),
              sum(x["by_refusal"] and not x["kind_ok"] for x in results),
-             sum(x["renamed"] for x in results), sum(x["fabricated"] for x in results)))
+             sum(x["renamed"] for x in results), sum(x["fabricated"] for x in results),
+             sum(x["refused_none"] for x in results), sum(x["other_unit"] for x in results),
+             sum(x["orphaned"] for x in results)))
     kinds = []
     for x in results:
         if x["want"] not in kinds:
@@ -748,6 +789,8 @@ def _print_expected_refusals(results):
                          % (k, sum(x["satisfied"] for x in idx), len(idx),
                             sum(x["kind_ok"] for x in idx)))
     print("  by expected kind  : %s" % "; ".join(parts))
+    print("  renames matched by a model's record only : %d   (%s; satisfy no row and stay "
+          "false positives)" % (sum(x["model_renamed"] for x in results), mark))
 
 
 def score_rounds(corpus, key, run_dir, twin=None):
@@ -824,9 +867,10 @@ def score_rounds(corpus, key, run_dir, twin=None):
     # label, so its false positives and stray refusals are exactly what they were.
     expected = key.get("expected_refusals")
     renamed, matched = read_expected_refusals(
-        expected or [], list(data.get("prior_refusals") or []), prior, norm_label, norm_unit, close)
+        expected or [], list(data.get("prior_refusals") or []), prior, norm_label, norm_unit, close,
+        list(data.get("prior_orphans") or []))
     matched_ids = {id(f) for f in matched}
-    listed = {norm_label(x["row"]["field_label"]) for x in renamed}
+    listed = listed_labels(renamed, norm_label)
     false_pos = [f for f in prior if id(f) not in matched_ids
                  and (norm_label(f.get("field_label")) not in key_labels
                       or not any(norm_label(r["field_label"]) == norm_label(f.get("field_label"))
@@ -865,7 +909,7 @@ def score_rounds(corpus, key, run_dir, twin=None):
     print("band irregular    : %d/%d found, %d/%d attributed to the operator rule; %d false positives; "
           "%d amendments" % (band_found, len(band_rows), band_attr, len(band_rows), len(band_fp), len(amendments)))
     if expected is not None:
-        _print_expected_refusals(renamed)
+        _print_expected_refusals(renamed, finding_record.MODEL_FINDING_MARK)
     # Every relation the run produced, including any this path has no dedicated
     # section for (a duration comparison is neither a prior record nor a band):
     # without this, a finding of a newer kind is computed, posted, and invisible
@@ -908,6 +952,14 @@ def is_multi_round_run(run_dir):
     return (Path(run_dir) / "audit" / "multi_round.json").is_file()
 
 
+def round_scoped_key(key):
+    """True when any top-level planted or clean entry carries round_id: the key of a
+    multi-round case that is not negotiation-style (input format, section 9). A twin
+    with no planted flaw is still such a key when only its clean entries carry it."""
+    return any(isinstance(e, dict) and "round_id" in e
+               for e in list(key.get("planted") or []) + list(key.get("clean") or []))
+
+
 def multi_round_entries(key):
     """(planted, clean) of a multi-round key, or None when the key has none.
 
@@ -918,7 +970,7 @@ def multi_round_entries(key):
     block = key.get("multi_round")
     if isinstance(block, dict):
         planted, clean = block.get("planted") or [], block.get("clean") or []
-    elif any(isinstance(p, dict) and "round_id" in p for p in key.get("planted") or []):
+    elif round_scoped_key(key):
         planted, clean = key.get("planted") or [], key.get("clean") or []
     else:
         return None
@@ -1077,6 +1129,16 @@ def score_multi_round(corpus, key, run_dir, planted, clean, twin=None):
     return 0
 
 
+def refuse_round_scoped_on_ordinary(key, run_dir):
+    """Input format section 12, item 4: round-scoped entries are scored from the
+    multi-round run only. Scoring them on an ordinary review would match a flaw of one
+    round against a document of another, so such a key is refused on any other run."""
+    if round_scoped_key(key):
+        raise SystemExit("%s is not a multi-round run (no audit/multi_round.json), and the "
+                         "key's entries are scoped by round: they are scored from the "
+                         "multi-round run only (docs/INPUT_FORMAT.md section 12, item 4)" % run_dir)
+
+
 def score(corpus, run_dir, key_path=None, twin_key=None, twin_run=None):
     """Score one run. `corpus` names a folder under benchmark/corpora/ (or an
     absolute path, as before); `key_path`, when given, is the key file itself and
@@ -1092,13 +1154,13 @@ def score(corpus, run_dir, key_path=None, twin_key=None, twin_run=None):
             raise SystemExit("%s is a multi-round run (audit/multi_round.json), and the key "
                              "has no multi-round entries to score it against" % run_dir)
         return score_multi_round(corpus, key, run_dir, entries[0], entries[1], twin)
+    refuse_round_scoped_on_ordinary(key, run_dir)
     if key.get("prior_records") is not None:
         return score_rounds(corpus, key, run_dir, twin)
     amendments = _load_amendments(run_dir)
     findings = _load_bus_findings(run_dir)
     planted = key.get("planted") or []
-    clean = [str(u.get("unit") if isinstance(u, dict) else u).lower() for u in key.get("clean") or []]
-    round_scoped = any(isinstance(p, dict) and "round_id" in p for p in planted)
+    clean = [str(u).lower() for u in key.get("clean") or []]
 
     assignment = _load_assignment(run_dir)
     sys.path.insert(0, str(ROOT / "scripts"))
@@ -1184,9 +1246,6 @@ def score(corpus, run_dir, key_path=None, twin_key=None, twin_run=None):
     print("run             : %s" % run_dir)
     print("task            : %s" % key.get("task_given_to_the_pipeline", ""))
     print("run completeness: %s" % _completeness_note(run_dir, amendments))
-    if round_scoped:
-        print("NOTE            : the key's entries are scoped by round, and this is not a "
-              "multi-round run; scored as one review, round_id and document_id ignored")
     print("amendments      : %d   (typed findings on the bus: %d)" % (len(amendments), len(findings)))
     print("recall          : %d/%d   (every planted entry, LOCATION ONLY)"
           % (sum(found), len(planted)))

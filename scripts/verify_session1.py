@@ -24993,9 +24993,11 @@ def check_292_every_controller_path_child_process_starts_without_a_window():
 def check_293_scorer_reads_the_key_parts_d042_added():
     """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
     reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
-    unit, reported by kind, or by a matched rename that is then no false positive; a fabricated
-    withdrawal named), scores a multi-round run (audit/multi_round.json) from Python's round
-    findings on bus channel multi_round, each only for the entry of its own round and document,
+    unit, reported by kind, or by a rename Python matched, which is then no false positive; a
+    rename only a model's record matches satisfies nothing; a fabricated withdrawal named),
+    scores a multi-round run (audit/multi_round.json) from Python's round findings on bus
+    channel multi_round, each only for the entry of its own round and document, refuses a
+    round-scoped key on any other run and a multi-round run whose key has no such entries,
     and reports the four relations Python never writes apart, located only by a model-written
     record and never by a Python post. Executed on synthetic run folders (the multi-round bus
     written by multi_round_rounds.post_findings itself); each reader proven by neutralise,

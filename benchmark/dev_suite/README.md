@@ -56,7 +56,7 @@ It refuses a twin key that is not the one the key's `twin_of` names, and a twin 
 that is not a run of the twin's document. It reads the key parts D-042 added to
 `docs/INPUT_FORMAT.md` section 9: a family 4 bundle's ordinary two-version run is scored
 on `prior_records`, `band_irregularities` and `expected_refusals` (by refusal kind; a
-matched rename is no false positive), its multi-round run (a run folder holding
+rename Python matched is no false positive), its multi-round run (a run folder holding
 `audit/multi_round.json`, same command) on the key's `multi_round` entries, round by
 round, and an entry of one of the four relations Python never writes is reported in a
 section of its own (check 293). The

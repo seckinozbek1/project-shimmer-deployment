@@ -12,15 +12,20 @@ does not read them), so such an entry could only ever be missed.
 Every case EXECUTES the scorer's main() on synthetic run folders written into temporary
 folders:
 
-1. expected refusals: a negotiation-style key with four renamed terms (one refused with
-   the expected kind, one refused with another kind, one matched as a rename where the
-   key expects no refusal, one with a fabricated withdrawal) and a run whose
-   review_data.json and bus hold exactly those records;
+1. expected refusals: a negotiation-style key with seven renamed terms (refused with the
+   expected kind; refused with another kind; refused where none is expected and matched
+   as a rename by Python; a fabricated withdrawal; matched only by a model-written
+   computed record, which satisfies nothing and stays a false positive; refused under
+   another unit; orphaned) and a run whose review_data.json and bus hold exactly those
+   records, with one stray refusal of an unlisted label;
 2. a multi-round run: its bus lines are written by multi_round_rounds.post_findings itself
    (the real posting code, through a recording wrapper), from a two-round record holding
    a planted flaw, a flaw found with the wrong figures, a flaw found only in another
    round, a model-written item on the multi_round channel, a clean distractor and a
    finding on an unkeyed unit, beside audit/multi_round.json and a completion record;
+   and three key forms: a key with no multi-round entries on that run (refused), a key
+   whose top-level clean entries alone carry round_id (scored), and that key on an
+   ordinary run (refused, input format section 12 item 4);
 3. the relations Python never writes: a single-version key with one entry located by a
    model-written record whose reason matches, one whose only record sits on a Python post
    with an amendment of another relation on its unit, and one with nothing.
@@ -94,26 +99,33 @@ def _record(relation, unit, **fields):
 
 # ---- 1. expected refusals --------------------------------------------------------------
 
+def _row(label, later, unit_id, kind, a, b, unit):
+    return {"field_label": label, "later_field_label": later, "unit_id": unit_id,
+            "reason_kind": kind, "value_a": a, "value_b": b, "unit": unit}
+
+
 def refusal_fixture(root):
-    """A negotiation-style key with four renamed terms and a run that refuses, matches and
-    fabricates exactly as the module docstring says."""
+    """A negotiation-style key with seven renamed terms and a run that refuses, matches,
+    fabricates and orphans them as the rows' comments say."""
     key = {"document": "terms_x.md", "task_given_to_the_pipeline": "fixture",
            "prior_records": [{"field_label": "deposit amount", "relation": "unchanged_from_prior",
                               "value_a": 100, "value_b": 100, "unit": "EUR"}],
            "band_irregularities": [],
            "expected_refusals": [
-               {"field_label": "rebate threshold", "later_field_label": "rebate trigger",
-                "unit_id": "u06-clause-swift", "reason_kind": "possible_rename",
-                "value_a": 61, "value_b": 61, "unit": "EUR"},
-               {"field_label": "audit interval", "later_field_label": "inspection interval",
-                "unit_id": "u08-clause-jay", "reason_kind": "possible_successor",
-                "value_a": 3, "value_b": 5, "unit": "months"},
-               {"field_label": "payment term", "later_field_label": "settlement term",
-                "unit_id": "u04-clause-tern", "reason_kind": None,
-                "value_a": 29, "value_b": 21, "unit": "days"},
-               {"field_label": "storage fee", "later_field_label": "warehouse fee",
-                "unit_id": "u09-clause-wren", "reason_kind": "possible_rename",
-                "value_a": 7, "value_b": 7, "unit": "EUR"}]}
+               # refused on its unit with the expected kind
+               _row("rebate threshold", "rebate trigger", "u06-clause-swift", "possible_rename", 61, 61, "EUR"),
+               # refused on its unit with another kind
+               _row("audit interval", "inspection interval", "u08-clause-jay", "possible_successor", 3, 5, "months"),
+               # no refusal expected: refused anyway, and matched as a rename by Python
+               _row("payment term", "settlement term", "u04-clause-tern", None, 29, 21, "days"),
+               # a fabricated withdrawal (Python's absent_since_prior on the earlier label)
+               _row("storage fee", "warehouse fee", "u09-clause-wren", "possible_rename", 7, 7, "EUR"),
+               # matched as a rename only by a model-written computed record
+               _row("freight rate", "carriage rate", "u10-clause-owl", "possible_rename", 12, 10, "%"),
+               # refused, but under another unit
+               _row("handling fee", "packing fee", "u11-clause-rook", "possible_rename", 4, 4, "EUR"),
+               # orphaned, never refused
+               _row("insurance cap", "cover cap", "u13-clause-kestrel", "possible_successor", 9, 5, "EUR")]}
     _write(root / "key" / "answer_key.json", json.dumps(key))
     run = root / "run"
     change = [
@@ -123,7 +135,12 @@ def refusal_fixture(root):
                 field_label="settlement term", value_a=29, value_b=21, unit_a="days", unit_b="days"),
         _record("absent_since_prior", "u09-clause-wren", verdict="ok", provenance="computed",
                 field_label="storage fee", value_a=None, value_b=7, unit_b="EUR")]
-    _write(run / "logs" / "agent_bus.jsonl", _bus_line("main", "computed", "python", "terms_x", change) + "\n")
+    model_change = [
+        _record("changed_from_prior", "u10-clause-owl", verdict="ok", provenance="computed",
+                field_label="carriage rate", value_a=12, value_b=10, unit_a="%", unit_b="%")]
+    _write(run / "logs" / "agent_bus.jsonl", "\n".join([
+        _bus_line("main", "computed", "python", "terms_x", change),
+        _bus_line("main", "cloud", "fixture-model", "terms_x", model_change)]) + "\n")
     _write(run / "deliverables" / "terms_x" / "review_data.json", json.dumps({
         "amendments": [], "prior_comparisons": change,
         "prior_refusals": [
@@ -131,9 +148,14 @@ def refusal_fixture(root):
              "reason_kind": "possible_rename"},
             {"unit_id": "u08-clause-jay", "label": "audit interval", "reason": "r",
              "reason_kind": "possible_rename"},
+            {"unit_id": "u04-clause-tern", "label": "payment term", "reason": "r",
+             "reason_kind": "possible_successor"},
+            {"unit_id": "u12-clause-crane", "label": "handling fee", "reason": "r",
+             "reason_kind": "possible_rename"},
             {"unit_id": "u05-clause-kite", "label": "loading charge", "reason": "r",
              "reason_kind": "possible_successor"}],
-        "prior_orphans": []}))
+        "prior_orphans": [{"label": "insurance cap", "unit_slug": "clause-kestrel", "reason": "r",
+                           "reason_kind": "orphan"}]}))
     return root / "key" / "answer_key.json", run
 
 
@@ -141,11 +163,11 @@ def observe_refusals():
     with tempfile.TemporaryDirectory(prefix="shimmer_scorer_refusals_") as td:
         key, run = refusal_fixture(Path(td))
         status, lines = run_scorer(["--key", str(key), "--run", str(run)])
-        table = [ln[ln.index("u0"):].rstrip() for ln in lines
+        table = [ln[ln.index(" u") + 1:].rstrip() for ln in lines
                  if ln.startswith("  ") and not ln.startswith("   ") and "-clause-" in ln]
         return {"status": status,
-                "lines": _lines(lines, "expected refusals", "  by expected kind", "false positives",
-                                "stray refusals", "recall, exact"),
+                "lines": _lines(lines, "expected refusals", "  by expected kind", "  renames matched",
+                                "false positives", "stray refusals", "recall, exact"),
                 "table": table}
 
 
@@ -153,18 +175,25 @@ REFUSALS = {
     "status": 0,
     "lines": [
         "recall, exact     : 1/1   (label + relation + figures)",
-        "false positives   : 1   (a record for a label or relation the key does not give)",
+        "false positives   : 2   (a record for a label or relation the key does not give)",
         "stray refusals    : 1   (refusals or orphans for labels the key does not list)",
-        "expected refusals : 3/4 satisfied (1 refused with the expected kind, 1 refused with "
+        "expected refusals : 3/7 satisfied (1 refused with the expected kind, 1 refused with "
         "another kind, 1 matched renames); 1 fabricated withdrawal(s) (absent_since_prior on a "
-        "renamed term's earlier label, counted in false positives)",
-        "  by expected kind  : possible_rename 1/2 satisfied, 1 refused with that kind; "
-        "possible_successor 1/1 satisfied, 0 refused with that kind; null 1/1 satisfied (no "
-        "refusal expected; only a matched rename satisfies)"],
-    "table": ["u06-clause-swift       possible_rename              refused, possible_rename as expected",
-              "u08-clause-jay         possible_successor           refused as possible_rename, OTHER KIND (key: possible_successor)",
-              "u04-clause-tern        null                         matched rename",
-              "u09-clause-wren        possible_rename              FABRICATED WITHDRAWAL"]}
+        "renamed term's earlier label, counted in false positives); not satisfying: 1 refused "
+        "where none is expected, 1 refused on another unit, 1 orphaned",
+        "  by expected kind  : possible_rename 1/4 satisfied, 1 refused with that kind; "
+        "possible_successor 1/2 satisfied, 0 refused with that kind; null 1/1 satisfied (no "
+        "refusal expected; only a matched rename satisfies)",
+        "  renames matched by a model's record only : 1   (%s; satisfy no row and stay false "
+        "positives)" % finding_record.MODEL_FINDING_MARK],
+    "table": [
+        "u06-clause-swift       possible_rename              refused, possible_rename as expected",
+        "u08-clause-jay         possible_successor           refused as possible_rename, OTHER KIND (key: possible_successor)",
+        "u04-clause-tern        null                         refused as possible_successor, key expects none; matched rename",
+        "u09-clause-wren        possible_rename              FABRICATED WITHDRAWAL",
+        "u10-clause-owl         possible_rename              rename matched by a model's record only (not counted)",
+        "u11-clause-rook        possible_rename              refused on another unit (u12-clause-crane)",
+        "u13-clause-kestrel     possible_successor           orphaned"]}
 
 
 def refusals_ignored():
@@ -183,6 +212,23 @@ def refusal_kind_not_compared():
             x["kind_ok"] = x["by_refusal"]
         return results, matched
     return patch.object(sc, "read_expected_refusals", any_kind)
+
+
+def model_rename_counted():
+    """A change record matched as a rename whoever wrote it."""
+    return patch.object(_scorer(), "python_written", lambda record: True)
+
+
+def matched_renames_left_in_false_positives():
+    """Every row scored as before, but no matched rename removed from false positives."""
+    sc = _scorer()
+    real = sc.read_expected_refusals
+    return patch.object(sc, "read_expected_refusals", lambda *a, **k: (real(*a, **k)[0], []))
+
+
+def listed_labels_left_stray():
+    """Refusals and orphans of listed labels counted as stray refusals."""
+    return patch.object(_scorer(), "listed_labels", lambda results, norm_label: set())
 
 
 # ---- 2. multi-round --------------------------------------------------------------------
@@ -294,6 +340,64 @@ def model_round_items_counted():
 def multi_round_run_not_detected():
     """The run's audit/multi_round.json not read: the run scored as an ordinary review."""
     return patch.object(_scorer(), "is_multi_round_run", lambda run_dir: False)
+
+
+def observe_key_forms():
+    """Three key forms against the multi-round run and an ordinary run:
+    a key with no multi-round entries on the multi-round run (refused); a key that is not
+    negotiation-style, its top-level entries scoped by round and only its clean entries
+    present (a twin with no planted flaw; scored); the same key on an ordinary run (refused,
+    section 12 item 4)."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_scorer_forms_") as td:
+        root = Path(td)
+        _key_path, run = multi_round_fixture(root / "mr")
+        _rkey, ordinary = refusal_fixture(root / "ord")
+        plain = root / "plain.json"
+        _write(plain, json.dumps({"document": "doc_b.md", "task_given_to_the_pipeline": "fixture",
+                                  "prior_records": [], "band_irregularities": []}))
+        twin = root / "twin.json"
+        _write(twin, json.dumps({"document": "doc_b.md", "task_given_to_the_pipeline": "fixture",
+                                 "planted": [],
+                                 "clean": [{"round_id": "r1", "document_id": "doc_a",
+                                            "unit": "u03-clause-nuthatch"}]}))
+        none_status, _ = run_scorer(["--key", str(plain), "--run", str(run)])
+        twin_status, twin_lines = run_scorer(["--key", str(twin), "--run", str(run)])
+        ord_status, _ = run_scorer(["--key", str(twin), "--run", str(ordinary)])
+        return {"no_entries": str(none_status).startswith("refused: ")
+                and "has no multi-round entries" in str(none_status),
+                "top_level": [twin_status] + _lines(twin_lines, "recall          :", "false positives",
+                                                    "distractor hits"),
+                "ordinary": str(ord_status).startswith("refused: ")
+                and "section 12, item 4" in str(ord_status)}
+
+
+KEY_FORMS = {
+    "no_entries": True,
+    "top_level": [0, "recall          : 0/0   (every planted entry of every round, LOCATION ONLY: "
+                     "round, document, unit and relation)",
+                  "false positives : 5   (irregular round findings on a round, document and unit no "
+                  "planted entry names)",
+                  "distractor hits : 1"],
+    "ordinary": True}
+
+
+def entries_absent_scored_as_empty():
+    """A multi-round run whose key has no multi-round entries scored as if it had none."""
+    sc = _scorer()
+    real = sc.multi_round_entries
+    return patch.object(sc, "multi_round_entries", lambda key: real(key) or ([], []))
+
+
+def top_level_form_from_planted_only():
+    """The top-level form detected from planted entries alone, as first written: a twin
+    with no planted flaw is not read as a multi-round key."""
+    return patch.object(_scorer(), "round_scoped_key", lambda key: any(
+        isinstance(p, dict) and "round_id" in p for p in key.get("planted") or []))
+
+
+def round_scoped_key_scored_on_an_ordinary_run():
+    """Round-scoped entries scored on an ordinary run, as the first version did with a NOTE."""
+    return patch.object(_scorer(), "refuse_round_scoped_on_ordinary", lambda key, run_dir: None)
 
 
 # ---- 3. relations Python never writes ----------------------------------------------------
@@ -408,6 +512,32 @@ class ScorerSection9Checks(unittest.TestCase):
         self.prove("multi_round_run_detected", observe_multi_round, MULTI_ROUND,
                    multi_round_run_not_detected)
 
+    def test_a_rename_matched_only_by_a_model_record_satisfies_nothing(self):
+        """Neutralised: a change record matched as a rename whoever wrote it."""
+        self.prove("rename_python_only", observe_refusals, REFUSALS, model_rename_counted)
+
+    def test_a_matched_rename_leaves_the_false_positives(self):
+        """Neutralised: matched renames left in the false positives."""
+        self.prove("rename_not_false_positive", observe_refusals, REFUSALS,
+                   matched_renames_left_in_false_positives)
+
+    def test_a_listed_label_is_not_a_stray_refusal(self):
+        """Neutralised: refusals and orphans of listed labels counted as stray."""
+        self.prove("listed_not_stray", observe_refusals, REFUSALS, listed_labels_left_stray)
+
+    def test_a_multi_round_run_whose_key_has_no_entries_is_refused(self):
+        """Neutralised: scored as if the key had empty entries."""
+        self.prove("no_entries_refused", observe_key_forms, KEY_FORMS, entries_absent_scored_as_empty)
+
+    def test_the_top_level_form_is_read_from_clean_entries_too(self):
+        """Neutralised: the top-level form detected from planted entries alone."""
+        self.prove("top_level_form", observe_key_forms, KEY_FORMS, top_level_form_from_planted_only)
+
+    def test_a_round_scoped_key_on_an_ordinary_run_is_refused(self):
+        """Neutralised: scored on the ordinary run."""
+        self.prove("round_scoped_on_ordinary_refused", observe_key_forms, KEY_FORMS,
+                   round_scoped_key_scored_on_an_ordinary_run)
+
     def test_a_relation_python_never_writes_is_located_by_a_model_record(self):
         """Neutralised: the records dropped by the Finding-record filter."""
         self.prove("unwritten_relation_read", observe_unwritten, UNWRITTEN, unwritten_records_dropped)
@@ -428,9 +558,12 @@ def check():
         return "FAIL", "; ".join(problems[:4])
     return "PASS", ("%d proofs, each neutralise, fail, restore, pass: expected_refusals scored by "
                     "kind (a refusal of another kind reported as such, a matched rename no false "
-                    "positive, a fabricated withdrawal named); a multi-round run posted by "
+                    "positive, a model-matched rename satisfying nothing, a listed label never stray, "
+                    "a fabricated withdrawal named); a multi-round run posted by "
                     "multi_round_rounds.post_findings scored per round and document from Python's "
-                    "round findings only; a relation Python never writes located only by a "
+                    "round findings only, a key without multi-round entries refused there and a "
+                    "round-scoped key refused on an ordinary run; a relation Python never writes "
+                    "located only by a "
                     "model-written record, marked, never by a Python post" % result.testsRun)
 
 
