@@ -66,3 +66,15 @@ Note (2026-10-29 about 23:10 +0300, S5 checker round 2, D-087): the `docs/OUTPUT
 | What | Version | SHA-256 | Recorded |
 |---|---|---|---|
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: the reply record `context` row, D-078; a format hash, recorded again here in a format-hash table) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | first recorded 2026-10-29 16:06 +0300, loop/s05 (D-078); this row 2026-10-29 about 23:10 +0300 (D-087) |
+
+## Preregistration version 2 frozen (D-S12 item 5, D-095)
+
+Version 1's rows above stay as they are. From this freeze, version 2's hash is the one S8 checks, and the scorer hash below replaces `049ae32b...` as the one B and C2 use.
+
+| Item | SHA-256 | Recorded |
+|---|---|---|
+| `docs/benchmarks/PREREGISTRATION.md` version 2 (frozen; LF-normalised) | `0c1884fb3ec0d4373af750874da57c14d164ade4b0a0bf7bca0478e92a332dc3` | 2026-10-30 01:03 +0300, loop/s05 at `aee36aa`, before any holdout sample (checked 01:02:39: the shared hand-off folder holds only B-dev's, C0's and S0's files; the ledger holds development launches only; no S8 branch) |
+| C's scorer (C0 run 4, the first on version 2; `c-scorer-c0-4`; hash of SCORER_MANIFEST.txt) | `2df0a673d45db03ca85c1a20a1a70ffc79056506df48c0a55b5c120702da1a8c` | 2026-10-30 01:03 +0300, from `_handoff/C_SCORER.json` |
+| `docs/OUTPUT_FORMAT.md` read by C0 run 4 (draft `output-format-v1-draft`, unchanged) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-30 01:03 +0300 |
+| `docs/INPUT_FORMAT.md` read by C0 run 4 (draft `input-format-v1-draft`, unchanged) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-30 01:03 +0300 |
+| `ROLE_C0_4.md` (run 4; the sections of run 1 to 3's text plus Annex D's D-S12) | `e3dc763fc1309f699f23ff21b5a31b68f1d85c66c0408afe8893d3f60a2fed25` | 2026-10-30 01:03 +0300 |
