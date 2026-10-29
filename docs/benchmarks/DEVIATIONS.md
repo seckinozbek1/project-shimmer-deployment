@@ -255,3 +255,10 @@ Each entry has these fields, in this order:
 - **What it says**: in reason (1), "209 of 255 development filings are cut" is a count, made by the real counter (the pinned tokenizer, the 32,768-token context and the 2,048-token output allowance); the words "(inferred from one filing, not counted)" belong to the next step, not to that count. What is an estimate from one filing is the share of filings that section 5.3 would exclude: only one filing, `e61777d6327c`, ran under B3 at full length (L3e and L4b, three calls over the context each), and DEV-011 assumes every cut filing behaves the same. Reason (2), B1 below the 95 percent parse floor at full length, rests on one item (0 of 1, both checkpoints at the output allowance): a measurement with n = 1, not a rate (D-086).
 - **What it changes**: nothing. FinDVer stays off the S8 priority list under section 12's rule for an item that cannot be settled; this note only says how strong each reason is.
 - **Holdout result seen**: no.
+
+### Note of 2026-10-29 about 23:30 +0300 (S5 checker round 3, D-088): the units in the note on DEV-002's and DEV-005's "false positives 0"
+
+- **Qualifies**: the note of 2026-10-29 about 23:10 +0300 on DEV-002 and DEV-005 above.
+- **What it says**: that note's "8 kept model-written records" counts the answers kept under DEV-002 (8 of 32 judging calls on uncomputable plans). In L5v the clean twin carried 10 model-written records in all, 8 of them those kept answers, and 0 Python records, besides the 20 model-only relations (missing_field 11, sum_mismatch 9). Stated exactly: 8 answers kept, 10 model-written records.
+- **What it changes**: nothing in the frozen design; the counts are those of the S5 report (item 7 (a) and the limitation below item 8) and open item 36.
+- **Holdout result seen**: no.

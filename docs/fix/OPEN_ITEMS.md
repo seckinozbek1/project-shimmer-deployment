@@ -450,6 +450,7 @@ open-item sweep.
 - **Evidence.** L6m (development, exposed): the synthetic family 4 case, prompt 15,795 tokens, cap hit after 944 seconds, exit 8; round reuse worked (round 2 reused 8 of 11 units).
 - **Why it was left.** A design change (which agent or which prompt shape the phase uses, within what the frozen checkpoint was evaluated on) plus a measured run; beyond S5's money (P9 b).
 - **What would settle it.** A general rule for the phase's call shape, built in S6a, measured on the synthetic and the negotiation cases, outcome `reviewed`.
+- **Added 2026-10-29 (S5 checker round 3, D-088).** One more thing to read before the fix is called done: in L6m's synthetic case, round 3 recomputed all 11 units (`audit/round_reuse.json`), although round 2 reused 8 of 11; why every unit counted as changed in round 3 is not yet known, and S6a reads it from the saved round signatures (`SIGNATURE_INPUTS`) before the re-run.
 
 ## 36. The S8 report must carry D-069's blind acceptance test, the clean twin's model records, and S-8 as the control (found at loop S5, checker rounds 1 and 2)
 
@@ -457,3 +458,39 @@ open-item sweep.
 - **Evidence.** L5v (development, exposed): the clean twin carried 8 kept model-written records and 20 model-only relations (missing_field 11, sum_mismatch 9), each a false alarm on a document with no planted flaw; the L6 model-text review found 3 of 3 sampled kept answers wrong (open item 34). D-086, D-087; the S5 report, below item 8; the dated note after DEV-020 in `docs/benchmarks/DEVIATIONS.md`.
 - **Why it was left.** The preregistration is frozen (D-085), and a limitation is not a rule change; changing how D-068 records are screened is open item 34's work (P16).
 - **What would settle it.** The S8 report states, beside the primary B3 result: (1) D-069's acceptance test was blind to D-068 records; (2) the clean twin's model-written records and model-only relations in L5v, with their counts; (3) sensitivity S-8 (B3 and B4 as if every model-written record were absent, DEV-012, DEV-015) as the control, reported beside the primary. The item leaves this file when the S8 report carries all three.
+- **Added 2026-10-29 (S5 checker round 3, D-088).** The units in the evidence above, stated exactly: in L5v the clean twin carried 10 model-written records, 8 of them answers kept under D-068 (of 32 judging calls), and 20 model-only relations; "8 kept model-written records" above means those 8 kept answers.
+
+## 37. The peak disk in use on the instance is not recorded (found at loop S5, item 9; S5 checker round 3)
+
+- **What it is.** S5 item 9 asks for disk among the measurements kept for S6, S8 and S9. The records hold the sealed asset archive's size, the instance's free disk at hardware admission and each run folder's size, but not the peak disk in use on the instance during a run (environment, wheels, model cache and run folder together).
+- **Evidence.** `assets_transfer_archive.json` and `hardware_admission.json` of every S5 launch; S5's records hold no disk reading after admission. The S5 report, item 9, "Disk"; D-086 (which named P9 reason e), corrected in D-088.
+- **Why it was left.** P9 reason (b): the reading needs a launch, and S5's allocation is closed (D-083); the instances of S5 are gone. Reason (e) was wrong, because the reading can be obtained in this loop.
+- **What would settle it.** In S6, before S8a's seal: the controller records a disk reading (`df` of the run root) before the workload and after evidence packing as a phase receipt, proven locally with neutralise, fail, restore, pass; the figure is read at the first launch after it (S6, from S5's unused allocation, or the first S8 run).
+
+## 38. The time in the pipeline's phases before phase 3 is not recorded (found at loop S5, item 9; S5 checker round 3)
+
+- **What it is.** The telemetry records phase latencies only from phase 3 on, so the time in start, ingestion and roles (phases 0 to 2) is not in any S5 record; item 9's per-phase time is incomplete for them.
+- **Evidence.** `phase_latencies` in each B3 entry's telemetry summary of every S5 launch; the S5 report, item 9, "Pipeline phases in B3"; D-086 (P9 e), corrected in D-088.
+- **Why it was left.** P9 reason (c): it needs a telemetry change in a pipeline file S5 did not otherwise change; under P16 that is S6's work. Reason (e) was wrong, because the figure can be obtained in this loop.
+- **What would settle it.** In S6: phase latencies for phases 0 to 2 written to the telemetry summary, held by a gate check run on a fixture; the figures are then read from the next run that carries them (S6 or S8). Until then, workload minutes less the recorded phases bound them from above (model load included).
+
+## 39. The phase latencies of the two L6m multi-round cases are not recorded (found at loop S5, item 9; S5 checker round 3)
+
+- **What it is.** Both L6m cases were refused at the multi-round phase before any phase latency was written, so item 9 has no per-phase time for a multi-round run.
+- **Evidence.** L6m (development, exposed): `analysis/model_telemetry_summary.json` of both entries; the S5 report, item 9 ("none recorded"); INC-023; D-086 (P9 e), corrected in D-088.
+- **Why it was left.** P9 reason (b): the latencies need a re-run of the two cases after open item 35's fix, and S5's allocation is closed (D-083). Reason (e) was wrong, because the re-run is planned in this loop.
+- **What would settle it.** The re-run of the synthetic and the negotiation multi-round cases in S6a after open item 35 is fixed, with their phase latencies recorded beside S5's item 9 tables.
+
+## 40. The cost per verified finding on the benchmarks is not recorded (found at loop S5, item 9; S5 checker round 3)
+
+- **What it is.** Item 9 asks for the cost per verified finding. S5 has it for the exposed tests (L1 and L5v) but not for the benchmarks (cost per correct FLAG item).
+- **Evidence.** The S5 report, item 9, "Exposed tests"; D-086 (P9 e), corrected in D-088.
+- **Why it was left.** P9 reason (c): the figure needs scored results, which belong to S8; computing one now would read development scores only for a cost figure (P11). Reason (e) was wrong, because S8 obtains it.
+- **What would settle it.** In S8d: C's scored results (correct FLAG items per benchmark) divided into the S8 ledger cost per benchmark, reported in the S8 report beside cost per document and per decision.
+
+## 41. Preregistration section 13: duties for the S8 report (found at loop S5, after checker round 3)
+
+- **What it is.** A fresh attack on section 13 found that B1 and B3 locate planted flaws by different tests (B3 by any rule and relation; B1 through the planted rule's item and its quoted sentences, capped when one rule has several flaws), that the unit text for synthetic documents is not defined in the text, and six minor gaps (private s5_sec13_attack.md).
+- **Evidence.** D-088; C0 run 3 agreed with the adapter on all 176 synthetic score blocks.
+- **Why it was left.** The preregistration is frozen and C0's three runs are used (S5 item 10); a change would be a new version and a new scorer (P18).
+- **What would settle it.** The S8 report prints both location readings with the difference stated, location recall on rules with one planted flaw, and the unit-text reading C used; a later preregistration version fixes the text before any later sealed run.
