@@ -436,3 +436,10 @@ open-item sweep.
 - **Evidence.** Gate logs of `8c2392d` and `ee2f1ed` (private); INC-021.
 - **Why it was left.** A test-infrastructure flake, not product behaviour; finding the thread needs an instrumented gate run, which belongs to the S6a sweep (P16).
 - **What would settle it.** Record the calling thread and stack in `refuse()` on a failing run, then either stop that thread at its own check's end or scope the check to its own calls; neutralise, fail, restore, pass.
+
+## 34. A model's figure relation is kept on a unit with no figures (found at loop S5, L6 model-text review)
+
+- **What it is.** Under D-068 the shared refusals screen absence claims (a quote must be in the unit) but not figure relations: a model answer with relation `sum_mismatch` on a unit that states no figures is kept as a model-written record.
+- **Evidence.** L6 model-text review (development, exposed): 3 of 3 kept records sampled were such answers on ContractNLI units, all wrong.
+- **Why it was left.** A screen change after development outputs are seen; sensitivity S-8 (DEV-012) reports B3 without model-written records instead (D-080; P16).
+- **What would settle it.** Refuse a model's figure relation when the unit carries no figure the relation names (`paired_review.model_item_notes` already notes "figures not in its unit"), measured on tests that are not benchmarks, with a check.

@@ -142,3 +142,14 @@ Each entry has these fields, in this order:
 - **Holdout result seen**: no.
 - **Development scores existing when decided**: B1 and B3 development scores; not read.
 - **Status**: draft. Five benchmarks were selected; three stay, the minimum S8 aims for.
+
+### DEV-012. Sensitivity S-8: B3 without model-written records
+
+- **Entered**: 2026-10-29 18:53 (system clock, +0300), loop stage S5 item 10a.
+- **Decision**: D-080.
+- **What changes**: section 4's sensitivity list gains S-8. Arms: B3 and B4. Primary analysis unchanged.
+- **Why**: under D-068 a model's answer on an uncomputable plan is kept as a model-written record, and section 5.1 lets a model-written record decide its item. Every development model-text review since (L4a, L5v, L4b, L6) found the base auditor model answering VIOLATION on units that do not address the rule; in L6 all three kept answers sampled were wrong (a sum relation on a unit with no figures). S-8 scores every item whose deciding record was written by a model as if that record were absent (the next record in section 5.1's order, else silence), so B3's result is also shown on Python's records alone.
+- **Decided from**: the model-text reviews (verdicts on model texts, no gold label), not from a score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores exist; the primary analysis is not changed.
+- **Status**: draft; the adapters compute it before C0 (lane), and C implements it from this text.
