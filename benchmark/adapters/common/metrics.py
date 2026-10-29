@@ -214,7 +214,11 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
             "unattached_figure_audit": sum(u.get("figure_audit", 0) for u in unattached),
             "unattached_per_deliverable": dict(sorted(per_deliverable.items()))},
         "refusals": {"items_from_refusal": labels["counts"]["refusals"],
-                     "run_failure_documents": labels["counts"]["run_failure_documents"]},
+                     "run_failure_documents": labels["counts"]["run_failure_documents"],
+                     # D-084, DEV-014: counted apart; in S-7 they are scored ABSTAIN
+                     "setup_failure_documents": labels["counts"].get("setup_failure_documents", 0),
+                     "items_s7_setup_failure_abstain": labels["counts"].get(
+                         "items_s7_setup_failure_abstain", 0)},
         "catch_layer": {k: sum(1 for r in catches if r["layer"] == k)
                         for k in ("computed", "judged", "both")},
         "counts": labels["counts"],
