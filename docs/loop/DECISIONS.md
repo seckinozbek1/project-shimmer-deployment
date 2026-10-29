@@ -644,3 +644,15 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Which outputs C0 receives.** Every dry-run output, labelled with its commit and whether it predates D-068; the mapping check counts only current-code outputs.
 - **Attack closures.** (1) and (2) CRITICAL, fit grades swapped and an oversized FinDVer cut: corrected; D-064's order kept; CUAD cut. (3) FinDVer now keeps a current-code B3 output and the B1 memory point. (4) The span cost is measured, not bounded by arithmetic. (5) Exposed bundles use L5v's 15 minutes. (6) Overrun path recorded. (7) D-068 call count shown. (8) Launch names fixed. (9) Moot (CUAD's B1 not run). (10) L6's drop order stated through (a). (11) The ratio claim removed.
 - **Rules.** P6, P9, P16, P18, IV.3, R17, DS5-4, D-064, the S5 spend order, preregistration section 2.
+
+## D-074. Annex D, D-S10 item 9 applied (idle time is a pause; sub-tasks match LOOP_STATE; heartbeat)
+
+- **When, stage.** 2026-10-29 11:33 +0300 (system clock), S5, on the operator's spec update of 11:30.
+- **Applied.** Idle spans of more than 30 minutes with no commit, no write under `docs/loop/`, no instance, no role session and no lane were found from git commit times, record-file times and the ledger, and entered in `PROGRESS.json` `pauses` as `boşta (oturum durmuştu)`: 27 Oct 17:14 to 17:46 and 18:56 to 19:50, 29 Oct 01:38 to 02:29 and 04:17 to 11:00 (the span the entry names), beside the overnight shutdown of 27 to 28 October. Spans while an instance ran are not pauses. `pace_recent`, `pace_overall` and `remaining_pace` are recomputed without them. `current` is rebuilt from LOOP_STATE at every recompute. The LEAD.lock heartbeat is written at every step (this session's first write was at 08:00 UTC). The turn is not ended while LOOP_STATE says RUNNING; summaries go to FOR_SECKIN.md.
+- **Rules.** Annex D, D-S10 items 8 and 9, IV.2.
+
+## D-075. S7's first pass starts during S5; three more merged worktrees removed; the pip cache left alone
+
+- **When, stage.** 2026-10-29 12:20 +0300 (system clock), S5 (L4b running) and S7.
+- **S7 first pass.** Part V lets S7 start once S2 is merged (its final pass waits for S6). `loop/s07` was created from the loop branch at `ea1c0d5`; plan `docs/loop/stages/S07_PLAN.md` checked by a fresh `loop-checker` (13 items, all closed in the plan, `524bd85` on `loop/s07`). Two lanes, `lane/s07-ui` and `lane/s07-launch` (DS7-6). Rules: P19, IV.5, Part V table.
+- **Disk.** Creating the S7 worktrees took free space to 29 GB, under S0 step 6's floor. The worktrees `s05-b3attn`, `s05-defect` and `s05-e` (merged into `loop/s05`, clean) held only ignored evidence files byte-identical to the main checkout's copies (SHA-256 compared), so they were removed (IV.5; their branches are kept): 31 GB free. Options not taken: purging the pip download cache (16.5 GB, `pip cache info`), which is the operator's machine cache, recreatable but not the loop's (P3, P12); it is listed in FOR_SECKIN.md as his option. Rules: IV.5, H12, P3, P12.
