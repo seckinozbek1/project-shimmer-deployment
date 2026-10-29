@@ -300,9 +300,9 @@ def _scored(adapter, labels: dict, bundles_dir, gone=()) -> dict:
 
 def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
     """Every analysis in the labels file, and S-4 from the primary labels (section 5.3).
-    A document excluded from this arm for a model call over its model's context is left
-    out of every analysis but S-7, which scores its items ABSTAIN; every arm that excludes
-    nothing is scored on all its documents.
+    A document excluded from this arm for a model call over its model's context, or for a
+    setup failure (B1 or B3, D-084), is left out of every analysis but S-7, which scores its
+    items ABSTAIN; every arm that excludes nothing is scored on all its documents.
 
     `paired_with` (another arm's labels file, as `label` writes it) adds the paired view
     (open point 12.14, D-078): every analysis again, on the documents both files label and
@@ -313,7 +313,7 @@ def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
         mine, other = labels["primary"], paired_with["primary"]
         own_docs = {r["document_id"] for r in mine["labels"]}
         other_docs = {r["document_id"] for r in other["labels"]}
-        excluded = mapping.over_context_excluded(mine) | mapping.over_context_excluded(other)
+        excluded = mapping.excluded_documents(mine) | mapping.excluded_documents(other)
         gone = (own_docs ^ other_docs) | excluded
         analyses = _scored(adapter, {k: v for k, v in labels.items() if k != "S-7"}, bundles_dir, gone)
         out[PAIRED_KEY] = {
@@ -321,6 +321,9 @@ def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
             "documents": len((own_docs & other_docs) - excluded),
             "left_out_over_context": {"this_arm": sorted(mapping.over_context_excluded(mine) & own_docs),
                                       "other_arm": sorted(mapping.over_context_excluded(other) & own_docs)},
+            # D-084, DEV-014: a document either arm had a setup failure on (B1 or B3)
+            "left_out_setup_failure": {"this_arm": sorted(mapping.setup_failure_excluded(mine) & own_docs),
+                                       "other_arm": sorted(mapping.setup_failure_excluded(other) & own_docs)},
             "left_out_not_in_both": sorted(own_docs - other_docs),
             "analyses": analyses}
     return out

@@ -97,6 +97,20 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              5.1 (a Python ok, a Python refusal), else silence; a Python-decided item, a
              run failure and an over-context exclusion unchanged; B0, B1 and B2 equal
              their primary in labels and score and say so. Neutralise, fail, restore, pass
+  setupfailure  one setup-failure rule for B1 and B3 (D-084, DEV-014): a B1 document whose
+             output holds b1_setup_failure.json and a B3 document with a call that failed
+             out of memory are ABSTAIN with basis setup_failure on every item, counted
+             apart, left out of that arm's scoring in every analysis but S-7 (ABSTAIN
+             there) and out of the paired view; any other failed call is no setup
+             failure. Each by neutralise, fail, restore, pass
+  synthetic  B's synthetic tests (benchmark/adapters/synthetic, preregistration section
+             13), on a hand-written test of three bundles: items from the targets file
+             and the conventions, never the key; Shimmer's unit ids (on every development
+             suite document too, where generated); B0, B1, B2 and B3 labels and scores by
+             hand (location by unit and relation under any rule, the attribution apart,
+             the reason by the key's claim, false positives, distractor hits, the twin's
+             false alarms, S-8; a negotiation-style key left unscored); the B1 prompt for
+             a synthetic item. Each by neutralise, fail, restore, pass
   dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
              opaque id only; sorted by words then id; evenly spaced positions; each
              replacement listed), the build restricted to chosen documents, B2 on it,
@@ -2558,6 +2572,381 @@ class S8Checks(_Case):
         self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ("B2", "B3", "B4")))
 
 
+class SetupFailureChecks(_Case):
+    """One setup-failure rule for B1 and B3 (D-084, DEV-014), on a synthetic ContractNLI
+    build: a B1 document whose output holds b1_setup_failure.json, and a B3 document whose
+    run has a reply record of a call that failed out of memory, carry basis setup_failure on
+    every item, are counted apart (never abstentions), are left out of that arm's scoring in
+    every analysis but S-7, which scores them ABSTAIN, and a paired comparison drops a
+    document either arm failed on; a failed call of any other kind is no setup failure.
+    Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _setup(self):
+        c = _common()
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        by_doc = c["mapping"].by_document(c["mapping"].read_items(items_path))
+        docs = sorted(by_doc)
+        self.assertGreaterEqual(len(docs), 2, "the synthetic build needs two documents")
+        b1_fail, b3_fail = docs[0], docs[-1]
+        b1, b3 = self.root / "b1", self.root / "b3"
+        for doc in docs:
+            out = b1 / doc
+            (out / "labels").mkdir(parents=True)
+            for k, item in enumerate(by_doc[doc]):
+                if doc == b1_fail and k:      # the run stopped at its second item
+                    break
+                (out / "labels" / (item["item_id"] + ".json")).write_text(
+                    json.dumps({"label": "Contradiction", "evidence": ""}), encoding="utf-8")
+            if doc == b1_fail:
+                (out / "b1_setup_failure.json").write_text(json.dumps(
+                    {"schema": "b1-setup-failure-v1", "kind": "out_of_memory",
+                     "item_id": by_doc[doc][min(1, len(by_doc[doc]) - 1)]["item_id"]}), encoding="utf-8")
+            rules = [i["rule_id"] for i in by_doc[doc]]
+            failed = doc == b3_fail
+            run = _incomplete_run(b3, doc, completion=_completion("failed", reached_end=False, exit_code=1)
+                                  if failed else _completion(),
+                                  bus_lines=[_bus_line("A", doc, [_rec("x1", rules[0], "irregular")],
+                                                       "paired", "python")])
+            folder = run / "audit" / "model_replies"
+            folder.mkdir(parents=True)
+            # an ordinary failed call is no setup failure; only out of memory or a refused kernel is
+            calls = [("RuntimeError", "VERIFIER")] + ([("out_of_memory", "PROCESSOR")] if failed else [])
+            for n, (kind, agent) in enumerate(calls, 1):
+                (folder / ("%06d_%032x.json" % (n, n))).write_text(json.dumps(
+                    {"schema_version": 1, "sequence": n, "agent": agent, "backend_ok": False,
+                     "error_category": kind}), encoding="utf-8")
+        return c, adapter, items_path, by_doc, docs, b1_fail, b3_fail, b1, b3
+
+    def test_one_setup_failure_rule_for_b1_and_b3(self):
+        c, adapter, items_path, by_doc, docs, b1_fail, b3_fail, b1, b3 = self._setup()
+        m, cli = c["mapping"], c["cli"]
+        n_all = sum(len(v) for v in by_doc.values())
+
+        def body():
+            problems = []
+            for arm, runs, failed in (("B1", b1, b1_fail), ("B3", b3, b3_fail)):
+                labels = cli.label(adapter, items_path, arm, runs)
+                primary = labels["primary"]
+                mine = {(r["class"], r["basis"]) for r in primary["labels"] if r["document_id"] == failed}
+                if mine != {("ABSTAIN", "setup_failure")}:
+                    problems.append("%s failed rows %s" % (arm, mine))
+                if any(r["basis"] == "setup_failure" for r in primary["labels"] if r["document_id"] != failed):
+                    problems.append(arm + ": another document is a setup failure")
+                counts = primary["counts"]
+                n = len(by_doc[failed])
+                if (counts["setup_failure_documents"], counts["items_setup_failure"]) != (1, n) \
+                        or counts["abstain"] != sum(1 for r in primary["labels"] if r["label"] == "ABSTAIN"
+                                                    and r["basis"] != "setup_failure"):
+                    problems.append("%s counts %s" % (arm, counts))
+                listed = primary["setup_failure"]
+                if (listed["checked"], listed["documents"], listed["items"]) != (True, 1, n):
+                    problems.append("%s listed %s" % (arm, listed))
+                s7 = {(r["class"], r["basis"]) for r in labels["S-7"]["labels"] if r["document_id"] == failed}
+                if s7 != {("ABSTAIN", "s7_setup_failure_abstain")}:
+                    problems.append("%s S-7 %s" % (arm, s7))
+                scored = cli.score(adapter, labels, self.root / "b")
+                for name, result in scored.items():
+                    want = (len(docs), n_all) if name == "S-7" else (len(docs) - 1, n_all - n)
+                    if name == "S-4":
+                        want = (want[0], result["decisions"])
+                    if (result["documents"], result["decisions"]) != want:
+                        problems.append("%s %s scored %s" % (arm, name, (result["documents"], result["decisions"])))
+            # the paired view drops a document either arm failed on
+            l1 = cli.label(adapter, items_path, "B1", b1)
+            l3 = cli.label(adapter, items_path, "B3", b3)
+            paired = cli.score(adapter, l3, self.root / "b", paired_with=l1)["paired"]
+            gone = {b1_fail, b3_fail}
+            if (paired["documents"], paired["left_out_setup_failure"]) != (
+                    len(docs) - len(gone), {"this_arm": [b3_fail], "other_arm": [b1_fail]}):
+                problems.append("paired %s" % {k: v for k, v in paired.items() if k != "analyses"})
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "read_b1_setup_failure", lambda d: None))
+        self._proof(body, lambda: mock.patch.object(m, "read_b3_setup_failure", lambda d: None))
+        self._proof(body, lambda: mock.patch.object(m, "SETUP_FAILURE_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "setup_failure_excluded", lambda result: set()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s7", m.sensitivity_s1))
+        self._proof(body, lambda: mock.patch.object(m, "B3_SETUP_FAILURE_KINDS", ("out_of_memory", "RuntimeError")))
+
+
+SYNTHETIC = ADAPTERS / "synthetic"
+
+
+def _synthetic_test(root):
+    """The hand-written synthetic test (benchmark/adapters/synthetic/fixtures), materialised:
+    each bundle's files, and its key as answer_key.json (a tracked file named like a key would
+    be ignored by git, so the key travels inside the fixture under `gold`)."""
+    data = _json(SYNTHETIC / "fixtures" / "synthetic_test.json")
+    for name, spec in data["bundles"].items():
+        for rel, text in spec["files"].items():
+            path = Path(root) / name / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        (Path(root) / name / "answer_key.json").write_text(json.dumps(spec["gold"]), encoding="utf-8")
+    return Path(root)
+
+
+def _syn_item_id(source):
+    return hashlib.sha256(("item:synthetic:" + source).encode("utf-8")).hexdigest()[:12]
+
+
+def _syn_rec(item_id, rule, verdict, unit, relation, field_label=None, a=None, b=None, **extra):
+    return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": unit, "relation": relation,
+                 "record_verdict": verdict, "field_label": field_label, "value_a": a, "value_b": b},
+                **extra)
+
+
+class SyntheticChecks(_Case):
+    """B's synthetic tests (preregistration section 13), on a hand-written test of three
+    bundles: items are (target document, rule) pairs read from the targets file and the
+    conventions, never from the key; units are Shimmer's; B0, B1, B2 and B3 are labelled
+    through the shared core (every record decides the rule it names); scores count location
+    by unit and relation under any rule with the attribution apart, the reason by the key's
+    claim, false positives, distractor hits and the twin's false alarms, and leave a
+    negotiation-style key unscored. Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _syn(self):
+        return _adapter("synthetic")
+
+    def _test(self):
+        return _synthetic_test(self.root / "test")
+
+    ITEMS = [("flawed_a", "log_q1", "CONV-GA"), ("flawed_a", "log_q1", "CONV-GB"),
+             ("rounds_c", "log_q3", "CONV-GA"), ("twin_b", "log_q2", "CONV-GA"),
+             ("twin_b", "log_q2", "CONV-GB")]
+
+    def test_items_are_read_from_targets_and_conventions_never_the_key(self):
+        syn = self._syn()
+        root = self._test()
+        want = sorted((_syn_item_id("%s/%s/%s" % t), t[1], t[2], t[0]) for t in self.ITEMS)
+
+        def body():
+            problems = []
+            try:
+                first = syn.item_rows(root)
+                for name in ("flawed_a", "twin_b", "rounds_c"):    # an unreadable key changes nothing
+                    (root / name / "answer_key.json").write_text("not json", encoding="utf-8")
+                second = syn.item_rows(root)
+            except Exception as exc:  # noqa: BLE001
+                return ["raised %s" % type(exc).__name__]
+            finally:
+                _synthetic_test(root)
+            got = sorted((r["item_id"], r["document_id"], r["rule_id"], r["bundle"]) for r in first)
+            if got != want:
+                problems.append("items %s" % got)
+            if first != second:
+                problems.append("the key changed the items")
+            if {r["benchmark"] for r in first} != {"synthetic"}:
+                problems.append("benchmark %s" % {r["benchmark"] for r in first})
+            return problems
+
+        def reads_key(original):
+            def item_rows(root_):
+                rows = original(root_)
+                planted = {(n, p["rule"]) for n in ("flawed_a", "twin_b") for p in json.loads(
+                    (Path(root_) / n / "answer_key.json").read_text(encoding="utf-8")).get("planted") or []}
+                return [r for r in rows if r["bundle"] == "rounds_c" or (r["bundle"], r["rule_id"]) in planted]
+            return item_rows
+        self._proof(body, lambda: mock.patch.object(syn, "item_rows", reads_key(syn.item_rows)))
+        self._proof(body, lambda: mock.patch.object(syn, "target_names", lambda f: ["context/ref_g.md"]))
+
+    def test_units_are_shimmers(self):
+        syn = self._syn()
+        root = self._test()
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        texts = [p.read_text(encoding="utf-8") for p in sorted(root.rglob("log_q*.md"))]
+        suite = ROOT / "benchmark" / "dev_suite" / "generated"
+        if suite.is_dir():      # the development suite, where it has been generated
+            for keyfile in sorted(suite.rglob("answer_key.json")):
+                folder = keyfile.parent
+                for name in syn.target_names(folder):
+                    texts.append((folder / "context" / name).read_text(encoding="utf-8").replace("\r\n", "\n"))
+
+        def body():
+            problems = []
+            for text in texts:
+                mine = [uid for uid, _t in syn.units(text)]
+                theirs = [u["unit_id"] for u in pairing_map.split_units(text)]
+                if mine != theirs:
+                    problems.append("units %s against %s" % (mine[:4], theirs[:4]))
+            if [uid for uid, _t in syn.units(texts[0])] != ["u00-gauge-log", "u01-entry-alpha",
+                                                           "u02-entry-beta", "u03-entry-gamma"]:
+                problems.append("fixture units %s" % syn.units(texts[0]))
+            return problems
+        self._proof(body, lambda: mock.patch.object(syn, "_slug", lambda text, limit=40: str(text).lower()))
+        self._proof(body, lambda: mock.patch.object(syn, "_RULE_LINE", re.compile(r"^.*$")))
+
+    def _runs(self, root):
+        """Hand-written B2, B3 and B1 outputs, one folder per bundle."""
+        docs = {"flawed_a": "log_q1", "twin_b": "log_q2", "rounds_c": "log_q3"}
+        b2, b3, b1 = self.root / "b2", self.root / "b3", self.root / "b1"
+        b2_findings = {
+            "flawed_a": [_syn_rec("f1", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 12, 10,
+                                  written_by="python"),
+                         _syn_rec("f2", "CONV-GB", "irregular", "u02-entry-beta", "sum_mismatch", "total count", 7, 9,
+                                  written_by="python"),
+                         _syn_rec("f3", "CONV-GA", "ok", "u03-entry-gamma", "above_band", "reading", 8, 10,
+                                  written_by="python")],
+            "twin_b": [_syn_rec("t1", "CONV-GA", "ok", "u01-entry-alpha", "above_band", "reading", 9, 10,
+                                written_by="python")],
+            "rounds_c": []}
+        for name, doc in docs.items():
+            folder = b2 / name / "deliverables" / doc
+            folder.mkdir(parents=True)
+            (b2 / name / "audit").mkdir()
+            (b2 / name / "audit" / "run_completion.json").write_text(json.dumps(_completion()), encoding="utf-8")
+            (folder / "review_data.json").write_text(json.dumps({"findings": b2_findings[name]}), encoding="utf-8")
+        python = {"flawed_a": [_syn_rec("p1", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 12, 10),
+                               # under another rule than the key's, and with the wrong figures
+                               _syn_rec("p2", "CONV-GA", "irregular", "u02-entry-beta", "sum_mismatch", "total count", 6, 9)],
+                  "twin_b": [], "rounds_c": []}
+        model = {"flawed_a": [_syn_rec("m1", "CONV-GA", "irregular", "u03-entry-gamma", "above_band", "reading", 8, 10)],
+                 "twin_b": [_syn_rec("m2", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 9, 10)],
+                 "rounds_c": []}
+        for name, doc in docs.items():
+            lines = [_bus_line("A", doc, python[name], "paired", "python")]
+            if model[name]:
+                lines.append(_bus_line("B", doc, model[name], _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32))
+            run = _incomplete_run(b3, doc, completion=_completion(), bus_lines=lines)
+            run.rename(b3 / name)
+        replies = {("flawed_a", "CONV-GA"): {"label": "violated", "evidence": "Reading: 12 units."},
+                   # held by two units: locates none
+                   ("flawed_a", "CONV-GB"): {"label": "violated", "evidence": "Limit: 10 units."},
+                   ("twin_b", "CONV-GA"): {"label": "holds", "evidence": ""},
+                   ("twin_b", "CONV-GB"): {"label": "not a label", "evidence": ""},
+                   ("rounds_c", "CONV-GA"): {"label": "holds", "evidence": ""}}
+        for (name, rule), reply in replies.items():
+            path = b1 / name / "labels" / (_syn_item_id("%s/%s/%s" % (name, docs[name], rule)) + ".json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(reply), encoding="utf-8")
+        return {"B2": b2, "B3": b3, "B1": b1}
+
+    LABELS = {
+        "B0": {k: ("CLEAR", "b0", []) for k in ITEMS},
+        "B1": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "b1_label", ["u01-entry-alpha"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("FLAG", "b1_label", []),
+               ("twin_b", "log_q2", "CONV-GA"): ("CLEAR", "b1_label", []),
+               ("twin_b", "log_q2", "CONV-GB"): ("ABSTAIN", "b1_parse_failure", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "b1_label", [])},
+        "B2": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "irregular", ["u01-entry-alpha"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("FLAG", "irregular", ["u02-entry-beta"]),
+               ("twin_b", "log_q2", "CONV-GA"): ("CLEAR", "ok", []),
+               ("twin_b", "log_q2", "CONV-GB"): ("CLEAR", "silent", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "silent", [])},
+        "B3": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "irregular",
+                                                  ["u01-entry-alpha", "u02-entry-beta", "u03-entry-gamma"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("CLEAR", "silent", []),
+               ("twin_b", "log_q2", "CONV-GA"): ("FLAG", "irregular", ["u01-entry-alpha"]),
+               ("twin_b", "log_q2", "CONV-GB"): ("CLEAR", "silent", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "silent", [])}}
+    # (planted, located, attributed, reason confirmed, item false positives, records on
+    # unplanted units, distractor hits, twin false alarms: flagged items and unit-rule pairs)
+    SCORES = {"B0": (2, 0, 0, 0, 0, 0, 0, (0, 0)),
+              "B1": (2, 1, 1, None, 0, 0, 0, (0, 0)),
+              "B2": (2, 2, 2, 2, 0, 0, 0, (0, 0)),
+              "B3": (2, 2, 1, 1, 1, 2, 2, (1, 1))}
+    S8 = {"B3": (2, 2, 1, 1, 0, 0, 0, (0, 0))}
+
+    def _labelled(self, syn, root, runs, arm):
+        items = self.root / "items.json"
+        syn.write_items(root, items)
+        return syn.label(items, arm, root, runs.get(arm))
+
+    def _score_view(self, scored):
+        t = scored["totals"]
+        base = [b for b in scored["bundles"] if b["bundle"] == "flawed_a"][0]
+        twin = base["twin_false_alarms"] or {}
+        return (t["planted"], t["located"], t["attributed"], t["reason_confirmed"], t["item_false_positives"],
+                t["records_on_unplanted_units"], t["distractor_hits"],
+                (twin.get("flag_items"), twin.get("flagged_unit_rule_pairs")))
+
+    def test_labels_and_scores_by_hand(self):
+        syn = self._syn()
+        root = self._test()
+        runs = self._runs(root)
+
+        def body():
+            problems = []
+            for arm in ("B0", "B1", "B2", "B3"):
+                labels = self._labelled(syn, root, runs, arm)
+                got = {(r["bundle"], r["document_id"], r["rule_id"]): (r["class"], r["basis"], r["cited_unit_ids"])
+                       for r in labels["primary"]["labels"]}
+                if got != self.LABELS[arm]:
+                    problems.append("%s labels %s" % (arm, got))
+                scored = syn.score(labels, root)
+                if self._score_view(scored["primary"]) != self.SCORES[arm]:
+                    problems.append("%s score %s" % (arm, self._score_view(scored["primary"])))
+                if [s["bundle"] for s in scored["primary"]["not_scored"]] != ["rounds_c"]:
+                    problems.append("%s not scored %s" % (arm, scored["primary"]["not_scored"]))
+                want8 = self.S8.get(arm, self.SCORES[arm])
+                if self._score_view(scored["S-8"]) != want8:
+                    problems.append("%s S-8 %s" % (arm, self._score_view(scored["S-8"])))
+                if self._score_view(scored["S-3"]) != self.SCORES[arm]:
+                    problems.append("%s S-3 differs from the primary" % arm)
+            return problems
+
+        m = _common()["mapping"]
+        # every record decides the rule it names: set aside, the sum record decides nothing
+        self._proof(body, lambda: mock.patch.object(syn.SPEC, "attribute_as_named", False))
+        # location by unit: neutralised, a record anywhere locates every flaw
+        self._proof(body, lambda: mock.patch.object(syn, "_on_unit", lambda planted, unit: True))
+        # the reason by the key's claim: neutralised, every located record confirms it
+        self._proof(body, lambda: mock.patch.object(syn, "reason_matches", lambda claim, record: True))
+        # B1 located only by a sentence one unit holds: neutralised, by every unit holding it
+        quote = lambda e: (e or "").rstrip(".").strip()  # noqa: E731
+        self._proof(body, lambda: mock.patch.object(syn, "b1_located_units", lambda e, u: (
+            sorted(uid for uid, text in u if quote(e) and quote(e) in " ".join(text.split())), 0)))
+        # S-8 drops the model's records
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+
+    def test_b1_prompt_for_a_synthetic_item(self):
+        syn = self._syn()
+        c = _common()
+        root = self._test()
+        items = self.root / "items.json"
+        syn.write_items(root, items)
+        item = [r for r in c["mapping"].read_items(items)
+                if r["bundle"] == "flawed_a" and r["rule_id"] == "CONV-GA"][0]
+        spec = c["prompt"].load_prompt()
+        user = c["prompt"].render_user(
+            spec, item["benchmark"], document=(root / "flawed_a" / "context" / "log_q1.md").read_text(encoding="utf-8"),
+            conventions=c["prompt"].conventions_from_bundle(root / "flawed_a"), item=item,
+            reference=c["prompt"].reference_from_bundle(root / "flawed_a"))
+        self.assertIn("ITEM\nItem id: %s\nRule id: CONV-GA\nDecide whether any passage of the document "
+                      "breaks this rule.\n" % item["item_id"], user)
+        self.assertIn("LABELS\nviolated: at least one passage of the document breaks the rule.\n"
+                      "holds: no passage of the document breaks the rule.\n"
+                      "undecided: the material does not let you decide.\nThe undecided label is: undecided", user)
+        self.assertIn("REFERENCE MATERIAL\nref_g.md\n# Bench reference", user)
+        self.assertIn("CONVENTIONS\nCONV-GA Reading limit [required] [conformance]: The reading must not "
+                      "exceed the limit.\nCONV-GB Count total", user)
+        self.assertNotIn("If the material does not let you decide",
+                         c["prompt"].render_system(spec, "synthetic"), "the undecided label is not invited")
+        # bare_model.py reads exactly these four fields, and the document id is the target's stem
+        self.assertEqual((item["document_id"], sorted(k for k in ("item_id", "document_id", "rule_id", "benchmark")
+                                                      if item.get(k))),
+                         ("log_q1", ["benchmark", "document_id", "item_id", "rule_id"]))
+        self.assertEqual(syn.SPEC.b1_labels, {"violated": "FLAG", "holds": "CLEAR", "undecided": "UNDECIDED"})
+
+
 # ---------------------------------------------------------------------------
 # the dry-run document choice and free measurements (benchmark/dryrun; S5 items 0.6, 0.7)
 
@@ -2945,6 +3334,20 @@ GROUPS = {
                      "is dropped; a Python-decided item, a run failure and an over-context "
                      "exclusion are unchanged; B0, B1 and B2 equal their primary and say so "
                      "(neutralise, fail, restore, pass)"),
+    "setupfailure": (SetupFailureChecks, "one setup-failure rule for B1 and B3 (D-084): a B1 "
+                                         "document with b1_setup_failure.json and a B3 document "
+                                         "with a call out of memory are ABSTAIN with basis "
+                                         "setup_failure, counted apart, left out of every analysis "
+                                         "but S-7 (ABSTAIN there) and out of the paired view; any "
+                                         "other failed call is no setup failure (neutralise, fail, "
+                                         "restore, pass)"),
+    "synthetic": (SyntheticChecks, "B's synthetic tests (section 13): items from targets and "
+                                   "conventions, never the key; Shimmer's units; B0, B1, B2 and "
+                                   "B3 labels and scores by hand (location by unit and relation "
+                                   "under any rule, attribution apart, the reason by the key's "
+                                   "claim, false positives, distractor hits, the twin's false "
+                                   "alarms, S-8, a negotiation-style key unscored); the B1 "
+                                   "prompt for a synthetic item (neutralise, fail, restore, pass)"),
     "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
                              "sorts by words then id, takes evenly spaced positions (the median "
                              "for one) and lists each replacement; the restricted build holds only "
@@ -2972,7 +3375,8 @@ def check():
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
-                             "excluded on a call over the model's context), read B2 and B3 records by one "
+                             "excluded on a call over the model's context; one setup-failure rule for B1 "
+                             "and B3), label and score B's synthetic tests by hand, read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")

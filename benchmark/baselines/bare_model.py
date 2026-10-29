@@ -185,6 +185,9 @@ GPU_MEMORY_WINDOW = ("torch.cuda peak counters reset after the model was loaded 
 SDPA_SWITCHES = {"FLASH_ATTENTION": "flash_sdp_enabled", "EFFICIENT_ATTENTION": "mem_efficient_sdp_enabled",
                  "MATH": "math_sdp_enabled", "CUDNN_ATTENTION": "cudnn_sdp_enabled"}
 SETUP_FAILURE_FILE = "b1_setup_failure.json"
+# D-084 (DEV-014): a prompt plus the output allowance over the model's context is a setup
+# failure too, recorded in SETUP_FAILURE_FILE under this kind before anything is generated.
+PROMPT_OVER_CONTEXT = "prompt_over_context"
 
 
 class SetupError(Exception):
@@ -193,7 +196,8 @@ class SetupError(Exception):
 
 class SetupFailure(SetupError):
     """A call that stopped the run (D-056 condition 3): out of memory, or a refused
-    attention kernel. Counted and reported apart, never an abstention."""
+    attention kernel; or (D-084) a prompt plus the output allowance over the model's
+    context, before anything is generated. Counted and reported apart, never an abstention."""
 
     def __init__(self, kind, item_id, error):
         super().__init__("B1 stopped at item %s: %s (%s), a setup failure, never an abstention"
@@ -784,8 +788,21 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
     over = [i for i, user in users.items()
             if backend.count_prompt(systems[i], user) + reader["max_new_tokens"] > limit]
     if over:
-        raise SetupError("prompt plus output allowance exceeds the model's context for %d item(s): %s"
-                         % (len(over), ", ".join(over[:5])))
+        # D-084 (DEV-014): one setup-failure rule for B1 and B3. A prompt over the context is
+        # a setup failure of the run on this document, recorded where the adapters read it,
+        # before anything is generated; never an abstention.
+        error = ("prompt plus output allowance exceeds the model's context for %d item(s): %s"
+                 % (len(over), ", ".join(over[:5])))
+        _write_json(out / SETUP_FAILURE_FILE, {
+            "baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-setup-failure-v1",
+            "kind": PROMPT_OVER_CONTEXT, "error": error, "item_id": sorted(over)[0],
+            "items_over_context": sorted(over), "document_id": doc["id"],
+            "items_total": len(items), "items_before_stop": 0, "reply_records_written": 0,
+            "call_id": None, "checkpoint": reader.get("checkpoint"), "attention": attention,
+            "gpu_memory": None,
+            "counted_as": "a setup failure of the B1 run, never an abstention (D-084)",
+            "finished_at": _now()})
+        raise SetupFailure(PROMPT_OVER_CONTEXT, sorted(over)[0], error)
     decoding = dict(decoding_policy.usage_fields(reader["decoding"]),
                     max_new_tokens=reader["max_new_tokens"])
     # D-056 condition 6: the pass's peak GPU memory, from here to after the last item.

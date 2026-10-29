@@ -394,6 +394,15 @@ class BareModelChecks(unittest.TestCase):
                                   expected=expected)
                 self.assertEqual(backend.asked, [], name + ": nothing generated")
                 self.assertFalse((out / "labels").exists(), name + ": no label written")
+                # D-084 (DEV-014): a prompt over the context is a setup failure, recorded
+                # where the adapters read it; every other stop here writes no such record
+                record = out / self.tool.SETUP_FAILURE_FILE
+                if name == "context":
+                    failure = json.loads(record.read_text(encoding="utf-8"))
+                    self.assertEqual((failure["kind"], failure["items_before_stop"]),
+                                     (self.tool.PROMPT_OVER_CONTEXT, 0), name)
+                else:
+                    self.assertFalse(record.exists(), name + ": no setup-failure record")
         with tempfile.TemporaryDirectory(prefix="b1_stop_") as tmp:
             backend = FakeBackend(replies)
             with mock.patch.object(reply_records, "write", return_value=None):
