@@ -220,7 +220,11 @@ async def _lifespan(app):
             raise RuntimeError("Shimmer could not stop every review worker; inspect the server log.")
 
 
-app = FastAPI(title="Project Shimmer front door", version="1.0", lifespan=_lifespan)
+# Loop S7 (plan closure 3, DS7-5): FastAPI's own /openapi.json, /docs,
+# /docs/oauth2-redirect and /redoc are switched off. They answered without a
+# token and described every route; only /health and /console answer without one.
+app = FastAPI(title="Project Shimmer front door", version="1.0", lifespan=_lifespan,
+              openapi_url=None, docs_url=None, redoc_url=None)
 
 
 # ---------------------------------------------------------------------------
@@ -953,6 +957,21 @@ def _validated_run_dir(run_id):
     if not run_dir.is_dir():
         raise HTTPException(status_code=404, detail="run_id not found")
     return run_dir
+
+
+SEALED_REFUSAL = ("sealed run: this route serves per-flaw results, which a sealed test never "
+                  "shows (Annex B.8); its counts and timings are on /replies, /model-findings, "
+                  "/switches and /report")
+
+
+def _refuse_sealed(run_dir):
+    """Loop S7 item 2: a route that serves per-flaw results (finding text, unit or
+    rule ids, reasons) refuses a sealed run with 403. Sealed is decided by
+    console_views.exposure: a run_record.json or seal.json marker in the run
+    folder or up to three parent folders (plan closure 2), failing closed."""
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        raise HTTPException(status_code=403, detail=SEALED_REFUSAL)
 
 
 def _project_finding(item, *, agent, doc_id):
@@ -2274,6 +2293,7 @@ async def deliverables(run_id: str):
         raise HTTPException(status_code=404, detail="run_id not found")
 
     run_dir = RUNS_DIR / run_id
+    _refuse_sealed(run_dir)
     deliv_dir = run_dir / "deliverables"
     if not deliv_dir.is_dir() or not any(deliv_dir.rglob("*")):
         raise HTTPException(status_code=404, detail="no deliverables exist yet for this run")
@@ -2328,6 +2348,7 @@ async def document_deliverables(run_id: str, doc_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="run_id not found")
 
+    _refuse_sealed(RUNS_DIR / run_id)
     doc_dir = (RUNS_DIR / run_id / "deliverables" / doc_id).resolve()
     deliv_root = (RUNS_DIR / run_id / "deliverables").resolve()
     if deliv_root not in doc_dir.parents and doc_dir != deliv_root:
@@ -2366,6 +2387,7 @@ async def run_log(run_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="run_id not found")
 
+    _refuse_sealed(RUNS_DIR / run_id)
     log_path = RUNS_DIR / run_id / "logs" / "pipeline_stdout.log"
     if not log_path.is_file():
         raise HTTPException(status_code=404, detail="no log written yet for this run")
@@ -2398,6 +2420,7 @@ async def findings(run_id: str):
     empty list, not a 404: "nothing found" and "no such run" are different answers
     and a poller must be able to tell them apart."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     records = _bus_findings(run_dir)
     return {"run_id": run_id, "count": len(records), "findings": records}
 
@@ -2415,6 +2438,7 @@ async def pairs(run_id: str):
     whose map was never written (a wide-mode run that failed before phase 5.5)
     is a 200 with an empty documents list."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     registry = _load_convention_registry()
     docs = [_pairs_view(p, registry) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
     return {"run_id": run_id, "document_count": len(docs), "documents": docs}
@@ -2439,6 +2463,7 @@ async def amendments(run_id: str):
     "nothing produced" and "unknown run" are different answers, matching the
     empty-but-200 convention every other run-scoped read here already uses."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _amendments_for_run(run_id, run_dir)
     return {"run_id": run_id, "count": len(items), "amendments": items}
 
@@ -2464,6 +2489,7 @@ async def amendment_refusals(run_id: str):
     do. 404 for a malformed/unknown run_id. 200 with an empty list, not an
     error, when nothing was refused: the common, expected case."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _amendment_refusals_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "refusals": items}
 
@@ -2488,6 +2514,7 @@ async def contract_violations(run_id: str):
     an empty list, not an error, when nothing failed its contract, the
     common, expected case."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _contract_violations_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "violations": items}
 
@@ -2618,8 +2645,81 @@ async def run_activation(run_id: str):
 
 @app.get("/runs/{run_id}/multi-round", dependencies=[Depends(verify_token)])
 async def run_multi_round(run_id: str):
+    """The validated case record (multi_round.read_saved) and, since loop S7, the
+    later-round reuse record (audit/round_reuse.json) as a rounds table under
+    `round_reuse`. A sealed run keeps whether a case was recorded, its outcome and
+    the reuse counts only (console_views.sealed_multi_round)."""
     from multi_round import read_saved
-    return read_saved(_validated_run_dir(run_id), run_id)
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    result = read_saved(run_dir, run_id)
+    state = console_views.exposure(run_dir)
+    if state == console_views.SEALED:
+        result = console_views.sealed_multi_round(result)
+    return dict(result, exposure=state, round_reuse=console_views.round_reuse(run_dir))
+
+
+# ---------------------------------------------------------------------------
+# Loop S7, item 1: read-only views of what S1 to S6 save in a run folder. Each
+# reads the run folder only (console_views), carries `exposure`, and for a sealed
+# run carries counts and timings only (item 2, Annex B.8).
+# ---------------------------------------------------------------------------
+@app.get("/runs/{run_id}/replies", dependencies=[Depends(verify_token)])
+async def run_replies(run_id: str):
+    """The run's saved model replies (audit/model_replies/, REPLIES-A): per call its
+    sequence, agent, backend, model id and mode, call id, phase, document, time,
+    backend result, payload and reply sizes and its latest outcome from
+    outcomes.jsonl; and counts by outcome. Never the reply or payload text (DS7-1):
+    the console is not a second copy of it. A sealed run: counts and first and
+    last call times only."""
+    import console_views
+    return dict(console_views.replies(_validated_run_dir(run_id)), run_id=run_id)
+
+
+@app.get("/runs/{run_id}/model-findings", dependencies=[Depends(verify_token)])
+async def run_model_findings(run_id: str):
+    """Each document master's `model_findings_not_promoted` (HONEST-OUTPUT-A), every
+    item carrying finding_record.MODEL_FINDING_MARK, with the producer counts
+    (summary_generators.findings_provenance) over the run's bus findings. A sealed
+    run: counts only."""
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    return dict(console_views.model_findings(run_dir, bus_findings=_bus_findings(run_dir)),
+                run_id=run_id)
+
+
+@app.get("/runs/{run_id}/switches", dependencies=[Depends(verify_token)])
+async def run_switches(run_id: str):
+    """INST_FINDER's setting for this run (audit/agent_switches.json: on, off and
+    ratified, or off and refused, with the amendment id or the refusal) and
+    FACT_CHECKER's withholding with the two Annex B.4 reasons (run_report_text,
+    the copy tools/analyze_ordinary_final_run.py also imports), read from the run's
+    activation record, else from this installation's current review scope, said so."""
+    import console_views
+    return dict(console_views.switches(_validated_run_dir(run_id), run_id, ROOT), run_id=run_id)
+
+
+@app.get("/runs/{run_id}/report", dependencies=[Depends(verify_token)])
+async def run_report(run_id: str):
+    """The run report: the Annex A 11.12 rows of a FINAL_STATUS.json found in the
+    run folder or up to three parent folders (a cloud session), else "no cloud
+    report for this run"; cost from that file, else the run folder's own cost
+    lines (logs/cost_tracker.jsonl, audit/infrastructure_cost.jsonl); budget from
+    the session's execution_manifest.json, else "not known". Estimates, never an
+    invoice. A sealed run drops the recall, attribution and per-flaw rows
+    (run_report_text.SEALED_REPORT_ROWS is the allowlist)."""
+    import console_views
+    return dict(console_views.report(_validated_run_dir(run_id)), run_id=run_id)
+
+
+@app.get("/test-change-requests", dependencies=[Depends(verify_token)])
+async def test_change_requests():
+    """docs/test_change_requests.md as rows (id, title, the entry's own fields),
+    read-only; "not present in this installation" when the file is absent (an
+    image that does not ship docs/). Exposed tests only: a sealed test's requests
+    never live in this file."""
+    import console_views
+    return console_views.test_change_requests(ROOT)
 
 
 @app.get("/runs/{run_id}/references", dependencies=[Depends(verify_token)])
@@ -2653,6 +2753,7 @@ async def run_references(run_id: str, ref_id: str = None):
     where content is the point rather than a leak.
     """
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     path = run_dir / "audit" / "reference_index.json"
     if not path.is_file():
         return {"run_id": run_id, "index_present": False, "count": 0, "references": []}
@@ -2833,10 +2934,15 @@ async def run_evidence(run_id: str, body: dict):
 
     A POST because the expected entries are the request body, not because it
     changes anything: this route writes nothing at all.
+
+    Loop S7 item 2: a sealed run is refused with 403 before the body is read. The
+    classification names units and rules per missed defect, which is a per-flaw
+    result a sealed test never shows (Annex B.8).
     """
     import fn_evidence as _fe
 
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     expected = body.get("expected")
     if not isinstance(expected, list) or not expected:
         raise HTTPException(

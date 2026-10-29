@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "run_id": "0c0501e00c0501e00c0501e00c0501e0",
+  "activation_mode": "dense",
+  "policy": "conservative_reference_with_existing_phase_gates",
+  "actual_call_definition": "wrapper dispatch attempted; successful generation is a separate cost/backend outcome",
+  "agents": [
+    "PROCESSOR",
+    "VERIFIER",
+    "FACT_CHECKER",
+    "PRACTICE_AUDITOR"
+  ],
+  "decisions": [
+    {
+      "decision_id": 1,
+      "agent": "PROCESSOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {},
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3-4",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "call-0001",
+      "outcome": "accepted_to_bus"
+    },
+    {
+      "decision_id": 2,
+      "agent": "VERIFIER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {},
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "call-0002",
+      "outcome": "accepted_to_bus"
+    },
+    {
+      "decision_id": 3,
+      "agent": "FACT_CHECKER",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "operator_withheld_for_corpus",
+      "evidence": {
+        "declared_in": "config/review_scope.json",
+        "field": "withheld_audit_agents"
+      },
+      "trigger_source": "review_scope",
+      "decision_kind": "structural",
+      "source_phase": "5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 4,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {},
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "call-0003",
+      "outcome": "accepted_to_bus"
+    }
+  ],
+  "agent_states": [
+    {
+      "agent": "PROCESSOR",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        1
+      ]
+    },
+    {
+      "agent": "VERIFIER",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        2
+      ]
+    },
+    {
+      "agent": "FACT_CHECKER",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        3
+      ]
+    },
+    {
+      "agent": "PRACTICE_AUDITOR",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        4
+      ]
+    }
+  ]
+}

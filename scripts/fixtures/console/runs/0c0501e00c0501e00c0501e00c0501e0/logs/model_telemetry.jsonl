@@ -1,0 +1,2 @@
+{"event": "pipeline_start", "monotonic_s": 92409.9988277, "run_id": "0c0501e00c0501e00c0501e00c0501e0", "schema_version": 1, "utc": "2026-10-29T09:17:57.863025+00:00"}
+{"event": "pipeline_end", "monotonic_s": 92410.0341254, "process_cpu_seconds": 0.03125, "run_id": "0c0501e00c0501e00c0501e00c0501e0", "schema_version": 1, "utc": "2026-10-29T09:17:57.899047+00:00"}
