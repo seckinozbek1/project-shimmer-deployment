@@ -1,4 +1,4 @@
-"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2, S-3, S-5 and S-6.
+"""Run output to label: preregistration sections 5.1 and 5.2, with S-1, S-2, S-3, S-5 to S-8.
 
 An item is a claim about the whole document judged unit by unit, so a settled answer on
 any unit beats a refusal on another (decision D-039 item 1). For each item, the first
@@ -44,7 +44,14 @@ ContractNLI: not mentioned) and ABSTAIN elsewhere. S-5 applies the earlier order
 refusal before an ok record, to every pipeline arm (section 5.1). S-6 (D-066) makes
 every item of a semantically incomplete document ABSTAIN, for every pipeline arm. S-7
 (section 5.3, D-078) makes every item of a B3 document excluded for a call over its
-model's context ABSTAIN; every other analysis leaves those items out.
+model's context ABSTAIN; every other analysis leaves those items out. S-8 (DEV-012) scores
+B3 and B4 as if every record a model wrote were absent: of the document's records only
+those stamped `written_by` exactly `python` are kept (an unstamped record is a model's,
+section 3 item 6), and each item is labelled by the same lines on what remains, so an
+item a model-written record decided takes the next line, else silence; the run-failure
+line, the D-066 rules, the over-context exclusion, the rule-id map and the pairing-map
+refusal entries (Python's own map, not records) are unchanged. For B0, B1 and B2, S-8
+equals the primary analysis, and its output says so.
 
 Completeness is reported per document and arm (D-066): semantic_complete, the PROCESSOR
 calls accepted against made, whether the PROCESSOR delivery was partial, the auditor pairs
@@ -138,6 +145,12 @@ OVER_CONTEXT_FIELD = "over_context"
 OVER_CONTEXT_ARMS = ("B3",)   # section 5.3 names B3 (B4 is not run where B3's text does not fit)
 OVER_CONTEXT_BASIS = "over_context_excluded"
 S7_BASIS = "s7_over_context_abstain"
+# DEV-012, sensitivity S-8: the arms it changes; for every other arm S-8 equals the primary.
+S8_ARMS = PIPELINE_ARMS
+S8_NOTE_APPLIED = ("S-8: scored as if every record written by a model were absent (only records "
+                   "stamped written_by exactly 'python' kept; an unstamped record is a model's); "
+                   "every other rule unchanged")
+S8_NOTE_EQUAL = "S-8 equals the primary analysis for this arm (S-8 changes B3 and B4 only)"
 
 
 class Refused(Exception):
@@ -421,6 +434,15 @@ def set_aside(spec: Spec, rule_count: int) -> bool:
     return int(rule_count) > 1
 
 
+def python_only_view(run: dict) -> dict:
+    """S-8 (DEV-012): the run as if every record a model wrote were absent. Only the
+    records stamped `written_by` exactly `python` are kept (is_computed); a record with any
+    other stamp or none is dropped. Everything else the run carries (the failure, the
+    pairing-map refusal entries and judging calls, the rule-id map, completeness) is kept,
+    so the lines of section 5.1 apply unchanged to what remains."""
+    return dict(run, records=[r for r in run["records"] if is_computed(r)])
+
+
 def _layer(records) -> str:
     kinds = {"computed" if is_computed(r) else "judged" for r in records}
     return kinds.pop() if len(kinds) == 1 else ("both" if kinds else "")
@@ -670,17 +692,24 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
             faults.append("reply_record_unreadable:%d" % over["unreadable_records"])
         rules = [i["rule_id"] for i in doc_items]
         count = len({_fold(r) for r in rules})
+        # S-8 (DEV-012): B3 and B4 also labelled with every model-written record absent
+        python_run = python_only_view(run) if arm in S8_ARMS else None
         for item in doc_items:
             if excluded:
                 gone = {"class": ABSTAIN, "basis": OVER_CONTEXT_BASIS}
                 row = dict(_row(spec, item, arm, gone), s3=dict(gone, cited_unit_ids=[], layer=""),
                            s5=dict(gone, cited_unit_ids=[], layer=""))
+                if python_run is not None:
+                    row["s8"] = dict(gone, cited_unit_ids=[], layer="")
                 rows.append(row)
                 continue
             row = _row(spec, item, arm, classify(spec, item["rule_id"], run, count))
-            for key, options in (("s3", {"attribute_figure_audit": True}),
-                                 ("s5", {"refusal_first": True})):
-                other = classify(spec, item["rule_id"], run, count, **options)
+            variants = [("s3", run, {"attribute_figure_audit": True}),
+                        ("s5", run, {"refusal_first": True})]
+            if python_run is not None:
+                variants.append(("s8", python_run, {}))
+            for key, source_run, options in variants:
+                other = classify(spec, item["rule_id"], source_run, count, **options)
                 row[key] = {"class": other["class"], "basis": other["basis"],
                             "cited_unit_ids": other["cited_unit_ids"], "layer": other["layer"]}
             rows.append(row)
@@ -701,6 +730,9 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3") -> dict:
                           "rules": count, "figure_audit_set_aside": aside,
                           "unattached": unattached(run, rules, run_dir, doc_id, aside),
                           "unattached_s3": unattached(run, rules, run_dir, doc_id, False),
+                          # S-8: the unattached findings Python wrote (None where S-8 changes nothing)
+                          "unattached_s8": (unattached(python_run, rules, run_dir, doc_id, aside)
+                                            if python_run is not None else None),
                           "relations": relation_counts(run, rules),
                           "missing_field_by_layer": None if run["failure"] else missing_field_layers(run, rules)})
     return _labels(spec, arm, rows, documents)
@@ -845,6 +877,21 @@ def sensitivity_s5(spec: Spec, result: dict) -> dict:
     """S-5: the earlier order of section 5.1, a refusal on any unit before an ok record
     (irregular still first), for every pipeline arm; B0 and B1 rows are unchanged."""
     return _alternative(spec, result, "s5", "S-5", result["documents"])
+
+
+def sensitivity_s8(spec: Spec, result: dict) -> dict:
+    """S-8 (DEV-012): B3 and B4 scored as if every record written by a model were absent:
+    an item a model-written record decides takes the next record in section 5.1's order,
+    else silence (python_only_view, then the same lines). The unattached findings are
+    Python's alone. B0, B1 and B2 rows are unchanged, so S-8 equals their primary analysis,
+    and the result says which (`s8_applies`, `note`)."""
+    applies = result["arm"] in S8_ARMS
+    documents = [dict(d, unattached=d["unattached_s8"]) if applies and d.get("unattached_s8") is not None
+                 else d for d in result["documents"]]
+    out = _alternative(spec, result, "s8", "S-8", documents)
+    out["s8_applies"] = applies
+    out["note"] = S8_NOTE_APPLIED if applies else S8_NOTE_EQUAL
+    return out
 
 
 def sensitivity_s6(spec: Spec, result: dict) -> dict:
