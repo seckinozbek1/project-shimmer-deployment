@@ -706,3 +706,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Applied.** The written rule, with S5's current-code measurements (L4b, L6): B's synthetic tests set aside first (about 10.4 USD); ContractNLI (first by fit) needs about 55 USD for its minimum of 30 documents, more than the 25.6 USD left, so it takes what is left as a pilot (about 13 documents at the development band mix, recomputed per band at S8c from B's counts); SciTab and ContraDoc get nothing. Second key computed (minutes per scored decision): SciTab 2.3, ContraDoc 9.8, ContractNLI 3.7. A is 36 USD: S5's unused allocation goes to S6 (IV.3), not to S8.
 - **Reading.** One measured document stands for band A of ContractNLI and two for band B: development figures, stated as such (P1). No score enters the rule.
 - **Rules.** S4e item 2, IV.3, D-S9, P1, P6.
+
+## D-082. The first real multi-round runs: what they settle and what waits
+
+- **When, stage.** 2026-10-29 20:20 +0300 (system clock), S5 item 2, after L6m (46 minutes, 0.99 USD).
+- **Result (development, run health).** Both cases (the synthetic family 4 case and the negotiation case) reached the multi-round phase with activation `activated` and were refused there (`agent_output_unavailable`, exit 8): the reading agent's reply to the phase's long free-form prompt ran to its 4,096-token cap (INC-023). The do-not-recompute rule held on real execution (round 2 reused 8 of 11 units of the synthetic case). S5 item 2's run happened; its health criterion (outcome `reviewed`) is not met.
+- **Options.** (a) Fix now (a new call shape for the phase, measured on both cases) and re-run: a design decision and about 2.8 USD more than S5 has after L6s2 (P9 b); (b) record, report, and give it to S6a with open item 35. Chosen (b): the S5 exit criterion "multi-round run done" is met as an execution with a recorded failure, and the fix belongs to the open-item sweep, paid from S5's unused allocation if any remains (IV.3), else recorded under P9 (b). FOR_SECKIN.md lists it.
+- **Rules.** P9, P16, P1, IV.6 (design gap).

@@ -443,3 +443,10 @@ open-item sweep.
 - **Evidence.** L6 model-text review (development, exposed): 3 of 3 kept records sampled were such answers on ContractNLI units, all wrong.
 - **Why it was left.** A screen change after development outputs are seen; sensitivity S-8 (DEV-012) reports B3 without model-written records instead (D-080; P16).
 - **What would settle it.** Refuse a model's figure relation when the unit carries no figure the relation names (`paired_review.model_item_notes` already notes "figures not in its unit"), measured on tests that are not benchmarks, with a check.
+
+## 35. The multi-round phase's reading-agent call runs to its output cap (found at loop S5, INC-023)
+
+- **What it is.** In final mode the multi-round phase sends PROCESSOR a long free-form prompt; the reply runs to the 4,096-token cap and the phase refuses the case (`agent_output_unavailable`), so no multi-round case has been reviewed on real execution.
+- **Evidence.** L6m (development, exposed): the synthetic family 4 case, prompt 15,795 tokens, cap hit after 944 seconds, exit 8; round reuse worked (round 2 reused 8 of 11 units).
+- **Why it was left.** A design change (which agent or which prompt shape the phase uses, within what the frozen checkpoint was evaluated on) plus a measured run; beyond S5's money (P9 b).
+- **What would settle it.** A general rule for the phase's call shape, built in S6a, measured on the synthetic and the negotiation cases, outcome `reviewed`.
