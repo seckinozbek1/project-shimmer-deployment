@@ -133,3 +133,5 @@ The allocation of D-S12 item 4 (S5's brought-back work and the first sweep's fin
 | Smoke runs (S12 item 8) | 3.12 | two smoke runs with the upload |
 | Reserve | 10.00 | storage share charged here first (about 0.65 USD more to S5's end, estimate) |
 | S8 sealed evaluation | 89.34 | the rest; floor 60 |
+
+CUAD forecast basis (D-094, closing the version 2 attack's item 8): one development contract at the mean of the 8 measured B2 contracts, 2,643 judging plans (SELECTION.md), at 17.0 seconds a plan everything included (L6, ContractNLI band B: 81.8 minutes over 289 plans), 748.9 minutes of B3; B1 tuned on its 41 items at about 15 seconds a call, 10.3 minutes; 15.4 minutes of session overhead and 2 minutes an entry for each arm: 778.6 minutes, 21.76 USD. A band B contract (about 1,230 plans, an estimate) would be 378.2 minutes, 10.57 USD. The contract is chosen at launch from the B2 plan counts; the forecast stays the mean's, so S8's fixed A (89.34 USD) does not depend on that choice.
