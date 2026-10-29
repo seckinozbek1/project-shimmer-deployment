@@ -10,15 +10,14 @@ from ordinary_final_run import read, write, sha, require
 from ordinary_final_summary import supplement, rows
 
 ROOT=Path(__file__).resolve().parents[1]
+if str(ROOT/'scripts') not in sys.path:
+    sys.path.insert(0,str(ROOT/'scripts'))
+# Annex B.4: both reasons, every report, whenever the bundle's own review scope withholds it.
+# One copy, shared with the console's GET /runs/{run_id}/switches (loop S7, DS7-3).
+from run_report_text import FACT_CHECKER_REASONS
+
 BASE=ROOT/'docs/fix/ordinary_final_cloud_run'
 EXPOSED_NO_MANIFEST='exposed, no manifest'
-# Annex B.4: both reasons, every report, whenever the bundle's own review scope withholds it.
-FACT_CHECKER_REASONS=(
-    'switched off, not deleted: deleting the agent needs operator approval under the constitution and cannot be '
-    'undone without code, while keeping it leaves LAW-III checks 87 and 127 unchanged and one cleared declaration '
-    'restores it',
-    'stays off: it returned five substantively wrong items in v7 and v8, byte-identical, and none correct in v5 '
-    '(runs 110990c1, 6f896263, a6649672)')
 ROLE_SEPARATION=('Role separation: separate sessions and folders on one Windows account; not enforced by the '
                  'operating system (Annex A, 11.2 options not in place; Annex B.11).')
 NOT_SCORED=('not computed by this tool: scoring belongs to the scorer (role C for a sealed test, '
