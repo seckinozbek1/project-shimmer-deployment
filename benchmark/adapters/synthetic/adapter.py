@@ -244,6 +244,20 @@ def run_dirs_for(items, runs=None, run_map=None) -> dict:
     return out
 
 
+def deliverable_texts(run_dir, document_id) -> dict:
+    """{deliverable file: its text} for the run's deliverables of the document (section 3.4's
+    four files; a missing file is left out)."""
+    folder = Path(run_dir) / mapping.DELIVERABLES_DIR / str(document_id)
+    return {name: mapping._deliverable_text(folder / name)
+            for name in mapping.DELIVERABLE_FILES if (folder / name).is_file()}
+
+
+def in_deliverables(record, texts) -> list:
+    """The deliverables whose text holds the record's id (section 3.4's per-deliverable count)."""
+    rid = str(record.get("record_id") or "")
+    return sorted(name for name, text in texts.items() if rid and rid in text)
+
+
 def read_synthetic_items(path) -> list:
     rows = mapping.read_items(path)
     for row in rows:
@@ -271,8 +285,13 @@ def label(items_path, arm, bundles_root, runs=None, run_map=None) -> dict:
             row["cited_unit_ids"], row["b1_ambiguous_sentences"] = b1_located_units(
                 row.get("evidence"), cache[doc])
     elif arm in mapping.ARMS:
-        primary = mapping.label_pipeline_arm(SPEC, items, None, arm,
-                                             run_dirs_for(items, runs, run_map), detail=True)
+        dirs = run_dirs_for(items, runs, run_map)
+        primary = mapping.label_pipeline_arm(SPEC, items, None, arm, dirs, detail=True)
+        texts = {doc: deliverable_texts(path, doc) for doc, path in dirs.items()}
+        for row in primary["labels"]:
+            for view in (row, row.get("s3"), row.get("s5"), row.get("s8")):
+                for record in (view or {}).get("deciding_records") or []:
+                    record["in_deliverables"] = in_deliverables(record, texts[row["document_id"]])
     else:
         raise Refused("unknown arm " + repr(arm))
     owner = _documents(items, bundles_root)
@@ -416,6 +435,16 @@ def score_bundle(folder, key, rows, arm) -> dict:
     out["records_on_unplanted_units"] = sum(1 for (u, _r) in flagged
                                             if not any(_on_unit(p, u) for p in planted_units))
     out["distractor_hits"] = sum(1 for (u, _r) in flagged if any(_on_unit(c, u) for c in clean))
+    # the records on units the key does not plant, by the deliverable that shows them (B2, B3, B4)
+    shown = {}
+    for row in rows:
+        if row["class"] != mapping.FLAG:
+            continue
+        for r in row.get("deciding_records") or []:
+            if not any(_on_unit(p, r.get("unit_id")) for p in planted_units):
+                for name in r.get("in_deliverables") or []:
+                    shown[name] = shown.get(name, 0) + 1
+    out["unplanted_records_per_deliverable"] = None if arm == "B1" else dict(sorted(shown.items()))
     return out
 
 
@@ -443,6 +472,11 @@ def _total(rows, arm) -> dict:
                                       else out["reason_confirmed"] / out["planted"])
     for k in ("python", "model", "both"):
         out.setdefault("located_by", {})[k] = sum(r["located_by"][k] for r in rows)
+    shown = {}
+    for r in rows:
+        for name, n in (r.get("unplanted_records_per_deliverable") or {}).items():
+            shown[name] = shown.get(name, 0) + n
+    out["unplanted_records_per_deliverable"] = None if arm == "B1" else dict(sorted(shown.items()))
     return out
 
 

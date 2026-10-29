@@ -2827,6 +2827,10 @@ class SyntheticChecks(_Case):
                 lines.append(_bus_line("B", doc, model[name], _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32))
             run = _incomplete_run(b3, doc, completion=_completion(), bus_lines=lines)
             run.rename(b3 / name)
+        # the model's record on the clean unit is shown in one deliverable
+        shown = b3 / "flawed_a" / "deliverables" / "log_q1"
+        shown.mkdir(parents=True)
+        (shown / "document_summary.md").write_text("Written by a model: record m1.\n", encoding="utf-8")
         replies = {("flawed_a", "CONV-GA"): {"label": "violated", "evidence": "Reading: 12 units."},
                    # held by two units: locates none
                    ("flawed_a", "CONV-GB"): {"label": "violated", "evidence": "Limit: 10 units."},
@@ -2901,6 +2905,13 @@ class SyntheticChecks(_Case):
                     problems.append("%s S-8 %s" % (arm, self._score_view(scored["S-8"])))
                 if self._score_view(scored["S-3"]) != self.SCORES[arm]:
                     problems.append("%s S-3 differs from the primary" % arm)
+                # the records on unplanted units, by the deliverable that shows them
+                shown = {"B1": None, "B3": {"document_summary.md": 1}}.get(arm, {})
+                if scored["primary"]["totals"]["unplanted_records_per_deliverable"] != shown:
+                    problems.append("%s per deliverable %s" % (
+                        arm, scored["primary"]["totals"]["unplanted_records_per_deliverable"]))
+                if arm == "B3" and scored["S-8"]["totals"]["unplanted_records_per_deliverable"] != {}:
+                    problems.append("B3 S-8 per deliverable")
             return problems
 
         m = _common()["mapping"]
@@ -2916,6 +2927,8 @@ class SyntheticChecks(_Case):
             sorted(uid for uid, text in u if quote(e) and quote(e) in " ".join(text.split())), 0)))
         # S-8 drops the model's records
         self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+        # a record shown in a deliverable is counted there
+        self._proof(body, lambda: mock.patch.object(syn, "in_deliverables", lambda record, texts: []))
 
     def test_b1_prompt_for_a_synthetic_item(self):
         syn = self._syn()
