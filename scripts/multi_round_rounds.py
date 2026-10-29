@@ -10,20 +10,29 @@ reuse is recorded. Only a changed unit's pairs reach paired_review.plan_calls.
 
 What "unchanged" means is decided by a signature over everything the computation
 reads for that unit and nothing else: the unit's own text, the full declared rules
-paired to it, the document's field vocabulary and the units of measure the document
-writes. A change anywhere in that set (a figure, a rule, a label that changes the
-vocabulary) recomputes the unit. Unit ids are not part of the signature, so a unit
-that moved position between rounds is still recognised; its reused records, and
-the plans it records as needing a model, carry the new id. The covered inputs are
-named in SIGNATURE_INPUTS.
+paired to it, the part of the document's field vocabulary those rules name, and the
+units of measure the document writes. A change anywhere in that set (a figure, a
+rule, a label one of its rules now names or no longer names) recomputes the unit.
+The vocabulary reaches a unit's computation only through pairing_map.needed_fields
+for a rule paired to it (plan_calls' needed set, its rule attribution, and the
+band's low-side condition in reference_tables.low_side_condition), so a label that
+another unit gains or loses, and that none of this unit's rules names, leaves the
+signature as it was. Measured, not preferred (L6m, loop S5, open item 35): round 3
+of the synthetic family 4 case renamed or added six labels in other clauses, and
+two clauses byte-identical to round 1 were recomputed because the signature then
+covered the whole document's vocabulary. Unit ids are not part of the signature, so
+a unit that moved position between rounds is still recognised; its reused records,
+and the plans it records as needing a model, carry the new id. The covered inputs
+are named in SIGNATURE_INPUTS.
 
 The round findings are posted on the run bus (post_findings, backend paired, model
 python) and written to the audit file. Nothing downstream reads them today: the
-case phase's model calls take the case evidence, not these findings.
+case phase's typed records are computed from the declared case evidence, not from
+these findings.
 
 This is Python only. A plan that needs a model (a judged absence, a pair where
-nothing is computable) is recorded as `needs_model` and not asked here: the case
-phase's model calls are PROCESSOR and VERIFIER on the case evidence, nothing else.
+nothing is computable) is recorded as `needs_model` and not asked here, or anywhere
+in the case phase.
 
 Written to <run>/audit/round_reuse.json. No model, no network, no file outside the
 run folder.
@@ -59,11 +68,23 @@ SIGNATURE_INPUTS = ("unit", "rules", "vocabulary", "known_units")
 FINDINGS_AGENT = "PRACTICE_AUDITOR"
 
 
+def named_vocabulary(rules, vocabulary):
+    """The part of the document's field vocabulary a unit's computation reads: for
+    each paired rule, the labels it names (pairing_map.needed_fields, the one test
+    plan_calls and reference_tables.low_side_condition apply to the vocabulary).
+    Kept per rule, keyed by the rule's id (its text is the "rules" input's)."""
+    return sorted(json.dumps([str(r.get("id")),
+                              sorted(" ".join(label) for label in
+                                     pairing_map.needed_fields(r.get("rule", ""), vocabulary))],
+                             ensure_ascii=False)
+                  for r in rules)
+
+
 def unit_signature(unit_text, rules, vocabulary, known_units):
     """sha256 over everything the unit's computation reads, and nothing else."""
     inputs = {"unit": unit_text,
               "rules": sorted((json.dumps(r, sort_keys=True, ensure_ascii=False) for r in rules)),
-              "vocabulary": sorted(" ".join(label) for label in vocabulary),
+              "vocabulary": named_vocabulary(rules, vocabulary),
               "known_units": sorted(str(u) for u in known_units)}
     payload = {name: inputs[name] for name in SIGNATURE_INPUTS}
     data = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")

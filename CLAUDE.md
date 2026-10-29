@@ -263,10 +263,19 @@ processing swarm governed by an append-only constitution.
   The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
   `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
   Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
-  paired rules, the document's field vocabulary and its units of measure (`SIGNATURE_INPUTS`),
-  reused records and model asks are rebased onto the new unit id, the record is
-  `audit/round_reuse.json`, and the round findings are posted on the run bus (backend `paired`,
-  model `python`, one envelope per round document); nothing downstream reads them yet. A
+  paired rules, the labels of the document's field vocabulary those rules name
+  (`multi_round_rounds.named_vocabulary`, the only way the vocabulary reaches the computation;
+  a label no paired rule names recomputes nothing) and its units of measure
+  (`SIGNATURE_INPUTS`), reused records and model asks are rebased onto the new unit id, the
+  record is `audit/round_reuse.json`, and the round findings are posted on the run bus (backend
+  `paired`, model `python`, one envelope per round document); nothing downstream reads them yet.
+  The case's typed records are computed in Python, with no model call (open item 35, INC-023:
+  the one free-form PROCESSOR call over the whole case ran to its output cap on real execution):
+  one position per declared (round, actor, issue), accepted only on exactly one accepted source,
+  numeric only when its quote states exactly one figure with a unit; one movement between
+  consecutive positions, always `unknown` (`multi_round_phase.computed_records`, `written_by`
+  `python`, posted with backend `computed`, model `python`). Only the strategic layer's explicit
+  decision-support modes still call PROCESSOR and VERIFIER. A
   term that vanished while its section states an unclaimed newcomer in the same unit of measure
   is refused as a possible rename (`paired_review.possible_successor`), never minted as
   withdrawn, until S5 measures an ensemble decision for it; two figures with no unit count as

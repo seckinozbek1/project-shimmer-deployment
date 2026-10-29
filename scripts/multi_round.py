@@ -1,7 +1,8 @@
 """Case-scoped typed positioning. No semantic classification is computed here.
 
-The input is operator-declared identity and source spans. PROCESSOR supplies
-interpretations and VERIFIER reviews them through the existing agent boundary.
+The input is operator-declared identity and source spans. The case phase computes
+its position and movement records in Python from them (multi_round_phase,
+open item 35); a movement's semantic category is never computed and stays unknown.
 All projections below also accept pre-authored envelopes for offline proofs.
 """
 from __future__ import annotations
