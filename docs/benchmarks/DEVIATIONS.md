@@ -162,3 +162,80 @@ Each entry has these fields, in this order:
 - **Decided from**: run health and cost of one development agreement; no score.
 - **Holdout result seen**: no.
 - **Status**: draft.
+
+### DEV-014. One setup-failure rule for B1 and B3
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f, lane `lane/s05-synth`.
+- **Decision**: D-084 (the final checker's item 3).
+- **What changes**: preregistration section 0 (the term "setup failure"; a setup failure is not a run failure), section 3.5, section 4 (the B1 arm; S-7 in the sensitivity list), section 5.1 (a new paragraph "Setup failures, one rule for B1 and B3"; the per-arm counts), section 5.3 (B1's over-context stop records a setup failure; comparisons and S-7 cover setup failures), section 7, section 9 (B1's measured memory), section 12 item 13. Code: `benchmark/adapters/common/mapping.py` (`SETUP_FAILURE_ARMS`, `read_b1_setup_failure`, `read_b3_setup_failure`, basis `setup_failure`, `label_b1`, `label_pipeline_arm`, the counts and the `setup_failure` listing, `sensitivity_s6`, `sensitivity_s7`, `setup_failure_excluded`, `excluded_documents`, `scored_view`), `benchmark/adapters/common/cli.py` (`score --paired-with`: `left_out_setup_failure`), `benchmark/adapters/common/metrics.py` (the counts), `benchmark/baselines/bare_model.py` (a prompt over the context is recorded in `b1_setup_failure.json` with kind `prompt_over_context` before anything is generated), with checks (`scripts/adapter_checks.py` group `setupfailure`, `scripts/baseline_checks.py`). Arms: B1 and B3.
+- **Why**: the text had no label rule for a B1 setup failure (an out-of-memory error or a prompt over the context), and B3's out-of-memory failure was a run failure (every item ABSTAIN and scored wrong) while B3's call over the context was excluded: the two arms were treated differently for the same kind of event. Now one rule: every item of the document is ABSTAIN with basis `setup_failure`, counted apart, left out of that arm's scoring in every analysis but S-7 (ABSTAIN there), and a paired comparison drops a document either arm failed on.
+- **Decided from**: the checker's reading of the text; nothing measured. No development output on disk has a B1 setup-failure record or a B3 reply record of an out-of-memory call (the one known, L6s2's span-part run, belongs to no label set of the design), so no development label changes.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run, which implements it from the text.
+
+### DEV-015. Sensitivity S-8 worded as the adapters compute it
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's item 4).
+- **What changes**: preregistration section 4, the S-8 entry of the sensitivity list, now word for word the definition in `benchmark/adapters/common/mapping.py` (only records stamped `written_by` exactly `python` kept, an unstamped record a model's; each item labelled by section 5.1's lines on what remains; the run-failure line, the D-066 rules, the over-context exclusion, the setup-failure rule, the rule-id map and the pairing-map refusal entries unchanged; the unattached findings Python's alone; for B0, B1 and B2 S-8 equals the primary and says so). The computation is unchanged (DEV-012). Arms: B3 and B4.
+- **Why**: the earlier one-line wording ("takes the next record in section 5.1's order") left open what happens to the run-failure line, the D-066 rules and the pairing-map refusal entries, which C implements from the text.
+- **Decided from**: the text and the code; nothing measured.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run.
+
+### DEV-016. B's synthetic tests get preregistered items, a B1 question, labels and measures
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's item 1, critical).
+- **What changes**: a new preregistration section 13 (the tests, items, arms, the B1 prompt for a synthetic item word for word, labels, measures per arm, what may be quoted under Annex A 11.11.3, the checks before the freeze); section 5.4 (revision 4: the synthetic question and labels, Invited: no; the five benchmarks' lines and the system turn unchanged); section 9 (a limitation on the synthetic tests); section 12 (C0 covers section 13). Code: `benchmark/adapters/synthetic/adapter.py` (new: `items`, `label`, `score`), `benchmark/baselines/b1_prompt.json` (the `synthetic` entry), `benchmark/adapters/common/mapping.py` (`Spec.attribute_as_named`, read by `set_aside`; `classify` and `label_pipeline_arm` can return the deciding records), with checks (`scripts/adapter_checks.py` group `synthetic`, on a hand-written fixture). Arms: all.
+- **Why**: the text named B's synthetic tests as the tests that meet Annex A 11.11.3 but gave them no items, no B1 question, no labels and no measures, so their result could have been read after the fact in whichever way favoured an arm.
+- **Decided from**: the input format (sections 9 to 11) and `tools/score_corpus.py`'s matching. One choice departs from the five benchmarks: every record decides the item of the rule it names (no figure-audit set-aside), because the input format makes a test's author write rules so that such a record goes to the rule the key names; and location is by unit and relation under any rule, as the input format and the scorer define it, with attribution reported apart. Development outputs existed and were read only to check the adapter against the scorer (section 13.7: the development suite's B2 outputs and the exposed tests' L5v B3 outputs), never to choose a rule; the B2 suite's scorer summary had been read by the lead before this entry.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores on the benchmarks, not read; the B2 development-suite scores and the L5v exposed-test scores, read for the agreement check only.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run, which implements section 13 from the text. The B1 cost per synthetic bundle stays an estimate (section 2).
+
+### DEV-017. ContractNLI's merged parts stated as applying, with their coarseness
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's items 2 and 7), carrying out D-083 and DEV-013.
+- **What changes**: preregistration section 2 (the fallback paragraph says what was applied: the trigger undecided, the fallback applies), section 3.2 (the 5-word minimum and the evidence-unit rule under merged parts), section 5.6 (the fallback applies when the trigger fires or is recorded as undecided; the development part counts), section 7 (the part rule beside every ContractNLI location measure), section 9 (the per-unit counts under merged parts; a new limitation: merged parts coarsen location). No code changes. Arms: all.
+- **Why**: sections 2 and 5.6 still said the fallback applies only if the trigger fires, while DEV-013 recorded the trigger as undecided and applied the fallback; and the text did not say how much coarser location becomes.
+- **Decided from**: counts on development builds of the 61 ContractNLI development agreements under both part rules (parts, words per part, evidence parts and their share of the agreement's words); no label and no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run.
+
+### DEV-018. Every B3 headline beside S-6 and the complete documents
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's item 8).
+- **What changes**: preregistration section 5.1 (the paragraph "Incomplete documents"), section 7 and section 13.5: every B3 headline value is printed beside its S-6 value, beside the same measure on the complete documents alone with the counts of complete documents and of documents in all, and beside its S-8 value. A reporting rule; no label changes. Arms: B3.
+- **Why**: semantically incomplete runs were 17 of the 20 B3 development document runs the adapters read, so a B3 headline alone would mostly describe incomplete runs.
+- **Decided from**: the count of incomplete runs (section 12 item 1); no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run.
+
+### DEV-019. H1 is not tested in S8 as sized; what may be quoted
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's item 6), following D-081.
+- **What changes**: preregistration section 2 (the sizing result: one benchmark, a pilot; H1 not tested), section 4 (H1 not tested in S8; the rule stands for a later sealed run with a non-pilot benchmark), section 7 (the sentence stands in every summary), section 13.6 (under Annex A 11.11.3 only the spread across B's three synthetic tests may be quoted; a claim holds across tests only when it holds in each). Also section 2's wording that S8 seals three benchmarks: one is sealed, as a pilot; SciTab and ContraDoc get no sample. Arms: all.
+- **Why**: D-081's sizing leaves one benchmark, ContractNLI, as a pilot, and pilots get no p-value and no "better" or "worse", so the primary hypothesis is never tested in S8; the text still read as though it would be, and said three benchmarks would be sealed.
+- **Decided from**: the sizing rule's result (D-081); no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run.
+
+### DEV-020. The pilot's size and the allocation at S8c
+
+- **Entered**: 2026-10-29 21:28 (system clock, +0300), loop stage S5 item 10f.
+- **Decision**: D-084 (the final checker's items 13 and 14), following D-081 and D-083.
+- **What changes**: preregistration section 0 (the S8 allocation A is 36 USD; nothing rolls forward from S5; the S8c recomputation cannot raise it) and section 2 (the same in the fallback paragraph and the sizing; the pilot is 12 to 13 documents: about 13 at the development band mix, about 12 at the holdout pool's band mix, band A to band B about 13 to 48, about 66.8 minutes a document; the B1 cost per synthetic bundle labelled an estimate, its shortfall taken from ContractNLI's documents, never from A). Arms: all.
+- **Why**: the text said "about 13 documents" and "plus any roll-forward", while S5's unused allocation goes to S6 (IV.3) and the pool's own band mix gives about 12.
+- **Decided from**: S5's measured minutes per band and the pool's counts per band; no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
+- **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run; the exact n is computed at S8c from B's counts.

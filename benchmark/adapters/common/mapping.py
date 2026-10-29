@@ -49,9 +49,10 @@ B3 and B4 as if every record a model wrote were absent: of the document's record
 those stamped `written_by` exactly `python` are kept (an unstamped record is a model's,
 section 3 item 6), and each item is labelled by the same lines on what remains, so an
 item a model-written record decided takes the next line, else silence; the run-failure
-line, the D-066 rules, the over-context exclusion, the rule-id map and the pairing-map
-refusal entries (Python's own map, not records) are unchanged. For B0, B1 and B2, S-8
-equals the primary analysis, and its output says so.
+line, the D-066 rules, the over-context exclusion, the setup-failure rule, the rule-id map
+and the pairing-map refusal entries (Python's own map, not records) are unchanged; the
+unattached findings under S-8 are Python's alone. For B0, B1 and B2, S-8 equals the
+primary analysis, and its output says so (preregistration section 4, word for word).
 
 One setup-failure rule for B1 and B3 alike (D-084, DEV-014): a B1 document whose output
 folder holds `b1_setup_failure.json` (bare_model.py writes it when a call runs out of
