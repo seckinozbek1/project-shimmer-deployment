@@ -609,3 +609,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Forecast.** 15.4 + 3 x 8 + 3 x 2 = 45 minutes x 1.29 x 1.3 = 1.27 USD; cap 1.90. S5 actual 9.65 + 1.27 = 10.92, within 24 (R17).
 - **Acceptance declared before the run.** D-068 stays only if the clean twin shows no D-068 record scored as a false positive beyond what L1-era runs showed, and recall on the clinical sheet is not below L1's; otherwise D-068 is reverted (its merge is reversible) and the defect deferred under P9 (e), recorded.
 - **Rules.** D-067, P1, P6, P11 (c), R17.
+
+## D-070. D-068 verified (L5v): it stays
+
+- **When, stage.** 2026-10-29 04:14 +0300 (system clock), S5, after L5v (61 minutes, 1.31 USD; S5 actual now 10.96 of 24).
+- **Measured (exposed tests, development; one run each).** Clinical sheet: execution passed; location recall 5 of 5, reason confirmed 4 of 5, false positives 0 (L1: 4 of 5, 4 of 5, 0); 1 judging call on an uncomputable plan, its answer kept as a model's record. Device log, flawed: location 3 of 10, reason confirmed 2 of 10, false positives 0; 26 such calls, 3 answers kept; semantically incomplete (PROCESSOR contract). Clean twin: false positives 0; 32 such calls, 8 answers kept as model's records; the scorer lists model-only relations apart (missing_field 11, sum_mismatch 9; written by a model, not confirmed, not counted); semantically incomplete.
+- **D-069's declared acceptance applied.** No D-068 record was scored as a false positive and the clinical recall is not below L1's, so D-068 stays. The clean twin's model-only relations are reported, not hidden, in the S5 report (P1, HONEST-OUTPUT-A).
+- **Rules.** D-068, D-069, P1.
