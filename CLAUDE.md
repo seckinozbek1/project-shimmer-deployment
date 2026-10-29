@@ -635,7 +635,9 @@ processing swarm governed by an append-only constitution.
   every model finding carries `MODEL_FINDING_MARK`; a sealed run (a marker walk that fails closed)
   shows counts and timings only and its per-flaw routes answer 403; only `/health` and `/console`
   answer without a token (FastAPI's own documentation routes are off). The Annex B.4 reasons live
-  once, in `scripts/run_report_text.py`. Checks 285 to 293.
+  once, in `scripts/run_report_text.py`. The screenshots in `docs/loop/ui/` are rendered by
+  `tools/console_screenshots.py` from the committed fixture only (replies under a fixed clock
+  inside the run window); two renders are byte-identical. Checks 285 to 293.
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the

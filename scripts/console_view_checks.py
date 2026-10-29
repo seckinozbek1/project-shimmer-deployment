@@ -46,6 +46,10 @@ SEALED_FORBIDDEN = ("u03-zone-beta", "u02-zone-alpha", "u01-zone-alpha", "u02-zo
                     "Location and reason-confirmed recall", "recall row value")
 # Text the replies written at run time carry; no route or view may show it.
 REPLY_SECRETS = ("payload text that the console never shows", "reply text that the console never shows")
+# Fixed clock for those replies and their outcomes, inside the fixture run's
+# recorded window (status.json and audit/run_completion.json: 09:00:05 to 09:41:10).
+REPLY_TIMES = ("2026-10-29T09:06:12+00:00", "2026-10-29T09:18:40+00:00", "2026-10-29T09:33:05+00:00")
+OUTCOME_TIMES = ("2026-10-29T09:06:13+00:00", "2026-10-29T09:18:41+00:00", "2026-10-29T09:39:50+00:00")
 # The mark as written in finding_record, read once at import so a neutralised mark
 # is compared with the real one, never with itself.
 MARK = finding_record.MODEL_FINDING_MARK
@@ -62,9 +66,28 @@ def _has_fastapi():
     return importlib.util.find_spec("fastapi") is not None
 
 
+def _fixture_json(*parts):
+    return json.loads(FIXTURE_RUNS.parent.joinpath(*parts).read_text(encoding="utf-8"))
+
+
+def run_window():
+    """(start, end) of the fixture run as its status.json records it."""
+    status = _fixture_json("runs", RUN_ID, "status.json")
+    return status["started_at"], status["completed_at"]
+
+
 def _write_replies(run_dir):
-    """Three calls through the real writer, with outcomes, into a temporary copy."""
+    """Three calls through the real writer, with outcomes, into a temporary copy.
+    The writer's clock is held to fixed times inside the fixture run's recorded
+    window (REPLY_TIMES, then OUTCOME_TIMES, in call order), so every copy carries
+    the same bytes and no record is stamped with the time it was written."""
     import reply_records
+    stamps = iter(REPLY_TIMES + OUTCOME_TIMES)
+    with patch.object(reply_records, "_now", lambda: next(stamps)):
+        _write_reply_records(reply_records, run_dir)
+
+
+def _write_reply_records(reply_records, run_dir):
     ctx = SimpleNamespace(run_dir=str(run_dir), run_id=RUN_ID)
     reply_records.write(ctx, agent="PROCESSOR", call_id="call-0001", backend="local",
                         model_id="fixture-model", model_mode="adapter", payload=REPLY_SECRETS[0],
@@ -87,26 +110,36 @@ def _copy_fixture(runs_dir):
     return run_dir
 
 
+def _times_inside_the_run_window():
+    """The fixture's run files agree on one window and every fixed reply and
+    outcome time falls inside it."""
+    start, end = run_window()
+    completion = _fixture_json("runs", RUN_ID, "audit", "run_completion.json")
+    telemetry = [json.loads(line) for line in FIXTURE_RUNS.joinpath(RUN_ID, "logs", "model_telemetry.jsonl")
+                 .read_text(encoding="utf-8").splitlines() if line.strip()]
+    marks = {row.get("event"): row.get("utc") for row in telemetry}
+    return (completion.get("started_at") == start and completion.get("finished_at") == end
+            and marks.get("pipeline_start") == start and marks.get("pipeline_end") == end
+            and all(start <= t <= end for t in REPLY_TIMES + OUTCOME_TIMES))
+
+
 def _final_status_rows():
-    return {"Purpose": "console fixture", "Sealed or exposed": "Sealed test",
-            "Date and time (UTC)": "2026-10-29T09:00:00+00:00", "Code commit": "f" * 40,
-            "Location and reason-confirmed recall": "recall row value",
-            "Attribution": "recall row value", "Cost": "0.1234 dollars estimated",
-            "Role separation": "fixture sentence"}
+    """The report rows of the committed fixture session's FINAL_STATUS.json."""
+    return _fixture_json("session", "FINAL_STATUS.json")["report"]
 
 
 def _make_session(folder, exposure):
-    """A cloud session folder around a run: run_record, seal, FINAL_STATUS, manifest."""
+    """A cloud session folder around a run, from the committed fixture session
+    (scripts/fixtures/console/session/): its FINAL_STATUS.json and
+    execution_manifest.json copied as they are, its run_record.json with the
+    exposure added, and a seal.json carrying only the exposure."""
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "run_record.json").write_text(json.dumps({"purpose": "console fixture", "exposure": exposure}),
-                                            encoding="utf-8")
+    session = FIXTURE_RUNS.parent / "session"
+    record = dict(_fixture_json("session", "run_record.json"), exposure=exposure)
+    (folder / "run_record.json").write_text(json.dumps(record), encoding="utf-8")
     (folder / "seal.json").write_text(json.dumps({"exposure": exposure}), encoding="utf-8")
-    (folder / "FINAL_STATUS.json").write_text(json.dumps({
-        "report": _final_status_rows(), "within_hard_ceiling": True,
-        "cost_estimates": {"infrastructure_estimate": 0.1234, "model_api_estimate": 0,
-                           "combined_estimate": 0.1234}}), encoding="utf-8")
-    (folder / "execution_manifest.json").write_text(json.dumps({"soft_budget_usd": 2.0,
-                                                                "hard_ceiling_usd": 3.0}), encoding="utf-8")
+    for name in ("FINAL_STATUS.json", "execution_manifest.json"):
+        shutil.copy2(session / name, folder / name)
 
 
 @contextlib.contextmanager
@@ -168,10 +201,14 @@ def check_replies_route():
                   and all(set(console_views.REPLY_FIELDS) <= set(c) for c in calls)
                   and calls[0]["payload_bytes"] == len(REPLY_SECRETS[0].encode()) and calls[2]["reply_bytes"] is None
                   and not any(s in text for s in REPLY_SECRETS) and '"text"' not in text
-                  and body.get("first_call_at") and body.get("exposure") == "exposed")
+                  and body.get("exposure") == "exposed"
+                  and [c.get("timestamp") for c in calls] == list(REPLY_TIMES)
+                  and body.get("first_call_at") == REPLY_TIMES[0] and body.get("last_call_at") == REPLY_TIMES[-1]
+                  and _times_inside_the_run_window())
             return ("PASS" if ok else "FAIL",
                     "GET /runs/{run_id}/replies: 401 without a token; 3 calls with metadata, sizes and the latest "
-                    "outcome, counts by outcome, no reply or payload text")
+                    "outcome, counts by outcome, no reply or payload text; call times are the fixed fixture times, "
+                    "inside the run window that status.json, audit/run_completion.json and the telemetry agree on")
         return _proved("replies_route", observe, verdict,
                        lambda: patch.object(console_views, "REPLY_FIELDS", console_views.REPLY_FIELDS + ("reply",)),
                        "the projection widened to carry the reply record")
@@ -594,11 +631,9 @@ def _views_observation(html_path):
                     cases.append({"fn": fn, "lang": lang, "data": projections[fn]})
                     keys.append("%s/%s/%s" % ("sealed" if sealed else "exposed", lang, fn))
         rendered = _render(html_path, cases)
-    # The replies are written afresh for every observation; their times are the
-    # only part that differs between two observations of the same code.
-    import re
-    stamp = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?\+00:00")
-    return {key: stamp.sub("<time>", html) for key, html in zip(keys, rendered)}
+    # The replies are written afresh for every observation under the fixed fixture
+    # clock (REPLY_TIMES), so two observations of the same code are identical.
+    return dict(zip(keys, rendered))
 
 
 def _views_verdict(views):
@@ -629,8 +664,29 @@ def _views_verdict(views):
     exposed = views["exposed/en/repliesHtml"]
     if "3 model calls were saved" not in exposed or "not promoted: 1" not in exposed:
         failures.append("replies view: counts by outcome missing")
+    # At phone width the calls table stacks each row into labelled lines, so every
+    # cell carries its column's label (7 columns, 3 calls).
+    if 's7-stack' not in exposed or exposed.count(' data-label="') != 21:
+        failures.append("replies view: the calls table does not label every cell for the phone layout")
     if views["exposed/en/switchesHtml"].count("<li>") != 2:
         failures.append("switches view: the two B.4 reasons are not listed")
+    # DS7-8: the B.4 reasons are standing agent policy, shown on a sealed run too,
+    # under a note that names precisely what is withheld (one text, both languages).
+    import html as html_module
+    if views["sealed/en/switchesHtml"].count("<li>") != 2:
+        failures.append("sealed switches view: the two B.4 reasons are not listed")
+    note_tr = localization.text(run_report_text.SEALED_NOTE, "tr")
+    if note_tr == run_report_text.SEALED_NOTE:
+        failures.append("the sealed note has no Turkish row")
+    for lang, note in (("en", run_report_text.SEALED_NOTE), ("tr", note_tr)):
+        shown = html_module.unescape(views["sealed/%s/switchesHtml" % lang])
+        if note not in shown:
+            failures.append(lang + ": the sealed note is not the shared SEALED_NOTE text")
+    if "the reasons given for findings" not in run_report_text.SEALED_NOTE:
+        failures.append("the sealed note does not name the findings' reasons as what is withheld")
+    page = (ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8")
+    if "var SEALED_NOTE_TEXT = %s;" % json.dumps(run_report_text.SEALED_NOTE) not in page:
+        failures.append("console.html's fallback sealed note differs from run_report_text.SEALED_NOTE")
     if "TCR-001" not in views["exposed/en/testChangesHtml"]:
         failures.append("test change requests page: no entry")
     if "u01-zone-alpha" not in views["exposed/en/roundReuseHtml"]:
@@ -638,7 +694,8 @@ def _views_verdict(views):
     return ("FAIL" if failures else "PASS",
             "; ".join(failures) or "the six views render the projections in English and Turkish; the model "
             "finding shows the mark first in both languages; a sealed view shows its note and no id, rule, "
-            "reason or text; no reply text anywhere; every new label has a Turkish row")
+            "finding reason or text; the sealed switches view keeps the two B.4 reasons under the shared note "
+            "(DS7-8) in both languages; no reply text anywhere; every new label has a Turkish row")
 
 
 def check_console_views():

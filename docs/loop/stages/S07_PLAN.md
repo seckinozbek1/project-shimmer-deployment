@@ -97,3 +97,9 @@ Drive `shimmer.bat` (through `cmd /c` with piped input ending in `Q`), `shimmer.
 11. **Two lanes (DS7-6).** The spec gives console and launchers to one UI agent (IV.5). They are split into two lanes because they share no file and can run in parallel (P19, IV.5 "parallel where it helps"); Class R, recorded.
 12. **Final pass.** After S6 merges, the launchers are walked again together with the views.
 13. **Screenshot checker.** The checker receives the PNGs together with the fixture files they were rendered from.
+
+## Revisions during the first pass (2026-10-29)
+
+- **Lane table.** The UI row also owns `scripts/console_views.py` (the projections; a separate module because check 261 runs the multi-round route's source in a bare namespace), `scripts/run_report_text.py`, `tools/analyze_ordinary_final_run.py` (import only), `tools/console_screenshots.py` (the renderer) and `scripts/fixtures/console/session/`. Fix lane `lane/s07-fix1` closed the screenshot checker's four items.
+- **DS7-7.** A sealed run's existing per-flaw routes (`/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, both `/deliverables`, `/log`) answer 403, beside `POST /evidence`: spec item 2 says the console never shows a sealed test's per-flaw results, and these routes would. A `seal.json` with no exposure field reads as sealed (fails closed; pre-S2 seals carry no field). Class R, P18.
+- **DS7-8.** The Annex B.4 reasons for withholding FACT_CHECKER are a standing, repository-wide agent policy that Annex B.4 requires in every run report, sealed runs included; they are not a test's per-flaw reasons, so the sealed switches view keeps them, and the sealed note names precisely what is withheld (finding text, unit ids, rule ids, the reasons given for findings, per-flaw results). Class R.
