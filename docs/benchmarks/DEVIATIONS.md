@@ -262,3 +262,7 @@ Each entry has these fields, in this order:
 - **What it says**: that note's "8 kept model-written records" counts the answers kept under DEV-002 (8 of 32 judging calls on uncomputable plans). In L5v the clean twin carried 10 model-written records in all, 8 of them those kept answers, and 0 Python records, besides the 20 model-only relations (missing_field 11, sum_mismatch 9). Stated exactly: 8 answers kept, 10 model-written records.
 - **What it changes**: nothing in the frozen design; the counts are those of the S5 report (item 7 (a) and the limitation below item 8) and open item 36.
 - **Holdout result seen**: no.
+
+### Dated note (2026-10-29 23:39 +0300, D-089): reporting duties on B's synthetic tests, entered before any sample is drawn
+
+No rule of the frozen text changes. The S8 report adds, beside the preregistered measures and labelled as reporting duties: location recall on rules with exactly one planted flaw, for every arm; B3's attributed count beside B1's located count; the count of B1 FLAG items whose quotes locate no unit and of quotes matching several units; the count of B1 synthetic location disagreements between C and the adapter with the unit-text reading reported; and an exploratory B1 location under section 3.2's two-way containment, labelled not preregistered.
