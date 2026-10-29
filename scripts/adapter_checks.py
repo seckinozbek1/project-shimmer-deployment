@@ -91,6 +91,12 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              view (score --paired-with) for both arms; reply records that fit change no
              label; B4 is not checked; the saved L4b FinDVer run reads 3 such calls where
              external/ holds it (skipped otherwise). Each by neutralise, fail, restore, pass
+  s8         sensitivity S-8 (DEV-012): B3 and B4 as if every record a model wrote were
+             absent (only `written_by` exactly `python` kept, an unstamped record a
+             model's): an item a model's record decided takes the next line of section
+             5.1 (a Python ok, a Python refusal), else silence; a Python-decided item, a
+             run failure and an over-context exclusion unchanged; B0, B1 and B2 equal
+             their primary in labels and score and say so. Neutralise, fail, restore, pass
   dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
              opaque id only; sorted by words then id; evenly spaced positions; each
              replacement listed), the build restricted to chosen documents, B2 on it,
@@ -1337,7 +1343,7 @@ class MappingChecks(_Case):
         cases = _json(_fixture("contractnli", "mapping_cases.json"))
         items, runs, b1 = _materialise(cases, self.root / "s5")
         b2 = c["cli"].label(_adapter("contractnli"), items, "B2", runs)
-        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
+        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
         for arm, folder in (("B1", b1), ("B0", None)):
             labels = c["cli"].label(_adapter("contractnli"), items, arm, folder)
             self.assertEqual([r["class"] for r in labels["S-5"]["labels"]],
@@ -1567,7 +1573,7 @@ class MetricChecks(_Case):
                token_counter=WordCounter(100))
         items = self.root / "cut" / "items.json"
         result = c["cli"].score(adapter, c["cli"].label(adapter, items, "B0"), self.root / "cut")
-        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "primary"])
+        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "S-8", "primary"])
         self.assertEqual((result["primary"]["decisions"], result["S-4"]["decisions"]), (4, 3))
         self.assertEqual((result["primary"]["items_evidence_beyond_cut"],
                           result["S-4"]["items_evidence_beyond_cut"]), (1, 0))
@@ -1918,7 +1924,7 @@ class RecordReaderChecks(_Case):
                 by_bus = c["cli"].label(_adapter(name), items, arm, bus_runs)
                 self.assertEqual(_label_view(by_bus["primary"]), _label_view(by_review["primary"]), name + " " + arm)
                 self.assertTrue(by_bus["primary"]["labels"], name)
-                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
+                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
             with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
                 with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
                     c["cli"].label(_adapter(name), items, "B3", bus_runs)
@@ -2014,7 +2020,7 @@ class IncompleteRunChecks(_Case):
         path = self.root / "items.json"
         path.write_text(json.dumps({"items": items}), encoding="utf-8")
         labels = c["cli"].label(_adapter("contractnli"), path, "B3", root)
-        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "primary"])
+        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
         b0 = c["cli"].label(_adapter("contractnli"), path, "B0")
         self.assertEqual([r["class"] for r in b0["S-6"]["labels"]], [r["class"] for r in b0["primary"]["labels"]])
 
@@ -2307,7 +2313,7 @@ class OverContextChecks(_Case):
                     (over, 3, {"LEGAL_ANALYST": 2, "SPEECH_ACT_TAGGER": 1})]:
                 problems.append("listed %s" % listed)
             # every sensitivity keeps the exclusion except S-7, which makes it ABSTAIN
-            for name in ("S-1", "S-2", "S-3", "S-5", "S-6"):
+            for name in ("S-1", "S-2", "S-3", "S-5", "S-6", "S-8"):
                 if {r["basis"] for r in labels[name]["labels"] if r["document_id"] == over} != {"over_context_excluded"}:
                     problems.append(name + " lost the exclusion")
             s7 = {(r["class"], r["basis"]) for r in labels["S-7"]["labels"] if r["document_id"] == over}
@@ -2331,7 +2337,7 @@ class OverContextChecks(_Case):
             paired = with_b3["paired"]
             if (paired["documents"], paired["left_out_over_context"]["other_arm"],
                     paired["analyses"]["primary"]["documents"], sorted(paired["analyses"])) != (
-                    len(fits), [over], len(fits), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "primary"]):
+                    len(fits), [over], len(fits), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-8", "primary"]):
                 problems.append("B0 paired %s" % {k: v for k, v in paired.items() if k != "analyses"})
             back = cli.score(adapter, labels, self.root / "b", paired_with=b0)["paired"]
             if (back["documents"], back["left_out_over_context"]["this_arm"],
@@ -2391,6 +2397,165 @@ class OverContextChecks(_Case):
                          (3, {"LEGAL_ANALYST": 1, "SPEECH_ACT_TAGGER": 1, "VERIFIER": 1}, 0))
         with mock.patch.object(m, "OVER_CONTEXT_FIELD", "never_written"):
             self.assertEqual(m.read_over_context(run)["over_context_calls"], 0)
+
+
+class S8Checks(_Case):
+    """Sensitivity S-8 (DEV-012), on hand-written synthetic B3 runs: B3 and B4 scored as if
+    every record written by a model were absent. Only records stamped `written_by` exactly
+    `python` are kept (an unstamped record is a model's, section 3 item 6) and section 5.1's
+    lines apply unchanged to what remains: an item a model-written record decided takes the
+    next line (a Python ok record, a Python refusal), else silence; a Python-decided item,
+    a run failure and an over-context exclusion are unchanged; B0, B1 and B2 equal their
+    primary and say so. Neutralise, fail, restore, pass."""
+
+    RULES = ["CONV-CNLI-NDA-%d" % k for k in range(1, 7)]
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _items(self, doc, rules):
+        return [{"item_id": "i-%s-%d" % (doc, k), "document_id": doc, "rule_id": rule, "benchmark": "contractnli"}
+                for k, rule in enumerate(rules)]
+
+    def _runs(self):
+        r = self.RULES
+        python = [_rec("p1", r[1], "ok"), _rec("p2", r[2], "irregular"), _rec("p3", r[3], "ok"),
+                  _rec("p5", r[5], "irregular", confidence="UNCERTAIN")]
+        model = [_rec("m0", r[0], "irregular"), _rec("m1", r[1], "irregular"), _rec("m2", r[2], "ok"),
+                 _rec("m4", r[4], "irregular", confidence="UNCERTAIN"), _rec("m5", r[5], "irregular")]
+        root = self.root / "s8"
+        _incomplete_run(root, "dmix", completion=_completion(), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dmix", python, "paired", "python"),
+            _bus_line("PRACTICE_AUDITOR", "dmix", model, _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32)])
+        # a run failure and an over-context exclusion stay what they are under S-8
+        _incomplete_run(root, "dfail", completion=_completion("stopped", reached_end=False), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dfail", [_rec("m9", r[0], "irregular")], _MODEL_BACKEND, _MODEL_ID)])
+        over = _incomplete_run(root, "dover", completion=_completion(), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dover", [_rec("m8", r[0], "irregular")], _MODEL_BACKEND, _MODEL_ID)])
+        _reply_record(over, 1, "LEGAL_ANALYST", _ctx(36413, 32768))
+        items = self._items("dmix", r) + self._items("dfail", r[:1]) + self._items("dover", r[:1])
+        path = self.root / "items.json"
+        path.write_text(json.dumps({"items": items}), encoding="utf-8")
+        return root, path
+
+    # primary and S-8, by item: class and basis
+    PRIMARY = {"i-dmix-0": ("FLAG", "irregular"), "i-dmix-1": ("FLAG", "irregular"),
+               "i-dmix-2": ("FLAG", "irregular"), "i-dmix-3": ("CLEAR", "ok"),
+               "i-dmix-4": ("UNDECIDED", "refusal"), "i-dmix-5": ("FLAG", "irregular"),
+               "i-dfail-0": ("ABSTAIN", "run_failure"), "i-dover-0": ("ABSTAIN", "over_context_excluded")}
+    S8 = dict(PRIMARY, **{
+        "i-dmix-0": ("CLEAR", "silent"),          # a model's irregular record alone: silence
+        "i-dmix-1": ("CLEAR", "ok"),              # a model's irregular over Python's ok: the ok
+        "i-dmix-4": ("CLEAR", "silent"),          # a model's refusal alone: silence
+        "i-dmix-5": ("UNDECIDED", "refusal")})    # a model's irregular over Python's refusal
+
+    def test_s8_drops_every_model_written_record(self):
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        root, path = self._runs()
+
+        def view(result):
+            return {r["item_id"]: (r["class"], r["basis"]) for r in result["labels"]}
+
+        def body():
+            problems = []
+            for arm in ("B3", "B4"):
+                labels = cli.label(adapter, path, arm, root)
+                want, want8 = dict(self.PRIMARY), dict(self.S8)
+                if arm == "B4":     # B4 is not checked for the context (section 5.3)
+                    want["i-dover-0"], want8["i-dover-0"] = ("FLAG", "irregular"), ("CLEAR", "silent")
+                if view(labels["primary"]) != want:
+                    problems.append("%s primary %s" % (arm, view(labels["primary"])))
+                s8 = labels["S-8"]
+                if view(s8) != want8:
+                    problems.append("%s S-8 %s" % (arm, view(s8)))
+                if (s8["analysis"], s8.get("s8_applies")) != ("S-8", True):
+                    problems.append("%s S-8 header %s" % (arm, (s8["analysis"], s8.get("s8_applies"))))
+                # the unattached findings under S-8 are Python's alone
+                stray = [d["unattached"]["count"] for d in s8["documents"] if d["document_id"] == "dmix"]
+                if stray != [0]:
+                    problems.append("%s S-8 unattached %s" % (arm, stray))
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+        self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s8", lambda spec, result: dict(
+            m._alternative(spec, result, "s3", "S-8", result["documents"]), s8_applies=True)))
+
+    def test_an_unstamped_record_is_a_models(self):
+        # The bus reader stamps every record it reads, so an unstamped record is held on the
+        # run as the record reader hands it over: dropped under S-8, like any stamp that is
+        # not exactly `python`.
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rule = self.RULES[0]
+        base = {"failure": False, "pairing_refusals": [], "judging_calls": [], "rule_map": {},
+                "rule_map_status": "missing", "completeness": {}}
+        cases = {
+            "unstamped": ([_rec("u1", rule, "irregular")], ("CLEAR", "silent")),
+            "case": ([_rec("u2", rule, "irregular", written_by="Python")], ("CLEAR", "silent")),
+            "unstamped_over_python_ok": ([_rec("u3", rule, "irregular"),
+                                          _rec("u4", rule, "ok", written_by="python")], ("CLEAR", "ok")),
+            "python": ([_rec("u5", rule, "irregular", written_by="python")], ("FLAG", "irregular"))}
+
+        def body():
+            problems = []
+            for name, (recs, want) in cases.items():
+                run = dict(base, records=recs)
+                primary = m.classify(spec, rule, run)
+                got = m.classify(spec, rule, m.python_only_view(run))
+                if (primary["class"], primary["basis"]) != ("FLAG", "irregular"):
+                    problems.append("%s primary %s" % (name, primary["class"]))
+                if (got["class"], got["basis"]) != want:
+                    problems.append("%s S-8 %s" % (name, (got["class"], got["basis"])))
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "is_computed", lambda r: r.get("written_by") != "model"))
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+
+    def test_other_arms_equal_their_primary_and_say_so(self):
+        # B0, B1 and B2: S-8 equals the primary, in the labels and in the score, and says so;
+        # for B2 even where its review_data.json holds a record no python stamp claims.
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = m.read_items(items_path)
+        runs = self.root / "b2"
+        b1 = self.root / "b1"
+        for doc, doc_items in m.by_document(items).items():
+            folder = runs / doc / "deliverables" / doc
+            folder.mkdir(parents=True)
+            (runs / doc / "audit").mkdir()
+            (runs / doc / "audit" / "run_completion.json").write_text(json.dumps(_completion()), encoding="utf-8")
+            (folder / "review_data.json").write_text(json.dumps({"findings": [
+                _rec("b1", doc_items[0]["rule_id"], "irregular")]}), encoding="utf-8")
+            (b1 / doc / "labels").mkdir(parents=True)
+            for item in doc_items:
+                (b1 / doc / "labels" / (item["item_id"] + ".json")).write_text(
+                    json.dumps({"label": "Contradiction", "evidence": ""}), encoding="utf-8")
+
+        def body():
+            problems = []
+            for arm, folder in (("B0", None), ("B1", b1), ("B2", runs)):
+                labels = cli.label(adapter, items_path, arm, folder)
+                same = [(r["class"], r["basis"]) for r in labels["S-8"]["labels"]] == [
+                    (r["class"], r["basis"]) for r in labels["primary"]["labels"]]
+                if not same or labels["S-8"].get("s8_applies") is not False \
+                        or labels["S-8"].get("note") != m.S8_NOTE_EQUAL:
+                    problems.append(arm + " S-8 differs or does not say so")
+                scored = cli.score(adapter, labels, self.root / "b")
+                if scored["S-8"]["headline"] != scored["primary"]["headline"] \
+                        or scored["S-8"].get("note") != m.S8_NOTE_EQUAL:
+                    problems.append(arm + " S-8 score differs or does not say so")
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ("B2", "B3", "B4")))
 
 
 # ---------------------------------------------------------------------------
@@ -2774,6 +2939,12 @@ GROUPS = {
                                        "of the paired view for both arms); without the flag B3 is "
                                        "labelled as with no reply records; B4 is not checked "
                                        "(section 5.3, D-078; neutralise, fail, restore, pass)"),
+    "s8": (S8Checks, "S-8 (DEV-012) scores B3 and B4 as if every model-written record were "
+                     "absent: an item a model's record decided takes Python's ok or refusal "
+                     "record, else silence; an unstamped record or a stamp not exactly python "
+                     "is dropped; a Python-decided item, a run failure and an over-context "
+                     "exclusion are unchanged; B0, B1 and B2 equal their primary and say so "
+                     "(neutralise, fail, restore, pass)"),
     "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
                              "sorts by words then id, takes evenly spaced positions (the median "
                              "for one) and lists each replacement; the restricted build holds only "
@@ -2800,7 +2971,7 @@ def check():
                              "back as the input format and as Shimmer splits them, cut per document, "
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
-                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7; B3 "
+                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
                              "excluded on a call over the model's context), read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "

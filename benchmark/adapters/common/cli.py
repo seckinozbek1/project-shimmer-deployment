@@ -18,8 +18,9 @@
 The cut budget is computed per document (section 5.3) from the bundle's own conventions
 with the B1 prompt (common/prompt.py). A token counter file defines `count(text) -> int`
 and `count_prompt(system, user) -> int` with the main reading agent's own tokenizer and
-chat template. `label` writes the primary labels and the S-1, S-2, S-3, S-5, S-6 and S-7
-analyses in one file; `score` scores each of them, and S-4 from the primary labels (the items
+chat template. `label` writes the primary labels and the S-1, S-2, S-3, S-5, S-6, S-7 and S-8
+analyses in one file (S-8, DEV-012: B3 and B4 as if every model-written record were absent;
+for B0, B1 and B2 it equals the primary and says so); `score` scores each of them, and S-4 from the primary labels (the items
 whose marked evidence lies wholly in the kept text). A B3 document whose run made a model
 call over its model's context is excluded (section 5.3, D-078): its items carry basis
 over_context_excluded, the labels file lists and counts them (`over_context`), every
@@ -268,7 +269,8 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
             "S-3": mapping.sensitivity_s3(adapter.SPEC, primary),
             "S-5": mapping.sensitivity_s5(adapter.SPEC, primary),
             "S-6": mapping.sensitivity_s6(adapter.SPEC, primary),
-            "S-7": mapping.sensitivity_s7(adapter.SPEC, primary)}
+            "S-7": mapping.sensitivity_s7(adapter.SPEC, primary),
+            "S-8": mapping.sensitivity_s8(adapter.SPEC, primary)}
 
 
 PAIRED_KEY = "paired"
@@ -285,6 +287,8 @@ def _scored(adapter, labels: dict, bundles_dir, gone=()) -> dict:
         if gone:
             view = mapping.restrict(spec, view, gone)
         out[name] = metrics.score_arm(spec, view, bundles_dir, adapter.headline)
+        if "s8_applies" in result:     # S-8 (DEV-012) says whether it differs from the primary
+            out[name]["s8_applies"], out[name]["note"] = result["s8_applies"], result.get("note")
     if "primary" in labels:
         view = mapping.scored_view(spec, labels["primary"])
         if gone:
