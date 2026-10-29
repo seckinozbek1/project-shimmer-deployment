@@ -31,3 +31,19 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 round 3) | `bdd31b284caa17c127a28b69223579ad41868e4a44ed351888af29ad0c4c0167` | 2026-10-27 18:34 +0300, loop/s03 (D-050) |
 | `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (S3 tie-break) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 tie-break) | `2e65a790d105a43da04ab4b2decc9488131184e2f08489cd729a5e00295c0448` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: D-066 incomplete runs and D-068 model-written records on uncomputable plans; row added late, at 2026-10-29 15:34 +0300, by the restarted lead under R14) | `c00b47c884382fa8aa74c2d5e501b302f450166c43260c0551cdf8f64bf0ae9e` | changed in `d18cf93` (2026-10-29 02:29 +0300), loop/s05 (D-068) |
+
+## The main reading agent pinned for B1 and the cut rule (preregistration section 12 item 8; S5 plan item 0.1; D-078)
+
+| Field | Value |
+|---|---|
+| Agent | PROCESSOR, backend `local_producer` (the sealed local final configuration); the registry's cloud model id is used by no arm |
+| Model id | `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` |
+| Revision | `bdd404162d94997f390efbfa660eb3f21cbbc81d` |
+| Weights SHA-256 (`model.safetensors`) | `99b85155b7bb40344d8c3938c8ec1147b27028804bca5d2e5559cb8e6533747d` |
+| B1 checkpoint (item 12, D-078) | tuned: adapter checkpoint 168, SHA-256 `8354d6545272399ea6771f1a6b560309e882fd7348f5c2be9cbd1bab01160703` |
+| Context | 32,768 tokens |
+| Output allowance | 2,048 tokens (`pipeline PRODUCTION_MAX_TOKENS`) |
+| Decoding policy | `tuning/producer_v3/evaluation_protocol.json`, SHA-256 (LF) `51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a` |
+| Attention and prefill (item 13, D-063) | sdpa pinned to the memory-efficient backend, prefilled in one shot |
+| Recorded | 2026-10-29 15:34 +0300, loop/s05, before any holdout sample |
