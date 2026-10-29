@@ -150,13 +150,62 @@ def inst_finder_setting(files, value):
         return scope['_inst_finder_switch'](folder)
 
 
-def seal_environment(files, value):
-    """The runtime environment sealed into the manifest; an unratified `off` refuses here."""
+def producer_attention_setting(files, attention=None, decision=None, prefill_chunk=None, prefill_decision=None):
+    """SHIMMER_PRODUCER_ATTENTION and SHIMMER_PRODUCER_PREFILL_CHUNK (and their decisions) as
+    the BOUND final_models reads them (D-058, D-061, D-063): sdpa pinned to the memory-efficient
+    backend and one-shot prefill, both under D-063, when the operator names none; eager or
+    chunked prefill only with the recorded decision (D-NNN) that asks for it, a measurement
+    run. The rules are not
+    copied: `producer_attention` and `producer_prefill` are read from the bound
+    scripts/final_models.py and evaluated, so the seal refuses exactly what the instance would
+    refuse. Both settings are written explicitly so the instance never runs an ambient value;
+    the runner replaces every SHIMMER_ variable with the sealed ones."""
+    require('scripts/final_models.py' in files, 'Frozen model source absent from the bound commit: scripts/final_models.py')
+    source = files['scripts/final_models.py'].decode('utf-8-sig')
+    tree = ast.parse(source)
+    names = {'producer_attention', 'attention_setting', 'producer_prefill', 'prefill_setting', 'require',
+             'PRODUCER_ATTENTION_ENV', 'PRODUCER_ATTENTION_DECISION_ENV', 'PRODUCER_ATTENTION_DEFAULT',
+             'ATTENTION_DECISION_DEFAULT', 'EAGER', 'SDPA', 'PRODUCER_ATTENTIONS', 'SDPA_BACKEND', 'DECISION_ID',
+             'PRODUCER_PREFILL_ENV', 'PRODUCER_PREFILL_DECISION_ENV', 'PREFILL_CHUNK_DEFAULT', 'PREFILL_DEFAULT',
+             'PREFILL_DECISION_DEFAULT', 'E_CHUNK_TOKENS', 'ONE_SHOT', 'CHUNKED'}
+    keep = [n for n in tree.body if (isinstance(n, ast.FunctionDef) and n.name in names) or
+            (isinstance(n, ast.Assign) and all(isinstance(t, ast.Name) and t.id in names for t in n.targets))]
+    defined = {n.name for n in keep if isinstance(n, ast.FunctionDef)}
+    require('producer_attention' in defined, 'The bound final_models has no producer attention setting (it predates D-058)')
+    require('producer_prefill' in defined, 'The bound final_models has no producer prefill setting (it predates D-061)')
+    scope = dict(os=os, re=re)
+    exec(compile(ast.Module(body=keep, type_ignores=[]), 'bound_final_models_attention', 'exec'), scope)
+    environ = {}
+    for key, value in (('PRODUCER_ATTENTION_ENV', attention), ('PRODUCER_ATTENTION_DECISION_ENV', decision),
+                       ('PRODUCER_PREFILL_ENV', prefill_chunk), ('PRODUCER_PREFILL_DECISION_ENV', prefill_decision)):
+        if value is not None:
+            environ[scope[key]] = str(value)
+    try:
+        record = scope['producer_attention'](environ)
+    except RuntimeError as exc:
+        raise RuntimeError('Refuse to seal the producer attention: ' + str(exc)) from None
+    try:
+        prefill = scope['producer_prefill'](environ)
+    except RuntimeError as exc:
+        raise RuntimeError('Refuse to seal the producer prefill: ' + str(exc)) from None
+    sealed = {scope['PRODUCER_ATTENTION_ENV']: record['attention_implementation']}
+    if record['attention_decision'] is not None:
+        sealed[scope['PRODUCER_ATTENTION_DECISION_ENV']] = record['attention_decision']
+    sealed[scope['PRODUCER_PREFILL_ENV']] = (scope['ONE_SHOT'] if prefill['prefill'] == scope['ONE_SHOT']
+                                             else str(prefill['prefill_chunk_tokens']))
+    sealed[scope['PRODUCER_PREFILL_DECISION_ENV']] = prefill['prefill_decision']
+    return sealed
+
+
+def seal_environment(files, value, attention=None, attention_decision=None, prefill_chunk=None, prefill_decision=None):
+    """The runtime environment sealed into the manifest; an unratified `off` refuses here, and
+    so does a producer attention or prefill the bound final_models would refuse (D-058, D-061)."""
     record = inst_finder_setting(files, value)
     require(not record['refusal'], 'Refuse to seal SHIMMER_INST_FINDER=off: no ratified amendment in the bound '
             'constitution names INST_FINDER and SHIMMER_INST_FINDER')
     return dict(SHIMMER_MODEL_MODE='final',SHIMMER_BACKEND_PROFILE='local',
         SHIMMER_INST_FINDER=record['setting'],
+        **producer_attention_setting(files, attention, attention_decision, prefill_chunk, prefill_decision),
         CUBLAS_WORKSPACE_CONFIG=':4096:8',PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True',
         HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HUB_DISABLE_TELEMETRY='1',
         HF_HUB_DISABLE_IMPLICIT_TOKEN='1',PYTHONNOUSERSITE='1',PYTHONDONTWRITEBYTECODE='1',
@@ -242,8 +291,50 @@ def test_seal(exposure, test_manifest, test_archive, source):
                 code_commit=source, scorer_sha256=value.get('scorer_sha256'))
 
 
+def replay_declaration(data):
+    """The sealed replay declaration (D-061 item 4) of a replay_prompts.json's bytes, written by
+    benchmark/baselines/replay_prompts.py extract: its digest and prompt count, after the
+    tool's own reader has checked every prompt against its SHA-256."""
+    sys.path.insert(0, str(ROOT/'benchmark/baselines'))
+    import replay_prompts
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder)/'replay_prompts.json'
+        path.write_bytes(data)
+        prompts = replay_prompts.load_prompts(path)
+    return dict(prompts_sha256=hashlib.sha256(data).hexdigest(), prompt_count=len(prompts))
+
+
+def b1_fields(items, targets, checkpoints, replay=None):
+    """The sealed B1 declaration (S5 R2): the checkpoints, the items of the bundle's ONE
+    document (its target's file stem, the id bare_model.py reads it under), and the items.json
+    digest. `items` is the bytes of the adapter's items.json, `targets` the workload's
+    _review_targets.json bytes, `checkpoints` the passes [{name, checkpoint?, args}] (a pass
+    without `checkpoint` loads the one its name names; a pass {name, replay: true, args} runs
+    replay_prompts.py on the sealed prompts, D-061 item 4), `replay` the replay declaration
+    (replay_declaration) or None. Nothing of an item but its id."""
+    targets = json.loads(targets.decode('utf-8')).get('targets') or []
+    require(len(targets) == 1, 'A B1 bundle names exactly one document under review')
+    document = Path(targets[0]).stem
+    rows = json.loads(items.decode('utf-8'))
+    rows = rows.get('items') if isinstance(rows, dict) else rows
+    require(isinstance(rows, list), 'items.json holds no item table')
+    ids = sorted(str(r['item_id']) for r in rows if isinstance(r, dict) and str(r.get('document_id')) == document
+                 and r.get('item_id'))
+    require(ids, 'items.json holds no item for the document under review')
+    value = dict(checkpoints=checkpoints, item_ids=ids, items_sha256=hashlib.sha256(items).hexdigest())
+    if replay is not None:
+        value['replay'] = replay
+    # The runner's own validation, so the seal refuses exactly what the instance would.
+    runner_b1 = dict(b1=value)
+    from ordinary_final_run import b1_checkpoints, b1_item_ids
+    b1_checkpoints(runner_b1)
+    b1_item_ids(runner_b1)
+    return value
+
+
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
-            test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None):
+            test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
+            b1_checkpoints=None, replay_prompts=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -254,6 +345,12 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle must be prepared outside the repository')
         require(workload is not None and Path(workload).is_file(), 'A sealed bundle is built from the test archive')
     require(not protected_test or sealed, 'Only a sealed bundle may set protected_test')
+    require(arm in ('B3', 'B1'), 'Arm is B3 or B1')
+    require((b1_items is not None and b1_checkpoints is not None) == (arm == 'B1'),
+            'A B1 bundle needs its items.json and its checkpoints; a B3 bundle takes neither')
+    # D-061 item 4: replayed B3 prompts are development material, sealed only into an exposed B1 bundle.
+    require(replay_prompts is None or (arm == 'B1' and not sealed),
+            'Replay prompts are sealed only into an exposed B1 bundle')
     require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
     OUT.mkdir(parents=True,exist_ok=True)
     source_inputs = Path(inputs_from).resolve() if inputs_from else original
@@ -281,7 +378,14 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             'Compact extraction prompt declaration absent from the bound commit')
     decoding = {b: dict(status=p['status'],source=p['source'],sha256=p['sha256'],kwargs=p['kwargs'])
                 for b, p in decoding_policy.summary(ROOT).items()}
-    environment = seal_environment(files, os.environ.get('SHIMMER_INST_FINDER'))
+    # D-058, D-063: the producer's attention (sdpa, memory-efficient backend pinned) and prefill
+    # (one shot), both under D-063, unless the operator seals eager or a chunk size with the
+    # recorded decision that asks for it (a measurement run), read from the environment at sealing.
+    environment = seal_environment(files, os.environ.get('SHIMMER_INST_FINDER'),
+                                   os.environ.get('SHIMMER_PRODUCER_ATTENTION'),
+                                   os.environ.get('SHIMMER_PRODUCER_ATTENTION_DECISION'),
+                                   os.environ.get('SHIMMER_PRODUCER_PREFILL_CHUNK'),
+                                   os.environ.get('SHIMMER_PRODUCER_PREFILL_DECISION'))
     # Only the explicitly selected input files may enter this bundle; named extras stay.
     files = {n:d for n,d in files.items() if not n.startswith('benchmark/') or any(named(n, p) for p in ARCHIVE_EXTRAS)}
     if workload is None:
@@ -298,6 +402,19 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         files['input/'+name] = data
         workload_hashes[name] = hashlib.sha256(data).hexdigest()
     multi_round = case is not None
+    b1 = None
+    if arm == 'B1':
+        require(not multi_round, 'A B1 bundle is never multi-round')
+        items = Path(b1_items).read_bytes()
+        replay_bytes = Path(replay_prompts).read_bytes() if replay_prompts is not None else None
+        b1 = b1_fields(items, members['_review_targets.json'], b1_checkpoints,
+                       replay_declaration(replay_bytes) if replay_bytes is not None else None)
+        # Carried as a support file, never inside the test archive (S5 item 0.2): ids, no gold.
+        (OUT/'items.json').write_bytes(items)
+        if replay_bytes is not None:
+            require(not credential_locations(replay_bytes, 'replay_prompts.json'),
+                    'Possible credential in replay_prompts.json; stop without printing content')
+            (OUT/'replay_prompts.json').write_bytes(replay_bytes)
     if multi_round:
         # The documents bind_sources will see on the instance, by the bound pipeline's own rules.
         documents = case_corpus_documents({n[len('context/'):]: d for n, d in members.items() if n.startswith('context/')},
@@ -355,6 +472,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     support_names = ['topology.json','ordinary_final_run.py','ordinary_final_summary.py','cloud_run_observer.py','install.lock']
     if multi_round:
         support_names.append(CASE_MANIFEST)
+    if b1:
+        support_names.append('items.json')
+        if 'replay' in b1:
+            support_names.append('replay_prompts.json')
     support = {n:sha(OUT/n) for n in support_names}
     provider = read(OUT/'provider_inventory.json')
     require(provider['instances']==[], 'Provider inventory not empty')
@@ -373,7 +494,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                     'no benchmark workload substitution']
     manifest = dict(schema_version=1,source_commit=source,source_archive_sha256=sha(OUT/'project.tar.gz'),
         classification='PREPARED_NOT_AUTHORIZED',max_runs=1,model_mode='final',multi_round=multi_round,
-        protected_test=protected_test,workload=workload_record,
+        protected_test=protected_test,arm=arm,workload=workload_record,
         decoding_policy=decoding,
         project_files={n:hashlib.sha256(d).hexdigest() for n,d in sorted(files.items())},
         # The CONTROLLER itself is bound here, with the wrapper that launches it and
@@ -408,6 +529,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         known_auditor_limitations=spec['auditor']['limitations'])
     if multi_round:
         manifest['case_manifest_sha256'] = support[CASE_MANIFEST]
+    if b1:
+        manifest['b1'] = b1
     if sealed:
         manifest['test_archive_sha256'] = seal_fields['test_archive_sha256']
     write(OUT/'execution_manifest.json', manifest)
@@ -447,9 +570,19 @@ if __name__ == '__main__':
     parser.add_argument('--ledger',type=Path,action='append',required=True,help='loop ledger(s) the IV.3 cap reads')
     parser.add_argument('--forecast-minutes',type=float,required=True,help='measured basis in minutes (docs/loop/BUDGET.md)')
     parser.add_argument('--storage-forecast-usd',type=float,required=True)
+    parser.add_argument('--arm',choices=('B3','B1'),default='B3',help='the arm this bundle runs (B1: bare_model.py)')
+    parser.add_argument('--items',type=Path,default=None,help="B1: the adapter's items.json (ids, no gold)")
+    parser.add_argument('--b1-checkpoints',type=Path,default=None,
+                        help='B1: JSON list of passes {"name", "checkpoint", "args"} ("checkpoint" tuned or base, '
+                             'the name when omitted), run in order, each into evidence/b1/<name>; '
+                             '{"name", "replay": true, "args"} runs replay_prompts.py (D-061 item 4)')
+    parser.add_argument('--replay-prompts',type=Path,default=None,
+                        help='B1, exposed only: replay_prompts.json (replay_prompts.py extract) for replay passes')
     args = parser.parse_args()
     prepare(args.output_dir, args.source_commit, args.reuse_assets,
             budget=dict(ledgers=args.ledger, forecast_minutes=args.forecast_minutes,
                         storage_forecast_usd=args.storage_forecast_usd),
             workload=args.workload, exposure=args.exposure, test_manifest=args.test_manifest,
-            protected_test=args.protected_test, inputs_from=args.inputs_from)
+            protected_test=args.protected_test, inputs_from=args.inputs_from, arm=args.arm, b1_items=args.items,
+            b1_checkpoints=read(args.b1_checkpoints) if args.b1_checkpoints else None,
+            replay_prompts=args.replay_prompts)

@@ -24,6 +24,7 @@ import sys
 import ordinary_final_cloud as controller
 import ordinary_final_run as run
 from ordinary_final_run import read, write, sha, require
+from cloud_run_common import no_window
 import loop_budget_guard as guard
 
 DETACH_LOG = 'controller_detached.log'
@@ -42,12 +43,12 @@ def spawn_detached(argv, log):
             for extra in (getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000), 0):
                 try:
                     return subprocess.Popen(base, stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
-                                            creationflags=flags | extra, close_fds=True).pid
+                                            creationflags=no_window(flags | extra), close_fds=True).pid
                 except OSError:
                     if not extra:
                         raise
         return subprocess.Popen(base, stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
-                                start_new_session=True, close_fds=True).pid
+                                start_new_session=True, close_fds=True, creationflags=no_window()).pid
     finally:
         stream.close()
 
@@ -151,15 +152,18 @@ def execute(bundle, plan, output_dir=None):
 
 
 def plan_from(args):
-    batch = None
+    batch, form = None, 'paired'
     if args.batch:
-        batch = [dict(item=e['item'], arm=e['arm'], bundle=Path(e['bundle'])) for e in read(args.batch)['entries']]
+        value = read(args.batch)
+        batch = [dict(item=e['item'], arm=e['arm'], bundle=Path(e['bundle'])) for e in value['entries']]
+        # 'paired' (B3 and B1 per item, the default) or 'b3_only' (exposed bundles only).
+        form = value.get('form', 'paired')
     report = dict(test_version=args.test_version, authors=dict(test=args.test_author, key=args.key_author,
                   scorer=args.scorer_author), scorer_version=args.scorer_version)
     return dict(ledger=args.ledger, read_ledgers=args.read_ledger or [], purpose=args.purpose,
                 forecast_minutes=args.forecast_minutes, forecast_includes_upload=args.forecast_includes_upload,
                 storage_forecast_usd=args.storage_forecast_usd, r_inputs=args.r_inputs, test_manifest=args.test_manifest,
-                frozen_tag=args.frozen_tag, batch=batch, report=report)
+                frozen_tag=args.frozen_tag, batch=batch, batch_form=form, report=report)
 
 
 def parser():
@@ -176,7 +180,7 @@ def parser():
     p.add_argument('--storage-forecast-usd', type=float, required=True)
     p.add_argument('--test-manifest', type=Path, default=None, help="role B's seal manifest (sealed runs)")
     p.add_argument('--frozen-tag', default=None, help='the frozen tag a sealed run must be built from')
-    p.add_argument('--batch', type=Path, default=None, help='batch file: {"entries": [{item, arm, bundle}]}')
+    p.add_argument('--batch', type=Path, default=None, help='batch file: {"entries": [{item, arm, bundle}], "form": "paired" (default) or "b3_only" (exposed only)}')
     p.add_argument('--test-version', default=None)
     p.add_argument('--test-author', default=None)
     p.add_argument('--key-author', default=None)

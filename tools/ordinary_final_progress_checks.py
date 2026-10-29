@@ -108,6 +108,23 @@ class ProgressReadings(unittest.TestCase):
         self.assertIn('the run decides its own call count', line)
         self.assertIn('0 auditor pairs', line)
 
+    def test_a_b1_workload_reading_counts_reply_records_against_the_expected_total(self):
+        """S5 R19: a B1 entry writes no pipeline telemetry; its reading is the reply records
+        bare_model.py has written against the total the runner wrote first (items x checkpoints)."""
+        for phase in ('ordinary_workload', 'batch_workload'):
+            line = self.read(phase, 3.0 * 60, {'evidence/b1': 'B1\n6\n16'})
+            self.assertTrue(line.startswith(phase + ' progress: 6 of 16 reply records measured'), line)
+            self.assertIn('3.0 min elapsed', line)
+            self.assertIn('2.0 reply record/min', line)
+            self.assertIn('~5.0 min remaining', line)
+            self.assertNotIn('model call', line)
+        # Before the first record: nothing to measure yet, never a percentage.
+        line = self.read('batch_workload', 30.0, {'evidence/b1': 'B1\n0\n16'})
+        self.assertIn('no reply records recorded yet', line)
+        # A B3 workload answers PIPELINE, and the pipeline's own reading applies unchanged.
+        line = self.read('batch_workload', 4.0 * 60, {'evidence/b1': 'PIPELINE', 'model_call': '40\n7\ncompleted=10/12'})
+        self.assertIn('10 of 12 agents', line)
+
     # --- the explicit refusals ----------------------------------------------------------
 
     def test_workload_says_nothing_is_measurable_before_the_first_record(self):
@@ -210,6 +227,9 @@ NEUTRALIZATIONS = (
      progress, 'size_reading', size_reading_that_invents_a_rate),
     ('test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero',
      progress, 'unreadable', unreadable_that_reports_zero_instead_of_refusing),
+    # S5: a B1 entry read as a pipeline run, so its reply records are never counted.
+    ('test_a_b1_workload_reading_counts_reply_records_against_the_expected_total',
+     progress, 'b1_workload', lambda context, phase: None),
 )
 
 

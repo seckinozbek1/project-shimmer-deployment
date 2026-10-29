@@ -111,7 +111,10 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` again, so bundles sealed
   before it refuse the same way and must be re-sealed. `scripts/agent_wrapper.py` is not
   in the controller binding: the seal already pins it among the runtime files the bundle
-  carries.
+  carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
+  and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
+  evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
+  S5's merge refuse the same way and must be re-sealed.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
@@ -172,6 +175,58 @@ processing swarm governed by an append-only constitution.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
+- B1-ARM-A (loop S5): the sealer writes `arm` (B3 or B1) into every manifest; a manifest
+  without one is B3. A B1 manifest carries `b1` (its sealed checkpoints `{name, args}`, the
+  item ids of its one document, the `items.json` digest) and `items.json` as a support file;
+  a sealed checkpoint carries only the options `benchmark/baselines/bare_model.py`'s parser
+  takes (`ordinary_final_run.B1_SEALED_ARGS`, refused at sealing otherwise; that parser takes
+  no abbreviations). `tools/ordinary_final_run.py` keeps every guard for both arms, refuses an
+  authorization whose `arm` differs from the sealed one (none means B3), and for B1 loads the
+  sealed `bare_model.py` in its own process, never imports `pipeline`, runs `main()` once per
+  checkpoint into `evidence/b1/<name>`, and passes only on one reply record per item per
+  checkpoint. A batch entry's plan arm must equal its sealed arm; a batch file may say
+  `"form": "b3_only"` (exposed bundles only, each item once, unpaired). Past the soft budget
+  a batch entry's `batch_pack_evidence` and `batch_evidence_hash` still run. The analyser
+  reports a B1 entry from `evidence/result.json` and each checkpoint's `b1_summary.json`. A sealed
+  B1 pass is `{name, checkpoint, args}` (D-056 condition 6): `name` is a free label (lower case,
+  digits, underscore; unique) naming `evidence/b1/<name>`, `checkpoint` (tuned or base) is
+  passed as `--checkpoint`, and a pass without `checkpoint` loads the checkpoint its name names.
+- STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
+  sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
+  and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
+  own `items.json` outside it. It never copies `answer_key.json` or build records, and
+  refuses the whole staging when a file under `context/` or `conventions/` is named like a
+  key. Check 287.
+- PREFILL-E (loop S5, D-056, D-058, D-060, D-061, D-063): with nothing set, the producer loads
+  sdpa (`SHIMMER_PRODUCER_ATTENTION`) and every producer call and every B1 call
+  (`benchmark/baselines/bare_model.py`, both checkpoints, every item) runs pinned per call to the
+  memory-efficient sdpa backend and prefilled in one shot through `final_models.generate_with_prefill`,
+  both recorded as decision D-063 (D-061's declared fallback: E missed its threshold; sdpa one shot
+  was byte-identical to one-shot eager on 12 of 12 replayed B3 prompts, E on 8 of 12). Eager
+  (one shot or chunked) and chunked prefill (`SHIMMER_PRODUCER_PREFILL_CHUNK`, E is
+  `E_CHUNK_TOKENS` 512, 2 tokens left to generate()) are measurement settings, each accepted only
+  with its decision id (`SHIMMER_PRODUCER_ATTENTION_DECISION`, `SHIMMER_PRODUCER_PREFILL_DECISION`);
+  a decision named with the default is accepted only when it is D-063. One rule each:
+  `final_models.attention_setting` and `prefill_setting`. The producer and B1 share one kernel.
+  The `_load_qwen` models run sdpa pinned the same way, one shot; the Auditor896 classifier stays
+  eager (its runtime contract says so). Every reply record carries `attention` (kernel, prefill
+  setting, decisions) and `prefill` (chunks, tail, seconds). Out of memory or a refused kernel is
+  written once and raised as a named failure, never retried; a prompt whose tokens plus the output
+  allowance exceed the model's positions is refused before generating, recorded (`context`,
+  `prompt_over_context`, a RUN_REPORT row) and is a declared exclusion of B3. B1 measurement
+  passes (`--attention eager`, `--prefill-chunk N`) need a decision id; each pass records its peak
+  GPU memory, and `bare_model.py compare --a --b --out` counts byte-identical replies and agreeing
+  labels. `benchmark/baselines/replay_prompts.py` replays B3 producer prompts (payloads only) as an
+  exposed-only replay pass; its `e`, `one_shot` and `e_repeat` paths are measurement paths, `sdpa`
+  is the run proper's. The sealer evaluates the bound rules, and the runner's B1 rule is held equal
+  to bare_model's. The analyser states "producer and B1 sdpa, prefilled in one shot,
+  memory-efficient backend pinned (D-063); differs from v5 to v12, which ran the producer eager".
+  Also from D-061: a VERIFIER reply that is not an object is a recorded contract failure;
+  `semantic_incomplete` is its own assessment reason; no partition retry under deterministic
+  decoding (`retry_skipped_deterministic`). The producer was trained and evaluated eager one shot,
+  so its 102-of-102 DEV figure is a one-shot eager figure; the difference is a preregistration
+  section 9 limitation. Loop S5 changed `tools/ordinary_final_run.py` several times (D-061, D-063),
+  so bundles sealed before S5's merge refuse with `Controller source changed`. Checks 282, 288, 289.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
@@ -254,6 +309,10 @@ processing swarm governed by an append-only constitution.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
+  A key outside `benchmark/corpora/` is scored with `tools/score_corpus.py --key <answer_key.json>
+  --run <run>`, and its twin with `--twin-key` and `--twin-run`; the scorer refuses a twin the key
+  does not name and a run that is not of the twin's document. Development cases built from
+  repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline
 
@@ -390,6 +449,19 @@ processing swarm governed by an append-only constitution.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
   `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+- UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
+  comparison), the model's answer is kept as a model-written Finding record, never discarded:
+  stamped by Python with the judged-absence stamping and the PLAN's rule
+  (`paired_review.stamp_from_plan`; a rule id the reply names is replaced), screened by the shared
+  refusals (`paired_review.judged_item_refusal`: quote not in the unit and the three absence-claim
+  refusals; listed in the pairing map under `uncomputable_refused`), kept only from a reply that is
+  ok and did not refuse (why it gave none in `uncomputable_judged`), and posted once as Python's
+  stamped copy (`stamped_by: python`, `judged_path: uncomputable`) under the model's backend and
+  model, so written by `model`; the call's own post still withholds its items. Outcome
+  `judged_uncomputable` (`judged_listed`, `judged_refused`); `advisory_not_kept` names runs before
+  D-068. Never promoted (check 269), marked wherever model findings are shown. Check 290. The
+  benchmark adapters label a semantically incomplete run from its records (D-066), report
+  completeness per document and arm, and add sensitivity S-6.
 - WRITTEN-BY-A (loop S2): who wrote a finding is read off the bus post it travelled in
   (`finding_record.written_by`): `python` only for `backend` `paired`/`computed` with a model
   id starting `python`, `model` for everything else, including an item no envelope claims.
@@ -685,6 +757,25 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
+  controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
+  wrappers, the progress and status readers, and every file under `tools/loop/`) passes its
+  creation flags through `cloud_run_common.no_window`, which ORs in the Windows no-window
+  flag and changes nothing elsewhere; a child that must keep the operator's console says so
+  with `keep_console` (an interactive ssh passphrase, the sealer's foreground re-exec), and a
+  `runner` defaulting to `subprocess.run` is given `cloud_run_common.hidden_run`. Measured,
+  not preferred: the detached controller has no console, so each ssh, scp, ssh-keygen and
+  curl it started opened a visible window on the operator's screen. The controller check and
+  gate check 292 scan every start's AST and run the controller, adapter, termination client
+  and progress reader against fakes that record each start's flags. This changed six bound
+  controller files, so bundles sealed before it refuse with `Controller source changed`.
+- WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
+  `max_pending` (256) runs as consecutive waves of at most that many calls
+  (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and
+  depending on the ONE parent set read before the first, posts published in source order; it is
+  never refused for its size, and a gather at or below the bound is one `run_wave` exactly as
+  before. Measured, not preferred: a development ContractNLI agreement with 289 judging plans
+  refused the whole run before this. Check 291.
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from

@@ -1,6 +1,6 @@
 # Benchmark adapters
 
-Adapters for the five external benchmarks of `docs/benchmarks/SELECTION.md`: ContraDoc, CUAD v1, SciTab, FinDVer and ContractNLI (added by the operator's decision D-S3). Each one turns benchmark items into test bundles in the input format `input-format-v1-draft` (`docs/INPUT_FORMAT.md`, on branch `loop/s03`), turns a run's output into labels, and scores labels against gold.
+Adapters for the five external benchmarks of `docs/benchmarks/SELECTION.md`: ContraDoc, CUAD v1, SciTab, FinDVer and ContractNLI (added by the operator's decision D-S3), and for role B's synthetic tests (`synthetic/`, below). Each one turns benchmark items into test bundles in the input format `input-format-v1-draft` (`docs/INPUT_FORMAT.md`, on branch `loop/s03`), turns a run's output into labels, and scores labels against gold.
 
 What they implement, from `docs/benchmarks/PREREGISTRATION.md`:
 
@@ -8,8 +8,8 @@ What they implement, from `docs/benchmarks/PREREGISTRATION.md`:
 - section 1: the hash split rule and the official splits, enforced at build (ContractNLI by its frozen files); the exclusion of demonstration documents; the length band of every document (`bands`);
 - section 3: the official metric or the closest honest measure (each benchmark's headline named in its score), location recall, false positives (item level and unattached), refusals, and the catch layer;
 - section 4: ABSTAIN and zero division in every F1-type measure;
-- section 5.1 and 5.2: the output-to-label mapping (a settled answer on any unit beats a refusal; a figure-audit record is a figure-audit relation stamped `written_by: python`, one definition for all five benchmarks: a band record decides its own rule's item, Python's `missing_field`, `sum_mismatch` and `product_mismatch` records decide only in a one-rule bundle, and a model-written record always decides its rule's item), with S-1, S-2, S-3 and S-5 (the earlier order, a refusal before an ok record);
-- section 5.3: the cut rule, with a per-document budget, and S-4;
+- section 5.1 and 5.2: the output-to-label mapping (a settled answer on any unit beats a refusal; a figure-audit record is a figure-audit relation stamped `written_by: python`, one definition for all five benchmarks: a band record decides its own rule's item, Python's `missing_field`, `sum_mismatch` and `product_mismatch` records decide only in a one-rule bundle, and a model-written record always decides its rule's item), with S-1, S-2, S-3, S-5 (the earlier order, a refusal before an ok record), S-6 (every item of a semantically incomplete document ABSTAIN, D-066) and S-8 (B3 and B4 as if every record a model wrote were absent, DEV-012);
+- section 5.3: the cut rule, with a per-document budget, and S-4; the exclusion of a B3 document whose run made a model call over its model's context, with S-7 (D-078, section 12 item 14);
 - sections 5.5 and 5.6: the rule templates and the document text and units, with ContractNLI's merged-span fallback.
 
 What they do not implement is listed at the end.
@@ -36,10 +36,13 @@ benchmark/adapters/
     prompt.py        the one renderer of the B1 prompt (section 5.4), used by bare_model.py
                      and by the cut budget
     cut.py           the one implementation of the cut rule (section 5.3)
-    mapping.py       run output to label (5.1, 5.2), B0, B1, S-1, S-2; run-output names
+    records.py       the one record reader: review_data.json (B2) or the run's bus (B3, B4)
+    mapping.py       run output to label (5.1, 5.2), B0, B1, S-1 to S-8 (S-4 in cli.py);
+                     the over-context exclusion (5.3); run-output names
     metrics.py       section 3 measures, with ABSTAIN and zero division as section 4 says
     cli.py           the commands below
   contradoc/  cuad/  scitab/  findver/  contractnli/      adapter.py and fixtures/
+  synthetic/         B's synthetic tests: items, labels and scores (section 13), no build
   <name>/fixtures/synthetic_items.json   synthetic items in the release's schema (FinDVer:
                                          fixtures/data/testmini.json and fixtures/financial_reports/)
   <name>/fixtures/mapping_cases.json     synthetic run outputs with the expected labels
@@ -61,7 +64,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py build --input <file> --out <folder
 py -3.12 benchmark/adapters/<name>/adapter.py split --input <benchmark file> [--out <file>] [--exclude F]
 py -3.12 benchmark/adapters/<name>/adapter.py bands --input <benchmark file> [--out <file>] [--exclude F] [--testmini F] [--assignment F] [--reports D] [--frozen-sha256 H]
 py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
-py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bundles <build folder> --out <metrics.json>
+py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bundles <build folder> --out <metrics.json> [--paired-with <another arm's labels.json>]
 ```
 
 `--reports` is FinDVer's own option; `--frozen-sha256` and `--parts` are ContractNLI's. An option an adapter does not take is refused.
@@ -93,19 +96,44 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
   - For B2, B3 and B4, `--runs` holds one run folder per document, named by its opaque document id.
   - For B1, `--runs` holds one `bare_model.py` output folder per document, named the same way, with `labels/<item id>.json` inside.
   - B0 needs no run.
-  - B3 and B4 are refused (exit 4) while the typed-record key of the pipeline's output is not settled (section 12 item 9). B2 writes that key.
-  - The output file holds the primary labels and the S-1, S-2, S-3 and S-5 analyses.
+  - Typed records are read by one reader, `common/records.py`: B2's from `review_data.json` (`findings`), B3's and B4's from the run's bus (`logs/agent_bus.jsonl`), stamped `written_by` from the line that carried them, superseded within one agent and document, a judged absence counted only by Python's stamped copy and the raw model copy listed apart (preregistration section 5.1, draft).
+  - That bus reading (decision DS5-8, section 12 item 9) has been attacked by a checker and recorded (`docs/loop/DECISIONS.md` D-055 and D-056), so `mapping.BUS_READER_ADOPTED` is True and B3 and B4 are labelled from the bus; a run with no readable bus is a run failure. With the flag False they are refused (exit 4).
+  - The output file holds the primary labels and the S-1, S-2, S-3, S-5, S-6, S-7 and S-8 analyses.
+  - S-8 (DEV-012, preregistration section 4): B3 and B4 scored as if every record written by a model were absent. Of a document's records only those whose `written_by` is exactly `python` are kept (`mapping.python_only_view`; an unstamped record, or any other stamp, is a model's, section 3 item 6), and each item is labelled by section 5.1's lines on what remains: an item a model-written record decided takes the next record in that order (irregular, then ok, then refusal), else silence. Every other rule is unchanged: the run-failure line, D-066 (incomplete runs, `item_calls_failed`), the over-context exclusion of section 5.3, the rule-id map, the figure-audit set-aside, and the pairing-map refusal entries (Python's own map, not records). The unattached findings of S-8 are Python's alone (`unattached_s8` on each document row). For B0, B1 and B2, S-8 equals the primary analysis; the S-8 result says which (`s8_applies`, `note`), in the labels file and in the score.
+  - D-066 (draft): a run that reached its end with exit code 0 and `semantic_complete` false is not a run failure; its items are labelled from its records, and S-6 makes them ABSTAIN. Each document row carries `semantic_incomplete` and `completeness` (PROCESSOR calls accepted against made, a partial delivery, the auditor pairs made from it); each item row carries `item_calls_failed`, `decided_by_partial_delivery_record` and `flagged_by_band`.
+  - Registry id to operator id (section 12 item 11, adopted by D-078, `mapping.RULE_ID_MAP_ADOPTED` True): a judging call and a pairing-map refusal name the registry id (`CONV-001`); each is matched to the item's operator id through the run's own `audit/convention_assignment.json` (`by_rule`, `source_rule_id`), compared without regard to case. The item-level exception `item_calls_failed` applies through it. Where that file is missing, unreadable or not one to one (two registry ids naming one operator id), it is not used on that document: the row says why (`not_applied_no_rule_map`, `not_applied_rule_map_unreadable`, `not_applied_rule_map_not_one_to_one`), the document row carries `rule_map_status`, and `documents_rule_map_unusable` counts it.
+  - Over the model's context (section 5.3, section 12 item 14, D-078): a B3 document whose run has at least one reply record under `audit/model_replies/` with `context.over_context` true (as `scripts/reply_records.py` writes it) is excluded from B3. Every item of it carries basis `over_context_excluded` (class ABSTAIN, never scored); the document row carries `over_context` (reply records read, those with a context, the calls over it, by agent) and `over_context_excluded`; the labels carry `over_context` (the excluded documents, their items, their calls by agent) and the counts `over_context_excluded_documents` and `items_over_context_excluded`. S-7 scores those items ABSTAIN (basis `s7_over_context_abstain`). An unreadable reply record is an adapter fault. B4 is not checked (`mapping.OVER_CONTEXT_ARMS`).
+  - One setup-failure rule for B1 and B3 (D-084, DEV-014, `mapping.SETUP_FAILURE_ARMS`): a B1 document whose `bare_model.py` output holds `b1_setup_failure.json` (a call out of memory or on a refused kernel, or a prompt plus the output allowance over the model's context, recorded before anything is generated), and a B3 document whose run has a reply record of a call that failed out of memory or on a refused kernel (`backend_ok` false, `error_category` `out_of_memory` or `attention_kernel_refused`), had a setup failure: every item of it carries basis `setup_failure` (class ABSTAIN, never counted as an abstention), the document row carries `setup_failure` and `setup_failure_excluded`, and the labels carry `setup_failure` (documents, items) and the counts `setup_failure_documents` and `items_setup_failure`. Every analysis but S-7 leaves those documents out of that arm's scoring; S-7 scores their items ABSTAIN (basis `s7_setup_failure_abstain`); `score --paired-with` leaves out a document either arm failed on (`left_out_setup_failure`). A B3 call over the model's context keeps its own basis, `over_context_excluded`, with the same treatment.
+  - D-068: a model's answer kept on a pair Python could compute nothing for is on the bus once, in Python's stamped copy (`judged_path` `uncomputable`), written by `model`; it decides its rule's item like any model-written record.
   - The command exits 3 when it records an adapter fault (a prior relation, a missing typed-record key, an unrecognised verdict).
 - **score** scores each analysis, and S-4 (the primary labels without the items `parts.json` lists as having their evidence beyond the cut). It reads gold from the bundles' `answer_key.json` and units from the bundle documents. It refuses when a labelled document has a gold item with no label. Every result carries the statement that it is not comparable with published numbers, and names its headline measure.
+  - Every analysis but S-7 leaves out the documents this arm excluded for a call over the model's context; S-7 scores their items ABSTAIN. An arm that excludes nothing (B0, B1, B2, B4) is scored on all its documents.
+  - S-8 is scored like every other analysis (in the paired view too); its score carries `s8_applies` and `note`, so a B0, B1 or B2 score says that S-8 equals its primary.
+  - `--paired-with <labels.json>` (another arm's labels file) adds `paired`: every analysis but S-7 again, on the documents both files label and neither arm excluded, with the documents left out and why (`left_out_over_context` per arm, `left_out_not_in_both`). Comparisons of B3 with any arm read this view (section 12 item 14).
+
+## B's synthetic tests
+
+`synthetic/adapter.py` scores the synthetic tests role B prepares (preregistration section 13). A test is a set of bundles in the input format, each with its own `answer_key.json`; they exist already, so there is no build. It shares `common/` with the benchmark adapters.
+
+```
+py -3.12 benchmark/adapters/synthetic/adapter.py items --root <test folder> [--out items.json]
+py -3.12 benchmark/adapters/synthetic/adapter.py label --items <items.json> --bundles <test folder> --arm B0|B1|B2|B3|B4 [--runs <folder>] [--run-map <map.json>] --out <labels.json>
+py -3.12 benchmark/adapters/synthetic/adapter.py score --labels <labels.json> --bundles <test folder> --out <metrics.json> [--key-map <map.json>]
+```
+
+- **items**: one item per (target document, rule): each document the bundle's targets file names (`context/_review_targets.json`, or `_review_targets.json` at the top of a staged workload) and each rule heading of its conventions that carries an operator id. The answer key is never read. `items.json` carries `item_id` (the first 12 hexadecimal characters of SHA-256 of `item:synthetic:<bundle>/<document>/<rule id>`), `document_id` (the target's file stem: the id the pipeline and `bare_model.py` use), `rule_id`, `benchmark` `synthetic`, `bundle` and the source ids. It is the item table `bare_model.py` and `tools/stage_workload.py --items` take; the B1 question and labels are the `synthetic` entry of `baselines/b1_prompt.json`.
+- **label**: through `common/mapping.py` (records, D-066, the over-context exclusion, the setup-failure rule, the rule-id map, S-1 to S-8). FLAG is `violated`, CLEAR `holds`; UNDECIDED is ABSTAIN. Every record decides the item of the rule it names (`Spec.attribute_as_named`; nothing is set aside, so S-3 equals the primary). A FLAG of B2, B3 or B4 carries its deciding records (`deciding_records`); a FLAG of B1 carries the units its quoted evidence lies in (`cited_unit_ids`: a quoted sentence, whitespace-normalised, a closing `.`, `!` or `?` dropped, locates the one unit whose text holds it; a sentence two units hold locates none). Units are Shimmer's (`synthetic.units`, held equal to `pairing_map.split_units`). `--runs` holds one run folder (B1: one `bare_model.py` output folder) per bundle, named by the bundle; `--run-map` names each instead.
+- **score**: per arm and analysis, per bundle, per role (base, twin, probe) and in total. A planted flaw is located by B2, B3 or B4 when a record that decided a FLAG of the document, under any rule, has a unit id containing the planted unit and the planted relation (any relation when the key gives none), and its reason is confirmed when one such record states the key's claim (relation, field label when both state one, both figures): `tools/score_corpus.py`'s matching and the input format's (section 9), on deciding records only. The rule is the attribution, reported apart (`attributed`). B1 is located when its item of the planted rule is FLAG and a quoted sentence lies in the planted unit; its reason is a reviewer's (section 3.3). False positives: items flagged whose rule the key does not plant, unit-rule pairs flagged on units the key does not plant (`records_on_unplanted_units`, with how many of those records each of section 3.4's deliverables shows, `unplanted_records_per_deliverable`), and unattached records. Distractor hits: unit-rule pairs flagged on a `clean` unit. A keyed bundle's twin false alarms are the twin's flagged items and pairs when the twin is labelled in the same file. A negotiation-style key (`prior_records`) is not scored (`not_scored`). `--key-map` names a key outside the bundle.
 
 ## PROVISIONAL, per adapter
 
 **All adapters (run output, `common/mapping.py`).** These are PROVISIONAL until `docs/OUTPUT_FORMAT.md` settles them (section 12, items 1 and 9). Its draft, `output-format-v1-draft`, is on branch `loop/s03` since 5fca716; its section 7.3 (Python's irregular findings are on the bus, not in `review_data.json`) conflicts with section 5.1's reading of `review_data.json` alone, recorded in section 12 item 9.
 
 - The completion record `<run>/audit/run_completion.json` is the pipeline's own (`scripts/run_completion.py`), read with the validity rules of its `read()`; B2 writes the same record.
-- The typed-record key `findings` is what B2 writes; the pipeline does not write it yet, so B3 and B4 are refused.
+- The typed-record key `findings` is what B2 writes; the pipeline's records are read from its bus (`common/records.py`), a reading adopted by D-056.
 - The UNCERTAIN marker is tested as `scripts/verifiability_gate.py` tests it.
-- Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11).
+- Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there; it is matched to the item's operator id through the run's own map (section 12 item 11, adopted by D-078; the map itself is not PROVISIONAL). The D-068 refusals (`uncomputable_refused`) are not refusals and are not read.
+- The completeness counts read `logs/generation_observation.jsonl` and `logs/model_telemetry.jsonl`, which the output format lists as files a scorer must not depend on: they decide no label, and a missing file reads as not recorded (None).
 - The record id `item_id` and its `revision` (INFRA-037 supersession).
 - The deliverables path.
 

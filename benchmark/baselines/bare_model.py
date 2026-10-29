@@ -18,7 +18,10 @@ line ``None.`` when it has none. It writes:
   <out>/b1_summary.json        counts and the parse rate per benchmark for this document,
                                the number of replies whose length reached the output
                                allowance (possibly truncated), and whether this document's
-                               rate is below 95 percent (information only)
+                               rate is below 95 percent (information only), and the
+                               attention every call ran under (D-056)
+  <out>/b1_setup_failure.json  only when a call ran out of memory or its attention kernel
+                               was refused: the run stops there (D-056 condition 3)
 
 The development floor of 95 percent (section 5.4) is decided per benchmark on the rate
 pooled over all its development items: ``bare_model.py pool --runs <folder>`` reads every
@@ -28,7 +31,8 @@ Before the first item the model is loaded and verified ONCE: its model id, check
 digest and decoding are compared with the values passed in (from VERSIONS.md; section 4),
 and every item's prompt plus the output allowance must fit the model's context. Any
 failure there stops the run with a non-zero exit before anything is generated. Inside
-the item loop only a generation error is caught (and recorded as a failed call).
+the item loop only a generation error is caught (and recorded as a failed call), except
+an out-of-memory error or a refused attention kernel, which stops the run (below).
 
 The reading agent is passed in (``--agent``). PROCESSOR is a PLACEHOLDER default until
 preregistration section 12 item 8 names the main reading agent. Its backend comes from
@@ -37,15 +41,87 @@ pipeline is never imported), its checkpoint through final_models in final mode, 
 decoding policy through scripts/decoding_policy.py, and its output allowance from the
 pipeline's PROCESSOR budget (PRODUCTION_MAX_TOKENS) unless --max-new-tokens overrides it.
 
+Two checkpoints (preregistration section 12 item 12; loop plan S5 revisions R3 and R20).
+In final mode (SHIMMER_MODEL_MODE=final) ``--checkpoint`` selects which one is loaded:
+
+  tuned   the tuned producer, through final_models.resident exactly as the pipeline loads
+          it: the pinned 4-bit base at its revision with the checkpoint 168 adapter
+  base    the SAME pinned 4-bit base at the same revision, read through
+          final_models.base_path (which checks every base_hashes entry), prepared as the
+          tuned producer's base is prepared, and WITHOUT the adapter: no adapter file is
+          read and PeftModel is never called, so the comparison isolates the adapter
+
+Each checkpoint is recorded in b1_summary.json under ``checkpoint`` (its name, model id,
+revision, the model.safetensors SHA-256 from base_hashes, the adapter SHA-256 or null, and
+whether an adapter was applied); its digest is ``<revision>:<model.safetensors sha256>``
+for the base and that followed by ``+adapter:<adapter sha256>`` for the tuned producer.
+In base mode only ``base`` exists (the reference loader, a PROVISIONAL snapshot digest).
+Each checkpoint runs in its own process into its own output folder (one reply record per
+item per checkpoint).
+
+Attention and prefill (docs/loop/DECISIONS.md D-056, superseded for the kernel by D-060,
+D-061 and D-063: B1 follows the producer). B1, both checkpoints, every item, generates under the
+producer's attention, sdpa pinned to the memory-efficient backend (the kernel
+scripts/final_models.py loads the producer with for B3 under D-063), and prefills the prompt in
+one shot, through the ONE generate helper B3's producer calls use
+(final_models.generate_with_prefill). So the primary comparison has no kernel or prefill
+difference. B1 switches the resident
+model's attention setting around each call (b1_attention) and restores it in a finally to what
+it was, so a B3 call in the same process runs under the producer's own setting again. The
+attention and prefill B1 declares (attention_record) are compared with what the backend loaded
+(verify_identity) and with what each call observed inside the switch; they are written into
+every reply record and into b1_summary.json, with what each call's prefill measured (chunks,
+tail tokens, prefill seconds; summed and maximised in b1_summary.json ``prefill_time``). An
+out-of-memory error, or a refused kernel, stops the run as a SETUP FAILURE: the call's reply
+record is written, then ``b1_setup_failure.json`` (counts only), and no label is written for
+that item, so it is never an abstention.
+
+Every sdpa call runs inside ``torch.nn.attention.sdpa_kernel([SDPBackend.EFFICIENT_ATTENTION])``
+(the memory-efficient kernel only, so a refused kernel raises instead of falling back to the
+quadratic math kernel). A measurement pass (D-056 condition 6, D-061 item 4, D-063) may run
+otherwise, each only with the recorded decision that asks for it: ``--attention eager
+--attention-decision D-NNN`` runs eager (the kernel the producer was trained with);
+``--prefill-chunk N --prefill-decision D-NNN`` prefills in chunks of N tokens (E is 512: the
+prompt is fed through the KV cache in fixed chunks, leaving 2 tokens to generate() itself). A
+decision without its setting, or a setting without its decision, is refused; the default's
+own decision (D-063) may be named with the default. Every reply record, label and
+b1_summary.json records the attention, the backend, the prefill and their decisions.
+
+Peak GPU memory per pass (D-056 condition 6): once the model is loaded and verified, the
+peak counters of torch.cuda are reset, and after the last item they are read, the peak
+allocated and the peak reserved bytes (and what was allocated at the reset, the resident
+weights), into b1_summary.json under ``gpu_memory`` (and into b1_setup_failure.json when a
+call stops the run). Every value is null when the backend did not load torch onto a CUDA
+device (on a CPU, or a mocked backend): this file imports no model library itself. The counters cover everything on the
+device, so a model still resident from an earlier pass in the same process is counted too.
+A model this file loaded for the pass is released when the pass ends.
+
+Comparing two passes (no model): ``bare_model.py compare --a <pass folder> --b <pass folder>
+--out <file>`` reads both folders' labels and reply records and writes, per item, whether
+the two reply texts are byte-identical (their recorded SHA-256 and length) and whether the
+two labels agree, with the counts. Item ids, booleans and counts only, never a reply's text
+or a label.
+
+In-process entry, for a runner that imports this file (benchmark/baselines on sys.path):
+    run_b1(bundle, items, out, checkpoint, *, expected=None, development=False,
+           agent=READING_AGENT, max_new_tokens=None, sensitive=False, run_id=None,
+           prefill_chunk=None, prefill_decision=None, attention="sdpa",
+           attention_decision=None) -> dict
+It returns the b1_summary.json content and raises on any setup failure (nothing generated).
+
 Usage (loads a local model; for the rented machine, never this laptop):
     py -3.12 benchmark/baselines/bare_model.py --bundle <bundle> --items <items.json> --out <dir>
-        --agent <AGENT> --expect-model-id <id> --expect-digest <sha256> --expect-decoding '<json>'
+        --checkpoint tuned|base --agent <AGENT> --expect-model-id <id> --expect-digest <digest>
+        --expect-decoding '<json>' [--attention eager --attention-decision D-NNN]
+        [--prefill-chunk N --prefill-decision D-NNN]
     py -3.12 benchmark/baselines/bare_model.py pool --runs <folder> [--out <file>]   (no model)
+    py -3.12 benchmark/baselines/bare_model.py compare --a <dir> --b <dir> --out <file>   (no model)
 """
 from __future__ import annotations
 
 import argparse
-
+import contextlib
+import gc
 import hashlib
 import json
 import re
@@ -82,10 +158,51 @@ UNCERTAIN_LABEL = "uncertain"
 # development items (pool_parse_rates), is below this floor has its prompt and parser
 # revised before the freeze, at most three times.
 PARSE_RATE_FLOOR = 0.95
+# The two checkpoints of section 12 item 12 (R20): the tuned producer, and the pinned base it
+# is built on without its adapter. Final mode offers both; base mode only the base.
+TUNED, BASE = "tuned", "base"
+CHECKPOINTS = (TUNED, BASE)
+FINAL_ROLE = "producer"
+# What scripts/final_models.py loads the producer with by default, and what B3 runs under:
+# sdpa, memory-efficient backend pinned, one shot (D-063, D-061's declared fallback). B1 never
+# changes the resident setting outside its own calls.
+B3_ATTENTION = final_models.PRODUCER_ATTENTION_DEFAULT
+# B1's attention follows the producer's (D-061, D-063: no kernel difference in the primary
+# comparison).
+B1_ATTENTION = B3_ATTENTION
+EAGER, SDPA = final_models.EAGER, final_models.SDPA
+# The memory-efficient sdpa backend pinned for every sdpa call (D-056 condition 1, D-063).
+B1_SDPA_BACKEND = final_models.SDPA_BACKEND
+# The attentions a pass may declare: sdpa (the default), or eager for a measurement pass
+# adopted by a recorded decision (D-056 condition 6, D-061 item 4, D-063).
+ATTENTIONS = (EAGER, SDPA)
+# The prefill fields of the declared attention record (final_models.prefill_setting).
+PREFILL_FIELDS = ("prefill", "prefill_chunk_tokens", "prefill_decision")
+# What the peak GPU memory of a pass covers (b1_summary.json gpu_memory).
+GPU_MEMORY_WINDOW = ("torch.cuda peak counters reset after the model was loaded and verified, "
+                     "read after the last item; everything on the device is counted")
+# torch.backends.cuda's switch for each sdpa backend, by SDPBackend name.
+SDPA_SWITCHES = {"FLASH_ATTENTION": "flash_sdp_enabled", "EFFICIENT_ATTENTION": "mem_efficient_sdp_enabled",
+                 "MATH": "math_sdp_enabled", "CUDNN_ATTENTION": "cudnn_sdp_enabled"}
+SETUP_FAILURE_FILE = "b1_setup_failure.json"
+# D-084 (DEV-014): a prompt plus the output allowance over the model's context is a setup
+# failure too, recorded in SETUP_FAILURE_FILE under this kind before anything is generated.
+PROMPT_OVER_CONTEXT = "prompt_over_context"
 
 
 class SetupError(Exception):
     """A failure before or outside generation: never caught per item."""
+
+
+class SetupFailure(SetupError):
+    """A call that stopped the run (D-056 condition 3): out of memory, or a refused
+    attention kernel; or (D-084) a prompt plus the output allowance over the model's
+    context, before anything is generated. Counted and reported apart, never an abstention."""
+
+    def __init__(self, kind, item_id, error):
+        super().__init__("B1 stopped at item %s: %s (%s), a setup failure, never an abstention"
+                         % (item_id, kind, error))
+        self.kind, self.item_id, self.error = kind, item_id, error
 
 
 def _now():
@@ -202,9 +319,81 @@ def parse_reply(reply, bench, item_id=None):
 pipeline_literal = python_only.pipeline_literal  # one ast reader of the pipeline source
 
 
-def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_tokens=None):
-    """The reading agent's backend, model, decoding policy and output allowance."""
+def resolve_checkpoint(mode, checkpoint=None):
+    """The checkpoint to load: `tuned` by default in final mode, `base` in base mode. A tuned
+    checkpoint outside final mode, or a name not in CHECKPOINTS, is refused."""
+    chosen = checkpoint or (TUNED if mode == "final" else BASE)
+    if chosen not in CHECKPOINTS:
+        raise ValueError("unknown checkpoint %r (one of %s)" % (chosen, ", ".join(CHECKPOINTS)))
+    if chosen == TUNED and mode != "final":
+        raise ValueError("the tuned checkpoint exists only in final mode (SHIMMER_MODEL_MODE=final)")
+    return chosen
+
+
+def checkpoint_record(checkpoint, spec):
+    """(record, digest) of a final-mode checkpoint, from the pinned specification: the
+    revision and model.safetensors SHA-256 base_path checks at load, and for the tuned
+    producer the adapter SHA-256 final_models.verify checks (R20)."""
+    weights = spec["base_hashes"]["model.safetensors"]
+    adapter = spec["files"]["adapter"]["sha256"] if checkpoint == TUNED else None
+    record = {"checkpoint": checkpoint, "model_id": spec["model_id"], "revision": spec["revision"],
+              "model_safetensors_sha256": weights, "adapter_sha256": adapter,
+              "adapter_applied": checkpoint == TUNED,
+              "adapter_checkpoint": spec.get("checkpoint") if checkpoint == TUNED else None}
+    digest = "%s:%s" % (spec["revision"], weights)
+    if adapter:
+        digest += "+adapter:" + adapter
+    return record, digest
+
+
+def load_base_checkpoint(device="cuda:0", *, spec=None, libs=None):
+    """The pinned 4-bit base of the tuned producer WITHOUT its adapter (R20). The same
+    path, checks and preparation as final_models.load gives the producer's base, up to the
+    adapter: final_models.verify_runtime, final_models.base_path (every base_hashes entry
+    checked; a mismatch refuses), the same from_pretrained arguments, architecture and
+    quantization checks, prepare_model_for_kbit_training, eval and the cache on. No adapter
+    file is read and PeftModel is never called. `libs` (AutoTokenizer, AutoModelForCausalLM,
+    prepare_model_for_kbit_training) is for the checks' mocked model; None imports the
+    real libraries."""
+    spec = spec or final_models.specification(FINAL_ROLE)
+    torch = final_models.verify_runtime()
+    final_models.require(device.startswith("cuda:"), "Frozen inference requires CUDA")
+    path = final_models.base_path(FINAL_ROLE, spec)
+    if libs is None:
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+        from peft import prepare_model_for_kbit_training
+        libs = SimpleNamespace(AutoTokenizer=AutoTokenizer, AutoModelForCausalLM=AutoModelForCausalLM,
+                               prepare_model_for_kbit_training=prepare_model_for_kbit_training)
+    tokenizer = libs.AutoTokenizer.from_pretrained(str(path), local_files_only=True,
+                                                   trust_remote_code=False)
+    model = libs.AutoModelForCausalLM.from_pretrained(
+        str(path), local_files_only=True, trust_remote_code=False,
+        device_map={"": int(device.split(":")[1])}, torch_dtype=torch.bfloat16,
+        attn_implementation=final_models.load_attention(FINAL_ROLE))
+    final_models.require(model.config.model_type == "qwen2" and model.is_loaded_in_4bit,
+                         "Frozen architecture mismatch")
+    quant = model.config.quantization_config
+    quant = quant.to_dict() if hasattr(quant, "to_dict") else quant
+    final_models.require(quant["bnb_4bit_quant_type"] == "nf4"
+                         and quant["bnb_4bit_compute_dtype"] == "bfloat16",
+                         "Frozen quantization mismatch")
+    model = libs.prepare_model_for_kbit_training(
+        model, use_gradient_checkpointing=True, gradient_checkpointing_kwargs={"use_reentrant": True})
+    model.requires_grad_(False)
+    model.eval()
+    model.gradient_checkpointing_disable()
+    model.config.use_cache = True
+    return tokenizer, model
+
+
+def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_tokens=None,
+                   checkpoint=None, prefill_chunk=None, prefill_decision=None,
+                   attention=B1_ATTENTION, attention_decision=None):
+    """The reading agent's backend, model, decoding policy, output allowance, checkpoint and
+    B1's attention and prefill (D-063: sdpa and one shot by default; eager or a chunk size
+    only with its recorded decision)."""
     root = Path(root)
+    attention = attention_record(prefill_chunk, prefill_decision, attention, attention_decision)
     registry = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
     entry = registry["agents"][agent]
     backend, model_id = entry["backend"], entry["model"]
@@ -225,16 +414,121 @@ def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_t
     declared, _ = decoding_policy.declaration(root)
     role = declared["backends"][backend].get("role")
     mode = final_models.mode()
-    if mode == "final" and backend == "local_producer":
-        model_id = final_models.specification("producer", root)["model_id"]
+    frozen = mode == "final" and backend == "local_producer"
+    # The two checkpoints exist for the frozen producer only; anywhere else the reference
+    # loader runs and only `base` is accepted.
+    chosen = resolve_checkpoint("final" if frozen else "base", checkpoint)
+    if frozen:
+        model_id = final_models.specification(FINAL_ROLE, root)["model_id"]
         sources["model"] = "config/final_models.json producer"
     allowance = (int(max_new_tokens) if max_new_tokens is not None
                  else int(pipeline_literal("PRODUCTION_MAX_TOKENS", root / "scripts" / "pipeline.py")))
     return {"agent": agent, "agent_source": "placeholder" if agent == READING_AGENT else "argument",
-            "backend": backend, "model_id": model_id, "model_mode": mode,
+            "backend": backend, "model_id": model_id, "model_mode": mode, "checkpoint": chosen,
             "role": role, "decoding": decoding, "max_new_tokens": allowance,
             "max_new_tokens_source": "argument" if max_new_tokens is not None
-            else "pipeline PRODUCTION_MAX_TOKENS", "sources": sources}
+            else "pipeline PRODUCTION_MAX_TOKENS", "sources": sources, "attention": attention}
+
+
+# ---------------------------------------------------------------------------
+# attention (D-056 conditions 1 to 4)
+
+
+def attention_record(prefill_chunk=None, prefill_decision=None, attention=B1_ATTENTION,
+                     attention_decision=None):
+    """B1's declared attention and prefill (D-063): the producer's default, sdpa pinned to the
+    memory-efficient backend, prefilled in one shot, both recorded under D-063, by default.
+    eager only with `attention_decision`, the recorded decision (D-NNN) that asks for the
+    measurement pass; chunked prefill (E, or another chunk size) only with `prefill_decision`.
+    A decision named with the default is accepted only when it is the default's own. The
+    rules are final_models.attention_setting and final_models.prefill_setting, the ones B3's
+    producer settings are read by."""
+    if attention not in ATTENTIONS:
+        raise ValueError("--attention is one of " + ", ".join(ATTENTIONS))
+    try:
+        record = final_models.attention_setting(attention, attention_decision)
+    except RuntimeError as exc:
+        raise ValueError("--attention/--attention-decision: " + str(exc)) from None
+    try:
+        prefill = final_models.prefill_setting(prefill_chunk, prefill_decision)
+    except RuntimeError as exc:
+        raise ValueError("--prefill-chunk/--prefill-decision: " + str(exc)) from None
+    return {**record, **prefill}
+
+
+def declared_attention(reader):
+    """The attention a run declares: the reader's, or the default (sdpa, one shot, D-063)."""
+    return dict((reader or {}).get("attention") or attention_record())
+
+
+def _attention_configs(model):
+    """Every distinct config object of the model that carries an attention setting: the
+    model's own and its modules' (one object in transformers, shared by every layer)."""
+    found = {}
+    candidates = [getattr(model, "config", None)]
+    modules = getattr(model, "modules", None)
+    if callable(modules):
+        candidates += [getattr(m, "config", None) for m in modules()]
+    for config in candidates:
+        if config is not None and hasattr(config, "_attn_implementation"):
+            found[id(config)] = config
+    return list(found.values())
+
+
+def enabled_sdpa_backends(torch):
+    """The sdpa backends torch currently allows, by SDPBackend name, joined with `+`."""
+    switches = torch.backends.cuda
+    return "+".join(name for name, switch in sorted(SDPA_SWITCHES.items())
+                    if getattr(switches, switch)())
+
+
+@contextlib.contextmanager
+def b1_attention(model, backends=None, implementation=B1_ATTENTION):
+    """B1's attention for the calls inside the block (D-056 conditions 1 and 2, D-063): the
+    model's attention setting switched to the pass's (sdpa by default, the producer's own;
+    eager for a measurement pass) and restored in a finally to what it was (the producer's
+    sealed attention as scripts/final_models.py loads it), whatever the block raised.
+    `implementation` sdpa also pins the memory-efficient sdpa backend, so a refused kernel raises
+    rather than falling back. Yields observe(), which reads the setting and the enabled
+    backends as they stand inside (no backend for eager). `backends` (SDPBackend names) is for
+    the checks' CPU model only."""
+    import torch
+    from torch.nn.attention import SDPBackend, sdpa_kernel
+    if implementation not in ATTENTIONS:
+        raise SetupError("unknown attention %r" % implementation)
+    configs = _attention_configs(model)
+    if not configs:
+        raise SetupError("the model carries no attention setting to switch")
+    before = [c._attn_implementation for c in configs]
+    sdpa = implementation == SDPA
+    chosen = [getattr(SDPBackend, name) for name in (backends or (B1_SDPA_BACKEND,))]
+
+    def observe():
+        values = sorted({str(c._attn_implementation) for c in configs})
+        return {"attention_implementation": "+".join(values),
+                "sdpa_backend": enabled_sdpa_backends(torch) if sdpa else None}
+
+    try:
+        for config in configs:
+            config._attn_implementation = implementation
+        with (sdpa_kernel(chosen) if sdpa else contextlib.nullcontext()):
+            yield observe
+    finally:
+        for config, value in zip(configs, before):
+            config._attn_implementation = value
+
+
+def prefill_of(attention):
+    """The prefill setting inside a declared attention record (final_models.prefill_setting)."""
+    return {k: attention.get(k) for k in PREFILL_FIELDS}
+
+
+def setup_failure_kind(exc):
+    """The kind of a call failure that stops the run (D-056 condition 3), or None for an
+    ordinary generation failure (a failed call, ABSTAIN). One classifier with B3's local
+    generate calls (final_models.generation_failure_kind, D-058): torch.cuda.OutOfMemoryError
+    is read by its class name, so this module imports no model library."""
+    return final_models.generation_failure_kind(exc)
 
 
 class LocalBackend:
@@ -243,26 +537,37 @@ class LocalBackend:
     model's own chat template with a system and a user turn, the frozen decoding kwargs.
     prepare() loads it once; nothing generates before that."""
 
-    def __init__(self, reader, run_context):
-        self.reader, self.run_context = reader, run_context
+    def __init__(self, reader, run_context, *, libs=None):
+        self.reader, self.run_context, self.libs = reader, run_context, libs
         self._tok = self._mdl = None
 
     def prepare(self):
-        """Load and verify; returns {model_id, digest, decoding} of what was loaded."""
+        """Load and verify; returns {model_id, digest, decoding, checkpoint} of what was
+        loaded. In final mode the reader's checkpoint decides: `tuned` through
+        final_models.resident (base plus adapter), `base` through load_base_checkpoint (the
+        same base, no adapter)."""
+        checkpoint = self.reader.get("checkpoint") or TUNED
         if self.reader["model_mode"] == "final" and self.reader["backend"] == "local_producer":
-            final_models.verify_runtime()
-            self._tok, self._mdl = final_models.resident("producer", self.run_context)
-            ident = final_models.identity("producer")
-            digest = ident["adapter_sha256"]
+            spec = final_models.specification(FINAL_ROLE)
+            record, digest = checkpoint_record(checkpoint, spec)
+            if checkpoint == TUNED:
+                final_models.verify_runtime()
+                self._tok, self._mdl = final_models.resident(FINAL_ROLE, self.run_context)
+            else:
+                self._tok, self._mdl = load_base_checkpoint(spec=spec, libs=self.libs)
         else:
             import agent_wrapper
             from huggingface_hub import snapshot_download
             self._tok, self._mdl = agent_wrapper._load_qwen(self.reader["model_id"])
-            # PROVISIONAL: a base checkpoint is identified by its local snapshot revision
+            # PROVISIONAL: a base-mode checkpoint is identified by its local snapshot revision
             snapshot = Path(snapshot_download(self.reader["model_id"], local_files_only=True))
             digest = "snapshot:" + snapshot.name
+            record = {"checkpoint": BASE, "model_id": self.reader["model_id"],
+                      "revision": snapshot.name, "model_safetensors_sha256": None,
+                      "adapter_sha256": None, "adapter_applied": False, "adapter_checkpoint": None}
         return {"model_id": self.reader["model_id"], "digest": digest,
-                "decoding": dict(self.reader["decoding"]["kwargs"])}
+                "decoding": dict(self.reader["decoding"]["kwargs"]), "checkpoint": record,
+                "attention": declared_attention(self.reader)}
 
     def _loaded(self):
         if self._tok is None:
@@ -291,9 +596,16 @@ class LocalBackend:
         tok, mdl = self._loaded()
         prompt = self._render(system, user)
         inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
-        with torch.no_grad():
-            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens,
-                               **self.reader["decoding"]["kwargs"])
+        attention = declared_attention(self.reader)
+        # D-063: the pass's attention for this call only (sdpa pinned, the producer's own, or
+        # eager for a measurement pass); the resident model is back on its own setting
+        # when the block ends, whatever it raised. The prompt is prefilled through the one
+        # generate helper B3's producer calls use, under the pass's prefill setting.
+        with torch.no_grad(), b1_attention(mdl, implementation=attention["attention_implementation"]) as observe:
+            observed = observe()
+            out, measured = final_models.generate_with_prefill(
+                mdl, inputs, max_new_tokens=max_new_tokens,
+                decoding_kwargs=self.reader["decoding"]["kwargs"], prefill=prefill_of(attention))
         start = int(inputs["input_ids"].shape[1])
         generated = int(out[0].shape[0]) - start
         text = tok.decode(out[0][start:], skip_special_tokens=True)
@@ -301,11 +613,34 @@ class LocalBackend:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return {"text": text, "payload": prompt, "form": "rendered_prompt",
-                "output_tokens": generated}
+                "output_tokens": generated, "attention": dict(attention, **observed), "prefill": measured}
+
+    def release(self):
+        """Drop this backend's hold on the model when its pass ends, so the next pass's peak
+        memory does not count it. A base checkpoint loaded here is freed; the tuned producer
+        stays resident in final_models' cache, as the pipeline keeps it."""
+        self._tok = self._mdl = None
+        gc.collect()
+        cuda = gpu_memory_probe()
+        if cuda is not None:
+            cuda.empty_cache()
 
 
 # ---------------------------------------------------------------------------
 # the run
+
+
+class RunContext:
+    """The run context B1 hands to the write paths it shares with the pipeline:
+    reply_records.write reads `run_dir` and `run_id`, and final_models.resident's load
+    telemetry (model_telemetry.emit) writes under `logs_dir()`, as on the pipeline's own
+    RunContext. A bare namespace without logs_dir() made the tuned load raise."""
+
+    def __init__(self, run_dir, run_id):
+        self.run_dir, self.run_id = str(run_dir), run_id
+
+    def logs_dir(self):
+        return Path(self.run_dir) / "logs"
 
 
 def load_items(path, document_id):
@@ -331,11 +666,14 @@ def _hashed(text):
     return {"sha256": hashlib.sha256(data).hexdigest(), "length_bytes": len(data)}
 
 
-def verify_identity(loaded, expected):
+def verify_identity(loaded, expected, attention=None):
     """Compare what was loaded with the values passed in (VERSIONS.md): a mismatch stops
-    the run (section 4)."""
-    wrong = [key for key in ("model_id", "digest", "decoding")
+    the run (section 4). `attention`, the run's declared attention (D-056 condition 1), is
+    always compared when given: a backend that reports none, or another, stops the run."""
+    wrong = [key for key in ("model_id", "digest", "decoding", "attention")
              if key in expected and expected[key] != loaded.get(key)]
+    if attention is not None and loaded.get("attention") != attention and "attention" not in wrong:
+        wrong.append("attention")
     if wrong:
         raise SetupError("loaded model differs from the recorded values on: " + ", ".join(wrong))
 
@@ -349,8 +687,73 @@ def length_reached(result, allowance):
     return tokens >= int(allowance)
 
 
+def gpu_memory_probe():
+    """torch.cuda when the backend has loaded torch and put it to use on a CUDA device, else
+    None. This file imports no model library itself: torch is read from sys.modules, where a
+    real backend's load put it, and CUDA is never initialized here (a mocked backend in the
+    checks leaves it untouched, so nothing is measured)."""
+    cuda = getattr(sys.modules.get("torch"), "cuda", None)
+    try:
+        return cuda if cuda is not None and cuda.is_available() and cuda.is_initialized() else None
+    except Exception:  # a torch built without CUDA support
+        return None
+
+
+def start_gpu_memory():
+    """Reset the peak counters at the start of a pass; returns (cuda, allocated at the reset)
+    or (None, None) without CUDA."""
+    cuda = gpu_memory_probe()
+    if cuda is None:
+        return None, None
+    cuda.reset_peak_memory_stats()
+    return cuda, int(cuda.memory_allocated())
+
+
+def read_gpu_memory(cuda, at_start):
+    """The pass's peak GPU memory, allocated and reserved, in bytes; every value null
+    without CUDA (D-056 condition 6)."""
+    measured = cuda is not None
+    return {"peak_allocated_bytes": int(cuda.max_memory_allocated()) if measured else None,
+            "peak_reserved_bytes": int(cuda.max_memory_reserved()) if measured else None,
+            "allocated_at_start_bytes": at_start if measured else None,
+            "measured": measured, "window": GPU_MEMORY_WINDOW if measured else "no CUDA: not measured"}
+
+
+def prefill_summary(measured, items):
+    """A pass's prefill, from what each call measured (D-061 item 4): calls measured, chunks,
+    the summed and the largest prefill seconds, and the largest prompt. Counts and seconds only;
+    seconds null when no call measured them (a mocked backend)."""
+    seconds = [m["prefill_seconds"] for m in measured if isinstance(m.get("prefill_seconds"), (int, float))]
+    return {"items": items, "calls_measured": len(measured),
+            "calls_chunked": sum(1 for m in measured if (m.get("chunks") or 0) > 0),
+            "chunks_total": sum(int(m.get("chunks") or 0) for m in measured),
+            "prompt_tokens_max": max((int(m.get("prompt_tokens") or 0) for m in measured), default=None),
+            "seconds_measured": len(seconds),
+            "seconds_total": round(sum(seconds), 6) if seconds else None,
+            "seconds_max": max(seconds) if seconds else None}
+
+
 def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMPT_PATH,
         run_id=None, expected=None, development=False, sensitive=False):
+    """Run B1 on one bundle (see _run). A backend built here (the LocalBackend) is released
+    when the pass ends, whatever it raised."""
+    built = backend is None
+    reader = reader or resolve_reader()
+    context = RunContext(out, run_id or ("b1-" + uuid.uuid4().hex[:12]))
+    if built:
+        backend = LocalBackend(reader, context)
+    try:
+        return _run(bundle, items_path, out, backend=backend, reader=reader, context=context,
+                    prompt_path=prompt_path, expected=expected, development=development,
+                    sensitive=sensitive)
+    finally:
+        release = getattr(backend, "release", None) if built else None
+        if callable(release):
+            release()
+
+
+def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMPT_PATH,
+         expected=None, development=False, sensitive=False):
     """Run B1 on one bundle. `backend` needs prepare() -> {model_id, digest, decoding},
     count_prompt(system, user), max_context() and generate(system, user, max_new_tokens)
     -> {text, payload, form, output_tokens}; None builds the LocalBackend (a real model load).
@@ -371,14 +774,12 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     unknown = sorted({str(i["benchmark"]).lower() for i in items} - set(spec["benchmarks"]))
     if unknown:
         raise ValueError("no prompt for benchmark " + ", ".join(unknown))
-    reader = reader or resolve_reader()
-    context = SimpleNamespace(run_dir=str(out), run_id=run_id or ("b1-" + uuid.uuid4().hex[:12]))
-    backend = backend or LocalBackend(reader, context)
     conventions = b1_prompt.conventions_from_bundle(bundle)
     reference = b1_prompt.reference_from_bundle(bundle)
     # Load and verify once, before the first item; nothing below is caught.
     loaded = backend.prepare()
-    verify_identity(loaded, expected or {})
+    attention = declared_attention(reader)
+    verify_identity(loaded, expected or {}, attention)
     users = {i["item_id"]: render_user(spec, str(i["benchmark"]).lower(), document=doc["text"],
                                        conventions=conventions, item=i, reference=reference)
              for i in items}
@@ -387,15 +788,30 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     over = [i for i, user in users.items()
             if backend.count_prompt(systems[i], user) + reader["max_new_tokens"] > limit]
     if over:
-        raise SetupError("prompt plus output allowance exceeds the model's context for %d item(s): %s"
-                         % (len(over), ", ".join(over[:5])))
+        # D-084 (DEV-014): one setup-failure rule for B1 and B3. A prompt over the context is
+        # a setup failure of the run on this document, recorded where the adapters read it,
+        # before anything is generated; never an abstention.
+        error = ("prompt plus output allowance exceeds the model's context for %d item(s): %s"
+                 % (len(over), ", ".join(over[:5])))
+        _write_json(out / SETUP_FAILURE_FILE, {
+            "baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-setup-failure-v1",
+            "kind": PROMPT_OVER_CONTEXT, "error": error, "item_id": sorted(over)[0],
+            "items_over_context": sorted(over), "document_id": doc["id"],
+            "items_total": len(items), "items_before_stop": 0, "reply_records_written": 0,
+            "call_id": None, "checkpoint": reader.get("checkpoint"), "attention": attention,
+            "gpu_memory": None,
+            "counted_as": "a setup failure of the B1 run, never an abstention (D-084)",
+            "finished_at": _now()})
+        raise SetupFailure(PROMPT_OVER_CONTEXT, sorted(over)[0], error)
     decoding = dict(decoding_policy.usage_fields(reader["decoding"]),
                     max_new_tokens=reader["max_new_tokens"])
-    summary, written = {}, []
+    # D-056 condition 6: the pass's peak GPU memory, from here to after the last item.
+    cuda, at_start = start_gpu_memory()
+    summary, written, prefill_times = {}, [], []
     for item in items:
         bench_key = str(item["benchmark"]).lower()
         bench = spec["benchmarks"][bench_key]
-        error, result = "", {}
+        error, result, stop = "", {}, None
         try:
             result = backend.generate(systems[item["item_id"]], users[item["item_id"]],
                                       reader["max_new_tokens"]) or {}
@@ -403,15 +819,41 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
             raise
         except Exception as exc:  # a generation error is a failed call, and still a record
             error = type(exc).__name__
+            # D-056 condition 3: out of memory, or a refused kernel, stops the run.
+            stop = setup_failure_kind(exc)
         reply = result.get("text") if isinstance(result.get("text"), str) else None
+        # The attention the call ran under, as the backend observed it inside the switch;
+        # a backend that observes nothing (a failed call) is recorded under the declared one.
+        observed = result.get("attention") if isinstance(result.get("attention"), dict) else None
+        call_attention = observed or attention
+        # What the call's prefill measured (D-061 item 4), counts and seconds only.
+        measured = result.get("prefill") if isinstance(result.get("prefill"), dict) else None
+        if measured is not None:
+            prefill_times.append(measured)
         call_id = reply_records.write(
             context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
             model_mode=reader["model_mode"], payload=result.get("payload"),
             payload_form=result.get("form"), reply=reply, ok=not error, error=error,
-            decoding=decoding, sensitive=sensitive, phase=ARM, doc_id=doc["id"])
+            decoding=decoding, sensitive=sensitive, phase=ARM, doc_id=doc["id"],
+            attention=call_attention, prefill=measured)
         if not call_id:
             raise SetupError("the reply record for item %s could not be written" % item["item_id"])
         written.append(call_id)
+        if stop:
+            _write_json(out / SETUP_FAILURE_FILE, {
+                "baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-setup-failure-v1",
+                "kind": stop, "error": error, "item_id": item["item_id"], "document_id": doc["id"],
+                "items_total": len(items), "items_before_stop": len(written) - 1,
+                "reply_records_written": len(written), "call_id": call_id,
+                "checkpoint": reader.get("checkpoint"), "attention": attention,
+                "gpu_memory": read_gpu_memory(cuda, at_start),
+                "counted_as": "a setup failure of the B1 run, never an abstention (D-056 condition 3)",
+                "finished_at": _now()})
+            raise SetupFailure(stop, item["item_id"], error)
+        if observed is not None and observed != attention:
+            raise SetupError("item %s ran under attention %s, not the declared %s"
+                             % (item["item_id"], json.dumps(observed, sort_keys=True),
+                                json.dumps(attention, sort_keys=True)))
         parsed = parse_reply(reply, bench, item["item_id"]) if not error else dict(
             parse_reply(None, bench), failure="backend_failure")
         undecided = bool(parsed["parsed"]) and _norm_label(parsed["label"]) == _norm_label(bench["undecided"])
@@ -429,7 +871,8 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
             "length_reached_allowance": reached}, **texts, **{
             "reply_item_id": parsed["reply_item_id"], "item_id_matches": parsed["item_id_matches"],
             "call_id": call_id, "backend_ok": not error, "reading_agent": reader["agent"],
-            "model_id": reader["model_id"], "model_mode": reader["model_mode"]}))
+            "model_id": reader["model_id"], "model_mode": reader["model_mode"],
+            "checkpoint": reader.get("checkpoint"), "attention": call_attention}))
         row = summary.setdefault(bench_key, {"items": 0, "parsed": 0, "undecided": 0,
                                              "abstain": 0, "backend_failures": 0, "repaired": 0,
                                              "length_reached_allowance": 0,
@@ -444,6 +887,7 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
         row["repaired"] += int(parsed["repaired"])
     if len(written) != len(items) or len(set(written)) != len(items):
         raise SetupError("reply records (%d) do not match items (%d)" % (len(set(written)), len(items)))
+    gpu_memory = read_gpu_memory(cuda, at_start)
     for row in summary.values():
         row["parse_rate"] = row["parsed"] / row["items"]
         row["parse_rate_floor"] = PARSE_RATE_FLOOR
@@ -451,13 +895,34 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     result = {"baseline": BASELINE_TEXT, "arm": ARM, "finished_at": _now(), "run_id": context.run_id,
               "bundle": Path(bundle).name, "document_id": doc["id"],
               "prompt": {"source": spec.get("source"), "status": spec.get("status")},
-              "reader": {k: reader[k] for k in ("agent", "agent_source", "backend", "model_id",
-                                                "model_mode", "max_new_tokens", "max_new_tokens_source")},
-              "loaded": loaded, "verified_against": sorted((expected or {}).keys()),
+              "reader": {k: reader.get(k) for k in ("agent", "agent_source", "backend", "model_id",
+                                                    "model_mode", "checkpoint", "max_new_tokens",
+                                                    "max_new_tokens_source")},
+              "checkpoint": loaded.get("checkpoint") or {"checkpoint": reader.get("checkpoint")},
+              "attention": attention, "gpu_memory": gpu_memory,
+              "prefill_time": prefill_summary(prefill_times, len(items)),
+              "loaded": loaded, "verified_against": sorted(set(expected or {}) | {"attention"}),
               "development": bool(development), "sensitive": bool(sensitive),
               "reference_material": bool(reference), "decoding": decoding, "benchmarks": summary}
     _write_json(out / "b1_summary.json", result)
     return result
+
+
+def run_b1(bundle, items, out, checkpoint, *, expected=None, development=False,
+           agent=READING_AGENT, max_new_tokens=None, sensitive=False, run_id=None,
+           backend=None, profile="local", prefill_chunk=None, prefill_decision=None,
+           attention=B1_ATTENTION, attention_decision=None):
+    """The one public entry for a runner that imports this file: B1 on one bundle with one
+    checkpoint (`tuned` or `base`), into `out` (a folder of its own per pass). The
+    reader is resolved from the tracked configuration as the command line resolves it; a
+    real model is loaded unless `backend` is given (the checks' mocked model). Returns the
+    b1_summary.json content; raises on any setup failure, before anything is generated."""
+    reader = resolve_reader(agent=agent, profile=profile, max_new_tokens=max_new_tokens,
+                            checkpoint=checkpoint, prefill_chunk=prefill_chunk,
+                            prefill_decision=prefill_decision, attention=attention,
+                            attention_decision=attention_decision)
+    return run(bundle, items, out, backend=backend, reader=reader, expected=expected,
+               development=development, sensitive=sensitive, run_id=run_id)
 
 
 def pool_parse_rates(runs_root, out=None) -> dict:
@@ -489,8 +954,99 @@ def pool_parse_rates(runs_root, out=None) -> dict:
     return result
 
 
+def reply_identity(record):
+    """What makes two replies byte-identical: the SHA-256 and byte length reply_records.write
+    takes over the reply's UTF-8 bytes (kept in a sensitive run too), or None when the call
+    returned no reply."""
+    reply = (record or {}).get("reply")
+    if not isinstance(reply, dict) or not reply.get("sha256"):
+        return None
+    return reply["sha256"], reply.get("length_bytes")
+
+
+def _pass_folder(folder):
+    """(labels by item id, reply records by call id, summary or None) of one pass folder."""
+    folder = Path(folder)
+    labels = {p.stem: json.loads(p.read_text(encoding="utf-8"))
+              for p in sorted((folder / "labels").glob("*.json"))}
+    if not labels:
+        raise ValueError("no labels under " + str(folder))
+    calls = {r.get("call_id"): r for r in reply_records.records(folder / "audit" / "model_replies")}
+    path = folder / "b1_summary.json"
+    summary = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    return labels, calls, summary
+
+
+def _pass_identity(folder, summary):
+    """The pass a folder holds, from its summary: no text."""
+    summary = summary or {}
+    attention = summary.get("attention") or {}
+    return {"folder": Path(folder).name, "summary_written": bool(summary),
+            "checkpoint": (summary.get("reader") or {}).get("checkpoint"),
+            "digest": (summary.get("loaded") or {}).get("digest"),
+            "attention_implementation": attention.get("attention_implementation"),
+            "attention_decision": attention.get("attention_decision"),
+            "prefill": attention.get("prefill"), "prefill_chunk_tokens": attention.get("prefill_chunk_tokens"),
+            "prefill_decision": attention.get("prefill_decision")}
+
+
+def compare_passes(a, b, out):
+    """D-056 condition 6: two pass folders compared item by item. For each item in either:
+    whether the two reply texts are byte-identical (reply_identity; null when an item or a
+    reply is missing on a side) and whether the two labels agree (the same label, or both
+    abstained; null when an item is missing on a side). Writes `out` with item ids, booleans
+    and counts only, never a reply's text or a label."""
+    labels_a, calls_a, summary_a = _pass_folder(a)
+    labels_b, calls_b, summary_b = _pass_folder(b)
+    rows = []
+    counts = dict.fromkeys(("items", "in_both", "missing_in_a", "missing_in_b", "replies_compared",
+                            "replies_byte_identical", "replies_differ", "reply_missing",
+                            "labels_agree", "labels_differ", "both_abstained"), 0)
+    for item_id in sorted(set(labels_a) | set(labels_b)):
+        la, lb = labels_a.get(item_id), labels_b.get(item_id)
+        counts["items"] += 1
+        counts["missing_in_a"] += int(la is None)
+        counts["missing_in_b"] += int(lb is None)
+        identical = agrees = None
+        if la is not None and lb is not None:
+            counts["in_both"] += 1
+            ra = reply_identity(calls_a.get(la.get("call_id")))
+            rb = reply_identity(calls_b.get(lb.get("call_id")))
+            if ra is None or rb is None:
+                counts["reply_missing"] += 1
+            else:
+                identical = ra == rb
+                counts["replies_compared"] += 1
+                counts["replies_byte_identical" if identical else "replies_differ"] += 1
+            agrees = (la.get("label"), bool(la.get("abstain"))) == (lb.get("label"), bool(lb.get("abstain")))
+            counts["labels_agree" if agrees else "labels_differ"] += 1
+            counts["both_abstained"] += int(bool(la.get("abstain")) and bool(lb.get("abstain")))
+        rows.append({"item_id": item_id, "reply_byte_identical": identical, "label_agrees": agrees})
+    result = {"baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-pass-comparison-v1",
+              "a": _pass_identity(a, summary_a), "b": _pass_identity(b, summary_b),
+              "byte_identity": "the recorded SHA-256 and byte length of each reply's UTF-8 text",
+              "label_agreement": "the same label, or both abstained",
+              "counts": counts, "items": rows, "finished_at": _now()}
+    _write_json(Path(out), result)
+    return result
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["compare"]:
+        compare = argparse.ArgumentParser(prog="bare_model.py compare", allow_abbrev=False,
+                                          description="compare two B1 pass folders item by item")
+        compare.add_argument("--a", required=True, help="one bare_model.py output folder")
+        compare.add_argument("--b", required=True, help="another bare_model.py output folder")
+        compare.add_argument("--out", required=True, help="the comparison file to write")
+        args = compare.parse_args(argv[1:])
+        try:
+            result = compare_passes(args.a, args.b, args.out)
+        except (OSError, ValueError, KeyError) as exc:
+            print("comparison stopped: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
+            return 4
+        print(json.dumps(result["counts"], indent=2))
+        return 0
     if argv[:1] == ["pool"]:
         pool = argparse.ArgumentParser(prog="bare_model.py pool",
                                        description="pool the development parse rate per benchmark")
@@ -504,22 +1060,7 @@ def main(argv=None):
             return 4
         print(json.dumps(result["benchmarks"], indent=2))
         return 0
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--bundle", required=True)
-    parser.add_argument("--items", required=True, help="items.json written beside the bundle")
-    parser.add_argument("--out", required=True)
-    parser.add_argument("--agent", default=READING_AGENT,
-                        help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
-    parser.add_argument("--profile", choices=["local", "registry"], default="local")
-    parser.add_argument("--max-new-tokens", type=int, default=None)
-    parser.add_argument("--expect-model-id")
-    parser.add_argument("--expect-digest")
-    parser.add_argument("--expect-decoding", help="the decoding kwargs as a JSON object")
-    parser.add_argument("--development", action="store_true",
-                        help="development run: the recorded values may be omitted (recorded)")
-    parser.add_argument("--sensitive", action="store_true",
-                        help="keep only hashes of prompts, replies, evidence and reason")
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
     expected = {}
     if args.expect_model_id:
         expected["model_id"] = args.expect_model_id
@@ -528,15 +1069,57 @@ def main(argv=None):
     if args.expect_decoding:
         expected["decoding"] = json.loads(args.expect_decoding)
     try:
-        reader = resolve_reader(agent=args.agent, profile=args.profile,
-                                max_new_tokens=args.max_new_tokens)
-        result = run(args.bundle, args.items, args.out, reader=reader, expected=expected,
-                     development=args.development, sensitive=args.sensitive)
+        result = run_b1(args.bundle, args.items, args.out, args.checkpoint, expected=expected,
+                        development=args.development, agent=args.agent,
+                        max_new_tokens=args.max_new_tokens, sensitive=args.sensitive,
+                        profile=args.profile, prefill_chunk=args.prefill_chunk,
+                        prefill_decision=args.prefill_decision, attention=args.attention,
+                        attention_decision=args.attention_decision)
+    except SetupFailure as exc:  # D-056 condition 3: reported apart, in b1_setup_failure.json
+        print("B1 stopped by a setup failure (%s), recorded in %s: %s"
+              % (exc.kind, SETUP_FAILURE_FILE, exc), file=sys.stderr)
+        return 4
     except Exception as exc:  # setup, load, verification or record failure: stop, non-zero
         print("B1 stopped before or during the run: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
         return 4
     print(json.dumps(result["benchmarks"], indent=2))
     return 0
+
+
+def build_parser():
+    """The run's argument parser, the one main() parses with. The ordinary final runner seals
+    a checkpoint's arguments against exactly these options (tools/ordinary_final_run.py
+    B1_RUNNER_ARGS and B1_SEALED_ARGS; a controller check holds the two equal). No option is
+    taken by an abbreviation, so a sealed argument means here exactly what the seal admitted."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], allow_abbrev=False)
+    parser.add_argument("--bundle", required=True)
+    parser.add_argument("--items", required=True, help="items.json written beside the bundle")
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--agent", default=READING_AGENT,
+                        help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
+    parser.add_argument("--profile", choices=["local", "registry"], default="local")
+    parser.add_argument("--checkpoint", choices=list(CHECKPOINTS), default=None,
+                        help="final mode: the tuned producer (default) or its pinned base without "
+                             "the adapter; base mode: base only")
+    parser.add_argument("--max-new-tokens", type=int, default=None)
+    parser.add_argument("--expect-model-id")
+    parser.add_argument("--expect-digest")
+    parser.add_argument("--expect-decoding", help="the decoding kwargs as a JSON object")
+    parser.add_argument("--development", action="store_true",
+                        help="development run: the recorded values may be omitted (recorded)")
+    parser.add_argument("--sensitive", action="store_true",
+                        help="keep only hashes of prompts, replies, evidence and reason")
+    parser.add_argument("--prefill-chunk", default=None,
+                        help="one_shot by default (D-063); a chunk size (E is %d) for a measurement "
+                             "pass, only with --prefill-decision" % final_models.E_CHUNK_TOKENS)
+    parser.add_argument("--prefill-decision", default=None,
+                        help="the recorded decision (D-NNN) that asks for that prefill")
+    parser.add_argument("--attention", choices=list(ATTENTIONS), default=B1_ATTENTION,
+                        help="sdpa (the producer's, D-063, the default) or eager for a measurement "
+                             "pass; eager only with --attention-decision")
+    parser.add_argument("--attention-decision", default=None,
+                        help="the recorded decision (D-NNN) that asks for the eager measurement pass")
+    return parser
 
 
 if __name__ == "__main__":

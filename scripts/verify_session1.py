@@ -21500,31 +21500,51 @@ def check_233_absence_claim_requires_a_quote():
     if "MUST set" not in psrc:
         return _fail("the absence question does not tell the model the quote is required")
 
-    # NEUTRALISE on the real file.
-    pr_path = ROOT / "scripts" / "paired_review.py"
-    original = pr_path.read_text(encoding="utf-8")
-    neutralised = original.replace(
-        '    if not str(item.get("quote") or "").strip():\n',
-        '    if False:\n', 1)
-    if neutralised == original:
-        return _fail("could not neutralise: the quote requirement was not found")
+    # EXECUTED on the real phase 5.5: both judged paths (a judged absence, and D-068's
+    # uncomputable plan) refuse an absence claim with no quote, or a blank one, through
+    # paired_review.judged_item_refusal.
     try:
-        pr_path.write_text(neutralised, encoding="utf-8")
-        gone = '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8")
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the requirement itself, FAIL, RESTORE, PASS. The neutralised function is
+    # compiled from the real paired_review.py with only the no-quote test inside
+    # refuses_judged_absence replaced, read and never written. (This used to write the
+    # real file, replacing the first textual copy of that line, and then only confirm the
+    # text had changed; D-068 added a second copy in judged_item_refusal, so the
+    # confirmation failed, and nothing was ever executed under the neutralisation.)
+    neutral_fn = _jrc.refuses_judged_absence_without_quote_test()
+    if neutral_fn is None:
+        return _fail("could not neutralise: the quote requirement was not found in "
+                     "paired_review.refuses_judged_absence")
+    original = _pr.refuses_judged_absence
+    _pr.refuses_judged_absence = neutral_fn
+    try:
+        neutral_unit = neutral_fn({"relation": "missing_field",
+                                   "stated_field": "calibration authority signature"},
+                                  rule, present)
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
     finally:
-        pr_path.write_text(original, encoding="utf-8")
-    if not gone:
-        return _fail("neutralise did not take effect on the real file")
-    if '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8"):
-        return _fail("restore failed: the quote requirement is gone")
+        _pr.refuses_judged_absence = original
+    if neutral_unit is not False:
+        return _fail("neutralise did not take effect: a claim with no quote is still refused")
+    if neutralised[0] != "FAIL":
+        return _fail("with the quote requirement neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("an absence claim with no quote, or an empty one, is refused; one with a "
                "quote naming a field the unit lacks passes; a non-absence relation is "
                "untouched; the contract does NOT require the field, so no past run "
                "becomes a violation and the requirement applies from this commit "
-               "forward; the model is told it is required; neutralise/restore proved")
+               "forward; the model is told it is required; the real phase 5.5 %s; "
+               "neutralise/fail/restore/pass proved on that path" % shipped[1])
 
 
 def check_232_typed_amendment_and_bounded_deepening():
@@ -21918,32 +21938,45 @@ def check_229_quoted_span_must_appear_in_the_unit():
                     {"quote": "next calibration visit logged"}, real) is not False:
                 return _fail("the real VETCH entry refuses a span it actually contains")
 
-    # WIRED: the paired path checks it, and the model is asked for it.
+    # The model is asked for it.
     src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
-    if "quote_not_in_unit" not in src:
-        return _fail("pipeline.py never calls quote_not_in_unit, so nothing checks a quote")
     if "`quote`" not in src and "quote`" not in src:
         return _fail("the absence question does not ask the model for a quote")
 
-    # NEUTRALISE: accept any quote.
+    # WIRED, EXECUTED: the real phase 5.5 refuses a quote the unit lacks on BOTH judged
+    # paths (a judged absence, and D-068's uncomputable plan), through
+    # paired_review.judged_item_refusal. (This used to look for the name
+    # quote_not_in_unit in pipeline.py, which D-068 moved into the helper.)
+    try:
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the real enforcement (accept any quote), FAIL, RESTORE, PASS.
     original = _pr.quote_not_in_unit
     _pr.quote_not_in_unit = lambda _i, _t: False
     try:
-        if _pr.quote_not_in_unit({"quote": "not in the unit"}, unit):
-            return _fail("neutralise did not take effect")
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
     finally:
         _pr.quote_not_in_unit = original
-    if _pr.quote_not_in_unit({"quote": "the next calibration visit is not stated"},
-                             unit) is not True:
-        return _fail("restore failed: a hallucinated span is accepted again")
+    if neutralised[0] != "FAIL":
+        return _fail("with quote_not_in_unit neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("a finding quoting words the unit does not contain is refused, including "
                "the real VETCH span from the corpus; a quote the unit carries passes "
                "through folded whitespace and case; no quote and an empty quote are never "
-               "refused because the field is optional by measurement (requiring it would "
-               "have made all 62 findings of the two saved runs violations at once); the "
-               "contract carries `quote` unrequired and the absence question asks for it; "
-               "neutralise/restore proved")
+               "refused by this test because the field is optional by measurement (requiring "
+               "it would have made all 62 findings of the two saved runs violations at once); "
+               "the contract carries `quote` unrequired and the absence question asks for it; "
+               "the real phase 5.5 %s; neutralise/fail/restore/pass proved on that path"
+               % shipped[1])
 
 
 def check_228_scorer_checks_the_reason_not_only_the_location():
@@ -22710,18 +22743,21 @@ def check_222_launcher_server_url_and_token_handshake():
     if neutralised == original:
         return _fail("could not neutralise: the console URL line was not found in "
                      "shimmer.sh as this check expects it")
+    # The launcher's exact bytes are kept and put back, so a run of the gate leaves the
+    # tree unchanged (text mode on Windows would write CRLF over the LF the repo pins).
+    original_bytes = sh.read_bytes()
     try:
-        sh.write_text(neutralised, encoding="utf-8")
+        sh.write_bytes(neutralised.encode("utf-8"))
         body = sh.read_text(encoding="utf-8", errors="replace")
         still_bad = "http://localhost:8000 ..." in body
     finally:
-        sh.write_text(original, encoding="utf-8")
+        sh.write_bytes(original_bytes)
     if not still_bad:
         return _fail("neutralise did not reintroduce the bare URL; the check is not "
                      "reading the real launcher")
-    # RESTORE verified.
-    if "http://localhost:8000 ..." in sh.read_text(encoding="utf-8", errors="replace"):
-        return _fail("restore failed: shimmer.sh still carries the bare URL")
+    # RESTORE verified, byte for byte.
+    if sh.read_bytes() != original_bytes:
+        return _fail("restore failed: shimmer.sh differs from its bytes before the check")
 
     return _ok("both launchers point at /console and /health on SHIMMER_PORT (the app "
                "registers no bare / route), and generate the token, hold the hash and "
@@ -24856,15 +24892,143 @@ def check_282_baseline_arms_hold_their_contracts():
     return check()
 
 
+def check_288_b3_local_attention_is_pinned_and_recorded():
+    """Loop stage S5, D-058, D-060, D-061 and D-063: B3 ran out of GPU memory on a ContraDoc
+    document (INC-015). E (eager, chunked prefill) missed its declared threshold and D-061's
+    declared fallback adopted option A (D-063): the producer loads with a sealed attention
+    setting (sdpa by default under D-063, eager only with a recorded decision) and a sealed
+    prefill setting (one shot by default under D-063, chunked only with a recorded decision);
+    every producer call runs through the one shared generate helper, pinned to the
+    memory-efficient sdpa backend on CUDA, as every _load_qwen call does; each records its
+    kernel and prefill in its reply record; the Auditor896 classifier stays eager as its
+    runtime contract says; out of memory or a refused kernel is one named failure never
+    retried; a prompt over the model's context is refused and recorded, never truncated. Mocked
+    models and one tiny CPU model built in the check (an eager measurement call of three chunks
+    and the tail replies byte for byte as one-shot)."""
+    from local_attention_checks import check
+    return check()
+
+
+def check_289_l2_diagnosis_fixes_hold():
+    """Loop stage S5, D-061 (a), (b) and (c), from the L2 diagnosis: a VERIFIER reply that is not
+    a JSON object is a recorded contract failure in auditor_pairs, never a crash (L2 entry 06); the
+    runner reports a run that reached its end with exit 0 but semantically incomplete as
+    `semantic_incomplete`, not `pipeline_not_completed`; a failed producer partition under
+    deterministic decoding is not retried (it can only repeat itself, P13) and is recorded
+    `retry_skipped_deterministic` on the observation and the reply outcome. Fixtures only."""
+    from l2_diagnosis_checks import check
+    return check()
+
+
+def check_290_uncomputable_judgment_is_kept_as_a_model_record():
+    """Loop stage S5, D-068: where Python's checks produce no comparison for a unit and a
+    rule, the model's answer used to be discarded (judging-call outcome advisory_not_kept),
+    so a rule only reading can decide had no answer in the run. It is kept now as a
+    model-written Finding record: unit and rule stamped from the plan, never the reply; the
+    judged-absence refusals and the quote check applied, refusals listed; a failed or refused
+    reply keeps nothing and says why; posted once with the model's backend, marked in the
+    deliverables, never promoted. Real phase 5.5 and phase 6 on a mocked run, no model;
+    neutralise, fail, restore, pass for each property."""
+    from uncomputable_judgment_checks import check
+    return check()
+
+
+def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
+    """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
+    (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
+    more calls than the scheduler admits at once (289 on a real development agreement, bound
+    256). An over-bound gather now runs as consecutive waves of at most the bound, in source
+    order, every chunk shown the ONE pre-gather bus snapshot and depending on the ONE
+    pre-gather parent set, posts published in source order; a gather at or below the bound
+    is one wave exactly as before. execute_plans on fixture wrappers with a small bound;
+    neutralise, fail, restore, pass for each property."""
+    from execution_topology_checks import wave_admission_check
+    return wave_admission_check()
+
+
+def check_292_every_controller_path_child_process_starts_without_a_window():
+    """Loop stage S5, D-079: the detached controller and its watchdog have no console, and a
+    console program (ssh, scp, ssh-keygen, curl, git, python) started from such a process
+    opens a visible window on Windows; they kept popping up on the operator's screen. Every
+    child-process start in the operator-side controller files and every file under
+    tools/loop/ passes its creation flags through cloud_run_common.no_window (the Windows
+    no-window flag ORed with any flags it had; nothing changes elsewhere, and a child that
+    must keep the operator's console says so with keep_console). Runs the controller check's
+    two legs (an AST scan of every start; the real controller, adapter, termination client
+    and progress reader executed against fakes that record each start's flags), then
+    neutralises each in turn (one start's flag dropped from the source; the helper adding no
+    flag), requires a failure, restores and requires a pass."""
+    import io
+    import os
+    import unittest
+    from unittest.mock import patch
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import cloud_run_common
+    import ordinary_final_controller_checks as checks
+    name = 'test_every_child_process_on_the_controller_path_starts_without_a_window'
+
+    def passes():
+        result = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(checks.ControllerChecks(name))
+        return result.wasSuccessful()
+    if not passes():
+        return "FAIL", 'a child process on the controller path starts without no_window (run %s)' % name
+    if os.name != 'nt':
+        return "SKIP", 'the scan passed; the executed leg proves the flag only on Windows'
+    proofs = []
+    for owner, attribute, mutant in ((checks, 'hidden_path_sources', checks.sources_with_one_flag_dropped),
+                                     (cloud_run_common, 'windows', lambda: False)):
+        with patch.object(owner, attribute, mutant):
+            failed = not passes()
+        restored = passes()
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (owner.__name__, attribute, failed, restored)
+        proofs.append(attribute)
+    return "PASS", ('every child-process start on the controller path passes no_window (AST scan and an executed '
+                    'controller run, adapter, termination client and progress reader); neutralised, failed, '
+                    'restored, passed: ' + ', '.join(proofs))
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
     budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
     no source id in a bundle; bundles read back as input-format-v1-draft and as
     pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
-    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 refused until section 12 item 9); the
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 read from the run's bus, adopted in D-056); the
     metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
     from adapter_checks import check
+    return check()
+
+
+def check_285_scorer_reads_a_key_and_twin_by_path():
+    """Loop stage S5, item 0.10 (R5, R21): tools/score_corpus.py scores a bundle outside
+    benchmark/corpora/ by an explicit --key path, and its clean twin by --twin-key and
+    --twin-run; the --corpus name and the absolute path the cloud caller passes are
+    unchanged. Each case is proven by neutralise, fail, restore, pass. SKIP when
+    benchmark/generators/ is absent."""
+    from scorer_path_checks import check
+    return check()
+
+
+def check_286_negotiation_dev_case_is_a_valid_live_case():
+    """Loop stage S5, item 0.9 (DS5-10): the negotiation multi-round development case under
+    benchmark/dev_cases/ is read by the sealer's own reader, accepted by the controller's
+    validate_live_case_manifest and bound span by span by multi_round.bind_sources, and is
+    exactly its builder's output from the anonymised corpus files. Each case is proven by
+    neutralise, fail, restore, pass. SKIP when benchmark/dev_cases/ is absent."""
+    from dev_case_checks import check
+    return check()
+
+
+def check_287_built_bundles_stage_as_the_sealers_workload():
+    """Loop stage S5 join, item 3: tools/stage_workload.py stages an adapter build and a
+    multi-round generator bundle into the folder the sealer's --workload reads (accepted by
+    workload_members, no key file, every source byte kept) and writes each B1 bundle's own
+    item table for --items; a file named like a key refuses the staging. Each case is proven
+    by neutralise, fail, restore, pass."""
+    from stage_workload_checks import check
     return check()
 
 
@@ -25240,6 +25404,22 @@ CHECKS = [
      check_283_benchmark_adapters_follow_the_preregistration),
     ("284 every refused change record carries a typed reason_kind kept in review_data.json",
      check_284_prior_refusal_kinds),
+    ("285 the scorer reads a key and a clean twin by explicit path, the corpus path unchanged",
+     check_285_scorer_reads_a_key_and_twin_by_path),
+    ("286 the negotiation development case is a valid live multi-round case",
+     check_286_negotiation_dev_case_is_a_valid_live_case),
+    ("287 built benchmark bundles stage as the sealer's workload with no key file",
+     check_287_built_bundles_stage_as_the_sealers_workload),
+    ("288 B3's producer runs sdpa pinned with sealed one-shot prefill (D-063), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061, D-063)",
+     check_288_b3_local_attention_is_pinned_and_recorded),
+    ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
+     check_289_l2_diagnosis_fixes_hold),
+    ("290 a model's answer where Python could compute nothing is kept as a stamped, model-written, never-promoted record (D-068)",
+     check_290_uncomputable_judgment_is_kept_as_a_model_record),
+    ("291 a gather over the scheduler's bound runs as waves sharing one snapshot and one parent set (D-076)",
+     check_291_over_bound_gather_runs_as_shared_snapshot_waves),
+    ("292 every child process the controller path starts runs with no window (D-079)",
+     check_292_every_controller_path_child_process_starts_without_a_window),
 ]
 
 

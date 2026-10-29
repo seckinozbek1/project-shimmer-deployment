@@ -30,6 +30,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+from cloud_run_common import no_window  # D-079: every child here runs with no window
 REAPER = HERE / 'instance_reaper.py'
 FAKE_KEY = 'PROOFONLY0a1b2c3d4e5f6a7b8c9d0e1f'
 
@@ -77,12 +79,13 @@ def run_reaper(work, now, ledger=None):
     args = [sys.executable, str(REAPER), '--mock-state', str(work / 'mock_state.json'),
             '--ledger', str(ledger or work / 'ledger.jsonl'), '--append-to', str(ledger or work / 'ledger.jsonl'),
             '--status', str(work / 'reaper_status.json'), '--now', iso(now)]
-    result = subprocess.run(args, capture_output=True, text=True, timeout=60)
+    result = subprocess.run(args, capture_output=True, text=True, timeout=60, creationflags=no_window())
     return result.returncode, result.stdout + result.stderr
 
 
 def alive(pid):
-    out = subprocess.run(['tasklist', '/FI', f'PID eq {pid}', '/NH'], capture_output=True, text=True)
+    out = subprocess.run(['tasklist', '/FI', f'PID eq {pid}', '/NH'], capture_output=True, text=True,
+                         creationflags=no_window())
     return str(pid) in out.stdout
 
 
@@ -100,7 +103,7 @@ def main(work):
 
     flags = 0x00000008 | 0x00000200 if os.name == 'nt' else 0  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     proc = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--fake-controller', str(work)],
-                            creationflags=flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            creationflags=no_window(flags), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             stdin=subprocess.DEVNULL, close_fds=True)
     for _ in range(60):
         if (work / 'controller.json').exists():
@@ -211,7 +214,7 @@ def main(work):
     args = [sys.executable, str(REAPER), '--mock-state', str(two / 'mock_state.json'), '--ledger', str(private),
             '--ledger', str(r_ledger), '--append-to', str(private), '--status', str(two / 'reaper_status.json'),
             '--now', iso(deadline + timedelta(seconds=1))]
-    code = subprocess.run(args, capture_output=True, text=True, timeout=60).returncode
+    code = subprocess.run(args, capture_output=True, text=True, timeout=60, creationflags=no_window()).returncode
     ends = lambda path: [(r['instance_name'], r['reason'], r['actual_minutes'])
                          for r in map(json.loads, path.read_text(encoding='utf-8').splitlines()) if r['event'] == 'termination']
     results['10_closed_in_the_ledger_that_holds_it'] = (

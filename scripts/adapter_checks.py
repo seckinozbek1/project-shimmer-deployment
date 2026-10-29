@@ -59,9 +59,65 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              benchmark (band records decide their rule's item, a model-written record
              always decides, a computed blank-cell record on a CUAD-shaped bundle does
              not); S-5 puts a refusal before an ok record, and a failed run decides no
-             item by ok over refusal; B3 is refused while the
-             typed-record key is unsettled; the catch layer is read from the
+             item by ok over refusal; B3 and B4 are read from the bus (decision
+             DS5-8, adopted by D-056), so a run with no bus is a run failure, and
+             with the flag off they are refused; the catch layer is read from the
              WRITTEN-BY-A stamp alone, compared exactly
+  records    one record reader (common/records.py): B2 from review_data.json, B3 from
+             the run's bus, written_by stamped from the line, supersession within
+             (agent, document, item_id), a judged absence counted only by Python's
+             stamped copy with the raw copy listed apart; every mapping fixture moved
+             onto a bus gives the same labels as its review_data.json form, and the
+             label command labels B3 and B4 from a fixture bus (BUS_READER_ADOPTED)
+  incomplete D-066 and D-068: a run that reached its end with exit code 0 and
+             semantic_complete false is not a run failure and is labelled from its
+             records (a stopped run that did not reach its end still is one); S-6
+             makes every item of such a document ABSTAIN; an item no record decides
+             whose rule's judging calls all failed is ABSTAIN item_calls_failed through
+             the run's own registry id map (adopted, D-078; a missing, unreadable or
+             many-to-one map is not used, the row says why, the document is counted;
+             with the switch off the row says whether it would have applied); a
+             pairing-map refusal naming a registry id refuses its operator id's item;
+             completeness per document (the
+             PROCESSOR calls accepted against made, a partial delivery, the pairs made
+             from it, the items a record of it decided); the items a band record
+             flagged (section 12 item 3); a D-068 kept answer on the
+             bus decides its rule's item as a model's record. Each by neutralise,
+             fail, restore, pass
+  overcontext  section 5.3 and open point 12.14 (D-078): a B3 document whose run has a
+             reply record with context.over_context true is excluded (basis
+             over_context_excluded, listed and counted), left out of every scored
+             analysis but S-7, which scores its items ABSTAIN, and out of the paired
+             view (score --paired-with) for both arms; reply records that fit change no
+             label; B4 is not checked; the saved L4b FinDVer run reads 3 such calls where
+             external/ holds it (skipped otherwise). Each by neutralise, fail, restore, pass
+  s8         sensitivity S-8 (DEV-012): B3 and B4 as if every record a model wrote were
+             absent (only `written_by` exactly `python` kept, an unstamped record a
+             model's): an item a model's record decided takes the next line of section
+             5.1 (a Python ok, a Python refusal), else silence; a Python-decided item, a
+             run failure and an over-context exclusion unchanged; B0, B1 and B2 equal
+             their primary in labels and score and say so. Neutralise, fail, restore, pass
+  setupfailure  one setup-failure rule for B1 and B3 (D-084, DEV-014): a B1 document whose
+             output holds b1_setup_failure.json and a B3 document with a call that failed
+             out of memory are ABSTAIN with basis setup_failure on every item, counted
+             apart, left out of that arm's scoring in every analysis but S-7 (ABSTAIN
+             there) and out of the paired view; any other failed call is no setup
+             failure. Each by neutralise, fail, restore, pass
+  synthetic  B's synthetic tests (benchmark/adapters/synthetic, preregistration section
+             13), on a hand-written test of three bundles: items from the targets file
+             and the conventions, never the key; Shimmer's unit ids (on every development
+             suite document too, where generated); B0, B1, B2 and B3 labels and scores by
+             hand (location by unit and relation under any rule, the attribution apart,
+             the reason by the key's claim, false positives, distractor hits, the twin's
+             false alarms, S-8; a negotiation-style key left unscored); the B1 prompt for
+             a synthetic item. Each by neutralise, fail, restore, pass
+  dryrun     benchmark/dryrun: the content-blind dry-run choice (words, band, side and
+             opaque id only; sorted by words then id; evenly spaced positions; each
+             replacement listed), the build restricted to chosen documents, B2 on it,
+             the B1 prompt tokens and the memory bound computed by hand (D-056
+             condition 8: float32 non-4-bit weights, activations and KV cache; sdpa
+             with no T x T term; the eager reference squared over the prompt only),
+             and its recomputation from a written summary
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -108,7 +164,7 @@ def _common():
         try:
             _MODULES["common"] = {m: importlib.import_module("common." + m)
                                   for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli",
-                                            "prompt")}
+                                            "prompt", "records")}
         finally:
             sys.path.remove(str(ADAPTERS))
     return _MODULES["common"]
@@ -1116,8 +1172,12 @@ class MappingChecks(_Case):
             arms = {"B2": c["cli"].label(adapter, items, "B2", runs),
                     "B1": c["cli"].label(adapter, items, "B1", b1)}
             for arm in ("B3", "B4"):
-                with self.assertRaises(c["mapping"].Refused, msg=name + " " + arm):
-                    c["cli"].label(adapter, items, arm, runs)
+                # B3 and B4 are read from the bus (D-056): these runs carry review_data.json
+                # only, so each is a run failure (no bus) and every item ABSTAIN, never
+                # labelled from review_data.json
+                pipeline = c["cli"].label(adapter, items, arm, runs)["primary"]
+                self.assertEqual({r["class"] for r in pipeline["labels"]}, {"ABSTAIN"}, name + " " + arm)
+                self.assertTrue(all(d["run_failure"] for d in pipeline["documents"]), name + " " + arm)
             for arm, labels in arms.items():
                 for variant in ("", " S-1", " S-2", " S-3", " S-5"):
                     key = arm + variant
@@ -1144,9 +1204,15 @@ class MappingChecks(_Case):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B2",
                                                        "--runs", str(runs), "--out", str(self.root / "l.json")])
-            refused = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
-                                                          "--runs", str(runs), "--out", str(self.root / "m.json")])
-        self.assertEqual((code, refused), (3, 4))
+            # B3 is labelled from the bus (D-056); these runs have none, so every item is a
+            # run failure (ABSTAIN), not a fault; with the bus reading not adopted it refuses
+            bus_arm = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+                                                          "--runs", str(runs), "--out", str(self.root / "b.json")])
+            with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
+                refused = c["cli"].main(_adapter("findver"), ["label", "--items", str(items), "--arm", "B3",
+                                                              "--runs", str(runs), "--out", str(self.root / "m.json")])
+        self.assertEqual((code, bus_arm, refused), (3, 0, 4))
+        self.assertEqual({r["class"] for r in _json(self.root / "b.json")["primary"]["labels"]}, {"ABSTAIN"})
         self.assertFalse((self.root / "m.json").exists(), "a refused arm writes no labels")
 
     def test_a_settled_answer_on_any_unit_beats_a_refusal(self):
@@ -1291,7 +1357,7 @@ class MappingChecks(_Case):
         cases = _json(_fixture("contractnli", "mapping_cases.json"))
         items, runs, b1 = _materialise(cases, self.root / "s5")
         b2 = c["cli"].label(_adapter("contractnli"), items, "B2", runs)
-        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "primary"])
+        self.assertEqual(sorted(b2), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
         for arm, folder in (("B1", b1), ("B0", None)):
             labels = c["cli"].label(_adapter("contractnli"), items, arm, folder)
             self.assertEqual([r["class"] for r in labels["S-5"]["labels"]],
@@ -1521,7 +1587,7 @@ class MetricChecks(_Case):
                token_counter=WordCounter(100))
         items = self.root / "cut" / "items.json"
         result = c["cli"].score(adapter, c["cli"].label(adapter, items, "B0"), self.root / "cut")
-        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "primary"])
+        self.assertEqual(sorted(result), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "S-8", "primary"])
         self.assertEqual((result["primary"]["decisions"], result["S-4"]["decisions"]), (4, 3))
         self.assertEqual((result["primary"]["items_evidence_beyond_cut"],
                           result["S-4"]["items_evidence_beyond_cut"]), (1, 0))
@@ -1674,6 +1740,1390 @@ class CliChecks(_Case):
         code, stdout, stderr = self._cli("contractnli", "bands", "--input", fixture, "--frozen-sha256", digest)
         self.assertEqual(code, 0, stderr)
         self.assertEqual(json.loads(stdout)["documents_by_side"], {"holdout": 2})
+
+
+# ---------------------------------------------------------------------------
+# the one record reader (common/records.py; loop plan S5, R22 and item 0.8)
+
+
+_MODEL_BACKEND, _MODEL_ID = "local_producer", "fixture-reader"
+
+
+def _bus_line(agent, doc_id, items, backend, model, **body):
+    return json.dumps({"timestamp": "2026-10-28T00:00:00+00:00", "sender": agent,
+                       "sender_role": "agent", "recipient": "ORCHESTRATOR", "channel": "main",
+                       "type": "INFORM", "uncertain": False,
+                       "body": dict({"event": "AGENT_OUTPUT", "backend": backend, "model": model,
+                                     "item_count": len(items),
+                                     "payload": {"agent": agent, "doc_id": doc_id, "items": items}},
+                                    **body)})
+
+
+def _as_bus(run_dir, doc_id, judged_raw=None):
+    """Move one run folder's review_data.json findings onto a bus, as the pipeline posts
+    them: Python's records (stamped python) in one paired/python line, every other record
+    in one model line with a call id; no item keeps its own `written_by`. A judged-absence
+    raw copy, if given, goes in a line whose call id the pairing map names as a judged-absence
+    call, and a record for another document in a line of its own. The review_data.json is
+    removed, so only the bus holds the records."""
+    path = Path(run_dir) / "deliverables" / doc_id / "review_data.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    path.unlink(missing_ok=True)
+    bus = Path(run_dir) / "logs" / "agent_bus.jsonl"
+    if not isinstance(data, dict):
+        return 0      # unreadable or missing: no bus either, a run failure both ways
+    bus.parent.mkdir(parents=True, exist_ok=True)
+    if not isinstance(data.get("findings"), list):
+        bus.write_text("", encoding="utf-8")
+        return 0      # no typed records: silent both ways
+    strip = lambda r: {k: v for k, v in r.items() if k != "written_by"}  # noqa: E731
+    python = [strip(r) for r in data["findings"] if r.get("written_by") == "python"]
+    model = [strip(r) for r in data["findings"] if r.get("written_by") != "python"]
+    lines = [_bus_line("PRACTICE_AUDITOR", doc_id, python, "paired", "python"),
+             _bus_line("PRACTICE_AUDITOR", doc_id, model, _MODEL_BACKEND, _MODEL_ID,
+                       call_id="c" * 32),
+             _bus_line("PRACTICE_AUDITOR", "another-document",
+                       [dict(r, record_verdict="irregular") for r in data["findings"]],
+                       _MODEL_BACKEND, _MODEL_ID)]
+    if judged_raw:
+        lines.append(_bus_line("PRACTICE_AUDITOR", doc_id, judged_raw, _MODEL_BACKEND, _MODEL_ID,
+                               call_id="a" * 32))
+        pairing_path = Path(run_dir) / "audit" / "pairing_map.json"
+        pairing_path.parent.mkdir(exist_ok=True)
+        pairing = json.loads(pairing_path.read_text(encoding="utf-8")) if pairing_path.is_file() else {}
+        mine = pairing.setdefault(doc_id, {})
+        mine.setdefault("judging_calls", []).append(
+            {"call_id": "a" * 32, "agent": "PRACTICE_AUDITOR", "plan_kind": "absence_judged",
+             "outcome": "judged_absence"})
+        pairing_path.write_text(json.dumps(pairing), encoding="utf-8")
+    bus.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return len(judged_raw or [])
+
+
+def _label_view(result):
+    return {r["item_id"]: (r["class"], r["label"], r["basis"], r["cited_unit_ids"], r["layer"],
+                           r["figure_audit_set_aside"], r["s3"]["class"], r["s5"]["class"])
+            for r in result["labels"]}
+
+
+class RecordReaderChecks(_Case):
+    """R22: one record reader for both forms. B2 is read from review_data.json, B3 from the
+    run's bus; the bus stamps written_by from the line, supersedes within (agent, document,
+    item_id) on the highest revision, counts a judged absence only by Python's stamped copy
+    and lists the raw model copy apart. The same records in both forms give the same labels."""
+
+    def test_same_records_in_both_forms_give_the_same_labels(self):
+        c = _common()
+        m, rec = c["mapping"], c["records"]
+        compared = 0
+        for name in NAMES:
+            adapter = _adapter(name)
+            cases = _json(_fixture(name, "mapping_cases.json"))
+            items, runs, _ = _materialise(cases, self.root / name / "rd")
+            _ignored, bus_runs, _ = _materialise(cases, self.root / name / "bus")
+            listed = 0
+            for doc in cases["runs"]:
+                rules = sorted({i["rule_id"] for i in cases["items"] if i["document_id"] == doc})
+                # a raw judged-absence copy saying every rule's field is absent: never counted
+                raw = [{"item_id": "raw-%d" % k, "source_rule_id": rule, "unit_id": "u01-p-00001",
+                        "relation": "missing_field", "record_verdict": "irregular",
+                        "absence_path": "judged"} for k, rule in enumerate(rules)]
+                listed += _as_bus(bus_runs / doc, doc, judged_raw=raw)
+            rows = m.read_items(items)
+            by_review = m.label_pipeline_arm(adapter.SPEC, rows, runs, arm="B2")
+            by_bus = m.label_pipeline_arm(adapter.SPEC, rows, bus_runs, arm="B3")
+            self.assertEqual(_label_view(by_bus), _label_view(by_review), name)
+            self.assertEqual({d["document_id"]: d["run_failure"] for d in by_bus["documents"]},
+                             {d["document_id"]: d["run_failure"] for d in by_review["documents"]}, name)
+            self.assertEqual({d["record_source"] for d in by_bus["documents"]}, {rec.BUS}, name)
+            self.assertEqual({d["record_source"] for d in by_review["documents"]}, {rec.REVIEW_DATA}, name)
+            self.assertGreater(listed, 0, name)
+            self.assertEqual(by_bus["counts"]["raw_judged_absence_records"], listed, name)
+            self.assertEqual(by_review["counts"]["raw_judged_absence_records"], 0, name)
+            compared += len(by_bus["labels"])
+        self.assertGreater(compared, 20)
+
+    def test_bus_rules(self):
+        rec, m = _common()["records"], _common()["mapping"]
+        spec = _adapter("cuad").SPEC
+        doc, rule = "dx", "CONV-X-01"
+        run = self.root / "run"
+        (run / "audit").mkdir(parents=True)
+        (run / "audit" / "run_completion.json").write_text(json.dumps({
+            "schema_version": 1, "state": "completed", "reached_end": True, "exit_code": 0,
+            "finished_at": "2026-10-28T00:00:00+00:00"}), encoding="utf-8")
+        (run / "audit" / "pairing_map.json").write_text(json.dumps({doc: {"judging_calls": [
+            {"call_id": "a" * 32, "plan_kind": "absence_judged"},
+            {"call_id": "e" * 32, "plan_kind": "uncomputable"}]}}), encoding="utf-8")
+
+        def r(item_id, verdict="irregular", **extra):
+            return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": "u01-p-00001",
+                         "relation": "sum_mismatch", "record_verdict": verdict}, **extra)
+        lines = [
+            # written_by from the line: an item's own stamp is replaced
+            _bus_line("A1", doc, [r("p1", written_by="model")], "paired", "python"),
+            _bus_line("A1", doc, [r("m1", written_by="python")], "local_producer", "qwen"),
+            _bus_line("A1", doc, [r("p2")], "computed", "python-x"),
+            _bus_line("A1", doc, [r("m2")], "paired", "qwen"),
+            # supersession within (agent, document, item_id): highest revision, then ts, then line
+            _bus_line("A1", doc, [r("s1", "irregular", revision=2)], "paired", "python"),
+            _bus_line("A1", doc, [r("s1", "ok", revision=1)], "paired", "python"),
+            _bus_line("A2", doc, [r("s1", "ok", revision=1)], "paired", "python"),
+            _bus_line("A1", doc, [r("t1", "ok", revision=1, ts="2026-10-28T02:00:00")], "paired", "python"),
+            _bus_line("A1", doc, [r("t1", "irregular", revision=1, ts="2026-10-28T01:00:00")], "paired", "python"),
+            _bus_line("A1", doc, [r("l1", "irregular")], "paired", "python"),
+            _bus_line("A1", doc, [r("l1", "ok")], "paired", "python"),
+            # a judged absence: the raw copy (call named by the pairing map, or by a bus
+            # line's judging_calls) listed apart; Python's stamped copy counted
+            _bus_line("J", doc, [r("raw1", relation="missing_field", absence_path="judged")],
+                      "local_producer", "qwen", call_id="a" * 32),
+            _bus_line("J", doc, [r("raw2", relation="missing_field")], "local_producer", "qwen",
+                      call_id="b" * 32),
+            json.dumps({"body": {"event": "PAIRED_JUDGING_CALLS", "backend": "paired", "model": "python",
+                                 "doc_id": doc, "judging_calls": [{"call_id": "b" * 32,
+                                                                   "plan_kind": "absence_judged"}]}}),
+            _bus_line("J", doc, [r("J:finding:u01-p-00001:CONV-001:1", relation="missing_field",
+                                   absence_path="judged", revision=1)], "local_producer", "qwen",
+                      stamped_by="python", absence_path="judged"),
+            # a model reply to another judging call is a model's record like any other
+            _bus_line("J", doc, [r("u1", "ok")], "local_producer", "qwen", call_id="e" * 32),
+            # not records: no record_verdict and no refusal; another document; a broken line
+            _bus_line("A1", doc, [{"item_id": "x1", "source_rule_id": rule, "claim": "c"}], "qwen", "qwen"),
+            _bus_line("A1", "other", [r("o1")], "paired", "python"),
+            "{not json",
+            # a refusal with no relation that names its rule is a record
+            _bus_line("A3", doc, [{"item_id": "f1", "source_rule_id": rule, "confidence": "uncertain"}],
+                      "local_producer", "qwen"),
+        ]
+        (run / "logs").mkdir()
+        (run / "logs" / "agent_bus.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        read = rec.read_records(run, doc, rec.BUS)
+        got = {(r.get("item_id"), r.get("record_verdict"), r["written_by"]) for r in read["records"]}
+        self.assertEqual(got, {
+            ("p1", "irregular", "python"), ("m1", "irregular", "model"),
+            ("p2", "irregular", "python"), ("m2", "irregular", "model"),
+            ("s1", "irregular", "python"), ("s1", "ok", "python"),
+            ("t1", "ok", "python"), ("l1", "ok", "python"),
+            ("J:finding:u01-p-00001:CONV-001:1", "irregular", "model"),
+            ("u1", "ok", "model"), ("f1", None, "model")})
+        self.assertEqual(sorted(r["item_id"] for r in read["raw_judged_absence"]), ["raw1", "raw2"])
+        self.assertEqual(read["faults"], ["bus_lines_unreadable:1"])
+        self.assertEqual(read["failure_reasons"], [])
+        # the stamped judged copy decides CUAD's absent class; the raw copies decide nothing
+        run_view = m.read_run(run, doc, rec.BUS)
+        absent = [x for x in run_view["records"] if x.get("relation") == "missing_field"]
+        self.assertEqual([x["item_id"] for x in absent], ["J:finding:u01-p-00001:CONV-001:1"])
+        self.assertEqual(m.classify(spec, rule, run_view, rule_count=41)["basis"], "irregular_missing_field")
+        # a missing bus is a run failure; review_data.json is not read for B3
+        (run / "logs" / "agent_bus.jsonl").unlink()
+        self.assertEqual(m.read_run(run, doc, rec.BUS)["failure_reasons"], ["bus_missing"])
+        with self.assertRaises(ValueError):
+            rec.read_records(run, doc, "elsewhere")
+
+    def test_label_command_labels_b3_from_the_bus_once_adopted(self):
+        # D-056: the bus reading is adopted, so the label command labels B3 (and B4) from a
+        # run's bus, giving the labels the same records give B2 from review_data.json; with
+        # the flag off it still refuses, as before the adoption.
+        c = _common()
+        self.assertTrue(c["mapping"].BUS_READER_ADOPTED)
+        self.assertEqual(c["mapping"].RECORD_SOURCE, {"B2": "review_data", "B3": "bus", "B4": "bus"})
+        for name in NAMES:
+            cases = _json(_fixture(name, "mapping_cases.json"))
+            items, runs, _ = _materialise(cases, self.root / name / "rd")
+            _ignored, bus_runs, _ = _materialise(cases, self.root / name / "bus")
+            for doc in cases["runs"]:
+                _as_bus(bus_runs / doc, doc)
+            by_review = c["cli"].label(_adapter(name), items, "B2", runs)
+            for arm in ("B3", "B4"):
+                by_bus = c["cli"].label(_adapter(name), items, arm, bus_runs)
+                self.assertEqual(_label_view(by_bus["primary"]), _label_view(by_review["primary"]), name + " " + arm)
+                self.assertTrue(by_bus["primary"]["labels"], name)
+                self.assertEqual(sorted(by_bus), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
+            with mock.patch.object(c["mapping"], "BUS_READER_ADOPTED", False):
+                with self.assertRaisesRegex(c["mapping"].Refused, "bus"):
+                    c["cli"].label(_adapter(name), items, "B3", bus_runs)
+
+
+# ---------------------------------------------------------------------------
+# D-066 (incomplete runs, completeness, S-6, item_calls_failed) and D-068 records
+
+
+_DONE = "2026-10-29T00:00:00+00:00"
+
+
+def _incomplete_run(root, doc, *, completion, bus_lines, pairing=None, rule_map=None,
+                    observation=None, telemetry=None):
+    """One synthetic B3 run folder: its completion record, bus, pairing map, rule map and
+    the two telemetry files the completeness report reads (absent when None)."""
+    run = Path(root) / doc
+    (run / "audit").mkdir(parents=True)
+    (run / "logs").mkdir()
+    (run / "audit" / "run_completion.json").write_text(json.dumps(completion), encoding="utf-8")
+    (run / "logs" / "agent_bus.jsonl").write_text("\n".join(bus_lines) + "\n", encoding="utf-8")
+    if pairing is not None:
+        (run / "audit" / "pairing_map.json").write_text(json.dumps({doc: pairing}), encoding="utf-8")
+    if rule_map is not None:
+        (run / "audit" / "convention_assignment.json").write_text(json.dumps({"by_rule": {
+            k: {"source_rule_id": v} for k, v in rule_map.items()}}), encoding="utf-8")
+    for name, rows in (("generation_observation.jsonl", observation), ("model_telemetry.jsonl", telemetry)):
+        if rows is not None:
+            (run / "logs" / name).write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    return run
+
+
+def _completion(state="completed", **extra):
+    return dict({"schema_version": 1, "state": state, "reached_end": True, "exit_code": 0,
+                 "finished_at": _DONE}, **extra)
+
+
+def _rec(item_id, rule, verdict, unit="u01-p-00001", **extra):
+    return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": unit, "relation": "date_window",
+                 "record_verdict": verdict}, **extra)
+
+
+class IncompleteRunChecks(_Case):
+    """D-066 and D-068 in the adapters, each property by neutralise, fail, restore, pass."""
+
+    def _items(self, doc, rules):
+        return [{"item_id": "i-%s-%d" % (doc, k), "document_id": doc, "rule_id": rule, "benchmark": "contractnli"}
+                for k, rule in enumerate(rules)]
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def test_a_semantically_incomplete_end_is_labelled_from_its_records(self):
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2", "CONV-CNLI-NDA-3"]
+        lines = [_bus_line("A", "dinc", [_rec("r1", rules[0], "irregular"), _rec("r2", rules[1], "ok")],
+                           "paired", "python")]
+        root = self.root / "inc"
+        _incomplete_run(root, "dinc", completion=_completion("stopped", semantic_complete=False), bus_lines=lines)
+        # a stopped run that did not reach its end, and one with exit code 2, are still run failures
+        _incomplete_run(root, "dstop", completion=_completion("stopped", reached_end=False, semantic_complete=False),
+                        bus_lines=[_bus_line("A", "dstop", [_rec("r1", rules[0], "irregular")], "paired", "python")])
+        _incomplete_run(root, "dexit", completion=_completion("stopped", exit_code=2, semantic_complete=False),
+                        bus_lines=[_bus_line("A", "dexit", [_rec("r1", rules[0], "irregular")], "paired", "python")])
+        items = self._items("dinc", rules) + self._items("dstop", rules[:1]) + self._items("dexit", rules[:1])
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            got = {r["item_id"]: (r["class"], r["basis"]) for r in out["labels"]}
+            want = {"i-dinc-0": ("FLAG", "irregular"), "i-dinc-1": ("CLEAR", "ok"), "i-dinc-2": ("CLEAR", "silent"),
+                    "i-dstop-0": ("ABSTAIN", "run_failure"), "i-dexit-0": ("ABSTAIN", "run_failure")}
+            docs = {d["document_id"]: (d["run_failure"], d["semantic_incomplete"]) for d in out["documents"]}
+            problems = [] if got == want else ["labels %s" % got]
+            if docs != {"dinc": (False, True), "dstop": (True, False), "dexit": (True, False)}:
+                problems.append("documents %s" % docs)
+            if (out["counts"]["semantic_incomplete_documents"], out["counts"]["items_in_semantic_incomplete_documents"]) != (1, 3):
+                problems.append("counts %s" % out["counts"])
+            # S-6: every item of the semantically incomplete document ABSTAIN, the rest unchanged
+            s6 = {r["item_id"]: (r["class"], r["basis"]) for r in m.sensitivity_s6(spec, out)["labels"]}
+            want6 = dict(want, **{k: ("ABSTAIN", "s6_semantic_incomplete") for k in want if k.startswith("i-dinc")})
+            if s6 != want6:
+                problems.append("S-6 %s" % s6)
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "semantically_incomplete_end", lambda c: False))
+        self._proof(body, lambda: mock.patch.object(
+            m, "sensitivity_s6", lambda spec, result: m._relabel(spec, result, "S-6", lambda r: None)))
+        # through the label command: S-6 beside the other analyses, B0 and B1 unchanged by it
+        c = _common()
+        path = self.root / "items.json"
+        path.write_text(json.dumps({"items": items}), encoding="utf-8")
+        labels = c["cli"].label(_adapter("contractnli"), path, "B3", root)
+        self.assertEqual(sorted(labels), ["S-1", "S-2", "S-3", "S-5", "S-6", "S-7", "S-8", "primary"])
+        b0 = c["cli"].label(_adapter("contractnli"), path, "B0")
+        self.assertEqual([r["class"] for r in b0["S-6"]["labels"]], [r["class"] for r in b0["primary"]["labels"]])
+
+    def test_item_calls_failed_applies_through_the_rule_map(self):
+        # Open point 12.11, adopted (D-078): a judging call names the registry id; the run's
+        # own audit/convention_assignment.json (by_rule, source_rule_id) takes it to the
+        # item's operator id, and an item no record decides whose rule's calls all failed is
+        # ABSTAIN item_calls_failed. A map that is missing, unreadable or not one to one is
+        # not used on that document: the row says why and the document is counted.
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2", "CONV-CNLI-NDA-3"]
+        failed = {"outcome": "reply_failed", "plan_kind": "uncomputable"}
+        pairing = {"judging_calls": [dict(failed, rule_id="CONV-001", call_id="a" * 32),
+                                     dict(failed, rule_id="CONV-001", call_id="b" * 32),
+                                     dict(failed, rule_id="CONV-002", call_id="c" * 32),
+                                     {"outcome": "judged_uncomputable", "rule_id": "CONV-002", "call_id": "d" * 32},
+                                     dict(failed, rule_id="CONV-003", call_id="e" * 32)]}
+        rule_map = {"CONV-001": rules[0], "CONV-002": rules[1], "CONV-003": rules[2]}
+        lines = [_bus_line("A", "dcall", [_rec("r3", rules[2], "irregular")], "paired", "python")]
+        root = self.root / "calls"
+        _incomplete_run(root, "dcall", completion=_completion(), bus_lines=lines, pairing=pairing, rule_map=rule_map)
+        empty = lambda doc: [_bus_line("A", doc, [], "paired", "python")]  # noqa: E731
+        _incomplete_run(root, "dnomap", completion=_completion(), bus_lines=empty("dnomap"), pairing=pairing)
+        # two registry ids naming one operator id: not one to one, not used
+        _incomplete_run(root, "dtwo", completion=_completion(), bus_lines=empty("dtwo"), pairing=pairing,
+                        rule_map={"CONV-001": rules[0], "CONV-002": rules[0].lower(), "CONV-003": rules[2]})
+        bad = _incomplete_run(root, "dbad", completion=_completion(), bus_lines=empty("dbad"), pairing=pairing)
+        (bad / "audit" / "convention_assignment.json").write_text("{not json", encoding="utf-8")
+        items = (self._items("dcall", rules) + self._items("dnomap", rules[:1])
+                 + self._items("dtwo", rules[:1]) + self._items("dbad", rules[:1]))
+
+        def view():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            return ({r["item_id"]: (r["class"], r["basis"], r["item_calls_failed"]) for r in out["labels"]},
+                    out["counts"]["item_calls_failed"], out["counts"]["item_calls_failed_not_applied"],
+                    out["counts"]["documents_rule_map_unusable"],
+                    {d["document_id"]: d["rule_map_status"] for d in out["documents"]})
+
+        statuses = {"dcall": "ok", "dnomap": "missing", "dtwo": "not_one_to_one", "dbad": "unreadable"}
+
+        def adopted():
+            got = view()
+            # all calls failed and no record decides: ABSTAIN; a record still decides; a
+            # rule with one returned call is silent; a missing, unreadable or many-to-one
+            # map: not applied, says why, the document counted
+            want = ({"i-dcall-0": ("ABSTAIN", "item_calls_failed", "applied"),
+                     "i-dcall-1": ("CLEAR", "silent", None),
+                     "i-dcall-2": ("FLAG", "irregular", "applied"),
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_no_rule_map"),
+                     "i-dtwo-0": ("CLEAR", "silent", "not_applied_rule_map_not_one_to_one"),
+                     "i-dbad-0": ("CLEAR", "silent", "not_applied_rule_map_unreadable")}, 1, 0, 3, statuses)
+            return [] if got == want else ["adopted %s" % (got,)]
+
+        def unsettled():
+            # the switch off (the S4 state): computed, reported, never applied
+            with mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False):
+                got = view()
+            want = ({"i-dcall-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dcall-1": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dcall-2": ("FLAG", "irregular", "not_applied_rule_map_unsettled:would_apply"),
+                     "i-dnomap-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dtwo-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled"),
+                     "i-dbad-0": ("CLEAR", "silent", "not_applied_rule_map_unsettled")}, 0, 2, 3, statuses)
+            return [] if got == want else ["unsettled %s" % (got,)]
+
+        def loose(run_dir):
+            # a reader that takes the map as written, one to one or not
+            path = Path(run_dir) / "audit" / "convention_assignment.json"
+            try:
+                by_rule = json.loads(path.read_text(encoding="utf-8"))["by_rule"]
+            except (OSError, ValueError, KeyError):
+                return {}, "ok"
+            return {k.casefold(): v["source_rule_id"].casefold() for k, v in by_rule.items()}, "ok"
+        self.assertTrue(m.RULE_ID_MAP_ADOPTED, "open point 12.11 is settled (D-078): the exception is applied")
+        self._proof(adopted, lambda: mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False))
+        self._proof(adopted, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+        self._proof(adopted, lambda: mock.patch.object(m, "read_rule_map", loose))
+        self._proof(unsettled, lambda: mock.patch.object(m, "JUDGING_CALL_FAILED", "never"))
+
+    def test_a_registry_id_refusal_maps_to_the_operator_id(self):
+        # Open point 12.11 (D-078): a pairing-map refusal (absence_refused) names the
+        # registry id under `rule_id`, as scripts/pipeline.py writes it; through the run's own
+        # map it is a refusal for the item of that operator id (UNDECIDED: ContractNLI's
+        # NotMentioned), and with no map in the run it matches no item (silent).
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2"]
+        refusal = {"unit_id": "u01-p-00001", "rule_id": "CONV-002", "relation": "missing_field",
+                   "reason": "absence claim supplies no quote"}
+        pairing = {"absence_refused": [refusal]}
+        root = self.root / "refused"
+        _incomplete_run(root, "dmap", completion=_completion(), bus_lines=[_bus_line("A", "dmap", [], "paired", "python")],
+                        pairing=pairing, rule_map={"CONV-001": rules[0], "CONV-002": rules[1]})
+        _incomplete_run(root, "dnomap", completion=_completion(),
+                        bus_lines=[_bus_line("A", "dnomap", [], "paired", "python")], pairing=pairing)
+        items = self._items("dmap", rules) + self._items("dnomap", rules)
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            got = {r["item_id"]: (r["class"], r["label"], r["basis"]) for r in out["labels"]}
+            want = {"i-dmap-0": ("CLEAR", "entailment", "silent"),
+                    "i-dmap-1": ("UNDECIDED", "not mentioned", "refusal"),
+                    "i-dnomap-0": ("CLEAR", "entailment", "silent"),
+                    "i-dnomap-1": ("CLEAR", "entailment", "silent")}
+            problems = [] if got == want else ["labels %s" % got]
+            if out["counts"]["refusals"] != 1:
+                problems.append("refusals %s" % out["counts"]["refusals"])
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "RULE_ID_MAP_ADOPTED", False))
+        self._proof(body, lambda: mock.patch.object(m, "PAIRING_RULE_FIELDS", ("source_rule_id",)))
+
+    def test_completeness_is_reported_per_document(self):
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rules = ["CONV-CNLI-NDA-1", "CONV-CNLI-NDA-2"]
+        observation = [
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p1", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p2", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "dpart", "call_id": "p3", "accepted_semantic_output": False},
+            {"agent": "VERIFIER", "doc_id": "dpart", "call_id": "v1", "accepted_semantic_output": True},
+            {"agent": "PROCESSOR", "doc_id": "other", "call_id": "p9", "accepted_semantic_output": True},
+            {"event": "extraction_merge", "doc_id": "dpart", "complete": False, "item_count": 2,
+             "missing_partitions": [2], "partition_calls": ["p1", "p2", "p3"]}]
+        telemetry = [{"event": "auditor_pair", "delivery": "partial"}, {"event": "auditor_pair", "delivery": "partial"},
+                     {"event": "auditor_pair", "delivery": "complete"}, {"event": "model_call", "agent": "PROCESSOR"}]
+        lines = [_bus_line("VERIFIER", "dpart", [_rec("v1", rules[0], "irregular")], "local_auditor", "m"),
+                 _bus_line("PRACTICE_AUDITOR", "dpart", [_rec("p1", rules[1], "ok")], "paired", "python")]
+        root = self.root / "part"
+        _incomplete_run(root, "dpart", completion=_completion("stopped", semantic_complete=False), bus_lines=lines,
+                        observation=observation, telemetry=telemetry)
+        _incomplete_run(root, "dnone", completion=_completion(), bus_lines=[_bus_line("A", "dnone", [], "paired", "python")])
+        items = self._items("dpart", rules) + self._items("dnone", rules[:1])
+
+        def body():
+            out = m.label_pipeline_arm(spec, items, root, arm="B3")
+            docs = {d["document_id"]: d["completeness"] for d in out["documents"]}
+            want = {"dpart": {"semantic_complete": False, "processor_calls_made": 3, "processor_calls_accepted": 2,
+                              "processor_delivery_partial": True, "partial_delivery_pairs": 2},
+                    "dnone": {"semantic_complete": True, "processor_calls_made": None, "processor_calls_accepted": None,
+                              "processor_delivery_partial": None, "partial_delivery_pairs": None}}
+            marked = {r["item_id"]: r["decided_by_partial_delivery_record"] for r in out["labels"]}
+            problems = [] if docs == want else ["completeness %s" % docs]
+            if marked != {"i-dpart-0": True, "i-dpart-1": False, "i-dnone-0": False}:
+                problems.append("marked %s" % marked)
+            if out["counts"]["items_decided_by_partial_delivery_record"] != 1:
+                problems.append("count %s" % out["counts"]["items_decided_by_partial_delivery_record"])
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "DRAFT_READERS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "PRODUCER_AGENT", "NOBODY"))
+
+    def test_items_flagged_by_a_band_record_are_counted(self):
+        # Preregistration section 12 item 3: a claim's figures read as a band (from the
+        # rule's own text) can decide a FLAG; the items so decided are counted per arm.
+        m = _common()["mapping"]
+        rules = ["CONV-T-1", "CONV-T-2", "CONV-T-3"]
+        lines = [_bus_line("A", "dband", [_rec("b1", rules[0], "irregular", relation="below_band"),
+                                          _rec("b2", rules[1], "irregular"),
+                                          _rec("b3", rules[2], "ok", relation="above_band")], "paired", "python")]
+        root = self.root / "band"
+        _incomplete_run(root, "dband", completion=_completion(), bus_lines=lines)
+        items = self._items("dband", rules)
+
+        def body():
+            problems = []
+            for name, flagged in (("contractnli", 1), ("scitab", 1), ("cuad", 0)):
+                out = m.label_pipeline_arm(_adapter(name).SPEC, items, root, arm="B3")
+                got = [r["flagged_by_band"] for r in out["labels"]]
+                want = [True, False, False] if flagged else [False, False, False]
+                if got != want or out["counts"]["items_flagged_by_band"] != flagged:
+                    problems.append("%s %s %s" % (name, got, out["counts"]["items_flagged_by_band"]))
+            return problems
+        self._proof(body, lambda: mock.patch.object(m, "BAND_RELATIONS", ()))
+
+    def test_a_kept_uncomputable_answer_decides_its_rule_as_a_models_record(self):
+        # D-068 on the bus as the pipeline posts it: the call's own post withholds its items,
+        # Python's stamped copy (stamped_by python, judged_path uncomputable) carries the kept
+        # answer under the model's backend; it is read once, written by model, and decides.
+        m, rec = _common()["mapping"], _common()["records"]
+        spec = _adapter("contractnli").SPEC
+        rule = "CONV-CNLI-NDA-1"
+        kept = _rec("PRACTICE_AUDITOR:finding:u02-p-00002:CONV-001:0", rule, "irregular", unit="u02-p-00002",
+                    relation="missing_field", judged_path="uncomputable", revision=1)
+        lines = [_bus_line("PRACTICE_AUDITOR", "dkept", [], "local_auditor", "m", call_id="f" * 32,
+                           items_withheld=1),
+                 _bus_line("PRACTICE_AUDITOR", "dkept", [kept], "local_auditor", "m", stamped_by="python",
+                           judged_path="uncomputable")]
+        pairing = {"judging_calls": [{"call_id": "f" * 32, "plan_kind": "uncomputable", "rule_id": "CONV-001",
+                                      "outcome": "judged_uncomputable", "judged_listed": 1}]}
+        root = self.root / "kept"
+        run = _incomplete_run(root, "dkept", completion=_completion(), bus_lines=lines, pairing=pairing)
+        read = rec.read_records(run, "dkept", rec.BUS)
+        self.assertEqual([(r["item_id"], r["written_by"]) for r in read["records"]], [(kept["item_id"], "model")])
+        self.assertEqual(read["raw_judged_absence"], [])
+        row = m.classify(spec, rule, m.read_run(run, "dkept", rec.BUS))
+        self.assertEqual((row["class"], row["basis"], row["layer"]), ("FLAG", "irregular", "judged"))
+
+
+# ---------------------------------------------------------------------------
+# section 5.3 and open point 12.14 (D-078): B3 documents with a call over the model's context
+
+
+def _reply_record(run_dir, sequence, agent, context):
+    """One reply record as scripts/reply_records.py writes it (counts only, no text):
+    `<run>/audit/model_replies/<sequence>_<call id>.json`, with `context` when given."""
+    folder = Path(run_dir) / "audit" / "model_replies"
+    folder.mkdir(parents=True, exist_ok=True)
+    call_id = ("%032x" % sequence)
+    record = {"schema_version": 1, "sequence": sequence, "call_id": call_id, "agent": agent,
+              "backend": "local_producer", "model_id": "stand-in", "backend_ok": context is None
+              or context.get("over_context") is not True, "payload": None, "reply": None}
+    if context is not None:
+        record["context"] = context
+    (folder / ("%06d_%s.json" % (sequence, call_id))).write_text(json.dumps(record), encoding="utf-8")
+
+
+def _ctx(prompt_tokens, limit, allowance=2048):
+    return {"prompt_tokens": prompt_tokens, "max_new_tokens": allowance, "model_context": limit,
+            "over_context": None if limit is None else prompt_tokens + allowance > limit}
+
+
+class OverContextChecks(_Case):
+    """Section 5.3 (D-058 condition v) and open point 12.14 (D-078), on a hand-written B3 run
+    per document of a synthetic ContractNLI build: a document whose run has one reply record
+    with `context.over_context` true is excluded from B3 (basis over_context_excluded,
+    listed and counted), every analysis but S-7 leaves it out, S-7 scores its items ABSTAIN,
+    and the paired view drops it for both arms; without the flag the labels are those of
+    the same run with no reply records at all. Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _setup(self):
+        c = _common()
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = c["mapping"].read_items(items_path)
+        docs = sorted({i["document_id"] for i in items})
+        self.assertGreaterEqual(len(docs), 2, "the synthetic build needs two documents")
+        by_doc = c["mapping"].by_document(items)
+        over, fits = docs[0], docs[1:]
+        runs = {}
+        for name in ("flag", "noflag", "bare"):
+            root = self.root / name
+            for doc in docs:
+                rules = [i["rule_id"] for i in by_doc[doc]]
+                # one irregular and one ok record, so every document has decided items
+                recs = [_rec("x1", rules[0], "irregular")] + ([_rec("x2", rules[1], "ok")] if len(rules) > 1 else [])
+                run = _incomplete_run(root, doc, completion=_completion(),
+                                      bus_lines=[_bus_line("A", doc, recs, "paired", "python")])
+                if name == "bare":
+                    continue
+                _reply_record(run, 1, "PROCESSOR", _ctx(3000, 32768))
+                _reply_record(run, 2, "VERIFIER", _ctx(1000, None))      # no stated context
+                _reply_record(run, 3, "SPEECH_ACT_TAGGER", None)          # an older record
+                if name == "flag" and doc == over:
+                    _reply_record(run, 4, "SPEECH_ACT_TAGGER", _ctx(35340, 32768))
+                    _reply_record(run, 5, "LEGAL_ANALYST", _ctx(36413, 32768))
+                    _reply_record(run, 6, "LEGAL_ANALYST", _ctx(36413, 32768))
+            runs[name] = root
+        return c, adapter, items_path, by_doc, over, fits, runs
+
+    def test_an_over_context_document_is_excluded_from_b3(self):
+        c, adapter, items_path, by_doc, over, fits, runs = self._setup()
+        m, cli = c["mapping"], c["cli"]
+        n_over = len(by_doc[over])
+        n_all = sum(len(v) for v in by_doc.values())
+
+        def body():
+            problems = []
+            labels = cli.label(adapter, items_path, "B3", runs["flag"])
+            primary = labels["primary"]
+            mine = [r for r in primary["labels"] if r["document_id"] == over]
+            if {(r["class"], r["basis"]) for r in mine} != {("ABSTAIN", "over_context_excluded")}:
+                problems.append("excluded rows %s" % {(r["class"], r["basis"]) for r in mine})
+            others = [r for r in primary["labels"] if r["document_id"] != over]
+            if any(r["basis"] == "over_context_excluded" for r in others):
+                problems.append("a fitting document was excluded")
+            counts = primary["counts"]
+            if (counts["over_context_excluded_documents"], counts["items_over_context_excluded"]) != (1, n_over):
+                problems.append("counts %s" % counts)
+            listed = primary["over_context"]
+            if (listed["checked"], listed["documents"], listed["items"]) != (True, 1, n_over) or [
+                    (d["document_id"], d["over_context_calls"], d["over_context_by_agent"])
+                    for d in listed["excluded_documents"]] != [
+                    (over, 3, {"LEGAL_ANALYST": 2, "SPEECH_ACT_TAGGER": 1})]:
+                problems.append("listed %s" % listed)
+            # every sensitivity keeps the exclusion except S-7, which makes it ABSTAIN
+            for name in ("S-1", "S-2", "S-3", "S-5", "S-6", "S-8"):
+                if {r["basis"] for r in labels[name]["labels"] if r["document_id"] == over} != {"over_context_excluded"}:
+                    problems.append(name + " lost the exclusion")
+            s7 = {(r["class"], r["basis"]) for r in labels["S-7"]["labels"] if r["document_id"] == over}
+            if s7 != {("ABSTAIN", "s7_over_context_abstain")}:
+                problems.append("S-7 %s" % s7)
+            # scored: the excluded document is in no analysis but S-7
+            scored = cli.score(adapter, labels, self.root / "b")
+            for name, result in scored.items():
+                want = (len(fits) + 1, n_all) if name == "S-7" else (len(fits), n_all - n_over)
+                if name == "S-4":
+                    want = (want[0], result["decisions"])     # S-4 drops its own items
+                if (result["documents"], result["decisions"]) != want:
+                    problems.append("%s scored %s" % (name, (result["documents"], result["decisions"])))
+            if scored["S-7"]["coverage"]["answered"] != n_all - n_over:
+                problems.append("S-7 answered %s" % scored["S-7"]["coverage"])
+            # the paired view: B0 against B3 and B3 against B0 both drop it; B0 alone keeps all
+            b0 = cli.label(adapter, items_path, "B0")
+            with_b3 = cli.score(adapter, b0, self.root / "b", paired_with=labels)
+            if with_b3["primary"]["documents"] != len(fits) + 1:
+                problems.append("B0 alone %s" % with_b3["primary"]["documents"])
+            paired = with_b3["paired"]
+            if (paired["documents"], paired["left_out_over_context"]["other_arm"],
+                    paired["analyses"]["primary"]["documents"], sorted(paired["analyses"])) != (
+                    len(fits), [over], len(fits), ["S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-8", "primary"]):
+                problems.append("B0 paired %s" % {k: v for k, v in paired.items() if k != "analyses"})
+            back = cli.score(adapter, labels, self.root / "b", paired_with=b0)["paired"]
+            if (back["documents"], back["left_out_over_context"]["this_arm"],
+                    back["analyses"]["primary"]["decisions"]) != (len(fits), [over], n_all - n_over):
+                problems.append("B3 paired %s" % {k: v for k, v in back.items() if k != "analyses"})
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_FIELD", "never_written"))
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "scored_view", lambda spec, result: result))
+        self._proof(body, lambda: mock.patch.object(m, "over_context_excluded", lambda result: set()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s7", m.sensitivity_s1))
+
+    def test_without_the_flag_b3_is_labelled_as_before(self):
+        # Reply records whose context fits (or states none, or is absent) change nothing:
+        # every analysis equals that of the same runs with no reply records at all, and B1,
+        # B2 and B4 are never checked for it.
+        c, adapter, items_path, by_doc, over, fits, runs = self._setup()
+        m, cli = c["mapping"], c["cli"]
+
+        def view(result):
+            return sorted((r["item_id"], r["class"], r["basis"]) for r in result["labels"])
+
+        def body():
+            problems = []
+            fit = cli.label(adapter, items_path, "B3", runs["noflag"])
+            bare = cli.label(adapter, items_path, "B3", runs["bare"])
+            for name in fit:
+                if view(fit[name]) != view(bare[name]):
+                    problems.append(name + " differs")
+            if fit["primary"]["over_context"]["documents"] or fit["primary"]["counts"]["items_over_context_excluded"]:
+                problems.append("excluded %s" % fit["primary"]["over_context"])
+            # B4 reads the same runs and is not checked: nothing excluded, even with the flag
+            b4 = cli.label(adapter, items_path, "B4", runs["flag"])
+            if b4["primary"]["over_context"]["checked"] or any(
+                    r["basis"] == "over_context_excluded" for r in b4["primary"]["labels"]):
+                problems.append("B4 excluded")
+            if cli.score(adapter, fit, self.root / "b")["primary"]["decisions"] != sum(len(v) for v in by_doc.values()):
+                problems.append("fit scored on fewer items")
+            return problems
+        # neutralised: a reader that takes any record with a context object as over it
+        loose = lambda run_dir: {"reply_records": 1, "records_with_context": 1, "over_context_calls": 1,  # noqa: E731
+                                 "over_context_by_agent": {"X": 1}, "unreadable_records": 0}
+        self._proof(body, lambda: mock.patch.object(m, "read_over_context", loose))
+        self._proof(body, lambda: mock.patch.object(m, "OVER_CONTEXT_ARMS", ("B3", "B4")))
+
+    def test_the_development_findver_run_is_excluded(self):
+        # Counts only, on the saved L4b FinDVer B3 run where external/ holds it (skipped
+        # otherwise): the three calls over their model's context the draft of section 12
+        # item 14 lists (SPEECH_ACT_TAGGER, LEGAL_ANALYST, VERIFIER).
+        run = EXTERNAL / "s05" / "labels" / "_runs" / "B3" / "findver" / "L4b" / "e61777d6327c"
+        if not (run / "audit" / "model_replies").is_dir():
+            self.skipTest("external/ does not hold the S5 development runs")
+        m = _common()["mapping"]
+        over = m.read_over_context(run)
+        self.assertEqual((over["over_context_calls"], over["over_context_by_agent"], over["unreadable_records"]),
+                         (3, {"LEGAL_ANALYST": 1, "SPEECH_ACT_TAGGER": 1, "VERIFIER": 1}, 0))
+        with mock.patch.object(m, "OVER_CONTEXT_FIELD", "never_written"):
+            self.assertEqual(m.read_over_context(run)["over_context_calls"], 0)
+
+
+class S8Checks(_Case):
+    """Sensitivity S-8 (DEV-012), on hand-written synthetic B3 runs: B3 and B4 scored as if
+    every record written by a model were absent. Only records stamped `written_by` exactly
+    `python` are kept (an unstamped record is a model's, section 3 item 6) and section 5.1's
+    lines apply unchanged to what remains: an item a model-written record decided takes the
+    next line (a Python ok record, a Python refusal), else silence; a Python-decided item,
+    a run failure and an over-context exclusion are unchanged; B0, B1 and B2 equal their
+    primary and say so. Neutralise, fail, restore, pass."""
+
+    RULES = ["CONV-CNLI-NDA-%d" % k for k in range(1, 7)]
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _items(self, doc, rules):
+        return [{"item_id": "i-%s-%d" % (doc, k), "document_id": doc, "rule_id": rule, "benchmark": "contractnli"}
+                for k, rule in enumerate(rules)]
+
+    def _runs(self):
+        r = self.RULES
+        python = [_rec("p1", r[1], "ok"), _rec("p2", r[2], "irregular"), _rec("p3", r[3], "ok"),
+                  _rec("p5", r[5], "irregular", confidence="UNCERTAIN")]
+        model = [_rec("m0", r[0], "irregular"), _rec("m1", r[1], "irregular"), _rec("m2", r[2], "ok"),
+                 _rec("m4", r[4], "irregular", confidence="UNCERTAIN"), _rec("m5", r[5], "irregular")]
+        root = self.root / "s8"
+        _incomplete_run(root, "dmix", completion=_completion(), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dmix", python, "paired", "python"),
+            _bus_line("PRACTICE_AUDITOR", "dmix", model, _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32)])
+        # a run failure and an over-context exclusion stay what they are under S-8
+        _incomplete_run(root, "dfail", completion=_completion("stopped", reached_end=False), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dfail", [_rec("m9", r[0], "irregular")], _MODEL_BACKEND, _MODEL_ID)])
+        over = _incomplete_run(root, "dover", completion=_completion(), bus_lines=[
+            _bus_line("PRACTICE_AUDITOR", "dover", [_rec("m8", r[0], "irregular")], _MODEL_BACKEND, _MODEL_ID)])
+        _reply_record(over, 1, "LEGAL_ANALYST", _ctx(36413, 32768))
+        items = self._items("dmix", r) + self._items("dfail", r[:1]) + self._items("dover", r[:1])
+        path = self.root / "items.json"
+        path.write_text(json.dumps({"items": items}), encoding="utf-8")
+        return root, path
+
+    # primary and S-8, by item: class and basis
+    PRIMARY = {"i-dmix-0": ("FLAG", "irregular"), "i-dmix-1": ("FLAG", "irregular"),
+               "i-dmix-2": ("FLAG", "irregular"), "i-dmix-3": ("CLEAR", "ok"),
+               "i-dmix-4": ("UNDECIDED", "refusal"), "i-dmix-5": ("FLAG", "irregular"),
+               "i-dfail-0": ("ABSTAIN", "run_failure"), "i-dover-0": ("ABSTAIN", "over_context_excluded")}
+    S8 = dict(PRIMARY, **{
+        "i-dmix-0": ("CLEAR", "silent"),          # a model's irregular record alone: silence
+        "i-dmix-1": ("CLEAR", "ok"),              # a model's irregular over Python's ok: the ok
+        "i-dmix-4": ("CLEAR", "silent"),          # a model's refusal alone: silence
+        "i-dmix-5": ("UNDECIDED", "refusal")})    # a model's irregular over Python's refusal
+
+    def test_s8_drops_every_model_written_record(self):
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        root, path = self._runs()
+
+        def view(result):
+            return {r["item_id"]: (r["class"], r["basis"]) for r in result["labels"]}
+
+        def body():
+            problems = []
+            for arm in ("B3", "B4"):
+                labels = cli.label(adapter, path, arm, root)
+                want, want8 = dict(self.PRIMARY), dict(self.S8)
+                if arm == "B4":     # B4 is not checked for the context (section 5.3)
+                    want["i-dover-0"], want8["i-dover-0"] = ("FLAG", "irregular"), ("CLEAR", "silent")
+                if view(labels["primary"]) != want:
+                    problems.append("%s primary %s" % (arm, view(labels["primary"])))
+                s8 = labels["S-8"]
+                if view(s8) != want8:
+                    problems.append("%s S-8 %s" % (arm, view(s8)))
+                if (s8["analysis"], s8.get("s8_applies")) != ("S-8", True):
+                    problems.append("%s S-8 header %s" % (arm, (s8["analysis"], s8.get("s8_applies"))))
+                # the unattached findings under S-8 are Python's alone
+                stray = [d["unattached"]["count"] for d in s8["documents"] if d["document_id"] == "dmix"]
+                if stray != [0]:
+                    problems.append("%s S-8 unattached %s" % (arm, stray))
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+        self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s8", lambda spec, result: dict(
+            m._alternative(spec, result, "s3", "S-8", result["documents"]), s8_applies=True)))
+
+    def test_an_unstamped_record_is_a_models(self):
+        # The bus reader stamps every record it reads, so an unstamped record is held on the
+        # run as the record reader hands it over: dropped under S-8, like any stamp that is
+        # not exactly `python`.
+        m = _common()["mapping"]
+        spec = _adapter("contractnli").SPEC
+        rule = self.RULES[0]
+        base = {"failure": False, "pairing_refusals": [], "judging_calls": [], "rule_map": {},
+                "rule_map_status": "missing", "completeness": {}}
+        cases = {
+            "unstamped": ([_rec("u1", rule, "irregular")], ("CLEAR", "silent")),
+            "case": ([_rec("u2", rule, "irregular", written_by="Python")], ("CLEAR", "silent")),
+            "unstamped_over_python_ok": ([_rec("u3", rule, "irregular"),
+                                          _rec("u4", rule, "ok", written_by="python")], ("CLEAR", "ok")),
+            "python": ([_rec("u5", rule, "irregular", written_by="python")], ("FLAG", "irregular"))}
+
+        def body():
+            problems = []
+            for name, (recs, want) in cases.items():
+                run = dict(base, records=recs)
+                primary = m.classify(spec, rule, run)
+                got = m.classify(spec, rule, m.python_only_view(run))
+                if (primary["class"], primary["basis"]) != ("FLAG", "irregular"):
+                    problems.append("%s primary %s" % (name, primary["class"]))
+                if (got["class"], got["basis"]) != want:
+                    problems.append("%s S-8 %s" % (name, (got["class"], got["basis"])))
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "is_computed", lambda r: r.get("written_by") != "model"))
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+
+    def test_other_arms_equal_their_primary_and_say_so(self):
+        # B0, B1 and B2: S-8 equals the primary, in the labels and in the score, and says so;
+        # for B2 even where its review_data.json holds a record no python stamp claims.
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = m.read_items(items_path)
+        runs = self.root / "b2"
+        b1 = self.root / "b1"
+        for doc, doc_items in m.by_document(items).items():
+            folder = runs / doc / "deliverables" / doc
+            folder.mkdir(parents=True)
+            (runs / doc / "audit").mkdir()
+            (runs / doc / "audit" / "run_completion.json").write_text(json.dumps(_completion()), encoding="utf-8")
+            (folder / "review_data.json").write_text(json.dumps({"findings": [
+                _rec("b1", doc_items[0]["rule_id"], "irregular")]}), encoding="utf-8")
+            (b1 / doc / "labels").mkdir(parents=True)
+            for item in doc_items:
+                (b1 / doc / "labels" / (item["item_id"] + ".json")).write_text(
+                    json.dumps({"label": "Contradiction", "evidence": ""}), encoding="utf-8")
+
+        def body():
+            problems = []
+            for arm, folder in (("B0", None), ("B1", b1), ("B2", runs)):
+                labels = cli.label(adapter, items_path, arm, folder)
+                same = [(r["class"], r["basis"]) for r in labels["S-8"]["labels"]] == [
+                    (r["class"], r["basis"]) for r in labels["primary"]["labels"]]
+                if not same or labels["S-8"].get("s8_applies") is not False \
+                        or labels["S-8"].get("note") != m.S8_NOTE_EQUAL:
+                    problems.append(arm + " S-8 differs or does not say so")
+                scored = cli.score(adapter, labels, self.root / "b")
+                if scored["S-8"]["headline"] != scored["primary"]["headline"] \
+                        or scored["S-8"].get("note") != m.S8_NOTE_EQUAL:
+                    problems.append(arm + " S-8 score differs or does not say so")
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ("B2", "B3", "B4")))
+
+
+class SetupFailureChecks(_Case):
+    """One setup-failure rule for B1 and B3 (D-084, DEV-014), on a synthetic ContractNLI
+    build: a B1 document whose output holds b1_setup_failure.json, and a B3 document whose
+    run has a reply record of a call that failed out of memory, carry basis setup_failure on
+    every item, are counted apart (never abstentions), are left out of that arm's scoring in
+    every analysis but S-7, which scores them ABSTAIN, and a paired comparison drops a
+    document either arm failed on; a failed call of any other kind is no setup failure.
+    Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _setup(self):
+        c = _common()
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        by_doc = c["mapping"].by_document(c["mapping"].read_items(items_path))
+        docs = sorted(by_doc)
+        self.assertGreaterEqual(len(docs), 2, "the synthetic build needs two documents")
+        b1_fail, b3_fail = docs[0], docs[-1]
+        b1, b3 = self.root / "b1", self.root / "b3"
+        for doc in docs:
+            out = b1 / doc
+            (out / "labels").mkdir(parents=True)
+            for k, item in enumerate(by_doc[doc]):
+                if doc == b1_fail and k:      # the run stopped at its second item
+                    break
+                (out / "labels" / (item["item_id"] + ".json")).write_text(
+                    json.dumps({"label": "Contradiction", "evidence": ""}), encoding="utf-8")
+            if doc == b1_fail:
+                (out / "b1_setup_failure.json").write_text(json.dumps(
+                    {"schema": "b1-setup-failure-v1", "kind": "out_of_memory",
+                     "item_id": by_doc[doc][min(1, len(by_doc[doc]) - 1)]["item_id"]}), encoding="utf-8")
+            rules = [i["rule_id"] for i in by_doc[doc]]
+            failed = doc == b3_fail
+            run = _incomplete_run(b3, doc, completion=_completion("failed", reached_end=False, exit_code=1)
+                                  if failed else _completion(),
+                                  bus_lines=[_bus_line("A", doc, [_rec("x1", rules[0], "irregular")],
+                                                       "paired", "python")])
+            folder = run / "audit" / "model_replies"
+            folder.mkdir(parents=True)
+            # an ordinary failed call is no setup failure; only out of memory or a refused kernel is
+            calls = [("RuntimeError", "VERIFIER")] + ([("out_of_memory", "PROCESSOR")] if failed else [])
+            for n, (kind, agent) in enumerate(calls, 1):
+                (folder / ("%06d_%032x.json" % (n, n))).write_text(json.dumps(
+                    {"schema_version": 1, "sequence": n, "agent": agent, "backend_ok": False,
+                     "error_category": kind}), encoding="utf-8")
+        return c, adapter, items_path, by_doc, docs, b1_fail, b3_fail, b1, b3
+
+    def test_one_setup_failure_rule_for_b1_and_b3(self):
+        c, adapter, items_path, by_doc, docs, b1_fail, b3_fail, b1, b3 = self._setup()
+        m, cli = c["mapping"], c["cli"]
+        n_all = sum(len(v) for v in by_doc.values())
+
+        def body():
+            problems = []
+            for arm, runs, failed in (("B1", b1, b1_fail), ("B3", b3, b3_fail)):
+                labels = cli.label(adapter, items_path, arm, runs)
+                primary = labels["primary"]
+                mine = {(r["class"], r["basis"]) for r in primary["labels"] if r["document_id"] == failed}
+                if mine != {("ABSTAIN", "setup_failure")}:
+                    problems.append("%s failed rows %s" % (arm, mine))
+                if any(r["basis"] == "setup_failure" for r in primary["labels"] if r["document_id"] != failed):
+                    problems.append(arm + ": another document is a setup failure")
+                counts = primary["counts"]
+                n = len(by_doc[failed])
+                if (counts["setup_failure_documents"], counts["items_setup_failure"]) != (1, n) \
+                        or counts["abstain"] != sum(1 for r in primary["labels"] if r["label"] == "ABSTAIN"
+                                                    and r["basis"] != "setup_failure"):
+                    problems.append("%s counts %s" % (arm, counts))
+                listed = primary["setup_failure"]
+                if (listed["checked"], listed["documents"], listed["items"]) != (True, 1, n):
+                    problems.append("%s listed %s" % (arm, listed))
+                s7 = {(r["class"], r["basis"]) for r in labels["S-7"]["labels"] if r["document_id"] == failed}
+                if s7 != {("ABSTAIN", "s7_setup_failure_abstain")}:
+                    problems.append("%s S-7 %s" % (arm, s7))
+                scored = cli.score(adapter, labels, self.root / "b")
+                for name, result in scored.items():
+                    want = (len(docs), n_all) if name == "S-7" else (len(docs) - 1, n_all - n)
+                    if name == "S-4":
+                        want = (want[0], result["decisions"])
+                    if (result["documents"], result["decisions"]) != want:
+                        problems.append("%s %s scored %s" % (arm, name, (result["documents"], result["decisions"])))
+            # the paired view drops a document either arm failed on
+            l1 = cli.label(adapter, items_path, "B1", b1)
+            l3 = cli.label(adapter, items_path, "B3", b3)
+            paired = cli.score(adapter, l3, self.root / "b", paired_with=l1)["paired"]
+            gone = {b1_fail, b3_fail}
+            if (paired["documents"], paired["left_out_setup_failure"]) != (
+                    len(docs) - len(gone), {"this_arm": [b3_fail], "other_arm": [b1_fail]}):
+                problems.append("paired %s" % {k: v for k, v in paired.items() if k != "analyses"})
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "read_b1_setup_failure", lambda d: None))
+        self._proof(body, lambda: mock.patch.object(m, "read_b3_setup_failure", lambda d: None))
+        self._proof(body, lambda: mock.patch.object(m, "SETUP_FAILURE_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "setup_failure_excluded", lambda result: set()))
+        self._proof(body, lambda: mock.patch.object(m, "sensitivity_s7", m.sensitivity_s1))
+        self._proof(body, lambda: mock.patch.object(m, "B3_SETUP_FAILURE_KINDS", ("out_of_memory", "RuntimeError")))
+
+
+SYNTHETIC = ADAPTERS / "synthetic"
+
+
+def _synthetic_test(root):
+    """The hand-written synthetic test (benchmark/adapters/synthetic/fixtures), materialised:
+    each bundle's files, and its key as answer_key.json (a tracked file named like a key would
+    be ignored by git, so the key travels inside the fixture under `gold`)."""
+    data = _json(SYNTHETIC / "fixtures" / "synthetic_test.json")
+    for name, spec in data["bundles"].items():
+        for rel, text in spec["files"].items():
+            path = Path(root) / name / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        (Path(root) / name / "answer_key.json").write_text(json.dumps(spec["gold"]), encoding="utf-8")
+    return Path(root)
+
+
+def _syn_item_id(source):
+    return hashlib.sha256(("item:synthetic:" + source).encode("utf-8")).hexdigest()[:12]
+
+
+def _syn_rec(item_id, rule, verdict, unit, relation, field_label=None, a=None, b=None, **extra):
+    return dict({"item_id": item_id, "source_rule_id": rule, "unit_id": unit, "relation": relation,
+                 "record_verdict": verdict, "field_label": field_label, "value_a": a, "value_b": b},
+                **extra)
+
+
+class SyntheticChecks(_Case):
+    """B's synthetic tests (preregistration section 13), on a hand-written test of three
+    bundles: items are (target document, rule) pairs read from the targets file and the
+    conventions, never from the key; units are Shimmer's; B0, B1, B2 and B3 are labelled
+    through the shared core (every record decides the rule it names); scores count location
+    by unit and relation under any rule with the attribution apart, the reason by the key's
+    claim, false positives, distractor hits and the twin's false alarms, and leave a
+    negotiation-style key unscored. Neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _syn(self):
+        return _adapter("synthetic")
+
+    def _test(self):
+        return _synthetic_test(self.root / "test")
+
+    ITEMS = [("flawed_a", "log_q1", "CONV-GA"), ("flawed_a", "log_q1", "CONV-GB"),
+             ("rounds_c", "log_q3", "CONV-GA"), ("twin_b", "log_q2", "CONV-GA"),
+             ("twin_b", "log_q2", "CONV-GB")]
+
+    def test_items_are_read_from_targets_and_conventions_never_the_key(self):
+        syn = self._syn()
+        root = self._test()
+        want = sorted((_syn_item_id("%s/%s/%s" % t), t[1], t[2], t[0]) for t in self.ITEMS)
+
+        def body():
+            problems = []
+            try:
+                first = syn.item_rows(root)
+                for name in ("flawed_a", "twin_b", "rounds_c"):    # an unreadable key changes nothing
+                    (root / name / "answer_key.json").write_text("not json", encoding="utf-8")
+                second = syn.item_rows(root)
+            except Exception as exc:  # noqa: BLE001
+                return ["raised %s" % type(exc).__name__]
+            finally:
+                _synthetic_test(root)
+            got = sorted((r["item_id"], r["document_id"], r["rule_id"], r["bundle"]) for r in first)
+            if got != want:
+                problems.append("items %s" % got)
+            if first != second:
+                problems.append("the key changed the items")
+            if {r["benchmark"] for r in first} != {"synthetic"}:
+                problems.append("benchmark %s" % {r["benchmark"] for r in first})
+            return problems
+
+        def reads_key(original):
+            def item_rows(root_):
+                rows = original(root_)
+                planted = {(n, p["rule"]) for n in ("flawed_a", "twin_b") for p in json.loads(
+                    (Path(root_) / n / "answer_key.json").read_text(encoding="utf-8")).get("planted") or []}
+                return [r for r in rows if r["bundle"] == "rounds_c" or (r["bundle"], r["rule_id"]) in planted]
+            return item_rows
+        self._proof(body, lambda: mock.patch.object(syn, "item_rows", reads_key(syn.item_rows)))
+        self._proof(body, lambda: mock.patch.object(syn, "target_names", lambda f: ["context/ref_g.md"]))
+
+    def test_units_are_shimmers(self):
+        syn = self._syn()
+        root = self._test()
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        texts = [p.read_text(encoding="utf-8") for p in sorted(root.rglob("log_q*.md"))]
+        suite = ROOT / "benchmark" / "dev_suite" / "generated"
+        if suite.is_dir():      # the development suite, where it has been generated
+            for keyfile in sorted(suite.rglob("answer_key.json")):
+                folder = keyfile.parent
+                for name in syn.target_names(folder):
+                    texts.append((folder / "context" / name).read_text(encoding="utf-8").replace("\r\n", "\n"))
+
+        def body():
+            problems = []
+            for text in texts:
+                mine = [uid for uid, _t in syn.units(text)]
+                theirs = [u["unit_id"] for u in pairing_map.split_units(text)]
+                if mine != theirs:
+                    problems.append("units %s against %s" % (mine[:4], theirs[:4]))
+            if [uid for uid, _t in syn.units(texts[0])] != ["u00-gauge-log", "u01-entry-alpha",
+                                                           "u02-entry-beta", "u03-entry-gamma"]:
+                problems.append("fixture units %s" % syn.units(texts[0]))
+            return problems
+        self._proof(body, lambda: mock.patch.object(syn, "_slug", lambda text, limit=40: str(text).lower()))
+        self._proof(body, lambda: mock.patch.object(syn, "_RULE_LINE", re.compile(r"^.*$")))
+
+    def _runs(self, root):
+        """Hand-written B2, B3 and B1 outputs, one folder per bundle."""
+        docs = {"flawed_a": "log_q1", "twin_b": "log_q2", "rounds_c": "log_q3"}
+        b2, b3, b1 = self.root / "b2", self.root / "b3", self.root / "b1"
+        b2_findings = {
+            "flawed_a": [_syn_rec("f1", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 12, 10,
+                                  written_by="python"),
+                         _syn_rec("f2", "CONV-GB", "irregular", "u02-entry-beta", "sum_mismatch", "total count", 7, 9,
+                                  written_by="python"),
+                         _syn_rec("f3", "CONV-GA", "ok", "u03-entry-gamma", "above_band", "reading", 8, 10,
+                                  written_by="python")],
+            "twin_b": [_syn_rec("t1", "CONV-GA", "ok", "u01-entry-alpha", "above_band", "reading", 9, 10,
+                                written_by="python")],
+            "rounds_c": []}
+        for name, doc in docs.items():
+            folder = b2 / name / "deliverables" / doc
+            folder.mkdir(parents=True)
+            (b2 / name / "audit").mkdir()
+            (b2 / name / "audit" / "run_completion.json").write_text(json.dumps(_completion()), encoding="utf-8")
+            (folder / "review_data.json").write_text(json.dumps({"findings": b2_findings[name]}), encoding="utf-8")
+        python = {"flawed_a": [_syn_rec("p1", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 12, 10),
+                               # under another rule than the key's, and with the wrong figures
+                               _syn_rec("p2", "CONV-GA", "irregular", "u02-entry-beta", "sum_mismatch", "total count", 6, 9)],
+                  "twin_b": [], "rounds_c": []}
+        model = {"flawed_a": [_syn_rec("m1", "CONV-GA", "irregular", "u03-entry-gamma", "above_band", "reading", 8, 10)],
+                 "twin_b": [_syn_rec("m2", "CONV-GA", "irregular", "u01-entry-alpha", "above_band", "reading", 9, 10)],
+                 "rounds_c": []}
+        for name, doc in docs.items():
+            lines = [_bus_line("A", doc, python[name], "paired", "python")]
+            if model[name]:
+                lines.append(_bus_line("B", doc, model[name], _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32))
+            run = _incomplete_run(b3, doc, completion=_completion(), bus_lines=lines)
+            run.rename(b3 / name)
+        # the model's record on the clean unit is shown in one deliverable
+        shown = b3 / "flawed_a" / "deliverables" / "log_q1"
+        shown.mkdir(parents=True)
+        (shown / "document_summary.md").write_text("Written by a model: record m1.\n", encoding="utf-8")
+        replies = {("flawed_a", "CONV-GA"): {"label": "violated", "evidence": "Reading: 12 units."},
+                   # held by two units: locates none
+                   ("flawed_a", "CONV-GB"): {"label": "violated", "evidence": "Limit: 10 units."},
+                   ("twin_b", "CONV-GA"): {"label": "holds", "evidence": ""},
+                   ("twin_b", "CONV-GB"): {"label": "not a label", "evidence": ""},
+                   ("rounds_c", "CONV-GA"): {"label": "holds", "evidence": ""}}
+        for (name, rule), reply in replies.items():
+            path = b1 / name / "labels" / (_syn_item_id("%s/%s/%s" % (name, docs[name], rule)) + ".json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(reply), encoding="utf-8")
+        return {"B2": b2, "B3": b3, "B1": b1}
+
+    LABELS = {
+        "B0": {k: ("CLEAR", "b0", []) for k in ITEMS},
+        "B1": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "b1_label", ["u01-entry-alpha"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("FLAG", "b1_label", []),
+               ("twin_b", "log_q2", "CONV-GA"): ("CLEAR", "b1_label", []),
+               ("twin_b", "log_q2", "CONV-GB"): ("ABSTAIN", "b1_parse_failure", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "b1_label", [])},
+        "B2": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "irregular", ["u01-entry-alpha"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("FLAG", "irregular", ["u02-entry-beta"]),
+               ("twin_b", "log_q2", "CONV-GA"): ("CLEAR", "ok", []),
+               ("twin_b", "log_q2", "CONV-GB"): ("CLEAR", "silent", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "silent", [])},
+        "B3": {("flawed_a", "log_q1", "CONV-GA"): ("FLAG", "irregular",
+                                                  ["u01-entry-alpha", "u02-entry-beta", "u03-entry-gamma"]),
+               ("flawed_a", "log_q1", "CONV-GB"): ("CLEAR", "silent", []),
+               ("twin_b", "log_q2", "CONV-GA"): ("FLAG", "irregular", ["u01-entry-alpha"]),
+               ("twin_b", "log_q2", "CONV-GB"): ("CLEAR", "silent", []),
+               ("rounds_c", "log_q3", "CONV-GA"): ("CLEAR", "silent", [])}}
+    # (planted, located, attributed, reason confirmed, item false positives, records on
+    # unplanted units, distractor hits, twin false alarms: flagged items and unit-rule pairs)
+    SCORES = {"B0": (2, 0, 0, 0, 0, 0, 0, (0, 0)),
+              "B1": (2, 1, 1, None, 0, 0, 0, (0, 0)),
+              "B2": (2, 2, 2, 2, 0, 0, 0, (0, 0)),
+              "B3": (2, 2, 1, 1, 1, 2, 2, (1, 1))}
+    S8 = {"B3": (2, 2, 1, 1, 0, 0, 0, (0, 0))}
+
+    def _labelled(self, syn, root, runs, arm):
+        items = self.root / "items.json"
+        syn.write_items(root, items)
+        return syn.label(items, arm, root, runs.get(arm))
+
+    def _score_view(self, scored):
+        t = scored["totals"]
+        base = [b for b in scored["bundles"] if b["bundle"] == "flawed_a"][0]
+        twin = base["twin_false_alarms"] or {}
+        return (t["planted"], t["located"], t["attributed"], t["reason_confirmed"], t["item_false_positives"],
+                t["records_on_unplanted_units"], t["distractor_hits"],
+                (twin.get("flag_items"), twin.get("flagged_unit_rule_pairs")))
+
+    def test_labels_and_scores_by_hand(self):
+        syn = self._syn()
+        root = self._test()
+        runs = self._runs(root)
+
+        def body():
+            problems = []
+            for arm in ("B0", "B1", "B2", "B3"):
+                labels = self._labelled(syn, root, runs, arm)
+                got = {(r["bundle"], r["document_id"], r["rule_id"]): (r["class"], r["basis"], r["cited_unit_ids"])
+                       for r in labels["primary"]["labels"]}
+                if got != self.LABELS[arm]:
+                    problems.append("%s labels %s" % (arm, got))
+                scored = syn.score(labels, root)
+                if self._score_view(scored["primary"]) != self.SCORES[arm]:
+                    problems.append("%s score %s" % (arm, self._score_view(scored["primary"])))
+                if [s["bundle"] for s in scored["primary"]["not_scored"]] != ["rounds_c"]:
+                    problems.append("%s not scored %s" % (arm, scored["primary"]["not_scored"]))
+                want8 = self.S8.get(arm, self.SCORES[arm])
+                if self._score_view(scored["S-8"]) != want8:
+                    problems.append("%s S-8 %s" % (arm, self._score_view(scored["S-8"])))
+                if self._score_view(scored["S-3"]) != self.SCORES[arm]:
+                    problems.append("%s S-3 differs from the primary" % arm)
+                # the records on unplanted units, by the deliverable that shows them
+                shown = {"B1": None, "B3": {"document_summary.md": 1}}.get(arm, {})
+                if scored["primary"]["totals"]["unplanted_records_per_deliverable"] != shown:
+                    problems.append("%s per deliverable %s" % (
+                        arm, scored["primary"]["totals"]["unplanted_records_per_deliverable"]))
+                if arm == "B3" and scored["S-8"]["totals"]["unplanted_records_per_deliverable"] != {}:
+                    problems.append("B3 S-8 per deliverable")
+            return problems
+
+        m = _common()["mapping"]
+        # every record decides the rule it names: set aside, the sum record decides nothing
+        self._proof(body, lambda: mock.patch.object(syn.SPEC, "attribute_as_named", False))
+        # location by unit: neutralised, a record anywhere locates every flaw
+        self._proof(body, lambda: mock.patch.object(syn, "_on_unit", lambda planted, unit: True))
+        # the reason by the key's claim: neutralised, every located record confirms it
+        self._proof(body, lambda: mock.patch.object(syn, "reason_matches", lambda claim, record: True))
+        # B1 located only by a sentence one unit holds: neutralised, by every unit holding it
+        quote = lambda e: (e or "").rstrip(".").strip()  # noqa: E731
+        self._proof(body, lambda: mock.patch.object(syn, "b1_located_units", lambda e, u: (
+            sorted(uid for uid, text in u if quote(e) and quote(e) in " ".join(text.split())), 0)))
+        # S-8 drops the model's records
+        self._proof(body, lambda: mock.patch.object(m, "python_only_view", lambda run: run))
+        # a record shown in a deliverable is counted there
+        self._proof(body, lambda: mock.patch.object(syn, "in_deliverables", lambda record, texts: []))
+
+    def test_b1_prompt_for_a_synthetic_item(self):
+        syn = self._syn()
+        c = _common()
+        root = self._test()
+        items = self.root / "items.json"
+        syn.write_items(root, items)
+        item = [r for r in c["mapping"].read_items(items)
+                if r["bundle"] == "flawed_a" and r["rule_id"] == "CONV-GA"][0]
+        spec = c["prompt"].load_prompt()
+        user = c["prompt"].render_user(
+            spec, item["benchmark"], document=(root / "flawed_a" / "context" / "log_q1.md").read_text(encoding="utf-8"),
+            conventions=c["prompt"].conventions_from_bundle(root / "flawed_a"), item=item,
+            reference=c["prompt"].reference_from_bundle(root / "flawed_a"))
+        self.assertIn("ITEM\nItem id: %s\nRule id: CONV-GA\nDecide whether any passage of the document "
+                      "breaks this rule.\n" % item["item_id"], user)
+        self.assertIn("LABELS\nviolated: at least one passage of the document breaks the rule.\n"
+                      "holds: no passage of the document breaks the rule.\n"
+                      "undecided: the material does not let you decide.\nThe undecided label is: undecided", user)
+        self.assertIn("REFERENCE MATERIAL\nref_g.md\n# Bench reference", user)
+        self.assertIn("CONVENTIONS\nCONV-GA Reading limit [required] [conformance]: The reading must not "
+                      "exceed the limit.\nCONV-GB Count total", user)
+        self.assertNotIn("If the material does not let you decide",
+                         c["prompt"].render_system(spec, "synthetic"), "the undecided label is not invited")
+        # bare_model.py reads exactly these four fields, and the document id is the target's stem
+        self.assertEqual((item["document_id"], sorted(k for k in ("item_id", "document_id", "rule_id", "benchmark")
+                                                      if item.get(k))),
+                         ("log_q1", ["benchmark", "document_id", "item_id", "rule_id"]))
+        self.assertEqual(syn.SPEC.b1_labels, {"violated": "FLAG", "holds": "CLEAR", "undecided": "UNDECIDED"})
+
+
+# ---------------------------------------------------------------------------
+# the dry-run document choice and free measurements (benchmark/dryrun; S5 items 0.6, 0.7)
+
+
+DRYRUN = ROOT / "benchmark" / "dryrun"
+
+
+def _dryrun(name):
+    """A benchmark/dryrun module, loaded with sys.path restored afterwards."""
+    key = "dryrun_" + name
+    if key not in _MODULES:
+        _common()
+        before = list(sys.path)
+        try:
+            sys.path.insert(0, str(DRYRUN))
+            sys.path.insert(0, str(ADAPTERS))
+            spec = importlib.util.spec_from_file_location("benchmark_dryrun_" + name, DRYRUN / (name + ".py"))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        finally:
+            sys.path[:] = before
+        _MODULES[key] = module
+    return _MODULES[key]
+
+
+class _GuardedRow(dict):
+    """A bands row that fails when any field but words, band, side and opaque id is read."""
+
+    def _allowed(self, key):
+        if key not in ("document_id", "words", "length_band", "side"):
+            raise AssertionError("the choice read " + str(key))
+
+    def __getitem__(self, key):
+        self._allowed(key)
+        return dict.__getitem__(self, key)
+
+    def get(self, key, default=None):
+        self._allowed(key)
+        return dict.get(self, key, default)
+
+
+class DryRunChecks(_Case):
+    """Item 0.6: the content-blind choice reads words, band, side and opaque id only, sorts
+    by words then opaque id, takes evenly spaced positions (the median for one) and lists
+    each choice's replacement. Item 0.7 and R24: the build restricted to chosen documents,
+    B2 on it, the B1 prompt tokens and the memory bound, on a synthetic build with a
+    stand-in counter."""
+
+    def setUp(self):
+        super().setUp()
+        if not DRYRUN.is_dir():
+            self.skipTest("benchmark/dryrun/ is not present here")
+
+    def test_positions_and_choice(self):
+        choose = _dryrun("choose")
+        self.assertEqual(choose.positions(5, 1), [2])
+        self.assertEqual(choose.positions(4, 1), [1])
+        self.assertEqual(choose.positions(132, 3), [32, 65, 98])
+        self.assertEqual(choose.positions(3, 3), [0, 1, 2])
+        with self.assertRaises(ValueError):
+            choose.positions(2, 3)
+        rows = [_GuardedRow(document_id=i, words=w, length_band=b, side=s, gold="x",
+                            source_document_id="src-" + i)
+                for i, w, b, s in (("d5", 300, "A", "development"), ("d1", 100, "A", "development"),
+                                   ("d3", 200, "A", "development"), ("d2", 200, "A", "development"),
+                                   ("d4", 250, "A", "holdout"), ("d6", 1500, "B", "development"),
+                                   ("d7", 1200, "B", "development"))]
+        got = choose.choose("x", rows, plan={"A": 1, "B": 1}, fallback={})
+        # band A development order: d1 100, d2 200, d3 200 (tie by id), d5 300: lower median d2
+        self.assertEqual([(r["band"], r["document_id"], r["position"], r["band_size"]) for r in got],
+                         [("A", "d2", 2, 4), ("B", "d7", 1, 2)])
+        self.assertEqual([r["replacement"]["document_id"] for r in got], ["d3", "d6"])
+        two = choose.choose("x", rows, plan={"A": 2}, fallback={"B": 1})
+        # n = 4, k = 2: 1-based positions floor(5/3) = 1 and floor(10/3) = 3
+        self.assertEqual([(r["role"], r["document_id"]) for r in two],
+                         [("chosen", "d1"), ("chosen", "d3"), ("fallback", "d7")])
+        self.assertEqual(two[1]["replacement"]["document_id"], "d5")
+        self.assertNotIn("src-", json.dumps(got + two))
+        self.assertEqual(set(choose.PLAN), set(NAMES))
+
+    def test_memory_bound_by_hand(self):
+        # D-056 condition 8, computed by hand: L 2, H 2, Hkv 1, h 4 (d 2), m 6, V 10, a 100-byte
+        # file; prompt P 3, allowance 2, so T 5. Non-4-bit parameters 2*10*4 + 2*2*4 + 4 +
+        # 2*(4 + 2*1*2) = 116, doubled from bf16 to float32: weights 100 + 2*116 = 332. KV cache
+        # 2*2*1*2*5*4 = 160 (float32). sdpa: 2*2*2*5*4 + 2*3*4 = 184, no T x T term; eager:
+        # 2*3*3*8 + 3*3*4 = 180, over the prompt only. Activations 3*(16 + 18)*4 = 408 (float32),
+        # dequantized 6*4*2 = 48, logits 40.
+        measure = _dryrun("measure")
+        dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
+                "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
+        self.assertEqual(measure.non_4bit_parameters(dims), 116)
+        self.assertEqual(measure.non_4bit_parameters(dict(dims, tie_word_embeddings=True)), 76)
+        common = {"weights": 332, "kv_cache": 160, "activations": 408, "dequantized": 48, "logits": 40,
+                  "runtime": 1 << 30}
+        bound = measure.memory_bound(3, 2, dims)
+        self.assertEqual((bound["attention"], bound["prompt_tokens"], bound["tokens"]), ("sdpa", 3, 5))
+        self.assertEqual(bound["bytes"], dict(common, attention=184))
+        self.assertEqual(bound["total_bytes"], 1172 + (1 << 30))
+        self.assertFalse(bound["over_limit"])
+        eager = measure.memory_bound(3, 2, dims, "eager")
+        self.assertEqual(eager["bytes"], dict(common, attention=180))
+        # eager's square is over the prompt only: the allowance moves only the KV cache and sdpa
+        longer = measure.memory_bound(3, 20, dims, "eager")
+        self.assertEqual(longer["bytes"]["attention"], 180)
+        self.assertEqual(longer["bytes"]["kv_cache"], 2 * 2 * 1 * 2 * 23 * 4)
+        with self.assertRaises(ValueError):
+            measure.memory_bound(3, 2, dims, "flash")
+        # Qwen2.5-7B's shape at a full-length prompt (context 32,768 less a 2,048 allowance): the
+        # eager square alone is 215 GB; sdpa has none, and its bound sits just over the 22 GB
+        # limit, mostly one-shot prefill's float32 activations (8.7 GB)
+        big = {"num_hidden_layers": 28, "num_attention_heads": 28, "num_key_value_heads": 4, "hidden_size": 3584,
+               "intermediate_size": 18944, "vocab_size": 152064, "weights_file_bytes": 5547254622}
+        full = measure.memory_bound(32768 - 2048, 2048, big)
+        self.assertEqual((full["total_gb"], full["bytes"]["activations"]), (22.38, 30720 * 71168 * 4))
+        self.assertEqual(measure.memory_bound(32768 - 2048, 2048, big, "eager")["total_gb"], 236.61)
+
+    def test_recompute_from_a_written_summary(self):
+        measure = _dryrun("measure")
+        dims = {"num_hidden_layers": 2, "num_attention_heads": 2, "num_key_value_heads": 1,
+                "hidden_size": 4, "intermediate_size": 6, "vocab_size": 10, "weights_file_bytes": 100}
+        summary = {"model_dimensions": dims, "output_allowance": 2, "memory_formula": "old",
+                   "documents": [{"benchmark": "findver", "part_rule": None, "document_id": "d1", "role": "chosen",
+                                  "band": "A", "b1_prompt_tokens": {"max": 3},
+                                  "memory_bound": {"total_gb": 9.0, "over_limit": False}}]}
+        path = self.root / "summary.json"
+        path.write_text(json.dumps(summary), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(measure.main(["recompute", "--summary", str(path), "--out",
+                                           str(self.root / "again.json")]), 0)
+        row = _json(self.root / "again.json")["documents"][0]
+        self.assertEqual((row["prompt_tokens"], row["tokens"], row["recorded_bound_gb"]), (3, 5, 9.0))
+        self.assertEqual((sum(row["sdpa_bytes"].values()), sum(row["eager_bytes"].values())),
+                         (1172 + (1 << 30), 1168 + (1 << 30)))
+
+    def test_restricted_build_b2_and_b1_tokens(self):
+        measure = _dryrun("measure")
+        c = _common()
+        adapter = _adapter("scitab")
+        every = {d["document_id"] for d in adapter.documents(adapter.read_source(_source("scitab")),
+                                                              {"development": True})}
+        wanted = sorted(every)[0]
+        out = self.root / "build"
+        c["cli"].build(measure.Only(adapter, [wanted]), _source("scitab"), out, development=True,
+                       synthetic=True, max_context=4096, output_allowance=64,
+                       token_counter=measure.StandIn)
+        record = _json(out / "parts.json")["documents"]
+        self.assertEqual([d["document_id"] for d in record], [wanted], "only the chosen document is built")
+        items = [i for i in _json(out / "items.json")["items"] if i["document_id"] == wanted]
+        sys.path.insert(0, str(ROOT / "benchmark" / "baselines"))
+        try:
+            row = measure.measure_document("scitab", out / wanted, items, record[0], self.root / "b2",
+                                           measure.StandIn, measure._stand_in_dims(), 64)
+        finally:
+            sys.path.remove(str(ROOT / "benchmark" / "baselines"))
+        pairing = _json(self.root / "b2" / "audit" / "pairing_map.json")[wanted]
+        self.assertEqual((row["units"], row["plans_not_asked"], row["b2_model_calls"]),
+                         (len(pairing["units"]), pairing["ablation_not_asked_count"], 0))
+        self.assertEqual(row["b1_prompt_tokens"]["items"], len(items))
+        self.assertGreaterEqual(row["b1_prompt_tokens"]["max"], row["b1_prompt_tokens"]["document_tokens"])
+        self.assertEqual(row["memory_bound"]["tokens"], row["b1_prompt_tokens"]["max"] + 64)
+        self.assertEqual((row["memory_bound"]["attention"], row["memory_bound_eager"]["attention"]),
+                         ("sdpa", "eager"))
+        self.assertEqual(row["memory_bound"]["prompt_tokens"], row["b1_prompt_tokens"]["max"])
+        self.assertEqual(row["words"], record[0]["source_words"])
 
 
 # ---------------------------------------------------------------------------
@@ -1864,9 +3314,60 @@ GROUPS = {
                                "the other way), never counted in a failed run; one figure-audit definition for every benchmark "
                                "(relation and python stamp; bands decide their rule, blank-cell, "
                                "sum and product records only in a one-rule bundle, model records "
-                               "always); B3 and B4 refused while "
-                               "the typed-record key is unsettled; the catch layer read from the "
+                               "always); B3 and B4 read from the bus (a run with no bus a run "
+                               "failure), refused with the bus reading not adopted; the catch layer read from the "
                                "written_by stamp alone, exactly"),
+    "records": (RecordReaderChecks, "one record reader for both forms: B2 from review_data.json, "
+                                    "B3 from the run's bus with written_by stamped from the line, "
+                                    "supersession within (agent, document, item_id) by revision, "
+                                    "then ts, then line, a judged absence counted only by "
+                                    "Python's stamped copy and the raw model copy listed apart, "
+                                    "another document's lines ignored; the same records in both "
+                                    "forms give the same labels on every mapping fixture; the "
+                                    "bus reading is adopted (D-056): the label command labels B3 "
+                                    "and B4 from a fixture bus as B2 from review_data.json, and "
+                                    "refuses with the flag off"),
+    "incomplete": (IncompleteRunChecks, "a run that reached its end with exit 0 and semantic_complete "
+                                        "false is labelled from its records, S-6 makes its items ABSTAIN, "
+                                        "item_calls_failed applies through the run's own registry id map "
+                                        "(D-078; a missing, unreadable or many-to-one map not used, says "
+                                        "why and is counted), a pairing-map refusal naming a registry id "
+                                        "refuses its operator id's item, completeness is reported per "
+                                        "document, and a kept D-068 answer decides its rule as a model's "
+                                        "record (D-066, D-068; neutralise, fail, restore, pass)"),
+    "overcontext": (OverContextChecks, "a B3 document whose run has a reply record with "
+                                       "context.over_context true is excluded (listed, counted, left "
+                                       "out of every analysis but S-7, which scores it ABSTAIN, and out "
+                                       "of the paired view for both arms); without the flag B3 is "
+                                       "labelled as with no reply records; B4 is not checked "
+                                       "(section 5.3, D-078; neutralise, fail, restore, pass)"),
+    "s8": (S8Checks, "S-8 (DEV-012) scores B3 and B4 as if every model-written record were "
+                     "absent: an item a model's record decided takes Python's ok or refusal "
+                     "record, else silence; an unstamped record or a stamp not exactly python "
+                     "is dropped; a Python-decided item, a run failure and an over-context "
+                     "exclusion are unchanged; B0, B1 and B2 equal their primary and say so "
+                     "(neutralise, fail, restore, pass)"),
+    "setupfailure": (SetupFailureChecks, "one setup-failure rule for B1 and B3 (D-084): a B1 "
+                                         "document with b1_setup_failure.json and a B3 document "
+                                         "with a call out of memory are ABSTAIN with basis "
+                                         "setup_failure, counted apart, left out of every analysis "
+                                         "but S-7 (ABSTAIN there) and out of the paired view; any "
+                                         "other failed call is no setup failure (neutralise, fail, "
+                                         "restore, pass)"),
+    "synthetic": (SyntheticChecks, "B's synthetic tests (section 13): items from targets and "
+                                   "conventions, never the key; Shimmer's units; B0, B1, B2 and "
+                                   "B3 labels and scores by hand (location by unit and relation "
+                                   "under any rule, attribution apart, the reason by the key's "
+                                   "claim, false positives, distractor hits, the twin's false "
+                                   "alarms, S-8, a negotiation-style key unscored); the B1 "
+                                   "prompt for a synthetic item (neutralise, fail, restore, pass)"),
+    "dryrun": (DryRunChecks, "the dry-run choice reads words, band, side and opaque id only, "
+                             "sorts by words then id, takes evenly spaced positions (the median "
+                             "for one) and lists each replacement; the restricted build holds only "
+                             "the chosen document; B2 on it, the B1 prompt tokens and the memory "
+                             "bound (computed by hand; float32 non-4-bit weights, activations and "
+                             "KV cache, sdpa with no T x T term, eager squared over the prompt "
+                             "only, D-056) agree, and a written summary is recomputed"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "
@@ -1886,8 +3387,10 @@ def check():
                              "back as the input format and as Shimmer splits them, cut per document, "
                              "split by document with sides and frozen files enforced, leak no source "
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
-                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5; B3 refused "
-                             "until the typed-record key is settled), score tiny examples as computed "
+                             "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
+                             "excluded on a call over the model's context; one setup-failure rule for B1 "
+                             "and B3), label and score B's synthetic tests by hand, read B2 and B3 records by one "
+                             "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")
 

@@ -5,13 +5,40 @@ import hashlib
 import ipaddress
 import json
 import math
+import os
 import re
+import subprocess
 import tarfile
 from pathlib import Path, PurePosixPath
 
 
 class InvalidPreparation(ValueError):
     pass
+
+
+# D-079: a console program started from a process with no console (the detached
+# controller, its watchdog) opens a visible window on Windows. Every child process the
+# operator-side tools start passes its creation flags through no_window, so ssh, scp,
+# ssh-keygen, curl, git and python children run without one. Elsewhere nothing changes.
+CREATE_NO_WINDOW = 0x08000000
+
+
+def windows():
+    return os.name == 'nt'
+
+
+def no_window(flags=0, keep_console=False):
+    """The creation flags for one child process: `flags` with the Windows no-window flag
+    added, or `flags` unchanged off Windows or where the child must keep the operator's
+    console (an interactive ssh passphrase prompt, a foreground re-exec)."""
+    if keep_console or not windows():
+        return flags
+    return flags | CREATE_NO_WINDOW
+
+
+def hidden_run(*args, **kwargs):
+    """subprocess.run with no window, for a `runner` argument that defaults to subprocess.run."""
+    return subprocess.run(*args, creationflags=no_window(kwargs.pop('creationflags', 0)), **kwargs)
 
 
 def require(condition, reason):

@@ -32,6 +32,13 @@ reference material), its use of the one cut rule (benchmark/adapters/common/
 cut.py; it carries none of its own) and its reading of the reading agent's model and
 decoding policy from the tracked configuration are checked beside it.
 
+B1's two checkpoints in final mode (loop plan S5, R20), on a mocked model and a fixture
+base folder, no model load: `base` loads the pinned base through final_models.base_path
+(base_hashes checked) and never applies the adapter nor reads an adapter file; `tuned`
+goes through final_models.resident and applies it; a base hash mismatch refuses before
+any model is loaded; each records its digest (revision plus model.safetensors SHA-256,
+plus the adapter's for tuned), and run_b1, the in-process entry, records the checkpoint.
+
 Neither tool may import a model library: that is checked in a fresh subprocess, so a
 library the gate process already imported cannot hide an import.
 
@@ -50,6 +57,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,20 +85,36 @@ def _absent(base=None):
 
 
 EXPECTED = {"model_id": "fixture-model", "digest": "fixture-digest", "decoding": {}}
+# D-063, written out here so the checks hold the tool to it: B1 follows the producer, sdpa
+# pinned to the memory-efficient backend, and prefills in one shot, both recorded under D-063
+# (D-061's declared fallback). The run proper names no measurement decision.
+B1_ATTENTION = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                "attention_decision": "D-063",
+                "prefill": "one_shot", "prefill_chunk_tokens": None, "prefill_decision": "D-063"}
+# D-056 condition 6, D-061 item 4 and D-063: an eager measurement pass, with the decision that
+# asks for it (nothing pinned), and a chunked (E) measurement pass.
+B1_EAGER = dict(B1_ATTENTION, attention_implementation="eager", sdpa_backend=None, attention_decision="D-061")
+B1_E = dict(B1_ATTENTION, prefill="chunked", prefill_chunk_tokens=512, prefill_decision="D-061")
 
 
 class FakeBackend:
-    """A mocked model: canned replies by item id, one token per word."""
+    """A mocked model: canned replies by item id, one token per word. It reports B1's
+    declared attention unless `attention` says otherwise (None: it reports none)."""
 
-    def __init__(self, replies, identity=None, context=100000, fail_prepare=False):
+    def __init__(self, replies, identity=None, context=100000, fail_prepare=False,
+                 attention=B1_ATTENTION, raise_for=None):
         self.replies, self.identity, self.context = replies, identity or dict(EXPECTED), context
         self.fail_prepare, self.asked, self.users, self.prepared = fail_prepare, [], {}, 0
+        self.attention, self.raise_for = attention, raise_for or {}
 
     def prepare(self):
         self.prepared += 1
         if self.fail_prepare:
             raise RuntimeError("fixture load failure")
-        return dict(self.identity)
+        identity = dict(self.identity)
+        if self.attention is not None:
+            identity.setdefault("attention", dict(self.attention))
+        return identity
 
     def count_prompt(self, system, user):
         return len((system + " " + user).split())
@@ -104,6 +128,8 @@ class FakeBackend:
         self.users[item_id] = user
         self.systems = getattr(self, "systems", {})
         self.systems[item_id] = system
+        if item_id in self.raise_for:
+            raise self.raise_for[item_id]
         if self.replies[item_id].get("raise"):
             raise RuntimeError("fixture failure")
         reply = self.replies[item_id]["reply"]
@@ -122,7 +148,8 @@ for p in (root / "scripts", root / "benchmark" / "baselines", root / "benchmark"
 import python_only, bare_model
 replies = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))["replies"]
 class Fake:
-    def prepare(self): return {"model_id": "m", "digest": "d", "decoding": {}}
+    def prepare(self): return {"model_id": "m", "digest": "d", "decoding": {},
+                               "attention": bare_model.attention_record()}
     def count_prompt(self, s, u): return 1
     def max_context(self): return 10
     def generate(self, s, u, n):
@@ -300,7 +327,11 @@ class BareModelChecks(unittest.TestCase):
             self.assertEqual(sorted(rates.values()), [0.0, 0.0, 1.0, 1.0])
             self.assertEqual({k: v["below_parse_rate_floor"] for k, v in summary["benchmarks"].items()},
                              {k: r < 0.95 for k, r in rates.items()})
-            self.assertEqual(summary["verified_against"], ["decoding", "digest", "model_id"])
+            self.assertEqual(summary["verified_against"], ["attention", "decoding", "digest", "model_id"])
+            # D-056: the attention every call ran under, in every reply record and the summary
+            self.assertEqual(summary["attention"], B1_ATTENTION)
+            self.assertEqual([r["attention"] for r in records], [B1_ATTENTION] * len(records))
+            self.assertEqual({l["attention"]["attention_implementation"] for l in labels.values()}, {"sdpa"})
             # A reply whose length reached the allowance (64) is recorded, per item and counted.
             reached = {item_id: label["length_reached_allowance"] for item_id, label in labels.items()}
             for item_id, entry in replies.items():
@@ -346,6 +377,14 @@ class BareModelChecks(unittest.TestCase):
              self.tool.SetupError),
             ("unrecorded", FakeBackend(replies), None, self.tool.SetupError),
             ("context", FakeBackend(replies, context=50), EXPECTED, self.tool.SetupError),
+            # D-056 condition 1: a backend that reports no attention, or another, stops the run
+            ("no attention", FakeBackend(replies, attention=None), EXPECTED, self.tool.SetupError),
+            ("eager attention", FakeBackend(replies, attention=dict(
+                B1_ATTENTION, attention_implementation="eager")), EXPECTED, self.tool.SetupError),
+            # D-061, D-063: a backend that loaded another prefill stops the run too
+            ("chunked prefill", FakeBackend(replies, attention=B1_E), EXPECTED, self.tool.SetupError),
+            ("math backend", FakeBackend(replies, attention=dict(B1_ATTENTION, sdpa_backend="MATH")),
+             EXPECTED, self.tool.SetupError),
         ]
         for name, backend, expected, error in cases:
             with tempfile.TemporaryDirectory(prefix="b1_stop_") as tmp:
@@ -355,6 +394,15 @@ class BareModelChecks(unittest.TestCase):
                                   expected=expected)
                 self.assertEqual(backend.asked, [], name + ": nothing generated")
                 self.assertFalse((out / "labels").exists(), name + ": no label written")
+                # D-084 (DEV-014): a prompt over the context is a setup failure, recorded
+                # where the adapters read it; every other stop here writes no such record
+                record = out / self.tool.SETUP_FAILURE_FILE
+                if name == "context":
+                    failure = json.loads(record.read_text(encoding="utf-8"))
+                    self.assertEqual((failure["kind"], failure["items_before_stop"]),
+                                     (self.tool.PROMPT_OVER_CONTEXT, 0), name)
+                else:
+                    self.assertFalse(record.exists(), name + ": no setup-failure record")
         with tempfile.TemporaryDirectory(prefix="b1_stop_") as tmp:
             backend = FakeBackend(replies)
             with mock.patch.object(reply_records, "write", return_value=None):
@@ -488,6 +536,922 @@ class BareModelChecks(unittest.TestCase):
         self.assertEqual(plain["max_new_tokens_source"], "pipeline PRODUCTION_MAX_TOKENS")
 
 
+class _FakeModel:
+    """A mocked 4-bit model: records what was done to it, loads nothing. Its config carries
+    the attention it was loaded with, as transformers sets it from attn_implementation."""
+
+    def __init__(self, attention=None):
+        self.config = SimpleNamespace(model_type="qwen2", use_cache=False, quantization_config={
+            "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": "bfloat16"},
+            _attn_implementation=attention)
+        self.is_loaded_in_4bit = True
+        self.prepared_for_kbit = False
+
+    def requires_grad_(self, flag):
+        return self
+
+    def eval(self):
+        return self
+
+    def gradient_checkpointing_disable(self):
+        return self
+
+
+class _FakeLibs:
+    """transformers and peft stand-ins: count every load and every adapter application."""
+
+    def __init__(self):
+        self.calls = {"tokenizer": [], "model": [], "kbit": 0, "adapter": [], "attention": []}
+        libs = self
+
+        class AutoTokenizer:
+            @staticmethod
+            def from_pretrained(path, **kw):
+                libs.calls["tokenizer"].append(path)
+                return SimpleNamespace(path=path)
+
+        class AutoModelForCausalLM:
+            @staticmethod
+            def from_pretrained(path, **kw):
+                libs.calls["model"].append(path)
+                libs.calls["attention"].append(kw.get("attn_implementation"))
+                return _FakeModel(kw.get("attn_implementation"))
+
+        class PeftModel:
+            @staticmethod
+            def from_pretrained(model, adapter_dir, **kw):
+                libs.calls["adapter"].append(adapter_dir)
+                wrapped = _FakeModel()
+                wrapped.base = model
+                return wrapped
+
+        def prepare_model_for_kbit_training(model, **kw):
+            libs.calls["kbit"] += 1
+            model.prepared_for_kbit = True
+            return model
+
+        self.AutoTokenizer, self.AutoModelForCausalLM = AutoTokenizer, AutoModelForCausalLM
+        self.PeftModel, self.prepare_model_for_kbit_training = PeftModel, prepare_model_for_kbit_training
+
+    def modules(self):
+        """sys.modules entries for the real final_models.load (the tuned path)."""
+        transformers = SimpleNamespace(AutoTokenizer=self.AutoTokenizer,
+                                       AutoModelForCausalLM=self.AutoModelForCausalLM)
+        peft = SimpleNamespace(PeftModel=self.PeftModel,
+                               prepare_model_for_kbit_training=self.prepare_model_for_kbit_training)
+        return {"transformers": transformers, "peft": peft}
+
+
+class CheckpointChecks(unittest.TestCase):
+    """R20: in final mode B1 loads the tuned producer (base plus adapter, through
+    final_models as the pipeline does) or the same pinned base WITHOUT the adapter, read
+    through final_models.base_path with its base_hashes check. On a mocked model and a
+    fixture base folder (no model load): base never applies the adapter and reads no adapter
+    file; tuned does; a base hash mismatch refuses before any model is loaded; each records
+    its digest (revision plus model.safetensors SHA-256, plus the adapter's for tuned)."""
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.fm = final_models = self.tool.final_models
+        self.tmp = tempfile.TemporaryDirectory(prefix="b1_ckpt_")
+        root = Path(self.tmp.name)
+        self.base = root / "base"
+        self.base.mkdir()
+        hashes = {}
+        for name, text in (("config.json", "{}"), ("model.safetensors", "fixture weights")):
+            (self.base / name).write_text(text, encoding="utf-8")
+            hashes[name] = final_models.sha(self.base / name)
+        adapter_dir = root / "adapter"
+        adapter_dir.mkdir()
+        for name in ("adapter_model.safetensors", "adapter_config.json"):
+            (adapter_dir / name).write_text("fixture adapter", encoding="utf-8")
+        self.adapter_dir = adapter_dir
+        self.spec = {"checkpoint": 168, "model_id": "fixture/base-4bit", "revision": "rev-fixture",
+                     "base_hashes": hashes,
+                     "files": {"adapter": {"path": "x", "sha256": "a" * 64},
+                               "adapter_config": {"path": "y", "sha256": "b" * 64}}}
+        self.paths = {"adapter": adapter_dir / "adapter_model.safetensors",
+                      "adapter_config": adapter_dir / "adapter_config.json"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _reader(self, checkpoint):
+        with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+            return self.tool.resolve_reader(ROOT, max_new_tokens=64, checkpoint=checkpoint)
+
+    @contextlib.contextmanager
+    def _mocked(self, libs, *, verify_adapter=True):
+        fake_torch = SimpleNamespace(bfloat16="bfloat16")
+        verify = (mock.patch.object(self.fm, "verify", return_value=(self.spec, self.paths))
+                  if verify_adapter else
+                  mock.patch.object(self.fm, "verify", side_effect=AssertionError("adapter files read")))
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.dict(os.environ, {"SHIMMER_PRODUCER_BASE_PATH": str(self.base),
+                                                             "SHIMMER_MODEL_MODE": "final"}))
+            stack.enter_context(mock.patch.dict(sys.modules, libs.modules()))
+            stack.enter_context(mock.patch.dict(self.fm._RESIDENTS, clear=True))
+            stack.enter_context(mock.patch.object(self.fm, "verify_runtime", return_value=fake_torch))
+            stack.enter_context(mock.patch.object(self.fm, "specification", return_value=self.spec))
+            stack.enter_context(verify)
+            yield
+
+    def _backend(self, checkpoint, libs):
+        context = self.tool.RunContext(self.tmp.name, "b1-ckpt")
+        return self.tool.LocalBackend(self._reader(checkpoint), context, libs=libs)
+
+    def test_checkpoint_choice_by_mode(self):
+        self.assertEqual(self.tool.resolve_checkpoint("final"), "tuned")
+        self.assertEqual(self.tool.resolve_checkpoint("final", "base"), "base")
+        self.assertEqual(self.tool.resolve_checkpoint("base"), "base")
+        for mode, name in (("base", "tuned"), ("final", "other")):
+            with self.assertRaises(ValueError, msg=mode + " " + name):
+                self.tool.resolve_checkpoint(mode, name)
+        self.assertEqual(self._reader("base")["checkpoint"], "base")
+        self.assertEqual(self._reader(None)["checkpoint"], "tuned")
+
+    def test_base_never_applies_the_adapter(self):
+        libs = _FakeLibs()
+        resident = mock.patch.object(self.fm, "resident", side_effect=AssertionError("tuned loader"))
+        with self._mocked(libs, verify_adapter=False), resident:
+            backend = self._backend("base", libs)
+            loaded = backend.prepare()
+        self.assertEqual(libs.calls["adapter"], [], "the base checkpoint applied an adapter")
+        self.assertEqual((libs.calls["model"], libs.calls["kbit"]), ([str(self.base)], 1))
+        self.assertEqual(libs.calls["attention"], ["sdpa"], "the base loads with the producer's attention (D-063)")
+        record = loaded["checkpoint"]
+        self.assertEqual((record["checkpoint"], record["adapter_applied"], record["adapter_sha256"]),
+                         ("base", False, None))
+        weights = self.spec["base_hashes"]["model.safetensors"]
+        self.assertEqual(loaded["digest"], "rev-fixture:" + weights)
+        self.assertEqual(record["model_safetensors_sha256"], weights)
+        self.assertTrue(backend._mdl.config.use_cache)
+
+    def test_tuned_applies_the_adapter(self):
+        libs = _FakeLibs()
+        with self._mocked(libs):
+            loaded = self._backend("tuned", libs).prepare()
+        self.assertEqual([Path(p) for p in libs.calls["adapter"]], [self.adapter_dir],
+                         "the tuned checkpoint did not apply its adapter")
+        self.assertEqual(libs.calls["model"], [str(self.base)])
+        self.assertEqual(libs.calls["attention"], ["sdpa"], "the tuned producer loads sdpa (D-063)")
+        self.assertEqual(loaded["checkpoint"]["adapter_applied"], True)
+        self.assertEqual(loaded["digest"], "rev-fixture:%s+adapter:%s" % (
+            self.spec["base_hashes"]["model.safetensors"], "a" * 64))
+
+    def test_base_hash_mismatch_refuses(self):
+        (self.base / "model.safetensors").write_text("other weights", encoding="utf-8")
+        for checkpoint in ("base", "tuned"):
+            libs = _FakeLibs()
+            with self._mocked(libs, verify_adapter=checkpoint == "tuned"):
+                with self.assertRaisesRegex(RuntimeError, "Base asset mismatch", msg=checkpoint):
+                    self._backend(checkpoint, libs).prepare()
+            self.assertEqual((libs.calls["model"], libs.calls["adapter"]), ([], []), checkpoint)
+
+    def test_entry_records_the_checkpoint(self):
+        # run_b1, the in-process entry, resolves the reader with the checkpoint and records it
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        for checkpoint in ("base", "tuned"):
+            identity = dict(EXPECTED, checkpoint={"checkpoint": checkpoint})
+            with tempfile.TemporaryDirectory(prefix="b1_entry_") as tmp, \
+                    mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                summary = self.tool.run_b1(BUNDLE, ITEMS, Path(tmp) / checkpoint, checkpoint,
+                                           expected=EXPECTED, max_new_tokens=64,
+                                           backend=FakeBackend(replies, identity=identity))
+                label = json.loads(next((Path(tmp) / checkpoint / "labels").glob("*.json"))
+                                   .read_text(encoding="utf-8"))
+            self.assertEqual((summary["reader"]["checkpoint"], summary["checkpoint"]["checkpoint"],
+                              label["checkpoint"]), (checkpoint, checkpoint, checkpoint))
+
+
+def _torch_or_skip(case):
+    """torch for the attention cases (imported, never a model loaded); skipped with the
+    reason where it is not installed."""
+    try:
+        import torch
+        from torch.nn.attention import SDPBackend, sdpa_kernel  # noqa: F401
+    except ImportError as exc:
+        case.skipTest("torch with torch.nn.attention is not installed here: " + str(exc))
+    return torch
+
+
+def _enabled_backends(torch):
+    """The sdpa backends torch allows right now, read here, not through the tool."""
+    flags = {"CUDNN_ATTENTION": torch.backends.cuda.cudnn_sdp_enabled(),
+             "EFFICIENT_ATTENTION": torch.backends.cuda.mem_efficient_sdp_enabled(),
+             "FLASH_ATTENTION": torch.backends.cuda.flash_sdp_enabled(),
+             "MATH": torch.backends.cuda.math_sdp_enabled()}
+    return "+".join(name for name, on in sorted(flags.items()) if on)
+
+
+class _Batch(dict):
+    def to(self, device):
+        return self
+
+
+class _AttentionTokenizer:
+    """A tokenizer stand-in: one id per word, a fixed decoded reply."""
+    chat_template = "fixture"
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        return "\n".join(m["content"] for m in messages)
+
+    def __call__(self, text, return_tensors=None, add_special_tokens=True):
+        ids = list(range(1, len(text.split()) + 1))
+        if return_tensors == "pt":
+            import torch
+            return _Batch(input_ids=torch.tensor([ids]), attention_mask=torch.ones((1, len(ids)), dtype=torch.long))
+        return {"input_ids": ids}
+
+    def decode(self, ids, skip_special_tokens=True):
+        return '{"label": "fixture"}'
+
+
+class _AttentionModel:
+    """The shared resident model, mocked: its config carries `_attn_implementation` (sdpa,
+    as scripts/final_models.py loads the producer by default, D-063) and the sealed attention
+    record final_models.load sets, it sits on a CUDA device (a name only: nothing is moved
+    there), and generate() records the attention setting and the enabled sdpa backends at the
+    moment it is called. `fail` is raised by generate."""
+
+    def __init__(self):
+        self.config = SimpleNamespace(_attn_implementation="sdpa", max_position_embeddings=10 ** 6,
+                                      model_type="qwen2")
+        self.device, self.calls, self.fail = "cuda:0", [], None
+        self.generation_config = SimpleNamespace(eos_token_id=None)
+        self._shimmer_identity = {"model_mode": "final", "adapter_checkpoint": 168}
+        self._shimmer_attention = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                                   "attention_decision": "D-063"}
+
+    def generate(self, input_ids=None, attention_mask=None, max_new_tokens=1, **kwargs):
+        import torch
+        self.calls.append((self.config._attn_implementation, _enabled_backends(torch)))
+        if self.fail is not None:
+            raise self.fail
+        return torch.cat([input_ids, torch.tensor([[7, 7]])], dim=1)
+
+
+class AttentionChecks(unittest.TestCase):
+    """D-056 conditions 1 to 4 as D-060, D-061 and D-063 amend them, on mocked models (no model
+    load) and a tiny randomly built CPU model (no download): B1 runs sdpa pinned to the
+    memory-efficient backend with one-shot prefill, and so does B3 on the same resident model in
+    the same process (until D-058 this check held B3 eager; D-058 held both sdpa; D-060 and
+    D-061 returned both to eager with chunked prefill; D-063 adopted sdpa one shot for both, B1
+    following the producer); the attention and prefill are recorded in every reply record and
+    the summary and checked against what each call observed; an out-of-memory error or a
+    refused kernel stops B1 as a setup failure, never an abstention; chunked prefill only with
+    a recorded decision; and the one shared generate helper's chunked prefill (E, a measurement
+    setting) gives one-shot prefill's greedy output and next-token scores."""
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.fm = self.tool.final_models
+        self.tmp = tempfile.TemporaryDirectory(prefix="b1_attn_")
+        self.spec = {"checkpoint": 168, "model_id": "fixture/base-4bit", "revision": "rev-fixture",
+                     "base_hashes": {"model.safetensors": "c" * 64},
+                     "files": {"adapter": {"path": "x", "sha256": "a" * 64}}}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @contextlib.contextmanager
+    def _resident(self, model):
+        """The tuned producer resident in final_models' cache, as the pipeline leaves it."""
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}))
+            stack.enter_context(mock.patch.dict(self.fm._RESIDENTS, {"final-producer": (_AttentionTokenizer(), model)},
+                                                clear=True))
+            stack.enter_context(mock.patch.object(self.fm, "verify_runtime", return_value=None))
+            stack.enter_context(mock.patch.object(self.fm, "specification", return_value=self.spec))
+            stack.enter_context(mock.patch.object(self.fm, "load", side_effect=AssertionError("a model load")))
+            yield
+
+    def _b3_call(self):
+        """One B3 call as the pipeline makes it: agent_wrapper.AgentWrapper.call_local on the
+        resident tuned producer (final mode), with its cost and reply writers stubbed. Returns
+        the attention its reply record would carry."""
+        import agent_wrapper
+        caller = object.__new__(agent_wrapper.AgentWrapper)
+        written = []
+        caller.backend, caller.model, caller.run_context = "local_producer", self.spec["model_id"], None
+        caller.name, caller._optimized_semantics = "PROCESSOR", False
+        caller._record_cost = lambda r, **kw: None
+        caller._write_reply = lambda r, sent: written.append(dict(sent))
+        result = caller.call_local("a fixture prompt", max_new_tokens=2)
+        self.assertTrue(result.ok, result.error)
+        return written[-1]["attention"]
+
+    def test_b1_and_b3_run_sdpa_one_shot_in_one_process(self):
+        """D-063 (amending D-056 condition 2, D-058, D-060 and D-061): the resident producer is
+        sdpa, B3's call runs pinned to the memory-efficient backend with one-shot prefill and
+        records both under D-063, B1's calls likewise (B1 follows the producer), the pin ends
+        with each call, and the resident model is sdpa after B1, whatever a B1 call raised."""
+        torch = _torch_or_skip(self)
+        import reply_records
+        self.assertEqual((self.tool.B3_ATTENTION, self.tool.B1_ATTENTION), ("sdpa", "sdpa"))
+        model = _AttentionModel()
+        everything = _enabled_backends(torch)
+        b3_record = {"attention_implementation": "sdpa", "sdpa_backend": "EFFICIENT_ATTENTION",
+                     "attention_decision": "D-063", "pinned": True,
+                     "prefill": "one_shot", "prefill_chunk_tokens": None, "prefill_decision": "D-063"}
+        with self._resident(model):
+            self.assertEqual(self._b3_call(), b3_record)
+            with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned")
+            context = self.tool.RunContext(Path(self.tmp.name) / "b1", "b1-attn")
+            backend = self.tool.LocalBackend(reader, context)
+            out = Path(self.tmp.name) / "b1"
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
+            self._b3_call()
+            # a B1 call that raises still hands the model back on its own setting, unpinned
+            model.fail = RuntimeError("fixture failure inside generate")
+            with self.assertRaises(RuntimeError):
+                backend.generate("s", "u", 2)
+            model.fail = None
+            self.assertEqual(self._b3_call(), b3_record)
+        pinned = ("sdpa", "EFFICIENT_ATTENTION")
+        self.assertNotEqual(everything, "EFFICIENT_ATTENTION", "every backend is enabled outside a call")
+        self.assertEqual(_enabled_backends(torch), everything, "the pin ends with each call")
+        self.assertEqual(model.calls, [pinned] * 8)
+        self.assertEqual(model.config._attn_implementation, "sdpa", "the resident model is sdpa after B1")
+        records = reply_records.records(out / "audit" / "model_replies")
+        self.assertEqual(len(records), 4)
+        for record in records:
+            self.assertEqual({k: record["attention"][k] for k in B1_ATTENTION}, B1_ATTENTION)
+            # what the prefill measured: the fixture prompts fit one chunk, so generate()
+            # prefilled them itself; a mocked model has no forward hook, so no seconds
+            self.assertEqual({k: record["prefill"][k] for k in ("chunks", "chunked_tokens", "prefill_seconds")},
+                             {"chunks": 0, "chunked_tokens": 0, "prefill_seconds": None})
+        self.assertEqual(summary["attention"], B1_ATTENTION)
+        self.assertEqual(summary["loaded"]["attention"], B1_ATTENTION)
+        self.assertEqual({k: summary["prefill_time"][k] for k in ("items", "calls_measured", "calls_chunked",
+                                                                  "seconds_measured", "seconds_total")},
+                         {"items": 4, "calls_measured": 4, "calls_chunked": 0, "seconds_measured": 0,
+                          "seconds_total": None})
+
+    def test_out_of_memory_stops_b1_as_a_setup_failure(self):
+        torch = _torch_or_skip(self)
+        import reply_records
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        oom = torch.cuda.OutOfMemoryError("CUDA out of memory. Tried to allocate 2.00 GiB (fixture)")
+        refused = RuntimeError("No available kernel. Aborting execution.")
+        for kind, error in (("out_of_memory", oom), ("attention_kernel_refused", refused)):
+            backend = FakeBackend(replies, raise_for={"a2": error})
+            out = Path(self.tmp.name) / kind
+            with self.assertRaises(self.tool.SetupFailure, msg=kind) as caught:
+                self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=self._reader(),
+                              expected=EXPECTED)
+            self.assertEqual(caught.exception.kind, kind)
+            self.assertEqual(backend.asked, ["a1", "a2"], kind + ": the run stops at the failing call")
+            failure = json.loads((out / self.tool.SETUP_FAILURE_FILE).read_text(encoding="utf-8"))
+            self.assertEqual({k: failure[k] for k in ("kind", "item_id", "items_total", "items_before_stop",
+                                                      "reply_records_written")},
+                             {"kind": kind, "item_id": "a2", "items_total": 4, "items_before_stop": 1,
+                              "reply_records_written": 2})
+            self.assertIn("never an abstention", failure["counted_as"])
+            # never an abstention: the failing item gets no label, and no summary is written
+            self.assertEqual(sorted(p.stem for p in (out / "labels").glob("*.json")), ["a1"])
+            self.assertFalse((out / "b1_summary.json").exists())
+            records = reply_records.records(out / "audit" / "model_replies")
+            self.assertEqual([(r["backend_ok"], r["error_category"]) for r in records],
+                             [(True, None), (False, type(error).__name__)])
+            with contextlib.redirect_stderr(io.StringIO()) as err, \
+                    mock.patch.object(self.tool, "run_b1", side_effect=self.tool.SetupFailure(kind, "a2", "x")):
+                code = self.tool.main(["--bundle", "b", "--items", "i", "--out", "o", "--development"])
+            self.assertEqual(code, 4)
+            self.assertIn("setup failure (%s)" % kind, err.getvalue())
+        # an ordinary generation failure stays a failed call (ABSTAIN), as before
+        self.assertIsNone(self.tool.setup_failure_kind(RuntimeError("fixture failure")))
+        self.assertIsNone(self.tool.setup_failure_kind(ValueError("out of memory")))
+        self.assertEqual(self.tool.setup_failure_kind(RuntimeError("CUDA error: out of memory")), "out_of_memory")
+        # through the real LocalBackend, an out-of-memory generate hands the model back on its
+        # own setting, and the pin ends with the call
+        model = _AttentionModel()
+        model.fail = oom
+        everything = _enabled_backends(torch)
+        with self._resident(model):
+            with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned")
+            backend = self.tool.LocalBackend(reader, self.tool.RunContext(self.tmp.name, "b1-oom"))
+            out = Path(self.tmp.name) / "local_oom"
+            with self.assertRaises(self.tool.SetupFailure):
+                self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
+        self.assertEqual(model.calls, [("sdpa", "EFFICIENT_ATTENTION")])
+        self.assertEqual(model.config._attn_implementation, "sdpa")
+        self.assertEqual(_enabled_backends(torch), everything)
+
+    def _reader(self):
+        with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "base"}):
+            return self.tool.resolve_reader(ROOT, max_new_tokens=64)
+
+    def test_one_shot_prefill_is_the_default_and_chunks_need_a_recorded_decision(self):
+        """D-063: one-shot prefill is the default, recorded under D-063; chunked prefill (E at
+        512 tokens, or another chunk size) only with the recorded decision that asks for it."""
+        self.assertEqual(self.tool.attention_record(), B1_ATTENTION)
+        self.assertEqual(self._reader()["attention"], B1_ATTENTION)
+        for chunk, decision in ((512, None), (256, None), (None, "D-056"), ("one_shot", "D-099"),
+                                (256, "decided"), (0, "D-099"), ("half", "D-099"), (-1, "D-099")):
+            with self.assertRaises(ValueError, msg=(chunk, decision)):
+                self.tool.attention_record(chunk, decision)
+        self.assertEqual(self.tool.attention_record("one_shot", "D-063"), B1_ATTENTION)
+        self.assertEqual(self.tool.attention_record(512, "D-061"), B1_E)
+        other = self.tool.attention_record("256", "D-099")
+        self.assertEqual((other["prefill"], other["prefill_chunk_tokens"], other["prefill_decision"]),
+                         ("chunked", 256, "D-099"))
+        parsed = self.tool.build_parser().parse_args(["--bundle", "b", "--items", "i", "--out", "o"])
+        self.assertEqual((parsed.prefill_chunk, parsed.prefill_decision), (None, None))
+        # the backend hands its pass's prefill to the one shared generate helper (the mocked
+        # model's 7-token prompt fits one chunk plus the tail, so nothing is chunked here; the
+        # tiny CPU model below runs the chunks)
+        torch = _torch_or_skip(self)
+        for chunk, decision in ((None, None), (512, "D-061"), (8, "D-099")):
+            model = _AttentionModel()
+            with self._resident(model), mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned",
+                                                  prefill_chunk=chunk, prefill_decision=decision)
+                backend = self.tool.LocalBackend(reader, self.tool.RunContext(self.tmp.name, "b1-chunk"))
+                backend.prepare()
+                seen = []
+                real = self.fm.generate_with_prefill
+
+                def spy(mdl, inputs, **kw):
+                    seen.append(dict(kw["prefill"]))
+                    return real(mdl, inputs, **kw)
+                with mock.patch.object(self.fm, "generate_with_prefill", spy):
+                    result = backend.generate("a b c", "d e f g", 2)
+            self.assertEqual(seen, [self.tool.prefill_of(reader["attention"])])
+            self.assertEqual(result["attention"]["prefill_chunk_tokens"], reader["attention"]["prefill_chunk_tokens"])
+        del torch
+
+    def test_chunked_prefill_matches_one_shot_on_a_tiny_cpu_model(self):
+        """D-061 items 3 and 6 (E, a measurement setting under D-063): the one shared helper, at
+        E's 512-token chunk, on a prompt of three full chunks and the 2-token tail (1,538 tokens), gives one-shot
+        prefill's greedy output and its next-token scores within tolerance on a tiny randomly
+        built CPU Qwen2 (2 layers, no download); a prompt of one chunk plus the tail or less is
+        prefilled by generate() itself."""
+        torch = _torch_or_skip(self)
+        try:
+            from transformers import Qwen2Config, Qwen2ForCausalLM
+        except ImportError as exc:
+            self.skipTest("transformers' Qwen2 classes are not installed here: " + str(exc))
+        torch.manual_seed(0)
+        config = Qwen2Config(vocab_size=64, hidden_size=32, intermediate_size=64, num_hidden_layers=2,
+                             num_attention_heads=4, num_key_value_heads=2, max_position_embeddings=2048,
+                             sliding_window=None, use_sliding_window=False, eos_token_id=63,
+                             pad_token_id=0, attn_implementation="eager")
+        model = Qwen2ForCausalLM(config).eval()
+        greedy = {"do_sample": False, "num_beams": 1}
+        scores = {"output_scores": True, "return_dict_in_generate": True}
+        e, one_shot = self.fm.prefill_setting(512, "D-061"), self.fm.prefill_setting()
+        long_ids = torch.randint(1, 60, (1, 3 * 512 + 2), generator=torch.Generator().manual_seed(2))
+        long_inputs = {"input_ids": long_ids, "attention_mask": torch.ones_like(long_ids)}
+        with torch.no_grad():
+            reference, measured_one = self.fm.generate_with_prefill(
+                model, long_inputs, max_new_tokens=6, decoding_kwargs=greedy, prefill=one_shot, **scores)
+            chunked_out, measured_e = self.fm.generate_with_prefill(
+                model, long_inputs, max_new_tokens=6, decoding_kwargs=greedy, prefill=e, **scores)
+            cache, chunks = self.fm.chunked_prefill(model, long_ids, 512)
+        self.assertEqual((chunks, cache.get_seq_length()), (3, 3 * 512), "two tokens are left to generate()")
+        self.assertEqual({k: measured_e[k] for k in ("prompt_tokens", "chunks", "chunked_tokens", "tail_tokens")},
+                         {"prompt_tokens": 1538, "chunks": 3, "chunked_tokens": 1536, "tail_tokens": 2})
+        self.assertEqual((measured_one["chunks"], measured_one["tail_tokens"]), (0, 1538))
+        for measured in (measured_e, measured_one):
+            self.assertIsInstance(measured["prefill_seconds"], float)
+        self.assertTrue(torch.equal(reference.sequences, chunked_out.sequences), "chunked greedy output differs")
+        self.assertEqual(len(reference.scores), len(chunked_out.scores))
+        for a, b in zip(reference.scores, chunked_out.scores):
+            self.assertTrue(torch.allclose(a, b, atol=1e-4, rtol=1e-4), float((a - b).abs().max()))
+        ids = torch.randint(1, 60, (1, 17), generator=torch.Generator().manual_seed(1))
+        inputs = {"input_ids": ids, "attention_mask": torch.ones_like(ids)}
+        real_sdpa = torch.nn.functional.scaled_dot_product_attention
+        counted = []
+
+        def counting_sdpa(*args, **kwargs):
+            counted.append(1)
+            return real_sdpa(*args, **kwargs)
+
+        calls = []
+        hook = model.register_forward_pre_hook(lambda module, args: calls.append(1))
+        try:
+            with torch.no_grad(), mock.patch.object(torch.nn.functional, "scaled_dot_product_attention",
+                                                    counting_sdpa):
+                # B1's default pass, sdpa (D-063), on the CPU, which has no memory-efficient
+                # kernel: pinned to it, the call is refused (raises), never run on another kernel;
+                # the model is back on its own setting (eager here) after
+                with self.assertRaises(RuntimeError) as refused:
+                    with self.tool.b1_attention(model):
+                        model(**inputs)
+                self.assertEqual(self.tool.setup_failure_kind(refused.exception), "attention_kernel_refused")
+                self.assertEqual(model.config._attn_implementation, "eager")
+                counted.clear()
+                # an eager measurement pass, chunked through the shared helper (17 tokens in chunks of 5)
+                with self.tool.b1_attention(model, implementation="eager"):
+                    calls.clear()
+                    eager, short = self.fm.generate_with_prefill(model, inputs, max_new_tokens=4, decoding_kwargs=greedy,
+                                                                 prefill=self.fm.prefill_setting(5, "D-099"), **scores)
+                self.assertEqual(counted, [], "eager attention called sdpa")
+                self.assertEqual((short["chunks"], short["tail_tokens"]), (3, 2))
+                self.assertEqual(len(calls), 3 + 4, "three chunks, then one forward per generated token")
+                # the same switch, sdpa on the CPU's math kernel, one shot
+                with self.tool.b1_attention(model, backends=("MATH",), implementation="sdpa"):
+                    one, _ = self.fm.generate_with_prefill(model, inputs, max_new_tokens=4, decoding_kwargs=greedy,
+                                                           prefill=one_shot, **scores)
+                    self.assertGreater(len(counted), 0, "the switch did not reach the attention code")
+        finally:
+            hook.remove()
+        self.assertEqual(model.config._attn_implementation, "eager")
+        # and sdpa gives the eager kernel's answer on this model
+        self.assertTrue(torch.equal(eager.sequences, one.sequences))
+        for a, b in zip(one.scores, eager.scores):
+            self.assertTrue(torch.allclose(a, b, atol=1e-4, rtol=1e-4), float((a - b).abs().max()))
+
+
+GIB = 2 ** 30
+
+
+class _FakeCuda:
+    """torch.cuda's peak-memory counters, mocked (no device touched): `events` records each
+    reset, read and generate in order; bump() is what a generate call allocates."""
+
+    def __init__(self, available=True, initialized=True):
+        self.available, self.initialized = available, initialized
+        self.events, self.allocated, self.peak, self.reserved = [], 5 * GIB, 0, 0
+
+    def is_available(self):
+        return self.available
+
+    def is_initialized(self):
+        return self.initialized
+
+    def reset_peak_memory_stats(self):
+        self.events.append("reset")
+        self.peak, self.reserved = self.allocated, self.allocated + GIB
+
+    def memory_allocated(self):
+        return self.allocated
+
+    def max_memory_allocated(self):
+        self.events.append("read")
+        return self.peak
+
+    def max_memory_reserved(self):
+        return self.reserved
+
+    def empty_cache(self):
+        self.events.append("empty_cache")
+
+    def bump(self, size):
+        self.peak = max(self.peak, self.allocated + size)
+        self.reserved = max(self.reserved, self.allocated + size + GIB)
+
+
+class _MeasuredBackend(FakeBackend):
+    """The mocked model on a mocked CUDA device: each call allocates one more GiB than the last."""
+
+    def __init__(self, replies, cuda, **kwargs):
+        super().__init__(replies, **kwargs)
+        self.cuda = cuda
+
+    def generate(self, system, user, max_new_tokens):
+        self.cuda.events.append("generate")
+        self.cuda.bump(GIB * (len(self.asked) + 1))
+        return super().generate(system, user, max_new_tokens)
+
+
+class MeasurementChecks(unittest.TestCase):
+    """D-056 condition 6 on mocked models (no model load, no device touched): an eager
+    measurement pass is accepted only with its recorded decision and runs eager, recorded in
+    every reply record, label and the summary; each pass's peak GPU memory (allocated and
+    reserved) is reset after the load and read after the last item, null without CUDA, and a
+    model the pass loaded is released when it ends; two pass folders are compared item by item
+    for byte-identical replies and agreeing labels, counts only."""
+
+    _resident = AttentionChecks._resident
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.fm = self.tool.final_models
+        self.tmp = tempfile.TemporaryDirectory(prefix="b1_measure_")
+        self.spec = {"checkpoint": 168, "model_id": "fixture/base-4bit", "revision": "rev-fixture",
+                     "base_hashes": {"model.safetensors": "c" * 64},
+                     "files": {"adapter": {"path": "x", "sha256": "a" * 64}}}
+        self.replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _reader(self, **kwargs):
+        with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "base"}):
+            return self.tool.resolve_reader(ROOT, max_new_tokens=64, **kwargs)
+
+    def test_eager_measurement_pass_needs_its_decision_and_is_recorded(self):
+        """D-056 condition 6 as D-063 amends it: the run proper is sdpa (memory-efficient
+        backend pinned) under D-063; an eager measurement pass only with its recorded decision,
+        unpinned for its calls, recorded everywhere, and the resident model back on sdpa
+        after it."""
+        for attention, decision in (("eager", None), ("sdpa", "D-061"), ("eager", "decided"), ("flash", None)):
+            with self.assertRaises(ValueError, msg=(attention, decision)):
+                self.tool.attention_record(attention=attention, attention_decision=decision)
+        self.assertEqual(self.tool.attention_record(attention="eager", attention_decision="D-061"), B1_EAGER)
+        self.assertEqual(self.tool.attention_record(attention="sdpa", attention_decision="D-063"), B1_ATTENTION)
+        parsed = self.tool.build_parser().parse_args(["--bundle", "b", "--items", "i", "--out", "o"])
+        self.assertEqual((parsed.attention, parsed.attention_decision), ("sdpa", None))
+        out = Path(self.tmp.name) / "refused"
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            code = self.tool.main(["--bundle", str(BUNDLE), "--items", str(ITEMS), "--out", str(out),
+                                   "--attention", "eager", "--development"])
+        self.assertEqual(code, 4)
+        self.assertIn("--attention-decision", err.getvalue())
+        self.assertFalse(out.exists(), "a refused eager pass wrote something")
+        # the eager pass on the shared resident model (sdpa, D-063): eager and unpinned for
+        # every call, recorded in every reply record, label and the summary; the resident model
+        # is sdpa again afterwards and B3's next call runs sdpa, pinned
+        torch = _torch_or_skip(self)
+        import reply_records
+        model = _AttentionModel()
+        out = Path(self.tmp.name) / "tuned_eager"
+        with self._resident(model):
+            with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "final"}):
+                reader = self.tool.resolve_reader(ROOT, max_new_tokens=8, checkpoint="tuned",
+                                                  attention="eager", attention_decision="D-061")
+            backend = self.tool.LocalBackend(reader, self.tool.RunContext(out, "b1-eager"))
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=reader, development=True)
+            self.assertEqual(model.config._attn_implementation, "sdpa", "the eager pass restores sdpa")
+            self.assertEqual(AttentionChecks._b3_call(self)["attention_implementation"], "sdpa")
+        everything = _enabled_backends(torch)
+        self.assertEqual(model.calls, [("eager", everything)] * 4 + [("sdpa", "EFFICIENT_ATTENTION")])
+        self.assertEqual(model.config._attn_implementation, "sdpa")
+        records = reply_records.records(out / "audit" / "model_replies")
+        self.assertEqual([r["attention"] for r in records], [B1_EAGER] * 4)
+        labels = [json.loads(p.read_text(encoding="utf-8")) for p in (out / "labels").glob("*.json")]
+        self.assertEqual([l["attention"] for l in labels], [B1_EAGER] * 4)
+        self.assertEqual((summary["attention"], summary["loaded"]["attention"]), (B1_EAGER, B1_EAGER))
+
+    def test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda(self):
+        cuda = _FakeCuda()
+        out = Path(self.tmp.name) / "measured"
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=_MeasuredBackend(self.replies, cuda),
+                                    reader=self._reader(), expected=EXPECTED)
+        # reset once after the load and before the first item, read after the last
+        self.assertEqual([e for e in cuda.events if e != "read"], ["reset"] + ["generate"] * 4)
+        self.assertEqual(cuda.events[-1], "read")
+        memory = summary["gpu_memory"]
+        self.assertEqual((memory["peak_allocated_bytes"], memory["peak_reserved_bytes"],
+                          memory["allocated_at_start_bytes"], memory["measured"]),
+                         (9 * GIB, 10 * GIB, 5 * GIB, True))
+        written = json.loads((out / "b1_summary.json").read_text(encoding="utf-8"))
+        self.assertEqual(written["gpu_memory"], memory)
+        # no CUDA, CUDA not in use, or no torch at all: every value null
+        nulls = {"peak_allocated_bytes": None, "peak_reserved_bytes": None, "allocated_at_start_bytes": None,
+                 "measured": False}
+        for name, modules in (("cpu", {"torch": SimpleNamespace(cuda=_FakeCuda(available=False))}),
+                              ("idle", {"torch": SimpleNamespace(cuda=_FakeCuda(initialized=False))}),
+                              ("absent", {"torch": None})):
+            with mock.patch.dict(sys.modules, modules):
+                summary = self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / name, backend=FakeBackend(self.replies),
+                                        reader=self._reader(), expected=EXPECTED)
+            self.assertEqual({k: summary["gpu_memory"][k] for k in nulls}, nulls, name)
+        # a call that stops the run records the peak so far in b1_setup_failure.json
+        cuda = _FakeCuda()
+        stopped = Path(self.tmp.name) / "stopped"
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            with self.assertRaises(self.tool.SetupFailure):
+                self.tool.run(BUNDLE, ITEMS, stopped, reader=self._reader(), expected=EXPECTED,
+                              backend=_MeasuredBackend(self.replies, cuda, raise_for={
+                                  "a2": RuntimeError("CUDA error: out of memory")}))
+        failure = json.loads((stopped / self.tool.SETUP_FAILURE_FILE).read_text(encoding="utf-8"))
+        self.assertEqual(failure["gpu_memory"]["peak_allocated_bytes"], 7 * GIB)
+
+    def test_a_model_the_pass_loaded_is_released_when_it_ends(self):
+        released = []
+        replies = self.replies
+
+        class Built(FakeBackend):
+            def __init__(self, reader, context, identity=None):
+                super().__init__(replies, identity=identity)
+
+            def release(self):
+                released.append(1)
+        with mock.patch.object(self.tool, "LocalBackend", Built):
+            self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "built", reader=self._reader(), expected=EXPECTED)
+            self.assertEqual(released, [1])
+            with mock.patch.object(self.tool, "LocalBackend",
+                                   lambda reader, context: Built(reader, context, dict(EXPECTED, digest="other"))):
+                with self.assertRaises(self.tool.SetupError):
+                    self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "refused", reader=self._reader(),
+                                  expected=EXPECTED)
+            self.assertEqual(released, [1, 1], "a pass that stops still releases its model")
+        # a backend handed in is the caller's: never released by the run
+        handed = Built(None, None)
+        self.tool.run(BUNDLE, ITEMS, Path(self.tmp.name) / "handed", backend=handed, reader=self._reader(),
+                      expected=EXPECTED)
+        self.assertEqual(released, [1, 1])
+        # the real release drops the model and empties the CUDA cache
+        cuda = _FakeCuda()
+        backend = self.tool.LocalBackend(self._reader(), self.tool.RunContext(self.tmp.name, "b1-release"))
+        backend._tok, backend._mdl = object(), object()
+        with mock.patch.dict(sys.modules, {"torch": SimpleNamespace(cuda=cuda)}):
+            backend.release()
+        self.assertEqual((backend._tok, backend._mdl, cuda.events), (None, None, ["empty_cache"]))
+
+    def _pass(self, name, replies, **kwargs):
+        out = Path(self.tmp.name) / name
+        self.tool.run(BUNDLE, ITEMS, out, backend=FakeBackend(replies), reader=self._reader(),
+                      expected=EXPECTED, **kwargs)
+        return out
+
+    def test_two_passes_are_compared_for_byte_identical_replies_and_agreeing_labels(self):
+        import copy
+        a = self._pass("tuned", self.replies)
+        b = self._pass("tuned_repeat", self.replies)
+        hashed = self._pass("tuned_hashed", self.replies, sensitive=True)
+        changed = copy.deepcopy(self.replies)
+        changed["a1"]["reply"] += " "                       # one byte more, the same label
+        changed["a3"]["reply"] = "No label this time."      # another reply, and an abstention
+        c = self._pass("tuned_eager", changed)
+        out = Path(self.tmp.name) / "compare"
+        same = self.tool.compare_passes(a, b, out / "same.json")["counts"]
+        self.assertEqual({k: same[k] for k in ("items", "in_both", "replies_compared", "replies_byte_identical",
+                                               "replies_differ", "reply_missing", "labels_agree", "labels_differ",
+                                               "both_abstained")},
+                         {"items": 4, "in_both": 4, "replies_compared": 3, "replies_byte_identical": 3,
+                          "replies_differ": 0, "reply_missing": 1, "labels_agree": 4, "labels_differ": 0,
+                          "both_abstained": 2})
+        # a sensitive pass keeps only hashes, and is compared on them
+        self.assertEqual(self.tool.compare_passes(a, hashed, out / "hashed.json")["counts"]["replies_byte_identical"], 3)
+        result = self.tool.compare_passes(a, c, out / "changed.json")
+        self.assertEqual({k: result["counts"][k] for k in ("replies_byte_identical", "replies_differ",
+                                                           "labels_agree", "labels_differ", "both_abstained")},
+                         {"replies_byte_identical": 1, "replies_differ": 2, "labels_agree": 3, "labels_differ": 1,
+                          "both_abstained": 2})
+        self.assertEqual({r["item_id"]: (r["reply_byte_identical"], r["label_agrees"]) for r in result["items"]},
+                         {"a1": (False, True), "a2": (True, True), "a3": (False, False), "a4": (None, True)})
+        self.assertEqual((result["a"]["folder"], result["b"]["folder"]), ("tuned", "tuned_eager"))
+        # an item missing on one side is counted, never compared
+        (c / "labels" / "a2.json").unlink()
+        missing = self.tool.compare_passes(a, c, out / "missing.json")["counts"]
+        self.assertEqual((missing["items"], missing["in_both"], missing["missing_in_b"]), (4, 3, 1))
+        # the command: counts only in its output, never a reply's text or a label
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = self.tool.main(["compare", "--a", str(a), "--b", str(c), "--out", str(out / "cli.json")])
+        self.assertEqual(code, 0)
+        text = (out / "cli.json").read_text(encoding="utf-8")
+        for secret in ("Line total", "refuted", "not enough info", "No label this time"):
+            self.assertNotIn(secret, text)
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(self.tool.main(["compare", "--a", str(a), "--b", str(out / "none"),
+                                             "--out", str(out / "x.json")]), 4)
+
+
+def _attention_ignoring_the_pass(original):
+    """B1's switch always to the default (sdpa, pinned), whatever the pass declared."""
+    def switch(model, backends=None, implementation="sdpa"):
+        return original(model, backends)
+    return switch
+
+
+def _attention_record_without_its_decision(original):
+    """The declared attention built without the rule that eager needs its decision."""
+    def record(prefill_chunk=None, prefill_decision=None, attention="sdpa", attention_decision=None):
+        return dict(original(prefill_chunk, prefill_decision), attention_implementation=attention,
+                    sdpa_backend="EFFICIENT_ATTENTION" if attention == "sdpa" else None,
+                    attention_decision=attention_decision)
+    return record
+
+
+def _prefill_without_its_decision(original):
+    """The prefill rule without its decision: a chunk size taken as asked, no decision needed."""
+    def setting(chunk=None, decision=None):
+        if chunk is not None and chunk != "one_shot" and decision is None:
+            return {"prefill": "chunked", "prefill_chunk_tokens": int(chunk), "prefill_decision": None}
+        return original(chunk, decision)
+    return setting
+
+
+def _prefill_leaving_one_token(original):
+    """Chunked prefill that leaves one prompt token to generate(), not two (D-061 item 3)."""
+    def prefill(model, input_ids, chunk_tokens, *, cache=None):
+        import torch
+        return original(model, torch.cat([input_ids, input_ids[:, -1:]], dim=1), chunk_tokens, cache=cache)
+    return prefill
+
+
+def _attention_without_restore(original):
+    """B1's switch that leaves the resident model on the pass's attention when it ends."""
+    def switch(model, backends=None, implementation="sdpa"):
+        inner = original(model, backends, implementation)
+
+        @contextlib.contextmanager
+        def kept():
+            with inner as observe:
+                yield observe
+            for config in {id(c): c for c in [model.config]}.values():
+                config._attn_implementation = implementation
+        return kept()
+    return switch
+
+
+def _pin_that_pins_nothing(original):
+    """B3's per-call pin that records the memory-efficient backend but never pins it."""
+    @contextlib.contextmanager
+    def pin(model, decision=None):
+        yield {"attention_implementation": getattr(model.config, "_attn_implementation", None),
+               "sdpa_backend": "EFFICIENT_ATTENTION", "attention_decision": decision, "pinned": True}
+    return pin
+
+
+# Neutralize, fail, restore, pass (D-056 condition 6; D-058, D-060, D-061 and D-063 for the
+# amended attention and prefill checks): each entry names a check, the function it holds (in
+# bare_model.py unless a module is named fifth), and a mutant built from the original;
+# prove_neutralizations() runs the check, then with the mutant in place (it must fail and the
+# mutant must have been called), then restored.
+# `py -3.12 -X utf8 scripts/baseline_checks.py --prove`.
+NEUTRALIZATIONS = [
+    (AttentionChecks, "test_b1_and_b3_run_sdpa_one_shot_in_one_process", "pinned_attention",
+     _pin_that_pins_nothing, "final_models"),
+    # D-063: B3's producer chunked (E, the D-061 default) instead of one shot.
+    (AttentionChecks, "test_b1_and_b3_run_sdpa_one_shot_in_one_process", "producer_prefill",
+     lambda original: (lambda environ=None: dict(original(environ), prefill="chunked", prefill_chunk_tokens=512,
+                                                  prefill_decision="D-061")),
+     "final_models"),
+    (AttentionChecks, "test_one_shot_prefill_is_the_default_and_chunks_need_a_recorded_decision", "prefill_setting",
+     _prefill_without_its_decision, "final_models"),
+    (AttentionChecks, "test_chunked_prefill_matches_one_shot_on_a_tiny_cpu_model", "chunked_prefill",
+     _prefill_leaving_one_token, "final_models"),
+    # D-063: the producer loaded eager (the D-060 default) instead of sdpa.
+    (CheckpointChecks, "test_tuned_applies_the_adapter", "load_attention",
+     lambda original: (lambda role, spec=None: "eager"), "final_models"),
+    (AttentionChecks, "test_out_of_memory_stops_b1_as_a_setup_failure", "setup_failure_kind",
+     lambda original: (lambda exc: None)),
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "b1_attention",
+     _attention_without_restore),
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "b1_attention",
+     _attention_ignoring_the_pass),
+    (MeasurementChecks, "test_eager_measurement_pass_needs_its_decision_and_is_recorded", "attention_record",
+     _attention_record_without_its_decision),
+    (MeasurementChecks, "test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda", "start_gpu_memory",
+     lambda original: (lambda: (None, None))),
+    (MeasurementChecks, "test_peak_gpu_memory_is_measured_per_pass_and_null_without_cuda", "gpu_memory_probe",
+     lambda original: (lambda: getattr(sys.modules.get("torch"), "cuda", None))),
+    (MeasurementChecks, "test_two_passes_are_compared_for_byte_identical_replies_and_agreeing_labels",
+     "reply_identity", lambda original: (lambda record: "same")),
+]
+
+
+def prove_neutralizations():
+    """{passed, proofs}: every NEUTRALIZATIONS entry passes, fails with its mutant in place
+    (which was called), and passes again restored."""
+    module = sys.modules[__name__]
+    loader = module._load
+    proofs = []
+
+    def single(case, name):
+        result = unittest.TestResult()
+        case(name).run(result)
+        return result.wasSuccessful() and not result.skipped
+
+    for entry in NEUTRALIZATIONS:
+        case, name, attribute, mutant = entry[:4]
+        owner = entry[4] if len(entry) > 4 else "bare_model"
+        invocations = []
+
+        def counting(original, _mutant=mutant):
+            replacement = _mutant(original)
+
+            def counted(*args, **kwargs):
+                invocations.append(1)
+                return replacement(*args, **kwargs)
+            return counted
+
+        def mutated(module_name, _attribute=attribute):
+            tool = loader(module_name)
+            if module_name == "bare_model" and owner == "bare_model":
+                setattr(tool, _attribute, counting(getattr(tool, _attribute)))
+            return tool
+        before = single(case, name)
+        if owner == "bare_model":
+            with mock.patch.object(module, "_load", mutated):
+                failed = not single(case, name)
+        else:
+            import importlib
+            shared = importlib.import_module(owner)
+            with mock.patch.object(shared, attribute, counting(getattr(shared, attribute))):
+                failed = not single(case, name)
+        after = single(case, name)
+        proofs.append({"check": name, "neutralized": owner + "." + attribute, "baseline_pass": before,
+                       "neutralized_fail": failed and bool(invocations), "restored_pass": after,
+                       "mutated_branch_invocations": len(invocations)})
+    passed = all(p["baseline_pass"] and p["neutralized_fail"] and p["restored_pass"] for p in proofs)
+    return {"passed": passed, "proofs": proofs}
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="b_absent_") as tmp:
@@ -528,7 +1492,8 @@ def check_python_only():
 
 
 def check_bare_model():
-    return _verdict([_run(BareModelChecks), _run(AbsentChecks)],
+    return _verdict([_run(BareModelChecks), _run(CheckpointChecks), _run(AttentionChecks),
+                     _run(MeasurementChecks), _run(AbsentChecks)],
                     "B1 with a mocked backend writes exactly one reply record per item (a failed "
                     "call included) joined to one typed label by call id, asks no item of another "
                     "document, prepares and verifies its model once and stops before generating on "
@@ -539,19 +1504,48 @@ def check_bare_model():
                     "prompt (revision 3: the undecided invitation only where the rule asks for "
                     "UNCERTAIN) with the reference material, uses the one cut rule in "
                     "common/cut.py, and reads its model and decoding policy from the tracked "
-                    "configuration")
+                    "configuration; in final mode its base checkpoint (the pinned base, "
+                    "base_hashes checked, no adapter) never applies the adapter, its tuned "
+                    "checkpoint does, a base hash mismatch refuses before any load, and each "
+                    "records its digest (mocked model); D-063: B1 generates sdpa pinned to the "
+                    "memory-efficient backend with one-shot prefill, as B3 does on the same resident "
+                    "model in the same process, through one shared generate helper, records and verifies the "
+                    "attention and prefill in every reply record and the summary, stops on an "
+                    "out-of-memory error or a refused kernel as a setup failure (never an "
+                    "abstention), takes chunked prefill only with a recorded decision, and the "
+                    "helper's chunked prefill (E) gives one-shot prefill's greedy output and next-token "
+                    "scores on a tiny CPU model built in the check (three chunks and the 2-token tail); D-056 "
+                    "condition 6: an eager measurement pass only with its recorded decision, recorded "
+                    "in every reply record, label and summary, the resident model restored to sdpa after it, "
+                    "each pass's peak GPU memory (null without "
+                    "CUDA), and a comparison of two passes counting byte-identical replies and "
+                    "agreeing labels")
 
 
 def check():
-    results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(AbsentChecks)]
+    results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(CheckpointChecks),
+               _run(AttentionChecks), _run(MeasurementChecks), _run(AbsentChecks)]
     return _verdict(results, "B2 makes no model call, imports no model library, writes the "
                              "pipeline's completion record and marks its output an ablation on each "
                              "file's first line; B1 verifies its model once and stops before "
                              "generating on any setup failure, writes one reply record per item, "
                              "parses (with escape repair) or abstains, records truncation, pools the "
                              "parse rate per benchmark for its floor, sends the preregistered prompt (revision 3) with "
-                             "reference material, and uses the one cut rule and prompt renderer")
+                             "reference material, and uses the one cut rule and prompt renderer; "
+                             "its base checkpoint never applies the adapter, its tuned one does, "
+                             "and a base hash mismatch refuses (mocked model); it runs sdpa pinned "
+                             "to the memory-efficient backend with one-shot prefill, as B3 does on "
+                             "the same resident model in the same process (D-063), stops on out of "
+                             "memory as a setup failure, and takes chunked prefill only with a "
+                             "recorded decision; an eager measurement pass needs its recorded "
+                             "decision and restores sdpa after it, each pass "
+                             "records its peak GPU memory, and two passes are compared for "
+                             "byte-identical replies and agreeing labels (D-056 condition 6)")
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--prove"]:
+        receipt = prove_neutralizations()
+        print(json.dumps(receipt, indent=2))
+        sys.exit(0 if receipt["passed"] else 1)
     print(check())

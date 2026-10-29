@@ -31,3 +31,38 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 round 3) | `bdd31b284caa17c127a28b69223579ad41868e4a44ed351888af29ad0c4c0167` | 2026-10-27 18:34 +0300, loop/s03 (D-050) |
 | `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (S3 tie-break) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 tie-break) | `2e65a790d105a43da04ab4b2decc9488131184e2f08489cd729a5e00295c0448` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: D-066 incomplete runs and D-068 model-written records on uncomputable plans; row added late, at 2026-10-29 15:34 +0300, by the restarted lead under R14) | `c00b47c884382fa8aa74c2d5e501b302f450166c43260c0551cdf8f64bf0ae9e` | changed in `d18cf93` (2026-10-29 02:29 +0300), loop/s05 (D-068) |
+
+## The main reading agent pinned for B1 and the cut rule (preregistration section 12 item 8; S5 plan item 0.1; D-078)
+
+| Field | Value |
+|---|---|
+| Agent | PROCESSOR, backend `local_producer` (the sealed local final configuration); the registry's cloud model id is used by no arm |
+| Model id | `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` |
+| Revision | `bdd404162d94997f390efbfa660eb3f21cbbc81d` |
+| Weights SHA-256 (`model.safetensors`) | `99b85155b7bb40344d8c3938c8ec1147b27028804bca5d2e5559cb8e6533747d` |
+| B1 checkpoint (item 12, D-078) | tuned: adapter checkpoint 168, SHA-256 `8354d6545272399ea6771f1a6b560309e882fd7348f5c2be9cbd1bab01160703` |
+| Context | 32,768 tokens |
+| Output allowance | 2,048 tokens (`pipeline PRODUCTION_MAX_TOKENS`) |
+| Decoding policy | `tuning/producer_v3/evaluation_protocol.json`, SHA-256 (LF) `51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a` |
+| Attention and prefill (item 13, D-063) | sdpa pinned to the memory-efficient backend, prefilled in one shot |
+| Recorded | 2026-10-29 15:34 +0300, loop/s05, before any holdout sample |
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: the reply record `context` row, D-078) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-29 16:06 +0300, loop/s05 (D-078) |
+
+## Preregistration frozen (S5 item 10f, D-085)
+
+| Item | SHA-256 | Recorded |
+|---|---|---|
+| `docs/benchmarks/PREREGISTRATION.md` (frozen; LF-normalised) | `f759527572ab7c9eca8bad2a5d8fd9100281387e5834a28c0b217d43f2f033f7` | 2026-10-29 22:09 +0300, loop/s05 at `fc02e1d`, before any holdout sample |
+| C's scorer (C0 run 3, the last; `c-scorer-c0-3`; hash of SCORER_MANIFEST.txt) | `049ae32b1a837e9bc4ecaf1947e32da19d465422ac845eec1641b9dd864b2a7f` | 2026-10-29 22:09 +0300, from `_handoff/C_SCORER.json` |
+| `docs/OUTPUT_FORMAT.md` read by C0 (draft `output-format-v1-draft`) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-29 22:09 +0300 |
+| `docs/INPUT_FORMAT.md` read by C0 (draft `input-format-v1-draft`) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-29 22:09 +0300 |
+| `ROLE_C0.md` (runs 1 to 3, the same text) | `5804490377df6ec9932744c8af022c2969bf4867c333e01df8f638ce2a6b861d` | 2026-10-29 22:09 +0300 |
+
+## Corrections (appended; rows above are never moved or edited)
+
+Note (2026-10-29 about 23:10 +0300, S5 checker round 2, D-087): the `docs/OUTPUT_FORMAT.md` row of 2026-10-29 16:06 +0300 (`07eea8f7...4150`, D-078) was written by mistake inside the reading-agent table, after its "Recorded" row. At S5 checker round 1 it was moved into the frozen-hashes table, which broke this file's append-only rule; it is now back where it was first written, unchanged, and the row below records it again in the table it belongs to. Nothing in the row itself was wrong.
+
+| What | Version | SHA-256 | Recorded |
+|---|---|---|---|
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: the reply record `context` row, D-078; a format hash, recorded again here in a format-hash table) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | first recorded 2026-10-29 16:06 +0300, loop/s05 (D-078); this row 2026-10-29 about 23:10 +0300 (D-087) |

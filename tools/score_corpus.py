@@ -62,6 +62,19 @@ false positives for any record the key does not give, stray refusals for labels
 the key does not list, and the band irregularities with their attribution.
 
     py -3.12 -X utf8 tools/score_corpus.py --corpus <name> --run output/runs/<run-dir>
+
+A key outside benchmark/corpora/ (a generated development bundle, a sealed test's
+key handed over by path) is read with --key instead of --corpus, and its twin, when
+one is to be compared, with --twin-key and --twin-run together: the twin's key file
+and the folder of a run of the twin, both anywhere. The twin pairing is checked, never
+assumed: the scored key must name the twin (its `twin_of` equals the twin key's
+folder name or file stem), and the twin run must be a run of the twin's document (a
+deliverable folder named after it). Under --key the scorer never searches
+output/runs/ for a twin; without the two twin options it says the twin check was not
+asked for. --corpus behaves exactly as before, an absolute path included.
+
+    py -3.12 -X utf8 tools/score_corpus.py --key <bundle>/answer_key.json --run <run-dir> \
+        [--twin-key <twin-bundle>/answer_key.json --twin-run <twin-run-dir>]
 """
 from __future__ import annotations
 
@@ -80,6 +93,46 @@ def _load_key(corpus):
     if not path.is_file():
         raise SystemExit("no answer key at %s" % path)
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_key_file(path):
+    """A key named by path (--key, --twin-key): a JSON object, or a refusal."""
+    path = Path(path)
+    if not path.is_file():
+        raise SystemExit("no answer key at %s" % path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit("the answer key at %s is not a JSON object" % path)
+    return data
+
+
+def explicit_twin(key, twin_key_path, twin_run):
+    """The twin named by path: (findings, run, twin name), or a refusal.
+
+    Nothing is guessed. The scored key must declare a twin, and that twin must be
+    the one named: its `twin_of` equals the twin key's folder name or file stem.
+    The twin run must be a run of the twin's own document (a deliverable folder
+    named after it, the rule twin_findings applies under output/runs/) and must
+    hold a bus, so the comparison has something to compare."""
+    twin = str(key.get("twin_of") or "")
+    if not twin:
+        raise SystemExit("--twin-key given, but the scored key declares no twin_of")
+    twin_key_path = Path(twin_key_path)
+    if twin not in (twin_key_path.parent.name, twin_key_path.stem):
+        raise SystemExit("the scored key's twin is %s; %s is not that twin's key"
+                         % (twin, twin_key_path))
+    twin_key = _read_key_file(twin_key_path)
+    stem = str(twin_key.get("document") or "").rsplit(".", 1)[0]
+    if not stem:
+        raise SystemExit("the twin key at %s names no document" % twin_key_path)
+    run = Path(twin_run)
+    if not (run / "logs" / "agent_bus.jsonl").is_file():
+        raise SystemExit("no bus at %s" % (run / "logs" / "agent_bus.jsonl"))
+    names = [Path(p).name for p in glob.glob(str(run / "deliverables" / "*"))]
+    if stem not in names:
+        raise SystemExit("%s is not a run of the twin's document %s (no deliverables/%s)"
+                         % (run, twin_key.get("document"), stem))
+    return _load_bus_findings(run), str(run), twin
 
 
 def _load_amendments(run_dir):
@@ -255,7 +308,7 @@ def twin_findings(corpus, key):
     return None, None
 
 
-def _print_twin_check(corpus, key, findings):
+def _print_twin_check(corpus, key, findings, twin=None, by_path=False):
     """Claims this run made that a run of the twin made IDENTICALLY.
 
     The twins differ exactly where the defects are, so a claim worded the same
@@ -263,8 +316,22 @@ def _print_twin_check(corpus, key, findings):
     exposed UNIT-VETCH on 2026-09-11, where the model said the document "does
     not mention the next calibration visit" about the flawed twin AND about the
     clean twin, whose entry states it in plain words. It was found by a person
-    reading two logs side by side; this makes it something the scorer runs."""
-    twin_hits, twin_run = twin_findings(corpus, key)
+    reading two logs side by side; this makes it something the scorer runs.
+
+    `twin` is explicit_twin's result when the twin was named by path; `by_path`
+    says the key itself was read by path (--key)."""
+    if twin is not None:
+        twin_hits, twin_run, _name = twin
+    elif by_path:
+        # A key read by path never borrows a twin from output/runs/: the twin's
+        # name there is a bundle folder, not a corpus, and a run found by name
+        # could be a run of another bundle that happens to share it.
+        if key.get("twin_of"):
+            print("twin check      : not asked (the key names twin %s; pass --twin-key "
+                  "and --twin-run to compare)" % key.get("twin_of"))
+        return
+    else:
+        twin_hits, twin_run = twin_findings(corpus, key)
     if twin_hits is None:
         if key.get("twin_of"):
             print("twin check      : unavailable (no scored run of %s on disk)"
@@ -462,7 +529,7 @@ def _load_review_data(run_dir):
             for field in ("amendments", "prior_comparisons", "prior_refusals", "prior_orphans")}
 
 
-def score_rounds(corpus, key, run_dir):
+def score_rounds(corpus, key, run_dir, twin=None):
     """Score a round-N comparison key (`prior_records`, `band_irregularities`).
 
     Mechanical, on typed fields only: a key row is FOUND when a computed prior-version
@@ -573,6 +640,9 @@ def score_rounds(corpus, key, run_dir):
     # without this, a finding of a newer kind is computed, posted, and invisible
     # in the only view of the run a reader sees.
     _print_relation_breakdown(findings)
+    if twin is not None:
+        print("twin check        : not run (a round-comparison key has no twin check; "
+              "--twin-key and --twin-run were read and not compared)")
     print()
     print("  %-42s %-22s %-28s %-10s refs" % ("field", "expected", "result", "cited"))
     for field, rel, status, cited, nrefs in table:
@@ -592,10 +662,17 @@ def score_rounds(corpus, key, run_dir):
     return 0
 
 
-def score(corpus, run_dir):
-    key = _load_key(corpus)
+def score(corpus, run_dir, key_path=None, twin_key=None, twin_run=None):
+    """Score one run. `corpus` names a folder under benchmark/corpora/ (or an
+    absolute path, as before); `key_path`, when given, is the key file itself and
+    `corpus` is only its label. `twin_key` and `twin_run` come together or not at
+    all, and name the twin's key and a run of the twin by path."""
+    if (twin_key is None) != (twin_run is None):
+        raise SystemExit("--twin-key and --twin-run are given together or not at all")
+    key = _read_key_file(key_path) if key_path is not None else _load_key(corpus)
+    twin = explicit_twin(key, twin_key, twin_run) if twin_key is not None else None
     if key.get("prior_records") is not None:
-        return score_rounds(corpus, key, run_dir)
+        return score_rounds(corpus, key, run_dir, twin)
     amendments = _load_amendments(run_dir)
     findings = _load_bus_findings(run_dir)
     planted = key.get("planted") or []
@@ -743,7 +820,7 @@ def score(corpus, run_dir):
     print("distractor hits : %d" % len(distractor))
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
     _print_relation_breakdown(findings, confirmed_hits)
-    _print_twin_check(corpus, key, findings)
+    _print_twin_check(corpus, key, findings, twin, by_path=key_path is not None)
     print()
     print("  planted      rule      kind                  found  reason  attributed  review state        matched via")
     for i, (p, f, a, h) in enumerate(zip(planted, found, attributed, how)):
@@ -785,10 +862,18 @@ def score(corpus, run_dir):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--corpus", required=True)
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--corpus", help="a folder under benchmark/corpora/ (or its absolute path)")
+    source.add_argument("--key", help="an answer key file anywhere (a bundle's answer_key.json)")
     ap.add_argument("--run", required=True)
+    ap.add_argument("--twin-key", help="the twin's answer key file, anywhere (with --twin-run)")
+    ap.add_argument("--twin-run", help="the folder of a run of the twin, anywhere (with --twin-key)")
     a = ap.parse_args(argv)
-    return score(a.corpus, a.run)
+    if (a.twin_key is None) != (a.twin_run is None):
+        ap.error("--twin-key and --twin-run are given together or not at all")
+    if a.key is not None:
+        return score(a.key, a.run, key_path=a.key, twin_key=a.twin_key, twin_run=a.twin_run)
+    return score(a.corpus, a.run, twin_key=a.twin_key, twin_run=a.twin_run)
 
 
 if __name__ == "__main__":
