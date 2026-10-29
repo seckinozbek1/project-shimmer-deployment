@@ -24930,6 +24930,19 @@ def check_290_uncomputable_judgment_is_kept_as_a_model_record():
     return check()
 
 
+def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
+    """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
+    (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
+    more calls than the scheduler admits at once (289 on a real development agreement, bound
+    256). An over-bound gather now runs as consecutive waves of at most the bound, in source
+    order, every chunk shown the ONE pre-gather bus snapshot and depending on the ONE
+    pre-gather parent set, posts published in source order; a gather at or below the bound
+    is one wave exactly as before. execute_plans on fixture wrappers with a small bound;
+    neutralise, fail, restore, pass for each property."""
+    from execution_topology_checks import wave_admission_check
+    return wave_admission_check()
+
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25356,6 +25369,8 @@ CHECKS = [
      check_289_l2_diagnosis_fixes_hold),
     ("290 a model's answer where Python could compute nothing is kept as a stamped, model-written, never-promoted record (D-068)",
      check_290_uncomputable_judgment_is_kept_as_a_model_record),
+    ("291 a gather over the scheduler's bound runs as waves sharing one snapshot and one parent set (D-076)",
+     check_291_over_bound_gather_runs_as_shared_snapshot_waves),
 ]
 
 

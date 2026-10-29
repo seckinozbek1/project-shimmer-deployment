@@ -757,6 +757,13 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
+  `max_pending` (256) runs as consecutive waves of at most that many calls
+  (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and
+  depending on the ONE parent set read before the first, posts published in source order; it is
+  never refused for its size, and a gather at or below the bound is one `run_wave` exactly as
+  before. Measured, not preferred: a development ContractNLI agreement with 289 judging plans
+  refused the whole run before this. Check 291.
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from
