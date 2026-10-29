@@ -29,14 +29,31 @@ if not exist ".venv\Scripts\activate.bat" (
     )
 )
 REM An existing incompatible venv is refused, never silently reused/rebuilt.
+REM The whole command is wrapped in one more pair of quotes: for /f hands it to
+REM cmd /c, which strips the first and the last quote of a line holding more
+REM than two, so without the outer pair the interpreter path and the candidate
+REM path lost a quote each and every start stopped here with a path syntax error.
 set "PYTHON_CMD="
-for /f "delims=" %%P in ('"!SHIMMER_PYTHON!" tools\runtime_contract.py --resolve --candidate "%CD%\.venv\Scripts\python.exe" --path-only') do set "PYTHON_CMD=%%P"
-if not defined PYTHON_CMD goto :end_fail
+for /f "delims=" %%P in ('""!SHIMMER_PYTHON!" tools\runtime_contract.py --resolve --candidate "%CD%\.venv\Scripts\python.exe" --path-only"') do set "PYTHON_CMD=%%P"
+if not defined PYTHON_CMD (
+    echo The Python in .venv does not match tools\cloud_run\runtime.json. Remove .venv and run this script again.
+    goto :end_fail
+)
 "!PYTHON_CMD!" tools\runtime_contract.py --source .
 if errorlevel 1 goto :end_fail
-call ".venv\Scripts\activate.bat"
+REM The activate script runs chcp.com inside a for /f, and that child reads the
+REM rest of a redirected input: every answer after this point was lost, so a
+REM scripted start always fell back to Cloud. Its input comes from nul instead.
+call ".venv\Scripts\activate.bat" < nul
 
 REM --- 3. Dependencies -------------------------------------------------------
+REM SHIMMER_SKIP_INSTALL=1 skips this step and the CUDA torch swap below, for an
+REM environment that is already installed or a machine with no network. The
+REM readiness preflight that follows still reports anything missing.
+if "!SHIMMER_SKIP_INSTALL!"=="1" (
+    echo SHIMMER_SKIP_INSTALL=1: the dependency install and the CUDA torch swap are skipped.
+    goto :profile
+)
 echo Installing dependencies (this is quick after the first run) ...
 "!PYTHON_CMD!" -m pip install -r requirements.txt --quiet
 if errorlevel 1 (
@@ -75,6 +92,7 @@ REM unconditionally and exit on its keyless code 2, so a local-only operator
 REM could not reach the menu at all and never learned whether their local stack
 REM was ready. The profile is passed to the preflight and to every run started
 REM from this menu.
+:profile
 echo.
 echo Which backend will you run on?
 echo   [C] Cloud  (Claude / GPT via your API keys; costs money per run)
@@ -113,6 +131,11 @@ if not "!PREFLIGHT_RC!"=="0" (
 )
 
 REM --- 6. Menu ---------------------------------------------------------------
+REM set /p cannot tell an empty line from the end of piped input: both leave the
+REM answer empty. The menu used to redraw forever once its input ran out, so a
+REM scripted or closed input never ended. Three empty answers in a row now leave
+REM the menu; any answer resets the count.
+set "EMPTY_ANSWERS=0"
 :menu
 echo.
 echo =========================================
@@ -127,6 +150,16 @@ echo   [Q] Quit
 echo.
 set "choice="
 set /p choice="Choose an option [1-5, Q]: "
+if not defined choice (
+    set /a EMPTY_ANSWERS+=1
+    if !EMPTY_ANSWERS! GEQ 3 (
+        echo.
+        echo No answer was read three times in a row ^(end of input^). Leaving the menu.
+        goto :end_ok
+    )
+    goto :menu
+)
+set "EMPTY_ANSWERS=0"
 
 if /i "!choice!"=="1" goto :opt_review
 if /i "!choice!"=="2" goto :opt_chat
@@ -176,9 +209,6 @@ if "!DRAFTQ!"=="" (
     echo No question entered. Returning to the menu.
     goto :menu
 )
-echo.
-echo Drafting a memo, then reviewing it ...
-echo (Add --help for all options.)
 REM The draft path ASKS the sensitivity question rather than answering it. It
 REM used to hardcode both override flags, declaring every launcher draft
 REM non-sensitive with no prompt, while the review path asked. A draft memo can
@@ -249,7 +279,9 @@ set "SHIMMER_UI_PORT=%SHIMMER_PORT%"
 if "!SHIMMER_UI_PORT!"=="" set "SHIMMER_UI_PORT=8000"
 echo Starting the server ...
 echo   Console:  http://localhost:!SHIMMER_UI_PORT!/console
-echo   Health:   http://localhost:!SHIMMER_UI_PORT!/health   ^(the only route with no token^)
+echo   Health:   http://localhost:!SHIMMER_UI_PORT!/health
+echo   Only /health and /console answer without a token. The console page holds
+echo   no data: it asks for the token before it shows anything.
 echo   There is no page at / , the console is the entry point.
 echo Press Ctrl+C to stop it and return here.
 "!PYTHON_CMD!" scripts\server.py

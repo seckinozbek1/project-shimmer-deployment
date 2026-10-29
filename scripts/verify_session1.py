@@ -24949,6 +24949,31 @@ def check_293_console_views_render_and_mark():
     return check_console_views()
 
 
+
+def check_294_launcher_menus_end_at_end_of_input():
+    """Loop S7 item 5: both launcher menus end when their input ends (shimmer.sh on a failed
+    read, shimmer.bat after three empty answers), and the Git Bash token question reads the end
+    of input as no. Driven on the real launcher text in temp folders with stand-ins; no install,
+    no model, no run. Skips where a launcher is absent (container image)."""
+    from launcher_checks import check_end_of_input
+    return check_end_of_input()
+
+
+def check_295_launchers_reach_their_menus():
+    """Loop S7 item 5: shimmer.bat reaches its menu (for /f quoting), keeps its answers through
+    the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
+    venv and honours SHIMMER_SKIP_INSTALL; the draft is announced only after its setup; no dead
+    batch label; start_shimmer.bat --check-entry answers."""
+    from launcher_checks import check_bootstrap
+    return check_bootstrap()
+
+
+def check_296_launcher_banner_names_the_open_routes():
+    """Loop S7 item 5: the server banner in both launchers names exactly the routes the live app
+    answers without a token, read off the app."""
+    from launcher_checks import check_banner
+    return check_banner()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25339,6 +25364,10 @@ CHECKS = [
      check_292_every_route_needs_a_token_but_health_and_console),
     ("293 the console's new views render in both languages with the model-finding mark",
      check_293_console_views_render_and_mark),
+    ("294 both launcher menus end at end of input", check_294_launcher_menus_end_at_end_of_input),
+    ("295 the launchers reach their menus with no install", check_295_launchers_reach_their_menus),
+    ("296 the launcher banner names exactly the routes open without a token",
+     check_296_launcher_banner_names_the_open_routes),
 ]
 
 

@@ -402,6 +402,15 @@ waiver. `scripts/harness/run_agent.py` tests one chosen unit/rule/agent, not an
 entire cluster or full review. Legacy `shimmer.bat` / `shimmer.sh` perform setup
 and preflight work and are not the normal desktop start path.
 
+`shimmer.bat` and `shimmer.sh` install `requirements.txt` on every start. Set
+`SHIMMER_SKIP_INSTALL=1` (read by these two launchers only, so it has no row in the variables
+table) to skip that step and the CUDA torch swap when the environment is already installed or
+the machine is offline; the readiness preflight still reports anything missing. Both menus end
+when their input ends, so they can be driven from a file (`shimmer.bat < answers.txt`); on
+Windows feed a file, not a pipe, because cmd keeps only the first line of piped input.
+`shimmer.sh` runs under Git Bash on Windows and finds a `.venv/Scripts/` environment there. The
+menu banner names both routes that answer without a token, `/health` and `/console`.
+
 Ordinary final cloud entry points (operator tools, not server routes; full flag
 tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)):
 
