@@ -721,3 +721,9 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **S5 spend.** 20.64 USD of 24 (L1 0.49, L2 3.18, L3e 3.38, L4a 2.60, L5v 1.31, L4b 4.39, L6 3.74, L6m 0.99, L6s2 0.56); 3.36 unused, the only money S6 may spend (IV.3).
 - **C0.** Run 1 agreed on every label set it could check; run 2 (with the B2 run folders run 1 lacked) reports full agreement on every label set of ContractNLI, ContraDoc and SciTab, primary and S-1 to S-8. The scorer hash of the last run is `bf6c9292544ac721433842605c0bb84763600643851a3a794193dd3cec071c84`.
 - **Rules.** R17, IV.3, P1, S5 item 10.
+
+## D-084. The final preregistration attack: all items accepted; synthetic-test scoring built before freeze; C0 run 3
+
+- **When, stage.** 2026-10-29 20:58 +0300 (system clock), S5 item 10f. A fresh checker: 1 CRITICAL, 7 SERIOUS, 7 MINOR (private s5_prereg_attack_final.md); the B1 prompt judged not a straw man.
+- **Choice.** Every item is closed before the freeze. (1) B's synthetic tests get preregistered scoring: items are (target document, rule) pairs read from the bundle's conventions, never from the key; B1 is asked one question per item with the benchmark prompt's structure; labels FLAG or CLEAR with the located unit; metrics: location and reason-confirmed recall over planted flaws, false positives in every deliverable, clean-twin false alarms, per arm; built as a synthetic adapter in `benchmark/adapters/` and checked on the development suite (B2 outputs) and the exposed tests (L5v B3 outputs); the B1 cost per bundle stays an estimate, labelled. (3) One setup-failure rule for B1 and B3 alike. (4) S-8 worded as the adapter computes it. Items 2, 5 to 14: text. Because items 1, 3 and 4 change rules C implements, C0 runs a third and last time; if it does not agree fully, the parts that differ leave the design (S5 item 10).
+- **Rules.** S4e item 11, S5 item 10, P1, P10, P11, P18, Annex A 11.8, 11.11.3.
