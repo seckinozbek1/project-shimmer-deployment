@@ -311,7 +311,11 @@ processing swarm governed by an append-only constitution.
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
   A key outside `benchmark/corpora/` is scored with `tools/score_corpus.py --key <answer_key.json>
   --run <run>`, and its twin with `--twin-key` and `--twin-run`; the scorer refuses a twin the key
-  does not name and a run that is not of the twin's document. Development cases built from
+  does not name and a run that is not of the twin's document. It reads `expected_refusals` by
+  refusal kind (a matched rename is no false positive), scores a run holding
+  `audit/multi_round.json` per round and document from Python's round findings only, and reports
+  the four relations Python never writes apart, located only by a marked model-written record
+  (check 293). Development cases built from
   repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline

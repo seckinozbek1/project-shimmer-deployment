@@ -65,7 +65,7 @@ case_manifest.json       multi-round cases only (section 12)
 ```
 
 - Here the manifest sits inside `context/`: the staging tool (`tools/stage_corpus.py`) copies only the files directly inside `context/` and `conventions/` into Shimmer's input folders, so a manifest anywhere else is never seen. It does not copy `answer_key.json` or `case_manifest.json`.
-- **Where working folders live.** One folder per test under `benchmark/corpora/`, and a test and its twin (section 10) side by side there. The scorer in this repository (`tools/score_corpus.py`) reads keys only from `benchmark/corpora/<bundle>/answer_key.json` and finds a twin's key by its folder name there, so a test is scored with its twin only when both sit there.
+- **Where working folders live.** One folder per test under `benchmark/corpora/`, and a test and its twin (section 10) side by side there. The scorer in this repository (`tools/score_corpus.py`) reads a key there by its folder name (`--corpus`) and then looks for a run of its twin under `output/runs/`; a key anywhere else is read by its path (`--key`), and its twin is compared only when the twin's key and a run of the twin are named too (`--twin-key` and `--twin-run`).
 - **From working folder to archive.** Move `context/_review_targets.json` to the archive's top, leave `answer_key.json` out, and keep `case_manifest.json` at the top for a multi-round case. Change nothing else. Shimmer then reads the same manifest, documents and conventions in both forms.
 - **Sealed tests.** Keep a sealed test's archive and key outside this repository, and keep no working folder of it under `benchmark/corpora/`. The cloud tool builds a sealed bundle only outside the repository and refuses to launch one inside it; it does not check where the archive itself is, so this part is the preparer's rule.
 
@@ -513,7 +513,7 @@ Older keys under `benchmark/corpora/` name the task `task` in a negotiation-styl
 
 - A flaw Python computes is keyed with Python's relation and figures (the table below).
 - A flaw Python's relations describe but Python does not compute in this test is keyed with that relation all the same. For example, a `date_window` whose bound is stated in another unit of the document, in a sentence whose other words the rule does not all use (or in one that ties with another candidate): the bound search of section 7 reads the document too, but finds no winning bound sentence there, so Python computes no window.
-- A flaw no Python relation describes is keyed with one of the four relations Python never writes: `unit_mismatch`, `rate_mismatch`, `copy_mismatch` and `carry_mismatch` (table below). Shimmer writes none of these today, so the scorer can confirm such a flaw's reason only if a finding with that relation ever appears, and can locate it only by an amendment on its unit under its rule. It counts as missed otherwise.
+- A flaw no Python relation describes is keyed with one of the four relations Python never writes: `unit_mismatch`, `rate_mismatch`, `copy_mismatch` and `carry_mismatch` (table below). Shimmer's Python writes none of these, so only a model's record with that relation can locate such a flaw and confirm its reason, or an amendment on its unit under its rule (built from another relation's finding) can locate it. It counts as missed otherwise. The repository's scorer reports these entries in a section of their own, a model's record marked as a model's and never counted as Python's; its location-only recall counts them only through an amendment.
 - Key every flaw under a rule whose text it breaks as written. A figure in the wrong measure breaks no band or sum rule (Python compares nothing across measures), so a test that plants one also states a rule requiring the measure ("Each result must be written in the measure in which its parameter's range is given."), and keys the flaw under that rule. Word such a rule so it takes no band and no sum attribution from the others (sections 7 and 9).
 
 **Flaws that depend on another unit.** Python computes every relation inside one unit; no relation compares two units. A reviewer asked about a unit is also shown the units just before and after it, as context, but it is asked only where Python found a disagreement on that unit, or computed nothing there. Key the flaw on the unit that is wrong, and name the other unit in an extra field of the planted entry: `depends_on_unit` for the unit just before or after, `source_unit` for a unit a figure was copied from, `related_unit` for a distant unit whose figure or condition decides it. A carried figure that also makes the unit's own column disagree with its stated total is a `sum_mismatch` Python computes; one that leaves each unit adding up on its own is a `carry_mismatch`.
@@ -604,7 +604,7 @@ How a row is counted:
 - An `absent_since_prior` on `field_label` is a false positive (a fabricated withdrawal).
 - A refusal of a label the key lists here is not a stray refusal.
 
-The repository's scorer does not read `expected_refusals` yet, and counts a matched rename's record as a false positive.
+The repository's scorer reads `expected_refusals` as above: it counts the rows satisfied, how many were refused with the expected kind and how many with another, the matched renames (not false positives) and the fabricated withdrawals (false positives), and the satisfied rows per expected kind.
 
 **`unit_mismatch` names two different things.** As a planted relation it is `claim.relation` of a planted entry (the table of relations above); as a refusal it is a `reason_kind` in `prior_refusals` (`docs/OUTPUT_FORMAT.md`, section 7.1). They are different fields and are never compared with each other.
 
@@ -621,7 +621,7 @@ The repository's scorer does not read `expected_refusals` yet, and counts a matc
 - **Distractor hits** are the irregular round findings on the (round, document, unit) of a `clean` entry.
 - `twin_of` names a twin case with every flaw repaired in every round. A twin that repairs only the last round (so that its earlier versions stay the test's, as an ordinary two-version twin needs) is not such a twin: leave `twin_of` out of the multi-round entries then.
 - Round findings carry the registry id, not the operator's own id (`docs/OUTPUT_FORMAT.md`, section 10.2): to check `rule`, give the scorer the case's conventions and number the rules as section 3 does.
-- The repository's scorer does not score multi-round cases yet.
+- The repository's scorer scores a run as a multi-round case when the run folder holds `audit/multi_round.json`, against the key's `multi_round` entries, or against `planted` and `clean` when they carry `round_id`; it refuses a multi-round run whose key has neither. It counts only round findings written by `python` (`docs/OUTPUT_FORMAT.md`, section 5.4), reports a model's item on that channel apart, gives recall per round, and does not check `rule`.
 
 ## 10. The clean twin
 
@@ -770,7 +770,7 @@ No other top-level field is allowed: one more field is refused. Inside rounds, a
 - **Reuse.** A unit whose own text, paired rules, document label set and document measures are all identical to a unit of an earlier round is not computed again. Its findings are copied from the earliest round that computed them, under the new unit id. A unit that moved position is still recognised, because the unit id is not part of the comparison.
 - Then the producer model proposes typed position records from the spans, and the reviewer model accepts, rejects or withholds each one. Nothing in a multi-round run becomes an amendment, and the run writes no deliverables. The round findings carry the registry id of their rule, not the operator's own id. `docs/OUTPUT_FORMAT.md` describes what the run writes.
 
-**Scoring a multi-round case.** Section 9, "Multi-round keys", gives the key: planted and clean entries scoped by round and document, scored on the Python round findings. Rename probes are measured in the ordinary two-version review of the same files (above, "The same bundle as an ordinary review"), not in a multi-round run. The repository's scorer scores neither yet.
+**Scoring a multi-round case.** Section 9, "Multi-round keys", gives the key: planted and clean entries scoped by round and document, scored on the Python round findings. Rename probes are measured in the ordinary two-version review of the same files (above, "The same bundle as an ordinary review"), not in a multi-round run. The repository's scorer scores both: the multi-round run against the multi-round entries, the ordinary review against the negotiation-style lists and `expected_refusals` (section 9).
 
 ## 13. Glossary
 

@@ -24990,6 +24990,19 @@ def check_292_every_controller_path_child_process_starts_without_a_window():
                     'restored, passed: ' + ', '.join(proofs))
 
 
+def check_293_scorer_reads_the_key_parts_d042_added():
+    """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
+    reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
+    unit, reported by kind, or by a matched rename that is then no false positive; a fabricated
+    withdrawal named), scores a multi-round run (audit/multi_round.json) from Python's round
+    findings on bus channel multi_round, each only for the entry of its own round and document,
+    and reports the four relations Python never writes apart, located only by a model-written
+    record and never by a Python post. Executed on synthetic run folders (the multi-round bus
+    written by multi_round_rounds.post_findings itself); each reader proven by neutralise,
+    fail, restore, pass."""
+    from scorer_section9_checks import check
+    return check()
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
@@ -25420,6 +25433,8 @@ CHECKS = [
      check_291_over_bound_gather_runs_as_shared_snapshot_waves),
     ("292 every child process the controller path starts runs with no window (D-079)",
      check_292_every_controller_path_child_process_starts_without_a_window),
+    ("293 the scorer reads expected refusals by kind, a multi-round run by round and document, and the relations Python never writes apart",
+     check_293_scorer_reads_the_key_parts_d042_added),
 ]
 
 
