@@ -10,9 +10,9 @@ Steps, each checked:
 3. The reaper, run before the deadline, leaves the instance alone.
 4. The reaper, run after the deadline, terminates it and appends exactly one ledger line.
 5. An instance without the loop prefix is never touched.
-6. The hard stop is the ledger's own (D-S9): a spend past an earlier 49 USD stop but below
-   the latest line's 69 USD leaves the instance alone; once spend reaches 69 it is
-   terminated.
+6. The hard stop is the ledger's own (D-S9, D-S12): a spend past the earlier 49 and 69 USD
+   stops but below the latest line's 99 USD leaves the instance alone; once spend reaches 99
+   it is terminated.
 8. With no budget line at all, every loop instance is terminated.
 9. An intent whose launch created no instance is left open before its deadline and closed
    once after it (reason ``intent_without_instance``), charged to the deadline.
@@ -145,6 +145,7 @@ def main(work):
     (hard / 'ledger.jsonl').write_text('\n'.join(json.dumps(r) for r in [
         budget_line('budget_open', 50.0, now - timedelta(hours=50)),
         dict(budget_line('budget_change', 70.0, now - timedelta(hours=45)), hard_stop_usd=69.0),
+        dict(budget_line('budget_change', 100.0, now - timedelta(hours=44)), hard_stop_usd=99.0),
         {'event': 'launch', 'instance_id': 'd' * 32, 'instance_name': 'shimmer-loop-old',
          'price_usd_per_hour': 1.29, 'launch_requested_utc': iso(now - timedelta(hours=40))},
         {'event': 'termination', 'instance_id': 'd' * 32, 'instance_name': 'shimmer-loop-old', 'actual_cost': 49.5},
@@ -154,12 +155,21 @@ def main(work):
     code, out = run_reaper(hard, now)
     state = json.loads((hard / 'mock_state.json').read_text(encoding='utf-8'))
     results['6_old_49_stop_no_longer_applies'] = (code == 0 and state['instances'][0]['status'] == 'active'
-                                                  and '"hard_stop_usd": 69.0' in out)
+                                                  and '"hard_stop_usd": 99.0' in out)
     with open(hard / 'ledger.jsonl', 'a', encoding='utf-8') as handle:
         for row in ({'event': 'launch', 'instance_id': 'e' * 32, 'instance_name': 'shimmer-loop-old2',
                      'price_usd_per_hour': 1.29, 'launch_requested_utc': iso(now - timedelta(hours=30))},
                     {'event': 'termination', 'instance_id': 'e' * 32, 'instance_name': 'shimmer-loop-old2',
                      'actual_cost': 19.6}):
+            handle.write(json.dumps(row) + '\n')
+    code, out = run_reaper(hard, now)
+    state = json.loads((hard / 'mock_state.json').read_text(encoding='utf-8'))
+    results['6_old_69_stop_no_longer_applies'] = code == 0 and state['instances'][0]['status'] == 'active'
+    with open(hard / 'ledger.jsonl', 'a', encoding='utf-8') as handle:
+        for row in ({'event': 'launch', 'instance_id': '9' * 32, 'instance_name': 'shimmer-loop-old3',
+                     'price_usd_per_hour': 1.29, 'launch_requested_utc': iso(now - timedelta(hours=20))},
+                    {'event': 'termination', 'instance_id': '9' * 32, 'instance_name': 'shimmer-loop-old3',
+                     'actual_cost': 30.0}):
             handle.write(json.dumps(row) + '\n')
     code, out = run_reaper(hard, now)
     state = json.loads((hard / 'mock_state.json').read_text(encoding='utf-8'))

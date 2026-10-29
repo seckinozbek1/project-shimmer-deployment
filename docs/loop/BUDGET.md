@@ -98,3 +98,18 @@ Spend so far: 0.00 USD on instances; the storage share is 0.16 USD (the reaper's
 ## S5 closing (2026-10-29 22:30 +0300)
 
 Instance spend in S5: 20.64 USD (ledger: L1 0.49, L2 3.18, L3e 3.38, L4a 2.60, L5v 1.31, L4b 4.39, L6 3.74, L6s 0.00, L6m 0.99, L6s2 0.56), against the S5 allocation of 24.00, so 3.36 USD is unused (the only money S6 may spend, IV.3). The reaper's reading (`reaper_status.json`, 2026-10-29 19:56:59 UTC; the same reading as the S5 report's stage boundary, S5 checker round 2): total spend 20.99 USD (20.9904), 0 loop instances listed, budget 70, hard stop 69. Storage share to date, as the difference: 20.99 - 20.64 = 0.35 USD. Remaining against the 70 USD budget: 70.00 - 20.99 = 49.01 USD (48.01 below the 69 USD hard stop). No overrun reached the reserve.
+
+## Allocation from 2026-10-29 21:10 UTC (operator decision D-S12; supersedes the tables above)
+
+| Date (UTC) | Event | Instance minutes | Instance cost (USD) | Storage share to date (USD) | Total spent (USD) | Remaining (USD) |
+|---|---|---|---|---|---|---|
+| 2026-10-29 21:10 | Budget raised to 100 USD by the operator (D-S12, Annex D, 30 October 00:05, revised 00:10 +03:00); reaper hard stop 99 USD; `budget_change` line appended to the private ledger at 21:10:04 UTC; the reaper's `budget_figures` reads (100.0, 99.0) from it. No instance running. | 0 | 20.64 (S5 so far) | 0.35 (S5 closing reading) | 20.99 | 79.01 |
+
+| Allocation | USD | Notes |
+|---|---|---|
+| S5 development runs | 30.00 | The 24.00 before, plus 6.00 for D-S12 item 1 (open items 37 to 40 settled in S5). 20.64 spent, 9.36 left. Unused S5 allocation still goes to S6 (IV.3). |
+| S8 sealed evaluation | 60.00 | A new preregistration version is still allowed (no holdout sample drawn, no sealed result), so S4e item 2's sizing rule is re-run with 60 USD (D-S12 item 5, D-090). Reserve pays only infrastructure re-runs in S8. |
+| Smoke runs (S12 item 8) | 3.00 | |
+| Reserve | 7.00 | Storage share is charged here first. Unused allocation rolls forward. |
+
+The reaper's hard stop is 99 USD and the guard counts against 100 USD, both read from the ledger's latest budget line (no figure in code, D-S9 item 3). Proven on the mocked provider (`tools/loop/reaper_proof.py` step 6, extended to a 49, 69, 99 chain: spend 69.1 leaves the instance alone, 99.1 terminates it), with neutralise (stop clamped to 69 in `budget_figures`), fail (step 6 false), restore, pass (D-090). Usage limits unchanged: no launch at five-hour 70 percent or seven-day 95 percent.
