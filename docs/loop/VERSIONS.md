@@ -47,3 +47,4 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | Decoding policy | `tuning/producer_v3/evaluation_protocol.json`, SHA-256 (LF) `51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a` |
 | Attention and prefill (item 13, D-063) | sdpa pinned to the memory-efficient backend, prefilled in one shot |
 | Recorded | 2026-10-29 15:34 +0300, loop/s05, before any holdout sample |
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S5: the reply record `context` row, D-078) | `07eea8f738c08ab4b7fd2efbf0e345ff0852c9c175c842e8054481108e014150` | 2026-10-29 16:06 +0300, loop/s05 (D-078) |

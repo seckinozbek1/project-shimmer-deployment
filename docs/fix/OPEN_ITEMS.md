@@ -429,3 +429,10 @@ open-item sweep.
 - **Evidence.** S5 B2 runs on the development suite (`external/s05/B2_suite/`, ignored): "no bus at ...".
 - **Why it was left.** A scorer change is attacked by a checker before use (III.2); the workaround gives the same false-positive count (P16).
 - **What would settle it.** Read the twin's findings from `review_data.json` when the run has no bus, with a check.
+
+## 33. Gate check 256 fails now and then inside a long gate run (found at loop S5, INC-021)
+
+- **What it is.** Check 256 ("startup readiness is explicit and non-mutating") patches `socket.create_connection` and `subprocess.Popen` for the whole process and counts any call during its window as forbidden. In two of five chunked runs on 29 October it failed with "sensitive health imported a model probe while inactive"; alone, and in the shorter range 200 to 256, it passed every time.
+- **Evidence.** Gate logs of `8c2392d` and `ee2f1ed` (private); INC-021.
+- **Why it was left.** A test-infrastructure flake, not product behaviour; finding the thread needs an instrumented gate run, which belongs to the S6a sweep (P16).
+- **What would settle it.** Record the calling thread and stack in `refuse()` on a failing run, then either stop that thread at its own check's end or scope the check to its own calls; neutralise, fail, restore, pass.
