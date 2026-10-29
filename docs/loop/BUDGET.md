@@ -121,3 +121,15 @@ The reaper's hard stop is 99 USD and the guard counts against 100 USD, both read
 | 2026-10-29 21:26 | Budget raised to 200 USD by the operator (D-S12 revised 00:20, replacing the 00:10 version applied at 21:10); reaper hard stop 199 USD; `budget_change` line appended at 21:26:33 UTC; the reaper's `budget_figures` reads (200.0, 199.0). No instance running. | 0 | 20.64 (S5 so far) | 0.35 (S5 closing reading) | 20.99 | 179.01 |
 
 The allocation of D-S12 item 4 (S5's brought-back work and the first sweep's findings, then S6, S9, S10 and smoke runs, a 10 USD reserve, S8 the rest and never less than 60 USD) is computed after the first sweep and recorded here in its own table. The 100 USD table above is void. Reaper proof (`tools/loop/reaper_proof.py` step 6): the chain is now 49, 69, 199; spend 69.1 leaves the instance alone, 199.1 terminates it; neutralised (stop clamped to 99 in `budget_figures`) step 6 fails; restored, it passes (D-091).
+
+### Allocation from 2026-10-30 about 00:50 +0300 (D-S12 item 4, D-092)
+
+| Allocation | USD | Forecast basis |
+|---|---|---|
+| Spent to date | 20.99 | instances 20.64 (S5 launches), storage share 0.35 |
+| S5 brought-back work and the first sweep's findings | 70.81 | L7 4.05, L8 15.12, L9a and L9b 24.65, CUAD one contract 21.76, dry runs 5.22 (2,533.5 instance minutes at 0.02795 USD a minute, exposed-batch overhead 15.4 minutes a session and 2 an entry) |
+| S6 cloud work | 5.74 | GNN graph 1.70, report-optimized measurement 0.64, S6b re-score 1.70, open item runs 1.70 |
+| S9, S10 | 0.00 | no Lambda work named |
+| Smoke runs (S12 item 8) | 3.12 | two smoke runs with the upload |
+| Reserve | 10.00 | storage share charged here first (about 0.65 USD more to S5's end, estimate) |
+| S8 sealed evaluation | 89.34 | the rest; floor 60 |
