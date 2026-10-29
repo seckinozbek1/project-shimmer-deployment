@@ -239,3 +239,19 @@ Each entry has these fields, in this order:
 - **Holdout result seen**: no.
 - **Development scores existing when decided**: B1, B2 and B3 development scores; not read.
 - **Status**: draft, written to close the final checker's attack (D-084); it becomes applied at the freeze, after C0's third run; the exact n is computed at S8c from B's counts.
+
+## Notes appended after the freeze (they change no design, no code and no entry above)
+
+### Note of 2026-10-29 about 23:10 +0300 (S5 checker round 2, D-087): what DEV-002's and DEV-005's "false positives 0" counts
+
+- **Qualifies**: DEV-002 (its required check "clean-twin false alarms counted") and DEV-005 ("Clean twin: false positives 0").
+- **What it says**: the "false positives 0" figures come from `tools/score_corpus.py`, which counts false positives over amendments only. A record kept under DEV-002 is a model-written record and never an amendment, so that count could not show a false alarm made by a DEV-002 record. Read by the benchmark reader instead (which lets a model-written record decide an item), the L5v clean twin carried 8 kept model-written records and 20 model-only relations (missing_field 11, sum_mismatch 9), each a false alarm on a document with no planted flaw, and the L6 model-text review found all 3 sampled kept answers wrong (open item 34). DEV-005's "verified" means only that the clinical recall did not fall and that no amendment changed; it does not show that DEV-002's records are right (D-086).
+- **What it changes**: nothing in the frozen design. Sensitivity S-8 (DEV-012, DEV-015) is the control: B3 and B4 reported as if every model-written record were absent. The S8 report states this beside the primary B3 result (open item 36).
+- **Holdout result seen**: no.
+
+### Note of 2026-10-29 about 23:10 +0300 (S5 checker round 2, D-087): what in DEV-011 is counted and what is estimated
+
+- **Qualifies**: DEV-011, reason (1) and reason (2).
+- **What it says**: in reason (1), "209 of 255 development filings are cut" is a count, made by the real counter (the pinned tokenizer, the 32,768-token context and the 2,048-token output allowance); the words "(inferred from one filing, not counted)" belong to the next step, not to that count. What is an estimate from one filing is the share of filings that section 5.3 would exclude: only one filing, `e61777d6327c`, ran under B3 at full length (L3e and L4b, three calls over the context each), and DEV-011 assumes every cut filing behaves the same. Reason (2), B1 below the 95 percent parse floor at full length, rests on one item (0 of 1, both checkpoints at the output allowance): a measurement with n = 1, not a rate (D-086).
+- **What it changes**: nothing. FinDVer stays off the S8 priority list under section 12's rule for an item that cannot be settled; this note only says how strong each reason is.
+- **Holdout result seen**: no.
