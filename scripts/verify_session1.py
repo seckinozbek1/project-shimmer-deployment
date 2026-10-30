@@ -24799,7 +24799,13 @@ def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     run before it. The delivery-level refusal in auditor_pairs.build applies to a
     single call's best-effort object; a partition-merged delivery pairs its
     accepted, receipt-bound items and marks each pair and the coverage figures
-    partial. Phase 5 hands such a partial draft to its auditors, noted."""
+    partial. Phase 5 hands such a partial draft to its auditors, noted.
+
+    D-S14 K2: VERIFIER's rendered payload carries each pair and draft item without
+    the runtime identity it cannot use (ten L8 VERIFIER prompts of 44,467 to 54,657
+    tokens ran out of GPU memory on the A10; projected, the same prompts measure
+    17,932 to 23,668). The pair records, telemetry and bus keep every identifier,
+    and pair_id, the join key, is still shown."""
     from ordinary_final_correction_checks import check_pairing
     return check_pairing()
 

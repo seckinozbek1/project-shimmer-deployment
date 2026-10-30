@@ -855,7 +855,15 @@ processing swarm governed by an append-only constitution.
   `semantic_incomplete`, `stopped`, `pipeline_not_completed`. Measured, not preferred: the old
   gate read the whole delivery per item, so one refused partition discarded every accepted one
   and the advisory classifier had no pairs in v5 or v6 (it never actually fired: VERIFIER was
-  skipped upstream, which the partial draft now prevents). Check 266.
+  skipped upstream, which the partial draft now prevents). VERIFIER's RENDERED payload shows
+  each pair as `pair_id` (the join key), `producer_item`, `source_evidence.text`,
+  `source_ref_ids`, `auditor_relation`, `classifier_status` and `delivery`
+  (`auditor_pairs.pair_view`), and each draft item without `DRAFT_ITEM_RUNTIME_KEYS`
+  (`draft_view`); the pair records, telemetry, reply records and bus keep every identifier.
+  Measured, not preferred (D-S14 K2): the ten L8 VERIFIER prompts of 44,467 to 54,657 tokens
+  ran out of GPU memory on the A10 before their first token; the same prompts measure 17,932
+  to 23,668 tokens projected (Phi tokenizer, offline), and none of the 22 saved VERIFIER items
+  carried a pair or producer identifier to join by. Check 266.
 - EXTRACTION-C: a bounded request carries at most `owned_spans_per_request` owned spans
   (declared in `config/compact_extraction_prompt.json`, today 2, read by
   `compact_contracts.request_size`), because every training input and DEV row of checkpoint

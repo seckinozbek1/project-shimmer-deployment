@@ -1096,6 +1096,60 @@ class CorrectionChecks(unittest.TestCase):
             self.assertEqual(summary["auditor_pairing"]["pairs_from_partial_delivery"], 0)
             self.assertEqual(summary["auditor_pairing"]["partial_deliveries"], 0)
 
+    # ---- D-S14 K2: what VERIFIER is shown carries no runtime identity -------------------
+
+    def _verifier_view(self):
+        import model_telemetry
+        doc, producer, refs = self._merged_delivery(partial=False)
+        draft = dict(producer["parsed"], items=[dict(producer["parsed"]["items"][0], ts="2026-10-30T00:00:00Z",
+                                                     source_hash="fixture-hash", section_id="s", unit_id="u01")])
+        sent = dict(task=auditor_pairs.TASK, document_name="probe.md", processor_draft=draft)
+        before = json.loads(json.dumps(sent))
+        w = SimpleNamespace(name="VERIFIER", backend="local_auditor", run_context=None, _parent_call_ids=[],
+                            _auditor_pair_request=dict(document=doc, producer=producer, references=refs))
+        events = []
+        with patch.dict(os.environ, SHIMMER_MODEL_MODE="final"), \
+                patch.object(auditor_pairs, "predict", return_value=("MATCH", 10)), \
+                patch.object(model_telemetry, "emit", side_effect=lambda c, event, **k: events.append(dict(event=event, **k))):
+            payload = auditor_pairs.prepare_context(w, sent)
+        self.assertEqual(sent, before)  # the caller's payload is not touched
+        return w, payload, events, draft
+
+    def test_pairing_verifier_shown_pairs_without_runtime_identity(self):
+        w, payload, events, _ = self._verifier_view()
+        record = w._auditor_pair_state[0]
+        pair = payload["auditor_pair_context"]["pairs"][0]
+        self.assertEqual(sorted(pair), sorted(["pair_id", "producer_item", "source_evidence", "source_ref_ids",
+                                               "auditor_relation", "classifier_status", "delivery"]))
+        span = extraction.ledger(w._auditor_pair_request["document"]["text"], "probe")[0]
+        self.assertEqual((record["source_span_id"], pair["source_evidence"]), (span.id, {"text": span.text}))
+        self.assertEqual((pair["pair_id"], pair["auditor_relation"], pair["classifier_status"], pair["delivery"],
+                          pair["source_ref_ids"]),
+                         (record["pair_id"], "MATCH", "classified", "complete", record["source_ref_ids"]))
+        rendered = json.dumps(payload["auditor_pair_context"], ensure_ascii=False, indent=2)
+        for key in ("run_id", "producer_item_id", "source_span_id", "source_hash", "producer_call_id",
+                    "producer_adapter_sha256", "auditor_adapter_sha256", "classifier_call_id"):
+            self.assertIn(key, record, key)  # the record keeps every identifier
+            self.assertNotIn('"%s"' % key, rendered, key)
+            self.assertNotIn(str(record[key]), rendered, key)
+        telemetry_pair = [e for e in events if e["event"] == "auditor_pair"][0]
+        for key in ("producer_item_id", "source_span_id", "source_hash", "producer_call_id", "classifier_call_id"):
+            self.assertEqual(telemetry_pair[key], record[key], key)
+        # The join a finding makes is by pair_id, which VERIFIER is still shown.
+        self.assertIs(auditor_pairs.finding_pair(dict(auditor_pair_id=pair["pair_id"], finding="MATCH"),
+                                                 w._auditor_pair_state), record)
+
+    def test_pairing_verifier_shown_draft_without_runtime_identity(self):
+        _, payload, _, draft = self._verifier_view()
+        shown = payload["processor_draft"]["items"][0]
+        for key in auditor_pairs.DRAFT_ITEM_RUNTIME_KEYS:
+            self.assertIn(key, draft["items"][0], key)
+            self.assertNotIn(key, shown, key)
+        kept = {k: v for k, v in draft["items"][0].items() if k not in auditor_pairs.DRAFT_ITEM_RUNTIME_KEYS}
+        self.assertEqual(shown, kept)  # nothing else is dropped or changed
+        self.assertEqual({k: v for k, v in payload["processor_draft"].items() if k != "items"},
+                         {k: v for k, v in draft.items() if k != "items"})
+
     # ---- A6: bounded requests carry the validated layout -------------------------------
 
     def test_layout_declared_request_size_within_validated_layout_and_used_live(self):
@@ -1207,7 +1261,9 @@ def check_verifier():
 
 def check_pairing():
     return _verdict(("test_pairing_",), "a partition-merged delivery pairs its receipt-bound items, a single failed delivery "
-                                        "is refused as before, partial pairs marked in the record, the coverage event and the summary")
+                                        "is refused as before, partial pairs marked in the record, the coverage event and the summary; "
+                                        "VERIFIER is shown each pair and draft item without runtime identity, which the "
+                                        "records and telemetry keep (D-S14 K2)")
 
 
 def check_layout():
@@ -1286,6 +1342,12 @@ NEUTRALIZATIONS = [
      lambda producer: ("single", False)),
     ("test_pairing_coverage_reports_pairs_from_a_partial_delivery", auditor_pairs, "delivery_scope",
      lambda producer: ("single", False)),
+    # D-S14 K2: the pair and the draft item as VERIFIER was shown them before, every identifier included.
+    ("test_pairing_verifier_shown_pairs_without_runtime_identity", auditor_pairs, "pair_view",
+     lambda record, pair: dict(record, producer_item=pair["producer_item"], source_evidence=dict(
+         text=pair["source_text"], source_hash=record["source_hash"], source_span_id=record["source_span_id"],
+         source_ref_ids=record["source_ref_ids"]))),
+    ("test_pairing_verifier_shown_draft_without_runtime_identity", auditor_pairs, "draft_view", lambda draft: draft),
     ("test_layout_declared_request_size_within_validated_layout_and_used_live", cc, "request_size", lambda: 4),
     ("test_record_example_uses_declared_values_and_the_agents_own_verdict_field", AgentWrapper, "_declared_values",
      lambda self, field: []),
