@@ -87,7 +87,7 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
-    "main": "f76b8ebc41b31aeecc871229964e2702032aa7df2a6381c3d04ea62a104f0269",
+    "main": "a4936f9016a5d1088cda030e1786444b94e7f9c2ee302b895bb616a58f1df811",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
@@ -359,6 +359,17 @@
         "_paired_convention_review": {
           "from": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
           "to": "ea86ffc165c153260e8ae50a266acba8c943fb8110d03ff3a4941a0076f76fe3"
+        }
+      }
+    },
+    {
+      "date": "2026-10-30",
+      "reason": "Operator-directed, 2026-10-30, loop stage S05: open item 38 (D-S12), main times its inline work before phase 3-4 with execution_topology.pre_phase_span (four contiguous spans, no-ops outside a topology runtime) so phase_latencies carry it; no other behaviour changes",
+      "document": "docs/loop/stages/S05_REPORT.md",
+      "functions": {
+        "main": {
+          "from": "f76b8ebc41b31aeecc871229964e2702032aa7df2a6381c3d04ea62a104f0269",
+          "to": "a4936f9016a5d1088cda030e1786444b94e7f9c2ee302b895bb616a58f1df811"
         }
       }
     }

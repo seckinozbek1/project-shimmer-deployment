@@ -24933,6 +24933,19 @@ def check_290_uncomputable_judgment_is_kept_as_a_model_record():
     return check()
 
 
+def check_294_pipeline_time_before_phase_3_is_in_phase_latencies():
+    """Loop stage S5, open item 38: phase_latencies began at phase 3, because only the five
+    decorated phase functions emitted phase_enter/phase_exit and main's work before phase
+    3-4 is inline. main now times it with execution_topology.pre_phase_span, contiguous
+    spans from argument parsing to phase 3-4's boundary (start, ingestion and roles, boot
+    and index, phase 1), marked pre_phase_3 so they add no consumer barrier. Reads the
+    spans from main's AST, drives them through a real topology Runtime on a temporary run
+    folder before a fixture phase 3-4, and reads model_telemetry.recompute's summary;
+    neutralise, fail, restore, pass for the span calls, the helper and the mark."""
+    from pre_phase_span_checks import check
+    return check()
+
+
 def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
     """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
     (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
@@ -25420,6 +25433,8 @@ CHECKS = [
      check_291_over_bound_gather_runs_as_shared_snapshot_waves),
     ("292 every child process the controller path starts runs with no window (D-079)",
      check_292_every_controller_path_child_process_starts_without_a_window),
+    ("294 the pipeline's time before phase 3 is in phase_latencies (open item 38)",
+     check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
 ]
 
 
