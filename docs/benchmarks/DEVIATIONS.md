@@ -280,3 +280,10 @@ No rule of the frozen text changes. The S8 report adds, beside the preregistered
 - **Holdout result seen**: no.
 - **Development scores existing when decided**: B1, B2 and B3 development scores; not read. The cost per correct FLAG item on development items (open item 40) is computed only after version 2 is frozen.
 - **Status**: draft; applied at version 2's freeze, after C0's run on it and a fresh checker's attack (D-S12 item 5).
+
+### Note of 2026-10-30 (D-108): DEV-021's section labels
+
+- **Qualifies**: DEV-021, "What changes".
+- **What it says**: the span-part threshold that depends on A (1.15 USD a document) is a section 2 change, not section 12's; the single-claim analysis (intervals only) is a section 7 change, not section 4's. S8c packs sessions as version 2's sizing computed, one benchmark per session, in priority order (D-108).
+- **What it changes**: nothing in the frozen text.
+- **Holdout result seen**: no.
