@@ -22938,11 +22938,42 @@ def check_221_dating_cascade_local_precise_and_loud():
         if not DD.resolve_dates([late])[0]["date"]:
             return _fail("restore failed: the late-dated document no longer resolves")
 
+        # 4. A year below 1000 keeps four digits on every platform. Linux
+        # strftime wrote year 288 as "288-01-01", and the cascade's
+        # int(iso[:4]) raised ValueError at phase 0 (two L8 entries). Windows
+        # pads, so the neutralisation EMULATES the Linux spelling.
+        if DD._iso(288) != "0288-01-01" or DD._iso(146, 2, 30) != "0146-01-01":
+            return _fail("_iso(288)=%r, _iso(146, 2, 30)=%r; expected four year digits"
+                         % (DD._iso(288), DD._iso(146, 2, 30)))
+        early = tmpdir / "early_year_sheet.md"
+        early.write_text("# Sheet\n\nLot 0288 counted.\n", encoding="utf-8")
+        rec_early = DD.resolve_dates([early])[0]
+        if rec_early["date"] is not None or rec_early["date_source"] != "unresolved":
+            return _fail("a document whose only four-digit token is 0288 resolved to %r (%r); "
+                         "it is outside the year range and must stay unresolved"
+                         % (rec_early["date"], rec_early["date_source"]))
+        original_iso = DD._iso
+        DD._iso = lambda y, m=1, d=1: "%d-%02d-%02d" % (y, m, d)
+        try:
+            DD.resolve_dates([early])
+            raised = False
+        except ValueError:
+            raised = True
+        finally:
+            DD._iso = original_iso
+        if not raised:
+            return _fail("with _iso neutralised to the unpadded Linux spelling the cascade did "
+                         "not raise; this check does not reach the year-below-1000 path")
+        if DD.resolve_dates([early])[0]["date_source"] != "unresolved":
+            return _fail("restore failed: the 0288 document no longer resolves unresolved")
+
     return _ok("filename 2024_09_23 keeps its month and day (was 2024-01-01); a date stated "
                "past character 3000 resolves from the document's own text; a document with no "
                "year anywhere stays unresolved, is dropped by the cutoff, and is named in "
                "audit/undated_documents.json with excluded apart from reviewed_anyway, served "
-               "by a route and rendered in the console; neutralise/restore proved")
+               "by a route and rendered in the console; a year below 1000 keeps four digits "
+               "(0288-01-01) and takes the out-of-range branch instead of raising; "
+               "neutralise/restore proved")
 
 
 def check_220_local_profile_reaches_the_menu_and_is_passed_on():
