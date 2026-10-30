@@ -65,6 +65,14 @@ that arm's scoring in every analysis but S-7, which scores it ABSTAIN; a paired 
 drops a document either arm had a setup failure on. B3's call over the model's context
 keeps its own basis, over_context_excluded, and the same treatment.
 
+Two scoring modes (D-S13 item 9, docs/benchmarks/SCORING_MODES.md), chosen per labels file
+and carried by every analysis (`scoring`): `as_shipped` is everything above, unchanged;
+`benchmark` (the main figure) counts every model judgement the pipeline shows as advice as a
+finding: before line 1, a record a model wrote that carries no source_rule_id takes the
+operator id the run's own map gives the registry id it names (advice_view), as phase 6 shows
+it in review_data.json; precedence between advice and Python's records stays the order of
+the lines. B0 and B1 are the same in both modes. S-8 is the same in both modes.
+
 Completeness is reported per document and arm (D-066): semantic_complete, the PROCESSOR
 calls accepted against made, whether the PROCESSOR delivery was partial, the auditor pairs
 made from a partial delivery, and per item whether a record of a partial delivery decided
@@ -163,6 +171,23 @@ S8_NOTE_APPLIED = ("S-8: scored as if every record written by a model were absen
                    "stamped written_by exactly 'python' kept; an unstamped record is a model's); "
                    "every other rule unchanged")
 S8_NOTE_EQUAL = "S-8 equals the primary analysis for this arm (S-8 changes B3 and B4 only)"
+# D-S13 item 9, docs/benchmarks/SCORING_MODES.md: two scoring modes. `as_shipped` is the
+# reading above, unchanged. `benchmark` counts every model judgement the pipeline shows as
+# advice as a finding: a model-written record that names only a registry id (phase 6 shows
+# it in review_data.json's model_findings_not_promoted under the operator's id) takes the
+# operator id the run's own map gives it (advice_view). Every analysis carries the mode.
+SCORING_AS_SHIPPED, SCORING_BENCHMARK = "as_shipped", "benchmark"
+SCORING_MODES = (SCORING_AS_SHIPPED, SCORING_BENCHMARK)
+SCORING_FIELD = "scoring"
+ADVICE_ARMS = ("B2", "B3", "B4")   # the arms whose labels come from records; B0 and B1 have no advice
+# How a record names its registry id, read in this order (docs/OUTPUT_FORMAT.md section 6.1;
+# scripts/finding_record.RULE_ID_FIELD_ALIASES, which phase 6 reads to show the operator id).
+REGISTRY_ID_FIELDS = ("rule_id", "procedure_id", "conv_id", "convention_ref")
+MAPPED_BY_RULE_MAP_FIELD = "source_rule_id_from_map"
+# The pairing map's refused answers, counted beside the advice in benchmark mode: shown as
+# refused, not as advice, so they decide nothing (SCORING_MODES.md section 1, form E).
+REFUSED_ANSWER_LISTS = (("uncomputable_refused", "refused_uncomputable"),
+                        ("absence_refused", "refused_judged_absence"))
 # D-084, DEV-014: one setup-failure rule for B1 and B3. B1's own record of a call that stopped
 # its run (benchmark/baselines/bare_model.py SETUP_FAILURE_FILE, beside labels/), and B3's
 # reply record of a generate call that failed for want of memory or of its pinned kernel
@@ -429,7 +454,8 @@ def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
     rule_map, rule_map_status = read_rule_map(run)
     out = {"failure": False, "failure_reasons": [], "records": [], "pairing_refusals": [],
            "faults": [], "raw_judged_absence": [], "source": source, "semantic_incomplete": False,
-           "judging_calls": [], "rule_map": rule_map, "rule_map_status": rule_map_status}
+           "judging_calls": [], "rule_map": rule_map, "rule_map_status": rule_map_status,
+           "refused_answers": {name: 0 for _key, name in REFUSED_ANSWER_LISTS}}
     completion = read_completion(run)
     if completion is None:
         out["failure_reasons"].append("completion_record_missing_or_invalid")
@@ -455,6 +481,8 @@ def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
                     if isinstance(entry, dict):
                         out["pairing_refusals"].append(entry)
             out["judging_calls"] = [c for c in mine.get("judging_calls") or [] if isinstance(c, dict)]
+            for key, name in REFUSED_ANSWER_LISTS:
+                out["refused_answers"][name] = sum(1 for e in mine.get(key) or [] if isinstance(e, dict))
         else:
             out["faults"].append("pairing_map_unreadable")
     return out
@@ -507,6 +535,48 @@ def python_only_view(run: dict) -> dict:
     pairing-map refusal entries and judging calls, the rule-id map, completeness) is kept,
     so the lines of section 5.1 apply unchanged to what remains."""
     return dict(run, records=[r for r in run["records"] if is_computed(r)])
+
+
+def registry_id(record):
+    """The registry id a record names: the first non-empty of REGISTRY_ID_FIELDS, or None."""
+    for name in REGISTRY_ID_FIELDS:
+        if record.get(name):
+            return record[name]
+    return None
+
+
+def advice_view(run: dict) -> tuple:
+    """(run, advice) for benchmark scoring (D-S13 item 9, docs/benchmarks/SCORING_MODES.md
+    section 2): every record a model wrote (is_computed false) is advice. One that carries
+    no `source_rule_id` takes the operator id the run's own map (read_rule_map, status `ok`
+    only) gives its registry id (registry_id), marked MAPPED_BY_RULE_MAP_FIELD; one that
+    carries a `source_rule_id` keeps it; Python's records are never changed. Everything
+    else the run carries is kept, so the lines of section 5.1 apply unchanged. `advice`
+    counts the advice records, those mapped and those left unmapped, the map's status,
+    the notes models wrote on Python's records, and the pairing map's refused answers."""
+    rule_map = (run.get("rule_map") or {}) if run.get("rule_map_status") == RULE_MAP_OK else {}
+    kept, advice, mapped, unmapped = [], 0, 0, 0
+    for record in run["records"]:
+        if is_computed(record):
+            kept.append(record)
+            continue
+        advice += 1
+        if str(record.get("source_rule_id") or ""):
+            kept.append(record)
+            continue
+        named = registry_id(record)
+        target = rule_map.get(_fold(named)) if named else None
+        if target:
+            kept.append(dict(record, source_rule_id=target, **{MAPPED_BY_RULE_MAP_FIELD: True}))
+            mapped += 1
+        else:
+            kept.append(record)
+            unmapped += 1
+    notes = sum(1 for r in run["records"] if is_computed(r) and r.get("explanation_by") == "model")
+    counts = dict({"records": advice, "mapped_by_rule_map": mapped, "unmapped": unmapped,
+                   "rule_map_status": run.get("rule_map_status"), "notes_on_python_records": notes},
+                  **(run.get("refused_answers") or {}))
+    return dict(run, records=kept), counts
 
 
 def _layer(records) -> str:
@@ -753,8 +823,14 @@ def by_document(items):
     return docs
 
 
+def check_scoring(scoring) -> str:
+    if scoring not in SCORING_MODES:
+        raise ValueError("unknown scoring mode %r (one of %s)" % (scoring, ", ".join(SCORING_MODES)))
+    return scoring
+
+
 def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
-                       detail=False) -> dict:
+                       detail=False, scoring=SCORING_AS_SHIPPED) -> dict:
     """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder (or
     `run_dirs[document id]` where a map is given, B's synthetic tests), its
     typed records read from RECORD_SOURCE[arm] by the one record reader. Each
@@ -764,12 +840,18 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
     12.14): every item of it carries basis over_context_excluded in every analysis but S-7,
     which scores it ABSTAIN. For B3 (SETUP_FAILURE_ARMS) a document whose run had a call fail
     out of memory or on a refused kernel is a setup failure (D-084): basis setup_failure,
-    the same treatment. `detail` adds each FLAG's deciding records (section 13)."""
+    the same treatment. `detail` adds each FLAG's deciding records (section 13). `scoring`
+    `benchmark` labels from advice_view's records and adds `advice` to each document row
+    (docs/benchmarks/SCORING_MODES.md); `as_shipped` is the reading above, unchanged."""
+    check_scoring(scoring)
     rows, documents = [], []
     source = RECORD_SOURCE.get(arm, records.REVIEW_DATA)
     for doc_id, doc_items in by_document(items).items():
         run_dir = Path(run_dirs[doc_id]) if run_dirs is not None else Path(runs_root) / doc_id
         run = read_run(run_dir, doc_id, source)
+        advice = None
+        if scoring == SCORING_BENCHMARK:
+            run, advice = advice_view(run)
         over = read_over_context(run_dir) if arm in OVER_CONTEXT_ARMS else None
         setup = read_b3_setup_failure(run_dir) if arm in SETUP_FAILURE_ARMS else None
         over_excluded = bool(over and over["over_context_calls"])
@@ -812,30 +894,33 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
                     row[key]["deciding_records"] = other.get("deciding_records", [])
             rows.append(row)
         aside = set_aside(spec, count)
-        documents.append({"document_id": doc_id, "run_failure": run["failure"],
-                          "failure_reasons": run["failure_reasons"], "faults": faults,
-                          "record_source": source,
-                          # section 5.3, open point 12.14: None where the arm is not checked
-                          "over_context": over, "over_context_excluded": over_excluded,
-                          # D-084, DEV-014: None where the arm is not checked or none failed
-                          "setup_failure": setup, "setup_failure_excluded": setup_excluded,
-                          "items": len(doc_items),
-                          # D-066: completeness, per document and arm; decides no label
-                          "semantic_incomplete": run["semantic_incomplete"],
-                          "completeness": run["completeness"],
-                          "rule_map_adopted": RULE_ID_MAP_ADOPTED,
-                          "rule_map_status": run["rule_map_status"],
-                          # a judged absence's raw model copy: listed, never counted
-                          "raw_judged_absence_records": len(run["raw_judged_absence"]),
-                          "rules": count, "figure_audit_set_aside": aside,
-                          "unattached": unattached(run, rules, run_dir, doc_id, aside),
-                          "unattached_s3": unattached(run, rules, run_dir, doc_id, False),
-                          # S-8: the unattached findings Python wrote (None where S-8 changes nothing)
-                          "unattached_s8": (unattached(python_run, rules, run_dir, doc_id, aside)
-                                            if python_run is not None else None),
-                          "relations": relation_counts(run, rules),
-                          "missing_field_by_layer": None if run["failure"] else missing_field_layers(run, rules)})
-    return _labels(spec, arm, rows, documents)
+        document = {"document_id": doc_id, "run_failure": run["failure"],
+                    "failure_reasons": run["failure_reasons"], "faults": faults,
+                    "record_source": source,
+                    # section 5.3, open point 12.14: None where the arm is not checked
+                    "over_context": over, "over_context_excluded": over_excluded,
+                    # D-084, DEV-014: None where the arm is not checked or none failed
+                    "setup_failure": setup, "setup_failure_excluded": setup_excluded,
+                    "items": len(doc_items),
+                    # D-066: completeness, per document and arm; decides no label
+                    "semantic_incomplete": run["semantic_incomplete"],
+                    "completeness": run["completeness"],
+                    "rule_map_adopted": RULE_ID_MAP_ADOPTED,
+                    "rule_map_status": run["rule_map_status"],
+                    # a judged absence's raw model copy: listed, never counted
+                    "raw_judged_absence_records": len(run["raw_judged_absence"]),
+                    "rules": count, "figure_audit_set_aside": aside,
+                    "unattached": unattached(run, rules, run_dir, doc_id, aside),
+                    "unattached_s3": unattached(run, rules, run_dir, doc_id, False),
+                    # S-8: the unattached findings Python wrote (None where S-8 changes nothing)
+                    "unattached_s8": (unattached(python_run, rules, run_dir, doc_id, aside)
+                                      if python_run is not None else None),
+                    "relations": relation_counts(run, rules),
+                    "missing_field_by_layer": None if run["failure"] else missing_field_layers(run, rules)}
+        if advice is not None:     # benchmark mode only, so as_shipped rows stay as they were
+            document["advice"] = advice
+        documents.append(document)
+    return _labels(spec, arm, rows, documents, scoring=scoring)
 
 
 def b1_class(spec: Spec, record) -> dict:
@@ -850,11 +935,13 @@ def b1_class(spec: Spec, record) -> dict:
     return {"class": cls, "basis": "b1_label", "evidence": record.get("evidence")}
 
 
-def label_b1(spec: Spec, items, runs_root, run_dirs=None) -> dict:
+def label_b1(spec: Spec, items, runs_root, run_dirs=None, scoring=SCORING_AS_SHIPPED) -> dict:
     """B1: `<runs_root>/<document id>/labels/<item id>.json` (or under `run_dirs[document
     id]`), written by bare_model.py. A document whose B1 output holds its setup-failure
     record (D-084, DEV-014) is a setup failure: every item ABSTAIN with basis setup_failure,
-    counted apart and left out of B1's scoring in every analysis but S-7."""
+    counted apart and left out of B1's scoring in every analysis but S-7. B1 has no advice,
+    so both scoring modes give the same labels; the result carries the mode it was asked for."""
+    check_scoring(scoring)
     rows, documents = [], []
     for doc_id, doc_items in by_document(items).items():
         base = Path(run_dirs[doc_id]) if run_dirs is not None else Path(runs_root) / doc_id
@@ -871,17 +958,26 @@ def label_b1(spec: Spec, items, runs_root, run_dirs=None) -> dict:
                           "faults": [], "unattached": None, "relations": {},
                           "items": len(doc_items), "setup_failure": setup,
                           "setup_failure_excluded": setup is not None})
-    return _labels(spec, "B1", rows, documents)
+    return _labels(spec, "B1", rows, documents, scoring=scoring)
 
 
-def label_b0(spec: Spec, items) -> dict:
-    """B0: no finding on every item, so every item is CLEAR (section 4)."""
+def label_b0(spec: Spec, items, scoring=SCORING_AS_SHIPPED) -> dict:
+    """B0: no finding on every item, so every item is CLEAR (section 4), in both modes."""
+    check_scoring(scoring)
     rows = [_row(spec, item, "B0", {"class": CLEAR, "basis": "b0"})
             for doc_items in by_document(items).values() for item in doc_items]
-    return _labels(spec, "B0", rows, [])
+    return _labels(spec, "B0", rows, [], scoring=scoring)
 
 
-def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
+def _advice_counts(documents) -> dict:
+    """Benchmark mode: the advice counts summed over the document rows that carry them."""
+    rows = [d.get("advice") or {} for d in documents]
+    return {"advice_records": sum(int(a.get("records") or 0) for a in rows),
+            "advice_mapped_by_rule_map": sum(int(a.get("mapped_by_rule_map") or 0) for a in rows),
+            "advice_unmapped": sum(int(a.get("unmapped") or 0) for a in rows)}
+
+
+def _labels(spec, arm, rows, documents, analysis="primary", scoring=SCORING_AS_SHIPPED) -> dict:
     counts = {
         "items": len(rows),
         "silent": sum(1 for r in rows if r["basis"] == "silent"),
@@ -924,6 +1020,8 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         # section 12 item 3
         "items_flagged_by_band": sum(1 for r in rows if r.get("flagged_by_band") and r["class"] == FLAG),
     }
+    if scoring == SCORING_BENCHMARK and arm in ADVICE_ARMS:   # SCORING_MODES.md section 3
+        counts.update(_advice_counts(documents))
     if spec.absence_flag:
         counts["missing_field_and_other_relation"] = sum(1 for r in rows if r["missing_field_and_other"])
         counts["judged_irregular_without_relation"] = sum(r["judged_without_relation"] for r in rows)
@@ -946,9 +1044,15 @@ def _labels(spec, arm, rows, documents, analysis="primary") -> dict:
         "items": sum(int(d.get("items") or 0) for d in failed),
         "failed_documents": [{"document_id": d["document_id"], "items": d.get("items"),
                               "setup_failure": d.get("setup_failure")} for d in failed]}
-    return {"benchmark": spec.name, "arm": arm, "analysis": analysis, "counts": counts,
-            "over_context": over_context, "setup_failure": setup_failure, "labels": rows,
-            "documents": documents}
+    return {"benchmark": spec.name, "arm": arm, "analysis": analysis, SCORING_FIELD: scoring,
+            "counts": counts, "over_context": over_context, "setup_failure": setup_failure,
+            "labels": rows, "documents": documents}
+
+
+def scoring_of(result) -> str:
+    """The scoring mode one analysis was labelled under; a labels file written before the
+    modes existed was labelled by today's reading, `as_shipped`."""
+    return result.get(SCORING_FIELD, SCORING_AS_SHIPPED)
 
 
 def _relabel(spec, result, analysis, change):
@@ -960,7 +1064,7 @@ def _relabel(spec, result, analysis, change):
             row["class"], row["basis"] = new
             row["label"] = spec.label(row["class"])
         rows.append(row)
-    return _labels(spec, result["arm"], rows, result["documents"], analysis)
+    return _labels(spec, result["arm"], rows, result["documents"], analysis, scoring_of(result))
 
 
 def sensitivity_s1(spec: Spec, result: dict) -> dict:
@@ -984,7 +1088,7 @@ def _alternative(spec, result, key, analysis, documents):
             row.update(other)
             row["label"] = spec.label(row["class"])
         rows.append(row)
-    return _labels(spec, result["arm"], rows, documents, analysis)
+    return _labels(spec, result["arm"], rows, documents, analysis, scoring_of(result))
 
 
 def sensitivity_s3(spec: Spec, result: dict) -> dict:
@@ -1061,7 +1165,8 @@ def restrict(spec: Spec, result: dict, gone, analysis=None) -> dict:
     gone = set(gone)
     rows = [r for r in result["labels"] if r["document_id"] not in gone]
     documents = [d for d in result.get("documents") or [] if d["document_id"] not in gone]
-    out = _labels(spec, result["arm"], rows, documents, analysis or result.get("analysis", "primary"))
+    out = _labels(spec, result["arm"], rows, documents, analysis or result.get("analysis", "primary"),
+                  scoring_of(result))
     for key in ("left_out_items",):
         if key in result:
             out[key] = result[key]

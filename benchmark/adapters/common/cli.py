@@ -12,6 +12,8 @@
          band and side (section 5.6, Words) over a whole input, no build needed; band totals
          for the holdout pool alone and for the development side apart
   label  --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
+         [--scoring benchmark|as_shipped]   (docs/benchmarks/SCORING_MODES.md; default
+         as_shipped, today's reading; benchmark counts the advice the pipeline shows)
   score  --labels <labels.json> --bundles <build folder> --out <metrics.json>
          [--paired-with <another arm's labels.json>]
 
@@ -30,7 +32,9 @@ document named by its opaque document id; for B1, one bare_model.py output folde
 document, named the same way. B2's typed records are read from review_data.json, B3's and
 B4's from the run's bus (common/records.py). That reading (decision DS5-8, preregistration
 section 12 item 9) was attacked and recorded (docs/loop/DECISIONS.md D-055, D-056), so
-mapping.BUS_READER_ADOPTED is True; with it False, B3 and B4 are refused.
+mapping.BUS_READER_ADOPTED is True; with it False, B3 and B4 are refused. Every analysis in a
+labels file and in a score carries `scoring`, the mode it was labelled under; `score
+--paired-with` refuses two arms with records (B2, B3, B4) labelled under different modes.
 """
 from __future__ import annotations
 
@@ -246,22 +250,25 @@ def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
                  "excluded_documents": excluded, "documents": rows}, **extra)
 
 
-def label(adapter, items_path, arm, runs_root=None) -> dict:
+def label(adapter, items_path, arm, runs_root=None, scoring=mapping.SCORING_AS_SHIPPED) -> dict:
+    """Every analysis of one arm. `scoring` is `as_shipped` (today's reading) or `benchmark`
+    (advice counted, docs/benchmarks/SCORING_MODES.md); every analysis carries it."""
+    mapping.check_scoring(scoring)
     items = mapping.read_items(items_path)
     foreign = sorted({str(i.get("benchmark")) for i in items} - {adapter.BENCHMARK})
     if foreign:
         raise ValueError("items of another benchmark: " + ", ".join(foreign))
     if arm == "B0":
-        primary = mapping.label_b0(adapter.SPEC, items)
+        primary = mapping.label_b0(adapter.SPEC, items, scoring=scoring)
     elif arm == "B1":
-        primary = mapping.label_b1(adapter.SPEC, items, runs_root)
+        primary = mapping.label_b1(adapter.SPEC, items, runs_root, scoring=scoring)
     elif arm in mapping.ARMS:
         if arm in mapping.PIPELINE_ARMS and not mapping.BUS_READER_ADOPTED:
             raise mapping.Refused(
                 "arm %s is refused: reading the pipeline's typed records from the run's bus "
                 "(common/records.py, decision DS5-8, preregistration section 12 item 9) "
                 "takes effect only after its checker attack is recorded" % arm)
-        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm)
+        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm, scoring=scoring)
     else:
         raise ValueError("unknown arm " + repr(arm))
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),
@@ -287,6 +294,7 @@ def _scored(adapter, labels: dict, bundles_dir, gone=()) -> dict:
         if gone:
             view = mapping.restrict(spec, view, gone)
         out[name] = metrics.score_arm(spec, view, bundles_dir, adapter.headline)
+        out[name][mapping.SCORING_FIELD] = mapping.scoring_of(result)
         if "s8_applies" in result:     # S-8 (DEV-012) says whether it differs from the primary
             out[name]["s8_applies"], out[name]["note"] = result["s8_applies"], result.get("note")
     if "primary" in labels:
@@ -295,6 +303,7 @@ def _scored(adapter, labels: dict, bundles_dir, gone=()) -> dict:
             view = mapping.restrict(spec, view, gone)
         out["S-4"] = metrics.score_arm(spec, metrics.without_evidence_beyond_cut(view, bundles_dir),
                                        bundles_dir, adapter.headline)
+        out["S-4"][mapping.SCORING_FIELD] = mapping.scoring_of(labels["primary"])
     return out
 
 
@@ -311,6 +320,11 @@ def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
     out = _scored(adapter, labels, bundles_dir)
     if paired_with is not None:
         mine, other = labels["primary"], paired_with["primary"]
+        # two arms with records are compared under one scoring mode (B0 and B1 have no advice)
+        modes = {mapping.scoring_of(r) for r in (mine, other) if r["arm"] in mapping.ADVICE_ARMS}
+        if len(modes) > 1:
+            raise ValueError("the two labels files were labelled under different scoring modes (%s)"
+                             % ", ".join(sorted(modes)))
         own_docs = {r["document_id"] for r in mine["labels"]}
         other_docs = {r["document_id"] for r in other["labels"]}
         excluded = mapping.excluded_documents(mine) | mapping.excluded_documents(other)
@@ -318,6 +332,7 @@ def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
         analyses = _scored(adapter, {k: v for k, v in labels.items() if k != "S-7"}, bundles_dir, gone)
         out[PAIRED_KEY] = {
             "arm": mine["arm"], "with_arm": other["arm"],
+            mapping.SCORING_FIELD: mapping.scoring_of(mine), "with_scoring": mapping.scoring_of(other),
             "documents": len((own_docs & other_docs) - excluded),
             "left_out_over_context": {"this_arm": sorted(mapping.over_context_excluded(mine) & own_docs),
                                       "other_arm": sorted(mapping.over_context_excluded(other) & own_docs)},
@@ -381,6 +396,10 @@ def main(adapter, argv=None) -> int:
     lab.add_argument("--arm", required=True, choices=mapping.ARMS)
     lab.add_argument("--runs")
     lab.add_argument("--out", required=True)
+    lab.add_argument("--scoring", choices=mapping.SCORING_MODES, default=mapping.SCORING_AS_SHIPPED,
+                     help="benchmark: every model judgement the pipeline shows as advice counts as "
+                          "a finding (the main figure); as_shipped: today's reading (the default); "
+                          "docs/benchmarks/SCORING_MODES.md")
     sc = sub.add_parser("score")
     sc.add_argument("--labels", required=True)
     sc.add_argument("--bundles", required=True)
@@ -430,7 +449,7 @@ def main(adapter, argv=None) -> int:
         if args.command == "label":
             if args.arm != "B0" and not args.runs:
                 parser.error("--runs is required for arm " + args.arm)
-            labels = label(adapter, args.items, args.arm, args.runs)
+            labels = label(adapter, args.items, args.arm, args.runs, args.scoring)
             _write(args.out, labels)
             found = faults_of(labels)
             print(json.dumps(labels["primary"]["counts"], indent=2))

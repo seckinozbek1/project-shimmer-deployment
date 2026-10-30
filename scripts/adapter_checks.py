@@ -97,6 +97,18 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              5.1 (a Python ok, a Python refusal), else silence; a Python-decided item, a
              run failure and an over-context exclusion unchanged; B0, B1 and B2 equal
              their primary in labels and score and say so. Neutralise, fail, restore, pass
+  scoring    the two scoring modes (D-S13 item 9, docs/benchmarks/SCORING_MODES.md):
+             `benchmark` counts a model-written record that names only a registry id (by
+             rule_id or procedure_id) for the operator id the run's own map gives it, a
+             refusal too; a model's own source_rule_id is kept; Python's records and a
+             document with no usable map are never mapped; a note on a Python record, a
+             refused answer, a judged absence's raw copy, withheld items and a model item
+             with no record_verdict decide nothing; precedence stays the order of the lines;
+             `as_shipped` (the default) is today's reading; every analysis of a labels file
+             and of a score carries its mode; `label --scoring` on the command line; a
+             paired view of two record arms under different modes is refused; B0, B1 and
+             S-8 are the same in both modes; B's synthetic tests take the same modes. Each by
+             neutralise, fail, restore, pass
   setupfailure  one setup-failure rule for B1 and B3 (D-084, DEV-014): a B1 document whose
              output holds b1_setup_failure.json and a B3 document with a call that failed
              out of memory are ABSTAIN with basis setup_failure on every item, counted
@@ -2572,6 +2584,270 @@ class S8Checks(_Case):
         self._proof(body, lambda: mock.patch.object(m, "S8_ARMS", ("B2", "B3", "B4")))
 
 
+class ScoringModeChecks(_Case):
+    """The two scoring modes (D-S13 item 9, docs/benchmarks/SCORING_MODES.md), on synthetic
+    run outputs holding every advice form of its section 1: `benchmark` counts a model's
+    record that names only a registry id (rule_id or procedure_id) for the operator id the
+    run's own map gives it, a refusal included, keeps a model's own source_rule_id, never
+    maps Python's record or a document without a usable map, and leaves a note, a refused
+    answer, a judged absence's raw copy, withheld items and a model item with no
+    record_verdict deciding nothing; precedence stays the order of the lines (an irregular
+    record decides whoever wrote it); `as_shipped` is the reading before the modes; every
+    analysis of the labels and of the score carries its mode, the command line takes
+    --scoring, a paired view refuses two record arms under different modes, B0 and B1 are
+    the same in both modes, S-8 is the same in both, and B's synthetic tests take the same
+    modes. Neutralise, fail, restore, pass."""
+
+    RULES = ["CONV-CNLI-NDA-%d" % k for k in range(1, 9)]
+    REGISTRY = ["CONV-%03d" % k for k in range(1, 9)]
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def _items(self, doc, rules):
+        return [{"item_id": "i-%s-%d" % (doc, k), "document_id": doc, "rule_id": rule, "benchmark": "contractnli"}
+                for k, rule in enumerate(rules)]
+
+    @staticmethod
+    def _reg(item_id, registry, verdict, field="rule_id", **extra):
+        """A model-written record naming only a registry id (no source_rule_id)."""
+        return dict({"item_id": item_id, field: registry, "unit_id": "u01-p-00001",
+                     "relation": "date_window", "record_verdict": verdict}, **extra)
+
+    def _runs(self):
+        r, g = self.RULES, self.REGISTRY
+        python = [_rec("p1", r[1], "irregular", explanation_by="model", explanation_model=_MODEL_ID),
+                  _rec("p3", r[3], "ok"),
+                  # Python's own record naming only a registry id is never mapped (r[6] stays silent)
+                  self._reg("p6", g[6], "irregular")]
+        model = [_rec("m0", r[0], "irregular"),                        # A: names the operator id
+                 self._reg("m1", g[1], "ok"),                          # B against Python's irregular
+                 self._reg("m2", g[2], "irregular"),                   # B: registry id only
+                 self._reg("m3", g[3], "irregular", field="procedure_id"),   # B against Python's ok
+                 self._reg("m4", g[4], "irregular", confidence="UNCERTAIN"),  # B: a refusal
+                 dict(self._reg("m5", g[6], "irregular"), source_rule_id=r[5]),  # its own id is kept
+                 self._reg("m9", "CONV-099", "irregular")]             # not in the map: unmapped
+        root = self.root / "runs"
+        rule_map = dict(zip(g, r))
+        pairing = {"uncomputable_refused": [{"unit_id": "u01-p-00001", "rule_id": g[7],
+                                             "relation": "missing_field", "reason": "quote_not_in_unit"}],
+                   "judging_calls": [{"call_id": "a" * 32, "agent": "PRACTICE_AUDITOR", "rule_id": g[7],
+                                      "plan_kind": "absence_judged", "outcome": "judged_absence"}]}
+        lines = [_bus_line("PRACTICE_AUDITOR", "dadv", python, "paired", "python"),
+                 _bus_line("VERIFIER", "dadv", model, _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32),
+                 # a judged absence's raw copy (its stamped copy is what counts): never read
+                 _bus_line("PRACTICE_AUDITOR", "dadv", [self._reg("j7", g[7], "irregular")],
+                           _MODEL_BACKEND, _MODEL_ID, call_id="a" * 32),
+                 # a reply whose items were withheld, and a model item with no record_verdict
+                 _bus_line("PRACTICE_AUDITOR", "dadv", [], _MODEL_BACKEND, _MODEL_ID, call_id="b" * 32,
+                           items_withheld=2),
+                 _bus_line("LEGAL_ANALYST", "dadv", [{"item_id": "l7", "rule_id": g[7], "unit_id": "u01-p-00001",
+                                                      "relation": "date_window", "verdict": "irregular"}],
+                           _MODEL_BACKEND, _MODEL_ID, call_id="d" * 32)]
+        _incomplete_run(root, "dadv", completion=_completion(), bus_lines=lines, pairing=pairing,
+                        rule_map=rule_map)
+        # the same advice in a document whose run has no usable map: nothing is mapped
+        _incomplete_run(root, "dnomap", completion=_completion(), bus_lines=[
+            _bus_line("VERIFIER", "dnomap", [self._reg("n2", g[2], "irregular")], _MODEL_BACKEND, _MODEL_ID)])
+        items = self._items("dadv", r) + self._items("dnomap", r[2:3])
+        path = self.root / "items.json"
+        path.write_text(json.dumps({"items": items}), encoding="utf-8")
+        return root, path
+
+    AS_SHIPPED = {"i-dadv-0": ("FLAG", "irregular"), "i-dadv-1": ("FLAG", "irregular"),
+                  "i-dadv-2": ("CLEAR", "silent"), "i-dadv-3": ("CLEAR", "ok"),
+                  "i-dadv-4": ("CLEAR", "silent"), "i-dadv-5": ("FLAG", "irregular"),
+                  "i-dadv-6": ("CLEAR", "silent"), "i-dadv-7": ("CLEAR", "silent"),
+                  "i-dnomap-0": ("CLEAR", "silent")}
+    BENCHMARK = dict(AS_SHIPPED, **{
+        "i-dadv-2": ("FLAG", "irregular"),        # a registry-only irregular record, mapped
+        "i-dadv-3": ("FLAG", "irregular"),        # mapped through procedure_id; irregular beats Python's ok
+        "i-dadv-4": ("UNDECIDED", "refusal")})    # a registry-only refusal, mapped
+    ADVICE = {"records": 7, "mapped_by_rule_map": 4, "unmapped": 1, "rule_map_status": "ok",
+              "notes_on_python_records": 1, "refused_uncomputable": 1, "refused_judged_absence": 0}
+
+    def test_benchmark_mode_counts_the_advice_the_pipeline_shows(self):
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        root, path = self._runs()
+
+        def view(result):
+            return {r["item_id"]: (r["class"], r["basis"]) for r in result["labels"]}
+
+        def body():
+            problems = []
+            for arm in ("B3", "B4"):
+                shipped = cli.label(adapter, path, arm, root)
+                named = cli.label(adapter, path, arm, root, "as_shipped")
+                bench = cli.label(adapter, path, arm, root, "benchmark")
+                if view(shipped["primary"]) != self.AS_SHIPPED:
+                    problems.append("%s as_shipped %s" % (arm, view(shipped["primary"])))
+                if json.dumps(shipped, sort_keys=True) != json.dumps(named, sort_keys=True):
+                    problems.append("%s the default is not as_shipped" % arm)
+                if view(bench["primary"]) != self.BENCHMARK:
+                    problems.append("%s benchmark %s" % (arm, view(bench["primary"])))
+                for mode, labels in (("as_shipped", shipped), ("benchmark", bench)):
+                    carried = {k: v.get("scoring") for k, v in labels.items()}
+                    if set(carried.values()) != {mode}:
+                        problems.append("%s %s analyses carry %s" % (arm, mode, carried))
+                docs = {d["document_id"]: d for d in bench["primary"]["documents"]}
+                if docs["dadv"].get("advice") != self.ADVICE:
+                    problems.append("%s advice %s" % (arm, docs["dadv"].get("advice")))
+                if (docs["dnomap"].get("advice") or {}).get("unmapped") != 1:
+                    problems.append("%s no map %s" % (arm, docs["dnomap"].get("advice")))
+                if any("advice" in d for d in shipped["primary"]["documents"]) or any(
+                        k.startswith("advice_") for k in shipped["primary"]["counts"]):
+                    problems.append("%s as_shipped carries advice fields" % arm)
+                counts = bench["primary"]["counts"]
+                if (counts.get("advice_records"), counts.get("advice_mapped_by_rule_map"),
+                        counts.get("advice_unmapped")) != (8, 4, 2):
+                    problems.append("%s advice counts %s" % (arm, counts))
+                # the mapped irregular records are no longer unattached; the unmapped one still is
+                stray = {d["document_id"]: d["unattached"]["count"] for d in bench["primary"]["documents"]}
+                if stray != {"dadv": 2, "dnomap": 1}:
+                    problems.append("%s benchmark unattached %s" % (arm, stray))
+                # S-8 drops every model-written record, so it is the same in both modes
+                if view(bench["S-8"]) != view(shipped["S-8"]):
+                    problems.append("%s S-8 differs between modes" % arm)
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "advice_view", lambda run: (run, {})))
+        self._proof(body, lambda: mock.patch.object(m, "REGISTRY_ID_FIELDS", ("rule_id",)))
+        self._proof(body, lambda: mock.patch.object(m, "is_computed", lambda r: False))
+        self._proof(body, lambda: mock.patch.object(m, "SCORING_BENCHMARK", m.SCORING_AS_SHIPPED))
+        self._proof(body, lambda: mock.patch.object(m, "scoring_of", lambda r: m.SCORING_AS_SHIPPED))
+
+        def overwrites(original):
+            def advice_view(run):
+                run = dict(run, records=[dict(rec, source_rule_id="") if not m.is_computed(rec) else rec
+                                         for rec in run["records"]])
+                return original(run)
+            return advice_view
+        self._proof(body, lambda: mock.patch.object(m, "advice_view", overwrites(m.advice_view)))
+
+        def any_map(original):
+            def advice_view(run):
+                return original(dict(run, rule_map_status=m.RULE_MAP_OK, rule_map=dict(
+                    run.get("rule_map") or {}, **{g.casefold(): r.casefold()
+                                                  for g, r in zip(self.REGISTRY, self.RULES)})))
+            return advice_view
+        self._proof(body, lambda: mock.patch.object(m, "advice_view", any_map(m.advice_view)))
+
+    def test_command_line_scores_and_arms_without_advice(self):
+        c = _common()
+        m, cli = c["mapping"], c["cli"]
+        adapter = _adapter("contractnli")
+        _build("contractnli", self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = m.read_items(items_path)
+        runs, b1 = self.root / "b2", self.root / "b1"
+        for doc, doc_items in m.by_document(items).items():
+            folder = runs / doc / "deliverables" / doc
+            folder.mkdir(parents=True)
+            (runs / doc / "audit").mkdir()
+            (runs / doc / "audit" / "run_completion.json").write_text(json.dumps(_completion()), encoding="utf-8")
+            (runs / doc / "audit" / "convention_assignment.json").write_text(json.dumps({"by_rule": {
+                "CONV-001": {"source_rule_id": doc_items[0]["rule_id"]}}}), encoding="utf-8")
+            (folder / "review_data.json").write_text(json.dumps({"findings": [
+                dict(self._reg("b1", "CONV-001", "irregular"), written_by="model")]}), encoding="utf-8")
+            (b1 / doc / "labels").mkdir(parents=True)
+            for item in doc_items:
+                (b1 / doc / "labels" / (item["item_id"] + ".json")).write_text(
+                    json.dumps({"label": "Entailment", "evidence": ""}), encoding="utf-8")
+        first = {d: next(i["item_id"] for i in its) for d, its in m.by_document(items).items()}
+
+        def body():
+            problems = []
+            out = {}
+            for mode in m.SCORING_MODES:
+                for arm, folder in (("B0", None), ("B1", b1), ("B2", runs)):
+                    dest = self.root / "out" / mode / (arm + ".json")
+                    argv = ["label", "--items", str(items_path), "--arm", arm, "--out", str(dest),
+                            "--scoring", mode] + (["--runs", str(folder)] if folder else [])
+                    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        code = cli.main(adapter, argv)
+                    if code != 0:
+                        problems.append("%s %s exit %s" % (mode, arm, code))
+                        continue
+                    out[mode, arm] = json.loads(dest.read_text(encoding="utf-8"))
+            if problems:
+                return problems
+            for arm in ("B0", "B1"):    # no advice: the same labels in both modes, each named
+                a, b = out["as_shipped", arm], out["benchmark", arm]
+                for name in a:
+                    if [(r["class"], r["basis"]) for r in a[name]["labels"]] != [
+                            (r["class"], r["basis"]) for r in b[name]["labels"]]:
+                        problems.append("%s %s differs between modes" % (arm, name))
+                    if (a[name].get("scoring"), b[name].get("scoring")) != ("as_shipped", "benchmark"):
+                        problems.append("%s %s carries %s" % (arm, name, (a[name].get("scoring"), b[name].get("scoring"))))
+                if any(k.startswith("advice_") for k in b["primary"]["counts"]):
+                    problems.append(arm + " carries advice counts")
+            # B2 reads review_data.json: its registry-only model record decides in benchmark mode only
+            for mode, want in (("as_shipped", "silent"), ("benchmark", "irregular")):
+                got = {r["basis"] for r in out[mode, "B2"]["primary"]["labels"] if r["item_id"] in first.values()}
+                if got != {want}:
+                    problems.append("B2 %s %s" % (mode, got))
+            scored = cli.score(adapter, out["benchmark", "B2"], self.root / "b", out["as_shipped", "B0"])
+            carried = {k: v.get("scoring") for k, v in scored.items() if k != cli.PAIRED_KEY}
+            carried.update({"paired:" + k: v.get("scoring") for k, v in scored[cli.PAIRED_KEY]["analyses"].items()})
+            if set(carried.values()) != {"benchmark"}:
+                problems.append("score carries %s" % carried)
+            if (scored[cli.PAIRED_KEY].get("scoring"), scored[cli.PAIRED_KEY].get("with_scoring")) != (
+                    "benchmark", "as_shipped"):
+                problems.append("paired modes %s" % scored[cli.PAIRED_KEY])
+            try:
+                cli.score(adapter, out["benchmark", "B2"], self.root / "b", out["as_shipped", "B2"])
+                problems.append("a paired view of two record arms under different modes was not refused")
+            except ValueError:
+                pass
+            # a labels file written before the modes existed is today's reading
+            old = {k: {kk: vv for kk, vv in v.items() if kk != "scoring"} for k, v in out["as_shipped", "B2"].items()}
+            if {v.get("scoring") for v in cli.score(adapter, old, self.root / "b").values()} != {"as_shipped"}:
+                problems.append("an unnamed labels file is not scored as as_shipped")
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "advice_view", lambda run: (run, {})))
+        self._proof(body, lambda: mock.patch.object(m, "ADVICE_ARMS", ()))
+        self._proof(body, lambda: mock.patch.object(m, "scoring_of", lambda r: r.get("scoring", "benchmark")))
+        with self.assertRaises(ValueError):
+            cli.label(adapter, items_path, "B0", None, "advice")
+
+    def test_synthetic_tests_take_the_same_modes(self):
+        m = _common()["mapping"]
+        syn = _adapter("synthetic")
+        root = _synthetic_test(self.root / "test")
+        rows = [r for r in syn.item_rows(root) if r["bundle"] == "flawed_a"]
+        items_path = self.root / "syn_items.json"
+        items_path.write_text(json.dumps({"items": rows}), encoding="utf-8")
+        doc = rows[0]["document_id"]
+        run = _incomplete_run(self.root / "syn_runs", doc, completion=_completion(), bus_lines=[
+            _bus_line("VERIFIER", doc, [dict(self._reg("v1", "CONV-002", "irregular"), unit_id="u01-entry-alpha")],
+                      _MODEL_BACKEND, _MODEL_ID)], rule_map={"CONV-001": "CONV-GA", "CONV-002": "CONV-GB"})
+        run_map = {"flawed_a": str(run)}
+
+        def body():
+            problems = []
+            got = {}
+            for mode in m.SCORING_MODES:
+                labels = syn.label(items_path, "B3", root, None, run_map, mode)
+                got[mode] = {r["rule_id"]: r["class"] for r in labels["primary"]["labels"]}
+                if {v.get("scoring") for v in labels.values()} != {mode}:
+                    problems.append("%s analyses carry %s" % (mode, {v.get("scoring") for v in labels.values()}))
+                scored = syn.score(labels, root)
+                if {v.get("scoring") for v in scored.values()} != {mode}:
+                    problems.append("%s scores carry another mode" % mode)
+            if got != {"as_shipped": {"CONV-GA": "CLEAR", "CONV-GB": "CLEAR"},
+                       "benchmark": {"CONV-GA": "CLEAR", "CONV-GB": "FLAG"}}:
+                problems.append("labels %s" % got)
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(m, "advice_view", lambda run: (run, {})))
+
+
 class SetupFailureChecks(_Case):
     """One setup-failure rule for B1 and B3 (D-084, DEV-014), on a synthetic ContractNLI
     build: a B1 document whose output holds b1_setup_failure.json, and a B3 document whose
@@ -3347,6 +3623,17 @@ GROUPS = {
                      "is dropped; a Python-decided item, a run failure and an over-context "
                      "exclusion are unchanged; B0, B1 and B2 equal their primary and say so "
                      "(neutralise, fail, restore, pass)"),
+    "scoring": (ScoringModeChecks, "two scoring modes (D-S13 item 9, SCORING_MODES.md): benchmark "
+                                   "counts a model's record naming only a registry id for the "
+                                   "operator id the run's own map gives it (a refusal too), keeps "
+                                   "a model's own id, never maps Python's record or a document "
+                                   "without a usable map, and leaves notes, refused answers, a "
+                                   "judged absence's raw copy, withheld items and items with no "
+                                   "record_verdict deciding nothing; as_shipped is today's reading; "
+                                   "every analysis of labels and score carries its mode; --scoring "
+                                   "on the command line; mixed modes refused in a paired view; B0, "
+                                   "B1 and S-8 the same in both; B's synthetic tests too "
+                                   "(neutralise, fail, restore, pass)"),
     "setupfailure": (SetupFailureChecks, "one setup-failure rule for B1 and B3 (D-084): a B1 "
                                          "document with b1_setup_failure.json and a B3 document "
                                          "with a call out of memory are ABSTAIN with basis "
@@ -3389,7 +3676,8 @@ def check():
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
                              "excluded on a call over the model's context; one setup-failure rule for B1 "
-                             "and B3), label and score B's synthetic tests by hand, read B2 and B3 records by one "
+                             "and B3; two scoring modes, benchmark and as_shipped), label and score B's "
+                             "synthetic tests by hand, read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")

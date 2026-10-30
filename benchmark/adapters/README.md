@@ -38,7 +38,8 @@ benchmark/adapters/
     cut.py           the one implementation of the cut rule (section 5.3)
     records.py       the one record reader: review_data.json (B2) or the run's bus (B3, B4)
     mapping.py       run output to label (5.1, 5.2), B0, B1, S-1 to S-8 (S-4 in cli.py);
-                     the over-context exclusion (5.3); run-output names
+                     the over-context exclusion (5.3); the two scoring modes
+                     (docs/benchmarks/SCORING_MODES.md); run-output names
     metrics.py       section 3 measures, with ABSTAIN and zero division as section 4 says
     cli.py           the commands below
   contradoc/  cuad/  scitab/  findver/  contractnli/      adapter.py and fixtures/
@@ -63,7 +64,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --o
 py -3.12 benchmark/adapters/<name>/adapter.py build --input <file> --out <folder> --development [--side holdout]     (development work only)
 py -3.12 benchmark/adapters/<name>/adapter.py split --input <benchmark file> [--out <file>] [--exclude F]
 py -3.12 benchmark/adapters/<name>/adapter.py bands --input <benchmark file> [--out <file>] [--exclude F] [--testmini F] [--assignment F] [--reports D] [--frozen-sha256 H]
-py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
+py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json> [--scoring benchmark|as_shipped]
 py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bundles <build folder> --out <metrics.json> [--paired-with <another arm's labels.json>]
 ```
 
@@ -105,6 +106,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
   - Over the model's context (section 5.3, section 12 item 14, D-078): a B3 document whose run has at least one reply record under `audit/model_replies/` with `context.over_context` true (as `scripts/reply_records.py` writes it) is excluded from B3. Every item of it carries basis `over_context_excluded` (class ABSTAIN, never scored); the document row carries `over_context` (reply records read, those with a context, the calls over it, by agent) and `over_context_excluded`; the labels carry `over_context` (the excluded documents, their items, their calls by agent) and the counts `over_context_excluded_documents` and `items_over_context_excluded`. S-7 scores those items ABSTAIN (basis `s7_over_context_abstain`). An unreadable reply record is an adapter fault. B4 is not checked (`mapping.OVER_CONTEXT_ARMS`).
   - One setup-failure rule for B1 and B3 (D-084, DEV-014, `mapping.SETUP_FAILURE_ARMS`): a B1 document whose `bare_model.py` output holds `b1_setup_failure.json` (a call out of memory or on a refused kernel, or a prompt plus the output allowance over the model's context, recorded before anything is generated), and a B3 document whose run has a reply record of a call that failed out of memory or on a refused kernel (`backend_ok` false, `error_category` `out_of_memory` or `attention_kernel_refused`), had a setup failure: every item of it carries basis `setup_failure` (class ABSTAIN, never counted as an abstention), the document row carries `setup_failure` and `setup_failure_excluded`, and the labels carry `setup_failure` (documents, items) and the counts `setup_failure_documents` and `items_setup_failure`. Every analysis but S-7 leaves those documents out of that arm's scoring; S-7 scores their items ABSTAIN (basis `s7_setup_failure_abstain`); `score --paired-with` leaves out a document either arm failed on (`left_out_setup_failure`). A B3 call over the model's context keeps its own basis, `over_context_excluded`, with the same treatment.
   - D-068: a model's answer kept on a pair Python could compute nothing for is on the bus once, in Python's stamped copy (`judged_path` `uncomputable`), written by `model`; it decides its rule's item like any model-written record.
+  - Two scoring modes (D-S13 item 9; the rule is `docs/benchmarks/SCORING_MODES.md`), `--scoring benchmark|as_shipped`, default `as_shipped`. `as_shipped` is everything above, unchanged. `benchmark` (the main figure) counts every model judgement the pipeline shows as advice as a finding: before section 5.1's lines, a record a model wrote that carries no `source_rule_id` takes the operator id the run's own map (`audit/convention_assignment.json`, used only when readable and one to one) gives the registry id it names (`rule_id`, else `procedure_id`, `conv_id`, `convention_ref`), as phase 6 shows it in `review_data.json`'s `model_findings_not_promoted` (`mapping.advice_view`; the record is marked `source_rule_id_from_map`). Precedence is unchanged: the lines' order, whoever wrote the record. A note on a Python record, a refused answer, a judged absence's raw copy, withheld items and a model item with no `record_verdict` decide nothing in either mode. Every analysis of a labels file and of a score carries `scoring`; in benchmark mode each B2, B3 or B4 document row carries `advice` (records, mapped, unmapped, the map's status, notes on Python's records, refused answers) and the counts add `advice_records`, `advice_mapped_by_rule_map` and `advice_unmapped`. B0, B1 and S-8 are the same in both modes. `score --paired-with` refuses two arms with records labelled under different modes. On the saved S5 development outputs the as-shipped labels equal the labels written before the modes existed byte for byte once `scoring` is removed.
   - The command exits 3 when it records an adapter fault (a prior relation, a missing typed-record key, an unrecognised verdict).
 - **score** scores each analysis, and S-4 (the primary labels without the items `parts.json` lists as having their evidence beyond the cut). It reads gold from the bundles' `answer_key.json` and units from the bundle documents. It refuses when a labelled document has a gold item with no label. Every result carries the statement that it is not comparable with published numbers, and names its headline measure.
   - Every analysis but S-7 leaves out the documents this arm excluded for a call over the model's context; S-7 scores their items ABSTAIN. An arm that excludes nothing (B0, B1, B2, B4) is scored on all its documents.
@@ -117,7 +119,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 
 ```
 py -3.12 benchmark/adapters/synthetic/adapter.py items --root <test folder> [--out items.json]
-py -3.12 benchmark/adapters/synthetic/adapter.py label --items <items.json> --bundles <test folder> --arm B0|B1|B2|B3|B4 [--runs <folder>] [--run-map <map.json>] --out <labels.json>
+py -3.12 benchmark/adapters/synthetic/adapter.py label --items <items.json> --bundles <test folder> --arm B0|B1|B2|B3|B4 [--runs <folder>] [--run-map <map.json>] --out <labels.json> [--scoring benchmark|as_shipped]
 py -3.12 benchmark/adapters/synthetic/adapter.py score --labels <labels.json> --bundles <test folder> --out <metrics.json> [--key-map <map.json>]
 ```
 
