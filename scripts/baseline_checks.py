@@ -1452,6 +1452,105 @@ def prove_neutralizations():
     return {"passed": passed, "proofs": proofs}
 
 
+CANDIDATE = BASELINES / "b1_prompt_findver_candidate.json"
+
+
+class FindverRevisionChecks(unittest.TestCase):
+    """D-S13 item 7 (docs/benchmarks/FINDVER_B1_REVISION.md): FinDVer's B1 candidate prompt
+    differs from the frozen prompt in FinDVer's entry alone, every other benchmark renders
+    byte for byte as frozen, FinDVer's question and labels are unchanged and the item
+    stands before and after the document; the candidate parser reads a complete label from a
+    last object the output allowance cut short, only where the frozen parser parses nothing,
+    and changes no reply the frozen parser parses. Neutralise, fail, restore, pass."""
+
+    def setUp(self):
+        if _absent():
+            self.skipTest(ABSENT_REASON)
+        self.tool = _load("bare_model")
+        self.frozen = self.tool.load_prompt()
+        self.candidate = self.tool.load_prompt(CANDIDATE)
+
+    def test_only_findvers_entry_changes(self):
+        frozen, candidate = self.frozen, self.candidate
+        self.assertEqual({k: v for k, v in candidate.items() if k not in ("source", "status", "note", "benchmarks")},
+                         {k: v for k, v in frozen.items() if k not in ("source", "status", "note", "benchmarks")})
+        self.assertEqual(sorted(candidate["benchmarks"]), sorted(frozen["benchmarks"]))
+        added = ("system", "user_template", "parse_truncated_label")
+        for key, bench in candidate["benchmarks"].items():
+            if key == "findver":
+                self.assertEqual({k: v for k, v in bench.items() if k not in added}, frozen["benchmarks"][key])
+                self.assertEqual(sorted(set(bench) - set(frozen["benchmarks"][key])), sorted(added))
+            else:
+                self.assertEqual(bench, frozen["benchmarks"][key], key)
+        conventions = [("CONV-X Claim [required] [conformance]", "Claim about the filing: x.")]
+        for key in frozen["benchmarks"]:
+            item = {"item_id": "abc123", "rule_id": "CONV-X"}
+            pair = [(self.tool.render_system(s, key), self.tool.render_user(
+                s, key, document="DOC-TEXT", conventions=conventions, item=item)) for s in (frozen, candidate)]
+            if key != "findver":
+                self.assertEqual(pair[0], pair[1], key + " renders as frozen")
+                continue
+            system, user = pair[1]
+            self.assertNotEqual(pair[0], pair[1])
+            bench = candidate["benchmarks"][key]
+            for line in bench["labels"] + [bench["question"]]:
+                self.assertIn(line, user)
+            at = user.index("DOC-TEXT")
+            self.assertLess(user.index("Item id: abc123"), at)
+            self.assertLess(user.index(bench["question"]), at)
+            self.assertIn("abc123", user[at:], "the item again after the document")
+            self.assertLess(system.index('"label"'), system.index('"evidence"'), "the label first")
+            self.assertNotIn("{undecided_invitation}", system)
+
+    def _cases(self):
+        bench = self.candidate["benchmarks"]["findver"]
+        frozen = self.frozen["benchmarks"]["findver"]
+        parse = self.tool.parse_reply
+        cut = '{"item_id": "x", "label": "refuted", "reason": "the table", "evidence": "| Revenue | 1 | 2 |\\n| Cost'
+        problems = []
+        got = parse("Working.\n" + cut, bench, "x")
+        if (got["parsed"], got["label"], got["truncated_object"], got["failure"]) != (True, "refuted", True, None):
+            problems.append("a complete label in a cut-short last object: %s" % got)
+        if parse("Working.\n" + cut, frozen, "x")["parsed"]:
+            problems.append("the frozen parser read a cut-short object")
+        whole = "Working {a}.\n" + json.dumps({"item_id": "x", "label": "entailed", "reason": "r", "evidence": "e"})
+        if parse(whole, bench, "x") != parse(whole, frozen, "x"):
+            problems.append("a reply the frozen parser parses changed")
+        for reply, why in (('{"item_id": "x", "evidence": "| a | b | c', "no label before the cut"),
+                           ('{"item_id": "x", "label": "refu', "the label itself cut"),
+                           ('{"item_id": "x", "label": "maybe", "evidence": "a', "a label not in the list"),
+                           ('{"label": "refuted"}\nmore {"item_id": "x", "evidence": "a', "a closed object earlier only"),
+                           ("", "an empty reply")):
+            if parse(reply, bench, "x")["parsed"] and why != "a closed object earlier only":
+                problems.append("parsed: " + why)
+        earlier = parse('{"label": "refuted"}\n{"item_id": "x", "evidence": "a', bench, "x")
+        if (earlier["parsed"], earlier["truncated_object"]) != (True, False):
+            problems.append("the frozen reading of an earlier closed object was not kept: %s" % earlier)
+        return problems
+
+    def test_truncated_label_where_the_frozen_parser_reads_nothing(self):
+        self.assertEqual(self._cases(), [], "shipped")
+        with mock.patch.object(self.tool, "truncated_label", lambda text: None):
+            self.assertNotEqual(self._cases(), [], "neutralised, the proof still passed")
+        self.assertEqual(self._cases(), [], "restored")
+
+    def test_cut_budget_counts_the_candidate_prompt(self):
+        sys.path.insert(0, str(ROOT / "benchmark" / "adapters"))
+        try:
+            from common import prompt
+        finally:
+            sys.path.remove(str(ROOT / "benchmark" / "adapters"))
+        count = lambda system, user: len(system.split()) + len(user.split())  # noqa: E731
+        items = [{"item_id": "x", "rule_id": "CONV-X", "benchmark": "findver"}]
+        conventions = [("CONV-X Claim [required] [conformance]", "text")]
+        frozen = prompt.overhead(self.frozen, items, conventions, count)
+        candidate = prompt.overhead(self.candidate, items, conventions, count)
+        self.assertEqual(candidate, count(self.tool.render_system(self.candidate, "findver"),
+                                          self.tool.render_user(self.candidate, "findver", document="",
+                                                                conventions=conventions, item=items[0])))
+        self.assertGreater(candidate, frozen)
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="b_absent_") as tmp:
@@ -1493,7 +1592,7 @@ def check_python_only():
 
 def check_bare_model():
     return _verdict([_run(BareModelChecks), _run(CheckpointChecks), _run(AttentionChecks),
-                     _run(MeasurementChecks), _run(AbsentChecks)],
+                     _run(MeasurementChecks), _run(FindverRevisionChecks), _run(AbsentChecks)],
                     "B1 with a mocked backend writes exactly one reply record per item (a failed "
                     "call included) joined to one typed label by call id, asks no item of another "
                     "document, prepares and verifies its model once and stops before generating on "
@@ -1519,12 +1618,15 @@ def check_bare_model():
                     "in every reply record, label and summary, the resident model restored to sdpa after it, "
                     "each pass's peak GPU memory (null without "
                     "CUDA), and a comparison of two passes counting byte-identical replies and "
-                    "agreeing labels")
+                    "agreeing labels; FinDVer's candidate prompt changes FinDVer's entry alone and "
+                    "its parser reads a complete label from a cut-short last object only where the "
+                    "frozen parser reads nothing (D-S13 item 7)")
 
 
 def check():
     results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(CheckpointChecks),
-               _run(AttentionChecks), _run(MeasurementChecks), _run(AbsentChecks)]
+               _run(AttentionChecks), _run(MeasurementChecks), _run(FindverRevisionChecks),
+               _run(AbsentChecks)]
     return _verdict(results, "B2 makes no model call, imports no model library, writes the "
                              "pipeline's completion record and marks its output an ablation on each "
                              "file's first line; B1 verifies its model once and stops before "
@@ -1540,7 +1642,10 @@ def check():
                              "recorded decision; an eager measurement pass needs its recorded "
                              "decision and restores sdpa after it, each pass "
                              "records its peak GPU memory, and two passes are compared for "
-                             "byte-identical replies and agreeing labels (D-056 condition 6)")
+                             "byte-identical replies and agreeing labels (D-056 condition 6); "
+                             "FinDVer's candidate prompt (D-S13 item 7) changes FinDVer's entry "
+                             "alone, and its parser reads a cut-short last object's complete label "
+                             "only where the frozen parser reads nothing")
 
 
 if __name__ == "__main__":
