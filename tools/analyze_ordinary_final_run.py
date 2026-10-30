@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import tarfile
 
-from ordinary_final_run import read, write, sha, require
+from ordinary_final_run import read, write, sha, require, DISK_USAGE
 from ordinary_final_summary import supplement, rows
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -188,6 +188,44 @@ def gib(value):
     return '%.2f GiB'%(value/2**30)
 
 
+def disk_record(base, target):
+    """Open item 37: the disk readings of the run root's filesystem, from the runner's
+    evidence/disk_usage.json (before the workload, the sampled peak, after it) and the
+    controller's disk_after_evidence.json (after evidence packing). A missing file is None."""
+    def load(path):
+        try:
+            return read(path) if Path(path).is_file() else None
+        except (OSError, ValueError):
+            return None
+    usage=load(Path(target)/'evidence'/DISK_USAGE)
+    usage=usage if isinstance(usage,dict) else {}
+    return dict(before_workload=usage.get('before_workload'),peak=usage.get('peak'),peak_kind=usage.get('peak_kind'),
+                after_workload=usage.get('after_workload'),readings=usage.get('readings'),
+                after_evidence=load(Path(base)/'disk_after_evidence.json'),
+                runner_file=bool(usage))
+
+
+def disk_reading_text(reading, absent):
+    if not isinstance(reading,dict):
+        return 'not recorded (%s)'%absent
+    if 'used_bytes' not in reading:
+        return 'unavailable (%s)'%reading.get('unavailable','no reason recorded')
+    return '%s in use of %s, %s available'%(gib(reading['used_bytes']),gib(reading['total_bytes']),gib(reading['available_bytes']))
+
+
+def disk_text(disk):
+    """The report row: disk in use before the workload, at its sampled peak, after it, and
+    after evidence packing; a reading that is missing or failed says so."""
+    runner='no evidence/disk_usage.json: the runner predates open item 37 or never reached the workload'
+    peak=disk_reading_text(disk['peak'],runner)
+    if isinstance(disk['peak'],dict) and 'used_bytes' in disk['peak']:
+        peak+=' (%s readings; %s)'%(disk['readings'],disk['peak_kind'])
+    return ('before the workload: %s; peak: %s; after the workload: %s; after evidence packing: %s'
+            %(disk_reading_text(disk['before_workload'],runner),peak,disk_reading_text(disk['after_workload'],runner),
+              disk_reading_text(disk['after_evidence'],'no disk_after_evidence.json: the controller predates open '
+                                'item 37 or the evidence was not packed')))
+
+
 def b1_measures_text(seen):
     """A pass's attention, prefill, peak GPU memory and prefill time (D-056 condition 6, D-061),
     as its summary recorded them."""
@@ -311,7 +349,7 @@ def analyze_b1(base,manifest,target,analysis,launch,run_record,copy_receipt,reco
     costs=model_telemetry.cost([record,api])
     status=dict(status='ORDINARY_FINAL_CLOUD_RUN_COMPLETED' if completed else 'ORDINARY_FINAL_CLOUD_RUN_FAILED',
         arm='B1',pipeline_started=False,pipeline_completion=None,remote_result=result,terminal_error=failure,
-        b1_checkpoints=checkpoints,b1_reply_records=sum(int(c.get('reply_records') or 0)
+        disk=disk_record(base,target),b1_checkpoints=checkpoints,b1_reply_records=sum(int(c.get('reply_records') or 0)
                                                         for c in ((result or {}).get('checkpoints') or {}).values()),
         semantic_call_receipts=None,producer168_receipts=None,auditor896_receipts=None,
         cost_estimates=costs,within_hard_ceiling=costs['combined_estimate']<=manifest['hard_ceiling_usd'],
@@ -381,6 +419,7 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('B3 prompts over the model context',over_context_text(arm,status,status.get('b3_prompts_over_context') or [])),
         ('Judging calls Python could compute nothing for',uncomputable_text(arm,status)),
         ('Execution assessment',assessment_text(status.get('remote_result'))),
+        ('Disk on the instance',disk_text(status['disk']) if status.get('disk') else 'not recorded: no disk readings were read'),
         ('Instance type and price','%s at %s dollars an hour'%(launch.get('instance_type','gpu_1x_a10'),launch['hourly_rate'])),
         ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)%s'
             %(status['cost_estimates']['combined_estimate'],
@@ -482,7 +521,7 @@ def analyze(bundle=BASE):
         protected_data_accessed=bool(manifest.get('protected_test')) and bool(completions),
         multi_round_declared=bool(manifest.get('multi_round')),
         multi_round_executed=bool(manifest.get('multi_round')) and bool(list(target.rglob('audit/multi_round.json'))),
-        uncomputable_judging=uncomputable,
+        uncomputable_judging=uncomputable,disk=disk_record(BASE,target),
         b3_prompts_over_context=[{k:r.get(k) for k in ('call_id','agent','doc_id','prompt_tokens','max_new_tokens','model_context')}
                                  for r in raw if r.get('event')==OVER_CONTEXT_EVENT],
         inventory_empty=True,temporary_ssh_removed=True,
