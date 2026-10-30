@@ -164,7 +164,7 @@ def _common():
         try:
             _MODULES["common"] = {m: importlib.import_module("common." + m)
                                   for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli",
-                                            "prompt", "records")}
+                                            "prompt", "records", "segments")}
         finally:
             sys.path.remove(str(ADAPTERS))
     return _MODULES["common"]
@@ -3244,6 +3244,154 @@ class DevelopmentChecks(_Case):
         self.assertEqual(sum(v["documents"] for v in result["holdout_pool_bands"].values()), 0)
 
 
+class SegmentChecks(_Case):
+    """D-S13 item 7 (docs/benchmarks/FINDVER_B1_REVISION.md section 3): B3 reads a long FinDVer
+    filing in segments of whole parts (common/segments.py), on the synthetic filings with a
+    word-count tokenizer and a small limit. The segment bundle holds the kept text exactly,
+    under the document's own headings, each segment within the limit (a lone part over it
+    is its own segment, listed); Shimmer's splitter gives the segment unit ids the map
+    translates; the rules are the document's; no source id leaks; builds are
+    byte-identical; and B3's labels read every segment's records from the one run, unit ids
+    translated, a call over the context in the run excluding the whole document.
+    Neutralise, fail, restore, pass."""
+
+    LIMIT = 24
+    BUDGET = {"max_context": 100000, "output_allowance": 10}
+
+    def _build(self, out, **extra):
+        return _build("findver", out, token_counter=WordCounter(overhead=50), **self.BUDGET, **extra)
+
+    def _segmented(self, out):
+        self._build(out, b3_segment_tokens=self.LIMIT)
+        parts = _json(out / "parts.json")
+        segmented = [d for d in parts["documents"] if d["b3_segments"]]
+        self.assertTrue(segmented, "the small limit segments at least one synthetic filing")
+        return parts, segmented
+
+    def test_a_long_filing_gets_a_segment_bundle(self):
+        c = _common()
+        bundle, seg = c["bundle"], c["segments"]
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        parts, segmented = self._segmented(self.root / "a")
+        self.assertEqual(parts["b3_segment_rule"]["limit_tokens"], self.LIMIT)
+        self.assertFalse(parts["b3_segment_rule"]["declared"])
+        self._build(self.root / "b", b3_segment_tokens=self.LIMIT)
+        self.assertEqual(_files(self.root / "a"), _files(self.root / "b"), "byte-identical builds")
+        sources = {d["source_document_id"] for d in parts["documents"]}
+        for record in segmented:
+            doc_id = record["document_id"]
+            self.assertEqual(record["b3_bundle"], "b3_segments/" + doc_id)
+            folder = self.root / "a" / "b3_segments" / doc_id
+            names = [s["segment_id"] + ".md" for s in record["b3_segments"]]
+            self.assertEqual(sorted(p.name for p in (folder / "context").iterdir()),
+                             sorted(names + ["_review_targets.json"]))
+            self.assertEqual(_json(folder / "context" / "_review_targets.json")["targets"], names)
+            self.assertEqual((folder / "conventions" / "rules.md").read_bytes(),
+                             (self.root / "a" / doc_id / "conventions" / "rules.md").read_bytes())
+            whole = {u: t for u, _h, _l, t in bundle.read_units(
+                (self.root / "a" / doc_id / "context" / (doc_id + ".md")).read_text(encoding="utf-8"))}
+            covered, position = [], 1
+            for s in record["b3_segments"]:
+                self.assertEqual(s["first"], position, "segments are consecutive")
+                position = s["last"] + 1
+                text = (folder / "context" / (s["segment_id"] + ".md")).read_text(encoding="utf-8")
+                self.assertEqual(s["tokens"], len(text.split()))
+                self.assertEqual(s["over_limit"], s["tokens"] > self.LIMIT)
+                if s["over_limit"]:
+                    self.assertEqual(s["first"], s["last"], "only a lone part may exceed the limit")
+                mapping = seg.unit_map(s)
+                units = [u["unit_id"] for u in pairing_map.split_units(text, document_id=s["segment_id"])]
+                self.assertEqual(units, list(mapping), "Shimmer's splitter on a segment")
+                read = bundle.read_units(text)
+                self.assertEqual(len(read), len(mapping))
+                for (_uid, heading, _l, body), (k, doc_uid) in zip(
+                        read, zip(range(s["first"], s["last"] + 1), mapping.values())):
+                    self.assertEqual(heading, "## P-%05d" % k, "the document's own heading")
+                    self.assertEqual(body, whole[doc_uid], "the segment holds the kept text")
+                    covered.append(doc_uid)
+                for source in sources:
+                    self.assertNotIn(source, text, "no source id in a segment")
+            self.assertEqual(covered, [p["unit_id"] for p in record["parts"]], "every kept part once")
+        # a limit every filing fits: no segment bundle, B3 reads the document's own bundle
+        self._build(self.root / "c", b3_segment_tokens=100000)
+        whole_parts = _json(self.root / "c" / "parts.json")
+        self.assertEqual([(d["b3_bundle"], d["b3_segments"]) for d in whole_parts["documents"]],
+                         [(d["document_id"], []) for d in whole_parts["documents"]])
+        self.assertFalse((self.root / "c" / "b3_segments").exists())
+        # the declared limit applies by default; no counter, no segments; an option alone refused
+        self._build(self.root / "d")
+        self.assertEqual(_json(self.root / "d" / "parts.json")["b3_segment_rule"],
+                         dict(parts["b3_segment_rule"], limit_tokens=_adapter("findver").B3_SEGMENT_TOKENS,
+                              declared=True))
+        _build("findver", self.root / "e")
+        self.assertNotIn("b3_segment_rule", _json(self.root / "e" / "parts.json"))
+        with self.assertRaises(ValueError):
+            _build("findver", self.root / "f", b3_segment_tokens=10)
+
+    def test_b3_labels_a_segmented_filing_from_one_run(self):
+        c = _common()
+        cli, seg = c["cli"], c["segments"]
+        adapter = _adapter("findver")
+        parts, segmented = self._segmented(self.root / "a")
+        record = segmented[0]
+        doc_id = record["document_id"]
+        segs = record["b3_segments"]
+        items_path = self.root / "a" / "items.json"
+        mine = sorted((i for i in _json(items_path)["items"] if i["document_id"] == doc_id),
+                      key=lambda i: i["item_id"])
+        last = segs[-1]
+        unit_in_last = seg.segment_unit(1, last["first"])
+        expected_unit = c["bundle"].unit_id(last["first"])
+        lines = [_bus_line("PRACTICE_AUDITOR", last["segment_id"],
+                           [_rec("x1", mine[0]["rule_id"], "irregular", unit=unit_in_last),
+                            _rec("x9", mine[0]["rule_id"], "irregular", unit="u77-p-00999")],
+                           "paired", "python")]
+        if len(mine) > 1:
+            lines.append(_bus_line("PRACTICE_AUDITOR", segs[0]["segment_id"],
+                                   [_rec("x2", mine[1]["rule_id"], "ok", unit=seg.segment_unit(1, 1))],
+                                   "paired", "python"))
+        others = sorted({i["document_id"] for i in _json(items_path)["items"]} - {doc_id})
+        for name in ("plain", "over"):
+            root = self.root / name
+            run = _incomplete_run(root, doc_id, completion=_completion(), bus_lines=lines)
+            for other in others:
+                _incomplete_run(root, other, completion=_completion(), bus_lines=[])
+            if name == "over":
+                _reply_record(run, 1, "VERIFIER", _ctx(140000, 131072))
+
+        def body():
+            problems = []
+            labels = cli.label(adapter, items_path, "B3", self.root / "plain")["primary"]
+            rows = {r["item_id"]: r for r in labels["labels"]}
+            first = rows[mine[0]["item_id"]]
+            if (first["class"], first["cited_unit_ids"]) != ("FLAG", sorted({expected_unit, "u77-p-00999"})):
+                problems.append("segment record not read as the document's: %s %s"
+                                % (first["class"], first["cited_unit_ids"]))
+            if len(mine) > 1 and (rows[mine[1]["item_id"]]["class"], rows[mine[1]["item_id"]]["basis"]) != ("CLEAR", "ok"):
+                problems.append("the first segment's ok record not read")
+            doc = next(d for d in labels["documents"] if d["document_id"] == doc_id)
+            if [s["segment_id"] for s in doc.get("b3_segments") or []] != [s["segment_id"] for s in segs]:
+                problems.append("segments not listed")
+            if not any(f.startswith(last["segment_id"] + ": segment_unit_not_in_segment") for f in doc["faults"]):
+                problems.append("a unit no segment part carries is not counted: %s" % doc["faults"])
+            over = cli.label(adapter, items_path, "B3", self.root / "over")["primary"]
+            if {r["basis"] for r in over["labels"] if r["document_id"] == doc_id} != {"over_context_excluded"}:
+                problems.append("a call over the context in a segmented run does not exclude the document")
+            b2 = cli.label(adapter, items_path, "B2", self.root / "plain")["primary"]
+            if any(d.get("b3_segments") for d in b2["documents"]):
+                problems.append("B2 read segments")
+            return problems
+
+        self.assertEqual(body(), [], "shipped")
+        with mock.patch.object(cli, "segments_beside", lambda items_path: {}):
+            self.assertNotEqual(body(), [], "neutralised (no segments read), the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="adapter_absent_") as tmp:
@@ -3373,6 +3521,14 @@ GROUPS = {
                               "(location for B3 and B1, B1 by containment either way where parts "
                               "are marked, the reverse way for units of 5 words or more, false "
                               "positives, unlabelled gold refused, S-4) matches by hand"),
+    "segments": (SegmentChecks, "B3 reads a long FinDVer filing in segments of whole parts (D-S13 "
+                                "item 7): the segment bundle holds the kept text under the document's "
+                                "own headings, each segment within the limit or a lone part listed over "
+                                "it, Shimmer's splitter gives the mapped unit ids, the rules are the "
+                                "document's, no source id leaks, builds are byte-identical; B3 labels "
+                                "read every segment's records from the one run with unit ids translated, "
+                                "and a call over the context excludes the whole document (neutralise, "
+                                "fail, restore, pass)"),
 }
 
 
@@ -3389,7 +3545,8 @@ def check():
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
                              "excluded on a call over the model's context; one setup-failure rule for B1 "
-                             "and B3), label and score B's synthetic tests by hand, read B2 and B3 records by one "
+                             "and B3; a long FinDVer filing read by B3 in segments and pooled back), "
+                             "label and score B's synthetic tests by hand, read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")

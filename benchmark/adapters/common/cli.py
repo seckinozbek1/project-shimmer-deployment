@@ -42,7 +42,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from . import bundle, cut, ids, mapping, metrics, prompt
+from . import bundle, cut, ids, mapping, metrics, prompt, segments
 
 EXIT_FAULT = 3
 EXIT_REFUSED = 4
@@ -155,6 +155,14 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
         extra["exclusion_sha256"] = _sha(exclude)
         extra["excluded_documents"] = excluded
     cut_plan = None
+    # B3's segments (common/segments.py): an adapter that declares B3_SEGMENT_TOKENS has
+    # every document read by B3 in segments of at most that many tokens, counted by the
+    # same tokenizer as the cut; --b3-segment-tokens replaces the declared limit
+    given_limit = options.pop("b3_segment_tokens", None)
+    if given_limit is not None and not all(budget_given):
+        raise ValueError("--b3-segment-tokens needs the token counter of the cut rule")
+    segment_limit = given_limit if given_limit is not None else getattr(adapter, "B3_SEGMENT_TOKENS", None)
+    segment_plan = None
     if all(budget_given):
         counter = load_counter(token_counter) if isinstance(token_counter, (str, Path)) else token_counter
         cut_plan = (counter.count, budget_function(counter, max_context, output_allowance, b1_prompt))
@@ -162,6 +170,13 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
             "max_context": int(max_context), "output_allowance": int(output_allowance),
             "b1_prompt_sha256": _sha(b1_prompt or prompt.DEFAULT_PROMPT),
             "token_counter_sha256": _sha(token_counter) if isinstance(token_counter, (str, Path)) else None}
+        if segment_limit is not None:
+            segment_plan = segments.plan(counter.count, int(segment_limit))
+            extra["b3_segment_rule"] = {
+                "limit_tokens": int(segment_limit),
+                "declared": int(segment_limit) == getattr(adapter, "B3_SEGMENT_TOKENS", None),
+                "counted_on": "each segment document file as written, by the cut rule's token counter",
+                "bundle_folder": segments.SEGMENTS_DIR}
     if assignment:
         extra["assignment_sha256"] = _sha(assignment)
     if testmini:
@@ -169,7 +184,8 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
     declared = side if side in (ids.DEVELOPMENT, ids.HOLDOUT) else None
     return bundle.write_bundles(out_dir, adapter.BENCHMARK, documents, cut_plan,
                                 declared_side=declared, build_extra=extra,
-                                refuse_holdout=declared is None and not lifted)
+                                refuse_holdout=declared is None and not lifted,
+                                segment=segment_plan)
 
 
 REMOVED_OVERLAP = "removed_overlap"
@@ -246,6 +262,18 @@ def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
                  "excluded_documents": excluded, "documents": rows}, **extra)
 
 
+def segments_beside(items_path) -> dict:
+    """{document id: its B3 segment records} from the parts record the build wrote beside
+    the item table (common/segments.py); empty when the build segmented nothing or no parts
+    record is there."""
+    path = Path(items_path).parent / bundle.PARTS_RECORD_NAME
+    if not path.is_file():
+        return {}
+    record = json.loads(path.read_text(encoding="utf-8"))
+    return {d["document_id"]: d["b3_segments"] for d in record.get("documents") or []
+            if d.get("b3_segments")}
+
+
 def label(adapter, items_path, arm, runs_root=None) -> dict:
     items = mapping.read_items(items_path)
     foreign = sorted({str(i.get("benchmark")) for i in items} - {adapter.BENCHMARK})
@@ -261,7 +289,8 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
                 "arm %s is refused: reading the pipeline's typed records from the run's bus "
                 "(common/records.py, decision DS5-8, preregistration section 12 item 9) "
                 "takes effect only after its checker attack is recorded" % arm)
-        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm)
+        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm,
+                                             segments=segments_beside(items_path))
     else:
         raise ValueError("unknown arm " + repr(arm))
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),

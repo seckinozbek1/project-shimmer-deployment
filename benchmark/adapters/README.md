@@ -59,7 +59,7 @@ Standard library only. Nothing imports the repository's `scripts/`. Copy `benchm
 Every adapter has the same five commands:
 
 ```
-py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F] [--exclude F] [--reports D] [--frozen-sha256 H] [--parts span|merged]
+py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F] [--exclude F] [--reports D] [--b3-segment-tokens N] [--frozen-sha256 H] [--parts span|merged]
 py -3.12 benchmark/adapters/<name>/adapter.py build --input <file> --out <folder> --development [--side holdout]     (development work only)
 py -3.12 benchmark/adapters/<name>/adapter.py split --input <benchmark file> [--out <file>] [--exclude F]
 py -3.12 benchmark/adapters/<name>/adapter.py bands --input <benchmark file> [--out <file>] [--exclude F] [--testmini F] [--assignment F] [--reports D] [--frozen-sha256 H]
@@ -67,7 +67,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B
 py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bundles <build folder> --out <metrics.json> [--paired-with <another arm's labels.json>]
 ```
 
-`--reports` is FinDVer's own option; `--frozen-sha256` and `--parts` are ContractNLI's. An option an adapter does not take is refused.
+`--reports` and `--b3-segment-tokens` are FinDVer's own options; `--frozen-sha256` and `--parts` are ContractNLI's. An option an adapter does not take is refused.
 
 - **build** writes one bundle per document, named by its opaque document id, plus `items.json` and `parts.json` beside the bundles. The output is byte-identical for the same input.
   - Inside each bundle: `context/<id>.md`, `context/_review_targets.json`, `conventions/rules.md` and `answer_key.json`.
@@ -78,6 +78,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
     - the word count and length band;
     - the cut record: budget, prompt overhead, words removed.
     It also gives the build's declared side, the SHA-256 of the split and testmini files it read, and the documents skipped (no text). It holds source ids and no gold; no arm's model sees it.
+  - **B3 segments** (FinDVer, D-S13 item 7; `common/segments.py`). An adapter that declares `B3_SEGMENT_TOKENS` (FinDVer, 2,500) has B3 read every document in segments when the cut rule's token counter is given: the kept text, the same every arm receives, split into consecutive segments of whole parts, each segment's document file at most that many tokens (a lone part above it is a segment of its own, listed `over_limit`; a part is never split). A document of more than one segment gets a second bundle, `b3_segments/<id>/`, whose targets are the segment documents `<id>-sNN.md`, each under the document's own part headings, with the document's rules; B3 runs that bundle in place of the document's, in one run folder named by the document id. `parts.json` records per document `b3_bundle` (the bundle B3 runs), `b3_segments` (each segment's id, first and last part, tokens, `over_limit`; empty for one segment) and `b3_segment_limit`, and the build's `b3_segment_rule`. `label` reads the segments from the `parts.json` beside `items.json` and, for B3 and B4, pools every segment's records from the one run, each record's unit id translated to the document's; a call over the context in that run excludes the whole document (section 5.3). `--b3-segment-tokens N` replaces the declared limit and needs the token counter. `tools/stage_workload.py --build` stages document bundles only; a segment bundle is staged with `--bundle <build>/b3_segments/<id>`.
   - `answer_key.json` holds the input format's required fields, with empty `planted`, `clean` and `twin_of`, and the gold of every item: label, evidence units, and whether location is measurable. The repository's `.gitignore` ignores every file named `*key*`, so built bundles are never committed by accident. They are build output.
 - **Sides.** Every build declares its side; a document on the other side makes the whole build refuse, writing nothing. A `--development` build that declares no side refuses a holdout document unless `--side holdout` is also given.
   - ContraDoc reads groups and sides from the frozen file written once on the whole input (`--assignment`: the adapter's own `split --out`, or the file B-dev wrote with its own implementation).
