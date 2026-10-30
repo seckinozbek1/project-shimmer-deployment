@@ -3355,9 +3355,13 @@ class SegmentChecks(_Case):
                                    [_rec("x2", mine[1]["rule_id"], "ok", unit=seg.segment_unit(1, 1))],
                                    "paired", "python"))
         others = sorted({i["document_id"] for i in _json(items_path)["items"]} - {doc_id})
+        observation = [{"doc_id": s["segment_id"], "agent": "PROCESSOR", "accepted_semantic_output": True}
+                       for s in segs]
+        telemetry = [{"event": "auditor_pair", "delivery": "partial"}] * 2
         for name in ("plain", "over"):
             root = self.root / name
-            run = _incomplete_run(root, doc_id, completion=_completion(), bus_lines=lines)
+            run = _incomplete_run(root, doc_id, completion=_completion(), bus_lines=lines,
+                                  observation=observation, telemetry=telemetry)
             for other in others:
                 _incomplete_run(root, other, completion=_completion(), bus_lines=[])
             if name == "over":
@@ -3378,6 +3382,10 @@ class SegmentChecks(_Case):
                 problems.append("segments not listed")
             if not any(f.startswith(last["segment_id"] + ": segment_unit_not_in_segment") for f in doc["faults"]):
                 problems.append("a unit no segment part carries is not counted: %s" % doc["faults"])
+            done = doc["completeness"]
+            if (done["processor_calls_made"], done["processor_calls_accepted"], done["partial_delivery_pairs"],
+                    done["semantic_complete"]) != (len(segs), len(segs), 2, True):
+                problems.append("completeness not pooled per segment, run-wide once: %s" % done)
             over = cli.label(adapter, items_path, "B3", self.root / "over")["primary"]
             if {r["basis"] for r in over["labels"] if r["document_id"] == doc_id} != {"over_context_excluded"}:
                 problems.append("a call over the context in a segmented run does not exclude the document")

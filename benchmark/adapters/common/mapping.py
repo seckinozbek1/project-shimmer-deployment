@@ -513,14 +513,24 @@ def read_segmented_run(run_dir, document_id, segment_records, source=records.BUS
     return out
 
 
+# completeness values `completeness` reads for the whole run, not per document: one
+# segment's reading is the run's
+RUN_WIDE_COMPLETENESS = ("semantic_complete", "partial_delivery_pairs")
+
+
 def _pooled_completeness(rows) -> dict:
+    """One document's completeness from its segments': the run-wide values as read once,
+    the per-document counts summed, a per-document flag true if any segment's is (None
+    wherever a segment's reading is None)."""
     out = {}
     for key in rows[0]:
         values = [r.get(key) for r in rows]
-        if any(v is None for v in values):
+        if key in RUN_WIDE_COMPLETENESS:
+            out[key] = values[0]
+        elif any(v is None for v in values):
             out[key] = None
         elif all(isinstance(v, bool) for v in values):
-            out[key] = all(values) if key == "semantic_complete" else any(values)
+            out[key] = any(values)
         else:
             out[key] = sum(values)
     return out
