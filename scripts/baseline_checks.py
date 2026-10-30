@@ -426,8 +426,11 @@ class BareModelChecks(unittest.TestCase):
             summary = self.tool.run(bundle, ITEMS, out, backend=backend, reader=self._reader(),
                                     expected=EXPECTED, sensitive=True)
             self.assertTrue(summary["reference_material"])
-            self.assertIn("REFERENCE MATERIAL\nref_q4.md\n# Reference\n\nA reference passage.\n\nITEM",
+            # D-117: the block is shown whole; what follows it is the benchmark template's order
+            # (FinDVer's revision 5 places the item before the document).
+            self.assertIn("REFERENCE MATERIAL\nref_q4.md\n# Reference\n\nA reference passage.\n\n",
                           backend.users["a1"])
+            self.assertIn("ITEM", backend.users["a1"])
             label = json.loads((out / "labels" / "a1.json").read_text(encoding="utf-8"))
             self.assertIsNone(label["evidence"])
             self.assertEqual(set(label["evidence_hashed"]), {"sha256", "length_bytes"})
@@ -445,7 +448,13 @@ class BareModelChecks(unittest.TestCase):
             self.assertEqual(parse("{\"label\": \"%s\"}\n%s" % (names[-1], undecided), bench)["label"],
                              bench["undecided"], key + " last object wins")
             self.assertFalse(parse(json.dumps({"label": "zzz"}), bench)["parsed"], key)
-            self.assertFalse(parse("{\"label\": \"%s\"" % first, bench)["parsed"], key)
+            cut = parse("{\"label\": \"%s\"" % first, bench)
+            if bench.get("parse_truncated_label"):
+                # D-117: an entry that declares the truncated-label reading reads a complete label
+                # from a last object the allowance cut short, and says so (FindverRevisionChecks).
+                self.assertEqual((cut["parsed"], cut["label"], cut["truncated_object"]), (True, first, True), key)
+            else:
+                self.assertFalse(cut["parsed"], key)
             self.assertFalse(parse("", bench)["parsed"], key)
             self.assertTrue(parse(json.dumps({"item_id": "other", "label": first}), bench, "x")["parsed"])
             # an invalid JSON escape in evidence costs nothing; a valid escaped pair is kept
@@ -1453,6 +1462,9 @@ def prove_neutralizations():
 
 
 CANDIDATE = BASELINES / "b1_prompt_findver_candidate.json"
+# The prompt version 2 of the preregistration froze (D-085, D-095), kept byte for byte when the
+# candidate's FinDVer entry was adopted into b1_prompt.json for development measurement (D-117).
+FROZEN_V2 = BASELINES / "b1_prompt_v2.json"
 
 
 class FindverRevisionChecks(unittest.TestCase):
@@ -1467,8 +1479,17 @@ class FindverRevisionChecks(unittest.TestCase):
         if _absent():
             self.skipTest(ABSENT_REASON)
         self.tool = _load("bare_model")
-        self.frozen = self.tool.load_prompt()
+        self.frozen = self.tool.load_prompt(FROZEN_V2)
         self.candidate = self.tool.load_prompt(CANDIDATE)
+        self.adopted = self.tool.load_prompt()
+
+    def test_the_candidate_entry_is_the_one_bare_model_sends(self):
+        """D-117: b1_prompt.json carries the candidate's FinDVer entry and every other entry as
+        version 2 froze it, so a sealed B1 pass measures the candidate."""
+        self.assertEqual(self.adopted["benchmarks"]["findver"], self.candidate["benchmarks"]["findver"])
+        for key, bench in self.frozen["benchmarks"].items():
+            if key != "findver":
+                self.assertEqual(self.adopted["benchmarks"][key], bench, key)
 
     def test_only_findvers_entry_changes(self):
         frozen, candidate = self.frozen, self.candidate
