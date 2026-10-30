@@ -488,6 +488,85 @@ def read_run(run_dir, document_id, source=records.REVIEW_DATA) -> dict:
     return out
 
 
+SEGMENT_ARMS = ("B3", "B4")   # the arms that read a long document in segments (common/segments.py)
+SEGMENT_FAULT = "segment_unit_not_in_segment"
+
+
+def read_segmented_run(run_dir, document_id, segment_records, source=records.BUS) -> dict:
+    """One document's run when B3 read it in segments (common/segments.py, D-S13 item 7): one
+    run folder whose targets are the segment documents. Each segment is read by `read_run`
+    under its own document id and the results are pooled into one run, as if the document
+    had been one: the records of every segment, each record's `unit_id` translated from the
+    segment's unit id to the document's (a unit id no segment part carries is kept as it is,
+    and counted as a fault), the pairing-map refusal entries and judging calls of every
+    segment, a failure if the run failed (completion and rule map are the run's own, read
+    once per segment and equal), semantically incomplete if any segment is, and the
+    completeness and refused-answer counts summed. `segments` lists each segment's own
+    reading."""
+    from . import segments as segment_rule
+    parts = []
+    for record in segment_records:
+        sid = record["segment_id"]
+        run = read_run(run_dir, sid, source)
+        translate = {k.casefold(): v for k, v in segment_rule.unit_map(record).items()}
+        unknown = 0
+        pooled = []
+        for r in run["records"]:
+            unit = r.get("unit_id")
+            if unit and str(unit).casefold() in translate:
+                r = dict(r, unit_id=translate[str(unit).casefold()], segment_unit_id=unit)
+            elif unit:
+                unknown += 1
+            pooled.append(r)
+        if unknown:
+            run["faults"].append("%s:%s:%d" % (SEGMENT_FAULT, sid, unknown))
+        parts.append((sid, dict(run, records=pooled)))
+    first = parts[0][1]
+    out = dict(first, records=[], pairing_refusals=[], judging_calls=[], raw_judged_absence=[],
+               faults=[], failure_reasons=list(first["failure_reasons"]), refused_answers={})
+    for sid, run in parts:
+        out["records"].extend(run["records"])
+        out["pairing_refusals"].extend(run["pairing_refusals"])
+        out["judging_calls"].extend(run["judging_calls"])
+        out["raw_judged_absence"].extend(run["raw_judged_absence"])
+        for name, n in (run.get("refused_answers") or {}).items():
+            out["refused_answers"][name] = out["refused_answers"].get(name, 0) + n
+        out["faults"].extend("%s: %s" % (sid, f) for f in run["faults"])
+        for reason in run["failure_reasons"]:
+            if reason not in out["failure_reasons"]:
+                out["failure_reasons"].append(reason)
+        out["semantic_incomplete"] = out["semantic_incomplete"] or run["semantic_incomplete"]
+    out["failure"] = bool(out["failure_reasons"])
+    out["completeness"] = _pooled_completeness([run["completeness"] for _sid, run in parts])
+    out["segments"] = [{"segment_id": sid, "failure": run["failure"], "records": len(run["records"]),
+                        "semantic_incomplete": run["semantic_incomplete"]} for sid, run in parts]
+    out["segment_runs"] = parts
+    return out
+
+
+# completeness values `completeness` reads for the whole run, not per document: one
+# segment's reading is the run's
+RUN_WIDE_COMPLETENESS = ("semantic_complete", "partial_delivery_pairs")
+
+
+def _pooled_completeness(rows) -> dict:
+    """One document's completeness from its segments': the run-wide values as read once,
+    the per-document counts summed, a per-document flag true if any segment's is (None
+    wherever a segment's reading is None)."""
+    out = {}
+    for key in rows[0]:
+        values = [r.get(key) for r in rows]
+        if key in RUN_WIDE_COMPLETENESS:
+            out[key] = values[0]
+        elif any(v is None for v in values):
+            out[key] = None
+        elif all(isinstance(v, bool) for v in values):
+            out[key] = any(values)
+        else:
+            out[key] = sum(values)
+    return out
+
+
 def _fold(value) -> str:
     return str(value if value is not None else "").casefold()
 
@@ -534,7 +613,10 @@ def python_only_view(run: dict) -> dict:
     other stamp or none is dropped. Everything else the run carries (the failure, the
     pairing-map refusal entries and judging calls, the rule-id map, completeness) is kept,
     so the lines of section 5.1 apply unchanged to what remains."""
-    return dict(run, records=[r for r in run["records"] if is_computed(r)])
+    view = dict(run, records=[r for r in run["records"] if is_computed(r)])
+    if "segment_runs" in run:       # a document B3 read in segments: each segment's own view
+        view["segment_runs"] = [(sid, python_only_view(part)) for sid, part in run["segment_runs"]]
+    return view
 
 
 def registry_id(record):
@@ -576,7 +658,10 @@ def advice_view(run: dict) -> tuple:
     counts = dict({"records": advice, "mapped_by_rule_map": mapped, "unmapped": unmapped,
                    "rule_map_status": run.get("rule_map_status"), "notes_on_python_records": notes},
                   **(run.get("refused_answers") or {}))
-    return dict(run, records=kept), counts
+    view = dict(run, records=kept)
+    if "segment_runs" in run:       # a document B3 read in segments: each segment's own view
+        view["segment_runs"] = [(sid, advice_view(part)[0]) for sid, part in run["segment_runs"]]
+    return view, counts
 
 
 def _layer(records) -> str:
@@ -776,6 +861,22 @@ def unattached(run: dict, rule_ids, run_dir, document_id, set_aside_figure_audit
             "per_deliverable": per_file}
 
 
+def unattached_of(run: dict, rule_ids, run_dir, document_id, set_aside_figure_audit=False) -> dict:
+    """`unattached` for a document's run; for a document B3 read in segments, summed over
+    its segments, each counted on its own records and its own deliverables."""
+    if "segment_runs" not in run:
+        return unattached(run, rule_ids, run_dir, document_id, set_aside_figure_audit)
+    rows = [unattached(part, rule_ids, run_dir, sid, set_aside_figure_audit)
+            for sid, part in run["segment_runs"]]
+    per_file = {}
+    for name in DELIVERABLE_FILES:
+        shown = [r["per_deliverable"].get(name) for r in rows]
+        per_file[name] = None if all(v is None for v in shown) else sum(v or 0 for v in shown)
+    return {"count": sum(r["count"] for r in rows),
+            "without_record_id": sum(r["without_record_id"] for r in rows),
+            "figure_audit": sum(r["figure_audit"] for r in rows), "per_deliverable": per_file}
+
+
 def relation_counts(run: dict, rule_ids) -> dict:
     """Irregular, non-refusal records tied to an item, by relation (for section 12 item 7)."""
     wanted = {_fold(r) for r in rule_ids}
@@ -830,7 +931,7 @@ def check_scoring(scoring) -> str:
 
 
 def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
-                       detail=False, scoring=SCORING_AS_SHIPPED) -> dict:
+                       detail=False, scoring=SCORING_AS_SHIPPED, segments=None) -> dict:
     """B3, B2 (and B4): `<runs_root>/<document id>/` is that document's run folder (or
     `run_dirs[document id]` where a map is given, B's synthetic tests), its
     typed records read from RECORD_SOURCE[arm] by the one record reader. Each
@@ -842,13 +943,20 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
     out of memory or on a refused kernel is a setup failure (D-084): basis setup_failure,
     the same treatment. `detail` adds each FLAG's deciding records (section 13). `scoring`
     `benchmark` labels from advice_view's records and adds `advice` to each document row
-    (docs/benchmarks/SCORING_MODES.md); `as_shipped` is the reading above, unchanged."""
+    (docs/benchmarks/SCORING_MODES.md); `as_shipped` is the reading above, unchanged.
+    `segments` ({document id: its segment records from parts.json}) names the documents
+    B3 read in segments (SEGMENT_ARMS, common/segments.py): their run is read by
+    `read_segmented_run`, and a call over the context or a setup failure in any segment
+    excludes the whole document; under `benchmark` advice_view maps the pooled run and
+    each segment's own reading alike."""
     check_scoring(scoring)
     rows, documents = [], []
     source = RECORD_SOURCE.get(arm, records.REVIEW_DATA)
     for doc_id, doc_items in by_document(items).items():
         run_dir = Path(run_dirs[doc_id]) if run_dirs is not None else Path(runs_root) / doc_id
-        run = read_run(run_dir, doc_id, source)
+        segmented = (segments or {}).get(doc_id) if arm in SEGMENT_ARMS else None
+        run = (read_segmented_run(run_dir, doc_id, segmented, source) if segmented
+               else read_run(run_dir, doc_id, source))
         advice = None
         if scoring == SCORING_BENCHMARK:
             run, advice = advice_view(run)
@@ -910,15 +1018,17 @@ def label_pipeline_arm(spec: Spec, items, runs_root, arm="B3", run_dirs=None,
                     # a judged absence's raw model copy: listed, never counted
                     "raw_judged_absence_records": len(run["raw_judged_absence"]),
                     "rules": count, "figure_audit_set_aside": aside,
-                    "unattached": unattached(run, rules, run_dir, doc_id, aside),
-                    "unattached_s3": unattached(run, rules, run_dir, doc_id, False),
+                    "unattached": unattached_of(run, rules, run_dir, doc_id, aside),
+                    "unattached_s3": unattached_of(run, rules, run_dir, doc_id, False),
                     # S-8: the unattached findings Python wrote (None where S-8 changes nothing)
-                    "unattached_s8": (unattached(python_run, rules, run_dir, doc_id, aside)
+                    "unattached_s8": (unattached_of(python_run, rules, run_dir, doc_id, aside)
                                       if python_run is not None else None),
                     "relations": relation_counts(run, rules),
                     "missing_field_by_layer": None if run["failure"] else missing_field_layers(run, rules)}
         if advice is not None:     # benchmark mode only, so as_shipped rows stay as they were
             document["advice"] = advice
+        if segmented:
+            document["b3_segments"] = run["segments"]
         documents.append(document)
     return _labels(spec, arm, rows, documents, scoring=scoring)
 

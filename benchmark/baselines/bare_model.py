@@ -276,14 +276,45 @@ def _loads(candidate):
         return json.loads(fixed), True
 
 
-def parse_reply(reply, bench, item_id=None):
-    """{parsed, label, evidence, reason, reply_item_id, item_id_matches, failure, repaired}."""
+_OPEN_OBJECT = re.compile(r'(?m)^\s*\{\s*"')
+_LABEL_FIELD = re.compile(r'"label"\s*:\s*"((?:[^"\\\n]|\\.)*)"')
+
+
+def truncated_label(text):
+    """The FinDVer revision's tolerance (docs/benchmarks/FINDVER_B1_REVISION.md, rule item
+    3), read only where the frozen parser finds no object that parses: the last line that
+    opens a JSON object (`{"...` at its start) and is never closed, and in it the first
+    `"label"` field whose string value is complete (its closing quote written). A reply cut
+    short by the output allowance after its label keeps that label; one cut before it, or
+    whose last object closes, gets nothing here. Returns the label string or None."""
+    opened = list(_OPEN_OBJECT.finditer(text))
+    if not opened:
+        return None
+    tail = text[opened[-1].start():]
+    if _last_balanced_object(tail) is not None:
+        return None
+    match = _LABEL_FIELD.search(tail)
+    if match is None:
+        return None
+    try:
+        return json.loads('"%s"' % match.group(1))
+    except ValueError:
+        return None
+
+
+def _without_fences(reply):
+    return "\n".join(line for line in reply.splitlines() if not _FENCE.match(line))
+
+
+def _frozen_parse(reply, bench, item_id=None):
+    """The section 5.4 parser as frozen in version 2."""
     out = {"parsed": False, "label": None, "evidence": None, "reason": None,
-           "reply_item_id": None, "item_id_matches": None, "failure": None, "repaired": False}
+           "reply_item_id": None, "item_id_matches": None, "failure": None, "repaired": False,
+           "truncated_object": False}
     if not isinstance(reply, str) or not reply.strip():
         out["failure"] = "empty_reply"
         return out
-    kept = "\n".join(line for line in reply.splitlines() if not _FENCE.match(line))
+    kept = _without_fences(reply)
     candidate = _last_balanced_object(kept)
     if candidate is None:
         out["failure"] = "no_json_object"
@@ -293,6 +324,10 @@ def parse_reply(reply, bench, item_id=None):
     except ValueError:
         out["failure"] = "json_invalid"
         return out
+    return _read_label(out, obj, bench, item_id)
+
+
+def _read_label(out, obj, bench, item_id):
     if not isinstance(obj, dict) or not isinstance(obj.get("label"), str):
         out["failure"] = "no_label"
         return out
@@ -310,6 +345,23 @@ def parse_reply(reply, bench, item_id=None):
     out["parsed"] = True
     out["label"] = match
     return out
+
+
+def parse_reply(reply, bench, item_id=None):
+    """{parsed, label, evidence, reason, reply_item_id, item_id_matches, failure, repaired,
+    truncated_object}: the frozen parser (`_frozen_parse`). A benchmark entry carrying
+    `parse_truncated_label` (FinDVer's candidate prompt) also reads, where the frozen parser
+    does not parse the reply, a complete label from a last object the output allowance cut
+    short (`truncated_label`); a reply the frozen parser parses keeps its result exactly."""
+    out = _frozen_parse(reply, bench, item_id)
+    if out["parsed"] or out["failure"] == "empty_reply" or not bench.get("parse_truncated_label"):
+        return out
+    label = truncated_label(_without_fences(reply))
+    if label is None:
+        return out
+    tolerant = _read_label(dict(out, failure=None, repaired=False, truncated_object=True),
+                           {"label": label}, bench, item_id)
+    return tolerant if tolerant["parsed"] else out
 
 
 # ---------------------------------------------------------------------------
@@ -866,7 +918,9 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
             "item_id": item["item_id"], "document_id": doc["id"], "rule_id": item["rule_id"],
             "benchmark": bench_key, "label": parsed["label"], "abstain": not parsed["parsed"],
             "undecided": undecided, "parse_failure": parsed["failure"],
-            "parse_repaired": parsed["repaired"], "output_tokens": result.get("output_tokens")
+            "parse_repaired": parsed["repaired"],
+            "parse_truncated_object": parsed["truncated_object"],
+            "output_tokens": result.get("output_tokens")
             if type(result.get("output_tokens")) is int else None,
             "length_reached_allowance": reached}, **texts, **{
             "reply_item_id": parsed["reply_item_id"], "item_id_matches": parsed["item_id_matches"],
@@ -875,6 +929,7 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
             "checkpoint": reader.get("checkpoint"), "attention": call_attention}))
         row = summary.setdefault(bench_key, {"items": 0, "parsed": 0, "undecided": 0,
                                              "abstain": 0, "backend_failures": 0, "repaired": 0,
+                                             "truncated_object": 0,
                                              "length_reached_allowance": 0,
                                              "length_not_reported": 0})
         row["items"] += 1
@@ -885,6 +940,7 @@ def _run(bundle, items_path, out, *, backend, reader, context, prompt_path=PROMP
         row["abstain"] += int(not parsed["parsed"])
         row["backend_failures"] += int(bool(error))
         row["repaired"] += int(parsed["repaired"])
+        row["truncated_object"] += int(parsed["truncated_object"])
     if len(written) != len(items) or len(set(written)) != len(items):
         raise SetupError("reply records (%d) do not match items (%d)" % (len(set(written)), len(items)))
     gpu_memory = read_gpu_memory(cuda, at_start)

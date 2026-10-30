@@ -145,6 +145,14 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              external/ holds them, the development build (96 contracts, the gold-free
              build, 109 claims naming a label beyond Passage, L10's 410 plans). Each
              proof by neutralise, fail, restore, pass
+  segments   D-S13 item 7 (docs/benchmarks/FINDVER_B1_REVISION.md section 3): B3 reads a
+             long FinDVer filing in segments of whole parts (common/segments.py): the
+             segment bundle holds the kept text under the document's own headings,
+             each segment within the limit; segment unit ids translate back; builds
+             are byte-identical; B3's labels pool every segment's records from the
+             one run, completeness per segment and run-wide once, a call over the
+             context excluding the whole document, and under benchmark scoring the
+             advice of every segment is mapped. Neutralise, fail, restore, pass
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -191,7 +199,7 @@ def _common():
         try:
             _MODULES["common"] = {m: importlib.import_module("common." + m)
                                   for m in ("ids", "bundle", "cut", "mapping", "metrics", "cli",
-                                            "prompt", "records")}
+                                            "prompt", "records", "segments")}
         finally:
             sys.path.remove(str(ADAPTERS))
     return _MODULES["common"]
@@ -3953,6 +3961,248 @@ class CuadClaimChecks(_Case):
         self.assertEqual(plans["527255a5c970"], (10, 410))
 
 
+class SegmentChecks(_Case):
+    """D-S13 item 7 (docs/benchmarks/FINDVER_B1_REVISION.md section 3): B3 reads a long FinDVer
+    filing in segments of whole parts (common/segments.py), on the synthetic filings with a
+    word-count tokenizer and a small limit. The segment bundle holds the kept text exactly,
+    under the document's own headings, each segment within the limit (a lone part over it
+    is its own segment, listed); Shimmer's splitter gives the segment unit ids the map
+    translates; the rules are the document's; no source id leaks; builds are
+    byte-identical; and B3's labels read every segment's records from the one run, unit ids
+    translated, a call over the context in the run excluding the whole document; and under
+    benchmark scoring (D-S13 item 9) every segment's advice is mapped and counted.
+    Neutralise, fail, restore, pass."""
+
+    LIMIT = 24
+    BUDGET = {"max_context": 100000, "output_allowance": 10}
+
+    def _build(self, out, **extra):
+        return _build("findver", out, token_counter=WordCounter(overhead=50), **self.BUDGET, **extra)
+
+    def _segmented(self, out):
+        self._build(out, b3_segment_tokens=self.LIMIT)
+        parts = _json(out / "parts.json")
+        segmented = [d for d in parts["documents"] if d["b3_segments"]]
+        self.assertTrue(segmented, "the small limit segments at least one synthetic filing")
+        return parts, segmented
+
+    def test_a_long_filing_gets_a_segment_bundle(self):
+        c = _common()
+        bundle, seg = c["bundle"], c["segments"]
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        parts, segmented = self._segmented(self.root / "a")
+        self.assertEqual(parts["b3_segment_rule"]["limit_tokens"], self.LIMIT)
+        self.assertFalse(parts["b3_segment_rule"]["declared"])
+        self._build(self.root / "b", b3_segment_tokens=self.LIMIT)
+        self.assertEqual(_files(self.root / "a"), _files(self.root / "b"), "byte-identical builds")
+        sources = {d["source_document_id"] for d in parts["documents"]}
+        for record in segmented:
+            doc_id = record["document_id"]
+            self.assertEqual(record["b3_bundle"], "b3_segments/" + doc_id)
+            folder = self.root / "a" / "b3_segments" / doc_id
+            names = [s["segment_id"] + ".md" for s in record["b3_segments"]]
+            self.assertEqual(sorted(p.name for p in (folder / "context").iterdir()),
+                             sorted(names + ["_review_targets.json"]))
+            self.assertEqual(_json(folder / "context" / "_review_targets.json")["targets"], names)
+            self.assertEqual((folder / "conventions" / "rules.md").read_bytes(),
+                             (self.root / "a" / doc_id / "conventions" / "rules.md").read_bytes())
+            whole = {u: t for u, _h, _l, t in bundle.read_units(
+                (self.root / "a" / doc_id / "context" / (doc_id + ".md")).read_text(encoding="utf-8"))}
+            covered, position = [], 1
+            for s in record["b3_segments"]:
+                self.assertEqual(s["first"], position, "segments are consecutive")
+                position = s["last"] + 1
+                text = (folder / "context" / (s["segment_id"] + ".md")).read_text(encoding="utf-8")
+                self.assertEqual(s["tokens"], len(text.split()))
+                self.assertEqual(s["over_limit"], s["tokens"] > self.LIMIT)
+                if s["over_limit"]:
+                    self.assertEqual(s["first"], s["last"], "only a lone part may exceed the limit")
+                mapping = seg.unit_map(s)
+                units = [u["unit_id"] for u in pairing_map.split_units(text, document_id=s["segment_id"])]
+                self.assertEqual(units, list(mapping), "Shimmer's splitter on a segment")
+                read = bundle.read_units(text)
+                self.assertEqual(len(read), len(mapping))
+                for (_uid, heading, _l, body), (k, doc_uid) in zip(
+                        read, zip(range(s["first"], s["last"] + 1), mapping.values())):
+                    self.assertEqual(heading, "## P-%05d" % k, "the document's own heading")
+                    self.assertEqual(body, whole[doc_uid], "the segment holds the kept text")
+                    covered.append(doc_uid)
+                for source in sources:
+                    self.assertNotIn(source, text, "no source id in a segment")
+            self.assertEqual(covered, [p["unit_id"] for p in record["parts"]], "every kept part once")
+        # a limit every filing fits: no segment bundle, B3 reads the document's own bundle
+        self._build(self.root / "c", b3_segment_tokens=100000)
+        whole_parts = _json(self.root / "c" / "parts.json")
+        self.assertEqual([(d["b3_bundle"], d["b3_segments"]) for d in whole_parts["documents"]],
+                         [(d["document_id"], []) for d in whole_parts["documents"]])
+        self.assertFalse((self.root / "c" / "b3_segments").exists())
+        # the declared limit applies by default; no counter, no segments; an option alone refused
+        self._build(self.root / "d")
+        self.assertEqual(_json(self.root / "d" / "parts.json")["b3_segment_rule"],
+                         dict(parts["b3_segment_rule"], limit_tokens=_adapter("findver").B3_SEGMENT_TOKENS,
+                              declared=True))
+        _build("findver", self.root / "e")
+        self.assertNotIn("b3_segment_rule", _json(self.root / "e" / "parts.json"))
+        with self.assertRaises(ValueError):
+            _build("findver", self.root / "f", b3_segment_tokens=10)
+
+    def test_b3_labels_a_segmented_filing_from_one_run(self):
+        c = _common()
+        cli, seg = c["cli"], c["segments"]
+        adapter = _adapter("findver")
+        parts, segmented = self._segmented(self.root / "a")
+        record = segmented[0]
+        doc_id = record["document_id"]
+        segs = record["b3_segments"]
+        items_path = self.root / "a" / "items.json"
+        mine = sorted((i for i in _json(items_path)["items"] if i["document_id"] == doc_id),
+                      key=lambda i: i["item_id"])
+        last = segs[-1]
+        unit_in_last = seg.segment_unit(1, last["first"])
+        expected_unit = c["bundle"].unit_id(last["first"])
+        lines = [_bus_line("PRACTICE_AUDITOR", last["segment_id"],
+                           [_rec("x1", mine[0]["rule_id"], "irregular", unit=unit_in_last),
+                            _rec("x9", mine[0]["rule_id"], "irregular", unit="u77-p-00999")],
+                           "paired", "python")]
+        if len(mine) > 1:
+            lines.append(_bus_line("PRACTICE_AUDITOR", segs[0]["segment_id"],
+                                   [_rec("x2", mine[1]["rule_id"], "ok", unit=seg.segment_unit(1, 1))],
+                                   "paired", "python"))
+        others = sorted({i["document_id"] for i in _json(items_path)["items"]} - {doc_id})
+        observation = [{"doc_id": s["segment_id"], "agent": "PROCESSOR", "accepted_semantic_output": True}
+                       for s in segs]
+        telemetry = [{"event": "auditor_pair", "delivery": "partial"}] * 2
+        for name in ("plain", "over"):
+            root = self.root / name
+            run = _incomplete_run(root, doc_id, completion=_completion(), bus_lines=lines,
+                                  observation=observation, telemetry=telemetry)
+            for other in others:
+                _incomplete_run(root, other, completion=_completion(), bus_lines=[])
+            if name == "over":
+                _reply_record(run, 1, "VERIFIER", _ctx(140000, 131072))
+
+        def body():
+            problems = []
+            labels = cli.label(adapter, items_path, "B3", self.root / "plain")["primary"]
+            rows = {r["item_id"]: r for r in labels["labels"]}
+            first = rows[mine[0]["item_id"]]
+            if (first["class"], first["cited_unit_ids"]) != ("FLAG", sorted({expected_unit, "u77-p-00999"})):
+                problems.append("segment record not read as the document's: %s %s"
+                                % (first["class"], first["cited_unit_ids"]))
+            if len(mine) > 1 and (rows[mine[1]["item_id"]]["class"], rows[mine[1]["item_id"]]["basis"]) != ("CLEAR", "ok"):
+                problems.append("the first segment's ok record not read")
+            doc = next(d for d in labels["documents"] if d["document_id"] == doc_id)
+            if [s["segment_id"] for s in doc.get("b3_segments") or []] != [s["segment_id"] for s in segs]:
+                problems.append("segments not listed")
+            if not any(f.startswith(last["segment_id"] + ": segment_unit_not_in_segment") for f in doc["faults"]):
+                problems.append("a unit no segment part carries is not counted: %s" % doc["faults"])
+            done = doc["completeness"]
+            if (done["processor_calls_made"], done["processor_calls_accepted"], done["partial_delivery_pairs"],
+                    done["semantic_complete"]) != (len(segs), len(segs), 2, True):
+                problems.append("completeness not pooled per segment, run-wide once: %s" % done)
+            over = cli.label(adapter, items_path, "B3", self.root / "over")["primary"]
+            if {r["basis"] for r in over["labels"] if r["document_id"] == doc_id} != {"over_context_excluded"}:
+                problems.append("a call over the context in a segmented run does not exclude the document")
+            b2 = cli.label(adapter, items_path, "B2", self.root / "plain")["primary"]
+            if any(d.get("b3_segments") for d in b2["documents"]):
+                problems.append("B2 read segments")
+            return problems
+
+        self.assertEqual(body(), [], "shipped")
+        with mock.patch.object(cli, "segments_beside", lambda items_path: {}):
+            self.assertNotEqual(body(), [], "neutralised (no segments read), the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+
+    def test_benchmark_scoring_reads_every_segment(self):
+        """The scoring mode (D-S13 item 9) applies to a segmented run as to any: the advice
+        of every segment is mapped by the run's one rule map, in the pooled run the labels
+        read and in each segment's own reading `unattached` counts, and the refused answers
+        of every segment are counted, not the first segment's alone."""
+        c = _common()
+        cli, m, seg = c["cli"], c["mapping"], c["segments"]
+        adapter = _adapter("findver")
+        _parts, segmented = self._segmented(self.root / "a")
+        record = segmented[0]
+        doc_id = record["document_id"]
+        segs = record["b3_segments"]
+        items_path = self.root / "a" / "items.json"
+        mine = sorted((i for i in _json(items_path)["items"] if i["document_id"] == doc_id),
+                      key=lambda i: i["item_id"])
+        last = segs[-1]
+        expected_unit = c["bundle"].unit_id(last["first"])
+        registry = "CONV-001"
+
+        def advice(item_id, rule, unit):
+            return {"item_id": item_id, "rule_id": rule, "unit_id": unit, "relation": "date_window",
+                    "record_verdict": "irregular"}
+
+        lines = [_bus_line("VERIFIER", last["segment_id"],
+                           [advice("a1", registry, seg.segment_unit(1, last["first"]))],
+                           _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32),
+                 _bus_line("VERIFIER", segs[0]["segment_id"],
+                           [advice("a2", "CONV-099", seg.segment_unit(1, 1))],
+                           _MODEL_BACKEND, _MODEL_ID, call_id="d" * 32)]
+        refused = {"uncomputable_refused": [{"unit_id": "u01-p-00001", "rule_id": "CONV-098",
+                                             "relation": "missing_field", "reason": "quote_not_in_unit"}]}
+        root = self.root / "runs"
+        run = _incomplete_run(root, doc_id, completion=_completion(), bus_lines=lines,
+                              rule_map={registry: mine[0]["rule_id"]})
+        (run / "audit" / "pairing_map.json").write_text(
+            json.dumps({s["segment_id"]: refused for s in segs}), encoding="utf-8")
+        for other in sorted({i["document_id"] for i in _json(items_path)["items"]} - {doc_id}):
+            _incomplete_run(root, other, completion=_completion(), bus_lines=[])
+
+        def body():
+            problems = []
+            shipped = cli.label(adapter, items_path, "B3", root)["primary"]
+            bench = cli.label(adapter, items_path, "B3", root, scoring=m.SCORING_BENCHMARK)["primary"]
+            first = {r["item_id"]: r for r in shipped["labels"]}[mine[0]["item_id"]]
+            if (first["class"], first["basis"]) != ("CLEAR", "silent"):
+                problems.append("as_shipped read a registry-only record: %s" % first["basis"])
+            first = {r["item_id"]: r for r in bench["labels"]}[mine[0]["item_id"]]
+            if (first["class"], first["cited_unit_ids"]) != ("FLAG", [expected_unit]):
+                problems.append("benchmark did not map a segment's advice: %s %s"
+                                % (first["class"], first["cited_unit_ids"]))
+            doc_s = next(d for d in shipped["documents"] if d["document_id"] == doc_id)
+            doc_b = next(d for d in bench["documents"] if d["document_id"] == doc_id)
+            if "advice" in doc_s:
+                problems.append("as_shipped carries advice")
+            got = doc_b.get("advice") or {}
+            want = {"records": 2, "mapped_by_rule_map": 1, "unmapped": 1,
+                    "refused_uncomputable": len(segs), "refused_judged_absence": 0}
+            if {k: got.get(k) for k in want} != want:
+                problems.append("advice not counted over every segment: %s" % got)
+            if (doc_s["unattached"]["count"], doc_b["unattached"]["count"]) != (2, 1):
+                problems.append("unattached not read from each segment's mapped view: %s %s"
+                                % (doc_s["unattached"]["count"], doc_b["unattached"]["count"]))
+            if [s["segment_id"] for s in doc_b.get("b3_segments") or []] != [s["segment_id"] for s in segs]:
+                problems.append("benchmark mode lost the segment listing")
+            return problems
+
+        original_view, original_read = m.advice_view, m.read_segmented_run
+
+        def unmapped_segments(run):
+            view, counts = original_view(run)
+            if "segment_runs" in run:
+                view = dict(view, segment_runs=run["segment_runs"])
+            return view, counts
+
+        def first_segment_refusals(*args, **kwargs):
+            out = original_read(*args, **kwargs)
+            return dict(out, refused_answers=out["segment_runs"][0][1]["refused_answers"])
+
+        self.assertEqual(body(), [], "shipped")
+        for neutralise in (mock.patch.object(m, "advice_view", unmapped_segments),
+                           mock.patch.object(m, "read_segmented_run", first_segment_refusals)):
+            with neutralise:
+                self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+            self.assertEqual(body(), [], "restored")
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="adapter_absent_") as tmp:
@@ -4105,6 +4355,15 @@ GROUPS = {
                               "(location for B3 and B1, B1 by containment either way where parts "
                               "are marked, the reverse way for units of 5 words or more, false "
                               "positives, unlabelled gold refused, S-4) matches by hand"),
+    "segments": (SegmentChecks, "B3 reads a long FinDVer filing in segments of whole parts (D-S13 "
+                                "item 7): the segment bundle holds the kept text under the document's "
+                                "own headings, each segment within the limit or a lone part listed over "
+                                "it, Shimmer's splitter gives the mapped unit ids, the rules are the "
+                                "document's, no source id leaks, builds are byte-identical; B3 labels "
+                                "read every segment's records from the one run with unit ids translated, "
+                                "and a call over the context excludes the whole document; under "
+                                "benchmark scoring every segment's advice is mapped and counted (neutralise, "
+                                "fail, restore, pass)"),
 }
 
 
@@ -4121,7 +4380,8 @@ def check():
                              "id, run from a copied tree in an isolated interpreter, map synthetic run "
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
                              "excluded on a call over the model's context; one setup-failure rule for B1 "
-                             "and B3; two scoring modes, benchmark and as_shipped), label and score B's "
+                             "and B3; two scoring modes, benchmark and as_shipped; a long FinDVer filing "
+                             "read by B3 in segments and pooled back), label and score B's "
                              "synthetic tests by hand, build CUAD as a claim check with no gold in any bundle, read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
