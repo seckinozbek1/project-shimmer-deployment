@@ -555,11 +555,22 @@ def semantic_incomplete(completion):
                 and completion.get('semantic_complete') is False)
 
 
+def model_call_required(multi_round):
+    """Whether the run's telemetry must hold a Producer 168 model call. Every run that is not
+    a declared multi-round run must. A declared multi-round run (`multi_round` not None) asks no
+    model by design (open item 35: its case records and round review are computed in Python), so
+    its own evidence is the pipeline_start and pipeline_end pair and the case record checks.
+    Measured, not preferred: L7 (2026-10-30) failed all nine multi-round entries that reached
+    `reviewed` and `activated` on this requirement alone (D-100)."""
+    return multi_round is None
+
+
 def assess(completion, raw, multi_round=None, arm='B3', b1=None):
     """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
     record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
     reviewed, a Python round review recorded (`round_review.availability`);
-    quality is reported separately and is never a pass. A B1 entry is assessed on its own
+    quality is reported separately and is never a pass. Its telemetry needs exactly one
+    pipeline_start and one pipeline_end and no model call (model_call_required). A B1 entry is assessed on its own
     records (assess_b1, `b1` maps each checkpoint to its observation and exit code)."""
     if arm == 'B1':
         return assess_b1(b1)
@@ -584,7 +595,8 @@ def assess(completion, raw, multi_round=None, arm='B3', b1=None):
         reasons.append('pipeline_not_completed')
     if not (sum(r['event']=='pipeline_start' for r in raw)==1 and
             sum(r['event']=='pipeline_end' for r in raw)==1 and
-            any(r['event']=='model_call' and r.get('adapter_checkpoint')==168 for r in raw)):
+            (not model_call_required(multi_round) or
+             any(r['event']=='model_call' and r.get('adapter_checkpoint')==168 for r in raw))):
         reasons.append('required_telemetry_missing')
     if any(r['event'] == 'auditor_pair' and r.get('classifier_status') == 'failed' for r in raw):
         reasons.append('auditor_pair_failure')

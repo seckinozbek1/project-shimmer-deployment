@@ -592,6 +592,8 @@ A **record** is flat: `record_id`, `case_id`, `actor_id`, `issue_id`, `round_id`
 
 A multi-round run is healthy when `outcome` is `reviewed`, `activation.activated` is `true`, `round_review.availability` is `recorded`, and `audit/run_completion.json` says `completed`. A case with no conventions gives `no_conventions`, which is not healthy.
 
+The runner also needs exactly one `pipeline_start` and one `pipeline_end` in a multi-round run's telemetry, and, unlike every other B3 run, no model call: the phase asks none.
+
 ### 10.2 `audit/round_reuse.json`
 
 Python's round review.
@@ -642,6 +644,8 @@ The controller collects the run as one archive, `collected_evidence.tar.gz`. The
 **Which test archive the run was made from.** The session folder's `seal.json`, field `test_archive_sha256`: the SHA-256 of the bytes of the test archive (input format, section 1) that the sealed bundle was prepared from. `tools/prepare_ordinary_final_run.py` writes it when the bundle is sealed, after checking that it equals the `archive_sha256` of the test manifest it was given, and writes the same value into `execution_manifest.json`; the controller checks the two again at launch. This is the hash a key's `archives` object is matched against (input format, section 12). An exposed run's `seal.json` has no `test_archive_sha256`, and its `test_manifest_sha256` is the text `exposed, no manifest`. A run started on this machine records no archive hash anywhere in its run folder.
 
 **`evidence/result.json`**: `execution_integrity_passed` (boolean), `reasons` (list), `failed_backend_attempts` (integer), `collection_and_teardown_pending` (`true`), `quality_claim` (`null`), `pipeline_exit_code` (integer). `reasons` values: `pipeline_not_completed`, `required_telemetry_missing`, `auditor_pair_failure`, `required_contract_failure`, `backend_failure`, and for a multi-round run `multi_round_not_reviewed`, `multi_round_not_activated`, `multi_round_round_review_not_recorded`. The runner's own exit code is 0 only when the pipeline returned 0 and the check passed; otherwise 2.
+
+`required_telemetry_missing` means the telemetry lacks exactly one `pipeline_start` and one `pipeline_end`, or, in a run that is not multi-round, a Producer 168 model call. A multi-round run is not required to hold a model call.
 
 **`FINAL_STATUS.json`** fields: `status` (`ORDINARY_FINAL_CLOUD_RUN_COMPLETED` when the run folder says `completed` and the health check passed, else `ORDINARY_FINAL_CLOUD_RUN_FAILED`), `pipeline_started`, `pipeline_completion` (the run's `run_completion.json` or `null`), `remote_result` (`result.json` or `null`), `terminal_error`, `semantic_call_receipts`, `producer168_receipts`, `auditor896_receipts`, `auditor896_pairs`, `auditor896_pairs_from_partial_delivery`, `cost_estimates` (an object; `combined_estimate` is the estimated dollars), `within_hard_ceiling`, `exactly_one_instance`, `maximum_one_workload_invocation`, `full_run_retried`, `protected_data_accessed`, `multi_round_declared`, `multi_round_executed`, `inventory_empty`, `temporary_ssh_removed`, `evidence_verified`, `quality_claim` (`null`), `subsequent_roadmap_work_started`, and `report`.
 

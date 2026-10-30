@@ -2953,6 +2953,24 @@ class ControllerChecks(unittest.TestCase):
                       'trained with, and v5 to v12 ran it eager), prefilled in chunks of 1024 tokens under decision D-064 '
                       '(a measurement run)', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
+    def test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call(self):
+        """D-100 (L7): a declared multi-round run asks no model (open item 35), so it passes on
+        exactly one pipeline_start and one pipeline_end and its case record checks; the same run
+        not reviewed fails; a run that is not multi-round still needs its Producer 168 call."""
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        case = dict(outcome='reviewed', activation=dict(activated=True), round_review=dict(availability='recorded'))
+        passed = runner.assess(completion, rows, case)
+        self.assertEqual(passed['reasons'], [])
+        self.assertTrue(passed['execution_integrity_passed'])
+        self.assertEqual(runner.assess(completion, rows, dict(case, outcome='refused'))['reasons'],
+                         ['multi_round_not_reviewed'])
+        self.assertEqual(runner.assess(completion, rows[:1], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows + rows[1:], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows)['reasons'], ['required_telemetry_missing'])
+        call = dict(event='model_call', agent='PROCESSOR', adapter_checkpoint=168)
+        self.assertEqual(runner.assess(completion, rows[:1] + [call] + rows[1:])['reasons'], [])
+
     def test_a_semantically_incomplete_run_is_reported_as_such(self):
         """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
         semantic work incomplete is assessed `semantic_incomplete` by the runner, and the
@@ -4406,6 +4424,9 @@ def child_process_starts(source):
 
 
 NEUTRALIZATIONS = [
+    # D-100: the model-call requirement applied to a declared multi-round run again, as L7 ran.
+    ('test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call', runner, 'model_call_required',
+     lambda multi_round: True),
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),
