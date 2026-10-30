@@ -135,3 +135,9 @@ The allocation of D-S12 item 4 (S5's brought-back work and the first sweep's fin
 | S8 sealed evaluation | 89.34 | the rest; floor 60 |
 
 CUAD forecast basis (D-094, closing the version 2 attack's item 8): one development contract at the mean of the 8 measured B2 contracts, 2,643 judging plans (SELECTION.md), at 17.0 seconds a plan everything included (L6, ContractNLI band B: 81.8 minutes over 289 plans), 748.9 minutes of B3; B1 tuned on its 41 items at about 15 seconds a call, 10.3 minutes; 15.4 minutes of session overhead and 2 minutes an entry for each arm: 778.6 minutes, 21.76 USD. A band B contract (about 1,230 plans, an estimate) would be 378.2 minutes, 10.57 USD. The contract is chosen at launch from the B2 plan counts; the forecast stays the mean's, so S8's fixed A (89.34 USD) does not depend on that choice.
+
+### Launches after D-S12 (forecast against actual)
+
+| Run | Purpose | Forecast basis | Forecast (USD) | Cap (USD) | Billed minutes, notes | Actual (USD) |
+|---|---|---|---|---|---|---|
+| L11 (2026-10-29 23:18 to 2026-10-30 02:29 UTC, D-097) | dev-dryrun-l11, 8 development documents B3 + B1 tuned, sealed at d50b299 | 198 minutes (staging lane's point forecast), A10 1.29 USD an hour, times 1.3 | 5.53 | 8.30 | 191 (ledger); 16 entries; every B3 entry reached its end; six B3 entries semantically incomplete (`semantic_incomplete`, pipeline exit 0); MATCH | 4.11 (ledger). Variance: actual 74 percent of forecast |
