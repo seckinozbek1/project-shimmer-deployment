@@ -24660,7 +24660,13 @@ def check_264_core_field_alias_is_read_and_recorded():
     key alone. The alias is declared in config/agent_contracts.json, read by the
     parser only when the canonical key is absent and the value maps without
     interpretation, and every application is recorded on the result, the bus post
-    and the observation row."""
+    and the observation row.
+
+    ENVELOPE-B (D-S14, K8): EDITOR_CLERK left `kind` out of 4 of its 20 calls in L7,
+    L8, L10 and L11, every other field present. A contract that declares exactly one
+    item kind and `single_kind_stamp` gets `kind` stamped where the key is absent,
+    recorded the same way and on the telemetry call record; a written kind that is
+    not the declared one is refused, and no other field is defaulted."""
     from ordinary_final_correction_checks import check_alias
     return check_alias()
 

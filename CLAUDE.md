@@ -834,6 +834,21 @@ processing swarm governed by an append-only constitution.
   alone; the same base under sampling never did in 145 items; the flip is one argmax at the
   key's first token, so the parser holds whether the origin is the adapter or value priming.
   Never widen the alias list from a hunch: an alias is a measured model habit, declared.
+- ENVELOPE-B (D-S14, K8): for an agent whose contract declares exactly one item kind, Python
+  stamps `kind` on an item that has NO `kind` key, ONLY when that contract declares
+  `single_kind_stamp` (today EDITOR_CLERK, `editorial_observation`; it must equal the first
+  word of `item_kind`, else it is ignored), read by `agent_wrapper.single_kind_stamp`. Each
+  stamp is recorded as `contract_normalized` (`items[i].kind<-editorial_observation`) on the
+  result, the bus post, the observation row and the telemetry call record, exactly as an
+  alias is. A `kind` the model wrote is never overwritten: under the declaration one that is
+  not the declared kind is refused (`items[i].kind (not the declared ...)`; before this the
+  validator checked only that `kind` was present), an empty or null one is refused as
+  missing, and no other field is ever defaulted. Measured, not preferred: in L7, L8, L10 and
+  L11 EDITOR_CLERK left `kind` out of 4 of its 20 calls with every other field present, each
+  failing its contract on that key alone (`required_contract_failure` in L11 02, 04, 08 and
+  L8 30); the 6 items that wrote it wrote `editorial_observation`. Replayed through the
+  parser, all 20 saved calls hold their contract, and the 4 refused before refuse again with a
+  wrong kind written in. Declare it for another agent only from a measurement. Check 264.
 - VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
   (`_record_example_required`) with the contract's DECLARED values where it enumerates them
   (FACT_CHECKER's verdict CONFIRMED, VERIFIER's finding MATCH; `_declared_values`, never a
