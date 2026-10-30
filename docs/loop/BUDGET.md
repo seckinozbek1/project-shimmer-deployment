@@ -156,3 +156,14 @@ Usage at each launch since D-S12 (status line, five-hour and seven-day percent; 
 ### S5 re-forecast after D-097 (D-107)
 
 S5's brought-back allocation was 70.81 USD. Spent on it so far 8.18 (L11, L7, L10). Forecast for the rest: L8 15.09, L9a (37 entries: 28 probes at 15.2 minutes plus 9 multi-round re-runs at about 2 minutes, 15.4 overhead, about 459 minutes) 12.83, L9b 12.33. Total about 48.4 USD, 22.4 USD under the allocation; the difference rolls forward to work a later sweep brings back (D-S12 item 4), never to S8, whose A is fixed by version 2. L11 was sealed at `d50b299`, before the measurement merge, a departure from D-097 (e) recorded in D-102.
+
+### Allocation redone for D-S13 and D-S14 (D-115)
+
+| Allocation | USD | Forecast basis |
+|---|---|---|
+| Spent to date | about 35.2 | instances 34.65 (S5 20.64; L11 4.11, L7 1.38, L10 2.69, L8 5.83), storage about 0.5 |
+| S5 remaining | about 68.1 | R1 3.10; L12 re-run of 37 entries 13.98; L9a 12.83; L9b 12.33; L13 FinDVer and CUAD-claim development 19.4; launcher review and draft 1.5; second re-run margin 5.0 |
+| S6 cloud work | 5.74 | as D-092, the GNN run included |
+| Smoke runs | 3.12 | |
+| Reserve | 10.00 | storage first |
+| S8 | about 77.8 | the rest; floor 60; version 3 is sized from the ledger when written |
