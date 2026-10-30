@@ -104,6 +104,8 @@ with its own confirmation. Neither is proposed here.
 
 ---
 
+- **Closed (2026-10-30, D-S13 item 1, D-109).** The operator decided the filesystem stays as the warm start for later runs; it is never deleted, it is kept current with the latest asset archive (D-S4), and the final report states its monthly storage cost.
+
 ## 5. Rehearsal per-polarity directories survive between runs and read as complete (issue #5)
 
 **What it is.** `tools/ordinary_final_rehearsal.py` writes each polarity into its own
