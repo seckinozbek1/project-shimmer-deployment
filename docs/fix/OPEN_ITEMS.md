@@ -552,3 +552,11 @@ open-item sweep.
 - **Evidence.** `scripts/multi_round_phase.py` (the bus post of the computed records); D-103.
 - **Why it was left.** Bus readers key agents by name; changing the payload agent touches every reader of the multi-round channel and the scorer's round reader (P16), and `written_by` already says Python.
 - **What would settle it.** In S6a: a payload agent naming Python (or the phase), with every reader and the scorer's round reader brought along, held by a check.
+
+## 46. A rule that names a document label pairs only with units carrying that label (found at loop S5, lane s05-cuadclaim)
+
+- **What it is.** The pairing map pairs a rule with a unit only when the unit carries every document label the rule's text names. A CUAD claim whose wording names a label such as "Source", "Name" or "Date" pairs only with units holding that label line, so a clause elsewhere in the contract is never asked about and reads as absent.
+- **Evidence.** On the CUAD development side, 109 of 3,936 (contract, claim) pairs name a label beyond the passage; one claim alone matches the `Source:` lines of 42 contracts; about 5 percent of unit-rule pairs are lost (457,769 of 482,119). The lane's measurement, gold-free, from Shimmer's own pairing map (D-113).
+- **Why it was left.** A property of the input format and the pairing map, for every corpus, not of one adapter (P16).
+- **What would settle it.** In S6a: a decision whether a label word inside a rule's prose is a pairing declaration (today it is read as one), with a gate check, measured on the corpora before and after.
+
