@@ -1,0 +1,220 @@
+SYNTHETIC CATEGORY LIST FOR THE CHECKS
+
+=================================================
+CATEGORY LIST
+
+	Category (incl. context and answer)
+	Description
+	Answer Format
+	Group
+	1
+	Category:	Document Name
+	Description: 	The title the synthetic contract gives itself
+	Answer Format: 	Yes/No
+	Group:		-
+	2
+	Category:	Parties
+	Description: 	The persons or firms that sign the synthetic contract,
+	named as the contract names them
+	Answer Format: 	Yes/No
+	Group:		-
+	3
+	Category:	Agreement Date
+	Description: 	Synthetic description of row 3, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	4
+	Category:	Effective Date
+	Description: 	Synthetic description of row 4, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	5
+	Category:	Expiration Date
+	Description: 	Synthetic description of row 5, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	6
+	Category:	Renewal Term
+	Description: 	Synthetic description of row 6, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	7
+	Category:	Notice to Terminate Renewal
+	Description: 	Synthetic description of row 7, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	8
+	Category:	Governing Law
+	Description: 	Which jurisdiction's law the synthetic contract chooses
+	Answer Format: 	Yes/No
+	Group:		-
+	9
+	Category:	Most Favored Nation
+	Description: 	Synthetic description of row 9, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	10
+	Category:	Non-Compete
+	Description: 	Synthetic description of row 10, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	11
+	Category:	Exclusivity
+	Description: 	Synthetic description of row 11, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	12
+	Category:	No-Solicit of Customers
+	Description: 	Synthetic description of row 12, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	13
+	Category:	Competitive Restriction Exception
+	Description: 	Synthetic description of row 13, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	14
+	Category:	No-Solicit of Employees
+	Description: 	Synthetic description of row 14, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	15
+	Category:	Non-Disparagement
+	Description: 	Synthetic description of row 15, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	16
+	Category:	Termination for Convenience
+	Description: 	May a party end the synthetic contract without a breach by the other?
+	Answer Format: 	Yes/No
+	Group:		-
+	17
+	Category:	Right of First Refusal or Offer (ROFR/ROFO/ROFN)
+	Description: 	Synthetic description of row 17, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	18
+	Category:	Change of Control
+	Description: 	Synthetic description of row 18, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	19
+	Category:	Anti-Assignment
+	Description: 	Synthetic description of row 19, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	20
+	Category:	Revenue/Profit Sharing
+	Description: 	Synthetic description of row 20, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	21
+	Category:	Price Restriction
+	Description: 	Synthetic description of row 21, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	22
+	Category:	Minimum Commitment
+	Description: 	Synthetic description of row 22, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	23
+	Category:	Volume Restriction
+	Description: 	Synthetic description of row 23, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	24
+	Category:	IP Ownership Assignment
+	Description: 	Synthetic description of row 24, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	25
+	Category:	Joint IP Ownership
+	Description: 	Synthetic description of row 25, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	26
+	Category:	License Grant
+	Description: 	Synthetic description of row 26, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	27
+	Category:	Non-Transferable License
+	Description: 	Synthetic description of row 27, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	28
+	Category:	Affiliate IP License-Licensor
+	Description: 	Synthetic description of row 28, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	29
+	Category:	Affiliate IP License-Licensee
+	Description: 	Synthetic description of row 29, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	30
+	Category:	Unlimited/All-You-Can-Eat License
+	Description: 	Synthetic description of row 30, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	31
+	Category:	Irrevocable or Perpetual License
+	Description: 	Synthetic description of row 31, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	32
+	Category:	Source Code Escrow
+	Description: 	Synthetic description of row 32, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	33
+	Category:	Post-Termination Services
+	Description: 	Synthetic description of row 33, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	34
+	Category:	Audit Rights
+	Description: 	Synthetic description of row 34, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	35
+	Category:	Uncapped Liability
+	Description: 	Synthetic description of row 35, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	36
+	Category:	Cap on Liability
+	Description: 	Synthetic description of row 36, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	37
+	Category:	Liquidated Damages
+	Description: 	Synthetic description of row 37, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	38
+	Category:	Warranty Duration
+	Description: 	Synthetic description of row 38, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	39
+	Category:	Insurance
+	Description: 	Must a party keep a policy of insurance in force?
+	Answer Format: 	Yes/No
+	Group:		-
+	40
+	Category:	Covenant Not to Sue
+	Description: 	Synthetic description of row 40, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+	41
+	Category:	Third Party Beneficiary
+	Description: 	Synthetic description of row 41, written by hand
+	Answer Format: 	Yes/No
+	Group:		-
+
+=================================================
+SOURCE OF CONTRACTS
+
+Synthetic.

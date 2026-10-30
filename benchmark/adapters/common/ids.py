@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 
-BENCHMARKS = ("contradoc", "cuad", "scitab", "findver", "contractnli")
+# cuad_claim is CUAD v1 as a claim check (cuad_claim/adapter.py), a draft for
+# preregistration version 3 (Annex D, D-S13 item 8): its own name keeps its ids apart.
+BENCHMARKS = ("contradoc", "cuad", "scitab", "findver", "contractnli", "cuad_claim")
 OPAQUE_LENGTH = 12
 SPLIT_MODULUS = 5
 DEVELOPMENT = "development"

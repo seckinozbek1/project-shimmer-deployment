@@ -130,6 +130,21 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              condition 8: float32 non-4-bit weights, activations and KV cache; sdpa
              with no T x T term; the eager reference squared over the prompt only),
              and its recomputation from a written summary
+  cuadclaim  CUAD as a claim check (benchmark/adapters/cuad_claim, D-S13 item 8): the
+             41 claims are the same in every bundle and written from the category list
+             alone, one item per claim under ids of its own, sides as CUAD's; no gold in
+             any bundle: a build from the input with every answers list emptied differs
+             only in answer_key.json, and no answer span of three words or more lies
+             outside the contract's document and its key, nor in the staged item fields;
+             FLAG present from any model-written irregular record, absent from an ok
+             record or silence, Python's blank-cell record set aside, a refusal ABSTAIN;
+             B1 asks the preregistered synthetic question, its prompt identical with the
+             gold emptied; the category list read (CRLF too) and refused when malformed,
+             or not the release's on a build that declares its side; a B1 score with
+             location and B0 by hand; the command line from a copied tree; and, where
+             external/ holds them, the development build (96 contracts, the gold-free
+             build, 109 claims naming a label beyond Passage, L10's 410 plans). Each
+             proof by neutralise, fail, restore, pass
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, with its headline named; an end-to-end
              score on a built bundle gives the hand-computed accuracy, location recall
@@ -3520,6 +3535,424 @@ class DevelopmentChecks(_Case):
         self.assertEqual(sum(v["documents"] for v in result["holdout_pool_bands"].values()), 0)
 
 
+# ---------------------------------------------------------------------------
+# CUAD as a claim check (benchmark/adapters/cuad_claim; Annex D, D-S13 item 8)
+
+
+CLAIM = "cuad_claim"
+CLAIM_CATEGORIES = ADAPTERS / CLAIM / "fixtures" / "category_list.txt"
+# An answer span shorter than this is not scanned for: the 41 rules are the same fixed text
+# in every bundle, and on the development items 7 one- or two-word answers occur in that
+# wording by coincidence. The gold-invariance proof covers every span whatever its length.
+CLAIM_SPAN_MIN_WORDS = 3
+# The fields tools/stage_workload.py writes into a staged B1 bundle's items.json: the item
+# table's source ids never reach an arm.
+STAGED_ITEM_FIELDS = ("item_id", "document_id", "rule_id", "benchmark")
+
+
+def _claim_build(out, source=None, **options):
+    options.setdefault("development", True)
+    options.setdefault("synthetic", bool(options["development"]))
+    options.setdefault("categories", str(CLAIM_CATEGORIES))
+    return _common()["cli"].build(_adapter(CLAIM), source or _source("cuad"), out, **options)
+
+
+def _without_gold(source, out):
+    """The same release file with every answers list emptied: a gold-free input."""
+    data = _json(source)
+    for entry in data["data"]:
+        for qa in entry["paragraphs"][0]["qas"]:
+            qa["answers"], qa["is_impossible"] = [], True
+    Path(out).write_text(json.dumps(data), encoding="utf-8")
+    return Path(out)
+
+
+def _answer_spans(source):
+    """{source document id: [whitespace-normalised answer spans]} of a CUAD release file."""
+    c = _common()
+    out = {}
+    for entry in _json(source)["data"]:
+        paragraph = entry["paragraphs"][0]
+        spans = out.setdefault(c["ids"].text_identity(paragraph["context"]), [])
+        spans += [c["bundle"].normalise_space(a["text"]) for qa in paragraph["qas"] for a in qa["answers"]]
+    return out
+
+
+def claim_gold_leaks(source, build, blank_build) -> list:
+    """What a claim build carries of the gold, as a list of problems (empty when nothing):
+    (1) gold invariance: a build from the same input with every answers list emptied must
+    give byte-identical files except each bundle's answer_key.json (items.json and
+    parts.json included); (2) the scan: no answer span of at least CLAIM_SPAN_MIN_WORDS
+    words occurs, whitespace-normalised, in any bundle file but the contract's own document
+    and its answer_key.json, nor in the staged item fields; (3) only answer_key.json
+    carries a gold label."""
+    c = _common()
+    problems = []
+    real, blank = _files(build), _files(blank_build)
+    if sorted(real) != sorted(blank):
+        problems.append("the gold-free build writes other files")
+    for path in sorted(set(real) & set(blank)):
+        if real[path] != blank[path] and Path(path).name != c["bundle"].ANSWER_NAME:
+            problems.append("differs with the gold emptied: " + path)
+    spans = _answer_spans(source)
+    parts = _json(Path(build) / c["bundle"].PARTS_RECORD_NAME)["documents"]
+    items = _json(Path(build) / c["bundle"].ITEM_TABLE_NAME)["items"]
+    for record in parts:
+        doc_id = record["document_id"]
+        mine = [s for s in spans.get(record["source_document_id"], [])
+                if len(s.split()) >= CLAIM_SPAN_MIN_WORDS]
+        staged = json.dumps([{k: i[k] for k in STAGED_ITEM_FIELDS} for i in items
+                             if i["document_id"] == doc_id], ensure_ascii=False)
+        texts = {"staged items.json": staged}
+        for path, data in real.items():
+            name = Path(path).name
+            if path.startswith(doc_id + "/") and name not in (c["bundle"].ANSWER_NAME, doc_id + ".md"):
+                texts[path] = data.decode("utf-8")
+                if '"gold"' in texts[path]:
+                    problems.append("a gold label outside answer_key.json: " + path)
+        for path, text in texts.items():
+            flat = c["bundle"].normalise_space(text)
+            problems += ["an answer span in " + path for s in mine if s in flat]
+    for name in (c["bundle"].ITEM_TABLE_NAME, c["bundle"].PARTS_RECORD_NAME):
+        if '"gold"' in real[name].decode("utf-8"):
+            problems.append("a gold label in " + name)
+    return problems
+
+
+class CuadClaimChecks(_Case):
+    """CUAD v1 as a claim check (D-S13 item 8): the rules and items, no gold in any bundle
+    (gold invariance and the answer-span scan), the labels of the claim form for B3 and B1,
+    the B1 prompt, the category list, a score, the command line from a copied tree, and the
+    development build. Each proof by neutralise, fail, restore, pass."""
+
+    def _proof(self, body, neutralise):
+        self.assertEqual(body(), [], "shipped")
+        with neutralise():
+            self.assertNotEqual(body(), [], "neutralised, the proof still passed")
+        self.assertEqual(body(), [], "restored")
+
+    def test_rules_items_ids_and_sides(self):
+        c, claim, cuad = _common(), _adapter(CLAIM), _adapter("cuad")
+        _claim_build(self.root / "b")
+        categories = claim.read_category_list(CLAIM_CATEGORIES)
+        ids_ = [claim.rule_id(k) for k in range(1, 42)]
+        self.assertEqual(ids_[0], "CONV-CUADC-01")
+        texts = set()
+        parts = _json(self.root / "b" / "parts.json")["documents"]
+        items = _json(self.root / "b" / "items.json")["items"]
+        self.assertEqual(len(parts), 2, "the duplicate merge keeps two of the three fixture contracts")
+        sides = {r["source_document_id"]: r["side"] for r in cuad.split_rows(cuad.read_source(_source("cuad")))}
+        for record in parts:
+            doc_id, sid = record["document_id"], record["source_document_id"]
+            self.assertEqual(doc_id, c["ids"].opaque_document_id(CLAIM, sid))
+            self.assertNotEqual(doc_id, c["ids"].opaque_document_id("cuad", sid), "ids apart from CUAD's")
+            self.assertEqual(record["side"], sides[sid], "the CUAD adapter's side")
+            bundle_dir = self.root / "b" / doc_id
+            rules = c["prompt"].conventions_from_bundle(bundle_dir)
+            self.assertEqual([c["prompt"].rule_id_of(h) for h, _t in rules], ids_)
+            self.assertTrue(all(h.endswith(" Claim [required] [conformance]") for h, _t in rules))
+            for k, (_h, text) in enumerate(rules, start=1):
+                self.assertEqual(text, claim.rule_text(k, categories))
+                self.assertTrue(text.startswith("Claim about the document: no passage of the document "
+                                                "holds a clause of this category: "), text)
+            texts.add((bundle_dir / "conventions" / "rules.md").read_bytes())
+            mine = [i for i in items if i["document_id"] == doc_id]
+            self.assertEqual(sorted(i["rule_id"] for i in mine), ids_, "one item per rule")
+            for i in mine:
+                self.assertEqual(i["item_id"], c["ids"].opaque_item_id(CLAIM, i["source_item_id"]))
+                self.assertEqual((i["benchmark"], i["source_document_id"]), (CLAIM, sid))
+                self.assertNotIn("gold", i)
+            # no source id in any bundle file; Shimmer's own splitter gives the part units
+            for path, data in _files(bundle_dir).items():
+                self.assertNotIn(sid.encode(), data, path)
+                self.assertNotIn(b"SYN-", data, path)
+            sys.path.insert(0, str(ROOT / "scripts"))
+            try:
+                import pairing_map
+            finally:
+                sys.path.remove(str(ROOT / "scripts"))
+            text = (bundle_dir / "context" / (doc_id + ".md")).read_text(encoding="utf-8")
+            self.assertEqual([u["unit_id"] for u in pairing_map.split_units(text, document_id=doc_id)],
+                             [p["unit_id"] for p in record["parts"]])
+            self.assertTrue(record["category_list_sha256"] and record["category_list_release"] is False)
+        self.assertEqual(len(texts), 1, "the same 41 rules in every bundle")
+        # the gold and the evidence units, by the answers' own offsets
+        alpha = c["ids"].opaque_document_id(CLAIM, c["ids"].text_identity(
+            _json(_source("cuad"))["data"][0]["paragraphs"][0]["context"]))
+        key = {i["rule_id"]: i for i in _json(self.root / "b" / alpha / "answer_key.json")["items"]}
+        present = {r: (i["evidence_unit_ids"], i["location_measurable"]) for r, i in key.items()
+                   if i["gold"] == "present"}
+        self.assertEqual(present, {"CONV-CUADC-01": (["u01-p-00001"], True),
+                                   "CONV-CUADC-02": (["u02-p-00002"], True),
+                                   "CONV-CUADC-08": (["u03-p-00003"], True),
+                                   "CONV-CUADC-16": (["u05-p-00005"], True)})
+        self.assertEqual(sum(1 for i in key.values() if i["gold"] == "absent"), 37)
+        self.assertTrue(all(i["evidence_unit_ids"] == [] and not i["location_measurable"]
+                            for i in key.values() if i["gold"] == "absent"))
+        # an answer whose offset does not locate its text is refused
+        with self.assertRaises(ValueError):
+            claim.evidence_parts("abc def", [(0, 3), (4, 7)], [{"text": "def", "answer_start": 0}])
+        self.assertEqual(claim.evidence_parts("abc\n\ndef", [(0, 3), (5, 8)],
+                                              [{"text": "c\n\nd", "answer_start": 2}]), [1, 2])
+
+    def test_no_gold_in_any_bundle(self):
+        claim = _adapter(CLAIM)
+        blank = _without_gold(_source("cuad"), self.root / "blank.json")
+        runs = iter(range(1000))
+
+        def body():
+            k = next(runs)
+            _claim_build(self.root / ("r%d" % k))
+            _claim_build(self.root / ("g%d" % k), blank)
+            return claim_gold_leaks(_source("cuad"), self.root / ("r%d" % k), self.root / ("g%d" % k))
+
+        original = claim.documents
+
+        def quoting(records, options=None):
+            # the leak the claim form must never have: a present item's rule carrying its clause
+            docs = original(records, options)
+            for doc in docs:
+                rules = {r["rule_id"]: r for r in doc["rules"]}
+                for item in doc["items"]:
+                    if item["gold"] == "present":
+                        clause = doc["parts"][item["evidence_parts"][0] - 1]["text"]
+                        rules[item["rule_id"]]["text"] += " The clause: " + " ".join(clause.split())
+            return docs
+
+        def by_form(records, options=None):
+            # a leak by form alone: no span, but the wording depends on the gold
+            docs = original(records, options)
+            for doc in docs:
+                rules = {r["rule_id"]: r for r in doc["rules"]}
+                for item in doc["items"]:
+                    if item["gold"] == "absent":
+                        rules[item["rule_id"]]["text"] += " Read every passage."
+            return docs
+
+        self._proof(body, lambda: mock.patch.object(claim, "documents", quoting))
+        self._proof(body, lambda: mock.patch.object(claim, "documents", by_form))
+        with mock.patch.object(claim, "documents", quoting):
+            k = next(runs)
+            _claim_build(self.root / ("r%d" % k))
+            _claim_build(self.root / ("g%d" % k), blank)
+            found = claim_gold_leaks(_source("cuad"), self.root / ("r%d" % k), self.root / ("g%d" % k))
+        self.assertTrue(any(p.startswith("an answer span in ") for p in found), found)
+        self.assertTrue(any(p.startswith("differs with the gold emptied") for p in found), found)
+
+    def _labels(self, spec, arm, root, items):
+        m = _common()["mapping"]
+        if arm == "B1":
+            return [r["label"] for r in m.label_b1(spec, items, root)["labels"]]
+        return [r["label"] for r in m.label_pipeline_arm(spec, items, root, arm)["labels"]]
+
+    def test_claim_labels_for_b3_and_b1(self):
+        m = _common()["mapping"]
+        claim = _adapter(CLAIM)
+        rules = [claim.rule_id(k) for k in range(1, 8)]
+        items = [{"item_id": "i%d" % k, "document_id": "dcc", "rule_id": r, "benchmark": CLAIM}
+                 for k, r in enumerate(rules)]
+        quote = {"quote": "Either party may end this agreement on thirty days notice."}
+        model = [_rec("m1", rules[0], "irregular", relation="contradiction", **quote),   # present
+                 _rec("m2", rules[1], "ok"),                                            # absent
+                 _rec("m4", rules[3], "irregular", confidence="UNCERTAIN"),              # refusal
+                 _rec("m6", rules[5], "irregular", relation="missing_field", **quote),   # present
+                 _rec("m7", rules[6], "irregular", relation="contradiction", **quote),
+                 _rec("m7b", rules[6], "ok", unit="u02-p-00002")]                       # any unit wins
+        python = [_rec("p5", rules[4], "irregular", relation="missing_field")]          # set aside
+        lines = [_bus_line("PRACTICE_AUDITOR", "dcc", model, _MODEL_BACKEND, _MODEL_ID, call_id="c" * 32),
+                 _bus_line("PRACTICE_AUDITOR", "dcc", python, "paired", "python")]
+        _incomplete_run(self.root / "b3", "dcc", completion=_completion(), bus_lines=lines)
+        b1 = self.root / "b1" / "dcc" / "labels"
+        b1.mkdir(parents=True)
+        for k, label in enumerate(["violated", "holds", "undecided", "absent", "VIOLATED: gloss",
+                                   "holds", ""]):
+            (b1 / ("i%d.json" % k)).write_text(json.dumps({"label": label, "evidence": quote["quote"]}),
+                                               encoding="utf-8")
+        want_b3 = ["present", "absent", "absent", m.ABSTAIN, "absent", "present", "present"]
+        want_b1 = ["present", "absent", m.ABSTAIN, m.ABSTAIN, "present", "absent", m.ABSTAIN]
+
+        def body():
+            got = (self._labels(claim.SPEC, "B3", self.root / "b3", items),
+                   self._labels(claim.SPEC, "B1", self.root / "b1", items))
+            return [] if got == (want_b3, want_b1) else [got]
+
+        # neutralised: the CUAD adapter's reading, where only missing_field is a FLAG
+        self._proof(body, lambda: mock.patch.object(claim.SPEC, "absence_flag", True))
+        # neutralised: B1's labels read as CUAD's present and absent
+        self._proof(body, lambda: mock.patch.object(claim.SPEC, "b1_labels", dict(
+            _adapter("cuad").SPEC.b1_labels)))
+        self.assertEqual(m.label_b0(claim.SPEC, items)["labels"][0]["label"], "absent")
+        self.assertEqual(claim.SPEC.s2, True)
+
+    def test_b1_prompt_renders_the_claims(self):
+        c, claim = _common(), _adapter(CLAIM)
+        blank = _without_gold(_source("cuad"), self.root / "blank.json")
+        _claim_build(self.root / "b")
+        _claim_build(self.root / "g", blank)
+        spec = c["prompt"].load_prompt(ROOT / "benchmark" / "baselines" / "b1_prompt.json")
+        bench = spec["benchmarks"][CLAIM]
+        # the preregistered question and labels of B's synthetic tests, word for word
+        self.assertEqual(bench, spec["benchmarks"]["synthetic"])
+        names = [line.split(":", 1)[0] for line in bench["labels"]]
+        self.assertEqual({n: claim.SPEC.b1_labels[c["mapping"].normalise_b1_label(n)] for n in names},
+                         {"violated": "FLAG", "holds": "CLEAR", "undecided": "UNDECIDED"})
+        self.assertEqual(c["mapping"].normalise_b1_label(bench["undecided"]), "undecided")
+        items = _json(self.root / "b" / "items.json")["items"]
+        system = c["prompt"].render_system(spec, CLAIM)
+        self.assertNotIn(spec["undecided_invitation"], system)
+        rendered = 0
+        for item in items:
+            prompts = []
+            for build in ("b", "g"):
+                bundle_dir = self.root / build / item["document_id"]
+                document = (bundle_dir / "context" / (item["document_id"] + ".md")).read_text(encoding="utf-8")
+                prompts.append(c["prompt"].render_user(
+                    spec, CLAIM, document=document, item=item,
+                    conventions=c["prompt"].conventions_from_bundle(bundle_dir),
+                    reference=c["prompt"].reference_from_bundle(bundle_dir)))
+            user = prompts[0]
+            self.assertEqual(prompts[0], prompts[1], "B1's prompt is the same with the gold emptied")
+            self.assertIn("ITEM\nItem id: %s\nRule id: %s\n%s\n" % (item["item_id"], item["rule_id"],
+                                                                   bench["question"]), user)
+            self.assertIn("REFERENCE MATERIAL\nNone.\n", user)
+            self.assertEqual(user.count("Claim [required] [conformance]: Claim about the document: "), 41)
+            self.assertIn("The undecided label is: undecided", user)
+            self.assertNotIn(item["source_item_id"], user)
+            rendered += 1
+        self.assertEqual(rendered, 82)
+
+    def test_category_list_and_refusals(self):
+        claim = _adapter(CLAIM)
+        rows = claim.read_category_list(CLAIM_CATEGORIES)
+        self.assertEqual(len(rows), 41)
+        self.assertEqual(rows[2]["description"],
+                         "The persons or firms that sign the synthetic contract, named as the contract names them")
+        self.assertEqual(rows[17]["name"], "ROFR/ROFO/ROFN")
+        self.assertEqual((claim.as_sentence("a b"), claim.as_sentence("a b?"), claim.as_sentence("a.")),
+                         ("a b.", "a b?", "a."))
+        text = CLAIM_CATEGORIES.read_text(encoding="utf-8")
+        crlf = self.root / "crlf.txt"
+        crlf.write_bytes(text.replace("\n", "\r\n").encode("utf-8"))
+        self.assertEqual(claim.read_category_list(crlf), rows)
+        for broken in (text.replace("\tCategory:\tInsurance", "\tCategory:\tInsurer"),
+                       text.replace("Must a party keep a policy of insurance in force?", ""),
+                       text.replace("CATEGORY LIST", "CATEGORIES"),
+                       text.replace("\t41\n\tCategory:\tThird Party Beneficiary", "\t41\n\tNotes:\tnone")):
+            path = self.root / "broken.txt"
+            path.write_text(broken, encoding="utf-8")
+            with self.assertRaises(ValueError):
+                claim.read_category_list(path)
+        with self.assertRaises(ValueError):
+            _claim_build(self.root / "none", categories=None)
+        # a non-development build takes only the release's category list
+        with self.assertRaisesRegex(ValueError, "not the release's"):
+            _claim_build(self.root / "rel", development=False, side="holdout", max_context=100000,
+                         output_allowance=10, token_counter=WordCounter(100))
+        self.assertFalse((self.root / "rel").exists() and any((self.root / "rel").iterdir()))
+
+    def test_score_and_location(self):
+        c, claim = _common(), _adapter(CLAIM)
+        _claim_build(self.root / "b")
+        items_path = self.root / "b" / "items.json"
+        items = _json(items_path)["items"]
+        gold = {}
+        for doc in {i["document_id"] for i in items}:
+            units = {u: t for u, _h, _l, t in c["bundle"].read_units(
+                (self.root / "b" / doc / "context" / (doc + ".md")).read_text(encoding="utf-8"))}
+            for row in _json(self.root / "b" / doc / "answer_key.json")["items"]:
+                gold[row["item_id"]] = (row["gold"], [units[u] for u in row["evidence_unit_ids"]])
+        for item in items:
+            label, units = gold[item["item_id"]]
+            folder = self.root / "b1" / item["document_id"] / "labels"
+            folder.mkdir(parents=True, exist_ok=True)
+            reply = {"label": "violated", "evidence": units[0]} if label == "present" else {"label": "holds"}
+            (folder / (item["item_id"] + ".json")).write_text(json.dumps(reply), encoding="utf-8")
+        b1 = c["cli"].score(claim, c["cli"].label(claim, items_path, "B1", self.root / "b1"), self.root / "b")
+        self.assertEqual(b1["primary"]["headline"]["headline_value"], 1.0)
+        self.assertEqual((b1["primary"]["location"]["value"], b1["primary"]["location"]["flag_items_measurable"]),
+                         (1.0, 6))
+        self.assertIn("claim form", b1["primary"]["headline"]["headline_measure"])
+        # B0 says absent everywhere: 76 absent right, 6 present missed, so macro-F1 is
+        # (0 + 2*76 / (2*76 + 6)) / 2 by hand
+        b0 = c["cli"].score(claim, c["cli"].label(claim, items_path, "B0"), self.root / "b")
+        self.assertAlmostEqual(b0["primary"]["headline"]["headline_value"], (2 * 76 / (2 * 76 + 6)) / 2)
+        self.assertEqual(b0["primary"]["location"]["value"], 0.0)
+
+    def test_command_line_from_a_copied_tree(self):
+        tree = self.root / "copy" / "benchmark"
+        shutil.copytree(ADAPTERS, tree / "adapters", ignore=shutil.ignore_patterns("__pycache__"))
+        (tree / "baselines").mkdir()
+        shutil.copy2(ROOT / "benchmark" / "baselines" / "b1_prompt.json", tree / "baselines")
+        counter = self.root / "counter.py"
+        counter.write_text(_COUNTER, encoding="utf-8")
+        source = tree / "adapters" / "cuad" / "fixtures" / "synthetic_items.json"
+        categories = tree / "adapters" / CLAIM / "fixtures" / "category_list.txt"
+
+        def cli(*args):
+            out = subprocess.run([sys.executable, "-I", "-X", "utf8", str(tree / "adapters" / CLAIM / "adapter.py")]
+                                 + [str(a) for a in args], capture_output=True, text=True, encoding="utf-8",
+                                 cwd=str(self.root), timeout=300)
+            return out.returncode, out.stdout, out.stderr
+
+        code, stdout, stderr = cli("build", "--input", source, "--out", self.root / "dev",
+                                   "--development", "--side", "holdout", "--categories", categories)
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual((json.loads(stdout)["documents"], json.loads(stdout)["items"]), (2, 82))
+        code, _o, stderr = cli("build", "--input", source, "--out", self.root / "rel", "--side", "holdout",
+                               "--max-context", 100000, "--output-allowance", 10, "--token-counter", counter,
+                               "--categories", categories)
+        self.assertEqual(code, 4, "a category list that is not the release's is refused")
+        self.assertIn("not the release's", stderr)
+        code, _o, stderr = cli("build", "--input", source, "--out", self.root / "nocat", "--development",
+                               "--side", "holdout")
+        self.assertEqual(code, 4, stderr)
+        code, stdout, stderr = cli("bands", "--input", source, "--categories", categories)
+        self.assertEqual(code, 0, stderr)
+        code, stdout, stderr = cli("split", "--input", source)
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(len(json.loads(stdout)), 2)
+
+    def test_development_build(self):
+        """Counts only, on the B-dev development items (skipped where external/ lacks them):
+        96 contracts and 3,936 items from the release's own category list, the gold-free
+        build differing only in the 96 answer keys, no answer span of at least three words
+        outside the documents, one rule set, and the pairing of the 41 claims by Shimmer's
+        own pairing map: 109 (contract, rule) pairs where a claim names a document label
+        beyond Passage (rows 1, 3, 4, 5 and 32 most), and L10's contract at 10 units and
+        410 judging plans, as L10 ran it."""
+        source, readme = _dev("cuad", "CUAD_v1.development.json"), _dev("cuad", "CUAD_v1_README.txt")
+        if not (EXTERNAL / "_bdev").is_dir() or not source.is_file() or not readme.is_file():
+            self.skipTest("the B-dev CUAD development items are not under external/ here")
+        c, claim = _common(), _adapter(CLAIM)
+        _claim_build(self.root / "dev", source, synthetic=False, categories=str(readme), side="development")
+        _claim_build(self.root / "blank", _without_gold(source, self.root / "blank.json"), synthetic=False,
+                     categories=str(readme), side="development")
+        parts = _json(self.root / "dev" / "parts.json")["documents"]
+        self.assertEqual((len(parts), len(_json(self.root / "dev" / "items.json")["items"])), (96, 96 * 41))
+        self.assertEqual({d["category_list_release"] for d in parts}, {True})
+        self.assertEqual(claim_gold_leaks(source, self.root / "dev", self.root / "blank"), [])
+        self.assertEqual(len({(self.root / "dev" / d["document_id"] / "conventions" / "rules.md").read_bytes()
+                              for d in parts}), 1)
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import pairing_map
+        finally:
+            sys.path.remove(str(ROOT / "scripts"))
+        rules_md = (self.root / "dev" / parts[0]["document_id"] / "conventions" / "rules.md").read_text(encoding="utf-8")
+        rules = [{"id": "CONV-%03d" % k, "rule": t}
+                 for k, (_h, t) in enumerate(c["prompt"].conventions_from_text(rules_md), start=1)]
+        beyond, plans = 0, {}
+        for d in parts:
+            text = (self.root / "dev" / d["document_id"] / "context" / (d["document_id"] + ".md")).read_text(
+                encoding="utf-8")
+            pm = pairing_map.build_pairing_map(text, rules, document_id=d["document_id"])
+            vocab = {tuple(v.split()) for v in pm["field_vocabulary"]}
+            beyond += sum(1 for r in rules if pairing_map.needed_fields(r["rule"], vocab) - {("passage",)})
+            plans[c["ids"].opaque_document_id("cuad", d["source_document_id"])] = (pm["unit_count"], pm["pair_count"])
+        self.assertEqual(beyond, 109)
+        self.assertEqual(plans["527255a5c970"], (10, 410))
+
+
 class AbsentChecks(unittest.TestCase):
     def test_absent_folder_skips(self):
         with tempfile.TemporaryDirectory(prefix="adapter_absent_") as tmp:
@@ -3655,6 +4088,18 @@ GROUPS = {
                              "bound (computed by hand; float32 non-4-bit weights, activations and "
                              "KV cache, sdpa with no T x T term, eager squared over the prompt "
                              "only, D-056) agree, and a written summary is recomputed"),
+    "cuadclaim": (CuadClaimChecks, "CUAD as a claim check (D-S13 item 8): 41 claims, the same in "
+                                   "every bundle, written from the category list alone, one item per "
+                                   "claim under ids of its own; no gold in any bundle (a gold-free "
+                                   "build differs only in answer_key.json, and no answer span of three "
+                                   "words or more is outside the document and the key); FLAG present "
+                                   "from any model-written irregular record, absent from ok or silence, "
+                                   "Python's blank-cell record set aside; B1 asks the preregistered "
+                                   "synthetic question and its prompt is the same with the gold "
+                                   "emptied; the category list read and refused as the release's; a "
+                                   "score with location; the command line from a copied tree; the "
+                                   "development build where external/ holds it (neutralise, fail, "
+                                   "restore, pass)"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example with its headline named, and an end-to-end score "
                               "(location for B3 and B1, B1 by containment either way where parts "
@@ -3677,7 +4122,7 @@ def check():
                              "outputs to the expected labels (B2, B1, B0, S-1, S-2, S-3, S-5, S-6, S-7, S-8; B3 "
                              "excluded on a call over the model's context; one setup-failure rule for B1 "
                              "and B3; two scoring modes, benchmark and as_shipped), label and score B's "
-                             "synthetic tests by hand, read B2 and B3 records by one "
+                             "synthetic tests by hand, build CUAD as a claim check with no gold in any bundle, read B2 and B3 records by one "
                              "reader with the same labels in both forms, score tiny examples as computed "
                              "by hand (S-4 included), and hold the development counts where external/ "
                              "has the development items")
