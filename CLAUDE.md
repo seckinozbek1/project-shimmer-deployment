@@ -270,7 +270,11 @@ processing swarm governed by an append-only constitution.
   `activated` (`multi_round.read_saved`), its round review recorded, and exactly one
   pipeline_start and one pipeline_end in its telemetry; it asks no model call of it
   (`ordinary_final_run.model_call_required`, D-100: L7 failed nine reviewed multi-round entries
-  on that requirement alone), while every other B3 run still needs its Producer 168 call. Later rounds reuse unchanged units through a
+  on that requirement alone), while every other B3 run still needs its Producer 168 call. The
+  phase saves its own step times (`timings` in `audit/multi_round.json`, `seconds` per round in
+  `audit/round_reuse.json`, `time.perf_counter`, rounded to microseconds; open item 39), since a
+  multi-round run has no topology runtime and empty `phase_latencies`; the analyser reports them
+  in its `Multi-round step times` row. Later rounds reuse unchanged units through a
   Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
   paired rules, the labels of the document's field vocabulary those rules name
   (`multi_round_rounds.named_vocabulary`, the only way the vocabulary reaches the computation;

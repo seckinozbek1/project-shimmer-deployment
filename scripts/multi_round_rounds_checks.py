@@ -403,6 +403,48 @@ def check_no_model_call():
                                       "Python and no model call")
 
 
+# ---------- open item 39: the multi-round run records its own step times ---------------------
+
+def _measured(value):
+    return type(value) is float and value >= 0 and value == round(value, 6)
+
+
+def observe_timings():
+    """The real case phase on the declared two-round case. The times themselves vary from
+    run to run, so what is observed is their shape: which steps are recorded, that each is a
+    non-negative number of seconds rounded to microseconds, that the round record's per-round
+    seconds are the ones the timings carry, and that the whole phase covers its steps."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_rounds_oi39_") as td:
+        run = mocked_multi_round_run(td)
+        saved = json.loads(run["ctx"].multi_round_path().read_text(encoding="utf-8"))
+        reuse = rounds.read(run["run_dir"]) or {}
+    t = saved.get("timings") if isinstance(saved.get("timings"), dict) else {}
+    steps = ("round_review", "records", "phase")
+    per_round = [(r.get("round_id"), r.get("seconds")) for r in reuse.get("rounds") or []]
+    recorded = all(_measured(t.get(k)) for k in steps)
+    return {"code": run["code"], "outcome": saved.get("outcome"),
+            "records": sorted((r["record_id"], r["state"], r.get("movement"), r.get("value"), r.get("unit"),
+                               r.get("written_by")) for r in saved.get("records") or []),
+            "fields": sorted(t), "unit": t.get("unit"), "clock": t.get("clock"),
+            "steps_measured": recorded,
+            "round_ids": [r for r, _ in per_round],
+            "rounds_measured": bool(per_round) and all(_measured(v) for _, v in per_round),
+            "rounds_match_record": [(r.get("round_id"), r.get("seconds")) for r in t.get("rounds") or []] == per_round,
+            "phase_covers_steps": recorded and t["phase"] >= t["round_review"] + t["records"] - 2e-6
+            and sum(v for _, v in per_round if _measured(v)) <= t["round_review"] + 2e-6}
+
+
+def check_timings():
+    o = observe_timings()
+    ok = (o["code"] == 0 and o["outcome"] == "reviewed" and o["records"] == OI35_RECORDS
+          and o["fields"] == ["clock", "phase", "records", "round_review", "rounds", "unit"]
+          and o["unit"] == "seconds" and o["clock"] == "time.perf_counter"
+          and o["steps_measured"] and o["round_ids"] == ["r1", "r2"] and o["rounds_measured"]
+          and o["rounds_match_record"] and o["phase_covers_steps"])
+    return ("PASS" if ok else "FAIL", "the multi-round record carries each round's review, the round review, the "
+                                      "record computation and the whole phase in seconds rounded to microseconds")
+
+
 def _records_from_processor(manifest_value, evidence):
     """Neutralisation: the case phase asks PROCESSOR for its records again, through
     the agent boundary it used before open item 35, with the same refusals."""
@@ -642,6 +684,17 @@ class MultiRoundRoundsChecks(unittest.TestCase):
         self.prove("oi35_no_model_call", observe_no_model_call, check_no_model_call,
                    lambda: patch.object(multi_round_phase, "computed_records", _records_from_processor))
 
+    def test_oi39_the_run_records_its_own_step_times(self):
+        # Neutralised: the phase writes no timings object.
+        import multi_round_phase
+        self.prove("oi39_step_times", observe_timings, check_timings,
+                   lambda: patch.object(multi_round_phase, "step_timings", lambda *a, **k: {}))
+
+    def test_oi39_step_times_are_rounded_to_microseconds(self):
+        # Neutralised: the measured intervals are written unrounded.
+        self.prove("oi39_rounded", observe_timings, check_timings,
+                   lambda: patch.object(rounds, "seconds", lambda elapsed: float(elapsed) + 1e-9))
+
     def test_oi35_two_figures_give_no_numeric_position(self):
         import multi_round_phase
         self.prove("oi35_one_figure", observe_computed_rules, check_computed_rules,
@@ -713,7 +766,9 @@ def check():
                     "names does not; reused model asks carry the new unit id; the convention-parse path runs; "
                     "the round findings reach the bus; the case is reviewed and activated with its records "
                     "computed in Python and no model call, a span with two figures has no numeric position, "
-                    "several statements are never chosen between, a movement is never classified; every "
+                    "several statements are never chosen between, a movement is never classified; the run "
+                    "records each round's review, the round review, the record computation and the whole "
+                    "phase in seconds rounded to microseconds (open item 39); every "
                     "multi-round reply (the strategic layer's) saved once as advisory_not_record; a renamed "
                     "term whose value moved, or that has no unit, is refused, not withdrawn; check 261's "
                     "stripped statements unchanged" % result.testsRun)

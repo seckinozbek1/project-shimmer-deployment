@@ -35,12 +35,14 @@ nothing is computable) is recorded as `needs_model` and not asked here, or anywh
 in the case phase.
 
 Written to <run>/audit/round_reuse.json. No model, no network, no file outside the
-run folder.
+run folder. Open item 39: each round entry carries `seconds`, the time.perf_counter
+time its review took (rounded to microseconds); it is a measurement, never an input.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -53,6 +55,11 @@ SCHEMA_VERSION = 1
 RECORD_NAME = "round_reuse.json"
 # Plans Python settles by itself; the others need a model and are recorded only.
 PYTHON_PLAN_KINDS = ("computed", "band", "duration", "absence_computed")
+
+
+def seconds(elapsed):
+    """A measured time.perf_counter interval in seconds, rounded to microseconds."""
+    return round(float(elapsed), 6)
 
 
 def record_path(ctx):
@@ -205,6 +212,7 @@ def review_rounds(ctx, manifest, documents, *, convention_registry=None):
     docs = {d.get("id"): d for d in documents or [] if isinstance(d, dict)}
     earlier = {}
     for rnd in sorted(manifest.get("rounds") or [], key=lambda r: r["sequence"]):
+        started = time.perf_counter()
         entry = {"round_id": rnd["round_id"], "sequence": rnd["sequence"], "documents": []}
         for doc_id in rnd.get("document_ids") or []:
             doc = docs.get(doc_id)
@@ -217,6 +225,7 @@ def review_rounds(ctx, manifest, documents, *, convention_registry=None):
                 "units_reused": sum(1 for r in rows if r["status"] == "reused"),
                 "units_computed": sum(1 for r in rows if r["status"] == "computed"),
                 "findings": [f for f in found if finding_record.is_finding(f)]})
+        entry["seconds"] = seconds(time.perf_counter() - started)
         record["rounds"].append(entry)
     _write(ctx, record)
     return record

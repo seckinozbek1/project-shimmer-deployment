@@ -28,6 +28,13 @@ declarations and nothing more (computed_records):
 Every record carries `written_by: python` and `provenance: computed`, and the
 records reach the run bus under backend `computed`, model `python`.
 
+Open item 39: under the multi-round argv no topology runtime exists, so the run's
+phase_latencies are empty; the phase records its own step times instead, measured
+with time.perf_counter in seconds rounded to microseconds, as `timings` in
+audit/multi_round.json (step_timings): each round's review, the whole round review,
+the record computation, and the whole phase up to its last write. They are
+measurements, never inputs, and change no other field.
+
 The strategic layer (strategic_support.execute) keeps its explicit, optional model
 calls for the decision-support modes; a trajectory_only case makes none.
 _call and _items are its agent boundary: a reply that is not ok, is truncated, or
@@ -40,6 +47,7 @@ rewrite or invent one. Production does not call it.
 from copy import deepcopy
 import hashlib
 import json
+import time
 
 import multi_round as mr
 
@@ -152,6 +160,18 @@ def computed_records(manifest, evidence):
     return mr.validate_records(manifest, evidence, records)
 
 
+def step_timings(review, measured, phase_seconds):
+    """The `timings` object: each round's review seconds as round_reuse.json records them,
+    the steps measured in execute (round_review, records), and the whole phase."""
+    import multi_round_rounds
+    timings = {"unit": "seconds", "clock": "time.perf_counter",
+               "rounds": [{"round_id": r.get("round_id"), "seconds": r.get("seconds")}
+                          for r in (review or {}).get("rounds") or []]}
+    timings.update({name: multi_round_rounds.seconds(value) for name, value in measured.items()})
+    timings["phase"] = multi_round_rounds.seconds(phase_seconds)
+    return timings
+
+
 def execute(ctx, record, documents, reference_index, wrapper_factory, *, sensitive,
             run_objectives="", convention_registry=None):
     """Called only on explicit request, after the ordinary startup governance gates.
@@ -171,6 +191,8 @@ Open item 35: the typed case records are then computed by computed_records, with
 no model call; see the module docstring.
 """
     mr.require(record["run_id"] == ctx.run_id, "run_identity")
+    started = time.perf_counter()
+    review, measured = None, {}
     try:
         mr.require(sensitive is False, "sensitive_multi_round_unavailable")
         manifest = mr.validate_manifest(record["manifest"])
@@ -180,8 +202,10 @@ no model call; see the module docstring.
         mr.write_record(ctx, record)
         import multi_round_rounds
         try:
+            step = time.perf_counter()
             review = multi_round_rounds.review_rounds(ctx, manifest, documents,
                                                       convention_registry=convention_registry)
+            measured["round_review"] = time.perf_counter() - step
             record["round_review"] = {"record": "audit/" + multi_round_rounds.RECORD_NAME,
                                       "availability": review.get("availability")}
             # S2 checker H4: the computed round findings reach the run bus. A bus
@@ -195,9 +219,11 @@ no model call; see the module docstring.
         except Exception as exc:  # the computed review never takes the case phase down
             record["round_review"] = {"availability": "failed", "error_type": type(exc).__name__}
         mr.write_record(ctx, record)
+        step = time.perf_counter()
         records = computed_records(manifest, record["evidence"])
         record["records"] = records
         mr.project(record)
+        measured["records"] = time.perf_counter() - step
         mr.write_record(ctx, record)
         import strategic_support
         record["strategic_layer"] = strategic_support.execute(record, None, wrapper_factory,
@@ -213,6 +239,7 @@ no model call; see the module docstring.
                                 "resolution": "case-scoped records computed in code from the operator's "
                                               "declared sources; no model judged them; no durable promotion"})
         record["outcome"] = "reviewed"
+        record["timings"] = step_timings(review, measured, time.perf_counter() - started)
         mr.write_record(ctx, record)
         return 0
     except (mr.InvalidState, ValueError, KeyError, TypeError) as exc:
@@ -223,6 +250,7 @@ no model call; see the module docstring.
             record["activation"] = mr.activation(True, eligible=False, reason=reason)
         record["outcome"] = "refused"
         record["records"] = []
+        record["timings"] = step_timings(review, measured, time.perf_counter() - started)
         mr.write_record(ctx, record)
         return 8
 
