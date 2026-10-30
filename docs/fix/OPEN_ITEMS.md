@@ -398,56 +398,56 @@ open-item sweep.
 
 - **Update (2026-10-30, D-098).** The repository scorer now reads a multi-round key (check 293), but it runs no twin check on a multi-round run and reads no `twin_of` inside `multi_round`, so this item still decides whether a family 4 twin's multi-round result can be read as a clean twin's. L7 runs the family 4 tests and twins multi-round (D-097); their twins are reported as this item says, not as clean twins.
 
-## 27. The general cloud path's score command cannot find its key (found at loop S5)
+## 27. The general cloud path's score command cannot find its key (found at loop S5) (issue #35)
 
 - **What it is.** `tools/prepare_cloud_run.py` (around line 437) writes `score.sh` with a relative `--corpus project/benchmark/corpora/clinical_reference`; `tools/score_corpus.py` joins that under its own corpora folder, so the command looks for `.../corpora/project/benchmark/corpora/...` and finds no key.
 - **Evidence.** The S5 cases lane (lane/s05-cases) found it while keeping `--corpus` unchanged; the join is `CORPORA / corpus` in `tools/score_corpus.py`.
 - **Why it was left.** It predates the loop, sits on the general cloud path the loop does not use for its runs, and `--corpus` was to stay unchanged (R21). P9 reason (c): outside S5's items.
 - **What would settle it.** Write `--key` (R21) into `score.sh` with the bundle's own key path, with a check that the generated command scores a fixture; S6 sweep.
 
-## 28. B2 does not run the comparison with an earlier version (found at loop S5)
+## 28. B2 does not run the comparison with an earlier version (found at loop S5) (issue #36)
 
 - **What it is.** `benchmark/baselines/python_only.py` reads a manifest's `prior` but does not run the earlier-version comparison, so B2 cannot measure the rename probes or any change record (S5 plan R4, R11).
 - **Evidence.** `python_only.py` docstring (around line 28) and its status record `not_reproduced.prior_comparison: true`.
 - **Why it was left.** The comparison is the pipeline's, not a baseline arm's; adding it to B2 is outside S5's items (P16, P9 reason c).
 - **What would settle it.** A decision that B2 must cover change records; then B2 calls the pipeline's own prior-comparison functions with a check.
 
-## 29. Five gaps left by D-068 (found at loop S5)
+## 29. Five gaps left by D-068 (found at loop S5) (issue #37)
 
 - **What it is.** (1) `paired_review.judging_call_counts` still counts uncomputable calls among calls that could carry a note on a Python finding; they cannot. (2) The judged-absence stamping keeps a rule id the model wrote, while the D-068 path replaces it with the plan's. (3) D-068 keeps only items with the Finding record's shape; an item carrying only an UNCERTAIN marker or no declared relation is dropped and counted (`not_finding_shaped`). (4) A D-068 call's reply-record outcome stays `advisory_not_record` and `mark_not_promoted` does not mark it. (5) The reading that `item_calls_failed` (D-066) replaces only silence is for the final preregistration checker to attack; item 12.11 decides whether it is applied.
 - **Evidence.** lane/s05-defect report (commits d18cf93, 0e77433, 7e9f16f); `scripts/paired_review.py`; `benchmark/adapters/common/mapping.py`.
 - **Why it was left.** Each is outside D-068's declared scope or needs the verification run's counts first (P16, P9 reason e until measured).
 - **What would settle it.** (1) count them apart in the summaries and the tr catalog, with check 278 updated; (2) apply the plan's rule to judged absences, with a pinned amendment; (3) the verification run's `not_finding_shaped` count, then a decision; (4) carry the call id on the stamped result; (5) the final preregistration attack.
 
-## 30. The reading agent's claim slot needs claim ids that real documents never carry (found at loop S5, item 7 diagnostics)
+## 30. The reading agent's claim slot needs claim ids that real documents never carry (found at loop S5, item 7 diagnostics) (issue #38)
 
 - **What it is.** The compact extraction contract accepts a claim only by an id written in the span text (`scripts/compact_contracts.py` around line 64). No development document under review carries such ids, so every PROCESSOR reply that writes a claim is refused as "Ungrounded claim id" and the accepted extractions are empty spans. Downstream, the classifier pairs an empty extraction with its source, so the clinical sheet's pairs are all labelled OMISSION.
 - **Evidence.** Saved replies of L1, L4a and L5v (development, exposed): refusals for an ungrounded claim id in 5 calls on the device log, 3 on its clean twin, 2 and 1 on two L4a documents; not one source span carries a claim id; classifier labels OMISSION on every pair whose extraction was empty. Recorded in the S5 report, item 7.
 - **Why it was left.** Placing claim ids in spans by Python (as EXTRACTION-B does for reference ids) changes the input the frozen Producer checkpoint was evaluated on; it needs its own evidence run and is a product change for S6a, not a dry-run fix (P16, P11).
 - **What would settle it.** A general rule for where claim ids come from (placed by Python, or not required), measured on development tests that are not benchmarks before any benchmark use.
 
-## 31. An amendment with no reference id raises validator errors, and amendments carry no agent (found at loop S5, item 7 diagnostics)
+## 31. An amendment with no reference id raises validator errors, and amendments carry no agent (found at loop S5, item 7 diagnostics) (issue #39)
 
 - **What it is.** Amendments built from computed findings in L1 and L5v carry an empty `ref_ids` list in some cases, which leaves `_validator_errors` on them (the comment then lacks a CONV and REF id), and every amendment's `agent` field is null.
 - **Evidence.** L5v device log 4 validator errors, L5v clinical sheet 2, L1 2 (saved `review_data.json`).
 - **Why it was left.** Found by a read-only diagnostic during S5's cloud runs; the fix belongs to the amendment path (S6a), after the dry runs (P16).
 - **What would settle it.** Trace why a computed finding reaches amendments with no REF id (the unit's passage placement, `paired_review.unit_passage_refs`), fix generally, and hold it with a check.
 
-## 32. The scorer's twin comparison cannot read a Python-only run (found at loop S5)
+## 32. The scorer's twin comparison cannot read a Python-only run (found at loop S5) (issue #40)
 
 - **What it is.** `tools/score_corpus.py --twin-run` reads the twin run's bus (`logs/agent_bus.jsonl`). B2 (`benchmark/baselines/python_only.py`) writes no bus, so a B2 twin cannot be passed; S5 scored each B2 twin as its own run (false positives counted) instead.
 - **Evidence.** S5 B2 runs on the development suite (`external/s05/B2_suite/`, ignored): "no bus at ...".
 - **Why it was left.** A scorer change is attacked by a checker before use (III.2); the workaround gives the same false-positive count (P16).
 - **What would settle it.** Read the twin's findings from `review_data.json` when the run has no bus, with a check.
 
-## 33. Gate check 256 fails now and then inside a long gate run (found at loop S5, INC-021)
+## 33. Gate check 256 fails now and then inside a long gate run (found at loop S5, INC-021) (issue #3)
 
 - **What it is.** Check 256 ("startup readiness is explicit and non-mutating") patches `socket.create_connection` and `subprocess.Popen` for the whole process and counts any call during its window as forbidden. In two of five chunked runs on 29 October it failed with "sensitive health imported a model probe while inactive"; alone, and in the shorter range 200 to 256, it passed every time.
 - **Evidence.** Gate logs of `8c2392d` and `ee2f1ed` (private); INC-021.
 - **Why it was left.** A test-infrastructure flake, not product behaviour; finding the thread needs an instrumented gate run, which belongs to the S6a sweep (P16).
 - **What would settle it.** Record the calling thread and stack in `refuse()` on a failing run, then either stop that thread at its own check's end or scope the check to its own calls; neutralise, fail, restore, pass.
 
-## 34. A model's figure relation is kept on a unit with no figures (found at loop S5, L6 model-text review)
+## 34. A model's figure relation is kept on a unit with no figures (found at loop S5, L6 model-text review) (issue #41)
 
 - **What it is.** Under D-068 the shared refusals screen absence claims (a quote must be in the unit) but not figure relations: a model answer with relation `sum_mismatch` on a unit that states no figures is kept as a model-written record.
 - **Evidence.** L6 model-text review (development, exposed): 3 of 3 kept records sampled were such answers on ContractNLI units, all wrong.
@@ -466,7 +466,7 @@ open-item sweep.
 
 - **Closed at loop S5 (2026-10-30, D-100, D-103).** On real execution (L7) all nine multi-round entries reached `reviewed` and `activated`. The runner's model-call requirement failed them, fixed in D-101; their re-run is in L9a.
 
-## 36. The S8 report must carry D-069's blind acceptance test, the clean twin's model records, and S-8 as the control (found at loop S5, checker rounds 1 and 2)
+## 36. The S8 report must carry D-069's blind acceptance test, the clean twin's model records, and S-8 as the control (found at loop S5, checker rounds 1 and 2) (issue #42)
 
 - **What it is.** D-069's acceptance test for D-068 asked whether a D-068 record on the clean twin was scored as a false positive, but `tools/score_corpus.py` counts false positives over amendments only and a D-068 record is never an amendment, so the test could not fail on what it was meant to catch. D-070's "verified" means only that clinical recall did not fall and that no amendment changed. The frozen preregistration does not say this, and the benchmark reader lets a model-written record decide an item, so B3 can carry model-driven false flags.
 - **Evidence.** L5v (development, exposed): the clean twin carried 8 kept model-written records and 20 model-only relations (missing_field 11, sum_mismatch 9), each a false alarm on a document with no planted flaw; the L6 model-text review found 3 of 3 sampled kept answers wrong (open item 34). D-086, D-087; the S5 report, below item 8; the dated note after DEV-020 in `docs/benchmarks/DEVIATIONS.md`.
@@ -496,7 +496,7 @@ open-item sweep.
 
 - **Closed at loop S5 (2026-10-30, D-100).** L7's catalogue run: start 0.28 s, ingestion and roles 0.06 s, boot and index 21.75 s, phase 1 0.003 s.
 
-## 39. The phase latencies of the two L6m multi-round cases are not recorded (found at loop S5, item 9; S5 checker round 3)
+## 39. The phase latencies of the two L6m multi-round cases are not recorded (found at loop S5, item 9; S5 checker round 3) (issue #43)
 
 - **What it is.** Both L6m cases were refused at the multi-round phase before any phase latency was written, so item 9 has no per-phase time for a multi-round run.
 - **Evidence.** L6m (development, exposed): `analysis/model_telemetry_summary.json` of both entries; the S5 report, item 9 ("none recorded"); INC-023; D-086 (P9 e), corrected in D-088.
@@ -516,7 +516,7 @@ open-item sweep.
 
 - **Closed at loop S5 (2026-10-30, D-096).** Settled on development items only, after preregistration version 2's freeze: ContractNLI B3 2.86 USD per correct FLAG (1 of 3), B1 tuned 0.27 (1 of 4); SciTab B3 0.08 (2 of 4), B1 tuned 0.13 (1 of 4); ContraDoc no correct FLAG in either arm. Development, a handful of documents, no inference. The S8 report gives the sealed figures beside them.
 
-## 41. Preregistration section 13: duties for the S8 report (found at loop S5, after checker round 3)
+## 41. Preregistration section 13: duties for the S8 report (found at loop S5, after checker round 3) (issue #44)
 
 - **What it is.** A fresh attack on section 13 found that B1 and B3 locate planted flaws by different tests (B3 by any rule and relation; B1 through the planted rule's item and its quoted sentences, capped when one rule has several flaws), that the unit text for synthetic documents is not defined in the text, and six minor gaps (private s5_sec13_attack.md).
 - **Evidence.** D-088; C0 run 3 agreed with the adapter on all 176 synthetic score blocks.
@@ -525,35 +525,35 @@ open-item sweep.
 
 - **Dated addition (2026-10-29 23:39 +0300, D-089).** Tie-break: S3 and S4 confirmed. C0 never tested C's reading of the synthetic unit text (no synthetic B1 output existed), so D-088's "matches in practice" is withdrawn. The S8 report must also give: the count of B1 synthetic location disagreements between C and the adapter and the reading reported; the count of B1 FLAG items whose quotes locate no unit beside the quotes matching several units; an exploratory B1 location under section 3.2's two-way containment, labelled not preregistered; location recall on rules with exactly one planted flaw for every arm; B3's attributed count beside B1's located count.
 
-## 42. A batch launched with `--output-dir` is always refused (found at loop S5, INC-014)
+## 42. A batch launched with `--output-dir` is always refused (found at loop S5, INC-014) (issue #45)
 
 - **What it is.** `tools/ordinary_final_cloud.py` refuses `--output-dir` for every batch launch, so a batch's run folders always sit inside the session bundle.
 - **Evidence.** `tools/ordinary_final_cloud.py` around line 160; INC-014 (L2's first attempt, refused before any provider call); the first sweep (D-092 item 17).
 - **Why it was left.** No S5 launch needed an output folder outside the bundle: the bundles live under the ignored `external/`. Whether a sealed S8 batch needs one (SEALED-RUN-A puts sealed output outside the repository, which a bundle under the test archive already is) is not shown.
 - **What would settle it.** In S6a, before S8a: either allow `--output-dir` for a batch (each entry's run folder under it), with a controller check, or record that S8's sealed batches need none.
 
-## 43. The multi-round strategic layer still sends the whole case in one unbounded call (found at loop S5, lane s05-mr)
+## 43. The multi-round strategic layer still sends the whole case in one unbounded call (found at loop S5, lane s05-mr) (issue #46)
 
 - **What it is.** After open item 35's fix, the multi-round phase asks no model, but an explicit `strategic_options` or recommendation request still sends PROCESSOR the whole case in one call with no bound, as the phase did before; on the L6m case that call ran to its cap after about 15 minutes. A failure is recorded as `recommendation_unavailable` and cannot take the case down. The pipeline's confirmation prompt ("Proceed with multi-round model calls (unmeasured)?") and the console hint now describe only that layer.
 - **Evidence.** `scripts/multi_round_phase.py` (the strategic layer); the lane report (private, D-092); INC-023.
 - **Why it was left.** No development case asks for it; bounding it is a design change of its own (which question, in which shape the checkpoint was evaluated on), outside open item 35's fix (P16).
 - **What would settle it.** In S6a: a bounded strategic question, or the layer refused in final mode, with a check; the prompt and hint texts brought in line (check 279 pins the prompt's statement).
 
-## 44. The multi-round scorer does not check the operator's rule id (found at loop S5, lane s05-scorer)
+## 44. The multi-round scorer does not check the operator's rule id (found at loop S5, lane s05-scorer) (issue #47)
 
 - **What it is.** Round findings carry registry ids only, so `tools/score_corpus.py` prints "attribution: not checked" for a multi-round run; `docs/INPUT_FORMAT.md` section 9 says a scorer needs the case's conventions numbered as section 3 does to check the operator's id.
 - **Evidence.** `tools/score_corpus.py` (`score_multi_round`); check 293; D-098.
 - **Why it was left.** Renumbering would reimplement the convention parser's numbering (dropped short rules included), outside the lane (P16).
 - **What would settle it.** A `--conventions` option that numbers the rules with the pipeline's own parser, with a gate check, in S6a.
 
-## 45. The multi-round records are posted with payload agent PROCESSOR (found at loop S5, D-S12 checker)
+## 45. The multi-round records are posted with payload agent PROCESSOR (found at loop S5, D-S12 checker) (issue #48)
 
 - **What it is.** Since open item 35's fix the multi-round phase computes its records in Python, but posts them with payload `"agent": "PROCESSOR"`; only the envelope's `backend` and `model` (and `written_by: python` on each record) say Python wrote them (P5, who wrote what).
 - **Evidence.** `scripts/multi_round_phase.py` (the bus post of the computed records); D-103.
 - **Why it was left.** Bus readers key agents by name; changing the payload agent touches every reader of the multi-round channel and the scorer's round reader (P16), and `written_by` already says Python.
 - **What would settle it.** In S6a: a payload agent naming Python (or the phase), with every reader and the scorer's round reader brought along, held by a check.
 
-## 46. A rule that names a document label pairs only with units carrying that label (found at loop S5, lane s05-cuadclaim)
+## 46. A rule that names a document label pairs only with units carrying that label (found at loop S5, lane s05-cuadclaim) (issue #49)
 
 - **What it is.** The pairing map pairs a rule with a unit only when the unit carries every document label the rule's text names. A CUAD claim whose wording names a label such as "Source", "Name" or "Date" pairs only with units holding that label line, so a clause elsewhere in the contract is never asked about and reads as absent.
 - **Evidence.** On the CUAD development side, 109 of 3,936 (contract, claim) pairs name a label beyond the passage; one claim alone matches the `Source:` lines of 42 contracts; about 5 percent of unit-rule pairs are lost (457,769 of 482,119). The lane's measurement, gold-free, from Shimmer's own pairing map (D-113).

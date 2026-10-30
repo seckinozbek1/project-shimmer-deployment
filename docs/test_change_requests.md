@@ -156,7 +156,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Proposal**: as TCR-007.
 - **Decision**:
 
-### TCR-012. `negotiation_r2_to_r3` and `negotiation_r3_to_r4`: completeness rules carry no scope or requirement declaration
+### TCR-012. `negotiation_r2_to_r3` and `negotiation_r3_to_r4`: completeness rules carry no scope or requirement declaration (issue #50)
 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/corpora/negotiation_r2_to_r3` and `benchmark/corpora/negotiation_r3_to_r4`, `conventions/mandate_conventions.md`, as at tag `loop-s01-v1`.
