@@ -167,3 +167,4 @@ S5's brought-back allocation was 70.81 USD. Spent on it so far 8.18 (L11, L7, L1
 | Smoke runs | 3.12 | |
 | Reserve | 10.00 | storage first |
 | S8 | about 77.8 | the rest; floor 60; version 3 is sized from the ledger when written |
+| R1 (2026-10-30 13:26 to 15:02 UTC, D-114, D-116) | d-s14-constraint-replay, one exposed replay-only B1 bundle, 136 producer prompts on two paths, sealed at cd498a3 | 112 minutes, times 1.3 | 3.10 | 4.70 | 96 (ledger); usage at launch five-hour 24, seven-day 44; disk 33 GB; rules A to D met, 52 of 52 failing partitions valid under the constraint; MATCH | 2.06 (ledger). Variance: 66 percent of forecast |
