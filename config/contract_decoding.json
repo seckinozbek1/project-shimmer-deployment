@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "name": "compact-producer-contract",
+  "version": 1,
+  "status": "active",
+  "authority": "D-S14 item 3 (fix the causes, never the checks); the loop records the decision that adopts it in docs/loop/DECISIONS.md",
+  "applies_to": {
+    "agent": "PROCESSOR",
+    "backend": "local_producer",
+    "path": "the compact producer under report_optimized: a wrapper bound by compact_contracts.bind_producer with the validated messages"
+  },
+  "envelope_key": "items",
+  "item_keys": ["claims", "questions", "refs", "span", "status", "uncertainty"],
+  "alias_key": "span",
+  "status_key": "status",
+  "id_arrays": {
+    "claims": "\\bCLM-[A-Za-z0-9-]+",
+    "refs": "\\bREF-\\d{4,}\\b"
+  },
+  "text_arrays": ["questions", "uncertainty"],
+  "semantic_keys": ["claims", "questions", "uncertainty"],
+  "status_values": {"semantic": "extracted", "none": "empty"},
+  "refusal": {"items": [], "status": "refused"},
+  "serialisation": "canonical: sorted keys, compact separators, non-ASCII kept (json.dumps sort_keys=True, separators=(',', ':'), ensure_ascii=False). All 84 DEV replies of checkpoint 168 (docs/fix/producer_tuning_v3_run, checkpoint-168 full_dev.jsonl) are byte for byte this serialisation, so the item keys run in sorted order, not in the order the contract's example names them.",
+  "description": "A logits constraint built per request from the request's own declaration, with compact_contracts.producer unchanged behind it. Only replies of the canonical shape can be generated: the envelope with exactly one item per owned alias, in the owned order; every item key present, in canonical order; span the next owned alias; claims only CLM ids written in that span's text; refs only that span's grounded set (REF ids in its text and the passages bounded_extraction.grounding placed in it); status extracted exactly when claims, questions or uncertainty is non-empty; questions and uncertainty the model's own JSON strings, non-blank and not repeated; or the refusal object, which the validator refuses as before. The id patterns are the validator's own (a check holds them equal to compact_contracts.producer). Nothing here changes the frozen decoding policy: greedy stays greedy, and a token the model would have chosen anyway is never changed."
+}

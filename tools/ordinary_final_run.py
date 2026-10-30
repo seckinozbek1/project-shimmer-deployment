@@ -235,7 +235,7 @@ REPLAY_PROMPTS = 'replay_prompts.json'
 REPLAY_MEASUREMENT = 'replay_measurement.json'
 REPLAY_RUNNER_ARGS = ('--prompts', '--out')
 REPLAY_SEALED_ARGS = {'--paths': True, '--decision': True, '--max-new-tokens': True}
-REPLAY_PATHS = {'e': True, 'one_shot': True, 'sdpa': False, 'e_repeat': True}
+REPLAY_PATHS = {'e': True, 'one_shot': True, 'sdpa': False, 'e_repeat': True, 'sdpa_constrained': False}
 REPLAY_DEFAULT_PATHS = ('e', 'one_shot', 'sdpa', 'e_repeat')
 
 

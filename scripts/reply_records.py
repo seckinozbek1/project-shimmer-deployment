@@ -104,7 +104,7 @@ def _now():
 def write(run_context, *, agent, call_id=None, backend, model_id, model_mode=None,
           payload=None, payload_form=None, reply=None, ok=True, error="",
           decoding=None, sensitive=False, phase="", doc_id="", attention=None, context=None,
-          prefill=None):
+          prefill=None, decoding_constraint=None):
     """Save one call's reply. Returns the call id (minted when none was given), or
     None when nothing was written (no run context, or the write failed).
 
@@ -116,7 +116,10 @@ def write(run_context, *, agent, call_id=None, backend, model_id, model_mode=Non
     attention record of a local call also names its prefill setting (chunked or one-shot, the
     chunk size and the decision, D-061), and ``prefill``, when given, is what the prefill
     measured (prompt tokens, chunks, tokens chunked, tail tokens, seconds; counts and times
-    only). A record written without any of them carries no such field, as before.
+    only). ``decoding_constraint``, when given, is the contract constraint the compact producer
+    decoded under (DECODING-B: its name, version, declaration and request digests, and the
+    steps, interventions and any dead end it counted; no text). A record written without any
+    of them carries no such field, as before.
 
     ``payload`` is the exact text sent to the backend after any outbound masking
     (None when the call ended before a request was built); its SHA-256 is taken
@@ -169,6 +172,8 @@ def write(run_context, *, agent, call_id=None, backend, model_id, model_mode=Non
                 record["context"] = dict(context)
             if prefill is not None:
                 record["prefill"] = dict(prefill)
+            if decoding_constraint is not None:
+                record["decoding_constraint"] = dict(decoding_constraint)
             target = path / f"{sequence:06d}_{call_id}.json"
             with target.open("x", encoding="utf-8") as stream:
                 json.dump(record, stream, ensure_ascii=False, sort_keys=True, indent=1, default=str)

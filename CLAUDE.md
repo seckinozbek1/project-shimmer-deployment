@@ -784,6 +784,36 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- DECODING-B (loop S5, D-S14 item 3): the compact producer (PROCESSOR on `local_producer`
+  bound by `compact_contracts.bind_producer` with the validated messages, report_optimized)
+  decodes under a logits constraint built per request from that request's OWN declaration
+  (`scripts/contract_decoding.py`, declared in `config/contract_decoding.json`), with
+  `compact_contracts.producer` UNCHANGED behind it, the prompt bytes unchanged (check 263) and
+  the frozen decoding policy unchanged (greedy stays greedy; the constraint rides beside the
+  kwargs as one logits processor, `contract_decoding.for_call`, the only place it is built).
+  Only the canonical reply can be generated: sorted keys and compact separators (the form all
+  84 DEV replies of checkpoint 168 take, NOT the key order the contract's example names), one
+  item per owned alias in owned order, every key present, claims only CLM ids written in that
+  span's text, refs only that span's grounded set (the validator's: REF ids in its text and
+  the passages `bounded_extraction.grounding` placed in it), no id twice, status extracted
+  exactly when claims, questions or uncertainty is non-empty, questions and uncertainty the
+  model's own non-blank, unrepeated JSON strings; or the refusal object, which stays the
+  model's to give and the validator's to refuse. A token the model would have chosen anyway
+  is never changed; every step where its top token was not admitted is counted. Every
+  constrained call records `decoding_constraint` (name, version, declaration and request
+  digests, steps, interventions, dead end) on its reply record and in its usage (the
+  `backend_invocation` telemetry row); every other call records none. Measured, not
+  preferred: L7, L8, L10 and L11 refused 52 of 283 compact partitions (invented CLM ids in
+  35 calls, two of them runaway lists to the 1536 cap, a dropped uncertainty key, a
+  context-only alias, one item for two spans, the neighbouring span's REF), each repeated
+  byte for byte by a deterministic re-ask; all 52 saved replies leave the constrained
+  language, and all 84 frozen DEV replies stay inside it with no intervention. The DEV
+  figure (102 of 102 items, 75 of 84 rows valid, 9 refusals) is re-measured under the
+  constraint by the replay path `sdpa_constrained` (`benchmark/baselines/replay_prompts.py`,
+  `extract --call-ids --dev`); until that measurement is read, the constraint is built and
+  proven on fixtures only. The replay path changed `tools/ordinary_final_run.py`
+  (`REPLAY_PATHS`), so bundles sealed before it refuse with `Controller source changed`.
+  Check 295 and the decoding gate (strict determinism on CUDA) hold this.
 - HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
   controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
   wrappers, the progress and status readers, and every file under `tools/loop/`) passes its
