@@ -4568,6 +4568,9 @@ def main(argv=None):
     parser = _build_arg_parser()
     localization.localize_parser(parser)
     args = parser.parse_args(argv)
+    # Pre-phase-3 spans (open item 38): main's inline work before phase 3-4, timed
+    # contiguously into phase_latencies under a topology runtime; no-ops otherwise.
+    execution_topology.pre_phase_span("phase_0_start")
 
     import final_models
     if final_models.mode() == 'final':
@@ -4936,6 +4939,7 @@ def main(argv=None):
         return code
 
     # Date cascade + cutoff -> populate input/operational/
+    execution_topology.pre_phase_span("phase_0_ingestion_and_roles")
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,
               phase="0")
     # chokepoint 4 (INFRA-041 P2): there is no BOOT date-web egress to suppress any
@@ -4984,7 +4988,8 @@ def main(argv=None):
             print("[pipeline] aborted by operator.", file=sys.stderr); return 0
 
     # BOOT orchestrator (adaptive_spawn fires if first run)
-    handler = _resolve_operator_handler(args, run_ctx)
+    execution_topology.pre_phase_span("phase_0_boot_and_index")
+    handler =_resolve_operator_handler(args, run_ctx)
     orch = TopOrchestrator.boot(ROOT, interactive=not args.non_interactive,
                                  operator_handler=handler, cost_tracker=cost_tracker,
                                  run_adaptive_spawn=True, run_context=run_ctx,
@@ -5176,6 +5181,7 @@ def main(argv=None):
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 
     # PHASE 1
+    execution_topology.pre_phase_span("phase_1_situation_assessment")
     _emit_progress(event="start", docs=len(op_docs), status="running")
     _emit_progress(phase=1, status="running")
     orch.deliberation_round({"phase": "situation_assessment",
@@ -5185,6 +5191,8 @@ def main(argv=None):
 
     # R6: the default sentence, plus the review question when the operator gave one.
     run_objectives = _effective_run_objectives(args.run_objectives, args.task, args.question)
+    # Genesis phase 2 has no code of its own here; phase 3-4 is the next boundary.
+    execution_topology.pre_phase_span(None)
 
     production, audit, conv_review = [], [], []
     deliverables = {}

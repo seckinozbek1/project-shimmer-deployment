@@ -14,6 +14,7 @@ repository except ledger lines.
 """
 import base64
 from datetime import datetime, timezone
+import inspect
 import json
 import math
 import os
@@ -289,6 +290,32 @@ def detached_poll_command(remote,label,progress=None):
 # never replaced by a run. Without a declaration none of this runs and the launch
 # body and transfer argv are byte-identical to the v9 path.
 ASSET_COPY_STATES=('MATCH','MISSING','MISMATCH','UNREACHABLE')
+
+
+# Open item 37: one disk reading of the run root's filesystem taken after the evidence archive
+# is written (so it counts the archive), by the runner's own disk_reading carried in the packer
+# and printed on one marked line; the controller saves it beside the collected evidence. A
+# missing or unreadable reading is saved as unavailable with its reason and never fails a run.
+DISK_AFTER_EVIDENCE='disk_after_evidence.json'
+DISK_MARK='SHIMMER_DISK_READING '
+DISK_AFTER_PACK=(inspect.getsource(runner.disk_reading)
+                 +"print('"+DISK_MARK+"'+json.dumps(disk_reading(str(pathlib.Path('.').resolve()))))\n")
+
+
+def disk_after_evidence(stdout):
+    """The packer's disk reading, or why there is none; never raises."""
+    try:
+        marked=[x for x in bytes(stdout or b'').decode('utf8',errors='replace').splitlines() if x.startswith(DISK_MARK)]
+        value=json.loads(marked[-1][len(DISK_MARK):]) if marked else None
+        if isinstance(value,dict):return value
+        return dict(unavailable='no disk reading in the evidence packer output')
+    except Exception as exc:
+        return dict(unavailable='unreadable disk reading in the evidence packer output: '+type(exc).__name__)
+
+
+def save_disk_after_evidence(folder,stdout):
+    try:write(Path(folder)/DISK_AFTER_EVIDENCE,disk_after_evidence(stdout))
+    except Exception:pass
 
 
 def asset_copy_declaration(base, digest):
@@ -571,10 +598,11 @@ with tarfile.open('collected_evidence.tar.gz','w:gz') as archive:
  for p in sorted(set(paths)):
   h=hashlib.sha256(p.read_bytes()).hexdigest();manifest[p.as_posix()]={'sha256':h,'bytes':p.stat().st_size};archive.add(p,arcname=p.as_posix(),recursive=False)
 pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,indent=2))
-"""
+"""+DISK_AFTER_PACK
     def collect(label_prefix,into,tag=None):
         """Pack, hash and download the instance's current evidence into `into`, verified."""
-        remote(label_prefix+'pack_evidence','cd '+REMOTE+' && /usr/bin/python3.12 -c '+shlex.quote(pack),180,tag=tag,into=into)
+        r=remote(label_prefix+'pack_evidence','cd '+REMOTE+' && /usr/bin/python3.12 -c '+shlex.quote(pack),180,tag=tag,into=into)
+        save_disk_after_evidence(into,r.stdout)
         r=remote(label_prefix+'evidence_hash','sha256sum '+REMOTE+'/collected_evidence.tar.gz',60,tag=tag,into=into)
         digest=r.stdout.decode().split()[0]
         transport(label_prefix+'evidence_download',['scp',*options,host+':'+REMOTE+'/collected_evidence.tar.gz',

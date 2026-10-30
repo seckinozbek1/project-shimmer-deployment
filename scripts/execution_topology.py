@@ -69,6 +69,7 @@ class Runtime:
         self.optimized = False
         self.run_context = None
         self.written = 0
+        self.span = None
 
     def write(self):
         if self.run_context is None:
@@ -151,6 +152,10 @@ class Runtime:
 
     def close(self):
         try:
+            if self.span is not None:
+                # main returned or raised inside a pre-phase-3 span: its time is still real.
+                self.scheduler.emit("phase_exit", phase=self.span, state="run_ended", pre_phase_3=True)
+                self.span = None
             self.scheduler.close()
         finally:
             self.write()
@@ -226,6 +231,25 @@ def phase_boundary(function):
         finally:
             finish(runtime, state)
     return synchronous
+
+
+def pre_phase_span(name):
+    """Close the open pre-phase-3 span and open `name` (None only closes).
+
+    main's work before phase 3-4 is inline, not a decorated phase function, so
+    phase_boundary never saw it and phase_latencies began at phase 3. The spans
+    are recorded as the same phase_enter/phase_exit pair, marked pre_phase_3 so
+    they add no consumer barrier. A no-op outside a topology runtime."""
+    runtime = ACTIVE.get()
+    if runtime is None:
+        return
+    if runtime.span is not None:
+        runtime.scheduler.emit("phase_exit", phase=runtime.span, state="completed", pre_phase_3=True)
+        runtime.span = None
+    if name is not None:
+        runtime.scheduler.emit("phase_enter", phase=name, pre_phase_3=True)
+        runtime.span = name
+    runtime.write()
 
 
 def entrypoint(function):

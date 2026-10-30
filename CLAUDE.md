@@ -114,7 +114,11 @@ processing swarm governed by an append-only constitution.
   carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
   and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
   evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
-  S5's merge refuse the same way and must be re-sealed.
+  S5's merge refuse the same way and must be re-sealed. Open item 37 (disk on the instance:
+  the runner's `evidence/disk_usage.json` before, sampled during and after the workload, and
+  the evidence packer's `disk_after_evidence.json`) changed `tools/ordinary_final_run.py` and
+  `tools/ordinary_final_cloud.py`, so bundles sealed before it refuse the same way and must be
+  re-sealed.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;

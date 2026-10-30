@@ -3746,6 +3746,176 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual([c['type'] for c in guard.instance_candidates(self.TYPES, guard.a10_reference_rate([ledger, other]))],
                          ['gpu_1x_a10', 'gpu_1x_a6000', 'gpu_1x_a100_sxm4', 'gpu_1x_h100_pcie'])
 
+    # ---- Open item 37: disk in use on the instance ------------------------------------------
+
+    def test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not(self):
+        """The runner's disk_reading: total, used (total less free) and available bytes of the
+        filesystem holding the run root, from statvfs as df -B1 reports them; a failed reading
+        is a record with its reason, never an exception."""
+        stat = SimpleNamespace(f_blocks=1000, f_frsize=4096, f_bfree=400, f_bavail=300)
+        with patch.object(os, 'statvfs', lambda path: stat, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes']),
+                         (4_096_000, 2_457_600, 1_228_800))
+        self.assertEqual(value['path'], str(self.root))
+
+        def refused(path):
+            raise OSError(5, 'Input/output error')
+        with patch.object(os, 'statvfs', refused, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertNotIn('used_bytes', value)
+        self.assertIn('OSError', value['unavailable'])
+
+    def test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails(self):
+        """The runner's DiskSampler: a reading before the workload, the largest of every reading
+        as the sampled peak, a reading after it; the file is rewritten after every reading (a
+        budget stop keeps what was read); an unavailable reading is counted with its reason and
+        a reader that raises fails nothing. execute() starts it after the network denial,
+        before either arm, and stops it in both arms' finally (read from its source)."""
+        used = iter([10, 70, 40, 20])
+        reading = lambda where: dict(path=where, epoch=1.0, total_bytes=100, used_bytes=next(used), available_bytes=5)
+        path = self.root / 'evidence' / runner.DISK_USAGE
+        path.parent.mkdir()
+        sampler = runner.DiskSampler(self.root, path, interval=3600, reading=reading).start()
+        self.assertEqual(read(path)['before_workload']['used_bytes'], 10)
+        sampler.take()
+        sampler.take()
+        # As a budget stop would leave it: before and the peak so far, no after.
+        kept = read(path)
+        self.assertEqual((kept['peak']['used_bytes'], kept['readings'], kept['after_workload']), (70, 3, None))
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['before_workload']['used_bytes'], value['peak']['used_bytes'],
+                          value['after_workload']['used_bytes'], value['readings']), (10, 70, 20, 4))
+        self.assertEqual((value['sample_seconds'], value['peak_kind']), (3600, runner.DISK_PEAK_KIND))
+        self.assertIn('not a continuous maximum', value['peak_kind'])
+        # Unavailable readings: recorded with their reason, counted apart, no peak invented.
+        path.unlink()
+        sampler = runner.DiskSampler(self.root, path, interval=3600,
+                                     reading=lambda where: dict(path=where, epoch=1.0, unavailable='OSError: fixture')).start()
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['peak'], value['readings'], value['unavailable_readings'], value['last_unavailable']),
+                         (None, 0, 2, 'OSError: fixture'))
+        self.assertEqual(value['before_workload']['unavailable'], 'OSError: fixture')
+
+        def raising(where):
+            raise RuntimeError('reader fault')
+        runner.DiskSampler(self.root, self.root / 'never.json', interval=3600, reading=raising).start().stop()
+        # The sampling thread itself reads on its interval.
+        path.unlink()
+        values = iter(range(1, 1000))
+        sampler = runner.DiskSampler(self.root, path, interval=0.01, reading=lambda where: dict(
+            path=where, epoch=1.0, total_bytes=1000, used_bytes=next(values), available_bytes=1)).start()
+        time_module.sleep(0.2)
+        sampler.stop()
+        self.assertGreater(read(path)['readings'], 3)
+        # The wiring in execute(), from its source.
+        tree = ast.parse(runner_source())
+        execute = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'execute')
+        body = [ast.unparse(s) for s in execute.body]
+        start = body.index('disk = DiskSampler(base, evidence / DISK_USAGE).start()')
+        self.assertEqual(body[start - 1], 'deny_network(rec)')
+        b1 = execute.body[start + 1]
+        self.assertEqual(ast.unparse(b1.test), "arm_of(manifest) == 'B1'")
+        self.assertEqual([ast.unparse(s) for s in b1.body[0].finalbody], ['disk.stop()'])
+        b3 = next(s for s in execute.body[start + 2:] if isinstance(s, ast.Try))
+        self.assertEqual(ast.unparse(b3.finalbody[0]), 'disk.stop()')
+
+    def test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence(self):
+        """The controller's evidence packer carries the runner's own disk_reading and prints one
+        marked reading after the archive is written; the controller saves it as
+        disk_after_evidence.json in the run folder it collects into (the session's, and each
+        batch entry's). No new phase. A packer output with no reading is saved as unavailable
+        with its reason, and the run completes exactly as before."""
+        reading = dict(path=controller.REMOTE, epoch=2.0, total_bytes=500, used_bytes=300, available_bytes=150)
+        marked = lambda value: (b'packed\n' + (controller.DISK_MARK + json.dumps(value)).encode() + b'\n')
+        transport, console, failure = self.execute(outputs={'pack_evidence': marked(reading)})
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE), reading)
+        self.assertNotIn('disk', ' '.join(transport.started))
+        # The packer's own script, as launched, executed here: the archive, then the reading.
+        launch = next(argv[-1] for argv, _ in transport.calls if argv[0] == 'ssh' and '/pack_evidence.pid' in argv[-1])
+        script = base64.b64decode(re.search(r"printf %s '?([A-Za-z0-9+/=]+)'?", launch).group(1)).decode()
+        code = shlex.split(script)[shlex.split(script).index('-c') + 1]
+        self.assertIn(controller.DISK_AFTER_PACK, code)
+        packed = self.root / 'packed'
+        packed.mkdir()
+        (packed / 'evidence').mkdir()
+        write(packed / 'evidence' / 'result.json', dict(fixture=True))
+        stat = SimpleNamespace(f_blocks=10, f_frsize=1024, f_bfree=4, f_bavail=3)
+        here, out = os.getcwd(), io.StringIO()
+        try:
+            os.chdir(packed)
+            with patch.object(os, 'statvfs', lambda path: stat, create=True), contextlib.redirect_stdout(out):
+                exec(compile(code, 'pack', 'exec'), {})
+        finally:
+            os.chdir(here)
+        self.assertTrue((packed / 'collected_evidence.tar.gz').is_file())
+        value = controller.disk_after_evidence(out.getvalue().encode())
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes'], value['path']),
+                         (10240, 6144, 3072, str(packed.resolve())))
+        # No reading in the packer's output: unavailable with its reason, the run unchanged.
+        self.setUp()
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE),
+                         dict(unavailable='no disk reading in the evidence packer output'))
+        self.assertIn('unreadable', controller.disk_after_evidence((controller.DISK_MARK + '{oops').encode())['unavailable'])
+        self.assert_torn_down()
+        # A batch: each entry's run folder holds the reading its own collection printed.
+        self.setUp()
+        bundles, entries = self.batch_bundles()
+        outputs = {'batch_pack_evidence_%d' % k: marked(dict(reading, used_bytes=300 + k)) for k in range(4)}
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries), outputs=outputs)
+        self.assertIsNone(failure, failure)
+        folders = sorted(p for p in (self.base / 'batch').iterdir() if p.is_dir())
+        self.assertEqual([read(p / controller.DISK_AFTER_EVIDENCE)['used_bytes'] for p in folders], [300, 301, 302, 303])
+
+    def test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence(self):
+        """FINAL_STATUS carries the readings under `disk` and RUN_REPORT.md a 'Disk on the
+        instance' row; a reading that is missing or failed says so."""
+        gib = 2 ** 30
+        at = lambda used: dict(path='/r', epoch=1.0, total_bytes=100 * gib, used_bytes=used * gib, available_bytes=(100 - used) * gib)
+        usage = dict(before_workload=at(40), peak=at(55), after_workload=at(50), readings=12, unavailable_readings=0,
+                     peak_kind=runner.DISK_PEAK_KIND, sample_seconds=runner.DISK_SAMPLE_SECONDS)
+        folder = self.root / 'analysis_disk'
+        self.analysis_folder(folder, evidence={'evidence/' + runner.DISK_USAGE: json.dumps(usage).encode()})
+        write(folder / 'disk_after_evidence.json', at(51))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([status['disk'][k]['used_bytes'] // gib for k in ('before_workload', 'peak', 'after_workload', 'after_evidence')],
+                         [40, 55, 50, 51])
+        row = status['report']['Disk on the instance']
+        self.assertEqual(row, 'before the workload: 40.00 GiB in use of 100.00 GiB, 60.00 GiB available; peak: 55.00 GiB in use '
+                              'of 100.00 GiB, 45.00 GiB available (12 readings; %s); after the workload: 50.00 GiB in use of '
+                              '100.00 GiB, 50.00 GiB available; after evidence packing: 51.00 GiB in use of 100.00 GiB, '
+                              '49.00 GiB available' % runner.DISK_PEAK_KIND)
+        self.assertIn('- **Disk on the instance.** before the workload: 40.00 GiB', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+        # Nothing recorded (a run before open item 37), and a failed reading.
+        folder = self.root / 'analysis_no_disk'
+        self.analysis_folder(folder)
+        write(folder / 'disk_after_evidence.json', dict(unavailable='OSError: fixture'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        row = read(folder / 'FINAL_STATUS.json')['report']['Disk on the instance']
+        self.assertIn('before the workload: not recorded (no evidence/disk_usage.json', row)
+        self.assertIn('after evidence packing: unavailable (OSError: fixture)', row)
+
+
+def runner_source():
+    """The runner's source, read for the disk sampler's wiring in execute()."""
+    return Path(runner.__file__).read_text(encoding='utf-8')
+
+
+def runner_source_without_the_b3_disk_stop():
+    source = Path(runner.__file__).read_text(encoding='utf-8')
+    changed = source.replace('    finally:\r\n        disk.stop()\r\n        rec.close()', '    finally:\r\n        rec.close()', 1)
+    changed = changed.replace('    finally:\n        disk.stop()\n        rec.close()', '    finally:\n        rec.close()', 1)
+    assert changed != source, 'the B3 disk stop is not in the runner any more'
+    return changed
+
 
 def shlex_quote(value):
     import shlex
@@ -4449,6 +4619,22 @@ NEUTRALIZATIONS = [
     # D-079: the helper no longer adds the flag, so every executed start would show a window.
     ('test_every_child_process_on_the_controller_path_starts_without_a_window', cloud_run_common, 'windows',
      lambda: False),
+    # Open item 37: a reading that never reads the filesystem.
+    ('test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not', runner, 'disk_reading',
+     lambda path: dict(path=str(path), epoch=0.0, unavailable='neutralised')),
+    # Open item 37: a sampler that keeps nothing it read.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', runner.DiskSampler, 'take',
+     lambda self, slot=None: None),
+    # Open item 37: the B3 arm no longer stops the sampler, so no after-workload reading.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', sys.modules[__name__],
+     'runner_source', runner_source_without_the_b3_disk_stop),
+    # Open item 37: the controller drops the packer's reading.
+    ('test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence', controller, 'disk_after_evidence',
+     lambda stdout: dict(unavailable='neutralised')),
+    # Open item 37: the analyser reads no disk record.
+    ('test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence', analysis, 'disk_record',
+     lambda base, target: dict(before_workload=None, peak=None, peak_kind=None, after_workload=None, readings=None,
+                               after_evidence=None, runner_file=False)),
 ]
 
 
