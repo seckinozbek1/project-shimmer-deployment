@@ -136,8 +136,9 @@ def site_kwargs(row, mode='base'):
     return kw
 
 
-def build_chain(snapshot_dir, kwargs, device):
-    """(raw generation config, effective config, processor chain) exactly as generate() would build them."""
+def build_chain(snapshot_dir, kwargs, device, custom=None):
+    """(raw generation config, effective config, processor chain) exactly as generate() would build them;
+    `custom` is a logits_processor list generate() was handed (the compact producer's constraint)."""
     raw = GenerationConfig.from_pretrained(str(snapshot_dir), local_files_only=True)
     cfg = copy.deepcopy(raw)
     unused = cfg.update(**kwargs)  # generate(): kwargs override the model's generation config
@@ -152,7 +153,8 @@ def build_chain(snapshot_dir, kwargs, device):
     GenerationMixin._prepare_special_tokens(stand, cfg, True, device=device)
     processors = GenerationMixin._get_logits_processor(
         stand, generation_config=cfg, input_ids_seq_length=PROBE_LENGTH, encoder_input_ids=None,
-        prefix_allowed_tokens_fn=None, logits_processor=LogitsProcessorList(), device=device, model_kwargs={})
+        prefix_allowed_tokens_fn=None, logits_processor=custom if custom is not None else LogitsProcessorList(),
+        device=device, model_kwargs={})
     return raw, cfg, processors
 
 
@@ -268,6 +270,45 @@ class DecodingFamilyChecks(unittest.TestCase):
 
     def test_redactor_family(self):
         self.family_check('redactor')
+
+    def test_producer_contract_constraint(self):
+        """DECODING-B: the compact producer's contract constraint is handed to generate() as a
+        custom logits processor and merged by transformers' own _get_logits_processor after the
+        frozen policy's chain, which it leaves as it was; applied through that chain it admits
+        exactly the tokens the declaration allows, with no floating-point cumsum, and on CUDA
+        under strict determinism, three steps of greedy choice."""
+        import contract_decoding
+        import contract_decoding_checks as fixture
+        row = next(r for r in families() if r['family'] == 'producer')
+        kw = dict(expected_kwargs(row['backend']), max_new_tokens=BUDGET)
+        spec, digest = contract_decoding.declaration()
+        tok = fixture.FixtureTokenizer()
+        owned, citable = fixture.owned_spans()
+        contract = contract_decoding.Contract.from_binding(owned, citable, spec)
+        _, _, plain = build_chain(snapshot(row), kw, 'cpu')
+        report = REPORT.setdefault('producer_contract_constraint', {})
+        for device in ['cpu'] + (['cuda:0'] if torch.cuda.is_available() else []):
+            constraint = contract_decoding.Constraint(contract, spec, digest, tok, PROBE_LENGTH, kw['eos_token_id'], 'binding')
+            _, _, chain = build_chain(snapshot(row), kw, device, custom=constraint.generate_kwargs()['logits_processor'])
+            self.assertEqual([type(p).__name__ for p in chain], [type(p).__name__ for p in plain] + ['ContractProcessor'])
+            ids = torch.full((1, PROBE_LENGTH), fixture.UNK, dtype=torch.long).to(device)
+            text = ''
+            with cumsum_recorder() as calls, (strict_determinism() if device != 'cpu' else contextlib.nullcontext()):
+                for _ in range(3):
+                    generator = torch.Generator().manual_seed(len(text))
+                    scores = chain(ids, torch.randn(1, PROBE_VOCAB, generator=generator).to(device))
+                    admitted = {int(t) for t in torch.isfinite(scores[0]).nonzero().flatten().tolist()}
+                    grammar = contract_decoding.Grammar(contract, spec)
+                    state = grammar.walk(grammar.start(), text)
+                    expected = {t for t, s in enumerate(tok.vocab) if t > fixture.UNK and grammar.walk(state, s) is not None}
+                    self.assertEqual(admitted, expected)
+                    token = int(scores[0].argmax())
+                    text += tok.vocab[token]
+                    ids = torch.cat([ids, torch.tensor([[token]], device=device)], dim=1)
+            self.assertEqual([c for c in calls if c['floating']], [])
+            self.assertTrue(text.startswith('{"items":[') or '{"items":['.startswith(text))
+            report[device] = dict(steps=3, reply_prefix_chars=len(text), strict_determinism=device != 'cpu',
+                                  float_cumsum=0, chain=[type(p).__name__ for p in chain])
 
 
 if __name__ == '__main__':

@@ -24989,6 +24989,53 @@ def check_294_pipeline_time_before_phase_3_is_in_phase_latencies():
     return check()
 
 
+def check_295_compact_producer_decodes_under_its_contract():
+    """Loop stage S5, D-S14 item 3 (DECODING-B, s5_diag_b3 K3 to K7): the tuned producer failed
+    52 of 283 compact partitions in L7, L8, L10 and L11 (invented CLM ids, a dropped
+    uncertainty key, a context-only alias, one item for two spans, the neighbouring span's REF,
+    runaway id lists), each one repeated byte for byte by a deterministic re-ask. The compact
+    producer now decodes under a logits constraint built from its request's own declaration
+    (scripts/contract_decoding.py, config/contract_decoding.json), compact_contracts.producer
+    unchanged behind it. Runs scripts/contract_decoding_checks.py: with a fixture tokenizer and
+    a stand-in model, every failure kind is prevented and the validator passes, the constraint
+    off reproduces every failure with the runs' own reason, a valid reply and the refusal are
+    never changed, the real call_local carries it and records it, the replay measures it, and
+    every frozen DEV reply of checkpoint 168 is inside the constrained language. Then
+    neutralises, in turn, the processor's admission (every token admitted), the wrapper's
+    binding (no constraint built) and the status and emptiness rule; requires a failure;
+    restores; requires a pass."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import contract_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/contract_decoding_checks.py does not pass'
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_kind_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_call', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (contract_decoding.Grammar, 'close_rule', lambda grammar, j, it, used: (True, True),
+         ('test_language_rules',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: 6 failure kinds prevented with the validator unchanged and reproduced with the '
+                    'constraint off; wrapper, reply record, replay and the 84 frozen DEV replies hold; '
+                    '3 neutralisations fail and restore'
+                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+
+
 def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
     """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
     (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
@@ -25495,6 +25542,8 @@ CHECKS = [
      check_293_scorer_reads_the_key_parts_d042_added),
     ("294 the pipeline's time before phase 3 is in phase_latencies (open item 38)",
      check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
+    ("295 the compact producer decodes under its request's own contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_295_compact_producer_decodes_under_its_contract),
 ]
 
 

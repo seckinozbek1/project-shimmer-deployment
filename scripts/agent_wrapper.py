@@ -30,6 +30,7 @@ import agent_activation
 import agent_briefs
 import run_options
 import generation_observation
+import contract_decoding
 import decoding_policy
 import final_models
 import model_telemetry
@@ -769,10 +770,11 @@ class AgentWrapper:
             ok=r.ok, error=r.error, decoding=sent.get("decoding"),
             sensitive=bool(getattr(self, "sensitive", False)),
             phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""),
-            attention=sent.get("attention"), context=sent.get("context"), prefill=sent.get("prefill"))
+            attention=sent.get("attention"), context=sent.get("context"), prefill=sent.get("prefill"),
+            decoding_constraint=sent.get("decoding_constraint"))
 
     def _local_generate(self, backend, mdl, inputs, max_new_tokens, decoding, sent, model_id, decision=None,
-                        prefill=None):
+                        prefill=None, constraint=None):
         """One local generate call (call_qwen, call_local), D-058 and D-061. The prompt must
         fit the model's context with the call's output allowance, or the call is refused before
         generating: recorded in its reply record (`context`) and as a `prompt_over_context`
@@ -785,8 +787,10 @@ class AgentWrapper:
         other call in one shot. The reply record
         carries the kernel and the prefill setting (`attention`) and what the prefill measured
         (`prefill`: chunks, tail, seconds). Out of memory or a refused kernel is raised once as
-        a named failure (final_models.GenerationFailure), never retried. Returns (output ids,
-        None) or (None, the refused CallResult)."""
+        a named failure (final_models.GenerationFailure), never retried. `constraint`, the
+        compact producer's (contract_decoding.for_call, DECODING-B), rides beside the frozen
+        decoding kwargs as a logits processor; what it counted is written back into `sent`.
+        Returns (output ids, None) or (None, the refused CallResult)."""
         prompt_tokens = int(inputs["input_ids"].shape[1])
         sent["context"] = final_models.context_record(mdl, prompt_tokens, max_new_tokens)
         if sent["context"]["over_context"]:
@@ -802,13 +806,16 @@ class AgentWrapper:
                 % (fit["prompt_tokens"], fit["max_new_tokens"], fit["model_context"])))
         torch = importlib.import_module("torch")
         setting = dict(prefill or final_models.NOT_GOVERNED_PREFILL)
+        extra = constraint.generate_kwargs() if constraint is not None else {}
         try:
             with torch.no_grad(), final_models.pinned_attention(mdl, decision) as attention:
                 sent["attention"] = dict(attention, **setting)
                 out, sent["prefill"] = final_models.generate_with_prefill(
                     mdl, inputs, max_new_tokens=max_new_tokens, decoding_kwargs=decoding["kwargs"],
-                    prefill=setting)
+                    prefill=setting, **extra)
         except Exception as exc:
+            if constraint is not None:
+                sent["decoding_constraint"] = constraint.summary()
             named = final_models.named_generation_failure(exc)
             # A raised generation is still a call: its record says so, then it raises on.
             self._write_reply(CallResult(backend, model_id, "", ok=False,
@@ -819,6 +826,8 @@ class AgentWrapper:
                 call_id=getattr(self, "_cost_call_id", None), agent=self.name, backend=backend,
                 kind=named.kind, attention=sent.get("attention"), prompt_tokens=prompt_tokens)
             raise named from exc
+        if constraint is not None:
+            sent["decoding_constraint"] = constraint.summary()
         return out, None
 
     @staticmethod
@@ -1155,8 +1164,15 @@ class AgentWrapper:
         if self.backend == "local_producer":
             prefill = getattr(mdl, "_shimmer_prefill", None)
             prefill = prefill if isinstance(prefill, dict) else final_models.producer_prefill()
+        # DECODING-B: the compact producer decodes under its request's own contract (a logits
+        # constraint built from the binding, compact_contracts.producer unchanged behind it);
+        # every other call has none.
+        constraint = contract_decoding.for_call(self, tok, int(inputs["input_ids"].shape[1]),
+                                                decoding_policy.effective_eos(decoding, mdl))
+        if constraint is not None:
+            _sent["decoding_constraint"] = constraint.summary()
         out, refused = self._local_generate(self.backend, mdl, inputs, max_new_tokens, decoding, _sent,
-                                            model_id, decision, prefill)
+                                            model_id, decision, prefill, constraint)
         if refused is not None:
             _record_cost(refused); return refused
         generation_ended = time.perf_counter()
@@ -1199,6 +1215,7 @@ class AgentWrapper:
             "cap_hit": out_tokens >= max_new_tokens,
             "terminal_token_id": last_token, "configured_eos_token_ids": eos_ids,
             **decoding_policy.usage_fields(decoding),
+            **({"decoding_constraint": constraint.summary()} if constraint is not None else {}),
         })
         _record_cost(r); return r
 
