@@ -833,6 +833,16 @@ processing swarm governed by an append-only constitution.
   never refused for its size, and a gather at or below the bound is one `run_wave` exactly as
   before. Measured, not preferred: a development ContractNLI agreement with 289 judging plans
   refused the whole run before this. Check 291.
+- LEDGER-CHECK-A (loop D-S16 item 1): `tools/loop/request_ledger_check.py` checks the
+  operator's private request ledger (passed with `--ledger`, never committed) against the loop
+  specification itself: every Annex C row and every `D-Sn` entry with its numbered items and
+  lettered sub-items needs a row (lettered list lines one row each; letters inside a sentence
+  one row for the item or one per letter), a row matching no item fails (relayed notes, `N-`,
+  are exempt), every DONE row's decision heading, commit and backticked path must resolve, and
+  a RUNNING row (not `RUNNING (standing)`) unchanged for 24 hours that names no running launch,
+  lane or role session fails. One count line; exit 1 on any failure. Run it whenever the ledger
+  changes, in every checker round, and before every merge, tag and push. Check 296 runs its
+  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`).
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from

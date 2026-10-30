@@ -25093,6 +25093,24 @@ def check_292_every_controller_path_child_process_starts_without_a_window():
                     'restored, passed: ' + ', '.join(proofs))
 
 
+
+def check_296_request_ledger_check_catches_dropped_requests():
+    """Loop D-S16 item 1: tools/loop/request_ledger_check.py reads every Annex C row and every
+    D-S entry with its numbered and lettered items from the loop specification, the ids in the
+    operator's private request ledger and DECISIONS.md, and fails on a specification item with
+    no row, a row that matches no item, a DONE row whose decision, commit or path does not
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running. Runs
+    tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
+    specification, ledger and DECISIONS.md, a one-commit git repository; the private ledger
+    is never read), then neutralises in turn the coverage rule, the evidence rule and the
+    stale rule, requires a failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from request_ledger_check_checks import check
+    return check()
+
+
 def check_293_scorer_reads_the_key_parts_d042_added():
     """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
     reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
@@ -25544,6 +25562,8 @@ CHECKS = [
      check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
     ("295 the compact producer decodes under its request's own contract, the validator unchanged behind it (DECODING-B, D-S14)",
      check_295_compact_producer_decodes_under_its_contract),
+    ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
+     check_296_request_ledger_check_catches_dropped_requests),
 ]
 
 
