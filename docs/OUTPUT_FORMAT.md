@@ -587,10 +587,13 @@ A multi-round run (input format, section 12) writes `audit/multi_round.json`, `a
 | `records` | The models' position records after review (below). Empty when refused. |
 | `strategic_layer` | The decision-support layer's record. Not needed for scoring. |
 | `outcome` | `reviewed` when the whole case phase ran, `refused` when it stopped. Missing means the phase did not complete. |
+| `timings` | The phase's own step times, measured with `time.perf_counter`, in seconds rounded to microseconds: `{"unit": "seconds", "clock": "time.perf_counter", "rounds": [{"round_id", "seconds"}], "round_review", "records", "phase"}`. `rounds` repeats each round's `seconds` from `audit/round_reuse.json`; `round_review` is the whole round review, `records` the record computation, `phase` the whole phase up to its last write. A step that did not run is absent. A multi-round run has no topology runtime, so these are its only step times (its `phase_latencies` are empty). Missing in runs before open item 39. A measurement, not needed for scoring. |
 
 A **record** is flat: `record_id`, `case_id`, `actor_id`, `issue_id`, `round_id`, `kind` (`position`, `movement`, `unresolved_issue`, `trajectory` or `decision_support`), `state` (`accepted`, `rejected`, `refused`, `unresolved`, `insufficient_evidence`, `not_comparable` or `unknown`), `category` (`observed_evidence`, `semantic_interpretation` or `recommendation`), `confidence` (`CONFIDENT` or `UNCERTAIN`), `text`, `source_ids`, `ref_ids`, and, by kind, `position`, `value` and `unit`, `previous_round_id`, `previous_position_id`, `current_position_id`, `movement` (`concession`, `hardening`, `reversal`, `stable`, `ambiguous` or `unknown`). It also carries `review_state` (the reviewer's decision, or `missing`), the producer's and the reviewer's `agent`, `backend`, `model` and `call_id` (as `producer_...` and `reviewer_...`), `item_id`, `revision` and `ref`. Every record is written by a model. The same records are posted on the bus with `body.event` `MULTI_ROUND_REVIEWED` (envelope `doc_id` is the case id); they are not findings.
 
 A multi-round run is healthy when `outcome` is `reviewed`, `activation.activated` is `true`, `round_review.availability` is `recorded`, and `audit/run_completion.json` says `completed`. A case with no conventions gives `no_conventions`, which is not healthy.
+
+The runner also needs exactly one `pipeline_start` and one `pipeline_end` in a multi-round run's telemetry, and, unlike every other B3 run, no model call: the phase asks none.
 
 ### 10.2 `audit/round_reuse.json`
 
@@ -602,6 +605,7 @@ Python's round review.
 | `rule` | A sentence stating the reuse rule. |
 | `availability`, `reason` | As in `round_review` above; `reason` only when unavailable. |
 | `rounds` | One entry per round, in `sequence` order: `round_id`, `sequence`, `documents`. |
+| `rounds[].seconds` | The time the round's review took, measured with `time.perf_counter`, in seconds rounded to microseconds. Missing in runs before open item 39. A measurement, not needed for scoring. |
 
 A document entry is `{"document_id", "availability": "missing_document"}` for a missing document, or `{"document_id", "units", "pairs_computed", "units_reused", "units_computed", "findings"}`. `findings` lists the document's Python findings in this round, in the shape of section 6, with `provenance: "computed"`, and `absence_path: "computed"` on a declared absence. These findings cite no REF id and carry no `source_rule_id`: only the registry id. A multi-round run folder holds no map from registry ids to operator's own ids. Registry ids are numbered `CONV-001`, `CONV-002`, ... in reading order of the conventions (input format, section 3, where a dropped short rule still uses up a number), so the map can be rebuilt from the bundle's conventions. An answer key travels without them: a scorer that checks the rule of a multi-round finding must be given the case's sealed conventions files too.
 
@@ -643,9 +647,13 @@ The controller collects the run as one archive, `collected_evidence.tar.gz`. The
 
 **`evidence/result.json`**: `execution_integrity_passed` (boolean), `reasons` (list), `failed_backend_attempts` (integer), `collection_and_teardown_pending` (`true`), `quality_claim` (`null`), `pipeline_exit_code` (integer). `reasons` values: `pipeline_not_completed`, `required_telemetry_missing`, `auditor_pair_failure`, `required_contract_failure`, `backend_failure`, and for a multi-round run `multi_round_not_reviewed`, `multi_round_not_activated`, `multi_round_round_review_not_recorded`. The runner's own exit code is 0 only when the pipeline returned 0 and the check passed; otherwise 2.
 
+`required_telemetry_missing` means the telemetry lacks exactly one `pipeline_start` and one `pipeline_end`, or, in a run that is not multi-round, a Producer 168 model call. A multi-round run is not required to hold a model call.
+
 **`FINAL_STATUS.json`** fields: `status` (`ORDINARY_FINAL_CLOUD_RUN_COMPLETED` when the run folder says `completed` and the health check passed, else `ORDINARY_FINAL_CLOUD_RUN_FAILED`), `pipeline_started`, `pipeline_completion` (the run's `run_completion.json` or `null`), `remote_result` (`result.json` or `null`), `terminal_error`, `semantic_call_receipts`, `producer168_receipts`, `auditor896_receipts`, `auditor896_pairs`, `auditor896_pairs_from_partial_delivery`, `cost_estimates` (an object; `combined_estimate` is the estimated dollars), `within_hard_ceiling`, `exactly_one_instance`, `maximum_one_workload_invocation`, `full_run_retried`, `protected_data_accessed`, `multi_round_declared`, `multi_round_executed`, `inventory_empty`, `temporary_ssh_removed`, `evidence_verified`, `quality_claim` (`null`), `subsequent_roadmap_work_started`, and `report`.
 
 **`report`** maps each row title to a sentence. The titles, in order: `Purpose`, `Sealed or exposed`, `Date and time (UTC)`, `Code commit`, `Test version`, `Test manifest hash`, `Authors (test, key, scorer)`, `Scorer version`, `Models and checkpoints`, `Decoding settings`, `Backend and machine`, `Instance type and price`, `Cost`, `Location and reason-confirmed recall`, `Attribution`, `False positives in every deliverable`, `Clean-twin result`, `Layer that produced each catch`, `Catches that depended on a directive`, `Model-text review verdicts`, `Agents withheld or settings changed`, `SHIMMER_INST_FINDER`, `Multi-round`, `Asset copy`, `Role separation`, `What the result does not show`. The quality rows say they were not computed: scoring belongs to the scorer. The values are sentences for a human; do not parse them.
+
+A row `Multi-round step times` follows `Multi-round`: the step times of a declared multi-round run (section 10.1, `timings`), `not recorded` for a run before them, `not applicable` otherwise. `FINAL_STATUS.json` carries the same object as `multi_round_timings` (`null` when absent). A measurement for a human; do not parse it.
 
 ### 11.2 Batch sessions
 

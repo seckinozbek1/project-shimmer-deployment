@@ -2953,6 +2953,61 @@ class ControllerChecks(unittest.TestCase):
                       'trained with, and v5 to v12 ran it eager), prefilled in chunks of 1024 tokens under decision D-064 '
                       '(a measurement run)', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
+    def test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call(self):
+        """D-100 (L7): a declared multi-round run asks no model (open item 35), so it passes on
+        exactly one pipeline_start and one pipeline_end and its case record checks; the same run
+        not reviewed fails; a run that is not multi-round still needs its Producer 168 call."""
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        case = dict(outcome='reviewed', activation=dict(activated=True), round_review=dict(availability='recorded'))
+        passed = runner.assess(completion, rows, case)
+        self.assertEqual(passed['reasons'], [])
+        self.assertTrue(passed['execution_integrity_passed'])
+        self.assertEqual(runner.assess(completion, rows, dict(case, outcome='refused'))['reasons'],
+                         ['multi_round_not_reviewed'])
+        self.assertEqual(runner.assess(completion, rows[:1], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows + rows[1:], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows)['reasons'], ['required_telemetry_missing'])
+        call = dict(event='model_call', agent='PROCESSOR', adapter_checkpoint=168)
+        self.assertEqual(runner.assess(completion, rows[:1] + [call] + rows[1:])['reasons'], [])
+
+    def test_a_multi_round_run_reports_its_own_step_times(self):
+        """Open item 39: a multi-round run has no topology runtime, so the report row carries the
+        step times its audit/multi_round.json saved; a run before them says so; a run that is not
+        multi-round says the row does not apply."""
+        import analyze_ordinary_final_run as analysis
+        timings = dict(unit='seconds', clock='time.perf_counter', rounds=[dict(round_id='r1', seconds=0.004631),
+                       dict(round_id='r2', seconds=0.001152)], round_review=0.011972, records=0.001151, phase=0.038369)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        run = 'evidence/run/r1/'
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+
+        def folder_with(name, saved):
+            evidence = {run + 'audit/run_completion.json': json.dumps(dict(completion, schema_version=1, run_id='r1',
+                                                                           finished_at='2026-10-30T00:00:00+00:00')).encode(),
+                        run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in rows).encode(),
+                        run + 'audit/execution_topology.jsonl': b'',
+                        run + 'audit/multi_round.json': json.dumps(saved).encode(),
+                        'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[],
+                                                                pipeline_exit_code=0)).encode()}
+            folder = self.root / name
+            self.analysis_folder(folder, evidence=evidence, multi_round=True, case_manifest_sha256='c' * 64)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            return read(folder / 'FINAL_STATUS.json')['report']['Multi-round step times']
+        self.assertEqual(folder_with('analysis_mr_times', dict(outcome='reviewed', timings=timings)),
+                         'round review 0.011972 s (r1 0.004631 s; r2 0.001152 s), record computation 0.001151 s, '
+                         'whole phase 0.038369 s (time.perf_counter, measured by the phase itself; the multi-round run '
+                         'has no topology runtime, so its phase_latencies are empty)')
+        self.assertTrue(folder_with('analysis_mr_before', dict(outcome='reviewed')).startswith(
+            'not recorded: the run\'s audit/multi_round.json carries no step times'))
+        plain = self.root / 'analysis_not_mr'
+        self.analysis_folder(plain)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(plain)
+        self.assertEqual(read(plain / 'FINAL_STATUS.json')['report']['Multi-round step times'],
+                         'not applicable: no multi-round run was declared')
+
     def test_a_semantically_incomplete_run_is_reported_as_such(self):
         """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
         semantic work incomplete is assessed `semantic_incomplete` by the runner, and the
@@ -4406,6 +4461,11 @@ def child_process_starts(source):
 
 
 NEUTRALIZATIONS = [
+    # D-100: the model-call requirement applied to a declared multi-round run again, as L7 ran.
+    ('test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call', runner, 'model_call_required',
+     lambda multi_round: True),
+    # Open item 39: the analyser stops reading the run's saved step times.
+    ('test_a_multi_round_run_reports_its_own_step_times', analysis, 'multi_round_timings', lambda target: None),
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),

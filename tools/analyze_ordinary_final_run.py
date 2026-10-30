@@ -63,6 +63,35 @@ def uncomputable_judging(run_dir):
                 refused=sum(int(c.get('judged_refused') or 0) for c in calls))
 
 
+def multi_round_timings(target):
+    """The `timings` a multi-round run saved in audit/multi_round.json (open item 39), or None."""
+    found=list(Path(target).rglob('audit/multi_round.json'))
+    if len(found)!=1:
+        return None
+    try:
+        timings=read(found[0]).get('timings')
+    except (OSError,ValueError,AttributeError):
+        return None
+    return timings if isinstance(timings,dict) else None
+
+
+def multi_round_step_times_text(manifest, timings):
+    """The report row for open item 39: under the multi-round argv no topology runtime exists,
+    so phase_latencies are empty and the run's own step times are reported instead."""
+    if not manifest.get('multi_round'):
+        return 'not applicable: no multi-round run was declared'
+    if not isinstance(timings,dict):
+        return ('not recorded: the run\'s audit/multi_round.json carries no step times (a run before open item 39, '
+                'or a phase that wrote no record)')
+    def text(value):
+        return '%.6f s'%value if isinstance(value,(int,float)) and not isinstance(value,bool) else 'not measured'
+    rounds='; '.join('%s %s'%(r.get('round_id'),text(r.get('seconds'))) for r in timings.get('rounds') or [] if isinstance(r,dict))
+    return ('round review %s (%s), record computation %s, whole phase %s (time.perf_counter, measured by the phase '
+            'itself; the multi-round run has no topology runtime, so its phase_latencies are empty)'
+            %(text(timings.get('round_review')),rounds or 'no round measured',text(timings.get('records')),
+              text(timings.get('phase'))))
+
+
 def uncomputable_text(arm, status):
     """The report row for D-067 and D-068: the calls discarded as advisory, the D-068 records
     kept, and what the counts do not show."""
@@ -437,6 +466,7 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('SHIMMER_INST_FINDER',str(manifest.get('environment',{}).get('SHIMMER_INST_FINDER'))),
         ('Multi-round','declared and sealed with case manifest '+str(manifest.get('case_manifest_sha256'))
             if manifest.get('multi_round') else 'not applicable: no multi-round run was declared'),
+        ('Multi-round step times',multi_round_step_times_text(manifest,status.get('multi_round_timings'))),
         ('Asset copy','MATCH: the sealed archive was read from the operator-declared copy' if receipt.get('used')
             else 'no MATCH (%s): the archive was uploaded'%(receipt.get('state') or 'no declaration for this bundle')),
         ('Role separation',ROLE_SEPARATION if sealed else 'not applicable: an exposed run claims no role separation'),
@@ -521,6 +551,7 @@ def analyze(bundle=BASE):
         protected_data_accessed=bool(manifest.get('protected_test')) and bool(completions),
         multi_round_declared=bool(manifest.get('multi_round')),
         multi_round_executed=bool(manifest.get('multi_round')) and bool(list(target.rglob('audit/multi_round.json'))),
+        multi_round_timings=multi_round_timings(target) if manifest.get('multi_round') else None,
         uncomputable_judging=uncomputable,disk=disk_record(BASE,target),
         b3_prompts_over_context=[{k:r.get(k) for k in ('call_id','agent','doc_id','prompt_tokens','max_new_tokens','model_context')}
                                  for r in raw if r.get('event')==OVER_CONTEXT_EVENT],

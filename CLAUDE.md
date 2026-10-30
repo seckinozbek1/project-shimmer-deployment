@@ -114,7 +114,9 @@ processing swarm governed by an append-only constitution.
   carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
   and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
   evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
-  S5's merge refuse the same way and must be re-sealed. Open item 37 (disk on the instance:
+  S5's merge refuse the same way and must be re-sealed. D-100 (L7) changed `tools/ordinary_final_run.py` again (a
+  declared multi-round run is assessed without the Producer 168 model-call requirement), so
+  bundles sealed before it refuse the same way and must be re-sealed. Open item 37 (disk on the instance:
   the runner's `evidence/disk_usage.json` before, sampled during and after the workload, and
   the evidence packer's `disk_after_evidence.json`) changed `tools/ordinary_final_run.py` and
   `tools/ordinary_final_cloud.py`, so bundles sealed before it refuse the same way and must be
@@ -265,7 +267,14 @@ processing swarm governed by an append-only constitution.
   instance), against the documents the bound pipeline's own `_load_corpus` loads;
   `execution_topology` is unchanged (D-011 choice 3).
   The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
-  `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
+  `activated` (`multi_round.read_saved`), its round review recorded, and exactly one
+  pipeline_start and one pipeline_end in its telemetry; it asks no model call of it
+  (`ordinary_final_run.model_call_required`, D-100: L7 failed nine reviewed multi-round entries
+  on that requirement alone), while every other B3 run still needs its Producer 168 call. The
+  phase saves its own step times (`timings` in `audit/multi_round.json`, `seconds` per round in
+  `audit/round_reuse.json`, `time.perf_counter`, rounded to microseconds; open item 39), since a
+  multi-round run has no topology runtime and empty `phase_latencies`; the analyser reports them
+  in its `Multi-round step times` row. Later rounds reuse unchanged units through a
   Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
   paired rules, the labels of the document's field vocabulary those rules name
   (`multi_round_rounds.named_vocabulary`, the only way the vocabulary reaches the computation;
