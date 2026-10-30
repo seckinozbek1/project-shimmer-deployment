@@ -143,3 +143,16 @@ CUAD forecast basis (D-094, closing the version 2 attack's item 8): one developm
 | L11 (2026-10-29 23:18 to 2026-10-30 02:29 UTC, D-097) | dev-dryrun-l11, 8 development documents B3 + B1 tuned, sealed at d50b299 | 198 minutes (staging lane's point forecast), A10 1.29 USD an hour, times 1.3 | 5.53 | 8.30 | 191 (ledger); 16 entries; every B3 entry reached its end; six B3 entries semantically incomplete (`semantic_incomplete`, pipeline exit 0); MATCH | 4.11 (ledger). Variance: actual 74 percent of forecast |
 | L7 (2026-10-30 02:57 to 04:01 UTC, D-097) | dev-multiround-l7, 12 entries b3_only (two multi-round cases, catalogue regression, two negotiation comparisons, seven family-4 tests and twins multi-round), sealed at 55f1dd1 | 380 minutes (multi-round at about 13 minutes a round), times 1.3 | 10.62 | 15.93 | 64 (ledger); the nine multi-round entries reached `reviewed` with no model call in seconds each and were failed by the runner's model-call requirement (`required_telemetry_missing`, D-100); catalogue completed; both negotiation comparisons semantically incomplete; MATCH | 1.38 (ledger). Variance: actual 13 percent of forecast (the multi-round phase now asks no model) |
 | L10 (2026-10-30 04:08 to 06:13 UTC, D-097) | dev-cuad-l10, CUAD development contract 527255a5c970, B3 + B1 tuned, sealed at 55f1dd1 | 147 minutes (410 plans at 17 seconds, B1 41 calls), times 1.3 | 4.11 | 6.16 | 125 (ledger); B3 semantically incomplete, 410 uncomputable judging calls all refused under D-068; B1 completed; MATCH | 2.69 (ledger). Variance: actual 65 percent of forecast; the allocation had forecast 21.76 USD for CUAD at the 2,643-plan mean (D-092, D-097) |
+| L8 (launched 2026-10-30 07:41 UTC, ledger; running, D-097) | dev-suite-l8, 20 development-suite tests and twins, B3 then B1 tuned (40 entries), sealed at 55f1dd1 | 540 minutes (15.4 + 20 x 15.2 + 20 x (9 + 2)), times 1.3 | 15.09 | about 22.6 | running; usage at launch five-hour 4, seven-day 37 | |
+
+Usage at each launch since D-S12 (status line, five-hour and seven-day percent; D-107): L11 0 and 35 (2026-10-29 23:17 UTC), L7 2 and 36 (02:56 UTC), L10 0 and 36 (about 04:08 UTC), L8 4 and 37 (about 07:40 UTC). Free disk before each: L11 36 GB, L7 32 GB, L10 42 GB, L8 39 GB. The allocation table above was written at 00:39 (D-092), not "about 00:50".
+
+### Running total (2026-10-30 09:22 UTC, D-107)
+
+| Date (UTC) | Event | Instance cost to date (USD) | Total spent, reaper (USD) | Remaining (USD) |
+|---|---|---|---|---|
+| 2026-10-30 09:22 | After L11 (4.11), L7 (1.38) and L10 (2.69); L8 running. Reaper reading 09:21:59 UTC: one loop instance listed, total spend 31.40 (it counts L8 to its reading time and the storage share). | 28.82 (S5 20.64 plus 8.18) | 31.40 | 168.60 |
+
+### S5 re-forecast after D-097 (D-107)
+
+S5's brought-back allocation was 70.81 USD. Spent on it so far 8.18 (L11, L7, L10). Forecast for the rest: L8 15.09, L9a (37 entries: 28 probes at 15.2 minutes plus 9 multi-round re-runs at about 2 minutes, 15.4 overhead, about 459 minutes) 12.83, L9b 12.33. Total about 48.4 USD, 22.4 USD under the allocation; the difference rolls forward to work a later sweep brings back (D-S12 item 4), never to S8, whose A is fixed by version 2. L11 was sealed at `d50b299`, before the measurement merge, a departure from D-097 (e) recorded in D-102.

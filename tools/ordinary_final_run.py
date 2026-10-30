@@ -570,7 +570,7 @@ def assess(completion, raw, multi_round=None, arm='B3', b1=None):
     record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
     reviewed, a Python round review recorded (`round_review.availability`);
     quality is reported separately and is never a pass. Its telemetry needs exactly one
-    pipeline_start and one pipeline_end and no model call (model_call_required). A B1 entry is assessed on its own
+    pipeline_start and one pipeline_end and does not require a model call (model_call_required, D-101). A B1 entry is assessed on its own
     records (assess_b1, `b1` maps each checkpoint to its observation and exit code)."""
     if arm == 'B1':
         return assess_b1(b1)

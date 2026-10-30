@@ -81,3 +81,4 @@ Version 1's rows above stay as they are. From this freeze, version 2's hash is t
 
 | `docs/INPUT_FORMAT.md` (draft `input-format-v1-draft`; only the repository scorer's sentences changed, D-098) | `5a0400fa9532bf69addd7ef71833e961f262032e98b0811065f184fc72c8a463` | 2026-10-30 02:3x +0300, loop/s05 at `260d466`; C0 run 4 read `47904fae...` |
 | `docs/OUTPUT_FORMAT.md` (draft `output-format-v1-draft`; additions the scorer does not read, D-101) | `e81010ee8e72c2d288e5cbedc68fc2021e92acac15fff9d2c7bd7d8879fb0654` | 2026-10-30 12:1x +0300, loop/s05 at `9b62469`; C0 run 4 read `07eea8f7...` |
+| `docs/OUTPUT_FORMAT.md` (draft; the multi-round record lines corrected to Python-written, D-103, D-107; the scorer reads none of them) | `17f326b02aa48851735788190a238de88ef97521a68aba8388d29c43d03ccc20` | 2026-10-30 12:3x +0300, loop/s05 |

@@ -369,6 +369,8 @@ open-item sweep.
 - **Why it was left.** How a sealed result reaches role C's scorer is a role-separation decision (who may see the run folder, where it is copied, when), not a format question; S3 writes the formats and changes no controller or scorer (P16).
 - **What would settle it.** A decision on the hand-over (who copies what, to where), then a scorer option that reads a run folder by path, with a gate check that scores a fixture run folder outside `output/runs/`; before the first sealed run is scored (S5).
 
+- **Re-dated (2026-10-30, D-092 item 28).** Its settle-by ("before the first sealed run is scored (S5)") passed with no sealed run; it is settled in S6a, before S8b.
+
 ## 24. A judged absence can be counted twice, and a refused answer can locate a flaw (found at loop S3, OUTPUT_FORMAT section 13 point 2) (issue #32)
 
 - **What it is.** For a judged absence the model's raw reply stays on the bus beside Python's stamped copy, including answers Python refused. The repository's scorer counts every bus finding, so one absence counts in both copies, and a refused answer can locate a planted flaw.
@@ -460,6 +462,8 @@ open-item sweep.
 
 - **Settled in code (2026-10-30, D-092, lane s05-mr `d2bb6f3`, merged `8110336`).** The multi-round phase's position and movement records are computed in Python from the operator's declared sources; no model is asked (the checkpoint was evaluated on no narrower shape in this phase); every refusal before the records is kept. Round 3's full recompute was a defect: the round signature's vocabulary input covered the whole document's labels; it now covers the labels each paired rule names (reuse 0/11, 8/11, 3/11 on the saved L6m case, findings equal to a fresh computation). Replayed locally on the saved L6m inputs, both cases reach `reviewed` and `activated` with no model call. The item closes when L7 (both cases on real execution) reads `reviewed`.
 
+- **Closed at loop S5 (2026-10-30, D-100, D-103).** On real execution (L7) all nine multi-round entries reached `reviewed` and `activated`. The runner's model-call requirement failed them, fixed in D-101; their re-run is in L9a.
+
 ## 36. The S8 report must carry D-069's blind acceptance test, the clean twin's model records, and S-8 as the control (found at loop S5, checker rounds 1 and 2)
 
 - **What it is.** D-069's acceptance test for D-068 asked whether a D-068 record on the clean twin was scored as a false positive, but `tools/score_corpus.py` counts false positives over amendments only and a D-068 record is never an amendment, so the test could not fail on what it was meant to catch. D-070's "verified" means only that clinical recall did not fall and that no amendment changed. The frozen preregistration does not say this, and the benchmark reader lets a model-written record decide an item, so B3 can carry model-driven false flags.
@@ -477,6 +481,8 @@ open-item sweep.
 
 - **Settled in code (2026-10-30, D-092, lane s05-meas `1ca2f7c`, merged `2e97296`).** The runner records disk in use before the workload, a 15-second sampled peak during it, and after it (`evidence/disk_usage.json`); the evidence packer records it after packing (`disk_after_evidence.json`); the analyser reports a "Disk on the instance" row. The peak is sampled, not continuous. The item closes when L7's report row is read (D-S12 overruled the deferral to S6).
 
+- **Closed at loop S5 (2026-10-30, D-100).** L7 read 45.24 GB in use before the first workload on a 1,455 GB filesystem, about 0.28 GB more per entry, 48.33 GB after the twelfth.
+
 ## 38. The time in the pipeline's phases before phase 3 is not recorded (found at loop S5, item 9; S5 checker round 3)
 
 - **What it is.** The telemetry records phase latencies only from phase 3 on, so the time in start, ingestion and roles (phases 0 to 2) is not in any S5 record; item 9's per-phase time is incomplete for them.
@@ -486,6 +492,8 @@ open-item sweep.
 
 - **Settled in code (2026-10-30, D-092, lane s05-meas `6a232e3`, check 294).** Four contiguous spans before phase 3 in `main` (start; ingestion and roles; boot and index; phase 1) are in `phase_latencies`; genesis phase 2 has no code boundary and is reported absent, not zero; the time before `main` (process start, imports) is still outside. `main`'s reference pin was amended in both pinned baselines with `tools/loop/amend_pinned_baselines.py`. The item closes when L7's telemetry is read.
 
+- **Closed at loop S5 (2026-10-30, D-100).** L7's catalogue run: start 0.28 s, ingestion and roles 0.06 s, boot and index 21.75 s, phase 1 0.003 s.
+
 ## 39. The phase latencies of the two L6m multi-round cases are not recorded (found at loop S5, item 9; S5 checker round 3)
 
 - **What it is.** Both L6m cases were refused at the multi-round phase before any phase latency was written, so item 9 has no per-phase time for a multi-round run.
@@ -494,6 +502,8 @@ open-item sweep.
 - **What would settle it.** The re-run of the synthetic and the negotiation multi-round cases in S6a after open item 35 is fixed, with their phase latencies recorded beside S5's item 9 tables.
 
 - **Brought back (2026-10-30, D-S12, D-097).** Open item 35's fix is merged; both cases are re-run in L7. The item closes when L7's phase latencies are read.
+
+- **Update (2026-10-30, D-101).** A multi-round run has no topology runtime, so its own step times are recorded in `audit/multi_round.json` (`timings`); the re-run of the nine multi-round entries moved from L7 to L9a. The item closes when L9a's timings are read.
 
 ## 40. The cost per verified finding on the benchmarks is not recorded (found at loop S5, item 9; S5 checker round 3)
 
@@ -533,3 +543,10 @@ open-item sweep.
 - **Evidence.** `tools/score_corpus.py` (`score_multi_round`); check 293; D-098.
 - **Why it was left.** Renumbering would reimplement the convention parser's numbering (dropped short rules included), outside the lane (P16).
 - **What would settle it.** A `--conventions` option that numbers the rules with the pipeline's own parser, with a gate check, in S6a.
+
+## 45. The multi-round records are posted with payload agent PROCESSOR (found at loop S5, D-S12 checker)
+
+- **What it is.** Since open item 35's fix the multi-round phase computes its records in Python, but posts them with payload `"agent": "PROCESSOR"`; only the envelope's `backend` and `model` (and `written_by: python` on each record) say Python wrote them (P5, who wrote what).
+- **Evidence.** `scripts/multi_round_phase.py` (the bus post of the computed records); D-103.
+- **Why it was left.** Bus readers key agents by name; changing the payload agent touches every reader of the multi-round channel and the scorer's round reader (P16), and `written_by` already says Python.
+- **What would settle it.** In S6a: a payload agent naming Python (or the phase), with every reader and the scorer's round reader brought along, held by a check.
