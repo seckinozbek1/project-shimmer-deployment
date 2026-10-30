@@ -834,6 +834,21 @@ processing swarm governed by an append-only constitution.
   alone; the same base under sampling never did in 145 items; the flip is one argmax at the
   key's first token, so the parser holds whether the origin is the adapter or value priming.
   Never widen the alias list from a hunch: an alias is a measured model habit, declared.
+- ENVELOPE-B (D-S14, K8): for an agent whose contract declares exactly one item kind, Python
+  stamps `kind` on an item that has NO `kind` key, ONLY when that contract declares
+  `single_kind_stamp` (today EDITOR_CLERK, `editorial_observation`; it must equal the first
+  word of `item_kind`, else it is ignored), read by `agent_wrapper.single_kind_stamp`. Each
+  stamp is recorded as `contract_normalized` (`items[i].kind<-editorial_observation`) on the
+  result, the bus post, the observation row and the telemetry call record, exactly as an
+  alias is. A `kind` the model wrote is never overwritten: under the declaration one that is
+  not the declared kind is refused (`items[i].kind (not the declared ...)`; before this the
+  validator checked only that `kind` was present), an empty or null one is refused as
+  missing, and no other field is ever defaulted. Measured, not preferred: in L7, L8, L10 and
+  L11 EDITOR_CLERK left `kind` out of 4 of its 20 calls with every other field present, each
+  failing its contract on that key alone (`required_contract_failure` in L11 02, 04, 08 and
+  L8 30); the 6 items that wrote it wrote `editorial_observation`. Replayed through the
+  parser, all 20 saved calls hold their contract, and the 4 refused before refuse again with a
+  wrong kind written in. Declare it for another agent only from a measurement. Check 264.
 - VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
   (`_record_example_required`) with the contract's DECLARED values where it enumerates them
   (FACT_CHECKER's verdict CONFIRMED, VERIFIER's finding MATCH; `_declared_values`, never a
@@ -855,7 +870,15 @@ processing swarm governed by an append-only constitution.
   `semantic_incomplete`, `stopped`, `pipeline_not_completed`. Measured, not preferred: the old
   gate read the whole delivery per item, so one refused partition discarded every accepted one
   and the advisory classifier had no pairs in v5 or v6 (it never actually fired: VERIFIER was
-  skipped upstream, which the partial draft now prevents). Check 266.
+  skipped upstream, which the partial draft now prevents). VERIFIER's RENDERED payload shows
+  each pair as `pair_id` (the join key), `producer_item`, `source_evidence.text`,
+  `source_ref_ids`, `auditor_relation`, `classifier_status` and `delivery`
+  (`auditor_pairs.pair_view`), and each draft item without `DRAFT_ITEM_RUNTIME_KEYS`
+  (`draft_view`); the pair records, telemetry, reply records and bus keep every identifier.
+  Measured, not preferred (D-S14 K2): the ten L8 VERIFIER prompts of 44,467 to 54,657 tokens
+  ran out of GPU memory on the A10 before their first token; the same prompts measure 17,932
+  to 23,668 tokens projected (Phi tokenizer, offline), and none of the 22 saved VERIFIER items
+  carried a pair or producer identifier to join by. Check 266.
 - EXTRACTION-C: a bounded request carries at most `owned_spans_per_request` owned spans
   (declared in `config/compact_extraction_prompt.json`, today 2, read by
   `compact_contracts.request_size`), because every training input and DEV row of checkpoint

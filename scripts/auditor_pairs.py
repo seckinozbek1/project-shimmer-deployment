@@ -279,13 +279,36 @@ def prepare_context(wrapper, payload):
         classifier_call_ids=calls, start_monotonic_s=begin, end_monotonic_s=time.perf_counter(),
         consumer='VERIFIER', reason='advisory_pair_context_ready')
     result = dict(payload)
-    context_pairs = [dict(record, producer_item=pair['producer_item'],
-        source_evidence=dict(text=pair['source_text'], source_hash=record['source_hash'],
-                             source_span_id=record['source_span_id'], source_ref_ids=record['source_ref_ids']))
-        for pair,record in zip(pairs,records)]
+    context_pairs = [pair_view(record, pair) for pair,record in zip(pairs,records)]
     result['auditor_pair_context'] = dict(schema_version=VERSION, pairs=context_pairs, unavailable=unavailable,
         interpretation='Advisory pair classifications, not findings. Retain independent reasoning, evidence and refusal. Agreement is not required.')
+    if 'processor_draft' in result:
+        result['processor_draft'] = draft_view(result['processor_draft'])
     return result
+
+
+# What VERIFIER is SHOWN, in its rendered payload only (D-S14, K2). Each pair and
+# each draft item used to carry the runtime identity VERIFIER cannot use (run,
+# item, span and call ids, source hashes, adapter digests, timestamps): about half
+# of every prompt, and the ten VERIFIER calls of L8 above about 44,300 prompt tokens
+# ran out of GPU memory on the A10 before their first token. The records kept in
+# _auditor_pair_state, the telemetry, the reply records and the bus keep every
+# identifier; pair_id stays because a finding joins its pair by it (finding_pair).
+DRAFT_ITEM_RUNTIME_KEYS = ('item_id', 'source_hash', 'ts', 'provenance', 'section_id', 'source_span_id', 'unit_id')
+
+
+def pair_view(record, pair):
+    return dict(pair_id=record['pair_id'], auditor_relation=record['auditor_relation'],
+        classifier_status=record['classifier_status'], delivery=record['delivery'],
+        source_ref_ids=record['source_ref_ids'], producer_item=pair['producer_item'],
+        source_evidence=dict(text=pair['source_text']))
+
+
+def draft_view(draft):
+    if not (isinstance(draft, dict) and isinstance(draft.get('items'), list)):
+        return draft
+    return dict(draft, items=[{k:v for k,v in item.items() if k not in DRAFT_ITEM_RUNTIME_KEYS}
+                              if isinstance(item, dict) else item for item in draft['items']])
 
 
 def finding_pair(item, records):

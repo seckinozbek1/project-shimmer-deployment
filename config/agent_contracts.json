@@ -5,6 +5,7 @@
   "envelope": "canonical/v1 (INFRA-037): {agent, doc_id, items:[flat items]}; core per item = item_id(runtime), revision(runtime), ts(runtime), ref, kind, confidence, verdict(optional), ref_ids",
   "core_field_aliases": {"confident": "confidence"},
   "core_field_aliases_note": "A model-written spelling of a core key that AgentWrapper reads as that key when the canonical key is absent and the value maps without interpretation (confidence: CONFIDENT/UNCERTAIN as written, true -> CONFIDENT, false -> UNCERTAIN). Declared here, never in code. Run 110990c1 (v5, 2026-09-18): the tuned Producer wrote confident for confidence in three of six item-bearing calls with the right value each time; every such call failed on that key alone. Each application is recorded on the result, the bus post and the generation observation as contract_normalized.",
+  "single_kind_stamp_note": "A contract's single_kind_stamp names the one item kind it declares (it must equal the first word of item_kind, else it is ignored); AgentWrapper stamps it on an item that has no kind key, and refuses an item whose kind is present and is not that kind. No other field is defaulted. Declared per contract, never in code, and only where measured: in launches L7, L8, L10 and L11 (October 2026) EDITOR_CLERK left kind out of 4 of its 20 calls with every other field present, each failing on that key alone, and the 6 items that wrote it wrote editorial_observation. Each application is recorded as contract_normalized, like an alias.",
   "finding_record": {
     "description": "The typed inter-agent Finding record. Agents do not communicate with each other in natural language: a finding is stated in fields, and the sentence written for a person travels as `explanation`, which no other agent reads. One canonical-envelope item, so strictly flat: a measured quantity is a number field plus a unit-string field, never a nested object. The record's verdict lives in `record_verdict`, not in `verdict`: every agent already has a `verdict` field with its own declared values, and the verifiability gate fires on exactly those values, so the record must not overwrite them.",
     "fields": [
@@ -310,6 +311,7 @@
     },
     "EDITOR_CLERK": {
       "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "single_kind_stamp": "editorial_observation",
       "fields": {
         "ref": "string (the REF-*/location/element this observation comments on)",
         "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
