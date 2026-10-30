@@ -466,6 +466,8 @@ open-item sweep.
 
 - **Closed at loop S5 (2026-10-30, D-100, D-103).** On real execution (L7) all nine multi-round entries reached `reviewed` and `activated`. The runner's model-call requirement failed them, fixed in D-101; their re-run is in L9a.
 
+- **Correction (2026-10-30, D-121).** The re-run of the nine multi-round entries moved from L9a to L12 (D-112).
+
 ## 36. The S8 report must carry D-069's blind acceptance test, the clean twin's model records, and S-8 as the control (found at loop S5, checker rounds 1 and 2) (issue #42)
 
 - **What it is.** D-069's acceptance test for D-068 asked whether a D-068 record on the clean twin was scored as a false positive, but `tools/score_corpus.py` counts false positives over amendments only and a D-068 record is never an amendment, so the test could not fail on what it was meant to catch. D-070's "verified" means only that clinical recall did not fall and that no amendment changed. The frozen preregistration does not say this, and the benchmark reader lets a model-written record decide an item, so B3 can carry model-driven false flags.
@@ -506,6 +508,8 @@ open-item sweep.
 - **Brought back (2026-10-30, D-S12, D-097).** Open item 35's fix is merged; both cases are re-run in L7. The item closes when L7's phase latencies are read.
 
 - **Update (2026-10-30, D-101).** A multi-round run has no topology runtime, so its own step times are recorded in `audit/multi_round.json` (`timings`); the re-run of the nine multi-round entries moved from L7 to L9a. The item closes when L9a's timings are read.
+
+- **Update (2026-10-30, D-121).** The re-run moved to L12 (D-112); the item closes when L12's timings are read. Issue #43 stays open until then.
 
 ## 40. The cost per verified finding on the benchmarks is not recorded (found at loop S5, item 9; S5 checker round 3)
 
