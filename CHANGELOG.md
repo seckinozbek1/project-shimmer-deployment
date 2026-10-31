@@ -9,7 +9,7 @@ One entry per product version, in plain English. The version number lives in `VE
 - **VERIFIER is shown no runtime identifiers and may write 4,096 tokens** (FACT_CHECKER keeps 2,048). Both were measured: the largest VERIFIER prompts fell by about half, and at 4,096 most lists that were cut off now end.
 - **Multi-round cases are computed in Python**, with no model call for the case records, and a multi-round run is judged by its own evidence and saves its own step times.
 - **Benchmark scoring has two labelled readings** (`--scoring benchmark|as_shipped`), the repository scorer reads refusal kinds and multi-round keys, and FinDVer filings are read in segments with a revised bare-model prompt. A CUAD claim-check adapter is added as a secondary arm.
-- **A dating fix for four-digit years on Linux, a declared single-kind stamp for EDITOR_CLERK, and over-bound gathers run as waves.**
+- **A dating fix for four-digit years on Linux, EDITOR_CLERK decoding under its own envelope, and over-bound gathers run as waves.**
 - **A request-ledger check** (`tools/loop/request_ledger_check.py`) holds the loop's records against its specification.
 - Gate checks 285 to 297 added; development results, every one exposed, are in the stage report and the results page.
 
