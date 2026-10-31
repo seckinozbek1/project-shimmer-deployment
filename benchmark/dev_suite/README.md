@@ -43,7 +43,22 @@ change to `docs/INPUT_FORMAT.md` before its freeze (S3 plan item 3).
 
 ## Scoring
 
-The repository scorer, `tools/score_corpus.py`, reads keys only from
-`benchmark/corpora/<bundle>/` today (open item 17), so it does not score this suite
-where it lies. The suite lives outside `benchmark/corpora/`, so the corpus checks
-(236, 239, 241, 243, 273) do not apply to it.
+The repository scorer, `tools/score_corpus.py`, scores a bundle of this suite where it
+lies by its key path, and compares it with its twin by the twin's key and a run of the
+twin (loop S5, R21):
+
+```
+py -3.12 -X utf8 tools/score_corpus.py --key generated/<test>/<bundle>/answer_key.json --run <run-dir> \
+    --twin-key generated/<test>/<twin-bundle>/answer_key.json --twin-run <twin-run-dir>
+```
+
+It refuses a twin key that is not the one the key's `twin_of` names, and a twin run
+that is not a run of the twin's document. It reads the key parts D-042 added to
+`docs/INPUT_FORMAT.md` section 9: a family 4 bundle's ordinary two-version run is scored
+on `prior_records`, `band_irregularities` and `expected_refusals` (by refusal kind; a
+rename Python matched is no false positive), its multi-round run (a run folder holding
+`audit/multi_round.json`, same command) on the key's `multi_round` entries, round by
+round, and an entry of one of the four relations Python never writes is reported in a
+section of its own (check 293). The
+suite lives outside `benchmark/corpora/`, so the corpus checks (236, 239, 241, 243,
+273) do not apply to it.

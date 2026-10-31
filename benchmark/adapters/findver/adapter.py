@@ -14,6 +14,11 @@ file name in `report`, and the filing is `financial_reports/<report>`, an object
 folder; by default it is `financial_reports` beside the items file's folder, as the
 release lays it out.
 
+B3 reads a filing in segments (D-S13 item 7, common/segments.py): with the cut rule's token
+counter, the kept text is split for B3 alone into segments of whole parts of at most
+B3_SEGMENT_TOKENS tokens (below; `--b3-segment-tokens` replaces it), written as a second
+bundle under `b3_segments/<document id>/` and pooled back into one document at labelling.
+
 Usage: as the ContraDoc adapter (build, label, score), and
     py -3.12 benchmark/adapters/findver/adapter.py split --input <file> --official development|holdout [--testmini <file>]
     py -3.12 benchmark/adapters/findver/adapter.py bands --input <file> [--reports <folder>] --testmini <file>
@@ -68,8 +73,22 @@ _CIK = re.compile(r"/edgar/data/(\d+)/")
 # ---------------------------------------------------------------------------------------
 SPLIT_OPTIONS = (("--official", "development or holdout: the official split the input file is"),
                  ("--testmini", "the testmini file; reports it holds are removed from a holdout file"))
+# B3 reads a filing in segments (common/segments.py; D-S13 item 7,
+# docs/benchmarks/FINDVER_B1_REVISION.md section 3): the text after the cut, every arm's,
+# split for B3 alone into segments of whole parts whose document file is at most this many
+# tokens of the main reading agent's tokenizer. Measured, not preferred, on the one filing
+# B3 has read at full length (e61777d6327c, L3e and L4b): its 30,124-token document made
+# whole-document producer prompts of 35,339 and 36,412 tokens (over the 32,768 context) and
+# a VERIFIER prompt of 349,634 and 336,958 auditor tokens, 11.6 and 11.2 per document
+# token; the largest VERIFIER prompt that ran on the A10 is 41,519 tokens (5db65ebc6ba5, L4b
+# and L6) and one of 106,212 ran out of GPU memory (L6s2). At 2,500 tokens a segment's
+# VERIFIER prompt is about 29,000 auditor tokens by that ratio (an estimate from one filing)
+# and its whole-document producer prompts about 8,800.
+B3_SEGMENT_TOKENS = 2500
 BUILD_OPTIONS = (("--reports", "the folder of filings (default: financial_reports beside the "
-                               "items file's folder, as the release lays it out)"),)
+                               "items file's folder, as the release lays it out)"),
+                 ("--b3-segment-tokens", "B3's segment limit in tokens (default %d, B3_SEGMENT_TOKENS); "
+                                         "applies when the cut rule's token counter is given" % B3_SEGMENT_TOKENS))
 
 SPEC = mapping.Spec(
     BENCHMARK,

@@ -14,6 +14,7 @@ repository except ledger lines.
 """
 import base64
 from datetime import datetime, timezone
+import inspect
 import json
 import math
 import os
@@ -27,7 +28,7 @@ import time
 
 from ordinary_final_run import read, write, sha, require
 import ordinary_final_run as runner
-from cloud_run_common import credential_locations
+from cloud_run_common import credential_locations, no_window
 from lambda_experiment_provider import LambdaExperiment
 from run_remote_experiment import poll_state, termination
 import loop_budget_guard as guard
@@ -63,7 +64,7 @@ def launch_plan():
     # The purpose is a short identifier, refused here, before any provider call, rather than
     # at the intent line after the temporary key is registered.
     guard.require_purpose(plan['purpose'])
-    value=dict(read_ledgers=[],r_inputs=None,test_manifest=None,frozen_tag=None,batch=None,report={},
+    value=dict(read_ledgers=[],r_inputs=None,test_manifest=None,frozen_tag=None,batch=None,batch_form='paired',report={},
                poll_seconds=guard.POLL_LIMIT_SECONDS,reaped=None,bundle_folder=None)
     value.update(plan)
     return value
@@ -82,7 +83,7 @@ def frozen_commit(tag):
     require(isinstance(tag,str) and FROZEN_TAG.fullmatch(tag) is not None and '..' not in tag
             and not tag.endswith(('.','.lock')),'Frozen tag not found')
     result=process.run(['git','rev-parse','--verify','--quiet','refs/tags/'+tag+'^{commit}'],cwd=ROOT,
-                       capture_output=True,timeout=30)
+                       capture_output=True,timeout=30,creationflags=no_window())
     require(result.returncode==0,'Frozen tag not found')
     return result.stdout.decode().strip()
 
@@ -120,9 +121,18 @@ def consumed(bundle):
     return (Path(bundle)/'LAUNCH_INTENT.json').exists() or (Path(bundle)/'RUN_FOLDER.json').exists()
 
 
-def batch_schedule(entries):
+BATCH_FORMS=('paired','b3_only')
+
+
+def batch_schedule(entries,form='paired',sealed=False):
     """B3 and B1 on the same items, item by item: (i1,B3),(i1,B1),(i2,B3),(i2,B1)... so a stop
-    at any point leaves every finished item paired except, at most, the one in progress."""
+    at any point leaves every finished item paired except, at most, the one in progress.
+
+    The `b3_only` form (S5 item 0.4, DS5-2) carries exposed development bundles that have no
+    B1 arm (regression bundles, multi-round cases, the development suite): every entry is B3,
+    each item once, run in the order given, paired with nothing. It is refused for a sealed run,
+    whose comparison needs both arms."""
+    require(form in BATCH_FORMS,'Unknown batch form')
     require(isinstance(entries,list) and entries,'Batch entries required')
     items=[]
     for e in entries:
@@ -130,17 +140,24 @@ def batch_schedule(entries):
                 and isinstance(e['item'],str) and re.fullmatch(r'[A-Za-z0-9_.-]{1,64}',e['item']),
                 'Batch entry needs item, arm (B3 or B1) and bundle')
         if e['item'] not in items:items.append(e['item'])
+    if form=='b3_only':
+        require(not sealed,'A B3-only batch is for exposed bundles only')
+        require(all(e['arm']=='B3' for e in entries),'A B3-only batch carries B3 entries only')
+        require(len(items)==len(entries),'Every B3-only batch item runs once')
+        require(len({str(Path(e['bundle']).resolve()) for e in entries})==len(entries),'Each batch entry has its own bundle')
+        return [dict(e,index=k,paired_with=None) for k,e in enumerate(entries)]
     schedule=[e for item in items for arm in BATCH_ARMS for e in entries if e['item']==item and e['arm']==arm]
     require(len(schedule)==len(entries)==len(BATCH_ARMS)*len(items),'Every batch item runs B3 and B1 exactly once')
     require(len({str(Path(e['bundle']).resolve()) for e in entries})==len(entries),'Each batch entry has its own bundle')
     return [dict(e,index=k,paired_with=k+1 if e['arm']==BATCH_ARMS[0] else k-1) for k,e in enumerate(schedule)]
 
 
-def batch_entries(plan,m,assets):
+def batch_entries(plan,m,assets,sealed=False):
     """Each batch bundle verified locally as the session bundle is, sharing one environment
-    and one sealed budget; [] without a batch."""
+    and one sealed budget; [] without a batch. Each entry's plan arm must equal the arm its
+    bundle was sealed with (S5 R19 (i)); the instance's runner checks it again."""
     if not plan['batch']:return []
-    schedule=batch_schedule(plan['batch'])
+    schedule=batch_schedule(plan['batch'],plan['batch_form'],sealed)
     require(Path(schedule[0]['bundle']).resolve()==Path(BASE).resolve(),'The first batch entry is the session bundle')
     for e in schedule:
         b=Path(e['bundle']).resolve()
@@ -155,6 +172,7 @@ def batch_entries(plan,m,assets):
         require(all(em[k]==m[k] for k in BUDGET_KEYS),'Batch bundles share the session sealed budget')
         require(em['max_runs']==1 and em['model_mode']=='final','Ordinary final run only')
         admit(em,es,plan,b)
+        require(em.get('arm')==e['arm'],'Batch arm differs from the sealed arm')
         # Every entry, the session bundle among them: launched once in place (LAUNCH_INTENT.json)
         # or in a run folder with --output-dir (RUN_FOLDER.json) is consumed either way.
         require(not consumed(b),'Batch bundle already consumed')
@@ -170,6 +188,18 @@ def park_command(remote,index):
     target=remote.rstrip('/')+'-batch/'+str(index)
     return ('cd '+shlex.quote(remote)+' && mkdir -p '+shlex.quote(target)+' && for f in *; do case "$f" in '
             'hf_cache|wheels|venv|assets.tar) ;; *) mv -- "$f" '+shlex.quote(target+'/')+' ;; esac; done && mkdir project')
+
+
+# Past the soft budget the controller issues no new remote work except stopping the workload
+# and collecting evidence: the session's own collection and, since S5 R18, a batch entry's
+# collection into its own run folder (its pack and hash; the download is a transfer, which the
+# soft budget never refused), so an entry finishing past the soft budget keeps its own evidence.
+SOFT_BUDGET_EXEMPT=frozenset({'stop_workload','pack_evidence','evidence_hash','final_gpu_state',
+                              'batch_pack_evidence','batch_evidence_hash'})
+
+
+def soft_budget_exempt(label):
+    return label in SOFT_BUDGET_EXEMPT
 
 
 CREDENTIAL_REFUSAL='No provider credential file found; set SHIMMER_CONFIG_PATH to the operator credential file'
@@ -262,6 +292,32 @@ def detached_poll_command(remote,label,progress=None):
 ASSET_COPY_STATES=('MATCH','MISSING','MISMATCH','UNREACHABLE')
 
 
+# Open item 37: one disk reading of the run root's filesystem taken after the evidence archive
+# is written (so it counts the archive), by the runner's own disk_reading carried in the packer
+# and printed on one marked line; the controller saves it beside the collected evidence. A
+# missing or unreadable reading is saved as unavailable with its reason and never fails a run.
+DISK_AFTER_EVIDENCE='disk_after_evidence.json'
+DISK_MARK='SHIMMER_DISK_READING '
+DISK_AFTER_PACK=(inspect.getsource(runner.disk_reading)
+                 +"print('"+DISK_MARK+"'+json.dumps(disk_reading(str(pathlib.Path('.').resolve()))))\n")
+
+
+def disk_after_evidence(stdout):
+    """The packer's disk reading, or why there is none; never raises."""
+    try:
+        marked=[x for x in bytes(stdout or b'').decode('utf8',errors='replace').splitlines() if x.startswith(DISK_MARK)]
+        value=json.loads(marked[-1][len(DISK_MARK):]) if marked else None
+        if isinstance(value,dict):return value
+        return dict(unavailable='no disk reading in the evidence packer output')
+    except Exception as exc:
+        return dict(unavailable='unreadable disk reading in the evidence packer output: '+type(exc).__name__)
+
+
+def save_disk_after_evidence(folder,stdout):
+    try:write(Path(folder)/DISK_AFTER_EVIDENCE,disk_after_evidence(stdout))
+    except Exception:pass
+
+
 def asset_copy_declaration(base, digest):
     """The operator's declaration of a provider-side asset copy for THIS bundle, or None
     without one. A declaration is tied to the archive digest it was written from
@@ -348,7 +404,9 @@ def execute():
     plan=launch_plan()
     workload=admit(m,seal,plan,BASE)
     sealed=workload['exposure']=='sealed'
-    batch=batch_entries(plan,m,assets)
+    batch=batch_entries(plan,m,assets,sealed)
+    # The arm the session bundle runs as: the first batch entry's, else its own sealed arm.
+    session_arm=batch[0]['arm'] if batch else runner.arm_of(m)
     soft,hard=m['soft_budget_usd'],m['hard_ceiling_usd']
     # The controller's own margins follow from the sealed reserves: it stops issuing remote
     # work a minute before the watchdog's termination reserve, and starts the workload only
@@ -362,12 +420,14 @@ def execute():
                 test_manifest_sha256=seal.get('test_manifest_sha256',runner.EXPOSED_NO_MANIFEST),
                 multi_round=m['multi_round'],protected_test=m['protected_test'],
                 shimmer_inst_finder=m['environment'].get('SHIMMER_INST_FINDER'),
-                frozen_tag=plan['frozen_tag'],batch_entries=len(batch),report=dict(plan['report']))
+                frozen_tag=plan['frozen_tag'],batch_entries=len(batch),batch_form=plan['batch_form'] if batch else None,
+                arm=session_arm,report=dict(plan['report']))
     save('run_record.json',record)
     CREDENTIAL=credential_path()
     provider=LambdaExperiment(CREDENTIAL)
-    inventory=provider.request('instances')['data']
-    require(inventory==[],'Provider inventory not empty')
+    # D-S17: only loop instances may be listed, fewer than the limit; the guard decides
+    # under the lock below, over the ledgers as well.
+    guard.refuse_full_inventory(provider.request('instances')['data'])
     types={}
     def list_types():
         rows=provider.request('instance-types')['data']
@@ -391,17 +451,16 @@ def execute():
     lock=guard.acquire_lock(plan['ledger'])
     try:
         inventory=provider.request('instances')['data']
-        require(inventory==[],'Provider inventory not empty')
         decision=guard.check(ledgers=[plan['ledger'],*plan['read_ledgers']],forecast_minutes=plan['forecast_minutes'],
                              hourly_rate=rate,storage_forecast_usd=plan['storage_forecast_usd'],now_epoch=time.time(),
-                             reserve_minutes=reserve_minutes,provider_names=[x.get('name') for x in inventory],
+                             reserve_minutes=reserve_minutes,provider_names=guard.loop_inventory(inventory),
                              instance_type=candidate['type'],r_inputs=plan['r_inputs'],reaped=plan['reaped'])
         require(decision['cap_usd']+1e-9>=hard,'Loop cap at launch %.2f dollars is below the sealed hard cap %.2f dollars; reseal'
                 %(decision['cap_usd'],hard))
         require(hard>=decision['forecast_usd'] and hard/rate*60>=plan['forecast_minutes']+reserve_minutes,
                 'Sealed hard cap leaves less than the forecast at the live price')
         require(m['image'] in provider.request('images')['data'],'Prepared image unavailable')
-        save('launch_preflight.json',dict(epoch=time.time(),instances=[],instance=current,image=m['image'],manifest_sha256=MANIFEST,
+        save('launch_preflight.json',dict(epoch=time.time(),instances=inventory,instance=current,image=m['image'],manifest_sha256=MANIFEST,
              selected=dict(type=candidate['type'],region=region,hourly_rate=rate,polls=polls),budget=decision))
         identity=BASE/'ssh_identity'
         require(not identity.exists() and not Path(str(identity)+'.pub').exists(),'Temporary key path occupied')
@@ -439,7 +498,7 @@ def execute():
         folder=BASE if into is None else into
         timeout=bounded(timeout)
         begin=time.time()
-        try:r=subprocess.run(argv,capture_output=True,timeout=timeout)
+        try:r=subprocess.run(argv,capture_output=True,timeout=timeout,creationflags=no_window())
         except subprocess.TimeoutExpired:
             if tolerate_timeout:
                 # A poll that hangs is an unreachable poll, not a phase result.
@@ -514,7 +573,7 @@ def execute():
         return subprocess.CompletedProcess(args=[label],returncode=-1 if code is None else code,stdout=r.stdout,stderr=b'')
     def remote(label,command,timeout=60,required=True,tag=None,into=None):
         require(ssh is not None,'SSH unavailable')
-        if time.time()>start+soft/rate*3600 and label not in {'stop_workload','pack_evidence','evidence_hash','final_gpu_state'}:
+        if time.time()>start+soft/rate*3600 and not soft_budget_exempt(label):
             save('soft_budget_assessment.json',dict(phase=label,epoch=time.time(),continued=False,
                 reason='No justified remaining-work estimate; preserve evidence and terminate'))
             raise RuntimeError('Soft budget reached before next phase')
@@ -539,10 +598,11 @@ with tarfile.open('collected_evidence.tar.gz','w:gz') as archive:
  for p in sorted(set(paths)):
   h=hashlib.sha256(p.read_bytes()).hexdigest();manifest[p.as_posix()]={'sha256':h,'bytes':p.stat().st_size};archive.add(p,arcname=p.as_posix(),recursive=False)
 pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,indent=2))
-"""
+"""+DISK_AFTER_PACK
     def collect(label_prefix,into,tag=None):
         """Pack, hash and download the instance's current evidence into `into`, verified."""
-        remote(label_prefix+'pack_evidence','cd '+REMOTE+' && /usr/bin/python3.12 -c '+shlex.quote(pack),180,tag=tag,into=into)
+        r=remote(label_prefix+'pack_evidence','cd '+REMOTE+' && /usr/bin/python3.12 -c '+shlex.quote(pack),180,tag=tag,into=into)
+        save_disk_after_evidence(into,r.stdout)
         r=remote(label_prefix+'evidence_hash','sha256sum '+REMOTE+'/collected_evidence.tar.gz',60,tag=tag,into=into)
         digest=r.stdout.decode().split()[0]
         transport(label_prefix+'evidence_download',['scp',*options,host+':'+REMOTE+'/collected_evidence.tar.gz',
@@ -561,7 +621,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
               exposure=entry['seal'].get('exposure','exposed'),
               test_manifest_sha256=entry['seal'].get('test_manifest_sha256',runner.EXPOSED_NO_MANIFEST)))
         write(folder/'operator_authorization.json',dict(permit,execution_manifest_sha256=entry['manifest_sha256'],
-              seal_sha256=entry['seal_sha256'],source_commit=entry['manifest']['source_commit'],
+              seal_sha256=entry['seal_sha256'],source_commit=entry['manifest']['source_commit'],arm=entry['arm'],
               multi_round=entry['manifest']['multi_round'],protected_data=entry['manifest']['protected_test']))
         if k>0:
             remote('batch_park',park_command(REMOTE,k-1),120,tag=tag,into=folder)
@@ -582,7 +642,8 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         collect('batch_',folder,tag)
     try:
         phase('temporary_ssh_identity')
-        r=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',name],capture_output=True)
+        r=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',name],capture_output=True,
+                         creationflags=no_window())
         require(r.returncode==0,'Temporary SSH generation failed')
         registration=provider.request('ssh-keys',dict(name=name,public_key=Path(str(identity)+'.pub').read_text().strip()))['data'][0]
         save('ssh_registration.json',registration)
@@ -621,7 +682,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         permit=dict(operator_authorized=True,action='one-ordinary-final-cloud-run',
             execution_manifest_sha256=MANIFEST,seal_sha256=SEAL,source_commit=m['source_commit'],
             preparation_commit=PREPARATION,controller_sha256=sha(__file__),
-            soft_budget_usd=soft,hard_ceiling_usd=hard,provider='Lambda',instance_type=candidate['type'],region=region,
+            soft_budget_usd=soft,hard_ceiling_usd=hard,arm=session_arm,provider='Lambda',instance_type=candidate['type'],region=region,
             instance_candidate=candidate,instance_id=iid,hourly_rate=rate,active_start_epoch=start,maximum_instances=1,
             maximum_runs=max(1,len(batch)),protected_data=m['protected_test'],multi_round=m['multi_round'],
             automatic_full_run_retry=False,asset_copy=copy,
@@ -631,7 +692,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
         watchdog=subprocess.Popen([sys.executable,str(ROOT/'tools/ordinary_final_watchdog.py'),'--bundle',str(BASE),
             '--credential-file',str(CREDENTIAL),'--arm'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,creationflags=flags)
+            stderr=subprocess.DEVNULL,creationflags=no_window(flags))
         save('watchdog_process.json',dict(pid=watchdog.pid))
         for _ in range(30):
             if (BASE/'WATCHDOG_ARMED.json').exists():break
@@ -761,10 +822,18 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         inventory=independent.request('instances')['data'];keys=independent.request('ssh-keys')['data']
         absent=registration is None or all(x['id']!=registration['id'] for x in keys)
         local_absent=not identity.exists() and not Path(str(identity)+'.pub').exists()
-        save('independent_inventory_confirmation.json',dict(instances=inventory,temporary_ssh_registration_absent=absent,
-            local_key_material_absent=local_absent,epoch=time.time(),no_persistent_storage_created=True))
-        require(inventory==[] and absent and local_absent,'Independent cleanup failed')
-        save('cleanup.json',dict(temporary_provider_ssh_removed=True,local_ssh_material_removed=True,inventory_empty=True))
+        # D-S17: another loop instance (its own launch, ledger and controller) may still run.
+        # `instances` holds what this run must not leave: its own instance, by id or name, and
+        # any instance outside the loop; the other loop instances are named apart.
+        left=[x for x in inventory if (iid and x.get('instance_id')==iid) or x.get('name')==name
+              or not str(x.get('name') or '').startswith(guard.PREFIX)]
+        others=sorted(str(x.get('name')) for x in inventory if x not in left)
+        save('independent_inventory_confirmation.json',dict(instances=left,other_loop_instances=others,
+            temporary_ssh_registration_absent=absent,local_key_material_absent=local_absent,epoch=time.time(),
+            no_persistent_storage_created=True))
+        require(left==[] and absent and local_absent,'Independent cleanup failed')
+        save('cleanup.json',dict(temporary_provider_ssh_removed=True,local_ssh_material_removed=True,inventory_empty=not others,
+                                 own_instance_absent=True))
         for entry in batch:
             # Each batch run folder carries the session's launch and cleanup records, so
             # the analyser reads one folder per bundle exactly as it reads a single run.

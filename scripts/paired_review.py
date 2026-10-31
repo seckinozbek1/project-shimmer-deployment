@@ -2525,14 +2525,26 @@ JUDGING_OUTCOMES = {
                           "and was kept neither as a finding nor as a note"),
     "reply_failed": "the call failed, so nothing from its reply was kept",
     "judged_absence": ("judged absence: {listed} listed as a model's items, {refused} refused by Python"),
+    # D-068: a returned reply on a plan Python could compute nothing for. Before
+    # D-068 such a reply was recorded `advisory_not_kept` (the entry above, kept
+    # because runs before D-068 carry it and the run analyser counts it).
+    "judged_uncomputable": ("judged with no comparison Python could compute: {listed} kept as a "
+                            "model's records, {refused} refused by Python"),
 }
 # S2 checker round 3 (item 1): a judging call's plan kind that asks for a judged
 # absence, never for a note on Python's findings.
 JUDGED_ABSENCE_PLAN = "absence_judged"
+# D-068: the plan kind where Python could compute nothing for a unit and a rule, so
+# the model's answer on the text is the only answer there is.
+UNCOMPUTABLE_PLAN = "uncomputable"
+# D-068: the field and value a kept answer on such a plan carries, on each record and
+# on the body of the bus post that carries the records.
+JUDGED_PATH_FIELD = "judged_path"
+JUDGED_PATH_UNCOMPUTABLE = "uncomputable"
 
 
 def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note,
-                        absence_listed=0, absence_refused=0):
+                        absence_listed=0, absence_refused=0, judged_listed=0, judged_refused=0):
     """One judging call as a flat record (scalars only): who was asked, about
     what, and what became of the reply. Nothing from the reply's text.
 
@@ -2540,7 +2552,9 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
     call is a failed call whatever it was asked; a judged-absence call that
     returned is recorded with the count of its claims Python listed as a model's
     items and the count it refused, which the caller passes once its items are
-    known; only then the note outcomes of a call asked for a note."""
+    known; D-068: a call on a plan Python could compute nothing for that returned
+    is recorded the same way, with the records kept and the records refused; only
+    then the note outcomes of a call asked for a note."""
     ok = isinstance(reply, dict) and reply.get("ok") is not False
     if not ok:
         outcome = "reply_failed"
@@ -2548,8 +2562,8 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
         outcome = "judged_absence"
     elif notes_kept:
         outcome = "note_kept"
-    elif plan_kind == "uncomputable":
-        outcome = "advisory_not_kept"
+    elif plan_kind == UNCOMPUTABLE_PLAN:
+        outcome = "judged_uncomputable"
     elif not has_note:
         outcome = "no_note_returned"
     else:
@@ -2560,7 +2574,70 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
             "plan_kind": str(plan_kind or ""), "backend": str(reply.get("backend") or ""),
             "model": str(reply.get("model") or ""), "notes_kept": int(notes_kept or 0),
             "absence_listed": int(absence_listed or 0), "absence_refused": int(absence_refused or 0),
+            "judged_listed": int(judged_listed or 0), "judged_refused": int(judged_refused or 0),
             "outcome": outcome}
+
+
+def judged_item_refusal(item, rule, fields_present, unit_text):
+    """The reason Python refuses one answer a model gave on one unit and one rule,
+    or None when it keeps it. The one test for both judged paths (a judged absence,
+    and D-068's plan Python could compute nothing for): an absence claim with no
+    quote, an absence claim naming no field, an absence claim naming a field the
+    unit carries (refuses_judged_absence), and any answer quoting text the unit does
+    not contain (quote_not_in_unit, against the same unit text the model was shown)."""
+    if refuses_judged_absence(item, rule, fields_present):
+        if not str(item.get("quote") or "").strip():
+            return "absence claim supplies no quote"
+        if not pairing_map._norm_label(item.get("stated_field") or item.get("field_label") or ""):
+            return "absence claim names no field"
+        return "claims a field absent that this unit carries"
+    if quote_not_in_unit(item, unit_text):
+        return "quotes text that does not appear in this unit"
+    return None
+
+
+def reply_kept_reason(reply):
+    """D-068: None when a judging reply may give records, else why it gives none. Only
+    a reply the call marks ok and that did not refuse the task is read; a failed call's
+    best-effort object is never a record."""
+    if not isinstance(reply, dict) or reply.get("ok") is not True:
+        return "reply_failed"
+    parsed = reply.get("parsed")
+    if isinstance(parsed, dict) and parsed.get("status") == "refused":
+        return "reply_refused"
+    return None
+
+
+def reply_items(reply):
+    """The items a reply carries, as the judged-absence stamping reads them (an
+    envelope's `items`, or a bare list), objects only."""
+    parsed = reply.get("parsed") if isinstance(reply, dict) else None
+    raw = parsed.get("items") if isinstance(parsed, dict) else parsed
+    return [i for i in raw if isinstance(i, dict)] if isinstance(raw, list) else []
+
+
+def stamp_from_plan(items, *, rule_id, source_rule_id):
+    """D-068: answers on a plan Python could compute nothing for, attributed to the
+    rule of the PLAN, never to a rule the reply names. The items come from the same
+    stamping as a judged absence's (unit, item id and revision set by Python); here
+    every rule-id spelling the reply wrote is replaced by the plan's registry id, the
+    operator's own id is the plan's (left out when the rule has none), the absence
+    path that stamping sets is removed (these are not absences unless the relation
+    says so, and then they are model-written, never `computed`), and each record says
+    which path kept it."""
+    out = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        item = {k: v for k, v in item.items()
+                if k not in finding_record.RULE_ID_FIELD_ALIASES
+                and k not in ("source_rule_id", "absence_path")}
+        item["rule_id"] = rule_id
+        if source_rule_id:
+            item["source_rule_id"] = source_rule_id
+        item[JUDGED_PATH_FIELD] = JUDGED_PATH_UNCOMPUTABLE
+        out.append(item)
+    return out
 
 
 def judging_call_counts(calls) -> dict:
@@ -2589,6 +2666,10 @@ def judging_call_line(record) -> str:
         said = localization.text(JUDGING_OUTCOMES["judged_absence"],
                                  listed=int(record.get("absence_listed") or 0),
                                  refused=int(record.get("absence_refused") or 0))
+    elif outcome == "judged_uncomputable":
+        said = localization.text(JUDGING_OUTCOMES["judged_uncomputable"],
+                                 listed=int(record.get("judged_listed") or 0),
+                                 refused=int(record.get("judged_refused") or 0))
     else:
         said = localization.text(JUDGING_OUTCOMES.get(outcome, str(outcome)))
     return localization.text(

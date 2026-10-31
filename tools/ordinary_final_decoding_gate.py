@@ -28,6 +28,7 @@ def main(out):
             patch.object(transformers.AutoModel, 'from_pretrained', no_load), \
             patch.object(transformers.PreTrainedModel, 'from_pretrained', no_load):
         import ordinary_final_decoding_checks as checks
+        import contract_decoding
         import decoding_policy
         import torch
         stream = io.StringIO()
@@ -43,13 +44,18 @@ def main(out):
 
         def no_policy(backend, root=None):
             return dict(backend=backend, status='neutralized', source='', sha256='', kwargs={})
+
+        def no_constraint(processor, state):
+            return list(range(processor.table.size)), None
         proofs = []
         for name, owner, attribute, mutant in [
                 ('test_producer_family', decoding_policy, 'policy', no_policy),
                 ('test_auditor_family', decoding_policy, 'policy', no_policy),
                 ('test_redactor_family', decoding_policy, 'policy', no_policy),
                 ('test_producer_family', checks, 'cumsum_recorder', blind_recorder),
-                ('test_redactor_family', checks, 'cumsum_recorder', blind_recorder)]:
+                ('test_redactor_family', checks, 'cumsum_recorder', blind_recorder),
+                ('test_producer_contract_constraint', contract_decoding.ContractProcessor, 'admitted', no_constraint),
+                ('test_auditor_envelope_constraint', contract_decoding.ContractProcessor, 'admitted', no_constraint)]:
             invocations = []
 
             def replacement(*args, _mutant=mutant, **kwargs):

@@ -31,7 +31,7 @@ branch runs after existing startup model/privacy gates, before date population,
 adaptive spawning, ordinary Review/Draft phases and ontology capture. It creates
 the existing orchestrator with `run_adaptive_spawn=False` and uses fresh PROCESSOR
 and VERIFIER wrappers. Their call-specific contracts come from
-`config/multi_round_contracts.json`; the fixed roster and ordinary contracts are
+`config/multi_round_contracts.json` (deleted at loop S5, D-103: the case records are computed in Python); the fixed roster and ordinary contracts are
 unchanged. This is a source-grounded case extraction/compilation task followed by
 independent fidelity review, within the existing agents' capabilities. No new
 agent, charter or constitutional change is introduced.

@@ -66,18 +66,33 @@ def manifest(docs):
 
 
 def authored_replies(case_id="declared_case"):
-    """PRE-AUTHORED REPLIES, NOT MODEL OUTPUT: one position per round, accepted."""
-    proposals = [{"record_id": "p_" + r, "kind": "position", "state": "accepted", "case_id": case_id,
-                  "confidence": "UNCERTAIN", "category": "semantic_interpretation", "text": "declared",
-                  "actor_id": "actor_a", "issue_id": "issue_a", "round_id": r, "source_ids": ["s_" + r],
-                  "position": "typed_a", "ref": "s_" + r} for r in ("r1", "r2")]
-    decisions = [{"target_record_id": "p_" + r, "state": "accepted", "confidence": "UNCERTAIN",
-                  "source_ids": ["s_" + r], "ref": "s_" + r, "kind": "review"} for r in ("r1", "r2")]
+    """PRE-AUTHORED REPLIES, NOT MODEL OUTPUT: the strategic layer's two calls on a
+    strategic_options request, one option resting on the computed movement."""
+    movement = "movement.r1.r2.actor_a.issue_a"
+    proposals = [{"record_id": "option_a", "type": "STRATEGIC_OPTION", "state": "accepted",
+                  "confidence": "UNCERTAIN", "action": "declared", "upside": "declared", "risk": "declared",
+                  "uncertainty": "declared", "assumptions": ["declared"], "source_ids": ["s_r1", "s_r2"],
+                  "interpretation_ids": [movement], "trajectory_ids": [movement], "actor_ids": ["actor_a"],
+                  "issue_ids": ["issue_a"], "round_ids": ["r1", "r2"], "option_ids": [],
+                  "ref": "option_a", "kind": "finding"}]
+    decisions = [{"target_record_id": "option_a", "state": "accepted", "confidence": "UNCERTAIN",
+                  "source_ids": ["s_r1", "s_r2"], "ref": "option_a", "kind": "review"}]
     return (json.dumps({"agent": "PROCESSOR", "doc_id": case_id, "items": proposals}),
             json.dumps({"agent": "VERIFIER", "doc_id": case_id, "items": decisions}))
 
 
-def mocked_multi_round_run(out_root, *, beta_r2=70, plan_spy=None):
+# Open item 35: what the stand-in local backend returns if the case phase asks it
+# anything. Shaped as L6m's capped reply was: the instructions echoed back, no
+# envelope. PRE-AUTHORED, NOT MODEL OUTPUT.
+CAPPED_REPLY = ("Do not repeat adjacent deliverables or adopt their conclusions; preserve competing "
+                "interpretations and identify missing evidence. " * 40)
+# The factory of the latest mocked run, for the neutralisation that restores a
+# model call in the case phase (_records_from_processor).
+_FACTORY = []
+
+
+def mocked_multi_round_run(out_root, *, beta_r2=70, plan_spy=None, replies=None, seen=None,
+                           case_manifest=None):
     """The real case phase, the pipeline's own wrapper factory, stand-in backends."""
     import pipeline as pl
     from harness.run_agent import build_orchestrator
@@ -90,9 +105,10 @@ def mocked_multi_round_run(out_root, *, beta_r2=70, plan_spy=None):
     orch = build_orchestrator(root=ROOT, out_root=Path(out_root), registry=registry)
     ctx = orch.run_context
     docs = documents(beta_r2)
-    record = mr.begin(ctx, manifest(docs))
+    record = mr.begin(ctx, case_manifest or manifest(docs))
     refs = ReferenceIndex.open(ROOT, index_path=ctx.reference_index_path())
-    producer, verifier = authored_replies()
+    if replies is None:
+        replies = [CAPPED_REPLY, CAPPED_REPLY]
     import multi_round_phase
     real_plan_calls = pr.plan_calls
 
@@ -100,9 +116,13 @@ def mocked_multi_round_run(out_root, *, beta_r2=70, plan_spy=None):
         if plan_spy is not None:
             plan_spy.append(sorted({u for u, _ in pairs}))
         return real_plan_calls(units, pairs, *args, **kwargs)
-    with backends(local=[producer, verifier]), patch.object(pr, "plan_calls", spy), \
+
+    def factory(name):
+        return pl._build_wrapper(name, orch, {})
+    _FACTORY[:] = [factory]
+    with backends(local=replies, seen=seen), patch.object(pr, "plan_calls", spy), \
             contextlib.redirect_stderr(io.StringIO()):
-        code = multi_round_phase.execute(ctx, record, docs, refs, lambda name: pl._build_wrapper(name, orch, {}),
+        code = multi_round_phase.execute(ctx, record, docs, refs, factory,
                                          sensitive=False, convention_registry={"conventions": RULES})
     return {"code": code, "record": record, "ctx": ctx, "run_dir": ctx.run_dir}
 
@@ -197,20 +217,52 @@ def _second_round(text_r2, *, rules_r1=None, rules_r2=None):
     return rows
 
 
+# Open item 35 (L6m round 3): a rule whose pairing is its DECLARED scope, so a label
+# its text names can change without changing which units it pairs with. The
+# vocabulary reaches a unit's computation only through such named labels.
+SCOPED_DECLARED = dict(SCOPED_RULE, scope=["reading"])
+NAMED_LABEL = "Entry taken: 3 units\n"      # words the scoped rule's text holds
+UNNAMED_LABEL = "Batch note: 3 units\n"     # words no paired rule's text holds
+
+
+def _findings(rows_and_found):
+    return sorted(json.dumps(f, sort_keys=True, default=str) for f in rows_and_found)
+
+
 def observe_signature():
     """Round 2 status of Entry Alpha, whose own text never changes."""
     def alpha(rows):
         return next(r["status"] for r in rows if r["unit_id"].endswith("entry-alpha"))
+    scoped = RULES + [SCOPED_DECLARED]
+    # The unnamed label's round 2 with reuse against the same round computed fresh.
+    earlier = {}
+    rounds.review_document({"id": "d1", "text": signature_text()}, scoped, earlier, round_id="r1")
+    _, reused, _ = rounds.review_document({"id": "d2", "text": signature_text(extra=UNNAMED_LABEL)},
+                                          scoped, earlier, round_id="r2")
+    _, fresh, _ = rounds.review_document({"id": "d2", "text": signature_text(extra=UNNAMED_LABEL)},
+                                         scoped, {}, round_id="r2")
     return {"unchanged": alpha(_second_round(signature_text())),
             "rule": alpha(_second_round(signature_text(), rules_r2=[RULE_CHANGED])),
-            "vocabulary": alpha(_second_round(signature_text(extra="Batch note: 3 units\n"))),
+            "vocabulary": alpha(_second_round(signature_text(extra=NAMED_LABEL), rules_r1=scoped)),
+            "vocabulary_unnamed": alpha(_second_round(signature_text(extra=UNNAMED_LABEL), rules_r1=scoped)),
+            "unnamed_reuse_equals_fresh": _findings(reused) == _findings(fresh) and bool(fresh),
             "known_units": alpha(_second_round(signature_text(gamma_unit="kg")))}
 
 
 def check_signature():
     o = observe_signature()
-    ok = o == {"unchanged": "reused", "rule": "computed", "vocabulary": "computed", "known_units": "computed"}
-    return ("PASS" if ok else "FAIL", "a changed rule, vocabulary label or known unit recomputes an unchanged unit")
+    ok = o == {"unchanged": "reused", "rule": "computed", "vocabulary": "computed",
+               "vocabulary_unnamed": "reused", "unnamed_reuse_equals_fresh": True,
+               "known_units": "computed"}
+    return ("PASS" if ok else "FAIL", "a changed rule, a label a paired rule names, or a known unit recomputes "
+                                      "an unchanged unit; a label no paired rule names does not, and the reuse "
+                                      "equals a fresh computation")
+
+
+def _whole_vocabulary(rules, vocabulary):
+    """Neutralisation: the signature covers the document's whole vocabulary, as
+    before open item 35."""
+    return sorted(" ".join(label) for label in vocabulary)
 
 
 def observe_moved_asks():
@@ -272,31 +324,215 @@ def _without(name):
 
 
 def observe_replies():
+    """The calls the case phase still makes: the strategic layer's, on an explicit
+    strategic_options request (open item 35 removed the trajectory calls)."""
     with tempfile.TemporaryDirectory(prefix="shimmer_rounds_replies_") as td:
-        run = mocked_multi_round_run(td)
+        docs = documents()
+        case = dict(manifest(docs), decision_support_mode="strategic_options")
+        run = mocked_multi_round_run(td, replies=list(authored_replies()), case_manifest=case)
         folder = reply_records.folder(run["ctx"])
         rows = reply_records.records(folder)
         current = reply_records.outcomes(folder)
+        layer = run["record"].get("strategic_layer") or {}
+        items = layer.get("items") or []
         return {"code": run["code"], "outcome": run["record"].get("outcome"),
+                "strategic_state": layer.get("state"),
                 "records": [(r["agent"], r["backend"], r["phase"], bool(r["reply"] and r["reply"].get("text")))
                             for r in rows],
                 "call_ids_unique": len({r["call_id"] for r in rows}) == len(rows),
                 "outcomes": [current.get(r["call_id"], "not_decided") for r in rows],
-                # The case records name the very calls whose replies were saved.
-                "records_name_saved_calls": sorted(
-                    {rec.get("producer_call_id") for rec in run["record"]["records"]}
-                    | {rec.get("reviewer_call_id") for rec in run["record"]["records"]})
-                    == sorted(r["call_id"] for r in rows)}
+                # The strategic items name the very calls whose replies were saved,
+                # and the trajectory records name none.
+                "records_name_saved_calls": bool(items) and sorted(
+                    {i.get("producer_call_id") for i in items} | {i.get("reviewer_call_id") for i in items})
+                    == sorted(r["call_id"] for r in rows),
+                "trajectory_names_no_call": all(
+                    not any(k.endswith("_call_id") for k in rec) for rec in run["record"]["records"])}
 
 
 def check_replies():
     o = observe_replies()
-    ok = (o["code"] == 0 and o["outcome"] == "reviewed"
+    ok = (o["code"] == 0 and o["outcome"] == "reviewed" and o["strategic_state"] == "strategic_options"
           and o["records"] == [("PROCESSOR", "local_producer", "multi_round", True),
                                ("VERIFIER", "local_auditor", "multi_round", True)]
           and o["call_ids_unique"] and o["outcomes"] == ["advisory_not_record"] * 2
-          and o["records_name_saved_calls"])
+          and o["records_name_saved_calls"] and o["trajectory_names_no_call"])
     return ("PASS" if ok else "FAIL", "one saved record per multi-round call, outcome advisory_not_record")
+
+
+# ---------- open item 35: the case records are computed, no model is asked -------------------
+
+def observe_no_model_call():
+    """The real case phase on the declared two-round case, with the stand-in local
+    backend holding a capped, envelope-less reply (as L6m's) for any call."""
+    seen = {"claude": [], "gpt": [], "local": []}
+    with tempfile.TemporaryDirectory(prefix="shimmer_rounds_oi35_") as td:
+        run = mocked_multi_round_run(td, replies=[CAPPED_REPLY, CAPPED_REPLY], seen=seen)
+        saved = mr.read_saved(run["run_dir"], run["ctx"].run_id)
+        bus = Path(run["run_dir"]) / "logs" / "agent_bus.jsonl"
+        posts = [json.loads(line)["body"] for line in bus.read_text(encoding="utf-8").splitlines()] \
+            if bus.is_file() else []
+        reviewed = [(b.get("backend"), b.get("model")) for b in posts if b.get("event") == "MULTI_ROUND_REVIEWED"]
+        view = saved.get("view") or {}
+        return {"code": run["code"], "outcome": saved.get("outcome"),
+                "activated": (saved.get("activation") or {}).get("activated"),
+                "reason": (saved.get("activation") or {}).get("reason"),
+                "model_sent": sum(len(v) for v in seen.values()),
+                "replies_saved": len(reply_records.records(reply_records.folder(run["ctx"]))),
+                "records": sorted((r["record_id"], r["state"], r.get("movement"), r.get("value"), r.get("unit"),
+                                   r.get("written_by")) for r in run["record"]["records"]),
+                "comparisons": [(c["movement_id"], c.get("delta"), c.get("unit"), c["typed_position_equal"])
+                                for c in view.get("structural_comparisons", [])],
+                "bus": reviewed}
+
+
+OI35_RECORDS = sorted([
+    ("position.r1.actor_a.issue_a", "accepted", None, 61.0, "units", "python"),
+    ("position.r2.actor_a.issue_a", "accepted", None, 61.0, "units", "python"),
+    ("movement.r1.r2.actor_a.issue_a", "accepted", "unknown", None, None, "python")])
+
+
+def check_no_model_call():
+    o = observe_no_model_call()
+    ok = (o["code"] == 0 and o["outcome"] == "reviewed" and o["activated"] is True and o["reason"] is None
+          and o["model_sent"] == 0 and o["replies_saved"] == 0
+          and o["records"] == OI35_RECORDS
+          and o["comparisons"] == [("movement.r1.r2.actor_a.issue_a", 0.0, "units", True)]
+          and o["bus"] == [("computed", "python")])
+    return ("PASS" if ok else "FAIL", "the case reaches reviewed and activated with records computed in "
+                                      "Python and no model call")
+
+
+# ---------- open item 39: the multi-round run records its own step times ---------------------
+
+def _measured(value):
+    return type(value) is float and value >= 0 and value == round(value, 6)
+
+
+def observe_timings():
+    """The real case phase on the declared two-round case. The times themselves vary from
+    run to run, so what is observed is their shape: which steps are recorded, that each is a
+    non-negative number of seconds rounded to microseconds, that the round record's per-round
+    seconds are the ones the timings carry, and that the whole phase covers its steps."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_rounds_oi39_") as td:
+        run = mocked_multi_round_run(td)
+        saved = json.loads(run["ctx"].multi_round_path().read_text(encoding="utf-8"))
+        reuse = rounds.read(run["run_dir"]) or {}
+    t = saved.get("timings") if isinstance(saved.get("timings"), dict) else {}
+    steps = ("round_review", "records", "phase")
+    per_round = [(r.get("round_id"), r.get("seconds")) for r in reuse.get("rounds") or []]
+    recorded = all(_measured(t.get(k)) for k in steps)
+    return {"code": run["code"], "outcome": saved.get("outcome"),
+            "records": sorted((r["record_id"], r["state"], r.get("movement"), r.get("value"), r.get("unit"),
+                               r.get("written_by")) for r in saved.get("records") or []),
+            "fields": sorted(t), "unit": t.get("unit"), "clock": t.get("clock"),
+            "steps_measured": recorded,
+            "round_ids": [r for r, _ in per_round],
+            "rounds_measured": bool(per_round) and all(_measured(v) for _, v in per_round),
+            "rounds_match_record": [(r.get("round_id"), r.get("seconds")) for r in t.get("rounds") or []] == per_round,
+            "phase_covers_steps": recorded and t["phase"] >= t["round_review"] + t["records"] - 2e-6
+            and sum(v for _, v in per_round if _measured(v)) <= t["round_review"] + 2e-6}
+
+
+def check_timings():
+    o = observe_timings()
+    ok = (o["code"] == 0 and o["outcome"] == "reviewed" and o["records"] == OI35_RECORDS
+          and o["fields"] == ["clock", "phase", "records", "round_review", "rounds", "unit"]
+          and o["unit"] == "seconds" and o["clock"] == "time.perf_counter"
+          and o["steps_measured"] and o["round_ids"] == ["r1", "r2"] and o["rounds_measured"]
+          and o["rounds_match_record"] and o["phase_covers_steps"])
+    return ("PASS" if ok else "FAIL", "the multi-round record carries each round's review, the round review, the "
+                                      "record computation and the whole phase in seconds rounded to microseconds")
+
+
+def _records_from_processor(manifest_value, evidence):
+    """Neutralisation: the case phase asks PROCESSOR for its records again, through
+    the agent boundary it used before open item 35, with the same refusals."""
+    import multi_round_phase as phase
+    producer = _FACTORY[0]("PROCESSOR")
+    contract = {"item_kind": "position", "fields": {"record_id": "id"}, "required": ["record_id"],
+                "directives": ["Return canonical {agent, doc_id, items}."]}
+    reply = phase._call(producer, contract, {"case": manifest_value, "evidence": evidence},
+                        manifest_value["case_id"], "")
+    return phase._items(reply, "PROCESSOR", manifest_value["case_id"])
+
+
+# A case manifest over the same two documents exercising every rule of
+# computed_records. Sources by (round, issue): a single accepted figure; a span
+# holding two figures (no numeric position); a declared unaccepted source; two
+# statements for one triple (never chosen between).
+def _span(doc, quote, sid, rnd, issue, state="accepted"):
+    start = doc["text"].index(quote)
+    return {"source_id": sid, "round_id": rnd, "actor_id": "actor_a", "issue_id": issue,
+            "document_id": doc["id"], "unit_id": "u01-entry-alpha", "char_start": start,
+            "char_end": start + len(quote), "quote": quote, "state": state}
+
+
+def rules_manifest():
+    docs = documents()
+    d1, d2 = docs
+    two = "Reading: 61 units\n\n## Entry Beta\n\nReading: 40 units"
+    sources = [_span(d1, "Reading: 61 units", "a1", "r1", "issue_a"),
+               _span(d2, "Reading: 61 units", "a2", "r2", "issue_a"),
+               _span(d1, two, "b1", "r1", "issue_b"),
+               _span(d2, "Reading: 70 units", "b2", "r2", "issue_b"),
+               _span(d1, "Reading: 40 units", "c1", "r1", "issue_c", state="unresolved"),
+               _span(d2, "Reading: 70 units", "c2", "r2", "issue_c"),
+               _span(d2, "Reading: 61 units", "d2a", "r2", "issue_d"),
+               _span(d2, "Reading: 5 units", "d2b", "r2", "issue_d")]
+    case = dict(manifest(docs), sources=sources,
+                issues=[{"issue_id": i} for i in ("issue_a", "issue_b", "issue_c", "issue_d")])
+    return case, docs
+
+
+def observe_computed_rules():
+    from reference_builder import ReferenceIndex
+    import multi_round_phase as phase
+    case, docs = rules_manifest()
+    with tempfile.TemporaryDirectory(prefix="shimmer_rounds_oi35_rules_") as td:
+        refs = ReferenceIndex.open(Path(td), index_path=Path(td) / "reference_index.json")
+        evidence = mr.bind_sources(mr.validate_manifest(case), docs, refs)
+        rows = phase.computed_records(case, evidence)
+        record = {"manifest": case, "evidence": evidence, "records": rows}
+        view = mr.project(record)
+        return {"rows": sorted((r["record_id"], r["state"], r["confidence"], r.get("movement"), r.get("value"),
+                                tuple(r["source_ids"])) for r in rows),
+                "deltas": sorted((c["movement_id"], c.get("delta")) for c in view["structural_comparisons"])}
+
+
+COMPUTED_RULES = {
+    "rows": sorted([
+        ("position.r1.actor_a.issue_a", "accepted", "CONFIDENT", None, 61.0, ("a1",)),
+        ("position.r2.actor_a.issue_a", "accepted", "CONFIDENT", None, 61.0, ("a2",)),
+        ("position.r1.actor_a.issue_b", "accepted", "CONFIDENT", None, None, ("b1",)),
+        ("position.r2.actor_a.issue_b", "accepted", "CONFIDENT", None, 70.0, ("b2",)),
+        ("position.r1.actor_a.issue_c", "insufficient_evidence", "UNCERTAIN", None, 40.0, ("c1",)),
+        ("position.r2.actor_a.issue_c", "accepted", "CONFIDENT", None, 70.0, ("c2",)),
+        ("position.r2.actor_a.issue_d", "unresolved", "UNCERTAIN", None, None, ("d2a", "d2b")),
+        ("movement.r1.r2.actor_a.issue_a", "accepted", "UNCERTAIN", "unknown", None, ("a1", "a2")),
+        ("movement.r1.r2.actor_a.issue_b", "accepted", "UNCERTAIN", "unknown", None, ("b1", "b2")),
+        ("movement.r1.r2.actor_a.issue_c", "insufficient_evidence", "UNCERTAIN", "unknown", None, ("c1", "c2"))]),
+    # A delta only where both positions are accepted and each states one figure.
+    "deltas": [("movement.r1.r2.actor_a.issue_a", 0.0), ("movement.r1.r2.actor_a.issue_b", None)]}
+
+
+def check_computed_rules():
+    o = observe_computed_rules()
+    return ("PASS" if o == COMPUTED_RULES else "FAIL",
+            "positions only from declared sources; a span with two figures has no numeric position; an "
+            "unaccepted source or two statements are never accepted; movements are never classified")
+
+
+def _first_figure(quote):
+    """Neutralisation: read the first figure even when the span states several."""
+    found = pr.quantities(quote)
+    return (found[0][0], found[0][1]) if found and found[0][1] else None
+
+
+def _accepted_when_all_accepted(sources):
+    """Neutralisation: a position is accepted whenever its sources are, however many
+    statements it holds (Python would then choose between them)."""
+    return "accepted" if all(s["state"] == "accepted" for s in sources) else "insufficient_evidence"
 
 
 V1 = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nGamma total: 9 units\n"
@@ -437,6 +673,53 @@ class MultiRoundRoundsChecks(unittest.TestCase):
     def test_a10_a_changed_vocabulary_recomputes(self):
         self.prove("a10_vocabulary", observe_signature, check_signature, lambda: _without("vocabulary"))
 
+    def test_oi35_a_label_no_paired_rule_names_does_not_recompute(self):
+        # Neutralised: the signature covers the whole document vocabulary again.
+        self.prove("oi35_named_vocabulary", observe_signature, check_signature,
+                   lambda: patch.object(rounds, "named_vocabulary", _whole_vocabulary))
+
+    def test_oi35_the_case_is_reviewed_with_no_model_call(self):
+        # Neutralised: the phase asks PROCESSOR for its records, as before open item 35.
+        import multi_round_phase
+        self.prove("oi35_no_model_call", observe_no_model_call, check_no_model_call,
+                   lambda: patch.object(multi_round_phase, "computed_records", _records_from_processor))
+
+    def test_oi39_the_run_records_its_own_step_times(self):
+        # Neutralised: the phase writes no timings object.
+        import multi_round_phase
+        self.prove("oi39_step_times", observe_timings, check_timings,
+                   lambda: patch.object(multi_round_phase, "step_timings", lambda *a, **k: {}))
+
+    def test_oi39_step_times_are_rounded_to_microseconds(self):
+        # Neutralised: the measured intervals are written unrounded.
+        self.prove("oi39_rounded", observe_timings, check_timings,
+                   lambda: patch.object(rounds, "seconds", lambda elapsed: float(elapsed) + 1e-9))
+
+    def test_oi35_two_figures_give_no_numeric_position(self):
+        import multi_round_phase
+        self.prove("oi35_one_figure", observe_computed_rules, check_computed_rules,
+                   lambda: patch.object(multi_round_phase, "_numeric", _first_figure))
+
+    def test_oi35_several_statements_are_never_chosen_between(self):
+        import multi_round_phase
+        self.prove("oi35_several_statements", observe_computed_rules, check_computed_rules,
+                   lambda: patch.object(multi_round_phase, "_position_state", _accepted_when_all_accepted))
+
+    def test_oi35_a_movement_is_never_classified(self):
+        # Neutralised: Python names a movement from the figures (a falling value a
+        # concession), the inference the contract forbids.
+        import multi_round_phase
+        real = multi_round_phase.computed_records
+
+        def classified(manifest_value, evidence):
+            rows = real(manifest_value, evidence)
+            for r in rows:
+                if r["kind"] == "movement":
+                    r["movement"] = "stable"
+            return rows
+        self.prove("oi35_movement_unknown", observe_computed_rules, check_computed_rules,
+                   lambda: patch.object(multi_round_phase, "computed_records", classified))
+
     def test_a10_a_changed_known_unit_recomputes(self):
         self.prove("a10_known_units", observe_signature, check_signature, lambda: _without("known_units"))
 
@@ -477,13 +760,18 @@ def check():
         problems = [str(case).split(" ")[0] + ": " + str(err).strip().splitlines()[-1][:160]
                     for case, err in list(result.failures) + list(result.errors)]
         return "FAIL", "; ".join(problems[:4])
-    return "PASS", ("%d S2b proofs, each neutralise, fail, restore, pass: a later round recomputes only the "
-                    "changed unit's pairs and records the reuse; a changed rule, vocabulary label or known "
-                    "unit recomputes an unchanged unit; reused model asks carry the new unit id; the "
-                    "convention-parse path runs; the round findings reach the bus; every multi-round reply "
-                    "saved once as advisory_not_record; a renamed term whose value moved, or that has no "
-                    "unit, is refused, not withdrawn; check 261's stripped statements unchanged"
-                    % result.testsRun)
+    return "PASS", ("%d S2b and open item 35 proofs, each neutralise, fail, restore, pass: a later round "
+                    "recomputes only the changed unit's pairs and records the reuse; a changed rule, a label "
+                    "a paired rule names or a known unit recomputes an unchanged unit, a label no paired rule "
+                    "names does not; reused model asks carry the new unit id; the convention-parse path runs; "
+                    "the round findings reach the bus; the case is reviewed and activated with its records "
+                    "computed in Python and no model call, a span with two figures has no numeric position, "
+                    "several statements are never chosen between, a movement is never classified; the run "
+                    "records each round's review, the round review, the record computation and the whole "
+                    "phase in seconds rounded to microseconds (open item 39); every "
+                    "multi-round reply (the strategic layer's) saved once as advisory_not_record; a renamed "
+                    "term whose value moved, or that has no unit, is refused, not withdrawn; check 261's "
+                    "stripped statements unchanged" % result.testsRun)
 
 
 if __name__ == "__main__":

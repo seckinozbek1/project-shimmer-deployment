@@ -21500,31 +21500,51 @@ def check_233_absence_claim_requires_a_quote():
     if "MUST set" not in psrc:
         return _fail("the absence question does not tell the model the quote is required")
 
-    # NEUTRALISE on the real file.
-    pr_path = ROOT / "scripts" / "paired_review.py"
-    original = pr_path.read_text(encoding="utf-8")
-    neutralised = original.replace(
-        '    if not str(item.get("quote") or "").strip():\n',
-        '    if False:\n', 1)
-    if neutralised == original:
-        return _fail("could not neutralise: the quote requirement was not found")
+    # EXECUTED on the real phase 5.5: both judged paths (a judged absence, and D-068's
+    # uncomputable plan) refuse an absence claim with no quote, or a blank one, through
+    # paired_review.judged_item_refusal.
     try:
-        pr_path.write_text(neutralised, encoding="utf-8")
-        gone = '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8")
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the requirement itself, FAIL, RESTORE, PASS. The neutralised function is
+    # compiled from the real paired_review.py with only the no-quote test inside
+    # refuses_judged_absence replaced, read and never written. (This used to write the
+    # real file, replacing the first textual copy of that line, and then only confirm the
+    # text had changed; D-068 added a second copy in judged_item_refusal, so the
+    # confirmation failed, and nothing was ever executed under the neutralisation.)
+    neutral_fn = _jrc.refuses_judged_absence_without_quote_test()
+    if neutral_fn is None:
+        return _fail("could not neutralise: the quote requirement was not found in "
+                     "paired_review.refuses_judged_absence")
+    original = _pr.refuses_judged_absence
+    _pr.refuses_judged_absence = neutral_fn
+    try:
+        neutral_unit = neutral_fn({"relation": "missing_field",
+                                   "stated_field": "calibration authority signature"},
+                                  rule, present)
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
     finally:
-        pr_path.write_text(original, encoding="utf-8")
-    if not gone:
-        return _fail("neutralise did not take effect on the real file")
-    if '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8"):
-        return _fail("restore failed: the quote requirement is gone")
+        _pr.refuses_judged_absence = original
+    if neutral_unit is not False:
+        return _fail("neutralise did not take effect: a claim with no quote is still refused")
+    if neutralised[0] != "FAIL":
+        return _fail("with the quote requirement neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("an absence claim with no quote, or an empty one, is refused; one with a "
                "quote naming a field the unit lacks passes; a non-absence relation is "
                "untouched; the contract does NOT require the field, so no past run "
                "becomes a violation and the requirement applies from this commit "
-               "forward; the model is told it is required; neutralise/restore proved")
+               "forward; the model is told it is required; the real phase 5.5 %s; "
+               "neutralise/fail/restore/pass proved on that path" % shipped[1])
 
 
 def check_232_typed_amendment_and_bounded_deepening():
@@ -21918,32 +21938,45 @@ def check_229_quoted_span_must_appear_in_the_unit():
                     {"quote": "next calibration visit logged"}, real) is not False:
                 return _fail("the real VETCH entry refuses a span it actually contains")
 
-    # WIRED: the paired path checks it, and the model is asked for it.
+    # The model is asked for it.
     src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
-    if "quote_not_in_unit" not in src:
-        return _fail("pipeline.py never calls quote_not_in_unit, so nothing checks a quote")
     if "`quote`" not in src and "quote`" not in src:
         return _fail("the absence question does not ask the model for a quote")
 
-    # NEUTRALISE: accept any quote.
+    # WIRED, EXECUTED: the real phase 5.5 refuses a quote the unit lacks on BOTH judged
+    # paths (a judged absence, and D-068's uncomputable plan), through
+    # paired_review.judged_item_refusal. (This used to look for the name
+    # quote_not_in_unit in pipeline.py, which D-068 moved into the helper.)
+    try:
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the real enforcement (accept any quote), FAIL, RESTORE, PASS.
     original = _pr.quote_not_in_unit
     _pr.quote_not_in_unit = lambda _i, _t: False
     try:
-        if _pr.quote_not_in_unit({"quote": "not in the unit"}, unit):
-            return _fail("neutralise did not take effect")
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
     finally:
         _pr.quote_not_in_unit = original
-    if _pr.quote_not_in_unit({"quote": "the next calibration visit is not stated"},
-                             unit) is not True:
-        return _fail("restore failed: a hallucinated span is accepted again")
+    if neutralised[0] != "FAIL":
+        return _fail("with quote_not_in_unit neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("a finding quoting words the unit does not contain is refused, including "
                "the real VETCH span from the corpus; a quote the unit carries passes "
                "through folded whitespace and case; no quote and an empty quote are never "
-               "refused because the field is optional by measurement (requiring it would "
-               "have made all 62 findings of the two saved runs violations at once); the "
-               "contract carries `quote` unrequired and the absence question asks for it; "
-               "neutralise/restore proved")
+               "refused by this test because the field is optional by measurement (requiring "
+               "it would have made all 62 findings of the two saved runs violations at once); "
+               "the contract carries `quote` unrequired and the absence question asks for it; "
+               "the real phase 5.5 %s; neutralise/fail/restore/pass proved on that path"
+               % shipped[1])
 
 
 def check_228_scorer_checks_the_reason_not_only_the_location():
@@ -22710,18 +22743,21 @@ def check_222_launcher_server_url_and_token_handshake():
     if neutralised == original:
         return _fail("could not neutralise: the console URL line was not found in "
                      "shimmer.sh as this check expects it")
+    # The launcher's exact bytes are kept and put back, so a run of the gate leaves the
+    # tree unchanged (text mode on Windows would write CRLF over the LF the repo pins).
+    original_bytes = sh.read_bytes()
     try:
-        sh.write_text(neutralised, encoding="utf-8")
+        sh.write_bytes(neutralised.encode("utf-8"))
         body = sh.read_text(encoding="utf-8", errors="replace")
         still_bad = "http://localhost:8000 ..." in body
     finally:
-        sh.write_text(original, encoding="utf-8")
+        sh.write_bytes(original_bytes)
     if not still_bad:
         return _fail("neutralise did not reintroduce the bare URL; the check is not "
                      "reading the real launcher")
-    # RESTORE verified.
-    if "http://localhost:8000 ..." in sh.read_text(encoding="utf-8", errors="replace"):
-        return _fail("restore failed: shimmer.sh still carries the bare URL")
+    # RESTORE verified, byte for byte.
+    if sh.read_bytes() != original_bytes:
+        return _fail("restore failed: shimmer.sh differs from its bytes before the check")
 
     return _ok("both launchers point at /console and /health on SHIMMER_PORT (the app "
                "registers no bare / route), and generate the token, hold the hash and "
@@ -22902,11 +22938,42 @@ def check_221_dating_cascade_local_precise_and_loud():
         if not DD.resolve_dates([late])[0]["date"]:
             return _fail("restore failed: the late-dated document no longer resolves")
 
+        # 4. A year below 1000 keeps four digits on every platform. Linux
+        # strftime wrote year 288 as "288-01-01", and the cascade's
+        # int(iso[:4]) raised ValueError at phase 0 (two L8 entries). Windows
+        # pads, so the neutralisation EMULATES the Linux spelling.
+        if DD._iso(288) != "0288-01-01" or DD._iso(146, 2, 30) != "0146-01-01":
+            return _fail("_iso(288)=%r, _iso(146, 2, 30)=%r; expected four year digits"
+                         % (DD._iso(288), DD._iso(146, 2, 30)))
+        early = tmpdir / "early_year_sheet.md"
+        early.write_text("# Sheet\n\nLot 0288 counted.\n", encoding="utf-8")
+        rec_early = DD.resolve_dates([early])[0]
+        if rec_early["date"] is not None or rec_early["date_source"] != "unresolved":
+            return _fail("a document whose only four-digit token is 0288 resolved to %r (%r); "
+                         "it is outside the year range and must stay unresolved"
+                         % (rec_early["date"], rec_early["date_source"]))
+        original_iso = DD._iso
+        DD._iso = lambda y, m=1, d=1: "%d-%02d-%02d" % (y, m, d)
+        try:
+            DD.resolve_dates([early])
+            raised = False
+        except ValueError:
+            raised = True
+        finally:
+            DD._iso = original_iso
+        if not raised:
+            return _fail("with _iso neutralised to the unpadded Linux spelling the cascade did "
+                         "not raise; this check does not reach the year-below-1000 path")
+        if DD.resolve_dates([early])[0]["date_source"] != "unresolved":
+            return _fail("restore failed: the 0288 document no longer resolves unresolved")
+
     return _ok("filename 2024_09_23 keeps its month and day (was 2024-01-01); a date stated "
                "past character 3000 resolves from the document's own text; a document with no "
                "year anywhere stays unresolved, is dropped by the cutoff, and is named in "
                "audit/undated_documents.json with excluded apart from reviewed_anyway, served "
-               "by a route and rendered in the console; neutralise/restore proved")
+               "by a route and rendered in the console; a year below 1000 keeps four digits "
+               "(0288-01-01) and takes the out-of-range branch instead of raising; "
+               "neutralise/restore proved")
 
 
 def check_220_local_profile_reaches_the_menu_and_is_passed_on():
@@ -24593,7 +24660,13 @@ def check_264_core_field_alias_is_read_and_recorded():
     key alone. The alias is declared in config/agent_contracts.json, read by the
     parser only when the canonical key is absent and the value maps without
     interpretation, and every application is recorded on the result, the bus post
-    and the observation row."""
+    and the observation row.
+
+    ENVELOPE-B (D-S14, K8): EDITOR_CLERK left `kind` out of 4 of its 20 calls in L7,
+    L8, L10 and L11, every other field present. A contract that declares exactly one
+    item kind and `single_kind_stamp` gets `kind` stamped where the key is absent,
+    recorded the same way and on the telemetry call record; a written kind that is
+    not the declared one is refused, and no other field is defaulted."""
     from ordinary_final_correction_checks import check_alias
     return check_alias()
 
@@ -24732,7 +24805,13 @@ def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     run before it. The delivery-level refusal in auditor_pairs.build applies to a
     single call's best-effort object; a partition-merged delivery pairs its
     accepted, receipt-bound items and marks each pair and the coverage figures
-    partial. Phase 5 hands such a partial draft to its auditors, noted."""
+    partial. Phase 5 hands such a partial draft to its auditors, noted.
+
+    D-S14 K2: VERIFIER's rendered payload carries each pair and draft item without
+    the runtime identity it cannot use (ten L8 VERIFIER prompts of 44,467 to 54,657
+    tokens ran out of GPU memory on the A10; projected, the same prompts measure
+    17,932 to 23,668). The pair records, telemetry and bus keep every identifier,
+    and pair_id, the join key, is still shown."""
     from ordinary_final_correction_checks import check_pairing
     return check_pairing()
 
@@ -24856,19 +24935,292 @@ def check_282_baseline_arms_hold_their_contracts():
     return check()
 
 
+def check_288_b3_local_attention_is_pinned_and_recorded():
+    """Loop stage S5, D-058, D-060, D-061 and D-063: B3 ran out of GPU memory on a ContraDoc
+    document (INC-015). E (eager, chunked prefill) missed its declared threshold and D-061's
+    declared fallback adopted option A (D-063): the producer loads with a sealed attention
+    setting (sdpa by default under D-063, eager only with a recorded decision) and a sealed
+    prefill setting (one shot by default under D-063, chunked only with a recorded decision);
+    every producer call runs through the one shared generate helper, pinned to the
+    memory-efficient sdpa backend on CUDA, as every _load_qwen call does; each records its
+    kernel and prefill in its reply record; the Auditor896 classifier stays eager as its
+    runtime contract says; out of memory or a refused kernel is one named failure never
+    retried; a prompt over the model's context is refused and recorded, never truncated. Mocked
+    models and one tiny CPU model built in the check (an eager measurement call of three chunks
+    and the tail replies byte for byte as one-shot)."""
+    from local_attention_checks import check
+    return check()
+
+
+def check_289_l2_diagnosis_fixes_hold():
+    """Loop stage S5, D-061 (a), (b) and (c), from the L2 diagnosis: a VERIFIER reply that is not
+    a JSON object is a recorded contract failure in auditor_pairs, never a crash (L2 entry 06); the
+    runner reports a run that reached its end with exit 0 but semantically incomplete as
+    `semantic_incomplete`, not `pipeline_not_completed`; a failed producer partition under
+    deterministic decoding is not retried (it can only repeat itself, P13) and is recorded
+    `retry_skipped_deterministic` on the observation and the reply outcome. Fixtures only."""
+    from l2_diagnosis_checks import check
+    return check()
+
+
+def check_290_uncomputable_judgment_is_kept_as_a_model_record():
+    """Loop stage S5, D-068: where Python's checks produce no comparison for a unit and a
+    rule, the model's answer used to be discarded (judging-call outcome advisory_not_kept),
+    so a rule only reading can decide had no answer in the run. It is kept now as a
+    model-written Finding record: unit and rule stamped from the plan, never the reply; the
+    judged-absence refusals and the quote check applied, refusals listed; a failed or refused
+    reply keeps nothing and says why; posted once with the model's backend, marked in the
+    deliverables, never promoted. Real phase 5.5 and phase 6 on a mocked run, no model;
+    neutralise, fail, restore, pass for each property."""
+    from uncomputable_judgment_checks import check
+    return check()
+
+
+def check_294_pipeline_time_before_phase_3_is_in_phase_latencies():
+    """Loop stage S5, open item 38: phase_latencies began at phase 3, because only the five
+    decorated phase functions emitted phase_enter/phase_exit and main's work before phase
+    3-4 is inline. main now times it with execution_topology.pre_phase_span, contiguous
+    spans from argument parsing to phase 3-4's boundary (start, ingestion and roles, boot
+    and index, phase 1), marked pre_phase_3 so they add no consumer barrier. Reads the
+    spans from main's AST, drives them through a real topology Runtime on a temporary run
+    folder before a fixture phase 3-4, and reads model_telemetry.recompute's summary;
+    neutralise, fail, restore, pass for the span calls, the helper and the mark."""
+    from pre_phase_span_checks import check
+    return check()
+
+
+def check_295_compact_producer_decodes_under_its_contract():
+    """Loop stage S5, D-S14 item 3 (DECODING-B, s5_diag_b3 K3 to K7): the tuned producer failed
+    52 of 283 compact partitions in L7, L8, L10 and L11 (invented CLM ids, a dropped
+    uncertainty key, a context-only alias, one item for two spans, the neighbouring span's REF,
+    runaway id lists), each one repeated byte for byte by a deterministic re-ask. The compact
+    producer now decodes under a logits constraint built from its request's own declaration
+    (scripts/contract_decoding.py, config/contract_decoding.json), compact_contracts.producer
+    unchanged behind it. Runs scripts/contract_decoding_checks.py: with a fixture tokenizer and
+    a stand-in model, every failure kind is prevented and the validator passes, the constraint
+    off reproduces every failure with the runs' own reason, a valid reply and the refusal are
+    never changed, the real call_local carries it and records it, the replay measures it, and
+    every frozen DEV reply of checkpoint 168 is inside the constrained language. Then
+    neutralises, in turn, the processor's admission (every token admitted), the wrapper's
+    binding (no constraint built) and the status and emptiness rule; requires a failure;
+    restores; requires a pass."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import contract_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/contract_decoding_checks.py does not pass'
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_kind_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_call', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (contract_decoding.Grammar, 'close_rule', lambda grammar, j, it, used: (True, True),
+         ('test_language_rules',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: 6 failure kinds prevented with the validator unchanged and reproduced with the '
+                    'constraint off; wrapper, reply record, replay and the 84 frozen DEV replies hold; '
+                    '3 neutralisations fail and restore'
+                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+
+
+def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
+    """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
+    (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
+    more calls than the scheduler admits at once (289 on a real development agreement, bound
+    256). An over-bound gather now runs as consecutive waves of at most the bound, in source
+    order, every chunk shown the ONE pre-gather bus snapshot and depending on the ONE
+    pre-gather parent set, posts published in source order; a gather at or below the bound
+    is one wave exactly as before. execute_plans on fixture wrappers with a small bound;
+    neutralise, fail, restore, pass for each property."""
+    from execution_topology_checks import wave_admission_check
+    return wave_admission_check()
+
+
+def check_292_every_controller_path_child_process_starts_without_a_window():
+    """Loop stage S5, D-079: the detached controller and its watchdog have no console, and a
+    console program (ssh, scp, ssh-keygen, curl, git, python) started from such a process
+    opens a visible window on Windows; they kept popping up on the operator's screen. Every
+    child-process start in the operator-side controller files and every file under
+    tools/loop/ passes its creation flags through cloud_run_common.no_window (the Windows
+    no-window flag ORed with any flags it had; nothing changes elsewhere, and a child that
+    must keep the operator's console says so with keep_console). Runs the controller check's
+    two legs (an AST scan of every start; the real controller, adapter, termination client
+    and progress reader executed against fakes that record each start's flags), then
+    neutralises each in turn (one start's flag dropped from the source; the helper adding no
+    flag), requires a failure, restores and requires a pass."""
+    import io
+    import os
+    import unittest
+    from unittest.mock import patch
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import cloud_run_common
+    import ordinary_final_controller_checks as checks
+    name = 'test_every_child_process_on_the_controller_path_starts_without_a_window'
+
+    def passes():
+        result = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(checks.ControllerChecks(name))
+        return result.wasSuccessful()
+    if not passes():
+        return "FAIL", 'a child process on the controller path starts without no_window (run %s)' % name
+    if os.name != 'nt':
+        return "SKIP", 'the scan passed; the executed leg proves the flag only on Windows'
+    proofs = []
+    for owner, attribute, mutant in ((checks, 'hidden_path_sources', checks.sources_with_one_flag_dropped),
+                                     (cloud_run_common, 'windows', lambda: False)):
+        with patch.object(owner, attribute, mutant):
+            failed = not passes()
+        restored = passes()
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (owner.__name__, attribute, failed, restored)
+        proofs.append(attribute)
+    return "PASS", ('every child-process start on the controller path passes no_window (AST scan and an executed '
+                    'controller run, adapter, termination client and progress reader); neutralised, failed, '
+                    'restored, passed: ' + ', '.join(proofs))
+
+
+
+def check_296_request_ledger_check_catches_dropped_requests():
+    """Loop D-S16 item 1: tools/loop/request_ledger_check.py reads every Annex C row and every
+    D-S entry with its numbered and lettered items from the loop specification, the ids in the
+    operator's private request ledger and DECISIONS.md, and fails on a specification item with
+    no row, a row that matches no item, a DONE row whose decision, commit or path does not
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running. Runs
+    tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
+    specification, ledger and DECISIONS.md, a one-commit git repository; the private ledger
+    is never read), then neutralises in turn the coverage rule, the evidence rule and the
+    stale rule, requires a failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from request_ledger_check_checks import check
+    return check()
+
+
+def check_297_local_auditor_agents_decode_under_their_envelope_contract():
+    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
+    PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
+    contract in L8, L11 and L12 (the envelope left unclosed, an item without a required key, a
+    raw control character in a string, text after a string closed too early). They now decode under the envelope
+    constraint of their own declared contract (scripts/contract_decoding.py EnvelopeGrammar,
+    config/envelope_decoding.json), the envelope validator unchanged behind it. Runs
+    scripts/envelope_decoding_checks.py: with a fixture tokenizer and a stand-in model each
+    shape is prevented and the validator passes, the constraint off reproduces each with the
+    validator's own reason, a reply that runs to the output cap is not prevented and is refused
+    as before, every valid form the saved replies take is never changed, the real call_local
+    carries and records it for a declared agent only, the saved-reply measurement tool and the
+    replay path hold. Then neutralises, in turn, the processor's admission (every token
+    admitted), the wrapper's routing (no envelope constraint built), the closing rule (the stop
+    token admitted anywhere) and the required-key rule (any declared key in any slot); requires
+    a failure; restores; requires a pass."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import envelope_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else             unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/envelope_decoding_checks.py does not pass'
+    grammar = contract_decoding.EnvelopeGrammar
+
+    def any_name(self, j, opt):
+        return tuple(sorted(set(self.contract.optional) | {s for names in self.contract.spellings for s in names}))
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_envelope', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (grammar, 'accepting', lambda self, state: True, ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (grammar, 'names', any_name, ('test_language_rules',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
+                    'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
+                    'and replay hold; 4 neutralisations fail and restore'
+                    % (unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases(), len(checks.KINDS),
+                       len(checks.VALID_FORMS)))
+
+
+def check_293_scorer_reads_the_key_parts_d042_added():
+    """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
+    reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
+    unit, reported by kind, or by a rename Python matched, which is then no false positive; a
+    rename only a model's record matches satisfies nothing; a fabricated withdrawal named),
+    scores a multi-round run (audit/multi_round.json) from Python's round findings on bus
+    channel multi_round, each only for the entry of its own round and document, refuses a
+    round-scoped key on any other run and a multi-round run whose key has no such entries,
+    and reports the four relations Python never writes apart, located only by a model-written
+    record and never by a Python post. Executed on synthetic run folders (the multi-round bus
+    written by multi_round_rounds.post_findings itself); each reader proven by neutralise,
+    fail, restore, pass."""
+    from scorer_section9_checks import check
+    return check()
+
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
     items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
     budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
     no source id in a bundle; bundles read back as input-format-v1-draft and as
     pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
-    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 refused until section 12 item 9); the
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 read from the run's bus, adopted in D-056); the
     metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
     from adapter_checks import check
     return check()
 
 
-def check_285_console_replies_route():
+def check_285_scorer_reads_a_key_and_twin_by_path():
+    """Loop stage S5, item 0.10 (R5, R21): tools/score_corpus.py scores a bundle outside
+    benchmark/corpora/ by an explicit --key path, and its clean twin by --twin-key and
+    --twin-run; the --corpus name and the absolute path the cloud caller passes are
+    unchanged. Each case is proven by neutralise, fail, restore, pass. SKIP when
+    benchmark/generators/ is absent."""
+    from scorer_path_checks import check
+    return check()
+
+
+def check_286_negotiation_dev_case_is_a_valid_live_case():
+    """Loop stage S5, item 0.9 (DS5-10): the negotiation multi-round development case under
+    benchmark/dev_cases/ is read by the sealer's own reader, accepted by the controller's
+    validate_live_case_manifest and bound span by span by multi_round.bind_sources, and is
+    exactly its builder's output from the anonymised corpus files. Each case is proven by
+    neutralise, fail, restore, pass. SKIP when benchmark/dev_cases/ is absent."""
+    from dev_case_checks import check
+    return check()
+
+
+def check_287_built_bundles_stage_as_the_sealers_workload():
+    """Loop stage S5 join, item 3: tools/stage_workload.py stages an adapter build and a
+    multi-round generator bundle into the folder the sealer's --workload reads (accepted by
+    workload_members, no key file, every source byte kept) and writes each B1 bundle's own
+    item table for --items; a file named like a key refuses the staging. Each case is proven
+    by neutralise, fail, restore, pass."""
+    from stage_workload_checks import check
+    return check()
+
+
+def check_298_console_replies_route():
     """Loop stage S7 (console): the replies route serves metadata and outcomes, never reply text. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24877,7 +25229,7 @@ def check_285_console_replies_route():
     return check_replies_route()
 
 
-def check_286_console_model_findings_route():
+def check_299_console_model_findings_route():
     """Loop stage S7 (console): the model-findings route carries the mark on every model finding. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24886,7 +25238,7 @@ def check_286_console_model_findings_route():
     return check_model_findings_route()
 
 
-def check_287_console_switches_route():
+def check_300_console_switches_route():
     """Loop stage S7 (console): the switches route reads INST_FINDER and the shared B.4 reasons. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24895,7 +25247,7 @@ def check_287_console_switches_route():
     return check_switches_route()
 
 
-def check_288_console_report_route():
+def check_301_console_report_route():
     """Loop stage S7 (console): the report route reads the cloud report rows, else the run folder's cost lines. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24904,7 +25256,7 @@ def check_288_console_report_route():
     return check_report_route()
 
 
-def check_289_console_test_change_requests_route():
+def check_302_console_test_change_requests_route():
     """Loop stage S7 (console): the test-change-requests route lists the log or says it is not present. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24913,7 +25265,7 @@ def check_289_console_test_change_requests_route():
     return check_test_change_requests_route()
 
 
-def check_290_console_multi_round_reuse_route():
+def check_303_console_multi_round_reuse_route():
     """Loop stage S7 (console): the multi-round route carries the round reuse table. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24922,7 +25274,7 @@ def check_290_console_multi_round_reuse_route():
     return check_multi_round_reuse_route()
 
 
-def check_291_console_sealed_filter():
+def check_304_console_sealed_filter():
     """Loop stage S7 (console): a sealed run shows counts and timings only, and per-flaw routes refuse it. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24931,7 +25283,7 @@ def check_291_console_sealed_filter():
     return check_sealed_filter()
 
 
-def check_292_every_route_needs_a_token_but_health_and_console():
+def check_305_every_route_needs_a_token_but_health_and_console():
     """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24940,7 +25292,7 @@ def check_292_every_route_needs_a_token_but_health_and_console():
     return check_all_routes_need_a_token()
 
 
-def check_293_console_views_render_and_mark():
+def check_306_console_views_render_and_mark():
     """Loop stage S7 (console): the console's new views render in both languages with the model-finding mark. Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
@@ -24949,8 +25301,7 @@ def check_293_console_views_render_and_mark():
     return check_console_views()
 
 
-
-def check_294_launcher_menus_end_at_end_of_input():
+def check_307_launcher_menus_end_at_end_of_input():
     """Loop S7 item 5: both launcher menus end when their input ends (shimmer.sh on a failed
     read, shimmer.bat after three empty answers), and the Git Bash token question reads the end
     of input as no. Driven on the real launcher text in temp folders with stand-ins; no install,
@@ -24959,7 +25310,7 @@ def check_294_launcher_menus_end_at_end_of_input():
     return check_end_of_input()
 
 
-def check_295_launchers_reach_their_menus():
+def check_308_launchers_reach_their_menus():
     """Loop S7 item 5: shimmer.bat reaches its menu (for /f quoting), keeps its answers through
     the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
     venv and honours SHIMMER_SKIP_INSTALL; the draft is announced only after its setup; no dead
@@ -24968,11 +25319,12 @@ def check_295_launchers_reach_their_menus():
     return check_bootstrap()
 
 
-def check_296_launcher_banner_names_the_open_routes():
+def check_309_launcher_banner_names_the_open_routes():
     """Loop S7 item 5: the server banner in both launchers names exactly the routes the live app
     answers without a token, read off the app."""
     from launcher_checks import check_banner
     return check_banner()
+
 
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
@@ -25346,28 +25698,54 @@ CHECKS = [
      check_283_benchmark_adapters_follow_the_preregistration),
     ("284 every refused change record carries a typed reason_kind kept in review_data.json",
      check_284_prior_refusal_kinds),
-    ("285 the replies route serves metadata and outcomes, never reply text",
-     check_285_console_replies_route),
-    ("286 the model-findings route carries the mark on every model finding",
-     check_286_console_model_findings_route),
-    ("287 the switches route reads INST_FINDER and the shared B.4 reasons",
-     check_287_console_switches_route),
-    ("288 the report route reads the cloud report rows, else the run folder's cost lines",
-     check_288_console_report_route),
-    ("289 the test-change-requests route lists the log or says it is not present",
-     check_289_console_test_change_requests_route),
-    ("290 the multi-round route carries the round reuse table",
-     check_290_console_multi_round_reuse_route),
-    ("291 a sealed run shows counts and timings only, and per-flaw routes refuse it",
-     check_291_console_sealed_filter),
-    ("292 every route answers 401 without a token except exactly /health and /console",
-     check_292_every_route_needs_a_token_but_health_and_console),
-    ("293 the console's new views render in both languages with the model-finding mark",
-     check_293_console_views_render_and_mark),
-    ("294 both launcher menus end at end of input", check_294_launcher_menus_end_at_end_of_input),
-    ("295 the launchers reach their menus with no install", check_295_launchers_reach_their_menus),
-    ("296 the launcher banner names exactly the routes open without a token",
-     check_296_launcher_banner_names_the_open_routes),
+    ("285 the scorer reads a key and a clean twin by explicit path, the corpus path unchanged",
+     check_285_scorer_reads_a_key_and_twin_by_path),
+    ("286 the negotiation development case is a valid live multi-round case",
+     check_286_negotiation_dev_case_is_a_valid_live_case),
+    ("287 built benchmark bundles stage as the sealer's workload with no key file",
+     check_287_built_bundles_stage_as_the_sealers_workload),
+    ("288 B3's producer runs sdpa pinned with sealed one-shot prefill (D-063), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061, D-063)",
+     check_288_b3_local_attention_is_pinned_and_recorded),
+    ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
+     check_289_l2_diagnosis_fixes_hold),
+    ("290 a model's answer where Python could compute nothing is kept as a stamped, model-written, never-promoted record (D-068)",
+     check_290_uncomputable_judgment_is_kept_as_a_model_record),
+    ("291 a gather over the scheduler's bound runs as waves sharing one snapshot and one parent set (D-076)",
+     check_291_over_bound_gather_runs_as_shared_snapshot_waves),
+    ("292 every child process the controller path starts runs with no window (D-079)",
+     check_292_every_controller_path_child_process_starts_without_a_window),
+    ("293 the scorer reads expected refusals by kind, a multi-round run by round and document, and the relations Python never writes apart",
+     check_293_scorer_reads_the_key_parts_d042_added),
+    ("294 the pipeline's time before phase 3 is in phase_latencies (open item 38)",
+     check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
+    ("295 the compact producer decodes under its request's own contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_295_compact_producer_decodes_under_its_contract),
+    ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
+     check_296_request_ledger_check_catches_dropped_requests),
+    ("297 the local auditor agents and ARCHIVIST decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_297_local_auditor_agents_decode_under_their_envelope_contract),
+    ("298 the replies route serves metadata and outcomes, never reply text",
+     check_298_console_replies_route),
+    ("299 the model-findings route carries the mark on every model finding",
+     check_299_console_model_findings_route),
+    ("300 the switches route reads INST_FINDER and the shared B.4 reasons",
+     check_300_console_switches_route),
+    ("301 the report route reads the cloud report rows, else the run folder's cost lines",
+     check_301_console_report_route),
+    ("302 the test-change-requests route lists the log or says it is not present",
+     check_302_console_test_change_requests_route),
+    ("303 the multi-round route carries the round reuse table",
+     check_303_console_multi_round_reuse_route),
+    ("304 a sealed run shows counts and timings only, and per-flaw routes refuse it",
+     check_304_console_sealed_filter),
+    ("305 every route answers 401 without a token except exactly /health and /console",
+     check_305_every_route_needs_a_token_but_health_and_console),
+    ("306 the console's new views render in both languages with the model-finding mark",
+     check_306_console_views_render_and_mark),
+    ("307 both launcher menus end at end of input", check_307_launcher_menus_end_at_end_of_input),
+    ("308 the launchers reach their menus with no install", check_308_launchers_reach_their_menus),
+    ("309 the launcher banner names exactly the routes open without a token",
+     check_309_launcher_banner_names_the_open_routes),
 ]
 
 

@@ -7,7 +7,9 @@ import inspect
 import math
 import json
 from pathlib import Path
+import decoding_policy
 import generation_observation
+import reply_records
 
 import bounded_extraction as extraction
 import execution_topology as topology
@@ -71,27 +73,38 @@ decide scope, or replace conditional interpretation or independent auditing.
     return any(c.get("agrees") is False for c in plan["checks"])
 
 
-def run_wave(runtime, calls, reason):
+def _admissible(calls):
+    if len({id(w) for w,k in calls}) != len(calls):
+        raise ValueError("A wave requires distinct wrapper instances")
+    if any(w.backend not in {"local_producer", "local_auditor"} for w,k in calls):
+        raise ValueError("Optimized waves are local only")
+    live = calls[0][0].bus
+    if any(w.bus is not live for w,k in calls):
+        raise ValueError("Wave calls must share one run bus")
+    return live
+
+
+def _parents(runtime):
+    return getattr(runtime, "frontier", ()) or ((runtime.previous,) if runtime.previous else ())
+
+
+def run_wave(runtime, calls, reason, snapshot=None, parents=None):
     """A complete sibling group, one wrapper per call, no shared model replicas.
 
 Governance checks still run in every wrapper. No sibling consumes another's
 output. Source and parent results are supplied explicitly before admission.
 All receipts, including failures, publish in source order after the wave drains.
+A chunk of a larger gather passes the gather's own snapshot and parents (run_waves);
+with neither passed both are read here, as for every wave below the bound.
 """
     if not calls:
         return []
-    if len({id(w) for w,k in calls}) != len(calls):
-        raise ValueError("A wave requires distinct wrapper instances")
-    if any(w.backend not in {"local_producer", "local_auditor"} for w,k in calls):
-        raise ValueError("Optimized waves are local only")
     with runtime.lock:
-        live = calls[0][0].bus
-        if any(w.bus is not live for w,k in calls):
-            raise ValueError("Wave calls must share one run bus")
-        snapshot = live.read_all()
+        live = _admissible(calls)
+        snapshot = live.read_all() if snapshot is None else snapshot
         start = len(runtime.scheduler.tasks)
         wave_id = "wave-%06d" % start
-        parents = getattr(runtime, "frontier", ()) or ((runtime.previous,) if runtime.previous else ())
+        parents = _parents(runtime) if parents is None else parents
         tasks, proxies = [], []
         for offset, (wrapper, kwargs) in enumerate(calls):
             task_id = "task-%06d" % (start + offset)
@@ -134,6 +147,29 @@ All receipts, including failures, publish in source order after the wave drains.
         return results
 
 
+def run_waves(runtime, calls, reason):
+    """D-076 (INC-019): a gather over the scheduler's bound runs as consecutive waves
+of at most max_pending calls, in source order, never refused. Every chunk shares the
+ONE snapshot and the ONE parent set read before the first, so no sibling in any chunk
+sees another sibling's posts. Each chunk's posts publish after it drains, so the bus
+still receives them in source order; the next wave depends on every chunk's tasks.
+A gather at or below the bound is exactly one run_wave, as before.
+"""
+    bound = runtime.scheduler.max_pending
+    if len(calls) <= bound:
+        return run_wave(runtime, calls, reason)
+    with runtime.lock:
+        snapshot = _admissible(calls).read_all()
+        parents = _parents(runtime)
+        results, frontier = [], ()
+        for begin in range(0, len(calls), bound):
+            results += run_wave(runtime, calls[begin:begin+bound], reason, snapshot, parents)
+            frontier += runtime.frontier
+        runtime.frontier = frontier
+        runtime.write()
+        return results
+
+
 class PlannedCall:
     def __init__(self, function, args, kwargs):
         self.function, self.args, self.kwargs = function, args, kwargs
@@ -170,6 +206,29 @@ def call_kwargs(plan):
                 doc_id=str(payload.get("document_id") or (a["activation"] or {}).get("doc_id") or
                            (progress[1] if progress else "") or ""),
                 items_are_advisory=a["items_are_advisory"], activation=a["activation"])
+
+
+RETRY_SKIPPED_DETERMINISTIC = "retry_skipped_deterministic"
+
+
+def skip_deterministic_retry(runtime, wrapper, result, reason):
+    """D-061 (c), P13: a failed partition whose call decoded deterministically (greedy, one
+    beam: decoding_policy.deterministic on the kwargs the call recorded) is not retried, since
+    the same request can only repeat the same reply (L2: 9 of 9 retries reproduced their request
+    and reply bytes). The skip is recorded on the generation observation and as the call's reply
+    outcome, `retry_skipped_deterministic`, with the reason the retry would have had; the
+    partition's failure stands. Returns True when the retry is skipped."""
+    kwargs = (result.get("generation") or {}).get("decoding_kwargs")
+    if not decoding_policy.deterministic(kwargs):
+        return False
+    context = getattr(runtime, "run_context", None) or getattr(wrapper, "run_context", None)
+    generation_observation.append(context, dict(
+        event="partition_retry_skipped", outcome=RETRY_SKIPPED_DETERMINISTIC, retry_skipped_deterministic=True,
+        retry_reason=reason, call_id=result.get("call_id"), agent=getattr(wrapper, "name", None),
+        doc_id=result.get("doc_id") or getattr(wrapper, "_cost_doc_id", "") or ""))
+    reply_records.write_outcome(context, result.get("call_id"), RETRY_SKIPPED_DETERMINISTIC,
+                                source="semantic_waves", retry_reason=reason)
+    return True
 
 
 async def execute_plans(plans):
@@ -217,10 +276,9 @@ async def execute_plans(plans):
         else:
             calls.append((w,k))
         groups.append((begin,len(calls),w.name,base.get("document_id", "")))
-    # Scheduler admission is bounded. Keep one shared snapshot per admitted wave.
-    if len(calls) > runtime.scheduler.max_pending:
-        raise ValueError("Extraction exceeds bounded wave admission; no source silently omitted")
-    results = await asyncio.to_thread(run_wave, runtime, calls, "explicit_parent_results_and_wave_snapshot")
+    # Scheduler admission is bounded: an over-bound gather runs as consecutive waves
+    # sharing one snapshot and one parent set, every call admitted once (D-076).
+    results = await asyncio.to_thread(run_waves, runtime, calls, "explicit_parent_results_and_wave_snapshot")
     # Retry a technical partition failure once; never retry semantic refusal/empty.
     retries=0
     for i, ((w,k),r) in enumerate(zip(calls,results)):
@@ -229,8 +287,11 @@ async def execute_plans(plans):
         if isinstance(r.get("parsed"),dict) and r["parsed"].get("items") == []:
             continue
         if r.get("truncated") is True or r.get("error") == "contract_violation":
+            reason = "truncation" if r.get("truncated") else "malformed_contract"
+            if skip_deterministic_retry(runtime, w, r, reason):
+                continue
             w._partition_attempt = 1
-            w._partition_retry_reason = "truncation" if r.get("truncated") else "malformed_contract"
+            w._partition_retry_reason = reason
             results[i] = (await asyncio.to_thread(run_wave,runtime,[(w,k)],"failed_partition_only"))[0]
             retries+=1
     out = []

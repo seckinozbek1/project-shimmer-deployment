@@ -285,6 +285,10 @@ python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger L
 | `--test-manifest` | Role B's seal manifest, for a sealed bundle. |
 | `--protected-test` | Only on a sealed bundle prepared by role B. |
 | `--ledger` (repeatable), `--forecast-minutes`, `--storage-forecast-usd` | The IV.3 inputs. All three are required. |
+| `--arm` | `B3` (default, the full pipeline) or `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`). Written into every manifest as `arm`. |
+| `--items` | B1 only: the adapter's `items.json` (item ids, no gold), sealed as a support file. |
+| `--b1-checkpoints` | B1 only: a JSON list of passes `{"name", "checkpoint", "args"}` (`checkpoint` may be left out, see below), run in that order, each into `evidence/b1/<name>`. Each `args` list may hold only options `bare_model.py` itself takes (see below). A replay pass `{"name", "replay": true, "args"}` runs `replay_prompts.py` instead (section "The E evidence run"). |
+| `--replay-prompts` | Exposed B1 only: the `replay_prompts.json` a replay pass reads (D-061 item 4), sealed as a support file. |
 
 The sealer writes the budget into the manifest from the live price in the
 provider inventory and the loop ledger: the ordered instance candidates (the
@@ -299,7 +303,44 @@ archive hash and the code commit, and the sealer prints counts only; an exposed
 bundle's seal says `exposed, no manifest`. The sealer refuses to seal
 `SHIMMER_INST_FINDER=off` unless the bound constitution holds a ratified amendment
 naming INST_FINDER and SHIMMER_INST_FINDER, using the pipeline's own test read
-from the bound source. Paths outside the runtime prefixes enter the source
+from the bound source.
+
+The producer's attention and prefill (D-058, D-061, D-063) are sealed the same way,
+in the manifest's `environment`, and the runner replaces every `SHIMMER_` variable
+with the sealed ones, so the instance's `scripts/final_models.py` loads the producer
+with exactly the sealed values. With nothing set at sealing they are
+`SHIMMER_PRODUCER_ATTENTION=sdpa`, `SHIMMER_PRODUCER_ATTENTION_DECISION=D-063`,
+`SHIMMER_PRODUCER_PREFILL_CHUNK=one_shot` and `SHIMMER_PRODUCER_PREFILL_DECISION=D-063`
+(option A, adopted by D-061's declared fallback in D-063): every producer call runs
+sdpa pinned to the memory-efficient backend and prefills its prompt in one shot,
+through the one generate helper (`final_models.generate_with_prefill`). B1 runs the
+same. The models `_load_qwen` loads run sdpa pinned the same way, one shot. Each
+reply record names the kernel, the prefill and the decisions, and what the prefill
+measured (chunks, tail tokens, prefill seconds). v5 to v12 ran the producer eager
+in one shot, the kernel it was trained and evaluated with. A measurement run is
+sealed otherwise by setting the variables in the sealing shell, each with the
+recorded decision that asks for it, for example E (eager, chunks of 512 tokens
+through the KV cache, 2 tokens left to generation; D-061):
+
+```powershell
+$env:SHIMMER_PRODUCER_ATTENTION = 'eager'
+$env:SHIMMER_PRODUCER_ATTENTION_DECISION = 'D-061'
+$env:SHIMMER_PRODUCER_PREFILL_CHUNK = '512'
+$env:SHIMMER_PRODUCER_PREFILL_DECISION = 'D-061'
+python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+Remove-Item Env:SHIMMER_PRODUCER_ATTENTION, Env:SHIMMER_PRODUCER_ATTENTION_DECISION, Env:SHIMMER_PRODUCER_PREFILL_CHUNK, Env:SHIMMER_PRODUCER_PREFILL_DECISION
+```
+
+The sealer evaluates the bound `final_models.producer_attention` and
+`final_models.producer_prefill` (through `attention_setting` and `prefill_setting`)
+and refuses, in one line, eager without a decision, an attention decision with sdpa
+other than D-063, a chunk size without a prefill decision, a prefill decision with
+`one_shot` other than D-063, a decision that is not `D-NNN`, or any other value; a
+bound `final_models` from before D-061 is refused. The Auditor896 classifier is not governed by these
+settings: it loads eager, as its runtime contract says. The report's backend field
+states the sealed attention and prefill (section "Report and binding").
+
+Paths outside the runtime prefixes enter the source
 archive only when listed in `ARCHIVE_EXTRAS` in the sealer (today
 `benchmark/adapters/` and `benchmark/baselines/`, so the B1 and B2 tools and the
 adapters they import reach the instance; their `fixtures/` folders and `*_checks.py`
@@ -316,6 +357,66 @@ text). It is sealed as a support file, its hash is also recorded as
 when it is declared, sealed and valid, and its assessment passes a multi-round
 run only when the saved case record shows outcome `reviewed` and activation
 `activated`.
+
+A B1 bundle (`--arm B1`) is sealed from the same workload as its B3 twin. Its
+manifest carries `arm: B1` and `b1`: the passes (each a short name, the
+checkpoint it loads and the `bare_model.py` arguments that pin it, for example its
+`--expect-digest`; the manifest keeps them under `checkpoints`), the
+item ids of the bundle's one document (the items in `items.json` whose
+`document_id` is the stem of the one target in `_review_targets.json`) and the
+digest of `items.json`, which travels as a support file and never inside the test
+archive. A checkpoint may not carry `--bundle`, `--items`, `--out`,
+`--checkpoint` or `--development`, which the runner sets itself. Everything else
+it carries must be one of the options `bare_model.py`'s own parser takes
+(`--agent`, `--profile`, `--max-new-tokens`, `--expect-model-id`,
+`--expect-digest`, `--expect-decoding`, `--prefill-chunk`, `--prefill-decision`,
+`--attention`, `--attention-decision`, each followed by its value or written
+`--option=value`, and the flag `--sensitive` alone), spelled in full: the parser
+takes no abbreviation, and the sealer refuses an unknown option, a missing value or
+a flag with a value, so a checkpoint the instance would refuse is refused at
+sealing instead. The runner's `B1_SEALED_ARGS` lists these options, and a
+controller check holds it, with the runner's own options, equal to the parser's.
+B1 follows the producer (D-061, D-063): its run proper is sdpa pinned to the
+memory-efficient backend with one-shot prefill under D-063, and needs neither
+option. `--attention` is `sdpa` (the default) or `eager`; `eager` is accepted only
+together with `--attention-decision D-NNN`, the recorded decision that asks for the
+measurement pass, and `--attention-decision` with `sdpa` only when it is `D-063`.
+`--prefill-chunk` is `one_shot` (the default) or a positive number of tokens (E is
+512); a chunk size is accepted only together with `--prefill-decision D-NNN`, and a
+`--prefill-decision` with `one_shot` only when it is `D-063`. The sealer refuses
+each case `bare_model.py` would refuse (a controller check holds the two rules
+equal case by case).
+
+A pass's `name` is a free label: lower case letters, digits and underscores,
+unique in the bundle. It names the pass's output folder `evidence/b1/<name>`.
+Its `checkpoint` is `tuned` or `base`, and the runner passes it to `bare_model.py`
+as `--checkpoint`. A pass sealed without `checkpoint` loads the checkpoint its
+name names, as every pass did before D-056 condition 6, so such a pass must be
+named `base` or `tuned`; a bundle sealed with `{"name", "args"}` passes keeps its
+meaning. Each checkpoint's `--expect-digest` is the digest `bare_model.py` computes
+for that checkpoint, `<revision>:<model.safetensors sha256>` for the base and that
+followed by `+adapter:<adapter sha256>` for the tuned producer (both from
+`config/final_models.json`, recorded in `docs/loop/VERSIONS.md`); a run whose
+loaded digest differs stops before its first item. A B1 bundle is
+never multi-round. A B3 bundle carries none of these fields; a manifest sealed
+before S5 has no `arm` and is a B3 bundle.
+
+On the instance the same runner, `ordinary_final_run.py`, runs both arms and keeps
+every guard for both: the authorization (which must name the arm the bundle was
+sealed with; an authorization naming no arm is a B3 one), `RUN_CLAIMED`, the
+budget-stop thread with its `os._exit(124)`, the sealed model cache, the pinned
+runtime and the network denial. For a B1 bundle it then loads the sealed
+project's `benchmark/baselines/bare_model.py` in its own process, never imports
+the pipeline, and calls its `main()` once per sealed pass, in order, with
+`--bundle <project>/input --items <bundle>/items.json --out
+evidence/b1/<name> --checkpoint <checkpoint>` followed by that pass's
+sealed arguments. It writes `evidence/b1/expected_records` (items times
+passes) first, for the progress reader. The assessment in
+`evidence/result.json` passes a B1 entry only when every pass returned 0
+and left exactly one reply record per item in its own folder (each item's label
+naming one record's call id) and no other record; no pipeline marker is asked
+for, and `pipeline_exit_code` is null. The controller's cleanup stops a B1 run
+exactly as it stops a B3 run, by the runner's name.
 
 ### Launch
 
@@ -339,7 +440,7 @@ python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGE
 | `--forecast-includes-upload` | States that the forecast includes the asset upload. Required whenever no asset-copy declaration applies to this bundle. |
 | `--output-dir` | Run in a fresh folder `<output-dir>/<bundle name>` instead of in the bundle; the asset archive is read where it is. |
 | `--test-manifest`, `--frozen-tag` | Required for a sealed run. |
-| `--batch` | A batch file `{"entries": [{"item", "arm", "bundle"}]}`. |
+| `--batch` | A batch file `{"entries": [{"item", "arm", "bundle"}], "form": "paired"}`; `form` is `paired` (the default) or `b3_only` (exposed bundles only). |
 | `--test-version`, `--test-author`, `--key-author`, `--scorer-author`, `--scorer-version` | Report fields for `RUN_REPORT.md`. |
 | `--detach` | Start the controller as a detached process and return; its output goes to `controller_detached.log` in the bundle and its pid to `controller_process.json`. |
 
@@ -348,9 +449,12 @@ and the live price. The `--ledger` must be one the reaper reads (the private led
 or R's); the guard always reads both of those beside any `--read-ledger`, needs a
 `budget_open` line among them, and holds an exclusive lock beside the ledger from
 its decision through the intent line, reading the provider inventory again just
-before it. It refuses, in one line, when another loop instance is running (an
-open launch in a ledger, or a `shimmer-loop-` name in the provider inventory),
-when the per-run cap `min(1.5 x forecast, ceiling - spend - caps of running loop
+before it. At most two loop instances run at once (D-S17, `MAX_LOOP_INSTANCES`):
+it refuses, in one line, when two are already running (counted once each over the
+open launches in the ledgers and the `shimmer-loop-` names in the provider
+inventory: "Two loop instances are running; at most two at a time"), when the
+inventory lists a loop instance no ledger records or any instance that is not a
+loop instance, when the per-run cap `min(1.5 x forecast, ceiling - spend - caps of running loop
 instances - storage forecast)` is below the forecast (measured minutes times the
 live price times 1.3), or when the capped run time does not cover the forecast time
 plus the run's stop reserve. The ceiling is the smaller of the reaper's hard stop
@@ -399,7 +503,202 @@ then arm B1 before the next item starts, the first scheduled entry (the first
 item's B3) must be the bundle the session was launched with, and the bundles share one environment, one asset archive and one sealed budget.
 Each entry gets its own run folder under `batch/`, its own seal entry,
 authorization and collected evidence, so a stop leaves every finished pair
-complete.
+complete. Each entry's `arm` in the batch file must equal the `arm` its bundle
+was sealed with (refused before any launch otherwise), and the controller writes
+it into the entry's authorization, which the runner checks again on the instance.
+
+A batch file with `"form": "b3_only"` carries exposed bundles that have no B1
+arm (regression bundles, multi-round cases, the development suite): every entry
+is B3, each item appears once, the entries run in the order given and are paired
+with nothing (`paired_with` is null in each seal entry). A sealed run refuses
+this form before any provider call; the paired form still refuses a batch
+without its B1 entries.
+
+Past the soft budget the controller starts no new remote work except stopping the
+workload and collecting evidence. A batch entry's own collection (its
+`batch_pack_evidence` and `batch_evidence_hash` phases, then the download) is part
+of that exemption, so an entry that finishes past the soft budget is still
+collected into its own run folder; the next entry is then refused and the session
+evidence is collected as before.
+
+### Stage, seal and launch a batch of benchmark bundles
+
+A benchmark build is not yet a workload. The adapters (`benchmark/adapters`) and
+the generators (`benchmark/generators`) write each bundle as `context/` (with
+`_review_targets.json` inside it), `conventions/` and `answer_key.json`, and an
+adapter writes the item table `items.json` beside its bundles. The sealer wants
+the targets file at the top of the workload folder and refuses anything but
+`context/`, `conventions/`, `_review_targets.json` and `case_manifest.json`.
+`tools/stage_workload.py` makes the one from the other:
+
+```powershell
+python tools/stage_workload.py --build BUILD_FOLDER --out STAGED_FOLDER
+python tools/stage_workload.py --bundle BUILD_FOLDER/BUNDLE --out WORKLOAD_FOLDER --items-out ITEMS.json
+```
+
+With `--build` every bundle of the build is staged: `STAGED_FOLDER/<bundle>/workload/`
+is the sealer's `--workload`, and, when the build has an `items.json`,
+`STAGED_FOLDER/<bundle>/items.json` is the sealer's `--items` for that bundle's B1
+twin. The tool copies `context/`, `conventions/` and `case_manifest.json` byte for
+byte (the sealer normalises line endings, not the staging) and moves the targets
+file to the top. It never copies the answer key, `parts.json` or any other build
+record, and a file under `context/` or `conventions/` whose name reads like a key
+(`answer`, `key` or `gold` as a word of its name) refuses the whole staging before
+anything is written. The item table holds only the bundle's own document's items,
+with the four fields `bare_model.py` reads (`item_id`, `document_id`, `rule_id`,
+`benchmark`), and is written outside the workload folder. The tool prints counts
+only. A generator build has no `items.json`, so its bundles are staged for B3 only.
+Third-party documents are staged only under the ignored `external/<name>/s05/`
+(H17), never inside a tracked folder. Gate check 287 holds this on a synthetic
+fixture.
+
+Then seal one B3 and one B1 bundle per item from the same staged workload, all
+binding the same asset archive (the first bundle builds or reuses it, the others
+pass `--reuse-assets` with it), with the same ledger and forecast inputs:
+
+```powershell
+python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/ITEM_B3 --workload STAGED_FOLDER/ITEM/workload --reuse-assets ASSET_BUNDLE --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/ITEM_B1 --workload STAGED_FOLDER/ITEM/workload --arm B1 --items STAGED_FOLDER/ITEM/items.json --b1-checkpoints B1_CHECKPOINTS.json --reuse-assets ASSET_BUNDLE --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+```
+
+`B1_CHECKPOINTS.json` names the base checkpoint first and the tuned one second,
+each pinned by its recorded model id and digest:
+
+```json
+[{"name": "base", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256"]},
+ {"name": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]}]
+```
+
+The first benchmark dry run (L2) also measures D-056 condition 6: B1 eager against
+sdpa for both checkpoints, one repeat of the tuned sdpa pass, and each pass's peak
+GPU memory. Its `B1_CHECKPOINTS.json` seals five passes. The base passes come
+first: the tuned producer stays resident once loaded, and a pass's peak memory
+counts everything on the device, so a base pass run after a tuned one would count
+the tuned producer's weights too (each pass records what was allocated when its
+counters were reset, `allocated_at_start_bytes`, which shows it):
+
+```json
+[{"name": "base", "checkpoint": "base", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256"]},
+ {"name": "base_eager", "checkpoint": "base", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256", "--attention", "eager", "--attention-decision", "D-056"]},
+ {"name": "tuned", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]},
+ {"name": "tuned_eager", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "eager", "--attention-decision", "D-056"]},
+ {"name": "tuned_repeat", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]}]
+```
+
+`MODEL_ID`, `REVISION`, `WEIGHTS_SHA256` and `ADAPTER_SHA256` are the producer's
+`model_id`, `revision`, `base_hashes["model.safetensors"]` and
+`files.adapter.sha256` in `config/final_models.json`. L2 was sealed before D-060:
+its passes ran sdpa by default and eager as the measurement. A bundle sealed under
+D-061 refused that file (eager was then the default and took no decision); from
+D-063 on it is admitted again, its unpinned sdpa default now the pinned, one-shot
+default recorded under D-063. In final mode `scripts/final_models.py` sets strict
+determinism for the whole process, so a `_repeat` pass measures whether a pass is
+byte-identical when run again.
+
+#### The E evidence run (D-061 item 4) and the measurement passes from D-063 on
+
+E (eager, chunked prefill) was to be adopted for S8 only on its own evidence
+(D-060's thresholds: at least 90 percent of the tuned checkpoint's replies
+byte-identical with one-shot eager and at least 95 percent of labels agreeing). L3e
+ran it, sealed under D-061 with E as the run proper, and E missed the threshold;
+D-061's declared fallback adopted option A (D-063). A bundle sealed from D-063 on
+refuses L3e's pass file (its one-shot and sdpa passes name decisions the defaults
+no longer take). The same measurements are sealed from D-063 on as one exposed B1
+bundle carrying the four tuned passes, in this order, and a replay pass over B3's
+own producer prompts:
+
+```json
+[{"name": "tuned", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]},
+ {"name": "tuned_eager", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "eager", "--attention-decision", "D-061"]},
+ {"name": "tuned_e", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256", "--attention", "eager", "--attention-decision", "D-061", "--prefill-chunk", "512", "--prefill-decision", "D-061"]},
+ {"name": "tuned_repeat", "checkpoint": "tuned", "args": ["--expect-model-id", "MODEL_ID", "--expect-digest", "REVISION:WEIGHTS_SHA256+adapter:ADAPTER_SHA256"]},
+ {"name": "replay", "replay": true, "args": ["--decision", "D-061"]}]
+```
+
+`tuned` is the run proper (option A: sdpa, memory-efficient backend pinned, one
+shot, D-063), `tuned_eager` the one-shot eager reference (the kernel the producer
+was trained with), `tuned_e` E, and `tuned_repeat` the determinism check. Each pass
+records its peak GPU memory and, per call, the prefill (chunks, tail tokens,
+prefill seconds; summed and maximised in `b1_summary.json` under `prefill_time`).
+Compare with `bare_model.py compare` (`tuned` against `tuned_eager`, `tuned`
+against `tuned_repeat`, `tuned_e` against `tuned_eager`). The items of the short
+documents are under 1,536 tokens, so the evidence on prompts of at least three
+chunks comes from the replay pass and from the long documents.
+
+The replay pass runs `benchmark/baselines/replay_prompts.py` on a sealed
+`replay_prompts.json`, written beforehand on the laptop from an earlier run's
+reply records (no model; it reads only the saved payloads, never a reply, a label
+or a key, and refuses a sensitive run's hashed records and any folder under
+`benchmark/keys/`):
+
+```powershell
+python benchmark/baselines/replay_prompts.py extract --records RUN_L2/evidence/run/RUN_ID/audit/model_replies --records RUN_L2_2/evidence/run/RUN_ID/audit/model_replies --out external/NAME/s05/replay_prompts.json
+python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/E_ITEM1_B1 --workload STAGED_FOLDER/ITEM1/workload --arm B1 --items STAGED_FOLDER/ITEM1/items.json --b1-checkpoints E_PASSES.json --replay-prompts external/NAME/s05/replay_prompts.json --reuse-assets ASSET_BUNDLE --ledger LEDGER.jsonl --forecast-minutes MINUTES --storage-forecast-usd DOLLARS
+```
+
+`--replay-prompts` is accepted only for an exposed B1 bundle; the file travels as
+a support file (`replay_prompts.json`, its digest and prompt count in the
+manifest's `b1.replay`), never in the source archive, and the runner refuses a
+replay pass in a sealed run. A replay pass is `{"name", "replay": true, "args"}`;
+its `args` may hold only `--paths` (default `e,one_shot,sdpa,e_repeat`),
+`--decision` (required exactly when a measurement path, `e`, `one_shot` or
+`e_repeat`, is run; `sdpa` is the run proper's setting under D-063) and `--max-new-tokens` (default: each prompt's own recorded allowance); the
+runner sets `--prompts` and `--out`. On the instance it loads the tuned producer
+once and runs every prompt through each path, writing one reply record per prompt
+per path (hashes only) and `evidence/b1/replay/replay_measurement.json`: per path
+the peak GPU memory and prefill seconds, per prompt the reply's SHA-256, output
+tokens and prefill, and per pair of paths (e against one_shot, e against e_repeat,
+sdpa against one_shot, e against sdpa) the byte-identical, equal-JSON and failure
+counts over every prompt and over the prompts of three chunks or more. An
+out-of-memory error on one path is recorded for that prompt and the path goes on
+(that is the measurement), never retried. The report's B1 row states each path's
+peak memory and longest prefill and each pair's counts. The 30,720-token
+measurement at full context is one more replay prompt of that length (an L2 item
+prompt or a document cut to it); B3's longest development prompt with the other
+models loaded is read from a B3 entry's own reply records (`prefill` per call)
+and its run's peak GPU memory.
+
+Each pass's `b1_summary.json` carries `gpu_memory`: the peak allocated and the
+peak reserved bytes from the moment the model was loaded and verified to the end
+of the last item (null on a machine without CUDA). After collection the passes are
+compared with `bare_model.py compare`, which needs no model:
+
+```powershell
+python benchmark/baselines/bare_model.py compare --a RUN/evidence/b1/base --b RUN/evidence/b1/base_eager --out RUN/analysis/b1_base_eager.json
+python benchmark/baselines/bare_model.py compare --a RUN/evidence/b1/tuned --b RUN/evidence/b1/tuned_eager --out RUN/analysis/b1_tuned_eager.json
+python benchmark/baselines/bare_model.py compare --a RUN/evidence/b1/tuned --b RUN/evidence/b1/tuned_repeat --out RUN/analysis/b1_tuned_repeat.json
+```
+
+Each comparison file gives, per item, whether the two replies are byte-identical
+(their recorded SHA-256 and byte length, so a sensitive pass compares too) and
+whether the two labels agree (the same label, or both abstained), with the counts.
+It holds item ids, booleans and counts only, never a reply's text or a label.
+
+The batch file lists every item's B3 and B1 bundles, the first item's B3 first
+(it is the bundle the session is launched with):
+
+```json
+{"form": "paired", "entries": [
+  {"item": "ITEM1", "arm": "B3", "bundle": "external/NAME/s05/ITEM1_B3"},
+  {"item": "ITEM1", "arm": "B1", "bundle": "external/NAME/s05/ITEM1_B1"},
+  {"item": "ITEM2", "arm": "B3", "bundle": "external/NAME/s05/ITEM2_B3"},
+  {"item": "ITEM2", "arm": "B1", "bundle": "external/NAME/s05/ITEM2_B1"}]}
+```
+
+and the launch names the first B3 bundle and the batch file, with the run folder
+outside the repository:
+
+```powershell
+python tools/ordinary_final_bound_cloud.py --bundle external/NAME/s05/ITEM1_B3 --batch BATCH.json --output-dir external/NAME/s05/runs --ledger LEDGER.jsonl --purpose dev-NAME --forecast-minutes MINUTES --storage-forecast-usd DOLLARS --forecast-includes-upload --detach
+```
+
+On the instance each B1 entry runs `bare_model.py` once per sealed pass, in the
+sealed order, into `evidence/b1/<name>/` (`evidence/b1/base/` and
+`evidence/b1/tuned/` for the two-pass file above), each holding one reply record
+and one label per item and its `b1_summary.json`. Afterwards
+`tools/analyze_ordinary_final_run.py --bundle RUN_FOLDER --batch` writes one report
+per entry. For bundles with no B1 twin (a generator build, regression bundles,
+multi-round cases) use `"form": "b3_only"` with B3 entries only.
 
 ### Asset copy
 
@@ -431,12 +730,54 @@ so), agents withheld (FACT_CHECKER with both of its reasons), the
 separation for a sealed run, and what the result does not show. A field that
 does not apply says why. `--batch` writes one report per batch run folder.
 
+The backend field names the producer's sealed attention and prefill (D-058,
+D-060, D-061, D-063): for the default, "producer and B1 sdpa, prefilled in one
+shot, memory-efficient backend pinned (D-063); differs from v5 to v12, which ran
+the producer eager"; the decision for a measurement run (eager, or a chunk size);
+"the default before D-063" for a bundle sealed under D-061 (eager, chunks of 512);
+"sealed under D-058" for a bundle sealed sdpa by default before D-060; and "sealed
+before D-058" (eager, one shot) for an older bundle. The row "Execution
+assessment" states the runner's assessment: passed, or each reason in words; a
+run that reached its end with exit 0 but whose completion record marks the
+semantic work incomplete is `semantic_incomplete` (D-061 (b)), never
+`pipeline_not_completed`. The row "B3 prompts over the model context" counts
+the B3 calls refused before generating because their prompt and output allowance
+exceeded the model's context (the `prompt_over_context` telemetry events, also
+listed under `b3_prompts_over_context` in `FINAL_STATUS.json`), with the documents
+they belong to: each such document is a declared exclusion of B3, never scored.
+
+Every report also names the entry's arm. A B1 entry never runs the pipeline and
+so never writes `run_completion.json` or model telemetry; the analyser reports it
+from the runner's own assessment (`evidence/result.json`) and each sealed
+checkpoint's collected `b1_summary.json`. Its status is
+`ORDINARY_FINAL_CLOUD_RUN_COMPLETED` only when that assessment passed and every
+sealed pass's summary was collected. Its "Models and checkpoints" row gives each
+pass, by name, its model, digest and whether the adapter was applied (and the
+checkpoint it loaded when the name is not that checkpoint's), and its "B1
+checkpoints" row gives each pass's exit code and its counts (items, parsed,
+abstained, undecided, backend failures, repaired replies, replies that reached the
+output allowance), its attention and prefill (a measurement pass with its
+decision), its longest prefill and its peak GPU memory, allocated and reserved (or
+that it was not measured, on a machine without CUDA); a replay pass is reported
+from its `replay_measurement.json` (per path peak memory, longest prefill and
+failures, per pair the byte-identical counts); `FINAL_STATUS.json` carries the same
+under `b1_checkpoints`.
+Counts only: no label, evidence or reply text enters the report.
+
 The controller is bound to the bundle it was sealed with. Loop S2 changed six of
 the seven bound files (`tools/cloud_run_common.py`, `tools/cloud_run_watchdog.py`,
 `tools/ordinary_final_bound_cloud.py`, `tools/ordinary_final_cloud.py`,
 `tools/ordinary_final_run.py`, `tools/ordinary_final_watchdog.py`), so every bundle
 sealed before S2 refuses with `Controller source changed` and must be sealed
-again.
+again. The S5 join changed `tools/ordinary_final_run.py` once more (the sealed B1
+argument check), so every bundle sealed before it refuses the same way. D-056
+condition 6 changed it again (passes with a checkpoint, the attention options), so
+every bundle sealed before that change refuses the same way too. D-061 changed it
+again (eager by default, the prefill options, replay passes, `semantic_incomplete`),
+so every bundle sealed before D-061, L2's included, refuses the same way and must be
+sealed again. D-063 changed it again (the B1 rule and the replay paths follow the
+sdpa one-shot default), so every bundle sealed before D-063, L3e's included,
+refuses the same way and must be sealed again.
 
 The rehearsal (`tools/ordinary_final_rehearsal.py`) launches the same way against
 its mocked provider: each rehearsal bundle gets a fresh ledger of its own,
