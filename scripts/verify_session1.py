@@ -25193,11 +25193,13 @@ def check_296_request_ledger_check_catches_dropped_requests():
     D-S entry with its numbered and lettered items from the loop specification, the ids in the
     operator's private request ledger and DECISIONS.md, and fails on a specification item with
     no row, a row that matches no item, a DONE row whose decision, commit or path does not
-    resolve, and a RUNNING row unchanged for 24 hours that names nothing running. Runs
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running (a launch
+    open in the budget ledger, a lane in `git worktree list`). Runs
     tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
-    specification, ledger and DECISIONS.md, a one-commit git repository; the private ledger
-    is never read), then neutralises in turn the coverage rule, the evidence rule and the
-    stale rule, requires a failure, restores and requires a pass."""
+    specification, ledger, budget ledger and DECISIONS.md, a one-commit git repository with a
+    lane worktree; the private ledger is never read), then neutralises in turn the coverage
+    rule, the evidence rule, the stale rule and its running-state test, requires a failure,
+    restores and requires a pass."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
     if loop not in sys.path:
         sys.path.insert(0, loop)
