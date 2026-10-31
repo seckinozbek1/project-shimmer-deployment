@@ -125,6 +125,23 @@ class ProgressReadings(unittest.TestCase):
         line = self.read('batch_workload', 4.0 * 60, {'evidence/b1': 'PIPELINE', 'model_call': '40\n7\ncompleted=10/12'})
         self.assertIn('10 of 12 agents', line)
 
+    def test_an_arm_l_workload_reading_counts_the_sealed_answers_given(self):
+        """D-S13 item 6d: an arm L entry writes no telemetry of its own until a menu run starts;
+        its reading is the last answer line the runner printed (sealed answers to the required
+        prompts given, of how many), with no rate or remaining time, since the answers come in
+        bursts between the menu's two runs. A workload that is not arm L reads as before."""
+        answered = 'L\n11 of 23 sealed answers to the required prompts given'
+        for phase in ('ordinary_workload', 'batch_workload'):
+            line = self.read(phase, 9.0 * 60, {'evidence/launcher': answered})
+            self.assertTrue(line.startswith(phase + ' progress: 11 of 23 sealed answers to the required prompts given'), line)
+            self.assertIn('9.0 min elapsed', line)
+            self.assertIn('no rate or remaining time', line)
+            self.assertNotIn('model call', line)
+        line = self.read('ordinary_workload', 20.0, {'evidence/launcher': 'L\n'})
+        self.assertIn('no sealed answer given yet', line)
+        line = self.read('ordinary_workload', 4.0 * 60, {'evidence/launcher': 'OTHER', 'model_call': '40\n7\ncompleted=10/12'})
+        self.assertIn('10 of 12 agents', line)
+
     # --- the explicit refusals ----------------------------------------------------------
 
     def test_workload_says_nothing_is_measurable_before_the_first_record(self):
@@ -230,6 +247,9 @@ NEUTRALIZATIONS = (
     # S5: a B1 entry read as a pipeline run, so its reply records are never counted.
     ('test_a_b1_workload_reading_counts_reply_records_against_the_expected_total',
      progress, 'b1_workload', lambda context, phase: None),
+    # D-S13 item 6d: an arm L entry read as a pipeline run, so its answers are never counted.
+    ('test_an_arm_l_workload_reading_counts_the_sealed_answers_given',
+     progress, 'launcher_workload', lambda context, phase: None),
 )
 
 
