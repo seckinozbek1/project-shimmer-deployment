@@ -108,7 +108,7 @@ One development contract, `527255a5c970` (band B, 2,664 words), 41 categories: g
 
 ## FinDVer (development, exposed)
 
-One development filing, `e61777d6327c` (band D), one item, run in L4b on earlier code (commit `344522f`). **Not measured**: no arm decided the item. B3 ended semantically incomplete and its item is ABSTAIN (97.7 workload minutes); B1 tuned and B1 base each ran to the 2,048-token output allowance without a label (13.4 minutes each, half of one two-checkpoint entry; D-115). The segmented B3 reading and the revised B1 prompt for FinDVer (D-115) are measured by L13, which is scheduled after v1 and has not run.
+One development filing, `e61777d6327c` (band D), one item, run in L4b on earlier code (commit `344522f`). **Not measured**: no arm decided the item. B3 ended semantically incomplete and its item is ABSTAIN (97.7 workload minutes); B1 tuned and B1 base each ran to the 2,048-token output allowance without a label (13.4 minutes each, half of one two-checkpoint entry; D-115). The segmented B3 reading and the revised B1 prompt for FinDVer (D-115) are measured by L13, which is scheduled after v1 and has not run. **FinDVer's held-out (`test`) labels have been public since 14 July 2026** (MIT licence; docs/benchmarks/SELECTION.md, FinDVer, and docs/benchmarks/FINDVER_B1_REVISION.md), so the contamination guard the benchmark's paper relied on is gone; any FinDVer figure, here or later, is read with that in mind.
 
 ## CUAD as a claim check
 
@@ -131,7 +131,14 @@ Every planted flaw B3 located was located by a Python-written record (114 by Pyt
 
 The 11 bundles that failed integrity on L12 were re-run in L12b; 9 passed and 2 still fail, each in the table as failed with its cause (D-138): `f1_s1101_cvjx` (a twin; two PRACTICE_AUDITOR replies ran to their 768-token allowance after the envelope constraint required an explanation, open item 47) and `f3_s3102_vwmj` (a test; VERIFIER's one-item-per-reference list ran to its 4,096-token allowance, open item 48).
 
-**Family 4, multi-round (B3 only).** Four tests and their twins, 8 bundles, run as declared multi-round cases (L12 re-run of L7's entries; all 8 passed integrity; 0.56 workload minutes a bundle). Scored by `tools/score_corpus.py` on each round's findings (the synthetic adapter does not score this key form): 118 of 124 planted entries located, 112 of 124 with the reason confirmed (0.903), 0 false positives, 0 distractor hits. Every round finding is Python's, so both modes give the same figure. No B1 arm exists for these cases.
+**Family 4, multi-round (B3 only).** Four tests and their four twins, 8 bundles, run as declared multi-round cases (L12 re-run of L7's entries; all 8 passed integrity; 0.56 workload minutes a bundle). Scored by `tools/score_corpus.py` on each round's findings (the synthetic adapter does not score this key form). Every round finding is Python's, so both modes give the same figures. No B1 arm exists for these cases.
+
+| Role | Bundles | Planted entries located | Reason confirmed | False positives (irregular round findings on no planted entry) | Distractor hits |
+|---|---|---|---|---|---|
+| Tests | `f4_s4101_gdks`, `f4_s4102_nqsw`, `f4_s4103_vqjj`, `f4_s4104_rstq` | 79 of 82 | 76 of 82 (0.927) | 0 | 0 |
+| Twins | `f4_s4101_bjfg`, `f4_s4102_xwpv`, `f4_s4103_kmvf`, `f4_s4104_xtxd` | 39 of 42 | 36 of 42 (0.857) | 0 | 0 |
+
+**A family 4 twin is not a clean twin in a multi-round run** (open item 26). It repairs only the last round; its earlier rounds are the test's, so their breaches stay in it and its own multi-round key lists them as planted entries (the 42 above). Its 0 false positives therefore say nothing a clean twin's would: no figure here measures false alarms on a document clean in every round, and the repository scorer runs no twin check on a multi-round run.
 
 **Correct refusal rate: not measured.** The suite's refusal entries (`expected_refusals`, the rename probes) are scored on the ordinary two-version review of the family 4 bundles, which are the probe launches L9a and L9b, scheduled after v1; the runs scored here carry no refusal entry.
 
