@@ -2,6 +2,8 @@
 
 **Every figure on this page is a development figure on exposed material.** The documents were seen while Shimmer was being built, the samples are a handful of documents per benchmark, and one run per document was made. No figure here is a held-out or sealed result, and none supports a claim about accuracy on unseen material. Sealed results, when they exist, are added to this page beside these and replace nothing on it.
 
+**In one sentence.** On the four public benchmarks measured, Shimmer scores below the bare model on three (ContractNLI, ContraDoc and CUAD, where it found none of the gold flags) and about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1.
+
 Built on 31 October 2026 from runs already done (L4a to L12b). No launch was made for this page.
 
 ## How to read the tables

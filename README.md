@@ -14,6 +14,8 @@ None of it is a held-out or sealed result, and none of it shows how well Shimmer
 works on documents it has not seen. A sealed evaluation is planned after v1. This
 version is not released as a Python package, and no package release is promised.
 
+On the four public benchmarks measured, Shimmer scores below the bare model on three (ContractNLI, ContraDoc and CUAD, where it found none of the gold flags) and about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1. Details: [docs/RESULTS.md](docs/RESULTS.md).
+
 ## What Shimmer is
 
 Shimmer puts together mechanisms that already exist. It does not introduce new
