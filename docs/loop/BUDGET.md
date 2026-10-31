@@ -233,3 +233,18 @@ Reaper reading 2026-10-31 (reaper_status.json): total spend 61.48 USD (instances
 | Total | 141.2 | about 3.7 over the 137.5 left |
 
 D-S18 item 7: the moved steps at the end wait first. With the sealed evaluation at its 60 floor, the last 3.7 USD of the moved steps do not fit: the S6 cloud work (5.74) waits unless an earlier forecast comes in under it. D-S12 item 4's 10 USD reserve is not in D-S18 item 7's order and is removed by it; storage, which the reserve carried first, is its own line here. D-S13 item 11 named the reserve as a funding source for the GNN run; that source is gone, and the run sits last among the moved steps.
+
+### Correction and the brought-back third re-run (2026-10-31 19:55 +0300, sweep 2, D-140)
+
+The 5.74 USD of S6 cloud work above is four items (D-092, sweep 1 items 31 to 34), not the GNN run alone: the GNN run 1.70 (D-S13 item 11), the report_optimized measurement 0.64, the S6b re-score 1.70, the open-item measurement runs 1.70. Sweep 2 brings back one item with a cost: replays of the 3 PRACTICE_AUDITOR and 4 VERIFIER prompts behind open items 47 and 48 (about 2.3 USD on the R2b and R2c bases) and a third re-run of the 3 entries still failing (about 155 minutes, about 4.3 USD): about 6.6 USD.
+
+| Moved steps, in order (D-S18 items 3 and 7) | USD | Cumulative after the 93.5 of v1, storage, track and sealed evaluation |
+|---|---|---|
+| L13 | 17.4 | 110.9 |
+| L9a | 12.3 | 123.2 |
+| L9b | 12.3 | 135.5 |
+| S6 GNN run (D-S13 item 11) | 1.70 | 137.2 |
+| Open items 47 and 48: replays and a third re-run | 6.6 | 143.8 |
+| S6: report_optimized measurement, S6b re-score, open-item runs | 4.04 | 147.8 |
+
+About 137.5 is left, so everything through the GNN run fits; the third re-run with its replays (6.6) and the other three S6 items (4.04) wait, about 10.3 USD in all, unless an earlier forecast comes in under it.
