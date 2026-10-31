@@ -425,8 +425,9 @@ def execute():
     save('run_record.json',record)
     CREDENTIAL=credential_path()
     provider=LambdaExperiment(CREDENTIAL)
-    inventory=provider.request('instances')['data']
-    require(inventory==[],'Provider inventory not empty')
+    # D-S17: only loop instances may be listed, fewer than the limit; the guard decides
+    # under the lock below, over the ledgers as well.
+    guard.refuse_full_inventory(provider.request('instances')['data'])
     types={}
     def list_types():
         rows=provider.request('instance-types')['data']
@@ -450,17 +451,16 @@ def execute():
     lock=guard.acquire_lock(plan['ledger'])
     try:
         inventory=provider.request('instances')['data']
-        require(inventory==[],'Provider inventory not empty')
         decision=guard.check(ledgers=[plan['ledger'],*plan['read_ledgers']],forecast_minutes=plan['forecast_minutes'],
                              hourly_rate=rate,storage_forecast_usd=plan['storage_forecast_usd'],now_epoch=time.time(),
-                             reserve_minutes=reserve_minutes,provider_names=[x.get('name') for x in inventory],
+                             reserve_minutes=reserve_minutes,provider_names=guard.loop_inventory(inventory),
                              instance_type=candidate['type'],r_inputs=plan['r_inputs'],reaped=plan['reaped'])
         require(decision['cap_usd']+1e-9>=hard,'Loop cap at launch %.2f dollars is below the sealed hard cap %.2f dollars; reseal'
                 %(decision['cap_usd'],hard))
         require(hard>=decision['forecast_usd'] and hard/rate*60>=plan['forecast_minutes']+reserve_minutes,
                 'Sealed hard cap leaves less than the forecast at the live price')
         require(m['image'] in provider.request('images')['data'],'Prepared image unavailable')
-        save('launch_preflight.json',dict(epoch=time.time(),instances=[],instance=current,image=m['image'],manifest_sha256=MANIFEST,
+        save('launch_preflight.json',dict(epoch=time.time(),instances=inventory,instance=current,image=m['image'],manifest_sha256=MANIFEST,
              selected=dict(type=candidate['type'],region=region,hourly_rate=rate,polls=polls),budget=decision))
         identity=BASE/'ssh_identity'
         require(not identity.exists() and not Path(str(identity)+'.pub').exists(),'Temporary key path occupied')
@@ -822,10 +822,18 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         inventory=independent.request('instances')['data'];keys=independent.request('ssh-keys')['data']
         absent=registration is None or all(x['id']!=registration['id'] for x in keys)
         local_absent=not identity.exists() and not Path(str(identity)+'.pub').exists()
-        save('independent_inventory_confirmation.json',dict(instances=inventory,temporary_ssh_registration_absent=absent,
-            local_key_material_absent=local_absent,epoch=time.time(),no_persistent_storage_created=True))
-        require(inventory==[] and absent and local_absent,'Independent cleanup failed')
-        save('cleanup.json',dict(temporary_provider_ssh_removed=True,local_ssh_material_removed=True,inventory_empty=True))
+        # D-S17: another loop instance (its own launch, ledger and controller) may still run.
+        # `instances` holds what this run must not leave: its own instance, by id or name, and
+        # any instance outside the loop; the other loop instances are named apart.
+        left=[x for x in inventory if (iid and x.get('instance_id')==iid) or x.get('name')==name
+              or not str(x.get('name') or '').startswith(guard.PREFIX)]
+        others=sorted(str(x.get('name')) for x in inventory if x not in left)
+        save('independent_inventory_confirmation.json',dict(instances=left,other_loop_instances=others,
+            temporary_ssh_registration_absent=absent,local_key_material_absent=local_absent,epoch=time.time(),
+            no_persistent_storage_created=True))
+        require(left==[] and absent and local_absent,'Independent cleanup failed')
+        save('cleanup.json',dict(temporary_provider_ssh_removed=True,local_ssh_material_removed=True,inventory_empty=not others,
+                                 own_instance_absent=True))
         for entry in batch:
             # Each batch run folder carries the session's launch and cleanup records, so
             # the analyser reads one folder per bundle exactly as it reads a single run.

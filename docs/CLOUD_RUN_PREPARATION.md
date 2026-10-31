@@ -449,9 +449,12 @@ and the live price. The `--ledger` must be one the reaper reads (the private led
 or R's); the guard always reads both of those beside any `--read-ledger`, needs a
 `budget_open` line among them, and holds an exclusive lock beside the ledger from
 its decision through the intent line, reading the provider inventory again just
-before it. It refuses, in one line, when another loop instance is running (an
-open launch in a ledger, or a `shimmer-loop-` name in the provider inventory),
-when the per-run cap `min(1.5 x forecast, ceiling - spend - caps of running loop
+before it. At most two loop instances run at once (D-S17, `MAX_LOOP_INSTANCES`):
+it refuses, in one line, when two are already running (counted once each over the
+open launches in the ledgers and the `shimmer-loop-` names in the provider
+inventory: "Two loop instances are running; at most two at a time"), when the
+inventory lists a loop instance no ledger records or any instance that is not a
+loop instance, when the per-run cap `min(1.5 x forecast, ceiling - spend - caps of running loop
 instances - storage forecast)` is below the forecast (measured minutes times the
 live price times 1.3), or when the capped run time does not cover the forecast time
 plus the run's stop reserve. The ceiling is the smaller of the reaper's hard stop
