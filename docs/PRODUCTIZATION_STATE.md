@@ -1,5 +1,10 @@
 # Productization state at this HEAD
 
+> Note (2026-10-31): "README section F" and "README section L" below refer to the README of
+> 2026-09-11. Its lettered sections, as they stood on 2026-09-13 (commit `1314475`), are kept in
+> [docs/history/README_PRE_ROUTING_AUDIT.md](history/README_PRE_ROUTING_AUDIT.md).
+> The current README has no lettered sections.
+
 One honest picture of this repository for a reader who has not followed the work. Every
 claim carries a citation to a file, a report or a commit in this repository. Nothing here is
 a plan; it is what is true now.

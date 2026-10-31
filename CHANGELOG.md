@@ -2,6 +2,11 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## Unreleased (documentation for v1)
+
+- **The README is rewritten for v1** and links the results page (`docs/RESULTS.md`). It says what Shimmer is (established mechanisms put together), what it does and does not do, what has been measured (development, exposed, with what the figures do not show), the limitations, a measured hardware and cost summary, install, quickstart, configuration, the constitution and agents, the testing rules and how to reproduce the evaluation. It states that the privacy layer today refuses sensitive runs and does not mask, that switching masking on needs its own amendment, and that the server's one shared token makes Shimmer a single-operator system. The sealed evaluation comes after v1; no package release is promised.
+- `CLAUDE.md` narrows "domain-agnostic" to what the evidence supports. Links to README sections that moved now point to `docs/RUNTIME_REFERENCE.md`; the dated history and state documents get dated notes instead of rewrites.
+
 ## 0.1.0.dev4 (2026-10-28)
 
 - **Adapters for five external benchmarks** (`benchmark/adapters/`: ContractNLI, CUAD, ContraDoc, SciTab, FinDVer), written and labelled by third parties on real documents. Each turns a benchmark item into a test bundle in the published input format, maps Shimmer's run output to the benchmark's label by one written rule, and computes the benchmark's own metric, or the closest honest measure with the reason when Shimmer's output cannot produce it. Standard library only; they run from a copied tree. No benchmark data is committed: it stays in the ignored `external/` folder.

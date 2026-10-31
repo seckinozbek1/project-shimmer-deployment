@@ -5,8 +5,10 @@ For the lead session only, started by Seckin in the main checkout: if `docs/loop
 This file is the operating contract for an AI coding agent (Claude Code) working in
 this repository. It is terse and rule-shaped, not a tutorial (the newcomer guide is
 README.md). The founding specification is [genesis.md](genesis.md), Parts I to XXVII:
-read it before making any change. Shimmer is a standalone, domain-agnostic document
-processing swarm governed by an append-only constitution.
+read it before making any change. Shimmer is a standalone document processing swarm
+governed by an append-only constitution. It is domain-agnostic only in a narrow sense:
+no domain vocabulary appears in code (the vocabulary rule below), and its results differ
+widely between the fields it has run on.
 
 ## Hard rules
 

@@ -20,8 +20,8 @@ read-only, authenticated activation/completion projection. No review routing,
 model, prompt, generation budget, suppression policy, constitution, governance
 decision or performance optimization changes are accepted.
 
-The [README architecture map](../../README.md#end-to-end-architecture) is the one
-current end-to-end map. Its [all-18-agent routing table](../../README.md#all-18-agents-actual-tasks-profiles-and-downstream-consumers)
+The [runtime reference architecture map](../RUNTIME_REFERENCE.md#end-to-end-architecture) is the one
+current end-to-end map. Its [all-18-agent routing table](../RUNTIME_REFERENCE.md#all-18-agents-actual-tasks-profiles-and-downstream-consumers)
 joins actual tasks, both model/backend profiles, eligibility/activation keys,
 repeat bounds, outputs and downstream consumers. This report supplies the deeper
 entry/artifact tables and contradiction record instead of duplicating that table.
