@@ -252,3 +252,7 @@ About 137.5 is left, so everything through the GNN run fits; the third re-run wi
 ### L12c in the allocation (2026-10-31 22:05 +0300, D-145)
 
 L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes about 4.9 (L12c 2.4, L14 1.5, slack 1.0). With storage 1.0, the track 30 and the sealed evaluation's 60, about 41.6 of the 137.5 left remains for the moved steps: L13 (17.4) and L9a (12.3) fit, L9b (12.3) fits only if an earlier forecast comes in under it by about 0.4, and the GNN run (1.70), the third re-run with its replays (6.6) and the other three S6 items (4.04) wait. The amount that waits after L9b is about 12.3 USD; the 10.3 written at 19:55 was the shortfall then, and the amount waiting then was 10.64. The 19:55 correction sits before the 20:10 table it corrects because that table's heading took D-139's later commit time; both stand as written.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L12c | launched 2026-10-31 19:09:39, dev-rerun-l12c, 5 B3 re-runs of the stamp-only passes, sealed at 5c3c129 after the full gate (D-143, D-144) | 2.38, cap 3.56 (85 minutes from the entries' own L12 and L12b times) | running; usage seven-day 70 percent (five-hour not reported), free memory 4.13 GB, disk 59.9 GB at launch |
