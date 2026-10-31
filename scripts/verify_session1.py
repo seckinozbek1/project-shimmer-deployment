@@ -25378,7 +25378,9 @@ def check_304_console_sealed_filter():
 
 
 def check_305_every_route_needs_a_token_but_health_and_console():
-    """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console. Runs on the committed synthetic fixture
+    """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console, and
+    FastAPI's own /openapi.json, /docs and /redoc stay off (a second neutralisation switches them back
+    on and must fail). Runs on the committed synthetic fixture
     under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
     check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
     for the views, Node) is absent."""
