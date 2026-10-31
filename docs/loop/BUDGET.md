@@ -199,3 +199,5 @@ The smoke 3.12 of the allocation table above went back to the pool under D-S17 i
 | R2b | launched 2026-10-31 about 10:22, d-s14-envelope-replay-archivist, sealed at abd288c | 1.12, cap 1.68 | running |
 
 D-S18 (D-133): about 147 USD left; v1 work about 13, the parallel track 30, the sealed evaluation at least 60, the moved steps about 42.
+| R2b | 2026-10-31 about 10:22 to 10:50 (ledger) | 1.12, cap 1.68 | 28 minutes, 0.60 USD; integrity passed; A to D hold, 2 of 2 fixed (D-134) |
+| R2c | 2026-10-31 about 10:20 to 11:30 (ledger) | 2.10, cap 3.14 | 70 minutes, 1.51 USD; integrity passed; 4 of 8 end within 4,096 (D-134). Instances total after R2: 54.61 |
