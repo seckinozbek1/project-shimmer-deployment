@@ -211,3 +211,10 @@ The smoke 3.12 of the allocation table above went back to the pool under D-S17 i
 | Sealed evaluation (version 3, ContractNLI and SciTab, D-S18 item 5) | at least 60 | floor 60; sized from the ledger when version 3 is written |
 | Moved steps (D-S18 item 3) | about 42 | L13 about 17.4, L9a 12.3, L9b 12.3; S6 cloud work 5.74 is inside the sealed evaluation's surplus or waits |
 | Total | about 141 | of about 143.8 left; if a forecast grows, L9b waits first and FOR_SECKIN says so |
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L12b a | launched 2026-10-31 about 13:30, dev-rerun-l12b-a, BATCH_a 6 entries, sealed at d6ce19a | 5.59, cap 8.39 (200 minutes times 1.3) | running; free memory 3.08 GB, disk 63.7 GB at launch (D-135 floor met) |
+| L12b b | launched 2026-10-31 about 13:40, dev-rerun-l12b-b, BATCH_b 7 entries, sealed at d6ce19a | 5.59, cap 8.39 | running (first attempt with a 190-minute forecast refused by the guard before any intent: cap 7.97 under the sealed 8.38) |
+| L12b a | 2026-10-31, dev-rerun-l12b-a (ledger termination) | 5.59, cap 8.39 | 178 minutes, 3.83 USD; 4 of 6 passed (D-138) |
+| L12b b | 2026-10-31, dev-rerun-l12b-b (ledger termination) | 5.59, cap 8.39 | 114 minutes, 2.45 USD; 6 of 7 passed (D-138). Instances total after L12b: 60.89 |
