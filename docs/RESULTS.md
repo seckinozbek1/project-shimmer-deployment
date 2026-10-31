@@ -2,7 +2,7 @@
 
 **Every figure on this page is a development figure on exposed material.** The documents were seen while Shimmer was being built, the samples are a handful of documents per benchmark, and one run per document was made. No figure here is a held-out or sealed result, and none supports a claim about accuracy on unseen material. Sealed results, when they exist, are added to this page beside these and replace nothing on it.
 
-Built on 31 October 2026 from runs already done (L4a to L12). No launch was made for this page.
+Built on 31 October 2026 from runs already done (L4a to L12b). No launch was made for this page.
 
 ## How to read the tables
 
@@ -24,19 +24,19 @@ Built on 31 October 2026 from runs already done (L4a to L12). No launch was made
 | SciTab | 3 tables, 14 claims | B3 benchmark mode | 4 of 7 (0.571) | 4 of 7 (0.571) | 0.571 | no gold item | 4.4 | 0.070 |
 | | | B3 as shipped (S-8) | n/a (0 flagged) | 0 of 7 | n/a | no gold item | 4.4 | none |
 | | | B1 tuned | 3 of 3 (1.000) | 3 of 7 (0.429) | 0.600 | no gold item | 1.8 | 0.039 |
-| ContraDoc | 3 documents, 3 items | B3 benchmark mode | n/a (0 flagged) | 0 of 1 | n/a | no class | 6.8 | none |
-| | | B3 as shipped (S-8) | n/a (0 flagged) | 0 of 1 | n/a | no class | 6.8 | none |
+| ContraDoc | 3 documents, 3 items | B3 benchmark mode | n/a (0 flagged) | 0 of 1 | n/a | no class | 5.7 | none |
+| | | B3 as shipped (S-8) | n/a (0 flagged) | 0 of 1 | n/a | no class | 5.7 | none |
 | | | B1 tuned | 1 of 1 (1.000) | 1 of 1 (1.000) | 1.000 | no class | 0.9 | 0.060 |
-| CUAD | 1 contract, 41 categories | B3 benchmark mode | n/a (0 flagged) | 0 of 34 | n/a | no class | 114.3 | none |
-| | | B3 as shipped (S-8) | n/a (0 flagged) | 0 of 34 | n/a | no class | 114.3 | none |
+| CUAD | 1 contract, 41 categories | B3 benchmark mode | n/a (0 flagged) | 0 of 34 | n/a | no class | 109.2 | none |
+| | | B3 as shipped (S-8) | n/a (0 flagged) | 0 of 34 | n/a | no class | 109.2 | none |
 | | | B1 tuned | 24 of 27 (0.889) | 24 of 34 (0.706) | 0.787 | no class | 9.7 | 0.0087 |
 | FinDVer | 1 filing, 1 item | all arms | not measured | not measured | not measured | no class | B3 97.7, B1 13.4 | none |
 | CUAD-claim | | | not run | | | | | |
-| Synthetic suite | 20 bundles, 96 items, 48 planted rule items | B3 benchmark mode | 42 of 47 (0.894) | 42 of 48 (0.875) | 0.884 | not measured | 10.9 | 0.111 |
-| | | B3 as shipped (S-8) | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | not measured | 10.9 | 0.117 |
+| Synthetic suite | 20 bundles, 96 items, 48 planted rule items | B3 benchmark mode | 42 of 48 (0.875) | 42 of 48 (0.875) | 0.875 | not measured | 10.6 | 0.109 |
+| | | B3 as shipped (S-8) | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | not measured | 10.6 | 0.114 |
 | | | B1 tuned | 35 of 66 (0.530) | 35 of 48 (0.729) | 0.614 | not measured | 2.5 | 0.031 |
 
-B3 rows that include a run which failed execution integrity: ContraDoc (1 of 3 documents), CUAD (its one contract) and the synthetic suite (11 of 20 bundles); their second re-run is L12b, below. The suite row covers families 1, 2, 3, 5 and 6; the multi-round family 4 is reported in its section. Each section below gives the counts behind every figure, the runs, the documents left out or failed, and what the figures do not show.
+B3 rows that include a run which still failed execution integrity after its second re-run (L12b): CUAD (its one contract) and the synthetic suite (2 of 20 bundles); each is marked failed with its cause. Rows that use an L12b run are on newer code than L12 (sealed at `d6ce19a`: VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST). The suite row covers families 1, 2, 3, 5 and 6; the multi-round family 4 is reported in its section. Each section below gives the counts behind every figure, the runs, the documents left out or failed, and what the figures do not show.
 
 ## ContractNLI (development, exposed)
 
@@ -79,17 +79,18 @@ Three development documents, `01015e47de8a`, `027002a77443` (band A), `06cd776dc
 
 | Arm | Run | Integrity | Accuracy (ABSTAIN wrong) | Flagged | Correct flags | Gold flags | Min per document | Set USD |
 |---|---|---|---|---|---|---|---|---|
-| B3 benchmark mode | L12 re-run, all three | 2 passed; `06cd776dcc1a` failed (semantically incomplete) | 2 of 3 | 0 | 0 | 1 | 6.8 | 0.44 |
-| B3 as shipped (S-8) | L12 re-run | as above | 2 of 3 | 0 | 0 | 1 | 6.8 | 0.44 |
+| B3 benchmark mode | L12 re-run for `01015e47de8a`, `027002a77443`; L12b (code `d6ce19a`) for `06cd776dcc1a` | all three passed | 2 of 3 | 0 | 0 | 1 | 5.7 | 0.37 |
+| B3 as shipped (S-8) | same | all three passed | 2 of 3 | 0 | 0 | 1 | 5.7 | 0.37 |
+| B3 benchmark mode, L12 | L12 re-run, all three | `06cd776dcc1a` failed (semantically incomplete) | 2 of 3 | 0 | 0 | 1 | 6.8 | 0.44 |
 | B1 tuned | L11 | all passed | 2 of 3 (1 ABSTAIN) | 1 | 1 | 1 | 0.9 | 0.06 |
 | B3 benchmark mode, first run | L11 | all three failed | 3 of 3 | 1 | 1 | 1 | 5.4 | 0.35 |
 | B3 as shipped (S-8), first run | L11 | all three failed | 2 of 3 | 0 | 0 | 1 | 5.4 | 0.35 |
 
-The first run's one correct flag in benchmark mode came from a model's advice record attributed through the run's rule map, in a run that failed integrity; the re-run made no such record. Evidence containment (the marked evidence sentence, exact containment, not the official Evidence Hit Rate): 1 of 1 in benchmark mode on the first run and on the earlier-code run below (the advice record that flagged it), 0 of 1 in every other row.
+The first run's one correct flag in benchmark mode came from a model's advice record attributed through the run's rule map, in a run that failed integrity; neither re-run made such a record. Evidence containment (the marked evidence sentence, exact containment, not the official Evidence Hit Rate): 1 of 1 in benchmark mode on the first run and on the earlier-code run below (the advice record that flagged it), 0 of 1 in every other row.
 
 Earlier code, two other documents (`077164cc8a97`, `c7f1d5f10f35`; gold 1 contradictory): B3 (L6, both semantically incomplete, never re-run) benchmark mode 2 of 2, 1 flagged and correct, 0.22 USD per correct finding, 5.2 minutes a document; as shipped (S-8, and the as-shipped primary) 1 of 2 with 1 answered, nothing flagged. B1 tuned (L4a) 1 of 2, nothing flagged; B1 base 0 of 2 (1 ABSTAIN), nothing flagged; 0.7 minutes a document each.
 
-**What these figures do not show.** One gold contradiction in three documents; one document more or less changes every figure. `06cd776dcc1a` failed integrity on both runs (L11 and L12) and is in the table as failed; its second re-run is L12b (below).
+**What these figures do not show.** One gold contradiction in three documents; one document more or less changes every figure. `06cd776dcc1a` failed integrity in L11 and L12 and passed in L12b, on newer code than the other two documents' runs; its label is the same in all three runs.
 
 ## CUAD (development, exposed)
 
@@ -97,12 +98,13 @@ One development contract, `527255a5c970` (band B, 2,664 words), 41 categories: g
 
 | Arm | Run | Integrity | Macro-F1 | Flagged absent | Correct | Gold absent | Answered | Min per document | Set USD |
 |---|---|---|---|---|---|---|---|---|---|
-| B3 benchmark mode | L12 re-run | failed (semantically incomplete) | 0.146 | 0 | 0 | 34 | 41 | 114.3 | 2.46 |
-| B3 as shipped (S-8) | L12 re-run | failed | 0.146 | 0 | 0 | 34 | 41 | 114.3 | 2.46 |
+| B3 benchmark mode | L12b (code `d6ce19a`) | failed (semantically incomplete, required contract failure: VERIFIER's list ran to 4,096 tokens, open item 48) | 0.146 | 0 | 0 | 34 | 41 | 109.2 | 2.35 |
+| B3 as shipped (S-8) | L12b | failed | 0.146 | 0 | 0 | 34 | 41 | 109.2 | 2.35 |
+| B3, L12 | L12 re-run | failed (semantically incomplete) | 0.146 | 0 | 0 | 34 | 41 | 114.3 | 2.46 |
 | B1 tuned | L10 | passed | 0.593 | 27 | 24 | 34 | 40 | 9.7 | 0.21 |
 | B3, first run | L10 | failed (semantically incomplete) | 0.146 | 0 | 0 | 34 | 41 | 98.9 | 2.13 |
 
-**What these figures do not show.** One contract. B3 failed integrity on both runs and is used as failed; its second re-run is L12b. B3 recorded no absence on this contract in either run (in L10 all 410 answers on uncomputable plans were refused, D-105). In a 41-rule bundle Python's own blank-field records are set aside in the primary analysis, so CUAD's absent class is reached only through a model-written absence record and S-8 cannot flag on it.
+**What these figures do not show.** One contract. B3 failed integrity on all three runs (L10, L12, L12b) and is used as failed. B3 recorded no absence on this contract in any run (in L10 all 410 answers on uncomputable plans were refused, D-105). In a 41-rule bundle Python's own blank-field records are set aside in the primary analysis, so CUAD's absent class is reached only through a model-written absence record and S-8 cannot flag on it.
 
 ## FinDVer (development, exposed)
 
@@ -118,30 +120,36 @@ The suite's generators, seeds and answer keys are in this repository, so it is e
 
 | Arm | Runs | Integrity | Precision | Recall | F1 | Planted flaws located, reason confirmed | Twin items flagged | Records on unplanted units | Min per bundle | Set USD | USD per correct finding |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| B3 benchmark mode | L12 re-run for 19, L8 for `f3_s3102_bsqv` | 9 of 20 passed; 11 failed (semantically incomplete) | 42 of 47 (0.894) | 42 of 48 (0.875) | 0.884 | 114 of 134 (0.851) | 5 | 51 | 10.9 | 4.67 | 0.111 (0.041 per confirmed flaw) |
-| B3 as shipped (S-8) | same | same | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | 114 of 134 (0.851) | 0 | 0 | 10.9 | 4.67 | 0.117 |
+| B3 benchmark mode | L12b (code `d6ce19a`) for the 11 L12 left failed, L12 re-run for 8, L8 for `f3_s3102_bsqv` | 18 of 20 passed; 2 failed (below) | 42 of 48 (0.875) | 42 of 48 (0.875) | 0.875 | 114 of 134 (0.851) | 6 | 45 | 10.6 | 4.57 | 0.109 (0.040 per confirmed flaw) |
+| B3 as shipped (S-8) | same | same | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | 114 of 134 (0.851) | 0 | 0 | 10.6 | 4.57 | 0.114 |
 | B1 tuned | L8 | 20 of 20 passed | 35 of 66 (0.530) | 35 of 48 (0.729) | 0.614 | 5 of 134 located by a quote; reason not computed | 31 | 11 | 2.5 | 1.09 | 0.031 |
+| B3 benchmark mode, L12 | L12 re-run for 19, L8 for `f3_s3102_bsqv` | 9 of 20 passed; 11 failed (semantically incomplete) | 42 of 47 (0.894) | 42 of 48 (0.875) | 0.884 | 114 of 134 (0.851) | 5 | 51 | 10.9 | 4.67 | 0.111 |
+| B3 as shipped (S-8), L12 | same | same | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | 114 of 134 (0.851) | 0 | 0 | 10.9 | 4.67 | 0.117 |
 | B3 benchmark mode, first run | L8 | 1 of 20 passed; 10 bundles left out (VERIFIER out of GPU memory, a setup failure) | 17 of 19 (0.895) | 17 of 30 (0.567) | 0.694 | 45 of 79 | 2 | 5 | 7.3 | 3.15 | 0.186 |
 
-Every planted flaw B3 located was located by a Python-written record (114 by Python, 0 by a model), so its location recall is the same in both modes. The repository scorer counts 0 false-positive amendments and 0 distractor hits on every B3 run, tests and twins. As-shipped primary (today's reading, before S-8) is precision 42 of 45 and recall 42 of 48 on this set.
+Every planted flaw B3 located was located by a Python-written record (114 by Python, 0 by a model), so its location recall is the same in both modes. The repository scorer counts 0 false-positive amendments and 0 distractor hits on every B3 run, tests and twins. As-shipped primary (today's reading, before S-8) is precision 42 of 46 and recall 42 of 48 on this set (42 of 45 on the L12 set). The L12b runs changed no planted flaw found: the located and reason-confirmed counts are those of L12; benchmark mode gained one flagged twin item.
 
-The 11 bundles that failed integrity on the re-run: `f1_s1101_cvjx`, `f1_s1101_vxnf`, `f1_s1102_mstx`, `f2_s2101_sxwc`, `f2_s2102_pbnd`, `f3_s3102_vwmj`, `f5_s5101_bmpd`, `f5_s5101_hndk`, `f5_s5102_fpcw`, `f5_s5102_hcvm`, `f6_s6101_sgkh`. They are in the table as failed; their second re-run is L12b.
+The 11 bundles that failed integrity on L12 were re-run in L12b; 9 passed and 2 still fail, each in the table as failed with its cause (D-138): `f1_s1101_cvjx` (a twin; two PRACTICE_AUDITOR replies ran to their 768-token allowance after the envelope constraint required an explanation, open item 47) and `f3_s3102_vwmj` (a test; VERIFIER's one-item-per-reference list ran to its 4,096-token allowance, open item 48).
 
 **Family 4, multi-round (B3 only).** Four tests and their twins, 8 bundles, run as declared multi-round cases (L12 re-run of L7's entries; all 8 passed integrity; 0.56 workload minutes a bundle). Scored by `tools/score_corpus.py` on each round's findings (the synthetic adapter does not score this key form): 118 of 124 planted entries located, 112 of 124 with the reason confirmed (0.903), 0 false positives, 0 distractor hits. Every round finding is Python's, so both modes give the same figure. No B1 arm exists for these cases.
 
 **Correct refusal rate: not measured.** The suite's refusal entries (`expected_refusals`, the rename probes) are scored on the ordinary two-version review of the family 4 bundles, which are the probe launches L9a and L9b, scheduled after v1; the runs scored here carry no refusal entry.
 
-**What these figures do not show.** The keys are in the repository and the generators were written by the same project, so the suite measures regressions, not recall on unseen material. Eleven of the twenty B3 runs used are semantically incomplete; counting only semantically complete documents (S-6), B3 locates 34 of 134 planted flaws. B1 flags 31 items on the clean twins, which no figure above weighs against its recall. The B3 first-run figures leave out ten bundles that failed setup.
+**What these figures do not show.** The keys are in the repository and the generators were written by the same project, so the suite measures regressions, not recall on unseen material. Two of the twenty B3 runs used are semantically incomplete; counting only semantically complete documents (S-6), B3 locates 103 of 134 planted flaws (34 of 134 on the L12 set, where eleven were incomplete). Nine of the latest runs are on newer code (L12b) than the other eleven. B1 flags 31 items on the clean twins, which no figure above weighs against its recall. The B3 first-run figures leave out ten bundles that failed setup.
 
-## L12b: second re-run of 13 entries (placeholder)
+## L12b: second re-run of 13 entries
 
-> **LEAD TO FILL.** L12b re-runs the 13 entries that still failed integrity after L12: ContraDoc `06cd776dcc1a`, CUAD `527255a5c970`, and the 11 suite bundles listed above. When it has been read, give each entry's latest integrity status here, and replace the B3 rows of the ContraDoc, CUAD and synthetic suite tables with figures from L12b where an entry passed (scripts and method as for L12, report below). Until then the tables above use the L12 runs, failed as stated.
+L12b re-ran the 13 entries that still failed integrity after L12, in two sessions on two instances at once, sealed at `d6ce19a` (VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST), so newer code than L12. 10 of 13 passed (D-138). Of the 37 B3 entries that first failed integrity in L7, L8, L10 and L11, 24 passed in L12, 10 more in L12b and 3 still fail.
 
 | Entry | L12 | L12b |
 |---|---|---|
-| ContraDoc `06cd776dcc1a` | failed: semantically incomplete, required contract failure | (lead) |
-| CUAD `527255a5c970` | failed: same | (lead) |
-| 11 suite bundles | failed: same | (lead) |
+| ContraDoc `06cd776dcc1a` | failed: semantically incomplete, required contract failure | passed |
+| CUAD `527255a5c970` | failed: same | failed: VERIFIER's list ran to 4,096 tokens (open item 48) |
+| Suite `f1_s1101_vxnf`, `f1_s1102_mstx`, `f2_s2101_sxwc`, `f2_s2102_pbnd`, `f5_s5101_bmpd`, `f5_s5101_hndk`, `f5_s5102_fpcw`, `f5_s5102_hcvm`, `f6_s6101_sgkh` | failed: same | passed |
+| Suite `f1_s1101_cvjx` | failed: same | failed: two PRACTICE_AUDITOR replies ran to 768 tokens under the envelope constraint (open item 47) |
+| Suite `f3_s3102_vwmj` | failed: same | failed: VERIFIER's list ran to 4,096 tokens (open item 48) |
+
+The three that still fail are recorded with their causes and are not fixed before v1 (D-S18 item 2a); each needs a decision measured on development runs.
 
 ## Left out, and why
 
@@ -167,7 +175,8 @@ The 11 bundles that failed integrity on the re-run: `f1_s1101_cvjx`, `f1_s1101_v
 | L10 | 2026-10-30 04:08 to 06:13 UTC | `55f1dd1` | 125 | 2.69 | CUAD B1 tuned, CUAD B3 first run |
 | L8 | 2026-10-30 07:41 to 12:12 UTC | `55f1dd1` | 271 | 5.83 | suite B1 tuned, suite B3 first runs, `f3_s3102_bsqv` |
 | L12 | 2026-10-30 16:26 to 2026-10-31 02:36 UTC | `2b585af` | 610 | 13.12 | B3 re-runs of 37 entries after the D-S14 fixes (contract-shaped decoding for the producer, D-116) |
+| L12b a, L12b b | 2026-10-31, two sessions on two instances at once | `d6ce19a` | 178 and 114 | 3.83 and 2.45 | B3 second re-runs of 13 entries (VERIFIER 4,096, the envelope constraint; D-138) |
 
 - **Code.** The labels and scores were computed on 31 October 2026 with the adapters' `label --scoring benchmark|as_shipped` and `score` commands and `tools/score_corpus.py` at `6fa01b9` (loop/s05), on the saved run outputs, into a scratch folder. Re-labelled as shipped, the saved label sets of L11 and L10 are reproduced exactly apart from the mode name, and those of L4a, L4b and L6 exactly apart from the mode name and the setup-failure fields the adapters added later (D-084); no label or score changed. Items and scoring bundles are the builds each launch was staged from (`external/s05/L11/build`, `external/s05/L10/build`, the S5 development build). Nothing here is from an S8 run.
-- **Models.** The producer is the tuned 7B checkpoint 168 under sdpa attention, prefilled in one shot (D-063), constrained to its contract on L12 (D-116); the auditors run on their own local checkpoints. B1 tuned and base load the same 7B model with and without the producer's adapter.
+- **Models.** The producer is the tuned 7B checkpoint 168 under sdpa attention, prefilled in one shot (D-063), constrained to its contract on L12 and L12b (D-116), with the auditors' envelopes constrained on L12b (D-132); the auditors run on their own local checkpoints. B1 tuned and base load the same 7B model with and without the producer's adapter.
 - **Cost.** Instance cost only; no model API cost was incurred (every model ran on the instance). The per-finding figures leave out the session overhead and the storage share (4.00 USD a month for the asset filesystem).

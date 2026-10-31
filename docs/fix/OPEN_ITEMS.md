@@ -566,3 +566,17 @@ open-item sweep.
 - **Why it was left.** A property of the input format and the pairing map, for every corpus, not of one adapter (P16).
 - **What would settle it.** In S6a: a decision whether a label word inside a rule's prose is a pairing declaration (today it is read as one), with a gate check, measured on the corpora before and after.
 
+
+## 47. The envelope constraint can force a PRACTICE_AUDITOR explanation that never ends within 768 tokens (found at loop S5, L12b and R2a) (issue #102)
+
+- **What it is.** When PRACTICE_AUDITOR on the local auditor would close an item without its required `explanation`, the envelope constraint (DECODING-B, check 297) keeps the item open; in three replies the explanation it then writes runs to the 768-token allowance (`PAIRED_JUDGING_MAX_TOKENS`), so the envelope never closes and the call is a contract violation.
+- **Evidence.** L12b entry `f1_s1101_cvjx` (two calls, first intervention at steps 168 and 169, 16 and 14 interventions, both to 768); R2a prompt `p0030` (15 interventions, to 768). D-132, D-138.
+- **Why it was left.** A fix (a larger PRACTICE_AUDITOR allowance, or a bound on the forced explanation) changes what every review asks of that agent and must be measured on development runs; D-S18 item 2a records it and lets v1 go on.
+- **What would settle it.** A replay of these prompts with a larger allowance or a bounded explanation, under a rule written before the measurement, then a decision with its D-number.
+
+## 48. VERIFIER's one-item-per-reference list can run past 4,096 tokens (found at loop S5, R2c and L12b) (issue #103)
+
+- **What it is.** VERIFIER sometimes writes one item for each reference in the draft and does not stop; at 4,096 new tokens (D-134) most replies now end, but some still reach the allowance and the envelope never closes.
+- **Evidence.** R2c: 4 of 8 capped prompts still at 4,096. L12b: `cuad_527255a5c970` (one intervention) and `f3_s3102_vwmj` (none) at 4,096; three other entries expected to stay capped ended on their own. D-134, D-138.
+- **Why it was left.** A larger allowance is unmeasured and the lists look unbounded; a structural bound (no more items than distinct references) needs a decision measured on development runs (P16).
+- **What would settle it.** A bound on VERIFIER's item count tied to its input (or a measured larger allowance), proven by a replay of these prompts, then a decision.
