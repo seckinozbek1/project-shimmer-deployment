@@ -511,6 +511,8 @@ open-item sweep.
 
 - **Update (2026-10-30, D-121).** The re-run moved to L12 (D-112); the item closes when L12's timings are read. Issue #43 stays open until then.
 
+- **Closed at loop S5 (2026-10-31, D-128).** L12 re-ran both multi-round cases and the seven family 4 bundles after D-101: all reviewed, and each records its own step times (`timings` in `audit/multi_round.json`: each round reviewed in a few milliseconds, for example 0.011, 0.004 and 0.006 seconds for the three rounds of the synthetic family 4 case).
+
 ## 40. The cost per verified finding on the benchmarks is not recorded (found at loop S5, item 9; S5 checker round 3)
 
 - **What it is.** Item 9 asks for the cost per verified finding. S5 has it for the exposed tests (L1 and L5v) but not for the benchmarks (cost per correct FLAG item).
