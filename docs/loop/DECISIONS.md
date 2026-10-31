@@ -1211,3 +1211,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Kept (16)** with their reasons, among them L9a, L9b and L13 (after v1), the full gate and the audit (in progress), the S6 sweep, the check-number collisions at the S6 and S7 merges, PATCH_1 and PATCH_2 after v1.
 - **To Seckin (2).** INFRA-045 in PATCH_1 (asked at 17:15); the double-click checks of the launchers only a person can do (asked at 21:25 on 30 October).
 - **Rules.** D-S12 item 3, D-S13 items 7, 9 and 11, D-S14 items 5 and 6, D-S18 items 3, 5 and 7.
+
+## D-141. A 1 GB floor for single model-free checks; the intervened-replies review and L12's negotiation scores read
+
+- **When, stage.** 2026-10-31 20:07 +0300 (system clock), S5 close.
+- **Floor.** Free memory has been 0.7 to 1.4 GB since about 19:00 +0300 (the operator's own programs); D-135's 2 GB floor for model-free checks stalled four lanes. Lane s05-c279 ran model-free checks at 1.0 to 1.4 GB with no failure. So single model-free checks run at 1 GB free, one lane at a time (order: s05-k8revert, s05-ledgerfix, s06-launchers, v1-readme); anything that loads a model keeps 4 GB, and the full gate waits for it (waiter running, FOR_SECKIN 19:40). Supersedes D-135 on that point.
+- **Intervened replies (item 8, the review D-139 promised).** Seeds recorded before reading, fresh reviewers. L12b envelope constraint, all 9 accepted intervened replies: 2 correct, 3 partly, 4 wrong; producer constraint, 6 of 28: 5 correct, 1 partly; L12 producer, 15 of 53: 15 correct. PRACTICE_AUDITOR's forced explanations were wrong or partly wrong in 7 of 8 and all 3 on uncomputable plans were kept as model-written records: open item 51, decided after v1 on a measurement; the S5 report says it plainly.
+- **L12's negotiation re-runs scored against L7 (D-S14 item 6).** Every scored figure reproduced (r2 to r3: prior records 6 of 6, bands 3 of 3; r3 to r4: 12 of 13 by the scorer, 13 of 13 on the record, bands 2 of 2; Python false band records 0), both now complete; the false Python `missing_field` amendment remains (open item 49), kept model records 1 and 3, all wrong (open item 34). Report section "The negotiation comparisons re-run in L12".
+- **Rules.** D-013, D-135, S5 item 8, D-S14 item 6.

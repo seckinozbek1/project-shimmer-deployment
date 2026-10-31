@@ -596,3 +596,10 @@ open-item sweep.
 - **Evidence.** Lane s05-c279's report: check 279's stand-in tokenizer could not build the token table, which is how the path was found; on the fixture the call now records `decoding_constraint` with 0 interventions.
 - **Why it was left.** The grammar follows the same contract the validator checks, so it admits only replies that contract accepts; whether the decision-support call should be constrained is a scope decision without a measurement (P9 reason b).
 - **What would settle it.** A replay of saved strategic VERIFIER prompts on sdpa and sdpa_constrained under a rule written before the measurement, or a decision to exempt that call, with a gate check.
+
+## 51. Under the envelope constraint PRACTICE_AUDITOR's forced explanation is mostly wrong (found at loop S5 close, the seeded review of intervened replies) (issue #106)
+
+- **What it is.** When PRACTICE_AUDITOR would close an item without its required `explanation`, the envelope constraint (D-129) keeps it open and the model writes one; the reply then passes its validator. Read against the unit, those forced explanations are mostly wrong.
+- **Evidence.** The S5 close review of intervened replies (L12b, seed recorded before reading): of 8 accepted PRACTICE_AUDITOR replies with interventions, 1 correct, 3 partly correct, 4 wrong; all 3 on uncomputable plans were wrong and kept as model-written records under D-068. The S5 report, "Intervened replies".
+- **Why it was left.** Whether to keep PRACTICE_AUDITOR under the constraint (more complete runs, more wrong advice) or take it out (contract failures return) is a product decision that needs a measurement on development runs (P9 reason b); v1 reports it as it is.
+- **What would settle it.** A development measurement of benchmark-mode precision with and without PRACTICE_AUDITOR's envelope constraint, under a rule written before it, then a decision with its D-number.

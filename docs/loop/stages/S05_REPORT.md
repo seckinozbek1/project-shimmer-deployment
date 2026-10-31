@@ -335,6 +335,68 @@ Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are re
 
 Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
 
+### Intervened replies (item 8): does the field the constraint forced say something true about the unit?
+
+Selection: reply records of the B3 entries with `decoding_constraint.interventions > 0` whose call the validator accepted (`contract_valid` true on the call's `model_call` telemetry row, joined by call id). Seed: int(SHA-256 hex of "<run folder name>:intervened-review", 16) mod 2^63, a suffix distinct from the main review's so the two draws are independent; L12b over both sessions with the first-launched session's folder, as above. Strata fixed before the draw: only the envelope constraint forces explanation, confidence or the envelope's closing, so every accepted envelope-constrained reply is taken (9 in L12b, all under 15) and the rest of the 15 is drawn from the producer-constrained ones with the same generator. L12 was sealed before the envelope constraint, so its intervened replies are all PROCESSOR (compact producer constraint). A correction made before any text was read, recorded in `tools\intervened_draw.py`: draw 1 selected by an outcome in `outcomes.jsonl` starting "accepted", which left out the 8 PRACTICE_AUDITOR replies whose outcome is `advisory_not_record` although the validator accepted them; it was replaced by the validator's own flag (draw 1 kept as `draw1_superseded_*.json`). Intervened replies the validator refused (L12b: PRACTICE_AUDITOR 2, VERIFIER 1) are outside the selection. Judged by a fresh general-purpose subagent per launch, who located the forced field from the contract and `first_intervention_step` of `steps` (no token boundaries were available, so identification is approximate and its confidence is stated per record).
+
+| Launch | Seed | Population (accepted, intervened) | Sample | Correct | Partly correct | Wrong | Empty | Unverifiable |
+|---|---|---|---|---|---|---|---|---|
+| L12b, envelope constraint (PRACTICE_AUDITOR 8, ARCHIVIST 1) | 5848831284326092619 | 9 | 9 (all) | 2 | 3 | 4 | 0 | 0 |
+| L12b, producer constraint (PROCESSOR) | 5848831284326092619 | 28 | 6 | 5 | 1 | 0 | 0 | 0 |
+| L12b, all | 5848831284326092619 | 37 | 15 | 7 | 4 | 4 | 0 | 0 |
+| L12, producer constraint (PROCESSOR) | 4540407318236091576 | 53 | 15 | 15 | 0 | 0 | 0 | 0 |
+
+What the forced fields were (counts only): all 8 PRACTICE_AUDITOR interventions are the same event, the model closing the item after `ref_ids` and the constraint forcing the required `explanation`. The forced explanation was never empty: 1 correct, 3 partly correct, 4 wrong. On the 3 uncomputable plans (all 3 wrong, and all 3 kept under D-068 as model-written records) it claimed a violation that the unit's figures do not support. On the 5 computed plans (Python's figures shown): 1 correct, 3 partly correct (the real mismatch named, but the arithmetic or the labels wrong), 1 wrong (the two figures reversed). So for this agent the constraint turns a reply that would have failed its contract into an accepted one that is wrong or partly wrong in 7 of 8 samples. ARCHIVIST's one forced field was its leading confidence key, judged warranted. The producer interventions are structural (the canonical first key `claims`, an alias, the second item, a grounded ref, a status value), and every forced producer field was true of its span in 20 of 21 samples (the other partly). In L12, 6 of the 15 producer replies were still wrong as a whole, through free strings the model wrote itself (repeated templated questions and gaps), which the constraint does not govern.
+
+Review files: `...\s5close_meas\L12b_INTERVENED_REVIEW.md` and `...\s5close_meas\L12_INTERVENED_REVIEW.md`; samples `L12b_intervened_sample.json` and `L12_intervened_sample.json`; dumps `rev_intervened_L12b\` and `rev_intervened_L12\` (reply and payload text, never to be committed).
+
+- Samples with seeds: `...\s5close_meas\L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
+
+Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are replays of prompts already in L7, L8, L10, L11 and L12, measured for byte identity and contract validity in D-116, D-132 and D-134), so they are not reviewed as model text. L7, L10 and L11 were reviewed earlier (S5 report).
+
+Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
+
+### The negotiation comparisons re-run in L12, scored against L7 (D-S14 item 6)
+
+Scored with `tools/score_corpus.py --corpus <name> --run <entry>\downloaded\evidence\run`, as `an_l7_report.md` did (`docs\loop\private\analysis\an_l7_report.md`, line 10). The scorer is byte-identical to the one L7's analysis used (SHA-256 `116aa93c...6063`, the s05-lead worktree at `791c4b4`). Since L12's commit `2b585af` the only changes under `scripts/` are the decoding constraint, its checks and 25 lines of `pipeline.py`, none of them read by the scorer. Each run exited 0. I also re-scored L7's two entries from their `downloaded\` folders with the same command, and their output matches `an_l7_report.md`'s figures line for line. Outputs: `...\s5close_meas\score\L7_negotiation_r2_to_r3.txt`, `L7_negotiation_r3_to_r4.txt`, `L12_negotiation_r2_to_r3.txt`, `L12_negotiation_r3_to_r4.txt`. The other figures come from `FINAL_STATUS.json` (`uncomputable_judging`), `audit\pairing_map.json`, `audit\run_completion.json`, `deliverables\*\review_data.json` (`model_findings_not_promoted`, `amendments`, `_validator_errors`), the band and `missing_field` records on `logs\agent_bus.jsonl` by backend, and `analysis\model_telemetry_summary.json`. Entries: L7 `03_negotiation_r2_to_r3_B3` and `04_negotiation_r3_to_r4_B3` under `X\L7\bundles\f4_s4103_vqjj_B3\batch\`; L12 `08_negotiation_r2_to_r3_B3` and `09_negotiation_r3_to_r4_B3` under `X\L12\bundles\contradoc_01015e47de8a_B3\batch\`.
+
+| Measure | r2 to r3, L7 | r2 to r3, L12 | r3 to r4, L7 | r3 to r4, L12 |
+|---|---|---|---|---|
+| Run completion | stopped, semantically incomplete (failed integrity) | completed (passed) | stopped, semantically incomplete (failed) | completed (passed) |
+| Prior records exact (label, relation, figures), scorer | 6 of 6 | 6 of 6 | 12 of 13 (13 of 13 on the record; the hyphenated label) | 12 of 13 (the same) |
+| Attribution (operator rule cited), refs per record | 6 of 6, 2 | 6 of 6, 2 | 12 of 12 found, 2 | 12 of 12 found, 2 |
+| False positives, scorer | 0 | 0 | 1 (`one-time 401 contribution` absent_since_prior, the label spelling) | 1 (the same) |
+| Stray refusals | 0 | 0 | 0 | 0 |
+| Bands found / attributed | 3 of 3 / 3 of 3 | 3 of 3 / 3 of 3 | 2 of 2 / 2 of 2 | 2 of 2 / 2 of 2 |
+| Band false positives, scorer | 1 | 1 | 2 | 2 |
+| of which Python band records | 0 | 0 | 0 | 0 |
+| Python false band records (bus, backend `paired`, model `python`: only the expected band records) | 0 | 0 | 0 | 0 |
+| False Python amendment | 1 (`missing_field` on the summary table, CONV-N01) | 1 (the same) | 0 | 0 |
+| D-068 calls / judged uncomputable / kept / refused / reply failed | 4 / 4 / 1 / 2 / 0 | 4 / 4 / 1 / 2 / 0 | 5 / 5 / 2 / 2 / 0 | 5 / 5 / 3 / 1 / 0 |
+| Kept D-068 records | u04 CONV-N07 below_band (wrong) | u04 CONV-N07 below_band (wrong, the same) | u02 CONV-N03 below_band, u04 CONV-N07 below_band (both wrong) | u02 CONV-N03 sum_mismatch, u03 CONV-N06 below_band, u04 CONV-N07 below_band (all wrong) |
+| Model-only relations, scorer | below_band 1, sum_mismatch 1 | below_band 1, sum_mismatch 1 | below_band 2, sum_mismatch 2 | below_band 2, sum_mismatch 2 |
+| Amendments (all at document level) / validator errors | 4 / 8 | 4 / 8 | 2 / 4 | 2 / 4 |
+| Judging calls / pairs | 7 / 8 | 7 / 8 | 7 / 7 | 7 / 7 |
+| Pipeline wall (s) | 346.3 | 392.4 | 476.0 | 561.3 |
+
+Where the "kept" judgments come from. All 4 kept-record judgments for L7 are `an_l7_report.md`'s. The three L12 r3 to r4 kept records were checked here against the rules (`X\L12\workload\negotiation_r3_to_r4\conventions\`) and the offer under review (`context\company_a_union_b_offer_2024_10_31.md`):
+- CONV-N03 (ratification bonus): the bonus is $12,000, inside $10,000 to $15,000, and the record calls it a sum_mismatch.
+- CONV-N06 (pension multiplier): $105 per month per year of service, on the band's lower bound, which the rule's "inside $105 to $150" includes; the record calls it below_band.
+- CONV-N07 (GPP minimum annual payout): 4%, inside 4% to 6%; the record calls it below_band.
+
+In both L12 entries the scorer's band false positives are exactly the kept model-written below_band records: 1 in r2 to r3, 2 in r3 to r4. The bus confirms this. Python's band records are only the expected ones (r2 to r3: CONV-N01 35, CONV-N02 12, CONV-N03 7,000; r3 to r4: CONV-N01 38, CONV-N02 13). Every other below_band record was posted by a model (local_auditor or local_producer).
+
+Reading (development, one run each). The re-run reproduces L7's scored figures exactly, and now completes:
+- prior records 6 of 6 and 13 of 13 on the record;
+- bands 3 of 3 and 2 of 2, every one attributed;
+- 0 Python false band records;
+- the same false Python `missing_field` amendment on the summary table.
+
+The difference is in what the model contributed. In r3 to r4 one more uncomputable answer was kept: 3 kept, against L7's 2, and all wrong. The set changed: CONV-N03's answer is now a sum_mismatch, and CONV-N06 is new. In both runs every kept record is an in-band figure called out of band (open item 34's pattern). Completion is the only measured improvement: both entries are semantically complete under the D-S14 producer constraint (L7 had refused PROCESSOR partitions). It changed none of the scored figures. The run takes longer: 46.1 s more (13 percent) on r2 to r3 and 85.3 s more (18 percent) on r3 to r4, consistent with the partitions that now complete. Every amendment still sits at document level with no REF id (open item 31).
+
+
+Reading for PRACTICE_AUDITOR (open item 51): in 7 of the 8 replies where the envelope constraint forced the required explanation, the explanation was wrong or partly wrong, and 3 of them were kept as model-written records under D-068. For this agent the constraint mostly turns a reply that would have failed its contract into an accepted reply that is wrong. Every such record is marked as written by a model and never promoted, but in benchmark mode it counts as advice. Whether PRACTICE_AUDITOR stays under the envelope constraint is decided after v1, on a measurement.
+
 ### Development scores after the reopening (development, exposed; D-S13 item 9; the full page is `docs/RESULTS.md` on the v1 branch)
 
 Benchmark mode counts every model judgement shown as advice as a finding; as shipped is S-8, Python's findings only. The scoring rule was chosen after development scores had been seen (D-113). Latest run per document (L12 or L12b), B1 tuned from L10 and L11.
