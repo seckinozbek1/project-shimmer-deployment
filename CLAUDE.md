@@ -828,8 +828,8 @@ processing swarm governed by an append-only constitution.
   interventions on the DEV rows; adopted. The replay path changed `tools/ordinary_final_run.py`
   (`REPLAY_PATHS`), so bundles sealed before it refuse with `Controller source changed`.
   Check 295 and the decoding gate (strict determinism on CUDA) hold this.
-  The same processor carries the ENVELOPE of three agents (D-S14, s5_diag_b3 K9 to K11):
-  VERIFIER and PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer
+  The same processor carries the ENVELOPE of four agents (D-S14, s5_diag_b3 K9 to K11; K8):
+  VERIFIER and PRACTICE_AUDITOR on local_auditor and ARCHIVIST and EDITOR_CLERK on local_producer
   (`config/envelope_decoding.json`, `contract_decoding.EnvelopeGrammar`, built per call by
   `for_envelope` from the agent's own contract in `config/agent_contracts.json`; a wrapper bound
   to a compact contract gets none). Admitted: an optional opening fence, the envelope
@@ -842,7 +842,14 @@ processing swarm governed by an append-only constitution.
   empty; JSON whitespace in runs of at most 16; the stop token only after the envelope's closing
   brace, after which anything may follow. `leading_keys` is the order every saved valid item
   writes: VERIFIER every required key in the validator's order, PRACTICE_AUDITOR every one but
-  `explanation` (2 valid L12 replies write it last), ARCHIVIST its confidence key first. NOT
+  `explanation` (2 valid L12 replies write it last), ARCHIVIST its confidence key first,
+  EDITOR_CLERK its confidence key first. EDITOR_CLERK was declared at the S5 close in place of
+  the removed K8 kind stamp (ENVELOPE-B): measured on all 61 of its saved replies in L7, L8,
+  L10, L11, L12 and L12b with the Qwen tokenizer, the 49 valid ones (26 items, `kind` second or
+  last) are inside the language with 0 interventions, and all 12 without `kind` (4 refused, 8
+  accepted only by the stamp, which the tool counts as `stamped` from the run's
+  `contract_normalized`, never as valid) leave it where the item closed; which key the model
+  writes in its place is not known until a replay on the model is read. NOT
   constrained, measured: enumerated values (36 of 74 valid VERIFIER items write a `finding` and
   123 of 1,838 valid PRACTICE_AUDITOR items a `verdict` the contract does not declare, which the
   validator accepts) and `doc_id`. Measured on every saved reply of the three agents in L7, L8,
@@ -859,6 +866,7 @@ processing swarm governed by an append-only constitution.
   VERIFIER prompts, 4 end on their own at 2,342 to 3,590 tokens and pass the unchanged
   validator, 4 still reach 4,096, with no out-of-memory failure and the same 21.89 GB peak. Not
   covered: the other local_producer agents and the other local_auditor agents (no measurement).
+  EDITOR_CLERK's constraint has no replay on the model yet (fixtures and saved replies only).
   The decoding checks' probe agent is CITATION_RESOLVER, so its kwargs test carries no
   constraint. The cloud replay (`replay_prompts.py extract --agents ...`, one model a
   file, then `run` on sdpa and sdpa_constrained, judged by the agent's own validator) was read
@@ -924,21 +932,23 @@ processing swarm governed by an append-only constitution.
   alone; the same base under sampling never did in 145 items; the flip is one argmax at the
   key's first token, so the parser holds whether the origin is the adapter or value priming.
   Never widen the alias list from a hunch: an alias is a measured model habit, declared.
-- ENVELOPE-B (D-S14, K8): for an agent whose contract declares exactly one item kind, Python
-  stamps `kind` on an item that has NO `kind` key, ONLY when that contract declares
-  `single_kind_stamp` (today EDITOR_CLERK, `editorial_observation`; it must equal the first
-  word of `item_kind`, else it is ignored), read by `agent_wrapper.single_kind_stamp`. Each
-  stamp is recorded as `contract_normalized` (`items[i].kind<-editorial_observation`) on the
-  result, the bus post, the observation row and the telemetry call record, exactly as an
-  alias is. A `kind` the model wrote is never overwritten: under the declaration one that is
-  not the declared kind is refused (`items[i].kind (not the declared ...)`; before this the
-  validator checked only that `kind` was present), an empty or null one is refused as
-  missing, and no other field is ever defaulted. Measured, not preferred: in L7, L8, L10 and
-  L11 EDITOR_CLERK left `kind` out of 4 of its 20 calls with every other field present, each
-  failing its contract on that key alone (`required_contract_failure` in L11 02, 04, 08 and
-  L8 30); the 6 items that wrote it wrote `editorial_observation`. Replayed through the
-  parser, all 20 saved calls hold their contract, and the 4 refused before refuse again with a
-  wrong kind written in. Declare it for another agent only from a measurement. Check 264.
+- ENVELOPE-B (D-S14, K8) is REMOVED (S5 close). It let a contract declare `single_kind_stamp`
+  so Python wrote EDITOR_CLERK's `kind` where the model wrote none (and refused a written kind
+  other than the declared one). It breached H9: editing `config/agent_contracts.json` is a
+  product change allowed only where a stage specification calls for it, and none did; and it
+  supplied a value the model did not write, after failures were seen (D-S14 item 3). The key,
+  `agent_wrapper.single_kind_stamp` and `stamp_single_kind` are gone: the contract file is byte
+  for byte its content before the K8 commit (a448af1) and the validator is as before K8 (a
+  missing or empty `kind` is refused for every agent; a written kind is checked for presence
+  only, the wrong-kind refusal going with the key it was read from). Check 264 proves that
+  state, each proof neutralised by putting K8 back. The cause is fixed in decoding instead:
+  EDITOR_CLERK is a declared envelope agent (DECODING-B, check 297), so an item cannot close
+  before `kind` is written. What depended on the stamp, from the saved evidence: 8 B3 entries
+  had one EDITOR_CLERK item stamped, and the 5 of them that passed integrity (L12
+  `27_f3_s3101_htmn`, `34_f6_s6101_pfqp`; L12b `02_f1_s1102_mstx`, `04_f5_s5102_hcvm`,
+  `05_f5_s5101_bmpd`) passed only through it, since a refused EDITOR_CLERK call is a
+  `required_contract_failure`; the other 3 (L12 `30_f5_s5101_bmpd`, `32_f5_s5102_hcvm`, L12b
+  `01_f1_s1101_cvjx`) failed for other reasons as well.
 - VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
   (`_record_example_required`) with the contract's DECLARED values where it enumerates them
   (FACT_CHECKER's verdict CONFIRMED, VERIFIER's finding MATCH; `_declared_values`, never a

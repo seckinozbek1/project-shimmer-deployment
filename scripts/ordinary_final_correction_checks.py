@@ -151,6 +151,19 @@ def concatenating_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
 
 # Captured before any patch so a neutralised stand-in cannot call itself.
 _ORIGINAL_AMENDMENT_FROM_FINDING = paired_review.amendment_from_finding
+_ORIGINAL_CONTRACT_MISSING = AgentWrapper._contract_missing
+_ORIGINAL_NORMALIZE_CORE_ALIASES = agent_wrapper.normalize_core_aliases
+
+
+def kind_stamping_aliases(obj, aliases=None):
+    """The alias pass with the removed K8 stamp put back: `kind` supplied on every item that
+    has none, recorded as K8 recorded it."""
+    applied = _ORIGINAL_NORMALIZE_CORE_ALIASES(obj, aliases)
+    for i, item in enumerate(obj.get("items") or [] if isinstance(obj, dict) else []):
+        if isinstance(item, dict) and "kind" not in item:
+            item["kind"] = "editorial_observation"
+            applied.append("items[%d].kind<-editorial_observation" % i)
+    return applied
 
 
 def no_grounding(text, spans, entries):
@@ -414,47 +427,45 @@ class CorrectionChecks(unittest.TestCase):
             self.assertEqual(rows[-1]["contract_normalized"], ["items[0].confident->confidence"])
             self.assertIs(rows[-1]["contract_valid"], True)
 
-    # ---- D-S14 K8 (ENVELOPE-B): the declared single kind ------------------------------
+    # ---- S5 close: the K8 kind stamp removed (H9); a missing kind is refused -----------
 
-    def test_alias_single_kind_is_stamped_only_where_declared_and_absent(self):
-        declared = {name: c["single_kind_stamp"] for name, c in contracts().items() if "single_kind_stamp" in c}
-        self.assertEqual(declared, {"EDITOR_CLERK": "editorial_observation"})
+    def test_alias_missing_kind_is_refused_and_nothing_stamps(self):
+        """The K8 stamp (ENVELOPE-B, a448af1) supplied `kind` where the model wrote none; it was
+        removed at the S5 close (H9: a contract edit no stage called for). No contract declares a
+        stamp, the wrapper carries no stamping code, and a missing kind is refused for every agent
+        exactly as before K8, the declared alias still read and recorded. The cause is fixed in
+        decoding instead (EDITOR_CLERK's envelope constraint, check 297)."""
+        self.assertEqual([name for name, c in contracts().items() if "single_kind_stamp" in c], [])
+        self.assertNotIn("single_kind_stamp", (ROOT / "config/agent_contracts.json").read_text(encoding="utf-8"))
+        for name in ("single_kind_stamp", "stamp_single_kind"):
+            self.assertFalse(hasattr(agent_wrapper, name), name)
         # The L11 and L8 shape: every field but kind, confidence under its declared alias.
         shape = {"confident": "CONFIDENT", "ref": "REF-0010", "ref_ids": ["REF-0010"], "rationale": "Fixture.",
                  "verdict": "concern"}
-        w = bare_wrapper("EDITOR_CLERK")
-        parsed, missing = w.parse_contract_output(json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d", "items": [shape]}))
-        self.assertEqual(missing, [])
-        self.assertEqual(w.last_contract_normalizations,
-                         ["items[0].confident->confidence", "items[0].kind<-editorial_observation"])
-        item = parsed["items"][0]
-        self.assertEqual((item["kind"], item["confidence"], item["verdict"], item["rationale"], item["ref"]),
-                         ("editorial_observation", "CONFIDENT", "concern", "Fixture.", "REF-0010"))
-        self.assertEqual(item["item_id"], "EDITOR_CLERK:editorial_observation:REF-0010:0")
-        # A kind the model wrote is never overwritten: the declared one passes unstamped, any other is refused.
-        for kind, expected in (("editorial_observation", []), ("finding", ["items[0].kind (not the declared editorial_observation)"]),
-                               ("Editorial_Observation", ["items[0].kind (not the declared editorial_observation)"]),
-                               ("", ["items[0].kind"]), (None, ["items[0].kind"])):
+        for agent, backend in (("EDITOR_CLERK", "local_producer"), ("EDITOR_HEAD_OF_UNIT", "local_producer"),
+                               ("VERIFIER", "local_auditor")):
+            w = bare_wrapper(agent, backend=backend)
+            parsed, missing = w.parse_contract_output(json.dumps({"agent": agent, "doc_id": "d", "items": [shape]}))
+            self.assertIn("items[0].kind", missing, agent)
+            self.assertNotIn("kind", parsed["items"][0], agent)
+            self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], agent)
+        # The validator as before K8: a written kind is required to be present and non-empty.
+        for kind, expected in (("editorial_observation", []), ("", ["items[0].kind"]), (None, ["items[0].kind"])):
             w = bare_wrapper("EDITOR_CLERK")
             parsed, missing = w.parse_contract_output(json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d",
                                                                   "items": [dict(shape, kind=kind)]}))
             self.assertEqual(missing, expected, kind)
             self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], kind)
-        # No other field is defaulted: a missing required field still fails, kind stamped or not.
+        # No field is defaulted: every missing required key is named.
         w = bare_wrapper("EDITOR_CLERK")
         _, missing = w.parse_contract_output(json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d", "items": [
             {k: v for k, v in shape.items() if k not in ("verdict", "confident")}]}))
-        self.assertEqual(missing, ["items[0].confidence", "items[0].verdict"])
-        # An agent with no declaration is unchanged: a missing kind is refused as before.
-        for agent in ("EDITOR_HEAD_OF_UNIT", "VERIFIER"):
-            w = bare_wrapper(agent, backend="local_auditor")
-            _, missing = w.parse_contract_output(json.dumps({"agent": agent, "doc_id": "d", "items": [shape]}))
-            self.assertIn("items[0].kind", missing, agent)
-            self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], agent)
-        # A declaration that is not the contract's own declared kind is not honoured.
-        self.assertIsNone(agent_wrapper.single_kind_stamp(dict(contracts()["EDITOR_CLERK"], single_kind_stamp="finding")))
+        self.assertEqual(missing, ["items[0].kind", "items[0].confidence", "items[0].verdict"])
 
-    def test_alias_single_kind_stamp_travels_with_result_bus_observation_and_telemetry(self):
+    def test_alias_missing_kind_is_a_contract_failure_on_result_bus_observation_and_telemetry(self):
+        """run_task on the saved shape without `kind`: the call fails its contract, the reason is
+        the missing kind, and the result, the bus post, the observation row and the telemetry call
+        record carry no stamp and contract_valid false."""
         from constitution import Constitution
         from message_bus import MessageBus
         from run_context import for_run_dir
@@ -469,18 +480,19 @@ class CorrectionChecks(unittest.TestCase):
                  "verdict": "serious_concern"}]})
             w.dispatch = lambda *a, **k: CallResult("local_producer", "fixture", raw, usage={"truncated": False})
             result = w.run_task(work_payload={"task": "fixture", "document_id": "d"})
-            stamp = ["items[0].kind<-editorial_observation"]
-            self.assertTrue(result["ok"])
-            self.assertEqual(result["contract_normalized"], stamp)
-            self.assertEqual(result["parsed"]["items"][0]["kind"], "editorial_observation")
-            posted = [m for m in bus.read_all() if m["body"].get("event") == "AGENT_OUTPUT"][-1]
-            self.assertEqual(posted["body"]["contract_normalized"], stamp)
-            self.assertEqual(posted["body"]["payload"]["items"][0]["kind"], "editorial_observation")
+            self.assertFalse(result["ok"])
+            self.assertEqual((result["error"], result["contract_missing"], result["contract_normalized"]),
+                             ("contract_violation", ["items[0].kind"], []))
+            self.assertNotIn("kind", result["parsed"]["items"][0])
+            posted = [m for m in bus.read_all() if m["body"].get("event") == "CONTRACT_VIOLATION"][-1]
+            self.assertEqual((posted["body"]["missing_fields"], posted["body"]["contract_normalized"]),
+                             (["items[0].kind"], []))
+            self.assertEqual([m for m in bus.read_all() if m["body"].get("event") == "AGENT_OUTPUT"], [])
             rows = [json.loads(l) for l in (ctx.logs_dir() / "generation_observation.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
-            self.assertEqual((rows[-1]["contract_normalized"], rows[-1]["contract_valid"]), (stamp, True))
+            self.assertEqual((rows[-1]["contract_normalized"], rows[-1]["contract_valid"]), ([], False))
             telemetry = [json.loads(l) for l in (ctx.logs_dir() / "model_telemetry.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
             calls = [r for r in telemetry if r.get("event") == "model_call" and r.get("agent") == "EDITOR_CLERK"]
-            self.assertEqual((calls[-1]["contract_normalized"], calls[-1]["contract_valid"]), (stamp, True))
+            self.assertEqual((calls[-1]["contract_normalized"], calls[-1]["contract_valid"]), ([], False))
 
     # ---- A4: the typed-record example and the no-draft VERIFIER call ------------------
 
@@ -1320,8 +1332,8 @@ def check_grounding():
 
 def check_alias():
     return _verdict(("test_alias_",), "declared alias read as the canonical key, recorded on result, bus and observation; "
-                                      "a declared single kind stamped only where absent, recorded on result, bus, "
-                                      "observation and telemetry, a wrong kind refused (D-S14 K8, ENVELOPE-B)")
+                                      "a missing kind refused for every agent, no stamp declared or applied, recorded "
+                                      "on result, bus, observation and telemetry (the K8 stamp removed at the S5 close, H9)")
 
 
 def check_verifier():
@@ -1387,11 +1399,12 @@ NEUTRALIZATIONS = [
     ("test_prompt_dispatch_sends_system_and_user_turns", AgentWrapper, "dispatch", concatenating_dispatch),
     ("test_alias_v5_outputs_parse_and_the_mapping_is_recorded", agent_wrapper, "core_field_aliases", lambda: {}),
     ("test_alias_application_travels_with_result_bus_and_observation", agent_wrapper, "core_field_aliases", lambda: {}),
-    # D-S14 K8: a contract read as declaring no single kind, which is the behaviour before ENVELOPE-B.
-    ("test_alias_single_kind_is_stamped_only_where_declared_and_absent", agent_wrapper, "single_kind_stamp",
-     lambda contract: None),
-    ("test_alias_single_kind_stamp_travels_with_result_bus_observation_and_telemetry", agent_wrapper,
-     "single_kind_stamp", lambda contract: None),
+    # S5 close (the K8 stamp removed, H9): each mutant brings back what K8 did, a validator
+    # that lets a missing kind through and an alias pass that stamps one.
+    ("test_alias_missing_kind_is_refused_and_nothing_stamps", AgentWrapper, "_contract_missing",
+     lambda self, obj: [m for m in _ORIGINAL_CONTRACT_MISSING(self, obj) if not m.endswith("].kind")]),
+    ("test_alias_missing_kind_is_a_contract_failure_on_result_bus_observation_and_telemetry", agent_wrapper,
+     "normalize_core_aliases", lambda obj, aliases=None: kind_stamping_aliases(obj, aliases)),
     ("test_verifier_record_example_carries_required_fields", AgentWrapper, "_record_example_required", lambda self, required: {}),
     ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
     # Neutralise the selector by restoring the pre-correction behaviour: every
