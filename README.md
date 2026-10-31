@@ -6,7 +6,9 @@ supporting reference material, and proposes cited amendments for a person to
 accept or reject. It never edits a source document. Every step leaves a record
 that a reader can inspect.
 
-**Status: v1, a prototype.** Every result in this repository is a development
+**Status: v1, a prototype.** "v1" names this documented state of the repository;
+its code version is the one in [VERSION](VERSION) (`0.1.0.dev4` at this commit).
+Every result in this repository is a development
 result on exposed material (material the project saw while it was being built).
 None of it is a held-out or sealed result, and none of it shows how well Shimmer
 works on documents it has not seen. A sealed evaluation is planned after v1. This
@@ -108,12 +110,18 @@ If the two ever differ, the results page is the current one.
   model: the main reading model given one fixed prompt per item, with no
   pipeline. "B1 tuned" carries the producer's tuned adapter.
 - **Benchmark mode** counts a model judgement that the pipeline shows as advice
-  as a finding. **As shipped** counts only Python's findings. This scoring rule
-  was chosen after development scores had been seen.
+  as a finding. **As shipped (S-8)** counts only Python's findings: it is the
+  adapters' sensitivity analysis S-8, which scores a run as if every
+  model-written record were absent. This scoring rule was chosen after
+  development scores had been seen.
+- **Every benchmark here is a pilot:** each has fewer than 30 documents and fewer
+  than 100 scored decisions.
+- **Purpose of these runs:** development measurement and run health, on exposed
+  material, with no seal and no manifest.
 - Precision, recall and F1 are those of the benchmark's flag class (for example
   "contradiction" or "refutes"). "n/a" means nothing was flagged.
 
-| Benchmark | Sample | B3 benchmark mode: P, R, F1 | B3 as shipped: P, R, F1 | B1 tuned: P, R, F1 | Minutes per document, B3 and B1 |
+| Benchmark | Sample | B3 benchmark mode: P, R, F1 | B3 as shipped (S-8): P, R, F1 | B1 tuned: P, R, F1 | Minutes per document, B3 and B1 |
 |---|---|---|---|---|---|
 | ContractNLI | 2 agreements, 34 items | 0 of 5, 0 of 2, 0.000 | n/a, 0 of 2, n/a | 0 of 3, 0 of 2, 0.000 | 63.5 and 5.4 |
 | SciTab | 3 tables, 14 claims | 4 of 7, 4 of 7, 0.571 | n/a, 0 of 7, n/a | 3 of 3, 3 of 7, 0.600 | 4.4 and 1.8 |
@@ -131,21 +139,35 @@ What these figures do not show:
   results page names each one.
 - **The synthetic suite is exposed by construction.** Its generators, seeds and
   answer keys are in this repository. It measures regressions, not recall on
-  unseen material. B1 also flagged 31 items on the suite's clean twins.
+  unseen material. On the suite's clean twins, B1 flagged 31 items and B3 in
+  benchmark mode flagged 5; B3 in benchmark mode also wrote 51 records on units
+  with no planted flaw.
+- **The suite's generators were written by the same model family that builds
+  Shimmer**, so the tests and the pipeline may share blind spots.
 - **Public benchmark documents may have been seen by the models in training.**
 - **Every B3 flag on the external benchmarks came from a model-written record.**
-  Counting only Python's findings (as shipped), B3 flagged nothing on them.
+  Counting only Python's findings (as shipped, S-8), B3 flagged nothing on them.
+  A review of model-written texts from one launch (ContractNLI, L11) found 9 of 15
+  sampled texts wrong and 5 partly correct.
+- **Not every field a sealed result report needs is here.** The fields the
+  project's testing rules require of a result report (commit, test version and
+  manifest hash, roles, scorer version, models and decoding, machine, cost,
+  recall, attribution, false positives in every deliverable, clean-twin result,
+  catch layer, directives, withheld agents, model-text review) are filled for
+  the sealed evaluation, after v1. The results page gives those that apply to
+  development runs.
 
 **Which code was measured.** The runs were built from commits `8b48f78`,
 `344522f`, `18eee21`, `d50b299`, `55f1dd1` and `2b585af`; labels and scores were
 computed at `6fa01b9`. The v1 code has changes after `2b585af` that these runs did
 not have, among them a decoding constraint on the output of VERIFIER,
-PRACTICE_AUDITOR and ARCHIVIST, and a larger VERIFIER output allowance. No figure was measured again on the v1 code. There is no
-release-candidate commit.
+PRACTICE_AUDITOR and ARCHIVIST, and a larger VERIFIER output allowance (4096
+tokens). At this commit no figure on the results page was measured on code with
+those changes; a second re-run of the failed entries on it (L12b) is in progress
+and its figures go to the results page. There is no release-candidate commit.
 
 **History.** The reports under `docs/fix/` from September 2026 describe runs on
-tests whose keys the project had read. They are history,
-with their dates and caveats, and are not evidence of what Shimmer can do now.
+tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
 
 ## Limitations
 
@@ -165,12 +187,13 @@ with their dates and caveats, and are not evidence of what Shimmer can do now.
   measured run used open-weight models on a rented GPU.
 - The FACT_CHECKER agent is switched off for every run from this repository
   (`config/review_scope.json`), because on an earlier test every item it returned
-  in three runs was wrong. It stays registered, so the checks between model families are
-  unchanged.
+  in three runs was wrong. It stays registered, so the checks between model
+  families are unchanged.
 
 ## Hardware and cost
 
-These are measured figures, not estimates.
+These are measured figures, not estimates, except the laptop line, which is the
+operator's recorded observation.
 
 - **Rented GPU.** Every measured run used one NVIDIA A10 (24 GB) instance in
   us-east-1 at 1.29 USD an hour, read from the provider at each launch.
@@ -187,22 +210,49 @@ These are measured figures, not estimates.
   ContractNLI agreements and 4.67 USD for the 20 suite bundles. Each launch also
   spent about 15 minutes on setup, and each entry about 2 minutes. The loop's
   spending record is [docs/loop/BUDGET.md](docs/loop/BUDGET.md).
-- **Laptop.** On the development laptop (an 8 GB GPU), a single local run took one
-  to three hours and made the machine page memory at 15 GB of RAM. Full runs
-  therefore go to a rented GPU.
+- **Laptop.** The project's standing rule (in [CLAUDE.md](CLAUDE.md)) records that
+  on the development laptop (an 8 GB GPU) a single local run cost one to three
+  hours and the machine paged memory at 15 GB of RAM. No run artifact backs those
+  two figures. Full runs therefore go to a rented GPU.
 
 ## Install
 
 Shimmer needs Python 3.12 (3.12.x; the sealed cloud profile pins 3.12.3, see
 [tools/cloud_run/runtime.json](tools/cloud_run/runtime.json)) and the packages in
 [requirements.txt](requirements.txt). The local backend also needs the configured
-Qwen, Phi and bge-m3 model files, already in the model cache, and a CUDA runtime.
-The desktop starter installs and downloads nothing. The menu launchers install
-packages but not the review models; their readiness check fetches the redactor's
-Qwen weights only when `SHIMMER_QWEN_PULL=1` is set. A clean install from a fresh clone has not yet been proven at this
-commit.
+Qwen and Phi model files in the model cache, and a CUDA runtime. The bge-m3
+embedding model is fetched from the network on first use when it is not cached.
+The desktop starter installs nothing. The menu launchers install packages but not
+the review models; their readiness check fetches the redactor's Qwen weights only
+when `SHIMMER_QWEN_PULL=1` is set. A clean install from a fresh clone has not yet
+been proven at this commit.
 
-**Windows, desktop console.** From the checkout:
+**Manual install (Windows).** These are the steps `shimmer.bat` runs, from the
+repository root:
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt --quiet
+# only on a machine with an NVIDIA GPU, when torch reports no CUDA:
+.venv\Scripts\python.exe -m pip install torch==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+```
+
+On Linux or macOS, use `python3.12 -m venv .venv` and `.venv/bin/python` in the
+same commands.
+
+**Windows, menu launcher.** `shimmer.bat` creates `.venv`, checks that its Python
+matches the runtime contract, runs `pip install -r requirements.txt`, installs the
+CUDA build of torch when `nvidia-smi` finds a GPU and torch has no CUDA, asks for
+the backend, runs the readiness check and shows a menu (review, chat, server,
+gate, import). `SHIMMER_SKIP_INSTALL=1` skips the install and the torch step.
+This describes the launcher from the S7 merge on; before that merge, `shimmer.bat`
+stops right after creating `.venv`, with a path syntax error.
+
+**Linux and macOS shell.** `./shimmer.sh` does the same as `shimmer.bat`, and in
+Git Bash on Windows it uses an existing Windows `.venv` (`.venv/Scripts`). Before
+the S7 merge it recreates the environment at every start in Git Bash.
+
+**Windows, desktop console.** From the checkout, once the packages are installed:
 
 ```powershell
 .\start_shimmer.bat
@@ -212,17 +262,6 @@ It finds a compatible Python (`tools/resolve_python.bat`), checks prerequisites,
 starts the local server and opens the console in the browser. Use **Copy token**
 to connect the browser. Keep the starter window open and use **Stop** to stop the
 server; closing the browser leaves the server running.
-
-**Windows, menu launcher.** `shimmer.bat` creates a `.venv`, installs the
-requirements, installs a CUDA build of torch when it finds an NVIDIA GPU, asks for the
-backend, runs the readiness check and shows a menu (review, chat, server, gate,
-import). At this commit it stops before its menu with a path syntax error: a
-quoting fault in the line that finds the environment's Python. The fix arrives
-when the launcher work (S7) is merged.
-
-**Linux and macOS shell.** `./shimmer.sh` does the same as `shimmer.bat`. In Git
-Bash on Windows it looks for `.venv/bin` and so recreates the environment at every
-start; the same merge fixes that.
 
 **Container.** The [Dockerfile](Dockerfile) builds an image with an external model
 cache, or with the weights baked in (`--build-arg BAKE_WEIGHTS=true`).
@@ -236,9 +275,12 @@ file. Never put a key in the repository.
 
 ## Quickstart
 
-1. Put the documents and their supporting material in `input/context/`, and the
-   operator's rules in `input/conventions/` (`review_conventions.md` and
-   `review_mandate.md`). `docs/INPUT_FORMAT.md` describes both.
+1. Create `input/context/` and `input/conventions/` (a fresh clone has no
+   `input/` folder). Put the documents and their supporting material in
+   `input/context/`, and the operator's rules in `input/conventions/`
+   (`review_conventions.md` and `review_mandate.md`). `docs/INPUT_FORMAT.md`
+   describes both. The menu launcher's import option ([5]) can place files and
+   set the cutoff for you.
 2. Start the console with `start_shimmer.bat`, choose Local or Cloud, paste the
    token and submit a review from the console. The
    [operator runbook](docs/RUNBOOK.md) walks through each screen.
@@ -248,10 +290,12 @@ file. Never put a key in the repository.
 py -3.12 scripts/pipeline.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override --backend-profile local
 ```
 
-The two override flags are required for every hand-typed run. Without the first,
-the run exits with code 6 because the privacy layer ships switched off. Without
-the second, it stops at the redaction gate when no operator redaction rule
-compiles. Each override is written to the governance ledger.
+Without `--sensitivity-layer-inactive-override` every run exits with code 6,
+because the privacy layer ships switched off. `--no-redaction-override` declares
+the run redact-nothing: it switches redaction off for that run. Without it, a run
+exits with code 4 when the local Qwen redaction model is not reachable, or when no
+operator redaction rule compiles (the case for every corpus shipped in this
+repository). Each override is written to the governance ledger.
 
 4. Read the results in `output/runs/<run id>/deliverables/`: one folder per
    document, plus `_run_summary.md`. `docs/OUTPUT_FORMAT.md` describes the run
@@ -285,10 +329,10 @@ Two matter most in practice:
 - **LAW-IV, protect what is private.** It cannot be overridden, not even by the
   operator.
 
-Changes go only through the amendment process: a new amendment carries the next
-number, needs the operator's approval and is checked by
-`scripts/constitution_guard.py`, which refuses any edit or deletion of an existing
-entry.
+Changes go only through the amendment process. A new amendment must carry the
+next number and be marked operator-approved. `scripts/constitution_guard.py`
+stops any edit or deletion of an existing amendment or seed law; it goes ahead
+only with the operator's explicit approval. An agent can never approve one.
 
 Shimmer registers 18 agents, each with one job (for example PROCESSOR extracts,
 VERIFIER checks the draft against the source, PRACTICE_AUDITOR checks the
@@ -316,7 +360,9 @@ checked by a search that the redacted text is gone.
 The server checks one shared access token: it stores only the token's SHA-256
 hash (`SHIMMER_TOKEN_HASH`) and compares each request with it. There are no user
 accounts and no per-caller records, so Shimmer is a single-operator system today.
-Only `/health` and `/console` answer without the token.
+Only `/health` and `/console` answer without the token. This holds from the S7
+merge on; before it, FastAPI's own `/docs`, `/redoc` and `/openapi.json` pages also
+answer without the token.
 
 ## Testing rules
 
@@ -354,7 +400,10 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
   options and the multi-round form.
 - **External benchmarks.** The adapters in `benchmark/adapters/` build test
   bundles from a benchmark file, label a run's output and score the labels
-  (`build`, `label --scoring benchmark|as_shipped`, `score`). The bare-model arm
+  (`build`, `label --scoring benchmark|as_shipped`, `score`). `label` also writes
+  the sensitivity analyses, S-8 among them; the "as shipped (S-8)" figures above
+  are S-8, not `--scoring as_shipped`, which gives today's reading and can differ
+  (on the suite, precision 42 of 45 against S-8's 40 of 40). The bare-model arm
   is `benchmark/baselines/bare_model.py`. No benchmark data is committed;
   `docs/benchmarks/SELECTION.md` names each source, version and licence.
 - **Runs.** Full runs go to a rented GPU through the sealed controller

@@ -1,6 +1,8 @@
 # Productization state at this HEAD
 
-> Note (2026-10-31): "README section F" and "README section L" below refer to the README of
+> Note (2026-10-31): this whole document describes the repository as it was on 2026-09-11.
+> It is history, not the current state, and "this HEAD" below means that day's commit.
+> "README section F" and "README section L" below refer to the README of
 > 2026-09-11. Its lettered sections, as they stood on 2026-09-13 (commit `1314475`), are kept in
 > [docs/history/README_PRE_ROUTING_AUDIT.md](history/README_PRE_ROUTING_AUDIT.md).
 > The current README has no lettered sections.
