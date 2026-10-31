@@ -194,6 +194,141 @@ The operator's decision D-S12 (Annex D, revised at 00:20 on 30 October) reopened
 - **Cost per correct FLAG item** (open item 40, development; D-096 extended with L11): ContractNLI B3 2.57 USD (2 correct), B1 tuned 0.51 (1); SciTab B3 0.061 (7), B1 tuned 0.061 (4); ContraDoc B3 none (0 correct), B1 tuned 0.09 (1); CUAD B3 none, B1 tuned 0.0087 (24). Under S-8, B3 has no correct FLAG item on any benchmark.
 - **Minutes per scored decision with the brought-back documents**: ContractNLI 3.67 (band A 2.31, B 4.57), SciTab 2.22, ContraDoc 10.11, CUAD 2.75. These are development measurements after version 2's freeze; they change no size (D-093, D-095).
 
+### Measurements after D-S12 (item 9)
+
+All A10 in us-east-1 at 1.29 USD an hour; every asset copy MATCH (`asset_copy_receipt.json` state MATCH, `used: true`, `seeded: false`, all eleven sessions).
+
+**Per launch.** For a replay (R1, R2a, R2b, R2c) there is no B3 pipeline: the GPU figure is the replay's own torch peak allocated memory (GiB, `replay_measurement.json`), not `vram_used_bytes`, and is marked so; the records are replay records, not B3 reply records.
+
+| Launch | Billed min | Workload min (all entries) | Billed minus workload | USD | Peak GPU memory, B3 (GB) | Peak process memory, B3 (GB) | B3 reply records |
+|---|---|---|---|---|---|---|---|
+| L11 | 191 | 154.0 (B3 135.0, B1 19.0) | 37.0 | 4.11 | 18.1 (ContractNLI `01c9504b9c28`) | 7.8 | 526 |
+| L7 | 64 | 28.7 (the nine multi-round entries 0.5 each) | 35.3 | 1.38 | 12.0 (catalogue) | 5.9 | 88 (the nine multi-round entries wrote none) |
+| L10 | 125 | 108.6 (B3 98.9, B1 9.7) | 16.4 | 2.69 | 14.2 | 4.1 | 433 |
+| L8 | 271 | 197.4 (B3 146.7, B1 50.7) | 73.6 | 5.83 | 23.7 (entry 34, ended out of GPU memory) | 7.8 | 795 |
+| R1 | 96 | 83.0 (replay, 136 prompts, two paths) | 13.0 | 2.06 | not applicable, B1 replay: 7.88 GiB allocated on both paths | not applicable (no B3) | none (272 replay records) |
+| L12 | 610 | 498.8 | 111.2 | 13.12 | 18.2 (CUAD) | 8.5 | 2,045 |
+| R2a | 125 | 110.3 (replay, 82 prompts, two paths) | 14.7 | 2.69 | not applicable, B1 replay: 20.38 GiB allocated on both paths | not applicable | none (164 replay records) |
+| R2b | 28 | 12.7 (replay, 14 prompts, two paths) | 15.3 | 0.60 | not applicable, B1 replay: 9.89 GiB allocated on both paths | not applicable | none (28 replay records) |
+| R2c | 70 | 55.2 (replay, 8 prompts, constrained path only) | 14.8 | 1.51 | not applicable, B1 replay: 20.38 GiB allocated | not applicable | none (8 replay records) |
+| L12b-a | 178 | 155.9 | 22.1 | 3.83 | 17.8 (CUAD) | 7.9 | 679 |
+| L12b-b | 114 | 90.6 | 23.4 | 2.45 | 16.2 (suite entry `f2_s2101_sxwc`) | 8.8 | 401 |
+| L12b (both) | 292 | 246.6 | 45.4 | 6.28 | 17.8 | 8.8 | 1,080 |
+USD from the ledger, unrounded: L11 4.1065, L7 1.376, L10 2.6875, L8 5.8265, R1 2.064, L12 13.115, R2a 2.6875, R2b 0.602, R2c 1.505, L12b-a 3.827, L12b-b 2.451. These eleven sum to 40.248 USD.
+
+**Controller phases per launch** (minutes, same groups as the existing table; the sum also holds `ssh_ready_*` and `watchdog_receipt_transfer*`, shown in brackets, which the existing table does not show apart; a replay is one bundle, so it has no per-entry checks).
+
+| Launch | Support transfer | Asset copy probe and use | Setup | Workload | Per-entry checks | Stop and collection | Sum of phases | Billed minus sum |
+|---|---|---|---|---|---|---|---|---|
+| L11 | 0.5 | 3.1 | 2.7 | 154.0 | 22.1 | 0.7 | 183.9 (SSH and watchdog 0.9) | 7.1 |
+| L7 | 0.6 | 5.1 | 2.7 | 28.7 | 18.0 | 0.7 | 56.2 (0.7) | 7.8 |
+| L10 | 0.5 | 3.7 | 2.7 | 108.6 | 1.7 | 0.7 | 118.0 (0.1) | 7.1 |
+| L8 | 0.9 | 3.3 | 2.7 | 197.4 | 57.8 | 0.7 | 264.7 (2.1) | 6.3 |
+| R1 | 0.6 | 2.7 | 2.7 | 83.0 | none (one bundle) | 0.7 | 89.7 (0.1) | 6.4 |
+| L12 | 0.7 | 7.0 | 2.9 | 498.8 | 91.2 | 0.7 | 603.4 (2.2) | 6.6 |
+| R2a | 0.7 | 3.7 | 2.7 | 110.3 | none (one bundle) | 0.7 | 118.1 (0.1) | 6.9 |
+| R2b | 0.6 | 3.3 | 2.7 | 12.7 | none (one bundle) | 0.7 | 19.9 (0.1) | 8.1 |
+| R2c | 0.6 | 4.7 | 2.7 | 55.2 | none (one bundle) | 0.7 | 63.8 (0.1) | 6.2 |
+| L12b-a | 0.8 | 3.5 | 2.7 | 155.9 | 7.4 | 0.7 | 171.3 (0.3) | 6.7 |
+| L12b-b | 0.5 | 4.1 | 2.7 | 90.6 | 9.1 | 0.7 | 108.0 (0.4) | 6.0 |
+
+Unrounded values are in `measure.json` (`phases_min`); the L10 row equals `an_l10_report.md`'s table (117.95, billed minus sum 7.05).
+
+**Pipeline phases in B3** (minutes, summed over the launch's B3 entries that recorded `phase_latencies`). From L7 on, the telemetry also records the spans before phase 3 (open item 38, check 294); they are given in the last column so the existing columns stay as they are. Replays: not applicable (no pipeline).
+
+| Launch | B3 entries | 3-4 content production | 5 audit | 5.5 convention review | 6 synthesis | 6.5 editorial review | Before 3 (start, ingestion and roles, boot and index, phase 1) |
+|---|---|---|---|---|---|---|---|
+| L11 | 8 | 23.2 | 6.1 | 97.1 | 0.1 | 2.5 | not recorded: sealed at `d50b299`, before the four spans were added |
+| L7 | 3 of 12 (the nine multi-round entries record no phase latencies; their step times are in `audit/multi_round.json`, D-101) | 9.6 | 2.4 | 8.0 | 0.0 | 1.2 | 1.1 |
+| L10 | 1 | 9.3 | 0.8 | 86.8 | 0.0 | 0.3 | 1.2 |
+| L8 | 18 of 20 (entries 00 and 04 stopped at document dating, K1); phases 5.5 to 6.5 in 8 (ten entries ended out of GPU memory in phase 5, K2) | 96.5 | 25.2 | 7.7 | 0.1 | 3.1 | 4.1 |
+| L12 | 28 of 37 (nine multi-round entries as in L7) | 151.1 | 51.4 | 256.2 | 0.4 | 11.2 | 9.5 |
+| L12b-a | 6 | 30.2 | 19.9 | 98.3 | 0.1 | 2.5 | 2.1 |
+| L12b-b | 7 | 47.8 | 16.9 | 17.8 | 0.1 | 3.0 | 1.6 |
+
+Phase 5.5 is the largest line wherever a ContractNLI or CUAD document ran (L11, L10, L12, L12b-a); on the suite (L8, L12b-b) phase 3-4 is.
+
+**Model calls by agent in B3** (Others: ARCHIVIST, INST_FINDER, CITATION_RESOLVER, SPEECH_ACT_TAGGER, LEGAL_ANALYST, VERIFIER, EDITOR_CLERK together). Replays: not applicable (no pipeline; R1 and R2b keep their own `logs\model_telemetry.jsonl` beside the replay).
+
+| Launch | EMBEDDING | PROCESSOR | PRACTICE_AUDITOR | AUDITOR896 | Others | Total |
+|---|---|---|---|---|---|---|
+| L11 | 291 | 26 | 408 | 32 | 60 | 817 |
+| L7 | 130 | 12 | 37 | 15 | 24 | 218 |
+| L10 | 175 | 10 | 410 | 6 | 7 | 608 |
+| L8 | 448 | 235 | 33 | 399 | 128 | 1,243 |
+| L12 | 1,038 | 293 | 962 | 574 | 216 | 3,083 |
+| L12b-a | 298 | 66 | 439 | 129 | 45 | 977 |
+| L12b-b | 219 | 92 | 72 | 182 | 55 | 620 |
+
+Per-agent counts in `measure.json` (`model_calls`).
+
+**B1 seconds per call** (entry workload seconds over calls, model load included, so an upper bound; one tuned pass per entry after D-S12, so one checkpoint, not two). L11: ContractNLI 20.9 and 17.4 (17 items each); SciTab 25.9, 45.7, 15.9 (4, 2, 8 items); ContraDoc 55.8, 55.9, 55.7 (one item each, load dominates). L10: CUAD 14.2 (41 items). L8 (development suite, per family, summed over its four B1 entries): family 1 37.4 (20 items), family 2 30.6 (28), family 3 40.9 (16), family 5 21.3 (20), family 6 29.6 (12). Replays, per replayed prompt and path (load included): R1 18.3 (272), R2a 40.4 (164), R2b 27.2 (28), R2c 414 (8 VERIFIER prompts at a 4,096 allowance). B1 peak allocated, tuned: L11 7.67 to 9.03 GiB, L10 9.73, L8 7.99 to 8.64.
+**Disk.**
+
+| Launch | Sealed asset archive (bytes) | Free disk at admission (GB) | Peak disk in use on the instance (GB, of 1,455) | Largest B3 run folder, downloaded (MB) | Collected evidence archives together (MB) |
+|---|---|---|---|---|---|
+| L11 | 13,149,972,480 | 1,410 | not recorded: the runner's and packer's readings (open item 37) came after L11's seal at `d50b299`; no `disk_usage.json` or `disk_after_evidence.json` in any entry | 16.7 (ContractNLI `01c9504b9c28`) | 24.0 |
+| L7 | 13,149,972,480 | 1,410 | 48.33 (after evidence, entry 11; the first reading, D-100) | 2.0 | 15.3 |
+| L10 | 13,149,972,480 | 1,410 | 45.56 | 25.1 | 8.3 |
+| L8 | 13,149,972,480 | 1,410 | 56.22 (after the last entry) | 2.1 | 51.0 |
+| R1 | 13,149,972,480 | 1,410 | 45.25 | not applicable (no B3) | 1.2 |
+| L12 | 13,149,972,480 | 1,410 | 55.50 | 25.8 (CUAD) | 60.2 |
+| R2a | 13,149,972,480 | 1,410 | 45.25 | not applicable | 1.6 |
+| R2b | 13,149,972,480 | 1,410 | 45.24 | not applicable | 1.1 |
+| R2c | 13,149,972,480 | 1,410 | 45.24 | not applicable | 1.2 |
+| L12b-a | 13,149,972,480 | 1,410 | 46.70 | 26.1 (CUAD) | 15.5 |
+| L12b-b | 13,149,972,480 | 1,410 | 46.95 | 2.5 | 11.8 |
+
+Peak disk in use is the larger of the sampled `disk_usage.json` peak (every 15 s, "not a continuous maximum") and `disk_after_evidence.json` (`measure.json`, `disk_peak_GB` and `disk_after_evidence_max_GB`; the two agree to 0.01 GB in every launch that has both). The filesystem is 1,455 GB (`total_bytes`), so the largest session (L8, 40 entries) used 3.9 percent of it.
+
+**Per document, brought-back documents** (S5 item 9 method: minutes = B3 + B1 tuned + 2 minutes per batch entry for each arm; USD at 1.29 an hour, no 1.3 margin, no session overhead; B1 is one tuned pass, not halved). Rows copied from `an_l11_report.md` (lines 99 to 108) and `an_l10_report.md` (section 3), whose sources are `X\L11\...` and `X\L10\...` and `X\labels\<bench>\B3\L11\items.json` for decisions; checked here against `measure.json` (B1 peaks and workloads agree).
+
+| Benchmark | Band | Document | B3 min | B3 peak GPU (GB) | B1 min (tuned only) | B1 peak, tuned (GiB) | Min per document | USD per document | Decisions | USD per decision |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ContractNLI (merged) | A | `0d98d9131a5b` | 31.6 | 12.6 | 5.9 | 8.52 | 41.5 | 0.89 | 17 | 0.052 |
+| ContractNLI (merged) | B | `01c9504b9c28` | 74.5 | 18.1 | 4.9 | 9.03 | 83.4 | 1.79 | 17 | 0.105 |
+| SciTab | A | `09b24267b75a` | 4.1 | 11.1 | 1.7 | 7.84 | 9.8 | 0.21 | 4 | 0.053 |
+| SciTab | A | `0e7ff50baa5f` | 3.1 | 10.7 | 1.5 | 7.67 | 8.6 | 0.19 | 2 | 0.093 |
+| SciTab | A | `26937b278860` | 5.5 | 11.1 | 2.1 | 7.88 | 11.6 | 0.25 | 8 | 0.031 |
+| ContraDoc | A | `01015e47de8a` | 4.9 | 11.7 | 0.9 | 7.96 | 9.8 | 0.21 | 1 | 0.212 |
+| ContraDoc | A | `027002a77443` | 3.9 | 11.6 | 0.9 | 7.83 | 8.9 | 0.19 | 1 | 0.190 |
+| ContraDoc | B | `06cd776dcc1a` | 7.3 | 11.7 | 0.9 | 8.15 | 12.2 | 0.26 | 1 | 0.263 |
+| CUAD | B (D-097) | `527255a5c970` | 98.9 | 14.2 | 9.7 | 9.73 | 112.6 | 2.42 | 41 | 0.059 |
+
+The same documents' B3 re-runs on the D-S14 code (`entries.txt`; B3 workload minutes, peak GPU GB, integrity), for reading beside the rows above, not replacing them: L12 ContractNLI `0d98d9131a5b` 36.3, 12.6, passed; `01c9504b9c28` 90.7, 13.9, passed; SciTab `0e7ff50baa5f` 3.4, 10.7, passed; ContraDoc `01015e47de8a` 7.9, 11.7, passed; `027002a77443` 3.8, 11.6, passed; `06cd776dcc1a` 8.7, 11.9, failed, then L12b-a 5.5, 11.9, passed; CUAD `527255a5c970` L12 114.3, 18.2, failed, L12b-a 109.2, 17.8, failed. On ContractNLI band B the D-S14 code took 90.7 minutes against L11's 74.5 and used less GPU memory (13.9 against 18.1 GB); on CUAD 114.3 and 109.2 against L10's 98.9. SciTab `09b24267b75a` and `26937b278860` passed in L11 and were not re-run.
+
+**Exposed tests and comparisons (B3 workload minutes, `entries.txt`):** catalogue regression 9.1 (L7); negotiation r2 to r3 6.3 (L7), 7.1 (L12); r3 to r4 8.5 (L7), 10.0 (L12); each multi-round case 0.5 (L7) and 0.6 (L12), Python only, no model call. Development suite B3 per bundle on the D-S14 code: L12 19 suite entries 4.9 to 17.1 minutes, mean 11.1; L12b 11 suite entries 6.3 to 19.9.
+
+Not recorded, each with its reason: L11's peak disk in use and its phases before 3 (the code sealed at `d50b299` did not write them); pipeline phase latencies of the multi-round entries in L7 and L12 (a multi-round run has no topology runtime; its own step times are in each entry's `audit/multi_round.json`, read and closed in D-128, not summed here); B3 peak process memory for the replays (no B3 pipeline ran).
+
+### Model-text reviews of L8, L12 and L12b (item 8)
+
+Rule (S5 plan item 8, D-080, D-086): seed = int(SHA-256 hex of "<run folder name>:text-review", 16) mod 2^63; population = every `.json` reply record under `downloaded\evidence\run\audit\model_replies\` of the session's B3 entries, sorted as path strings; sample = `random.Random(seed).sample(population, 15)`. `seed_draw.py` first reproduced L11's recorded draw exactly (526 records, the same 15), then derived each seed and drew each sample, writing `<launch>_text_review_sample.json`, before any record's text was read. Each sample was judged by a fresh general-purpose subagent (one per launch) against the unit's own text in the record's payload (and the staged workload document where needed), joined to the pairing map's judging-call entry by call id; none opened a key, answer, gold, labels or items file.
+
+| Launch | Run folder | Seed | Population | Sample | Correct | Partly correct | Wrong | Empty | Unverifiable |
+|---|---|---|---|---|---|---|---|---|---|
+| L8 | `f1_s1101_vxnf_B3` | 7172554169477582575 | 795 (18 of 20 B3 entries hold records; 00 and 04 stopped at dating before any call) | 15 | 4 | 0 | 9 | 2 | 0 |
+| L12 | `contradoc_01015e47de8a_B3` | 2016037227976882296 | 2,045 (28 of 37 B3 entries; the nine multi-round entries make no model call) | 15 | 4 | 5 | 6 | 0 | 0 |
+| L12b | `contradoc_06cd776dcc1a_B3` (L12b-a), population both sessions | 696316031219208063 | 1,080 (all 13 B3 entries: a 679, b 401) | 15 | 2 | 1 | 12 | 0 | 0 |
+
+Two seed facts, stated before the draws and to be carried with the counts:
+- L12's session folder has the same name as L11's (`contradoc_01015e47de8a_B3`), so the rule gives L12 the same seed as L11 (2016037227976882296). The populations differ (L11 526 records, L12 2,045), so the samples differ; the rule was applied as written, not changed to avoid the repeat.
+- L12b ran as two sessions, so the rule names no single folder. Chosen and recorded in `seed_draw.py`'s docstring before the draw: the population is the union of both sessions' B3 records, and the seed is the rule's value for the first-launched session's folder (L12b-a, `contradoc_06cd776dcc1a_B3`). L12b-b's folder (`f1_s1101_vxnf_B3`) has the same name as L8's, so using it would have repeated L8's seed.
+
+Per agent:
+- L8: AUDITOR896 (final) 10: 1 correct, 9 wrong; PROCESSOR (final) 3: 3 correct; VERIFIER (base) 1: empty (the call ran out of GPU memory, K2); LEGAL_ANALYST (final) 1: empty (a deepen call returned no item). No sampled record was a paired judging call, so no D-068 disposition applies.
+- L12: PRACTICE_AUDITOR (base) 8: 1 correct, 3 partly, 4 wrong (7 of the 8 refused under D-068 as absence claims with no quote: 0, 3, 4; the 8th was a computed plan whose figures Python held, restated correctly); PROCESSOR (final) 3: 3 correct; AUDITOR896 (final) 2: 2 wrong; INST_FINDER (final) 1: partly; LEGAL_ANALYST (final) 1: partly. No sampled record was a kept D-068 record.
+- L12b: PRACTICE_AUDITOR (base) 8: 1 partly (the computed-plan note: right verdict, wrong arithmetic in its sentence), 7 wrong (all on the CUAD contract, all refused under D-068); AUDITOR896 (final) 5: 5 wrong; PROCESSOR (final) 2: 2 correct.
+
+The pattern across the three (counts only): the base PRACTICE_AUDITOR still answers VIOLATION with `missing_field` on units that do not address the rule (ContractNLI hypotheses, CUAD categories), as in L1 to L11; after the D-S14 fixes every such sampled answer was refused under D-068 rather than kept, so in these samples none reached a model-written record (16 sampled PRACTICE_AUDITOR records: 14 refused under D-068, 2 notes on computed plans, 0 kept). New against the earlier reviews: the classifier AUDITOR896 is the largest wrong group (16 of 17 sampled records wrong over the three launches), labelling a faithful empty extraction OMISSION, in most samples with a byte-identical reply (the reviewers' reading: the producer correctly extracts `empty` where a span carries no claim id or stated gap, so MATCH is the faithful relation). The producer's compact extractions were right in all 8 sampled (empty, correctly). Development, one run each; these are reviewer judgments on 15 records a launch.
+
+Review files: private `analysis/L8_MODEL_TEXT_REVIEW.md`, `analysis/L12_MODEL_TEXT_REVIEW.md` and `analysis/L12b_MODEL_TEXT_REVIEW.md` (they describe replies without quoting them).
+- Samples with seeds: `...\s5close_meas\L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
+
+Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are replays of prompts already in L7, L8, L10, L11 and L12, measured for byte identity and contract validity in D-116, D-132 and D-134), so they are not reviewed as model text. L7, L10 and L11 were reviewed earlier (S5 report).
+
+Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
+
 ### D-S14: every development run must complete (D-111 to D-116, D-128)
 
 First runs of L7, L8, L10 and L11: 37 failed B3 entries (D-112 counted 33 with L8 read at 14:20, before it ended; 37 in L12's rerun record) by kind (private s5_diag_b3.md): dating `ValueError` 2 (K1), VERIFIER out of GPU memory 10 (K2), the producer's compact contract 52 of 283 partitions in 15 entries (K3 to K7), EDITOR_CLERK `kind` 4 (K8), rarer agent shapes in 5 (K9 to K11), the runner's model-call rule on nine multi-round runs (K12). Fixed: K1 (four-digit years), K2 (VERIFIER shown no runtime identifiers), K3 to K7 (contract-shaped decoding, validator unchanged, proven by R1), K8 (declared single kind stamped), K12 (D-101). After the fixes, L12 re-ran all 37 that had failed: 24 pass; no out-of-memory, no `ValueError`, no telemetry failure and no producer violation remain. The 13 left fail on PRACTICE_AUDITOR (9), VERIFIER (8) and ARCHIVIST (1) envelopes: 6 of the 13 are predicted cleared by extending the constraint to those agents (D-129, proof R2); the other 7 fail because VERIFIER lists one item per reference until its 2,048-token output allowance ends, which no constraint shortens; an informational pass at 4,096 tokens (R2c) informs the run-setting decision. R2 runs as three launches (no B1-only batch form, D-130); two loop instances at once are merged and proven (D-S17 item 1, D-131).
