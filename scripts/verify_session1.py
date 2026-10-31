@@ -25442,6 +25442,16 @@ def check_309_launcher_banner_names_the_open_routes():
     return check_banner()
 
 
+def check_310_chat_window_command_mode():
+    """Loop D-S13 item 6e: menu option [2], the chat window, driven withdrawn (never shown) in
+    command mode with no model: help, a cutoff written to a temporary scope file, a draft
+    confirmed and a review cancelled, every wizard or pipeline launch recorded and none run. A
+    request whose worker raises frees the window; before, every later message was answered
+    "Still working on the previous request". Skips where the chat file or Tk is absent."""
+    from launcher_checks import check_chat_window
+    return check_chat_window()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25862,6 +25872,8 @@ CHECKS = [
     ("308 the launchers reach their menus with no install", check_308_launchers_reach_their_menus),
     ("309 the launcher banner names exactly the routes open without a token",
      check_309_launcher_banner_names_the_open_routes),
+    ("310 the chat window runs in command mode and a failed request frees it",
+     check_310_chat_window_command_mode),
 ]
 
 

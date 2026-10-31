@@ -347,6 +347,17 @@ def latest_run_dir() -> "Path | None":
     return max(dirs, key=lambda d: d.stat().st_mtime) if dirs else None
 
 
+def results_hint(d: "Path | None") -> str:
+    """Where the run's deliverables are, relative to the project when they sit in it."""
+    if d is None:
+        return ""
+    try:
+        shown = d.relative_to(ROOT).as_posix()
+    except ValueError:
+        shown = d.as_posix()
+    return f" Results in {shown}/deliverables/ (start with _run_summary.md)"
+
+
 def _summarize_bus_line(line: str) -> str:
     try:
         obj = json.loads(line)
@@ -578,7 +589,17 @@ class ChatApp:
         target = (self._run_review if action == "review"
                   else self._run_draft if action == "draft"
                   else self._run_import)
-        threading.Thread(target=target, args=(cmd,), daemon=True).start()
+        threading.Thread(target=self._guarded, args=(target, cmd), daemon=True).start()
+
+    def _guarded(self, target, cmd: dict) -> None:
+        """A worker that raises must not leave the window busy for good: every later
+        message would be answered "Still working on the previous request"."""
+        try:
+            target(cmd)
+        except Exception as e:
+            self.ui(self.post, f"The request stopped with an error ({type(e).__name__}). "
+                               "See the messages above.")
+            self.ui(self._finish_run)
 
     def _stream_subprocess(self, argv: "list[str]", stdin_str: "str | None") -> int:
         try:
@@ -645,9 +666,7 @@ class ChatApp:
         rc = self._stream_subprocess(
             [sys.executable, "-X", "utf8", str(PIPELINE)] + PIPELINE_NONINTERACTIVE + flags, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Review complete." + where)
         else:
             self.ui(self.post, f"Review ended with exit code {rc}. See the messages above.")
@@ -667,9 +686,7 @@ class ChatApp:
         self.ui(self.post, "Drafting a memo, then reviewing it...")
         rc = self._stream_subprocess(argv, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Draft and review complete." + where)
         else:
             self.ui(self.post, f"Draft ended with exit code {rc}. See the messages above.")

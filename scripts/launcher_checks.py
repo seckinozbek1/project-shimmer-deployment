@@ -20,6 +20,12 @@ the run must show it, and the restored text must pass again.
                        start_shimmer.bat --check-entry answers.
   check_banner         the server banner in both launchers names exactly the
                        routes the app answers without a token.
+  check_chat_window    menu option [2], the chat window, withdrawn so it is never
+                       shown, in command mode with no model: help, a cutoff
+                       written to a temporary scope file, a draft confirmed and a
+                       review cancelled, every launch recorded and none run; a
+                       request whose worker raises frees the window instead of
+                       answering "Still working" to everything after it.
 
 A launcher file that is absent (the container image ships none) is skipped with
 that reason. The batch half needs cmd.exe and runs on Windows only; the shell
@@ -41,6 +47,9 @@ BAT = ROOT / "shimmer.bat"
 SH = ROOT / "shimmer.sh"
 START = ROOT / "start_shimmer.bat"
 RESOLVE = ROOT / "tools" / "resolve_python.bat"
+CHAT = ROOT / "scripts" / "chat.py"
+# Every process these checks start runs with no window of its own (D-079's rule).
+NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 PASS_BOUND_SECONDS = 30
 LOOP_PROBE_SECONDS = 8
@@ -118,7 +127,7 @@ def _run(argv, cwd, env, answers, timeout):
         # Output goes to a file, not a pipe: a timed-out launcher's children
         # would otherwise hold the pipe open and the wait would never end.
         proc = subprocess.Popen(argv, cwd=str(cwd), env=env, stdin=stdin,
-                                stdout=sink, stderr=subprocess.STDOUT)
+                                stdout=sink, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
         try:
             proc.wait(timeout=timeout)
             timed_out = False
@@ -134,7 +143,7 @@ def _kill_tree(proc):
     wrapper that starts a second bash, which a plain kill leaves running)."""
     if _windows():
         subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
-                       capture_output=True, timeout=30)
+                       capture_output=True, timeout=30, creationflags=NO_WINDOW)
     else:
         proc.kill()
     try:
@@ -336,7 +345,7 @@ def _bat_labels():
 
 def _start_entry():
     proc = subprocess.run(["cmd.exe", "/d", "/c", str(START), "--check-entry"], cwd=str(ROOT),
-                          capture_output=True, timeout=120)
+                          capture_output=True, timeout=120, creationflags=NO_WINDOW)
     out = proc.stdout.decode("utf-8", errors="replace").strip().splitlines()
     try:
         entry = json.loads(out[-1])
@@ -445,6 +454,124 @@ def _banner():
            banner_paths(text) == open_paths)
 
 
+# --- the chat window (menu option [2]) ----------------------------------------------
+
+_CHAT_GUARD = "threading.Thread(target=self._guarded, args=(target, cmd), daemon=True).start()"
+_CHAT_UNGUARDED = "threading.Thread(target=target, args=(cmd,), daemon=True).start()"
+
+
+def _load_chat(text, tmp):
+    """The chat module from TEXT, its files pointed into TMP. Nothing it would
+    start runs: each launch is recorded, and the first one raises, as a wizard
+    that cannot start or a flags file that cannot be written would."""
+    import importlib.util
+    path = tmp / "chat_under_check.py"
+    _write(path, text)
+    spec = importlib.util.spec_from_file_location("chat_under_check", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.SCOPE_PATH = tmp / "config" / "review_scope.json"
+    module.RUNS_ROOT = tmp / "runs"
+    launches = []
+
+    def recorded(self, argv, stdin_str):
+        launches.append([Path(a).name for a in argv[3:5]])
+        if len(launches) == 1:
+            raise OSError("stand-in: the first launch cannot start")
+        return 0
+
+    def no_model(self):
+        self.qwen_available = False
+        self.ui(self.post, "Local AI model not available. Using command mode.")
+
+    module.ChatApp._stream_subprocess = recorded
+    module.ChatApp._check_qwen = no_model
+    return module, launches
+
+
+def _drive_chat(text, typed):
+    """Type each line into a withdrawn chat window (never shown) and return the
+    transcript after each, and the recorded launches."""
+    import tkinter as tk
+    import time
+    with tempfile.TemporaryDirectory(prefix="shimmer_chat_", ignore_cleanup_errors=True) as td:
+        tmp = Path(td)
+        module, launches = _load_chat(text, tmp)
+        root = tk.Tk()
+        root.withdraw()
+        app = module.ChatApp(root)
+        replies = []
+
+        def script():
+            for line in typed:
+                before = len(app.msg.get("1.0", "end"))
+                app.entry.delete(0, "end")
+                app.entry.insert(0, line)
+                app.on_send()
+                deadline = time.monotonic() + 2
+                # a confirmed request runs on a worker; wait for it to settle
+                while app.busy and time.monotonic() < deadline:
+                    yield
+                yield
+                replies.append(app.msg.get("1.0", "end")[before:])
+
+        steps = script()
+
+        def tick():
+            try:
+                next(steps)
+            except StopIteration:
+                root.destroy()
+                return
+            root.after(20, tick)
+
+        root.after(50, tick)
+        # the neutralised copy's worker dies by design; keep its traceback off stderr
+        import threading
+        hook, threading.excepthook = threading.excepthook, lambda args: None
+        try:
+            root.mainloop()
+        finally:
+            threading.excepthook = hook
+        scope = (json.loads(module.SCOPE_PATH.read_text(encoding="utf-8"))
+                 if module.SCOPE_PATH.is_file() else None)
+        return replies, launches, scope
+
+
+def _chat():
+    text = CHAT.read_text(encoding="utf-8")
+    typed = ["help", "set cutoff 2026-01-15", "draft a memo on staffing", "y",
+             "status", "draft a memo on staffing", "y", "review", "n"]
+
+    def passes(result):
+        replies, launches, scope = result
+        return (len(replies) == len(typed) and "draft a memo on <topic>" in replies[0]
+                and scope == {"cutoff_date": "2026-01-15", "cutoff_type": "date"}
+                and "stopped with an error (OSError)" in replies[3]
+                and "Current settings:" in replies[4]
+                and launches == [["pipeline.py", "--task"], ["pipeline.py", "--task"]]
+                and "Cancelled." in replies[8])
+
+    def stuck(result):
+        replies = result[0]
+        return len(replies) > 4 and "Still working on the previous request" in replies[4]
+
+    neutral = _neutralise(text, _CHAT_GUARD, _CHAT_UNGUARDED, "the chat worker guard")
+    _prove("a failed chat request frees the window", passes(_drive_chat(text, typed)),
+           stuck(_drive_chat(neutral, typed)), passes(_drive_chat(text, typed)))
+
+
+def _tk_unavailable():
+    try:
+        import tkinter as tk
+        root = tk.Tk()
+        root.withdraw()
+        root.destroy()
+    except Exception as exc:  # no Tcl/Tk, or no display
+        return "tkinter cannot open a window here (%s)" % type(exc).__name__
+    return None
+
+
 # --- entry points for the gate ------------------------------------------------------
 
 def _missing(*paths):
@@ -506,10 +633,15 @@ def check_banner():
     return _collect([("banner", _banner)])
 
 
+def check_chat_window():
+    """Menu option [2] in command mode, withdrawn, with no model and nothing run."""
+    return _collect([("chat window", _missing(CHAT) or _tk_unavailable() or _chat)])
+
+
 def check():
-    """All three, for running this file by hand."""
+    """All four, for running this file by hand."""
     results = [("end of input", check_end_of_input()), ("bootstrap", check_bootstrap()),
-               ("banner", check_banner())]
+               ("banner", check_banner()), ("chat window", check_chat_window())]
     worst = "PASS"
     for _name, (status, _detail) in results:
         if status == "FAIL":
@@ -519,6 +651,6 @@ def check():
 
 if __name__ == "__main__":
     for title, function in (("end of input", check_end_of_input), ("bootstrap", check_bootstrap),
-                            ("banner", check_banner)):
+                            ("banner", check_banner), ("chat window", check_chat_window)):
         status, detail = function()
         print("%s: %s %s" % (title, status, detail))
