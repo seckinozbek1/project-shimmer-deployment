@@ -27,6 +27,16 @@ not admitted) is counted and recorded. The declaration is config/contract_decodi
 constraint is active only on the compact producer path (for_call). A dead end, which the
 grammar is built never to reach, admits only the stop tokens and is recorded: the reply is
 then refused by the validator, never accepted.
+
+The same processor carries a second grammar, the general envelope of the local auditor agents
+that failed their contract in L8, L11 and L12 (VERIFIER and PRACTICE_AUDITOR on local_auditor,
+s5_diag_b3 K9 and K11; declared in config/envelope_decoding.json, built per call from the
+agent's own contract in config/agent_contracts.json): the envelope {agent, doc_id, items},
+closed before the stop token is admitted, each item opening with every key the validator
+requires, in the order the agents' saved replies write them, and nothing else constrained
+(EnvelopeGrammar). It does not stop a repetition inside a string or an item list that runs to
+the output cap: a reply that cannot close in its allowance is truncated as before and refused
+by the unchanged validator.
 """
 from __future__ import annotations
 
@@ -290,9 +300,288 @@ class Grammar:
         return state
 
 
+    def accepting(self, state):
+        """True where the stop token is admitted: the reply is complete."""
+        return state == DONE
+
+    def unrestricted(self, state):
+        return False
+
+
 def accepts(contract, spec, text):
     """True when `text` is a complete reply of the request's canonical language."""
     return Grammar(contract, spec).walk(Grammar(contract, spec).start(), text) == DONE
+
+
+# --- the general envelope of the local auditor agents (config/envelope_decoding.json)
+ENVELOPE_DECLARATION = 'config/envelope_decoding.json'
+CONTRACTS = 'config/agent_contracts.json'
+WHITESPACE = ' \t\n\r'
+DIGITS = '0123456789'
+# The characters a structural (non-string, non-tail) state can admit: printable ASCII and JSON
+# whitespace. Keys, literals, numbers and escapes are ASCII; anything else is string content.
+STRUCTURAL = [chr(c) for c in range(32, 127)] + list('\t\n\r')
+TAIL = ('tail',)
+NUMBER = {  # phase: {character class: next phase}; terminal phases end at any other character
+    'sign': {'0': 'zero', '1': 'int'},
+    'zero': {'.': 'dot', 'e': 'e'},
+    'int': {'0': 'int', '1': 'int', '.': 'dot', 'e': 'e'},
+    'dot': {'0': 'frac', '1': 'frac'},
+    'frac': {'0': 'frac', '1': 'frac', 'e': 'e'},
+    'e': {'+': 'esign', '0': 'exp', '1': 'exp'},
+    'esign': {'0': 'exp', '1': 'exp'},
+    'exp': {'0': 'exp', '1': 'exp'},
+}
+NUMBER_END = ('zero', 'int', 'frac', 'exp')
+
+
+def _number_class(ch):
+    if ch == '0':
+        return '0'
+    if ch in DIGITS:
+        return '1'
+    if ch in 'eE':
+        return 'e'
+    if ch in '+-':
+        return '+'
+    return ch
+
+
+def envelope_declaration(root=None):
+    """(the envelope declaration, its SHA-256 with CRLF normalised to LF); refused when unsound."""
+    data = (Path(root or ROOT) / ENVELOPE_DECLARATION).read_bytes().replace(b'\r\n', b'\n')
+    value = json.loads(data.decode('utf-8'))
+    require(value.get('schema_version') == 1 and isinstance(value.get('name'), str)
+            and type(value.get('version')) is int, 'Invalid envelope decoding declaration')
+    require(value.get('envelope_keys') == ['agent', 'doc_id', 'items'], 'The envelope keys are agent, doc_id, items')
+    require(isinstance(value.get('agents'), dict) and value['agents']
+            and all(isinstance(v, dict) and isinstance(v.get('backend'), str) for v in value['agents'].values()),
+            'Each declared agent names its backend')
+    core = list(value.get('core_required') or []) + list(value.get('core_optional') or [])
+    require(core and len(set(core)) == len(core), 'The core keys are distinct')
+    require(type(value.get('whitespace_run_max')) is int and value['whitespace_run_max'] > 0,
+            'The whitespace run is bounded')
+    require(all(isinstance(f, str) and f.startswith('```') for f in value.get('fences') or []), 'A fence opens with ```')
+    require(value.get('status') in ('active', 'off'), 'The constraint is active or off')
+    return value, hashlib.sha256(data).hexdigest()
+
+
+def declared_contracts(root=None):
+    return json.loads((Path(root or ROOT) / CONTRACTS).read_text(encoding='utf-8'))
+
+
+class EnvelopeContract:
+    """One agent's envelope: its name, the validator's required item keys in order (the core
+    keys, then the contract's `required`), the spellings admitted for each (a declared core
+    alias in its canonical key's place), and the other declared field names an item may carry."""
+
+    def __init__(self, agent, required, spellings, optional):
+        require(isinstance(agent, str) and agent and required, 'An envelope contract names its agent and keys')
+        self.agent = agent
+        self.required = tuple(required)
+        self.spellings = tuple(tuple(s) for s in spellings)
+        self.optional = tuple(sorted(set(optional) - set(self.required)
+                                     - {s for names in self.spellings for s in names}))
+
+    @classmethod
+    def for_agent(cls, agent, spec, contract=None, root=None):
+        """The agent's contract as the validator reads it (agent_wrapper._contract_missing:
+        CORE_ITEM_REQUIRED, then the contract's `required`), with its declared fields and the
+        finding_record fields as the optional names."""
+        declared = declared_contracts(root)
+        contract = contract if isinstance(contract, dict) and contract else declared['contracts'][agent]
+        required = list(spec['core_required']) + [k for k in contract.get('required', []) if k not in spec['core_required']]
+        aliases = declared.get('core_field_aliases') or {}
+        spellings = [[key] + sorted(a for a, canonical_key in aliases.items() if canonical_key == key) for key in required]
+        record = declared.get('finding_record') or {}
+        optional = list(spec['core_optional']) + [k for k in contract.get('fields', {}) if k != 'finding_record'] \
+            + list(record.get('fields') or [])
+        return cls(agent, required, spellings, optional)
+
+    def digest(self):
+        return hashlib.sha256(canonical(dict(agent=self.agent, required=list(self.required),
+                                             spellings=[list(s) for s in self.spellings],
+                                             optional=list(self.optional))).encode('utf-8')).hexdigest()
+
+
+class EnvelopeGrammar:
+    """The envelope language of one agent's call, as a character-level recognizer with the
+    Grammar interface (start, step, walk, free, next_chars, accepting, unrestricted). States
+    are small tuples that carry no text, so the admitted tokens of a state are computed once
+    per tokenizer and agent (signature)."""
+
+    def __init__(self, contract, spec):
+        self.contract, self.spec = contract, spec
+        self.ws = spec['whitespace_run_max']
+        self.fences = tuple(spec['fences'])
+        self.lexemes = ('"agent"', ':', '"%s"' % contract.agent, ',', '"doc_id"', ':', None, ',', '"items"', ':', '[')
+        self.signature = hashlib.sha256(('%s|%s|%d|%s' % (contract.digest(), canonical(self.fences), self.ws,
+                                                         canonical(spec['envelope_keys']))).encode('utf-8')).hexdigest()
+
+    def start(self):
+        return ('lead', '', 0)
+
+    def gap(self, desc):
+        return ('gap', 0, desc)
+
+    def names(self, j, opt):
+        if j < len(self.contract.required):
+            return self.contract.spellings[j]
+        return tuple(n for i, n in enumerate(self.contract.optional) if not opt >> i & 1)
+
+    def after_key(self, j, opt, name):
+        if j < len(self.contract.required):
+            return ('K', j + 1, opt)
+        return ('K', j, opt | 1 << self.contract.optional.index(name))
+
+    # what comes next (whitespace allowed before it), entered with its first character
+    def enter(self, desc, ch):
+        kind = desc[0]
+        if kind == 'E':
+            i = desc[1]
+            nxt = ('E', i + 1) if i + 1 < len(self.lexemes) else ('ITEMS', True)
+            text = self.lexemes[i]
+            if text is None:
+                return ('s', False, False, None, nxt) if ch == '"' else None
+            if ch != text[0]:
+                return None
+            return ('lit', text[1:], nxt) if len(text) > 1 else self.gap(nxt)
+        if kind == 'ITEMS':
+            if ch == '{' and desc[1]:
+                return self.gap(('K', 0, 0))
+            if ch == ']':
+                return self.gap(('CLOSE',))
+            if ch == ',' and not desc[1]:
+                return self.gap(('ISTART',))
+            return None
+        if kind == 'ISTART':
+            return self.gap(('K', 0, 0)) if ch == '{' else None
+        if kind == 'K':
+            _, j, opt = desc
+            if j == 0:
+                return ('kn', '', j, opt) if ch == '"' else None
+            if j == len(self.contract.required) and ch == '}':
+                return self.gap(('ITEMS', False))
+            if ch == ',' and self.names(j, opt):
+                return self.gap(('KQ', j, opt))
+            return None
+        if kind == 'KQ':
+            return ('kn', '', desc[1], desc[2]) if ch == '"' else None
+        if kind == 'COLON':
+            _, j, opt, name = desc
+            if ch != ':':
+                return None
+            return self.gap(('V', j < len(self.contract.required), True, self.after_key(j, opt, name)))
+        if kind == 'V':
+            _, req, arr_ok, after = desc
+            if ch == '"':
+                return ('s', req, False, None, after)
+            if ch == '-':
+                return ('n', 'sign', after)
+            if ch in DIGITS:
+                return ('n', 'zero' if ch == '0' else 'int', after)
+            if ch == 't':
+                return ('lit', 'rue', after)
+            if ch == 'f':
+                return ('lit', 'alse', after)
+            if ch == 'n' and not req:
+                return ('lit', 'ull', after)
+            if ch == '[' and arr_ok:
+                return self.gap(('ARR', True, after))
+            return None
+        if kind == 'ARR':
+            _, first, after = desc
+            if ch == ']':
+                return self.gap(after)
+            element = ('V', False, False, ('ARR', False, after))
+            if first:
+                return self.enter(element, ch)
+            return self.gap(element) if ch == ',' else None
+        if kind == 'CLOSE':
+            return TAIL if ch == '}' else None
+        return None
+
+    def step(self, state, ch):
+        kind = state[0]
+        if kind == 'tail':
+            return TAIL
+        if kind == 'gap':
+            _, n, desc = state
+            if ch in WHITESPACE:
+                return ('gap', n + 1, desc) if n < self.ws else None
+            return self.enter(desc, ch)
+        if kind == 'lead':
+            _, fence, n = state
+            if (n == 0 or not fence) and any(f.startswith(fence + ch) for f in self.fences):
+                return ('lead', fence + ch, 0)
+            if fence and fence not in self.fences:
+                return None
+            if ch in WHITESPACE:
+                return ('lead', fence, n + 1) if n < self.ws else None
+            return self.gap(('E', 0)) if ch == '{' else None
+        if kind == 'lit':
+            _, rest, nxt = state
+            if ch != rest[0]:
+                return None
+            return ('lit', rest[1:], nxt) if len(rest) > 1 else self.gap(nxt)
+        if kind == 'kn':
+            _, partial, j, opt = state
+            names = self.names(j, opt)
+            if ch == '"':
+                return self.gap(('COLON', j, opt, partial)) if partial in names else None
+            grown = partial + ch
+            return ('kn', grown, j, opt) if any(n.startswith(grown) for n in names) else None
+        if kind == 's':
+            _, req, nonempty, esc, after = state
+            if esc is None:
+                if ch == '"':
+                    return self.gap(after) if nonempty or not req else None
+                if ch == '\\':
+                    return ('s', req, nonempty, '', after)
+                if ch < ' ':
+                    return None
+                return state if nonempty else ('s', req, True, None, after)
+            if esc == '':
+                if ch in ESCAPES:
+                    return ('s', req, True, None, after)
+                return ('s', req, nonempty, 'u', after) if ch == 'u' else None
+            if ch not in HEX:
+                return None
+            digits = esc[1:] + ch
+            return ('s', req, True, None, after) if len(digits) == 4 else ('s', req, nonempty, 'u' + digits, after)
+        if kind == 'n':
+            _, phase, after = state
+            nxt = NUMBER[phase].get(_number_class(ch))
+            if nxt is not None:
+                return ('n', nxt, after)
+            return self.step(self.gap(after), ch) if phase in NUMBER_END else None
+        return None
+
+    def walk(self, state, text):
+        for ch in text:
+            state = self.step(state, ch)
+            if state is None:
+                return None
+        return state
+
+    def free(self, state):
+        return state[0] == 's' and state[3] is None
+
+    def next_chars(self, state):
+        return {ch for ch in STRUCTURAL if self.step(state, ch) is not None}
+
+    def accepting(self, state):
+        return state == TAIL
+
+    def unrestricted(self, state):
+        return state == TAIL
+
+
+def envelope_accepts(contract, spec, text):
+    """True when `text` is a complete reply of the agent's envelope language (the envelope
+    closed; anything after it is the tail)."""
+    grammar = EnvelopeGrammar(contract, spec)
+    return grammar.accepting(grammar.walk(grammar.start(), text) or ('none',))
 
 
 class TokenTable:
@@ -323,6 +612,7 @@ class TokenTable:
             elif special in '"\\':
                 self.quote_tokens.append(t)
         self.safe = safe
+        self.admitted_cache = {}
 
     @classmethod
     def of(cls, tok):
@@ -340,16 +630,17 @@ class ContractProcessor:
     reply as the caller will (the tokenizer's decode of the generated ids, special tokens
     skipped) and counts every step where the model's own top token was not admitted."""
 
-    def __init__(self, contract, spec, tok, prompt_tokens, eos_ids, record):
+    def __init__(self, contract, spec, tok, prompt_tokens, eos_ids, record, grammar=None):
         import torch
         self.torch, self.tok, self.prompt_tokens = torch, tok, int(prompt_tokens)
-        self.grammar = Grammar(contract, spec)
+        self.grammar = grammar if grammar is not None else Grammar(contract, spec)
         self.table = TokenTable.of(tok)
         eos = eos_ids if isinstance(eos_ids, (list, tuple)) else [eos_ids]
         self.eos = [int(e) for e in eos if e is not None]
         require(self.eos, 'A constrained call needs its stop tokens')
         self.safe = torch.zeros(self.table.size, dtype=torch.bool)
         self.safe[torch.tensor(self.table.safe, dtype=torch.long)] = True
+        self.everything = torch.ones(self.table.size, dtype=torch.bool)
         self.text, self.state = '', self.grammar.start()
         self.counts = record
         record.update(steps=0, interventions=0, first_intervention_step=None, dead_end=False)
@@ -363,10 +654,26 @@ class ContractProcessor:
         return state
 
     def admitted(self, state):
-        """The admitted token ids (a list) beside the free-text mask (a bool tensor or None)."""
+        """The admitted token ids (a list) beside the free-text mask (a bool tensor or None).
+        A grammar whose states carry no text (a `signature`) has each state's answer computed
+        once per tokenizer and kept on the token table."""
         grammar, table = self.grammar, self.table
         if state is None or state == DONE:
             return [], None
+        if grammar.unrestricted(state):
+            return [], self.everything
+        signature = getattr(grammar, 'signature', None)
+        if signature is None:
+            return self._admitted(state)
+        key = (signature, state)
+        found = table.admitted_cache.get(key)
+        if found is None:
+            ids, free = self._admitted(state)
+            found = table.admitted_cache[key] = (ids, free is not None)
+        return found[0], (self.safe if found[1] else None)
+
+    def _admitted(self, state):
+        grammar, table = self.grammar, self.table
         ids = []
         if grammar.free(state):
             for t in table.quote_tokens:
@@ -391,11 +698,12 @@ class ContractProcessor:
             mask[:min(width, self.table.size)] = free[:width]
         if ids:
             mask[torch.tensor([t for t in ids if t < width], dtype=torch.long)] = True
-        if state == DONE or not bool(mask.any()):
-            if state != DONE:
-                self.counts['dead_end'] = True
-            mask[:] = False
-            mask[torch.tensor([e for e in self.eos if e < width], dtype=torch.long)] = True
+        stops = torch.tensor([e for e in self.eos if e < width], dtype=torch.long)
+        if state is not None and self.grammar.accepting(state):
+            mask[stops] = True
+        elif not bool(mask.any()):
+            self.counts['dead_end'] = True
+            mask[stops] = True
         top = int(scores[0].argmax())
         self.counts['steps'] += 1
         if not bool(mask[top]):
@@ -410,10 +718,11 @@ class Constraint:
     record that goes on the reply record and the call's usage (name, version, declaration
     digest, request digest, and what the processor counted)."""
 
-    def __init__(self, contract, spec, digest, tok, prompt_tokens, eos_ids, source):
+    def __init__(self, contract, spec, digest, tok, prompt_tokens, eos_ids, source, grammar=None):
+        scope = dict(owned_aliases=len(contract.aliases)) if grammar is None else dict(agent=contract.agent)
         self.record = dict(name=spec['name'], version=spec['version'], declaration_sha256=digest,
-                           contract_sha256=contract.digest(), owned_aliases=len(contract.aliases), source=source)
-        self.processor = ContractProcessor(contract, spec, tok, prompt_tokens, eos_ids, self.record)
+                           contract_sha256=contract.digest(), **scope, source=source)
+        self.processor = ContractProcessor(contract, spec, tok, prompt_tokens, eos_ids, self.record, grammar)
 
     def generate_kwargs(self):
         from transformers import LogitsProcessorList
@@ -436,7 +745,12 @@ def for_call(wrapper, tok, prompt_tokens, eos_ids, root=None):
     grounding and the messages together; its declaration is that binding's own owned spans
     and grounding, the validator's sets. A wrapper carrying messages without a binding (no
     owned spans: a fixture that sets the prompt turns alone) has no declaration to decode
-    under and gets none."""
+    under and gets none. A declared envelope agent (config/envelope_decoding.json: VERIFIER and
+    PRACTICE_AUDITOR on local_auditor) gets the envelope constraint of its own contract
+    (for_envelope); every other call gets none."""
+    envelope = for_envelope(wrapper, tok, prompt_tokens, eos_ids, root)
+    if envelope is not None:
+        return envelope
     if getattr(wrapper, 'name', None) != 'PROCESSOR' or getattr(wrapper, 'backend', None) != 'local_producer':
         return None
     owned = getattr(wrapper, '_owned_source_spans', None)
@@ -450,9 +764,35 @@ def for_call(wrapper, tok, prompt_tokens, eos_ids, root=None):
     return Constraint(contract, spec, digest, tok, prompt_tokens, eos_ids, 'binding')
 
 
-def for_prompt(prompt, tok, prompt_tokens, eos_ids, root=None):
+def envelope_constraint(agent, tok, prompt_tokens, eos_ids, source, contract=None, root=None):
+    """The envelope constraint of one call of a declared agent, built from its own contract."""
+    spec, digest = envelope_declaration(root)
+    require(agent in spec['agents'], 'No envelope declaration for agent %s' % agent)
+    built = EnvelopeContract.for_agent(agent, spec, contract, root)
+    return Constraint(built, spec, digest, tok, prompt_tokens, eos_ids, source, EnvelopeGrammar(built, spec))
+
+
+def for_envelope(wrapper, tok, prompt_tokens, eos_ids, root=None):
+    """The envelope constraint of a local call, or None: the agent and its backend must be
+    declared, the declaration active, and the call an ordinary contract call (a wrapper bound to
+    a compact contract, with its own source adapter, answers another shape and gets none)."""
+    spec, _ = envelope_declaration(root)
+    name = getattr(wrapper, 'name', None)
+    declared = spec['agents'].get(name)
+    if spec['status'] != 'active' or declared is None or getattr(wrapper, 'backend', None) != declared['backend']:
+        return None
+    if getattr(wrapper, '_compact_contract', None) or getattr(wrapper, '_source_adapter', None) \
+            or getattr(wrapper, '_compact_messages', None):
+        return None
+    return envelope_constraint(name, tok, prompt_tokens, eos_ids, 'contract', getattr(wrapper, 'contract', None), root)
+
+
+def for_prompt(prompt, tok, prompt_tokens, eos_ids, root=None, agent=None):
     """The constraint of a replayed compact producer prompt (no binding): its declaration read
-    back from the prompt's own canonical payload (Contract.from_rendered)."""
+    back from the prompt's own canonical payload (Contract.from_rendered). With `agent`, a
+    declared envelope agent's replayed prompt: the envelope constraint of its own contract."""
+    if agent is not None:
+        return envelope_constraint(agent, tok, prompt_tokens, eos_ids, 'rendered_prompt', root=root)
     spec, digest = declaration(root)
     contract = Contract.from_rendered(prompt, spec)
     return Constraint(contract, spec, digest, tok, prompt_tokens, eos_ids, 'rendered_prompt')

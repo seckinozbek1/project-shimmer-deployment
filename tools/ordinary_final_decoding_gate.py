@@ -54,7 +54,8 @@ def main(out):
                 ('test_redactor_family', decoding_policy, 'policy', no_policy),
                 ('test_producer_family', checks, 'cumsum_recorder', blind_recorder),
                 ('test_redactor_family', checks, 'cumsum_recorder', blind_recorder),
-                ('test_producer_contract_constraint', contract_decoding.ContractProcessor, 'admitted', no_constraint)]:
+                ('test_producer_contract_constraint', contract_decoding.ContractProcessor, 'admitted', no_constraint),
+                ('test_auditor_envelope_constraint', contract_decoding.ContractProcessor, 'admitted', no_constraint)]:
             invocations = []
 
             def replacement(*args, _mutant=mutant, **kwargs):

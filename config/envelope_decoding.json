@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "name": "agent-envelope-contract",
+  "version": 1,
+  "status": "active",
+  "authority": "D-S14 (fix the causes, never the checks); the loop records the decision that adopts it in docs/loop/DECISIONS.md",
+  "agents": {
+    "VERIFIER": {"backend": "local_auditor"},
+    "PRACTICE_AUDITOR": {"backend": "local_auditor"}
+  },
+  "envelope_keys": ["agent", "doc_id", "items"],
+  "core_required": ["ref", "kind", "confidence"],
+  "core_optional": ["verdict", "ref_ids"],
+  "fences": ["```json", "```"],
+  "whitespace_run_max": 16,
+  "description": "A logits constraint built per call from the calling agent's own declared contract (config/agent_contracts.json), with the envelope validator (agent_wrapper._contract_missing, is_envelope) unchanged behind it. Admitted: an optional opening fence, then the canonical envelope {agent, doc_id, items} with its keys in that order, agent the calling agent, doc_id any JSON string, items an array of flat objects (every value a JSON scalar or an array of scalars). Each item opens with the validator's required keys (core_required, then the contract's required list, in that order; a declared core_field_aliases spelling admitted in its canonical key's place), each value neither null nor the empty string, followed by any of the agent's other declared field names (core_optional, the contract's fields, the finding_record fields), each at most once. JSON whitespace between tokens, at most whitespace_run_max characters in a run. Once the envelope's closing brace is written, anything may follow and the stop token is admitted; nowhere before. String values are the model's own; enumerated values are NOT constrained (measured: saved valid replies use values outside the declared enumerations, which the validator accepts). Nothing here changes the frozen decoding policy: greedy stays greedy, and a token the model would have chosen anyway is never changed.",
+  "measured": "every saved valid reply of these agents in the S5 evidence (L7, L8, L10, L11) and L12 passes token by token through the constraint with the Phi-3.5 tokenizer with no intervention (tools and counts: CLAUDE.md DECODING-B)"
+}

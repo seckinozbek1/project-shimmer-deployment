@@ -25111,6 +25111,57 @@ def check_296_request_ledger_check_catches_dropped_requests():
     return check()
 
 
+def check_297_local_auditor_agents_decode_under_their_envelope_contract():
+    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 and K11): VERIFIER and
+    PRACTICE_AUDITOR on local_auditor failed their envelope contract in L8, L11 and L12 (the
+    envelope left unclosed, an item without a required key, a raw control character in a
+    string, text after a string closed too early). They now decode under the envelope
+    constraint of their own declared contract (scripts/contract_decoding.py EnvelopeGrammar,
+    config/envelope_decoding.json), the envelope validator unchanged behind it. Runs
+    scripts/envelope_decoding_checks.py: with a fixture tokenizer and a stand-in model each
+    shape is prevented and the validator passes, the constraint off reproduces each with the
+    validator's own reason, a reply that runs to the output cap is not prevented and is refused
+    as before, every valid form the saved replies take is never changed, the real call_local
+    carries and records it for a declared agent only, the saved-reply measurement tool and the
+    replay path hold. Then neutralises, in turn, the processor's admission (every token
+    admitted), the wrapper's routing (no envelope constraint built), the closing rule (the stop
+    token admitted anywhere) and the required-key rule (any declared key in any slot); requires
+    a failure; restores; requires a pass."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import envelope_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else             unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/envelope_decoding_checks.py does not pass'
+    grammar = contract_decoding.EnvelopeGrammar
+
+    def any_name(self, j, opt):
+        return tuple(sorted(set(self.contract.optional) | {s for names in self.contract.spellings for s in names}))
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_envelope', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (grammar, 'accepting', lambda self, state: True, ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (grammar, 'names', any_name, ('test_language_rules',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: 6 envelope failure shapes prevented with the validator unchanged and reproduced with '
+                    'the constraint off; the output cap not prevented; 8 valid forms unchanged; wrapper, measurement '
+                    'and replay hold; 4 neutralisations fail and restore'
+                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+
+
 def check_293_scorer_reads_the_key_parts_d042_added():
     """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
     reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
@@ -25564,6 +25615,8 @@ CHECKS = [
      check_295_compact_producer_decodes_under_its_contract),
     ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
      check_296_request_ledger_check_catches_dropped_requests),
+    ("297 the local auditor agents decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_297_local_auditor_agents_decode_under_their_envelope_contract),
 ]
 
 
