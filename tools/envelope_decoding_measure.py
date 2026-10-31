@@ -1,13 +1,13 @@
 """Measure the envelope constraint (DECODING-B) on saved replies, offline: tokenizer only, no model.
 
     py -3.12 -X utf8 tools/envelope_decoding_measure.py --records <run>/audit/model_replies
-        [--records <another run's folder> ...] [--tokenizer unsloth/Phi-3.5-mini-instruct-bnb-4bit]
+        [--records <another run's folder> ...]
         [--out measurement.json]
 
 For every saved reply of a declared envelope agent (config/envelope_decoding.json) in the reply
 records given, whose outcome (outcomes.jsonl) says whether the run accepted it: the reply is
 walked character by character through the agent's envelope grammar and fed token by token
-(the tokenizer's encoding of the reply, then a stop token) through the real ContractProcessor,
+(the encoding of the reply by its backend's tokenizer, then the backend's stop token) through the real ContractProcessor,
 the model's choice standing in as the top logit, counting every step where that token was not
 admitted. A valid reply must pass with 0 interventions; a failed one shows where the
 constraint first acts. The tokenizer is read from the local cache only (never fetched).
@@ -28,7 +28,9 @@ if str(ROOT / 'scripts') not in sys.path:
 
 import contract_decoding as cd  # noqa: E402
 
-TOKENIZER = 'unsloth/Phi-3.5-mini-instruct-bnb-4bit'
+# The tokenizer of each declared backend's model (the local cache only).
+TOKENIZERS = {'local_auditor': 'unsloth/Phi-3.5-mini-instruct-bnb-4bit',
+              'local_producer': 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit'}
 FAILED = 'contract_violation'
 NEVER_READ = ('benchmark/keys',)
 
@@ -71,7 +73,9 @@ def first_break(grammar, text):
     return None if grammar.accepting(state) else (len(text), 'end>' + state[0])
 
 
-def measure(folders, tok, stops, width=None, root=None):
+def measure(folders, tok, stops, width=None, root=None, agents=None):
+    """`tok` and `stops` are one tokenizer and stop list, or a map from backend to each;
+    `agents`, when given, limits the measurement to those declared agents."""
     import torch
     spec, digest = cd.envelope_declaration(root)
     counts = collections.Counter()
@@ -80,7 +84,8 @@ def measure(folders, tok, stops, width=None, root=None):
     for folder in folders:
         for record, outcome in records(folder):
             agent = record.get('agent')
-            if agent not in spec['agents'] or record.get('backend') != spec['agents'][agent]['backend']:
+            if agent not in spec['agents'] or record.get('backend') != spec['agents'][agent]['backend'] \
+                    or (agents and agent not in agents):
                 continue
             reply = (record.get('reply') or {}).get('text')
             if not isinstance(reply, str):
@@ -95,10 +100,13 @@ def measure(folders, tok, stops, width=None, root=None):
             counts[(agent, group, 'inside_the_language')] += int(accepted)
             if valid and accepted:
                 whitespace[agent] = max(whitespace[agent], longest_whitespace(grammar, reply))
-            constraint = cd.envelope_constraint(agent, tok, 1, stops, 'measurement', root=root)
-            ids = [stops[0]]
-            for token in tok.encode(reply, add_special_tokens=False) + [stops[0]]:
-                scores = torch.zeros((1, width or len(tok)))
+            backend = record.get('backend')
+            used = tok[backend] if isinstance(tok, dict) else tok
+            ends = stops[backend] if isinstance(stops, dict) else stops
+            constraint = cd.envelope_constraint(agent, used, 1, ends, 'measurement', root=root)
+            ids = [ends[0]]
+            for token in used.encode(reply, add_special_tokens=False) + [ends[0]]:
+                scores = torch.zeros((1, width or len(used)))
                 scores[0, token] = 1.0
                 constraint.processor(torch.tensor([ids]), scores)
                 ids.append(token)
@@ -124,15 +132,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog='envelope_decoding_measure.py', allow_abbrev=False,
                                      description=__doc__.split('\n\n')[0])
     parser.add_argument('--records', action='append', required=True)
-    parser.add_argument('--tokenizer', default=TOKENIZER)
     parser.add_argument('--out', default=None)
+    parser.add_argument('--agents', default=None, help='comma-separated declared agents to measure (default: all)')
     args = parser.parse_args(argv)
     os.environ.setdefault('HF_HUB_OFFLINE', '1')
     from transformers import AutoTokenizer
     import decoding_policy
-    tok = AutoTokenizer.from_pretrained(args.tokenizer, local_files_only=True)
-    stops = list(decoding_policy.policy('local_auditor')['kwargs']['eos_token_id'])
-    result = measure(args.records, tok, stops)
+    tok = {backend: AutoTokenizer.from_pretrained(name, local_files_only=True) for backend, name in TOKENIZERS.items()}
+    stops = {backend: list(decoding_policy.policy(backend)['kwargs']['eos_token_id']) for backend in TOKENIZERS}
+    result = measure(args.records, tok, stops, agents={a for a in (args.agents or '').split(',') if a} or None)
     text = json.dumps(result, indent=2, sort_keys=True)
     if args.out:
         Path(args.out).write_text(text + '\n', encoding='utf-8')

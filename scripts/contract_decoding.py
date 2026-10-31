@@ -357,7 +357,9 @@ def envelope_declaration(root=None):
     require(isinstance(value.get('agents'), dict) and value['agents']
             and all(isinstance(v, dict) and isinstance(v.get('backend'), str) for v in value['agents'].values()),
             'Each declared agent names its backend')
-    core = list(value.get('core_required') or []) + list(value.get('core_optional') or [])
+    require(all(isinstance(v.get('leading_keys', []), list) and all(isinstance(k, str) for k in v.get('leading_keys', []))
+                for v in value['agents'].values()), 'Leading keys are a list of key names')
+    core = list(value.get('core_required') or []) + list(value.get('core_optional') or []) + list(value.get('runtime_optional') or [])
     require(core and len(set(core)) == len(core), 'The core keys are distinct')
     require(type(value.get('whitespace_run_max')) is int and value['whitespace_run_max'] > 0,
             'The whitespace run is bounded')
@@ -371,36 +373,48 @@ def declared_contracts(root=None):
 
 
 class EnvelopeContract:
-    """One agent's envelope: its name, the validator's required item keys in order (the core
-    keys, then the contract's `required`), the spellings admitted for each (a declared core
-    alias in its canonical key's place), and the other declared field names an item may carry."""
+    """One agent's envelope: its name, the validator's required item keys (the core keys, then
+    the contract's `required`), the spellings admitted for each (a declared core alias in its
+    canonical key's place), how many of them lead every item in that order (`leading`, the
+    order the agent's saved valid items write them), and the other declared field names an item
+    may carry. Keys after the leading ones come in any order, each at most once, and the item
+    closes only when every required key is written."""
 
-    def __init__(self, agent, required, spellings, optional):
+    def __init__(self, agent, required, spellings, optional, leading=None):
         require(isinstance(agent, str) and agent and required, 'An envelope contract names its agent and keys')
         self.agent = agent
         self.required = tuple(required)
         self.spellings = tuple(tuple(s) for s in spellings)
-        self.optional = tuple(sorted(set(optional) - set(self.required)
-                                     - {s for names in self.spellings for s in names}))
+        self.leading = self.required if leading is None else tuple(leading)
+        require(self.leading == self.required[:len(self.leading)] or
+                (set(self.leading) <= set(self.required) and len(set(self.leading)) == len(self.leading)),
+                'The leading keys are required keys')
+        spelled = {key: names for key, names in zip(self.required, self.spellings)}
+        self.optional = tuple(sorted(set(optional) - set(self.required) - {s for names in self.spellings for s in names}))
+        rest = tuple(k for k in self.required if k not in self.leading)
+        self.lead_spellings = tuple(spelled[k] for k in self.leading)
+        self.pool = rest + self.optional
+        self.pool_spellings = tuple(spelled.get(k, (k,)) for k in self.pool)
+        self.pool_required = sum(1 << i for i, k in enumerate(self.pool) if k in rest)
 
     @classmethod
     def for_agent(cls, agent, spec, contract=None, root=None):
         """The agent's contract as the validator reads it (agent_wrapper._contract_missing:
-        CORE_ITEM_REQUIRED, then the contract's `required`), with its declared fields and the
-        finding_record fields as the optional names."""
+        CORE_ITEM_REQUIRED, then the contract's `required`), with its declared fields, the
+        finding_record fields and the runtime-owned keys as the optional names, and the leading
+        keys its declaration names (every required key when it names none)."""
         declared = declared_contracts(root)
         contract = contract if isinstance(contract, dict) and contract else declared['contracts'][agent]
         required = list(spec['core_required']) + [k for k in contract.get('required', []) if k not in spec['core_required']]
         aliases = declared.get('core_field_aliases') or {}
         spellings = [[key] + sorted(a for a, canonical_key in aliases.items() if canonical_key == key) for key in required]
         record = declared.get('finding_record') or {}
-        optional = list(spec['core_optional']) + [k for k in contract.get('fields', {}) if k != 'finding_record'] \
-            + list(record.get('fields') or [])
-        return cls(agent, required, spellings, optional)
+        optional = list(spec['core_optional']) + list(spec.get('runtime_optional') or [])             + [k for k in contract.get('fields', {}) if k != 'finding_record'] + list(record.get('fields') or [])
+        return cls(agent, required, spellings, optional, spec['agents'].get(agent, {}).get('leading_keys'))
 
     def digest(self):
         return hashlib.sha256(canonical(dict(agent=self.agent, required=list(self.required),
-                                             spellings=[list(s) for s in self.spellings],
+                                             spellings=[list(s) for s in self.spellings], leading=list(self.leading),
                                              optional=list(self.optional))).encode('utf-8')).hexdigest()
 
 
@@ -425,14 +439,26 @@ class EnvelopeGrammar:
         return ('gap', 0, desc)
 
     def names(self, j, opt):
-        if j < len(self.contract.required):
-            return self.contract.spellings[j]
-        return tuple(n for i, n in enumerate(self.contract.optional) if not opt >> i & 1)
+        """The key spellings admitted at item position j (a leading key's own spellings, then
+        every pool key not yet written)."""
+        if j < len(self.contract.leading):
+            return self.contract.lead_spellings[j]
+        return tuple(n for i, names in enumerate(self.contract.pool_spellings) if not opt >> i & 1 for n in names)
 
     def after_key(self, j, opt, name):
-        if j < len(self.contract.required):
+        if j < len(self.contract.leading):
             return ('K', j + 1, opt)
-        return ('K', j, opt | 1 << self.contract.optional.index(name))
+        index = next(i for i, names in enumerate(self.contract.pool_spellings) if name in names)
+        return ('K', j, opt | 1 << index)
+
+    def required_value(self, j, name):
+        if j < len(self.contract.leading):
+            return True
+        index = next(i for i, names in enumerate(self.contract.pool_spellings) if name in names)
+        return bool(self.contract.pool_required >> index & 1)
+
+    def closable(self, j, opt):
+        return j == len(self.contract.leading) and opt & self.contract.pool_required == self.contract.pool_required
 
     # what comes next (whitespace allowed before it), entered with its first character
     def enter(self, desc, ch):
@@ -458,9 +484,9 @@ class EnvelopeGrammar:
             return self.gap(('K', 0, 0)) if ch == '{' else None
         if kind == 'K':
             _, j, opt = desc
-            if j == 0:
+            if j == 0 and opt == 0:
                 return ('kn', '', j, opt) if ch == '"' else None
-            if j == len(self.contract.required) and ch == '}':
+            if ch == '}' and self.closable(j, opt):
                 return self.gap(('ITEMS', False))
             if ch == ',' and self.names(j, opt):
                 return self.gap(('KQ', j, opt))
@@ -471,7 +497,7 @@ class EnvelopeGrammar:
             _, j, opt, name = desc
             if ch != ':':
                 return None
-            return self.gap(('V', j < len(self.contract.required), True, self.after_key(j, opt, name)))
+            return self.gap(('V', self.required_value(j, name), True, self.after_key(j, opt, name)))
         if kind == 'V':
             _, req, arr_ok, after = desc
             if ch == '"':

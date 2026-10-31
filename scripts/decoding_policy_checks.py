@@ -88,7 +88,7 @@ RAISE_LINE = generate_raises.__code__.co_firstlineno + 1
 TORCH = SimpleNamespace(no_grad=contextlib.nullcontext, cuda=SimpleNamespace(is_available=lambda: False))
 
 
-def wrapper(backend, model="fixture", name="ARCHIVIST", run_context=None):
+def wrapper(backend, model="fixture", name="CITATION_RESOLVER", run_context=None):
     w = object.__new__(agent_wrapper.AgentWrapper)
     w.backend, w.name, w.model, w.run_context, w.cost_tracker = backend, name, model, run_context, None
     w._optimized_semantics = True

@@ -55,8 +55,9 @@ An evaluation tool, not a review and not an arm. Two commands:
     interventions, dead end), and a prompt with a reference reply is compared with it; the
     per-path totals by set are under `validity`, `reference` and `constraint`. Ids, hashes,
     counts, the validator's reasons and seconds only, never a prompt's or a reply's text.
-    A file of envelope agents' prompts is replayed on their own model (the local auditor,
-    loaded by the run's loader in a process set up as the run's) on sdpa and sdpa_constrained
+    A file of envelope agents' prompts (one model a file) is replayed on their own model (the
+    local auditor for VERIFIER and PRACTICE_AUDITOR, loaded by the run's loader in a process set
+    up as the run's; the tuned producer for ARCHIVIST) on sdpa and sdpa_constrained
     only; sdpa_constrained carries the envelope constraint of each prompt's own agent, and every
     reply is judged by the agent's envelope validator and run_task's completeness rule, unchanged.
 
@@ -242,6 +243,7 @@ def extract(folders, out, *, min_chars=0, call_ids=None, dev=False, agents=None)
                             "source_call_id": row.get("call_id"),
                             "source_run_id": row.get("run_id"), "agent": row.get("agent"),
                             "backend": row.get("backend"), "model_id": row.get("model_id"),
+                            **({"envelope": True} if chosen is not None else {}),
                             "doc_id": row.get("doc_id"), "max_new_tokens": allowance if type(allowance) is int else None,
                             "prompt_sha256": payload["sha256"],
                             "reference_reply_sha256": reference if isinstance(reference, str) else None,
@@ -423,12 +425,16 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
     if len(models) != 1:
         raise ValueError("a replay replays one model's prompts; this file holds %d" % len(models))
     (model_backend, _), = models
-    envelope = model_backend != PRODUCER_BACKEND
+    # The envelope agents' prompts (extract --agents): each prompt names its agent and backend.
+    envelope = any(p.get("envelope") is True for p in prompts)
+    if envelope and not all(p.get("envelope") is True for p in prompts):
+        raise ValueError("a replay file holds envelope agents' prompts or producer prompts, not both")
     if envelope:
-        # The envelope agents' prompts (extract --agents): replayed on their own model, loaded by
-        # the run's own loader, under the run proper's setting only.
+        # Replayed on their own model, loaded by the run's own loader (the tuned producer for a
+        # local_producer agent, the agent's local model otherwise), under the run proper's
+        # setting only.
         backends = envelope_agents({p.get("agent") for p in prompts})
-        if set(backends.values()) != {model_backend}:
+        if set(backends.values()) != {model_backend} or any(p.get("backend") != model_backend for p in prompts):
             raise ValueError("a prompt's backend is not its agent's declared backend")
         if any(PATHS[name]["measurement"] for name in paths):
             raise ValueError("the envelope agents' prompts replay on sdpa and sdpa_constrained only")
@@ -438,14 +444,15 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                          "canonical compact payload" % sum(1 for v in compact.values() if not v))
     context = bare_model.RunContext(out, run_id or ("replay-" + uuid.uuid4().hex[:12]))
     built = backend is None
+    auditor = envelope and model_backend != PRODUCER_BACKEND
     if reader is None:
         reader = (bare_model.resolve_reader(agent=sorted({p["agent"] for p in prompts})[0], checkpoint=bare_model.BASE)
-                  if envelope else bare_model.resolve_reader(checkpoint=bare_model.TUNED))
-    if envelope and built and reader["model_id"] != next(iter(prompts))["model_id"]:
+                  if auditor else bare_model.resolve_reader(checkpoint=bare_model.TUNED))
+    if auditor and built and reader["model_id"] != next(iter(prompts))["model_id"]:
         raise ValueError("the prompts were rendered for %s; the agent's local model is %s"
                          % (next(iter(prompts))["model_id"], reader["model_id"]))
     if built:
-        backend = (EnvelopeReplayBackend if envelope else ReplayBackend)(reader, context)
+        backend = (EnvelopeReplayBackend if auditor else ReplayBackend)(reader, context)
     try:
         loaded = backend.prepare()
         limit = backend.max_context()

@@ -814,32 +814,36 @@ processing swarm governed by an append-only constitution.
   proven on fixtures only. The replay path changed `tools/ordinary_final_run.py`
   (`REPLAY_PATHS`), so bundles sealed before it refuse with `Controller source changed`.
   Check 295 and the decoding gate (strict determinism on CUDA) hold this.
-  The same processor carries the ENVELOPE of the local auditor agents (D-S14, s5_diag_b3 K9
-  and K11): VERIFIER and PRACTICE_AUDITOR on local_auditor (`config/envelope_decoding.json`,
-  `contract_decoding.EnvelopeGrammar`, built per call by `for_envelope` from the agent's own
-  contract in `config/agent_contracts.json`; a wrapper bound to a compact contract gets none).
-  Admitted: an optional opening fence, the envelope `{agent, doc_id, items}` in that key order
-  with `agent` the calling agent and `doc_id` any string, flat items opening with the
-  validator's required keys in its own order (`CORE_ITEM_REQUIRED`, then the contract's
-  `required`; the declared `confident` alias in its key's place), each neither null nor empty,
-  then any other declared field name at most once (the core optional keys, the contract's
-  fields, the finding_record fields), JSON whitespace in runs of at most 16, and the stop token
-  only after the envelope's closing brace, after which anything may follow. NOT constrained,
-  measured: enumerated values (24 of 47 valid VERIFIER items write a `finding` and 123 of
-  1,735 valid PRACTICE_AUDITOR items a `verdict` the contract does not declare, which the
-  validator accepts) and `doc_id` (2 valid PRACTICE_AUDITOR replies name another unit). Measured on every
-  saved reply of the two agents in L7, L8, L10, L11 and L12 with the Phi-3.5 tokenizer
-  (`tools/envelope_decoding_measure.py`): all 1,761 valid replies (26 VERIFIER, 1,735
-  PRACTICE_AUDITOR) are inside the language with 0 interventions, and all 10 failed ones leave
-  it. It does not stop a repetition inside a string or an item list that runs to the output
-  cap: 5 of those 10 (4 VERIFIER at 2,048 tokens, one item per reference; 1 PRACTICE_AUDITOR
-  at 768, one sentence repeated) stay truncated and are refused as before. Not covered: the
-  local_producer agents (their valid replies write the alias, other key orders and other doc
-  ids) and the other local_auditor agents (no saved replies to measure). Until the cloud replay
-  (`replay_prompts.py extract --agents VERIFIER,PRACTICE_AUDITOR`, then `run` on sdpa and
-  sdpa_constrained, judged by the agent's own validator) is read, it is proven on fixtures and
-  saved replies only. No bound controller file changed. Check 297 and the decoding gate hold
-  this.
+  The same processor carries the ENVELOPE of three agents (D-S14, s5_diag_b3 K9 to K11):
+  VERIFIER and PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer
+  (`config/envelope_decoding.json`, `contract_decoding.EnvelopeGrammar`, built per call by
+  `for_envelope` from the agent's own contract in `config/agent_contracts.json`; a wrapper bound
+  to a compact contract gets none). Admitted: an optional opening fence, the envelope
+  `{agent, doc_id, items}` in that key order with `agent` the calling agent and `doc_id` any
+  string, flat items opening with the agent's declared `leading_keys` in order, then the other
+  required keys (`CORE_ITEM_REQUIRED`, then the contract's `required`) and any other declared
+  field name (the core optional and runtime keys, the contract's fields, the finding_record
+  fields) in any order, each at most once, the item closing only when every required key is
+  written; the declared `confident` alias in its key's place; a required value neither null nor
+  empty; JSON whitespace in runs of at most 16; the stop token only after the envelope's closing
+  brace, after which anything may follow. `leading_keys` is the order every saved valid item
+  writes: VERIFIER every required key in the validator's order, PRACTICE_AUDITOR every one but
+  `explanation` (2 valid L12 replies write it last), ARCHIVIST its confidence key first. NOT
+  constrained, measured: enumerated values (36 of 74 valid VERIFIER items write a `finding` and
+  123 of 1,838 valid PRACTICE_AUDITOR items a `verdict` the contract does not declare, which the
+  validator accepts) and `doc_id`. Measured on every saved reply of the three agents in L7, L8,
+  L10, L11 and all 37 L12 entries with each backend's tokenizer
+  (`tools/envelope_decoding_measure.py`): all 1,932 valid replies (38 VERIFIER, 1,838
+  PRACTICE_AUDITOR, 56 ARCHIVIST) are inside the language with 0 interventions, and all 24
+  failed ones leave it. It does not stop a repetition inside a string or an item list that runs
+  to the output cap: 9 of those 24 (8 VERIFIER at 2,048 tokens, one item per reference; 1
+  PRACTICE_AUDITOR at 768, one sentence repeated) stay truncated and are refused as before. Not
+  covered: the other local_producer agents and the other local_auditor agents (no measurement).
+  The decoding checks' probe agent is CITATION_RESOLVER, so its kwargs test carries no
+  constraint. Until the cloud replay (`replay_prompts.py extract --agents ...`, one model a
+  file, then `run` on sdpa and sdpa_constrained, judged by the agent's own validator) is read,
+  it is proven on fixtures and saved replies only. No bound controller file changed. Check 297
+  and the decoding gate hold this.
 - HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
   controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
   wrappers, the progress and status readers, and every file under `tools/loop/`) passes its

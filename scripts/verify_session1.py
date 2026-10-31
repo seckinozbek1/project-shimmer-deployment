@@ -25112,10 +25112,10 @@ def check_296_request_ledger_check_catches_dropped_requests():
 
 
 def check_297_local_auditor_agents_decode_under_their_envelope_contract():
-    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 and K11): VERIFIER and
-    PRACTICE_AUDITOR on local_auditor failed their envelope contract in L8, L11 and L12 (the
-    envelope left unclosed, an item without a required key, a raw control character in a
-    string, text after a string closed too early). They now decode under the envelope
+    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
+    PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
+    contract in L8, L11 and L12 (the envelope left unclosed, an item without a required key, a
+    raw control character in a string, text after a string closed too early). They now decode under the envelope
     constraint of their own declared contract (scripts/contract_decoding.py EnvelopeGrammar,
     config/envelope_decoding.json), the envelope validator unchanged behind it. Runs
     scripts/envelope_decoding_checks.py: with a fixture tokenizer and a stand-in model each
@@ -25156,10 +25156,11 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
         if not (failed and restored):
             return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
                 getattr(owner, '__name__', owner), attribute, failed, restored)
-    return "PASS", ('%d checks: 6 envelope failure shapes prevented with the validator unchanged and reproduced with '
-                    'the constraint off; the output cap not prevented; 8 valid forms unchanged; wrapper, measurement '
+    return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
+                    'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
                     'and replay hold; 4 neutralisations fail and restore'
-                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+                    % (unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases(), len(checks.KINDS),
+                       len(checks.VALID_FORMS)))
 
 
 def check_293_scorer_reads_the_key_parts_d042_added():
@@ -25615,7 +25616,7 @@ CHECKS = [
      check_295_compact_producer_decodes_under_its_contract),
     ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
      check_296_request_ledger_check_catches_dropped_requests),
-    ("297 the local auditor agents decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+    ("297 the local auditor agents and ARCHIVIST decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
      check_297_local_auditor_agents_decode_under_their_envelope_contract),
 ]
 
