@@ -589,3 +589,10 @@ open-item sweep.
 - **Evidence.** L7 entry 03 (`external/s05/L7`), the L7 analysis (private `analysis/an_l7_report.md`), D-106. The round scorer does not count it, so no score shows it.
 - **Why it was left.** A change to how a table's fields are read touches every corpus's pairing (P16); found in S5 analysis, after the S5 code was settled.
 - **What would settle it.** A rule that a table unit's fields include its row labels, or that an absence on a table unit is checked against its cells, with a gate check, measured on the corpora before and after.
+
+## 50. The multi-round strategic VERIFIER call is decoded under an envelope grammar no measurement covered (found at loop S5 close, lane s05-c279) (issue #105)
+
+- **What it is.** Since the envelope constraint (D-129), every VERIFIER call on the local auditor is decoded under a grammar built from the contract its wrapper carries. The multi-round strategic layer replaces the wrapper's contract (`multi_round_phase._call`), so its VERIFIER call is constrained by the strategic contract's own keys, a shape the R2 measurements never saw.
+- **Evidence.** Lane s05-c279's report: check 279's stand-in tokenizer could not build the token table, which is how the path was found; on the fixture the call now records `decoding_constraint` with 0 interventions.
+- **Why it was left.** The grammar follows the same contract the validator checks, so it admits only replies that contract accepts; whether the decision-support call should be constrained is a scope decision without a measurement (P9 reason b).
+- **What would settle it.** A replay of saved strategic VERIFIER prompts on sdpa and sdpa_constrained under a rule written before the measurement, or a decision to exempt that call, with a gate check.
