@@ -146,9 +146,63 @@ Every analyser report of an S5 launch has the purpose on line 1 (`Purpose: <purp
 
 Every reading is far below both limits. Correction at S5 checker round 2 (S2, D-087): the previous lead did read usage and the reaper's last run at each of L1 to L5v, in the same shell command that started the controller (or 9 seconds before it, L5v), and each launch intent in the private ledger follows its reading by under a minute (L1 09:52:10, L2 12:24:21, L3e 16:24:34, L4a 20:20:01, L5v 00:13:12 UTC); each reaper run was under 5 minutes old. Those readings were kept only in the previous lead's session transcript, outside the loop's record files, which is why round 1 found none; they are copied here. The "Launched" column repeats the times on `BUDGET.md`'s forecast rows; the ledger's launch intent times are the ones above (L2's is 31 minutes after its forecast row's time: two earlier starts of its controller, at 12:20 and 12:21 UTC, were refused before any launch intent, each after its own usage reading of 13 and 4). Whether the usage status file was itself under 10 minutes old at each reading is shown only for L2 (its own time, 12:20:32 UTC, was printed 3.5 minutes before the launch command); the status line rewrites it every minute while the session runs.
 
+## Brought back under D-S12 (30 October 2026)
+
+The operator's decision D-S12 (Annex D, revised at 00:20 on 30 October) reopened S5 after its first merge (`2dea80f`, unpushed; D-090, D-091): a 200 USD budget, the work S5 had left for lack of money done in S5, a look-back sweep, and the order of item 7. Each item below has its D-number.
+
+### Order of work (D-S12 item 7)
+
+1. Budget 200 USD, reaper hard stop 199 USD: ledger line 2026-10-29 21:26:33 UTC; reaper proof step 6 runs 49, 69, 199 on the mocked provider, neutralised and restored (D-091).
+2. First look-back sweep (private `sweep_01_s5.md`): **83 found, 14 brought back, 18 decided, 46 kept, 5 to Seckin** (D-092).
+3. Allocation (D-092): spent 20.99; S5 brought-back work 70.81; S6 5.74; S9 and S10 0; smoke runs 3.12; reserve 10; S8 89.34 USD.
+4. Preregistration version 2 (D-093 to D-095): S4e item 2's unchanged rule with A = 89.34 USD gives ContractNLI 30 documents and SciTab 30 documents (both qualify; H1 tested on both) and a ContraDoc pilot of about 17; two fresh checker attacks (the first on a draft for a superseded allocation, rejected; the second closed in D-094); C0 run 4 in full agreement; version 2 frozen (LF SHA-256 `0c1884fb...`, scorer `2df0a673...`). A draft for 60 USD was withdrawn (D-091).
+5. The brought-back work (below), then this stage's checks, report and merge.
+
+### Items
+
+- **Open item 35** (the multi-round phase's call ran to its cap): the case records are computed in Python, no model asked; the round signature reads only the labels each paired rule names (round 3 recomputed all 11 units before). Settled on real execution in L7: all nine multi-round entries reached `reviewed` and `activated` (D-100). The runner's model-call requirement then failed them (`required_telemetry_missing`); fixed so a declared multi-round run is held by its own evidence (D-101), and the nine were re-run in L12, all nine passing (D-112, D-128).
+- **Open item 37** (peak disk on the instance): runner and evidence-packer readings (D-098 lane s05-meas, check via the controller gate). Read in L7: 45.24 GB in use before the first workload on a 1,455 GB filesystem, about 0.28 GB more per entry, 48.33 GB after the twelfth (D-100). Closed.
+- **Open item 38** (phases before phase 3): four spans in `phase_latencies` (check 294). Read in L7's catalogue run: start 0.28 s, ingestion and roles 0.06 s, boot and index 21.75 s, phase 1 0.003 s (D-100). Closed.
+- **Open item 39** (multi-round step times): a multi-round run has no topology runtime, so its own timings are recorded in `audit/multi_round.json` (D-101); read on L12's nine re-runs and closed (D-128).
+- **Open item 40** (cost per correct FLAG item, development only, after version 2's freeze; D-096, extended with L11): see the cost table below.
+- **Open item 17** (the repository scorer's three key parts): closed (D-098, check 293, attacked and fixed before merge).
+- **S5 cuts of D-073 and D-077**: CUAD's B3 output and cost (L10), the development suite on B3 (L8, L9a, L9b), the catalogue regression and both negotiation comparisons and the negotiation multi-round case (L7), dry runs to five documents (L11).
+
+### Launches after D-S12
+
+| Launch | Purpose | Sealed at | Entries | Billed min | USD (forecast) | Integrity |
+|---|---|---|---|---|---|---|
+| L11 | dry runs to five documents (ContraDoc, SciTab, ContractNLI) | d50b299 | 16 (8 B3, 8 B1) | 191 | 4.11 (5.53) | B1 8 of 8; B3 2 of 8 |
+| L7 | multi-round cases, catalogue regression, negotiation comparisons, family 4 tests and twins | 55f1dd1 | 12 B3 | 64 | 1.38 (10.62) | 1 of 12 (nine reviewed multi-round runs failed the runner's model-call rule, D-100) |
+| L10 | CUAD, one development contract | 55f1dd1 | 2 (B3, B1) | 125 | 2.69 (4.11) | B1 passed; B3 semantically incomplete |
+| L8 | development suite: 20 tests and twins | 55f1dd1 | 40 (20 B3, 20 B1) | 271 | 5.83 (15.09) | B1 20 of 20; B3 1 of 20 |
+| R1 | replay proof of contract-shaped decoding (136 producer prompts, two paths) | cd498a3 | 1 B1 replay | 96 | 2.06 (3.13) | rules A to D met; 52 of 52 failing partitions valid (D-116) |
+| L12 | re-run of the 37 failed B3 entries after the D-S14 fixes | 2b585af | 37 B3 | 610 | 13.12 (13.98) | 24 of 37 (L7 11/11, L11 5/6, L8 8/19, L10 0/1) |
+| R2a | cloud proof of the envelope constraint (82 auditor prompts, two paths; D-129, D-130) | 7cb979e | 1 B1 replay | 125 | 2.69 (3.63) | passed; A, B, C hold; 12 of 22 failing calls fixed (D-132) |
+| R2b | the same for ARCHIVIST (14 prompts, two paths), beside R2c on a second instance | abd288c | 1 B1 replay | 28 | 0.60 (1.12) | passed; A to D hold; 2 of 2 fixed (D-134) |
+| R2c | VERIFIER at a 4,096-token allowance (8 capped prompts, informational) | abd288c | 1 B1 replay | 70 | 1.51 (2.10) | passed; 4 of 8 end within 4,096 (D-134) |
+| L12b | second re-run of the 13 still failing, two sessions on two instances | d6ce19a | 13 B3 | 178 + 114 | 6.28 (11.18) | 10 of 13 (D-138) |
+
+
+### Results (development, exposed; no inference)
+
+- **L11, dry runs on current code** (8 development documents, B3 and B1 tuned; private `an_l11_report.md`). Every run reached its end; B1 tuned passed on all eight (7.67 to 9.03 GiB); six of eight B3 runs semantically incomplete (PROCESSOR contract violations in 3, EDITOR_CLERK `items[0].kind` in 3, PRACTICE_AUDITOR in 2 on ContractNLI band B). All 408 B3 judging plans uncomputable: 101 answers kept as model-written records, 293 refused, 2 reply failed. ContractNLI band B's 272 plans ran in waves (D-076). Headlines, B3 against B1 tuned: ContractNLI 9 of 34 against 18 of 34 (B3 under S-8 21 of 34); SciTab macro-F1 0.375 against 0.475 (S-8 0.222); ContraDoc 2 of 3 each. Every B3 FLAG label on ContractNLI and SciTab came from a model-written record. Model-text review (seed 2016037227976882296, 15 of 526): 1 correct, 5 partly correct, 9 wrong; all five kept D-068 records partly correct or wrong (open item 34).
+- **L7, ordinary entries** (private `an_l7_report.md`). Catalogue regression (TCR-006): still 0 of 5 located, no false positives: three planted absences never reach a judge (no `[scope:]`/`[requires:]`, the TCR-012 mechanism), the vocabulary defect has no Finding relation, the closed-record defect was refused for naming the wrong field. Negotiation r2 to r3 (TCR-001): 6 of 6, bands 3 of 3, as before; one kept model record (wrong) and one false Python `missing_field` amendment on the summary table. Negotiation r3 to r4 (TCR-002): 13 of 13 on the records (the scorer's 12 of 13 is one hyphenated label), bands 2 of 2 attributed, Python's false band records 5 to 0. TCR-012 confirmed on the runs. Both comparisons semantically incomplete (PROCESSOR partitions). Every negotiation amendment sits at document level with no REF id (the document under review is indexed twice under one id; open item 31). Text review: 30 texts, 8 correct, 9 partly correct, 13 wrong; all 3 kept D-068 records wrong `below_band` answers on figures inside their bands.
+- **L10, CUAD** (contract `527255a5c970`; private `an_l10_report.md`). B3 semantically incomplete (7 of 10 PROCESSOR partitions refused: malformed contracts, one truncated at 1,536 tokens); phase 5.5 86.8 of 98.9 minutes, 410 plans in two waves at about 12.7 seconds a plan; all 410 uncomputable answers refused for one reason, an absence claim with no quote, so B3 records nothing and labels all 41 categories present. B1 tuned passed (41 of 41 parsed, 14.2 seconds a call, 9.73 GiB). Macro-F1 B3 0.146 against B1 tuned 0.593; correct FLAG (absent) B3 0 of 34, B1 tuned 24. Cost 112.6 minutes, 2.42 USD a document, 0.059 USD a decision (the allocation forecast 21.76 USD for a mean contract). Text review: 15 of 433, 10 correct, 3 partly correct, 1 wrong, 1 empty.
+- **Cost per correct FLAG item** (open item 40, development; D-096 extended with L11): ContractNLI B3 2.57 USD (2 correct), B1 tuned 0.51 (1); SciTab B3 0.061 (7), B1 tuned 0.061 (4); ContraDoc B3 none (0 correct), B1 tuned 0.09 (1); CUAD B3 none, B1 tuned 0.0087 (24). Under S-8, B3 has no correct FLAG item on any benchmark.
+- **Minutes per scored decision with the brought-back documents**: ContractNLI 3.67 (band A 2.31, B 4.57), SciTab 2.22, ContraDoc 10.11, CUAD 2.75. These are development measurements after version 2's freeze; they change no size (D-093, D-095).
+
+### D-S14: every development run must complete (D-111 to D-116, D-128)
+
+First runs of L7, L8, L10 and L11: 33 failed B3 entries by kind (private s5_diag_b3.md): dating `ValueError` 2 (K1), VERIFIER out of GPU memory 10 (K2), the producer's compact contract 52 of 283 partitions in 15 entries (K3 to K7), EDITOR_CLERK `kind` 4 (K8), rarer agent shapes in 5 (K9 to K11), the runner's model-call rule on nine multi-round runs (K12). Fixed: K1 (four-digit years), K2 (VERIFIER shown no runtime identifiers), K3 to K7 (contract-shaped decoding, validator unchanged, proven by R1), K8 (declared single kind stamped), K12 (D-101). After the fixes, L12 re-ran all 37 that had failed: 24 pass; no out-of-memory, no `ValueError`, no telemetry failure and no producer violation remain. The 13 left fail on PRACTICE_AUDITOR (9), VERIFIER (8) and ARCHIVIST (1) envelopes: 6 of the 13 are predicted cleared by extending the constraint to those agents (D-129, proof R2); the other 7 fail because VERIFIER lists one item per reference until its 2,048-token output allowance ends, which no constraint shortens; an informational pass at 4,096 tokens (R2c) informs the run-setting decision. R2 runs as three launches (no B1-only batch form, D-130); two loop instances at once are merged and proven (D-S17 item 1, D-131).
+
+On the A10 (R2, D-132, D-134): the constraint changed no valid reply of the three agents (72 valid prompts byte-identical, 0 interventions, equal GPU memory) and fixed 14 of 24 failing calls (10 missing explanations, 2 unclosed VERIFIER envelopes, 2 ARCHIVIST replies without confidence). The VERIFIER lists that ran to the 2,048-token cap are a budget, not a shape: at 4,096, 4 of 8 end and pass, so VERIFIER's allowance became 4,096 (a run setting, D-134); the other 4 repeat one item per reference past 4,096 and are recorded with that cause.
+
+L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowance and the envelope constraint, as two sessions on two instances at once (292 billed minutes in all, 6.28 USD): 10 pass. Of the 37 B3 development entries that first failed integrity, 34 now pass. The 3 left, each with its cause and an open item: `f1_s1101_cvjx`, two PRACTICE_AUDITOR replies the constraint kept open for their required explanation, which then ran to 768 tokens (open item 47); `cuad_527255a5c970` and `f3_s3102_vwmj`, VERIFIER lists that run to 4,096 (open item 48). Under D-S18 item 2a they are recorded and do not hold v1 back.
+
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-088:
+`docs/loop/DECISIONS.md`, D-055 to D-136 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -184,6 +238,54 @@ Every reading is far below both limits. Correction at S5 checker round 2 (S2, D-
 - D-086: S5 checker round 1's record items: D-069's blind acceptance criterion and the S8 limitation; the FinDVer estimate labelled; the review seeds; the purpose-line reading; the item 9 figures not recorded (P9 e).
 - D-087: S5 checker round 2's record items: the cloud-run baseline pair at the S5 base, the usage readings at L1 to L5v, the A1 limitation bound forward (open item 36), the side gates' commit and the merges between.
 - D-088: S5 checker round 3's record items: the item 9 deferrals bound to S6 and S8 as open items 37 to 40 (reasons corrected from P9 e), the C0 hash records, INC-024, the units of the clean twin's model records, the logs not kept, the final-integration errors named, the purpose-line reading under P2.
+- D-089: Tie-break on the section 13 attack (IV.4 step 5): two confirmed, record fixes; the freeze stands
+- D-090: D-S12 applied: S5 reopens for open items 37 to 40, the budget is 100 USD, and S8 is re-sized with 60 USD
+- D-091: D-S12 as revised at 00:20 replaces D-090: 200 USD, parked work brought back, a look-back sweep, and the order of item 7
+- D-092: The first look-back sweep, what is brought back, and the allocation of D-S12 item 4
+- D-093: Preregistration version 2: S4e item 2's rule with A = 89.34 USD
+- D-094: The attack on preregistration version 2 closed
+- D-095: C0 run 4 in full agreement; preregistration version 2 is frozen
+- D-096: Open item 40 settled: cost per correct FLAG item on the development benchmarks
+- D-097: The brought-back launches: staging, run modes, and order
+- D-098: Open item 17 closed: the repository scorer reads the three key parts; the input format draft's scorer sentences
+- D-099: Disk for the brought-back launches: worktrees removed, identical archives hard-linked, sealing just in time
+- D-100: L11 and L7 read: open items 35, 37 and 38 settled on real execution; the runner's model-call requirement fails a multi-round run
+- D-101: A declared multi-round run is assessed on its own evidence; open item 39's step times recorded
+- D-102: The measurement lane merge (open items 37 and 38) and what it bound
+- D-103: Open item 35: the multi-round case records are computed in Python and no model is asked
+- D-104: Open item 40 extended with L11 and L10 (development)
+- D-105: CUAD measured (L10) and kept off the S8 list
+- D-106: The regression of the catalogue test and both negotiation comparisons (L7)
+- D-107: Departures and record corrections after the D-S12 checker of the work so far
+- D-108: Second reading of version 2's late fixes; how S8c packs sessions; no version 3
+- D-109: D-S13 applied: items 1, 4, 5 and 12 now; item 10's question; where the other items go
+- D-110: D-S13 item 3: the four large disk users found out, nothing deleted; items 7 to 9 started
+- D-111: D-S14 applied: every development run must complete; L8 runs on, L9a and L9b held, the causes diagnosed first
+- D-112: D-S14: the failure causes found, and the fixes chosen
+- D-113: D-S13 items 8 and 9: CUAD as a claim check is a secondary arm; the benchmark scoring mode merged
+- D-114: D-S14 fixes merged and proven on the laptop; contract-shaped decoding adopted only if its cloud re-measure meets rules A to C
+- D-115: D-S13 item 7 merged, and the allocation redone for the D-S13 and D-S14 work
+- D-116: R1 read: contract-shaped decoding meets rules A to D and is adopted
+- D-117: FinDVer's B1 candidate adopted for development measurement; L13 staged
+- D-118: What may be read from L13 before preregistration version 3 is frozen
+- D-119: D-S15 applied: disk read, deferrals into FOR_SECKIN, item 6d named, LOOP_STATE corrected
+- D-120: D-S15 items 4 and 5 applied: issues in step, the ledger of Seckin's requests
+- D-121: The first records consistency check (D-S15 item 7): 25 found, 25 fixed
+- D-122: D-S16 received: the order of its application
+- D-123: D-S13 items 6b and 6c: the launcher's quoting defect, and where each install runs
+- D-124: D-S16 item 1: the ledger has its two columns and a checking script that proves itself
+- D-125: D-S16 item 3: GitHub as a second witness; the stage gate defined
+- D-126: Preregistration version 3 drafted; its ten open points decided before any L12 or L13 figure is read
+- D-127: D-S17 applied: two loop instances (in a lane, proven first), the S5 launch order, S12 out of the loop
+- D-128: L12 read: 24 of 37 re-runs pass; the producer's failures are gone; three agents' envelopes remain
+- D-129: The envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST merged; R2's rule; VERIFIER's output cap
+- D-130: R2 as three launches; the records consistency check before R2a: 21 found, 21 fixed; the twoinst merge after R2a
+- D-131: Two loop instances merged and proven (D-S17 item 1); PROGRESS.json recomputed in full (D-S17 item 4)
+- D-132: R2a read: the envelope constraint adopted (rules A, B and C hold); 12 of 22 failing auditor calls fixed
+- D-133: D-S18 applied: v1 by Monday 2 November 12:00 +0300; the order of work; money
+- D-134: R2b and R2c read; VERIFIER's output allowance raised to 4,096 (a run setting)
+- D-135: The records consistency check before L12b: 22 found, 22 fixed; memory floors for checks and for two instances
+- D-136: VERIFIER's output allowance merged (4,096; FACT_CHECKER keeps 2,048); L12b sealed on it
 
 ## Bound controller files and pinned functions changed in S5
 
