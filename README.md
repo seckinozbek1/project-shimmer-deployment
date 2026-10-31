@@ -125,22 +125,22 @@ If the two ever differ, the results page is the current one.
 |---|---|---|---|---|---|
 | ContractNLI | 2 agreements, 34 items | 0 of 5, 0 of 2, 0.000 | n/a, 0 of 2, n/a | 0 of 3, 0 of 2, 0.000 | 63.5 and 5.4 |
 | SciTab | 3 tables, 14 claims | 4 of 7, 4 of 7, 0.571 | n/a, 0 of 7, n/a | 3 of 3, 3 of 7, 0.600 | 4.4 and 1.8 |
-| ContraDoc | 3 documents, 3 items | n/a, 0 of 1, n/a | n/a, 0 of 1, n/a | 1 of 1, 1 of 1, 1.000 | 6.8 and 0.9 |
-| CUAD | 1 contract, 41 categories | n/a, 0 of 34, n/a | n/a, 0 of 34, n/a | 24 of 27, 24 of 34, 0.787 | 114.3 and 9.7 |
+| ContraDoc | 3 documents, 3 items | n/a, 0 of 1, n/a | n/a, 0 of 1, n/a | 1 of 1, 1 of 1, 1.000 | 5.7 and 0.9 |
+| CUAD | 1 contract, 41 categories | n/a, 0 of 34, n/a | n/a, 0 of 34, n/a | 24 of 27, 24 of 34, 0.787 | 109.2 and 9.7 |
 | FinDVer | 1 filing, 1 item | not measured | not measured | not measured | 97.7 and 13.4 |
-| Synthetic suite | 20 bundles, 48 planted rule items | 42 of 47, 42 of 48, 0.884 | 40 of 40, 40 of 48, 0.909 | 35 of 66, 35 of 48, 0.614 | 10.9 and 2.5 |
+| Synthetic suite | 20 bundles, 48 planted rule items | 42 of 48, 42 of 48, 0.875 | 40 of 40, 40 of 48, 0.909 | 35 of 66, 35 of 48, 0.614 | 10.6 and 2.5 |
 
 What these figures do not show:
 
 - **Samples are tiny.** One to three documents per benchmark, one run per
   document. One item more or less changes a figure a great deal.
-- **Several B3 runs failed their execution checks** and are counted as failed:
-  one ContraDoc document, the CUAD contract and 11 of the 20 suite bundles. The
-  results page names each one.
+- **Some B3 runs still failed their execution checks after a second re-run**
+  and are counted as failed: the CUAD contract and 2 of the 20 suite bundles.
+  The results page names each one with its cause.
 - **The synthetic suite is exposed by construction.** Its generators, seeds and
   answer keys are in this repository. It measures regressions, not recall on
   unseen material. On the suite's clean twins, B1 flagged 31 items and B3 in
-  benchmark mode flagged 5; B3 in benchmark mode also wrote 51 records on units
+  benchmark mode flagged 6; B3 in benchmark mode also wrote 45 records on units
   with no planted flaw.
 - **The suite's generators were written by the same model family that builds
   Shimmer**, so the tests and the pipeline may share blind spots.
@@ -159,12 +159,13 @@ What these figures do not show:
 
 **Which code was measured.** The runs were built from commits `8b48f78`,
 `344522f`, `18eee21`, `d50b299`, `55f1dd1` and `2b585af`; labels and scores were
-computed at `6fa01b9`. The v1 code has changes after `2b585af` that these runs did
-not have, among them a decoding constraint on the output of VERIFIER,
-PRACTICE_AUDITOR and ARCHIVIST, and a larger VERIFIER output allowance (4096
-tokens). At this commit no figure on the results page was measured on code with
-those changes; a second re-run of the failed entries on it (L12b) is in progress
-and its figures go to the results page. There is no release-candidate commit.
+computed at `6fa01b9`. The second re-run of the entries that still failed (L12b)
+was built from `d6ce19a`, which adds a decoding constraint on the output of
+VERIFIER, PRACTICE_AUDITOR and ARCHIVIST and a larger VERIFIER output allowance
+(4,096 tokens). So the rows that use an L12b run (one ContraDoc document, the
+CUAD contract and 11 suite bundles) are on newer code than the rest; the results
+page says which run each row uses. Changes made after `d6ce19a` were not
+measured. There is no release-candidate commit.
 
 **History.** The reports under `docs/fix/` from September 2026 describe runs on
 tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
@@ -203,11 +204,11 @@ operator's recorded observation.
   21.89 GB allocated. In one launch, ten VERIFIER prompts of 44,467 to 54,657
   tokens ran out of GPU memory on the A10 before their first token; the prompt
   shown to VERIFIER was made smaller after that.
-- **Time per document.** From 4.4 minutes (a SciTab table) to 114.3 minutes (a
+- **Time per document.** From 4.4 minutes (a SciTab table) to 109.2 minutes (a
   CUAD contract) for Shimmer, and 0.9 to 13.4 minutes for the bare model, on the
   instance, model loading included. See the table above.
 - **Cost.** Instance time only, at the rate above: for example 2.73 USD for the two
-  ContractNLI agreements and 4.67 USD for the 20 suite bundles. Each launch also
+  ContractNLI agreements and 4.57 USD for the 20 suite bundles. Each launch also
   spent about 15 minutes on setup, and each entry about 2 minutes. The loop's
   spending record is [docs/loop/BUDGET.md](docs/loop/BUDGET.md).
 - **Laptop.** The project's standing rule (in [CLAUDE.md](CLAUDE.md)) records that
@@ -250,7 +251,8 @@ stops right after creating `.venv`, with a path syntax error.
 
 **Linux and macOS shell.** `./shimmer.sh` does the same as `shimmer.bat`, and in
 Git Bash on Windows it uses an existing Windows `.venv` (`.venv/Scripts`). Before
-the S7 merge it recreates the environment at every start in Git Bash.
+the S7 merge, in Git Bash it stops after the environment step, before the install
+and the menu, because it looks for `.venv/bin/python`.
 
 **Windows, desktop console.** From the checkout, once the packages are installed:
 
@@ -259,9 +261,9 @@ the S7 merge it recreates the environment at every start in Git Bash.
 ```
 
 It finds a compatible Python (`tools/resolve_python.bat`), checks prerequisites,
-starts the local server and opens the console in the browser. Use **Copy token**
-to connect the browser. Keep the starter window open and use **Stop** to stop the
-server; closing the browser leaves the server running.
+starts the local server and opens the console in the browser. Use **Copy access
+token** to connect the browser. Keep the starter window open and use **Stop
+Shimmer** to stop the server; closing the browser leaves the server running.
 
 **Container.** The [Dockerfile](Dockerfile) builds an image with an external model
 cache, or with the weights baked in (`--build-arg BAKE_WEIGHTS=true`).
@@ -403,7 +405,7 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
   (`build`, `label --scoring benchmark|as_shipped`, `score`). `label` also writes
   the sensitivity analyses, S-8 among them; the "as shipped (S-8)" figures above
   are S-8, not `--scoring as_shipped`, which gives today's reading and can differ
-  (on the suite, precision 42 of 45 against S-8's 40 of 40). The bare-model arm
+  (on the suite, precision 42 of 46 against S-8's 40 of 40). The bare-model arm
   is `benchmark/baselines/bare_model.py`. No benchmark data is committed;
   `docs/benchmarks/SELECTION.md` names each source, version and licence.
 - **Runs.** Full runs go to a rented GPU through the sealed controller
