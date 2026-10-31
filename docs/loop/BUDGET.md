@@ -191,3 +191,11 @@ Corrections: R1's forecast is 3.13 USD (112 minutes at 1.29 USD an hour, times 1
 | R2c | d-s14-verifier-cap-4096, 8 prompts, sdpa_constrained, informational | 75 | external/s05/R2/verifier_cap_B1 (re-sealed after the twoinst merge) |
 
 The smoke 3.12 of the allocation table above went back to the pool under D-S17 item 3 (D-127); it is not spent on S12.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| R2a | 2026-10-31 08:05 to 10:10, d-s14-envelope-replay-auditor, sealed at 7cb979e | 3.63, cap 5.45 (130 minutes times 1.3) | 125 minutes, 2.69 USD; integrity passed, 164 reply records; A, B, C hold, 12 of 22 fixed (D-132). Usage at launch not read; disk 69 GB, free memory 4.2 GB. Running instance total after it: 52.50 |
+| R2c | launched 2026-10-31 about 10:20, d-s14-verifier-cap-4096, sealed at abd288c | 2.10, cap 3.14 | running (first two-instance use, D-133) |
+| R2b | launched 2026-10-31 about 10:22, d-s14-envelope-replay-archivist, sealed at abd288c | 1.12, cap 1.68 | running |
+
+D-S18 (D-133): about 147 USD left; v1 work about 13, the parallel track 30, the sealed evaluation at least 60, the moved steps about 42.
