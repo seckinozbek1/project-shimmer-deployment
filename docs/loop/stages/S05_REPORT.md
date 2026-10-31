@@ -21,12 +21,14 @@ Stage S5 of the autonomous loop of 27 October 2026, on branch `loop/s05`, create
 
 S5 spend: 20.64 USD of 24 (ledger; L1 0.49, L2 3.18, L3e 3.38, L4a 2.60, L5v 1.31, L4b 4.39, L6 3.74, L6m 0.99, L6s2 0.56). 3.36 USD is unused and is the only money S6 may spend (IV.3, D-083). No overrun reached the reserve.
 
+After the reopening (D-S12 to D-S18): S5 spend is 60.89 USD of instances in all by the ledger's terminations (20.64 before D-S12, then L11 4.11, L7 1.38, L10 2.69, L8 5.83, R1 2.06, L12 13.12, R2a 2.69, R2b 0.60, R2c 1.51, L12b 6.28: 40.25 after D-S12), against the D-092 and D-115 allocations and, from D-133, the D-S18 order (v1 work, the parallel track 30, the sealed evaluation at least 60, the moved steps). The 3.36 USD sentence above is the first close's and is superseded by the 200 USD budget (D-091). The reaper reading at the close and BUDGET.md's S5 closing line are in "Stage boundary".
+
 ### Items of the S5 specification
 
 1. **Smoke run (L1).** Every model reply saved (`audit/model_replies/`, outcomes appended), the honest deliverables, the 11.12 report fields, the budget guard, the ledger lines and the `shimmer-loop-` name, and the asset copy: MATCH, measured, so later forecasts dropped the upload (overhead 15.4 minutes measured against 48.3 with the upload).
 2. **First real multi-round run (L6m).** The synthetic family 4 case of three rounds (`f4_s4103_vqjj`) and the negotiation case of three offers (anonymised material only, H6), B3. In L6 the synthetic case was in its archive check at the 18:15 stop; both ran in L6m. Both reached the multi-round phase with activation `activated` and were refused there (`agent_output_unavailable`, pipeline exit 8): the phase's reading-agent call got a 15,795-token prompt and ran to its 4,096-token cap in 944 seconds, outside the two-turn shape the checkpoint was evaluated on (INC-023). `audit/round_reuse.json` of the synthetic case: round 1 computed 11 units, round 2 reused 8 and computed 3 (the do-not-recompute rule holds on real execution), round 3 computed all 11 (why every unit counted as changed in round 3 is not yet read; it is to be read in S6a, open item 35). The health criterion (outcome `reviewed`) is not met: deferred to S6a with open item 35 (D-082, P9 b).
 3. **Regression on the existing exposed tests.** The clinical sheet (L1, L5v) and the device-log flawed document and clean twin (L5v) on current code, scored with `tools/score_corpus.py`: clinical location 5 of 5, reason confirmed 4 of 5, false positives 0 (L5v); device log location 3 of 10, reason confirmed 2 of 10, false positives 0; clean twin false positives 0. These false-positive counts are counted by the scorer over amendments only, so they cannot show a false alarm made by a model-written record: the clean twin's model-written records and model-only relations are in the limitation below item 8 (open item 36). The catalogue test and both negotiation comparisons were cut by the spend order (D-077, P9 b; FOR_SECKIN.md).
-4. **The development suite.** B3 on the suite was cut (D-073). B2 ran every bundle on the laptop at no cost (84 bundles, 0 failures; location and reason-confirmed recall: family 1 tests 24 of 28, probes 92 of 112; family 2 24 of 36, 90 of 144; family 3 22 of 22, 80 of 88; family 5 22 of 22, 82 of 88; family 6 22 of 26, 88 of 104; 0 false positives on every bundle; every twin 0). Family 4 (multi-round) is not measurable by B2 (R4, open item 28). The scorer's twin comparison cannot read a B2 run (open item 32).
+4. **The development suite.** B3 on the suite was cut (D-073). B2 ran every bundle on the laptop at no cost (84 bundles, 0 failures; location and reason-confirmed recall: family 1 tests 24 of 28, probes 92 of 112; family 2 24 of 36, 90 of 144; family 3 22 of 22, 80 of 88; family 5 22 of 22, 82 of 88; family 6 22 of 26, 88 of 104; 0 false positives on every bundle; every twin 0). Family 4 (multi-round) is not measurable by B2 (R4, open item 28). The scorer's twin comparison cannot read a B2 run (open item 32). (First close. After the reopening B3 ran the suite: L8, re-run in L12 and L12b; see "Development scores after the reopening" below.)
 5. **Adapter dry runs and baseline proofs.** On current code (after D-068): ContraDoc 2, SciTab 2, ContractNLI 3 merged agreements, FinDVer 1, CUAD 0 (D-073), below five documents per benchmark (a recorded cut, P9 b). L6 re-measured B3 on the five L4a documents under D-068 and on ContractNLI band B under D-076. L2's ten documents ran under earlier code and count for cost only. B1 ran on every dry-run item with both checkpoints; at full length on FinDVer it fits (18.6 and 20.9 GiB allocated of 24) but gave no parseable label. B2 ran on every built development bundle on the laptop. Labels and the official metrics are computed by the adapters on development items only (`external/s05/labels/`, ignored).
 6. **Fix and re-run.** INC-011 to INC-023 (private). Product fixes in S5: D-061 (general fixes from L2), D-063 (sdpa one shot for the producer and B1), D-066 (scoring a semantically incomplete run), D-068 (model answers on uncomputable plans kept as model-written records; verified by L5v, D-070), D-076 (a phase above the scheduler bound runs as waves; INC-019; re-run in L6), D-078 (adapters: section 5.3's over-context exclusion with S-7, the rule-id map adopted), D-079 (every child process on the controller path starts with no window; check 292). Test-infrastructure: checks 229 and 233 (INC-017), check 222 restores the launcher byte for byte (INC-022). Not fixed in S5: INC-023 (open item 35).
 7. **Diagnostics.** (a) The clean twin draws more records than the flawed document because the model answers uncomputable plans (D-068 path), not because of a computed finding: in L5v the twin has 0 Python records and 10 model-written records (8 of them answers kept under D-068, of 32 judging calls), all marked and none an amendment. (b) Empty extractions: the compact extraction contract accepts a claim only by an id written in the span, and no real document carries one, so every reply that wrote a claim was refused (open item 30). (c) The classifier gave one label on the clinical sheet because every extraction it saw was empty; it is not a classifier fault. (d) Check 232's two items verified on saved replies: the deepening cap holds (never reached: at most one finding per run) and every amendment keeps its typed record (10 of 10). Side finding: amendments with no REF id raise validator errors (open item 31).
@@ -143,12 +145,281 @@ Every analyser report of an S5 launch has the purpose on line 1 (`Purpose: <purp
 | L6s | not launched | | | | |
 | L6m | 29 Oct | 8 | 23 | 29 Oct 16:30 | the current lead's session |
 | L6s2 | 29 Oct | 10 | 23 | 29 Oct 17:18 | the current lead's session |
+| L11 | 29 Oct 23:17 UTC | 0 | 35 | | BUDGET.md line on usage since D-S12 |
+| L7 | 30 Oct 02:56 UTC | 2 | 36 | | as L11 |
+| L10 | 30 Oct about 04:08 UTC | 0 | 36 | | as L11 |
+| L8 | 30 Oct about 07:40 UTC | 4 | 37 | | as L11 |
+| R1, L12 | 30 Oct | 7 (L12) | 47 (L12) | | BUDGET.md L12 row |
+| R2a, R2b, R2c, L12b a, L12b b | 31 Oct | not read | not read (66 at 16:23 UTC, window not reset, so at or below 66) | | INC-026 |
 
 Every reading is far below both limits. Correction at S5 checker round 2 (S2, D-087): the previous lead did read usage and the reaper's last run at each of L1 to L5v, in the same shell command that started the controller (or 9 seconds before it, L5v), and each launch intent in the private ledger follows its reading by under a minute (L1 09:52:10, L2 12:24:21, L3e 16:24:34, L4a 20:20:01, L5v 00:13:12 UTC); each reaper run was under 5 minutes old. Those readings were kept only in the previous lead's session transcript, outside the loop's record files, which is why round 1 found none; they are copied here. The "Launched" column repeats the times on `BUDGET.md`'s forecast rows; the ledger's launch intent times are the ones above (L2's is 31 minutes after its forecast row's time: two earlier starts of its controller, at 12:20 and 12:21 UTC, were refused before any launch intent, each after its own usage reading of 13 and 4). Whether the usage status file was itself under 10 minutes old at each reading is shown only for L2 (its own time, 12:20:32 UTC, was printed 3.5 minutes before the launch command); the status line rewrites it every minute while the session runs.
 
+## Brought back under D-S12 (30 October 2026)
+
+The operator's decision D-S12 (Annex D, revised at 00:20 on 30 October) reopened S5 after its first merge (`2dea80f`, unpushed; D-090, D-091): a 200 USD budget, the work S5 had left for lack of money done in S5, a look-back sweep, and the order of item 7. Each item below has its D-number.
+
+### Order of work (D-S12 item 7)
+
+1. Budget 200 USD, reaper hard stop 199 USD: ledger line 2026-10-29 21:26:33 UTC; reaper proof step 6 runs 49, 69, 199 on the mocked provider, neutralised and restored (D-091).
+2. First look-back sweep (private `sweep_01_s5.md`): **83 found, 14 brought back, 18 decided, 46 kept, 5 to Seckin** (D-092).
+3. Allocation (D-092): spent 20.99; S5 brought-back work 70.81; S6 5.74; S9 and S10 0; smoke runs 3.12; reserve 10; S8 89.34 USD.
+4. Preregistration version 2 (D-093 to D-095): S4e item 2's unchanged rule with A = 89.34 USD gives ContractNLI 30 documents and SciTab 30 documents (both qualify; H1 tested on both) and a ContraDoc pilot of about 17; two fresh checker attacks (the first on a draft for a superseded allocation, rejected; the second closed in D-094); C0 run 4 in full agreement; version 2 frozen (LF SHA-256 `0c1884fb...`, scorer `2df0a673...`). A draft for 60 USD was withdrawn (D-091).
+5. The brought-back work (below), then this stage's checks, report and merge.
+
+### Items
+
+- **Open item 35** (the multi-round phase's call ran to its cap): the case records are computed in Python, no model asked; the round signature reads only the labels each paired rule names (round 3 recomputed all 11 units before). Settled on real execution in L7: all nine multi-round entries reached `reviewed` and `activated` (D-100). The runner's model-call requirement then failed them (`required_telemetry_missing`); fixed so a declared multi-round run is held by its own evidence (D-101), and the nine were re-run in L12, all nine passing (D-112, D-128).
+- **Open item 37** (peak disk on the instance): runner and evidence-packer readings (D-098 lane s05-meas, check via the controller gate). Read in L7: 45.24 GB in use before the first workload on a 1,455 GB filesystem, about 0.28 GB more per entry, 48.33 GB after the twelfth (D-100). Closed.
+- **Open item 38** (phases before phase 3): four spans in `phase_latencies` (check 294). Read in L7's catalogue run: start 0.28 s, ingestion and roles 0.06 s, boot and index 21.75 s, phase 1 0.003 s (D-100). Closed.
+- **Open item 39** (multi-round step times): a multi-round run has no topology runtime, so its own timings are recorded in `audit/multi_round.json` (D-101); read on L12's nine re-runs and closed (D-128).
+- **Open item 40** (cost per correct FLAG item, development only, after version 2's freeze; D-096, extended with L11): see the cost table below.
+- **Open item 17** (the repository scorer's three key parts): closed (D-098, check 293, attacked and fixed before merge).
+- **S5 cuts of D-073 and D-077**: CUAD's B3 output and cost (L10), the development suite on B3 (L8, then re-run in L12 and L12b; the 56 probes of L9a and L9b moved after v1 by D-S18 item 3, not run), the catalogue regression and both negotiation comparisons and the negotiation multi-round case (L7), dry runs to five documents (L11).
+
+### Launches after D-S12
+
+| Launch | Purpose | Sealed at | Entries | Billed min | USD (forecast) | Integrity |
+|---|---|---|---|---|---|---|
+| L11 | dry runs to five documents (ContraDoc, SciTab, ContractNLI) | d50b299 | 16 (8 B3, 8 B1) | 191 | 4.11 (5.53) | B1 8 of 8; B3 2 of 8 |
+| L7 | multi-round cases, catalogue regression, negotiation comparisons, family 4 tests and twins | 55f1dd1 | 12 B3 | 64 | 1.38 (10.62) | 1 of 12 (nine reviewed multi-round runs failed the runner's model-call rule, D-100) |
+| L10 | CUAD, one development contract | 55f1dd1 | 2 (B3, B1) | 125 | 2.69 (4.11) | B1 passed; B3 semantically incomplete |
+| L8 | development suite: 20 tests and twins | 55f1dd1 | 40 (20 B3, 20 B1) | 271 | 5.83 (15.09) | B1 20 of 20; B3 1 of 20 |
+| R1 | replay proof of contract-shaped decoding (136 producer prompts, two paths) | cd498a3 | 1 B1 replay | 96 | 2.06 (3.13) | rules A to D met; 52 of 52 failing partitions valid (D-116) |
+| L12 | re-run of the 37 failed B3 entries after the D-S14 fixes | 2b585af | 37 B3 | 610 | 13.12 (13.98) | 24 of 37 (L7 11/11, L11 5/6, L8 8/19, L10 0/1) |
+| R2a | cloud proof of the envelope constraint (82 auditor prompts, two paths; D-129, D-130) | 7cb979e | 1 B1 replay | 125 | 2.69 (3.63) | passed; A, B, C hold; 12 of 22 failing calls now pass the validator (D-132) |
+| R2b | the same for ARCHIVIST (14 prompts, two paths), beside R2c on a second instance | abd288c | 1 B1 replay | 28 | 0.60 (1.12) | passed; A to D hold; 2 of 2 fixed (D-134) |
+| R2c | VERIFIER at a 4,096-token allowance (8 capped prompts, informational) | abd288c | 1 B1 replay | 70 | 1.51 (2.10) | passed; 4 of 8 end within 4,096 (D-134) |
+| L12b | second re-run of the 13 still failing, two sessions on two instances | d6ce19a | 13 B3 | 178 + 114 | 6.28 (11.18) | 10 of 13 (D-138; 5 of those on the removed stamp) |
+| L12c | re-run of the 5 stamp-only passes, EDITOR_CLERK under its envelope | 5c3c129 | 5 B3 | 79 | 1.70 (2.38) | 4 of 5 (D-146) |
+
+
+### Results (development, exposed; no inference)
+
+- **L11, dry runs on current code** (8 development documents, B3 and B1 tuned; private `an_l11_report.md`). Every run reached its end; B1 tuned passed on all eight (7.67 to 9.03 GiB); six of eight B3 runs semantically incomplete (PROCESSOR contract violations in 3, EDITOR_CLERK `items[0].kind` in 3, PRACTICE_AUDITOR in 2 on ContractNLI band B). All 408 B3 judging plans uncomputable: 101 answers kept as model-written records, 293 refused, 2 reply failed, and 12 neither kept nor refused (counted as dropped in the L11 analysis; the analyser records no reason). ContractNLI band B's 272 plans ran in waves (D-076). Headlines, B3 against B1 tuned: ContractNLI 9 of 34 against 18 of 34 (B3 under S-8 21 of 34); SciTab macro-F1 0.375 against 0.475 (S-8 0.222); ContraDoc 2 of 3 each. Every B3 FLAG label on ContractNLI and SciTab came from a model-written record. Model-text review (seed 2016037227976882296, 15 of 526): 1 correct, 5 partly correct, 9 wrong; all five kept D-068 records partly correct or wrong (open item 34).
+- **L7, ordinary entries** (private `an_l7_report.md`). Catalogue regression (TCR-006): still 0 of 5 located, no false positives: three planted absences never reach a judge (no `[scope:]`/`[requires:]`, the TCR-012 mechanism), the vocabulary defect has no Finding relation, the closed-record defect was refused for naming the wrong field. Negotiation r2 to r3 (TCR-001): 6 of 6, bands 3 of 3, as before; one kept model record (wrong) and one false Python `missing_field` amendment on the summary table. Negotiation r3 to r4 (TCR-002): 13 of 13 on the records (the scorer's 12 of 13 is one hyphenated label), bands 2 of 2 attributed, Python's false band records 5 to 0. TCR-012 confirmed on the runs. Both comparisons semantically incomplete (PROCESSOR partitions). Every negotiation amendment sits at document level with no REF id (the document under review is indexed twice under one id; open item 31). Text review: 30 texts, 8 correct, 9 partly correct, 13 wrong; all 3 kept D-068 records wrong `below_band` answers on figures inside their bands.
+- **L10, CUAD** (contract `527255a5c970`; private `an_l10_report.md`). B3 semantically incomplete (7 of 10 PROCESSOR partitions refused: malformed contracts, one truncated at 1,536 tokens); phase 5.5 86.8 of 98.9 minutes, 410 plans in two waves at about 12.7 seconds a plan; all 410 uncomputable answers refused for one reason, an absence claim with no quote, so B3 records nothing and labels all 41 categories present. B1 tuned passed (41 of 41 parsed, 14.2 seconds a call, 9.73 GiB). Macro-F1 B3 0.146 against B1 tuned 0.593; correct FLAG (absent) B3 0 of 34, B1 tuned 24. Cost 112.6 minutes, 2.42 USD a document, 0.059 USD a decision (the allocation forecast 21.76 USD for a mean contract). Text review: 15 of 433, 10 correct, 3 partly correct, 1 wrong, 1 empty.
+- **Cost per correct FLAG item** (open item 40, development; D-096 extended with L11): ContractNLI B3 2.57 USD (2 correct), B1 tuned 0.51 (1); SciTab B3 0.061 (7), B1 tuned 0.061 (4); ContraDoc B3 none (0 correct), B1 tuned 0.09 (1); CUAD B3 none, B1 tuned 0.0087 (24). Under S-8, B3 has no correct FLAG item on any benchmark.
+- **Minutes per scored decision with the brought-back documents**: ContractNLI 3.67 (band A 2.31, B 4.57), SciTab 2.22, ContraDoc 10.11, CUAD 2.75. These are development measurements after version 2's freeze; they change no size (D-093, D-095).
+
+### Measurements after D-S12 (item 9)
+
+All A10 in us-east-1 at 1.29 USD an hour; every asset copy MATCH (`asset_copy_receipt.json` state MATCH, `used: true`, `seeded: false`, all eleven sessions).
+
+**Per launch.** For a replay (R1, R2a, R2b, R2c) there is no B3 pipeline: the GPU figure is the replay's own torch peak allocated memory (GiB, `replay_measurement.json`), not `vram_used_bytes`, and is marked so; the records are replay records, not B3 reply records.
+
+| Launch | Billed min | Workload min (all entries) | Billed minus workload | USD | Peak GPU memory, B3 (GB) | Peak process memory, B3 (GB) | B3 reply records |
+|---|---|---|---|---|---|---|---|
+| L11 | 191 | 154.0 (B3 135.0, B1 19.0) | 37.0 | 4.11 | 18.1 (ContractNLI `01c9504b9c28`) | 7.8 | 526 |
+| L7 | 64 | 28.7 (the nine multi-round entries 0.5 each) | 35.3 | 1.38 | 12.0 (catalogue) | 5.9 | 88 (the nine multi-round entries wrote none) |
+| L10 | 125 | 108.6 (B3 98.9, B1 9.7) | 16.4 | 2.69 | 14.2 | 4.1 | 433 |
+| L8 | 271 | 197.4 (B3 146.7, B1 50.7) | 73.6 | 5.83 | 23.7 (entry 34, ended out of GPU memory) | 7.8 | 795 |
+| R1 | 96 | 83.0 (replay, 136 prompts, two paths) | 13.0 | 2.06 | not applicable, B1 replay: 7.88 GiB allocated on both paths | not applicable (no B3) | none (272 replay records) |
+| L12 | 610 | 498.8 | 111.2 | 13.12 | 18.2 (CUAD) | 8.5 | 2,045 |
+| R2a | 125 | 110.3 (replay, 82 prompts, two paths) | 14.7 | 2.69 | not applicable, B1 replay: 20.38 GiB allocated on both paths | not applicable | none (164 replay records) |
+| R2b | 28 | 12.7 (replay, 14 prompts, two paths) | 15.3 | 0.60 | not applicable, B1 replay: 9.89 GiB allocated on both paths | not applicable | none (28 replay records) |
+| R2c | 70 | 55.2 (replay, 8 prompts, constrained path only) | 14.8 | 1.51 | not applicable, B1 replay: 20.38 GiB allocated | not applicable | none (8 replay records) |
+| L12b-a | 178 | 155.9 | 22.1 | 3.83 | 17.8 (CUAD) | 7.9 | 679 |
+| L12b-b | 114 | 90.6 | 23.4 | 2.45 | 16.2 (suite entry `f2_s2101_sxwc`) | 8.8 | 401 |
+| L12b (both) | 292 | 246.6 | 45.4 | 6.28 | 17.8 | 8.8 | 1,080 |
+USD from the ledger, unrounded: L11 4.1065, L7 1.376, L10 2.6875, L8 5.8265, R1 2.064, L12 13.115, R2a 2.6875, R2b 0.602, R2c 1.505, L12b-a 3.827, L12b-b 2.451. These eleven sum to 40.248 USD.
+
+**Controller phases per launch** (minutes, same groups as the existing table; the sum also holds `ssh_ready_*` and `watchdog_receipt_transfer*`, shown in brackets, which the existing table does not show apart; a replay is one bundle, so it has no per-entry checks).
+
+| Launch | Support transfer | Asset copy probe and use | Setup | Workload | Per-entry checks | Stop and collection | Sum of phases | Billed minus sum |
+|---|---|---|---|---|---|---|---|---|
+| L11 | 0.5 | 3.1 | 2.7 | 154.0 | 22.1 | 0.7 | 183.9 (SSH and watchdog 0.9) | 7.1 |
+| L7 | 0.6 | 5.1 | 2.7 | 28.7 | 18.0 | 0.7 | 56.2 (0.7) | 7.8 |
+| L10 | 0.5 | 3.7 | 2.7 | 108.6 | 1.7 | 0.7 | 118.0 (0.1) | 7.1 |
+| L8 | 0.9 | 3.3 | 2.7 | 197.4 | 57.8 | 0.7 | 264.7 (2.1) | 6.3 |
+| R1 | 0.6 | 2.7 | 2.7 | 83.0 | none (one bundle) | 0.7 | 89.7 (0.1) | 6.4 |
+| L12 | 0.7 | 7.0 | 2.9 | 498.8 | 91.2 | 0.7 | 603.4 (2.2) | 6.6 |
+| R2a | 0.7 | 3.7 | 2.7 | 110.3 | none (one bundle) | 0.7 | 118.1 (0.1) | 6.9 |
+| R2b | 0.6 | 3.3 | 2.7 | 12.7 | none (one bundle) | 0.7 | 19.9 (0.1) | 8.1 |
+| R2c | 0.6 | 4.7 | 2.7 | 55.2 | none (one bundle) | 0.7 | 63.8 (0.1) | 6.2 |
+| L12b-a | 0.8 | 3.5 | 2.7 | 155.9 | 7.4 | 0.7 | 171.3 (0.3) | 6.7 |
+| L12b-b | 0.5 | 4.1 | 2.7 | 90.6 | 9.1 | 0.7 | 108.0 (0.4) | 6.0 |
+
+Unrounded values are in `measure.json` (`phases_min`); the L10 row equals `an_l10_report.md`'s table (117.95, billed minus sum 7.05).
+
+**Pipeline phases in B3** (minutes, summed over the launch's B3 entries that recorded `phase_latencies`). From L7 on, the telemetry also records the spans before phase 3 (open item 38, check 294); they are given in the last column so the existing columns stay as they are. Replays: not applicable (no pipeline).
+
+| Launch | B3 entries | 3-4 content production | 5 audit | 5.5 convention review | 6 synthesis | 6.5 editorial review | Before 3 (start, ingestion and roles, boot and index, phase 1) |
+|---|---|---|---|---|---|---|---|
+| L11 | 8 | 23.2 | 6.1 | 97.1 | 0.1 | 2.5 | not recorded: sealed at `d50b299`, before the four spans were added |
+| L7 | 3 of 12 (the nine multi-round entries record no phase latencies; their step times are in `audit/multi_round.json`, D-101) | 9.6 | 2.4 | 8.0 | 0.0 | 1.2 | 1.1 |
+| L10 | 1 | 9.3 | 0.8 | 86.8 | 0.0 | 0.3 | 1.2 |
+| L8 | 18 of 20 (entries 00 and 04 stopped at document dating, K1); phases 5.5 to 6.5 in 8 (ten entries ended out of GPU memory in phase 5, K2) | 96.5 | 25.2 | 7.7 | 0.1 | 3.1 | 4.1 |
+| L12 | 28 of 37 (nine multi-round entries as in L7) | 151.1 | 51.4 | 256.2 | 0.4 | 11.2 | 9.5 |
+| L12b-a | 6 | 30.2 | 19.9 | 98.3 | 0.1 | 2.5 | 2.1 |
+| L12b-b | 7 | 47.8 | 16.9 | 17.8 | 0.1 | 3.0 | 1.6 |
+
+Phase 5.5 is the largest line wherever a ContractNLI or CUAD document ran (L11, L10, L12, L12b-a); on the suite (L8, L12b-b) phase 3-4 is.
+
+**Model calls by agent in B3** (Others: ARCHIVIST, INST_FINDER, CITATION_RESOLVER, SPEECH_ACT_TAGGER, LEGAL_ANALYST, VERIFIER, EDITOR_CLERK together). Replays: not applicable (no pipeline; R1 and R2b keep their own `logs\model_telemetry.jsonl` beside the replay).
+
+| Launch | EMBEDDING | PROCESSOR | PRACTICE_AUDITOR | AUDITOR896 | Others | Total |
+|---|---|---|---|---|---|---|
+| L11 | 291 | 26 | 408 | 32 | 60 | 817 |
+| L7 | 130 | 12 | 37 | 15 | 24 | 218 |
+| L10 | 175 | 10 | 410 | 6 | 7 | 608 |
+| L8 | 448 | 235 | 33 | 399 | 128 | 1,243 |
+| L12 | 1,038 | 293 | 962 | 574 | 216 | 3,083 |
+| L12b-a | 298 | 66 | 439 | 129 | 45 | 977 |
+| L12b-b | 219 | 92 | 72 | 182 | 55 | 620 |
+
+Per-agent counts in `measure.json` (`model_calls`).
+
+**B1 seconds per call** (entry workload seconds over calls, model load included, so an upper bound; one tuned pass per entry after D-S12, so one checkpoint, not two). L11: ContractNLI 20.9 and 17.4 (17 items each); SciTab 25.9, 45.7, 15.9 (4, 2, 8 items); ContraDoc 55.8, 55.9, 55.7 (one item each, load dominates). L10: CUAD 14.2 (41 items). L8 (development suite, per family, summed over its four B1 entries): family 1 37.4 (20 items), family 2 30.6 (28), family 3 40.9 (16), family 5 21.3 (20), family 6 29.6 (12). Replays, per replayed prompt and path (load included): R1 18.3 (272), R2a 40.4 (164), R2b 27.2 (28), R2c 414 (8 VERIFIER prompts at a 4,096 allowance). B1 peak allocated, tuned: L11 7.67 to 9.03 GiB, L10 9.73, L8 7.99 to 8.64.
+**Disk.**
+
+| Launch | Sealed asset archive (bytes) | Free disk at admission (GB) | Peak disk in use on the instance (GB, of 1,455) | Largest B3 run folder, downloaded (MB) | Collected evidence archives together (MB) |
+|---|---|---|---|---|---|
+| L11 | 13,149,972,480 | 1,410 | not recorded: the runner's and packer's readings (open item 37) came after L11's seal at `d50b299`; no `disk_usage.json` or `disk_after_evidence.json` in any entry | 16.7 (ContractNLI `01c9504b9c28`) | 24.0 |
+| L7 | 13,149,972,480 | 1,410 | 48.33 (after evidence, entry 11; the first reading, D-100) | 2.0 | 15.3 |
+| L10 | 13,149,972,480 | 1,410 | 45.56 | 25.1 | 8.3 |
+| L8 | 13,149,972,480 | 1,410 | 56.22 (after the last entry) | 2.1 | 51.0 |
+| R1 | 13,149,972,480 | 1,410 | 45.25 | not applicable (no B3) | 1.2 |
+| L12 | 13,149,972,480 | 1,410 | 55.50 | 25.8 (CUAD) | 60.2 |
+| R2a | 13,149,972,480 | 1,410 | 45.25 | not applicable | 1.6 |
+| R2b | 13,149,972,480 | 1,410 | 45.24 | not applicable | 1.1 |
+| R2c | 13,149,972,480 | 1,410 | 45.24 | not applicable | 1.2 |
+| L12b-a | 13,149,972,480 | 1,410 | 46.70 | 26.1 (CUAD) | 15.5 |
+| L12b-b | 13,149,972,480 | 1,410 | 46.95 | 2.5 | 11.8 |
+
+Peak disk in use is the larger of the sampled `disk_usage.json` peak (every 15 s, "not a continuous maximum") and `disk_after_evidence.json` (`measure.json`, `disk_peak_GB` and `disk_after_evidence_max_GB`; the two agree to 0.01 GB in every launch that has both). The filesystem is 1,455 GB (`total_bytes`), so the largest session (L8, 40 entries) used 3.9 percent of it.
+
+**Per document, brought-back documents** (S5 item 9 method: minutes = B3 + B1 tuned + 2 minutes per batch entry for each arm; USD at 1.29 an hour, no 1.3 margin, no session overhead; B1 is one tuned pass, not halved). Rows copied from `an_l11_report.md` (lines 99 to 108) and `an_l10_report.md` (section 3), whose sources are `X\L11\...` and `X\L10\...` and `X\labels\<bench>\B3\L11\items.json` for decisions; checked here against `measure.json` (B1 peaks and workloads agree).
+
+| Benchmark | Band | Document | B3 min | B3 peak GPU (GB) | B1 min (tuned only) | B1 peak, tuned (GiB) | Min per document | USD per document | Decisions | USD per decision |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ContractNLI (merged) | A | `0d98d9131a5b` | 31.6 | 12.6 | 5.9 | 8.52 | 41.5 | 0.89 | 17 | 0.052 |
+| ContractNLI (merged) | B | `01c9504b9c28` | 74.5 | 18.1 | 4.9 | 9.03 | 83.4 | 1.79 | 17 | 0.105 |
+| SciTab | A | `09b24267b75a` | 4.1 | 11.1 | 1.7 | 7.84 | 9.8 | 0.21 | 4 | 0.053 |
+| SciTab | A | `0e7ff50baa5f` | 3.1 | 10.7 | 1.5 | 7.67 | 8.6 | 0.19 | 2 | 0.093 |
+| SciTab | A | `26937b278860` | 5.5 | 11.1 | 2.1 | 7.88 | 11.6 | 0.25 | 8 | 0.031 |
+| ContraDoc | A | `01015e47de8a` | 4.9 | 11.7 | 0.9 | 7.96 | 9.8 | 0.21 | 1 | 0.212 |
+| ContraDoc | A | `027002a77443` | 3.9 | 11.6 | 0.9 | 7.83 | 8.9 | 0.19 | 1 | 0.190 |
+| ContraDoc | B | `06cd776dcc1a` | 7.3 | 11.7 | 0.9 | 8.15 | 12.2 | 0.26 | 1 | 0.263 |
+| CUAD | B (D-097) | `527255a5c970` | 98.9 | 14.2 | 9.7 | 9.73 | 112.6 | 2.42 | 41 | 0.059 |
+
+The same documents' B3 re-runs on the D-S14 code (`entries.txt`; B3 workload minutes, peak GPU GB, integrity), for reading beside the rows above, not replacing them: L12 ContractNLI `0d98d9131a5b` 36.3, 12.6, passed; `01c9504b9c28` 90.7, 13.9, passed; SciTab `0e7ff50baa5f` 3.4, 10.7, passed; ContraDoc `01015e47de8a` 7.9, 11.7, passed; `027002a77443` 3.8, 11.6, passed; `06cd776dcc1a` 8.7, 11.9, failed, then L12b-a 5.5, 11.9, passed; CUAD `527255a5c970` L12 114.3, 18.2, failed, L12b-a 109.2, 17.8, failed. On ContractNLI band B the D-S14 code took 90.7 minutes against L11's 74.5 and used less GPU memory (13.9 against 18.1 GB); on CUAD 114.3 and 109.2 against L10's 98.9. SciTab `09b24267b75a` and `26937b278860` passed in L11 and were not re-run.
+
+**Exposed tests and comparisons (B3 workload minutes, `entries.txt`):** catalogue regression 9.1 (L7); negotiation r2 to r3 6.3 (L7), 7.1 (L12); r3 to r4 8.5 (L7), 10.0 (L12); each multi-round case 0.5 (L7) and 0.6 (L12), Python only, no model call. Development suite B3 per bundle on the D-S14 code: L12 19 suite entries 4.9 to 17.1 minutes, mean 11.1; L12b 11 suite entries 6.3 to 19.9.
+
+Not recorded, each with its reason: L11's peak disk in use and its phases before 3 (the code sealed at `d50b299` did not write them); pipeline phase latencies of the multi-round entries in L7 and L12 (a multi-round run has no topology runtime; its own step times are in each entry's `audit/multi_round.json`, read and closed in D-128, not summed here); B3 peak process memory for the replays (no B3 pipeline ran).
+
+### Model-text reviews of L8, L12 and L12b (item 8)
+
+Rule (S5 plan item 8, D-080, D-086): seed = int(SHA-256 hex of "<run folder name>:text-review", 16) mod 2^63; population = every `.json` reply record under `downloaded\evidence\run\audit\model_replies\` of the session's B3 entries, sorted as path strings; sample = `random.Random(seed).sample(population, 15)`. `seed_draw.py` first reproduced L11's recorded draw exactly (526 records, the same 15), then derived each seed and drew each sample, writing `<launch>_text_review_sample.json`, before any record's text was read. Each sample was judged by a fresh general-purpose subagent (one per launch) against the unit's own text in the record's payload (and the staged workload document where needed), joined to the pairing map's judging-call entry by call id; none opened a key, answer, gold, labels or items file.
+
+| Launch | Run folder | Seed | Population | Sample | Correct | Partly correct | Wrong | Empty | Unverifiable |
+|---|---|---|---|---|---|---|---|---|---|
+| L8 | `f1_s1101_vxnf_B3` | 7172554169477582575 | 795 (18 of 20 B3 entries hold records; 00 and 04 stopped at dating before any call) | 15 | 4 | 0 | 9 | 2 | 0 |
+| L12 | `contradoc_01015e47de8a_B3` | 2016037227976882296 | 2,045 (28 of 37 B3 entries; the nine multi-round entries make no model call) | 15 | 4 | 5 | 6 | 0 | 0 |
+| L12b | `contradoc_06cd776dcc1a_B3` (L12b-a), population both sessions | 696316031219208063 | 1,080 (all 13 B3 entries: a 679, b 401) | 15 | 2 | 1 | 12 | 0 | 0 |
+
+Two seed facts, stated before the draws and to be carried with the counts:
+- L12's session folder has the same name as L11's (`contradoc_01015e47de8a_B3`), so the rule gives L12 the same seed as L11 (2016037227976882296). The populations differ (L11 526 records, L12 2,045), so the samples differ; the rule was applied as written, not changed to avoid the repeat.
+- L12b ran as two sessions, so the rule names no single folder. Chosen and recorded in `seed_draw.py`'s docstring before the draw: the population is the union of both sessions' B3 records, and the seed is the rule's value for the first-launched session's folder (L12b-a, `contradoc_06cd776dcc1a_B3`). L12b-b's folder (`f1_s1101_vxnf_B3`) has the same name as L8's, so using it would have repeated L8's seed.
+
+Per agent:
+- L8: AUDITOR896 (final) 10: 1 correct, 9 wrong; PROCESSOR (final) 3: 3 correct; VERIFIER (base) 1: empty (the call ran out of GPU memory, K2); LEGAL_ANALYST (final) 1: empty (a deepen call returned no item). No sampled record was a paired judging call, so no D-068 disposition applies.
+- L12: PRACTICE_AUDITOR (base) 8: 1 correct, 3 partly, 4 wrong (7 of the 8 refused under D-068 as absence claims with no quote: 0, 3, 4; the 8th was a computed plan whose figures Python held, restated correctly); PROCESSOR (final) 3: 3 correct; AUDITOR896 (final) 2: 2 wrong; INST_FINDER (final) 1: partly; LEGAL_ANALYST (final) 1: partly. No sampled record was a kept D-068 record.
+- L12b: PRACTICE_AUDITOR (base) 8: 1 partly (the computed-plan note: right verdict, wrong arithmetic in its sentence), 7 wrong (all on the CUAD contract, all refused under D-068); AUDITOR896 (final) 5: 5 wrong; PROCESSOR (final) 2: 2 correct.
+
+The pattern across the three (counts only): the base PRACTICE_AUDITOR still answers VIOLATION with `missing_field` on units that do not address the rule (ContractNLI hypotheses, CUAD categories), as in L1 to L11; after the D-S14 fixes every such sampled answer was refused under D-068 rather than kept, so in these samples none reached a model-written record (16 sampled PRACTICE_AUDITOR records: 14 refused under D-068, 2 notes on computed plans, 0 kept). New against the earlier reviews: the classifier AUDITOR896 is the largest wrong group (16 of 17 sampled records wrong over the three launches), labelling a faithful empty extraction OMISSION, in most samples with a byte-identical reply (the reviewers' reading: the producer correctly extracts `empty` where a span carries no claim id or stated gap, so MATCH is the faithful relation). The producer's compact extractions were right in all 8 sampled (empty, correctly). Development, one run each; these are reviewer judgments on 15 records a launch.
+
+Review files: private `analysis/L8_MODEL_TEXT_REVIEW.md`, `analysis/L12_MODEL_TEXT_REVIEW.md` and `analysis/L12b_MODEL_TEXT_REVIEW.md` (they describe replies without quoting them).
+- Samples with seeds: private `analysis/L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
+
+Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are replays of prompts already in L7, L8, L10, L11 and L12, measured for byte identity and contract validity in D-116, D-132 and D-134), so they are not reviewed as model text. L7, L10 and L11 were reviewed earlier (S5 report).
+
+Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
+
+### Intervened replies (item 8): does the field the constraint forced say something true about the unit?
+
+Selection: reply records of the B3 entries with `decoding_constraint.interventions > 0` whose call the validator accepted (`contract_valid` true on the call's `model_call` telemetry row, joined by call id). Seed: int(SHA-256 hex of "<run folder name>:intervened-review", 16) mod 2^63, a suffix distinct from the main review's so the two draws are independent; L12b over both sessions with the first-launched session's folder, as above. Strata fixed before the draw: only the envelope constraint forces explanation, confidence or the envelope's closing, so every accepted envelope-constrained reply is taken (9 in L12b, all under 15) and the rest of the 15 is drawn from the producer-constrained ones with the same generator. L12 was sealed before the envelope constraint, so its intervened replies are all PROCESSOR (compact producer constraint). A correction made before any text was read, recorded in `tools\intervened_draw.py`: draw 1 selected by an outcome in `outcomes.jsonl` starting "accepted", which left out the 8 PRACTICE_AUDITOR replies whose outcome is `advisory_not_record` although the validator accepted them; it was replaced by the validator's own flag (draw 1 kept as `draw1_superseded_*.json`). Intervened replies the validator refused (L12b: PRACTICE_AUDITOR 2, VERIFIER 1) are outside the selection. Judged by a fresh general-purpose subagent per launch, who located the forced field from the contract and `first_intervention_step` of `steps` (no token boundaries were available, so identification is approximate and its confidence is stated per record).
+
+| Launch | Seed | Population (accepted, intervened) | Sample | Correct | Partly correct | Wrong | Empty | Unverifiable |
+|---|---|---|---|---|---|---|---|---|
+| L12b, envelope constraint (PRACTICE_AUDITOR 8, ARCHIVIST 1) | 5848831284326092619 | 9 | 9 (all) | 2 | 3 | 4 | 0 | 0 |
+| L12b, producer constraint (PROCESSOR) | 5848831284326092619 | 28 | 6 | 5 | 1 | 0 | 0 | 0 |
+| L12b, all | 5848831284326092619 | 37 | 15 | 7 | 4 | 4 | 0 | 0 |
+| L12, producer constraint (PROCESSOR) | 4540407318236091576 | 53 | 15 | 15 | 0 | 0 | 0 | 0 |
+
+What the forced fields were (counts only): all 8 PRACTICE_AUDITOR interventions are the same event, the model closing the item after `ref_ids` and the constraint forcing the required `explanation`. The forced explanation was never empty: 1 correct, 3 partly correct, 4 wrong. On the 3 uncomputable plans (all 3 wrong, and all 3 kept under D-068 as model-written records) it claimed a violation that the unit's figures do not support. On the 5 computed plans (Python's figures shown): 1 correct, 3 partly correct (the real mismatch named, but the arithmetic or the labels wrong), 1 wrong (the two figures reversed). So for this agent the constraint turns a reply that would have failed its contract into an accepted one that is wrong or partly wrong in 7 of 8 samples. ARCHIVIST's one forced field was its leading confidence key, judged warranted. The producer interventions are structural (the canonical first key `claims`, an alias, the second item, a grounded ref, a status value), and every forced producer field was true of its span in 20 of 21 samples (the other partly). In L12, 6 of the 15 producer replies were still wrong as a whole, through free strings the model wrote itself (repeated templated questions and gaps), which the constraint does not govern.
+
+Review files: private `analysis/L12b_INTERVENED_REVIEW.md` and private `analysis/L12_INTERVENED_REVIEW.md`; samples `L12b_intervened_sample.json` and `L12_intervened_sample.json`; dumps `rev_intervened_L12b\` and `rev_intervened_L12\` (reply and payload text, never to be committed).
+
+
+Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
+
+### The negotiation comparisons re-run in L12, scored against L7 (D-S14 item 6)
+
+Scored with `tools/score_corpus.py --corpus <name> --run <entry>\downloaded\evidence\run`, as `an_l7_report.md` did (`docs\loop\private\analysis\an_l7_report.md`, line 10). The scorer is byte-identical to the one L7's analysis used (SHA-256 `116aa93c...6063`, the s05-lead worktree at `791c4b4`). Since L12's commit `2b585af` the only changes under `scripts/` are the decoding constraint, its checks and 25 lines of `pipeline.py`, none of them read by the scorer. Each run exited 0. I also re-scored L7's two entries from their `downloaded\` folders with the same command, and their output matches `an_l7_report.md`'s figures line for line. Outputs: private `analysis/score\L7_negotiation_r2_to_r3.txt`, `L7_negotiation_r3_to_r4.txt`, `L12_negotiation_r2_to_r3.txt`, `L12_negotiation_r3_to_r4.txt`. The other figures come from `FINAL_STATUS.json` (`uncomputable_judging`), `audit\pairing_map.json`, `audit\run_completion.json`, `deliverables\*\review_data.json` (`model_findings_not_promoted`, `amendments`, `_validator_errors`), the band and `missing_field` records on `logs\agent_bus.jsonl` by backend, and `analysis\model_telemetry_summary.json`. Entries: L7 `03_negotiation_r2_to_r3_B3` and `04_negotiation_r3_to_r4_B3` under `X\L7\bundles\f4_s4103_vqjj_B3\batch\`; L12 `08_negotiation_r2_to_r3_B3` and `09_negotiation_r3_to_r4_B3` under `X\L12\bundles\contradoc_01015e47de8a_B3\batch\`.
+
+| Measure | r2 to r3, L7 | r2 to r3, L12 | r3 to r4, L7 | r3 to r4, L12 |
+|---|---|---|---|---|
+| Run completion | stopped, semantically incomplete (failed integrity) | completed (passed) | stopped, semantically incomplete (failed) | completed (passed) |
+| Prior records exact (label, relation, figures), scorer | 6 of 6 | 6 of 6 | 12 of 13 (13 of 13 on the record; the hyphenated label) | 12 of 13 (the same) |
+| Attribution (operator rule cited), refs per record | 6 of 6, 2 | 6 of 6, 2 | 12 of 12 found, 2 | 12 of 12 found, 2 |
+| False positives, scorer | 0 | 0 | 1 (`one-time 401 contribution` absent_since_prior, the label spelling) | 1 (the same) |
+| Stray refusals | 0 | 0 | 0 | 0 |
+| Bands found / attributed | 3 of 3 / 3 of 3 | 3 of 3 / 3 of 3 | 2 of 2 / 2 of 2 | 2 of 2 / 2 of 2 |
+| Band false positives, scorer | 1 | 1 | 2 | 2 |
+| of which Python band records | 0 | 0 | 0 | 0 |
+| Python false band records (bus, backend `paired`, model `python`: only the expected band records) | 0 | 0 | 0 | 0 |
+| False Python amendment | 1 (`missing_field` on the summary table, CONV-N01) | 1 (the same) | 0 | 0 |
+| D-068 calls / judged uncomputable / kept / refused / reply failed | 4 / 4 / 1 / 2 / 0 | 4 / 4 / 1 / 2 / 0 | 5 / 5 / 2 / 2 / 0 | 5 / 5 / 3 / 1 / 0 |
+| Kept D-068 records | u04 CONV-N07 below_band (wrong) | u04 CONV-N07 below_band (wrong, the same) | u02 CONV-N03 below_band, u04 CONV-N07 below_band (both wrong) | u02 CONV-N03 sum_mismatch, u03 CONV-N06 below_band, u04 CONV-N07 below_band (all wrong) |
+| Model-only relations, scorer | below_band 1, sum_mismatch 1 | below_band 1, sum_mismatch 1 | below_band 2, sum_mismatch 2 | below_band 2, sum_mismatch 2 |
+| Amendments (all at document level) / validator errors | 4 / 8 | 4 / 8 | 2 / 4 | 2 / 4 |
+| Judging calls / pairs | 7 / 8 | 7 / 8 | 7 / 7 | 7 / 7 |
+| Pipeline wall (s) | 346.3 | 392.4 | 476.0 | 561.3 |
+
+Where the "kept" judgments come from. All 4 kept-record judgments for L7 are `an_l7_report.md`'s. The three L12 r3 to r4 kept records were checked here against the rules (`X\L12\workload\negotiation_r3_to_r4\conventions\`) and the offer under review (`context\company_a_union_b_offer_2024_10_31.md`):
+- CONV-N03 (ratification bonus): the bonus is $12,000, inside $10,000 to $15,000, and the record calls it a sum_mismatch.
+- CONV-N06 (pension multiplier): $105 per month per year of service, on the band's lower bound, which the rule's "inside $105 to $150" includes; the record calls it below_band.
+- CONV-N07 (GPP minimum annual payout): 4%, inside 4% to 6%; the record calls it below_band.
+
+In both L12 entries the scorer's band false positives are exactly the kept model-written below_band records: 1 in r2 to r3, 2 in r3 to r4. The bus confirms this. Python's band records are only the expected ones (r2 to r3: CONV-N01 35, CONV-N02 12, CONV-N03 7,000; r3 to r4: CONV-N01 38, CONV-N02 13). Every other below_band record was posted by a model (local_auditor or local_producer).
+
+Reading (development, one run each). The re-run reproduces L7's scored figures exactly, and now completes:
+- prior records 6 of 6 and 13 of 13 on the record;
+- bands 3 of 3 and 2 of 2, every one attributed;
+- 0 Python false band records;
+- the same false Python `missing_field` amendment on the summary table.
+
+The difference is in what the model contributed. In r3 to r4 one more uncomputable answer was kept: 3 kept, against L7's 2, and all wrong. The set changed: CONV-N03's answer is now a sum_mismatch, and CONV-N06 is new. In both runs every kept record is an in-band figure called out of band (open item 34's pattern). Completion is the only measured improvement: both entries are semantically complete under the D-S14 producer constraint (L7 had refused PROCESSOR partitions). It changed none of the scored figures. The run takes longer: 46.1 s more (13 percent) on r2 to r3 and 85.3 s more (18 percent) on r3 to r4, consistent with the partitions that now complete. Every amendment still sits at document level with no REF id (open item 31).
+
+
+Reading for PRACTICE_AUDITOR (open item 51): in 7 of the 8 replies where the envelope constraint forced the required explanation, the explanation was wrong or partly wrong, and 3 of them were kept as model-written records under D-068. For this agent the constraint mostly turns a reply that would have failed its contract into an accepted reply that is wrong. Every such record is marked as written by a model and never promoted, but in benchmark mode it counts as advice. Whether PRACTICE_AUDITOR stays under the envelope constraint is decided after v1, on a measurement.
+
+### Development scores after the reopening (development, exposed; D-S13 item 9; the full page is `docs/RESULTS.md` on the v1 branch)
+
+Benchmark mode counts every model judgement shown as advice as a finding; as shipped is S-8, Python's findings only. The scoring rule was chosen after development scores had been seen (D-113). Latest run per document (L12 or L12b), B1 tuned from L10 and L11.
+
+| Benchmark | Sample | B3 benchmark mode P, R | B3 as shipped (S-8) P, R | B1 tuned P, R |
+|---|---|---|---|---|
+| ContractNLI | 2 agreements, 34 items | 0 of 5, 0 of 2 | none flagged, 0 of 2 | 0 of 3, 0 of 2 |
+| SciTab | 3 tables, 14 claims | 4 of 7, 4 of 7 | none flagged, 0 of 7 | 3 of 3, 3 of 7 |
+| ContraDoc | 3 documents | none flagged, 0 of 1 | none flagged, 0 of 1 | 1 of 1, 1 of 1 |
+| CUAD | 1 contract, 41 categories | none flagged, 0 of 34 (run failed integrity) | none flagged | 24 of 27, 24 of 34 |
+| Synthetic suite | 20 bundles, 48 planted rule items | 42 of 48, 42 of 48 | 40 of 40, 40 of 48 | 35 of 66, 35 of 48 |
+
+FinDVer: not measured (no arm decided its one item); its held-out labels have been public since 14 July 2026 (D-S13 item 7). Correct refusals (ContractNLI not mentioned): B3 0 of 11 in both readings, B1 tuned 5 of 11. Samples this small show no difference between arms.
+
+### D-S14: every development run must complete (D-111 to D-116, D-128)
+
+First runs of L7, L8, L10 and L11: 37 failed B3 entries (D-112 counted 33 with L8 read at 14:20, before it ended; 37 in L12's rerun record) by kind (private s5_diag_b3.md): dating `ValueError` 2 (K1), VERIFIER out of GPU memory 10 (K2), the producer's compact contract 52 of 283 partitions in 15 entries (K3 to K7), EDITOR_CLERK `kind` 4 (K8), rarer agent shapes in 5 (K9 to K11), the runner's model-call rule on nine multi-round runs (K12). Fixed: K1 (four-digit years), K2 (VERIFIER shown no runtime identifiers), K3 to K7 (contract-shaped decoding, validator unchanged, proven by R1), K8 (a declared single kind stamped; removed at the S5 close because it crossed H9, INC-027, D-139, its cause fixed under the decoding constraint instead), K12 (D-101). After the fixes, L12 re-ran all 37 that had failed: 24 pass; no out-of-memory, no `ValueError`, no telemetry failure and no producer violation remain. The 13 left fail on PRACTICE_AUDITOR (9), VERIFIER (8) and ARCHIVIST (1) envelopes: 6 of the 13 are predicted cleared by extending the constraint to those agents (D-129, proof R2); the other 7 fail because VERIFIER lists one item per reference until its 2,048-token output allowance ends, which no constraint shortens; an informational pass at 4,096 tokens (R2c) informs the run-setting decision. R2 runs as three launches (no B1-only batch form, D-130); two loop instances at once are merged and proven (D-S17 item 1, D-131).
+
+On the A10 (R2, D-132, D-134): the constraint changed no valid reply of the three agents (72 valid prompts byte-identical, 0 interventions, equal GPU memory) and 14 of 24 failing calls now pass the validator (9 PRACTICE_AUDITOR replies missing their explanation, 3 unclosed envelopes, 2 of them VERIFIER and 1 PRACTICE_AUDITOR, and 2 ARCHIVIST replies without confidence); "pass the validator" says the shape is right, not that the forced text is right, which the seeded review of intervened replies reads (item 8). One more PRACTICE_AUDITOR reply missing its explanation (`p0030`) ran to 768 under the constraint (open item 47). The VERIFIER lists that ran to the 2,048-token cap are a budget, not a shape: at 4,096, 4 of 8 end and pass, so VERIFIER's allowance became 4,096 (a run setting, D-134); the other 4 repeat one item per reference past 4,096 and are recorded with that cause.
+
+L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowance and the envelope constraint, as two sessions on two instances at once (292 billed minutes in all, 6.28 USD): 10 pass. Of the 37 B3 development entries that first failed integrity, 34 passed, but 5 of those passed only because Python stamped EDITOR_CLERK's missing `kind` (K8), a change removed at the close because it crossed H9 (INC-027, D-143): 29 pass on their own, and L12c re-ran the 5 with EDITOR_CLERK under its envelope constraint: 4 pass, so 33 of 37 pass on their own (D-146); `f1_s1102_mstx` failed on VERIFIER's 4,096 allowance (open item 48). The 3 left, each with its cause and an open item: `f1_s1101_cvjx`, two PRACTICE_AUDITOR replies the constraint kept open for their required explanation, which then ran to 768 tokens (open item 47); `cuad_527255a5c970` and `f3_s3102_vwmj`, VERIFIER lists that run to 4,096 (open item 48). Under D-S18 item 2a they are recorded and do not hold v1 back.
+
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-088:
+`docs/loop/DECISIONS.md`, D-055 to D-146 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -184,6 +455,64 @@ Every reading is far below both limits. Correction at S5 checker round 2 (S2, D-
 - D-086: S5 checker round 1's record items: D-069's blind acceptance criterion and the S8 limitation; the FinDVer estimate labelled; the review seeds; the purpose-line reading; the item 9 figures not recorded (P9 e).
 - D-087: S5 checker round 2's record items: the cloud-run baseline pair at the S5 base, the usage readings at L1 to L5v, the A1 limitation bound forward (open item 36), the side gates' commit and the merges between.
 - D-088: S5 checker round 3's record items: the item 9 deferrals bound to S6 and S8 as open items 37 to 40 (reasons corrected from P9 e), the C0 hash records, INC-024, the units of the clean twin's model records, the logs not kept, the final-integration errors named, the purpose-line reading under P2.
+- D-089: Tie-break on the section 13 attack (IV.4 step 5): two confirmed, record fixes; the freeze stands
+- D-090: D-S12 applied: S5 reopens for open items 37 to 40, the budget is 100 USD, and S8 is re-sized with 60 USD
+- D-091: D-S12 as revised at 00:20 replaces D-090: 200 USD, parked work brought back, a look-back sweep, and the order of item 7
+- D-092: The first look-back sweep, what is brought back, and the allocation of D-S12 item 4
+- D-093: Preregistration version 2: S4e item 2's rule with A = 89.34 USD
+- D-094: The attack on preregistration version 2 closed
+- D-095: C0 run 4 in full agreement; preregistration version 2 is frozen
+- D-096: Open item 40 settled: cost per correct FLAG item on the development benchmarks
+- D-097: The brought-back launches: staging, run modes, and order
+- D-098: Open item 17 closed: the repository scorer reads the three key parts; the input format draft's scorer sentences
+- D-099: Disk for the brought-back launches: worktrees removed, identical archives hard-linked, sealing just in time
+- D-100: L11 and L7 read: open items 35, 37 and 38 settled on real execution; the runner's model-call requirement fails a multi-round run
+- D-101: A declared multi-round run is assessed on its own evidence; open item 39's step times recorded
+- D-102: The measurement lane merge (open items 37 and 38) and what it bound
+- D-103: Open item 35: the multi-round case records are computed in Python and no model is asked
+- D-104: Open item 40 extended with L11 and L10 (development)
+- D-105: CUAD measured (L10) and kept off the S8 list
+- D-106: The regression of the catalogue test and both negotiation comparisons (L7)
+- D-107: Departures and record corrections after the D-S12 checker of the work so far
+- D-108: Second reading of version 2's late fixes; how S8c packs sessions; no version 3
+- D-109: D-S13 applied: items 1, 4, 5 and 12 now; item 10's question; where the other items go
+- D-110: D-S13 item 3: the four large disk users found out, nothing deleted; items 7 to 9 started
+- D-111: D-S14 applied: every development run must complete; L8 runs on, L9a and L9b held, the causes diagnosed first
+- D-112: D-S14: the failure causes found, and the fixes chosen
+- D-113: D-S13 items 8 and 9: CUAD as a claim check is a secondary arm; the benchmark scoring mode merged
+- D-114: D-S14 fixes merged and proven on the laptop; contract-shaped decoding adopted only if its cloud re-measure meets rules A to C
+- D-115: D-S13 item 7 merged, and the allocation redone for the D-S13 and D-S14 work
+- D-116: R1 read: contract-shaped decoding meets rules A to D and is adopted
+- D-117: FinDVer's B1 candidate adopted for development measurement; L13 staged
+- D-118: What may be read from L13 before preregistration version 3 is frozen
+- D-119: D-S15 applied: disk read, deferrals into FOR_SECKIN, item 6d named, LOOP_STATE corrected
+- D-120: D-S15 items 4 and 5 applied: issues in step, the ledger of Seckin's requests
+- D-121: The first records consistency check (D-S15 item 7): 25 found, 25 fixed
+- D-122: D-S16 received: the order of its application
+- D-123: D-S13 items 6b and 6c: the launcher's quoting defect, and where each install runs
+- D-124: D-S16 item 1: the ledger has its two columns and a checking script that proves itself
+- D-125: D-S16 item 3: GitHub as a second witness; the stage gate defined
+- D-126: Preregistration version 3 drafted; its ten open points decided before any L12 or L13 figure is read
+- D-127: D-S17 applied: two loop instances (in a lane, proven first), the S5 launch order, S12 out of the loop
+- D-128: L12 read: 24 of 37 re-runs pass; the producer's failures are gone; three agents' envelopes remain
+- D-129: The envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST merged; R2's rule; VERIFIER's output cap
+- D-130: R2 as three launches; the records consistency check before R2a: 21 found, 21 fixed; the twoinst merge after R2a
+- D-131: Two loop instances merged and proven (D-S17 item 1); PROGRESS.json recomputed in full (D-S17 item 4)
+- D-132: R2a read: the envelope constraint adopted (rules A, B and C hold); 12 of 22 failing auditor calls fixed
+- D-133: D-S18 applied: v1 by Monday 2 November 12:00 +0300; the order of work; money
+- D-134: R2b and R2c read; VERIFIER's output allowance raised to 4,096 (a run setting)
+- D-135: The records consistency check before L12b: 22 found, 22 fixed; memory floors for checks and for two instances
+- D-136: VERIFIER's output allowance merged (4,096; FACT_CHECKER keeps 2,048); L12b sealed on it
+- D-137: The parallel track's first two patches received; when and how they merge; the constitution amendment is the operator's to apply
+- D-138: L12b read: 10 of 13 pass; 34 of the 37 first failures now pass; the 3 left and their causes
+- D-139: The S5 close checkers: what they found, what is fixed, the departures, and the corrections to earlier entries
+- D-140: Sweep 2 over S5: 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin
+- D-141: A 1 GB floor for single model-free checks; the intervened-replies review and L12's negotiation scores read
+- D-142: The S13 history rewrite rehearsed on a throwaway mirror; what the real run does
+- D-143: K8 removed and its cause fixed (H9, INC-027); 5 passes depended on the stamp; L12c re-runs them
+- D-144: The full main gate and the side gates at the S5 close
+- D-145: The records consistency check before L12c: 16 found, 16 fixed; the ledger check's running-state test merged and its 6 rows settled
+- D-146: L12c read: 4 of 5 pass; 33 of the 37 first failures pass on their own; EDITOR_CLERK's envelope holds on the model
 
 ## Bound controller files and pinned functions changed in S5
 
@@ -191,9 +520,13 @@ Every reading is far below both limits. Correction at S5 checker round 2 (S2, D-
 - **B1 attention lane and the join lane** (B1 kernel, B1 passes, staging): `tools/ordinary_final_run.py`. D-061 and D-063 changed it again (PREFILL-E).
 - **Hidden-window lane** (D-079, HIDDEN-A, check 292): six of the 11 bound names: `tools/cloud_run_common.py`, `tools/cloud_run_watchdog.py`, `tools/ordinary_final_cloud.py`, `tools/ordinary_final_bound_cloud.py`, `tools/lambda_experiment_provider.py`, `tools/run_remote_experiment.py`.
 
-Every bundle sealed before each of these merges refuses with `Controller source changed` and must be resealed (CONTROLLER-BINDING); L6m and L6s2 were resealed after the hidden-window merge. Pinned pipeline functions: one reference amendment in S5, recorded in both `benchmark/fixtures/multi_round_baseline_contract.json` and `benchmark/fixtures/topology_reference_contract.json` (`reference_amendments`, 2026-10-29, D-068): `_paired_convention_review` from `c849c3bc...` to `ea86ffc1...`. The waves fix (D-076) left `scripts/pipeline.py` unchanged.
+Every bundle sealed before each of these merges refuses with `Controller source changed` and must be resealed (CONTROLLER-BINDING); L6m and L6s2 were resealed after the hidden-window merge. Pinned pipeline functions: in the first part of S5 one reference amendment, recorded in both `benchmark/fixtures/multi_round_baseline_contract.json` and `benchmark/fixtures/topology_reference_contract.json` (`reference_amendments`, 2026-10-29, D-068): `_paired_convention_review` from `c849c3bc...` to `ea86ffc1...`. The waves fix (D-076) left `scripts/pipeline.py` unchanged. After the reopening, two more, recorded the same way in both baseline contracts: `main` on 2026-10-30 (`9060797f...` to `ac1e96b4...`, open item 38, D-102) and `phase_5_audit` on 2026-10-31 (`6d994ae0...` to `95d3a868...`, VERIFIER's 4,096 allowance, D-136). Bound controller files changed after the reopening: `tools/ordinary_final_run.py` and `tools/ordinary_final_cloud.py` (open item 37, D-102; the multi-round assessment, D-101; the replay path `sdpa_constrained`, D-116), `tools/ordinary_final_cloud.py`, `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` (two instances, D-131); every bundle was sealed after the change it ran on.
 
 ## Checkers
+
+**After the reopening (30 and 31 October).** A D-S12 checker (`s5_dS12_check1.md`, D-107) and a second reading (D-108); two fresh attacks on preregistration version 2 (D-094) and one on the scorer (D-098). Three records consistency checks before launches: D-121 (25 found, 25 fixed), D-130 (21 and 21), D-135 (22 and 22), and a fourth before L12c, D-145 (16 and 16). The close round (D-139): adversarial 15 items (9 SERIOUS, 6 MINOR), completeness 22 gaps, claims 14 items, and a fresh attack on four lead positions; the attack's verdicts were all accepted (moved rows SCHEDULED in S8, not DEFERRED; EDITOR_CLERK's stamp removed for H9, INC-027; the reserve gone under D-S18 with storage given its own line; the label `seckin-request`). Every item was closed in the records or by a lane: the full gate and side gates (D-144), the ledger check's running-state test (D-145), the K8 removal (D-143), the measurements and reviews (D-141). Sweep 2 (D-140): 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin. The outside audit was requested at 19:46 +0300 (`docs/loop/private/audit/REQUEST_S05.md`); AUDIT_RESULT_HERE
+
+**The first close (29 October), as it was written then:**
 
 **Round 1 (2026-10-29 about 22:30 +0300).** No CRITICAL. Adversarial: 3 SERIOUS (A1 D-069's acceptance could not detect D-068 records, because the scorer counts false positives over amendments only; A2 side gates not recorded for the merges `8ac7a60`, `8c2392d` and `70596c6`; A3 pinned-function amendment completeness to be shown by `test_reference_ast_contract` at the loop/s05 tip) and 6 MINOR (A4 the B1 checkpoint rule read development scores and D-066 came after B1 scores; A5 S8 has one external benchmark; A6 the FinDVer figure is an estimate; A7 the review seeds; A8 the commits where check 256 failed; A9 this section). Completeness: 8 gaps (C1 no model-text review of L6m and L6s2; C2 and C3 item 9 figures not tabulated; C4 C0 inputs not recorded; C5 the purpose line and the unanalysed L6m and L6s2; C6 usage readings per launch; C7 BUDGET.md actuals, the L6s row, the closing line and stray cells; C8 the close). Claims: 4 MINOR (H1, the same as C7; H3 L5v forecast rounding; H4 a format-hash row in the wrong VERSIONS table; H5 this report's commit counts). Closed in the records: A1 (limitation below item 8, D-086), A4, A5 (item 10), A6 (D-086, SELECTION.md note), A7 (item 8, D-086), A8 (Gate), C2 and C3 (item 9 tables; the figures not recorded in D-086 under P9 e), C4 (item 10), C5 (the reading; L6m and L6s2 analysed), C6 (usage table), C7 and H1 (BUDGET.md), H3 (BUDGET.md, launch table), H4 (VERSIONS.md: the row moved, content unchanged), H5 (top of this report). A2, A3 and C1 closed in D-086 (the lead's closures: the side gates and the merges between, see Gate; `test_reference_ast_contract` ok at the tip; L6m and L6s2 reviewed, item 8). C8 is the close itself.
 
@@ -203,6 +536,10 @@ Every bundle sealed before each of these merges refuses with `Controller source 
 
 ## Gate
 
+**At the reopened close (D-144).** The full main gate on the lead worktree at `5c3c129` (code as at `8548995`): PASS 266, WARN 1, SKIP 2, FAIL or ERROR 29 of 298, the non-pass set equal to the first merge's gate apart from check 31, which a worktree fails for the same reason as check 01 (no `input/` folders); checks 285 to 297 pass. The side gates on the same commit: execution topology, report recommendations, localization and multi-round OK, each ending in the worktree's check 01; final integration 156 tests with the 3 adapter errors; cloud run checks the two known worktree failures; controller checks OK. Logs: private `gate_logs/s05_close/`. Thirteen lane merges after the first close were gated by chunks of the checks they touched, recorded in their decisions (D-098 to D-145); bundles sealed on those commits before this full gate are a recorded departure (D-139 (a)). The merge gate in the main checkout runs at the second merge.
+
+**The first close (29 October), as it was written then:**
+
 Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foreground chunks, INC-016), each compared with the worktree baseline: at each recorded gate the non-pass set was the worktree baseline, apart from the check 256 flake below (D-062, D-064, INC-017, INC-021); the checks S5 added (285 to 292) pass in their lanes and at the lead's gates. The server checks ran in the loop venv. Check 256 fails now and then inside a long run and passes alone (INC-013, INC-021, open item 33; traced in S6a). In S5's chunked gates it failed ("sensitive health imported a model probe while inactive") three times, each inside the long chunk that holds it, and passed alone each time: at `8c2392d` in the chunk 200 to 277, then PASS alone and in the range 200 to 256 (logs `gate_logs/s05_8c2392d/c2.log`, `c256.log`, `c200_256.log`); at `ee2f1ed` in the chunk 200 to 277, then PASS alone right after (recorded in INC-021's recurrence note; the solo log was not kept); at `2b50067` in the chunk 190 to 260, then PASS alone (`gate_logs/s05_2b50067/c2.log`, `c256.log`). It passed inside the chunk at `18eee21`, `70596c6`, `ee8fa6a` and `fc02e1d`. Earlier, in S5's full gate at `1c4daac`, it failed once and passed alone (INC-013). INC-022 is fixed: check 222 restores `shimmer.sh` byte for byte, so the gate no longer changes the tree. INC-017 (checks 229 and 233 after D-068) closed at `cbcceac`. The merge gate on the loop branch runs at the stage close.
 
 **Side gates (S5 checker rounds 1 and 2).** The six side gates recorded in D-086 (logs `gate_logs/s05_close_side/`: `execution_topology.log`, `report_recommendations.log`, `localization.log`, `final_integration.log`, `cloud_run.log`, `controller.log`) ran at 22:31 to 22:38 +0300 on 29 October in the lead worktree, on the code of `7c74028` with the round 1 record edits not yet committed (they became `cdc6fc3` at 22:43, records only). The execution topology, report recommendations and localization gates each end with a subset of the main gate whose check 01 FAILs ("missing required dirs: input/context, input/operational, durable/governance"): that is the worktree baseline (a worktree holds tracked files only; GATE_BASELINE.md, environment 2), the same line as in the S3 side-gate logs `gate_logs/s03_5ac15f3_side_execution_topology_no_generation_gate.log`, `..._report_recommendations_...` and `..._localization_...`. The cloud-run checks fail on the pair `test_full_bundle_reproducible_and_readiness_last` (AssertionError, "False is not true" at the `ready_to_provision` assertion) and `test_preparation_refuses_existing_evidence` (FileNotFoundError). GATE_BASELINE.md's environment 2 records FileNotFoundError for both; at round 2 the cloud-run checks were run at `ea1c0d5` (the S5 base, in a temporary detached worktree, removed after) and at the S5 tip `cdc6fc3`, in the same environment: the same two tests fail with the same kinds and the same message at both (88 tests at `ea1c0d5`, 92 at the tip), and the S3 side-gate log `gate_logs/s03_5ac15f3_side_cloud_run_checks.log` already shows the AssertionError. It is not an S5 regression: the baseline's record of the kind is out of date, not the code (D-087). Those two round 2 cloud-run runs, at `ea1c0d5` and at `cdc6fc3`, were not written to a log file; their results stand only in D-087 (S5 checker round 3, D-088). The final-integration gate (`final_integration.log`) ends with 152 tests, 0 failures and 3 errors, and the log does not name them. The waves lane names the same three errors at 148 tests before its change and at 152 after (`s5_lane_waves_report.md`): `test_ordinary_final_admission_requires_valid_pair_contract`, `test_preserved_artifacts_match` and `test_startup_requires_runtime_artifacts_and_contract`, each `RuntimeError: Missing frozen producer adapter`. The frozen producer adapter's weights are an untracked file that only the main checkout holds, so a worktree cannot load them; this is environmental, not an S5 regression. The merge gate in the main checkout, which holds the adapter, will show the result of these three tests at the stage close.
@@ -210,6 +547,16 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 **The merges between `ea1c0d5` and the tip.** `8ac7a60` (lane/s05-defect, D-068 and D-066): side gates run by the lane at its tip before the merge (adapter checks 58 cases, baseline checks 26, execution topology, report recommendations, localization, final integration 148 tests and the controller gate 92 tests, each passing; the cloud-run checks are not in the lane's list), recorded in the lane's report to the previous lead (session transcript of 28 October, 23:30 UTC; no lane report file was saved, and no log of those side gates was kept, so their results stand only in that transcript and in D-087); main gate at `889d682` (the merge plus `CLAUDE.md`), in chunks (`gate_logs/s05_889d682_chunk1.log` to `chunk4.log`): the worktree baseline apart from checks 229 and 233 (INC-017, fixed at `cbcceac`). `8c2392d` (lane/s05-waves): main gate in chunks at the merge (`gate_logs/s05_8c2392d/`) and the lane's side gates (`s5_lane_waves_report.md`). `70596c6` (lane/s05-hidden): main gate in chunks and the controller gate at the merge (`gate_logs/s05_70596c6/`, `ctl.log`) and the lane's side gates (`s5_lane_hidden_report.md`).
 
 ## Count line
+
+**At the reopened close.** 10 specification items and 11 exit criteria, plus the S5-bound items of D-S12 to D-S18 (the ledger's S5 rows):
+
+- **Done.** Items 1 to 10, with item 2 settled on real execution (D-100, D-101; the nine multi-round entries reviewed and activated in L12), item 3 (L7, D-106; L12's re-runs scored, D-141), item 4 (B3 on the suite in L8, L12, L12b; scores in "Development scores after the reopening"), item 5 (CUAD measured in L10, dry runs to five documents in L11, D-100, D-105), item 8 (reviews of L6 to L12b and of intervened replies, D-141), item 9 (the measurement tables after D-S12, open items 37 to 40 closed, D-128). Exit criteria: smoke run; regression scored; development suite and adapter dry runs; B1 and B2 proven; every failure classified (D-112, D-128, D-138, D-143); C0 in full agreement on version 2 (run 4) and version 2 frozen (`0c1884fb...`; version 3 drafted, D-126, after v1); measurements recorded; spend within its allocation (D-092, D-115, D-133).
+- **Moved after v1 by the operator (D-S18 item 3; SCHEDULED in S8, not dropped).** L9a and L9b (the 56 probes), L13 (FinDVer and CUAD-claim development runs), preregistration version 3 (ContractNLI and SciTab only) and the sealed evaluation.
+- **Recorded and not fixed in S5 (D-S14 item 7, D-S18 item 2a).** The 3 entries that still fail (open items 47 and 48); PRACTICE_AUDITOR's forced explanations (open item 51); and after L12c (D-146) 33 of the 37 first failures pass on their own; 4 still fail, `f1_s1101_cvjx` (open item 47) and `cuad_527255a5c970`, `f3_s3102_vwmj`, `f1_s1102_mstx` (open item 48).
+- **Not now (P9 reason b, with FOR_SECKIN entries).** D-S13 item 6b, the launcher install on a fresh clone (memory below 4 GB; with 6c after the S7 merge, then S10).
+- **At close.** The outside audit's findings fixed, stage merged, VERSION 0.1.0.dev5, tag `loop-s05-v1`, push under D-S5.
+
+**The first close (29 October), as it was written then:**
 
 21 named (spec items 1 to 10 and the 11 exit criteria), 13 done, 7 not now (P9 reasons b and c), 1 at close. S5 checker round 2 moved item 9 to "not now, in part" (it was counted done); round 3 moved the exit criterion "measurements recorded" with it, and corrected item 9's reason from (e) to (b) and (c) (D-088).
 
@@ -219,7 +566,9 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 ## Stage boundary
 
-No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
+**At the reopened close.** No loop instance is running: the reaper's reading at 20:26:59 UTC on 31 October listed 0 instances, total spend 63.18 USD (instances 62.59 by the ledger's 21 terminations, storage about 0.59), about 135.8 left under the 199 hard stop. Storage to the loop's end is forecast at about 1.0 USD (0.13 a day for the shared filesystem). Lanes still open: s06-launchers (open item 20), s07-sync (S7), v1-results and v1-readme (S11), s05-prereg3 (version 3, after v1); none runs a launch. The parallel track's two patches wait for after v1 (D-137). The asset copy `shimmer-filesystem` stays as the operator created it. Free disk about 60 GB, above the 30 GB floor. The first S5 merge `2dea80f` (never pushed) is superseded by the second merge.
+
+**The first close (29 October), as it was written then:** No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
 
 ## Effort
 

@@ -141,7 +141,7 @@ CUAD forecast basis (D-094, closing the version 2 attack's item 8): one developm
 | Run | Purpose | Forecast basis | Forecast (USD) | Cap (USD) | Billed minutes, notes | Actual (USD) |
 |---|---|---|---|---|---|---|
 | L11 (2026-10-29 23:18 to 2026-10-30 02:29 UTC, D-097) | dev-dryrun-l11, 8 development documents B3 + B1 tuned, sealed at d50b299 | 198 minutes (staging lane's point forecast), A10 1.29 USD an hour, times 1.3 | 5.53 | 8.30 | 191 (ledger); 16 entries; every B3 entry reached its end; six B3 entries semantically incomplete (`semantic_incomplete`, pipeline exit 0); MATCH | 4.11 (ledger). Variance: actual 74 percent of forecast |
-| L7 (2026-10-30 02:57 to 04:01 UTC, D-097) | dev-multiround-l7, 12 entries b3_only (two multi-round cases, catalogue regression, two negotiation comparisons, seven family-4 tests and twins multi-round), sealed at 55f1dd1 | 380 minutes (multi-round at about 13 minutes a round), times 1.3 | 10.62 | 15.93 | 64 (ledger); the nine multi-round entries reached `reviewed` with no model call in seconds each and were failed by the runner's model-call requirement (`required_telemetry_missing`, D-100); catalogue completed; both negotiation comparisons semantically incomplete; MATCH | 1.38 (ledger). Variance: actual 13 percent of forecast (the multi-round phase now asks no model) |
+| L7 (2026-10-30 02:58 to 04:01 UTC, D-097) | dev-multiround-l7, 12 entries b3_only (two multi-round cases, catalogue regression, two negotiation comparisons, seven family-4 tests and twins multi-round), sealed at 55f1dd1 | 380 minutes (multi-round at about 13 minutes a round), times 1.3 | 10.62 | 15.93 | 64 (ledger); the nine multi-round entries reached `reviewed` with no model call in seconds each and were failed by the runner's model-call requirement (`required_telemetry_missing`, D-100); catalogue completed; both negotiation comparisons semantically incomplete; MATCH | 1.38 (ledger). Variance: actual 13 percent of forecast (the multi-round phase now asks no model) |
 | L10 (2026-10-30 04:08 to 06:13 UTC, D-097) | dev-cuad-l10, CUAD development contract 527255a5c970, B3 + B1 tuned, sealed at 55f1dd1 | 147 minutes (410 plans at 17 seconds, B1 41 calls), times 1.3 | 4.11 | 6.16 | 125 (ledger); B3 semantically incomplete, 410 uncomputable judging calls all refused under D-068; B1 completed; MATCH | 2.69 (ledger). Variance: actual 65 percent of forecast; the allocation had forecast 21.76 USD for CUAD at the 2,643-plan mean (D-092, D-097) |
 | L8 (2026-10-30 07:41 to 12:12 UTC, D-097) | dev-suite-l8, 20 development-suite tests and twins, B3 then B1 tuned (40 entries), sealed at 55f1dd1 | 540 minutes (15.4 + 20 x 15.2 + 20 x (9 + 2)), times 1.3 | 15.09 | 22.64 | 271 (ledger); usage at launch five-hour 4, seven-day 37; disk 39 GB; B1 20 of 20 passed; B3 1 of 20 passed and 19 failed: 12 did not complete (10 with `backend_failure`, one of them also `required_contract_failure`; 2 with `required_telemetry_missing`), 7 `semantic_incomplete` (4 of them also `required_contract_failure`); the reasons do not overlap across the two groups (s5_diag_b3); diagnosis under D-S14 (D-111); MATCH | 5.83 (ledger). Variance: actual 39 percent of forecast |
 | R1 (2026-10-30 13:27 to 15:02 UTC, ledger, D-114, D-116) | d-s14-constraint-replay, one exposed replay-only B1 bundle, 136 producer prompts on two paths, sealed at cd498a3 | 112 minutes, times 1.3 | 3.13 | 4.70 | 96 (ledger); usage at launch five-hour 24, seven-day 44; disk 33 GB; rules A to D met, 52 of 52 failing partitions valid under the constraint; MATCH | 2.06 (ledger). Variance: 66 percent of forecast |
@@ -153,7 +153,7 @@ Usage at each launch since D-S12 (status line, five-hour and seven-day percent; 
 
 | Date (UTC) | Event | Instance cost to date (USD) | Total spent, reaper (USD) | Remaining (USD) |
 |---|---|---|---|---|
-| 2026-10-30 09:22 | After L11 (4.11), L7 (1.38) and L10 (2.69); L8 running. Reaper reading 09:21:59 UTC: one loop instance listed, total spend 31.40 (it counts L8 to its reading time and the storage share). | 28.82 (S5 20.64 plus 8.18) | 31.40 | 168.60 |
+| 2026-10-30 09:22 | After L11 (4.11), L7 (1.38) and L10 (2.69); L8 running. Reaper reading 09:21:59 UTC: one loop instance listed, total spend 31.40 (it counts L8 to its reading time and the storage share). | 28.81 (S5 20.64 plus 8.17; the ledger's 28.8100) | 31.40 | 168.60 |
 
 ### S5 re-forecast after D-097 (D-107)
 
@@ -163,7 +163,7 @@ S5's brought-back allocation was 70.81 USD. Spent on it so far 8.18 (L11, L7, L1
 
 | Allocation | USD | Forecast basis |
 |---|---|---|
-| Spent to date | about 35.2 | instances 34.65 (S5 20.64; L11 4.11, L7 1.38, L10 2.69, L8 5.83), storage about 0.5 |
+| Spent to date | about 35.2 | instances 34.64 (the ledger's 34.6365; S5 20.64; L11 4.11, L7 1.38, L10 2.69, L8 5.83), storage about 0.5 |
 | S5 remaining | about 68.1 | R1 3.10; L12 re-run of 37 entries 13.98; L9a 12.83; L9b 12.33; L13 FinDVer and CUAD-claim development 19.4; launcher review and draft 1.5; second re-run margin 5.0 |
 | S6 cloud work | 5.74 | as D-092, the GNN run included |
 | Smoke runs | 3.12 | |
@@ -211,3 +211,48 @@ The smoke 3.12 of the allocation table above went back to the pool under D-S17 i
 | Sealed evaluation (version 3, ContractNLI and SciTab, D-S18 item 5) | at least 60 | floor 60; sized from the ledger when version 3 is written |
 | Moved steps (D-S18 item 3) | about 42 | L13 about 17.4, L9a 12.3, L9b 12.3; S6 cloud work 5.74 is inside the sealed evaluation's surplus or waits |
 | Total | about 141 | of about 143.8 left; if a forecast grows, L9b waits first and FOR_SECKIN says so |
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L12b a | launched 2026-10-31 13:13:11 (ledger), dev-rerun-l12b-a, BATCH_a 6 entries, sealed at d6ce19a | 5.59, cap 8.39 (forecast 200 minutes at 1.29 USD an hour times 1.3 is 5.59; the cap is 1.5 times that) | running; free memory 3.08 GB, disk 63.7 GB at launch (D-135 floor met) |
+| L12b b | launched 2026-10-31 13:23:35 (ledger), dev-rerun-l12b-b, BATCH_b 7 entries, sealed at d6ce19a | 5.59, cap 8.39 | running (first attempt with a 190-minute forecast refused by the guard before any intent: cap 7.97 under the sealed 8.39) |
+| L12b a | 2026-10-31, dev-rerun-l12b-a (ledger termination) | 5.59, cap 8.39 | 178 minutes, 3.83 USD; 4 of 6 passed (D-138) |
+| L12b b | 2026-10-31, dev-rerun-l12b-b (ledger termination) | 5.59, cap 8.39 | 114 minutes, 2.45 USD; 6 of 7 passed (D-138). Instances total after L12b: 60.89 |
+
+### The allocation after L12b, recomputed (2026-10-31 20:10 +0300, D-139)
+
+Reaper reading 2026-10-31 (reaper_status.json): total spend 61.48 USD (instances 60.89 by the ledger's terminations, storage about 0.59). Left under the 199 hard stop: about 137.5.
+
+| Allocation (D-S18 item 7 order) | USD | Basis |
+|---|---|---|
+| v1 work left | 2.5 | L14 launcher review and draft 1.5 (D-115), slack 1.0 |
+| Storage to the loop's end | 1.0 | about 0.13 USD a day (the shared filesystem), to about 7 November at the latest |
+| Parallel track (D-S18 item 6a) | 30.0 | refused past this |
+| Sealed evaluation (version 3, ContractNLI and SciTab) | at least 60.0 | floor 60 |
+| Moved steps (D-S18 item 3), in this order | 47.7 | L13 17.4, L9a 12.3, L9b 12.3, S6 cloud work 5.74 (the GNN run, D-S13 item 11) |
+| Total | 141.2 | about 3.7 over the 137.5 left |
+
+D-S18 item 7: the moved steps at the end wait first. With the sealed evaluation at its 60 floor, the last 3.7 USD of the moved steps do not fit: the S6 cloud work (5.74) waits unless an earlier forecast comes in under it. D-S12 item 4's 10 USD reserve is not in D-S18 item 7's order and is removed by it; storage, which the reserve carried first, is its own line here. D-S13 item 11 named the reserve as a funding source for the GNN run; that source is gone, and the run sits last among the moved steps.
+
+### Correction and the brought-back third re-run (2026-10-31 19:55 +0300, sweep 2, D-140)
+
+The 5.74 USD of S6 cloud work above is four items (D-092, sweep 1 items 31 to 34), not the GNN run alone: the GNN run 1.70 (D-S13 item 11), the report_optimized measurement 0.64, the S6b re-score 1.70, the open-item measurement runs 1.70. Sweep 2 brings back one item with a cost: replays of the 3 PRACTICE_AUDITOR and 4 VERIFIER prompts behind open items 47 and 48 (about 2.3 USD on the R2b and R2c bases) and a third re-run of the 3 entries still failing (about 155 minutes, about 4.3 USD): about 6.6 USD.
+
+| Moved steps, in order (D-S18 items 3 and 7) | USD | Cumulative after the 93.5 of v1, storage, track and sealed evaluation |
+|---|---|---|
+| L13 | 17.4 | 110.9 |
+| L9a | 12.3 | 123.2 |
+| L9b | 12.3 | 135.5 |
+| S6 GNN run (D-S13 item 11) | 1.70 | 137.2 |
+| Open items 47 and 48: replays and a third re-run | 6.6 | 143.8 |
+| S6: report_optimized measurement, S6b re-score, open-item runs | 4.04 | 147.8 |
+
+About 137.5 is left, so everything through the GNN run fits; the third re-run with its replays (6.6) and the other three S6 items (4.04) wait, about 10.3 USD in all, unless an earlier forecast comes in under it.
+
+### L12c in the allocation (2026-10-31 22:05 +0300, D-145)
+
+L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes about 4.9 (L12c 2.4, L14 1.5, slack 1.0). With storage 1.0, the track 30 and the sealed evaluation's 60, about 41.6 of the 137.5 left remains for the moved steps: L13 (17.4) and L9a (12.3) fit, L9b (12.3) fits only if an earlier forecast comes in under it by about 0.4, and the GNN run (1.70), the third re-run with its replays (6.6) and the other three S6 items (4.04) wait. The amount that waits after L9b is about 12.3 USD; the 10.3 written at 19:55 was the shortfall then, and the amount waiting then was 10.64. The 19:55 correction sits before the 20:10 table it corrects because that table's heading took D-139's later commit time; both stand as written.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L12c | launched 2026-10-31 19:09:39, dev-rerun-l12c, 5 B3 re-runs of the stamp-only passes, sealed at 5c3c129 after the full gate (D-143, D-144) | 2.38, cap 3.56 (85 minutes from the entries' own L12 and L12b times) | 79 minutes, 1.70 USD; 4 of 5 passed (D-146); usage seven-day 70 percent (five-hour not reported), free memory 4.13 GB, disk 59.9 GB at launch. Instances total after it: 62.59; reaper 63.18 |

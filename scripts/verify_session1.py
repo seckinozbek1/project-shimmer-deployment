@@ -24756,11 +24756,13 @@ def check_264_core_field_alias_is_read_and_recorded():
     interpretation, and every application is recorded on the result, the bus post
     and the observation row.
 
-    ENVELOPE-B (D-S14, K8): EDITOR_CLERK left `kind` out of 4 of its 20 calls in L7,
-    L8, L10 and L11, every other field present. A contract that declares exactly one
-    item kind and `single_kind_stamp` gets `kind` stamped where the key is absent,
-    recorded the same way and on the telemetry call record; a written kind that is
-    not the declared one is refused, and no other field is defaulted."""
+    The K8 stamp (ENVELOPE-B, D-S14) that supplied EDITOR_CLERK's missing `kind` was
+    removed at the S5 close (H9: a contract edit no stage called for). Proven here: no
+    contract declares a stamp, the wrapper carries no stamping code, and a missing kind
+    is refused for every agent as before K8, a contract failure on the result, the bus
+    post, the observation row and the telemetry call record. Each proof is neutralised
+    by putting K8 back (a validator that lets a missing kind through, an alias pass that
+    stamps one). The cause is fixed in decoding instead (check 297)."""
     from ordinary_final_correction_checks import check_alias
     return check_alias()
 
@@ -25193,11 +25195,13 @@ def check_296_request_ledger_check_catches_dropped_requests():
     D-S entry with its numbered and lettered items from the loop specification, the ids in the
     operator's private request ledger and DECISIONS.md, and fails on a specification item with
     no row, a row that matches no item, a DONE row whose decision, commit or path does not
-    resolve, and a RUNNING row unchanged for 24 hours that names nothing running. Runs
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running (a launch
+    open in the budget ledger, a lane in `git worktree list`). Runs
     tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
-    specification, ledger and DECISIONS.md, a one-commit git repository; the private ledger
-    is never read), then neutralises in turn the coverage rule, the evidence rule and the
-    stale rule, requires a failure, restores and requires a pass."""
+    specification, ledger, budget ledger and DECISIONS.md, a one-commit git repository with a
+    lane worktree; the private ledger is never read), then neutralises in turn the coverage
+    rule, the evidence rule, the stale rule and its running-state test, requires a failure,
+    restores and requires a pass."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
     if loop not in sys.path:
         sys.path.insert(0, loop)
@@ -25220,7 +25224,11 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     replay path hold. Then neutralises, in turn, the processor's admission (every token
     admitted), the wrapper's routing (no envelope constraint built), the closing rule (the stop
     token admitted anywhere) and the required-key rule (any declared key in any slot); requires
-    a failure; restores; requires a pass."""
+    a failure; restores; requires a pass. At the S5 close EDITOR_CLERK (local_producer) joined
+    the declaration in place of the removed K8 kind stamp: its saved shape without `kind` is
+    prevented through the real call_local, the validator supplying nothing, neutralised by
+    dropping it from the declaration and by an item that may close with a required key
+    unwritten."""
     import io
     import unittest
     from unittest.mock import patch
@@ -25236,13 +25244,24 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
 
     def any_name(self, j, opt):
         return tuple(sorted(set(self.contract.optional) | {s for names in self.contract.spellings for s in names}))
+    declaration = contract_decoding.envelope_declaration
+
+    def without_editor_clerk(root=None):
+        value, digest = declaration(root)
+        return dict(value, agents={k: v for k, v in value['agents'].items() if k != 'EDITOR_CLERK'}), digest
     mutants = (
         (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
          ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
         (contract_decoding, 'for_envelope', lambda *args, **kwargs: None,
          ('test_the_wrapper_carries_the_constraint_and_records_it',)),
         (grammar, 'accepting', lambda self, state: True, ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
-        (grammar, 'names', any_name, ('test_language_rules',)))
+        (grammar, 'names', any_name, ('test_language_rules',)),
+        # S5 close (the K8 kind stamp removed): EDITOR_CLERK left out of the declaration, and an
+        # item allowed to close before every required key is written.
+        (contract_decoding, 'envelope_declaration', without_editor_clerk,
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)),
+        (grammar, 'closable', lambda self, j, opt: j == len(self.contract.leading),
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)))
     for owner, attribute, mutant, names in mutants:
         with patch.object(owner, attribute, mutant):
             failed = not passes(*names)
@@ -25252,9 +25271,10 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
                 getattr(owner, '__name__', owner), attribute, failed, restored)
     return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
                     'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
-                    'and replay hold; 4 neutralisations fail and restore'
+                    'and replay hold; EDITOR_CLERK missing kind prevented through the wrapper with no stamp; '
+                    '%d neutralisations fail and restore'
                     % (unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases(), len(checks.KINDS),
-                       len(checks.VALID_FORMS)))
+                       len(checks.VALID_FORMS), len(mutants)))
 
 
 def check_293_scorer_reads_the_key_parts_d042_added():
@@ -25818,7 +25838,7 @@ CHECKS = [
      check_295_compact_producer_decodes_under_its_contract),
     ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
      check_296_request_ledger_check_catches_dropped_requests),
-    ("297 the local auditor agents and ARCHIVIST decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+    ("297 the local auditor agents, ARCHIVIST and EDITOR_CLERK decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
      check_297_local_auditor_agents_decode_under_their_envelope_contract),
     ("298 the replies route serves metadata and outcomes, never reply text",
      check_298_console_replies_route),

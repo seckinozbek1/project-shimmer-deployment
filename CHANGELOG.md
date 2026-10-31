@@ -2,6 +2,17 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## 0.1.0.dev5 (2026-10-31)
+
+- **Development runs on a cloud GPU, end to end.** A sealed bundle now carries the B3 pipeline arm and the B1 bare-model arm, runs several bundles in one instance session (`--batch`), and keeps every entry's evidence even past the soft budget. Each launch is a loop launch: a ledger line before the request, a budget guard, a reaper that ends an instance at its deadline, and up to two loop instances at once, with a third refused.
+- **Model output is shaped by its own contract while it is written.** The compact producer and the envelopes of VERIFIER, PRACTICE_AUDITOR and ARCHIVIST decode under a constraint built from each call's own contract (`scripts/contract_decoding.py`); a token the model would have chosen anyway is never changed, the validators are unchanged, and replays on the A10 left every valid reply byte for byte as it was (EDITOR_CLERK's envelope, added at the S5 close, is proven on saved replies so far).
+- **VERIFIER is shown no runtime identifiers and may write 4,096 tokens** (FACT_CHECKER keeps 2,048). Both were measured: the largest VERIFIER prompts fell by about half, and at 4,096 most lists that were cut off now end.
+- **Multi-round cases are computed in Python**, with no model call for the case records, and a multi-round run is judged by its own evidence and saves its own step times.
+- **Benchmark scoring has two labelled readings** (`--scoring benchmark|as_shipped`), the repository scorer reads refusal kinds and multi-round keys, and FinDVer filings are read in segments with a revised bare-model prompt. A CUAD claim-check adapter is added as a secondary arm.
+- **A dating fix for four-digit years on Linux, EDITOR_CLERK decoding under its own envelope, and over-bound gathers run as waves.**
+- **A request-ledger check** (`tools/loop/request_ledger_check.py`) holds the loop's records against its specification.
+- Gate checks 285 to 297 added; development results, every one exposed, are in the stage report and the results page.
+
 ## 0.1.0.dev4 (2026-10-28)
 
 - **Adapters for five external benchmarks** (`benchmark/adapters/`: ContractNLI, CUAD, ContraDoc, SciTab, FinDVer), written and labelled by third parties on real documents. Each turns a benchmark item into a test bundle in the published input format, maps Shimmer's run output to the benchmark's label by one written rule, and computes the benchmark's own metric, or the closest honest measure with the reason when Shimmer's output cannot produce it. Standard library only; they run from a copied tree. No benchmark data is committed: it stays in the ignored `external/` folder.

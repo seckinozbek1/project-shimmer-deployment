@@ -15,7 +15,14 @@ dropped could slip through. This script does not rest on the loop's attention:
     repository root or the private folder; a DONE row with no pointer fails;
 (e) it flags every RUNNING row (not `RUNNING (standing)`) whose last change is more than 24
     hours old, or unreadable, and whose status or evidence names no running launch, lane or
-    role session (`L12`, `lane/`, `lane-`, `C0 run`, `R` and a digit, `agent`);
+    role session. Running is read from evidence, never from a name alone: a launch runs only
+    when the budget ledger (`--budget-ledger`, default `budget_ledger.jsonl` in the private
+    folder) holds a `launch_intent` or `launch` line for the purpose or instance name the row
+    names with no later `termination` line for that instance (matched by name or instance id);
+    a lane runs only when `git worktree list` of the root shows the branch the row names
+    (`lane/x`, or `lane-x` for the lane's agent name, both meaning branch `lane/x`). A role
+    session or an agent has no record this script can read offline, so a row naming only one
+    of those, or a launch series such as `L12`, is NOT exempt;
 (f) it prints one count line and exits 1 on any failure.
 
 How ids are formed. Annex C row `R1` is ledger id `C-R1`. An entry with no numbered items is
@@ -28,6 +35,7 @@ needs its row (`D-S12.2a`). Standard library only, no network; git runs with no 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -54,7 +62,9 @@ BACKTICK = re.compile(r'`([^`\n]+)`')
 HEX = re.compile(r'[0-9a-f]{7,40}')
 EXTENSION = re.compile(r'\.[A-Za-z][A-Za-z0-9_-]*$')
 TIME = re.compile(r'(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?\s*([+-]\d{2}):?(\d{2})')
-NAMES_RUNNING = re.compile(r'\bL\d+[a-z]?\b|lane/|lane-|C0 run|\bR\d+\b|agent', re.IGNORECASE)
+LANE = re.compile(r'(?<![\w/-])lane[/-]([A-Za-z0-9_.-]*[A-Za-z0-9_])')
+WORD = re.compile(r'[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9]')
+DEFAULT_BUDGET_LEDGER = 'budget_ledger.jsonl'
 
 
 # (a) the specification
@@ -257,7 +267,51 @@ def parse_time(text):
         tzinfo=timezone(offset))
 
 
-def stale_running(rows, now):
+def open_launches(budget_text):
+    """Lower-cased purposes and instance names of every launch the budget ledger opened (a
+    `launch_intent` or `launch` line) and did not close (a `termination` line for the same
+    instance name or instance id). Every instance name is a launch of its own, so a line
+    copied from another ledger after the termination does not reopen it. An unreadable line
+    is skipped."""
+    opened, ids, closed = {}, {}, []
+    for line in (budget_text or '').splitlines():
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(record, dict):
+            continue
+        name, instance = record.get('instance_name'), record.get('instance_id')
+        if record.get('event') in ('launch_intent', 'launch') and name:
+            opened.setdefault(name, set()).add(name.lower())
+            if record.get('purpose'):
+                opened[name].add(str(record['purpose']).lower())
+            if instance:
+                ids[instance] = name
+        elif record.get('event') == 'termination':
+            closed.append((name, instance))
+    for name, instance in closed:
+        opened.pop(name, None)
+        opened.pop(ids.get(instance), None)
+    return set().union(*opened.values()) if opened else set()
+
+
+def _git_worktree_branches(root):
+    """The branches `git worktree list` of the root shows checked out, as `lane/x`."""
+    result = subprocess.run(['git', '-C', str(root), 'worktree', 'list', '--porcelain'], stdin=subprocess.DEVNULL,
+                            capture_output=True, text=True, creationflags=no_window())
+    prefix = 'branch refs/heads/'
+    return {line[len(prefix):] for line in result.stdout.splitlines() if line.startswith(prefix)}
+
+
+def names_running(text, launches, branches):
+    """The launches and lanes the text names that are running by the evidence read."""
+    found = sorted({w.lower() for w in WORD.findall(text)} & launches)
+    found += sorted({'lane/' + name for name in LANE.findall(text)} & branches)
+    return found
+
+
+def stale_running(rows, now, launches=frozenset(), branches=frozenset()):
     stale = []
     for row in rows:
         status = _status(row)
@@ -266,21 +320,22 @@ def stale_running(rows, now):
         changed = parse_time(row['cells'].get('Last change', ''))
         if changed is not None and now - changed <= STALE_AFTER:
             continue
-        if NAMES_RUNNING.search(status + ' ' + _evidence(row)):
+        if names_running(status + ' ' + _evidence(row), launches, branches):
             continue
         stale.append((row['id'], 'no readable Last change' if changed is None
-                      else 'last change %s, nothing running named' % changed.isoformat()))
+                      else 'last change %s, names no running launch or lane' % changed.isoformat()))
     return stale
 
 
 # (f) the report
 
-def check(spec_text, ledger_text, decisions_text, root, private, now, commit_exists=_git_commit_exists):
+def check(spec_text, ledger_text, decisions_text, root, private, now, commit_exists=_git_commit_exists,
+          budget_text='', worktree_branches=_git_worktree_branches):
     items = specification_items(spec_text)
     rows = ledger_rows(ledger_text)
     missing, unmatched, notes, duplicates = coverage(items, rows)
     unresolved = unresolved_evidence(rows, decisions_text, root, private, commit_exists)
-    stale = stale_running(rows, now)
+    stale = stale_running(rows, now, open_launches(budget_text), worktree_branches(root))
     annex_c = sum(1 for i in items if i['source'] == 'Annex C')
     entries = len({i['source'] for i in items if i['source'] != 'Annex C'})
     subs = sum(len(i['subs']) for i in items)
@@ -307,6 +362,8 @@ def main(argv=None):
     parser.add_argument('--ledger', required=True, help='the private request ledger')
     parser.add_argument('--decisions', help='DECISIONS.md, default <root>/%s' % DEFAULT_DECISIONS.as_posix())
     parser.add_argument('--private', help='the private folder, default the ledger\'s folder')
+    parser.add_argument('--budget-ledger', help='the loop\'s budget ledger read for running launches, default '
+                        '<private>/%s; with none, no launch counts as running' % DEFAULT_BUDGET_LEDGER)
     parser.add_argument('--now', help='ISO time with offset to judge staleness against (default: the clock)')
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
@@ -314,11 +371,15 @@ def main(argv=None):
     spec = Path(args.spec) if args.spec else root / DEFAULT_SPEC
     decisions = Path(args.decisions) if args.decisions else root / DEFAULT_DECISIONS
     private = Path(args.private) if args.private else ledger.resolve().parent
+    budget = Path(args.budget_ledger) if args.budget_ledger else private / DEFAULT_BUDGET_LEDGER
+    if args.budget_ledger and not budget.is_file():
+        parser.error('--budget-ledger %s is not a file' % budget)
     now = parse_time(args.now) if args.now else datetime.now(timezone.utc)
     if now is None:
         parser.error('--now needs a date, a time and an offset')
     failed, lines = check(spec.read_text(encoding='utf-8'), ledger.read_text(encoding='utf-8'),
-                          decisions.read_text(encoding='utf-8'), root, private, now)
+                          decisions.read_text(encoding='utf-8'), root, private, now,
+                          budget_text=budget.read_text(encoding='utf-8') if budget.is_file() else '')
     print('\n'.join(lines))
     return 1 if failed else 0
 

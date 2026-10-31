@@ -10,7 +10,11 @@ walked character by character through the agent's envelope grammar and fed token
 (the encoding of the reply by its backend's tokenizer, then the backend's stop token) through the real ContractProcessor,
 the model's choice standing in as the top logit, counting every step where that token was not
 admitted. A valid reply must pass with 0 interventions; a failed one shows where the
-constraint first acts. The tokenizer is read from the local cache only (never fetched).
+constraint first acts. A reply the run accepted only because Python supplied a value the model
+did not write (a `<-` entry in its call's `contract_normalized`, read from the run's
+`logs/generation_observation.jsonl`: the K8 kind stamp, removed at the S5 close) is not a valid
+reply: it is counted under `stamped` and listed with the failed ones, and must leave the
+language. The tokenizer is read from the local cache only (never fetched).
 Prints and writes counts, call ids, step numbers and state kinds only, never a reply's text.
 """
 from __future__ import annotations
@@ -35,8 +39,22 @@ FAILED = 'contract_violation'
 NEVER_READ = ('benchmark/keys',)
 
 
+def stamped_calls(folder):
+    """Call ids whose acceptance carried a value Python supplied (`<-` in contract_normalized),
+    from the run's observation log beside <run>/audit/model_replies."""
+    log = Path(folder).parent.parent / 'logs' / 'generation_observation.jsonl'
+    stamped = set()
+    if log.is_file():
+        for line in log.read_text(encoding='utf-8').splitlines():
+            if line.strip():
+                row = json.loads(line)
+                if any('<-' in str(n) for n in row.get('contract_normalized') or []):
+                    stamped.add(row.get('call_id'))
+    return stamped
+
+
 def records(folder):
-    """(record, outcome) for each reply record in one model_replies folder."""
+    """(record, outcome, stamped) for each reply record in one model_replies folder."""
     folder = Path(folder)
     for part in NEVER_READ:
         if (ROOT / part).resolve() in (folder.resolve(), *folder.resolve().parents):
@@ -47,9 +65,10 @@ def records(folder):
             if line.strip():
                 row = json.loads(line)
                 outcomes[row.get('call_id')] = row.get('outcome')
+    stamped = stamped_calls(folder)
     for path in sorted(folder.glob('*.json')):
         record = json.loads(path.read_text(encoding='utf-8'))
-        yield record, outcomes.get(record.get('call_id'))
+        yield record, outcomes.get(record.get('call_id')), record.get('call_id') in stamped
 
 
 def longest_whitespace(grammar, text):
@@ -82,7 +101,7 @@ def measure(folders, tok, stops, width=None, root=None, agents=None):
     whitespace = collections.Counter()
     acted, failed = [], []
     for folder in folders:
-        for record, outcome in records(folder):
+        for record, outcome, stamped in records(folder):
             agent = record.get('agent')
             if agent not in spec['agents'] or record.get('backend') != spec['agents'][agent]['backend'] \
                     or (agents and agent not in agents):
@@ -91,8 +110,8 @@ def measure(folders, tok, stops, width=None, root=None, agents=None):
             if not isinstance(reply, str):
                 counts[(agent, 'no_reply_text')] += 1
                 continue
-            valid = outcome not in (FAILED, None)
-            group = 'valid' if valid else ('failed' if outcome == FAILED else 'no_outcome')
+            valid = outcome not in (FAILED, None) and not stamped
+            group = 'valid' if valid else ('stamped' if stamped else 'failed' if outcome == FAILED else 'no_outcome')
             contract = cd.EnvelopeContract.for_agent(agent, spec, root=root)
             grammar = cd.EnvelopeGrammar(contract, spec)
             counts[(agent, group, 'replies')] += 1
@@ -114,6 +133,7 @@ def measure(folders, tok, stops, width=None, root=None, agents=None):
             counts[(agent, group, 'with_intervention')] += int(bool(seen['interventions']))
             counts[(agent, group, 'dead_end')] += int(bool(seen['dead_end']))
             row = dict(call_id=record.get('call_id'), run_id=record.get('run_id'), agent=agent, outcome=outcome,
+                       stamped=stamped,
                        steps=seen['steps'], interventions=seen['interventions'],
                        first_intervention_step=seen['first_intervention_step'], leaves_at=first_break(grammar, reply))
             if valid and seen['interventions']:
