@@ -859,7 +859,11 @@ processing swarm governed by an append-only constitution.
   PRACTICE_AUDITOR, 56 ARCHIVIST) are inside the language with 0 interventions, and all 24
   failed ones leave it. It does not stop a repetition inside a string or an item list that runs
   to the output cap: 9 of those 24 (8 VERIFIER at 2,048 tokens, one item per reference; 1
-  PRACTICE_AUDITOR at 768, one sentence repeated) stay truncated and are refused as before. Not
+  PRACTICE_AUDITOR at 768, one sentence repeated) stay truncated and are refused as before.
+  VERIFIER's output allowance is now 4,096 (`pipeline.VERIFIER_MAX_TOKENS`, D-134; FACT_CHECKER
+  keeps `AUDIT_MAX_TOKENS` 2,048, check 216), measured by replay R2c on the A10: of those 8
+  VERIFIER prompts, 4 end on their own at 2,342 to 3,590 tokens and pass the unchanged
+  validator, 4 still reach 4,096, with no out-of-memory failure and the same 21.89 GB peak. Not
   covered: the other local_producer agents and the other local_auditor agents (no measurement).
   The decoding checks' probe agent is CITATION_RESOLVER, so its kwargs test carries no
   constraint. Until the cloud replay (`replay_prompts.py extract --agents ...`, one model a
