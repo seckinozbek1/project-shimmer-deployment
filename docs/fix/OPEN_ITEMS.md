@@ -522,6 +522,8 @@ open-item sweep.
 
 - **Closed at loop S5 (2026-10-30, D-096).** Settled on development items only, after preregistration version 2's freeze: ContractNLI B3 2.86 USD per correct FLAG (1 of 3), B1 tuned 0.27 (1 of 4); SciTab B3 0.08 (2 of 4), B1 tuned 0.13 (1 of 4); ContraDoc no correct FLAG in either arm. Development, a handful of documents, no inference. The S8 report gives the sealed figures beside them.
 
+- **Note (2026-10-31, S5 close).** D-104 pooled D-096's sets with L11 and L10; the S5 report uses D-104's figures: ContractNLI B3 2.57 USD per correct FLAG (2 correct), B1 tuned 0.51 (1); SciTab B3 0.061 (7), B1 tuned 0.061 (4); ContraDoc B3 none, B1 tuned 0.09 (1); CUAD B3 none, B1 tuned 0.0087 (24). Development only.
+
 ## 41. Preregistration section 13: duties for the S8 report (found at loop S5, after checker round 3) (issue #44)
 
 - **What it is.** A fresh attack on section 13 found that B1 and B3 locate planted flaws by different tests (B3 by any rule and relation; B1 through the planted rule's item and its quoted sentences, capped when one rule has several flaws), that the unit text for synthetic documents is not defined in the text, and six minor gaps (private s5_sec13_attack.md).
@@ -580,3 +582,17 @@ open-item sweep.
 - **Evidence.** R2c: 4 of 8 capped prompts still at 4,096. L12b: `cuad_527255a5c970` (one intervention) and `f3_s3102_vwmj` (none) at 4,096; three other entries expected to stay capped ended on their own. D-134, D-138.
 - **Why it was left.** A larger allowance is unmeasured and the lists look unbounded; a structural bound (no more items than distinct references) needs a decision measured on development runs (P16).
 - **What would settle it.** A bound on VERIFIER's item count tied to its input (or a measured larger allowance), proven by a replay of these prompts, then a decision.
+
+## 49. A false Python missing_field amendment on a summary table read from its header only (found at loop S5, L7, D-106) (issue #104)
+
+- **What it is.** In the negotiation r2 to r3 comparison, Python posted a `missing_field` amendment for CONV-N01 on the u06 summary table: the table's fields are read only from its header row (term, figure), and the comment says the field is absent from the unit's text although the table's first row states the figure.
+- **Evidence.** L7 entry 03 (`external/s05/L7`), the L7 analysis (private `analysis/an_l7_report.md`), D-106. The round scorer does not count it, so no score shows it.
+- **Why it was left.** A change to how a table's fields are read touches every corpus's pairing (P16); found in S5 analysis, after the S5 code was settled.
+- **What would settle it.** A rule that a table unit's fields include its row labels, or that an absence on a table unit is checked against its cells, with a gate check, measured on the corpora before and after.
+
+## 50. The multi-round strategic VERIFIER call is decoded under an envelope grammar no measurement covered (found at loop S5 close, lane s05-c279) (issue #105)
+
+- **What it is.** Since the envelope constraint (D-129), every VERIFIER call on the local auditor is decoded under a grammar built from the contract its wrapper carries. The multi-round strategic layer replaces the wrapper's contract (`multi_round_phase._call`), so its VERIFIER call is constrained by the strategic contract's own keys, a shape the R2 measurements never saw.
+- **Evidence.** Lane s05-c279's report: check 279's stand-in tokenizer could not build the token table, which is how the path was found; on the fixture the call now records `decoding_constraint` with 0 interventions.
+- **Why it was left.** The grammar follows the same contract the validator checks, so it admits only replies that contract accepts; whether the decision-support call should be constrained is a scope decision without a measurement (P9 reason b).
+- **What would settle it.** A replay of saved strategic VERIFIER prompts on sdpa and sdpa_constrained under a rule written before the measurement, or a decision to exempt that call, with a gate check.
