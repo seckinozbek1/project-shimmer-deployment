@@ -143,9 +143,10 @@ def _extract_date(s: str) -> "str | None":
 
 
 def _extract_question(text: str) -> str:
-    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic."""
+    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic. A bare
+    'draft' leaves no topic (it used to become the topic "draft")."""
     return re.sub(
-        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\s+(me\s+)?(a\s+)?"
+        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\b\s*(me\s+)?(a\s+)?"
         r"(memo|brief|note)?\s*(on|about|regarding|re)?\s*:?\s*",
         "", text.strip()).strip()
 

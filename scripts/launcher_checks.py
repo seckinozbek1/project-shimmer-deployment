@@ -25,7 +25,8 @@ the run must show it, and the restored text must pass again.
                        written to a temporary scope file, a draft confirmed and a
                        review cancelled, every launch recorded and none run; a
                        request whose worker raises frees the window instead of
-                       answering "Still working" to everything after it.
+                       answering "Still working" to everything after it; a bare
+                       "draft" asks for its topic instead of drafting on "draft".
 
 A launcher file that is absent (the container image ships none) is skipped with
 that reason. The batch half needs cmd.exe and runs on Windows only; the shell
@@ -541,7 +542,7 @@ def _drive_chat(text, typed):
 def _chat():
     text = CHAT.read_text(encoding="utf-8")
     typed = ["help", "set cutoff 2026-01-15", "draft a memo on staffing", "y",
-             "status", "draft a memo on staffing", "y", "review", "n"]
+             "status", "draft a memo on staffing", "y", "review", "n", "draft", "y"]
 
     def passes(result):
         replies, launches, scope = result
@@ -550,15 +551,27 @@ def _chat():
                 and "stopped with an error (OSError)" in replies[3]
                 and "Current settings:" in replies[4]
                 and launches == [["pipeline.py", "--task"], ["pipeline.py", "--task"]]
-                and "Cancelled." in replies[8])
+                and "Cancelled." in replies[8]
+                and "Tell me what the memo should be about." in replies[10])
 
     def stuck(result):
         replies = result[0]
         return len(replies) > 4 and "Still working on the previous request" in replies[4]
 
+    def topic_draft(result):
+        replies, launches = result[0], result[1]
+        return len(replies) > 10 and len(launches) == 3 and "Draft and review complete." in replies[10]
+
+    # the draft lead-in as chat.py writes it, and as it was before a bare draft got no topic
+    lead_in = r"(draft|write|prepare|compose)\b\s*(me\s+)?"
+    old_lead_in = r"(draft|write|prepare|compose)\s+(me\s+)?"
+    shipped = passes(_drive_chat(text, typed))
     neutral = _neutralise(text, _CHAT_GUARD, _CHAT_UNGUARDED, "the chat worker guard")
-    _prove("a failed chat request frees the window", passes(_drive_chat(text, typed)),
+    _prove("a failed chat request frees the window", shipped,
            stuck(_drive_chat(neutral, typed)), passes(_drive_chat(text, typed)))
+    neutral = _neutralise(text, lead_in, old_lead_in, "the draft lead-in")
+    _prove("a bare draft asks for its topic", shipped,
+           topic_draft(_drive_chat(neutral, typed)), passes(_drive_chat(text, typed)))
 
 
 def _tk_unavailable():
