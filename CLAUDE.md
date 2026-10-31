@@ -823,8 +823,9 @@ processing swarm governed by an append-only constitution.
   language, and all 84 frozen DEV replies stay inside it with no intervention. The DEV
   figure (102 of 102 items, 75 of 84 rows valid, 9 refusals) is re-measured under the
   constraint by the replay path `sdpa_constrained` (`benchmark/baselines/replay_prompts.py`,
-  `extract --call-ids --dev`); until that measurement is read, the constraint is built and
-  proven on fixtures only. The replay path changed `tools/ordinary_final_run.py`
+  `extract --call-ids --dev`); measured on the A10 by replay R1 (D-116): all 52 failing
+  partitions valid under the constraint, DEV 75 of 84 valid with 9 refusals as before, 0
+  interventions on the DEV rows; adopted. The replay path changed `tools/ordinary_final_run.py`
   (`REPLAY_PATHS`), so bundles sealed before it refuse with `Controller source changed`.
   Check 295 and the decoding gate (strict determinism on CUDA) hold this.
   The same processor carries the ENVELOPE of three agents (D-S14, s5_diag_b3 K9 to K11):
@@ -849,17 +850,19 @@ processing swarm governed by an append-only constitution.
   (`tools/envelope_decoding_measure.py`): all 1,932 valid replies (38 VERIFIER, 1,838
   PRACTICE_AUDITOR, 56 ARCHIVIST) are inside the language with 0 interventions, and all 24
   failed ones leave it. It does not stop a repetition inside a string or an item list that runs
-  to the output cap: 9 of those 24 (8 VERIFIER at 2,048 tokens, one item per reference; 1
-  PRACTICE_AUDITOR at 768, one sentence repeated) stay truncated and are refused as before.
+  to the output cap. Measured on the A10 (R2a, R2b; D-132, D-134): no valid reply changed, and
+  14 of the 24 failed calls became valid; 10 stayed invalid (8 VERIFIER at 2,048 tokens, one item
+  per reference; 1 PRACTICE_AUDITOR at 768, one sentence repeated; and 1 PRACTICE_AUDITOR the
+  constraint kept open for its required `explanation`, which then ran to 768, open item 47).
   VERIFIER's output allowance is now 4,096 (`pipeline.VERIFIER_MAX_TOKENS`, D-134; FACT_CHECKER
   keeps `AUDIT_MAX_TOKENS` 2,048, check 216), measured by replay R2c on the A10: of those 8
   VERIFIER prompts, 4 end on their own at 2,342 to 3,590 tokens and pass the unchanged
   validator, 4 still reach 4,096, with no out-of-memory failure and the same 21.89 GB peak. Not
   covered: the other local_producer agents and the other local_auditor agents (no measurement).
   The decoding checks' probe agent is CITATION_RESOLVER, so its kwargs test carries no
-  constraint. Until the cloud replay (`replay_prompts.py extract --agents ...`, one model a
-  file, then `run` on sdpa and sdpa_constrained, judged by the agent's own validator) is read,
-  it is proven on fixtures and saved replies only. No bound controller file changed. Check 297
+  constraint. The cloud replay (`replay_prompts.py extract --agents ...`, one model a
+  file, then `run` on sdpa and sdpa_constrained, judged by the agent's own validator) was read
+  as R2a and R2b, and the constraint adopted (D-132, D-134). No bound controller file changed. Check 297
   and the decoding gate hold this.
 - HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
   controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
