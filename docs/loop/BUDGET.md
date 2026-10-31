@@ -214,7 +214,7 @@ The smoke 3.12 of the allocation table above went back to the pool under D-S17 i
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| L12b a | launched 2026-10-31 13:13:11 (ledger), dev-rerun-l12b-a, BATCH_a 6 entries, sealed at d6ce19a | 5.59, cap 8.39 (200 minutes times 1.3) | running; free memory 3.08 GB, disk 63.7 GB at launch (D-135 floor met) |
+| L12b a | launched 2026-10-31 13:13:11 (ledger), dev-rerun-l12b-a, BATCH_a 6 entries, sealed at d6ce19a | 5.59, cap 8.39 (forecast 200 minutes at 1.29 USD an hour times 1.3 is 5.59; the cap is 1.5 times that) | running; free memory 3.08 GB, disk 63.7 GB at launch (D-135 floor met) |
 | L12b b | launched 2026-10-31 13:23:35 (ledger), dev-rerun-l12b-b, BATCH_b 7 entries, sealed at d6ce19a | 5.59, cap 8.39 | running (first attempt with a 190-minute forecast refused by the guard before any intent: cap 7.97 under the sealed 8.39) |
 | L12b a | 2026-10-31, dev-rerun-l12b-a (ledger termination) | 5.59, cap 8.39 | 178 minutes, 3.83 USD; 4 of 6 passed (D-138) |
 | L12b b | 2026-10-31, dev-rerun-l12b-b (ledger termination) | 5.59, cap 8.39 | 114 minutes, 2.45 USD; 6 of 7 passed (D-138). Instances total after L12b: 60.89 |
@@ -248,3 +248,7 @@ The 5.74 USD of S6 cloud work above is four items (D-092, sweep 1 items 31 to 34
 | S6: report_optimized measurement, S6b re-score, open-item runs | 4.04 | 147.8 |
 
 About 137.5 is left, so everything through the GNN run fits; the third re-run with its replays (6.6) and the other three S6 items (4.04) wait, about 10.3 USD in all, unless an earlier forecast comes in under it.
+
+### L12c in the allocation (2026-10-31 22:05 +0300, D-145)
+
+L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes about 4.9 (L12c 2.4, L14 1.5, slack 1.0). With storage 1.0, the track 30 and the sealed evaluation's 60, about 41.6 of the 137.5 left remains for the moved steps: L13 (17.4) and L9a (12.3) fit, L9b (12.3) fits only if an earlier forecast comes in under it by about 0.4, and the GNN run (1.70), the third re-run with its replays (6.6) and the other three S6 items (4.04) wait. The amount that waits after L9b is about 12.3 USD; the 10.3 written at 19:55 was the shortfall then, and the amount waiting then was 10.64. The 19:55 correction sits before the 20:10 table it corrects because that table's heading took D-139's later commit time; both stand as written.

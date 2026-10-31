@@ -329,7 +329,7 @@ Per agent:
 The pattern across the three (counts only): the base PRACTICE_AUDITOR still answers VIOLATION with `missing_field` on units that do not address the rule (ContractNLI hypotheses, CUAD categories), as in L1 to L11; after the D-S14 fixes every such sampled answer was refused under D-068 rather than kept, so in these samples none reached a model-written record (16 sampled PRACTICE_AUDITOR records: 14 refused under D-068, 2 notes on computed plans, 0 kept). New against the earlier reviews: the classifier AUDITOR896 is the largest wrong group (16 of 17 sampled records wrong over the three launches), labelling a faithful empty extraction OMISSION, in most samples with a byte-identical reply (the reviewers' reading: the producer correctly extracts `empty` where a span carries no claim id or stated gap, so MATCH is the faithful relation). The producer's compact extractions were right in all 8 sampled (empty, correctly). Development, one run each; these are reviewer judgments on 15 records a launch.
 
 Review files: private `analysis/L8_MODEL_TEXT_REVIEW.md`, `analysis/L12_MODEL_TEXT_REVIEW.md` and `analysis/L12b_MODEL_TEXT_REVIEW.md` (they describe replies without quoting them).
-- Samples with seeds: `...\s5close_meas\L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
+- Samples with seeds: private `analysis/L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
 
 Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are replays of prompts already in L7, L8, L10, L11 and L12, measured for byte identity and contract validity in D-116, D-132 and D-134), so they are not reviewed as model text. L7, L10 and L11 were reviewed earlier (S5 report).
 
@@ -348,17 +348,14 @@ Selection: reply records of the B3 entries with `decoding_constraint.interventio
 
 What the forced fields were (counts only): all 8 PRACTICE_AUDITOR interventions are the same event, the model closing the item after `ref_ids` and the constraint forcing the required `explanation`. The forced explanation was never empty: 1 correct, 3 partly correct, 4 wrong. On the 3 uncomputable plans (all 3 wrong, and all 3 kept under D-068 as model-written records) it claimed a violation that the unit's figures do not support. On the 5 computed plans (Python's figures shown): 1 correct, 3 partly correct (the real mismatch named, but the arithmetic or the labels wrong), 1 wrong (the two figures reversed). So for this agent the constraint turns a reply that would have failed its contract into an accepted one that is wrong or partly wrong in 7 of 8 samples. ARCHIVIST's one forced field was its leading confidence key, judged warranted. The producer interventions are structural (the canonical first key `claims`, an alias, the second item, a grounded ref, a status value), and every forced producer field was true of its span in 20 of 21 samples (the other partly). In L12, 6 of the 15 producer replies were still wrong as a whole, through free strings the model wrote itself (repeated templated questions and gaps), which the constraint does not govern.
 
-Review files: `...\s5close_meas\L12b_INTERVENED_REVIEW.md` and `...\s5close_meas\L12_INTERVENED_REVIEW.md`; samples `L12b_intervened_sample.json` and `L12_intervened_sample.json`; dumps `rev_intervened_L12b\` and `rev_intervened_L12\` (reply and payload text, never to be committed).
+Review files: private `analysis/L12b_INTERVENED_REVIEW.md` and private `analysis/L12_INTERVENED_REVIEW.md`; samples `L12b_intervened_sample.json` and `L12_intervened_sample.json`; dumps `rev_intervened_L12b\` and `rev_intervened_L12\` (reply and payload text, never to be committed).
 
-- Samples with seeds: `...\s5close_meas\L8_text_review_sample.json`, `L12_text_review_sample.json`, `L12b_text_review_sample.json`. The extracted record dumps the judges read (`rev_L8\`, `rev_L12\`, `rev_L12b\`) hold reply and payload text and must not be copied into any committed file.
-
-Excluded: R1 and R2 (R2a, R2b, R2c) replayed saved prompts (their replies are replays of prompts already in L7, L8, L10, L11 and L12, measured for byte identity and contract validity in D-116, D-132 and D-134), so they are not reviewed as model text. L7, L10 and L11 were reviewed earlier (S5 report).
 
 Suggested item 8 line for the S5 report: "L8 4, 0, 9, 2, 0; L12 4, 5, 6, 0, 0; L12b 2, 1, 12, 0, 0 (seeds by the rule; L12's equals L11's because the session folder names are equal; L12b's from its first-launched session over both sessions' records; R1 and R2 excluded as replays of saved prompts)."
 
 ### The negotiation comparisons re-run in L12, scored against L7 (D-S14 item 6)
 
-Scored with `tools/score_corpus.py --corpus <name> --run <entry>\downloaded\evidence\run`, as `an_l7_report.md` did (`docs\loop\private\analysis\an_l7_report.md`, line 10). The scorer is byte-identical to the one L7's analysis used (SHA-256 `116aa93c...6063`, the s05-lead worktree at `791c4b4`). Since L12's commit `2b585af` the only changes under `scripts/` are the decoding constraint, its checks and 25 lines of `pipeline.py`, none of them read by the scorer. Each run exited 0. I also re-scored L7's two entries from their `downloaded\` folders with the same command, and their output matches `an_l7_report.md`'s figures line for line. Outputs: `...\s5close_meas\score\L7_negotiation_r2_to_r3.txt`, `L7_negotiation_r3_to_r4.txt`, `L12_negotiation_r2_to_r3.txt`, `L12_negotiation_r3_to_r4.txt`. The other figures come from `FINAL_STATUS.json` (`uncomputable_judging`), `audit\pairing_map.json`, `audit\run_completion.json`, `deliverables\*\review_data.json` (`model_findings_not_promoted`, `amendments`, `_validator_errors`), the band and `missing_field` records on `logs\agent_bus.jsonl` by backend, and `analysis\model_telemetry_summary.json`. Entries: L7 `03_negotiation_r2_to_r3_B3` and `04_negotiation_r3_to_r4_B3` under `X\L7\bundles\f4_s4103_vqjj_B3\batch\`; L12 `08_negotiation_r2_to_r3_B3` and `09_negotiation_r3_to_r4_B3` under `X\L12\bundles\contradoc_01015e47de8a_B3\batch\`.
+Scored with `tools/score_corpus.py --corpus <name> --run <entry>\downloaded\evidence\run`, as `an_l7_report.md` did (`docs\loop\private\analysis\an_l7_report.md`, line 10). The scorer is byte-identical to the one L7's analysis used (SHA-256 `116aa93c...6063`, the s05-lead worktree at `791c4b4`). Since L12's commit `2b585af` the only changes under `scripts/` are the decoding constraint, its checks and 25 lines of `pipeline.py`, none of them read by the scorer. Each run exited 0. I also re-scored L7's two entries from their `downloaded\` folders with the same command, and their output matches `an_l7_report.md`'s figures line for line. Outputs: private `analysis/score\L7_negotiation_r2_to_r3.txt`, `L7_negotiation_r3_to_r4.txt`, `L12_negotiation_r2_to_r3.txt`, `L12_negotiation_r3_to_r4.txt`. The other figures come from `FINAL_STATUS.json` (`uncomputable_judging`), `audit\pairing_map.json`, `audit\run_completion.json`, `deliverables\*\review_data.json` (`model_findings_not_promoted`, `amendments`, `_validator_errors`), the band and `missing_field` records on `logs\agent_bus.jsonl` by backend, and `analysis\model_telemetry_summary.json`. Entries: L7 `03_negotiation_r2_to_r3_B3` and `04_negotiation_r3_to_r4_B3` under `X\L7\bundles\f4_s4103_vqjj_B3\batch\`; L12 `08_negotiation_r2_to_r3_B3` and `09_negotiation_r3_to_r4_B3` under `X\L12\bundles\contradoc_01015e47de8a_B3\batch\`.
 
 | Measure | r2 to r3, L7 | r2 to r3, L12 | r3 to r4, L7 | r3 to r4, L12 |
 |---|---|---|---|---|
@@ -421,7 +418,7 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-139 (D-089 onward after the reopening):
+`docs/loop/DECISIONS.md`, D-055 to D-145 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -507,6 +504,13 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 - D-136: VERIFIER's output allowance merged (4,096; FACT_CHECKER keeps 2,048); L12b sealed on it
 - D-137: The parallel track's first two patches received; when and how they merge; the constitution amendment is the operator's to apply
 - D-138: L12b read: 10 of 13 pass; 34 of the 37 first failures now pass; the 3 left and their causes
+- D-139: The S5 close checkers: what they found, what is fixed, the departures, and the corrections to earlier entries
+- D-140: Sweep 2 over S5: 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin
+- D-141: A 1 GB floor for single model-free checks; the intervened-replies review and L12's negotiation scores read
+- D-142: The S13 history rewrite rehearsed on a throwaway mirror; what the real run does
+- D-143: K8 removed and its cause fixed (H9, INC-027); 5 passes depended on the stamp; L12c re-runs them
+- D-144: The full main gate and the side gates at the S5 close
+- D-145: The records consistency check before L12c: 16 found, 16 fixed; the ledger check's running-state test merged and its 6 rows settled
 
 ## Bound controller files and pinned functions changed in S5
 

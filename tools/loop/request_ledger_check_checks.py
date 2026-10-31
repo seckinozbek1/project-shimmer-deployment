@@ -1,14 +1,18 @@
 """Proofs for tools/loop/request_ledger_check.py (loop D-S16 item 1), on fixtures in a
 temporary folder: a tiny specification, ledger and DECISIONS.md, and a git repository with
-one commit. Nothing private is read. `check()` runs the tests, then neutralises each of the
-script's three failing rules in turn (coverage (c), evidence (d), stale RUNNING rows (e)),
-requires a failure, restores it and requires a pass.
+one commit and a lane worktree, and a budget ledger with one open and two finished launches.
+Nothing private is read. `check()` runs the tests, then neutralises each of the script's
+failing rules in turn (coverage (c), evidence (d), stale RUNNING rows (e), and (e)'s
+running-state test, replaced by the name-only test it was before), requires a failure,
+restores it and requires a pass.
 
     py -3.12 -X utf8 tools/loop/request_ledger_check_checks.py
 """
 from __future__ import annotations
 
 import io
+import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -73,6 +77,19 @@ DECISIONS = """# Decisions
 - **When, stage.** 2026-10-30 10:00 +0300.
 """
 
+BUDGET = '\n'.join(json.dumps(line) for line in [
+    {'event': 'budget_open', 'budget_usd': 10.0},
+    {'event': 'launch_intent', 'purpose': 'fixture-open', 'instance_name': 'shimmer-loop-0000000-open'},
+    {'event': 'launch', 'purpose': 'fixture-open', 'instance_name': 'shimmer-loop-0000000-open', 'instance_id': 'i-open'},
+    {'event': 'launch_intent', 'purpose': 'fixture-done', 'instance_name': 'shimmer-loop-0000000-done'},
+    {'event': 'launch', 'purpose': 'fixture-done', 'instance_name': 'shimmer-loop-0000000-done', 'instance_id': 'i-done'},
+    {'event': 'termination', 'instance_id': 'i-done'},
+    {'event': 'launch_intent', 'purpose': 'fixture-intent', 'instance_name': 'shimmer-loop-0000000-intent'},
+    {'event': 'termination', 'instance_name': 'shimmer-loop-0000000-intent', 'reason': 'intent_without_instance'},
+    {'event': 'launch_intent', 'purpose': 'fixture-intent', 'instance_name': 'shimmer-loop-0000000-intent',
+     'copied_from': 'other ledger'},
+]) + '\nnot a json line\n'
+
 HEADER = '| Id | Request | Source | Stage | Status | Last change | Evidence or where |\n|---|---|---|---|---|---|---|\n'
 
 
@@ -91,7 +108,7 @@ def ledger_rows(commit):
         row('D-S2.3', status='SCHEDULED', evidence='S6'),
         row('D-S2.4.1', status='SCHEDULED', evidence='S7'),
         row('D-S2.4.2', status='DEFERRED', evidence='deferral entry'),
-        row('D-S3.1', status='RUNNING', evidence='L12 running', last='2026-10-01T10:00+0300'),
+        row('D-S3.1', status='RUNNING', evidence='launch `fixture-open` running', last='2026-10-01T10:00+0300'),
         row('D-S9', status='SCHEDULED', evidence='S14'),
         row('N-2026-10-30-0000', evidence='D-001'),
     ]
@@ -114,10 +131,14 @@ class Fixture:
         self.commit = subprocess.run(git + ['rev-parse', '--short=10', 'HEAD'], stdin=subprocess.DEVNULL,
                                      capture_output=True, text=True, check=True,
                                      creationflags=no_window()).stdout.strip()
+        subprocess.run(git + ['worktree', 'add', '-q', '-b', 'lane/x', str(Path(folder) / 'lane_x')],
+                       stdin=subprocess.DEVNULL, capture_output=True, check=True, creationflags=no_window())
+        subprocess.run(git + ['branch', 'lane/gone'], stdin=subprocess.DEVNULL, capture_output=True, check=True,
+                       creationflags=no_window())
 
     def run(self, rows):
         text = HEADER + '\n'.join(rows) + '\n'
-        return ledger_check.check(SPEC, text, DECISIONS, self.root, self.private, NOW)
+        return ledger_check.check(SPEC, text, DECISIONS, self.root, self.private, NOW, budget_text=BUDGET)
 
 
 class RequestLedgerChecks(unittest.TestCase):
@@ -208,8 +229,26 @@ class RequestLedgerChecks(unittest.TestCase):
                              'STALE RUNNING D-S2.2a: no readable Last change')
         self.assertPasses(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING', evidence='work',
                                                       last='2026-11-01T12:01+0300')))
-        for named in ('L13 running', 'lane `lane/s05-x`', 'agent install-6bc', 'C0 run 2', 'role R1', 'lane-s05'):
+        running = ('launch `fixture-open`', 'instance shimmer-loop-0000000-open', 'lane `lane/x` running',
+                   'lane-x running', 'Fixture-Open.')
+        for named in running:
             self.assertPasses(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING', evidence=named, last=old)))
+        not_running = ('L13 running', 'lane `lane/gone`', 'lane-gone', 'agent install-6bc', 'C0 run 2', 'role R1',
+                       'launch `fixture-intent`', 'shimmer-loop-0000000-done', 'fixture-opener', 'mylane-x')
+        for named in not_running:
+            self.assertFailsWith(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING', evidence=named, last=old)),
+                                 'STALE RUNNING D-S2.2a: last change')
+        self.assertPasses(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING (standing)', evidence='work',
+                                                      last=old)))
+
+    def test_e_a_row_naming_only_a_finished_launch_is_stale(self):
+        old = '2026-11-01T11:59+0300'
+        self.assertEqual(ledger_check.open_launches(BUDGET), {'fixture-open', 'shimmer-loop-0000000-open'})
+        self.assertFailsWith(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING',
+                                                         evidence='launch `fixture-done` finished', last=old)),
+                             'STALE RUNNING D-S2.2a: last change')
+        self.assertPasses(self.replaced('D-S2.2a', row('D-S2.2a', status='RUNNING',
+                                                      evidence='launch `fixture-open` running', last=old)))
 
     def test_cli_exit_codes(self):
         folder = Path(self.folder.name)
@@ -219,20 +258,35 @@ class RequestLedgerChecks(unittest.TestCase):
         args = ['--root', str(self.fixture.root), '--spec', str(spec), '--decisions', str(decisions),
                 '--ledger', str(ledger), '--now', NOW.isoformat()]
         out = io.StringIO()
+        budget = folder / 'budget.jsonl'
+        budget.write_text(BUDGET, encoding='utf-8')
         ledger.write_text(HEADER + '\n'.join(self.rows()) + '\n', encoding='utf-8')
         with patch('sys.stdout', out):
+            self.assertEqual(ledger_check.main(args + ['--budget-ledger', str(budget)]), 0)
+        (self.fixture.private / 'budget_ledger.jsonl').write_text(BUDGET, encoding='utf-8')
+        with patch('sys.stdout', out):
             self.assertEqual(ledger_check.main(args), 0)
+        (self.fixture.private / 'budget_ledger.jsonl').unlink()
+        with patch('sys.stdout', out):
+            self.assertEqual(ledger_check.main(args), 1)
+        self.assertIn('STALE RUNNING D-S3.1', out.getvalue())
         ledger.write_text(HEADER + '\n'.join(self.rows()[1:]) + '\n', encoding='utf-8')
         with patch('sys.stdout', out):
             self.assertEqual(ledger_check.main(args), 1)
         self.assertIn('missing 1', out.getvalue())
 
 
+# The name-only test (e) used before running state was read: any launch, lane or session name.
+NAME_ONLY = re.compile(r'\bL\d+[a-z]?\b|lane/|lane-|C0 run|\bR\d+\b|agent|launch', re.IGNORECASE)
+
 NEUTRALISED = (
     ('coverage', lambda items, rows: ([], [], [], []),
      ('test_c_a_removed_row_fails_and_its_restoration_passes', 'test_c_unmatched_and_duplicate_rows_fail_and_notes_are_exempt')),
     ('unresolved_evidence', lambda *args, **kwargs: [], ('test_d_every_done_pointer_must_resolve',)),
-    ('stale_running', lambda rows, now: [], ('test_e_an_old_running_row_naming_nothing_running_is_stale',)),
+    ('stale_running', lambda rows, now, launches=(), branches=(): [],
+     ('test_e_an_old_running_row_naming_nothing_running_is_stale',)),
+    ('names_running', lambda text, launches, branches: ['named'] if NAME_ONLY.search(text) else [],
+     ('test_e_a_row_naming_only_a_finished_launch_is_stale',)),
 )
 
 
@@ -255,7 +309,7 @@ def check():
         proofs.append(attribute)
     return 'PASS', ('the request ledger check reads Annex C and every D-S item from a fixture specification, '
                     'fails on a removed, unmatched or duplicate row, an unresolved DONE pointer and a stale '
-                    'RUNNING row, and passes once restored; neutralised, failed, restored, passed: ' + ', '.join(proofs))
+                    'RUNNING row, including one naming only a finished launch, and passes once restored; neutralised, failed, restored, passed: ' + ', '.join(proofs))
 
 
 if __name__ == '__main__':

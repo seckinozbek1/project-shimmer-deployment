@@ -898,7 +898,11 @@ processing swarm governed by an append-only constitution.
   one row for the item or one per letter), a row matching no item fails (relayed notes, `N-`,
   are exempt), every DONE row's decision heading, commit and backticked path must resolve, and
   a RUNNING row (not `RUNNING (standing)`) unchanged for 24 hours that names no running launch,
-  lane or role session fails. One count line; exit 1 on any failure. Run it whenever the ledger
+  lane or role session fails. Running is read from evidence, never a name alone: a launch
+  only when the budget ledger (`--budget-ledger`, default the private folder's
+  `budget_ledger.jsonl`) holds its launch with no termination, a lane only when
+  `git worktree list` shows its branch, and a role session or agent never (no offline record),
+  so a row naming only those is not exempt. One count line; exit 1 on any failure. Run it whenever the ledger
   changes, in every checker round, and before every merge, tag and push. Check 296 runs its
   proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`).
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
