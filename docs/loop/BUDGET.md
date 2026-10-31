@@ -218,3 +218,18 @@ The smoke 3.12 of the allocation table above went back to the pool under D-S17 i
 | L12b b | launched 2026-10-31 13:23:35 (ledger), dev-rerun-l12b-b, BATCH_b 7 entries, sealed at d6ce19a | 5.59, cap 8.39 | running (first attempt with a 190-minute forecast refused by the guard before any intent: cap 7.97 under the sealed 8.39) |
 | L12b a | 2026-10-31, dev-rerun-l12b-a (ledger termination) | 5.59, cap 8.39 | 178 minutes, 3.83 USD; 4 of 6 passed (D-138) |
 | L12b b | 2026-10-31, dev-rerun-l12b-b (ledger termination) | 5.59, cap 8.39 | 114 minutes, 2.45 USD; 6 of 7 passed (D-138). Instances total after L12b: 60.89 |
+
+### The allocation after L12b, recomputed (2026-10-31 20:10 +0300, D-139)
+
+Reaper reading 2026-10-31 (reaper_status.json): total spend 61.48 USD (instances 60.89 by the ledger's terminations, storage about 0.59). Left under the 199 hard stop: about 137.5.
+
+| Allocation (D-S18 item 7 order) | USD | Basis |
+|---|---|---|
+| v1 work left | 2.5 | L14 launcher review and draft 1.5 (D-115), slack 1.0 |
+| Storage to the loop's end | 1.0 | about 0.13 USD a day (the shared filesystem), to about 7 November at the latest |
+| Parallel track (D-S18 item 6a) | 30.0 | refused past this |
+| Sealed evaluation (version 3, ContractNLI and SciTab) | at least 60.0 | floor 60 |
+| Moved steps (D-S18 item 3), in this order | 47.7 | L13 17.4, L9a 12.3, L9b 12.3, S6 cloud work 5.74 (the GNN run, D-S13 item 11) |
+| Total | 141.2 | about 3.7 over the 137.5 left |
+
+D-S18 item 7: the moved steps at the end wait first. With the sealed evaluation at its 60 floor, the last 3.7 USD of the moved steps do not fit: the S6 cloud work (5.74) waits unless an earlier forecast comes in under it. D-S12 item 4's 10 USD reserve is not in D-S18 item 7's order and is removed by it; storage, which the reserve carried first, is its own line here. D-S13 item 11 named the reserve as a funding source for the GNN run; that source is gone, and the run sits last among the moved steps.

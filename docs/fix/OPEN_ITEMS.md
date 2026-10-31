@@ -583,7 +583,7 @@ open-item sweep.
 - **Why it was left.** A larger allowance is unmeasured and the lists look unbounded; a structural bound (no more items than distinct references) needs a decision measured on development runs (P16).
 - **What would settle it.** A bound on VERIFIER's item count tied to its input (or a measured larger allowance), proven by a replay of these prompts, then a decision.
 
-## 49. A false Python missing_field amendment on a summary table read from its header only (found at loop S5, L7, D-106)
+## 49. A false Python missing_field amendment on a summary table read from its header only (found at loop S5, L7, D-106) (issue #104)
 
 - **What it is.** In the negotiation r2 to r3 comparison, Python posted a `missing_field` amendment for CONV-N01 on the u06 summary table: the table's fields are read only from its header row (term, figure), and the comment says the field is absent from the unit's text although the table's first row states the figure.
 - **Evidence.** L7 entry 03 (`external/s05/L7`), the L7 analysis (private `analysis/an_l7_report.md`), D-106. The round scorer does not count it, so no score shows it.
