@@ -18670,10 +18670,13 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     Two things changed, both asserted here with real call machinery, no model:
 
     1. The budget is per CALL TYPE, not one number for every local call
-       (pipeline.py's five named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       (pipeline.py's six named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       VERIFIER_MAX_TOKENS=4096 (D-134, measured by replay R2c),
        AUDIT_MAX_TOKENS/PRODUCTION_MAX_TOKENS/DEEPEN_MAX_TOKENS/
        WIDE_REVIEW_MAX_TOKENS=2048, each wired to the real call site an AST
-       walk of pipeline.py confirms still calls it). agent_wrapper.py's own
+       walk of pipeline.py confirms still calls it; phase_5_audit is driven
+       with dispatch stubbed to show VERIFIER's call gets 4096 and
+       FACT_CHECKER's 2048, with neutralise, fail, restore, pass). agent_wrapper.py's own
        hardcoded `min(max_tokens, 1024)` is gone, replaced by
        LOCAL_MAX_OUTPUT_TOKENS, an outer backstop above the defaults for the
        five, never the budget itself.
@@ -18882,6 +18885,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     budgets = {
         "PAIRED_JUDGING_MAX_TOKENS": _pl.PAIRED_JUDGING_MAX_TOKENS,
         "AUDIT_MAX_TOKENS": _pl.AUDIT_MAX_TOKENS,
+        "VERIFIER_MAX_TOKENS": _pl.VERIFIER_MAX_TOKENS,
         "PRODUCTION_MAX_TOKENS": _pl.PRODUCTION_MAX_TOKENS,
         "DEEPEN_MAX_TOKENS": _pl.DEEPEN_MAX_TOKENS,
         "WIDE_REVIEW_MAX_TOKENS": _pl.WIDE_REVIEW_MAX_TOKENS,
@@ -18895,7 +18899,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
         return _fail("PAIRED_JUDGING_MAX_TOKENS must not sit below the largest real, "
                      "uncapped observed call (645 tokens): that would reduce it below what "
                      "this call type has already been shown to need")
-    for name in ("AUDIT_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
+    for name in ("AUDIT_MAX_TOKENS", "VERIFIER_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
         if budgets[name] <= 1024:
             return _fail(f"{name} must be raised above the old 1024 ceiling: real evidence "
                          f"(this call type hit 1024 and lost output) rules out leaving it "
@@ -18914,19 +18918,109 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
             for kw in getattr(node, "keywords", []):
                 if kw.arg == "max_tokens" and isinstance(kw.value, _ast.Name):
                     max_tokens_names_seen.add(kw.value.id)
+                # phase 5's one call site picks VERIFIER's budget or the audit
+                # budget by agent name (D-134); both branches must be names.
+                if (kw.arg == "max_tokens" and isinstance(kw.value, _ast.IfExp)
+                        and isinstance(kw.value.body, _ast.Name)
+                        and isinstance(kw.value.orelse, _ast.Name)):
+                    max_tokens_names_seen.update((kw.value.body.id, kw.value.orelse.id))
     missing = set(budgets) - max_tokens_names_seen
     if missing:
         return _fail(f"the following budget constants are defined but no call site in "
                      f"pipeline.py passes them as max_tokens=<name>: {sorted(missing)}. "
                      f"Constants seen at a call site: {sorted(max_tokens_names_seen)}")
 
+    # Part 4 (D-134): VERIFIER's own budget reaches VERIFIER's real call and
+    # FACT_CHECKER keeps the audit budget, executed through phase_5_audit itself
+    # with dispatch stubbed (no model), read from the max_new_tokens the wrapper
+    # hands the local backend. Measured: replay R2c of the 8 VERIFIER prompts cut
+    # at 2048 ended 4 on their own at 2342 to 3590 tokens under 4096.
+    if budgets["VERIFIER_MAX_TOKENS"] != 4096 or budgets["AUDIT_MAX_TOKENS"] != 2048:
+        return _fail(f"VERIFIER_MAX_TOKENS={budgets['VERIFIER_MAX_TOKENS']} and "
+                     f"AUDIT_MAX_TOKENS={budgets['AUDIT_MAX_TOKENS']}: D-134 measured 4096 for "
+                     f"VERIFIER and left FACT_CHECKER at 2048")
+    seen = _phase_5_output_budgets(_pl)
+    if seen != {"VERIFIER": 4096, "FACT_CHECKER": 2048}:
+        return _fail(f"phase_5_audit handed the local backend {seen}, expected VERIFIER 4096 "
+                     f"and FACT_CHECKER 2048")
+    # NEUTRALISE: VERIFIER's constant set back to the audit budget must reach
+    # VERIFIER's call (so the constant, not a literal, decides it); RESTORE: 4096.
+    saved_budget = _pl.VERIFIER_MAX_TOKENS
+    try:
+        _pl.VERIFIER_MAX_TOKENS = _pl.AUDIT_MAX_TOKENS
+        neutralised = _phase_5_output_budgets(_pl)
+    finally:
+        _pl.VERIFIER_MAX_TOKENS = saved_budget
+    if neutralised != {"VERIFIER": 2048, "FACT_CHECKER": 2048}:
+        return _fail(f"neutralise (VERIFIER_MAX_TOKENS=2048) reached the backend as "
+                     f"{neutralised}: the constant does not decide VERIFIER's call")
+    restored = _phase_5_output_budgets(_pl)
+    if restored != seen:
+        return _fail(f"restore: {restored} differs from {seen}")
+
     return _ok("call_local/call_qwen detect a cut from generated length alone "
                "(truncated=True at the cap, False short of it); run_task carries it onto "
                "both a CONTRACT_VIOLATION post and an AGENT_OUTPUT post (parsed but "
-               "possibly incomplete) and onto the returned dict; five named budgets "
-               "(PAIRED_JUDGING 768, the rest 2048) replace the old blanket 1024, each "
-               f"below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each wired by name to its real "
-               "call site; neutralise (no usage key) reads falsy, restore reads accurately")
+               "possibly incomplete) and onto the returned dict; six named budgets "
+               "(PAIRED_JUDGING 768, VERIFIER 4096 per D-134, the rest 2048) replace the old "
+               f"blanket 1024, each below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each "
+               "wired by name to its real call site; phase_5_audit hands VERIFIER 4096 and "
+               "FACT_CHECKER 2048 (neutralised to 2048 the constant reaches VERIFIER's call, "
+               "restored 4096); neutralise (no usage key) reads falsy, restore reads accurately")
+
+
+def _phase_5_output_budgets(_pl):
+    """Drive the real phase_5_audit under the local profile with AgentWrapper.dispatch
+    stubbed (no model, no network) and return each auditor's max_new_tokens as the
+    wrapper handed it to the backend. The setup is check 133's."""
+    import os as _os
+    import copy as _copy
+    import json as _json
+    import tempfile as _tempfile
+    import asyncio
+    import agent_wrapper as _aw
+    from orchestrator import TopOrchestrator
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from reference_builder import ReferenceIndex
+    saved = _os.environ.get("SHIMMER_BACKEND_PROFILE")
+    orig_dispatch = _aw.AgentWrapper.dispatch
+    seen = {}
+
+    def _stub_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
+        seen[self.name] = kwargs.get("max_new_tokens")
+        return _aw.CallResult(backend=self.backend, model="stub", raw_text="",
+                              ok=False, error="stubbed, no model call")
+    try:
+        with _tempfile.TemporaryDirectory() as td:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = "local"
+            c = Constitution.load(Path("config/constitution.json"))
+            bus = MessageBus.open(Path(td) / "bus.jsonl")
+            reg = _copy.deepcopy(
+                _json.loads(Path("config/agent_registry.json").read_text(encoding="utf-8"))["agents"])
+            contracts = _json.loads(Path("config/agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+            for a in ("VERIFIER", "FACT_CHECKER"):
+                reg[a]["backend"] = "local_auditor"
+            orch = TopOrchestrator(root=Path("."), constitution=c, bus=bus, registry=reg, contracts=contracts)
+            doc = {"id": "synthetic_d1", "name": "synthetic.md", "text": "A short synthetic source."}
+            production = [{"scope": "doc", "doc_id": "synthetic_d1", "agent": "PROCESSOR",
+                           "ok": True, "parsed": {"agent": "PROCESSOR", "doc_id": "synthetic_d1", "items": []},
+                           "raw_text": "", "contract_missing": [], "error": None}]
+            _aw.AgentWrapper.dispatch = _stub_dispatch
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(_pl.phase_5_audit(
+                    orch, {"_stub": ""}, [doc], production, "review the document",
+                    convention_registry=None, reference_index=ReferenceIndex(project_root=Path(td))))
+            finally:
+                loop.close()
+    finally:
+        _aw.AgentWrapper.dispatch = orig_dispatch
+        if saved is None:
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        else:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = saved
+    return seen
 
 
 def check_217_a_gap_between_two_timestamps_is_computed_in_python():
