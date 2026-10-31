@@ -513,37 +513,6 @@ def normalize_core_aliases(obj, aliases=None):
     return applied
 
 
-# ENVELOPE-B (D-S14, K8): for an agent whose contract declares exactly one item kind,
-# `kind` is a routing fact, not a judgement, and the contract may declare that Python
-# stamps it (`single_kind_stamp`, which must equal the first word of `item_kind`).
-# Measured, not preferred: in L7, L8, L10 and L11, EDITOR_CLERK left `kind` out of 4
-# of its 20 calls with every other field present, and each such call failed its
-# contract on that key alone; the 6 items that wrote it wrote `editorial_observation`.
-# The stamp applies only where the key is absent. A kind the model wrote that is not
-# the declared one is refused, and no other field is ever defaulted.
-def single_kind_stamp(contract):
-    """The kind Python stamps for this contract, or None when none is declared."""
-    contract = contract if isinstance(contract, dict) else {}
-    kind = contract.get("single_kind_stamp")
-    declared = str(contract.get("item_kind") or "").split()
-    if isinstance(kind, str) and kind and declared and declared[0] == kind:
-        return kind
-    return None
-
-
-def stamp_single_kind(obj, kind):
-    """Stamp the declared kind on every item that has no `kind` key, and return what
-    was applied as 'items[i].kind<-kind' strings."""
-    applied = []
-    if not kind or not is_envelope(obj):
-        return applied
-    for i, item in enumerate(obj["items"]):
-        if isinstance(item, dict) and "kind" not in item:
-            item["kind"] = kind
-            applied.append(f"items[{i}].kind<-{kind}")
-    return applied
-
-
 def _is_scalar(v) -> bool:
     return v is None or isinstance(v, (str, int, float, bool))
 
@@ -1253,7 +1222,6 @@ class AgentWrapper:
             return ["not a canonical envelope {agent:str, doc_id:str, items:list}"]
         missing = []
         required = self.contract.get("required", [])  # agent-specific per-item fields
-        stamped_kind = single_kind_stamp(self.contract)
         for i, item in enumerate(obj["items"]):
             if not isinstance(item, dict):
                 missing.append(f"items[{i}].(not an object)")
@@ -1263,8 +1231,6 @@ class AgentWrapper:
             for rkey in CORE_ITEM_REQUIRED:
                 if rkey not in item or item.get(rkey) in (None, ""):
                     missing.append(f"items[{i}].{rkey}")
-            if stamped_kind and item.get("kind") not in (None, "", stamped_kind):
-                missing.append(f"items[{i}].kind (not the declared {stamped_kind})")
             for rkey in required:
                 if rkey not in item or item.get(rkey) in (None, ""):
                     missing.append(f"items[{i}].{rkey}")
@@ -1279,11 +1245,9 @@ class AgentWrapper:
                 obj = adapter(obj)
             except ValueError as exc:
                 return obj, [str(exc)]
-        # A declared alias of a core key is read as that key before validation, and
-        # a declared single kind is stamped where the item has none (ENVELOPE-B);
-        # what was mapped or stamped travels with the result and the bus post.
-        self.last_contract_normalizations = normalize_core_aliases(obj) + stamp_single_kind(
-            obj, single_kind_stamp(getattr(self, "contract", None)))
+        # A declared alias of a core key is read as that key before validation;
+        # what was mapped travels with the result and the bus post.
+        self.last_contract_normalizations = normalize_core_aliases(obj)
         missing = self._contract_missing(obj)
         if is_envelope(obj):
             return make_envelope(obj["agent"], obj["doc_id"], obj["items"]), missing

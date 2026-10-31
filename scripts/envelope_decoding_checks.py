@@ -5,7 +5,9 @@ choice each envelope failure shape L8, L11 and L12 recorded for VERIFIER and PRA
 on local_auditor (s5_diag_b3 K9 and K11): the envelope left unclosed (the stop token after the
 items), the reply stopped inside an item, an item closed without a required key (VERIFIER's
 reasoning, PRACTICE_AUDITOR's explanation), a raw control character inside a string, and text
-running on after a string that closed too early. Each shape is written twice: with the
+running on after a string that closed too early; ARCHIVIST's item without its confidence key
+and EDITOR_CLERK's item without `kind` on local_producer (the shape the K8 stamp, removed at the
+S5 close, used to supply). Each shape is written twice: with the
 constraint the reply is the valid one the model ranked next, and the envelope validator
 (agent_wrapper.parse_contract_output and _contract_missing, unchanged) accepts it; with the
 constraint off the same model writes the failure and the validator refuses it with the reason
@@ -108,6 +110,26 @@ A_NO_CONFIDENCE = envelope('ARCHIVIST', [{k: v for k, v in archivist_item().item
 A_NO_CONFIDENCE = A_NO_CONFIDENCE.replace('{"document_count"', '{"element": "Review cycle", "document_count"', 1)     .replace(', "element": "Review cycle"', '', 1)
 A_FIXED = envelope('ARCHIVIST', [dict([('confident', 'CONFIDENT'), ('element', 'Review cycle')]
                                       + [(k, v) for k, v in archivist_item().items() if k not in ('confident', 'element')])])
+
+
+def editor_clerk_item(**extra):
+    """An editorial observation in the key order 21 of the 49 saved valid EDITOR_CLERK items
+    write: the confidence key (as the declared alias) first, the rest in sorted order."""
+    value = dict(confident='CONFIDENT', kind='editorial_observation', rationale='The heading names no owner.',
+                 ref='REF-0010', ref_ids=['REF-0010'], verdict='concern')
+    value.update(extra)
+    return value
+
+
+E_VALID = envelope('EDITOR_CLERK', [editor_clerk_item()])
+# EDITOR_CLERK's twelve saved replies without a kind (L8 30, L11 02, 04, 08, and the eight the
+# removed K8 stamp accepted in L12 and L12b) wrote the confidence key, then ref, rationale,
+# ref_ids and verdict, and closed the item.
+E_NO_KIND = envelope('EDITOR_CLERK', [dict((k, editor_clerk_item()[k]) for k in
+                                           ('confident', 'ref', 'rationale', 'ref_ids', 'verdict'))])
+# One saved valid reply (L12 31) writes the same keys and then kind, last: the model's own
+# completion of the same shape.
+E_KIND_LAST = E_NO_KIND[:-3] + ', "kind": "editorial_observation"}]}'
 # Each failure shape, as (agent, the model's top choice, the valid reply it ranked next, the
 # validator's reasons in the runs).
 KINDS = {
@@ -122,6 +144,7 @@ KINDS = {
     'K9_text_after_an_early_quote': ('PRACTICE_AUDITOR', P_EARLY_QUOTE, P_EARLY_QUOTE_FIXED,
                                      ['not a canonical envelope {agent:str, doc_id:str, items:list}']),
     'K10_missing_confidence': ('ARCHIVIST', A_NO_CONFIDENCE, A_FIXED, ['items[0].confidence']),
+    'K8_missing_kind': ('EDITOR_CLERK', E_NO_KIND, E_KIND_LAST, ['items[0].kind']),
 }
 # A valid reply in every form the saved valid replies take: compact, pretty-printed, fenced, with
 # a note after the envelope, the fence closed and a stray brace after it, enumerated values the
@@ -140,6 +163,11 @@ VALID_FORMS = {
     'archivist_inventory': ('ARCHIVIST', A_VALID),
     'archivist_other_order_and_runtime_key': ('ARCHIVIST', envelope('ARCHIVIST', [
         dict([('confident', 'CONFIDENT'), ('ref', 'REF-0005'), ('kind', 'inventory'), ('title', None), ('ts', 'x')])])),
+    'editor_clerk_observation': ('EDITOR_CLERK', E_VALID),
+    'editor_clerk_canonical_confidence': ('EDITOR_CLERK', envelope('EDITOR_CLERK', [
+        dict([('confidence', 'UNCERTAIN')] + [(k, v) for k, v in editor_clerk_item().items() if k != 'confident'])])),
+    'editor_clerk_kind_last': ('EDITOR_CLERK', E_KIND_LAST.replace('"confident"', '"confidence"')),
+    'editor_clerk_empty': ('EDITOR_CLERK', envelope('EDITOR_CLERK', [])),
 }
 
 
@@ -193,7 +221,9 @@ class EnvelopeDecodingChecks(unittest.TestCase):
         declared = cd.declared_contracts()
         for agent, row in spec['agents'].items():
             contract, _ = contract_of(agent)
-            self.assertEqual(list(contract.required), spec['core_required'] + declared['contracts'][agent]['required'])
+            # A contract key that is also a core key (EDITOR_CLERK's ref) is checked once.
+            self.assertEqual(list(contract.required), spec['core_required'] + [
+                k for k in declared['contracts'][agent]['required'] if k not in spec['core_required']])
             self.assertIn('confident', contract.spellings[contract.required.index('confidence')])
             self.assertRegex(profile, r'"%s":\s*\("%s",' % (agent, re.escape(row['backend'])))
             for name in spec['core_optional']:
@@ -282,13 +312,49 @@ class EnvelopeDecodingChecks(unittest.TestCase):
                            'confidence_twice': envelope('ARCHIVIST', [dict(confident='CONFIDENT', confidence='CONFIDENT',
                                                                            ref='REF-1', kind='inventory')])}.items():
             self.assertFalse(cd.envelope_accepts(archivist, spec, text), name)
+        clerk, _ = contract_of('EDITOR_CLERK')
+        self.assertEqual(clerk.leading, ('confidence',))
+        self.assertEqual(clerk.required, ('ref', 'kind', 'confidence', 'verdict', 'rationale'))
+        for name, text in {'kind_missing': E_NO_KIND,
+                           'kind_empty': envelope('EDITOR_CLERK', [editor_clerk_item(kind='')]),
+                           'kind_null': envelope('EDITOR_CLERK', [editor_clerk_item(kind=None)]),
+                           'confidence_not_first': envelope('EDITOR_CLERK', [dict(
+                               [('kind', 'editorial_observation')]
+                               + [(k, v) for k, v in editor_clerk_item().items() if k != 'kind'])]),
+                           'one_of_two_items_without_kind': envelope('EDITOR_CLERK', [
+                               editor_clerk_item(), json.loads(E_NO_KIND)['items'][0]])}.items():
+            self.assertFalse(cd.envelope_accepts(clerk, spec, text), name)
+
+    def test_editor_clerk_missing_kind_is_prevented_through_the_wrapper(self):
+        """The cause the removed K8 stamp papered over, fixed where it arises: call_local on
+        EDITOR_CLERK (local_producer), the stand-in writing the saved shape without `kind` as its
+        top choice, returns the reply the model ranked next (kind written last, as one saved
+        valid reply writes it), and the envelope validator, which supplies nothing, accepts it.
+        Neutralised by dropping EDITOR_CLERK from the declaration and by letting an item close
+        before every required key is written."""
+        tok = EnvelopeTokenizer()
+        model = base.StandInModel(tok, E_NO_KIND, E_KIND_LAST)
+        w = object.__new__(agent_wrapper.AgentWrapper)
+        w.name, w.backend, w.model, w.cost_tracker = 'EDITOR_CLERK', 'local_producer', 'fixture', None
+        w._optimized_semantics = True
+        with tempfile.TemporaryDirectory() as tmp:
+            w.run_context = SimpleNamespace(run_dir=tmp, run_id='fixture', logs_dir=lambda: Path(tmp) / 'logs')
+            with patch.dict(os.environ, SHIMMER_MODEL_MODE='base'), \
+                    patch.object(agent_wrapper, '_load_qwen', return_value=(tok, model)):
+                result = w.call_local('plain prompt', max_new_tokens=CAP)
+        self.assertTrue(result.ok, result.error)
+        self.assertEqual(result.raw_text, E_KIND_LAST)
+        self.assertEqual(reasons('EDITOR_CLERK', result.raw_text), [])
+        self.assertEqual(reasons('EDITOR_CLERK', E_NO_KIND), ['items[0].kind'])
+        self.assertEqual(result.usage['decoding_constraint']['agent'], 'EDITOR_CLERK')
+        self.assertGreaterEqual(result.usage['decoding_constraint']['interventions'], 1)
 
     def test_the_wrapper_carries_the_constraint_and_records_it(self):
-        """call_local on VERIFIER and PRACTICE_AUDITOR (local_auditor) and ARCHIVIST
-        (local_producer): generate() receives the frozen decoding kwargs unchanged plus the
-        logits processor, the reply is the valid one, and the reply record and the usage carry
-        the constraint with the agent. EDITOR_CLERK (local_producer), an unbound PROCESSOR and a
-        VERIFIER bound to the compact auditor contract carry none."""
+        """call_local on VERIFIER and PRACTICE_AUDITOR (local_auditor) and ARCHIVIST and
+        EDITOR_CLERK (local_producer): generate() receives the frozen decoding kwargs unchanged
+        plus the logits processor, the reply is the valid one, and the reply record and the usage
+        carry the constraint with the agent. CITATION_RESOLVER (local_producer, undeclared), an
+        unbound PROCESSOR and a VERIFIER bound to the compact auditor contract carry none."""
         tok = EnvelopeTokenizer()
 
         def call(wrapper, intended, fallback, run_dir):
@@ -310,7 +376,8 @@ class EnvelopeDecodingChecks(unittest.TestCase):
             for agent, backend, (intended, fallback) in (
                     ('VERIFIER', 'local_auditor', (KINDS['K11_envelope_unclosed'][1], V_VALID)),
                     ('PRACTICE_AUDITOR', 'local_auditor', (P_NO_EXPLANATION, P_EXPLANATION_LAST)),
-                    ('ARCHIVIST', 'local_producer', (A_NO_CONFIDENCE, A_FIXED))):
+                    ('ARCHIVIST', 'local_producer', (A_NO_CONFIDENCE, A_FIXED)),
+                    ('EDITOR_CLERK', 'local_producer', (E_NO_KIND, E_KIND_LAST))):
                 policy = decoding_policy.policy(backend)['kwargs']
                 result, sent = call(wrapper(agent, backend), intended, fallback, Path(tmp) / agent)
                 self.assertTrue(result.ok, result.error)
@@ -329,7 +396,7 @@ class EnvelopeDecodingChecks(unittest.TestCase):
                 self.assertEqual(record['decoding']['decoding_kwargs'], policy)
             bound = wrapper('VERIFIER', 'local_auditor')
             cc.bind_auditor(bound, 'd1', ['REF-0001'])
-            for name, plain in (('EDITOR_CLERK', wrapper('EDITOR_CLERK', 'local_producer')),
+            for name, plain in (('CITATION_RESOLVER', wrapper('CITATION_RESOLVER', 'local_producer')),
                                 ('PROCESSOR', wrapper('PROCESSOR', 'local_producer')), ('VERIFIER_compact', bound)):
                 result, sent = call(plain, V_VALID, V_VALID, Path(tmp) / name)
                 self.assertIsNone(sent['logits_processor'])
@@ -355,27 +422,42 @@ class EnvelopeDecodingChecks(unittest.TestCase):
     def test_the_saved_reply_measurement(self):
         """tools/envelope_decoding_measure.py on reply records: a valid reply in each saved form
         passes token by token with 0 interventions, a failed one is acted on where it leaves the
-        language, another agent's record is not read, and nothing of a reply is written."""
+        language, a reply the run accepted only through a value Python supplied (the removed K8
+        kind stamp, read from the run's observation log) is counted apart and listed with the
+        failed ones, another agent's record is not read, and nothing of a reply is written."""
         sys.path.insert(0, str(ROOT / 'tools'))
         import envelope_decoding_measure as measure
         import reply_records
         with tempfile.TemporaryDirectory() as tmp:
             context = SimpleNamespace(run_dir=str(Path(tmp) / 'run'), run_id='r')
             rows = [(agent, text, 'accepted_to_bus') for agent, text in VALID_FORMS.values()]
-            rows += [('PRACTICE_AUDITOR', P_NO_EXPLANATION, 'contract_violation'), ('EDITOR_CLERK', V_VALID[:-1], 'accepted_to_bus')]
+            rows += [('PRACTICE_AUDITOR', P_NO_EXPLANATION, 'contract_violation'),
+                     ('CITATION_RESOLVER', V_VALID[:-1], 'accepted_to_bus'), ('EDITOR_CLERK', E_NO_KIND, 'accepted_to_bus')]
             for i, (agent, text, outcome) in enumerate(rows):
                 call = reply_records.write(context, agent=agent, call_id='c%02d' % i,
-                                           backend='local_producer' if agent in ('EDITOR_CLERK', 'ARCHIVIST') else 'local_auditor',
+                                           backend='local_producer' if agent in ('CITATION_RESOLVER', 'ARCHIVIST', 'EDITOR_CLERK')
+                                           else 'local_auditor',
                                            model_id='m', payload='prompt', payload_form='rendered_prompt', reply=text)
                 reply_records.write_outcome(context, call, outcome, source='fixture')
+            stamped = 'c%02d' % (len(rows) - 1)
+            logs = Path(tmp) / 'run' / 'logs'
+            logs.mkdir()
+            (logs / 'generation_observation.jsonl').write_text(json.dumps(dict(
+                agent='EDITOR_CLERK', call_id=stamped, contract_valid=True,
+                contract_normalized=['items[0].confident->confidence', 'items[0].kind<-editorial_observation'])) + '\n',
+                encoding='utf-8')
             result = measure.measure([Path(tmp) / 'run' / 'audit' / 'model_replies'], EnvelopeTokenizer(), [EOS])
         self.assertEqual(result['valid_replies_with_intervention'], [])
         self.assertEqual(sum(v for k, v in result['counts'].items() if k.endswith('/valid/replies')), len(VALID_FORMS))
         self.assertEqual(sum(v for k, v in result['counts'].items() if k.endswith('/valid/inside_the_language')), len(VALID_FORMS))
-        self.assertEqual([(r['call_id'], r['leaves_at'][1]) for r in result['failed_replies']], [('c%02d' % len(VALID_FORMS), 'gap>K')])
-        self.assertGreaterEqual(result['failed_replies'][0]['interventions'], 1)
-        self.assertNotIn('EDITOR_CLERK', json.dumps(result))
+        self.assertEqual((result['counts']['EDITOR_CLERK/stamped/replies'],
+                          result['counts']['EDITOR_CLERK/stamped/inside_the_language']), (1, 0))
+        self.assertEqual([(r['call_id'], r['stamped'], r['leaves_at'][1]) for r in result['failed_replies']],
+                         [('c%02d' % len(VALID_FORMS), False, 'gap>K'), (stamped, True, 'gap>K')])
+        self.assertTrue(all(r['interventions'] >= 1 for r in result['failed_replies']))
+        self.assertNotIn('CITATION_RESOLVER', json.dumps(result))
         self.assertNotIn('no reviewer', json.dumps(result))
+        self.assertNotIn('names no owner', json.dumps(result))
 
     def test_replay_extracts_and_validates_auditor_prompts(self):
         """replay_prompts extract --agents keeps the named local_auditor agents' calls, with each

@@ -772,7 +772,8 @@ def for_call(wrapper, tok, prompt_tokens, eos_ids, root=None):
     and grounding, the validator's sets. A wrapper carrying messages without a binding (no
     owned spans: a fixture that sets the prompt turns alone) has no declaration to decode
     under and gets none. A declared envelope agent (config/envelope_decoding.json: VERIFIER and
-    PRACTICE_AUDITOR on local_auditor) gets the envelope constraint of its own contract
+    PRACTICE_AUDITOR on local_auditor, ARCHIVIST and EDITOR_CLERK on local_producer) gets the
+    envelope constraint of its own contract
     (for_envelope); every other call gets none."""
     envelope = for_envelope(wrapper, tok, prompt_tokens, eos_ids, root)
     if envelope is not None:
