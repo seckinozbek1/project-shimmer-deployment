@@ -255,4 +255,4 @@ L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes abo
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| L12c | launched 2026-10-31 19:09:39, dev-rerun-l12c, 5 B3 re-runs of the stamp-only passes, sealed at 5c3c129 after the full gate (D-143, D-144) | 2.38, cap 3.56 (85 minutes from the entries' own L12 and L12b times) | running; usage seven-day 70 percent (five-hour not reported), free memory 4.13 GB, disk 59.9 GB at launch |
+| L12c | launched 2026-10-31 19:09:39, dev-rerun-l12c, 5 B3 re-runs of the stamp-only passes, sealed at 5c3c129 after the full gate (D-143, D-144) | 2.38, cap 3.56 (85 minutes from the entries' own L12 and L12b times) | 79 minutes, 1.70 USD; 4 of 5 passed (D-146); usage seven-day 70 percent (five-hour not reported), free memory 4.13 GB, disk 59.9 GB at launch. Instances total after it: 62.59; reaper 63.18 |

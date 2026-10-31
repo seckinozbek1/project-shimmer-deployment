@@ -189,7 +189,8 @@ The operator's decision D-S12 (Annex D, revised at 00:20 on 30 October) reopened
 | R2a | cloud proof of the envelope constraint (82 auditor prompts, two paths; D-129, D-130) | 7cb979e | 1 B1 replay | 125 | 2.69 (3.63) | passed; A, B, C hold; 12 of 22 failing calls now pass the validator (D-132) |
 | R2b | the same for ARCHIVIST (14 prompts, two paths), beside R2c on a second instance | abd288c | 1 B1 replay | 28 | 0.60 (1.12) | passed; A to D hold; 2 of 2 fixed (D-134) |
 | R2c | VERIFIER at a 4,096-token allowance (8 capped prompts, informational) | abd288c | 1 B1 replay | 70 | 1.51 (2.10) | passed; 4 of 8 end within 4,096 (D-134) |
-| L12b | second re-run of the 13 still failing, two sessions on two instances | d6ce19a | 13 B3 | 178 + 114 | 6.28 (11.18) | 10 of 13 (D-138) |
+| L12b | second re-run of the 13 still failing, two sessions on two instances | d6ce19a | 13 B3 | 178 + 114 | 6.28 (11.18) | 10 of 13 (D-138; 5 of those on the removed stamp) |
+| L12c | re-run of the 5 stamp-only passes, EDITOR_CLERK under its envelope | 5c3c129 | 5 B3 | 79 | 1.70 (2.38) | 4 of 5 (D-146) |
 
 
 ### Results (development, exposed; no inference)
@@ -414,11 +415,11 @@ First runs of L7, L8, L10 and L11: 37 failed B3 entries (D-112 counted 33 with L
 
 On the A10 (R2, D-132, D-134): the constraint changed no valid reply of the three agents (72 valid prompts byte-identical, 0 interventions, equal GPU memory) and 14 of 24 failing calls now pass the validator (9 PRACTICE_AUDITOR replies missing their explanation, 3 unclosed envelopes, 2 of them VERIFIER and 1 PRACTICE_AUDITOR, and 2 ARCHIVIST replies without confidence); "pass the validator" says the shape is right, not that the forced text is right, which the seeded review of intervened replies reads (item 8). One more PRACTICE_AUDITOR reply missing its explanation (`p0030`) ran to 768 under the constraint (open item 47). The VERIFIER lists that ran to the 2,048-token cap are a budget, not a shape: at 4,096, 4 of 8 end and pass, so VERIFIER's allowance became 4,096 (a run setting, D-134); the other 4 repeat one item per reference past 4,096 and are recorded with that cause.
 
-L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowance and the envelope constraint, as two sessions on two instances at once (292 billed minutes in all, 6.28 USD): 10 pass. Of the 37 B3 development entries that first failed integrity, 34 passed, but 5 of those passed only because Python stamped EDITOR_CLERK's missing `kind` (K8), a change removed at the close because it crossed H9 (INC-027, D-143): 29 pass on their own, and L12c re-runs the 5 with EDITOR_CLERK under its envelope constraint. The 3 left, each with its cause and an open item: `f1_s1101_cvjx`, two PRACTICE_AUDITOR replies the constraint kept open for their required explanation, which then ran to 768 tokens (open item 47); `cuad_527255a5c970` and `f3_s3102_vwmj`, VERIFIER lists that run to 4,096 (open item 48). Under D-S18 item 2a they are recorded and do not hold v1 back.
+L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowance and the envelope constraint, as two sessions on two instances at once (292 billed minutes in all, 6.28 USD): 10 pass. Of the 37 B3 development entries that first failed integrity, 34 passed, but 5 of those passed only because Python stamped EDITOR_CLERK's missing `kind` (K8), a change removed at the close because it crossed H9 (INC-027, D-143): 29 pass on their own, and L12c re-ran the 5 with EDITOR_CLERK under its envelope constraint: 4 pass, so 33 of 37 pass on their own (D-146); `f1_s1102_mstx` failed on VERIFIER's 4,096 allowance (open item 48). The 3 left, each with its cause and an open item: `f1_s1101_cvjx`, two PRACTICE_AUDITOR replies the constraint kept open for their required explanation, which then ran to 768 tokens (open item 47); `cuad_527255a5c970` and `f3_s3102_vwmj`, VERIFIER lists that run to 4,096 (open item 48). Under D-S18 item 2a they are recorded and do not hold v1 back.
 
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-145 (D-089 onward after the reopening):
+`docs/loop/DECISIONS.md`, D-055 to D-146 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -511,6 +512,7 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 - D-143: K8 removed and its cause fixed (H9, INC-027); 5 passes depended on the stamp; L12c re-runs them
 - D-144: The full main gate and the side gates at the S5 close
 - D-145: The records consistency check before L12c: 16 found, 16 fixed; the ledger check's running-state test merged and its 6 rows settled
+- D-146: L12c read: 4 of 5 pass; 33 of the 37 first failures pass on their own; EDITOR_CLERK's envelope holds on the model
 
 ## Bound controller files and pinned functions changed in S5
 
@@ -522,6 +524,10 @@ Every bundle sealed before each of these merges refuses with `Controller source 
 
 ## Checkers
 
+**After the reopening (30 and 31 October).** A D-S12 checker (`s5_dS12_check1.md`, D-107) and a second reading (D-108); two fresh attacks on preregistration version 2 (D-094) and one on the scorer (D-098). Three records consistency checks before launches: D-121 (25 found, 25 fixed), D-130 (21 and 21), D-135 (22 and 22), and a fourth before L12c, D-145 (16 and 16). The close round (D-139): adversarial 15 items (9 SERIOUS, 6 MINOR), completeness 22 gaps, claims 14 items, and a fresh attack on four lead positions; the attack's verdicts were all accepted (moved rows SCHEDULED in S8, not DEFERRED; EDITOR_CLERK's stamp removed for H9, INC-027; the reserve gone under D-S18 with storage given its own line; the label `seckin-request`). Every item was closed in the records or by a lane: the full gate and side gates (D-144), the ledger check's running-state test (D-145), the K8 removal (D-143), the measurements and reviews (D-141). Sweep 2 (D-140): 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin. The outside audit was requested at 19:46 +0300 (`docs/loop/private/audit/REQUEST_S05.md`); AUDIT_RESULT_HERE
+
+**The first close (29 October), as it was written then:**
+
 **Round 1 (2026-10-29 about 22:30 +0300).** No CRITICAL. Adversarial: 3 SERIOUS (A1 D-069's acceptance could not detect D-068 records, because the scorer counts false positives over amendments only; A2 side gates not recorded for the merges `8ac7a60`, `8c2392d` and `70596c6`; A3 pinned-function amendment completeness to be shown by `test_reference_ast_contract` at the loop/s05 tip) and 6 MINOR (A4 the B1 checkpoint rule read development scores and D-066 came after B1 scores; A5 S8 has one external benchmark; A6 the FinDVer figure is an estimate; A7 the review seeds; A8 the commits where check 256 failed; A9 this section). Completeness: 8 gaps (C1 no model-text review of L6m and L6s2; C2 and C3 item 9 figures not tabulated; C4 C0 inputs not recorded; C5 the purpose line and the unanalysed L6m and L6s2; C6 usage readings per launch; C7 BUDGET.md actuals, the L6s row, the closing line and stray cells; C8 the close). Claims: 4 MINOR (H1, the same as C7; H3 L5v forecast rounding; H4 a format-hash row in the wrong VERSIONS table; H5 this report's commit counts). Closed in the records: A1 (limitation below item 8, D-086), A4, A5 (item 10), A6 (D-086, SELECTION.md note), A7 (item 8, D-086), A8 (Gate), C2 and C3 (item 9 tables; the figures not recorded in D-086 under P9 e), C4 (item 10), C5 (the reading; L6m and L6s2 analysed), C6 (usage table), C7 and H1 (BUDGET.md), H3 (BUDGET.md, launch table), H4 (VERSIONS.md: the row moved, content unchanged), H5 (top of this report). A2, A3 and C1 closed in D-086 (the lead's closures: the side gates and the merges between, see Gate; `test_reference_ast_contract` ok at the tip; L6m and L6s2 reviewed, item 8). C8 is the close itself.
 
 **Round 2 (2026-10-29 about 22:55 +0300).** No CRITICAL. Items S1 to S3, M4 to M10, C1, C3 and C4, all closed in the records (D-087): S1 the cloud-run baseline pair checked at `ea1c0d5` (Gate); S2 the usage readings at L1 to L5v found in the previous lead's session transcript (usage table); S3 the A1 limitation bound forward (open item 36, a dated note in `docs/benchmarks/DEVIATIONS.md`); M4 VERSIONS.md restored and a corrected row appended; M5 a dated note on DEV-011; M6 the count line; M7 item 8 and this section; M8 the purpose-line wording at the top; M9 the side gates' commit and the merges between (Gate); M10 one reaper reading here and in BUDGET.md, and L6's variance; C1 the hash abbreviation in item 10; C3 check 01 in the side gates (Gate); C4 the C0 manifests kept (item 10).
@@ -529,6 +535,10 @@ Every bundle sealed before each of these merges refuses with `Controller source 
 **Round 3, the last (2026-10-29 about 23:20 +0300).** No CRITICAL. Items SER1, SER2, G1, G3 to G5, M1 to M6. Closed in the records (D-088): SER1 the four item 9 deferrals made open items 37 to 40, each bound to S6 or S8 with its P9 reason corrected (D-086 had named reason e, but each names an in-loop way to settle it), listed in FOR_SECKIN.md, and the count line and its "not now" header fixed; G1 the C0 hash records (item 10); G3 INC-024 for L6s2's out-of-memory failure; G4 open item 35 names round 3's full recomputation as a thing to read; G5 the LOOP_STATE issues list to cover the open items from 27 on; M1 the clean twin's units, "8 answers kept, 10 model-written records", in item 7 (a), the limitation below item 8, open item 36 and a dated note in `docs/benchmarks/DEVIATIONS.md`; M2 "measurements recorded" in part (count line); M3 the logs not kept (Gate); M4 the final-integration errors named (Gate); M5 the purpose-line reading under P2 (Purpose line); M6 the qualifier on item 3's clean-twin false positives. SER2 (preregistration section 13 and the synthetic B1 prompt, never attacked by a fresh checker) is handled by a separate fresh checker; its result is recorded in D-088.
 
 ## Gate
+
+**At the reopened close (D-144).** The full main gate on the lead worktree at `5c3c129` (code as at `8548995`): PASS 266, WARN 1, SKIP 2, FAIL or ERROR 29 of 298, the non-pass set equal to the first merge's gate apart from check 31, which a worktree fails for the same reason as check 01 (no `input/` folders); checks 285 to 297 pass. The side gates on the same commit: execution topology, report recommendations, localization and multi-round OK, each ending in the worktree's check 01; final integration 156 tests with the 3 adapter errors; cloud run checks the two known worktree failures; controller checks OK. Logs: private `gate_logs/s05_close/`. Thirteen lane merges after the first close were gated by chunks of the checks they touched, recorded in their decisions (D-098 to D-145); bundles sealed on those commits before this full gate are a recorded departure (D-139 (a)). The merge gate in the main checkout runs at the second merge.
+
+**The first close (29 October), as it was written then:**
 
 Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foreground chunks, INC-016), each compared with the worktree baseline: at each recorded gate the non-pass set was the worktree baseline, apart from the check 256 flake below (D-062, D-064, INC-017, INC-021); the checks S5 added (285 to 292) pass in their lanes and at the lead's gates. The server checks ran in the loop venv. Check 256 fails now and then inside a long run and passes alone (INC-013, INC-021, open item 33; traced in S6a). In S5's chunked gates it failed ("sensitive health imported a model probe while inactive") three times, each inside the long chunk that holds it, and passed alone each time: at `8c2392d` in the chunk 200 to 277, then PASS alone and in the range 200 to 256 (logs `gate_logs/s05_8c2392d/c2.log`, `c256.log`, `c200_256.log`); at `ee2f1ed` in the chunk 200 to 277, then PASS alone right after (recorded in INC-021's recurrence note; the solo log was not kept); at `2b50067` in the chunk 190 to 260, then PASS alone (`gate_logs/s05_2b50067/c2.log`, `c256.log`). It passed inside the chunk at `18eee21`, `70596c6`, `ee8fa6a` and `fc02e1d`. Earlier, in S5's full gate at `1c4daac`, it failed once and passed alone (INC-013). INC-022 is fixed: check 222 restores `shimmer.sh` byte for byte, so the gate no longer changes the tree. INC-017 (checks 229 and 233 after D-068) closed at `cbcceac`. The merge gate on the loop branch runs at the stage close.
 
@@ -538,6 +548,16 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 ## Count line
 
+**At the reopened close.** 10 specification items and 11 exit criteria, plus the S5-bound items of D-S12 to D-S18 (the ledger's S5 rows):
+
+- **Done.** Items 1 to 10, with item 2 settled on real execution (D-100, D-101; the nine multi-round entries reviewed and activated in L12), item 3 (L7, D-106; L12's re-runs scored, D-141), item 4 (B3 on the suite in L8, L12, L12b; scores in "Development scores after the reopening"), item 5 (CUAD measured in L10, dry runs to five documents in L11, D-100, D-105), item 8 (reviews of L6 to L12b and of intervened replies, D-141), item 9 (the measurement tables after D-S12, open items 37 to 40 closed, D-128). Exit criteria: smoke run; regression scored; development suite and adapter dry runs; B1 and B2 proven; every failure classified (D-112, D-128, D-138, D-143); C0 in full agreement on version 2 (run 4) and version 2 frozen (`0c1884fb...`; version 3 drafted, D-126, after v1); measurements recorded; spend within its allocation (D-092, D-115, D-133).
+- **Moved after v1 by the operator (D-S18 item 3; SCHEDULED in S8, not dropped).** L9a and L9b (the 56 probes), L13 (FinDVer and CUAD-claim development runs), preregistration version 3 (ContractNLI and SciTab only) and the sealed evaluation.
+- **Recorded and not fixed in S5 (D-S14 item 7, D-S18 item 2a).** The 3 entries that still fail (open items 47 and 48); PRACTICE_AUDITOR's forced explanations (open item 51); and after L12c (D-146) 33 of the 37 first failures pass on their own; 4 still fail, `f1_s1101_cvjx` (open item 47) and `cuad_527255a5c970`, `f3_s3102_vwmj`, `f1_s1102_mstx` (open item 48).
+- **Not now (P9 reason b, with FOR_SECKIN entries).** D-S13 item 6b, the launcher install on a fresh clone (memory below 4 GB; with 6c after the S7 merge, then S10).
+- **At close.** The outside audit's findings fixed, stage merged, VERSION 0.1.0.dev5, tag `loop-s05-v1`, push under D-S5.
+
+**The first close (29 October), as it was written then:**
+
 21 named (spec items 1 to 10 and the 11 exit criteria), 13 done, 7 not now (P9 reasons b and c), 1 at close. S5 checker round 2 moved item 9 to "not now, in part" (it was counted done); round 3 moved the exit criterion "measurements recorded" with it, and corrected item 9's reason from (e) to (b) and (c) (D-088).
 
 - **Done.** Items 1, 6, 7, 8, 10. Exit criteria: smoke run; regression scored (with the recorded cut); development suite and adapter dry runs (B2 only and the recorded cuts); B1 and B2 proven; every failure classified; spend within 24 USD; C0 in full agreement; preregistration frozen.
@@ -546,7 +566,9 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 ## Stage boundary
 
-No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
+**At the reopened close.** STAGE_BOUNDARY_HERE
+
+**The first close (29 October), as it was written then:** No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
 
 ## Effort
 
