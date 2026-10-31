@@ -114,7 +114,10 @@ processing swarm governed by an append-only constitution.
   carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
   and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
   evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
-  S5's merge refuse the same way and must be re-sealed. D-101 (after L7, D-100) changed `tools/ordinary_final_run.py` again (a
+  S5's merge refuse the same way and must be re-sealed. D-S17 item 1 (at most two loop
+  instances) changed `tools/ordinary_final_cloud.py`, `tools/loop_budget_guard.py` and
+  `tools/loop/instance_reaper.py`, so every bundle sealed before it refuses with
+  `Controller source changed` and must be re-sealed. D-101 (after L7, D-100) changed `tools/ordinary_final_run.py` again (a
   declared multi-round run is assessed without the Producer 168 model-call requirement), so
   bundles sealed before it refuse the same way and must be re-sealed. Open item 37 (disk on the instance:
   the runner's `evidence/disk_usage.json` before, sampled during and after the workload, and
@@ -129,8 +132,13 @@ processing swarm governed by an append-only constitution.
   `--read-ledger` and needs a `budget_open` line among them. Before the launch request
   `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
   decision through the intent line and reading the provider inventory again just before it:
-  it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
-  in the inventory), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
+  it refuses when two loop instances already run (D-S17: at most two at a time, a third
+  refused in one line, "Two loop instances are running; at most two at a time"; the limit is
+  `instance_reaper.MAX_LOOP_INSTANCES`, read by the guard as `loop_budget_guard.MAX_LOOP_INSTANCES`
+  and by `admits_another`; each instance counted once over the open ledger launches and the
+  `shimmer-loop-` names in the inventory), when the inventory lists a loop instance no ledger
+  records (its cap could not be counted) or any instance that is not a loop instance (the
+  controller, the sealer and the bound preflight refuse that too), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
   caps - storage forecast)`, ceiling `min(hard stop, budget - 1)` (`loop_budget_guard.cap_ceiling`,
   so a hard stop at the budget never removes the one-dollar margin), is below the forecast
   (measured minutes x live price x 1.3), or when
@@ -141,7 +149,12 @@ processing swarm governed by an append-only constitution.
   line's `hard_stop_usd`, else the budget less the one-dollar margin), a launch with no readable
   budget line is refused, and the reaper terminates every loop instance while no budget line can
   be read. The type rule's A10 reference is the latest `a10_reference_price_usd_per_hour` on any
-  budget line. An open launch accrues spend only up to its recorded deadline; past it, with no
+  budget line. The hard stop counts every running loop instance together (spend is the
+  total over all launches); the reaper judges each instance on its own record and, should more
+  than two be left running, ends the latest-requested beyond the limit (`over_instance_limit`).
+  A controller's independent cleanup requires its own instance gone and no instance outside the
+  loop, and names another loop instance still running apart (`other_loop_instances`).
+  An open launch accrues spend only up to its recorded deadline; past it, with no
   instance of its name listed, the reaper closes it with one termination line
   (`intent_without_instance`, or `instance_not_listed_charged_to_deadline` for a launch whose
   instance is gone), charged to the deadline: a ceiling counted as actual spend and never

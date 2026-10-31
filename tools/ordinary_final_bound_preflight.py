@@ -1,7 +1,7 @@
 """Read-only live provider preflight for a bound launch. Launches nothing.
 
 Reverifies against the live provider, through the allowlisted adapter only:
-empty inventory, a sealed instance candidate offered at its sealed rate cap or lower
+no instance outside the loop and fewer loop instances than the limit (D-S17), a sealed instance candidate offered at its sealed rate cap or lower
 (the A10 in us-east-1 first, IV.3), and the prepared image still offered. Writes
 authorized_live_preflight.json.
 """
@@ -26,7 +26,7 @@ def main(bundle):
     m = read(base / 'execution_manifest.json')
     provider = LambdaExperiment(credential_path())
     instances = provider.request('instances')['data']
-    require(instances == [], 'Provider inventory not empty')
+    guard.refuse_full_inventory(instances)  # D-S17: loop instances only, fewer than the limit
     types = provider.request('instance-types')['data']
     # One reading of the free inventory, the IV.3 type rule over the sealed candidates: the
     # A10 in us-east-1 if offered within its rate cap, otherwise the first admissible
