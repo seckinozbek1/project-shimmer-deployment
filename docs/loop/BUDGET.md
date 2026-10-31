@@ -186,16 +186,28 @@ Corrections: R1's forecast is 3.13 USD (112 minutes at 1.29 USD an hour, times 1
 
 | Launch | Purpose | Forecast minutes | Bundle |
 |---|---|---|---|
-| R2a | d-s14-envelope-replay-auditor, 82 prompts, sdpa and sdpa_constrained | 130 | external/s05/R2/auditor_B1 |
-| R2b | d-s14-envelope-replay-archivist, 14 prompts, sdpa and sdpa_constrained | 40 | external/s05/R2/archivist_B1 (re-sealed after the twoinst merge) |
-| R2c | d-s14-verifier-cap-4096, 8 prompts, sdpa_constrained, informational | 75 | external/s05/R2/verifier_cap_B1 (re-sealed after the twoinst merge) |
+| R2a | d-s14-envelope-replay-auditor, 82 prompts, sdpa and sdpa_constrained | 130 | external/s05/R2/auditor_B1 (sealed at 7cb979e) |
+| R2b | d-s14-envelope-replay-archivist, 14 prompts, sdpa and sdpa_constrained | 40 | external/s05/R2/archivist_B1_abd (sealed at abd288c; `archivist_B1`, sealed at 7cb979e, was never launched) |
+| R2c | d-s14-verifier-cap-4096, 8 prompts, sdpa_constrained, informational | 75 | external/s05/R2/verifier_cap_B1_abd (sealed at abd288c; `verifier_cap_B1`, sealed at 7cb979e, was never launched) |
 
 The smoke 3.12 of the allocation table above went back to the pool under D-S17 item 3 (D-127); it is not spent on S12.
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| R2a | 2026-10-31 08:05 to 10:10, d-s14-envelope-replay-auditor, sealed at 7cb979e | 3.63, cap 5.45 (130 minutes times 1.3) | 125 minutes, 2.69 USD; integrity passed, 164 reply records; A, B, C hold, 12 of 22 fixed (D-132). Usage at launch not read; disk 69 GB, free memory 4.2 GB. Running instance total after it: 52.50 |
-| R2c | launched 2026-10-31 about 10:20, d-s14-verifier-cap-4096, sealed at abd288c | 2.10, cap 3.14 | running (first two-instance use, D-133) |
-| R2b | launched 2026-10-31 about 10:22, d-s14-envelope-replay-archivist, sealed at abd288c | 1.12, cap 1.68 | running |
+| R2a | 2026-10-31 08:05 to 10:10, d-s14-envelope-replay-auditor, sealed at 7cb979e | 3.63, cap 5.45 (130 minutes times 1.3) | 125 minutes, 2.69 USD; integrity passed, 164 reply records; A, B, C hold, 12 of 22 fixed (D-132). Usage at launch not read; disk 69 GB, free memory 4.2 GB. Instance total after it: 52.50 |
+| R2c | 2026-10-31 10:20:59 to 11:30:14, d-s14-verifier-cap-4096, sealed at abd288c | 2.10, cap 3.14 | 70 minutes, 1.51 USD; integrity passed; 4 of 8 end within 4,096 (D-134). First two-instance use (D-133); free memory 3.47 GB, disk 69 GB at launch |
+| R2b | 2026-10-31 10:21:37 to 10:48:48, d-s14-envelope-replay-archivist, sealed at abd288c | 1.12, cap 1.68 | 28 minutes, 0.60 USD; integrity passed; A to D hold, 2 of 2 fixed (D-134) |
 
-D-S18 (D-133): about 147 USD left; v1 work about 13, the parallel track 30, the sealed evaluation at least 60, the moved steps about 42.
+### Running total after R2, and the allocation under D-S18 (2026-10-31 15:40 +0300, D-133, D-135)
+
+| Date (UTC) | Event | Instance cost to date (USD) | Total spent, reaper (USD) | Remaining (USD) |
+|---|---|---|---|---|
+| 2026-10-31 11:46 | After R2a, R2b, R2c. Reaper reading 11:46:59 UTC: 0 instances. 18 terminations | 54.61 | 55.18 | about 143.8 under the 199 hard stop |
+
+| Allocation (D-S18 item 7 order) | USD | Forecast basis |
+|---|---|---|
+| v1 work left | about 9.0 | L12b 13 entries, about 310 minutes in two sessions, about 6.5 with the 1.3 factor plus margin; L14 launcher review and draft 1.5; slack 1 |
+| Parallel track (D-S18 item 6a) | 30.00 | requests in `docs/loop/private/parallel/`, refused past this |
+| Sealed evaluation (version 3, ContractNLI and SciTab, D-S18 item 5) | at least 60 | floor 60; sized from the ledger when version 3 is written |
+| Moved steps (D-S18 item 3) | about 42 | L13 about 17.4, L9a 12.3, L9b 12.3; S6 cloud work 5.74 is inside the sealed evaluation's surplus or waits |
+| Total | about 141 | of about 143.8 left; if a forecast grows, L9b waits first and FOR_SECKIN says so |
