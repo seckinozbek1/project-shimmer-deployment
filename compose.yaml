@@ -22,7 +22,7 @@ x-shimmer-common: &shimmer-common
     # Set it in the shell before `docker compose up`, never in this file:
     #   export SHIMMER_TOKEN_HASH=<hash>          (macOS/Linux)
     #   $env:SHIMMER_TOKEN_HASH = "<hash>"         (Windows PowerShell)
-    - SHIMMER_TOKEN_HASH=${SHIMMER_TOKEN_HASH:?SHIMMER_TOKEN_HASH must be set (see README section I)}
+    - SHIMMER_TOKEN_HASH=${SHIMMER_TOKEN_HASH:?SHIMMER_TOKEN_HASH must be set (see docs/RUNTIME_REFERENCE.md, Server environment)}
   deploy:
     resources:
       reservations:

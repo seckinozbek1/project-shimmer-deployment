@@ -2,6 +2,11 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## Unreleased (documentation for v1)
+
+- **The README is rewritten for v1** and links the results page (`docs/RESULTS.md`). It says what Shimmer is (established mechanisms put together), what it does and does not do, what has been measured (development, exposed, with what the figures do not show), the limitations, a measured hardware and cost summary, install, quickstart, configuration, the constitution and agents, the testing rules and how to reproduce the evaluation. It states that the privacy layer today refuses sensitive runs and does not mask, that switching masking on needs its own amendment, and that the server's one shared token makes Shimmer a single-operator system. The sealed evaluation comes after v1; no package release is promised.
+- `CLAUDE.md` narrows "domain-agnostic" to what the evidence supports. Links to README sections that moved now point to `docs/RUNTIME_REFERENCE.md`; the dated history and state documents get dated notes instead of rewrites.
+
 ## 0.1.0.dev5 (2026-10-31)
 
 - **Development runs on a cloud GPU, end to end.** A sealed bundle now carries the B3 pipeline arm and the B1 bare-model arm, runs several bundles in one instance session (`--batch`), and keeps every entry's evidence even past the soft budget. Each launch is a loop launch: a ledger line before the request, a budget guard, a reaper that ends an instance at its deadline, and up to two loop instances at once, with a third refused.
