@@ -5,7 +5,7 @@ An evaluation tool, not a review and not an arm. Two commands:
 
   extract (no model)
       py -3.12 benchmark/baselines/replay_prompts.py extract --records <run>/audit/model_replies
-          [--records <another run's folder> ...] [--call-ids calls.json] [--dev]
+          [--records <another run's folder> ...] [--call-ids calls.json] [--dev | --agents A,B]
           --out replay_prompts.json [--min-chars N]
     Reads the reply records of one or more earlier runs (one JSON file per call, written by
     scripts/reply_records.py) and keeps every producer call (backend local_producer) whose
@@ -20,7 +20,10 @@ An evaluation tool, not a review and not an arm. Two commands:
     cap) and, as their reference, the SHA-256 of each frozen DEV reply (DEV_REPLIES). It
     writes replay_prompts.json: per prompt its set (records or dev), source call id, agent,
     document id, the rendered prompt, its SHA-256, the output allowance and the reference
-    reply's SHA-256, and the source runs.
+    reply's SHA-256, and the source runs. --agents VERIFIER,PRACTICE_AUDITOR keeps instead the
+    calls of those envelope agents (config/envelope_decoding.json) on their declared backend,
+    each with its backend and model id; a file holds one model's prompts. A --call-ids file whose
+    objects each carry a `set` label counts each prompt under its own set.
 
   run (loads the tuned producer once, through the loader B1's tuned checkpoint uses)
       py -3.12 benchmark/baselines/replay_prompts.py run --prompts replay_prompts.json --out <dir>
@@ -52,6 +55,11 @@ An evaluation tool, not a review and not an arm. Two commands:
     interventions, dead end), and a prompt with a reference reply is compared with it; the
     per-path totals by set are under `validity`, `reference` and `constraint`. Ids, hashes,
     counts, the validator's reasons and seconds only, never a prompt's or a reply's text.
+    A file of envelope agents' prompts (one model a file) is replayed on their own model (the
+    local auditor for VERIFIER and PRACTICE_AUDITOR, loaded by the run's loader in a process set
+    up as the run's; the tuned producer for ARCHIVIST) on sdpa and sdpa_constrained
+    only; sdpa_constrained carries the envelope constraint of each prompt's own agent, and every
+    reply is judged by the agent's envelope validator and run_task's completeness rule, unchanged.
 
 The thresholds the E evidence is read against (D-060, D-061: at least 90 percent byte-identical
 with one-shot eager and at least 95 percent label agreement on the tuned checkpoint) are applied
@@ -133,13 +141,20 @@ def _refuse_keys(folder):
 
 
 def _call_ids(path):
-    """The call ids a --call-ids file lists: a JSON list of ids or of objects carrying `call_id`."""
+    """The call ids a --call-ids file lists: a JSON list of ids or of objects carrying `call_id`.
+    When every object also carries `set` (lower case letters, digits, underscores; not `dev`),
+    {call id: set}, and each prompt is counted under its own set."""
     if path is None:
         return None
     value = json.loads(Path(path).read_text(encoding="utf-8"))
     ids = [v.get("call_id") if isinstance(v, dict) else v for v in value] if isinstance(value, list) else None
     if not ids or not all(isinstance(i, str) and i for i in ids) or len(set(ids)) != len(ids):
         raise ValueError("--call-ids lists distinct call ids")
+    if all(isinstance(v, dict) and "set" in v for v in value):
+        import re
+        if not all(isinstance(v["set"], str) and re.fullmatch(r"[a-z0-9_]+", v["set"]) and v["set"] != "dev" for v in value):
+            raise ValueError("--call-ids names each set in lower case letters, digits and underscores, never dev")
+        return {v["call_id"]: v["set"] for v in value}
     return set(ids)
 
 
@@ -168,13 +183,36 @@ def dev_prompts(root=ROOT):
     return rows, {"dev_rows": len(rows), "protocol": declared["validated_protocol"], "replies": DEV_REPLIES}
 
 
-def extract(folders, out, *, min_chars=0, call_ids=None, dev=False):
+def model_key(prompt):
+    """The model a prompt is replayed on: the tuned producer for every producer prompt (a prompt
+    with no backend is one), otherwise its backend and the model its call loaded."""
+    backend = prompt.get("backend") or PRODUCER_BACKEND
+    return (backend, None) if backend == PRODUCER_BACKEND else (backend, prompt.get("model_id"))
+
+
+def envelope_agents(agents):
+    """{agent: backend} for the named envelope agents (config/envelope_decoding.json); an agent
+    the declaration does not name is refused."""
+    import contract_decoding
+    declared = contract_decoding.envelope_declaration()[0]["agents"]
+    unknown = sorted(set(agents) - set(declared))
+    if unknown:
+        raise ValueError("--agents names an agent with no envelope declaration: " + ", ".join(unknown))
+    return {agent: declared[agent]["backend"] for agent in agents}
+
+
+def extract(folders, out, *, min_chars=0, call_ids=None, dev=False, agents=None):
     """replay_prompts.json from the reply records under `folders` (only the calls `call_ids`
-    names, when given) and, with `dev`, the DEV rows (see the module text)."""
+    names, when given) and, with `dev`, the DEV rows (see the module text). With `agents`, the
+    calls of those declared envelope agents on their own backend instead of the producer's
+    (DECODING-B's envelope constraint); --dev is the producer's and is refused with it."""
     prompts, sources = [], []
     wanted = set(call_ids) if call_ids is not None else None
     if not folders and not dev:
         raise ValueError("name reply record folders, --dev, or both")
+    chosen = envelope_agents(agents) if agents else None
+    if chosen is not None and dev:
+        raise ValueError("--dev adds producer prompts; a replay file holds one model's prompts")
     for folder in folders or ():
         _refuse_keys(folder)
         rows = reply_records.records(folder)
@@ -182,7 +220,9 @@ def extract(folders, out, *, min_chars=0, call_ids=None, dev=False):
             raise ValueError("no reply records under " + str(folder))
         kept = 0
         for row in rows:
-            if row.get("backend") != PRODUCER_BACKEND:
+            if chosen is None and row.get("backend") != PRODUCER_BACKEND:
+                continue
+            if chosen is not None and chosen.get(row.get("agent")) != row.get("backend"):
                 continue
             if wanted is not None and row.get("call_id") not in wanted:
                 continue
@@ -198,9 +238,12 @@ def extract(folders, out, *, min_chars=0, call_ids=None, dev=False):
                 continue
             allowance = (row.get("decoding") or {}).get("max_new_tokens")
             reference = (row.get("reply") or {}).get("sha256")
-            prompts.append({"prompt_id": "p%04d" % (len(prompts) + 1), "set": "records",
+            label = call_ids.get(row.get("call_id"), "records") if isinstance(call_ids, dict) else "records"
+            prompts.append({"prompt_id": "p%04d" % (len(prompts) + 1), "set": label,
                             "source_call_id": row.get("call_id"),
                             "source_run_id": row.get("run_id"), "agent": row.get("agent"),
+                            "backend": row.get("backend"), "model_id": row.get("model_id"),
+                            **({"envelope": True} if chosen is not None else {}),
                             "doc_id": row.get("doc_id"), "max_new_tokens": allowance if type(allowance) is int else None,
                             "prompt_sha256": payload["sha256"],
                             "reference_reply_sha256": reference if isinstance(reference, str) else None,
@@ -211,14 +254,18 @@ def extract(folders, out, *, min_chars=0, call_ids=None, dev=False):
         sources.append({"run_ids": sorted({str(r.get("run_id")) for r in rows}), "records": len(rows),
                         "producer_prompts": kept})
     if wanted:
-        raise ValueError("%d listed call id(s) have no producer prompt in the records given" % len(wanted))
+        raise ValueError("%d listed call id(s) have no %s prompt in the records given"
+                         % (len(wanted), "producer" if chosen is None else "named agent's"))
     if dev:
         rows, source = dev_prompts()
         for row in rows:
             prompts.append(dict({"prompt_id": "p%04d" % (len(prompts) + 1)}, **row))
         sources.append(source)
     if not prompts:
-        raise ValueError("no producer prompt with its rendered text in the records given")
+        raise ValueError("no %s prompt with its rendered text in the records given"
+                         % ("producer" if chosen is None else "named agent's"))
+    if len({model_key(p) for p in prompts}) > 1:
+        raise ValueError("the records given hold prompts of more than one model; a replay file holds one model's prompts")
     value = {"schema": SCHEMA, "written_at": _now(), "sources": sources, "min_chars": int(min_chars),
              "prompt_count": len(prompts), "prompts": prompts}
     _write_json(out, value)
@@ -280,18 +327,20 @@ class ReplayBackend:
     def max_context(self):
         return self.local.max_context()
 
-    def generate(self, prompt, attention, max_new_tokens, constraint=False):
+    def generate(self, prompt, attention, max_new_tokens, constraint=False, agent=None):
         """One replayed call. With `constraint`, the compact producer's contract constraint
-        (contract_decoding.for_prompt, its declaration read from the prompt's own payload) rides
-        beside the frozen decoding kwargs exactly as in a B3 call, and what it counted is
-        returned."""
+        (contract_decoding.for_prompt, its declaration read from the prompt's own payload), or
+        with `agent` that envelope agent's constraint, rides beside the frozen decoding kwargs
+        exactly as in a B3 call, and what it counted is returned. `truncated` is the run's own
+        rule: the allowance spent without a stop token."""
         import torch
         import contract_decoding
         import decoding_policy
         tok, mdl = self.local._loaded()
         inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
         start = int(inputs["input_ids"].shape[1])
-        constrained = (contract_decoding.for_prompt(prompt, tok, start, decoding_policy.effective_eos(self.reader["decoding"], mdl))
+        constrained = (contract_decoding.for_prompt(prompt, tok, start, decoding_policy.effective_eos(self.reader["decoding"], mdl),
+                                                    agent=agent)
                        if constraint else None)
         extra = constrained.generate_kwargs() if constrained is not None else {}
         with torch.no_grad(), self.bare_model.b1_attention(mdl, implementation=attention["attention_implementation"]) as observe:
@@ -301,16 +350,35 @@ class ReplayBackend:
                 prefill=self.bare_model.prefill_of(attention), **extra)
         text = tok.decode(out[0][start:], skip_special_tokens=True)
         generated = int(out[0].shape[0]) - start
+        import generation_observation
+        _, truncated = generation_observation.local_stop(int(out[0][-1]) if generated else None,
+                                                         decoding_policy.effective_eos(self.reader["decoding"], mdl),
+                                                         generated, max_new_tokens)
         del inputs, out
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        result = {"text": text, "output_tokens": generated, "attention": dict(attention, **observed), "prefill": measured}
+        result = {"text": text, "output_tokens": generated, "attention": dict(attention, **observed), "prefill": measured,
+                  "truncated": truncated}
         if constrained is not None:
             result["decoding_constraint"] = constrained.summary()
         return result
 
     def release(self):
         self.local.release()
+
+
+class EnvelopeReplayBackend(ReplayBackend):
+    """A declared envelope agent's model (VERIFIER and PRACTICE_AUDITOR: the local auditor),
+    loaded through bare_model's LocalBackend the way agent_wrapper.call_local loads it
+    (agent_wrapper._load_qwen, sdpa pinned to the memory-efficient backend, one shot), in a
+    process set up as the run's (final_models.verify_runtime's strict determinism in final
+    mode). With `constraint`, the envelope constraint of the prompt's own agent
+    (contract_decoding.for_prompt with the agent) rides beside the frozen decoding kwargs."""
+
+    def prepare(self):
+        if final_models.mode() == "final":
+            final_models.verify_runtime()
+        return self.local.prepare()
 
 
 def _json_value(text):
@@ -353,15 +421,38 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
     if decision is not None and not any(PATHS[name]["measurement"] for name in paths):
         raise ValueError("--decision is named only with a measurement path")
     prompts = load_prompts(prompts_path)
-    compact = {p["prompt_id"]: is_compact(p["prompt"]) for p in prompts}
-    if any(PATHS[name].get("constraint") for name in paths) and not all(compact.values()):
+    models = {model_key(p) for p in prompts}
+    if len(models) != 1:
+        raise ValueError("a replay replays one model's prompts; this file holds %d" % len(models))
+    (model_backend, _), = models
+    # The envelope agents' prompts (extract --agents): each prompt names its agent and backend.
+    envelope = any(p.get("envelope") is True for p in prompts)
+    if envelope and not all(p.get("envelope") is True for p in prompts):
+        raise ValueError("a replay file holds envelope agents' prompts or producer prompts, not both")
+    if envelope:
+        # Replayed on their own model, loaded by the run's own loader (the tuned producer for a
+        # local_producer agent, the agent's local model otherwise), under the run proper's
+        # setting only.
+        backends = envelope_agents({p.get("agent") for p in prompts})
+        if set(backends.values()) != {model_backend} or any(p.get("backend") != model_backend for p in prompts):
+            raise ValueError("a prompt's backend is not its agent's declared backend")
+        if any(PATHS[name]["measurement"] for name in paths):
+            raise ValueError("the envelope agents' prompts replay on sdpa and sdpa_constrained only")
+    compact = {p["prompt_id"]: (not envelope) and is_compact(p["prompt"]) for p in prompts}
+    if not envelope and any(PATHS[name].get("constraint") for name in paths) and not all(compact.values()):
         raise ValueError("a constrained path replays compact producer prompts only; %d prompt(s) carry no "
                          "canonical compact payload" % sum(1 for v in compact.values() if not v))
     context = bare_model.RunContext(out, run_id or ("replay-" + uuid.uuid4().hex[:12]))
     built = backend is None
-    reader = reader or bare_model.resolve_reader(checkpoint=bare_model.TUNED)
+    auditor = envelope and model_backend != PRODUCER_BACKEND
+    if reader is None:
+        reader = (bare_model.resolve_reader(agent=sorted({p["agent"] for p in prompts})[0], checkpoint=bare_model.BASE)
+                  if auditor else bare_model.resolve_reader(checkpoint=bare_model.TUNED))
+    if auditor and built and reader["model_id"] != next(iter(prompts))["model_id"]:
+        raise ValueError("the prompts were rendered for %s; the agent's local model is %s"
+                         % (next(iter(prompts))["model_id"], reader["model_id"]))
     if built:
-        backend = ReplayBackend(reader, context)
+        backend = (EnvelopeReplayBackend if auditor else ReplayBackend)(reader, context)
     try:
         loaded = backend.prepare()
         limit = backend.max_context()
@@ -379,7 +470,10 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                     row["failure"] = error = "prompt_over_context"
                 else:
                     try:
-                        if PATHS[name].get("constraint"):
+                        if PATHS[name].get("constraint") and envelope:
+                            result = backend.generate(prompt["prompt"], declared[name], allowance, constraint=True,
+                                                      agent=prompt["agent"]) or {}
+                        elif PATHS[name].get("constraint"):
                             result = backend.generate(prompt["prompt"], declared[name], allowance, constraint=True) or {}
                         else:
                             result = backend.generate(prompt["prompt"], declared[name], allowance) or {}
@@ -402,12 +496,15 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                     if compact[prompt["prompt_id"]]:
                         reason = contract_reason(prompt["prompt"], text)
                         row["contract"] = {"valid": reason is None, "reason": reason}
+                    elif envelope:
+                        found = envelope_reasons(prompt["agent"], text, result.get("truncated"))
+                        row["contract"] = {"valid": not found, "reason": "; ".join(found)[:160] or None}
                     if prompt.get("reference_reply_sha256"):
                         row["reference_identical"] = row["reply"]["sha256"] == prompt["reference_reply_sha256"]
                 if result.get("decoding_constraint") is not None:
                     row["decoding_constraint"] = dict(result["decoding_constraint"])
                 call = reply_records.write(
-                    context, agent=AGENT_LABEL, backend=PRODUCER_BACKEND, model_id=reader["model_id"],
+                    context, agent=AGENT_LABEL, backend=model_backend, model_id=reader["model_id"],
                     model_mode=reader["model_mode"], payload=prompt["prompt"], payload_form="rendered_prompt",
                     reply=text, ok=not error, error=error, decoding=dict(decoding, max_new_tokens=allowance),
                     sensitive=True, phase=PHASE, doc_id=prompt.get("doc_id") or "",
@@ -432,9 +529,10 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
     for name in paths:
         for prompt_id, by_path in rows.items():
             row, group = by_path[name], sets[prompt_id]
-            if compact[prompt_id]:
-                counts = validity.setdefault(name, {}).setdefault(group, {"compact_prompts": 0, "replied": 0, "valid": 0, "reasons": {}})
-                counts["compact_prompts"] += 1
+            if compact[prompt_id] or envelope:
+                label = "contract_prompts" if envelope else "compact_prompts"
+                counts = validity.setdefault(name, {}).setdefault(group, {label: 0, "replied": 0, "valid": 0, "reasons": {}})
+                counts[label] += 1
                 if row.get("contract") is not None:
                     counts["replied"] += 1
                     counts["valid"] += int(row["contract"]["valid"])
@@ -498,6 +596,20 @@ def contract_reason(prompt, text):
         return str(exc)[:80]
 
 
+def envelope_reasons(agent, text, truncated):
+    """[] when the reply holds the agent's envelope contract as a run judges it, else the
+    reasons: agent_wrapper's parser and validator, unchanged, on a wrapper carrying the agent's
+    contract, and run_task's completeness rule (a reply not known to have stopped on its own is
+    not complete; `truncated` False only for a stop token)."""
+    import agent_wrapper
+    import contract_decoding
+    wrapper = object.__new__(agent_wrapper.AgentWrapper)
+    wrapper.name, wrapper.contract = agent, contract_decoding.declared_contracts()["contracts"][agent]
+    parsed, missing = wrapper.parse_contract_output(text)
+    found = list(missing) or ([] if parsed is not None else ["no JSON object found in output"])
+    return found + (["response completeness not established"] if truncated is not False else [])
+
+
 def decoding_fields(reader):
     import decoding_policy
     return dict(decoding_policy.usage_fields(reader["decoding"]))
@@ -514,6 +626,8 @@ def build_parser():
     ex.add_argument("--records", action="append", default=[], help="an earlier run's audit/model_replies folder")
     ex.add_argument("--call-ids", default=None, help="a JSON list of the call ids to keep (or of objects with call_id)")
     ex.add_argument("--dev", action="store_true", help="add the validated DEV rows of checkpoint 168 with their frozen replies' digests")
+    ex.add_argument("--agents", default=None,
+                    help="comma-separated envelope agents (config/envelope_decoding.json) whose calls to keep instead of the producer's")
     ex.add_argument("--out", required=True)
     ex.add_argument("--min-chars", type=int, default=0)
     rn = commands.add_parser("run", allow_abbrev=False, help="replay the prompts through the paths (loads the model)")
@@ -531,7 +645,7 @@ def main(argv=None):
     try:
         if args.command == "extract":
             value = extract(args.records, args.out, min_chars=args.min_chars, call_ids=_call_ids(args.call_ids),
-                            dev=args.dev)
+                            dev=args.dev, agents={a for a in (args.agents or "").split(",") if a} or None)
             print(json.dumps({"prompt_count": value["prompt_count"], "sources": value["sources"]}, indent=2))
             return 0
         if Path(args.out).exists() and any(Path(args.out).iterdir()):

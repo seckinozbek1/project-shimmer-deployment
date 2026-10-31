@@ -310,6 +310,44 @@ class DecodingFamilyChecks(unittest.TestCase):
             report[device] = dict(steps=3, reply_prefix_chars=len(text), strict_determinism=device != 'cpu',
                                   float_cumsum=0, chain=[type(p).__name__ for p in chain])
 
+    def test_auditor_envelope_constraint(self):
+        """DECODING-B (the envelope of VERIFIER and PRACTICE_AUDITOR): the envelope constraint is
+        handed to generate() as a custom logits processor and merged after the auditor family's
+        frozen chain, which it leaves as it was; applied through that chain it admits exactly the
+        tokens the agent's envelope grammar allows, with no floating-point cumsum, and on CUDA
+        under strict determinism, six steps of greedy choice."""
+        import contract_decoding
+        import envelope_decoding_checks as fixture
+        row = next(r for r in families() if r['family'] == 'auditor')
+        kw = dict(expected_kwargs(row['backend']), max_new_tokens=BUDGET)
+        tok = fixture.EnvelopeTokenizer()
+        _, _, plain = build_chain(snapshot(row), kw, 'cpu')
+        report = REPORT.setdefault('auditor_envelope_constraint', {})
+        for device in ['cpu'] + (['cuda:0'] if torch.cuda.is_available() else []):
+            constraint = contract_decoding.envelope_constraint('VERIFIER', tok, PROBE_LENGTH, kw['eos_token_id'], 'contract')
+            _, _, chain = build_chain(snapshot(row), kw, device, custom=constraint.generate_kwargs()['logits_processor'])
+            self.assertEqual([type(p).__name__ for p in chain], [type(p).__name__ for p in plain] + ['ContractProcessor'])
+            ids = torch.full((1, PROBE_LENGTH), fixture.base.UNK, dtype=torch.long).to(device)
+            text = ''
+            with cumsum_recorder() as calls, (strict_determinism() if device != 'cpu' else contextlib.nullcontext()):
+                for _ in range(6):
+                    generator = torch.Generator().manual_seed(len(text))
+                    scores = chain(ids, torch.randn(1, PROBE_VOCAB, generator=generator).to(device))
+                    admitted = {int(t) for t in torch.isfinite(scores[0]).nonzero().flatten().tolist()}
+                    grammar = constraint.processor.grammar
+                    state = grammar.walk(grammar.start(), text)
+                    expected = {t for t, s in enumerate(tok.vocab) if t > fixture.base.UNK and grammar.walk(state, s) is not None}
+                    self.assertEqual(admitted, expected)
+                    token = int(scores[0].argmax())
+                    text += tok.vocab[token]
+                    ids = torch.cat([ids, torch.tensor([[token]], device=device)], dim=1)
+            self.assertEqual([c for c in calls if c['floating']], [])
+            self.assertIsNotNone(contract_decoding.EnvelopeGrammar(constraint.processor.grammar.contract,
+                                                                   constraint.processor.grammar.spec).walk(
+                constraint.processor.grammar.start(), text))
+            report[device] = dict(steps=6, reply_prefix_chars=len(text), strict_determinism=device != 'cpu',
+                                  float_cumsum=0, chain=[type(p).__name__ for p in chain])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

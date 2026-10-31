@@ -296,7 +296,8 @@ class ContractDecodingChecks(unittest.TestCase):
         messages: generate() receives the frozen decoding kwargs unchanged plus the logits
         processor; the reply passes the wrapper's own source adapter (the validator); the reply
         record and the usage carry the constraint. A call that is not the compact producer's
-        (unbound PROCESSOR, VERIFIER on local_auditor) carries none."""
+        (unbound PROCESSOR, EDITOR_CLERK on local_producer) carries none; VERIFIER on
+        local_auditor carries the envelope constraint instead (envelope_decoding_checks)."""
         real = FIXTURE['real_document']
         text, doc = real['source'], real['doc']
         spans = extraction.ledger(text, doc)
@@ -346,7 +347,7 @@ class ContractDecodingChecks(unittest.TestCase):
             record = json.loads(next((Path(tmp) / 'bound' / 'audit' / 'model_replies').glob('*.json')).read_text(encoding='utf-8'))
             self.assertEqual(record['decoding_constraint'], usage)
             self.assertEqual(record['decoding']['decoding_kwargs'], policy)
-            for name, backend in (('PROCESSOR', 'local_producer'), ('VERIFIER', 'local_auditor')):
+            for name, backend in (('PROCESSOR', 'local_producer'), ('EDITOR_CLERK', 'local_producer')):
                 plain = wrapper(name, backend)
                 result, sent = call(plain, valid, Path(tmp) / name)
                 self.assertIsNone(sent['logits_processor'])
