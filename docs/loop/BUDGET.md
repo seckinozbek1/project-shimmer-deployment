@@ -177,3 +177,17 @@ S5's brought-back allocation was 70.81 USD. Spent on it so far 8.18 (L11, L7, L1
 | 2026-10-30 17:26 | After L8 (5.83) and R1 (2.06); L12 running. Reaper reading 17:26:59 UTC: one loop instance listed. Instances by the ledger's terminations: 36.70 (36.7005: S5 before D-S12 20.64, L11 4.11, L7 1.38, L10 2.69, L8 5.83, R1 2.06) | 36.70 | see reaper_status.json at the reading (it counts L12 to that time and storage) | about 162.8 before L12 |
 
 Corrections: R1's forecast is 3.13 USD (112 minutes at 1.29 USD an hour, times 1.3; the ledger's 3.1304), not 3.10; D-115's S5 remaining becomes about 68.2. L9a holds the 28 probes only (the nine multi-round re-runs are in L12, D-112), so its forecast is 441 minutes, 12.33 USD, not 12.83; D-115's S5 remaining becomes about 67.7. Launch times in the rows above are the ledger's launch lines.
+
+### Running total after L12, and R2's forecasts (2026-10-31 11:04 +0300, D-130)
+
+| Date (UTC) | Event | Instance cost to date (USD) | Total spent, reaper (USD) | Remaining (USD) |
+|---|---|---|---|---|
+| 2026-10-31 06:16 | After L12 (13.12). Reaper reading 06:16:59 UTC: 0 instances. Instances by the ledger's terminations: 49.82 (49.8155: S5 before D-S12 20.64, L11 4.11, L7 1.38, L10 2.69, L8 5.83, R1 2.06, L12 13.12) | 49.82 | 50.35 | about 149.6 |
+
+| Launch | Purpose | Forecast minutes | Bundle |
+|---|---|---|---|
+| R2a | d-s14-envelope-replay-auditor, 82 prompts, sdpa and sdpa_constrained | 130 | external/s05/R2/auditor_B1 |
+| R2b | d-s14-envelope-replay-archivist, 14 prompts, sdpa and sdpa_constrained | 40 | external/s05/R2/archivist_B1 (re-sealed after the twoinst merge) |
+| R2c | d-s14-verifier-cap-4096, 8 prompts, sdpa_constrained, informational | 75 | external/s05/R2/verifier_cap_B1 (re-sealed after the twoinst merge) |
+
+The smoke 3.12 of the allocation table above went back to the pool under D-S17 item 3 (D-127); it is not spent on S12.
