@@ -566,7 +566,7 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 ## Stage boundary
 
-**At the reopened close.** STAGE_BOUNDARY_HERE
+**At the reopened close.** No loop instance is running: the reaper's reading at 20:26:59 UTC on 31 October listed 0 instances, total spend 63.18 USD (instances 62.59 by the ledger's 21 terminations, storage about 0.59), about 135.8 left under the 199 hard stop. Storage to the loop's end is forecast at about 1.0 USD (0.13 a day for the shared filesystem). Lanes still open: s06-launchers (open item 20), s07-sync (S7), v1-results and v1-readme (S11), s05-prereg3 (version 3, after v1); none runs a launch. The parallel track's two patches wait for after v1 (D-137). The asset copy `shimmer-filesystem` stays as the operator created it. Free disk about 60 GB, above the 30 GB floor. The first S5 merge `2dea80f` (never pushed) is superseded by the second merge.
 
 **The first close (29 October), as it was written then:** No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
 
