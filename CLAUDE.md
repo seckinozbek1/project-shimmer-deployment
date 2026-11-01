@@ -935,7 +935,7 @@ processing swarm governed by an append-only constitution.
   curl it started opened a visible window on the operator's screen. The controller check and
   gate check 292 scan every start's AST and run the controller, adapter, termination client
   and progress reader against fakes that record each start's flags. This changed six bound
-  controller files, so bundles sealed before it refuse with `Controller source changed`.
+  controller files, so bundles sealed before it refuse with `Controller source changed`. The console checks' start scan (check 306) refuses a `creationflags` that also sets CREATE_NEW_CONSOLE or DETACHED_PROCESS, beside which Windows ignores the no-window flag, and counts `os.exec*`, attribute chains and modules reached by `importlib.import_module` or `__import__` (loop S7 round 3).
 - WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
   `max_pending` (256) runs as consecutive waves of at most that many calls
   (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and

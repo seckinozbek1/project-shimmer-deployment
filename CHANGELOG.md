@@ -15,6 +15,7 @@ One entry per product version, in plain English. The version number lives in `VE
 - Gate checks 298 to 311 added; check 108 extended to exits 8 and 9.
 - **`shimmer.sh` starts from a scripted shell too.** It finds its own folder without `dirname` and adds `/usr/bin` to a PATH that lacks it, so a Git Bash started by a script reaches the menu (open item 54).
 - **The console's sealed pages say exactly what they withhold.** The sealed note names the document, file and target names it withholds and that the FACT_CHECKER reasons are shown under Agent switches, sits directly under the multi-round heading, and one model-written finding reads in the singular; the console fixture's records agree with each other, and ten sealed screenshots are re-rendered (open item 55).
+- **Checks that prove what they say.** Check 306 now proves the sealed note's wording on its own, refuses a hidden-start flag that Windows would ignore and sees more ways a process can start; check 298 compares the console fixture's records call by call in both directions; check 308 covers an empty PATH; check 311 runs the launcher's opening lines instead of matching one literal line; and check 32 removes the input folders it creates, so a gate leaves the tree as it found it.
 
 ## 0.1.0.dev5 (2026-11-01)
 

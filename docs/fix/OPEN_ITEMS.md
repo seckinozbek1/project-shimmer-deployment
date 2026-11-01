@@ -351,7 +351,7 @@ open-item sweep.
 
 - **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
 - **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
-- **2026-11-01, sweep 3 over S7 (D-158).** Part (2) is settled by the parallel track's PATCH_2 (lane/readable: `reviewed_document.md` becomes the document itself, the per-agent record moves to `agent_record.md`), merged as a lane after v1 (D-137); issue #13 moved to S6.
+- **2026-11-01, sweep 3 over S7 (D-158).** Part (2) will be settled by the parallel track's PATCH_2 (lane/readable: `reviewed_document.md` becomes the document itself, the per-agent record moves to `agent_record.md`) when it merges as a lane after v1 (D-137); it is not merged yet, so part (2) stays open; issue #13 moved to S6.
 
 ## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2) (issue #25)
 
@@ -629,6 +629,7 @@ open-item sweep.
 - **What would settle it.** `shimmer.sh` finding its own folder without external tools (or adding Git's `usr/bin` itself), with a check that starts it with that PATH, in S6.
 
 - **Closed at loop S7 round 3 (2026-11-01, commit `b2b2fb1`, lane s07-r3fix).** The "P9 reason b" above was wrong: the fix costs no money. `shimmer.sh` reads its own folder by parameter expansion on `$0` (no `dirname`), and appends `/usr/bin` to PATH only where the directory exists and PATH does not name it, for the tools reached after that (the venv's activate calls `cygpath` on Git Bash; the menu calls `cat` and `rm`); a PATH that names it is left as it is. Check 308 (`scripts/launcher_checks.py`) starts the launcher from another folder with PATH holding only the python stand-in's folder and requires its menu; neutralised by putting the `dirname` line back (stops at `dirname`, exit 1, no menu) and by dropping the append (the activate stand-in's tool is not found): FAIL; restored: PASS. The entry above is kept as written.
+- **Since lane s07-r4fix (2026-11-01, D-160).** The append adds no empty entry (an empty or colon-ended PATH gained one, which bash reads as the repository root after the cd); check 308 starts it with PATH empty and a `python3` planted in its folder, neutralised by the former line (the planted `python3` runs): FAIL; restored: PASS.
 
 ## 55. Wording and fixture defects on the console's sealed pages (found at loop S7 close, sweep 3 and the screenshot checker) (issue #113)
 
