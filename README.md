@@ -14,7 +14,7 @@ None of it is a held-out or sealed result, and none of it shows how well Shimmer
 works on documents it has not seen. A sealed evaluation is planned after v1. This
 version is not released as a Python package, and no package release is promised.
 
-On the four public benchmarks measured, Shimmer scores below the bare model on three (ContractNLI, ContraDoc and CUAD, where it found none of the gold flags) and about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1. Details: [docs/RESULTS.md](docs/RESULTS.md).
+On the four public benchmarks measured, Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1. Details: [docs/RESULTS.md](docs/RESULTS.md).
 
 ## What Shimmer is
 
@@ -123,6 +123,9 @@ If the two ever differ, the results page is the current one.
   than 100 scored decisions.
 - **Purpose of these runs:** development measurement and run health, on exposed
   material, with no seal and no manifest.
+- **These development runs were not preregistered.** For sealed results, the
+  order of preregistration, freeze and sampling will be attested only by the
+  project's local records.
 - Precision, recall and F1 are those of the benchmark's flag class (for example
   "contradiction" or "refutes"). "n/a" means nothing was flagged.
 
@@ -137,11 +140,15 @@ If the two ever differ, the results page is the current one.
 
 What these figures do not show:
 
-- **Samples are tiny.** One to three documents per benchmark, one run per
-  document. One item more or less changes a figure a great deal.
+- **Samples are tiny.** One to three documents per benchmark, one counted run per
+  document; runs that failed integrity were re-run up to twice. One item more or
+  less changes a figure a great deal.
 - **Some B3 runs still failed their execution checks after a second re-run**
   and are counted as failed: the CUAD contract and 2 of the 20 suite bundles.
-  The results page names each one with its cause.
+  Five suite bundles counted as passed did so only through a change removed at
+  the S5 close (Python writing a field the model left out); re-run once more
+  (L12c, not scored on the page), four passed and one failed. The results page
+  names each one with its cause.
 - **The synthetic suite is exposed by construction.** Its generators, seeds and
   answer keys are in this repository. It measures regressions, not recall on
   unseen material. On the suite's clean twins, B1 flagged 31 items and B3 in
@@ -152,15 +159,20 @@ What these figures do not show:
 - **Public benchmark documents may have been seen by the models in training.**
 - **Every B3 flag on the external benchmarks came from a model-written record.**
   Counting only Python's findings (as shipped, S-8), B3 flagged nothing on them.
-  A review of model-written texts from one launch (ContractNLI, L11) found 9 of 15
-  sampled texts wrong and 5 partly correct.
-- **Not every field a sealed result report needs is here.** The fields the
-  project's testing rules require of a result report (commit, test version and
-  manifest hash, roles, scorer version, models and decoding, machine, cost,
-  recall, attribution, false positives in every deliverable, clean-twin result,
-  catch layer, directives, withheld agents, model-text review) are filled for
-  the sealed evaluation, after v1. The results page gives those that apply to
-  development runs.
+  A review of model-written texts from one launch (L11: 15 of the 526 texts
+  written across its eight ContractNLI, SciTab and ContraDoc documents) found 1
+  correct, 5 partly correct and 9 wrong.
+- **Not every field a sealed result report needs is here.** The project's
+  testing rules list the fields of a result report. The results page gives, for
+  these development runs: the purpose, that they are exposed, the dates, the
+  code commits, the models, the decoding settings, the machine and its price,
+  the cost, who wrote the tests, keys and scorer, the scorer's commit, recall
+  and precision, the clean-twin result, the layer that produced the catches
+  (Python or a model), the withheld agent (FACT_CHECKER) and the model-text
+  review. It does not give a test version or manifest hash (there is none: no
+  seal), attribution counts, false positives counted in every deliverable,
+  or whether each catch depended on a directive (not recorded for these runs).
+  The sealed evaluation, after v1, fills every field.
 
 **Which code was measured.** The runs were built from commits `8b48f78`,
 `344522f`, `18eee21`, `d50b299`, `55f1dd1` and `2b585af`; labels and scores were
@@ -170,7 +182,8 @@ VERIFIER, PRACTICE_AUDITOR and ARCHIVIST and a larger VERIFIER output allowance
 (4,096 tokens). So the rows that use an L12b run (one ContraDoc document, the
 CUAD contract and 11 suite bundles) are on newer code than the rest; the results
 page says which run each row uses. Changes made after `d6ce19a` were not
-measured. There is no release-candidate commit.
+measured (L12c, built from `5c3c129`, re-ran five entries for their integrity
+only; their scores were not computed). There is no release-candidate commit.
 
 **History.** The reports under `docs/fix/` from September 2026 describe runs on
 tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
@@ -211,9 +224,9 @@ operator's recorded observation.
   ten VERIFIER prompts of 44,467 to 54,657 tokens ran out of GPU memory on the A10
   before their first token; the prompt shown to VERIFIER was made smaller after
   that (D-114).
-- **Time per document.** From 4.4 minutes (a SciTab table) to 109.2 minutes (a
-  CUAD contract) for Shimmer, and 0.9 to 13.4 minutes for the bare model, on the
-  instance, model loading included. See the table above; each figure's run is on
+- **Time per document.** From 4.4 minutes (the mean of three SciTab tables) to
+  109.2 minutes (the one CUAD contract) for Shimmer, and 0.9 to 13.4 minutes for
+  the bare model, on the instance, model loading included. See the table above; each figure's run is on
   the results page.
 - **Cost.** Instance time only, at the rate above: for example 2.73 USD for the two
   ContractNLI agreements and 4.57 USD for the 20 suite bundles. Each launch also
