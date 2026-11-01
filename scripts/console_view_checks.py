@@ -550,8 +550,29 @@ def check_all_routes_need_a_token():
             finally:
                 server.app.router.routes[:] = saved
 
-        return _proved("all_routes_need_a_token", observe, verdict, ungated_route,
-                       "an ungated route added to the live app")
+        @contextlib.contextmanager
+        def docs_switched_on():
+            # FastAPI's defaults, as server.py had them before the three were set to None.
+            app = server.app
+            saved_routes = list(app.router.routes)
+            saved = (app.openapi_url, app.docs_url, app.redoc_url, app.openapi_schema)
+            app.openapi_url, app.docs_url, app.redoc_url = "/openapi.json", "/docs", "/redoc"
+            app.setup()
+            try:
+                yield
+            finally:
+                app.router.routes[:] = saved_routes
+                app.openapi_url, app.docs_url, app.redoc_url, app.openapi_schema = saved
+
+        route = _proved("all_routes_need_a_token", observe, verdict, ungated_route,
+                        "an ungated route added to the live app")
+        if route[0] != "PASS":
+            return route
+        docs = _proved("fastapi_docs_need_a_token", observe, verdict, docs_switched_on,
+                       "FastAPI's own /openapi.json, /docs and /redoc switched back on")
+        if docs[0] != "PASS":
+            return docs
+        return ("PASS", route[1] + "; " + docs[1][docs[1].index("neutralised ("):])
 
 
 # ---------------------------------------------------------------------------

@@ -363,7 +363,7 @@ def summarize(raw, scheduler=()):
             interval['call_ids'].append(r['call_id'])
     barriers=[]
     for e in scheduler:
-        if e['event']=='phase_enter':
+        if e['event']=='phase_enter' and not e.get('pre_phase_3'):
             required=e.get('required_tasks',[])
             auditor_tasks={r['task_id'] for r in calls if r.get('designation')=='auditor' and r.get('task_id') in required}
             auditor_ends=[task_events[t]['task_end']['monotonic_s'] for t in auditor_tasks if 'task_end' in task_events[t]]

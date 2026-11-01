@@ -10,6 +10,7 @@ instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
 remote work completes while the connection carrying it dies must be recognised
 as completed, never failed, and the workload must then run.
 """
+import ast
 import base64
 import contextlib
 import hashlib
@@ -19,6 +20,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -56,6 +58,174 @@ STORAGE_USD = 3.9
 # The budget every fixture ledger opens with (its own figure; the guard reads it from the ledger).
 FIXTURE_BUDGET_USD = 50.0
 LOOP_NAME = 'shimmer-loop-fixture'
+def b1_checkpoint_digests():
+    """The two final-mode checkpoint digests bare_model.py computes (benchmark/baselines/
+    bare_model.py checkpoint_record), read from the pinned config/final_models.json producer
+    entry: `<revision>:<model.safetensors sha256>` for the base, plus `+adapter:<sha256>` for
+    the tuned producer. The fixture seals exactly these, so `--expect-digest` is checked by
+    bare_model's own verify_identity against what its own code says the checkpoint is."""
+    import final_models
+    spec = final_models.specification('producer', ROOT)
+    base = '%s:%s' % (spec['revision'], spec['base_hashes']['model.safetensors'])
+    return dict(base=base, tuned=base + '+adapter:' + spec['files']['adapter']['sha256']), spec['model_id']
+
+
+B1_DIGESTS, B1_MODEL_ID = b1_checkpoint_digests()
+# A B1 bundle's sealed checkpoints (S5 R2): base then tuned, each pinned by its own arguments,
+# which bare_model.py's own parser takes and its own verify_identity checks.
+B1_CHECKPOINTS = [dict(name=name, args=['--expect-model-id', B1_MODEL_ID, '--expect-digest', B1_DIGESTS[name]])
+                  for name in ('base', 'tuned')]
+# The measurement passes (D-056 condition 6 as D-061 and D-063 amend it): the run proper (sdpa,
+# memory-efficient backend pinned, one shot, D-063) against one-shot eager (the kernel the
+# producer was trained with) for both checkpoints, the tuned checkpoint under E (eager, chunks
+# of 512), and one repeat of the tuned run proper, each a free name and the checkpoint it loads.
+# `base` and `tuned` are sealed without `checkpoint` (the name is the checkpoint, as before),
+# the others with it. Every measurement pass names its decision.
+B1_EAGER = ['--attention', 'eager', '--attention-decision', 'D-061']
+B1_E = B1_EAGER + ['--prefill-chunk', '512', '--prefill-decision', 'D-061']
+B1_L2_PASSES = [B1_CHECKPOINTS[0],
+                dict(name='base_eager', checkpoint='base', args=B1_CHECKPOINTS[0]['args'] + B1_EAGER),
+                B1_CHECKPOINTS[1],
+                dict(name='tuned_eager', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_EAGER),
+                dict(name='tuned_e', checkpoint='tuned', args=B1_CHECKPOINTS[1]['args'] + B1_E),
+                dict(name='tuned_repeat', checkpoint='tuned', args=list(B1_CHECKPOINTS[1]['args']))]
+
+
+def b1_pass_attention(name):
+    """(attention, attention decision, prefill, prefill decision) a fixture pass declares."""
+    if name.endswith('_eager'):
+        return 'eager', 'D-061', 'one_shot', 'D-063'
+    if name.endswith('_e'):
+        return 'eager', 'D-061', 'chunked', 'D-061'
+    return 'sdpa', 'D-063', 'one_shot', 'D-063'
+B1_FIXTURES =ROOT / 'benchmark' / 'baselines' / 'fixtures'
+# The sealed project's benchmark/baselines/bare_model.py in the B1 check: it loads the REAL
+# bare_model.py and replaces ONLY its model backend by one that answers from the canned replies
+# (no model load). Every argument the runner passes, --checkpoint included, reaches the real
+# main() untouched; the backend reports the checkpoint the real resolve_reader chose and the
+# digest the real checkpoint_record gives it, so a checkpoint name lost on the way is caught by
+# bare_model's own identity check.
+BARE_MODEL_STAND_IN = '''import importlib.util, json
+from pathlib import Path
+_spec = importlib.util.spec_from_file_location('bare_model_real', Path(%(real)r))
+real = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(real)
+REPLIES = json.loads(Path(%(replies)r).read_text(encoding='utf-8'))['replies']
+checkpoints = []
+
+
+class Backend:
+    def __init__(self, reader, context):
+        self.reader = reader
+        checkpoints.append(reader['checkpoint'])
+
+    def prepare(self):
+        record, digest = real.checkpoint_record(self.reader['checkpoint'], real.final_models.specification(real.FINAL_ROLE))
+        return {'model_id': self.reader['model_id'], 'digest': digest, 'decoding': {}, 'checkpoint': record,
+                'attention': real.declared_attention(self.reader)}
+
+    def count_prompt(self, system, user):
+        return 1
+
+    def max_context(self):
+        return 10 ** 6
+
+    def generate(self, system, user, max_new_tokens):
+        item = next(k for k in REPLIES if ('Item id: %%s\\n' %% k) in user)
+        if REPLIES[item].get('raise'):
+            raise RuntimeError('fixture failure')
+        return {'text': REPLIES[item]['reply'], 'payload': user, 'form': 'fixture', 'output_tokens': 1}
+
+
+real.LocalBackend = Backend
+main = real.main
+
+
+def __getattr__(name):
+    # Everything else is the real bare_model's (replay_prompts.py imports it by this name).
+    return getattr(real, name)
+'''
+# The sealed project's benchmark/baselines/replay_prompts.py in the replay check (D-061 item 4):
+# the REAL replay_prompts.py with ONLY its model backend replaced (no model load). Its reply is
+# a JSON object naming the prompt's word count; a prompt of 1,538 words or more is reported
+# prefilled in three chunks under a chunked path.
+REPLAY_STAND_IN = '''import importlib.util
+from pathlib import Path
+_spec = importlib.util.spec_from_file_location('replay_prompts_real', Path(%(real)r))
+real = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(real)
+asked = []
+
+
+class Backend:
+    def __init__(self, reader, context):
+        self.reader = reader
+
+    def prepare(self):
+        return {'model_id': self.reader['model_id'], 'digest': 'fixture-digest', 'checkpoint': {'checkpoint': 'tuned'}}
+
+    def count(self, prompt):
+        return len(prompt.split())
+
+    def max_context(self):
+        return 10 ** 6
+
+    def generate(self, prompt, attention, max_new_tokens):
+        words = len(prompt.split())
+        asked.append((attention['attention_implementation'], attention['prefill']))
+        chunks = 3 if attention['prefill'] == 'chunked' and words >= 1538 else 0
+        return {'text': '{"words": %%d}' %% words, 'output_tokens': 1, 'attention': attention,
+                'prefill': {'prompt_tokens': words, 'chunks': chunks, 'prefill_seconds': 0.25}}
+
+    def release(self):
+        pass
+
+
+real.ReplayBackend = Backend
+main = real.main
+'''
+
+
+@contextlib.contextmanager
+def pipeline_import_watch():
+    """Every import of `pipeline` attempted inside the block, recorded and refused. The
+    project's own modules (scripts/, benchmark/) are dropped from sys.modules first, so each
+    one the block uses is executed afresh and its imports are seen; sys.modules is restored
+    after, so no other check sees a module this block loaded."""
+    import builtins
+    seen = []
+    original = builtins.__import__
+
+    def watching(name, globals=None, locals=None, fromlist=(), level=0):
+        if level == 0 and name.split('.')[0] == 'pipeline':
+            seen.append(name)
+            raise ImportError('pipeline import refused by the B1 check')
+        return original(name, globals, locals, fromlist, level)
+
+    class Finder:
+        @staticmethod
+        def find_spec(name, path=None, target=None):
+            if name.split('.')[0] == 'pipeline':
+                seen.append(name)
+                raise ImportError('pipeline import refused by the B1 check')
+            return None
+
+    snapshot = dict(sys.modules)
+    roots = [str((ROOT / 'scripts').resolve()), str((ROOT / 'benchmark').resolve())]
+    for key, module in list(sys.modules.items()):
+        where = getattr(module, '__file__', None) or ''
+        if key in ('pipeline', 'bare_model') or any(os.path.abspath(where).startswith(r) for r in roots if where):
+            del sys.modules[key]
+    builtins.__import__ = watching
+    sys.meta_path.insert(0, Finder)
+    try:
+        yield seen
+    finally:
+        builtins.__import__ = original
+        sys.meta_path.remove(Finder)
+        for key in set(sys.modules) - set(snapshot):
+            del sys.modules[key]
+        sys.modules.update(snapshot)
 
 
 def fixture_budget(types=None, reference=1.29):
@@ -214,6 +384,7 @@ class FakeCurl:
     raw shape, so the adapter's own projection runs. Nothing reaches the network."""
     def __init__(self):
         self.instances, self.keys, self.launches, self.argvs, self.stdins = [], [], 0, [], []
+        self.flags = []
 
     @staticmethod
     def raw_type():
@@ -250,6 +421,7 @@ class FakeCurl:
     def run(self, args, input=None, **kwargs):
         self.argvs.append(list(args))
         self.stdins.append(input)
+        self.flags.append(kwargs.get('creationflags'))
         endpoint = args[-1].split('/api/v1/', 1)[1]
         method = args[args.index('--request') + 1] if '--request' in args else None
         body = json.loads(args[args.index('--data-binary') + 1]) if '--data-binary' in args else None
@@ -276,6 +448,8 @@ class FakeTransport:
         self.outputs = dict(outputs or {})
         self.progress = list(progress or [])
         self.started, self.polled, self.calls = [], [], []
+        # D-079: the creation flags of every process start, in order (run and Popen).
+        self.flags = []
         # The remote filesystem as far as preconditions go: every directory a launch
         # command creates is recorded, so a phase whose command requires a path to be
         # absent answers from that record instead of an unconditional 0 (run v4).
@@ -296,8 +470,9 @@ class FakeTransport:
         self.created.update({remote, remote + '/project'})
         return 0
 
-    def run(self, argv, capture_output=True, timeout=None):
+    def run(self, argv, capture_output=True, timeout=None, creationflags=None):
         self.calls.append((list(argv), timeout))
+        self.flags.append(('run', argv[0], creationflags))
         done = lambda rc, out=b'': subprocess.CompletedProcess(args=argv, returncode=rc, stdout=out, stderr=b'')
         if argv[0] == 'ssh-keygen':
             identity = Path(argv[argv.index('-f') + 1])
@@ -383,6 +558,7 @@ class FakeTransport:
 
     def popen(self, argv, **kwargs):
         self.popen_argv = list(argv)
+        self.flags.append(('Popen', 'python', kwargs.get('creationflags')))
         folder = Path(argv[argv.index('--bundle') + 1])
         write(folder / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=777, heartbeat_epoch=controller.time.time(),
                                                    execution_manifest_sha256=sha(folder / 'execution_manifest.json')))
@@ -546,6 +722,55 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual(progress, ['[progress] phase=3/9 status=running', '[local-progress] event=memory'])
         self.assertEqual(transport.started.count('ordinary_workload'), 1)
         self.assert_torn_down()
+
+    def test_every_child_process_on_the_controller_path_starts_without_a_window(self):
+        """D-079: a console program started from a process with no console (the detached
+        controller, its watchdog) opens a visible window on Windows. Two legs. The AST of
+        every operator-side file on the controller path (HIDDEN_PATH and every file under
+        tools/loop/) is read for every child-process start (subprocess run, Popen, call,
+        check_call, check_output under any alias, a runner parameter defaulting to one,
+        os.system, os.popen, os.startfile, os.spawn*, os.exec*, asyncio subprocesses), and
+        each must pass creationflags through cloud_run_common.no_window. Then the real
+        controller runs end to end with the real provider adapter (only curl, ssh, scp,
+        ssh-keygen and the watchdog process replaced), the termination client and the
+        progress reader each make a call, and every start they made must carry the
+        no-window flag on Windows (none elsewhere, where nothing changes)."""
+        starts = {name: child_process_starts(source) for name, source in hidden_path_sources().items()}
+        unhidden = ['%s:%d %s' % (name, line, verdict) for name, found in starts.items()
+                    for line, verdict in found if verdict != 'hidden']
+        self.assertEqual(unhidden, [], 'child-process starts without no_window')
+        # Not vacuous: the starts this check was written against are all still seen.
+        self.assertGreaterEqual(sum(len(found) for found in starts.values()), 30)
+        for name in ('tools/ordinary_final_cloud.py', 'tools/lambda_experiment_provider.py', 'tools/cloud_run_watchdog.py',
+                     'tools/ordinary_final_bound_cloud.py', 'tools/ordinary_final_progress.py', 'tools/loop/reaper_proof.py'):
+            self.assertTrue(starts[name], name + ' has no start to check')
+        expected = cloud_run_common.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        # The real adapter loads a fixture value from the operator file (as the key test does).
+        self.enterContext(patch.dict(os.environ))
+        os.environ.pop('LAMBDA_API_KEY', None)
+        self.credential.write_text('LAMBDA_API_KEY = ' + repr('shimmer' + '0' * 32 + 'fixture') + '\n', encoding='utf8')
+        curl = FakeCurl()
+        with curl.installed(), contextlib.redirect_stdout(io.StringIO()):
+            transport, console, failure = self.execute(provider=provider_adapter.LambdaExperiment)
+            self.assertIsNone(failure, failure)
+            cloud_run_watchdog.LambdaTermination(self.credential).request('instances')
+        self.assertEqual({kind for kind, _, _ in transport.flags}, {'run', 'Popen'})
+        self.assertTrue({program for _, program, _ in transport.flags} >= {'ssh', 'scp', 'ssh-keygen', 'python'})
+        import ordinary_final_progress as progress
+        seen = []
+
+        def observed(argv, **kwargs):
+            seen.append(kwargs.get('creationflags'))
+            return subprocess.CompletedProcess(argv, 0, b'1\n', b'')
+        with patch.object(progress.subprocess, 'run', observed):
+            progress.observe(self.base, 'ubuntu@10.0.0.2', 'true')
+        self.assertTrue(curl.flags and seen)
+        flags = [f for _, _, f in transport.flags] + curl.flags + seen
+        self.assertEqual([f for f in flags if f is None or (f & cloud_run_common.CREATE_NO_WINDOW) != expected], [],
+                         'a start without the no-window flag')
+        # The detached watchdog keeps its own flags beside the new one.
+        popen = [f for kind, _, f in transport.flags if kind == 'Popen'][0]
+        self.assertEqual(popen & 8, 8 if os.name == 'nt' else 0)
 
     def test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root(self):
         """Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent."""
@@ -1339,14 +1564,16 @@ class ControllerChecks(unittest.TestCase):
             with self.assertRaisesRegex(guard.GuardRefusal, 'not one the reaper reads'):
                 guard.require_reaped(fresh_spend)
             guard.require_reaped(private)
-        # Another loop instance: an open launch in a ledger, or a loop name in the inventory.
+        # Two loop instances running (D-S17): open launches in a ledger, each counted once with
+        # its inventory name; a listed loop instance no ledger records is refused on its own.
         other = self.root / 'g2' / 'ledger.jsonl'
         open_ledger(other)
-        write_lines(other, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                 price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
-            decide(ledgers=[other])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(other, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                     price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60))])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            decide(ledgers=[other], provider_names=['shimmer-loop-open', 'shimmer-loop-open2'])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'no ledger records is running \\(shimmer-loop-elsewhere\\)'):
             decide(ledgers=[fresh_spend], provider_names=['shimmer-loop-elsewhere'])
         # R_INPUTS.json: the allocation left, the instance type and R's cap.
         fresh = self.root / 'g3' / 'ledger.jsonl'
@@ -1364,15 +1591,155 @@ class ControllerChecks(unittest.TestCase):
                 decide(ledgers=[fresh], r_inputs=inputs, instance_type='gpu_1x_a10')
 
     def test_controller_launch_is_refused_by_the_guard_before_any_instance(self):
-        """S2c item 5 wired into the launch path: an open loop launch in the ledger refuses
-        this launch after the inventory and price reads and before any key or instance."""
-        write_lines(self.ledger, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        """S2c item 5 wired into the launch path: two open loop launches in the ledger (D-S17)
+        refuse this launch after the inventory and price reads and before any key or instance."""
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(self.ledger, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                           price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'Two loop instances are running'):
             self.execute()
         self.assertEqual(FakeProvider.state['launches'], 0)
         self.assertEqual(FakeProvider.state['keys'], [])
         self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+
+    def two_instance_ledger(self, folder, caps, minutes_ago=1):
+        """A fresh loop ledger with one open launch per cap, each requested `minutes_ago`."""
+        ledger = self.root / folder / 'ledger.jsonl'
+        open_ledger(ledger)
+        now = 1_000_000.0 + 3600
+        for index, cap in enumerate(caps):
+            write_lines(ledger, [dict(event='launch', instance_id=str(index + 1) * 32, instance_name='shimmer-loop-run%d' % index,
+                                      cap_usd=cap, price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60 * minutes_ago),
+                                      deadline_utc=guard.utc(now + 7200))])
+        return ledger, now
+
+    def test_a_second_loop_instance_is_admitted_while_one_runs_and_its_cap_counts_the_first(self):
+        """D-S17 item 1: with one loop instance running a second launch is admitted, still
+        forecast and capped, its per-run cap counting the first one's cap; the controller
+        launches it beside the first and its cleanup requires only its own instance gone."""
+        ledger, now = self.two_instance_ledger('second', [43.0])
+        decide = lambda path: guard.check(ledgers=[path], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=3.9,
+                                          now_epoch=now, reserve_minutes=15, reaped=[], provider_names=['shimmer-loop-run0'])
+        decision = decide(ledger)
+        self.assertEqual(decision['running_caps_usd'], 43.0)
+        # The cap is the ceiling less spend, the first one's cap and storage, not 1.5 x forecast.
+        self.assertLess(decision['cap_usd'], 1.5 * decision['forecast_usd'])
+        self.assertAlmostEqual(decision['cap_usd'], decision['cap_ceiling_usd'] - decision['spend_usd'] - 43.0 - 3.9, places=3)
+        # A first cap one dollar larger leaves the second less than its forecast.
+        with self.assertRaisesRegex(guard.GuardRefusal, 'leaves less than the forecast'):
+            decide(self.two_instance_ledger('second44', [44.0])[0])
+        # The controller, with the first loop instance listed and recorded.
+        first = ('f' * 32, 'shimmer-loop-first')
+        FakeProvider.state = dict(instances=[first], keys=[], launches=0, terminate_calls=0, status={first[0]: 'active'},
+                                  credentials=[], type_reads=0)
+        write_lines(self.ledger, [dict(event='launch', instance_id=first[0], instance_name=first[1], cap_usd=5.0,
+                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0),
+                                       deadline_utc=guard.utc(1_000_000.0 + 86400))])
+        _, _, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(FakeProvider.state['launches'], 1)
+        self.assertEqual(read(self.base / 'launch_preflight.json')['budget']['running_caps_usd'], 5.0)
+        confirm = read(self.base / 'independent_inventory_confirmation.json')
+        self.assertEqual((confirm['instances'], confirm['other_loop_instances']), ([], [first[1]]))
+        cleanup = read(self.base / 'cleanup.json')
+        self.assertEqual((cleanup['own_instance_absent'], cleanup['inventory_empty']), (True, False))
+        self.assertEqual((FakeProvider.state['instances'], FakeProvider.state['status'][first[0]]), ([first], 'active'))
+
+    def test_a_third_loop_instance_is_refused_before_any_instance(self):
+        """D-S17 item 1: with two loop instances running a third launch is refused in one line,
+        by the guard and by the controller before any key, intent or instance."""
+        ledger, now = self.two_instance_ledger('third', [2.0, 2.0])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=3.9, now_epoch=now,
+                        reserve_minutes=15, reaped=[], provider_names=['shimmer-loop-run0', 'shimmer-loop-run1'])
+        running = [('1' * 32, 'shimmer-loop-run0'), ('2' * 32, 'shimmer-loop-run1')]
+        FakeProvider.state = dict(instances=list(running), keys=[], launches=0, terminate_calls=0,
+                                  status={i: 'active' for i, _ in running}, credentials=[], type_reads=0)
+        for ident, name in running:
+            write_lines(self.ledger, [dict(event='launch', instance_id=ident, instance_name=name, cap_usd=2.0, price_usd_per_hour=1.29,
+                                           launch_requested_utc=guard.utc(1_000_000.0), deadline_utc=guard.utc(1_000_000.0 + 86400))])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            self.execute()
+        self.assertEqual((FakeProvider.state['launches'], FakeProvider.state['keys']), (0, []))
+        self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+        self.assertFalse(Path(str(self.ledger) + '.lock').exists())
+        self.assertEqual(FakeProvider.state['instances'], running)
+
+    def two_loop_instances(self, folder, launches, opening=None):
+        """A mock provider listing one active loop instance per launch line not terminated, and its ledger."""
+        ended = {r['instance_name'] for r in launches if r['event'] == 'termination'}
+        ledger = self.root / folder / 'ledger.jsonl'
+        write_lines(ledger, [opening or dict(event='budget_open', time_utc='2026-10-27T03:00:00+00:00',
+                                             loop_start_utc='2026-10-27T03:00:00+00:00', budget_usd=200.0,
+                                             hard_stop_usd=199.0, storage_usd_per_day=0.0)] + launches)
+        state = self.root / folder / 'state.json'
+        write(state, dict(instances=[dict(instance_id=r['instance_id'], name=r['instance_name'], status='active')
+                                     for r in launches if r['event'] == 'launch' and r['instance_name'] not in ended]))
+        return ledger, state, instance_reaper.MockProvider(state)
+
+    def test_the_reaper_sees_both_loop_instances_and_ends_each_after_its_deadline(self):
+        """D-S17 item 1: the reaper judges each of two running loop instances on its own
+        deadline: both left alone before, the first ended after its deadline while the second
+        runs on, then the second, one ledger line each."""
+        from datetime import timedelta
+        start = instance_reaper.parse_time('2026-10-27T10:00:00+00:00')
+        launch = lambda ident, name, minutes: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=1.29,
+                                                    cap_usd=2.0, launch_requested_utc=start.isoformat(),
+                                                    deadline_utc=(start + timedelta(minutes=minutes)).isoformat())
+        ledger, state, provider = self.two_loop_instances('both', [launch('a', 'shimmer-loop-one', 30),
+                                                                   launch('b', 'shimmer-loop-two', 60)])
+        statuses = lambda: [i['status'] for i in read(state)['instances']]
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=10))
+        self.assertEqual((status['loop_running'], status['terminated'], statuses()), (2, [], ['active', 'active']))
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=31))
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-one', reason='deadline_passed')])
+        self.assertEqual(statuses(), ['terminated', 'active'])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=61))
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-two', reason='deadline_passed')])
+        self.assertEqual(statuses(), ['terminated', 'terminated'])
+        ends = [(r['instance_name'], r['reason']) for r in ledger_rows(ledger) if r['event'] == 'termination']
+        self.assertEqual(ends, [('shimmer-loop-one', 'deadline_passed'), ('shimmer-loop-two', 'deadline_passed')])
+
+    def test_the_hard_stop_counts_both_loop_instances_together(self):
+        """D-S17 item 1: the 199 dollar hard stop is reached by the two instances together. 150
+        dollars closed and one instance accrued to 30 leaves it alone at 180; a second accrued
+        to 30 brings the total to 210 and both are terminated, one line each."""
+        from datetime import timedelta
+        now = instance_reaper.parse_time('2026-10-27T12:00:00+00:00')
+        launch = lambda ident, name: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=30.0,
+                                          cap_usd=40.0, launch_requested_utc=(now - timedelta(minutes=60)).isoformat(),
+                                          deadline_utc=(now + timedelta(minutes=60)).isoformat())
+        closed = [dict(event='launch', instance_id='9' * 32, instance_name='shimmer-loop-old', price_usd_per_hour=1.29,
+                       launch_requested_utc='2026-10-27T04:00:00+00:00'),
+                  dict(event='termination', instance_id='9' * 32, instance_name='shimmer-loop-old', actual_cost=150.0)]
+        ledger, state, provider = self.two_loop_instances('hard1', closed + [launch('a', 'shimmer-loop-one')])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual((status['terminated'], round(status['total_spend_usd'], 2)), ([], 180.0))
+        ledger, state, provider = self.two_loop_instances('hard2', closed + [launch('a', 'shimmer-loop-one'),
+                                                                             launch('b', 'shimmer-loop-two')])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual(round(status['total_spend_usd'], 2), 210.0)
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-one', reason='hard_stop_spend_reached'),
+                                                dict(instance_name='shimmer-loop-two', reason='hard_stop_spend_reached')])
+        self.assertEqual([i['status'] for i in read(state)['instances']], ['terminated', 'terminated'])
+        self.assertEqual(len([r for r in ledger_rows(ledger) if r['event'] == 'termination' and r.get('by') == 'reaper']), 2)
+
+    def test_the_reaper_ends_a_loop_instance_beyond_the_limit(self):
+        """D-S17 item 1, the reaper's side: three loop instances inside their deadlines (which
+        the guard never admits) leave the two requested first running and end the latest."""
+        from datetime import timedelta
+        now = instance_reaper.parse_time('2026-10-27T12:00:00+00:00')
+        launch = lambda ident, name, ago: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=1.29,
+                                               cap_usd=2.0, launch_requested_utc=(now - timedelta(minutes=ago)).isoformat(),
+                                               deadline_utc=(now + timedelta(minutes=60)).isoformat())
+        ledger, state, provider = self.two_loop_instances('three', [launch('c', 'shimmer-loop-late', 5),
+                                                                    launch('a', 'shimmer-loop-early', 30),
+                                                                    launch('b', 'shimmer-loop-middle', 20)])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-late', reason='over_instance_limit')])
+        self.assertEqual({i['name']: i['status'] for i in read(state)['instances']},
+                         {'shimmer-loop-late': 'terminated', 'shimmer-loop-early': 'active', 'shimmer-loop-middle': 'active'})
+        self.assertLessEqual(set(ledger_rows(ledger)[-1]), set(guard.LEDGER_FIELDS))
 
     def test_the_general_cloud_path_refuses_loop_names_and_ledgers(self):
         """R4: the general cloud tools are not a loop launch path."""
@@ -1551,23 +1918,26 @@ class ControllerChecks(unittest.TestCase):
 
     # ---- S2c item 3: the 11.12 report ------------------------------------------------------
 
-    def analysis_folder(self, folder, exposure='exposed', copy_used=False):
+    def analysis_folder(self, folder, exposure='exposed', copy_used=False, evidence=None, **manifest_changes):
+        """A collected run folder for the analyser. `evidence` maps further collected member
+        names (as the instance packs them, e.g. evidence/result.json) to their bytes."""
         import tarfile as tar_module
         folder.mkdir(parents=True)
         manifest = fixture_manifest(self.base / 'project.tar.gz', self.root / 'assets.tar',
                                     models=[dict(model_id='fixture/producer', revision='1' * 40)],
-                                    decoding_policy=dict(local_producer=dict(status='restored')))
+                                    decoding_policy=dict(local_producer=dict(status='restored')), **manifest_changes)
         write(folder / 'execution_manifest.json', manifest)
         scope = json.dumps(dict(withheld_audit_agents=['FACT_CHECKER'])).encode()
         with tar_module.open(folder / 'project.tar.gz', 'w:gz') as archive:
             info = tar_module.TarInfo('config/review_scope.json'); info.size = len(scope)
             archive.addfile(info, io.BytesIO(scope))
-        member = (folder / 'execution_manifest.json').read_bytes()
+        members = {'execution_manifest.json': (folder / 'execution_manifest.json').read_bytes(), **(evidence or {})}
         with tar_module.open(folder / 'collected_evidence.tar.gz', 'w:gz') as archive:
-            info = tar_module.TarInfo('execution_manifest.json'); info.size = len(member)
-            archive.addfile(info, io.BytesIO(member))
-        write(folder / 'remote_collection_manifest.json', {'execution_manifest.json': dict(sha256=sha(folder / 'execution_manifest.json'),
-                                                                                        bytes=len(member))})
+            for name, member in members.items():
+                info = tar_module.TarInfo(name); info.size = len(member)
+                archive.addfile(info, io.BytesIO(member))
+        write(folder / 'remote_collection_manifest.json', {name: dict(sha256=hashlib.sha256(member).hexdigest(), bytes=len(member))
+                                                           for name, member in members.items()})
         write(folder / 'collection_integrity.json', dict(sha256=sha(folder / 'collected_evidence.tar.gz')))
         write(folder / 'independent_inventory_confirmation.json', dict(instances=[], temporary_ssh_registration_absent=True,
               local_key_material_absent=True, epoch=1_003_600.0))
@@ -1595,7 +1965,8 @@ class ControllerChecks(unittest.TestCase):
                       'Instance type and price', 'Cost', 'Location and reason-confirmed recall', 'Attribution',
                       'False positives in every deliverable', 'Clean-twin result', 'Layer that produced each catch',
                       'Catches that depended on a directive', 'Model-text review verdicts', 'Agents withheld or settings changed',
-                      'SHIMMER_INST_FINDER', 'Multi-round', 'Asset copy', 'Role separation', 'What the result does not show'):
+                      'SHIMMER_INST_FINDER', 'Multi-round', 'Asset copy', 'Role separation', 'What the result does not show',
+                      'Judging calls Python could compute nothing for'):
             self.assertIn('- **' + label + '.**', text)
         self.assertIn('exposed, no manifest', text)
         self.assertIn('- **SHIMMER_INST_FINDER.** on', text)
@@ -1620,6 +1991,170 @@ class ControllerChecks(unittest.TestCase):
                       'system (Annex A, 11.2 options not in place; Annex B.11).', '\n'.join(lines))
         self.assertIn('MATCH: the sealed archive was read from the operator-declared copy', '\n'.join(lines))
         self.assertIn('d' * 64, '\n'.join(lines))
+
+    def test_the_analyser_reads_a_completed_pipeline_run_through_its_telemetry(self):
+        """S5 join: analyze() on a collected run that reached the pipeline's end reads its
+        telemetry and scheduler logs with the imported rows() reader. A local named `rows` in
+        analyze() shadowed that reader, so every real run raised UnboundLocalError there (the S5
+        smoke run); the fixture reaches that line and the analysis completes."""
+        folder = self.root / 'analysis_pipeline'
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        run = 'evidence/run/r1/'
+        self.analysis_folder(folder, evidence={
+            run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+            run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode(),
+            run + 'audit/execution_topology.jsonl': b'',
+            'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()})
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual((status['status'], status['pipeline_started']), ('ORDINARY_FINAL_CLOUD_RUN_COMPLETED', True))
+        self.assertEqual((status['semantic_call_receipts'], status['producer168_receipts']), (1, 1))
+        self.assertTrue((folder / 'analysis' / 'model_telemetry_summary.json').is_file())
+        self.assertIn('- **Arm.** B3: the full pipeline', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def test_the_analyser_counts_discarded_and_kept_uncomputable_judgments(self):
+        """D-067 and D-068: per run, the judging calls on plans Python could compute nothing
+        for, discarded as advisory (advisory_not_kept, before D-068) or returned under D-068
+        with the answers kept as a model's records and refused, read from the run's own
+        pairing map, with the line saying what the counts do not show. Neutralise (the
+        pairing map not read), fail, restore, pass."""
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        run = 'evidence/run/r1/'
+        judging = [dict(plan_kind='uncomputable', outcome='advisory_not_kept', judged_listed=0, judged_refused=0),
+                   dict(plan_kind='uncomputable', outcome='judged_uncomputable', judged_listed=2, judged_refused=1),
+                   dict(plan_kind='uncomputable', outcome='judged_uncomputable', judged_listed=1, judged_refused=0),
+                   dict(plan_kind='uncomputable', outcome='reply_failed', judged_listed=0, judged_refused=0),
+                   dict(plan_kind='computed', outcome='note_kept')]
+        pairing = {'d1': dict(judging_calls=judging[:3]), 'd2': dict(judging_calls=judging[3:])}
+
+        def report(name):
+            folder = self.root / name
+            self.analysis_folder(folder, evidence={
+                run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+                run + 'audit/pairing_map.json': json.dumps(pairing).encode(),
+                run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode(),
+                run + 'audit/execution_topology.jsonl': b'',
+                'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()})
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            return read(folder / 'FINAL_STATUS.json')
+
+        want = dict(calls=4, advisory_not_kept=1, judged_uncomputable=2, reply_failed=1, kept_model_records=3, refused=1)
+        line = ('4 judging calls on plans Python could compute nothing for: 1 discarded as advisory (advisory_not_kept, '
+                "the outcome before D-068); 2 returned under D-068, keeping 3 answers as a model's records and refusing 1; "
+                '1 failed. ' + analysis.UNCOMPUTABLE_DOES_NOT_SHOW)
+        status = report('uncomputable_shipped')
+        self.assertEqual(status['uncomputable_judging'], want)
+        self.assertEqual(status['report']['Judging calls Python could compute nothing for'], line)
+        with patch.object(analysis, 'uncomputable_judging', lambda run_dir: None):
+            neutralised = report('uncomputable_neutralised')
+        self.assertNotEqual(neutralised['report']['Judging calls Python could compute nothing for'], line)
+        self.assertIsNone(neutralised['uncomputable_judging'])
+        restored = report('uncomputable_restored')
+        self.assertEqual(restored['report']['Judging calls Python could compute nothing for'], line)
+
+    def b1_analysis_evidence(self, summaries=('base', 'tuned'), passed=True):
+        """The collected evidence of a B1 entry: the runner's assessment and one b1_summary.json
+        per checkpoint named in `summaries` (counts only, as bare_model writes them)."""
+        evidence = {'evidence/result.json': json.dumps(dict(
+            execution_integrity_passed=passed, reasons=[] if passed else ['b1_checkpoint_failed:tuned'], arm='B1',
+            pipeline_exit_code=None, checkpoints={n: dict(items=4, reply_records=4, items_without_one_record=[],
+                                                          summary_written=n in summaries, exit_code=0 if passed else 4)
+                                                  for n in ('base', 'tuned')})).encode()}
+        for name in summaries:
+            evidence['evidence/b1/%s/b1_summary.json' % name] = json.dumps(dict(
+                arm='B1', document_id='dq4', loaded=dict(model_id=B1_MODEL_ID, digest=B1_DIGESTS[name]),
+                checkpoint=dict(checkpoint=name, adapter_applied=name == 'tuned'),
+                benchmarks=dict(contradoc=dict(items=4, parsed=3, abstain=1, undecided=0, backend_failures=0, repaired=1,
+                                               length_reached_allowance=0)))).encode()
+        return evidence
+
+    def test_a_b1_entry_is_reported_from_its_checkpoint_summaries(self):
+        """S5 join: a B1 entry never writes run_completion.json, so the analyser reports it from
+        the runner's arm-aware assessment and each checkpoint's b1_summary.json: COMPLETED only
+        when the assessment passed AND every sealed checkpoint's summary was collected, with the
+        arm, each checkpoint's model, digest and adapter, and its counts in RUN_REPORT.md and
+        FINAL_STATUS.json. A missing summary or a failed assessment reads FAILED."""
+        b1 = dict(arm='B1', b1=dict(checkpoints=B1_CHECKPOINTS, item_ids=['a1', 'a2', 'a3', 'a4'], items_sha256='e' * 64))
+        folder = self.root / 'analysis_b1'
+        self.analysis_folder(folder, evidence=self.b1_analysis_evidence(), **b1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual((status['status'], status['arm'], status['pipeline_started']),
+                         ('ORDINARY_FINAL_CLOUD_RUN_COMPLETED', 'B1', False))
+        self.assertEqual(list(status['b1_checkpoints']), ['base', 'tuned'])
+        self.assertEqual(status['b1_checkpoints']['tuned']['counts']['parsed'], 3)
+        self.assertEqual(status['b1_reply_records'], 8)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('- **Arm.** B1: the bare-model baseline', text)
+        self.assertIn('base: %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('tuned: %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
+        self.assertIn('tuned (exit 0): items 4, parsed 3, abstain 1, undecided 0, backend failures 0, repaired 1, '
+                      'length reached allowance 0', text)
+        self.assertEqual(status['report']['Multi-round'], 'not applicable: no multi-round run was declared')
+        # One checkpoint's summary not collected, or the runner's assessment failed: FAILED.
+        for name, evidence in (('analysis_b1_missing', self.b1_analysis_evidence(summaries=('base',))),
+                               ('analysis_b1_failed', self.b1_analysis_evidence(passed=False))):
+            self.analysis_folder(self.root / name, evidence=evidence, **b1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(self.root / name)
+            self.assertEqual(read(self.root / name / 'FINAL_STATUS.json')['status'], 'ORDINARY_FINAL_CLOUD_RUN_FAILED', name)
+        self.assertIn('tuned (exit 0): no b1_summary.json collected',
+                      (self.root / 'analysis_b1_missing' / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory(self):
+        """D-056 condition 6 and D-061: the analyser reports every sealed pass by its name, the
+        checkpoint it loaded where the name differs, its attention and prefill (a measurement
+        pass with its decision), its longest prefill and its peak GPU memory, allocated and
+        reserved, as its b1_summary.json recorded them (not measured on a CPU), in RUN_REPORT.md
+        and FINAL_STATUS.json."""
+        gib = 2 ** 30
+        memory = {'base': (10, 11), 'base_eager': (12, 13), 'tuned': (14, 15), 'tuned_e': (16, 17)}
+        evidence = {'evidence/result.json': json.dumps(dict(
+            execution_integrity_passed=True, reasons=[], arm='B1', pipeline_exit_code=None,
+            checkpoints={p['name']: dict(items=4, reply_records=4, items_without_one_record=[], summary_written=True,
+                                         exit_code=0) for p in B1_L2_PASSES})).encode()}
+        for entry in B1_L2_PASSES:
+            name, checkpoint = entry['name'], entry.get('checkpoint', entry['name'])
+            attention, decision, prefill, prefill_decision = b1_pass_attention(name)
+            peak = memory.get(name)
+            evidence['evidence/b1/%s/b1_summary.json' % name] = json.dumps(dict(
+                arm='B1', document_id='dq4', loaded=dict(model_id=B1_MODEL_ID, digest=B1_DIGESTS[checkpoint]),
+                reader=dict(checkpoint=checkpoint), checkpoint=dict(checkpoint=checkpoint, adapter_applied=checkpoint == 'tuned'),
+                attention=dict(attention_implementation=attention, attention_decision=decision, prefill=prefill,
+                               prefill_chunk_tokens=512 if prefill == 'chunked' else None, prefill_decision=prefill_decision),
+                prefill_time=dict(seconds_measured=4, seconds_max=2.5) if name == 'tuned' else None,
+                gpu_memory=dict(peak_allocated_bytes=peak[0] * gib, peak_reserved_bytes=peak[1] * gib, measured=True)
+                if peak else dict(peak_allocated_bytes=None, peak_reserved_bytes=None, measured=False),
+                benchmarks=dict(contradoc=dict(items=4, parsed=4, abstain=0, undecided=0, backend_failures=0,
+                                               repaired=0, length_reached_allowance=0)))).encode()
+        folder = self.root / 'analysis_b1_l2'
+        self.analysis_folder(folder, evidence=evidence, arm='B1',
+                             b1=dict(checkpoints=B1_L2_PASSES, item_ids=['a1', 'a2', 'a3', 'a4'], items_sha256='e' * 64))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual(status['status'], 'ORDINARY_FINAL_CLOUD_RUN_COMPLETED')
+        self.assertEqual(list(status['b1_checkpoints']), sorted(p['name'] for p in B1_L2_PASSES))
+        self.assertEqual(status['b1_checkpoints']['tuned_e']['gpu_memory']['peak_reserved_bytes'], 17 * gib)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('base_eager (checkpoint base): %s, digest %s, adapter not applied' % (B1_MODEL_ID, B1_DIGESTS['base']), text)
+        self.assertIn('tuned_repeat (checkpoint tuned): %s, digest %s, adapter applied' % (B1_MODEL_ID, B1_DIGESTS['tuned']), text)
+        self.assertIn('length reached allowance 0, attention sdpa (memory-efficient backend pinned, D-063), one-shot '
+                      'prefill (D-063), peak GPU memory 10.00 GiB allocated, 11.00 GiB reserved', text)
+        self.assertIn('tuned (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention sdpa (memory-efficient backend pinned, D-063), one-shot '
+                      'prefill (D-063), longest prefill 2.5 s, peak GPU memory 14.00 GiB', text)
+        self.assertIn('tuned_e (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager (measurement pass, D-061), chunked prefill of 512 '
+                      'tokens (D-061), peak GPU memory 16.00 GiB allocated, 17.00 GiB reserved', text)
+        self.assertIn('tuned_eager (exit 0): items 4, parsed 4, abstain 0, undecided 0, backend failures 0, repaired 0, '
+                      'length reached allowance 0, attention eager (measurement pass, D-061), one-shot prefill (D-063), '
+                      'peak GPU memory not measured (no CUDA)', text)
 
     # ---- S2c items 8 and 9: the sealed run ------------------------------------------------
 
@@ -1803,22 +2338,30 @@ class ControllerChecks(unittest.TestCase):
 
     # ---- S2c item 11: batches -----------------------------------------------------------
 
-    def batch_bundles(self):
+    def batch_bundles(self, pairs=(('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1'))):
+        """The session bundle (i1, B3) and one bundle per other (item, arm), each sealed with its
+        arm; a B1 bundle carries its items.json and its sealed checkpoints."""
         runner_file = {'ordinary_final_run.py': b'# sealed runner fixture\n', 'install.lock': b'fixture==1.0\n'}
         (self.base / 'ordinary_final_run.py').write_bytes(runner_file['ordinary_final_run.py'])
         (self.base / 'install.lock').write_bytes(runner_file['install.lock'])
-        self.remanifest(support_files={n: sha(self.base / n) for n in runner_file})
+        self.remanifest(support_files={n: sha(self.base / n) for n in runner_file}, arm='B3')
         bundles = {('i1', 'B3'): self.base}
-        for item, arm in (('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1')):
+        for item, arm in pairs:
             folder = self.root / ('bundle_%s_%s' % (item, arm))
+            support, extra = dict(runner_file), {}
+            if arm == 'B1':
+                items = json.dumps(dict(items=[dict(item_id=item + '-a', document_id='doc', rule_id='CONV-1',
+                                                    benchmark='contradoc')])).encode()
+                support['items.json'] = items
+                extra['b1'] = sealer.b1_fields(items, json.dumps(dict(targets=['doc.md'])).encode(), B1_CHECKPOINTS)
             with patch.object(controller, 'ROOT', self.root):
                 make_bundle(folder, self.root / 'assets.tar', project=('project %s %s' % (item, arm)).encode(),
-                            support=runner_file)
+                            support=support, arm=arm, **extra)
             bundles[(item, arm)] = folder
         # Items keep the order they are first named in (the preparer's order); arms are
         # deliberately listed out of order.
         order = [('i1', 'B1'), ('i2', 'B1'), ('i1', 'B3'), ('i2', 'B3')]
-        return bundles, [dict(item=i, arm=a, bundle=bundles[(i, a)]) for i, a in order]
+        return bundles, [dict(item=i, arm=a, bundle=bundles[(i, a)]) for i, a in order if (i, a) in bundles]
 
     def test_batch_runs_b3_and_b1_item_by_item_and_a_stop_leaves_pairs(self):
         """S2c item 11: several bundles in one instance session, each with its own run folder,
@@ -1853,6 +2396,521 @@ class ControllerChecks(unittest.TestCase):
         done = [p.name for p in sorted((self.base / 'batch').iterdir()) if (p / 'collection_integrity.json').exists()]
         self.assertEqual(done, ['00_i1_B3', '01_i1_B1'])
         self.assertFalse((self.base / 'batch' / '02_i2_B3' / 'workload_return.json').exists())
+        self.assert_torn_down()
+
+    # ---- S5: the B1 arm inside the runner (R2, R19), B3-only batches (0.4), R18 ----------
+
+    def test_the_sealer_records_the_arm_and_a_b1_bundle_carries_its_items_and_checkpoints(self):
+        """R2, item 0.2: the sealer's own prepare() writes `arm` into every manifest; a B1
+        bundle also carries its sealed checkpoints, the item ids of its one document and
+        items.json as a support file, and the instance-side verify admits it."""
+        import multi_round_launch_checks as mr_checks
+        workload = self.root / 'workload'
+        (workload / 'context').mkdir(parents=True)
+        (workload / 'conventions').mkdir()
+        (workload / 'context' / 'doc.md').write_text('# Doc\n\nA statement.\n', encoding='utf-8', newline='\n')
+        (workload / 'conventions' / 'rules.md').write_text(mr_checks.CONVENTIONS, encoding='utf-8', newline='\n')
+        write(workload / '_review_targets.json', dict(source='operator', targets=['doc.md'], grounding=[], prior=[]))
+        items = self.root / 'items.json'
+        write(items, dict(items=[dict(item_id='x2', document_id='doc', rule_id='CONV-1', benchmark='contradoc'),
+                                 dict(item_id='x1', document_id='doc', rule_id='CONV-2', benchmark='contradoc'),
+                                 dict(item_id='y1', document_id='other', rule_id='CONV-1', benchmark='contradoc')]))
+        inputs = self.root / 'inputs'
+        inputs.mkdir()
+        (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
+        write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[A10_TYPE], images=[dict(IMAGE)],
+                                                       observed_at='fixture'))
+
+        def seal(name, **arm):
+            with mr_checks.sealing_stand_ins():
+                sealer.prepare(self.root / name, budget=dict(ledgers=[self.ledger], forecast_minutes=FORECAST_MINUTES,
+                                                             storage_forecast_usd=STORAGE_USD, reaped=[self.ledger]),
+                               workload=workload, inputs_from=inputs, now_epoch=FakeClock().now, **arm)
+            return self.root / name, read(self.root / name / 'execution_manifest.json')
+        bundle, b3 = seal('b3')
+        self.assertEqual(b3['arm'], 'B3')
+        self.assertNotIn('b1', b3)
+        self.assertNotIn('items.json', b3['support_files'])
+        self.assertEqual(mr_checks.instance_verify(bundle)['arm'], 'B3')
+        bundle, b1 = seal('b1', arm='B1', b1_items=items, b1_checkpoints=B1_CHECKPOINTS)
+        self.assertEqual(b1['arm'], 'B1')
+        self.assertEqual(b1['b1']['checkpoints'], B1_CHECKPOINTS)
+        self.assertEqual(b1['b1']['item_ids'], ['x1', 'x2'])
+        self.assertEqual(b1['support_files']['items.json'], sha(items))
+        self.assertEqual(b1['b1']['items_sha256'], sha(items))
+        self.assertEqual((bundle / 'items.json').read_bytes(), items.read_bytes())
+        self.assertEqual(mr_checks.instance_verify(bundle)['arm'], 'B1')
+        # Refusals: a B1 bundle without its items or checkpoints, and a checkpoint argument the runner sets.
+        with self.assertRaisesRegex(RuntimeError, 'needs its items.json and its checkpoints'):
+            seal('b1_bare', arm='B1')
+        with self.assertRaisesRegex(RuntimeError, 'argument the runner sets'):
+            seal('b1_out', arm='B1', b1_items=items, b1_checkpoints=[dict(name='base', args=['--out', 'x'])])
+
+    def test_a_b1_entry_runs_only_on_an_authorization_naming_its_sealed_arm(self):
+        """R19 (i): the controller writes each entry's plan arm into its authorization, and the
+        runner admits a bundle only on an authorization naming the arm it was sealed with; a
+        plan arm that differs from the sealed arm is refused before any launch."""
+        bundles, entries = self.batch_bundles()
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries))
+        self.assertIsNone(failure, failure)
+        order = [('i1', 'B3'), ('i1', 'B1'), ('i2', 'B3'), ('i2', 'B1')]
+        for k, (item, arm) in enumerate(order):
+            folder = self.base / 'batch' / ('%02d_%s_%s' % (k, item, arm))
+            # Entry 0 runs on the session authorization the instance received; later entries
+            # on their own, both naming the plan arm.
+            permit = read((self.base if k == 0 else folder) / 'operator_authorization.json')
+            manifest = read(bundles[(item, arm)] / 'execution_manifest.json')
+            self.assertEqual((permit['arm'], manifest['arm']), (arm, arm))
+            runner.authorization(bundles[(item, arm)], manifest, permit, now=permit['active_start_epoch'] + 1)
+            other = dict(permit, arm='B3' if arm == 'B1' else 'B1')
+            with self.assertRaisesRegex(RuntimeError, 'Arm authorization mismatch'):
+                runner.authorization(bundles[(item, arm)], manifest, other, now=permit['active_start_epoch'] + 1)
+        # An authorization naming no arm is a B3 one: never enough for a B1 bundle.
+        b1 = bundles[('i1', 'B1')]
+        permit = {k: v for k, v in read(self.base / 'batch' / '01_i1_B1' / 'operator_authorization.json').items() if k != 'arm'}
+        with self.assertRaisesRegex(RuntimeError, 'Arm authorization mismatch'):
+            runner.authorization(b1, read(b1 / 'execution_manifest.json'), permit, now=permit['active_start_epoch'] + 1)
+        # The plan names an arm its bundle was not sealed with: refused locally, nothing launched.
+        self.setUp()
+        bundles, entries = self.batch_bundles()
+        swapped = [dict(e, bundle=bundles[(e['item'], 'B3' if e['arm'] == 'B1' else 'B1')]) if e['item'] == 'i2' else e
+                   for e in entries]
+        with self.assertRaisesRegex(RuntimeError, 'Batch arm differs from the sealed arm'):
+            self.execute(plan=fixture_plan(self.ledger, batch=swapped))
+        self.assertIsNone(FakeProvider.state)
+
+    def test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline(self):
+        """R19 (ii) to (iv), item 0.2: the runner's B1 path loads the sealed project's
+        bare_model.py in its own process (so os._exit(124) and the cleanup's process pattern stop
+        it), runs it once per sealed checkpoint, in order, each into its own folder with one
+        reply record per item, and never imports the pipeline. The real bare_model.py runs, in
+        final mode as the sealed environment sets it, with every argument the runner builds
+        (--checkpoint and the sealed --expect-model-id and --expect-digest included); only its
+        model backend answers from the canned replies (S5 join)."""
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
+        stand_in.parent.mkdir(parents=True)
+        stand_in.write_text(BARE_MODEL_STAND_IN % dict(real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'),
+                                                       replies=str(B1_FIXTURES / 'b1_replies.json')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        (base / 'items.json').write_bytes(items)
+        b1 = sealer.b1_fields(items, (project / 'input' / 'context' / '_review_targets.json').read_bytes(), B1_CHECKPOINTS)
+        self.assertEqual(b1['item_ids'], ['a1', 'a2', 'a3', 'a4'])     # dother's item is not this bundle's
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={'items.json': sha(base / 'items.json')})
+        self.assertEqual(runner.arm_declaration(manifest), 'B1')
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        closed = []
+        with pipeline_import_watch() as imports, contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: closed.append(1)))
+            pipeline_loaded = 'pipeline' in sys.modules
+            asked = list(getattr(sys.modules.get('bare_model'), 'checkpoints', []))
+        self.assertEqual(imports, [], 'the B1 path imported the pipeline')
+        self.assertFalse(pipeline_loaded)
+        self.assertEqual(closed, [1])
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-400:]))
+        self.assertTrue(result['execution_integrity_passed'], result)
+        self.assertEqual((result['arm'], result['pipeline_exit_code']), ('B1', None))
+        self.assertEqual(asked, ['base', 'tuned'])
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '8')
+        for name in ('base', 'tuned'):
+            folder = evidence / 'b1' / name
+            records = sorted((folder / 'audit' / 'model_replies').glob('*.json'))
+            self.assertEqual(len(records), 4, name)
+            self.assertEqual(sorted(p.stem for p in (folder / 'labels').glob('*.json')), ['a1', 'a2', 'a3', 'a4'])
+            # Each checkpoint was verified by bare_model's own identity check against its sealed
+            # arguments: the base without the adapter, the tuned producer with it.
+            summary = read(folder / 'b1_summary.json')
+            self.assertEqual(summary['loaded']['digest'], B1_DIGESTS[name])
+            self.assertEqual(summary['verified_against'], ['attention', 'digest', 'model_id'])
+            self.assertEqual((summary['reader']['checkpoint'], summary['checkpoint']['adapter_applied']),
+                             (name, name == 'tuned'))
+            self.assertEqual(result['checkpoints'][name]['exit_code'], 0)
+        self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), ['base', 'expected_records', 'tuned'])
+
+    def test_b1_passes_run_by_name_and_load_their_sealed_checkpoint(self):
+        """D-056 condition 6, D-061 item 4 and D-063: the measurement passes (base, base_eager,
+        tuned, tuned_eager, tuned_e, tuned_repeat) are sealed as {name, checkpoint, args}; the
+        runner passes each pass's checkpoint to the real bare_model.main as --checkpoint and
+        writes it into evidence/b1/<name>, so two passes of one checkpoint never share a folder;
+        each measurement pass runs with its decision recorded, the others sdpa in one shot under
+        D-063; the assessment and the progress total count passes by name."""
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        stand_in = project / 'benchmark' / 'baselines' / 'bare_model.py'
+        stand_in.parent.mkdir(parents=True)
+        stand_in.write_text(BARE_MODEL_STAND_IN % dict(real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'),
+                                                       replies=str(B1_FIXTURES / 'b1_replies.json')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        (base / 'items.json').write_bytes(items)
+        b1 = sealer.b1_fields(items, (project / 'input' / 'context' / '_review_targets.json').read_bytes(), B1_L2_PASSES)
+        self.assertEqual(b1['checkpoints'], B1_L2_PASSES)
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={'items.json': sha(base / 'items.json')})
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        with pipeline_import_watch(), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: None))
+            asked = list(getattr(sys.modules.get('bare_model'), 'checkpoints', []))
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-400:]))
+        self.assertTrue(result['execution_integrity_passed'], result)
+        names = [p['name'] for p in B1_L2_PASSES]
+        self.assertEqual(asked, ['base', 'base', 'tuned', 'tuned', 'tuned', 'tuned'])
+        self.assertEqual(list(result['checkpoints']), sorted(names))
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), '24')
+        self.assertEqual(sorted(p.name for p in (evidence / 'b1').iterdir()), sorted(names + ['expected_records']))
+        for entry in B1_L2_PASSES:
+            folder = evidence / 'b1' / entry['name']
+            self.assertEqual(len(list((folder / 'audit' / 'model_replies').glob('*.json'))), 4, entry['name'])
+            summary = read(folder / 'b1_summary.json')
+            checkpoint = entry.get('checkpoint', entry['name'])
+            self.assertEqual((summary['reader']['checkpoint'], summary['loaded']['digest']),
+                             (checkpoint, B1_DIGESTS[checkpoint]), entry['name'])
+            declared = summary['attention']
+            self.assertEqual((declared['attention_implementation'], declared['attention_decision'], declared['prefill'],
+                              declared['prefill_decision']), b1_pass_attention(entry['name']), entry['name'])
+            self.assertIn('gpu_memory', summary)
+            self.assertIn('prefill_time', summary)
+
+    def test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths(self):
+        """D-061 item 4: B3's own rendered producer prompts are extracted from an earlier run's
+        reply records (payloads only: a sensitive run's records and a key folder are refused,
+        other backends skipped), sealed as replay_prompts.json beside a B1 bundle with a replay
+        pass, and the runner runs the REAL replay_prompts.py on them (only its model backend
+        stood in) through the four paths, one reply record per prompt per path, the measurement
+        holding counts, hashes and seconds, never a prompt's or a reply's text."""
+        import reply_records
+        spec = importlib.util.spec_from_file_location('replay_prompts_check', ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py')
+        replay = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(replay)
+        # the runner states the tool's paths, its measurement rule and its run options exactly
+        self.assertEqual(runner.REPLAY_PATHS, {k: v['measurement'] for k, v in replay.PATHS.items()})
+        self.assertEqual(runner.REPLAY_DEFAULT_PATHS, replay.DEFAULT_PATHS)
+        run_parser = replay.build_parser()._subparsers._group_actions[0].choices['run']
+        options = {s: a.nargs != 0 for a in run_parser._actions for s in a.option_strings if s not in ('-h', '--help')}
+        self.assertEqual(set(options), set(runner.REPLAY_RUNNER_ARGS) | set(runner.REPLAY_SEALED_ARGS))
+        self.assertEqual({k: options[k] for k in runner.REPLAY_SEALED_ARGS}, runner.REPLAY_SEALED_ARGS)
+        # extract: two producer prompts (one of three chunks and the tail), a non-producer call skipped
+        records = self.root / 'b3_run'
+        context = SimpleNamespace(run_dir=str(records), run_id='b3-fixture')
+        long_prompt = ' '.join(['w'] * 1538)
+        for backend, payload in (('local_producer', 'short prompt words'), ('local_auditor', 'verifier prompt'),
+                                 ('local_producer', long_prompt)):
+            reply_records.write(context, agent='PROCESSOR', backend=backend, model_id='m', payload=payload,
+                                payload_form='rendered_prompt', reply='SECRET REPLY TEXT', decoding={'max_new_tokens': 64},
+                                doc_id='doc-r')
+        prompts_file = self.root / 'replay_prompts.json'
+        extracted = replay.extract([records / 'audit' / 'model_replies'], prompts_file)
+        self.assertEqual((extracted['prompt_count'], [p['agent'] for p in extracted['prompts']]), (2, ['PROCESSOR'] * 2))
+        self.assertNotIn('SECRET REPLY TEXT', prompts_file.read_text(encoding='utf8'))
+        hashed = self.root / 'b3_sensitive'
+        reply_records.write(SimpleNamespace(run_dir=str(hashed), run_id='s'), agent='PROCESSOR', backend='local_producer',
+                            model_id='m', payload='p', payload_form='rendered_prompt', reply='r', sensitive=True)
+        with self.assertRaisesRegex(ValueError, 'hashes only'):
+            replay.extract([hashed / 'audit' / 'model_replies'], self.root / 'x.json')
+        with self.assertRaisesRegex(ValueError, 'key folder'):
+            replay.extract([ROOT / 'benchmark' / 'keys' / 'any'], self.root / 'x.json')
+        # sealing: a replay pass needs the sealed prompts, and a measurement path needs its decision
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        declaration = sealer.replay_declaration(prompts_file.read_bytes())
+        passes = [B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--decision', 'D-061'])]
+        for bad, declared, reason in (
+                (passes, None, 'needs the sealed replay prompts'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=[])], declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'sdpa', '--decision', 'D-061'])],
+                 declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'sdpa,e'])],
+                 declaration, 'names --decision exactly'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--paths', 'e,flash'])], declaration, 'paths once each'),
+                ([B1_CHECKPOINTS[1], dict(name='replay', replay=True, args=['--out', 'x', '--decision', 'D-061'])],
+                 declaration, 'argument the runner sets'),
+                ([B1_CHECKPOINTS[1]], declaration, 'without a replay pass')):
+            with self.assertRaisesRegex(RuntimeError, reason):
+                sealer.b1_fields(items, targets, bad, declared)
+        # the run: the real bare_model (stand-in backend) for `tuned`, the real replay tool for `replay`
+        project = self.root / 'project'
+        shutil.copytree(B1_FIXTURES / 'bundle_q4', project / 'input')
+        tools = project / 'benchmark' / 'baselines'
+        tools.mkdir(parents=True)
+        (tools / 'bare_model.py').write_text(BARE_MODEL_STAND_IN % dict(
+            real=str(ROOT / 'benchmark' / 'baselines' / 'bare_model.py'), replies=str(B1_FIXTURES / 'b1_replies.json')),
+            encoding='utf8')
+        (tools / 'replay_prompts.py').write_text(REPLAY_STAND_IN % dict(
+            real=str(ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py')), encoding='utf8')
+        base = self.root / 'instance'
+        base.mkdir()
+        (base / 'items.json').write_bytes(items)
+        shutil.copy(prompts_file, base / 'replay_prompts.json')
+        b1 = sealer.b1_fields(items, targets, passes, declaration)
+        manifest = dict(arm='B1', b1=b1, multi_round=False, support_files={
+            'items.json': sha(base / 'items.json'), 'replay_prompts.json': sha(base / 'replay_prompts.json')})
+        self.assertEqual(runner.arm_declaration(manifest), 'B1')
+        with self.assertRaisesRegex(RuntimeError, 'development material'):
+            runner.admit_workload(dict(manifest, protected_test=False, argv=list(runner.ARGV), test_archive_sha256='a' * 64,
+                                       source_commit='c'),
+                                  dict(exposure='sealed', test_manifest_sha256='b' * 64, test_archive_sha256='a' * 64,
+                                       code_commit='c'))
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        sys.modules.pop('replay_prompts', None)
+        with pipeline_import_watch() as imports, contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, patch.dict(os.environ, SHIMMER_MODEL_MODE='final'):
+            code = runner.execute_b1(base, manifest, project, evidence, SimpleNamespace(close=lambda: None))
+            asked = list(getattr(sys.modules.get('replay_prompts'), 'asked', []))
+        result = read(evidence / 'result.json')
+        self.assertEqual(code, 0, (result, errors.getvalue()[-600:]))
+        self.assertEqual(imports, [])
+        self.assertEqual((evidence / 'b1' / 'expected_records').read_text(encoding='utf8').strip(), str(4 + 2 * 4))
+        self.assertEqual(asked, [('eager', 'chunked')] * 2 + [('eager', 'one_shot')] * 2 + [('sdpa', 'one_shot')] * 2
+                         + [('eager', 'chunked')] * 2)
+        folder = evidence / 'b1' / 'replay'
+        self.assertEqual(len(list((folder / 'audit' / 'model_replies').glob('*.json'))), 8)
+        text = (folder / 'replay_measurement.json').read_text(encoding='utf8')
+        self.assertNotIn('short prompt words', text)
+        self.assertNotIn('"words"', text)
+        measurement = json.loads(text)
+        self.assertEqual(measurement['comparisons']['e_vs_one_shot']['all']['byte_identical'], 2)
+        self.assertEqual(measurement['comparisons']['e_vs_e_repeat']['three_chunks_or_more']['compared'], 1)
+        # D-063: sdpa one shot is the run proper's setting and records D-063; the eager paths
+        # are measurement paths and record the pass's decision
+        self.assertEqual({p: (measurement['paths'][p]['attention_decision'], measurement['paths'][p]['prefill_decision'])
+                          for p in ('e', 'one_shot', 'sdpa', 'e_repeat')},
+                         {'e': ('D-061', 'D-061'), 'one_shot': ('D-061', 'D-063'), 'sdpa': ('D-063', 'D-063'),
+                          'e_repeat': ('D-061', 'D-061')})
+        self.assertEqual(result['checkpoints']['replay']['reply_records'], 8)
+        # the analyser reports the replay pass from its measurement
+        status = analysis.replay_pass_status(folder / 'replay_measurement.json', 'replay', result)
+        line = analysis.replay_text('replay', status)
+        self.assertIn('replay (exit 0): replay of 2 B3 producer prompts under decision D-061', line)
+        self.assertIn('e_vs_one_shot 2 of 2 byte-identical (1 of 1 at three chunks or more)', line)
+
+    def test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts(self):
+        """D-056 condition 6 and D-061, at sealing: a pass is {name, args} or {name, checkpoint,
+        args}; its name is lower case, digits and underscores; the checkpoint it loads (its
+        `checkpoint`, else its name) is one bare_model.py loads; eager comes only with its
+        decision and a decision with sdpa only when it is D-063's own; a chunk size only with a
+        prefill decision, and a decision with one_shot only when it is D-063's own (D-063). The
+        sealer refuses each case bare_model would refuse on the instance,
+        and on a table of attention and prefill arguments the runner's rule and bare_model's own
+        attention_record agree case by case."""
+        items = (B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        pin = B1_CHECKPOINTS[0]['args']
+
+        def refusal(passes):
+            try:
+                sealer.b1_fields(items, targets, passes)
+                return None
+            except RuntimeError as exc:
+                return str(exc)
+        self.assertIsNone(refusal(B1_L2_PASSES))
+        self.assertIsNone(refusal([dict(name='base', checkpoint='base', args=pin)]))
+        cases = [
+            ([dict(name='large', args=pin)], 'names no checkpoint'),
+            ([dict(name='base_x', checkpoint='large', args=pin)], 'names no checkpoint'),
+            ([dict(name='base-sdpa', checkpoint='base', args=pin)], 'needs a name'),
+            ([dict(name='Base', checkpoint='base', args=pin)], 'needs a name'),
+            ([dict(name='base', checkpoint='base', args=pin, extra=1)], 'needs a name'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'eager'])], 'only with --attention-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention-decision', 'D-061'])], 'attention decision only with eager'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention=sdpa', '--attention-decision=D-061'])],
+             'attention decision only with eager'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--attention', 'flash'])], 'attention bare_model does not take'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', '512'])], 'only with --prefill-decision'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061'])],
+             'prefill decision only with'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-decision', 'D-099'])], 'prefill decision only with'),
+            ([dict(name='e', checkpoint='base', args=pin + ['--prefill-chunk', 'half', '--prefill-decision', 'D-099'])],
+             'prefill chunk bare_model does not take'),
+            ([dict(name='a', checkpoint='base', args=pin), dict(name='a', checkpoint='tuned', args=pin)], 'names repeat'),
+        ]
+        for passes, reason in cases:
+            self.assertIn(reason, refusal(passes) or 'admitted', passes)
+        self.assertIsNone(refusal([dict(name='e', checkpoint='base', args=pin + ['--attention=eager',
+                                                                                  '--attention-decision=D-061'])]))
+        self.assertIsNone(refusal([dict(name='a', checkpoint='base', args=pin + [
+            '--attention', 'sdpa', '--attention-decision', 'D-063', '--prefill-chunk', 'one_shot',
+            '--prefill-decision', 'D-063'])]))
+        spec = importlib.util.spec_from_file_location('bare_model_pairs', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
+        bare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bare)
+        # the runner's stated rule and bare_model's own, case by case
+        table = [[], ['--attention', 'sdpa'], ['--attention', 'sdpa', '--attention-decision', 'D-061'],
+                 ['--attention', 'sdpa', '--attention-decision', 'D-063'], ['--attention', 'eager'],
+                 ['--attention', 'eager', '--attention-decision', 'D-061'], ['--attention-decision', 'D-061'],
+                 ['--attention-decision', 'D-063'], ['--attention', 'eager', '--attention-decision', 'decided'],
+                 ['--attention', 'sdpa', '--attention-decision', 'decided'],
+                 ['--prefill-chunk', 'one_shot'], ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-061'],
+                 ['--prefill-chunk', 'one_shot', '--prefill-decision', 'D-063'], ['--prefill-decision', 'D-063'],
+                 ['--prefill-chunk', '512'], ['--prefill-chunk', '512', '--prefill-decision', 'D-061'],
+                 ['--prefill-chunk', '512', '--prefill-decision', 'D-099'], ['--prefill-chunk', '256'],
+                 ['--prefill-chunk', '256', '--prefill-decision', 'D-099'], ['--prefill-chunk', '0', '--prefill-decision', 'D-099'],
+                 ['--prefill-decision', 'D-061'], ['--prefill-decision', 'D-099'],
+                 ['--prefill-chunk', 'one_shot', '--prefill-decision', 'decided']]
+        for args in table:
+            values = runner.b1_option_values(args)
+            try:
+                bare.attention_record(values.get('--prefill-chunk'), values.get('--prefill-decision'),
+                                      values.get('--attention', 'sdpa'), values.get('--attention-decision'))
+                bare_admits = True
+            except ValueError:
+                bare_admits = False
+            self.assertEqual(runner.b1_attention_error(args) is None, bare_admits, args)
+
+    def test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes(self):
+        """S5 join: the options a sealed B1 checkpoint may carry (the runner's B1_SEALED_ARGS)
+        and the ones the runner sets (B1_RUNNER_ARGS) are together exactly the options of
+        bare_model.py's own parser, with the same value-or-flag shape; the sealer admits an
+        argument list only when that parser takes it, and refuses at sealing what it would
+        refuse on the instance (an unknown option, an abbreviation, a missing value, a valued
+        flag)."""
+        spec = importlib.util.spec_from_file_location('bare_model_parser', ROOT / 'benchmark' / 'baselines' / 'bare_model.py')
+        bare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bare)
+        parser = bare.build_parser()
+        options = {s: a.nargs != 0 for a in parser._actions for s in a.option_strings if s not in ('-h', '--help')}
+        self.assertEqual(set(options), set(runner.B1_RUNNER_ARGS) | set(runner.B1_SEALED_ARGS))
+        self.assertFalse(set(runner.B1_RUNNER_ARGS) & set(runner.B1_SEALED_ARGS))
+        self.assertEqual({k: options[k] for k in runner.B1_SEALED_ARGS}, runner.B1_SEALED_ARGS)
+        # The checkpoints a pass may load are the ones bare_model's --checkpoint takes.
+        choices = next(a.choices for a in parser._actions if '--checkpoint' in a.option_strings)
+        self.assertEqual(set(runner.B1_CHECKPOINT_NAMES), set(choices))
+        items =(B1_FIXTURES / 'items_q4.json').read_bytes()
+        targets = (B1_FIXTURES / 'bundle_q4' / 'context' / '_review_targets.json').read_bytes()
+        runner_args = ['--bundle', 'b', '--items', 'i', '--out', 'o', '--checkpoint', 'base']
+
+        def bare_takes(args):
+            try:
+                with contextlib.redirect_stderr(io.StringIO()):
+                    parser.parse_args(runner_args + args)
+                return True
+            except SystemExit:
+                return False
+
+        def sealer_takes(args):
+            try:
+                sealer.b1_fields(items, targets, [dict(name='base', args=args)])
+                return True
+            except RuntimeError:
+                return False
+        every = ['--agent', 'PROCESSOR', '--profile', 'local', '--max-new-tokens', '8', '--expect-model-id', 'm',
+                 '--expect-digest=d', '--expect-decoding', '{}', '--sensitive',
+                 '--prefill-chunk', '4096', '--prefill-decision', 'D-056',
+                 '--attention', 'eager', '--attention-decision', 'D-056']
+        cases = [every, B1_CHECKPOINTS[0]['args'], B1_CHECKPOINTS[1]['args'], [],
+                 ['--bogus', 'x'], ['--expect-dig', B1_DIGESTS['base']], ['--expect-digest'],
+                 ['--expect-digest', '--sensitive'], ['--sensitive=1'], ['--sensitive', 'extra']]
+        verdicts = [(sealer_takes(args), bare_takes(args)) for args in cases]
+        self.assertEqual(verdicts, [(True, True)] * 4 + [(False, False)] * 6)
+        # The sealed fixture reaches bare_model as the values its identity check compares.
+        parsed = parser.parse_args(runner_args + B1_CHECKPOINTS[1]['args'])
+        self.assertEqual((parsed.expect_digest, parsed.expect_model_id), (B1_DIGESTS['tuned'], B1_MODEL_ID))
+
+    def test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker(self):
+        """R19 (v): a B1 entry passes on exactly one reply record per item per checkpoint, with
+        no pipeline marker required, and fails on a missing record."""
+        evidence = self.root / 'b1'
+        ids = ['a1', 'a2']
+        for name in ('base', 'tuned'):
+            for n, item in enumerate(ids):
+                call = '%s%d' % (name, n)
+                for sub in ('audit/model_replies', 'labels'):
+                    (evidence / name / sub).mkdir(parents=True, exist_ok=True)
+                write(evidence / name / 'audit' / 'model_replies' / ('%06d_%s.json' % (n + 1, call)), dict(call_id=call))
+                write(evidence / name / 'labels' / (item + '.json'), dict(item_id=item, call_id=call))
+
+        def seen():
+            return {name: dict(runner.b1_observation(evidence / name, ids), exit_code=0) for name in ('base', 'tuned')}
+        passed = runner.assess(None, [], arm='B1', b1=seen())
+        self.assertTrue(passed['execution_integrity_passed'], passed)
+        self.assertEqual(passed['reasons'], [])
+        # The same evidence assessed as B3 fails on the pipeline markers B1 never writes.
+        self.assertIn('pipeline_not_completed', runner.assess(None, [])['reasons'])
+        # D-061 (b): a pipeline that reached its end with exit 0 but semantically incomplete is
+        # reported as semantic_incomplete, never as pipeline_not_completed.
+        incomplete = dict(state='stopped', reached_end=True, exit_code=0, semantic_complete=False)
+        self.assertEqual([r for r in runner.assess(incomplete, [])['reasons']
+                          if r in ('semantic_incomplete', 'pipeline_not_completed')], ['semantic_incomplete'])
+        for stopped in (dict(incomplete, exit_code=1), dict(incomplete, reached_end=False),
+                        dict(state='stopped', reached_end=True, exit_code=0)):
+            self.assertEqual([r for r in runner.assess(stopped, [])['reasons']
+                              if r in ('semantic_incomplete', 'pipeline_not_completed')], ['pipeline_not_completed'], stopped)
+        complete = dict(state='completed', reached_end=True, exit_code=0)
+        self.assertNotIn('pipeline_not_completed', runner.assess(complete, [])['reasons'])
+        self.assertNotIn('semantic_incomplete', runner.assess(complete, [])['reasons'])
+        # One record gone from one checkpoint: that checkpoint fails, the other does not.
+        next((evidence / 'tuned' / 'audit' / 'model_replies').glob('*.json')).unlink()
+        failed = runner.assess(None, [], arm='B1', b1=seen())
+        self.assertFalse(failed['execution_integrity_passed'])
+        self.assertEqual(failed['reasons'], ['b1_reply_record_missing:tuned', 'b1_reply_record_count:tuned'])
+        # A checkpoint that did not return 0, and no checkpoint at all, fail too.
+        self.assertIn('b1_checkpoint_failed:base',
+                      runner.assess(None, [], arm='B1', b1=dict(seen(), base=dict(seen()['base'], exit_code=4)))['reasons'])
+        self.assertEqual(runner.assess(None, [], arm='B1', b1={})['reasons'], ['b1_no_checkpoint_ran'])
+
+    def test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused(self):
+        """Item 0.4, DS5-2: exposed bundles with no B1 arm run as a B3-only batch, every entry
+        once, in the order given, each with its own run folder; the paired form still refuses
+        them, and a sealed run refuses the B3-only form before any launch."""
+        bundles, _ = self.batch_bundles(pairs=(('i2', 'B3'), ('i3', 'B3')))
+        entries = [dict(item=i, arm='B3', bundle=bundles[(i, 'B3')]) for i in ('i1', 'i2', 'i3')]
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries, batch_form='b3_only'))
+        self.assertIsNone(failure, failure)
+        self.assertEqual([s for s in transport.started if s.startswith('batch_workload_')],
+                         ['batch_workload_0', 'batch_workload_1', 'batch_workload_2'])
+        for k, item in enumerate(('i1', 'i2', 'i3')):
+            folder = self.base / 'batch' / ('%02d_%s_B3' % (k, item))
+            self.assertEqual((read(folder / 'seal_entry.json')['arm'], read(folder / 'seal_entry.json')['paired_with']),
+                             ('B3', None))
+            self.assertEqual(read(folder / 'workload_return.json')['exit_code'], 0)
+            self.assertTrue((folder / 'collection_integrity.json').exists())
+        self.assertEqual(read(self.base / 'run_record.json')['batch_form'], 'b3_only')
+        self.assert_torn_down()
+        # The paired form refuses the same entries, as before.
+        self.setUp()
+        bundles, _ = self.batch_bundles(pairs=(('i2', 'B3'), ('i3', 'B3')))
+        entries = [dict(item=i, arm='B3', bundle=bundles[(i, 'B3')]) for i in ('i1', 'i2', 'i3')]
+        with self.assertRaisesRegex(RuntimeError, 'Every batch item runs B3 and B1 exactly once'):
+            self.execute(plan=fixture_plan(self.ledger, batch=entries))
+        self.assertIsNone(FakeProvider.state)
+        # The same B3-only file for a sealed bundle: refused before any provider call.
+        self.setUp()
+        repo, commit, _ = self.git_repo()
+        bundle, manifest = self.sealed_bundle(commit)
+        plan = fixture_plan(self.ledger, test_manifest=manifest, frozen_tag='loop-s08-frozen', batch_form='b3_only',
+                            batch=[dict(item='i1', arm='B3', bundle=bundle)])
+        with self.assertRaisesRegex(RuntimeError, 'A B3-only batch is for exposed bundles only'):
+            self.execute(root=repo, base=bundle, plan=plan)
+        self.assertIsNone(FakeProvider.state)
+        with self.assertRaisesRegex(RuntimeError, 'B3 entries only'):
+            controller.batch_schedule([dict(item='i1', arm='B1', bundle=bundle)], 'b3_only')
+
+    def test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder(self):
+        """R18: past the soft budget no new remote work starts, but a batch entry that finishes
+        there is still packed, hashed and downloaded into its own run folder; the next entry is
+        then refused and the session evidence collected as before."""
+        bundles, entries = self.batch_bundles()
+        m = read(self.base / 'execution_manifest.json')
+        soft_seconds = m['soft_budget_usd'] / 1.29 * 3600
+        polls = {'batch_workload_0': ['RUNNING'] * int(soft_seconds / controller.POLL_INTERVAL + 10)}
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries), polls=polls)
+        self.assertEqual(failure['message'], 'Soft budget reached before next phase')
+        self.assertEqual(read(self.base / 'soft_budget_assessment.json')['phase'], 'batch_park')
+        first = self.base / 'batch' / '00_i1_B3'
+        self.assertEqual(read(first / 'collection_integrity.json')['sha256'], hashlib.sha256(EVIDENCE).hexdigest())
+        self.assertTrue((first / 'collected_evidence.tar.gz').exists())
+        self.assertLess(transport.started.index('batch_workload_0'), transport.started.index('batch_pack_evidence_0'))
+        self.assertFalse((self.base / 'batch' / '01_i1_B1' / 'workload_return.json').exists())
+        self.assertTrue((self.base / 'collection_integrity.json').exists())
         self.assert_torn_down()
 
     # ---- S2c item 13: named extras of the cloud source archive ----------------------------
@@ -1903,7 +2961,8 @@ class ControllerChecks(unittest.TestCase):
 
     def test_unratified_inst_finder_off_refuses_to_seal(self):
         files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
-                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes()}
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
         self.assertEqual(sealer.seal_environment(files, None)['SHIMMER_INST_FINDER'], 'on')
         self.assertEqual(sealer.seal_environment(files, 'on')['SHIMMER_INST_FINDER'], 'on')
         with self.assertRaisesRegex(RuntimeError, 'Refuse to seal SHIMMER_INST_FINDER=off'):
@@ -1913,6 +2972,211 @@ class ControllerChecks(unittest.TestCase):
             id='FIXTURE', operator_approved=True, change='INST_FINDER switched off through SHIMMER_INST_FINDER')]
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
+
+    # ---- D-058, D-061, D-063: the producer's attention and prefill are sealed ---------------
+
+    def test_the_producer_attention_is_sealed_and_eager_only_with_its_decision(self):
+        """D-058 item (iv) as D-061 and D-063 amend it: the settings the instance's final_models
+        reads at load travel in the sealed environment: sdpa (memory-efficient backend pinned)
+        and one-shot prefill, both under D-063, when the operator names none; eager or a chunk
+        size only with the recorded decision (D-NNN) that asks for it, so a measurement run can
+        be sealed. The seal evaluates the BOUND final_models' own rules and refuses what the
+        instance would refuse; the runner's environment, built from the manifest, is what
+        final_models reads."""
+        import final_models
+        files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
+                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
+        default = sealer.seal_environment(files, None)
+        self.assertEqual({k: default.get(k) for k in ('SHIMMER_PRODUCER_ATTENTION', 'SHIMMER_PRODUCER_ATTENTION_DECISION',
+                                                      'SHIMMER_PRODUCER_PREFILL_CHUNK', 'SHIMMER_PRODUCER_PREFILL_DECISION')},
+                         {'SHIMMER_PRODUCER_ATTENTION': 'sdpa', 'SHIMMER_PRODUCER_ATTENTION_DECISION': 'D-063',
+                          'SHIMMER_PRODUCER_PREFILL_CHUNK': 'one_shot', 'SHIMMER_PRODUCER_PREFILL_DECISION': 'D-063'})
+        measurement = sealer.seal_environment(files, None, 'eager', 'D-061', '512', 'D-061')
+        self.assertEqual((measurement['SHIMMER_PRODUCER_ATTENTION'], measurement['SHIMMER_PRODUCER_ATTENTION_DECISION'],
+                          measurement['SHIMMER_PRODUCER_PREFILL_CHUNK'], measurement['SHIMMER_PRODUCER_PREFILL_DECISION']),
+                         ('eager', 'D-061', '512', 'D-061'))
+        for attention, decision in (('eager', None), ('sdpa', 'D-061'), ('eager', 'decided'), ('flash', None)):
+            with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer attention', msg=(attention, decision)):
+                sealer.seal_environment(files, None, attention, decision)
+        for chunk, decision in (('512', None), ('256', None), (None, 'D-099'), ('one_shot', 'D-061'), ('half', 'D-099')):
+            with self.assertRaisesRegex(RuntimeError, 'Refuse to seal the producer prefill', msg=(chunk, decision)):
+                sealer.seal_environment(files, None, None, None, chunk, decision)
+        # what the instance reads: the runner replaces every SHIMMER_ variable with the sealed ones
+        for sealed, expected in ((default, ('sdpa', 'D-063', 'one_shot', None)), (measurement, ('eager', 'D-061', 'chunked', 512))):
+            with patch.dict(os.environ, sealed):
+                if 'SHIMMER_PRODUCER_ATTENTION_DECISION' not in sealed:
+                    os.environ.pop('SHIMMER_PRODUCER_ATTENTION_DECISION', None)
+                read_back = final_models.producer_attention()
+                prefill = final_models.producer_prefill()
+            self.assertEqual((read_back['attention_implementation'], read_back['attention_decision'],
+                              prefill['prefill'], prefill['prefill_chunk_tokens']), expected)
+        # a bound final_models from before D-058, or before D-061, has no such setting and is refused
+        older = dict(files, **{'scripts/final_models.py': b'def require(ok, reason):\n    pass\n'})
+        with self.assertRaisesRegex(RuntimeError, 'predates D-058'):
+            sealer.seal_environment(older, None)
+        before = (ROOT / 'scripts/final_models.py').read_text(encoding='utf8').replace('def producer_prefill(', 'def _gone(')
+        with self.assertRaisesRegex(RuntimeError, 'predates D-061'):
+            sealer.seal_environment(dict(files, **{'scripts/final_models.py': before.encode()}), None)
+
+    def test_the_report_states_the_producer_attention_and_prompts_over_the_context(self):
+        """D-058 items (v) and (vi): the backend field names the producer's sealed attention
+        (D-063's default: the producer and B1 sdpa one shot, memory-efficient backend pinned,
+        and v5 to v12 ran the producer eager; sdpa without a decision: the fixed sentence of
+        D-058; none: sealed before D-058, eager), and the over-context row
+        counts the B3 calls refused for exceeding the model's context, by document."""
+        import analyze_ordinary_final_run as analysis
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        over = [dict(event='prompt_over_context', call_id='c%d' % k, agent=agent, doc_id='doc-a', prompt_tokens=31000,
+                     max_new_tokens=2048, model_context=32768) for k, agent in ((2, 'PROCESSOR'), (3, 'VERIFIER'))]
+        run = 'evidence/run/r1/'
+        evidence = {run + 'audit/run_completion.json': json.dumps(dict(state='completed', reached_end=True, exit_code=0)).encode(),
+                    run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in [call] + over).encode(),
+                    run + 'audit/execution_topology.jsonl': b'',
+                    'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[], pipeline_exit_code=0)).encode()}
+        folder = self.root / 'analysis_attention'
+        self.analysis_folder(folder, evidence=evidence,
+                             environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer sdpa (memory-efficient, pinned); differs from v5 to v12, which ran the '
+                      'producer eager', text)
+        self.assertIn('- **B3 prompts over the model context.** 2 calls on 1 documents (doc-a)', text)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([r['call_id'] for r in status['b3_prompts_over_context']], ['c2', 'c3'])
+        # sealed before D-058: the producer ran eager; no over-context event: none
+        older = self.root / 'analysis_attention_older'
+        self.analysis_folder(older, evidence=dict(evidence, **{run + 'logs/model_telemetry.jsonl': (json.dumps(call) + '\n').encode()}))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(older)
+        text = (older / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager (sealed before D-058 named the producer attention', text)
+        self.assertIn('- **B3 prompts over the model context.** none: every B3 prompt fit', text)
+        # an eager measurement run names its decision
+        eager = self.root / 'analysis_attention_eager'
+        self.analysis_folder(eager, environment=dict(SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager',
+                                                     SHIMMER_PRODUCER_ATTENTION_DECISION='D-058'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(eager)
+        text = (eager / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('producer eager under decision D-058', text)
+        self.assertIn('- **B3 prompts over the model context.** not determined: the pipeline did not start', text)
+        # D-063: the run proper, the producer and B1 sdpa one shot, memory-efficient backend pinned
+        proper = self.root / 'analysis_attention_d063'
+        self.analysis_folder(proper, evidence=evidence, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='sdpa', SHIMMER_PRODUCER_ATTENTION_DECISION='D-063',
+            SHIMMER_PRODUCER_PREFILL_CHUNK='one_shot', SHIMMER_PRODUCER_PREFILL_DECISION='D-063'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(proper)
+        text = (proper / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer and B1 sdpa, prefilled in one shot, memory-efficient backend pinned (D-063); '
+                      'differs from v5 to v12, which ran the producer eager', text)
+        self.assertIn('- **Execution assessment.** passed', text)
+        # D-060, D-061: a run sealed under D-061 (eager with chunked prefill), and an E measurement run
+        sealed_e = self.root / 'analysis_attention_e'
+        self.analysis_folder(sealed_e, evidence=evidence, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager', SHIMMER_PRODUCER_PREFILL_CHUNK='512',
+            SHIMMER_PRODUCER_PREFILL_DECISION='D-061'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(sealed_e)
+        text = (sealed_e / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('us-east-1; producer eager, the kernel it was trained and evaluated with (D-060, the default before '
+                      'D-063), prefilled in chunks of 512 tokens through the KV cache, 2 tokens left to generation (E, '
+                      'D-061, the default before D-063)', text)
+        measured = self.root / 'analysis_attention_eager_e'
+        self.analysis_folder(measured, environment=dict(
+            SHIMMER_INST_FINDER='on', SHIMMER_PRODUCER_ATTENTION='eager', SHIMMER_PRODUCER_ATTENTION_DECISION='D-064',
+            SHIMMER_PRODUCER_PREFILL_CHUNK='1024', SHIMMER_PRODUCER_PREFILL_DECISION='D-064'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(measured)
+        self.assertIn('producer eager under decision D-064 (a measurement run; eager is the kernel the producer was '
+                      'trained with, and v5 to v12 ran it eager), prefilled in chunks of 1024 tokens under decision D-064 '
+                      '(a measurement run)', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
+
+    def test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call(self):
+        """D-100 (L7): a declared multi-round run asks no model (open item 35), so it passes on
+        exactly one pipeline_start and one pipeline_end and its case record checks; the same run
+        not reviewed fails; a run that is not multi-round still needs its Producer 168 call."""
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        case = dict(outcome='reviewed', activation=dict(activated=True), round_review=dict(availability='recorded'))
+        passed = runner.assess(completion, rows, case)
+        self.assertEqual(passed['reasons'], [])
+        self.assertTrue(passed['execution_integrity_passed'])
+        self.assertEqual(runner.assess(completion, rows, dict(case, outcome='refused'))['reasons'],
+                         ['multi_round_not_reviewed'])
+        self.assertEqual(runner.assess(completion, rows[:1], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows + rows[1:], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows)['reasons'], ['required_telemetry_missing'])
+        call = dict(event='model_call', agent='PROCESSOR', adapter_checkpoint=168)
+        self.assertEqual(runner.assess(completion, rows[:1] + [call] + rows[1:])['reasons'], [])
+
+    def test_a_multi_round_run_reports_its_own_step_times(self):
+        """Open item 39: a multi-round run has no topology runtime, so the report row carries the
+        step times its audit/multi_round.json saved; a run before them says so; a run that is not
+        multi-round says the row does not apply."""
+        import analyze_ordinary_final_run as analysis
+        timings = dict(unit='seconds', clock='time.perf_counter', rounds=[dict(round_id='r1', seconds=0.004631),
+                       dict(round_id='r2', seconds=0.001152)], round_review=0.011972, records=0.001151, phase=0.038369)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        run = 'evidence/run/r1/'
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+
+        def folder_with(name, saved):
+            evidence = {run + 'audit/run_completion.json': json.dumps(dict(completion, schema_version=1, run_id='r1',
+                                                                           finished_at='2026-10-30T00:00:00+00:00')).encode(),
+                        run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in rows).encode(),
+                        run + 'audit/execution_topology.jsonl': b'',
+                        run + 'audit/multi_round.json': json.dumps(saved).encode(),
+                        'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[],
+                                                                pipeline_exit_code=0)).encode()}
+            folder = self.root / name
+            self.analysis_folder(folder, evidence=evidence, multi_round=True, case_manifest_sha256='c' * 64)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            return read(folder / 'FINAL_STATUS.json')['report']['Multi-round step times']
+        self.assertEqual(folder_with('analysis_mr_times', dict(outcome='reviewed', timings=timings)),
+                         'round review 0.011972 s (r1 0.004631 s; r2 0.001152 s), record computation 0.001151 s, '
+                         'whole phase 0.038369 s (time.perf_counter, measured by the phase itself; the multi-round run '
+                         'has no topology runtime, so its phase_latencies are empty)')
+        self.assertTrue(folder_with('analysis_mr_before', dict(outcome='reviewed')).startswith(
+            'not recorded: the run\'s audit/multi_round.json carries no step times'))
+        plain = self.root / 'analysis_not_mr'
+        self.analysis_folder(plain)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(plain)
+        self.assertEqual(read(plain / 'FINAL_STATUS.json')['report']['Multi-round step times'],
+                         'not applicable: no multi-round run was declared')
+
+    def test_a_semantically_incomplete_run_is_reported_as_such(self):
+        """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
+        semantic work incomplete is assessed `semantic_incomplete` by the runner, and the
+        analyser's report says so in words, never `pipeline_not_completed`."""
+        import analyze_ordinary_final_run as analysis
+        call = dict(event='model_call', call_id='c1', agent='PROCESSOR', designation='producer', adapter_checkpoint=168,
+                    start_monotonic_s=1.0, end_monotonic_s=2.0, total_service_seconds=1.0, output_tokens=3)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), call, dict(event='pipeline_end', monotonic_s=3.0)]
+        completion = dict(state='stopped', reached_end=True, exit_code=0, semantic_complete=False)
+        result = runner.assess(completion, rows)
+        self.assertEqual(result['reasons'], ['semantic_incomplete'])
+        run = 'evidence/run/r1/'
+        evidence = {run + 'audit/run_completion.json': json.dumps(dict(completion, schema_version=1, run_id='r1',
+                                                                       finished_at='2026-10-28T00:00:00+00:00')).encode(),
+                    run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in rows).encode(),
+                    run + 'audit/execution_topology.jsonl': b'',
+                    'evidence/result.json': json.dumps(dict(result, pipeline_exit_code=0)).encode()}
+        folder = self.root / 'analysis_incomplete'
+        self.analysis_folder(folder, evidence=evidence)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        text = (folder / 'RUN_REPORT.md').read_text(encoding='utf8')
+        self.assertIn('- **Execution assessment.** failed: semantic_incomplete (the pipeline reached its end with exit '
+                      'code 0, and its completion record marks the semantic work incomplete', text)
+        self.assertNotIn('pipeline_not_completed', text)
+        self.assertEqual(read(folder / 'FINAL_STATUS.json')['report']['Execution assessment'][:27],
+                         'failed: semantic_incomplete')
 
     # ---- S2 checker round 1 ---------------------------------------------------------------
 
@@ -2024,9 +3288,10 @@ class ControllerChecks(unittest.TestCase):
         runs = self.root / 'outside' / 'runs'
         blocked = self.root / 'blocked' / 'ledger.jsonl'
         open_ledger(blocked)
-        write_lines(blocked, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                   price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(blocked, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'Two loop instances are running'):
             self.execute(root=repo, base=bundle, call=lambda: bound.execute(bundle, fixture_plan(blocked), runs))
         self.assertFalse(bound.consumed(bundle))
         self.assertTrue((runs / 'bundle').exists())
@@ -2059,7 +3324,19 @@ class ControllerChecks(unittest.TestCase):
             FakeProvider.state['instances'].append(('e' * 32, 'shimmer-loop-elsewhere'))
             return [A10_TYPE]
         FakeProvider.types = appearing
-        with self.assertRaisesRegex(RuntimeError, 'Provider inventory not empty'):
+        with self.assertRaisesRegex(guard.GuardRefusal, 'no ledger records is running'):
+            self.execute()
+        self.assertEqual(FakeProvider.state['launches'], 0)
+        self.assertFalse(Path(str(self.ledger) + '.lock').exists())
+        # An instance outside the loop appearing then is refused as an inventory that was not
+        # empty always was (D-S17 admits loop instances only).
+        self.setUp()
+
+        def foreign(reads):
+            FakeProvider.state['instances'].append(('e' * 32, 'someone-else'))
+            return [A10_TYPE]
+        FakeProvider.types = foreign
+        with self.assertRaisesRegex(guard.GuardRefusal, 'not a loop instance'):
             self.execute()
         self.assertEqual(FakeProvider.state['launches'], 0)
         self.assertFalse(Path(str(self.ledger) + '.lock').exists())
@@ -2379,9 +3656,10 @@ class ControllerChecks(unittest.TestCase):
         provider = instance_reaper.MockProvider(state)
         status = instance_reaper.reap(provider, [ledger], ledger, now=instance_reaper.parse_time('2026-10-27T11:00:00+00:00'))
         self.assertEqual((status['closed_without_instance'], len(ledger_rows(ledger))), ([], 2))
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
-            guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0, now_epoch=now.timestamp(),
-                        reserve_minutes=15, reaped=[])
+        # Until it is closed the open intent counts as a running loop instance, its cap a running cap.
+        self.assertEqual([r['instance_name'] for r in guard.ledger_state([ledger], now.timestamp())[1]], ['shimmer-loop-lost'])
+        self.assertEqual(guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0,
+                                     now_epoch=now.timestamp(), reserve_minutes=15, reaped=[])['running_caps_usd'], 2.0)
         status = instance_reaper.reap(provider, [ledger], ledger, now=now)
         self.assertEqual(status['closed_without_instance'], [dict(instance_name='shimmer-loop-lost', reason='intent_without_instance')])
         self.assertEqual(status['terminated'], [])
@@ -2679,6 +3957,176 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual([c['type'] for c in guard.instance_candidates(self.TYPES, guard.a10_reference_rate([ledger, other]))],
                          ['gpu_1x_a10', 'gpu_1x_a6000', 'gpu_1x_a100_sxm4', 'gpu_1x_h100_pcie'])
 
+    # ---- Open item 37: disk in use on the instance ------------------------------------------
+
+    def test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not(self):
+        """The runner's disk_reading: total, used (total less free) and available bytes of the
+        filesystem holding the run root, from statvfs as df -B1 reports them; a failed reading
+        is a record with its reason, never an exception."""
+        stat = SimpleNamespace(f_blocks=1000, f_frsize=4096, f_bfree=400, f_bavail=300)
+        with patch.object(os, 'statvfs', lambda path: stat, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes']),
+                         (4_096_000, 2_457_600, 1_228_800))
+        self.assertEqual(value['path'], str(self.root))
+
+        def refused(path):
+            raise OSError(5, 'Input/output error')
+        with patch.object(os, 'statvfs', refused, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertNotIn('used_bytes', value)
+        self.assertIn('OSError', value['unavailable'])
+
+    def test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails(self):
+        """The runner's DiskSampler: a reading before the workload, the largest of every reading
+        as the sampled peak, a reading after it; the file is rewritten after every reading (a
+        budget stop keeps what was read); an unavailable reading is counted with its reason and
+        a reader that raises fails nothing. execute() starts it after the network denial,
+        before either arm, and stops it in both arms' finally (read from its source)."""
+        used = iter([10, 70, 40, 20])
+        reading = lambda where: dict(path=where, epoch=1.0, total_bytes=100, used_bytes=next(used), available_bytes=5)
+        path = self.root / 'evidence' / runner.DISK_USAGE
+        path.parent.mkdir()
+        sampler = runner.DiskSampler(self.root, path, interval=3600, reading=reading).start()
+        self.assertEqual(read(path)['before_workload']['used_bytes'], 10)
+        sampler.take()
+        sampler.take()
+        # As a budget stop would leave it: before and the peak so far, no after.
+        kept = read(path)
+        self.assertEqual((kept['peak']['used_bytes'], kept['readings'], kept['after_workload']), (70, 3, None))
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['before_workload']['used_bytes'], value['peak']['used_bytes'],
+                          value['after_workload']['used_bytes'], value['readings']), (10, 70, 20, 4))
+        self.assertEqual((value['sample_seconds'], value['peak_kind']), (3600, runner.DISK_PEAK_KIND))
+        self.assertIn('not a continuous maximum', value['peak_kind'])
+        # Unavailable readings: recorded with their reason, counted apart, no peak invented.
+        path.unlink()
+        sampler = runner.DiskSampler(self.root, path, interval=3600,
+                                     reading=lambda where: dict(path=where, epoch=1.0, unavailable='OSError: fixture')).start()
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['peak'], value['readings'], value['unavailable_readings'], value['last_unavailable']),
+                         (None, 0, 2, 'OSError: fixture'))
+        self.assertEqual(value['before_workload']['unavailable'], 'OSError: fixture')
+
+        def raising(where):
+            raise RuntimeError('reader fault')
+        runner.DiskSampler(self.root, self.root / 'never.json', interval=3600, reading=raising).start().stop()
+        # The sampling thread itself reads on its interval.
+        path.unlink()
+        values = iter(range(1, 1000))
+        sampler = runner.DiskSampler(self.root, path, interval=0.01, reading=lambda where: dict(
+            path=where, epoch=1.0, total_bytes=1000, used_bytes=next(values), available_bytes=1)).start()
+        time_module.sleep(0.2)
+        sampler.stop()
+        self.assertGreater(read(path)['readings'], 3)
+        # The wiring in execute(), from its source.
+        tree = ast.parse(runner_source())
+        execute = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'execute')
+        body = [ast.unparse(s) for s in execute.body]
+        start = body.index('disk = DiskSampler(base, evidence / DISK_USAGE).start()')
+        self.assertEqual(body[start - 1], 'deny_network(rec)')
+        b1 = execute.body[start + 1]
+        self.assertEqual(ast.unparse(b1.test), "arm_of(manifest) == 'B1'")
+        self.assertEqual([ast.unparse(s) for s in b1.body[0].finalbody], ['disk.stop()'])
+        b3 = next(s for s in execute.body[start + 2:] if isinstance(s, ast.Try))
+        self.assertEqual(ast.unparse(b3.finalbody[0]), 'disk.stop()')
+
+    def test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence(self):
+        """The controller's evidence packer carries the runner's own disk_reading and prints one
+        marked reading after the archive is written; the controller saves it as
+        disk_after_evidence.json in the run folder it collects into (the session's, and each
+        batch entry's). No new phase. A packer output with no reading is saved as unavailable
+        with its reason, and the run completes exactly as before."""
+        reading = dict(path=controller.REMOTE, epoch=2.0, total_bytes=500, used_bytes=300, available_bytes=150)
+        marked = lambda value: (b'packed\n' + (controller.DISK_MARK + json.dumps(value)).encode() + b'\n')
+        transport, console, failure = self.execute(outputs={'pack_evidence': marked(reading)})
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE), reading)
+        self.assertNotIn('disk', ' '.join(transport.started))
+        # The packer's own script, as launched, executed here: the archive, then the reading.
+        launch = next(argv[-1] for argv, _ in transport.calls if argv[0] == 'ssh' and '/pack_evidence.pid' in argv[-1])
+        script = base64.b64decode(re.search(r"printf %s '?([A-Za-z0-9+/=]+)'?", launch).group(1)).decode()
+        code = shlex.split(script)[shlex.split(script).index('-c') + 1]
+        self.assertIn(controller.DISK_AFTER_PACK, code)
+        packed = self.root / 'packed'
+        packed.mkdir()
+        (packed / 'evidence').mkdir()
+        write(packed / 'evidence' / 'result.json', dict(fixture=True))
+        stat = SimpleNamespace(f_blocks=10, f_frsize=1024, f_bfree=4, f_bavail=3)
+        here, out = os.getcwd(), io.StringIO()
+        try:
+            os.chdir(packed)
+            with patch.object(os, 'statvfs', lambda path: stat, create=True), contextlib.redirect_stdout(out):
+                exec(compile(code, 'pack', 'exec'), {})
+        finally:
+            os.chdir(here)
+        self.assertTrue((packed / 'collected_evidence.tar.gz').is_file())
+        value = controller.disk_after_evidence(out.getvalue().encode())
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes'], value['path']),
+                         (10240, 6144, 3072, str(packed.resolve())))
+        # No reading in the packer's output: unavailable with its reason, the run unchanged.
+        self.setUp()
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE),
+                         dict(unavailable='no disk reading in the evidence packer output'))
+        self.assertIn('unreadable', controller.disk_after_evidence((controller.DISK_MARK + '{oops').encode())['unavailable'])
+        self.assert_torn_down()
+        # A batch: each entry's run folder holds the reading its own collection printed.
+        self.setUp()
+        bundles, entries = self.batch_bundles()
+        outputs = {'batch_pack_evidence_%d' % k: marked(dict(reading, used_bytes=300 + k)) for k in range(4)}
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries), outputs=outputs)
+        self.assertIsNone(failure, failure)
+        folders = sorted(p for p in (self.base / 'batch').iterdir() if p.is_dir())
+        self.assertEqual([read(p / controller.DISK_AFTER_EVIDENCE)['used_bytes'] for p in folders], [300, 301, 302, 303])
+
+    def test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence(self):
+        """FINAL_STATUS carries the readings under `disk` and RUN_REPORT.md a 'Disk on the
+        instance' row; a reading that is missing or failed says so."""
+        gib = 2 ** 30
+        at = lambda used: dict(path='/r', epoch=1.0, total_bytes=100 * gib, used_bytes=used * gib, available_bytes=(100 - used) * gib)
+        usage = dict(before_workload=at(40), peak=at(55), after_workload=at(50), readings=12, unavailable_readings=0,
+                     peak_kind=runner.DISK_PEAK_KIND, sample_seconds=runner.DISK_SAMPLE_SECONDS)
+        folder = self.root / 'analysis_disk'
+        self.analysis_folder(folder, evidence={'evidence/' + runner.DISK_USAGE: json.dumps(usage).encode()})
+        write(folder / 'disk_after_evidence.json', at(51))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([status['disk'][k]['used_bytes'] // gib for k in ('before_workload', 'peak', 'after_workload', 'after_evidence')],
+                         [40, 55, 50, 51])
+        row = status['report']['Disk on the instance']
+        self.assertEqual(row, 'before the workload: 40.00 GiB in use of 100.00 GiB, 60.00 GiB available; peak: 55.00 GiB in use '
+                              'of 100.00 GiB, 45.00 GiB available (12 readings; %s); after the workload: 50.00 GiB in use of '
+                              '100.00 GiB, 50.00 GiB available; after evidence packing: 51.00 GiB in use of 100.00 GiB, '
+                              '49.00 GiB available' % runner.DISK_PEAK_KIND)
+        self.assertIn('- **Disk on the instance.** before the workload: 40.00 GiB', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+        # Nothing recorded (a run before open item 37), and a failed reading.
+        folder = self.root / 'analysis_no_disk'
+        self.analysis_folder(folder)
+        write(folder / 'disk_after_evidence.json', dict(unavailable='OSError: fixture'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        row = read(folder / 'FINAL_STATUS.json')['report']['Disk on the instance']
+        self.assertIn('before the workload: not recorded (no evidence/disk_usage.json', row)
+        self.assertIn('after evidence packing: unavailable (OSError: fixture)', row)
+
+
+def runner_source():
+    """The runner's source, read for the disk sampler's wiring in execute()."""
+    return Path(runner.__file__).read_text(encoding='utf-8')
+
+
+def runner_source_without_the_b3_disk_stop():
+    source = Path(runner.__file__).read_text(encoding='utf-8')
+    changed = source.replace('    finally:\r\n        disk.stop()\r\n        rec.close()', '    finally:\r\n        rec.close()', 1)
+    changed = changed.replace('    finally:\n        disk.stop()\n        rec.close()', '    finally:\n        rec.close()', 1)
+    assert changed != source, 'the B3 disk stop is not in the runner any more'
+    return changed
+
 
 def shlex_quote(value):
     import shlex
@@ -2840,11 +4288,11 @@ class FileProvider:
 class HangingTransport(FakeTransport):
     """The instance never answers ssh: the controller blocks after its launch, as one would
     whose session or machine stopped, until something kills it."""
-    def run(self, argv, capture_output=True, timeout=None):
+    def run(self, argv, capture_output=True, timeout=None, creationflags=None):
         if argv[0] == 'ssh' and argv[-1] == 'true':
             while True:
                 time_module.sleep(1)
-        return super().run(argv, capture_output, timeout)
+        return super().run(argv, capture_output, timeout, creationflags)
 
 
 def child_fixture(work):
@@ -2953,10 +4401,74 @@ def admit_as_exposed(m, seal, plan, base):
     return dict(_ORIGINAL_ADMIT(m, seal, plan, base), exposure='exposed')
 
 
-def arm_major_schedule(entries):
+def arm_major_schedule(entries, form='paired', sealed=False):
     """Every B3 first, then every B1: a stop part way leaves no pair."""
-    value = sorted(_ORIGINAL_SCHEDULE(entries), key=lambda e: (controller.BATCH_ARMS.index(e['arm']), e['index']))
+    value = sorted(_ORIGINAL_SCHEDULE(entries, form, sealed), key=lambda e: (controller.BATCH_ARMS.index(e['arm']), e['index']))
     return [dict(e, index=k) for k, e in enumerate(value)]
+
+
+def schedule_ignoring_exposure(entries, form='paired', sealed=False):
+    """The reading before S5 item 0.4's refusal: a B3-only batch admitted for a sealed run."""
+    return _ORIGINAL_SCHEDULE(entries, form, False)
+
+
+_ORIGINAL_B1_FIELDS = sealer.b1_fields
+
+
+def b1_fields_for_every_document(items, targets, checkpoints):
+    """Every item of items.json sealed into the bundle, whatever document it belongs to."""
+    value = _ORIGINAL_B1_FIELDS(items, targets, checkpoints)
+    rows = json.loads(items.decode('utf-8'))['items']
+    return dict(value, item_ids=sorted(r['item_id'] for r in rows))
+
+
+_ORIGINAL_LOAD_BARE_MODEL = runner.load_bare_model
+_ORIGINAL_B1_ARGV = runner.b1_argv
+
+
+def load_bare_model_with_the_pipeline(project):
+    """A B1 runner that pulls the pipeline in beside the baseline (what R19 (iii) forbids)."""
+    import pipeline  # noqa: F401
+    return _ORIGINAL_LOAD_BARE_MODEL(project)
+
+
+def b1_argv_into_one_folder(base, project, out, checkpoint):
+    """Every checkpoint written into one shared folder instead of its own (R19 (iv))."""
+    return _ORIGINAL_B1_ARGV(base, project, Path(out).parent / 'shared', checkpoint)
+
+
+def b1_status_without_reading_the_summaries(manifest, target, result):
+    """Every sealed checkpoint counted as collected because the runner's assessment says it ran,
+    without reading its b1_summary.json from the collected evidence."""
+    return {e['name']: dict(summary_written=True, exit_code=0, model_id=None, digest=None, adapter_applied=None,
+                            counts={k: 0 for k in analysis.B1_COUNTS})
+            for e in manifest['b1']['checkpoints']}
+
+
+def b1_argv_without_the_checkpoint(base, project, out, checkpoint):
+    """The runner's argument list with --checkpoint and its name dropped (the stand-in's old
+    stripping): bare_model then loads its final-mode default for every checkpoint."""
+    argv = _ORIGINAL_B1_ARGV(base, project, out, checkpoint)
+    k = argv.index('--checkpoint')
+    return argv[:k] + argv[k + 2:]
+
+
+def b1_argv_with_the_pass_name_as_checkpoint(base, project, out, checkpoint):
+    """The pre-condition-6 argument list: the pass's name passed as --checkpoint, its sealed
+    `checkpoint` ignored."""
+    argv = _ORIGINAL_B1_ARGV(base, project, out, checkpoint)
+    k = argv.index('--checkpoint')
+    return argv[:k + 1] + [checkpoint['name']] + argv[k + 2:]
+
+
+def b1_argv_into_the_checkpoint_folder(base, project, out, checkpoint):
+    """Each pass written into its checkpoint's folder, so two passes of one checkpoint share it."""
+    return _ORIGINAL_B1_ARGV(base, project, Path(out).parent / checkpoint.get('checkpoint', checkpoint['name']), checkpoint)
+
+
+def b1_observation_counting_files_only(folder, item_ids):
+    """A B1 assessment that trusts a file count and never asks which item has its record."""
+    return dict(items=len(item_ids), reply_records=len(item_ids), items_without_one_record=[], summary_written=True)
 
 
 def declaration_for_any_bundle(base, digest):
@@ -2977,6 +4489,18 @@ def ledger_view_by_key_only(rows, now):
     intent keyed by its name stays open when its termination carries the id."""
     stripped = [dict(r, instance_name=None) if r.get('event') == 'termination' and r.get('instance_id') else r for r in rows]
     return _ORIGINAL_LEDGER_VIEW(stripped, now)
+
+
+_ORIGINAL_LOOP_INSTANCES = instance_reaper.loop_instances
+
+
+def spend_per_instance_view(rows, now):
+    """A hard stop counted one instance at a time: of the open launches' accrued spend, only
+    the largest single one counts, as if the other instance were not there."""
+    by_name, closed, spend = _ORIGINAL_LEDGER_VIEW(rows, now)
+    opens = [instance_reaper.accrued(rec, now, to_deadline=True) for rec in by_name.values()
+             if rec['ident'] not in closed and (rec.get('event') == 'launch' or rec.get('launch_requested_utc'))]
+    return by_name, closed, spend - sum(opens) + max(opens, default=0.0)
 
 
 def declaration_written_when_absent(base, digest):
@@ -3023,7 +4547,103 @@ def archive_names_ignoring_extras(names, extra=(), extras=None):
 
 
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
+# The runner's own attention and prefill rule, kept for the mutant that drops only its prefill half.
+runner_b1_attention_error = runner.b1_attention_error
+
+# D-079: every operator-side file on the controller path. Each child process one of them
+# starts runs with no window; every file under tools/loop/ is added at read time, so a new
+# loop tool is covered without being listed. The instance-side files (ordinary_final_run.py,
+# cloud_run_observer.py, the pipeline) run on Linux, where the flag does not exist.
+HIDDEN_PATH = ('tools/ordinary_final_cloud.py', 'tools/ordinary_final_bound_cloud.py', 'tools/ordinary_final_watchdog.py',
+               'tools/cloud_run_common.py', 'tools/cloud_run_watchdog.py', 'tools/lambda_experiment_provider.py',
+               'tools/loop_budget_guard.py', 'tools/run_remote_experiment.py', 'tools/deploy_cloud_run.py',
+               'tools/prepare_cloud_run.py', 'tools/ordinary_final_progress.py', 'tools/ordinary_final_status.py',
+               'tools/analyze_ordinary_final_run.py', 'tools/declare_asset_copy.py')
+START_NAMES = {'run', 'Popen', 'call', 'check_call', 'check_output', 'getoutput', 'getstatusoutput'}
+OS_STARTS = {'system', 'popen', 'startfile'}
+
+
+def read_hidden_path_sources():
+    files = [ROOT / name for name in HIDDEN_PATH] + sorted((ROOT / 'tools/loop').glob('*.py'))
+    return {path.relative_to(ROOT).as_posix(): path.read_text(encoding='utf8') for path in files}
+
+
+def hidden_path_sources():
+    return read_hidden_path_sources()
+
+
+def sources_with_one_flag_dropped():
+    sources = read_hidden_path_sources()
+    name = 'tools/ordinary_final_cloud.py'
+    changed = sources[name].replace('timeout=timeout,creationflags=no_window())', 'timeout=timeout)', 1)
+    assert changed != sources[name], 'the neutralised flag is not in the controller any more'
+    sources[name] = changed
+    return sources
+
+
+def carries_no_window(call):
+    for keyword in call.keywords:
+        if keyword.arg == 'creationflags':
+            return any(isinstance(n, ast.Call) and getattr(n.func, 'id', getattr(n.func, 'attr', None)) == 'no_window'
+                       for n in ast.walk(keyword.value))
+    return False
+
+
+def child_process_starts(source):
+    """[(line, verdict)] for every child-process start in one file's AST: 'hidden' when its
+    creationflags call no_window, otherwise 'unflagged' (or 'cannot carry a flag' for the os
+    starts, which take none and so are refused on this path outright)."""
+    tree = ast.parse(source)
+    modules, direct = set(), set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.update(a.asname or a.name for a in node.names if a.name == 'subprocess')
+        elif isinstance(node, ast.ImportFrom) and node.module == 'subprocess':
+            direct.update(a.asname or a.name for a in node.names if a.name in START_NAMES)
+    # A parameter defaulting to a start (runner=subprocess.run) is a start wherever it is called.
+    runners = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            positional = node.args.posonlyargs + node.args.args
+            pairs = list(zip(positional[len(positional) - len(node.args.defaults):], node.args.defaults))
+            pairs += list(zip(node.args.kwonlyargs, node.args.kw_defaults))
+            for argument, default in pairs:
+                if isinstance(default, ast.Attribute) and default.attr in START_NAMES \
+                        and isinstance(default.value, ast.Name) and default.value.id in modules:
+                    runners.add(argument.arg)
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
+            if f.value.id in modules and f.attr in START_NAMES:
+                found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+            elif f.value.id == 'os' and (f.attr in OS_STARTS or f.attr.startswith(('spawn', 'exec'))):
+                found.append((node.lineno, 'cannot carry a flag'))
+            elif f.value.id == 'asyncio' and f.attr.startswith('create_subprocess'):
+                found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+        elif isinstance(f, ast.Name) and (f.id in direct or f.id in runners):
+            found.append((node.lineno, 'hidden' if carries_no_window(node) else 'unflagged'))
+    return sorted(found)
+
+
 NEUTRALIZATIONS = [
+    # D-S17 item 1: the limit set back to one, so a second launch is refused again.
+    ('test_a_second_loop_instance_is_admitted_while_one_runs_and_its_cap_counts_the_first', guard, 'admits_another',
+     lambda running: running < 1),
+    # D-S17 item 1: the limit set to three, so a third launch is admitted.
+    ('test_a_third_loop_instance_is_refused_before_any_instance', guard, 'admits_another', lambda running: running < 3),
+    # A reaper that sees one loop instance only, as if one could ever run.
+    ('test_the_reaper_sees_both_loop_instances_and_ends_each_after_its_deadline', instance_reaper, 'loop_instances',
+     lambda listed: _ORIGINAL_LOOP_INSTANCES(listed)[:1]),
+    ('test_the_hard_stop_counts_both_loop_instances_together', instance_reaper, 'ledger_view', spend_per_instance_view),
+    ('test_the_reaper_ends_a_loop_instance_beyond_the_limit', instance_reaper, 'over_limit', lambda kept, by_name: []),
+    # D-100: the model-call requirement applied to a declared multi-round run again, as L7 ran.
+    ('test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call', runner, 'model_call_required',
+     lambda multi_round: True),
+    # Open item 39: the analyser stops reading the run's saved step times.
+    ('test_a_multi_round_run_reports_its_own_step_times', analysis, 'multi_round_timings', lambda target: None),
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),
@@ -3155,6 +4775,104 @@ NEUTRALIZATIONS = [
     # Item 4: the cap's ceiling the hard stop alone, so a stop at the budget drops the margin.
     ('test_a_hard_stop_at_the_budget_keeps_the_one_dollar_margin', guard, 'cap_ceiling',
      lambda budget, hard_stop: hard_stop),
+    # S5, one mechanism per proof.
+    # R2, item 0.2: the sealed item ids taken from every document in items.json, not the bundle's one.
+    ('test_the_sealer_records_the_arm_and_a_b1_bundle_carries_its_items_and_checkpoints', sealer, 'b1_fields',
+     b1_fields_for_every_document),
+    # R19 (i): the runner no longer compares the authorization's arm with the sealed arm.
+    ('test_a_b1_entry_runs_only_on_an_authorization_naming_its_sealed_arm', runner, 'admit_arm',
+     lambda manifest, permit: None),
+    # R19 (iii): the B1 runner imports the pipeline.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'load_bare_model',
+     load_bare_model_with_the_pipeline),
+    # R19 (iv): the checkpoints share one output folder.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'b1_argv',
+     b1_argv_into_one_folder),
+    # S5 join: the checkpoint name not passed to bare_model, so both runs load its default.
+    ('test_a_b1_entry_runs_bare_model_per_checkpoint_and_never_imports_the_pipeline', runner, 'b1_argv',
+     b1_argv_without_the_checkpoint),
+    # S5 join: a B1 entry's checkpoints taken as collected on the runner's word alone.
+    ('test_a_b1_entry_is_reported_from_its_checkpoint_summaries', analysis, 'b1_checkpoint_status',
+     b1_status_without_reading_the_summaries),
+    # S5 join: any sealed argument admitted, whatever bare_model's parser takes.
+    ('test_the_sealed_checkpoint_arguments_are_exactly_what_bare_model_takes', runner, 'b1_argument_error',
+     lambda args: None),
+    # R19 (v): a B1 assessment that counts files and so passes a missing record.
+    ('test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker', runner, 'b1_observation',
+     b1_observation_counting_files_only),
+    # D-056 condition 6: the pass's name passed as its checkpoint (base_eager is refused by bare_model).
+    ('test_b1_passes_run_by_name_and_load_their_sealed_checkpoint', runner, 'b1_argv',
+     b1_argv_with_the_pass_name_as_checkpoint),
+    # D-056 condition 6: two passes of one checkpoint written into one folder.
+    ('test_b1_passes_run_by_name_and_load_their_sealed_checkpoint', runner, 'b1_argv',
+     b1_argv_into_the_checkpoint_folder),
+    # D-056 condition 6: any checkpoint admitted at sealing, whatever bare_model loads.
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_pass_checkpoint',
+     lambda entry: entry.get('checkpoint', entry.get('name'))),
+    # D-056 condition 6, D-063: eager sealed without its decision (bare_model would refuse it on the instance).
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
+     lambda args: None),
+    # D-056 condition 6, D-061: a pass's attention, prefill and peak memory not read from its summary.
+    ('test_a_b1_entry_reports_each_pass_by_name_with_its_attention_and_peak_memory', analysis, 'b1_pass_measures',
+     lambda summary: dict(checkpoint=None, attention_implementation=None, attention_decision=None, gpu_memory=None)),
+    # Item 0.4, DS5-2: a B3-only batch admitted for a sealed run.
+    ('test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused', controller, 'batch_schedule',
+     schedule_ignoring_exposure),
+    # D-058 (iv), D-063: eager or a chunk size sealed without its decision (the instance's
+    # final_models would refuse it); the D-063 default is still sealed as it should be.
+    ('test_the_producer_attention_is_sealed_and_eager_only_with_its_decision', sealer, 'producer_attention_setting',
+     lambda files, attention=None, decision=None, chunk=None, prefill_decision=None: {
+         'SHIMMER_PRODUCER_ATTENTION': attention or 'sdpa', 'SHIMMER_PRODUCER_ATTENTION_DECISION': decision or 'D-063',
+         'SHIMMER_PRODUCER_PREFILL_CHUNK': chunk or 'one_shot', 'SHIMMER_PRODUCER_PREFILL_DECISION': prefill_decision or 'D-063'}),
+    # D-061 (b): a semantically incomplete run reported as one that did not complete.
+    ('test_a_semantically_incomplete_run_is_reported_as_such', runner, 'semantic_incomplete',
+     lambda completion: False),
+    # D-061 (b): the report's execution row without the reason's meaning.
+    ('test_a_semantically_incomplete_run_is_reported_as_such', analysis, 'assessment_text',
+     lambda result: 'failed' if not (result or {}).get('execution_integrity_passed') else 'passed'),
+    # D-061: the report's backend field without the producer's prefill.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'producer_prefill_text',
+     lambda environment: 'prefill not stated'),
+    # D-061 item 4: a replay pass run as a bare_model pass.
+    ('test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths', runner, 'is_replay',
+     lambda entry: False),
+    # D-061 item 4: a replay pass whose measurement path runs without its decision.
+    ('test_a_replay_pass_replays_b3_prompts_through_the_e_evidence_paths', runner, 'replay_error',
+     lambda args: None),
+    # D-061, D-063: the runner's prefill rule not held to bare_model's (a chunk size sealed without its decision).
+    ('test_a_b1_pass_names_a_checkpoint_and_an_attention_bare_model_accepts', runner, 'b1_attention_error',
+     lambda args: None if '--prefill-chunk' in args else runner_b1_attention_error(args)),
+    # D-058 (vi): the backend field without the producer's attention.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'producer_attention_text',
+     lambda manifest: 'producer attention not stated'),
+    # D-058 (v): over-context calls not counted.
+    ('test_the_report_states_the_producer_attention_and_prompts_over_the_context', analysis, 'over_context_text',
+     lambda arm, status, events: 'none'),
+    # R18: the per-entry collection refused past the soft budget, as before S5.
+    ('test_an_entry_finishing_past_the_soft_budget_is_collected_into_its_own_folder', controller, 'soft_budget_exempt',
+     lambda label: label in {'stop_workload', 'pack_evidence', 'evidence_hash', 'final_gpu_state'}),
+    # D-079: one start on the path loses its no-window flag (the controller's transport).
+    ('test_every_child_process_on_the_controller_path_starts_without_a_window', sys.modules[__name__],
+     'hidden_path_sources', sources_with_one_flag_dropped),
+    # D-079: the helper no longer adds the flag, so every executed start would show a window.
+    ('test_every_child_process_on_the_controller_path_starts_without_a_window', cloud_run_common, 'windows',
+     lambda: False),
+    # Open item 37: a reading that never reads the filesystem.
+    ('test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not', runner, 'disk_reading',
+     lambda path: dict(path=str(path), epoch=0.0, unavailable='neutralised')),
+    # Open item 37: a sampler that keeps nothing it read.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', runner.DiskSampler, 'take',
+     lambda self, slot=None: None),
+    # Open item 37: the B3 arm no longer stops the sampler, so no after-workload reading.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', sys.modules[__name__],
+     'runner_source', runner_source_without_the_b3_disk_stop),
+    # Open item 37: the controller drops the packer's reading.
+    ('test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence', controller, 'disk_after_evidence',
+     lambda stdout: dict(unavailable='neutralised')),
+    # Open item 37: the analyser reads no disk record.
+    ('test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence', analysis, 'disk_record',
+     lambda base, target: dict(before_workload=None, peak=None, peak_kind=None, after_workload=None, readings=None,
+                               after_evidence=None, runner_file=False)),
 ]
 
 

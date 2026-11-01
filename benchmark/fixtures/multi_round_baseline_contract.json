@@ -43,7 +43,7 @@
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
     "phase_3_4_content_production": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3",
-    "phase_5_audit": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
+    "phase_5_audit": "95d3a868616f4b9d28c84cc0559811187e525e4d33262f999c3bc07134713c96",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
     "_prior_comparison": "4fdf51341e37b147039dcada08959dadc378059fbd3356dc9ae11fb3ca2133a8",
@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "ef96ca5366e63bd40daa7a60e0777dfd6adcd65b562ed931ba274a229ccffddd",
-    "_paired_convention_review": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
+    "_paired_convention_review": "ea86ffc165c153260e8ae50a266acba8c943fb8110d03ff3a4941a0076f76fe3",
     "_stamped_judged_items": "d1bbf7395103fd3cb2dd24ba3e5d046c3ab59a8af7995c53d4c07fcc4741e28f",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -87,7 +87,7 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
-    "main": "f76b8ebc41b31aeecc871229964e2702032aa7df2a6381c3d04ea62a104f0269",
+    "main": "a4936f9016a5d1088cda030e1786444b94e7f9c2ee302b895bb616a58f1df811",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
@@ -348,6 +348,39 @@
         "_prior_refusals_for": {
           "from": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
           "to": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417"
+        }
+      }
+    },
+    {
+      "date": "2026-10-29",
+      "reason": "Operator-directed, 2026-10-29, loop stage S05: D-068, a model's answer on a paired plan Python could compute nothing for is kept as a stamped, model-written, never-promoted Finding record instead of being discarded; the judged-answer refusals are read through one helper",
+      "document": "docs/loop/stages/S05_REPORT.md",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "c849c3bc0c32e7069c6ace28725b7ac940cdd61bdcb70631c888ece9c6272349",
+          "to": "ea86ffc165c153260e8ae50a266acba8c943fb8110d03ff3a4941a0076f76fe3"
+        }
+      }
+    },
+    {
+      "date": "2026-10-30",
+      "reason": "Operator-directed, 2026-10-30, loop stage S05: open item 38 (D-S12), main times its inline work before phase 3-4 with execution_topology.pre_phase_span (four contiguous spans, no-ops outside a topology runtime) so phase_latencies carry it; no other behaviour changes",
+      "document": "docs/loop/stages/S05_REPORT.md",
+      "functions": {
+        "main": {
+          "from": "f76b8ebc41b31aeecc871229964e2702032aa7df2a6381c3d04ea62a104f0269",
+          "to": "a4936f9016a5d1088cda030e1786444b94e7f9c2ee302b895bb616a58f1df811"
+        }
+      }
+    },
+    {
+      "date": "2026-10-31",
+      "reason": "Operator-directed, 2026-10-31, loop stage S05: D-134 (a run setting under D-S14 item 3), phase_5_audit passes VERIFIER its own output allowance VERIFIER_MAX_TOKENS (4096) and FACT_CHECKER keeps AUDIT_MAX_TOKENS (2048). Measured by replay R2c (A10, sdpa_constrained, the run's own loader): of 8 VERIFIER prompts whose saved replies stopped at 2048, 4 ended on their own at 2342 to 3590 tokens and passed the unchanged validator, 4 still reached 4096, no out-of-memory failure. Applies on every topology; no other behaviour changes.",
+      "document": "docs/loop/DECISIONS.md",
+      "functions": {
+        "phase_5_audit": {
+          "from": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
+          "to": "95d3a868616f4b9d28c84cc0559811187e525e4d33262f999c3bc07134713c96"
         }
       }
     }

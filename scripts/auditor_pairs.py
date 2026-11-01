@@ -279,13 +279,36 @@ def prepare_context(wrapper, payload):
         classifier_call_ids=calls, start_monotonic_s=begin, end_monotonic_s=time.perf_counter(),
         consumer='VERIFIER', reason='advisory_pair_context_ready')
     result = dict(payload)
-    context_pairs = [dict(record, producer_item=pair['producer_item'],
-        source_evidence=dict(text=pair['source_text'], source_hash=record['source_hash'],
-                             source_span_id=record['source_span_id'], source_ref_ids=record['source_ref_ids']))
-        for pair,record in zip(pairs,records)]
+    context_pairs = [pair_view(record, pair) for pair,record in zip(pairs,records)]
     result['auditor_pair_context'] = dict(schema_version=VERSION, pairs=context_pairs, unavailable=unavailable,
         interpretation='Advisory pair classifications, not findings. Retain independent reasoning, evidence and refusal. Agreement is not required.')
+    if 'processor_draft' in result:
+        result['processor_draft'] = draft_view(result['processor_draft'])
     return result
+
+
+# What VERIFIER is SHOWN, in its rendered payload only (D-S14, K2). Each pair and
+# each draft item used to carry the runtime identity VERIFIER cannot use (run,
+# item, span and call ids, source hashes, adapter digests, timestamps): about half
+# of every prompt, and the ten VERIFIER calls of L8 above about 44,300 prompt tokens
+# ran out of GPU memory on the A10 before their first token. The records kept in
+# _auditor_pair_state, the telemetry, the reply records and the bus keep every
+# identifier; pair_id stays because a finding joins its pair by it (finding_pair).
+DRAFT_ITEM_RUNTIME_KEYS = ('item_id', 'source_hash', 'ts', 'provenance', 'section_id', 'source_span_id', 'unit_id')
+
+
+def pair_view(record, pair):
+    return dict(pair_id=record['pair_id'], auditor_relation=record['auditor_relation'],
+        classifier_status=record['classifier_status'], delivery=record['delivery'],
+        source_ref_ids=record['source_ref_ids'], producer_item=pair['producer_item'],
+        source_evidence=dict(text=pair['source_text']))
+
+
+def draft_view(draft):
+    if not (isinstance(draft, dict) and isinstance(draft.get('items'), list)):
+        return draft
+    return dict(draft, items=[{k:v for k,v in item.items() if k not in DRAFT_ITEM_RUNTIME_KEYS}
+                              if isinstance(item, dict) else item for item in draft['items']])
 
 
 def finding_pair(item, records):
@@ -309,13 +332,22 @@ def compare(wrapper, result):
     records = getattr(wrapper, '_auditor_pair_state', None)
     if records is None:
         return
-    parsed = (result or {}).get('parsed') or {}
+    parsed = (result or {}).get('parsed')
+    parsed = {} if parsed is None else parsed
     try:
         wire=json.loads((result or {}).get('raw_text',''))
     except (ValueError,TypeError):
         wire={}
+    # D-061 (a): a VERIFIER reply that is not a JSON object, or whose items are not a list of
+    # objects, is a recorded contract failure (the call's contract_valid false on its
+    # model_call telemetry, and the reason on the join event), never a crash. L2 entry 06 crashed
+    # here calling .get on such a reply.
+    contract_failure = verifier_contract_failure(parsed)
+    if contract_failure is not None:
+        wrapper._observed_contract_valid = False
+        parsed = parsed if isinstance(parsed, dict) else {}
     refused=parsed.get('status')=='refused' or isinstance(wire,dict) and wire.get('status')=='refused'
-    findings = parsed.get('items', [])
+    findings = [f for f in parsed.get('items', []) if isinstance(f, dict)] if isinstance(parsed.get('items', []), list) else []
     joins = []
     for item in findings:
         pair = finding_pair(item, records) if result.get('ok') else None
@@ -325,8 +357,23 @@ def compare(wrapper, result):
             agreement=('agree' if pair['auditor_relation']==item['finding'] else 'disagree') if comparable else 'not_comparable'))
     telemetry.emit(wrapper.run_context, 'auditor_verifier_join', verifier_call_id=(result or {}).get('call_id'),
         pair_ids=[r['pair_id'] for r in records], findings=joins, finding_count=len(findings),
-        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')))
+        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')),
+        contract_failure=contract_failure)
     # Do not modify parsed findings, acceptance, refusal or the bus contract.
+
+
+def verifier_contract_failure(parsed):
+    """None for a VERIFIER reply compare() can read (a JSON object whose `items`, when present,
+    is a list of objects), else the reason: 'reply_not_object', 'items_not_list' or
+    'item_not_object' (D-061 (a))."""
+    if not isinstance(parsed, dict):
+        return 'reply_not_object'
+    items = parsed.get('items', [])
+    if not isinstance(items, list):
+        return 'items_not_list'
+    if any(not isinstance(item, dict) for item in items):
+        return 'item_not_object'
+    return None
 
 
 def contract_self_check():

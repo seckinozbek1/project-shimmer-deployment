@@ -16,7 +16,7 @@ import tarfile
 import time
 from datetime import datetime, timezone
 
-from cloud_run_common import require, safe_metadata, write_json, digest, credential_locations
+from cloud_run_common import require, safe_metadata, write_json, digest, credential_locations, hidden_run, no_window
 from lambda_experiment_provider import LambdaExperiment
 from prepare_cloud_run import git
 from prepare_source_layer import manifest as source_manifest
@@ -68,7 +68,7 @@ def prepare(args):
             'cloud_run_transport_checks.py','cloud_run_transfer_checks.py')
     checks=[]
     for suite in suites:
-        result=subprocess.run([sys.executable,str(ROOT/'tools'/suite)],capture_output=True,timeout=120)
+        result=subprocess.run([sys.executable,str(ROOT/'tools'/suite)],capture_output=True,timeout=120,creationflags=no_window())
         require(not credential_locations(result.stdout+result.stderr,suite),'sensitive test diagnostic')
         (base/(suite+'.log')).write_bytes(result.stdout+result.stderr)
         require(result.returncode==0,'local gate failed: '+suite)
@@ -79,14 +79,14 @@ def prepare(args):
     shutil.copytree(ROOT/'docs/fix/compact_contract_ab',base/'compact_local')
     for module,folder in [('compact_contract_no_generation_gate','scripts'),('compact_contract_budget','tools')]:
         command='import sys;from pathlib import Path;sys.path.insert(0,'+repr(str(ROOT/folder))+');import '+module+' as g;g.OUT=Path('+repr(str(base/'compact_local'))+');raise SystemExit(g.main())'
-        result=subprocess.run([sys.executable,'-c',command],capture_output=True,timeout=120)
+        result=subprocess.run([sys.executable,'-c',command],capture_output=True,timeout=120,creationflags=no_window())
         require(not credential_locations(result.stdout+result.stderr,module),'sensitive gate diagnostic')
         (base/(module+'.log')).write_bytes(result.stdout+result.stderr)
         require(result.returncode==0,'compact readiness gate failed: '+module)
         checks.append(dict(suite=module,passed=True))
     require(json.loads((base/'compact_local/readiness.json').read_text())['verdict']=='REMOTE_CONTRACT_AB_READY','readiness absent')
-    selected=runtime.resolve(root=ROOT)
-    preflight=runtime.subprocess_check(selected,ROOT)
+    selected=runtime.resolve(root=ROOT,runner=hidden_run)
+    preflight=runtime.subprocess_check(selected,ROOT,runner=hidden_run)
     write_json(base/'local_source_preflight.json',preflight)
     status=git(ROOT,'status','--short').decode()
     require(all(line.startswith('?? ') for line in status.splitlines()),'commit tracked source before preparation')
@@ -151,10 +151,11 @@ def execute(args):
     require(digest(base/'source.tar.gz')==m['bundle']['sha256'],'reviewed archive changed')
     require(not (base/'launch_intent.json').exists(),'one launch only')
     provider=LambdaExperiment(args.credential_file);identity=base/'ssh_identity'
-    generated=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',m['name']],capture_output=True)
+    generated=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',m['name']],capture_output=True,
+                             creationflags=no_window())
     require(generated.returncode==0,'SSH identity generation failed')
     # Check the private identity is readable by OpenSSH without displaying it.
-    check=subprocess.run(['ssh-keygen','-y','-f',str(identity)],capture_output=True)
+    check=subprocess.run(['ssh-keygen','-y','-f',str(identity)],capture_output=True,creationflags=no_window())
     require(check.returncode==0,'OpenSSH cannot read temporary identity')
     registration=provider.request('ssh-keys',dict(name=m['name'],public_key=Path(str(identity)+'.pub').read_text().strip()))['data'][0]
     write_json(base/'ssh_registration.json',registration)
@@ -162,7 +163,7 @@ def execute(args):
     iid=None;ssh=None;options=None;host=None;remote='/home/ubuntu/'+m['name']
     def transport(label, command, timeout=30, required=True):
         begin=time.time()
-        try:p=subprocess.run(command,capture_output=True,timeout=timeout)
+        try:p=subprocess.run(command,capture_output=True,timeout=timeout,creationflags=no_window())
         except subprocess.TimeoutExpired:
             write_json(base/(label+'_timing.json'),dict(seconds=time.time()-begin,status='timeout'))
             raise RuntimeError('transport timeout: '+label) from None
@@ -178,7 +179,7 @@ def execute(args):
         iid=launched['instance_ids'][0];write_json(base/'launch.json',dict(instance_id=iid,epoch=start,utc=utc()))
         flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
         subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'watch','--directory',str(base),'--credential-file',str(args.credential_file)],
-            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=flags)
+            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=no_window(flags))
         for _ in range(20):
             if (base/'WATCHDOG_ARMED.json').exists():break
             time.sleep(.5)

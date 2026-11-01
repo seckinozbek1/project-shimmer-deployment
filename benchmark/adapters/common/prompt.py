@@ -11,6 +11,11 @@ these functions. Standard library only.
   render_system            the system turn of one benchmark (the undecided invitation only
                            where its rule template asks for UNCERTAIN)
   render_user              the user turn, each slot filled once
+
+A benchmark entry may carry its own `system` and `user_template`, used in place of the
+shared ones for that benchmark alone (the FinDVer revision of
+docs/benchmarks/FINDVER_B1_REVISION.md, in a candidate prompt file); an entry without them
+renders exactly as before.
 """
 from __future__ import annotations
 
@@ -33,6 +38,11 @@ def load_prompt(path=None) -> dict:
             raise ValueError("b1_prompt.json lacks " + key)
     if INVITATION_SLOT not in spec["system"]:
         raise ValueError("the system turn has no %s slot" % INVITATION_SLOT)
+    for key, bench in spec["benchmarks"].items():
+        if "system" in bench and INVITATION_SLOT not in bench["system"]:
+            raise ValueError("the %s system turn has no %s slot" % (key, INVITATION_SLOT))
+        if "user_template" in bench and "{document}" not in bench["user_template"]:
+            raise ValueError("the %s user template has no {document} slot" % key)
     return spec
 
 
@@ -91,10 +101,11 @@ INVITATION_SLOT = "{undecided_invitation}"
 def render_system(spec, bench_key) -> str:
     """The system turn for one benchmark (revision 3): the undecided invitation is a
     sentence of its own only where the benchmark's rule template asks for UNCERTAIN
-    (`invite_undecided`); elsewhere the slot is empty and the label stays listed."""
+    (`invite_undecided`); elsewhere the slot is empty and the label stays listed. A
+    benchmark's own `system` replaces the shared one."""
     bench = spec["benchmarks"][bench_key]
     sentence = (" " + spec["undecided_invitation"]) if bench.get("invite_undecided") else ""
-    return spec["system"].replace(INVITATION_SLOT, sentence)
+    return bench.get("system", spec["system"]).replace(INVITATION_SLOT, sentence)
 
 
 def render_user(spec, bench_key, *, document, conventions, item, reference="") -> str:
@@ -110,7 +121,7 @@ def render_user(spec, bench_key, *, document, conventions, item, reference="") -
         "undecided_label": bench["undecided"],
     }
     # One pass: a filled slot is never read again, so braces in the document stay text.
-    return _SLOT.sub(lambda m: values[m.group(1)], spec["user_template"])
+    return _SLOT.sub(lambda m: values[m.group(1)], bench.get("user_template", spec["user_template"]))
 
 
 def overhead(spec, items, conventions, count_prompt, reference="") -> int:

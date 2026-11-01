@@ -15,7 +15,7 @@ import subprocess
 import sys
 import time
 
-from cloud_run_common import budget_deadlines, digest, require, safe_metadata, verify_bundle, verify_files, write_json
+from cloud_run_common import budget_deadlines, digest, no_window, require, safe_metadata, verify_bundle, verify_files, write_json
 from runtime_contract import load_contract, remote_resolver_command, compatible
 from loop_budget_guard import GuardRefusal, PREFIX, refuse_general_path, refuse_while_loop_open
 
@@ -52,9 +52,11 @@ def plan(bundle, host, running_epoch):
 
 
 def run_transport(command, timeout, runner=subprocess.run, interactive=False):
-    # OpenSSH owns passphrase entry in interactive mode; this tool never reads it.
+    # OpenSSH owns passphrase entry in interactive mode; this tool never reads it, and the
+    # child keeps the operator's console for it (D-079: otherwise it runs with no window).
     return runner(command, check=True, stdout=None if interactive else subprocess.DEVNULL,
-                  stderr=None if interactive else subprocess.DEVNULL, timeout=timeout)
+                  stderr=None if interactive else subprocess.DEVNULL, timeout=timeout,
+                  creationflags=no_window(keep_console=interactive))
 
 
 def upload_timeout(requested, terminate_epoch, now=None):
@@ -157,7 +159,7 @@ def execute(args, runner=subprocess.run, provider=None):
     flags = (getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
              | getattr(subprocess, 'CREATE_NO_WINDOW', 0)) if os.name == 'nt' else 0
     watchdog = subprocess.Popen(watch_cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                creationflags=flags, start_new_session=os.name != 'nt')
+                                creationflags=no_window(flags), start_new_session=os.name != 'nt')
     for _ in range(100):
         require(watchdog.poll() is None, 'watchdog did not arm')
         if (local / 'WATCHDOG_ARMED.json').exists():
@@ -180,7 +182,8 @@ def execute(args, runner=subprocess.run, provider=None):
         write_json(local / 'lifecycle.json', {'instance_reported_running_epoch': epoch, 'first_ssh_success_epoch': first_ssh,
                                             'deployment_start_epoch': deployment_start})
         try:
-            resolved_result = runner(transport['resolve_python'], check=True, capture_output=True, text=True, timeout=60)
+            resolved_result = runner(transport['resolve_python'], check=True, capture_output=True, text=True, timeout=60,
+                                     creationflags=no_window(keep_console=interactive))
         except subprocess.CalledProcessError as exc:
             write_json(local / 'runtime_resolution_failure.json', {
                 'required': load_contract()['python_profiles']['sealed_reference'],

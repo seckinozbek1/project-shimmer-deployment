@@ -12,17 +12,29 @@
          band and side (section 5.6, Words) over a whole input, no build needed; band totals
          for the holdout pool alone and for the development side apart
   label  --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
+         [--scoring benchmark|as_shipped]   (docs/benchmarks/SCORING_MODES.md; default
+         as_shipped, today's reading; benchmark counts the advice the pipeline shows)
   score  --labels <labels.json> --bundles <build folder> --out <metrics.json>
+         [--paired-with <another arm's labels.json>]
 
 The cut budget is computed per document (section 5.3) from the bundle's own conventions
 with the B1 prompt (common/prompt.py). A token counter file defines `count(text) -> int`
 and `count_prompt(system, user) -> int` with the main reading agent's own tokenizer and
-chat template. `label` writes the primary labels and the S-1, S-2, S-3 and S-5 analyses in
-one file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
-evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
+chat template. `label` writes the primary labels and the S-1, S-2, S-3, S-5, S-6, S-7 and S-8
+analyses in one file (S-8, DEV-012: B3 and B4 as if every model-written record were absent;
+for B0, B1 and B2 it equals the primary and says so); `score` scores each of them, and S-4 from the primary labels (the items
+whose marked evidence lies wholly in the kept text). A B3 document whose run made a model
+call over its model's context is excluded (section 5.3, D-078): its items carry basis
+over_context_excluded, the labels file lists and counts them (`over_context`), every
+analysis but S-7 leaves them out, and S-7 scores them ABSTAIN. `--paired-with` adds the
+paired view: the documents both arms label and neither excluded. For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
-document, named the same way. B3 and B4 are refused while the typed-record key of the
-pipeline's output is not settled (preregistration section 12 item 9).
+document, named the same way. B2's typed records are read from review_data.json, B3's and
+B4's from the run's bus (common/records.py). That reading (decision DS5-8, preregistration
+section 12 item 9) was attacked and recorded (docs/loop/DECISIONS.md D-055, D-056), so
+mapping.BUS_READER_ADOPTED is True; with it False, B3 and B4 are refused. Every analysis in a
+labels file and in a score carries `scoring`, the mode it was labelled under; `score
+--paired-with` refuses two arms with records (B2, B3, B4) labelled under different modes.
 """
 from __future__ import annotations
 
@@ -34,7 +46,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from . import bundle, cut, ids, mapping, metrics, prompt
+from . import bundle, cut, ids, mapping, metrics, prompt, segments
 
 EXIT_FAULT = 3
 EXIT_REFUSED = 4
@@ -147,6 +159,14 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
         extra["exclusion_sha256"] = _sha(exclude)
         extra["excluded_documents"] = excluded
     cut_plan = None
+    # B3's segments (common/segments.py): an adapter that declares B3_SEGMENT_TOKENS has
+    # every document read by B3 in segments of at most that many tokens, counted by the
+    # same tokenizer as the cut; --b3-segment-tokens replaces the declared limit
+    given_limit = options.pop("b3_segment_tokens", None)
+    if given_limit is not None and not all(budget_given):
+        raise ValueError("--b3-segment-tokens needs the token counter of the cut rule")
+    segment_limit = given_limit if given_limit is not None else getattr(adapter, "B3_SEGMENT_TOKENS", None)
+    segment_plan = None
     if all(budget_given):
         counter = load_counter(token_counter) if isinstance(token_counter, (str, Path)) else token_counter
         cut_plan = (counter.count, budget_function(counter, max_context, output_allowance, b1_prompt))
@@ -154,6 +174,13 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
             "max_context": int(max_context), "output_allowance": int(output_allowance),
             "b1_prompt_sha256": _sha(b1_prompt or prompt.DEFAULT_PROMPT),
             "token_counter_sha256": _sha(token_counter) if isinstance(token_counter, (str, Path)) else None}
+        if segment_limit is not None:
+            segment_plan = segments.plan(counter.count, int(segment_limit))
+            extra["b3_segment_rule"] = {
+                "limit_tokens": int(segment_limit),
+                "declared": int(segment_limit) == getattr(adapter, "B3_SEGMENT_TOKENS", None),
+                "counted_on": "each segment document file as written, by the cut rule's token counter",
+                "bundle_folder": segments.SEGMENTS_DIR}
     if assignment:
         extra["assignment_sha256"] = _sha(assignment)
     if testmini:
@@ -161,7 +188,8 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
     declared = side if side in (ids.DEVELOPMENT, ids.HOLDOUT) else None
     return bundle.write_bundles(out_dir, adapter.BENCHMARK, documents, cut_plan,
                                 declared_side=declared, build_extra=extra,
-                                refuse_holdout=declared is None and not lifted)
+                                refuse_holdout=declared is None and not lifted,
+                                segment=segment_plan)
 
 
 REMOVED_OVERLAP = "removed_overlap"
@@ -238,37 +266,110 @@ def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
                  "excluded_documents": excluded, "documents": rows}, **extra)
 
 
-def label(adapter, items_path, arm, runs_root=None) -> dict:
+def segments_beside(items_path) -> dict:
+    """{document id: its B3 segment records} from the parts record the build wrote beside
+    the item table (common/segments.py); empty when the build segmented nothing or no parts
+    record is there."""
+    path = Path(items_path).parent / bundle.PARTS_RECORD_NAME
+    if not path.is_file():
+        return {}
+    record = json.loads(path.read_text(encoding="utf-8"))
+    return {d["document_id"]: d["b3_segments"] for d in record.get("documents") or []
+            if d.get("b3_segments")}
+
+
+def label(adapter, items_path, arm, runs_root=None, scoring=mapping.SCORING_AS_SHIPPED) -> dict:
+    """Every analysis of one arm. `scoring` is `as_shipped` (today's reading) or `benchmark`
+    (advice counted, docs/benchmarks/SCORING_MODES.md); every analysis carries it."""
+    mapping.check_scoring(scoring)
     items = mapping.read_items(items_path)
     foreign = sorted({str(i.get("benchmark")) for i in items} - {adapter.BENCHMARK})
     if foreign:
         raise ValueError("items of another benchmark: " + ", ".join(foreign))
     if arm == "B0":
-        primary = mapping.label_b0(adapter.SPEC, items)
+        primary = mapping.label_b0(adapter.SPEC, items, scoring=scoring)
     elif arm == "B1":
-        primary = mapping.label_b1(adapter.SPEC, items, runs_root)
+        primary = mapping.label_b1(adapter.SPEC, items, runs_root, scoring=scoring)
     elif arm in mapping.ARMS:
-        if arm in mapping.PIPELINE_ARMS and not mapping.TYPED_RECORDS_SETTLED:
+        if arm in mapping.PIPELINE_ARMS and not mapping.BUS_READER_ADOPTED:
             raise mapping.Refused(
-                "arm %s is refused: the key that carries the pipeline's typed records in "
-                "review_data.json is not settled (preregistration section 12 item 9); the "
-                "provisional key %r is what B2 writes" % (arm, mapping.TYPED_RECORDS_KEY))
-        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm)
+                "arm %s is refused: reading the pipeline's typed records from the run's bus "
+                "(common/records.py, decision DS5-8, preregistration section 12 item 9) "
+                "takes effect only after its checker attack is recorded" % arm)
+        primary = mapping.label_pipeline_arm(adapter.SPEC, items, runs_root, arm, scoring=scoring,
+                                             segments=segments_beside(items_path))
     else:
         raise ValueError("unknown arm " + repr(arm))
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),
             "S-2": mapping.sensitivity_s2(adapter.SPEC, primary),
             "S-3": mapping.sensitivity_s3(adapter.SPEC, primary),
-            "S-5": mapping.sensitivity_s5(adapter.SPEC, primary)}
+            "S-5": mapping.sensitivity_s5(adapter.SPEC, primary),
+            "S-6": mapping.sensitivity_s6(adapter.SPEC, primary),
+            "S-7": mapping.sensitivity_s7(adapter.SPEC, primary),
+            "S-8": mapping.sensitivity_s8(adapter.SPEC, primary)}
 
 
-def score(adapter, labels: dict, bundles_dir) -> dict:
-    """Every analysis in the labels file, and S-4 from the primary labels (section 5.3)."""
-    out = {name: metrics.score_arm(adapter.SPEC, result, bundles_dir, adapter.headline)
-           for name, result in labels.items()}
+PAIRED_KEY = "paired"
+
+
+def _scored(adapter, labels: dict, bundles_dir, gone=()) -> dict:
+    """Every analysis of one labels file, each without the documents in `gone`, and S-4 from
+    the primary labels. Every analysis but S-7 leaves out the documents this arm excluded
+    for a model call over its model's context (section 5.3); S-7 scores them ABSTAIN."""
+    spec = adapter.SPEC
+    out = {}
+    for name, result in labels.items():
+        view = mapping.scored_view(spec, result)
+        if gone:
+            view = mapping.restrict(spec, view, gone)
+        out[name] = metrics.score_arm(spec, view, bundles_dir, adapter.headline)
+        out[name][mapping.SCORING_FIELD] = mapping.scoring_of(result)
+        if "s8_applies" in result:     # S-8 (DEV-012) says whether it differs from the primary
+            out[name]["s8_applies"], out[name]["note"] = result["s8_applies"], result.get("note")
     if "primary" in labels:
-        out["S-4"] = metrics.score_arm(adapter.SPEC, metrics.without_evidence_beyond_cut(
-            labels["primary"], bundles_dir), bundles_dir, adapter.headline)
+        view = mapping.scored_view(spec, labels["primary"])
+        if gone:
+            view = mapping.restrict(spec, view, gone)
+        out["S-4"] = metrics.score_arm(spec, metrics.without_evidence_beyond_cut(view, bundles_dir),
+                                       bundles_dir, adapter.headline)
+        out["S-4"][mapping.SCORING_FIELD] = mapping.scoring_of(labels["primary"])
+    return out
+
+
+def score(adapter, labels: dict, bundles_dir, paired_with=None) -> dict:
+    """Every analysis in the labels file, and S-4 from the primary labels (section 5.3).
+    A document excluded from this arm for a model call over its model's context, or for a
+    setup failure (B1 or B3, D-084), is left out of every analysis but S-7, which scores its
+    items ABSTAIN; every arm that excludes nothing is scored on all its documents.
+
+    `paired_with` (another arm's labels file, as `label` writes it) adds the paired view
+    (open point 12.14, D-078): every analysis again, on the documents both files label and
+    neither arm excluded, with the documents left out and why. Comparisons of B3 with any
+    arm read this view; S-7 is not in it, since it is the reading on all documents."""
+    out = _scored(adapter, labels, bundles_dir)
+    if paired_with is not None:
+        mine, other = labels["primary"], paired_with["primary"]
+        # two arms with records are compared under one scoring mode (B0 and B1 have no advice)
+        modes = {mapping.scoring_of(r) for r in (mine, other) if r["arm"] in mapping.ADVICE_ARMS}
+        if len(modes) > 1:
+            raise ValueError("the two labels files were labelled under different scoring modes (%s)"
+                             % ", ".join(sorted(modes)))
+        own_docs = {r["document_id"] for r in mine["labels"]}
+        other_docs = {r["document_id"] for r in other["labels"]}
+        excluded = mapping.excluded_documents(mine) | mapping.excluded_documents(other)
+        gone = (own_docs ^ other_docs) | excluded
+        analyses = _scored(adapter, {k: v for k, v in labels.items() if k != "S-7"}, bundles_dir, gone)
+        out[PAIRED_KEY] = {
+            "arm": mine["arm"], "with_arm": other["arm"],
+            mapping.SCORING_FIELD: mapping.scoring_of(mine), "with_scoring": mapping.scoring_of(other),
+            "documents": len((own_docs & other_docs) - excluded),
+            "left_out_over_context": {"this_arm": sorted(mapping.over_context_excluded(mine) & own_docs),
+                                      "other_arm": sorted(mapping.over_context_excluded(other) & own_docs)},
+            # D-084, DEV-014: a document either arm had a setup failure on (B1 or B3)
+            "left_out_setup_failure": {"this_arm": sorted(mapping.setup_failure_excluded(mine) & own_docs),
+                                       "other_arm": sorted(mapping.setup_failure_excluded(other) & own_docs)},
+            "left_out_not_in_both": sorted(own_docs - other_docs),
+            "analyses": analyses}
     return out
 
 
@@ -324,10 +425,17 @@ def main(adapter, argv=None) -> int:
     lab.add_argument("--arm", required=True, choices=mapping.ARMS)
     lab.add_argument("--runs")
     lab.add_argument("--out", required=True)
+    lab.add_argument("--scoring", choices=mapping.SCORING_MODES, default=mapping.SCORING_AS_SHIPPED,
+                     help="benchmark: every model judgement the pipeline shows as advice counts as "
+                          "a finding (the main figure); as_shipped: today's reading (the default); "
+                          "docs/benchmarks/SCORING_MODES.md")
     sc = sub.add_parser("score")
     sc.add_argument("--labels", required=True)
     sc.add_argument("--bundles", required=True)
     sc.add_argument("--out", required=True)
+    sc.add_argument("--paired-with", help="another arm's labels file: adds the paired view, on "
+                                          "the documents both label and neither arm excluded "
+                                          "for a call over its model's context (section 5.3)")
     args = parser.parse_args(argv)
     try:
         if args.command == "build":
@@ -370,7 +478,7 @@ def main(adapter, argv=None) -> int:
         if args.command == "label":
             if args.arm != "B0" and not args.runs:
                 parser.error("--runs is required for arm " + args.arm)
-            labels = label(adapter, args.items, args.arm, args.runs)
+            labels = label(adapter, args.items, args.arm, args.runs, args.scoring)
             _write(args.out, labels)
             found = faults_of(labels)
             print(json.dumps(labels["primary"]["counts"], indent=2))
@@ -380,9 +488,14 @@ def main(adapter, argv=None) -> int:
             return 0
         if args.command == "score":
             labels = json.loads(Path(args.labels).read_text(encoding="utf-8"))
-            result = score(adapter, labels, args.bundles)
+            other = (json.loads(Path(args.paired_with).read_text(encoding="utf-8"))
+                     if args.paired_with else None)
+            result = score(adapter, labels, args.bundles, other)
             _write(args.out, result)
-            print(json.dumps({k: v["headline"] for k, v in result.items()}, indent=2))
+            shown = {k: v["headline"] for k, v in result.items() if k != PAIRED_KEY}
+            if PAIRED_KEY in result:
+                shown[PAIRED_KEY] = {k: v["headline"] for k, v in result[PAIRED_KEY]["analyses"].items()}
+            print(json.dumps(shown, indent=2))
             return 0
     except (mapping.Refused, ValueError) as exc:
         print("refused: %s" % exc, file=sys.stderr)

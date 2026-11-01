@@ -111,7 +111,19 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` and `tools/loop/instance_reaper.py` again, so bundles sealed
   before it refuse the same way and must be re-sealed. `scripts/agent_wrapper.py` is not
   in the controller binding: the seal already pins it among the runtime files the bundle
-  carries.
+  carries. Loop S5 changed `tools/ordinary_final_run.py`, `tools/ordinary_final_cloud.py`
+  and `tools/ordinary_final_bound_cloud.py` (the B1 arm, the B3-only batch form, per-entry
+  evidence past the soft budget, the sealed B1 argument check), so bundles sealed before
+  S5's merge refuse the same way and must be re-sealed. D-S17 item 1 (at most two loop
+  instances) changed `tools/ordinary_final_cloud.py`, `tools/loop_budget_guard.py` and
+  `tools/loop/instance_reaper.py`, so every bundle sealed before it refuses with
+  `Controller source changed` and must be re-sealed. D-101 (after L7, D-100) changed `tools/ordinary_final_run.py` again (a
+  declared multi-round run is assessed without the Producer 168 model-call requirement), so
+  bundles sealed before it refuse the same way and must be re-sealed. Open item 37 (disk on the instance:
+  the runner's `evidence/disk_usage.json` before, sampled during and after the workload, and
+  the evidence packer's `disk_after_evidence.json`) changed `tools/ordinary_final_run.py` and
+  `tools/ordinary_final_cloud.py`, so bundles sealed before it refuse the same way and must be
+  re-sealed.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
@@ -120,8 +132,13 @@ processing swarm governed by an append-only constitution.
   `--read-ledger` and needs a `budget_open` line among them. Before the launch request
   `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
   decision through the intent line and reading the provider inventory again just before it:
-  it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
-  in the inventory), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
+  it refuses when two loop instances already run (D-S17: at most two at a time, a third
+  refused in one line, "Two loop instances are running; at most two at a time"; the limit is
+  `instance_reaper.MAX_LOOP_INSTANCES`, read by the guard as `loop_budget_guard.MAX_LOOP_INSTANCES`
+  and by `admits_another`; each instance counted once over the open ledger launches and the
+  `shimmer-loop-` names in the inventory), when the inventory lists a loop instance no ledger
+  records (its cap could not be counted) or any instance that is not a loop instance (the
+  controller, the sealer and the bound preflight refuse that too), when the per-run cap `min(1.5 x forecast, ceiling - spend - running
   caps - storage forecast)`, ceiling `min(hard stop, budget - 1)` (`loop_budget_guard.cap_ceiling`,
   so a hard stop at the budget never removes the one-dollar margin), is below the forecast
   (measured minutes x live price x 1.3), or when
@@ -132,7 +149,12 @@ processing swarm governed by an append-only constitution.
   line's `hard_stop_usd`, else the budget less the one-dollar margin), a launch with no readable
   budget line is refused, and the reaper terminates every loop instance while no budget line can
   be read. The type rule's A10 reference is the latest `a10_reference_price_usd_per_hour` on any
-  budget line. An open launch accrues spend only up to its recorded deadline; past it, with no
+  budget line. The hard stop counts every running loop instance together (spend is the
+  total over all launches); the reaper judges each instance on its own record and, should more
+  than two be left running, ends the latest-requested beyond the limit (`over_instance_limit`).
+  A controller's independent cleanup requires its own instance gone and no instance outside the
+  loop, and names another loop instance still running apart (`other_loop_instances`).
+  An open launch accrues spend only up to its recorded deadline; past it, with no
   instance of its name listed, the reaper closes it with one termination line
   (`intent_without_instance`, or `instance_not_listed_charged_to_deadline` for a launch whose
   instance is gone), charged to the deadline: a ceiling counted as actual spend and never
@@ -172,6 +194,58 @@ processing swarm governed by an append-only constitution.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
+- B1-ARM-A (loop S5): the sealer writes `arm` (B3 or B1) into every manifest; a manifest
+  without one is B3. A B1 manifest carries `b1` (its sealed checkpoints `{name, args}`, the
+  item ids of its one document, the `items.json` digest) and `items.json` as a support file;
+  a sealed checkpoint carries only the options `benchmark/baselines/bare_model.py`'s parser
+  takes (`ordinary_final_run.B1_SEALED_ARGS`, refused at sealing otherwise; that parser takes
+  no abbreviations). `tools/ordinary_final_run.py` keeps every guard for both arms, refuses an
+  authorization whose `arm` differs from the sealed one (none means B3), and for B1 loads the
+  sealed `bare_model.py` in its own process, never imports `pipeline`, runs `main()` once per
+  checkpoint into `evidence/b1/<name>`, and passes only on one reply record per item per
+  checkpoint. A batch entry's plan arm must equal its sealed arm; a batch file may say
+  `"form": "b3_only"` (exposed bundles only, each item once, unpaired). Past the soft budget
+  a batch entry's `batch_pack_evidence` and `batch_evidence_hash` still run. The analyser
+  reports a B1 entry from `evidence/result.json` and each checkpoint's `b1_summary.json`. A sealed
+  B1 pass is `{name, checkpoint, args}` (D-056 condition 6): `name` is a free label (lower case,
+  digits, underscore; unique) naming `evidence/b1/<name>`, `checkpoint` (tuned or base) is
+  passed as `--checkpoint`, and a pass without `checkpoint` loads the checkpoint its name names.
+- STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
+  sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
+  and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
+  own `items.json` outside it. It never copies `answer_key.json` or build records, and
+  refuses the whole staging when a file under `context/` or `conventions/` is named like a
+  key. Check 287.
+- PREFILL-E (loop S5, D-056, D-058, D-060, D-061, D-063): with nothing set, the producer loads
+  sdpa (`SHIMMER_PRODUCER_ATTENTION`) and every producer call and every B1 call
+  (`benchmark/baselines/bare_model.py`, both checkpoints, every item) runs pinned per call to the
+  memory-efficient sdpa backend and prefilled in one shot through `final_models.generate_with_prefill`,
+  both recorded as decision D-063 (D-061's declared fallback: E missed its threshold; sdpa one shot
+  was byte-identical to one-shot eager on 12 of 12 replayed B3 prompts, E on 8 of 12). Eager
+  (one shot or chunked) and chunked prefill (`SHIMMER_PRODUCER_PREFILL_CHUNK`, E is
+  `E_CHUNK_TOKENS` 512, 2 tokens left to generate()) are measurement settings, each accepted only
+  with its decision id (`SHIMMER_PRODUCER_ATTENTION_DECISION`, `SHIMMER_PRODUCER_PREFILL_DECISION`);
+  a decision named with the default is accepted only when it is D-063. One rule each:
+  `final_models.attention_setting` and `prefill_setting`. The producer and B1 share one kernel.
+  The `_load_qwen` models run sdpa pinned the same way, one shot; the Auditor896 classifier stays
+  eager (its runtime contract says so). Every reply record carries `attention` (kernel, prefill
+  setting, decisions) and `prefill` (chunks, tail, seconds). Out of memory or a refused kernel is
+  written once and raised as a named failure, never retried; a prompt whose tokens plus the output
+  allowance exceed the model's positions is refused before generating, recorded (`context`,
+  `prompt_over_context`, a RUN_REPORT row) and is a declared exclusion of B3. B1 measurement
+  passes (`--attention eager`, `--prefill-chunk N`) need a decision id; each pass records its peak
+  GPU memory, and `bare_model.py compare --a --b --out` counts byte-identical replies and agreeing
+  labels. `benchmark/baselines/replay_prompts.py` replays B3 producer prompts (payloads only) as an
+  exposed-only replay pass; its `e`, `one_shot` and `e_repeat` paths are measurement paths, `sdpa`
+  is the run proper's. The sealer evaluates the bound rules, and the runner's B1 rule is held equal
+  to bare_model's. The analyser states "producer and B1 sdpa, prefilled in one shot,
+  memory-efficient backend pinned (D-063); differs from v5 to v12, which ran the producer eager".
+  Also from D-061: a VERIFIER reply that is not an object is a recorded contract failure;
+  `semantic_incomplete` is its own assessment reason; no partition retry under deterministic
+  decoding (`retry_skipped_deterministic`). The producer was trained and evaluated eager one shot,
+  so its 102-of-102 DEV figure is a one-shot eager figure; the difference is a preregistration
+  section 9 limitation. Loop S5 changed `tools/ordinary_final_run.py` several times (D-061, D-063),
+  so bundles sealed before S5's merge refuse with `Controller source changed`. Checks 282, 288, 289.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
@@ -206,12 +280,28 @@ processing swarm governed by an append-only constitution.
   instance), against the documents the bound pipeline's own `_load_corpus` loads;
   `execution_topology` is unchanged (D-011 choice 3).
   The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
-  `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
+  `activated` (`multi_round.read_saved`), its round review recorded, and exactly one
+  pipeline_start and one pipeline_end in its telemetry; it does not require a model call of it
+  (`ordinary_final_run.model_call_required`, D-101: L7 failed nine reviewed multi-round entries
+  on that requirement alone), while every other B3 run still needs its Producer 168 call. The
+  phase saves its own step times (`timings` in `audit/multi_round.json`, `seconds` per round in
+  `audit/round_reuse.json`, `time.perf_counter`, rounded to microseconds; open item 39), since a
+  multi-round run has no topology runtime and empty `phase_latencies`; the analyser reports them
+  in its `Multi-round step times` row. Later rounds reuse unchanged units through a
   Python-only per-round review (`multi_round_rounds`): a unit's signature covers its text, its
-  paired rules, the document's field vocabulary and its units of measure (`SIGNATURE_INPUTS`),
-  reused records and model asks are rebased onto the new unit id, the record is
-  `audit/round_reuse.json`, and the round findings are posted on the run bus (backend `paired`,
-  model `python`, one envelope per round document); nothing downstream reads them yet. A
+  paired rules, the labels of the document's field vocabulary those rules name
+  (`multi_round_rounds.named_vocabulary`, the only way the vocabulary reaches the computation;
+  a label no paired rule names recomputes nothing) and its units of measure
+  (`SIGNATURE_INPUTS`), reused records and model asks are rebased onto the new unit id, the
+  record is `audit/round_reuse.json`, and the round findings are posted on the run bus (backend
+  `paired`, model `python`, one envelope per round document); nothing downstream reads them yet.
+  The case's typed records are computed in Python, with no model call (open item 35, INC-023:
+  the one free-form PROCESSOR call over the whole case ran to its output cap on real execution):
+  one position per declared (round, actor, issue), accepted only on exactly one accepted source,
+  numeric only when its quote states exactly one figure with a unit; one movement between
+  consecutive positions, always `unknown` (`multi_round_phase.computed_records`, `written_by`
+  `python`, posted with backend `computed`, model `python`). Only the strategic layer's explicit
+  decision-support modes still call PROCESSOR and VERIFIER. A
   term that vanished while its section states an unclaimed newcomer in the same unit of measure
   is refused as a possible rename (`paired_review.possible_successor`), never minted as
   withdrawn, until S5 measures an ensemble decision for it; two figures with no unit count as
@@ -254,6 +344,15 @@ processing swarm governed by an append-only constitution.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
+  A key outside `benchmark/corpora/` is scored with `tools/score_corpus.py --key <answer_key.json>
+  --run <run>`, and its twin with `--twin-key` and `--twin-run`; the scorer refuses a twin the key
+  does not name and a run that is not of the twin's document. It reads `expected_refusals` by
+  refusal kind (a rename Python matched is no false positive; one only a model's record matches
+  satisfies nothing), scores a run holding `audit/multi_round.json` per round and document from
+  Python's round findings only (a round-scoped key is refused on any other run), and reports
+  the four relations Python never writes apart, located only by a marked model-written record
+  (check 293). Development cases built from
+  repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline
 
@@ -390,6 +489,19 @@ processing swarm governed by an append-only constitution.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
   `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+- UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
+  comparison), the model's answer is kept as a model-written Finding record, never discarded:
+  stamped by Python with the judged-absence stamping and the PLAN's rule
+  (`paired_review.stamp_from_plan`; a rule id the reply names is replaced), screened by the shared
+  refusals (`paired_review.judged_item_refusal`: quote not in the unit and the three absence-claim
+  refusals; listed in the pairing map under `uncomputable_refused`), kept only from a reply that is
+  ok and did not refuse (why it gave none in `uncomputable_judged`), and posted once as Python's
+  stamped copy (`stamped_by: python`, `judged_path: uncomputable`) under the model's backend and
+  model, so written by `model`; the call's own post still withholds its items. Outcome
+  `judged_uncomputable` (`judged_listed`, `judged_refused`); `advisory_not_kept` names runs before
+  D-068. Never promoted (check 269), marked wherever model findings are shown. Check 290. The
+  benchmark adapters label a semantically incomplete run from its records (D-066), report
+  completeness per document and arm, and add sensitivity S-6.
 - WRITTEN-BY-A (loop S2): who wrote a finding is read off the bus post it travelled in
   (`finding_record.written_by`): `python` only for `backend` `paired`/`computed` with a model
   id starting `python`, `model` for everything else, including an item no envelope claims.
@@ -637,7 +749,7 @@ processing swarm governed by an append-only constitution.
   answer without a token (FastAPI's own documentation routes are off). The Annex B.4 reasons live
   once, in `scripts/run_report_text.py`. The screenshots in `docs/loop/ui/` are rendered by
   `tools/console_screenshots.py` from the committed fixture only (replies under a fixed clock
-  inside the run window); two renders are byte-identical. Checks 285 to 293.
+  inside the run window); two renders are byte-identical. Checks 298 to 306.
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the
@@ -694,6 +806,114 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- DECODING-B (loop S5, D-S14 item 3): the compact producer (PROCESSOR on `local_producer`
+  bound by `compact_contracts.bind_producer` with the validated messages, report_optimized)
+  decodes under a logits constraint built per request from that request's OWN declaration
+  (`scripts/contract_decoding.py`, declared in `config/contract_decoding.json`), with
+  `compact_contracts.producer` UNCHANGED behind it, the prompt bytes unchanged (check 263) and
+  the frozen decoding policy unchanged (greedy stays greedy; the constraint rides beside the
+  kwargs as one logits processor, `contract_decoding.for_call`, the only place it is built).
+  Only the canonical reply can be generated: sorted keys and compact separators (the form all
+  84 DEV replies of checkpoint 168 take, NOT the key order the contract's example names), one
+  item per owned alias in owned order, every key present, claims only CLM ids written in that
+  span's text, refs only that span's grounded set (the validator's: REF ids in its text and
+  the passages `bounded_extraction.grounding` placed in it), no id twice, status extracted
+  exactly when claims, questions or uncertainty is non-empty, questions and uncertainty the
+  model's own non-blank, unrepeated JSON strings; or the refusal object, which stays the
+  model's to give and the validator's to refuse. A token the model would have chosen anyway
+  is never changed; every step where its top token was not admitted is counted. Every
+  constrained call records `decoding_constraint` (name, version, declaration and request
+  digests, steps, interventions, dead end) on its reply record and in its usage (the
+  `backend_invocation` telemetry row); every other call records none. Measured, not
+  preferred: L7, L8, L10 and L11 refused 52 of 283 compact partitions (invented CLM ids in
+  35 calls, two of them runaway lists to the 1536 cap, a dropped uncertainty key, a
+  context-only alias, one item for two spans, the neighbouring span's REF), each repeated
+  byte for byte by a deterministic re-ask; all 52 saved replies leave the constrained
+  language, and all 84 frozen DEV replies stay inside it with no intervention. The DEV
+  figure (102 of 102 items, 75 of 84 rows valid, 9 refusals) is re-measured under the
+  constraint by the replay path `sdpa_constrained` (`benchmark/baselines/replay_prompts.py`,
+  `extract --call-ids --dev`); measured on the A10 by replay R1 (D-116): all 52 failing
+  partitions valid under the constraint, DEV 75 of 84 valid with 9 refusals as before, 0
+  interventions on the DEV rows; adopted. The replay path changed `tools/ordinary_final_run.py`
+  (`REPLAY_PATHS`), so bundles sealed before it refuse with `Controller source changed`.
+  Check 295 and the decoding gate (strict determinism on CUDA) hold this.
+  The same processor carries the ENVELOPE of four agents (D-S14, s5_diag_b3 K9 to K11; K8):
+  VERIFIER and PRACTICE_AUDITOR on local_auditor and ARCHIVIST and EDITOR_CLERK on local_producer
+  (`config/envelope_decoding.json`, `contract_decoding.EnvelopeGrammar`, built per call by
+  `for_envelope` from the agent's own contract in `config/agent_contracts.json`; a wrapper bound
+  to a compact contract gets none). Admitted: an optional opening fence, the envelope
+  `{agent, doc_id, items}` in that key order with `agent` the calling agent and `doc_id` any
+  string, flat items opening with the agent's declared `leading_keys` in order, then the other
+  required keys (`CORE_ITEM_REQUIRED`, then the contract's `required`) and any other declared
+  field name (the core optional and runtime keys, the contract's fields, the finding_record
+  fields) in any order, each at most once, the item closing only when every required key is
+  written; the declared `confident` alias in its key's place; a required value neither null nor
+  empty; JSON whitespace in runs of at most 16; the stop token only after the envelope's closing
+  brace, after which anything may follow. `leading_keys` is the order every saved valid item
+  writes: VERIFIER every required key in the validator's order, PRACTICE_AUDITOR every one but
+  `explanation` (2 valid L12 replies write it last), ARCHIVIST its confidence key first,
+  EDITOR_CLERK its confidence key first. EDITOR_CLERK was declared at the S5 close in place of
+  the removed K8 kind stamp (ENVELOPE-B): measured on all 61 of its saved replies in L7, L8,
+  L10, L11, L12 and L12b with the Qwen tokenizer, the 49 valid ones (26 items, `kind` second or
+  last) are inside the language with 0 interventions, and all 12 without `kind` (4 refused, 8
+  accepted only by the stamp, which the tool counts as `stamped` from the run's
+  `contract_normalized`, never as valid) leave it where the item closed; which key the model
+  writes in its place is not known until a replay on the model is read. NOT
+  constrained, measured: enumerated values (36 of 74 valid VERIFIER items write a `finding` and
+  123 of 1,838 valid PRACTICE_AUDITOR items a `verdict` the contract does not declare, which the
+  validator accepts) and `doc_id`. Measured on every saved reply of the three agents in L7, L8,
+  L10, L11 and all 37 L12 entries with each backend's tokenizer
+  (`tools/envelope_decoding_measure.py`): all 1,932 valid replies (38 VERIFIER, 1,838
+  PRACTICE_AUDITOR, 56 ARCHIVIST) are inside the language with 0 interventions, and all 24
+  failed ones leave it. It does not stop a repetition inside a string or an item list that runs
+  to the output cap. Measured on the A10 (R2a, R2b; D-132, D-134): no valid reply changed, and
+  14 of the 24 failed calls became valid; 10 stayed invalid (8 VERIFIER at 2,048 tokens, one item
+  per reference; 1 PRACTICE_AUDITOR at 768, one sentence repeated; and 1 PRACTICE_AUDITOR the
+  constraint kept open for its required `explanation`, which then ran to 768, open item 47).
+  VERIFIER's output allowance is now 4,096 (`pipeline.VERIFIER_MAX_TOKENS`, D-134; FACT_CHECKER
+  keeps `AUDIT_MAX_TOKENS` 2,048, check 216), measured by replay R2c on the A10: of those 8
+  VERIFIER prompts, 4 end on their own at 2,342 to 3,590 tokens and pass the unchanged
+  validator, 4 still reach 4,096, with no out-of-memory failure and the same 21.89 GB peak. Not
+  covered: the other local_producer agents and the other local_auditor agents (no measurement).
+  EDITOR_CLERK's constraint has no replay on the model yet (fixtures and saved replies only).
+  The decoding checks' probe agent is CITATION_RESOLVER, so its kwargs test carries no
+  constraint. The cloud replay (`replay_prompts.py extract --agents ...`, one model a
+  file, then `run` on sdpa and sdpa_constrained, judged by the agent's own validator) was read
+  as R2a and R2b, and the constraint adopted (D-132, D-134). No bound controller file changed. Check 297
+  and the decoding gate hold this.
+- HIDDEN-A (loop S5, D-079): every child process the operator-side tools start (the
+  controller, the bound wrapper, both watchdogs, the provider adapter, the general launch
+  wrappers, the progress and status readers, and every file under `tools/loop/`) passes its
+  creation flags through `cloud_run_common.no_window`, which ORs in the Windows no-window
+  flag and changes nothing elsewhere; a child that must keep the operator's console says so
+  with `keep_console` (an interactive ssh passphrase, the sealer's foreground re-exec), and a
+  `runner` defaulting to `subprocess.run` is given `cloud_run_common.hidden_run`. Measured,
+  not preferred: the detached controller has no console, so each ssh, scp, ssh-keygen and
+  curl it started opened a visible window on the operator's screen. The controller check and
+  gate check 292 scan every start's AST and run the controller, adapter, termination client
+  and progress reader against fakes that record each start's flags. This changed six bound
+  controller files, so bundles sealed before it refuse with `Controller source changed`.
+- WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
+  `max_pending` (256) runs as consecutive waves of at most that many calls
+  (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and
+  depending on the ONE parent set read before the first, posts published in source order; it is
+  never refused for its size, and a gather at or below the bound is one `run_wave` exactly as
+  before. Measured, not preferred: a development ContractNLI agreement with 289 judging plans
+  refused the whole run before this. Check 291.
+- LEDGER-CHECK-A (loop D-S16 item 1): `tools/loop/request_ledger_check.py` checks the
+  operator's private request ledger (passed with `--ledger`, never committed) against the loop
+  specification itself: every Annex C row and every `D-Sn` entry with its numbered items and
+  lettered sub-items needs a row (lettered list lines one row each; letters inside a sentence
+  one row for the item or one per letter), a row matching no item fails (relayed notes, `N-`,
+  are exempt), every DONE row's decision heading, commit and backticked path must resolve, and
+  a RUNNING row (not `RUNNING (standing)`) unchanged for 24 hours that names no running launch,
+  lane or role session fails. Running is read from evidence, never a name alone: a launch
+  only when the budget ledger (`--budget-ledger`, default the private folder's
+  `budget_ledger.jsonl`) holds its launch with no termination, a lane only when
+  `git worktree list` shows its branch, and a role session or agent never (no offline record),
+  so a row naming only those is not exempt. One count line; exit 1 on any failure. Run it whenever the ledger
+  changes, in every checker round, and before every merge, tag and push. Check 296 runs its
+  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`).
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from
@@ -725,6 +945,23 @@ processing swarm governed by an append-only constitution.
   alone; the same base under sampling never did in 145 items; the flip is one argmax at the
   key's first token, so the parser holds whether the origin is the adapter or value priming.
   Never widen the alias list from a hunch: an alias is a measured model habit, declared.
+- ENVELOPE-B (D-S14, K8) is REMOVED (S5 close). It let a contract declare `single_kind_stamp`
+  so Python wrote EDITOR_CLERK's `kind` where the model wrote none (and refused a written kind
+  other than the declared one). It breached H9: editing `config/agent_contracts.json` is a
+  product change allowed only where a stage specification calls for it, and none did; and it
+  supplied a value the model did not write, after failures were seen (D-S14 item 3). The key,
+  `agent_wrapper.single_kind_stamp` and `stamp_single_kind` are gone: the contract file is byte
+  for byte its content before the K8 commit (a448af1) and the validator is as before K8 (a
+  missing or empty `kind` is refused for every agent; a written kind is checked for presence
+  only, the wrong-kind refusal going with the key it was read from). Check 264 proves that
+  state, each proof neutralised by putting K8 back. The cause is fixed in decoding instead:
+  EDITOR_CLERK is a declared envelope agent (DECODING-B, check 297), so an item cannot close
+  before `kind` is written. What depended on the stamp, from the saved evidence: 8 B3 entries
+  had one EDITOR_CLERK item stamped, and the 5 of them that passed integrity (L12
+  `27_f3_s3101_htmn`, `34_f6_s6101_pfqp`; L12b `02_f1_s1102_mstx`, `04_f5_s5102_hcvm`,
+  `05_f5_s5101_bmpd`) passed only through it, since a refused EDITOR_CLERK call is a
+  `required_contract_failure`; the other 3 (L12 `30_f5_s5101_bmpd`, `32_f5_s5102_hcvm`, L12b
+  `01_f1_s1101_cvjx`) failed for other reasons as well.
 - VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
   (`_record_example_required`) with the contract's DECLARED values where it enumerates them
   (FACT_CHECKER's verdict CONFIRMED, VERIFIER's finding MATCH; `_declared_values`, never a
@@ -746,7 +983,15 @@ processing swarm governed by an append-only constitution.
   `semantic_incomplete`, `stopped`, `pipeline_not_completed`. Measured, not preferred: the old
   gate read the whole delivery per item, so one refused partition discarded every accepted one
   and the advisory classifier had no pairs in v5 or v6 (it never actually fired: VERIFIER was
-  skipped upstream, which the partial draft now prevents). Check 266.
+  skipped upstream, which the partial draft now prevents). VERIFIER's RENDERED payload shows
+  each pair as `pair_id` (the join key), `producer_item`, `source_evidence.text`,
+  `source_ref_ids`, `auditor_relation`, `classifier_status` and `delivery`
+  (`auditor_pairs.pair_view`), and each draft item without `DRAFT_ITEM_RUNTIME_KEYS`
+  (`draft_view`); the pair records, telemetry, reply records and bus keep every identifier.
+  Measured, not preferred (D-S14 K2): the ten L8 VERIFIER prompts of 44,467 to 54,657 tokens
+  ran out of GPU memory on the A10 before their first token; the same prompts measure 17,932
+  to 23,668 tokens projected (Phi tokenizer, offline), and none of the 22 saved VERIFIER items
+  carried a pair or producer identifier to join by. Check 266.
 - EXTRACTION-C: a bounded request carries at most `owned_spans_per_request` owned spans
   (declared in `config/compact_extraction_prompt.json`, today 2, read by
   `compact_contracts.request_size`), because every training input and DEV row of checkpoint

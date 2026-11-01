@@ -87,7 +87,7 @@ Answered after loop stage S1 Part 4 (the reply write path) was merged (commit `f
 Each is classified by the loop's decision profile (Part III.2 of the loop spec). Class R decisions are taken by the loop and recorded in `docs/loop/DECISIONS.md` (D-011); none of these is Class S.
 
 1. Frozen adapters or base models: the frozen adapters (final mode admits a declared multi-round Review), so the run measures the models every other sealed run uses.
-2. Whether the Producer and Auditor checkpoints suit the multi-round contracts (`config/multi_round_contracts.json`, never trained on): measured in the first development run, not assumed.
+2. Whether the Producer and Auditor checkpoints suit the multi-round contracts (`config/multi_round_contracts.json`, never trained on): measured in the first development run, not assumed. Settled at loop S5 (D-103): the checkpoint ran to its cap on the contract (L6m), the file is deleted and the records are computed in Python.
 3. Topology: `reference_serial` for multi-round; `execution_topology.py` is not widened.
 4. Case material: the synthetic multi-round case from loop stage S3 and, if a manifest can be written, the anonymised negotiation material, both as exposed development cases.
 5. Who writes the case manifest: the builder, for an exposed development case (Annex B.1); a sealed case is written by role B only.

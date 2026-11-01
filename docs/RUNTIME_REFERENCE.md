@@ -380,7 +380,7 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
 
-A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7, and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 292).
+A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7, and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 305).
 
 The route table is checked against the actual registered application routes.
 `/status`, `/queue`, `/results`, unscoped `/findings` or `/pairs`, and

@@ -367,11 +367,24 @@ PAIRED_JUDGING_MAX_TOKENS = 768       # PRACTICE_AUDITOR etc: one unit, one rule
                                        # a handful of findings at most; the
                                        # largest of 5 real, uncapped calls was
                                        # 645 tokens (see above)
-AUDIT_MAX_TOKENS = 2048               # VERIFIER, FACT_CHECKER: an open-ended
-                                       # audit of one document's whole draft,
-                                       # capped at 1024 with direct evidence of
-                                       # a lost finding (VERIFIER's contract
-                                       # violation, 13:11:26Z on the run above)
+AUDIT_MAX_TOKENS = 2048               # FACT_CHECKER (VERIFIER before D-134): an
+                                       # open-ended audit of one document's whole
+                                       # draft, capped at 1024 with direct
+                                       # evidence of a lost finding (VERIFIER's
+                                       # contract violation, 13:11:26Z on the run
+                                       # above)
+VERIFIER_MAX_TOKENS = 4096            # VERIFIER alone (D-134, D-S14 item 3).
+                                       # Measured, not preferred: replay R2c (A10,
+                                       # sdpa_constrained, the run's own loader)
+                                       # of the 8 VERIFIER prompts whose saved
+                                       # replies stopped at 2048: 4 ended on
+                                       # their own at 2342 to 3590 tokens and
+                                       # passed the unchanged validator, 4 still
+                                       # reached 4096; no out-of-memory failure
+                                       # (largest prompt 41371 tokens), peak
+                                       # 21.89 GB allocated as at 2048.
+                                       # FACT_CHECKER keeps AUDIT_MAX_TOKENS: it
+                                       # was not measured.
 PRODUCTION_MAX_TOKENS = 2048          # ARCHIVIST, INST_FINDER, CITATION_RESOLVER,
                                        # PROCESSOR, SPEECH_ACT_TAGGER, LEGAL_ANALYST
                                        # pass one: 4 of 6 on the run above hit
@@ -1672,7 +1685,7 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             names.append(name)
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
-                                  max_tokens=AUDIT_MAX_TOKENS,
+                                  max_tokens=VERIFIER_MAX_TOKENS if name == "VERIFIER" else AUDIT_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=_doc_refs_excerpt(reference_index, doc['id']),
                                   activation={"reason": "source_and_draft_audit", "source_phase": "5",
@@ -2447,6 +2460,12 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     refused_judged = []
     judged_items_by_agent: dict = {}
     judged_provenance: dict = {}
+    # D-068: the kept answers on plans Python could compute nothing for, by agent,
+    # with the call that wrote them, and the answers Python refused.
+    uncomputable_items_by_agent: dict = {}
+    uncomputable_provenance: dict = {}
+    uncomputable_judged = []
+    refused_uncomputable = []
     if prediction is not None:
         prediction.planned(doc["id"], plans)
     if not plans:
@@ -2479,20 +2498,10 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             kept = []
             refusal_start = len(refused_judged)
             for item in judged:
-                refusal = None
-                if paired_review_mod.refuses_judged_absence(
-                        item, rule, fields_present_by_unit.get(unit["unit_id"])):
-                    if not str(item.get("quote") or "").strip():
-                        refusal = "absence claim supplies no quote"
-                    elif not pairing_map_mod._norm_label(item.get("stated_field") or item.get("field_label") or ""):
-                        refusal = "absence claim names no field"
-                    else:
-                        refusal = "claims a field absent that this unit carries"
-                elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
-                    # The finding quotes words the unit does not contain, so the
-                    # claim rests on text that is not there. Checked against the
-                    # same unit text the model was shown as document_text.
-                    refusal = "quotes text that does not appear in this unit"
+                # The quote is checked against the same unit text the model was
+                # shown as document_text (paired_review.judged_item_refusal).
+                refusal = paired_review_mod.judged_item_refusal(
+                    item, rule, fields_present_by_unit.get(unit["unit_id"]), unit.get("text"))
                 if refusal:
                     refused_judged.append({
                         "unit_id": unit["unit_id"], "rule_id": rule["id"],
@@ -2524,6 +2533,56 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
             log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
                             f"path=judged items={len(judged)}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            results.append(r)
+            return
+        if plan.get("kind") == paired_review_mod.UNCOMPUTABLE_PLAN:
+            # D-068. Python could compute nothing for this unit and rule, so the
+            # model's answer on the text is the only answer there is. It used to
+            # be discarded (`advisory_not_kept`): a rule Python cannot check by
+            # arithmetic then had no answer at all. It is kept now as a MODEL's
+            # record, after the same stamping a judged absence gets (unit, item id
+            # and revision set by Python), the rule of the plan (never one the
+            # reply names) and the same refusals (judged_item_refusal); a failed
+            # or refused reply keeps nothing and says why. Posted with the model's
+            # backend and model, so it is written by `model`: never a Python
+            # finding, never promoted to an amendment (the promoter reads only
+            # Python's records), marked wherever model findings are shown.
+            not_kept = paired_review_mod.reply_kept_reason(r)
+            judged = [] if not_kept else paired_review_mod.stamp_from_plan(
+                _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id),
+                rule_id=rule["id"], source_rule_id=source_rule_id)
+            # Items without the Finding record's shape are not records; counted.
+            not_finding_shaped = 0 if not_kept else len(paired_review_mod.reply_items(r)) - len(judged)
+            kept, refused_here = [], 0
+            for item in judged:
+                refusal = paired_review_mod.judged_item_refusal(
+                    item, rule, fields_present_by_unit.get(unit["unit_id"]), unit.get("text"))
+                if refusal:
+                    refused_uncomputable.append({
+                        "unit_id": unit["unit_id"], "rule_id": rule["id"],
+                        "relation": item.get("relation"), "reason": refusal})
+                    refused_here += 1
+                    log_event(_LOG, f"paired_review_uncomputable_refused "
+                                    f"unit={unit['unit_id']} rule={rule['id']}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                    continue
+                kept.append(item)
+            kept = paired_review_mod.dedupe(kept)
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                judged_listed=len(kept), judged_refused=refused_here))
+            uncomputable_items_by_agent.setdefault(agent, []).extend(kept)
+            if kept:
+                uncomputable_provenance[agent] = (r.get("backend"), r.get("model"))
+            uncomputable_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                                        "items": len(kept), "refused": refused_here,
+                                        "not_finding_shaped": not_finding_shaped,
+                                        "not_kept_reason": not_kept,
+                                        "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            log_event(_LOG, f"paired_review_uncomputable unit={unit['unit_id']} rule={rule['id']} "
+                            f"items={len(kept)} refused={refused_here}",
                       run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
             results.append(r)
             return
@@ -2698,7 +2757,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         # explanation, so the reply's own items must not reach the bus as typed
         # findings. Posting them put 23 findings carrying no rule_id and no
         # unit_id on the 2026-09-11 clean run's bus, which nothing could check,
-        # cite or score, two of them plainly false.
+        # cite or score, two of them plainly false. D-068: an uncomputable plan's
+        # reply stays advisory on this post too; its kept answers travel only in
+        # Python's stamped copy (posted below), so each is counted once.
         advisory = plan.get("kind") != "absence_judged"
         planned_judgment = _run_one(
             wrapper, payload,
@@ -2753,6 +2814,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # The judged answers Python refused, on the record beside the ones it kept.
     pairing["absence_refused"] = refused_judged
     pairing["absence_refused_count"] = len(refused_judged)
+    # D-068: every call on a plan Python could compute nothing for, with the answers
+    # kept as a model's records, the answers refused and why a reply gave none; the
+    # refusals listed apart from the absence refusals (they are not absences).
+    pairing["uncomputable_judged"] = uncomputable_judged
+    pairing["uncomputable_kept_count"] = sum(e["items"] for e in uncomputable_judged)
+    pairing["uncomputable_refused"] = refused_uncomputable
+    pairing["uncomputable_refused_count"] = len(refused_uncomputable)
     log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
                     f"reattributed={len(reattributed)} absence_computed="
                     f"{pairing['absence_computed_count']} absence_judged="
@@ -2874,6 +2942,39 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
                                 f"error_type={type(e).__name__}",
                           run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
+                            "parsed": envelope, "raw_text": "", "contract_missing": [],
+                            "error": None, "item_count": len(items),
+                            "backend": backend or "", "model": model or ""})
+
+    # D-068: the model's kept answers on plans Python could compute nothing for, in
+    # one post per agent like a judged absence's stamped copy: the model's own
+    # backend and model (never "python", so written by `model`), stamped_by python
+    # and judged_path uncomputable on the body, and returned for phase 6, where they
+    # are shown as a model's findings, marked, and never promoted.
+    for agent, raw_items in uncomputable_items_by_agent.items():
+        items = paired_review_mod.dedupe(raw_items)
+        if not items:
+            continue
+        backend, model = uncomputable_provenance.get(agent, (None, None))
+        log_event(_LOG, f"paired_review_uncomputable_findings agent={agent} count={len(items)}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        envelope = agent_wrapper.make_envelope(agent, str(doc["id"]), items)
+        try:
+            _build_wrapper(agent, orch, keys).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "AGENT_OUTPUT", "backend": backend or "", "model": model or "",
+                      "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                      "stamped_by": "python",
+                      paired_review_mod.JUDGED_PATH_FIELD: paired_review_mod.JUDGED_PATH_UNCOMPUTABLE},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "a model's answer where Python could compute "
+                                                  "nothing: its unit and rule stamped by the "
+                                                  "pipeline that asked; not checked by Python"})
+        except Exception as e:
+            log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                            f"error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
                             "parsed": envelope, "raw_text": "", "contract_missing": [],
                             "error": None, "item_count": len(items),
@@ -4480,6 +4581,9 @@ def main(argv=None):
     parser = _build_arg_parser()
     localization.localize_parser(parser)
     args = parser.parse_args(argv)
+    # Pre-phase-3 spans (open item 38): main's inline work before phase 3-4, timed
+    # contiguously into phase_latencies under a topology runtime; no-ops otherwise.
+    execution_topology.pre_phase_span("phase_0_start")
 
     import final_models
     if final_models.mode() == 'final':
@@ -4848,6 +4952,7 @@ def main(argv=None):
         return code
 
     # Date cascade + cutoff -> populate input/operational/
+    execution_topology.pre_phase_span("phase_0_ingestion_and_roles")
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,
               phase="0")
     # chokepoint 4 (INFRA-041 P2): there is no BOOT date-web egress to suppress any
@@ -4896,7 +5001,8 @@ def main(argv=None):
             print("[pipeline] aborted by operator.", file=sys.stderr); return 0
 
     # BOOT orchestrator (adaptive_spawn fires if first run)
-    handler = _resolve_operator_handler(args, run_ctx)
+    execution_topology.pre_phase_span("phase_0_boot_and_index")
+    handler =_resolve_operator_handler(args, run_ctx)
     orch = TopOrchestrator.boot(ROOT, interactive=not args.non_interactive,
                                  operator_handler=handler, cost_tracker=cost_tracker,
                                  run_adaptive_spawn=True, run_context=run_ctx,
@@ -5088,6 +5194,7 @@ def main(argv=None):
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 
     # PHASE 1
+    execution_topology.pre_phase_span("phase_1_situation_assessment")
     _emit_progress(event="start", docs=len(op_docs), status="running")
     _emit_progress(phase=1, status="running")
     orch.deliberation_round({"phase": "situation_assessment",
@@ -5097,6 +5204,8 @@ def main(argv=None):
 
     # R6: the default sentence, plus the review question when the operator gave one.
     run_objectives = _effective_run_objectives(args.run_objectives, args.task, args.question)
+    # Genesis phase 2 has no code of its own here; phase 3-4 is the next boundary.
+    execution_topology.pre_phase_span(None)
 
     production, audit, conv_review = [], [], []
     deliverables = {}

@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools')]
 from ordinary_final_run import read
+from cloud_run_common import no_window
 
 # The phases worth a reading, with what each one's total is and where its work can be seen.
 REMOTE_ROOT = '/home/ubuntu/shimmer-ordinary-final'
@@ -55,7 +56,7 @@ def observe(bundle, host, command, timeout=40):
     argv = ['ssh', '-i', str(bundle / 'ssh_identity'), *SSH_OPTIONS,
             '-o', 'UserKnownHostsFile=' + str(bundle / 'known_hosts'), host, command]
     try:
-        result = subprocess.run(argv, capture_output=True, timeout=timeout)
+        result = subprocess.run(argv, capture_output=True, timeout=timeout, creationflags=no_window())
     except (subprocess.TimeoutExpired, OSError):
         return None
     if result.returncode != 0:
@@ -132,8 +133,34 @@ def install_pinned_wheels(context):
             '(not one to one), %.1f min elapsed, %.1f entries/min' % (done, total, elapsed / 60, rate * 60))
 
 
+B1_ROOT = 'evidence/b1'
+
+
+def b1_workload(context, phase):
+    """A B1 entry (S5 R19): bare_model.py writes one reply record per item per sealed pass under
+    evidence/b1/<pass name>/audit/model_replies (every pass's folder is counted, whatever
+    checkpoint it loads), and the runner writes the total it expects (items times passes)
+    beside them first. None when the workload is not a B1 run (the pipeline's reading applies)
+    or the instance did not answer (the pipeline's own observation then says so)."""
+    raw = context['look'](
+        "cd %s && if [ -d %s ]; then echo B1; (find %s -path '*/audit/model_replies/*.json' 2>/dev/null | wc -l); "
+        "(cat %s/expected_records 2>/dev/null || echo 0); else echo PIPELINE; fi" % (REMOTE_ROOT, B1_ROOT, B1_ROOT, B1_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', '', ''])[:3]
+    if lines[0].strip() != 'B1':
+        return None
+    done, total = digits(lines[1]), digits(lines[2])
+    return count_reading(phase, done, total or None, context['elapsed'], 'reply records',
+                         'one reply record per item per pass, all written')
+
+
 def ordinary_workload(context):
-    """The run itself: count the telemetry records it writes as it goes."""
+    """The run itself: count the telemetry records it writes as it goes (a B1 entry: its
+    reply records, b1_workload)."""
+    b1 = b1_workload(context, 'ordinary_workload')
+    if b1 is not None:
+        return b1
     raw = context['look'](
         "cd %s && (grep -c '\"event\": \"model_call\"' %s 2>/dev/null || echo 0); "
         "(grep -c '\"event\": \"auditor_pair\"' %s 2>/dev/null || echo 0); "

@@ -96,8 +96,14 @@ class Output:
 
 
 class LocalModel:
-    """A tokenizer and model in one: decode returns the next queued reply."""
+    """A tokenizer and model in one: decode returns the next queued reply. A call the
+    envelope constraint covers (DECODING-B: VERIFIER on local_auditor, among others) builds
+    its token table from this tokenizer, so it carries a small vocabulary of its own
+    (encode, len, batch_decode, and decode of the anchor alone) that consumes no reply;
+    generate ignores the processor, as it ignores every other decoding argument."""
     chat_template = "configured"
+    VOCABULARY = ["{", "}", "[", "]", '"', ":", ",", " ", "a", "\n"]
+    ANCHOR = 0
 
     def __init__(self, replies, seen):
         self.replies, self.seen = replies, seen
@@ -114,7 +120,18 @@ class LocalModel:
     def generate(self, **kw):
         return Output([1, 2, 3, 4, 9])
 
+    def __len__(self):
+        return len(self.VOCABULARY)
+
+    def encode(self, text, **kw):
+        return [self.VOCABULARY.index(text)]
+
+    def batch_decode(self, rows, **kw):
+        return ["".join(self.VOCABULARY[t] for t in row) for row in rows]
+
     def decode(self, ids, **kw):
+        if list(ids) == [self.ANCHOR]:
+            return self.VOCABULARY[self.ANCHOR]
         return self.replies.pop(0)
 
 

@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import date as _date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -68,10 +68,13 @@ _MONTHS = {m: i + 1 for i, m in enumerate([
 
 
 def _iso(year: int, month: int = 1, day: int = 1) -> str:
+    # isoformat, not strftime: Linux strftime writes year 288 as "288-01-01",
+    # and the cascade's int(iso[:4]) then raised instead of taking its
+    # out-of-range branch (two L8 workload documents, 30 October 2026).
     try:
-        return datetime(year, month, day).strftime("%Y-%m-%d")
+        return _date(year, month, day).isoformat()
     except ValueError:
-        return datetime(year, 1, 1).strftime("%Y-%m-%d")
+        return _date(year, 1, 1).isoformat()
 
 
 def date_from_filename(filename: str) -> str | None:

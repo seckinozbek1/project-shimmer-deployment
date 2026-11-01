@@ -141,7 +141,7 @@ A run started through the server also has `status.json` at the top of the run fo
 
 ## 5. The bus: `logs/agent_bus.jsonl`
 
-<!-- Sources: scripts/message_bus.py (MessageBus.post, _validate, VALID_TYPES, VALID_ROLES); scripts/agent_wrapper.py (post_to_bus, run_task: AGENT_OUTPUT, CONTRACT_VIOLATION, BACKEND_ERROR, items_are_advisory withholding, contract_normalized; make_envelope; current_items); scripts/pipeline.py (_paired_convention_review: consume_judgment, advisory only for plans other than absence_judged, computed post with backend paired and judging_calls, PAIRED_JUDGING_CALLS post, stamped judged post; _stamped_judged_items; _prior_comparison: backend computed; phase_6_synthesis: AMENDMENT_REFUSED); scripts/paired_review.py (judging_call_record, JUDGING_OUTCOMES, JUDGED_ABSENCE_PLAN, plan_calls plan kinds, stamp_note_writer, note_models); scripts/multi_round_rounds.py (post_findings, bus_envelopes); scripts/multi_round_phase.py (MULTI_ROUND_REVIEWED); scripts/finding_record.py (is_finding, written_by, COMPUTED_BACKENDS); tools/score_corpus.py (_load_bus_findings). -->
+<!-- Sources: scripts/message_bus.py (MessageBus.post, _validate, VALID_TYPES, VALID_ROLES); scripts/agent_wrapper.py (post_to_bus, run_task: AGENT_OUTPUT, CONTRACT_VIOLATION, BACKEND_ERROR, items_are_advisory withholding, contract_normalized; make_envelope; current_items); scripts/pipeline.py (_paired_convention_review: consume_judgment, advisory only for plans other than absence_judged, computed post with backend paired and judging_calls, PAIRED_JUDGING_CALLS post, stamped judged post, the D-068 stamped uncomputable post; _stamped_judged_items; _prior_comparison: backend computed; phase_6_synthesis: AMENDMENT_REFUSED); scripts/paired_review.py (judging_call_record, JUDGING_OUTCOMES, JUDGED_ABSENCE_PLAN, plan_calls plan kinds, stamp_note_writer, note_models); scripts/multi_round_rounds.py (post_findings, bus_envelopes); scripts/multi_round_phase.py (MULTI_ROUND_REVIEWED); scripts/finding_record.py (is_finding, written_by, COMPUTED_BACKENDS); tools/score_corpus.py (_load_bus_findings). -->
 
 The bus is append-only: one JSON object per line, in the order posted.
 
@@ -176,6 +176,7 @@ A line whose `body.event` is `AGENT_OUTPUT` carries an agent's result:
 | `note_models` | list of strings, optional | On Python's paired posts: the models whose sentences sit in these records as notes. |
 | `judging_calls` | list of objects, optional | On Python's paired post (backend `paired`): every judging call this agent made on this document, kept note or not (section 5.6). This is the one body field that holds objects; it is not an item. |
 | `stamped_by`, `absence_path` | strings, optional | On a judged-absence post (section 5.5): `python` and `judged`. |
+| `stamped_by`, `judged_path` | strings, optional | On the post of answers kept where Python could compute nothing (section 5.5, D-068): `python` and `uncomputable`. |
 | `items_withheld`, `items_withheld_reason` | optional | On an advisory model reply: the reply's items were withheld, `items` is empty, and `items_withheld` counts them. |
 
 Other `body.event` values carry no findings:
@@ -215,6 +216,13 @@ Python refuses a `missing_field` answer that gives no quote, names no field, or 
 
 To tell the two lines apart: the second has `body.stamped_by`. To find the first: its `body.call_id` appears in the pairing map's `judging_calls` with `plan_kind` `absence_judged` (section 5.6).
 
+**Answers kept where Python could compute nothing** (from loop decision D-068, 29 October 2026). The defect it closes: where Python's checks produce no comparison for a unit and a rule (no figure, band, date pair or declared field to compute from; plan kind `uncomputable`, section 5.6), the paired review asked a model and then discarded its answer, so a rule that only reading can decide had no answer anywhere in the run (the judging call's outcome was `advisory_not_kept`). Now the answer is kept as a **model's** record, and a scorer sees it. It appears **once**:
+
+1. The model's own reply line still withholds its items (`items: []`, `items_withheld`), as every judging call except a judged absence does.
+2. If Python kept at least one answer, a line with the model's backend and model (so written by `model`), no `call_id`, and `stamped_by: "python"` and `judged_path: "uncomputable"` on the body. Python stamps each kept item as it stamps a judged absence (`unit_id` the unit it asked about, `item_id` `<agent>:finding:<unit id>:<rule id>:<n>`, `revision: 1`), and more: `rule_id` is **always** the registry id of the rule it asked about and `source_rule_id` that rule's operator's own id (left out when the rule has none), whatever rule the model named (any `procedure_id`, `conv_id` or `convention_ref` the model wrote is removed); `judged_path: "uncomputable"`; no `absence_path`. The model's `record_verdict`, `relation` and other fields stay as it wrote them.
+
+Python keeps only items with the Finding record's shape (section 5.3). It refuses an answer that quotes text the unit does not contain, and a `missing_field` answer that gives no quote, names no field, or names a field the unit carries, the same refusals as for a judged absence; refusals are listed in the pairing map under `uncomputable_refused` (section 8.1), and are not refusals in the sense of an UNCERTAIN record. A failed call, or a reply that refused the task, keeps nothing; the pairing map's `uncomputable_judged` says why. A kept answer is never promoted to an amendment and is shown in the deliverables as a model's finding (section 7.4). Runs before D-068 have no such line.
+
 **Multi-round runs.** Round findings reused from an earlier round appear once per round (section 10).
 
 ### 5.6 Judging calls
@@ -230,6 +238,7 @@ In the paired review, Python asks a model about one unit and one rule only where
 | `backend`, `model` | strings | The model that answered; `""` when unknown. |
 | `notes_kept` | integer | How many of Python's findings carry this call's sentence as a note. |
 | `absence_listed`, `absence_refused` | integers | On a judged absence: the answers Python kept and the answers it refused. `0` otherwise. |
+| `judged_listed`, `judged_refused` | integers | On an `uncomputable` call (D-068): the answers Python kept as a model's records and the answers it refused. `0` otherwise, and absent in runs before D-068. |
 | `outcome` | string | What became of the reply (below). |
 
 | `outcome` | Meaning |
@@ -237,11 +246,12 @@ In the paired review, Python asks a model about one unit and one rule only where
 | `note_kept` | The call's sentence is attached to at least one of Python's findings as a note. |
 | `no_note_returned` | The reply carried no sentence. |
 | `no_finding_to_attach` | Python found no disagreement on this unit and rule, so the sentence was not kept. |
-| `advisory_not_kept` | Python could compute nothing for the pair; the reply was kept neither as a finding nor as a note. |
+| `advisory_not_kept` | Runs before D-068 only: Python could compute nothing for the pair; the reply was kept neither as a finding nor as a note. |
+| `judged_uncomputable` | From D-068: Python could compute nothing for the pair and the call returned. Its counts are in `judged_listed` and `judged_refused` (section 5.5). |
 | `reply_failed` | The call failed. |
 | `judged_absence` | A judged-absence call that returned. Its counts are in `absence_listed` and `absence_refused`. |
 
-A judging call never changes a figure. Its reply's own items are withheld from the bus (`items_withheld`), except for a judged absence.
+A judging call never changes a figure. Its reply's own items are withheld from its own post (`items_withheld`), except for a judged absence; the answers kept on an `uncomputable` call travel in Python's stamped copy (section 5.5).
 
 ## 6. The Finding record
 
@@ -269,6 +279,7 @@ A judging call never changes a figure. Its reply's own items are withheld from t
 | `addend_field`, `addends` | string, list of numbers, optional | On `sum_mismatch`: the column summed and the values added. |
 | `factor_fields`, `factors` | lists, optional | On `product_mismatch`: the two labels multiplied and their values. |
 | `absence_path` | string, optional | On an absence: `computed` (Python decided a field declared in `[requires: ...]` is missing) or `judged` (a model answered, section 5.5). |
+| `judged_path` | string, optional | `uncomputable` on a model's answer kept where Python could compute nothing (section 5.5, D-068). Its `unit_id`, `rule_id` and `source_rule_id` are Python's stamp, not the model's. |
 | `provenance` | string, optional | `computed` on change records and multi-round round findings. |
 | `quote` | string, optional | On a model's absence claim: the words it relied on. |
 | `round_id` | string, optional | On multi-round round findings on the bus: the round. |
@@ -478,6 +489,8 @@ Written in every ordinary review, before any agent is asked. One object keyed by
 | `suspended`, `suspended_count` | Present when an `[unless: ...]` switched a rule off on a unit: `{"unit_id", "rule_id", "source_rule_id", "detail"}`. |
 | `absence` | Every absence decided: `{"unit_id", "rule_id", "field", "path"}` with `path` `computed` or `judged`; a judged entry also has `items` (answers kept) and `call_id`. |
 | `absence_computed_count`, `absence_judged_count`, `absence_refused`, `absence_refused_count` | `absence_refused` lists judged answers Python refused: `{"unit_id", "rule_id", "relation", "reason"}`. |
+| `uncomputable_judged`, `uncomputable_kept_count` | From D-068 (section 5.5): one entry per call on an `uncomputable` plan, `{"unit_id", "rule_id", "items", "refused", "not_finding_shaped", "not_kept_reason", "call_id"}`: the answers kept as a model's records, the answers refused, the reply's items without the Finding record's shape, and why a reply gave none (`reply_failed`, `reply_refused`, or `null`). The count sums `items`. |
+| `uncomputable_refused`, `uncomputable_refused_count` | From D-068: the answers Python refused on those calls, `{"unit_id", "rule_id", "relation", "reason"}`. Not refusals in the sense of an UNCERTAIN record. |
 | `calls_made` | Model calls made in this step. |
 | `judging_calls` | One record per call made (section 5.6). Its length equals `calls_made`. |
 | `prior_orphans` | As in section 7.1, when an earlier version was declared. |
@@ -535,13 +548,14 @@ Every model call writes exactly one record here, whatever path it took. A run wi
 | `sensitive` | boolean | `true` in a run with redaction on: then `text` is left out below. |
 | `payload` | object or null | What was sent: `sha256`, `length_bytes`, `form` (`anthropic_messages_json`, `openai_messages_json`, `rendered_prompt` or `classifier_messages_json`) and `text`. |
 | `reply` | object or null | What came back: `sha256`, `length_bytes` and `text`. For the classifier, the label. |
+| `context` | object, optional | Written for a local generate call: `prompt_tokens`, `max_new_tokens` (the call's output allowance), `model_context` (the model's positions, null when the model states none) and `over_context` (true when prompt tokens plus the allowance exceed the context; null when the context is not stated). Counts only, kept in a sensitive run too. A call over its context is refused before generating (D-058 condition v). The benchmark adapters exclude a B3 document from scoring when any of its records has `over_context` true (preregistration section 5.3). |
 
 **`outcomes.jsonl`**: what happened to each reply, one line per decision: `{"call_id", "outcome", "source", "timestamp", ...}`, sometimes with `item_count`, `findings_withheld` or `pair_id`. A later line for the same `call_id` replaces an earlier one. A call with no line has the outcome `not_decided`.
 
 | `outcome` | Meaning |
 |---|---|
 | `accepted_to_bus` | A valid reply; its items were posted on the bus. A judged-absence call (section 5.5) ends here. |
-| `advisory_not_record` | A valid reply whose items were withheld from the bus: Python made the record from its own arithmetic (every judging call except a judged absence), or the call was a multi-round call. |
+| `advisory_not_record` | A valid reply whose items were withheld from its own post on the bus: Python made the record from its own arithmetic (every judging call except a judged absence), or, on a plan Python could compute nothing for, Python posts the answers it kept in its own stamped copy (section 5.5); or the call was a multi-round call. |
 | `not_promoted` | The reply carried a finding that was kept in `model_findings_not_promoted` and not promoted. |
 | `contract_violation` | The reply broke its required shape. |
 | `refused` | A valid reply that refused the task. |
@@ -570,13 +584,16 @@ A multi-round run (input format, section 12) writes `audit/multi_round.json`, `a
 | `fixture` | The manifest's `fixture` value. |
 | `evidence` | The source spans, each as declared plus its `ref_id`. |
 | `round_review` | The Python round review: `{"record": "audit/round_reuse.json", "availability": ..., "bus_envelopes": <count>}`, or `{"availability": "failed", "error_type": ...}`. `availability` is `recorded`, `no_conventions` or `unavailable`. |
-| `records` | The models' position records after review (below). Empty when refused. |
+| `records` | The case's position and movement records (below), computed in Python since open item 35 (D-103); in runs before it, the models' records after review. Empty when refused. |
 | `strategic_layer` | The decision-support layer's record. Not needed for scoring. |
 | `outcome` | `reviewed` when the whole case phase ran, `refused` when it stopped. Missing means the phase did not complete. |
+| `timings` | The phase's own step times, measured with `time.perf_counter`, in seconds rounded to microseconds: `{"unit": "seconds", "clock": "time.perf_counter", "rounds": [{"round_id", "seconds"}], "round_review", "records", "phase"}`. `rounds` repeats each round's `seconds` from `audit/round_reuse.json`; `round_review` is the whole round review, `records` the record computation, `phase` the whole phase up to its last write. A step that did not run is absent. A multi-round run has no topology runtime, so these are its only step times (its `phase_latencies` are empty). Missing in runs before open item 39. A measurement, not needed for scoring. |
 
-A **record** is flat: `record_id`, `case_id`, `actor_id`, `issue_id`, `round_id`, `kind` (`position`, `movement`, `unresolved_issue`, `trajectory` or `decision_support`), `state` (`accepted`, `rejected`, `refused`, `unresolved`, `insufficient_evidence`, `not_comparable` or `unknown`), `category` (`observed_evidence`, `semantic_interpretation` or `recommendation`), `confidence` (`CONFIDENT` or `UNCERTAIN`), `text`, `source_ids`, `ref_ids`, and, by kind, `position`, `value` and `unit`, `previous_round_id`, `previous_position_id`, `current_position_id`, `movement` (`concession`, `hardening`, `reversal`, `stable`, `ambiguous` or `unknown`). It also carries `review_state` (the reviewer's decision, or `missing`), the producer's and the reviewer's `agent`, `backend`, `model` and `call_id` (as `producer_...` and `reviewer_...`), `item_id`, `revision` and `ref`. Every record is written by a model. The same records are posted on the bus with `body.event` `MULTI_ROUND_REVIEWED` (envelope `doc_id` is the case id); they are not findings.
+A **record** is flat: `record_id`, `case_id`, `actor_id`, `issue_id`, `round_id`, `kind` (`position`, `movement`, `unresolved_issue`, `trajectory` or `decision_support`), `state` (`accepted`, `rejected`, `refused`, `unresolved`, `insufficient_evidence`, `not_comparable` or `unknown`), `category` (`observed_evidence`, `semantic_interpretation` or `recommendation`), `confidence` (`CONFIDENT` or `UNCERTAIN`), `text`, `source_ids`, `ref_ids`, and, by kind, `position`, `value` and `unit`, `previous_round_id`, `previous_position_id`, `current_position_id`, `movement` (`concession`, `hardening`, `reversal`, `stable`, `ambiguous` or `unknown`). Since open item 35 (D-103) every record is computed in Python from the operator's declared sources and carries `written_by` (`python`) and `provenance` (`computed`), with `item_id`, `revision` and `ref`; a movement's `movement` is always `unknown`. In runs before it, each record also carried `review_state` (the reviewer's decision, or `missing`) and the producer's and the reviewer's `agent`, `backend`, `model` and `call_id` (as `producer_...` and `reviewer_...`), and every record was written by a model. The same records are posted on the bus with `body.event` `MULTI_ROUND_REVIEWED` (envelope `doc_id` is the case id); they are not findings.
 
 A multi-round run is healthy when `outcome` is `reviewed`, `activation.activated` is `true`, `round_review.availability` is `recorded`, and `audit/run_completion.json` says `completed`. A case with no conventions gives `no_conventions`, which is not healthy.
+
+The runner also needs exactly one `pipeline_start` and one `pipeline_end` in a multi-round run's telemetry, and, unlike every other B3 run, it is not required to hold a model call: the phase asks none (D-101). A model call is not refused either; the strategic layer, when requested, still makes one (open item 43).
 
 ### 10.2 `audit/round_reuse.json`
 
@@ -588,6 +605,7 @@ Python's round review.
 | `rule` | A sentence stating the reuse rule. |
 | `availability`, `reason` | As in `round_review` above; `reason` only when unavailable. |
 | `rounds` | One entry per round, in `sequence` order: `round_id`, `sequence`, `documents`. |
+| `rounds[].seconds` | The time the round's review took, measured with `time.perf_counter`, in seconds rounded to microseconds. Missing in runs before open item 39. A measurement, not needed for scoring. |
 
 A document entry is `{"document_id", "availability": "missing_document"}` for a missing document, or `{"document_id", "units", "pairs_computed", "units_reused", "units_computed", "findings"}`. `findings` lists the document's Python findings in this round, in the shape of section 6, with `provenance: "computed"`, and `absence_path: "computed"` on a declared absence. These findings cite no REF id and carry no `source_rule_id`: only the registry id. A multi-round run folder holds no map from registry ids to operator's own ids. Registry ids are numbered `CONV-001`, `CONV-002`, ... in reading order of the conventions (input format, section 3, where a dropped short rule still uses up a number), so the map can be rebuilt from the bundle's conventions. An answer key travels without them: a scorer that checks the rule of a multi-round finding must be given the case's sealed conventions files too.
 
@@ -629,9 +647,13 @@ The controller collects the run as one archive, `collected_evidence.tar.gz`. The
 
 **`evidence/result.json`**: `execution_integrity_passed` (boolean), `reasons` (list), `failed_backend_attempts` (integer), `collection_and_teardown_pending` (`true`), `quality_claim` (`null`), `pipeline_exit_code` (integer). `reasons` values: `pipeline_not_completed`, `required_telemetry_missing`, `auditor_pair_failure`, `required_contract_failure`, `backend_failure`, and for a multi-round run `multi_round_not_reviewed`, `multi_round_not_activated`, `multi_round_round_review_not_recorded`. The runner's own exit code is 0 only when the pipeline returned 0 and the check passed; otherwise 2.
 
+`required_telemetry_missing` means the telemetry lacks exactly one `pipeline_start` and one `pipeline_end`, or, in a run that is not multi-round, a Producer 168 model call. A multi-round run is not required to hold a model call.
+
 **`FINAL_STATUS.json`** fields: `status` (`ORDINARY_FINAL_CLOUD_RUN_COMPLETED` when the run folder says `completed` and the health check passed, else `ORDINARY_FINAL_CLOUD_RUN_FAILED`), `pipeline_started`, `pipeline_completion` (the run's `run_completion.json` or `null`), `remote_result` (`result.json` or `null`), `terminal_error`, `semantic_call_receipts`, `producer168_receipts`, `auditor896_receipts`, `auditor896_pairs`, `auditor896_pairs_from_partial_delivery`, `cost_estimates` (an object; `combined_estimate` is the estimated dollars), `within_hard_ceiling`, `exactly_one_instance`, `maximum_one_workload_invocation`, `full_run_retried`, `protected_data_accessed`, `multi_round_declared`, `multi_round_executed`, `inventory_empty`, `temporary_ssh_removed`, `evidence_verified`, `quality_claim` (`null`), `subsequent_roadmap_work_started`, and `report`.
 
 **`report`** maps each row title to a sentence. The titles, in order: `Purpose`, `Sealed or exposed`, `Date and time (UTC)`, `Code commit`, `Test version`, `Test manifest hash`, `Authors (test, key, scorer)`, `Scorer version`, `Models and checkpoints`, `Decoding settings`, `Backend and machine`, `Instance type and price`, `Cost`, `Location and reason-confirmed recall`, `Attribution`, `False positives in every deliverable`, `Clean-twin result`, `Layer that produced each catch`, `Catches that depended on a directive`, `Model-text review verdicts`, `Agents withheld or settings changed`, `SHIMMER_INST_FINDER`, `Multi-round`, `Asset copy`, `Role separation`, `What the result does not show`. The quality rows say they were not computed: scoring belongs to the scorer. The values are sentences for a human; do not parse them.
+
+A row `Multi-round step times` follows `Multi-round`: the step times of a declared multi-round run (section 10.1, `timings`), `not recorded` for a run before them, `not applicable` otherwise. `FINAL_STATUS.json` carries the same object as `multi_round_timings` (`null` when absent). A measurement for a human; do not parse it.
 
 ### 11.2 Batch sessions
 
@@ -669,7 +691,7 @@ All files at branch `loop/s03`, commit `990ed88`, unless noted.
 - `scripts/pipeline.py`: `main` (decorators, `--output-dir`, final-mode block, multi-round branch and its return before the convention assignment, every early return and exit code, rename at end only without `--output-dir`, `completion.reached_end`), `_load_corpus`, `_review_slug`, `_slug_from_question`, `_inst_finder_switch`, `_inst_finder_startup_guard`, `_inst_finder_decision`, `_prior_comparison`, `_paired_convention_review` (`consume_judgment`, the advisory flag, `judging_calls_by_agent`, computed post with `judging_calls`, `PAIRED_JUDGING_CALLS` post, stamped judged post, `pairing` fields), `_stamped_judged_items`, `_stamp_source_rule_ids`, `phase_6_synthesis` (`_process_doc`), `_harvest_amendment_payloads_from_bus` (called once, before any per-document step), `_polish_findings`, `_prior_refusals_for`, `_prior_orphans_for`, `_draft_generate_with_evidence`, `_render_per_agent_md`.
 - `scripts/finding_record.py`: module docstring, `_FALLBACK`, `schema`, `is_finding`, `validate_finding`, `COMPUTED_BACKENDS`, `written_by`, `stamp_written_by`, `is_model_written`, `MODEL_FINDING_MARK`, `CHECKED_SOUNDING_FIELDS`, `model_finding_for_reader`, `RULE_ID_FIELD_ALIASES`, `resolved_rule_id`, `source_rule_id_for`, `PRIOR_RELATIONS`, `ABSENCE_RELATIONS`, `render_prior_comparison`, `figure_text`.
 - `config/agent_contracts.json`: `finding_record` (fields, required, relations, verdicts, says), `envelope`.
-- `scripts/paired_review.py`: `REL_TOLERANCE`, `ABS_TOLERANCE`, `unit_exponents`, `_unit_str`, `compute_checks`, `_close`, `disagreements`, `RELATION_DETAIL_FIELDS`, `finding_from_check`, `_default_explanation`, `dedupe`, `_absence_check`, `absence_plans`, `plan_calls` (plan kinds), `_rule_for_check`, `prior_checks`, `absent_checks`, `PRIOR_REFUSAL_KINDS`, `prior_findings`, `computed_finding_items`, `amendment_from_finding`, `stamp_note_writer`, `JUDGING_OUTCOMES`, `JUDGED_ABSENCE_PLAN`, `judging_call_record`, `judging_call_counts`, `notes_on_python_findings`, `note_models`, `computed_sentence`, `COMPUTED_PROVENANCE_WITH_NOTE`, `ABSENCE_PROVENANCE_WITH_NOTE`, `model_item_notes`, `_severity_makes_amendment`, `ensure_amendments_for_findings`, `figures_in_unit`, `unit_passage_refs`, `opens_with`.
+- `scripts/paired_review.py`: `REL_TOLERANCE`, `ABS_TOLERANCE`, `unit_exponents`, `_unit_str`, `compute_checks`, `_close`, `disagreements`, `RELATION_DETAIL_FIELDS`, `finding_from_check`, `_default_explanation`, `dedupe`, `_absence_check`, `absence_plans`, `plan_calls` (plan kinds), `_rule_for_check`, `prior_checks`, `absent_checks`, `PRIOR_REFUSAL_KINDS`, `prior_findings`, `computed_finding_items`, `amendment_from_finding`, `stamp_note_writer`, `JUDGING_OUTCOMES`, `JUDGED_ABSENCE_PLAN`, `UNCOMPUTABLE_PLAN`, `judging_call_record`, `judged_item_refusal`, `reply_kept_reason`, `reply_items`, `stamp_from_plan`, `judging_call_counts`, `notes_on_python_findings`, `note_models`, `computed_sentence`, `COMPUTED_PROVENANCE_WITH_NOTE`, `ABSENCE_PROVENANCE_WITH_NOTE`, `model_item_notes`, `_severity_makes_amendment`, `ensure_amendments_for_findings`, `figures_in_unit`, `unit_passage_refs`, `opens_with`.
 - `scripts/pairing_map.py`: `pair_units`, `unmatched_findings`, `build_pairing_map`, `write_pairing_map`.
 - `scripts/reference_tables.py`: `prior_values_for_scalars` (its refusals and their `reason_kind`).
 - `scripts/agent_wrapper.py`, `current_items`, and `scripts/pipeline.py`, `_items_for`: supersession by `item_id` within one agent's results for one document.
