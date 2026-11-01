@@ -167,7 +167,9 @@ What these figures do not show:
   L11 (external benchmarks) 1 correct, 5 partly correct, 9 wrong; L8 (the
   synthetic suite) 4 correct, 9 wrong, 2 empty; L12 (benchmarks and suite) 4
   correct, 5 partly correct, 6 wrong; L12b (re-runs) 2 correct, 1 partly
-  correct, 12 wrong. The results page says which rows each launch counts for.
+  correct, 12 wrong. L12c (the integrity re-run of five suite entries, not
+  scored) has no model-text review. The results page says which rows each
+  launch counts for.
 - **Not every field a sealed result report needs is here.** The project's
   testing rules list the fields of a result report. The results page gives, for
   these development runs: the purpose, that they are exposed, the dates, the
