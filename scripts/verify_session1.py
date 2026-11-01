@@ -498,8 +498,13 @@ def check_15_search():
         except (json.JSONDecodeError, KeyError, ValueError):
             pass  # fall through and re-run live
 
+    import os as _os
+    from unittest.mock import patch as _patch
     router = SearchRouter.open(ROOT)
-    result = router.search(query, claim_type="institutional")
+    # Web access opens only under the cloud profile (D-S23 item 1, check 315); this live
+    # smoke test is of the cloud path, whatever profile the gate's shell carries.
+    with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+        result = router.search(query, claim_type="institutional")
     if result.strategy_used not in {"ddg", "brave", "api", "direct", "exhausted"}:
         return _fail(f"strategy: {result.strategy_used!r}")
     if result.verdict not in {"FOUND", "UNVERIFIABLE"}:
@@ -2409,13 +2414,18 @@ def check_69_chokepoint_query_masked():
     masker = S.make_query_masker(sensitive=True, operator_rules=rules, project_root=str(d),
                                  run_id="R", ledger_path=str(d / "l.jsonl"))
     saved = S.LAYER_ACTIVE
+    import os as _os
+    from unittest.mock import patch as _patch
     try:
         S.LAYER_ACTIVE = True
         router = SR.SearchRouter(project_root=d, keys={}, registry={}, query_masker=masker)
         seen = {}
         router._ddg_search = lambda q, max_results=5: (seen.update(ddg=q) or ([], ""))
         router._brave_search = lambda q: (seen.update(brave=q) or ([], ""))
-        router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
+        # Web egress opens only under the cloud profile (D-S23 item 1, check 315), so the
+        # masker is exercised on the one profile where a query can leave the machine.
+        with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+            router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
         recorded = seen.get("ddg", "")
         if "12-345-6789" in recorded or "[REDACTED" not in recorded:
             return _fail(f"query reached the engine unmasked: {recorded!r}")
@@ -25765,6 +25775,23 @@ def check_314_citation_version_equals_version_file():
                f"fail, the restored copy passes, an image-shaped tree skips")
 
 
+def check_315_no_web_under_the_local_profile():
+    """Loop S11, D-S23 item 1 (open item 68): under the local backend profile no agent reaches
+    the web, whatever its registry flag says; web access opens only under the cloud profile.
+    scripts/web_access_checks.py runs SearchRouter.search, the one place web access is opened,
+    for a may_use_web agent and a system caller with urlopen, socket.create_connection and
+    socket.connect recording and refusing (the ddgs package a recorder): under the local
+    profile, and under an empty one, no non-local connection may be attempted and both callers
+    are refused with a web_access_refused event; under the cloud profile every engine is tried
+    (and refused by the stand-ins). The run summary's own writer states the profile and whether
+    web access was open under both. No function in search_router.py but search() and the egress
+    methods reaches an engine or urlopen (a planted second caller is flagged). Neutralise (the
+    refusal removed from search(); the rule opened for every profile), fail, restore, pass. No
+    network, no weights, temporary folders only."""
+    from web_access_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -26195,6 +26222,8 @@ CHECKS = [
      check_313_no_local_profile_path_reaches_a_cloud_client),
     ("314 CITATION.cff version equals VERSION",
      check_314_citation_version_equals_version_file),
+    ("315 no agent reaches the web under the local profile",
+     check_315_no_web_under_the_local_profile),
 ]
 
 

@@ -149,6 +149,7 @@ async function main() {
   context.renderSubmit(); await Promise.resolve(); await Promise.resolve();
   assert(context.app.innerHTML.includes('Local Draft is not yet proven'));
   assert(elements['startup-backend'].textContent.includes('Local, models on this machine'));
+  assert(elements['startup-backend'].textContent.includes('Web access: closed'));
   console.log('PASS: executed console rendering, API binding, unavailable/stale states, view separation, citations, mutation/restoration and no-op refusal');
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });
