@@ -7,7 +7,8 @@ prompt map read word for word from the bound launcher, wizard and pipeline sourc
 sealer's mapping of the workload as the wizard lists it, the session driver answering only
 from the map (and stopping on an unknown prompt, on answers used up and at its deadline), the
 REAL shimmer.sh and the REAL intake wizard driven through a review then a draft then Q with a
-stand-in pipeline (each child Python network-denied by the sealed sitecustomize), the
+stand-in pipeline (each Python child that loads the sealed sitecustomize network-denied by it;
+a Python-level denial, so native code and non-Python children are neither denied nor counted), the
 menu's environment made from the runner's runtime, the arm-aware assessment, the controller's
 single-bundle rule and its stop of the menu's children, and the analyser's report row.
 
@@ -408,7 +409,8 @@ class LauncherArmChecks:
         (the preflight's continue question and the review's escalation, both optional, are met
         and answered); the stand-in pipeline gets the menu's own flags and base mode; both runs
         are moved under evidence/launcher, the draft's memo kept and its system manifest cleared,
-        every child Python logs its network with the denial installed, and the assessment
+        every Python child that loads the sitecustomize logs its network with the denial installed
+        (the only children counted), and the assessment
         passes. An outside connection each pipeline child tries is refused, recorded and fails
         the arm. The
         analyser's report row reads the collected session."""
@@ -566,6 +568,37 @@ class LauncherArmChecks:
         self.assertIn("pkill -TERM -f '%s/[o]rdinary_final_run.py'" % controller.REMOTE, stop)
         self.assertIn("pkill -TERM -f '%s/[p]roject/'" % controller.REMOTE, stop)
 
+    def test_the_stop_patterns_match_the_command_lines_the_menu_starts(self):
+        """S7 close, adversarial 8: the two pkill patterns of stop_workload, read as the regular
+        expressions pkill -f matches, against the command lines the instance runs: the runner as
+        the controller starts it (`--bundle REMOTE`, so the runner's base and project are REMOTE and
+        REMOTE/project), the menu's shell as drive_session starts it, and every Python child
+        shimmer.sh starts (`$PYTHON_CMD`, the venv's own python under the menu's working folder).
+        The project pattern matches the menu and its children and not the runner; neither matches
+        the shell line that runs pkill itself."""
+        self.need_launcher_files()
+        from pathlib import PurePosixPath
+        text = (ROOT / runner.LAUNCHER_SCRIPT).read_text(encoding='utf-8')
+        # shimmer.sh runs in its own folder, and the children's python is the venv's (bin/ on Linux).
+        self.assertIn('cd "$(dirname "$0")"', text)
+        self.assertIn('VENV_PYTHON="$PWD/$VENV_BIN/python"', text)
+        self.assertIn('echo ".venv/bin"', text)
+        project = PurePosixPath(controller.REMOTE) / 'project'
+        python = str(project / '.venv' / 'bin' / 'python')
+        stop = controller.stop_command(controller.REMOTE)
+        runner_pattern, project_pattern = re.findall(r"pkill -TERM -f '([^']*)'", stop)
+        menu = [' '.join([runner.launcher_shell(), str(project / runner.LAUNCHER_SCRIPT)])]
+        menu += [python + ' ' + m.group(1) for m in re.finditer(r'"\$PYTHON_CMD" (scripts/\S+[^\n\\]*)', text)]
+        self.assertGreaterEqual(len(menu), 6, menu)
+        runner_line = 'python3 -B %s/ordinary_final_run.py --bundle %s --execute' % (controller.REMOTE, controller.REMOTE)
+        for line in menu:
+            self.assertRegex(line, project_pattern)
+        self.assertRegex(runner_line, runner_pattern)
+        self.assertNotRegex(runner_line, project_pattern)
+        own = "bash -c \"%s\"" % stop
+        self.assertNotRegex(own, project_pattern)
+        self.assertNotRegex(own, runner_pattern)
+
 
 def launcher_status_without_the_transcript(target, result):
     return dict(transcript=False, answers=0, answer_ids=[], seconds=None, session={}, runs={}, network={}, context={},
@@ -574,6 +607,11 @@ def launcher_status_without_the_transcript(target, result):
 
 def stop_command_without_the_project(remote):
     return "pkill -TERM -f '" + remote + "/[o]rdinary_final_run.py' || true"
+
+
+def stop_command_missing_the_children(remote):
+    """The project pattern narrowed to a folder no command line the menu starts carries."""
+    return _ORIGINAL_STOP_COMMAND(remote).replace('/[p]roject/', '/[p]roject/scripts/', 1)
 
 
 def record_with_every_deliverable(folder, task):
@@ -600,6 +638,7 @@ _ORIGINAL_NETWORK = runner.launcher_network
 _ORIGINAL_ENVIRONMENT = runner.launcher_environment
 _ORIGINAL_PROMPTS = sealer.launcher_prompts
 _ORIGINAL_SITECUSTOMIZE = runner.sitecustomize_source
+_ORIGINAL_STOP_COMMAND = controller.stop_command
 
 # (test, owner, attribute, mutant): each rule's neutralisation; the test must fail under it.
 LAUNCHER_NEUTRALIZATIONS = [
@@ -648,6 +687,9 @@ LAUNCHER_NEUTRALIZATIONS = [
     # The stop ends the runner only, leaving the menu's children running.
     ('test_arm_l_runs_as_one_bundle_and_the_stop_ends_the_menus_children', controller, 'stop_command',
      stop_command_without_the_project),
+    # The stop's project pattern no longer matching the menu's command lines (S7 close, adversarial 8).
+    ('test_the_stop_patterns_match_the_command_lines_the_menu_starts', controller, 'stop_command',
+     stop_command_missing_the_children),
 ]
 NAMES = sorted({name for name, _owner, _attribute, _mutant in LAUNCHER_NEUTRALIZATIONS})
 
@@ -693,7 +735,8 @@ def check():
     detail = ('%d arm L tests, %d neutralisations each failing its test and restored: the sealed launcher block, exposed '
               'only, prompts word for word in the bound sources, the wizard\'s numbering, the session answering only '
               'from the map and stopping otherwise, the real menu and wizard through a review then a draft with every '
-              'child network-denied, the menu environment from the runtime, the assessment, a single bundle and the '
+              'Python child that loaded the sitecustomize network-denied (native code and non-Python children neither '
+              'denied nor counted), the menu environment from the runtime, the assessment, a single bundle and the '
               'stop of the menu\'s children' % (len(NAMES) - len(skipped), len(proofs)))
     if skipped:
         return 'SKIP', detail + '; skipped here: ' + ', '.join(skipped)

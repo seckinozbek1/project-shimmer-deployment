@@ -219,7 +219,10 @@ def _drive_sh(bash, text, answers, timeout=PASS_BOUND_SECONDS, layout="Scripts")
         tmp = Path(td)
         fake = _sh_fixture(tmp, text, layout)
         env = _clean_env(tmp)
-        env["PATH"] = str(fake.parent) + os.pathsep + env.get("PATH", "")
+        # The bash's own folder (Git's usr/bin on Windows) carries the tools the
+        # launcher calls (cat, rm, mktemp). A gate started from PowerShell or cmd
+        # does not have it on PATH, and 307 and 308 then failed (D-147, S7 close).
+        env["PATH"] = os.pathsep.join((str(fake.parent), str(Path(bash).parent), env.get("PATH", "")))
         env["LAUNCHER_CHECK_PYTHON"] = _posix(fake)
         return _run([bash, _posix(tmp / "shimmer.sh")], tmp, env, answers, timeout)
 
@@ -385,10 +388,19 @@ def _sh_bootstrap(bash):
            "STUB_PYTHON refused -m pip" in broken["out"] and broken["rc"] == 1,
            _ended(again) and "STUB_PYTHON refused" not in again["out"])
 
+    # The draft is announced only after its setup succeeded (S7 close, adversarial 7:
+    # the same neutralisation as the batch launcher's).
     answers = "L\n1\nD\nA question\nQ\n"
     ok = _drive_sh(bash, text, answers)
-    if not ("Draft setup cancelled." in ok["out"] and "Drafting a memo" not in ok["out"]):
-        raise AssertionError("shimmer.sh announces a draft whose setup was cancelled")
+    quiet = "Draft setup cancelled." in ok["out"] and "Drafting a memo" not in ok["out"]
+    early = ('DRAFT_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_draft_flags.$$"',
+             'echo "Drafting a memo, then reviewing it ..."\n'
+             '                        DRAFT_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_draft_flags.$$"')
+    broken = _drive_sh(bash, _neutralise(text, early[0], early[1], "the early draft line"), answers)
+    again = _drive_sh(bash, text, answers)
+    _prove("sh draft is announced only after setup", quiet,
+           "Drafting a memo" in broken["out"] and "Draft setup cancelled." in broken["out"],
+           "Drafting a memo" not in again["out"])
 
 
 # --- the banner -------------------------------------------------------------------

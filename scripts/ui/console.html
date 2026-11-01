@@ -844,7 +844,7 @@ function nextActionSentence(run) {
          route requires at least one file under deliverables/). The cause
          is not asserted here, only that the log explains it, since this
          function cannot rule out a cause other than missing conventions. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui("Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.");
       }
       return ui("Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.");
@@ -920,7 +920,7 @@ function nextActionSentenceHuman(run) {
          not a filtering, in the other direction too: this empty case must
          be as visible here as it now is in the developer view, not
          smoothed over by the reviewer view's plainer language. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui('<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ') + mutedParen(ui("state: completed, no documents"));
       }
       return ui('<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ') + mutedParen(ui("state: completed"));
@@ -2046,15 +2046,18 @@ function activationSummaryHtml(data, human) {
     return out + ui('<p class="notice">Activation evidence is unavailable (') + escapeHtml((data && data.availability) || 'request_failed') + ui('). No call count or skipped-agent conclusion can be drawn.</p>');
   }
   var rows = data.decisions, states = data.agent_states;
-  var calls = rows.filter(function (r) { return r.actual_call === true; }).length;
-  var failures = rows.filter(function (r) { return r.state === 'execution_failure' || r.state === 'pre_dispatch_failure'; }).length;
-  var recovery = rows.filter(function (r) { return r.recovered === true; }).length;
-  var capped = rows.filter(function (r) { return r.truncated === true; }).length;
-  var noncalls = rows.filter(function (r) { return r.activated === false; }).length;
+  /* A sealed run's route sends the decisions as counts only (Annex B.8). */
+  var counts = data.exposure === 'sealed' ? (data.decision_counts || {}) : null;
+  var calls = counts ? counts.dispatch_attempts : rows.filter(function (r) { return r.actual_call === true; }).length;
+  var failures = counts ? counts.failures : rows.filter(function (r) { return r.state === 'execution_failure' || r.state === 'pre_dispatch_failure'; }).length;
+  var recovery = counts ? counts.recovered : rows.filter(function (r) { return r.recovered === true; }).length;
+  var capped = counts ? counts.capped : rows.filter(function (r) { return r.truncated === true; }).length;
+  var noncalls = counts ? counts.non_calls : rows.filter(function (r) { return r.activated === false; }).length;
   var unreached = states.filter(function (s) { return s.state === 'phase_not_reached'; }).length;
   out += ui('<p>Routing profile: <strong>') + escapeHtml(data.activation_mode) + '</strong>. ' + calls +
     ui(' dispatch attempts; ') + noncalls + ui(' explicit non-call decisions; ') + unreached + ui(' agents have no reached-phase decision.</p>') +
     '<p>' + failures + ui(' recorded execution or preparation failures; ') + recovery + ui(' recovered replies; ') + capped + ui(' capped replies. Attempts are not successful generations, and a non-call is not a clean finding. Counts are the recorded snapshot.</p>');
+  if (counts) return out + sealedNoteHtml(data);
   if (human) return out;
   out += ui('<details><summary>Per-agent states and activation decisions</summary><ul>');
   states.forEach(function (s) {
@@ -2088,6 +2091,12 @@ function loadActivation(runId) {
 
 function multiRoundHtml(data) {
   if (!data || !data.recorded) return ui('<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>');
+  /* A sealed run's route keeps whether a case was recorded and its outcome only
+     (console_views.sealed_multi_round); its note is shown with the rounds below. */
+  if (data.exposure === 'sealed') {
+    return '<h2>' + ui('Multi-round positioning') + '</h2><p>' + ui('A case output was recorded. Outcome: ') +
+      escapeHtml(displayValue(data.outcome || ui('not recorded'))) + '.</p>';
+  }
   var out = ui('<h2>Multi-round positioning</h2><p>') + (data.fixture ? ui('SYNTHETIC FIXTURE. ') : '') +
     escapeHtml(displayValue(data.activation.state)) + '. ' + escapeHtml(displayValue(data.outcome || '')) + ' ' +
     escapeHtml(displayValue(data.activation.reason || '')) + ui('. Model quality and performance remain unverified.</p>');
@@ -2523,6 +2532,11 @@ function renderDetailBody(run, allRuns) {
   if (run.documents && run.documents.length) {
     html += ui('<h2>Documents</h2>');
     html += renderDocuments(run);
+  } else if (run.exposure === "sealed" && run.document_count > 0) {
+    /* A sealed run's record carries its document counts only (Annex B.8). */
+    html += ui('<h2>Documents</h2>') + '<p>' + escapeHtml(String(run.document_count)) +
+      ui(" documents, done: ") + escapeHtml(String(run.documents_done)) +
+      ui(". Sealed test: the document names are withheld.") + '</p>';
   }
 
   var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });

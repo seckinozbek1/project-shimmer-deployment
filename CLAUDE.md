@@ -231,12 +231,17 @@ processing swarm governed by an append-only constitution.
   `bash shimmer.sh` once with pipes in its own session and answers each prompt only from the map
   at a line start once the output is quiet (`drive_session`); an unknown prompt, answers used up,
   30 minutes with no output or the deadline (the budget stop less a minute) ends the session,
-  never a guess. Every child Python loads a sitecustomize that applies
-  `cloud_run_observer.deny_network` and logs to `evidence/launcher/network/`. The two runs move to `evidence/launcher/review|draft/`;
+  never a guess. A child Python that loads the sitecustomize from `PYTHONPATH` applies
+  `cloud_run_observer.deny_network` and logs to `evidence/launcher/network/`; the denial is a
+  Python-level patch, so native code and non-Python children are neither denied nor counted, and
+  a Python child that never loads the sitecustomize (`-I`, `-S`, `-E`, `PYTHONPATH` dropped)
+  leaves no log and is not counted (S7 close; an independent child count is an open item). The two runs move to `evidence/launcher/review|draft/`;
   `assess_launcher` passes integrity only: the menu ended by itself with exit 0, every sealed
   answer given, one run per task reaching its end with exit 0 and one pipeline_start and end, the
-  run summary and the memo, the draft's manifest and memo cleared, every child's socket layer
-  denied and every pipeline process's denial in full, and no blocked attempt; incomplete semantic
+  run summary and the memo, the draft's manifest and memo cleared, the socket layer denied in
+  every Python child that loaded the sitecustomize and the denial in full in every pipeline
+  process, and no blocked attempt among them (a measured count of those children, not a proof of
+  no network for the session); incomplete semantic
   work is recorded and does not fail the arm, since base models as shipped carry no quality claim. The controller refuses arm L in a batch, and
   `stop_workload` also ends what runs from the remote project; the analyser's `Launcher session`
   row reports it, never comparable with B3 or B1. Its workload progress (PROGRESS-A) is the sealed
@@ -777,11 +782,17 @@ processing swarm governed by an append-only constitution.
   agent switches, the run report and the test change request log read `scripts/console_views.py`
   projections through token routes; saved replies are shown as metadata and outcomes, never text;
   every model finding carries `MODEL_FINDING_MARK`; a sealed run (a marker walk that fails closed)
-  shows counts and timings only and its per-flaw routes answer 403; only `/health` and `/console`
+  shows counts and timings only (`/activation` its decisions as counts, a pending question on
+  `/approvals` and `/runs/{run_id}` its timings only; its run record on `/runs/{run_id}` and
+  `/runs` document, file and target counts and no name, question or error text) and its
+  per-flaw routes, with
+  `/undated-documents` and `/convention-assignment`, answer 403; only `/health` and `/console`
   answer without a token (FastAPI's own documentation routes are off). The Annex B.4 reasons live
   once, in `scripts/run_report_text.py`. The screenshots in `docs/loop/ui/` are rendered by
-  `tools/console_screenshots.py` from the committed fixture only (replies under a fixed clock
-  inside the run window); two renders are byte-identical. Checks 298 to 306.
+  `tools/console_screenshots.py`: the run pages from the committed fixture only (replies under a
+  fixed clock inside the run window), the test-change-requests pages from the repository's own
+  `docs/test_change_requests.md` as of the render; two renders of one tree are byte-identical.
+  Checks 298 to 306.
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the

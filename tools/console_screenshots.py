@@ -1,8 +1,8 @@
 """Render the loop S7 console screenshots (docs/loop/ui/) from the committed fixture.
 
-Every figure in a shot comes from the committed fixture under
+Every figure in a run shot comes from the committed fixture under
 scripts/fixtures/console/ or from what this tool writes deterministically into a
-temporary copy of it:
+temporary copy of it (the test-change-requests shots are the exception, below):
 
 - runs/<exposed id>/: the committed exposed run, plus three saved model replies
   written by the real writer (reply_records.write) under the fixed fixture clock
@@ -13,11 +13,19 @@ temporary copy of it:
 - runs/<turkish id>/: the same run under another id whose status.json and
   audit/run_options.json say the output language is tr.
 
+The test-change-requests shots (#/test-changes) are not run-scoped: the server
+answers them from the repository's own docs/test_change_requests.md, the log of
+exposed tests that is committed in the repository, so they show its real entries
+as of the render.
+
 Nothing in the repository is written except the PNGs in --out. The server runs
 under --server-python (an interpreter with fastapi and uvicorn) as a child of
 this process, bound to 127.0.0.1, with a token generated here and passed to it
 only as its SHA-256; it is stopped by its own process handle when the shots are
-done. Playwright (Chromium) runs under the interpreter running this tool. No
+done. It is started with the no-window flag (cloud_run_common.no_window,
+HIDDEN-A). Playwright (Chromium, headless) runs under the interpreter running
+this tool and starts its own driver and browser processes, whose flags this tool
+does not set. No
 pipeline run, no model, no network beyond the loopback server.
 
     py -3.12 tools/console_screenshots.py --server-python <python with fastapi and uvicorn>
@@ -38,6 +46,9 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cloud_run_common import no_window  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
@@ -185,7 +196,8 @@ def main(argv=None):
                    KMP_DUPLICATE_LIB_OK="TRUE")
         child = subprocess.Popen([args.server_python, "-X", "utf8", str(Path(__file__).resolve()),
                                   "--serve-runs", str(runs), "--serve-port", str(port)],
-                                 env=env, stdin=subprocess.DEVNULL, cwd=str(temporary))
+                                 env=env, stdin=subprocess.DEVNULL, cwd=str(temporary),
+                                 creationflags=no_window())
         print("console server pid %d on 127.0.0.1:%d" % (child.pid, port), flush=True)
         _wait_ready(port, child)
         written = _shoot(port, token, out)

@@ -356,6 +356,86 @@ def sealed_multi_round(result):
     return {key: result.get(key) for key in ("recorded", "availability", "outcome")}
 
 
+# The agent-level fields /activation keeps for a sealed run: who was called and how often.
+SEALED_AGENT_STATE_FIELDS = ("agent", "state", "eligible", "activated", "actual_calls")
+# What /activation keeps of the completion record for a sealed run: state, timings, counts.
+SEALED_COMPLETION_FIELDS = ("state", "started_at", "finished_at", "reached_end", "exit_code",
+                            "document_count", "amendment_count")
+
+
+def sealed_activation(result):
+    """What /activation keeps for a sealed run (loop S7 close, adversarial 1): the
+    routing profile, each agent's state and call count, and the decisions as counts.
+    A decision's evidence carries unit ids, rule ids, finding indexes and item ids
+    (scripts/pipeline.py), and its reason, document and call id are per-flaw too, so
+    no decision row is kept."""
+    rows = result.get("decisions") or []
+    completion = result.get("completion")
+    return dict(_base_sealed(),
+                run_id=result.get("run_id"), recorded=result.get("recorded"),
+                availability=result.get("availability"), activation_mode=result.get("activation_mode"),
+                completion=({k: completion.get(k) for k in SEALED_COMPLETION_FIELDS}
+                            if isinstance(completion, dict) else None),
+                agent_states=[{k: s.get(k) for k in SEALED_AGENT_STATE_FIELDS}
+                              for s in result.get("agent_states") or []],
+                decisions=[],
+                decision_counts={
+                    "decisions": len(rows),
+                    "dispatch_attempts": sum(1 for r in rows if r.get("actual_call") is True),
+                    "non_calls": sum(1 for r in rows if r.get("activated") is False),
+                    "failures": sum(1 for r in rows
+                                    if r.get("state") in ("execution_failure", "pre_dispatch_failure")),
+                    "recovered": sum(1 for r in rows if r.get("recovered") is True),
+                    "capped": sum(1 for r in rows if r.get("truncated") is True)})
+
+
+# What a pending governed question keeps for a sealed run: when it was asked and
+# what happens if nobody answers. Its topic, message and payload are withheld.
+SEALED_APPROVAL_FIELDS = ("asked_at", "default_on_timeout", "timeout_at")
+
+
+def sealed_approval(pending):
+    """A sealed run's pending question for GET /approvals and GET /runs/{run_id}: the
+    payload of a governed question can carry a finding, a rule or a unit, so only its
+    timings are kept, with the same keys present and the rest emptied."""
+    return dict(_base_sealed(), topic=None, message="", payload={},
+                **{k: pending.get(k) for k in SEALED_APPROVAL_FIELDS})
+
+
+# Run-record fields that name a sealed test's material: each list is emptied and
+# replaced by its count under the paired key.
+SEALED_RECORD_LISTS = (("documents", "document_count"), ("files", "file_count"),
+                       ("prior_files", "prior_file_count"), ("review_targets", "review_target_count"))
+# Run-record text fields a sealed run withholds: the draft question can quote the
+# material, and an error (and the stop reason's detail) is the run log's tail, whose
+# route answers 403.
+SEALED_RECORD_TEXT = ("question", "error")
+
+
+def sealed_run_record(record):
+    """What a run record (GET /runs/{run_id}, GET /runs) keeps for a sealed run
+    (Annex B.8): document, file, prior and target names as counts only (and the
+    documents done), no question, no error text; state, outcome, stop code, timings
+    and progress counts as they are."""
+    out = dict(record, exposure=SEALED)
+    documents = record.get("documents") or []
+    out["documents_done"] = sum(1 for d in documents if isinstance(d, dict) and d.get("status") == "done")
+    for key, count in SEALED_RECORD_LISTS:
+        value = record.get(key)
+        out[key] = [] if isinstance(value, list) else value
+        out[count] = len(value) if isinstance(value, list) else 0
+    for key in SEALED_RECORD_TEXT:
+        if record.get(key):
+            out[key] = None
+    if isinstance(record.get("stop_reason"), dict):
+        out["stop_reason"] = dict(record["stop_reason"], detail=None)
+    return out
+
+
+def _base_sealed():
+    return {"exposure": SEALED, "sealed_note": run_report_text.SEALED_NOTE}
+
+
 def test_change_requests(root):
     """docs/test_change_requests.md as rows: id, title and the entry's own fields."""
     path = Path(root) / TEST_CHANGE_REQUESTS

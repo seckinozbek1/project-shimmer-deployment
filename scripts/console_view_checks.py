@@ -58,6 +58,9 @@ TCR_PATH = console_views.TEST_CHANGE_REQUESTS
 # Exactly these answer without a token (plan closure 3, DS7-5).
 EXEMPT = frozenset({"/health", "/console"})
 FASTAPI_DOCS = ("/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc")
+# Node runs with the Windows no-window flag: a gate started detached has no console
+# for it to inherit (HIDDEN-A, S7 close).
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 SKIP_FASTAPI = ("SKIP", "fastapi absent: this route check runs under an interpreter with fastapi "
                         "(the loop venv); skipped as not applicable here")
 
@@ -414,8 +417,21 @@ def check_multi_round_reuse_route():
 # The sealed filter (item 2)
 # ---------------------------------------------------------------------------
 PER_FLAW_GETS = ("/findings", "/pairs", "/amendments", "/amendment-refusals", "/contract-violations",
-                 "/references", "/deliverables", "/deliverables/" + DOC, "/log")
-NEW_VIEWS = ("/replies", "/model-findings", "/switches", "/report", "/multi-round")
+                 "/references", "/deliverables", "/deliverables/" + DOC, "/log",
+                 # S7 close (adversarial 1): document names and rule ids, refused too.
+                 "/undated-documents", "/convention-assignment")
+# /activation since the S7 close (adversarial 1): the fixture's PRACTICE_AUDITOR
+# decision carries a unit id and a rule id in its evidence, as the pipeline's do.
+NEW_VIEWS = ("/replies", "/model-findings", "/switches", "/report", "/multi-round", "/activation")
+# A pending governed question written into the sealed run, its payload naming a
+# unit and a rule: GET /approvals keeps its timings only.
+PENDING_APPROVAL = {"topic": "amendment_review", "asked_at": "2026-10-29T09:20:00+00:00",
+                    "payload": {"message": "u03-zone-beta under CONV-002: rate looks higher",
+                                "unit_id": "u03-zone-beta", "rule_id": "CONV-002"}}
+
+
+def _write_pending_approval(run_dir):
+    (Path(run_dir) / "audit" / "pending_approval.json").write_text(json.dumps(PENDING_APPROVAL), encoding="utf-8")
 
 
 def _sealed_observation(client, headers):
@@ -424,15 +440,36 @@ def _sealed_observation(client, headers):
                        for path in PER_FLAW_GETS}
     out["evidence"] = client.post("/runs/" + RUN_ID + "/evidence", headers=headers,
                                   json={"expected": [{"unit": "u03-zone-beta", "rule": "CONV-002"}]}).status_code
+    approvals = client.get("/approvals", headers=headers)
+    out["approvals"] = approvals.json() if approvals.status_code == 200 else {"status": approvals.status_code}
+    # The run record and the run list (S7 close): a sealed run's documents as counts only.
+    record = client.get("/runs/" + RUN_ID, headers=headers)
+    out["run"] = record.json() if record.status_code == 200 else {"status": record.status_code}
+    listing = client.get("/runs", headers=headers)
+    out["runs"] = [r for r in (listing.json().get("runs") or [] if listing.status_code == 200 else [])
+                   if r.get("run_id") == RUN_ID]
     return out
 
 
 def _sealed_verdict(o):
-    text = json.dumps({k: o[k] for k in NEW_VIEWS})
+    text = json.dumps({k: o[k] for k in NEW_VIEWS + ("approvals", "run", "runs")})
+    # The document's own id names sealed material on the run record and the run list.
     leaks = [w for w in SEALED_FORBIDDEN + REPLY_SECRETS if w in text]
+    leaks += [DOC] if DOC in json.dumps({k: o[k] for k in ("run", "runs")}) else []
+    run_records = [o["run"]] + list(o["runs"])
     bodies = [(o[k] or {}).get("body") or {} for k in NEW_VIEWS]
     rows = [r["label"] for r in (o["/report"]["body"] or {}).get("rows") or []]
+    activation = (o["/activation"] or {}).get("body") or {}
+    pending = [a for a in (o["approvals"] or {}).get("approvals") or [] if a.get("run_id") == RUN_ID]
     ok = (not leaks and all(b.get("exposure") == "sealed" for b in bodies)
+          and activation.get("decisions") == [] and len(activation.get("agent_states") or []) == 4
+          and (activation.get("decision_counts") or {}).get("dispatch_attempts") == 3
+          and (activation.get("decision_counts") or {}).get("non_calls") == 1
+          and len(run_records) == 2
+          and all(r.get("documents") == [] and r.get("document_count") == 1 and r.get("files") == []
+                  and r.get("file_count") == 1 and r.get("exposure") == "sealed" for r in run_records)
+          and len(pending) == 1 and pending[0].get("asked_at") == PENDING_APPROVAL["asked_at"]
+          and pending[0].get("payload") == {} and pending[0].get("topic") is None
           and all(o[k]["status"] == 200 for k in NEW_VIEWS)
           and (o["/replies"]["body"] or {}).get("count") == 3 and "calls" not in (o["/replies"]["body"] or {})
           and (o["/model-findings"]["body"] or {}).get("count") == 1
@@ -465,12 +502,27 @@ def check_sealed_filter():
             else:
                 _make_session(root / "session", "sealed")
                 (root / "session" / "run_record.json").unlink()
+            _write_pending_approval(run_dir)
             observe = lambda: _sealed_observation(client, headers)  # noqa: E731
             status, results[name] = _proved("sealed_filter_" + name, observe, _sealed_verdict,
                                             lambda: patch.object(console_views, "exposure", lambda run_dir: "exposed"),
                                             "exposure always read as exposed")
             if status != "PASS":
                 return ("FAIL", "%s: %s" % (name, results[name]))
+            if name == "run_folder_marker":
+                # Each reduction on its own (S7 close, adversarial 1): the activation
+                # decisions and the pending question passed through unreduced.
+                unreduced = {"sealed_activation": lambda record: dict(record, exposure="sealed"),
+                             "sealed_approval": lambda record: dict(record, exposure="sealed"),
+                             "sealed_run_record": lambda record: dict(record, exposure="sealed")}
+                for reducer in ("sealed_activation", "sealed_approval", "sealed_run_record"):
+                    status, detail = _proved(
+                        "sealed_filter_" + reducer, observe, _sealed_verdict,
+                        lambda reducer=reducer: patch.object(console_views, reducer, unreduced[reducer]),
+                        "console_views.%s returns its input" % reducer)
+                    if status != "PASS":
+                        return ("FAIL", "%s: %s" % (reducer, detail))
+                    results[reducer] = detail[detail.index("neutralised ("):]
             if name == "cloud_session":
                 seal = root / "session" / "seal.json"
                 seal.write_text("{", encoding="utf-8")
@@ -495,9 +547,14 @@ def check_sealed_filter():
                 except ProofFailure as exc:
                     return ("FAIL", "POST /evidence on a sealed run: %s" % exc.category)
     return ("PASS", "a sealed run (marker in the run folder; seal.json three levels up in the cloud layout; "
-                    "an unreadable or silent seal.json) shows counts and timings only on every new route, the "
-                    "report keeps only the allowlisted rows, per-flaw routes and POST /evidence answer 403; "
-                    "neutralised (exposure read as exposed; the /evidence guard removed): FAIL; restored: PASS. "
+                    "an unreadable or silent seal.json) shows counts and timings only on every new route and "
+                    "on /activation (decisions as counts, no evidence), GET /approvals keeps a pending "
+                    "question's timings only, GET /runs/{run_id} and GET /runs carry the run's document "
+                    "and file counts and no document or file name, the report keeps only the allowlisted rows, per-flaw routes "
+                    "(with /undated-documents and /convention-assignment) and POST /evidence answer 403; "
+                    "neutralised (exposure read as exposed; the activation, approval and run-record "
+                    "reductions each returning their input; the /evidence guard removed): FAIL; "
+                    "restored: PASS. "
                     + " | ".join("%s: %s" % kv for kv in results.items()))
 
 
@@ -601,7 +658,16 @@ process.stdout.write(JSON.stringify(out));
 """
 
 VIEW_FUNCTIONS = ("repliesHtml", "modelFindingsHtml", "switchesHtml", "reportHtml", "roundReuseHtml",
-                  "testChangesHtml")
+                  "testChangesHtml", "activationSummaryHtml", "multiRoundHtml")
+# Views whose sealed note is shown by the section beside them, not by the view
+# itself: the multi-round heading sits above roundReuseHtml in one holder.
+NOTE_SHOWN_BESIDE = ("multiRoundHtml",)
+# A sealed run whose case WAS recorded, as /multi-round sends it (S7 close,
+# adversarial 4): the fixture records no case master, so the view case is built
+# from console_views.sealed_multi_round over a recorded case's own fields.
+RECORDED_CASE = {"recorded": True, "availability": "recorded", "outcome": "reviewed", "fixture": False,
+                 "run_id": RUN_ID, "activation": {"state": "activated", "reason": "operator_requested"},
+                 "view": {"case_id": "fixture-case", "evidence": []}}
 # English section labels a Turkish view must not show.
 ENGLISH_LABELS = ("Model replies", "Written by a model", "Agent switches", "Run report", "Rounds",
                   "Test change requests", "Every saved call", "Why it is withheld", "Model API cost",
@@ -609,21 +675,33 @@ ENGLISH_LABELS = ("Model replies", "Written by a model", "Agent switches", "Run 
 
 
 def _projections(runs_dir, sealed):
+    """What each route sends, built as the server builds it: the sealed reductions
+    are applied when console_views.exposure reads the run as sealed, so a
+    neutralised exposure reader renders a sealed run as exposed."""
     run_dir = Path(runs_dir) / RUN_ID
     if sealed:
         (run_dir / "run_record.json").write_text(json.dumps({"exposure": "sealed"}), encoding="utf-8")
+    state = console_views.exposure(run_dir)
     from multi_round import read_saved
-    multi = read_saved(run_dir, RUN_ID)
-    if sealed:
-        multi = console_views.sealed_multi_round(multi)
-    multi = dict(multi, exposure=console_views.exposure(run_dir), round_reuse=console_views.round_reuse(run_dir))
+    from routing_view import read_activation
+    multi, recorded, activation = read_saved(run_dir, RUN_ID), dict(RECORDED_CASE), read_activation(run_dir, RUN_ID)
+    if state == console_views.SEALED:
+        multi, recorded = console_views.sealed_multi_round(multi), console_views.sealed_multi_round(recorded)
+        activation = console_views.sealed_activation(activation)
+    else:
+        activation = dict(activation, exposure=state)
+    reuse = console_views.round_reuse(run_dir)
+    multi = dict(multi, exposure=state, round_reuse=reuse)
     from honest_output_checks import server_findings
     return {"repliesHtml": console_views.replies(run_dir),
             "modelFindingsHtml": console_views.model_findings(run_dir, bus_findings=server_findings(run_dir)),
             "switchesHtml": console_views.switches(run_dir, RUN_ID, ROOT),
             "reportHtml": console_views.report(run_dir),
             "roundReuseHtml": multi,
-            "testChangesHtml": console_views.test_change_requests(ROOT)}
+            "testChangesHtml": console_views.test_change_requests(ROOT),
+            "activationSummaryHtml": activation,
+            "multiRoundHtml": multi,
+            "multiRoundHtml:recorded": dict(recorded, exposure=state, round_reuse=reuse)}
 
 
 def _render(html_path, cases):
@@ -633,7 +711,8 @@ def _render(html_path, cases):
         data = Path(tmp) / "cases.json"
         data.write_text(json.dumps(cases), encoding="utf-8")
         result = subprocess.run(["node", str(harness), str(html_path), str(ROOT / "scripts" / "ui"), str(data)],
-                                capture_output=True, text=True, encoding="utf-8", timeout=60)
+                                capture_output=True, text=True, encoding="utf-8", timeout=60,
+                                creationflags=NO_WINDOW)
         if result.returncode != 0:
             raise RuntimeError("view harness failed: " + result.stderr.strip().splitlines()[-1:][0]
                                if result.stderr.strip() else "view harness failed")
@@ -648,8 +727,8 @@ def _views_observation(html_path):
             _copy_fixture(runs)
             projections = _projections(runs, sealed)
             for lang in ("en", "tr"):
-                for fn in VIEW_FUNCTIONS:
-                    cases.append({"fn": fn, "lang": lang, "data": projections[fn]})
+                for fn in VIEW_FUNCTIONS + (("multiRoundHtml:recorded",) if sealed else ()):
+                    cases.append({"fn": fn.split(":")[0], "lang": lang, "data": projections[fn]})
                     keys.append("%s/%s/%s" % ("sealed" if sealed else "exposed", lang, fn))
         rendered = _render(html_path, cases)
     # The replies are written afresh for every observation under the fixed fixture
@@ -667,7 +746,7 @@ def _views_verdict(views):
         if any(s in html for s in REPLY_SECRETS):
             failures.append(key + ": reply text shown")
         if state == "sealed" and fn != "testChangesHtml":  # not run-scoped
-            if "sealed-note" not in html:
+            if "sealed-note" not in html and fn.split(":")[0] not in NOTE_SHOWN_BESIDE:
                 failures.append(key + ": no sealed note")
             leaked = [w for w in SEALED_FORBIDDEN if w in html]
             if leaked:
@@ -712,16 +791,73 @@ def _views_verdict(views):
         failures.append("test change requests page: no entry")
     if "u01-zone-alpha" not in views["exposed/en/roundReuseHtml"]:
         failures.append("rounds view: no unit rows")
+    # S7 close, adversarial 1: the exposed activation view shows each decision in
+    # Developer view, the sealed one its counts only (the leak scan above).
+    if "u03-zone-beta" not in views["exposed/en/activationSummaryHtml"]:
+        failures.append("activation view: the exposed decisions are not shown")
+    if "3 dispatch attempts" not in views["sealed/en/activationSummaryHtml"]:
+        failures.append("sealed activation view: the decision counts are not shown")
+    # S7 close, adversarial 4: a recorded sealed case says so, never "no valid output".
+    for lang in ("en", "tr"):
+        shown = views["sealed/%s/multiRoundHtml:recorded" % lang]
+        if (localization.text("No valid recorded case output.", lang) in shown
+                or localization.text("A case output was recorded. Outcome: ", lang) not in shown):
+            failures.append(lang + ": a recorded sealed case is not shown as recorded")
     return ("FAIL" if failures else "PASS",
-            "; ".join(failures) or "the six views render the projections in English and Turkish; the model "
+            "; ".join(failures) or "the eight views render the projections in English and Turkish; the model "
             "finding shows the mark first in both languages; a sealed view shows its note and no id, rule, "
-            "finding reason or text; the sealed switches view keeps the two B.4 reasons under the shared note "
+            "finding reason or text (the activation view its decision counts only); a recorded sealed case "
+            "is shown as recorded; the sealed switches view keeps the two B.4 reasons under the shared note "
             "(DS7-8) in both languages; no reply text anywhere; every new label has a Turkish row")
 
 
+# The files that start the console's and the chat window's children (S7 close,
+# adversarial 5): every start carries creationflags (the no-window flag, HIDDEN-A).
+HIDDEN_START_FILES = ("scripts/console_view_checks.py", "scripts/chat.py", "scripts/launcher_checks.py",
+                      "tools/console_screenshots.py")
+_START_NAMES = {"run", "Popen", "call", "check_call", "check_output"}
+
+
+def _unflagged_starts(sources):
+    """[file:line] of every subprocess start in `sources` that carries no creationflags."""
+    import ast
+    found = []
+    for name, source in sorted(sources.items()):
+        for node in ast.walk(ast.parse(source)):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"
+                    and node.func.attr in _START_NAMES
+                    and not any(k.arg == "creationflags" for k in node.keywords)):
+                found.append("%s:%d" % (name, node.lineno))
+    return found
+
+
+def _children_hidden():
+    sources = {name: (ROOT / name).read_text(encoding="utf-8") for name in HIDDEN_START_FILES}
+    starts = sum(source.count("subprocess.") for source in sources.values())
+    if _unflagged_starts(sources):
+        return ("FAIL", "child processes started without the no-window flag: %s" % _unflagged_starts(sources))
+    dropped = dict(sources)
+    needle = "bufsize=1,\n                creationflags=NO_WINDOW)"
+    if dropped["scripts/chat.py"].replace("\r\n", "\n").count(needle) != 1:
+        return ("FAIL", "the chat window's start moved: the neutralisation cannot be applied")
+    dropped["scripts/chat.py"] = dropped["scripts/chat.py"].replace("\r\n", "\n").replace(needle, "bufsize=1)")
+    if not _unflagged_starts(dropped):
+        return ("FAIL", "the chat window's flag dropped and the scan still passes")
+    if _unflagged_starts(sources):
+        return ("FAIL", "the restored sources do not pass")
+    return ("PASS", "every subprocess start in %s carries the no-window flag (%d subprocess references read); "
+                    "neutralised (the chat window's flag dropped): FAIL; restored: PASS"
+            % (", ".join(HIDDEN_START_FILES), starts))
+
+
 def check_console_views():
+    hidden = _children_hidden()
+    if hidden[0] != "PASS":
+        return hidden
     if shutil.which("node") is None:
-        return ("SKIP", "node is not on PATH: the console view proof runs console.html's own functions in Node")
+        return ("SKIP", "node is not on PATH: the console view proof runs console.html's own functions in Node; "
+                        + hidden[1])
     html_path = ROOT / "scripts" / "ui" / "console.html"
     state = {"path": html_path}
 
@@ -729,21 +865,37 @@ def check_console_views():
         return _views_observation(state["path"])
 
     @contextlib.contextmanager
-    def unmarked():
+    def replaced(needle, replacement, what):
         with tempfile.TemporaryDirectory(prefix="shimmer_console_unmarked_") as tmp:
             copy = Path(tmp) / "console.html"
             source = html_path.read_text(encoding="utf-8")
-            needle = "escapeHtml(ui(f.mark || data.mark))"
             if source.count(needle) != 1:
-                raise RuntimeError("the mark site moved")
-            copy.write_text(source.replace(needle, '""'), encoding="utf-8")
+                raise RuntimeError(what + " moved")
+            copy.write_text(source.replace(needle, replacement), encoding="utf-8")
             state["path"] = copy
             try:
                 yield
             finally:
                 state["path"] = html_path
 
-    return _proved("console_views", observe, _views_verdict, unmarked, "the mark removed from the view")
+    # S7 close, adversarial 6: the sealed note and the sealed rendering have their
+    # own neutralisations beside the mark's.
+    proofs = (
+        (lambda: replaced("escapeHtml(ui(f.mark || data.mark))", '""', "the mark site"),
+         "the mark removed from the view"),
+        (lambda: replaced('if (!data || data.exposure !== "sealed") return "";', 'return "";', "the sealed note"),
+         "sealedNoteHtml never shows the note"),
+        (lambda: patch.object(console_views, "exposure", lambda run_dir: console_views.EXPOSED),
+         "a sealed run's projections built as exposed"),
+    )
+    details = []
+    for neutralise, what in proofs:
+        status, detail = _proved("console_views", observe, _views_verdict, neutralise, what)
+        if status != "PASS":
+            return (status, detail)
+        details.append(detail)
+    return ("PASS", details[0] + "; " + "; ".join(d[d.index("neutralised ("):] for d in details[1:])
+            + ". " + hidden[1])
 
 
 CHECKS = (check_replies_route, check_model_findings_route, check_switches_route, check_report_route,
