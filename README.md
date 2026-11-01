@@ -227,8 +227,10 @@ Qwen and Phi model files in the model cache, and a CUDA runtime. The bge-m3
 embedding model is fetched from the network on first use when it is not cached.
 The desktop starter installs nothing. The menu launchers install packages but not
 the review models; their readiness check fetches the redactor's Qwen weights only
-when `SHIMMER_QWEN_PULL=1` is set. A clean install from a fresh clone has not yet
-been proven at this commit.
+when `SHIMMER_QWEN_PULL=1` is set. The manual Windows steps below were run on a
+fresh clone on 1 November 2026 (Windows 11, an 8 GB NVIDIA card): the packages
+installed and torch saw CUDA after the third step. The full gate on that clone runs
+at the v1 commit.
 
 **Manual install (Windows).** These are the steps `shimmer.bat` runs, from the
 repository root:
@@ -248,13 +250,9 @@ matches the runtime contract, runs `pip install -r requirements.txt`, installs t
 CUDA build of torch when `nvidia-smi` finds a GPU and torch has no CUDA, asks for
 the backend, runs the readiness check and shows a menu (review, chat, server,
 gate, import). `SHIMMER_SKIP_INSTALL=1` skips the install and the torch step.
-This describes the launcher from the S7 merge on; before that merge, `shimmer.bat`
-stops right after creating `.venv`, with a path syntax error.
 
 **Linux and macOS shell.** `./shimmer.sh` does the same as `shimmer.bat`, and in
-Git Bash on Windows it uses an existing Windows `.venv` (`.venv/Scripts`). Before
-the S7 merge, in Git Bash it stops after the environment step, before the install
-and the menu, because it looks for `.venv/bin/python`.
+Git Bash on Windows it uses an existing Windows `.venv` (`.venv/Scripts`).
 
 **Windows, desktop console.** From the checkout, once the packages are installed:
 
@@ -364,9 +362,8 @@ checked by a search that the redacted text is gone.
 The server checks one shared access token: it stores only the token's SHA-256
 hash (`SHIMMER_TOKEN_HASH`) and compares each request with it. There are no user
 accounts and no per-caller records, so Shimmer is a single-operator system today.
-Only `/health` and `/console` answer without the token. This holds from the S7
-merge on; before it, FastAPI's own `/docs`, `/redoc` and `/openapi.json` pages also
-answer without the token.
+Only `/health` and `/console` answer without the token; FastAPI's own `/docs`,
+`/redoc` and `/openapi.json` pages are switched off.
 
 ## Testing rules
 
