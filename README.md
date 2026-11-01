@@ -380,7 +380,10 @@ allows it.
   that declare its severity, its scope (`[scope: ...]`) and the fields it requires
   (`[requires: ...]`).
 - `config/review_scope.json`: the date cutoff that decides which documents are
-  under review, and agents withheld for a review scope.
+  under review, and agents withheld for a review scope. It is a tracked file:
+  setting the cutoff from the import wizard or the chat window rewrites it in
+  place, so the change shows in `git status` and holds for every later run until
+  it is set again.
 - `input/context/_review_targets.json`: an explicit list of the documents under
   review, and earlier versions to compare with. It wins over the date cutoff.
 - `config/agent_registry.json`: which provider model each agent uses under the
