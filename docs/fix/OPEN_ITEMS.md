@@ -271,6 +271,14 @@ covered, and S1 had used its three checker rounds (D-016).
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
 
+**Closed (2026-11-02, loop S11, D-183).** The bz2 and xz tars are decompressed by the guard's
+own forward reader: what follows a stream must be another whole stream of the same format, or
+the archive is refused as unreadable (gzip already refused non-zero trailing bytes). The
+unreadable suffixes now include `.lz`, `.tlz`, `.lzma`, `.Z`, `.taz` and the other common
+formats the guard has no reader for. Check 275 has a case for each, each with a neutralisation
+(Python's own BZ2File and LZMAFile put back; the suffix list as it was) that passes the archive
+unseen, then fails restored. A suffix in no list is still not recognised as an archive.
+
 ## 15. Converted SummEdits data is tracked in the repository (found at loop S4)
 
 - **What it is.** `tuning/auditor_external_relation_v1/` tracks files built from the SummEdits and SummExecEdit releases (for example `examples.jsonl`, `document_registry.jsonl`), from a task before the loop. The loop's rule for third-party data (S4b) says never commit third-party data, raw or converted.
@@ -677,6 +685,7 @@ open-item sweep.
 - **Evidence.** `scripts/chat.py:583`: `cmd.setdefault("mode", self.pending_mode)` keeps a model-supplied mode over the person's earlier choice.
 - **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
 - **What would settle it.** The person's mode wins, or the window asks; a check case.
+- **Closed (2026-11-02, loop S11, D-183).** Once the person sets a mode, a review request keeps it whatever mode the request was read as (proposed by the model, or defaulted to normal by the keyword parser), and the window says so before asking to proceed. Check 310 drives both cases and neutralises the test.
 
 ## 61. The chat window's set cutoff writes a tracked config file (found at loop S7 close and S10, lanes) (issue #119)
 
@@ -778,3 +787,12 @@ open-item sweep.
 - **Evidence.** The S10 outside audit, finding 2; the S10 provider sweep (D-169).
 - **Why it was left.** Unconsumed today, so no output changes (P16: recorded for S6).
 - **What would settle it.** A check 313 case for it, or the module kept out of every run path by a check.
+- **Closed (2026-11-02, loop S11, D-183).** `ClaimExtractor.extract` builds no OpenAI client under the local backend profile, key or not; it reads with its regex patterns only. Check 313 has a `claim extractor` case (a placeholder key, a raising client) and a neutralisation that removes the guard and fails with an OpenAI client built.
+
+## 75. `scripts/model_registry.py` builds provider clients directly, outside the path check 313 covers (found at the deferral sweep of 2 November 2026, sweep row B-36) (issue #136)
+
+- **What it is.** `model_registry.list_available_models` builds an Anthropic or OpenAI client itself, not through the agent wrapper, to list a provider's models for the start-of-run model gate.
+- **Evidence.** D-169 and D-170 (the provider sweep); `CHANGELOG.md` dev7.
+- **Why it was left.** The sweep found no local-profile path that reaches it, so no output changes (Annex D D-S23 item 7 (c)).
+- **What would settle it.** A check 313 case that fails if a local-profile path builds a cloud client through it.
+- **Closed (2026-11-02, loop S11, D-183).** The model gate is the one run path that reaches the module, and check 313's `model gate` case runs `enforce_current_models` over the local-profile registry with raising clients. A new neutralisation gives the gate the registry as shipped (the profile applied after the gate instead of before) and the case fails with both clients built.

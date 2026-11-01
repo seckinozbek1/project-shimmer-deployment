@@ -25629,7 +25629,9 @@ def check_310_chat_window_command_mode():
     S7 6e findings): the startup line says only what the probe checked (libraries import, a model
     id is configured), and a request whose model failed to load, failed while answering (an error
     in generate, out of GPU memory for one) or gave no usable answer keeps the keyword parser's
-    reply and says first that the model was not used and why, each with its own reason. Skips where the
+    reply and says first that the model was not used and why, each with its own reason. A mode the
+    person set wins over a mode in the parsed request, one the model proposed or the keyword parser
+    defaulted, and the confirmation says so (D-183, issue #118). Skips where the
     chat file or Tk is absent."""
     from launcher_checks import check_chat_window
     return check_chat_window()
@@ -25686,11 +25688,14 @@ def check_313_no_local_profile_path_reaches_a_cloud_client():
     by stand-ins whose client construction raises and is recorded, both credentials set to
     placeholders, and the local model a recording stand-in (scripts/local_profile_cloud_checks.py):
     the local-profile registry puts no agent on a provider backend, the start-of-run model gate
-    lists no provider, dispatch for every agent, the draft memo, the --amendment-polish pass and
-    the harness under its local profile each construct no client. Neutralise (the draft memo's
-    direct call_claude put back; a direct call_claude in the polish pass; AMENDMENT_DRAFTER left
-    out of _LOCAL_PROFILE; LEGAL_ANALYST mapped to claude_api, so the harness builds a Claude
-    client), fail, restore, pass. No network, no weights, temporary folders only."""
+    lists no provider, ClaimExtractor.extract with a key reads by regex only (D-183), dispatch
+    for every agent, the draft memo, the --amendment-polish pass and the harness under its local
+    profile each construct no client. Neutralise (the draft memo's direct call_claude put back;
+    a direct call_claude in the polish pass; AMENDMENT_DRAFTER left out of _LOCAL_PROFILE;
+    LEGAL_ANALYST mapped to claude_api, so the harness builds a Claude client; the model gate
+    given the registry as shipped, so model_registry builds both clients; ClaimExtractor.extract
+    without its local-profile guard), fail, restore, pass. No network, no weights, temporary
+    folders only."""
     from local_profile_cloud_checks import check
     return check()
 

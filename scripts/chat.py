@@ -87,6 +87,9 @@ MODEL_NOT_USED = "The local model was not used for this request (%s). Using the 
 MODEL_FAILED_TO_LOAD = "it failed to load"
 MODEL_GAVE_NO_ANSWER = "it gave no usable answer"
 MODEL_FAILED_WHILE_ANSWERING = "it failed while answering"
+# The person's own mode setting is kept over the one the request was read as (issue #118).
+MODE_KEPT = ("Keeping the %s mode you set; the request was read as %s mode. "
+             "Type 'mode %s' first to change it.")
 
 _STOPWORDS = {
     "why", "did", "you", "flag", "flagged", "the", "a", "an", "is", "was", "for",
@@ -431,6 +434,7 @@ class ChatApp:
         self.busy = False
         self.pending = None        # a parsed command awaiting y/n confirmation
         self.pending_mode = "normal"
+        self.mode_set_by_person = False  # True once the person sets a mode themselves
         self.qwen_available = False
 
         root.title("Shimmer")
@@ -583,7 +587,15 @@ class ChatApp:
         action = cmd.get("action", "unknown")
         if action in ("review", "draft", "import"):
             if action == "review":
-                cmd.setdefault("mode", self.pending_mode)
+                # A mode the person set wins over a mode in the parsed request, which the
+                # model may have proposed or the keyword parser defaulted (D-183, issue #118).
+                if self.mode_set_by_person:
+                    proposed = cmd.get("mode")
+                    cmd["mode"] = self.pending_mode
+                    if proposed and proposed != self.pending_mode:
+                        self.post(MODE_KEPT % (self.pending_mode, proposed, proposed))
+                else:
+                    cmd.setdefault("mode", self.pending_mode)
             self.pending = cmd
             self.post(f"Understood: {describe(cmd)}. Proceed? [y/n]")
         elif action == "set_cutoff":
@@ -595,6 +607,7 @@ class ChatApp:
                 self.post("That date is not valid. Use YYYY-MM-DD, for example 2025-06-01.")
         elif action == "set_mode":
             self.pending_mode = "sensitive" if cmd.get("mode") == "sensitive" else "normal"
+            self.mode_set_by_person = True
             self.post(f"Run mode set to {self.pending_mode} for the next review.")
         elif action == "status":
             self.post(status_text(self.pending_mode))

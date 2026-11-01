@@ -15,7 +15,11 @@ scripts/reply_records_checks.py, and every run folder is a temporary directory.
                 backend by pipeline._LOCAL_PROFILE (the table pipeline.main applies), and
                 every other agent is already local;
   model gate    model_registry.enforce_current_models over the local-profile registry (the
-                pipeline's start-of-run gate) lists no provider's models;
+                pipeline's start-of-run gate) lists no provider's models (the one run path
+                that reaches model_registry's own Anthropic and OpenAI clients);
+  claim extractor  claim_classifier.ClaimExtractor.extract with a placeholder key reads
+                with its regex patterns and builds no OpenAI client (no run path imports
+                the module today; the guard holds if one ever does, D-183);
   every agent   dispatch for every agent of the local-profile registry (the one place that
                 picks the backend function: run_task, the editorial board, the redaction
                 stage and multi-round all reach a model through it);
@@ -25,11 +29,13 @@ scripts/reply_records_checks.py, and every run folder is a temporary directory.
   harness       harness.run_agent.run_one under its local profile, from the registry as
                 shipped (cloud backends).
 
-Each passes only with zero clients constructed and the local stand-in answering. Then four
+Each passes only with zero clients constructed and the local stand-in answering. Then six
 neutralisations, each required to fail and then pass again restored: the draft memo with its
 old direct call_claude put back, the polish pass with a direct call_claude put back in place
-of dispatch, _LOCAL_PROFILE with AMENDMENT_DRAFTER left out, and _LOCAL_PROFILE mapping
-LEGAL_ANALYST to claude_api (the harness then builds a Claude client). A harness exit is
+of dispatch, _LOCAL_PROFILE with AMENDMENT_DRAFTER left out, _LOCAL_PROFILE mapping
+LEGAL_ANALYST to claude_api (the harness then builds a Claude client), the model gate given
+the registry as shipped (model_registry then builds both clients), and ClaimExtractor.extract
+with its local-profile guard removed (it then builds an OpenAI client). A harness exit is
 caught and reported as a failure.
 """
 from __future__ import annotations
@@ -52,6 +58,8 @@ PROVIDER_BACKENDS = ("claude_api", "openai_api")
 _PLACEHOLDER = "TEST_CREDENTIAL_PLACEHOLDER"
 KEYS = {"ANTHROPIC_API_KEY": _PLACEHOLDER, "OPENAI_API_KEY": _PLACEHOLDER}
 POLISHED = "POLISHED SENTENCE FROM THE LOCAL STAND-IN"
+CLAIM_TEXT = "In 2024 the agency reported that 12% of the 340 sites had closed."
+EXTRACT_GUARD = 'if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":'
 POLISH_FUNCTION = "_polish_findings"
 POLISH_WRAPPER = 'wrapper = _build_wrapper("AMENDMENT_DRAFTER", orch, keys)\n'
 POLISH_DIRECT = POLISH_WRAPPER + "    wrapper.dispatch = lambda stable, dynamic='', **kw: wrapper.call_claude(stable, dynamic)\n"
@@ -157,11 +165,12 @@ def _registry_case(profile):
     return problems, "%d agents, none on a provider backend" % len(agents)
 
 
-def _model_gate_case(profile, root):
+def _model_gate_case(profile, root, gate_registry=None):
     import model_registry
     built, seen = [], []
+    registry = (gate_registry or local_registry)(profile)
     with stand_ins([], built, seen):
-        gate = model_registry.enforce_current_models(Path(root), local_registry(profile), KEYS, interactive=False)
+        gate = model_registry.enforce_current_models(Path(root), registry, KEYS, interactive=False)
     problems = []
     if built:
         problems.append("the model gate constructed %s" % built)
@@ -268,12 +277,34 @@ def _harness_case(profile, root):
     return problems, "harness run_one (local) on %s" % (result or {}).get("backend")
 
 
-def _cases(draft, polish, profile):
+def _claim_extractor_case(extract):
+    import claim_classifier
+    built, seen = [], []
+    claims, error = None, None
+    with stand_ins([], built, seen), patch.object(claim_classifier.ClaimExtractor, "extract", extract):
+        try:
+            claims = claim_classifier.ClaimExtractor(openai_key=_PLACEHOLDER).extract(CLAIM_TEXT)
+        except Exception as exc:
+            error = "%s: %s" % (type(exc).__name__, exc)
+    problems = []
+    if built:
+        problems.append("ClaimExtractor.extract constructed %s" % built)
+    if error:
+        problems.append("ClaimExtractor.extract raised (%s)" % error)
+    if not claims:
+        problems.append("no claims from the regex reader")
+    return problems, "ClaimExtractor.extract with a key: %d claim(s) from the regex reader" % len(claims or [])
+
+
+def _cases(draft, polish, profile, gate_registry=None, extract=None):
     """Every case; returns (problems by case, summaries)."""
+    import claim_classifier
+    extract = extract or claim_classifier.ClaimExtractor.extract
     problems, summaries = {}, []
     with tempfile.TemporaryDirectory(prefix="shimmer_local_cloud_", ignore_cleanup_errors=True) as td:
         for label, run in (("registry", lambda r: _registry_case(profile)),
-                           ("model gate", lambda r: _model_gate_case(profile, r)),
+                           ("model gate", lambda r: _model_gate_case(profile, r, gate_registry)),
+                           ("claim extractor", lambda r: _claim_extractor_case(extract)),
                            ("every agent", lambda r: _every_agent_case(profile, r)),
                            ("draft memo", lambda r: _draft_case(draft, profile, r)),
                            ("polish pass", lambda r: _polish_case(polish, profile, r)),
@@ -302,6 +333,25 @@ def _polish_with_direct_call_claude():
     return namespace[POLISH_FUNCTION]
 
 
+def _extract_without_local_guard():
+    """ClaimExtractor.extract with its local-profile guard removed, compiled in the module's
+    own namespace."""
+    import textwrap
+    import claim_classifier
+    source = (ROOT / "scripts" / "claim_classifier.py").read_text(encoding="utf-8")
+    cls = next(n for n in ast.parse(source).body if isinstance(n, ast.ClassDef) and n.name == "ClaimExtractor")
+    node = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "extract")
+    segment = textwrap.dedent(ast.get_source_segment(source, node, padded=True))
+    lines = segment.splitlines(True)
+    guard = [i for i, line in enumerate(lines) if EXTRACT_GUARD in line]
+    if len(guard) != 1:
+        raise AssertionError("cannot neutralise: ClaimExtractor.extract has no single %r guard" % EXTRACT_GUARD)
+    del lines[guard[0]:guard[0] + 2]
+    namespace = dict(vars(claim_classifier))
+    exec(compile("".join(lines), "claim_classifier_neutralised", "exec"), namespace)
+    return namespace["extract"]
+
+
 def _detail(problems):
     return "; ".join("%s: %s" % (label, ", ".join(found)) for label, found in problems.items())
 
@@ -322,7 +372,11 @@ def check():
             ("_LOCAL_PROFILE without AMENDMENT_DRAFTER", "registry",
              (draft, polish, {k: v for k, v in profile.items() if k != "AMENDMENT_DRAFTER"})),
             ("_LOCAL_PROFILE mapping LEGAL_ANALYST to claude_api", "harness",
-             (draft, polish, {**profile, "LEGAL_ANALYST": ("claude_api", profile["LEGAL_ANALYST"][1])})))
+             (draft, polish, {**profile, "LEGAL_ANALYST": ("claude_api", profile["LEGAL_ANALYST"][1])})),
+            ("the model gate given the registry before the local profile", "model gate",
+             (draft, polish, profile, lambda _profile: shipped_registry())),
+            ("ClaimExtractor.extract without its local-profile guard", "claim extractor",
+             (draft, polish, profile, None, _extract_without_local_guard())))
     except AssertionError as exc:
         return "FAIL", str(exc)
     proofs = []

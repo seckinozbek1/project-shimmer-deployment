@@ -10,11 +10,15 @@ deletion is allowed, so a file committed by mistake can be removed. A staged
 archive is read from the index (`:0:<path>`, the literal path) with the reader
 its SUFFIX names (never by sniffing): a tar (.tar, .tar.gz, .tgz, .tar.xz, .txz,
 .tar.bz2, .tbz2) is streamed from git and never holds the archive's bytes in
-memory, through every gzip member or bz2/xz stream, and anything after the tar's
-end that is not zero bytes (a second tar joined on) is refused; a .zip above
-ZIP_SIZE_CAP is refused unread with the limit named; an archive or compressed
-suffix the guard cannot read (.7z, .rar, .zst, .tzst, .lz4, a bare .gz, .bz2 or
-.xz) is refused unread. It is refused when a member name carries a refused
+memory, through every gzip member or bz2/xz stream, bytes after the last
+compressed stream that are not a whole stream are refused (D-183), and anything
+after the tar's end that is not zero bytes (a second tar joined on) is refused; a
+.zip above ZIP_SIZE_CAP is refused unread with the limit named; an archive or
+compressed suffix the guard cannot read (.7z, .rar, .zst, .tzst, .lz4, a bare .gz,
+.bz2 or .xz, and since D-183 .lz, .lzma, .Z and the rest of UNREADABLE_SUFFIXES)
+is refused unread. The two D-183 cases each neutralise the fix (Python's own
+BZ2File and LZMAFile; the suffix list as it was), require the archive to pass
+unseen, and require the refusal again restored. It is refused when a member name carries a refused
 segment, or when it cannot be read in full, a MemoryError included (fail
 closed): the controller packs project/output into collected_evidence.tar.gz,
 which has been force-committed under docs/fix/ before. A failed `git diff
@@ -25,9 +29,11 @@ pure function over bytes; the git-backed cases run only where git is installed
 (the container image has no git, so there they are skipped with the reason,
 never failed).
 """
+import bz2
 import contextlib
 import gzip
 import io
+import lzma
 import shutil
 import subprocess
 import tarfile
@@ -183,6 +189,61 @@ class StagedPathChecks(unittest.TestCase):
         reason = gs.archive_refusal("two.tar.gz", two)
         self.assertIsNotNone(reason)
         self.assertIn(REPLY, reason)
+
+    def test_bytes_after_the_last_compressed_stream_are_refused(self):
+        # Open item 13 (D-183): bytes after a valid bz2 or xz stream were skipped by
+        # BZ2File and LZMAFile, so the tar check never saw them. A second tar
+        # holding a refused member is appended after the first stream's end.
+        hidden = gzip.compress(_tar_gz({REPLY: b"{}"}, "w"))
+        cases = (("e.tar.bz2", "w:bz2", bz2.compress), ("e.tbz2", "w:bz2", bz2.compress),
+                 ("e.tar.xz", "w:xz", lzma.compress), ("e.txz", "w:xz", lzma.compress),
+                 ("e.tar.gz", "w:gz", gzip.compress))
+        for name, mode, compress in cases:
+            clean = _tar_gz({"ok.txt": b"x" * 4096}, mode)
+            self.assertIsNone(gs.archive_refusal(name, clean), name)
+            for trailer in (hidden, b"trailing bytes", b"BZh9", b"\xfd7zXZ\x00"):
+                self.assertEqual(gs.archive_refusal(name, clean + trailer), "unreadable archive",
+                                 (name, trailer[:8]))
+            # Two whole streams of the same format, the refused member only in the
+            # second, are still read through.
+            whole = _tar_gz({"ok.txt": b"x", REPLY: b"{}"}, "w")
+            two = compress(whole[:1024]) + compress(whole[1024:])
+            self.assertIn(REPLY, gs.archive_refusal(name, two) or "", name)
+        # Neutralise: the bz2 and xz readers Python ships (BZ2File, LZMAFile) put back.
+        def shipped_readers(name, raw):
+            folded = name.casefold()
+            if folded.endswith((".tar.xz", ".txz")):
+                return lzma.LZMAFile(raw)
+            if folded.endswith((".tar.bz2", ".tbz2")):
+                return bz2.BZ2File(raw)
+            return real(name, raw)
+        real = gs._decompressed
+        with mock.patch.object(gs, "_decompressed", shipped_readers):
+            for name, mode, _ in cases[:4]:
+                clean = _tar_gz({"ok.txt": b"x" * 4096}, mode)
+                self.assertIsNone(gs.archive_refusal(name, clean + hidden),
+                                  "neutralised, %s with bytes after its stream must pass unseen" % name)
+        for name, mode, _ in cases[:4]:  # restored
+            clean = _tar_gz({"ok.txt": b"x" * 4096}, mode)
+            self.assertEqual(gs.archive_refusal(name, clean + hidden), "unreadable archive", name)
+
+    def test_formats_without_a_reader_are_refused(self):
+        # Open item 13 (D-183): lzip, lzma-alone and compress were neither read nor refused.
+        named = ("a.lz", "a.tar.lz", "a.tlz", "a.lzma", "a.tar.lzma", "a.Z", "a.tar.Z", "a.taz",
+                 "a.lzo", "a.br", "a.sz", "a.tbz", "a.cab", "a.cpio")
+        data = lzma.compress(_tar_gz({REPLY: b"{}"}, "w"), format=lzma.FORMAT_ALONE)
+        for name in named:
+            self.assertTrue(gs.is_archive_name(name), name)
+            self.assertEqual(gs.archive_refusal(name, data), "unreadable archive", name)
+        self.assertIsNone(gs.archive_refusal("notes.lz.md", data))
+        # Neutralise: the suffix list as it was before; the named formats pass unread.
+        before = (".7z", ".rar", ".zst", ".tzst", ".lz4", ".gz", ".bz2", ".xz")
+        with mock.patch.object(gs, "UNREADABLE_SUFFIXES", before):
+            for name in ("a.lz", "a.lzma", "a.Z"):
+                self.assertIsNone(gs.archive_refusal(name, data),
+                                  "neutralised, %s must pass unread" % name)
+        for name in ("a.lz", "a.lzma", "a.Z"):  # restored
+            self.assertEqual(gs.archive_refusal(name, data), "unreadable archive", name)
 
     def test_unreadable_suffixes_are_refused_unread(self):
         for name in ("a.7z", "a.rar", "a.zst", "a.tzst", "a.lz4", "a.gz", "a.BZ2", "a.xz",
@@ -429,7 +490,9 @@ def check():
                     f"seals/ and audit/model_replies/ paths at any depth and in any case, and "
                     f"staged archives holding them, unreadable, unreadable by suffix or too "
                     f"large; tars streamed through every gzip member and refused when bytes "
-                    f"follow their end; readers chosen by suffix; literal :0: index paths; a "
+                    f"follow their end or their last bz2/xz stream, and .lz, .lzma and .Z "
+                    f"refused unread, each neutralised, failed and restored (D-183); readers "
+                    f"chosen by suffix; literal :0: index paths; a "
                     f"failed git listing refuses; deletions and ordinary paths pass")
 
 

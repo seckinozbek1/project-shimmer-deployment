@@ -548,7 +548,9 @@ widely between the fields it has run on.
   it: check 269 still holds that only Python-computed findings become amendments.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
-  `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+  `.tar.gz`, which has been force-committed under `docs/fix/` before. It refuses an archive
+  with bytes after its last compressed stream and one whose suffix names a format it cannot
+  read (`.lz`, `.lzma`, `.Z` among them), fail closed (D-183). Checks 275 and 276.
 - UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
   comparison), the model's answer is kept as a model-written Finding record, never discarded:
   stamped by Python with the judged-absence stamping and the PLAN's rule
@@ -792,7 +794,7 @@ widely between the fields it has run on.
   Option [1] offers Review or Draft; [2] chat; [3] server; [4] gate; [5] import wizard.
 - `scripts/intake_wizard.py`: scan, classify, place, set the cutoff, choose mode, write the
   review-targets manifest. Driven by the launcher and by chat (as a subprocess).
-- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode). Its startup line says only what the probe checked (libraries import, a model is named) and a request the model did not answer says so before the command parser's reply (check 310).
+- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode). Its startup line says only what the probe checked (libraries import, a model is named) and a request the model did not answer says so before the command parser's reply (check 310). A mode the person set wins over the mode a review request is read as (proposed by the model or defaulted by the parser), and the window says so (D-183, check 310).
 - `scripts/server.py`: the token-gated FastAPI dock. Config is env-driven (`SHIMMER_*`,
   read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The
   [runtime reference](docs/RUNTIME_REFERENCE.md) route table is the complete route list and gate check 167 fails if it and the app disagree

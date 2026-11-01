@@ -15,9 +15,11 @@ archive is read from the index, its reader chosen by suffix: a tar (.tar,
 .tar.gz, .tgz, .tar.xz, .txz, .tar.bz2, .tbz2) is streamed from git and never
 holds the archive's bytes in memory, a .zip is read whole only up to
 ZIP_SIZE_CAP, and an archive or compressed suffix it cannot read (.7z, .rar,
-.zst, .tzst, .lz4, a bare .gz, .bz2 or .xz) is refused unread. It is refused
-when a member name carries a refused segment, when it is too large to inspect,
-or when it cannot be read in full. It acts only when it is run.
+.zst, .tzst, .lz4, a bare .gz, .bz2 or .xz, .lz, .lzma, .Z and the others in
+UNREADABLE_SUFFIXES) is refused unread. It is refused when a member name
+carries a refused segment, when it is too large to inspect, when bytes follow
+its last compressed stream (D-183), or when it cannot be read in full. It acts
+only when it is run.
 """
 import bz2
 import contextlib
@@ -205,7 +207,12 @@ REFUSED_STAGED_SEGMENTS = ("seals/", "audit/model_replies/")
 # Archives nested inside archives are not opened.
 TAR_SUFFIXES = (".tar", ".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2")
 ZIP_SUFFIXES = (".zip",)
-UNREADABLE_SUFFIXES = (".7z", ".rar", ".zst", ".tzst", ".lz4", ".gz", ".bz2", ".xz")
+# Compared case-folded, so `.z` covers compress's `.Z`. The second line was added for
+# open item 13 (D-183): lzip, lzma-alone, compress and the other common formats the
+# guard has no reader for were neither read nor refused before.
+UNREADABLE_SUFFIXES = (".7z", ".rar", ".zst", ".tzst", ".lz4", ".gz", ".bz2", ".xz",
+                       ".lz", ".tlz", ".lzma", ".tlzma", ".z", ".taz", ".lzo", ".tzo", ".br",
+                       ".sz", ".tbz", ".tb2", ".cab", ".arj", ".lzh", ".lha", ".cpio", ".wim")
 ZIP_SIZE_CAP = 512 * 1024 * 1024
 UNREADABLE = "unreadable archive"
 GIT_TIMEOUT = 300
@@ -268,17 +275,55 @@ def _members_refusal(names):
     return None
 
 
+class _Streams:
+    """bz2 or xz streams decompressed forward from a pipe, every input byte
+    accounted for. Python's BZ2File and LZMAFile skip whatever follows the last
+    stream when it does not decompress, so bytes after a valid stream reached the
+    tar check unseen (open item 13). Here what follows a stream must be another
+    stream of the same format, read in full, or the read raises and the archive is
+    UNREADABLE (D-183). Output is bounded by the size asked for (max_length), so
+    the tar reader's one block per read is never more than one block here."""
+
+    def __init__(self, raw, make):
+        self.raw, self.make, self.dec, self.out, self.done = raw, make, make(), b"", False
+
+    def _more(self, want):
+        if self.dec.eof:
+            pending = self.dec.unused_data or self.raw.read(_CHUNK)
+            if not pending:
+                self.done = True
+                return
+            self.dec = self.make()  # raises below when PENDING is not a stream
+        elif self.dec.needs_input:
+            pending = self.raw.read(_CHUNK)
+            if not pending:
+                raise EOFError("compressed stream ended before its end marker")
+        else:
+            pending = b""
+        self.out += self.dec.decompress(pending, want)
+
+    def read(self, size=-1):
+        if size is None or size < 0:
+            raise ValueError("read whole: not supported on a streamed archive")
+        while len(self.out) < size and not self.done:
+            self._more(size - len(self.out))
+        data, self.out = self.out[:size], self.out[size:]
+        return data
+
+
 def _decompressed(name, raw):
-    """The tar stream inside `raw`, by suffix. GzipFile, BZ2File and LZMAFile read
-    forward from a pipe and continue through every gzip member or bz2/xz stream,
-    so a second member joined to the first is read, not dropped."""
+    """The tar stream inside `raw`, by suffix. Each reader reads forward from a pipe
+    and continues through every gzip member or bz2/xz stream, so a second member
+    joined to the first is read, not dropped; GzipFile refuses non-zero bytes after
+    its last member, and _Streams refuses any bytes after the last bz2 or xz
+    stream that are not a whole stream."""
     folded = name.casefold()
     if folded.endswith((".tar.gz", ".tgz")):
         return gzip.GzipFile(fileobj=raw, mode="rb")
     if folded.endswith((".tar.xz", ".txz")):
-        return lzma.LZMAFile(raw)
+        return _Streams(raw, lzma.LZMADecompressor)
     if folded.endswith((".tar.bz2", ".tbz2")):
-        return bz2.BZ2File(raw)
+        return _Streams(raw, bz2.BZ2Decompressor)
     return raw
 
 
