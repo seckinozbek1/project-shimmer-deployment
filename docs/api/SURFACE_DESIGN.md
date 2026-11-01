@@ -182,7 +182,8 @@ Two constraints apply throughout:
     the four governance codes carried over unchanged from `_EXIT_STATUS_MAP`
     (`stopped_model_approval`, `stopped_redaction_gate`,
     `refused_sensitivity_layer_inactive`, and `blocked` split into two distinct codes,
-    see below) or `"crashed"` / `"run_timeout"`. `detail` is the short structured reason
+    see below; since loop S7, open item 11, also `refused_multi_round` for exit 8 and
+    `refused_inst_finder_unratified` for exit 9) or `"crashed"` / `"run_timeout"`. `detail` is the short structured reason
     (for `blocked`, which fields), never the raw stdout tail.
   - The exit-code-5 ambiguity (`blocked` meaning either a redaction-gate block or a
     draft-mode phase-0 generation failure, `SURFACE_INVENTORY.md` Question d) is resolved

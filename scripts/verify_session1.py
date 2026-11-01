@@ -4882,7 +4882,9 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
     """productization STEP 6 gate check (e): the exit-code map (server.py's
     _status_for_exit_code / _EXIT_STATUS_MAP) yields "blocked" for exit code 5
     and "stopped_model_approval" for exit code 3, matching the evidence's
-    exit-code table (pipeline.py's own `return N` points)."""
+    exit-code table (pipeline.py's own `return N` points). Open item 11 adds
+    exits 8 and 9 (multi-round refusal, unratified INST_FINDER switch) as
+    governance statuses, pinned to the `return` points that produce them."""
     import importlib
     server = importlib.import_module("server")
     importlib.reload(server)
@@ -4915,9 +4917,97 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
             return _fail(f"{governance_status!r} missing from GOVERNANCE_STATUSES "
                          f"(the console must render it as a governance outcome, not a failure)")
 
+    # Open item 11: exits 8 (multi-round refusal) and 9 (unratified
+    # SHIMMER_INST_FINDER=off) are governance refusals, read from the source
+    # (pipeline.py main() and multi_round_phase.execute, by AST, never run).
+    import ast as _ast
+
+    def _function(path, name):
+        return next(node for node in _ast.walk(_ast.parse(path.read_text(encoding="utf-8")))
+                    if isinstance(node, _ast.FunctionDef) and node.name == name)
+
+    def _constant_returns(fn):
+        return {node.value.value for node in _ast.walk(fn)
+                if isinstance(node, _ast.Return) and isinstance(node.value, _ast.Constant)
+                and isinstance(node.value.value, int)}
+
+    def _if_returning(fn, code):
+        return [node for node in _ast.walk(fn) if isinstance(node, _ast.If)
+                and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                        and s.value.value == code for s in node.body)]
+
+    pipeline_main = _function(SCRIPTS / "pipeline.py", "main")
+    phase_execute = _function(SCRIPTS / "multi_round_phase.py", "execute")
+    guard_names = {t.id for node in _ast.walk(pipeline_main) if isinstance(node, _ast.Assign)
+                   and isinstance(node.value, _ast.Call)
+                   and _ast.unparse(node.value.func) == "_inst_finder_startup_guard"
+                   for t in node.targets if isinstance(t, _ast.Name)}
+    if not any(isinstance(node.test, _ast.Name) and node.test.id in guard_names
+               for node in _if_returning(pipeline_main, 9)):
+        return _fail("pipeline.py main() no longer returns 9 on the _inst_finder_startup_guard "
+                     "refusal; the exit-9 status below would be pinned to the wrong cause")
+
+    def _refuses_multi_round(node):
+        return any(isinstance(c, _ast.Call) and _ast.unparse(c.func).endswith("activation")
+                   and any(k.arg == "eligible" and isinstance(k.value, _ast.Constant)
+                           and k.value.value is False for k in c.keywords)
+                   for s in node.body for c in _ast.walk(s))
+    multi_round_8 = [node for node in _if_returning(pipeline_main, 8) if _refuses_multi_round(node)]
+    if len(multi_round_8) != 2:
+        return _fail(f"pipeline.py main() has {len(multi_round_8)} multi-round refusals "
+                     f"returning 8 (activation eligible=False), expected 2")
+    if not any(isinstance(node, _ast.ExceptHandler) and _refuses_multi_round(node)
+               and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                       and s.value.value == 8 for s in node.body)
+               for node in _ast.walk(phase_execute)):
+        return _fail("multi_round_phase.execute no longer returns 8 on its refusal path")
+    if not any(isinstance(node, _ast.Return) and _ast.unparse(node.value) == "code"
+               for node in _ast.walk(pipeline_main)):
+        return _fail("pipeline.py main() no longer returns multi_round_phase.execute's code")
+    main_codes = _constant_returns(pipeline_main) | _constant_returns(phase_execute)
+
+    def _exit_map_problem():
+        for code, status in ((8, "refused_multi_round"), (9, "refused_inst_finder_unratified")):
+            if server._status_for_exit_code(code) != status:
+                return (f"exit code {code} mapped to {server._status_for_exit_code(code)!r}, "
+                        f"expected {status!r}")
+            if status not in server.GOVERNANCE_STATUSES:
+                return f"{status!r} missing from GOVERNANCE_STATUSES"
+            if server._outcome_for_status(status, code)[0] != "governance_stop":
+                return f"{status!r} does not reach the governance_stop outcome"
+        unmapped = sorted(code for code in main_codes if code not in server._EXIT_STATUS_MAP)
+        if unmapped:
+            return (f"pipeline.py main() / multi_round_phase.execute return {unmapped} with no "
+                    f"_EXIT_STATUS_MAP entry, so the console shows them as 'failed'")
+        return None
+
+    problem = _exit_map_problem()
+    if problem:
+        return _fail(problem)
+    # Neutralise, fail, restore, pass: removing exit 9's entry, then exit 8's
+    # governance membership, must each be caught.
+    saved_9 = server._EXIT_STATUS_MAP.pop(9)
+    try:
+        caught_entry = _exit_map_problem()
+    finally:
+        server._EXIT_STATUS_MAP[9] = saved_9
+    server.GOVERNANCE_STATUSES.discard("refused_multi_round")
+    try:
+        caught_governance = _exit_map_problem()
+    finally:
+        server.GOVERNANCE_STATUSES.add("refused_multi_round")
+    if not caught_entry or not caught_governance:
+        return _fail("the exit 8/9 proof did not fail with exit 9's map entry removed or "
+                     "refused_multi_round dropped from GOVERNANCE_STATUSES")
+    if _exit_map_problem():
+        return _fail(f"after restoring, the exit 8/9 proof still fails: {_exit_map_problem()}")
+
     return _ok("exit code 5 -> 'blocked', exit code 3 -> 'stopped_model_approval' "
-               "(plus 0/2/4/6/7/unknown all map correctly); the four governance "
-               "statuses are all present in GOVERNANCE_STATUSES")
+               "(plus 0/2/4/6/7/unknown all map correctly); 8 -> 'refused_multi_round' and "
+               "9 -> 'refused_inst_finder_unratified', the codes pipeline.py main() returns "
+               f"for those refusals (by AST; every constant it returns, {sorted(main_codes)}, "
+               "is mapped); the six governance statuses are in GOVERNANCE_STATUSES; removing "
+               "exit 9's entry or 8's governance membership is caught and restored")
 
 
 def check_109_served_html_leaks_nothing():

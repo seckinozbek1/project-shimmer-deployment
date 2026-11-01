@@ -802,6 +802,8 @@ var GOVERNANCE_SENTENCES = {
   stopped_redaction_gate: "The redaction gate stopped the run before completion.",
   blocked: "The pipeline blocked itself: a redaction block at run-end, or (in draft mode) a memo-generation failure the run could not recover from. Check the log for which.",
   refused_sensitivity_layer_inactive: "This run was declared sensitive, but the privacy masking layer is not active on this server, so the run refused to start rather than risk an unprotected sensitive submission.",
+  refused_multi_round: "The multi-round review refused this run: it was not declared non-sensitive, redaction was enabled, or the saved case state was invalid. The reason is recorded in audit/multi_round.json.",
+  refused_inst_finder_unratified: "SHIMMER_INST_FINDER=off was set, but no operator-ratified constitution amendment allows switching INST_FINDER off, so the run refused to start.",
   cancelled: "Cancelled by request."
 };
 
@@ -813,12 +815,16 @@ var GOVERNANCE_SENTENCES = {
    blocked, or refused_sensitivity_layer_inactive is not "waiting on an
    operator decision" at all), silently filtering the human view down to
    one code's meaning. See docs/api/CONSOLE_LANGUAGE.md's approved sentence
-   for stopped_model_approval; the other three follow the same register. */
+   for stopped_model_approval; the others follow the same register
+   (refused_multi_round and refused_inst_finder_unratified, exits 8 and 9,
+   were added for open item 11). */
 var GOVERNANCE_SENTENCES_HUMAN = {
   stopped_model_approval: "The system refused to keep going without a decision from the operator running it, and none came in time.",
   stopped_redaction_gate: "The system's privacy check stopped the review before it finished.",
   blocked: "The system blocked itself: either a privacy check at the very end, or (for a generated memo) a drafting step that could not recover. The full log says which.",
-  refused_sensitivity_layer_inactive: "This review was marked as sensitive, but the server's privacy protection was not switched on, so it refused to start rather than risk exposing something it should not have."
+  refused_sensitivity_layer_inactive: "This review was marked as sensitive, but the server's privacy protection was not switched on, so it refused to start rather than risk exposing something it should not have.",
+  refused_multi_round: "This review covers several rounds of a case, and the system refused it on purpose: the case could not be reviewed under the settings it was given.",
+  refused_inst_finder_unratified: "This review asked for one of the system's checking agents to be switched off, which the operator has not yet approved, so it refused to start."
 };
 
 function nextActionSentence(run) {

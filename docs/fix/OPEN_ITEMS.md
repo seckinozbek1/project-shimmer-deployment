@@ -230,6 +230,8 @@ status labels are loop stage S7's work.
 **What would settle it.** A governance status for exit 9 (and a label for 8) in the server and
 the console, with its gate check, in S7.
 
+- **Closed at loop S7 (2026-11-01, lane `s07-exitcodes`).** `scripts/server.py` maps exit 8 to `refused_multi_round` and exit 9 to `refused_inst_finder_unratified`, both in `GOVERNANCE_STATUSES`, so both reach the `governance_stop` outcome. The console carries a developer and a plain sentence for each, with a Turkish row in `scripts/ui/localization_catalog.js`; `scripts/ui/localization_checks.js` now renders every governance code and requires both rows. Gate check 108 proves the two mappings, reads by AST that `pipeline.py` `main()` returns 9 on the `_inst_finder_startup_guard` refusal and 8 on its two multi-round refusals (and `multi_round_phase.execute` 8 on its own), requires an entry for every constant exit code those return, and removes exit 9's entry and 8's governance membership to show it fails before restoring. The entry above is kept as written.
+
 ---
 
 ## 12. The execution seal does not check the INST_FINDER ratification, and FINAL_STATUS does not state the setting (found at loop S1)
