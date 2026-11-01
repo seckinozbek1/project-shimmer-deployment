@@ -25666,6 +25666,64 @@ def check_313_no_local_profile_path_reaches_a_cloud_client():
     from local_profile_cloud_checks import check
     return check()
 
+
+_CITATION_VERSION_LINE = re.compile(r'^version:\s*(?P<q>["\']?)(?P<v>[^"\'\s#]+)(?P=q)\s*(?:#.*)?$')
+
+
+def _citation_version_mismatch(root):
+    """None when `CITATION.cff` states exactly one top-level `version` equal to the content of
+    `VERSION`; otherwise the reason. The two files are read from `root`; a missing one is the
+    caller's to skip, never a pass."""
+    root = Path(root)
+    want = (root / "VERSION").read_text(encoding="utf-8").strip()
+    found = [m.group("v") for m in
+             (_CITATION_VERSION_LINE.match(line) for line in
+              (root / "CITATION.cff").read_text(encoding="utf-8").splitlines()) if m]
+    if len(found) != 1:
+        return f"CITATION.cff states {len(found)} top-level version lines, expected exactly 1"
+    if found[0] != want:
+        return f"CITATION.cff version {found[0]!r} differs from VERSION {want!r}"
+    return None
+
+
+def check_314_citation_version_equals_version_file():
+    """Loop S11 item 6, DS11-2 option (ii): `CITATION.cff` cannot read a file, so its `version`
+    is compared with `VERSION`, the single version source. On copies of both files in a
+    temporary folder: neutralise (CITATION.cff given a different version), fail; a second
+    `version` line, fail; restore, pass; then the real files. SKIP, naming the file, where either
+    file is absent (the container image ships `VERSION` and not `CITATION.cff`)."""
+    import shutil
+    import tempfile
+    missing = [name for name in ("VERSION", "CITATION.cff") if not (ROOT / name).is_file()]
+    if missing:
+        return _skip(f"{', '.join(missing)} absent from this tree, nothing to compare (the "
+                     f"container image ships VERSION and not CITATION.cff)")
+    real = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    want = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        shutil.copyfile(ROOT / "VERSION", tmp / "VERSION")
+        cff = tmp / "CITATION.cff"
+        base = re.sub(r'(?m)^version:.*$', lambda _m: f'version: "{want}"', real)
+        neutralised = re.sub(r'(?m)^version:.*$', 'version: "0.0.0.neutralised"', real)
+        if neutralised == real:
+            raise FixtureNotAsIntended("CITATION.cff has no top-level version line to neutralise")
+        cff.write_text(neutralised, encoding="utf-8")
+        if _citation_version_mismatch(tmp) is None:
+            return _fail("a CITATION.cff version differing from VERSION was accepted")
+        cff.write_text(base + f'version: "{want}"\n', encoding="utf-8")
+        if _citation_version_mismatch(tmp) is None:
+            return _fail("a CITATION.cff with two version lines was accepted")
+        cff.write_text(base, encoding="utf-8")
+        if _citation_version_mismatch(tmp) is not None:
+            return _fail(f"the restored copy failed: {_citation_version_mismatch(tmp)}")
+    problem = _citation_version_mismatch(ROOT)
+    if problem:
+        return _fail(problem)
+    return _ok(f"CITATION.cff version equals VERSION ({want}); a different version and a second "
+               f"version line each fail on a copy, the restored copy passes")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -26094,6 +26152,8 @@ CHECKS = [
      check_312_draft_memo_uses_the_drafters_backend),
     ("313 no local-profile path constructs a cloud provider client",
      check_313_no_local_profile_path_reaches_a_cloud_client),
+    ("314 CITATION.cff version equals VERSION",
+     check_314_citation_version_equals_version_file),
 ]
 
 

@@ -17,6 +17,11 @@ The filesystem now holds `assets-8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35
 The next run in `us-east-1` that declares it is the first that can find `MATCH` and skip the
 37-minute upload; this machine cannot read the filesystem's state, so that run is the check.
 
+> Note (2026-11-01): that check has been made. From the loop's first launch, L1, every launch
+> read `MATCH` for this digest and skipped the upload (`docs/loop/DECISIONS.md` D-057 and D-109;
+> the loop declared each bundle it ran under D-028). D-109 item 1 also decided that the
+> filesystem stays: it is never deleted, which replaces the deletion rule below.
+
 **What it is.** One persistent filesystem in `us-east-1` holding the sealed ordinary final asset
 archive, so a run attaches and hashes it instead of uploading 13.15 GB. The upload is 36.9 to
 37.8 minutes of every run measured so far, about 70 percent of billed time. The run that first
@@ -79,7 +84,8 @@ is in the bundle's manifest and its `authorization_binding.json`. Create a new f
 let any run declaring it seed the copy, or copy the archive up by hand to
 `<mount>/assets-<sha256>.tar`. No state lives only on the filesystem.
 
-**The deletion rule.** The filesystem is deleted when the prototype roadmap closes. Before
+**The deletion rule** (superseded: D-109 item 1 keeps the filesystem; the rule is kept for
+the record). The filesystem is deleted when the prototype roadmap closes. Before
 deleting it, confirm that **no bundle still declares it**:
 
 ```

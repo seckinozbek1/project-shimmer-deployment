@@ -5,8 +5,10 @@ For the lead session only, started by Seckin in the main checkout: if `docs/loop
 This file is the operating contract for an AI coding agent (Claude Code) working in
 this repository. It is terse and rule-shaped, not a tutorial (the newcomer guide is
 README.md). The founding specification is [genesis.md](genesis.md), Parts I to XXVII:
-read it before making any change. Shimmer is a standalone, domain-agnostic document
-processing swarm governed by an append-only constitution.
+read it before making any change. Shimmer is a standalone document processing swarm
+governed by an append-only constitution. It is domain-agnostic only in a narrow sense:
+no domain vocabulary appears in code (the vocabulary rule below), and its results differ
+widely between the fields it has run on.
 
 ## Hard rules
 
@@ -14,9 +16,14 @@ processing swarm governed by an append-only constitution.
 - LAW-IV (privacy) is never edited. It outranks LAW-0 (operator sovereignty) for
   sensitive-content handling, with no exceptions. A single leak is irreversible.
 - The constitution is append-only. The INFRA-029 amendment-guard tripwire
-  (`scripts/constitution_guard.py`) intercepts any attempt to modify or delete an
-  existing `amendments[]` entry or seed law from any code path; adding a new id is the
-  only allowed change. No-gap rule: an amendment id is never reused, never inserted
+  (`scripts/constitution_guard.py`, `check_constitution_change`, called by
+  `Constitution.save` and the snapshot load) refuses a write that would modify or delete an
+  existing `amendments[]` entry or seed law unless the operator approves it in an interactive
+  session through the operator handler (LAW-0); with no handler, outside interactive mode or
+  without an approval it is refused (the snapshot load keeps the live constitution), and each
+  such decision is logged to `durable/governance/constitution_guard_log.jsonl`. A new amendment
+  is accepted only as one verified append per write, `operator_approved`, an INFRA id being the
+  next one. No-gap rule: an amendment id is never reused, never inserted
   between existing ids, never renumbered. Every numbered DELTA is recorded in
   `config/constitution.json` `amendments[]`, the single canonical record; no DELTA
   lives only in prose.

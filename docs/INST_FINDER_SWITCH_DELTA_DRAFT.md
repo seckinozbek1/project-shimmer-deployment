@@ -20,7 +20,8 @@ an amendment with `operator_approved: true` whose `change` text names both
 
 Without such an amendment, a run started with `SHIMMER_INST_FINDER=off` refuses
 to start (exit code 9) with one line naming the missing DELTA. The setting is
-never ignored silently.
+never ignored silently. The server and the console show such a run with the
+governance status `refused_inst_finder_unratified`, not as a failure.
 
 ## What the operator would ratify
 

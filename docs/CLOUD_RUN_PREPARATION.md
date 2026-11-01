@@ -164,7 +164,7 @@ and no `budget_close`).
 # Download exact public runtime wheels locally when the wheelhouse is absent.
 python tools/prepare_cloud_wheels.py --download
 
-python tools/prepare_cloud_run.py --experiment-id new_comparison --expected-commit FULL_COMMIT_SHA --hourly-rate 1.99 --credential-file C:/private/config.py --identity-file C:/Users/OPERATOR/.ssh/shimmer_lambda
+python tools/prepare_cloud_run.py --experiment-id new_comparison --expected-commit FULL_COMMIT_SHA --hourly-rate 1.99 --soft-usd SOFT_USD --hard-usd HARD_USD --credential-file C:/private/config.py --identity-file C:/Users/OPERATOR/.ssh/shimmer_lambda
 
 python tools/cloud_run_checks.py --json
 python tools/cloud_run_transport_checks.py
@@ -285,7 +285,8 @@ python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger L
 | `--test-manifest` | Role B's seal manifest, for a sealed bundle. |
 | `--protected-test` | Only on a sealed bundle prepared by role B. |
 | `--ledger` (repeatable), `--forecast-minutes`, `--storage-forecast-usd` | The IV.3 inputs. All three are required. |
-| `--arm` | `B3` (default, the full pipeline) or `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`). Written into every manifest as `arm`. |
+| `--arm` | `B3` (default, the full pipeline), `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`) or `L` (the launcher menu as shipped, exposed bundles only; CLAUDE.md ARM-L-A). Written into every manifest as `arm`. |
+| `--launcher-question` | Arm L only, and required for it: the one-line draft question the menu is answered with. |
 | `--items` | B1 only: the adapter's `items.json` (item ids, no gold), sealed as a support file. |
 | `--b1-checkpoints` | B1 only: a JSON list of passes `{"name", "checkpoint", "args"}` (`checkpoint` may be left out, see below), run in that order, each into `evidence/b1/<name>`. Each `args` list may hold only options `bare_model.py` itself takes (see below). A replay pass `{"name", "replay": true, "args"}` runs `replay_prompts.py` instead (section "The E evidence run"). |
 | `--replay-prompts` | Exposed B1 only: the `replay_prompts.json` a replay pass reads (D-061 item 4), sealed as a support file. |
@@ -344,7 +345,8 @@ Paths outside the runtime prefixes enter the source
 archive only when listed in `ARCHIVE_EXTRAS` in the sealer (today
 `benchmark/adapters/` and `benchmark/baselines/`, so the B1 and B2 tools and the
 adapters they import reach the instance; their `fixtures/` folders and `*_checks.py`
-files stay out); a listed path the bound commit lacks fails the build in one line,
+files stay out), and for an arm L bundle the launcher files `shimmer.sh`,
+`tools/runtime_contract.py` and `tools/cloud_run/runtime.json`; a listed path the bound commit lacks fails the build in one line,
 and test material never travels inside the source archive.
 
 A workload carrying `case_manifest.json` is sealed as a declared multi-round
@@ -356,7 +358,8 @@ text). It is sealed as a support file, its hash is also recorded as
 --multi-round-manifest case_manifest.json`. The runner admits the workload only
 when it is declared, sealed and valid, and its assessment passes a multi-round
 run only when the saved case record shows outcome `reviewed` and activation
-`activated`.
+`activated`. Unlike any other B3 run, a multi-round run is not required to make
+the Producer 168 model call (D-101).
 
 A B1 bundle (`--arm B1`) is sealed from the same workload as its B3 twin. Its
 manifest carries `arm: B1` and `b1`: the passes (each a short name, the
@@ -401,8 +404,8 @@ loaded digest differs stops before its first item. A B1 bundle is
 never multi-round. A B3 bundle carries none of these fields; a manifest sealed
 before S5 has no `arm` and is a B3 bundle.
 
-On the instance the same runner, `ordinary_final_run.py`, runs both arms and keeps
-every guard for both: the authorization (which must name the arm the bundle was
+On the instance the same runner, `ordinary_final_run.py`, runs all three arms (B3,
+B1 and L; this section describes B3 and B1) and keeps every guard for each: the authorization (which must name the arm the bundle was
 sealed with; an authorization naming no arm is a B3 one), `RUN_CLAIMED`, the
 budget-stop thread with its `os._exit(124)`, the sealed model cache, the pinned
 runtime and the network denial. For a B1 bundle it then loads the sealed
@@ -506,6 +509,8 @@ authorization and collected evidence, so a stop leaves every finished pair
 complete. Each entry's `arm` in the batch file must equal the `arm` its bundle
 was sealed with (refused before any launch otherwise), and the controller writes
 it into the entry's authorization, which the runner checks again on the instance.
+An arm L bundle is never a batch entry: the controller runs it as a single bundle
+in its own session.
 
 A batch file with `"form": "b3_only"` carries exposed bundles that have no B1
 arm (regression bundles, multi-round cases, the development suite): every entry
@@ -640,15 +645,17 @@ python tools/prepare_ordinary_final_run.py --output-dir external/NAME/s05/E_ITEM
 a support file (`replay_prompts.json`, its digest and prompt count in the
 manifest's `b1.replay`), never in the source archive, and the runner refuses a
 replay pass in a sealed run. A replay pass is `{"name", "replay": true, "args"}`;
-its `args` may hold only `--paths` (default `e,one_shot,sdpa,e_repeat`),
-`--decision` (required exactly when a measurement path, `e`, `one_shot` or
-`e_repeat`, is run; `sdpa` is the run proper's setting under D-063) and `--max-new-tokens` (default: each prompt's own recorded allowance); the
+its `args` may hold only `--paths` (default `e,one_shot,sdpa,e_repeat`; a fifth
+path, `sdpa_constrained`, sdpa one shot under the contract constraint of DECODING-B,
+may also be named), `--decision` (required exactly when a measurement path, `e`,
+`one_shot` or `e_repeat`, is run; `sdpa` is the run proper's setting under D-063,
+and `sdpa_constrained` is not a measurement path either) and `--max-new-tokens` (default: each prompt's own recorded allowance); the
 runner sets `--prompts` and `--out`. On the instance it loads the tuned producer
 once and runs every prompt through each path, writing one reply record per prompt
 per path (hashes only) and `evidence/b1/replay/replay_measurement.json`: per path
 the peak GPU memory and prefill seconds, per prompt the reply's SHA-256, output
 tokens and prefill, and per pair of paths (e against one_shot, e against e_repeat,
-sdpa against one_shot, e against sdpa) the byte-identical, equal-JSON and failure
+sdpa against one_shot, e against sdpa, sdpa_constrained against sdpa) the byte-identical, equal-JSON and failure
 counts over every prompt and over the prompts of three chunks or more. An
 out-of-memory error on one path is recorded for that prompt and the path goes on
 (that is the measurement), never retried. The report's B1 row states each path's
@@ -777,7 +784,15 @@ again (eager by default, the prefill options, replay passes, `semantic_incomplet
 so every bundle sealed before D-061, L2's included, refuses the same way and must be
 sealed again. D-063 changed it again (the B1 rule and the replay paths follow the
 sdpa one-shot default), so every bundle sealed before D-063, L3e's included,
-refuses the same way and must be sealed again.
+refuses the same way and must be sealed again. The binding also pins what the
+controller imports to decide and record a launch: `tools/loop_budget_guard.py`,
+`tools/loop/instance_reaper.py`, `tools/loop/keep_awake.py` and
+`tools/run_remote_experiment.py`. Later changes refuse older bundles the same way:
+the `sdpa_constrained` replay path, HIDDEN-A (no visible child windows), D-101
+(multi-round assessed without the Producer 168 call), D-S17 (at most two loop
+instances), open item 37 (disk usage evidence) and arm L. CLAUDE.md
+(CONTROLLER-BINDING) keeps the full list; any bundle sealed before the current
+controller must be sealed again.
 
 The rehearsal (`tools/ordinary_final_rehearsal.py`) launches the same way against
 its mocked provider: each rehearsal bundle gets a fresh ledger of its own,

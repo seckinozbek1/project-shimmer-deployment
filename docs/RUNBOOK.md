@@ -37,7 +37,7 @@ files. Local needs the configured Qwen, Phi and bge-m3 assets and their compatib
 runtime. The pinned container has separate weight-format requirements. CPU-only
 local review is not certified by a successful package check.
 
-The starter opens `/console` and offers Copy token. Paste the token into the
+The starter opens `/console` and offers Copy access token. Paste the token into the
 console's access field. It is held in that browser session and sent in the
 Authorization header. Never place it in a URL, log, screenshot, repository or
 shared document. An expired or replaced server session can require reconnecting
@@ -172,7 +172,7 @@ when using advanced entry points.
 ## Stop, interruption and rerun
 
 Cancel a queued or running job from the console. It stops the job and preserves
-saved run evidence. Use the desktop starter's Stop to stop its owned server and
+saved run evidence. Use the desktop starter's Stop Shimmer button to stop its owned server and
 children. Closing the browser alone leaves them running. There is no HTTP server
 shutdown endpoint. Do not kill unrelated Python processes.
 
@@ -232,7 +232,9 @@ audit. The secret guard and staged review remain required before a commit.
 Unsupported/unproven here: Local Draft (it runs on the local model but is not yet proven); usable Sensitive review with the shipped
 inactive layer; complete semantic coverage; historical rule reconstruction through
 the rule endpoint; general sparse speedup; ontology/GNN feedback into agent tasks;
-automatic resume; private-document quality; fresh-clone startup; and a complete
+automatic resume; private-document quality; fresh-clone startup from the README's steps
+alone (in loop S10 both launchers installed and reached their menus on fresh clones; the
+final fresh-clone proof follows S11); and a complete
 review inside the unmounted image. The
 [cloud preparation guide](CLOUD_RUN_PREPARATION.md) describes the separate single-GPU
 experiment workflow; it does not certify fresh-clone desktop startup.
