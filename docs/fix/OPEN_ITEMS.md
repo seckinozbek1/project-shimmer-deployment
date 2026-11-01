@@ -768,3 +768,10 @@ open-item sweep.
 - **Evidence.** The README's adapter command list says `build` where `benchmark/adapters/synthetic/adapter.py` (about lines 555 to 568) takes `items` (lane s11-readme's report).
 - **Why it was left.** It changes no product behaviour (P16: recorded for S6).
 - **What would settle it.** The README naming the command the adapter takes.
+
+## 74. `scripts/claim_classifier.py` builds an OpenAI client that check 313 does not cover (found at the S10 outside audit) (issue #132)
+
+- **What it is.** `ClaimExtractor._gpt_extract` (about line 118) builds an OpenAI client when given a key. Only gate check 16 imports the module, so no run path reaches it; if a run path ever used it, check 313 would not see it unless that path were among its cases.
+- **Evidence.** The S10 outside audit, finding 2; the S10 provider sweep (D-169).
+- **Why it was left.** Unconsumed today, so no output changes (P16: recorded for S6).
+- **What would settle it.** A check 313 case for it, or the module kept out of every run path by a check.
