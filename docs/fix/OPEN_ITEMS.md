@@ -603,3 +603,10 @@ open-item sweep.
 - **Evidence.** The S5 close review of intervened replies (L12b, seed recorded before reading): of 8 accepted PRACTICE_AUDITOR replies with interventions, 1 correct, 3 partly correct, 4 wrong; all 3 on uncomputable plans were wrong and kept as model-written records under D-068. The S5 report, "Intervened replies".
 - **Why it was left.** Whether to keep PRACTICE_AUDITOR under the constraint (more complete runs, more wrong advice) or take it out (contract failures return) is a product decision that needs a measurement on development runs (P9 reason b); v1 reports it as it is.
 - **What would settle it.** A development measurement of benchmark-mode precision with and without PRACTICE_AUDITOR's envelope constraint, under a rule written before it, then a decision with its D-number.
+
+## 52. Arm L counts only the Python children that report themselves (found at loop S7 close, adversarial checker)
+
+- **What it is.** Arm L's network accounting (`launcher_network`) counts processes from the logs its sitecustomize writes. A Python child that never loads it (`-I`, `-S`, `-E`, a dropped PYTHONPATH) leaves no log and is not counted; native code and non-Python children pass the Python-level denial unblocked and unrecorded. ARM-L-A and check 311 now say exactly that.
+- **Evidence.** `tools/ordinary_final_run.py` (the launcher network reading and the pass rule), `tools/cloud_run_observer.py`; D-148; lane s07-fix2's report.
+- **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b).
+- **What would settle it.** The sitecustomize logs every interpreter start; the runner counts child processes independently (sampling its session's process group); the pass rule requires the two counts of Python children to match and records non-Python children by name; a neutralisation hides one child from the sitecustomize; check 311.
