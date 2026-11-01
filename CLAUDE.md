@@ -792,7 +792,7 @@ widely between the fields it has run on.
   Option [1] offers Review or Draft; [2] chat; [3] server; [4] gate; [5] import wizard.
 - `scripts/intake_wizard.py`: scan, classify, place, set the cutoff, choose mode, write the
   review-targets manifest. Driven by the launcher and by chat (as a subprocess).
-- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode). Its startup line says only what the probe checked (libraries import, a model is named) and a request the model did not answer says so before the command parser's reply (check 310).
+- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode). Its startup line says only what the probe checked (libraries import, a model is named) and a request the model did not answer says so before the command parser's reply (check 310). A mode the person set wins over the mode a review request is read as (proposed by the model or defaulted by the parser), and the window says so (D-183, check 310).
 - `scripts/server.py`: the token-gated FastAPI dock. Config is env-driven (`SHIMMER_*`,
   read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The
   [runtime reference](docs/RUNTIME_REFERENCE.md) route table is the complete route list and gate check 167 fails if it and the app disagree

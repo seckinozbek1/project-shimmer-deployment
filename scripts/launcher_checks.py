@@ -748,6 +748,12 @@ def _generation_fails(model_id):
     return _ModelTokenizer("unused"), _GenerateFails()
 
 
+def _answers_in_order(replies):
+    """The model answers REPLIES in order, one per request."""
+    pending = list(replies)
+    return lambda model_id: (_ModelTokenizer(pending.pop(0)), _ModelStandIn())
+
+
 def _drive_chat(text, typed, model=None):
     """Type each line into a withdrawn chat window (never shown) and return the
     transcript after each, and the recorded launches. With MODEL (a stand-in for
@@ -929,6 +935,42 @@ def _chat_model_path(text):
     _prove("a model that failed while answering is said so", not_used(crashed, "it failed while answering"),
            not not_used(_drive_chat(neutral, ["help"], model=_generation_fails), "it failed while answering"),
            not_used(_drive_chat(text, ["help"], model=_generation_fails), "it failed while answering"))
+    _chat_mode_kept(text)
+
+
+# Issue #118 (D-183): the person's mode setting wins over a mode in the parsed request.
+_MODE_KEPT_TEST = "                if self.mode_set_by_person:\n"
+_MODE_REPLACED = "                if False:\n"
+_MODEL_MODE_REPLIES = ('{"action": "set_mode", "mode": "sensitive"}', '{"action": "review", "mode": "normal"}')
+
+
+def _chat_mode_kept(text):
+    """The person sets sensitive mode, then asks for a review the model reads as normal mode
+    (and, in command mode, a bare review the keyword parser defaults to normal): the
+    confirmation keeps sensitive mode and says the request was read otherwise; nothing runs."""
+    def kept(result):
+        replies, launches = result[0], result[1]
+        return (len(replies) == 3 and "in sensitive mode" in replies[1] and "in normal mode" not in replies[1]
+                and "Keeping the sensitive mode you set" in replies[1]
+                and "Cancelled." in replies[2] and launches == [])
+
+    def model_run(source):
+        return _drive_chat(source, ["make the next review sensitive", "review the documents", "n"],
+                           model=_answers_in_order(_MODEL_MODE_REPLIES))
+
+    def keyword_run(source):
+        return _drive_chat(source, ["mode sensitive", "review", "n"])
+
+    shipped_model, shipped_keyword = kept(model_run(text)), kept(keyword_run(text))
+    if not shipped_model:
+        raise AssertionError("a mode the model proposed replaced the person's: %r" % model_run(text)[0])
+    if not shipped_keyword:
+        raise AssertionError("a defaulted mode replaced the person's: %r" % keyword_run(text)[0])
+    neutral = _neutralise(text, _MODE_KEPT_TEST, _MODE_REPLACED, "the person's mode test")
+    _prove("the person's mode wins over a mode the model proposed", shipped_model,
+           not kept(model_run(neutral)), kept(model_run(text)))
+    _prove("the person's mode wins over a defaulted mode", shipped_keyword,
+           not kept(keyword_run(neutral)), kept(keyword_run(text)))
 
 
 def _tk_unavailable():

@@ -677,6 +677,7 @@ open-item sweep.
 - **Evidence.** `scripts/chat.py:583`: `cmd.setdefault("mode", self.pending_mode)` keeps a model-supplied mode over the person's earlier choice.
 - **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
 - **What would settle it.** The person's mode wins, or the window asks; a check case.
+- **Closed (2026-11-02, loop S11, D-183).** Once the person sets a mode, a review request keeps it whatever mode the request was read as (proposed by the model, or defaulted to normal by the keyword parser), and the window says so before asking to proceed. Check 310 drives both cases and neutralises the test.
 
 ## 61. The chat window's set cutoff writes a tracked config file (found at loop S7 close and S10, lanes) (issue #119)
 

@@ -25629,7 +25629,9 @@ def check_310_chat_window_command_mode():
     S7 6e findings): the startup line says only what the probe checked (libraries import, a model
     id is configured), and a request whose model failed to load, failed while answering (an error
     in generate, out of GPU memory for one) or gave no usable answer keeps the keyword parser's
-    reply and says first that the model was not used and why, each with its own reason. Skips where the
+    reply and says first that the model was not used and why, each with its own reason. A mode the
+    person set wins over a mode in the parsed request, one the model proposed or the keyword parser
+    defaulted, and the confirmation says so (D-183, issue #118). Skips where the
     chat file or Tk is absent."""
     from launcher_checks import check_chat_window
     return check_chat_window()
