@@ -57,11 +57,12 @@ It does:
   wrote is kept, shown and marked in every file a reader gets: "Written by a
   model. Not promoted to an amendment. Not checked by Python." It never becomes
   an amendment.
-- Save every model reply, the exact payload sent and the decoding settings under
-  the run's `audit/model_replies/` folder (only hashes and lengths when redaction
-  is on).
-- Produce a JSON amendment record, Markdown summaries and a Word file with
-  tracked changes, in English or Turkish.
+- Save the reply of every model call a run makes (embedding calls aside), with
+  the payload sent and the decoding settings, under the run's
+  `audit/model_replies/` folder (only hashes and lengths of the texts when
+  redaction is on).
+- Produce a JSON review record (`review_data.json`), Markdown summaries and a Word
+  file with tracked changes, in English or Turkish.
 
 It does not:
 
@@ -83,7 +84,7 @@ It does not:
    confirm.
 3. Follow findings, citations, agent activity and any governed questions in the
    console. Look at refusals and coverage as well as proposed changes.
-4. Review the summaries, the amendment record and the tracked-changes document.
+4. Review the summaries, the review record and the tracked-changes document.
    Keep the run's evidence with its deliverables.
 
 ```mermaid
@@ -190,9 +191,9 @@ tests whose keys the project had read. They are history, with their dates and ca
   differ widely from one field to another.
 - The cloud backend (provider models) has no figure on the results page. Every
   measured run used open-weight models on a rented GPU.
-- The FACT_CHECKER agent is switched off for every run from this repository
-  (`config/review_scope.json`), because on an earlier test every item it returned
-  in three runs was wrong. It stays registered, so the checks between model
+- The FACT_CHECKER agent is withheld from every run that uses the shipped
+  `config/review_scope.json` (`withheld_audit_agents`), because on an earlier test
+  every item it returned in three runs was wrong. It stays registered, so the checks between model
   families are unchanged.
 
 ## Hardware and cost
@@ -203,14 +204,17 @@ operator's recorded observation.
 - **Rented GPU.** Every measured run used one NVIDIA A10 (24 GB) instance in
   us-east-1 at 1.29 USD an hour, read from the provider at each launch.
 - **GPU memory.** An earlier ordinary run (v12, September 2026) peaked at 11.96 GB
-  of 24 GB. A bare-model run on a full-length financial filing peaked at 18.6 GiB
-  (base) and 20.9 GiB (tuned) allocated. A replay of auditor prompts peaked at
-  21.89 GB allocated. In one launch, ten VERIFIER prompts of 44,467 to 54,657
-  tokens ran out of GPU memory on the A10 before their first token; the prompt
-  shown to VERIFIER was made smaller after that.
+  of 24 GB (`docs/fix/ORDINARY_FINAL_V12_RUN_RESULTS.md`). A bare-model run on a
+  full-length financial filing peaked at 18.6 GiB (base) and 20.9 GiB (tuned)
+  allocated (launch L4b, decision D-077 in `docs/loop/DECISIONS.md`). A replay of
+  auditor prompts peaked at 21.89 GB allocated (D-132, D-134). In one launch (L8),
+  ten VERIFIER prompts of 44,467 to 54,657 tokens ran out of GPU memory on the A10
+  before their first token; the prompt shown to VERIFIER was made smaller after
+  that (D-114).
 - **Time per document.** From 4.4 minutes (a SciTab table) to 109.2 minutes (a
   CUAD contract) for Shimmer, and 0.9 to 13.4 minutes for the bare model, on the
-  instance, model loading included. See the table above.
+  instance, model loading included. See the table above; each figure's run is on
+  the results page.
 - **Cost.** Instance time only, at the rate above: for example 2.73 USD for the two
   ContractNLI agreements and 4.57 USD for the 20 suite bundles. Each launch also
   spent about 15 minutes on setup, and each entry about 2 minutes. The loop's
@@ -231,8 +235,9 @@ The desktop starter installs nothing. The menu launchers install packages but no
 the review models; their readiness check fetches the redactor's Qwen weights only
 when `SHIMMER_QWEN_PULL=1` is set. The manual Windows steps below were run on a
 fresh clone on 1 November 2026 (Windows 11, an 8 GB NVIDIA card): the packages
-installed and torch saw CUDA after the third step. The full gate on that clone runs
-at the v1 commit.
+installed and torch saw CUDA after the third step. They are run again, with the
+full gate, on a new fresh clone of the tree that carries this README; that result
+is recorded in the loop's S10 report, not here.
 
 **Manual install (Windows).** These are the steps `shimmer.bat` runs, from the
 repository root:
@@ -268,9 +273,30 @@ token** to connect the browser. Keep the starter window open and use **Stop
 Shimmer** to stop the server; closing the browser leaves the server running.
 
 **Container.** The [Dockerfile](Dockerfile) builds an image with an external model
-cache, or with the weights baked in (`--build-arg BAKE_WEIGHTS=true`).
-[compose.yaml](compose.yaml) runs a named image and does not build one. The entry
-point takes `serve`, `run` or `verify`. The image has not been rebuilt for v1.
+cache (the default), or with the weights baked in (`--build-arg BAKE_WEIGHTS=true`).
+The entry point ([tools/entrypoint.sh](tools/entrypoint.sh)) takes `serve` (the
+server, on port 8000), `run` (one review, through `tools/run_local_demo.py`) or
+`verify` (the gate with `--offline`, the default when no command is given). The
+server refuses to start without `SHIMMER_TOKEN_HASH`, the SHA-256 hash of an
+access token, and one of the gate's checks needs it too; `python scripts/server.py`
+with no hash set prints a one-line command that makes a token and its hash. From the repository root:
+
+```powershell
+docker build -t shimmer:local .
+# the offline gate: no network, nothing mounted
+docker run --rm --network none --gpus all -e SHIMMER_TOKEN_HASH=<hash> shimmer:local verify
+# the server, with the host's model cache mounted where the image looks for it
+docker run --rm --gpus all -p 8000:8000 -e SHIMMER_TOKEN_HASH=<hash> -v <host model cache>:/root/.cache/huggingface shimmer:local serve
+```
+
+These commands come from the Dockerfile and the entry point; none of them has been
+run in the loop that prepared v1, because the image build is waiting for disk
+space (the last image build and offline gate were on 11 September 2026, on older
+code). Without the weights baked in or a cache mounted, the checks that load a
+model fail for lack of weights. [compose.yaml](compose.yaml) records the server and
+review services with every mount (`input/`, `config/`, `durable/`,
+`ontology/stores/`, `output/runs/` and the model cache, `HOST_HF_CACHE`); it runs
+the image named `shimmer:local` and does not build it.
 
 **Provider keys** (only for the cloud backend, Draft under Cloud included) live
 outside the repository. Shimmer looks for them through `$SHIMMER_CONFIG_PATH`, then a sibling
@@ -308,7 +334,7 @@ refuses to start (exit code 9, shown by the server and the console as the
 governance status `refused_inst_finder_unratified`, not as a failure). Each run
 records the setting in `audit/agent_switches.json` and its run summary.
 
-4. Read the results in `output/runs/<run id>/deliverables/`: one folder per
+4. Read the results in `output/runs/<UTC time>__<run id>/deliverables/`: one folder per
    document, plus `_run_summary.md`. `docs/OUTPUT_FORMAT.md` describes the run
    folder.
 
@@ -321,8 +347,10 @@ records the setting in `audit/agent_switches.json` and its run summary.
   under review, and agents withheld for a review scope.
 - `input/context/_review_targets.json`: an explicit list of the documents under
   review, and earlier versions to compare with. It wins over the date cutoff.
-- `config/agent_registry.json`: which model each agent uses. Model names are read
-  from the provider, never typed into code.
+- `config/agent_registry.json`: which provider model each agent uses under the
+  cloud backend. Model names are read from the provider, never typed into code.
+  The local backend's models come from its local profile, which
+  `config/local_models.json` can override.
 - `config/decoding_policy.json`: the frozen decoding settings for local models.
 - `config/domain_vocabulary.json`: domain words that must never appear in code.
 - Server settings are `SHIMMER_*` environment variables, listed in the
@@ -348,8 +376,9 @@ only with the operator's explicit approval. An agent can never approve one.
 Shimmer registers 18 agents, each with one job (for example PROCESSOR extracts,
 VERIFIER checks the draft against the source, PRACTICE_AUDITOR checks the
 operator's rules, REDACTOR applies redaction rules, and six editorial ranks give
-advisory review). Agents are activated by condition, so a run need not call
-every agent. The
+advisory review). Not every agent is called in every run: an agent can be
+withheld by configuration or skipped when its input is missing, and each call or
+skip is recorded. The
 [runtime reference](docs/RUNTIME_REFERENCE.md) has the full table, with each
 agent's provider and local models.
 
@@ -389,8 +418,8 @@ In short:
 - Every report states its purpose, whether its test is sealed or exposed, and
   which layer (Python or a model) produced each catch.
 - No number is quoted publicly as evidence of what Shimmer can do until it holds
-  on at least three independently prepared sealed tests on one code commit, with
-  the spread reported.
+  on at least three independently prepared tests, sealed before the run, on one
+  code commit, with the spread reported.
 
 The preregistration draft is
 [docs/benchmarks/PREREGISTRATION.md](docs/benchmarks/PREREGISTRATION.md) and the
@@ -446,6 +475,14 @@ The full gate, `scripts/verify_session1.py`, includes checks that load models,
 even with `--offline`. Run it only on a machine prepared for that. A passing
 fixture check proves behaviour on that fixture, not review quality, privacy or
 deployment readiness.
+
+## History of this repository
+
+The public history of this repository is to be rewritten to remove personal paths
+and a collaborator's project name from earlier commits. Once it is, a commit map
+at `docs/history/COMMIT_MAP.md` will give the new hash of every old commit, so that
+a hash cited in the project's records can still be found. Dated copies of earlier
+documents are kept under `docs/history/`.
 
 ## Citation and licence
 

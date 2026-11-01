@@ -112,7 +112,7 @@ One development contract, `527255a5c970` (band B, 2,664 words), 41 categories: g
 
 One development filing, `e61777d6327c` (band D), one item, run in L4b on earlier code (commit `344522f`). **Not measured**: no arm decided the item. B3 ended semantically incomplete and its item is ABSTAIN (97.7 workload minutes); B1 tuned and B1 base each ran to the 2,048-token output allowance without a label (13.4 minutes each, half of one two-checkpoint entry; D-115). The segmented B3 reading and the revised B1 prompt for FinDVer (D-115) are measured by L13, which is scheduled after v1 and has not run. **FinDVer's held-out (`test`) labels have been public since 14 July 2026** (MIT licence; docs/benchmarks/SELECTION.md, FinDVer, and docs/benchmarks/FINDVER_B1_REVISION.md), so the contamination guard the benchmark's paper relied on is gone; any FinDVer figure, here or later, is read with that in mind.
 
-## CUAD as a claim check
+## CUAD as a claim check (development, exposed)
 
 **Not run.** Its development measurement is part of L13, scheduled after v1 (D-133 item 3).
 
@@ -144,9 +144,9 @@ The 11 bundles that failed integrity on L12 were re-run in L12b; 9 passed and 2 
 
 **Correct refusal rate: not measured.** The suite's refusal entries (`expected_refusals`, the rename probes) are scored on the ordinary two-version review of the family 4 bundles, which are the probe launches L9a and L9b, scheduled after v1; the runs scored here carry no refusal entry.
 
-**What these figures do not show.** The keys are in the repository and the generators were written by the same project, so the suite measures regressions, not recall on unseen material. Two of the twenty B3 runs used are semantically incomplete; counting only semantically complete documents (S-6), B3 locates 103 of 134 planted flaws (34 of 134 on the L12 set, where eleven were incomplete). Nine of the latest runs are on newer code (L12b) than the other eleven. B1 flags 31 items on the clean twins, which no figure above weighs against its recall. The B3 first-run figures leave out ten bundles that failed setup.
+**What these figures do not show.** The keys are in the repository and the generators were written by the same project, so the suite measures regressions, not recall on unseen material. Two of the twenty B3 runs used are semantically incomplete; counting only semantically complete documents (S-6), B3 locates 103 of 134 planted flaws (34 of 134 on the L12 set, where eleven were incomplete). Eleven of the latest runs are on newer code (L12b) than the other nine. B1 flags 31 items on the clean twins, which no figure above weighs against its recall. The B3 first-run figures leave out ten bundles that failed setup.
 
-## L12b: second re-run of 13 entries
+## L12b: second re-run of 13 entries (development, exposed)
 
 L12b re-ran the 13 entries that still failed integrity after L12, in two sessions on two instances at once, sealed at `d6ce19a` (VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST), so newer code than L12. 10 of 13 passed (D-138). Of the 37 B3 entries that first failed integrity in L7, L8, L10 and L11, 24 passed in L12, 10 more in L12b and 3 still fail.
 
