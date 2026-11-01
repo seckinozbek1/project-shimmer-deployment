@@ -273,4 +273,12 @@ Instances 62.87 USD over 22 terminations (ledger sum); reaper 63.57 at 13:31:59 
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| L14b | launcher-menu-l14b, arm L, sealed at 2b8caa9 after the tip gate (D-160) | 1.68, cap 2.52 (60 minutes) | 13:48:19 (intent) to 14:40:46 (termination), 53 minutes, 1.14 USD; the review ran from the menu to its end, the draft stopped (INC-031, D-162). Usage seven-day 81 percent (five-hour not reported, reaper 13:46:59 UTC), free memory 4.9 GB, disk 48 GB at launch. Instances total after it: 64.01 over 23 terminations; reaper 64.72; left 134.28. The v1 line has about 1.08 left; L14c (about 1.2) passes it by about 0.1, taken from the moved steps at the end. |
+| L14b | launcher-menu-l14b, arm L, sealed at 2b8caa9 after the tip gate (D-160) | 1.68, cap 2.52 (60 minutes) | 13:48:19 (intent) to 14:40:46 (termination), 53 minutes, 1.14 USD; the review ran from the menu to its end, the draft stopped (INC-031, D-162). Usage seven-day 81 percent (five-hour not reported, reaper 13:46:59 UTC), free memory 4.9 GB, disk 48 GB at launch. Instances total after it: 64.01 over 23 terminations; reaper 64.72; left 134.28. The v1 line has about 1.08 left; L14c (forecast 1.48, D-163) passes it by about 0.4, taken from the moved steps at the end. |
+
+### L14c (2026-11-01 20:20 +0300, D-166)
+
+Spent 64.73 by the reaper (17:07:00 UTC); 134.27 left under 199. The v1 line has about 1.08 left. L14c re-runs the launcher menu after S10's draft fix: forecast 53 minutes (L14b's measured time) x 1.29 x 1.3 = 1.48 USD, cap 2.22; it passes the v1 line by about 0.4, taken from the moved steps at the end (D-163). Storage forecast passed at launch 0.59, as for L14b (the cap is the forecast rule's either way; the loop's storage to its end is 1.0, D-139, about 0.71 spent). Hard stop check: 64.73 + 2.22 + 0.59 = 67.54, far below 199.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L14c | launcher-menu-l14c, arm L, sealed at 74408d3 after gate G1b and the side gates (D-165, D-166) | 1.48, cap 2.22 (53 minutes) | L14C_ACTUAL |
