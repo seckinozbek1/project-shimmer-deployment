@@ -753,4 +753,18 @@ open-item sweep.
 - **What it is.** Corrections to the format drafts held for the next preregistration version.
 - **Evidence.** Lane s11-readme's third pass verified 16 corrections to `docs/INPUT_FORMAT.md` (5) and `docs/OUTPUT_FORMAT.md` (11) against the code (private `analysis/lane_s11_readme_report.md`, "Format corrections held for the next version"): among them exit code 4's unreachable-Qwen cause, every exit 2 shown as `snapshot_conflict`, the full B1 and arm L reason lists, and that only `strategic_options` and `recommendation` call a model. S3a item 5 allows only additions the scorer does not read after C0's last run, so they were put back (D-172).
 - **Why it was left.** P9 reason d: until C0 run 5 the output format may change only by additions the scorer does not read (S3a item 5).
-- **What would settle it.** Applied in the format drafts together with preregistration version 3 and C0 run 5 (D-S18 item 5), before the formats freeze (P9 reason d until then).
+- **What would settle it.** Applied in the format drafts together with preregistration version 3 and C0 run 5, if a new version is still allowed (D-S13 item 10, D-S18 item 5), before the formats freeze. If no new version is allowed, the formats freeze as they are and each correction is a post-freeze defect reported beside the S8 results (P9 reason d).
+
+## 72. Two figures on the results page differ from the S5 report (found at loop S11 close) (issue #130)
+
+- **What it is.** Two figures on the results page differ from the S5 report.
+- **Evidence.** `docs/RESULTS.md` gives the L11 ContractNLI first run as 8 of 34 where `docs/loop/stages/S05_REPORT.md` (about line 198) says 9 of 34, and CUAD B1 as "answered 40" where the S5 report says 41 of 41 parsed. Settling them needs the run's label files, which are not committed (lane s11-readme's third pass).
+- **Why it was left.** It changes no product behaviour (P16: recorded for S6).
+- **What would settle it.** Both figures re-derived from the runs' label files and the page or the report corrected.
+
+## 73. The README names the synthetic adapter's command differently from the code (found at loop S11 close) (issue #131)
+
+- **What it is.** The README names the synthetic adapter's command differently from the code.
+- **Evidence.** The README's adapter command list says `build` where `benchmark/adapters/synthetic/adapter.py` (about lines 555 to 568) takes `items` (lane s11-readme's report).
+- **Why it was left.** It changes no product behaviour (P16: recorded for S6).
+- **What would settle it.** The README naming the command the adapter takes.
