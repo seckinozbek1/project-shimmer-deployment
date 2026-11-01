@@ -726,3 +726,17 @@ open-item sweep.
 - **Evidence.** L14c (D-167): 4,096 output tokens; the S10 adversarial checker.
 - **Why it was left.** The function is pinned; a change needs an amendment and a run to see whether the memo is in fact cut (L14d, after v1).
 - **What would settle it.** A truncated memo marked in its outcome and the run summary, with a check, at L14d.
+
+## 68. Under the local profile a web-enabled agent can still reach the web (found at loop S10 close, lane s10-fix2) (issue #126)
+
+- **What it is.** Under the local profile a web-enabled agent can still reach the web.
+- **Evidence.** `scripts/search_router.py:201-274` opens web URLs with `urllib.request` for agents whose registry flag allows the web (`may_use_web`). It is not a provider client, so the S10 provider sweep (check 313) leaves it; under the local profile a review with a web-enabled agent would still reach the network (lane s10-fix2's report).
+- **Why it was left.** An operator choice (P12); recorded for S6 (P16).
+- **What would settle it.** The operator's choice: whether the local profile refuses the web, then a check either way.
+
+## 69. Check 313 copies the local remap of `pipeline.main` instead of calling it (found at loop S10 close, lane s10-fix2) (issue #127)
+
+- **What it is.** Check 313 copies the local remap of `pipeline.main` instead of calling it.
+- **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
+- **Why it was left.** recorded for S6 (P16).
+- **What would settle it.** The remap factored into a function when a change to `main` needs an amendment anyway, and 313 calling it.
