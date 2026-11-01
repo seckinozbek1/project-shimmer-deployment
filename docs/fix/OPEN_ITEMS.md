@@ -354,6 +354,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 ## Corrections to items 12, 18 and 19 (loop S2 checker round 1)
 
 - **Item 12 (closed).** "Both halves landed" overstates the report half: the run report states the setting sealed in the manifest (`tools/analyze_ordinary_final_run.py`), not the setting the run observed in `audit/agent_switches.json`. The seal refuses an unratified `off`, so the sealed value is the run's value; reading the run's own record as a cross-check is left for S6.
+- **Item 12, the report half (closed 2026-11-02, loop S11, D-184; issue #133).** The analyser now reads every `audit/agent_switches.json` in the collected evidence and states it beside the sealed setting; a recorded setting that differs from the seal, or a record that cannot be read, is named `DIFFERS FROM THE SEAL` in the report and kept in `FINAL_STATUS.json` under `inst_finder`. A B1 entry, which runs no pipeline, says so. Proof: `test_the_report_states_the_runs_own_inst_finder_setting_and_any_difference` in `tools/ordinary_final_controller_checks.py`, neutralised by reporting the sealed value as the run's.
 - **Item 18.** "None of these files is changed by S2" is wrong for one file: `scripts/ui/localization_catalog.js` was changed by S2 and still holds the one dash whose key must match the agent registry word for word (stated in the same item).
 - **Item 19 (1).** The absence-prediction section is translated in Turkish runs (`scripts/absence_prediction.py` localizes each sentence); only the raw status token is untranslated.
 

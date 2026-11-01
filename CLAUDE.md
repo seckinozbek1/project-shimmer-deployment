@@ -307,8 +307,10 @@ widely between the fields it has run on.
   item by item (B3 then B1 per item), each with its own run folder under `batch/`, seal entry,
   authorization and evidence, so a stop leaves every finished pair complete. The analyser
   (`tools/analyze_ordinary_final_run.py`, `--batch` for a session) writes `RUN_REPORT.md`
-  (Annex A 11.12: purpose and sealed-or-exposed lines first, the `SHIMMER_INST_FINDER` value,
-  FACT_CHECKER withheld with both B.4 reasons, instance type and price, asset copy MATCH or
+  (Annex A 11.12: purpose and sealed-or-exposed lines first, the `SHIMMER_INST_FINDER` value
+  sealed in the manifest beside the one each pipeline run saved in `audit/agent_switches.json`,
+  a difference or an unreadable record named `DIFFERS FROM THE SEAL` and kept in
+  `FINAL_STATUS.json` under `inst_finder` (D-184, issue #133), FACT_CHECKER withheld with both B.4 reasons, instance type and price, asset copy MATCH or
   not, the role-separation sentence for a sealed run; a field that does not apply says why) and
   the same rows in `FINAL_STATUS.json` under `report`. The sealer refuses an unratified
   `SHIMMER_INST_FINDER=off` with the pipeline's own ratification test, read from the bound
