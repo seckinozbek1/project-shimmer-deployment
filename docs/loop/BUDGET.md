@@ -256,3 +256,7 @@ L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes abo
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
 | L12c | launched 2026-10-31 19:09:39, dev-rerun-l12c, 5 B3 re-runs of the stamp-only passes, sealed at 5c3c129 after the full gate (D-143, D-144) | 2.38, cap 3.56 (85 minutes from the entries' own L12 and L12b times) | 79 minutes, 1.70 USD; 4 of 5 passed (D-146); usage seven-day 70 percent (five-hour not reported), free memory 4.13 GB, disk 59.9 GB at launch. Instances total after it: 62.59; reaper 63.18 |
+
+### D-S19: money for the waiting moved steps (2026-11-01 about 03:20 +0300, D-150)
+
+From the parallel track's 30 USD, 12.34 USD moves to the moved steps that waited (the GNN run 1.70, the third re-run with its replays 6.6, the three other S6 items 4.04); the track keeps 17.66. With about 135.8 left (reaper 63.18 at 20:26:59 UTC): v1 work about 2.5 (L14 1.5, slack 1.0), storage 1.0, the track 17.66, the sealed evaluation at least 60, the moved steps 54.6 (L13 17.4, L9a 12.3, L9b 12.3, then the 12.34 above): total about 135.8, so everything fits with nothing left over; L9b still depends on forecasts not growing by more than about 0.4. The 60 floor, the 200 cap and the 199 hard stop are unchanged.
