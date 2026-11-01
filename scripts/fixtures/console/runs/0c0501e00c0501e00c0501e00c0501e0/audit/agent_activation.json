@@ -91,10 +91,10 @@
       "refire_limit": 0,
       "downstream_consumer": "bus_and_phase_consumer",
       "doc_id": "",
-      "state": "completed",
+      "state": "execution_failure",
       "actual_call": true,
       "call_id": "call-0003",
-      "outcome": "accepted_to_bus"
+      "outcome": "backend_failure"
     }
   ],
   "agent_states": [
@@ -130,7 +130,7 @@
     },
     {
       "agent": "PRACTICE_AUDITOR",
-      "state": "completed",
+      "state": "execution_failure",
       "eligible": true,
       "activated": true,
       "actual_calls": 1,

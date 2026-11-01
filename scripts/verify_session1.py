@@ -25519,8 +25519,9 @@ def check_307_launcher_menus_end_at_end_of_input():
 def check_308_launchers_reach_their_menus():
     """Loop S7 item 5: shimmer.bat reaches its menu (for /f quoting), keeps its answers through
     the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
-    venv and honours SHIMMER_SKIP_INSTALL; the draft is announced only after its setup; no dead
-    batch label; start_shimmer.bat --check-entry answers."""
+    venv and honours SHIMMER_SKIP_INSTALL; shimmer.sh started from another folder with no
+    /usr/bin on PATH reaches its menu (open item 54); the draft is announced only after its
+    setup; no dead batch label; start_shimmer.bat --check-entry answers."""
     from launcher_checks import check_bootstrap
     return check_bootstrap()
 

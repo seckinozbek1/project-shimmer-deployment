@@ -1,3 +1,3 @@
 {"agent": "PROCESSOR", "ok": true, "cost_usd": 0.0, "phase": "3-4", "doc_id": "sample_ledger", "call_id": "call-0001"}
 {"agent": "VERIFIER", "ok": true, "cost_usd": 0.0, "phase": "5", "doc_id": "sample_ledger", "call_id": "call-0002"}
-{"agent": "PRACTICE_AUDITOR", "ok": true, "cost_usd": 0.0, "phase": "5.5", "doc_id": "sample_ledger", "call_id": "call-0003"}
+{"agent": "PRACTICE_AUDITOR", "ok": false, "cost_usd": 0.0, "phase": "5.5", "doc_id": "sample_ledger", "call_id": "call-0003"}

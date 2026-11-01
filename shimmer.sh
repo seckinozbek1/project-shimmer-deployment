@@ -11,7 +11,22 @@
 # ===========================================================================
 
 set -u
-cd "$(dirname "$0")"
+# The script's own folder, read with bash parameter expansion rather than dirname:
+# a non-login Git Bash started by a script can have no /usr/bin on PATH, and the
+# launcher used to stop here before its menu (open item 54).
+case "$0" in
+    */*) SHIMMER_HERE="${0%/*}"; [ -n "$SHIMMER_HERE" ] || SHIMMER_HERE="/" ;;
+    *)   SHIMMER_HERE="." ;;
+esac
+cd "$SHIMMER_HERE"
+# The same caller's PATH lacks the tools reached later: the venv's activate script
+# calls cygpath on Git Bash, and the menu calls cat and rm. Where /usr/bin exists and
+# PATH does not name it, it is appended (never put first); a PATH that names it, as
+# every login shell's and Linux's does, is left exactly as it is.
+case ":$PATH:" in
+    *:/usr/bin:*) ;;
+    *) [ -d /usr/bin ] && PATH="$PATH:/usr/bin" && export PATH ;;
+esac
 
 # --- 1. Bootstrap discovery only; the contract selects the executable ------
 PYTHON_CMD=""

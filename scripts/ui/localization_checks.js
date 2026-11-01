@@ -91,6 +91,23 @@ async function main(){
     assert.equal(context.ShimmerLocale.language(),'tr');noEnglish(elements.app.innerHTML);
     context.renderDetailBody({run_id:'RUN-1',state:'stopped',outcome:'succeeded',documents:[],has_log:false},[]);assert.equal(context.ShimmerLocale.language(),'en');assert(elements.app.innerHTML.includes('Process finished'));
   });
+  check('Model-written finding count reads singular or plural',()=>{
+    // Open item 55 (a): "1 model-written findings were kept" read a fixed plural.
+    const sing=' model-written finding was kept, not promoted and not checked by Python.';
+    const plur=' model-written findings were kept, none promoted and none checked by Python.';
+    const holds=()=>{for(const lang of ['en','tr']){context.ShimmerLocale.select(lang);
+      const one=context.modelFindingsHtml({count:1}),two=context.modelFindingsHtml({count:2});
+      if(!one.includes('<p>1'+context.ui(sing)+'</p>')||!two.includes('<p>2'+context.ui(plur)+'</p>'))return false;
+      if(lang==='tr'){if(context.ui(sing)===sing||context.ui(sing)===context.ui(plur))return false;noEnglish(one);noEnglish(two);}}
+      return true;};
+    assert(holds(),'the model-findings count sentence does not agree with its count');
+    const node=body.find(n=>n.type==='FunctionDeclaration'&&n.id.name==='modelFindingsHtml');
+    const original=script.slice(node.start,node.end);
+    const plural=original.replace('data.count === 1 ? "'+sing+'" : ','');
+    assert.notEqual(plural,original,'cannot neutralise: the singular choice is not in modelFindingsHtml');
+    vm.runInContext(plural,context);assert(!holds(),'neutralised to the fixed plural and the check still passes');
+    vm.runInContext(original,context);assert(holds(),'restored modelFindingsHtml does not pass');
+  });
   check('Neutralize detection and restore',()=>{context.ShimmerLocale.select('tr');const old=context.ui;context.ui=x=>x;assert.throws(()=>noEnglish(context.multiRoundHtml(null)));context.ui=old;noEnglish(context.multiRoundHtml(null));});
   console.log('PASS: '+checks+' offline localization UI checks');
 }

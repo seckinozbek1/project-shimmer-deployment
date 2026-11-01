@@ -2096,13 +2096,16 @@ function loadActivation(runId) {
 }
 
 function multiRoundHtml(data) {
-  if (!data || !data.recorded) return ui('<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>');
   /* A sealed run's route keeps whether a case was recorded and its outcome only
-     (console_views.sealed_multi_round); its note is shown with the rounds below. */
-  if (data.exposure === 'sealed') {
-    return '<h2>' + ui('Multi-round positioning') + '</h2><p>' + ui('A case output was recorded. Outcome: ') +
+     (console_views.sealed_multi_round). Its note sits directly under the heading,
+     before anything the section says (open item 55); the rounds below carry none. */
+  if (data && data.exposure === 'sealed') {
+    var head = '<h2>' + ui('Multi-round positioning') + '</h2>' + sealedNoteHtml(data);
+    if (!data.recorded) return head + '<p>' + ui('No valid recorded case output.') + '</p>';
+    return head + '<p>' + ui('A case output was recorded. Outcome: ') +
       escapeHtml(displayValue(data.outcome || ui('not recorded'))) + '.</p>';
   }
+  if (!data || !data.recorded) return ui('<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>');
   var out = ui('<h2>Multi-round positioning</h2><p>') + (data.fixture ? ui('SYNTHETIC FIXTURE. ') : '') +
     escapeHtml(displayValue(data.activation.state)) + '. ' + escapeHtml(displayValue(data.outcome || '')) + ' ' +
     escapeHtml(displayValue(data.activation.reason || '')) + ui('. Model quality and performance remain unverified.</p>');
@@ -2161,7 +2164,7 @@ var REPLY_OUTCOME_LABELS = {
 };
 var TCR_FIELD_LABELS = ["Date", "Test and version", "What was noticed", "Evidence", "Who noticed it",
   "From a run's output?", "Proposal", "Decision"];
-var SEALED_NOTE_TEXT = "Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results, and are shown.";
+var SEALED_NOTE_TEXT = "Sealed test: counts and timings only. Withheld: document, file and target names, finding text, unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results; they are shown under Agent switches.";
 
 function sealedNoteHtml(data) {
   if (!data || data.exposure !== "sealed") return "";
@@ -2222,7 +2225,8 @@ function modelFindingsHtml(data) {
   out += provenanceSentenceHtml(data.provenance);
   if (!data.count) return out + '<p>' + ui("No model-written finding was kept for this run.") + '</p>';
   if (!Array.isArray(data.documents)) {
-    return out + '<p>' + escapeHtml(String(data.count)) + ui(" model-written findings were kept, none promoted and none checked by Python.") + '</p>';
+    /* One finding reads in the singular (open item 55), in both languages. */
+    return out + '<p>' + escapeHtml(String(data.count)) + ui(data.count === 1 ? " model-written finding was kept, not promoted and not checked by Python." : " model-written findings were kept, none promoted and none checked by Python.") + '</p>';
   }
   data.documents.forEach(function (doc) {
     if (!doc.items || !doc.items.length) return;
@@ -2293,7 +2297,8 @@ function reportHtml(data) {
 
 function roundReuseHtml(data) {
   var rr = data && data.round_reuse;
-  var out = sealedNoteHtml(data);
+  /* A sealed run's note is shown once, under the section heading (multiRoundHtml). */
+  var out = "";
   if (!rr || rr.availability === "not_recorded") return out;
   out += '<h3>' + ui("Rounds") + '</h3>';
   if (rr.availability === "invalid") return out + '<p class="notice">' + ui("The round reuse record could not be read.") + '</p>';
