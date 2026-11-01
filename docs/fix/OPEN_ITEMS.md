@@ -604,9 +604,23 @@ open-item sweep.
 - **Why it was left.** Whether to keep PRACTICE_AUDITOR under the constraint (more complete runs, more wrong advice) or take it out (contract failures return) is a product decision that needs a measurement on development runs (P9 reason b); v1 reports it as it is.
 - **What would settle it.** A development measurement of benchmark-mode precision with and without PRACTICE_AUDITOR's envelope constraint, under a rule written before it, then a decision with its D-number.
 
-## 52. Arm L counts only the Python children that report themselves (found at loop S7 close, adversarial checker)
+## 52. Arm L counts only the Python children that report themselves (found at loop S7 close, adversarial checker) (issue #108)
 
 - **What it is.** Arm L's network accounting (`launcher_network`) counts processes from the logs its sitecustomize writes. A Python child that never loads it (`-I`, `-S`, `-E`, a dropped PYTHONPATH) leaves no log and is not counted; native code and non-Python children pass the Python-level denial unblocked and unrecorded. ARM-L-A and check 311 now say exactly that.
 - **Evidence.** `tools/ordinary_final_run.py` (the launcher network reading and the pass rule), `tools/cloud_run_observer.py`; D-148; lane s07-fix2's report.
-- **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b).
+- **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b); it is taken up in S6, after L14b (sweep 3, D-158).
 - **What would settle it.** The sitecustomize logs every interpreter start; the runner counts child processes independently (sampling its session's process group); the pass rule requires the two counts of Python children to match and records non-Python children by name; a neutralisation hides one child from the sitecustomize; check 311.
+
+## 53. The replies view does not show decoding-constraint intervention counts (found at loop S7 close, lane s07-fix2) (issue #109)
+
+- **What it is.** Every constrained call records `decoding_constraint` (steps, interventions, dead end) on its reply record and in its usage; the console's replies view shows the reply metadata only, so where the constraint changed a token is not visible there.
+- **Evidence.** Lane s07-fix2's per-feature review of S5's later additions (private `analysis/lane_s07_fix2_report.md`); `scripts/console_views.py` (`REPLY_FIELDS`).
+- **Why it was left.** Developer detail per call, not needed for v1 (D-S18 item 3; P9 reason b).
+- **What would settle it.** The intervention count per call in the replies view, with a check, in S6.
+
+## 54. `shimmer.sh` fails at `dirname` when started from a non-login Git Bash with no `/usr/bin` on PATH (found at loop S7 final pass, lane s07-final) (issue #110)
+
+- **What it is.** A person starting Git Bash gets a login shell with `/usr/bin` on PATH; a scripted caller without it stops at `dirname` before the menu. The gate's launcher checks were fixed by putting the bash folder on PATH; the launcher itself was not.
+- **Evidence.** Lane s07-final's report (private `analysis/lane_s07_final_report.md`); lane s07-fix2 (checks 307 and 308).
+- **Why it was left.** It affects scripted callers only, not a person (P9 reason b).
+- **What would settle it.** `shimmer.sh` finding its own folder without external tools (or adding Git's `usr/bin` itself), with a check that starts it with that PATH, in S6.
