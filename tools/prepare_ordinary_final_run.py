@@ -379,6 +379,34 @@ def launcher_prompts(question, targets_answer, prior_answer):
     return [dict(id=i, prompt=p, answers=a, optional=o, repeat_last=r) for i, p, a, o, r in rows]
 
 
+def launcher_sensitivity_error(conventions):
+    """Why arm L's sealed answers may not declare this workload non-sensitive, or None. The map
+    answers yes to both NON-SENSITIVE overrides and chooses Normal mode (no redaction) with no
+    operator present, so the workload's conventions ({file name: bytes}, as the wizard places
+    them in input/conventions/) are compiled by the pipeline's own parser and redaction compiler:
+    an operator redaction or confidentiality rule in force, one that failed to compile, or a
+    redaction-intent decision the ensemble could not make refuses the seal."""
+    import convention_parser
+    from sensitivity_layer.rules import redaction_rules
+    with tempfile.TemporaryDirectory() as folder:
+        target = Path(folder)/'input'/'conventions'
+        target.mkdir(parents=True)
+        for name, data in conventions.items():
+            (target/name).write_bytes(data)
+        report = redaction_rules(convention_parser.parse_conventions(Path(folder)).as_dict())
+    if report['operator_in_force']:
+        return 'The launcher workload carries an operator redaction or confidentiality rule (%s); arm L declares ' \
+               'every run non-sensitive and redacts nothing' % ', '.join(r['id'] for r in report['operator_rules'])
+    if report['warnings']:
+        return 'The launcher workload carries a redaction-intent convention that does not compile (%s)' % ', '.join(
+            w['id'] for w in report['warnings'])
+    undecided = [v.get('id') for v in report.get('semantic_votes', []) if not v.get('available')]
+    if undecided:
+        return 'The ensemble could not decide whether the launcher workload\'s conventions are redaction rules (%s)' \
+               % ', '.join(map(str, undecided))
+    return None
+
+
 def launcher_fields(members, question, files):
     """The arm L workload and its sealed launcher block. The menu's wizard reads ONE flat folder,
     so the workload's context/ and conventions/ files go into launcher_input/ under their own
@@ -412,6 +440,8 @@ def launcher_fields(members, question, files):
             flat[base], kinds[base] = data, kind
     documents = sorted(n for n, k in kinds.items() if k == 'DOCUMENT')
     require(any(k == 'CONVENTIONS' for k in kinds.values()), 'The launcher workload carries no conventions')
+    sensitivity = launcher_sensitivity_error({n: flat[n] for n, k in kinds.items() if k == 'CONVENTIONS'})
+    require(sensitivity is None, sensitivity or '')
     targets = list(targets_file.get('targets') or [])
     require(targets and all(t in documents for t in targets), 'The review targets are not documents of the launcher workload')
     grounding = [d for d in documents if d not in targets]

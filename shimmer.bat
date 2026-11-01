@@ -39,7 +39,8 @@ if not defined PYTHON_CMD (
     echo The Python in .venv does not match tools\cloud_run\runtime.json. Remove .venv and run this script again.
     goto :end_fail
 )
-"!PYTHON_CMD!" tools\runtime_contract.py --source .
+REM The menu's own entry modules, not the experiment probe (see shimmer.sh).
+"!PYTHON_CMD!" tools\runtime_contract.py --source . --entrypoint launcher
 if errorlevel 1 goto :end_fail
 REM The activate script runs chcp.com inside a for /f, and that child reads the
 REM rest of a redirected input: every answer after this point was lost, so a
