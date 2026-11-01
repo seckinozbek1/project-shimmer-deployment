@@ -26,7 +26,7 @@ SHARED_PARTS = {
     "constitution_by_default": {
         "decided": True,
         "summary": "Every structured agent task checks the constitution before dispatch. Draft memo generation has a separate free-text path after startup governance.",
-        "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls call_claude directly, bypassing run_task.",
+        "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls dispatch directly on the drafter's own backend, bypassing run_task.",
     },
     "receive_format": {
         "decided": True,
@@ -147,7 +147,7 @@ FIRES_AMENDMENT_DRAFTER = {
                  "findings make no call. Failure retains the original finding. "
                  "The deterministic template builds amendments either way. "
                  "Separately, Draft task mode uses this identity for one free-text "
-                 "memo through the direct Claude call path before review.",
+                 "memo through a direct call on its own backend before review.",
     "where": "scripts/pipeline.py: phase_6_synthesis, _polish_findings, "
              "main's Draft branch and _draft_generate_with_evidence.",
 }

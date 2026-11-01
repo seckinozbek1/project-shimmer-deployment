@@ -16929,11 +16929,15 @@ def _fne_rendered_body():
         ctx2 = _rc.create_run(Path(td) / "draft")
         seen = {}
 
-        def _fake_call_claude(stable, dynamic, *, max_tokens=4096):
+        def _fake_call_gpt(stable, dynamic, *, max_tokens=4096):
             seen["call_id"] = getattr(w, "_cost_call_id", "")
             seen["chars"] = len(stable) + len(dynamic)
-            return _aw.CallResult(backend="claude_api", model="stub", raw_text="memo", ok=True)
-        w.call_claude = _fake_call_claude
+            return _aw.CallResult(backend="openai_api", model="stub", raw_text="memo", ok=True)
+        # The memo goes through the drafter's own backend (INC-031, check 312), so the
+        # stand-in replaces this wrapper's backend function: openai_api, set above.
+        if w.backend != "openai_api":
+            return _fail(f"the draft stand-in expects the openai_api wrapper set above, got {w.backend}")
+        w.call_gpt = _fake_call_gpt
         memo = _pl._draft_generate_with_evidence(w, "stable part", "dynamic part",
                                                  passages=[{"ref_id": "REF-0007", "text": "p"}],
                                                  run_ctx=ctx2)
@@ -25546,7 +25550,10 @@ def check_308_launchers_reach_their_menus():
     the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
     venv and honours SHIMMER_SKIP_INSTALL; shimmer.sh started from another folder with no
     /usr/bin on PATH reaches its menu (open item 54); the draft is announced only after its
-    setup; no dead batch label; start_shimmer.bat --check-entry answers."""
+    setup; no dead batch label; start_shimmer.bat --check-entry answers; shimmer.sh under Git
+    Bash accepts a real Windows venv (python -m venv in a temporary folder, the real runtime
+    contract) with MSYS argument conversion on and off (INC-030), skipped with its reason where
+    Git Bash or a Windows Python of the contract's version is absent."""
     from launcher_checks import check_bootstrap
     return check_bootstrap()
 
@@ -25563,7 +25570,11 @@ def check_310_chat_window_command_mode():
     command mode with no model: help, a cutoff written to a temporary scope file, a draft
     confirmed and a review cancelled, every wizard or pipeline launch recorded and none run. A
     request whose worker raises frees the window; before, every later message was answered
-    "Still working on the previous request". Skips where the chat file or Tk is absent."""
+    "Still working on the previous request". On stand-ins for the model's modules (S10, from the
+    S7 6e findings): the startup line says only what the probe checked (libraries import, a model
+    id is configured), and a request whose model failed to load or gave no usable answer keeps the
+    keyword parser's reply and says first that the model was not used and why. Skips where the
+    chat file or Tk is absent."""
     from launcher_checks import check_chat_window
     return check_chat_window()
 
@@ -25592,6 +25603,20 @@ def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
     if tools not in sys.path:
         sys.path.insert(0, tools)
     from ordinary_final_launcher_checks import check
+    return check()
+
+
+def check_312_draft_memo_uses_the_drafters_backend():
+    """INC-031 (loop S10): the draft memo goes through the backend the drafter resolved.
+    pipeline._draft_generate_with_evidence used to call call_claude whatever the backend, so a
+    local-profile draft went to the Claude client (L14b: backend claude_api with a local model id,
+    three blocked connection attempts, exit 5). Model-free (scripts/draft_backend_checks.py): the
+    real backend functions run on the stand-ins of scripts/reply_records_checks.py; a local drafter
+    whose call_claude raises must return the local text with its call evidence, activation row,
+    reply record and free_text outcome on one call id, and a Claude drafter still reaches the
+    Claude client. Neutralise (the old direct call_claude compiled beside the pipeline), fail,
+    restore, pass."""
+    from draft_backend_checks import check
     return check()
 
 CHECKS = [
@@ -26018,6 +26043,8 @@ CHECKS = [
      check_310_chat_window_command_mode),
     ("311 arm L runs the launcher menu once from its sealed prompt map",
      check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
+    ("312 the draft memo goes through the drafter's own backend",
+     check_312_draft_memo_uses_the_drafters_backend),
 ]
 
 

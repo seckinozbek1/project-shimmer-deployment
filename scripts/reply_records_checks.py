@@ -247,7 +247,8 @@ def mocked_run(fx):
         expected[r["call_id"]] = "contract_violation"
         r = fx.wrapper("FACT_CHECKER").run_task(work_payload=payload("SECRET-PAYLOAD-E"))
         expected[r["call_id"]] = "backend_failure"
-        # The draft memo, through the pipeline's own function (a direct call_claude).
+        # The draft memo, through the pipeline's own function (dispatched on the drafter's
+        # backend, claude_api in this fixture; INC-031).
         memo = pipeline._draft_generate_with_evidence(
             fx.wrapper("AMENDMENT_DRAFTER"), "Draft a memo.", "## Question\nSECRET-PAYLOAD-MEMO",
             passages=[], run_ctx=fx.ctx)

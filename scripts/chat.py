@@ -78,6 +78,15 @@ HELP_TEXT = (
     "plain language and I will work out the command."
 )
 
+# What the window says about the local model (S7 6e). The startup probe checks only that the
+# libraries import and that a model id is configured, so the line claims nothing more; a
+# request the model did not answer says so before the keyword parser's reply.
+LOCAL_MODEL_CONFIGURED = ("Local model configured (its libraries import and a model is named); "
+                          "it loads on your first request. Describe what you want in plain language.")
+MODEL_NOT_USED = "The local model was not used for this request (%s). Using the command parser instead."
+MODEL_FAILED_TO_LOAD = "it failed to load"
+MODEL_GAVE_NO_ANSWER = "it gave no usable answer"
+
 _STOPWORDS = {
     "why", "did", "you", "flag", "flagged", "the", "a", "an", "is", "was", "for",
     "about", "me", "explain", "reason", "on", "in", "of", "to", "this", "that",
@@ -490,7 +499,10 @@ class ChatApp:
             configured = False
         self.qwen_available = configured
         if configured:
-            self.ui(self.post, "Local AI model available. Describe what you want in plain language.")
+            # The probe checks only that torch and transformers import and that a model id is
+            # configured (redaction_gate.qwen_backend_status), never the weights or the memory,
+            # so the line says that much and no more (S7 6e).
+            self.ui(self.post, LOCAL_MODEL_CONFIGURED)
         else:
             self.ui(self.post, "Local AI model not available. Using command mode. "
                                "Type 'help' for available commands.")
@@ -529,7 +541,7 @@ class ChatApp:
             self.post("Please answer y or n.")
 
     def _qwen_parse(self, text: str) -> None:
-        cmd = None
+        cmd, not_used = None, None
         try:
             from agent_wrapper import _load_qwen
             import decoding_policy
@@ -539,20 +551,29 @@ class ChatApp:
             # call site (config/decoding_policy.json): greedy, single beam.
             decoding = decoding_policy.policy("qwen_local")
             tok, mdl = _load_qwen(mid)
-            prompt = QWEN_SYSTEM_PROMPT + "\n\nUser: " + text + "\n\nJSON:"
-            inputs = tok(prompt, return_tensors="pt").to(mdl.device)
-            with torch.no_grad():
-                out = mdl.generate(**inputs, max_new_tokens=256, **decoding["kwargs"])
-            raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-            cmd = extract_json(raw)
         except Exception:
-            cmd = None
-        if not cmd or "action" not in cmd:
+            not_used = MODEL_FAILED_TO_LOAD
+        if not_used is None:
+            try:
+                prompt = QWEN_SYSTEM_PROMPT + "\n\nUser: " + text + "\n\nJSON:"
+                inputs = tok(prompt, return_tensors="pt").to(mdl.device)
+                with torch.no_grad():
+                    out = mdl.generate(**inputs, max_new_tokens=256, **decoding["kwargs"])
+                raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+                cmd = extract_json(raw)
+            except Exception:
+                cmd = None
+            if not cmd or "action" not in cmd:
+                not_used = MODEL_GAVE_NO_ANSWER
+        if not_used is not None:
             cmd = command_mode_parse(text)  # graceful fallback for this input
-        self.ui(self._after_parse, cmd, text)
+        self.ui(self._after_parse, cmd, text, not_used)
 
-    def _after_parse(self, cmd: dict, text: str) -> None:
+    def _after_parse(self, cmd: dict, text: str, not_used=None) -> None:
         self.busy = False
+        if not_used is not None:
+            # The fallback is kept, and said (S7 6e): the reply below is the keyword parser's.
+            self.post(MODEL_NOT_USED % not_used)
         self._on_parsed(cmd, text)
 
     def _on_parsed(self, cmd: dict, text: str) -> None:

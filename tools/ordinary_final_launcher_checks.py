@@ -751,7 +751,10 @@ class LauncherArmChecks:
         head = text[text.index('case "$0" in'):text.index('cd "$SHIMMER_HERE"\n') + len('cd "$SHIMMER_HERE"')]
         self.assertFalse(starts_in_own_folder(bash, text.replace(head, ':', 1), self.root / 'own_folder_neutralised'))
         self.assertTrue(starts_in_own_folder(bash, text, self.root / 'own_folder_restored'))
-        self.assertIn('VENV_PYTHON="$PWD/$VENV_BIN/python"', text)
+        # The venv's python is named relative to that folder (INC-030) and the children run the
+        # absolute path the runtime contract answers with, the interpreter's own sys.executable.
+        self.assertIn('VENV_PYTHON="$VENV_BIN/python"', text)
+        self.assertIn('PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$VENV_PYTHON" --path-only)', text)
         self.assertIn('echo ".venv/bin"', text)
         project = PurePosixPath(controller.REMOTE) / 'project'
         python = str(project / '.venv' / 'bin' / 'python')
