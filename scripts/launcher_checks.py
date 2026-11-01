@@ -17,7 +17,9 @@ the run must show it, and the restored text must pass again.
                        (Scripts/) and honours SHIMMER_SKIP_INSTALL; shimmer.sh
                        started from another folder with no /usr/bin on PATH
                        finds its own folder and reaches its menu, /usr/bin
-                       appended for the tools after it (open item 54); the draft
+                       appended for the tools after it (open item 54), with no
+                       empty entry even to an empty PATH, so a python3 in its
+                       own folder never runs (S7 round 3); the draft
                        path announces the draft only once setup succeeded; no
                        batch label is dead and no goto names a missing label;
                        start_shimmer.bat --check-entry answers.
@@ -41,6 +43,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -235,12 +238,20 @@ def _drive_sh(bash, text, answers, timeout=PASS_BOUND_SECONDS, layout="Scripts")
 _ACTIVATE_CALLS_A_TOOL = 'cat </dev/null && echo "STUB_ACTIVATE cat ran"\n'
 
 
-def _drive_sh_bare_path(bash, text, answers, timeout=PASS_BOUND_SECONDS):
+# A python3 planted in the launcher's own folder, which is the current folder after its cd:
+# it runs only if PATH has an empty entry, which bash reads as the current folder.
+_PLANTED_PYTHON = '#!%s\necho "PLANTED_PYTHON ran from the current folder" >&2\nexit 1\n'
+PLANTED_MARK = "PLANTED_PYTHON ran from the current folder"
+
+
+def _drive_sh_bare_path(bash, text, answers, timeout=PASS_BOUND_SECONDS, path=None):
     """shimmer.sh started as a scripted caller starts it from a non-login Git Bash
     (open item 54): PATH holds only the python stand-in's folder, so neither Git's
     usr/bin nor /usr/bin is on it, and the launcher is started from ANOTHER folder,
     so finding its own folder matters. The stand-in's shebang names bash by absolute
-    path, since /usr/bin/env would look bash up on that PATH."""
+    path, since /usr/bin/env would look bash up on that PATH. With `path` given, PATH
+    is exactly that (an empty one included) and a python3 is planted in the launcher's
+    own folder, which runs only through an empty PATH entry (S7 round 3, adversarial 5)."""
     with tempfile.TemporaryDirectory(prefix="shimmer_launcher_sh_bare_", ignore_cleanup_errors=True) as td:
         tmp = Path(td)
         project = tmp / "project"
@@ -253,9 +264,17 @@ def _drive_sh_bare_path(bash, text, answers, timeout=PASS_BOUND_SECONDS):
         elsewhere = tmp / "elsewhere"
         elsewhere.mkdir()
         env = _clean_env(tmp)
-        env["PATH"] = str(fake.parent)
         env["LAUNCHER_CHECK_PYTHON"] = _posix(fake)
-        return _run([bash, _posix(project / "shimmer.sh")], elsewhere, env, answers, timeout)
+        if path is None:
+            env["PATH"] = str(fake.parent)
+            return _run([bash, _posix(project / "shimmer.sh")], elsewhere, env, answers, timeout)
+        planted = project / "python3"
+        _write(planted, _PLANTED_PYTHON % shell)
+        os.chmod(planted, 0o755)
+        # PATH is set inside bash: Windows passes an empty PATH in the environment block to Git
+        # Bash as "=", so the empty value is written by a bash that then starts the launcher.
+        return _run([bash, "-c", 'PATH=%s; export PATH; exec %s "$1"' % (shlex.quote(path), shell), "launcher",
+                     _posix(project / "shimmer.sh")], elsewhere, env, answers, timeout)
 
 
 # --- proofs ---------------------------------------------------------------------
@@ -457,6 +476,20 @@ def _sh_bootstrap(bash):
     _prove("sh puts /usr/bin on a PATH that lacks it", "STUB_ACTIVATE cat ran" in ok["out"],
            "STUB_ACTIVATE cat ran" not in broken["out"] and "command not found" in broken["out"],
            "STUB_ACTIVATE cat ran" in again["out"] and reached(again))
+
+    # S7 round 3, adversarial 5: an empty PATH gains /usr/bin and no empty entry, so a
+    # python3 in the launcher's own folder (the current folder after its cd) never runs.
+    new_line = ('[ -d /usr/bin ] && SHIMMER_PATH_HEAD="${PATH%:}" \\\n'
+                '           && PATH="${SHIMMER_PATH_HEAD:+$SHIMMER_PATH_HEAD:}/usr/bin" && export PATH ;;')
+    old_line = '[ -d /usr/bin ] && PATH="$PATH:/usr/bin" && export PATH ;;'
+    empty = _drive_sh_bare_path(bash, text, "L\nQ\n", path="")
+    broken = _drive_sh_bare_path(bash, _neutralise(text, new_line, old_line, "the empty-entry-free append"),
+                                 "L\nQ\n", path="")
+    again = _drive_sh_bare_path(bash, text, "L\nQ\n", path="")
+    _prove("sh appends /usr/bin to an empty PATH with no empty entry",
+           not empty["timed_out"] and PLANTED_MARK not in empty["out"],
+           PLANTED_MARK in broken["out"],
+           not again["timed_out"] and PLANTED_MARK not in again["out"])
 
 
 # --- the banner -------------------------------------------------------------------

@@ -233,15 +233,17 @@ def _record_disagreements(run_dir):
     """Every way the run folder's activation and cost records disagree with its saved reply
     records, call by call: a call whose reply failed must be a failed call with a failed cost
     line in both, and a call whose reply succeeded a completed call, an ok cost line, and an
-    activation outcome the reply outcomes record for it."""
+    activation outcome the reply outcomes record for it. The three records must also name the same
+    calls, each once (S7 round 3, adversarial 4: an activation row or a cost line whose call id has
+    no reply record was never compared)."""
     import reply_records
     run_dir = Path(run_dir)
     calls = console_views.replies(run_dir).get("calls") or []
-    rows = {r.get("call_id"): r for r in json.loads((run_dir / "audit" / "agent_activation.json")
-                                                     .read_text(encoding="utf-8"))["decisions"]}
-    states = {s.get("agent"): s.get("state") for s in json.loads(
-        (run_dir / "audit" / "agent_activation.json").read_text(encoding="utf-8"))["agent_states"]}
-    cost = {line.get("call_id"): line for line in console_views._jsonl(run_dir / "logs" / "cost_tracker.jsonl")}
+    activation = json.loads((run_dir / "audit" / "agent_activation.json").read_text(encoding="utf-8"))
+    rows = {r.get("call_id"): r for r in activation["decisions"]}
+    states = {s.get("agent"): s.get("state") for s in activation["agent_states"]}
+    cost_lines = list(console_views._jsonl(run_dir / "logs" / "cost_tracker.jsonl"))
+    cost = {line.get("call_id"): line for line in cost_lines}
     outcomes = {}
     for line in console_views._jsonl(run_dir / "audit" / reply_records.DIRNAME / reply_records.OUTCOMES_NAME):
         outcomes.setdefault(line.get("call_id"), []).append(line.get("outcome"))
@@ -259,6 +261,12 @@ def _record_disagreements(run_dir):
                          % (cid, row.get("outcome"), outcomes.get(cid)))
         if not ok and (row.get("outcome") != "backend_failure" or outcomes.get(cid)):
             found.append("%s: a failed reply with activation outcome %s" % (cid, row.get("outcome")))
+    named = {"reply records": sorted(str(c.get("call_id")) for c in calls),
+             "activation rows": sorted(str(r.get("call_id")) for r in activation["decisions"]
+                                       if r.get("call_id") is not None),
+             "cost lines": sorted(str(line.get("call_id")) for line in cost_lines)}
+    if len({tuple(ids) for ids in named.values()}) != 1:
+        found.append("the records name different calls: " + ", ".join("%s %s" % kv for kv in named.items()))
     return len(calls), found
 
 
@@ -288,13 +296,43 @@ def _fixture_records_agree(run_dir):
             activation.write_bytes(held[0])
             costs.write_bytes(held[1])
 
+    @contextlib.contextmanager
+    def extra(kind):
+        """One more call in one record only, in the temporary copy: a cost line or an activation
+        row for call-0004, which has no reply record."""
+        activation = Path(run_dir) / "audit" / "agent_activation.json"
+        costs = Path(run_dir) / "logs" / "cost_tracker.jsonl"
+        held = activation.read_bytes(), costs.read_bytes()
+        if kind == "cost":
+            costs.write_bytes(held[1] + (json.dumps({"agent": "PROCESSOR", "ok": True, "cost_usd": 0.0, "phase": "3-4",
+                                                     "doc_id": DOC, "call_id": "call-0004"}) + "\n").encode("utf-8"))
+        else:
+            record = json.loads(held[0])
+            record["decisions"].append(dict(record["decisions"][0], decision_id=5, call_id="call-0004"))
+            activation.write_text(json.dumps(record), encoding="utf-8")
+        try:
+            yield
+        finally:
+            activation.write_bytes(held[0])
+            costs.write_bytes(held[1])
+
     def verdict(o):
         count, found = o
         return ("PASS" if count == 3 and not found else "FAIL",
                 "the fixture's audit/agent_activation.json and logs/cost_tracker.jsonl agree with its %d saved "
-                "reply records call by call (state, outcome, ok)%s" % (count, (": " + "; ".join(found)) if found else ""))
-    return _proved("fixture_records_agree", lambda: _record_disagreements(run_dir), verdict, old_records,
-                   "the fixture's former records put back: call-0003 completed, accepted_to_bus, ok")
+                "reply records call by call (state, outcome, ok) and name the same calls%s"
+                % (count, (": " + "; ".join(found)) if found else ""))
+    proofs = ((old_records, "the fixture's former records put back: call-0003 completed, accepted_to_bus, ok"),
+              (lambda: extra("cost"), "a cost line for call-0004, which has no reply record"),
+              (lambda: extra("activation"), "an activation row for call-0004, which has no reply record"))
+    details = []
+    for neutralise, what in proofs:
+        status, detail = _proved("fixture_records_agree", lambda: _record_disagreements(run_dir), verdict,
+                                 neutralise, what)
+        if status != "PASS":
+            return (status, detail)
+        details.append(detail)
+    return ("PASS", details[0] + "; " + "; ".join(d[d.index("neutralised ("):] for d in details[1:]))
 
 
 def check_model_findings_route():
@@ -756,6 +794,15 @@ MANY_KEPT = " model-written findings were kept, none promoted and none checked b
 OLD_SEALED_NOTE = ("Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons "
                    "given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding "
                    "FACT_CHECKER are standing agent policy, not results, and are shown.")
+# Its Turkish catalog row as it read then (localization_catalog.js before commit b2b2fb1).
+# With this row, the old note as console.html's fallback and as SEALED_NOTE, the note's
+# shared text and its Turkish row agree, so only the (b, d) property is broken.
+OLD_SEALED_NOTE_TR = ("Mühürlü test: yalnızca sayılar ve süreler. "
+                      "Gösterilmeyenler: bulgu metni, birim kimlikleri, kural kimlikleri, bulgular için "
+                      "verilen gerekçeler ve kusur bazındaki sonuçlar (Ek B.8). FACT_CHECKER'ın "
+                      "devre dışı bırakılmasına ilişkin Ek B.4 "
+                      "gerekçeleri sonuç değil, kalıcı ajan politikasıdır ve "
+                      "gösterilir.")
 # A sealed run whose case WAS recorded, as /multi-round sends it (S7 close,
 # adversarial 4): the fixture records no case master, so the view case is built
 # from console_views.sealed_multi_round over a recorded case's own fields.
@@ -799,13 +846,14 @@ def _projections(runs_dir, sealed):
             "roundReuseHtml:recorded": dict(recorded, exposure=state, round_reuse=reuse)}
 
 
-def _render(html_path, cases):
+def _render(html_path, cases, ui_dir=None):
     with tempfile.TemporaryDirectory(prefix="shimmer_console_view_js_") as tmp:
         harness = Path(tmp) / "harness.js"
         harness.write_text(_HARNESS, encoding="utf-8")
         data = Path(tmp) / "cases.json"
         data.write_text(json.dumps(cases), encoding="utf-8")
-        result = subprocess.run(["node", str(harness), str(html_path), str(ROOT / "scripts" / "ui"), str(data)],
+        result = subprocess.run(["node", str(harness), str(html_path), str(ui_dir or ROOT / "scripts" / "ui"),
+                                 str(data)],
                                 capture_output=True, text=True, encoding="utf-8", timeout=60,
                                 creationflags=NO_WINDOW)
         if result.returncode != 0:
@@ -814,7 +862,7 @@ def _render(html_path, cases):
         return json.loads(result.stdout)
 
 
-def _views_observation(html_path):
+def _views_observation(html_path, ui_dir=None):
     with tempfile.TemporaryDirectory(prefix="shimmer_console_views_js_") as tmp:
         cases, keys = [], []
         for sealed in (False, True):
@@ -830,13 +878,40 @@ def _views_observation(html_path):
                 for fn in VIEW_FUNCTIONS + (extra if sealed else ()):
                     cases.append({"fn": fn.split(":")[0], "lang": lang, "data": projections[fn]})
                     keys.append("%s/%s/%s" % ("sealed" if sealed else "exposed", lang, fn))
-        rendered = _render(html_path, cases)
+        rendered = _render(html_path, cases, ui_dir)
     # The replies are written afresh for every observation under the fixed fixture
     # clock (REPLY_TIMES), so two observations of the same code are identical.
     return dict(zip(keys, rendered))
 
 
-def _views_verdict(views):
+def _note_names_failure(lang, fn, heading):
+    """The open item 55 (b, d) line for one sealed view, one text for the verdict and the proof."""
+    return ("%s %s: the sealed note does not name the withheld names and the section that shows the B.4 "
+            "reasons (%s)" % (lang, fn, heading))
+
+
+def _reasons_failure(key):
+    """The line for a sealed view other than the switches view that shows a B.4 reason."""
+    return key + ": shows the B.4 reasons, which the note places under Agent switches only"
+
+
+def _views_verdict(views, html_path=None):
+    failures = _views_failures(views, html_path)
+    return ("FAIL" if failures else "PASS",
+            "; ".join(failures) or "the eight views render the projections in English and Turkish; the model "
+            "finding shows the mark first in both languages; a sealed view shows its note and no id, rule, "
+            "finding reason or text (the activation view its decision counts only); a recorded sealed case "
+            "is shown as recorded; the sealed switches view keeps the two B.4 reasons under the shared note "
+            "(DS7-8) in both languages, and no other sealed view shows them in either language (each "
+            "reason's own text in English, its catalog text in Turkish); the sealed note names the document, "
+            "file and target names it withholds and the one section that shows the B.4 reasons (Agent "
+            "switches), sits directly under the multi-round heading once, and one model-written finding "
+            "reads in the singular (open item 55); no reply text anywhere; every new label has a Turkish row")
+
+
+def _views_failures(views, html_path=None):
+    """Every failure of the rendered views; `html_path` is the console.html they were rendered
+    from (the shipped one when None), whose fallback note is compared with SEALED_NOTE."""
     import localization
     mark_en = MARK
     mark_tr = localization.text(mark_en, "tr")
@@ -896,14 +971,20 @@ def _views_verdict(views):
             note = shown[shown.find('sealed-note">'):]
             note = note[:note.find("</p>")]
             if names not in note or heading not in note:
-                failures.append("%s %s: the sealed note does not name the withheld names and the section that "
-                                "shows the B.4 reasons (%s)" % (lang, fn, heading))
+                failures.append(_note_names_failure(lang, fn, heading))
         if "<h2>%s</h2>" % heading not in views["sealed/%s/switchesHtml" % lang]:
             failures.append(lang + ": the section the sealed note names is not the switches section")
+    # The reasons as each language shows them: the English text, and the Turkish catalog row
+    # the Turkish view renders through ui() (S7 round 3, adversarial 3: the scan covered
+    # sealed/en/ only).
+    reasons = {"en": REASONS, "tr": tuple(localization.text(r, "tr") for r in REASONS)}
+    if any(tr == en for tr, en in zip(reasons["tr"], REASONS)):
+        failures.append("tr: a B.4 reason has no Turkish row")
     for key, html in views.items():
-        if (key.startswith("sealed/en/") and not key.endswith("/switchesHtml")
-                and any(r[:60] in html_module.unescape(html) for r in REASONS)):
-            failures.append(key + ": shows the B.4 reasons, which the note places under Agent switches only")
+        state, lang = key.split("/")[:2]
+        if (state == "sealed" and not key.endswith("/switchesHtml")
+                and any(r[:60] in html_module.unescape(html) for r in reasons[lang])):
+            failures.append(_reasons_failure(key))
     # Open item 55 (c): on the multi-round section (the case view, then the rounds, in one
     # holder) the sealed note comes directly under the heading, once.
     for lang in ("en", "tr"):
@@ -923,7 +1004,7 @@ def _views_verdict(views):
             failures.append("tr: the singular sentence has no Turkish row of its own")
         if ("<p>1" + one_text + "</p>") not in one or ("<p>2" + many_text + "</p>") not in two:
             failures.append(lang + ": the model-findings count sentence does not agree with its count")
-    page = (ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8")
+    page = Path(html_path or ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8")
     if "var SEALED_NOTE_TEXT = %s;" % json.dumps(run_report_text.SEALED_NOTE) not in page:
         failures.append("console.html's fallback sealed note differs from run_report_text.SEALED_NOTE")
     if "TCR-001" not in views["exposed/en/testChangesHtml"]:
@@ -942,30 +1023,31 @@ def _views_verdict(views):
         if (localization.text("No valid recorded case output.", lang) in shown
                 or localization.text("A case output was recorded. Outcome: ", lang) not in shown):
             failures.append(lang + ": a recorded sealed case is not shown as recorded")
-    return ("FAIL" if failures else "PASS",
-            "; ".join(failures) or "the eight views render the projections in English and Turkish; the model "
-            "finding shows the mark first in both languages; a sealed view shows its note and no id, rule, "
-            "finding reason or text (the activation view its decision counts only); a recorded sealed case "
-            "is shown as recorded; the sealed switches view keeps the two B.4 reasons under the shared note "
-            "(DS7-8) in both languages; the sealed note names the document, file and target names it "
-            "withholds and the one section that shows the B.4 reasons (Agent switches), sits directly under "
-            "the multi-round heading once, and one model-written finding reads in the singular (open item "
-            "55); no reply text anywhere; every new label has a Turkish row")
+    return failures
 
 
 # The files that start the console's and the chat window's children (S7 close,
 # adversarial 5): every start passes the no-window flag as its creationflags (HIDDEN-A).
 HIDDEN_START_FILES = ("scripts/console_view_checks.py", "scripts/chat.py", "scripts/launcher_checks.py",
                       "tools/console_screenshots.py")
-# What the scan counts as a start (S7 round 2, adversarial 2): subprocess's starters called on
-# the module, on an alias of it or through a name imported from it, asyncio's two, and os's own
-# starters, which take no creationflags and so are never hidden.
+# What the scan counts as a start (S7 round 2, adversarial 2; round 3, adversarial 2):
+# subprocess's starters, asyncio's two and os's own starters (system, popen, startfile, the
+# spawn and exec families), which take no creationflags and so are never hidden; each called
+# on the module, on an alias of it, through a name imported from it, through an attribute
+# chain (asyncio.subprocess.create_subprocess_exec), or on a module reached by
+# importlib.import_module("...") or __import__("...") with a literal name.
 _START_NAMES = {"run", "Popen", "call", "check_call", "check_output", "getoutput", "getstatusoutput"}
 _FLAGLESS_STARTS = {"getoutput", "getstatusoutput"}
 _ASYNCIO_STARTS = {"create_subprocess_exec", "create_subprocess_shell"}
 _OS_STARTS = {"system", "popen", "startfile", "spawnl", "spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve",
-              "spawnvp", "spawnvpe", "posix_spawn", "posix_spawnp"}
+              "spawnvp", "spawnvpe", "posix_spawn", "posix_spawnp", "execl", "execle", "execlp", "execlpe",
+              "execv", "execve", "execvp", "execvpe"}
+_TRACKED_MODULES = ("subprocess", "os", "asyncio", "cloud_run_common", "importlib")
 WINDOWS_NO_WINDOW = 0x08000000
+# Windows ignores the no-window flag beside CREATE_NEW_CONSOLE (0x10) or DETACHED_PROCESS (0x8),
+# so a creationflags that sets either is never hidden (S7 round 3, adversarial 2).
+WINDOWS_CONSOLE_BITS = 0x00000010 | 0x00000008
+_CONSOLE_FLAG_NAMES = {"CREATE_NEW_CONSOLE", "DETACHED_PROCESS"}
 _FLAG_NAMES = {("subprocess", "CREATE_NO_WINDOW"), ("cloud_run_common", "CREATE_NO_WINDOW")}
 
 
@@ -975,41 +1057,79 @@ def _start_scan(source):
     forms the scanned files write: CREATE_NO_WINDOW or a constant holding 0x08000000, getattr
     (subprocess, "CREATE_NO_WINDOW", 0), `<flag> if os.name == "nt" else 0`, an OR with the
     flag, a name bound once in the module to one of those, or cloud_run_common.no_window()
-    without keep_console."""
+    without keep_console; and none of it may set CREATE_NEW_CONSOLE or DETACHED_PROCESS (by
+    name, by a constant carrying 0x10 or 0x8, or through a name bound to either), beside which
+    Windows ignores the no-window flag."""
     import ast
     tree = ast.parse(source)
-    modules = {"subprocess": set(), "os": set(), "asyncio": set(), "cloud_run_common": set()}
-    imported = {}
+    aliases = {}  # a local name -> the dotted path an import binds it to
     stores = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name in modules:
-                    modules[alias.name].add(alias.asname or alias.name)
-        elif isinstance(node, ast.ImportFrom) and node.module in modules:
+                top = alias.name.split(".")[0]
+                if top in _TRACKED_MODULES:
+                    aliases[alias.asname or top] = alias.name.split(".") if alias.asname else [top]
+        elif (isinstance(node, ast.ImportFrom) and not node.level and node.module
+              and node.module.split(".")[0] in _TRACKED_MODULES):
             for alias in node.names:
-                imported[alias.asname or alias.name] = (node.module, alias.name)
+                aliases[alias.asname or alias.name] = node.module.split(".") + [alias.name]
         elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
             stores[node.id] = stores.get(node.id, 0) + 1
         elif isinstance(node, ast.arg):
             stores[node.arg] = stores.get(node.arg, 0) + 1
 
-    def named(expr):
-        if isinstance(expr, ast.Attribute) and isinstance(expr.value, ast.Name):
-            for module, aliases in modules.items():
-                if expr.value.id in aliases:
-                    return module, expr.attr
+    bindings = {node.targets[0].id: node.value for node in tree.body
+                if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)}
+
+    def path(expr, seen=()):
+        """The dotted path `expr` names, or None: an imported name, an attribute chain on one,
+        a module importlib.import_module("...") or __import__("...") returns for a literal
+        name, or a name bound once in the module to one of those."""
         if isinstance(expr, ast.Name):
-            return imported.get(expr.id)
+            if expr.id in aliases:
+                return list(aliases[expr.id])
+            if (expr.id not in seen and stores.get(expr.id) == 1 and expr.id in bindings
+                    and isinstance(bindings[expr.id], (ast.Attribute, ast.Call))):
+                return path(bindings[expr.id], seen + (expr.id,))
+            return None
+        if isinstance(expr, ast.Attribute):
+            base = path(expr.value, seen)
+            return None if base is None else base + [expr.attr]
+        if (isinstance(expr, ast.Call) and expr.args and isinstance(expr.args[0], ast.Constant)
+                and isinstance(expr.args[0].value, str)):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "__import__" and "__import__" not in stores:
+                return expr.args[0].value.split(".")[:1]  # __import__ returns the top package
+            if path(expr.func, seen) == ["importlib", "import_module"]:
+                return expr.args[0].value.split(".")
         return None
+
+    def named(expr):
+        """(module, name) for a path of exactly two parts, asyncio.subprocess read as asyncio."""
+        found = path(expr)
+        if found is not None and found[:2] == ["asyncio", "subprocess"]:
+            found = ["asyncio"] + found[2:]
+        return tuple(found) if found is not None and len(found) == 2 else None
+
+    def console(expr, seen=()):
+        """True when `expr` could set CREATE_NEW_CONSOLE or DETACHED_PROCESS."""
+        for node in ast.walk(expr):
+            if isinstance(node, ast.Constant) and ((type(node.value) is int and node.value & WINDOWS_CONSOLE_BITS)
+                                                   or node.value in _CONSOLE_FLAG_NAMES):
+                return True
+            if isinstance(node, ast.Attribute) and node.attr in _CONSOLE_FLAG_NAMES:
+                return True
+            if isinstance(node, ast.Name):
+                if node.id in _CONSOLE_FLAG_NAMES or (aliases.get(node.id) or [""])[-1] in _CONSOLE_FLAG_NAMES:
+                    return True
+                if node.id not in seen and node.id in bindings and console(bindings[node.id], seen + (node.id,)):
+                    return True
+        return False
 
     def is_start(target):
         return target is not None and ((target[0] == "subprocess" and target[1] in _START_NAMES)
                                        or (target[0] == "asyncio" and target[1] in _ASYNCIO_STARTS)
                                        or (target[0] == "os" and target[1] in _OS_STARTS))
-
-    bindings = {node.targets[0].id: node.value for node in tree.body
-                if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)}
 
     def hidden(expr, seen=()):
         if isinstance(expr, ast.Constant):
@@ -1030,8 +1150,8 @@ def _start_scan(source):
             return hidden(expr.body, seen) and (hidden(expr.orelse, seen) or (windows_test and off_windows))
         if isinstance(expr, ast.Call):
             if (isinstance(expr.func, ast.Name) and expr.func.id == "getattr" and len(expr.args) == 3
-                    and not expr.keywords and isinstance(expr.args[0], ast.Name)
-                    and expr.args[0].id in modules["subprocess"] and isinstance(expr.args[1], ast.Constant) and expr.args[1].value == "CREATE_NO_WINDOW"
+                    and not expr.keywords and path(expr.args[0]) == ["subprocess"]
+                    and isinstance(expr.args[1], ast.Constant) and expr.args[1].value == "CREATE_NO_WINDOW"
                     and isinstance(expr.args[2], ast.Constant) and expr.args[2].value == 0):
                 return True
             if named(expr.func) == ("cloud_run_common", "no_window"):
@@ -1051,6 +1171,9 @@ def _start_scan(source):
                 unhidden.append((node.lineno, "%s.%s takes no creationflags" % target))
             elif not flags:
                 unhidden.append((node.lineno, "no creationflags"))
+            elif console(flags[0].value):
+                unhidden.append((node.lineno, "creationflags also sets CREATE_NEW_CONSOLE or DETACHED_PROCESS, "
+                                              "beside which Windows ignores the no-window flag"))
             elif not hidden(flags[0].value):
                 unhidden.append((node.lineno, "creationflags is not the no-window flag"))
     for node in ast.walk(tree):
@@ -1085,6 +1208,20 @@ _HIDDEN_NEUTRALISATIONS = (
     ("an os.system start", "scripts/console_view_checks.py", None, None, '\nos.system("x")\n'),
     ("an asyncio start with no flag", "scripts/console_view_checks.py", None, None,
      '\nimport asyncio\nasyncio.create_subprocess_exec("x")\n'),
+    # S7 round 3, adversarial 2: each new rule on its own.
+    ("the no-window flag beside CREATE_NEW_CONSOLE", "scripts/console_view_checks.py", None, None,
+     '\nsubprocess.run(["x"], creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NO_WINDOW)\n'),
+    ("the no-window flag beside DETACHED_PROCESS", "scripts/console_view_checks.py", None, None,
+     '\nsubprocess.run(["x"], creationflags=NO_WINDOW | subprocess.DETACHED_PROCESS)\n'),
+    ("creationflags 0xFFFFFFFF", "scripts/console_view_checks.py", None, None,
+     '\nsubprocess.run(["x"], creationflags=0xFFFFFFFF)\n'),
+    ("an os.execv start", "scripts/console_view_checks.py", None, None, '\nos.execv("x", ["x"])\n'),
+    ("an asyncio.subprocess.create_subprocess_exec start with no flag", "scripts/console_view_checks.py", None, None,
+     '\nimport asyncio\nasyncio.subprocess.create_subprocess_exec("x")\n'),
+    ("an importlib.import_module(\"subprocess\").run start with no flag", "scripts/console_view_checks.py", None,
+     None, '\nimport importlib\nimportlib.import_module("subprocess").run(["x"])\n'),
+    ("an __import__(\"subprocess\").Popen start with no flag", "scripts/console_view_checks.py", None, None,
+     '\n__import__("subprocess").Popen(["x"])\n'),
 )
 
 
@@ -1117,9 +1254,12 @@ def _children_hidden():
     if found:
         return ("FAIL", "child processes started without the no-window flag: %s" % found)
     return ("PASS", "every child-process start in %s (%d found; the scan counts subprocess's starters called on "
-                    "the module, an alias or an imported name, asyncio's two and os's own, which are never hidden) "
-                    "passes creationflags provably the no-window flag (CREATE_NO_WINDOW, a name bound once to it, "
-                    "or cloud_run_common.no_window(), executed: it ORs in 0x08000000 on Windows); neutralised in "
+                    "the module, an alias, an imported name, an attribute chain or a module reached by "
+                    "importlib.import_module or __import__ with a literal name, asyncio's two (asyncio.subprocess "
+                    "included) and os's own, the spawn and exec families included, which are never hidden) passes "
+                    "creationflags provably the no-window flag (CREATE_NO_WINDOW, a name bound once to it, or "
+                    "cloud_run_common.no_window(), executed: it ORs in 0x08000000 on Windows) and setting neither "
+                    "CREATE_NEW_CONSOLE nor DETACHED_PROCESS (0x10, 0x8); neutralised in "
                     "memory (%s): each FAIL naming the changed file; originals: PASS"
             % (", ".join(HIDDEN_START_FILES), count, "; ".join(n[0] for n in _HIDDEN_NEUTRALISATIONS)))
 
@@ -1131,11 +1271,12 @@ def check_console_views():
     if shutil.which("node") is None:
         return ("SKIP", "node is not on PATH: the console view proof runs console.html's own functions in Node; "
                         + hidden[1])
+    import localization
     html_path = ROOT / "scripts" / "ui" / "console.html"
-    state = {"path": html_path}
+    state = {"path": html_path, "ui": None}
 
     def observe():
-        return _views_observation(state["path"])
+        return _views_observation(state["path"], state["ui"])
 
     @contextlib.contextmanager
     def replaced(needle, replacement, what):
@@ -1151,6 +1292,83 @@ def check_console_views():
             finally:
                 state["path"] = html_path
 
+    @contextlib.contextmanager
+    def noted(note, rows, what):
+        """`note` as run_report_text.SEALED_NOTE and as console.html's fallback, with the
+        Turkish catalog rows `rows` added: console.html, localization.js and the catalog
+        copied into one temporary ui folder for Node, and the same catalog for Python's
+        localization.text, so the shared text, the fallback and the Turkish row agree."""
+        with tempfile.TemporaryDirectory(prefix="shimmer_console_note_") as tmp:
+            ui_dir = Path(tmp)
+            source = html_path.read_text(encoding="utf-8")
+            fallback = "var SEALED_NOTE_TEXT = %s;" % json.dumps(run_report_text.SEALED_NOTE)
+            if source.count(fallback) != 1:
+                raise RuntimeError(what + " moved")
+            (ui_dir / "console.html").write_text(
+                source.replace(fallback, "var SEALED_NOTE_TEXT = %s;" % json.dumps(note)), encoding="utf-8")
+            shutil.copy2(ROOT / "scripts" / "ui" / "localization.js", ui_dir / "localization.js")
+            head = (ROOT / "scripts" / "ui" / "localization_catalog.js").read_text(encoding="utf-8").split(
+                "var SHIMMER_TR = ", 1)[0]
+            catalog = dict(localization.catalog(), **rows)
+            (ui_dir / "localization_catalog.js").write_text(
+                head + "var SHIMMER_TR = " + json.dumps(catalog, ensure_ascii=False, indent=2) + ";\n",
+                encoding="utf-8")
+            state["path"], state["ui"] = ui_dir / "console.html", ui_dir
+            try:
+                with patch.object(run_report_text, "SEALED_NOTE", note), \
+                        patch.object(localization, "catalog", lambda: catalog):
+                    yield
+            finally:
+                state["path"], state["ui"] = html_path, None
+
+    def only(neutralise, what, allowed, required_all):
+        """A proof whose neutralised FAIL must come from the lines under test alone: every
+        failure the neutralised views give is in allowed(keys), and with required_all every
+        one of those lines fires. The failure messages are asserted, not just the FAIL."""
+        seen = []
+
+        def check():
+            failures = _views_failures(observe(), state["path"])
+            seen.append(failures)
+            return ("FAIL" if failures else "PASS", "")
+        try:
+            proof = prove_effect(name="console_views", validate=lambda: (FIXTURE_RUNS / RUN_ID / "status.json").is_file(),
+                                 observe=observe, check=check, neutralise=neutralise)
+        except ProofFailure as exc:
+            return ("FAIL", "%s: neutralised (%s): %s" % (exc.category, what, "; ".join(seen[-1]) if seen else ""))
+        lines = allowed(proof["before"].keys())
+        mutated = seen[1]
+        stray = [f for f in mutated if f not in lines]
+        if stray or (required_all and set(mutated) != lines):
+            return ("FAIL", "neutralised (%s): the FAIL does not come from the lines under test alone: %s"
+                    % (what, "; ".join(mutated)))
+        return ("PASS", "neutralised (%s): FAIL from those lines alone (%d messages, e.g. '%s'); restored: PASS"
+                % (what, len(mutated), mutated[0]))
+
+    def names_lines(keys):
+        return {_note_names_failure(lang, fn, localization.text(NOTE_REASONS_SECTION, lang))
+                for lang in ("en", "tr") for fn in ("repliesHtml", "modelFindingsHtml", "switchesHtml", "reportHtml",
+                                                    "multiRoundHtml", "activationSummaryHtml")}
+
+    def tr_reason_lines(keys):
+        return {_reasons_failure(k) for k in keys if k.startswith("sealed/tr/") and not k.endswith("/switchesHtml")}
+
+    note_tr = localization.text(run_report_text.SEALED_NOTE, "tr")
+    reason_tr = localization.text(REASONS[0], "tr")
+    exact = (
+        # Open item 55 (b, d) alone (S7 round 3, adversarial 1): the former note as the shared
+        # text, the fallback and with its Turkish row, so the older note lines all hold.
+        (lambda: noted(OLD_SEALED_NOTE, {OLD_SEALED_NOTE: OLD_SEALED_NOTE_TR}, "the fallback note"),
+         "the former note as SEALED_NOTE, console.html's fallback and with its former Turkish row",
+         names_lines, True),
+        # The Turkish reasons scan alone (S7 round 3, adversarial 3): the Turkish note row
+        # carries the first reason's Turkish text, so every Turkish sealed view with the note
+        # shows a reason and no English view does.
+        (lambda: noted(run_report_text.SEALED_NOTE, {run_report_text.SEALED_NOTE: note_tr + " " + reason_tr},
+                       "the fallback note"),
+         "the Turkish note row carrying the first B.4 reason's Turkish text", tr_reason_lines, False),
+    )
+
     # S7 close, adversarial 6: the sealed note and the sealed rendering have their
     # own neutralisations beside the mark's.
     proofs = (
@@ -1164,7 +1382,7 @@ def check_console_views():
         (lambda: replaced("data.count === 1 ? \"" + ONE_KEPT + "\" : ", "", "the singular count sentence"),
          "the fixed plural sentence for a count of 1"),
         (lambda: patch.object(run_report_text, "SEALED_NOTE", OLD_SEALED_NOTE),
-         "the former sealed note, which says 'are shown' and omits the names"),
+         "the former sealed note text alone, with no Turkish row and not the fallback"),
         (lambda: replaced("if (!data.recorded) return head + '<p>' + ui('No valid recorded case output.') + '</p>';",
                           "if (!data.recorded) return '<h2>' + ui('Multi-round positioning') + '</h2><p>' + "
                           "ui('No valid recorded case output.') + '</p>' + sealedNoteHtml(data);",
@@ -1173,7 +1391,13 @@ def check_console_views():
     )
     details = []
     for neutralise, what in proofs:
-        status, detail = _proved("console_views", observe, _views_verdict, neutralise, what)
+        status, detail = _proved("console_views", observe, lambda views: _views_verdict(views, state["path"]),
+                                 neutralise, what)
+        if status != "PASS":
+            return (status, detail)
+        details.append(detail)
+    for neutralise, what, allowed, required_all in exact:
+        status, detail = only(neutralise, what, allowed, required_all)
         if status != "PASS":
             return (status, detail)
         details.append(detail)

@@ -234,6 +234,22 @@ def git_usr_bin(bash):
     return folder
 
 
+def starts_in_own_folder(bash, text, root):
+    """True when shimmer.sh's opening lines (everything before its bootstrap step), started from
+    another folder by its path, leave it in its own folder: a marker beside the copy is found in
+    the current folder after them. Nothing after the opening lines runs."""
+    project, elsewhere = Path(root) / 'project', Path(root) / 'elsewhere'
+    project.mkdir(parents=True)
+    elsewhere.mkdir(parents=True)
+    opening = text.replace('\r\n', '\n').split('\n# --- 1.', 1)[0]
+    (project / 'shimmer.sh').write_text(opening + '\n[ -f ./own_folder_marker ] && echo IN_OWN_FOLDER\n',
+                                        encoding='utf-8', newline='\n')
+    (project / 'own_folder_marker').write_text('', encoding='utf-8')
+    result = subprocess.run([bash, (project / 'shimmer.sh').as_posix()], cwd=str(elsewhere), capture_output=True,
+                            timeout=60, stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
+    return result.returncode == 0 and 'IN_OWN_FOLDER' in result.stdout.decode('utf-8', 'replace')
+
+
 def tracked_source(source, extra=()):
     """The sealer's runtime_source over this tree: its own selection (archive_names) of the tracked
     files, read from the working tree where the sealer reads the same names from the bound commit."""
@@ -725,7 +741,16 @@ class LauncherArmChecks:
         from pathlib import PurePosixPath
         text = (ROOT / runner.LAUNCHER_SCRIPT).read_text(encoding='utf-8')
         # shimmer.sh runs in its own folder, and the children's python is the venv's (bin/ on Linux).
-        self.assertIn('cd "$(dirname "$0")"', text)
+        # Its own folder is read by executing its opening lines, not by matching their text (S7
+        # round 3: open item 54 replaced `cd "$(dirname "$0")"` with a parameter expansion, and
+        # the literal assertion then failed on a launcher that still runs in its own folder).
+        bash = git_bash()
+        if not bash:
+            self.skipTest('no bash that runs a script (Git Bash on Windows)')
+        self.assertTrue(starts_in_own_folder(bash, text, self.root / 'own_folder'))
+        head = text[text.index('case "$0" in'):text.index('cd "$SHIMMER_HERE"\n') + len('cd "$SHIMMER_HERE"')]
+        self.assertFalse(starts_in_own_folder(bash, text.replace(head, ':', 1), self.root / 'own_folder_neutralised'))
+        self.assertTrue(starts_in_own_folder(bash, text, self.root / 'own_folder_restored'))
         self.assertIn('VENV_PYTHON="$PWD/$VENV_BIN/python"', text)
         self.assertIn('echo ".venv/bin"', text)
         project = PurePosixPath(controller.REMOTE) / 'project'

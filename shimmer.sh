@@ -22,10 +22,13 @@ cd "$SHIMMER_HERE"
 # The same caller's PATH lacks the tools reached later: the venv's activate script
 # calls cygpath on Git Bash, and the menu calls cat and rm. Where /usr/bin exists and
 # PATH does not name it, it is appended (never put first); a PATH that names it, as
-# every login shell's and Linux's does, is left exactly as it is.
+# every login shell's and Linux's does, is left exactly as it is. The append adds no
+# empty entry: an empty or colon-ended PATH would otherwise gain one, and an empty
+# entry is the current folder, which after the cd above is the repository root.
 case ":$PATH:" in
     *:/usr/bin:*) ;;
-    *) [ -d /usr/bin ] && PATH="$PATH:/usr/bin" && export PATH ;;
+    *) [ -d /usr/bin ] && SHIMMER_PATH_HEAD="${PATH%:}" \
+           && PATH="${SHIMMER_PATH_HEAD:+$SHIMMER_PATH_HEAD:}/usr/bin" && export PATH ;;
 esac
 
 # --- 1. Bootstrap discovery only; the contract selects the executable ------
