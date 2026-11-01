@@ -2,7 +2,9 @@
 
 A real review and a real draft started from the launcher menu run on the loop's own instance,
 never on the laptop. These checks prove every new rule of that arm here, on fixtures, with no
-model, no pipeline and no network: the sealed launcher block and its exposed-only rule, the
+model call and no network (one test starts the real pipeline, which stops at its first
+question, declined, before any model work; every other test runs a stand-in pipeline or
+none): the sealed launcher block and its exposed-only rule, the
 prompt map read word for word from the bound launcher, wizard and pipeline sources, the
 sealer's mapping of the workload as the wizard lists it, the session driver answering only
 from the map (and stopping on an unknown prompt, on answers used up and at its deadline), the
@@ -143,9 +145,10 @@ def bound_sources():
 
 def ensemble_says_no(rule_text):
     """A model-free stand-in for the five-voter redaction-intent decision: available, and no. The
-    sealer's own compiler still runs its declared-category and phrasing rules; the clinical
-    workload's real ensemble verdict (5 of 5 voters no on every convention) was measured once,
-    with the models, when the sealer's sensitivity rule was added."""
+    sealer's own compiler still runs its declared-category and phrasing rules. With the models,
+    the sealer's sensitivity rule was run once on the clinical workload when it was added and
+    returned None (no refusal) in 44 s, with bge-m3 on the GPU, as lane s07-arml2's report
+    (D-157) records; no per-voter count was recorded."""
     return False, (dict(available=True, result=False, stand_in=True) if str(rule_text or '').strip() else None)
 
 

@@ -25558,7 +25558,9 @@ def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
     pipeline's first question (L14: the menu's runtime check imported a module that archive does
     not carry); the menu environment is made from the runner's runtime; the
     assessment, the single-bundle rule, the stop of the menu's children and the report row.
-    Each rule by neutralise, fail, restore, pass. No model, no pipeline, no network. SKIP where
+    Each rule by neutralise, fail, restore, pass. No model call and no network; the archive test
+    starts the real pipeline, which stops at its first question, declined, before any model work
+    (every other test runs a stand-in pipeline or none). SKIP where
     the tree holds no shimmer.sh (the container image) or no bash runs a script."""
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:

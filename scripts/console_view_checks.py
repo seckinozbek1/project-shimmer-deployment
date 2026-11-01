@@ -812,43 +812,174 @@ def _views_verdict(views):
 
 
 # The files that start the console's and the chat window's children (S7 close,
-# adversarial 5): every start carries creationflags (the no-window flag, HIDDEN-A).
+# adversarial 5): every start passes the no-window flag as its creationflags (HIDDEN-A).
 HIDDEN_START_FILES = ("scripts/console_view_checks.py", "scripts/chat.py", "scripts/launcher_checks.py",
                       "tools/console_screenshots.py")
-_START_NAMES = {"run", "Popen", "call", "check_call", "check_output"}
+# What the scan counts as a start (S7 round 2, adversarial 2): subprocess's starters called on
+# the module, on an alias of it or through a name imported from it, asyncio's two, and os's own
+# starters, which take no creationflags and so are never hidden.
+_START_NAMES = {"run", "Popen", "call", "check_call", "check_output", "getoutput", "getstatusoutput"}
+_FLAGLESS_STARTS = {"getoutput", "getstatusoutput"}
+_ASYNCIO_STARTS = {"create_subprocess_exec", "create_subprocess_shell"}
+_OS_STARTS = {"system", "popen", "startfile", "spawnl", "spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve",
+              "spawnvp", "spawnvpe", "posix_spawn", "posix_spawnp"}
+WINDOWS_NO_WINDOW = 0x08000000
+_FLAG_NAMES = {("subprocess", "CREATE_NO_WINDOW"), ("cloud_run_common", "CREATE_NO_WINDOW")}
+
+
+def _start_scan(source):
+    """(start lines, [(line, reason)]) for one source: every child-process start, and each one
+    whose creationflags is not provably the no-window flag. Provably means, and only means, the
+    forms the scanned files write: CREATE_NO_WINDOW or a constant holding 0x08000000, getattr
+    (subprocess, "CREATE_NO_WINDOW", 0), `<flag> if os.name == "nt" else 0`, an OR with the
+    flag, a name bound once in the module to one of those, or cloud_run_common.no_window()
+    without keep_console."""
+    import ast
+    tree = ast.parse(source)
+    modules = {"subprocess": set(), "os": set(), "asyncio": set(), "cloud_run_common": set()}
+    imported = {}
+    stores = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in modules:
+                    modules[alias.name].add(alias.asname or alias.name)
+        elif isinstance(node, ast.ImportFrom) and node.module in modules:
+            for alias in node.names:
+                imported[alias.asname or alias.name] = (node.module, alias.name)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            stores[node.id] = stores.get(node.id, 0) + 1
+        elif isinstance(node, ast.arg):
+            stores[node.arg] = stores.get(node.arg, 0) + 1
+
+    def named(expr):
+        if isinstance(expr, ast.Attribute) and isinstance(expr.value, ast.Name):
+            for module, aliases in modules.items():
+                if expr.value.id in aliases:
+                    return module, expr.attr
+        if isinstance(expr, ast.Name):
+            return imported.get(expr.id)
+        return None
+
+    def is_start(target):
+        return target is not None and ((target[0] == "subprocess" and target[1] in _START_NAMES)
+                                       or (target[0] == "asyncio" and target[1] in _ASYNCIO_STARTS)
+                                       or (target[0] == "os" and target[1] in _OS_STARTS))
+
+    bindings = {node.targets[0].id: node.value for node in tree.body
+                if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)}
+
+    def hidden(expr, seen=()):
+        if isinstance(expr, ast.Constant):
+            return type(expr.value) is int and bool(expr.value & WINDOWS_NO_WINDOW)
+        if isinstance(expr, (ast.Attribute, ast.Name)) and named(expr) in _FLAG_NAMES:
+            return True
+        if isinstance(expr, ast.Name):
+            return (expr.id not in seen and stores.get(expr.id) == 1 and expr.id in bindings
+                    and hidden(bindings[expr.id], seen + (expr.id,)))
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.BitOr):
+            return hidden(expr.left, seen) or hidden(expr.right, seen)
+        if isinstance(expr, ast.IfExp):
+            windows_test = (isinstance(expr.test, ast.Compare) and named(expr.test.left) == ("os", "name")
+                            and len(expr.test.ops) == 1 and isinstance(expr.test.ops[0], ast.Eq)
+                            and isinstance(expr.test.comparators[0], ast.Constant)
+                            and expr.test.comparators[0].value == "nt")
+            off_windows = isinstance(expr.orelse, ast.Constant) and expr.orelse.value == 0
+            return hidden(expr.body, seen) and (hidden(expr.orelse, seen) or (windows_test and off_windows))
+        if isinstance(expr, ast.Call):
+            if (isinstance(expr.func, ast.Name) and expr.func.id == "getattr" and len(expr.args) == 3
+                    and not expr.keywords and isinstance(expr.args[0], ast.Name)
+                    and expr.args[0].id in modules["subprocess"] and isinstance(expr.args[1], ast.Constant) and expr.args[1].value == "CREATE_NO_WINDOW"
+                    and isinstance(expr.args[2], ast.Constant) and expr.args[2].value == 0):
+                return True
+            if named(expr.func) == ("cloud_run_common", "no_window"):
+                return all(k.arg is not None and (k.arg != "keep_console"
+                                                  or (isinstance(k.value, ast.Constant) and k.value.value is False))
+                           for k in expr.keywords) and len(expr.args) <= 1
+        return False
+
+    starts, unhidden, called = [], [], set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and is_start(named(node.func)):
+            target = named(node.func)
+            called.add(id(node.func))
+            starts.append(node.lineno)
+            flags = [k for k in node.keywords if k.arg == "creationflags"]
+            if target[0] == "os" or target[1] in _FLAGLESS_STARTS:
+                unhidden.append((node.lineno, "%s.%s takes no creationflags" % target))
+            elif not flags:
+                unhidden.append((node.lineno, "no creationflags"))
+            elif not hidden(flags[0].value):
+                unhidden.append((node.lineno, "creationflags is not the no-window flag"))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Attribute, ast.Name)) and id(node) not in called and is_start(named(node)):
+            unhidden.append((node.lineno, "%s.%s referenced, not called, so its start is not seen" % named(node)))
+    return starts, unhidden
 
 
 def _unflagged_starts(sources):
-    """[file:line] of every subprocess start in `sources` that carries no creationflags."""
-    import ast
-    found = []
+    """(number of starts, ["file:line (reason)"]) over `sources`."""
+    count, found = 0, []
     for name, source in sorted(sources.items()):
-        for node in ast.walk(ast.parse(source)):
-            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                    and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"
-                    and node.func.attr in _START_NAMES
-                    and not any(k.arg == "creationflags" for k in node.keywords)):
-                found.append("%s:%d" % (name, node.lineno))
-    return found
+        starts, unhidden = _start_scan(source)
+        count += len(starts)
+        found.extend("%s:%d (%s)" % (name, line, reason) for line, reason in sorted(unhidden))
+    return count, found
+
+
+# Each neutralisation changes ONE real source in memory, never on disk: (what, file, needle,
+# replacement, appended). The scan must FAIL naming that file, and then pass on the originals.
+_HIDDEN_NEUTRALISATIONS = (
+    ("the chat window's flag dropped", "scripts/chat.py",
+     "bufsize=1,\n                creationflags=NO_WINDOW)", "bufsize=1)", ""),
+    ("the chat window's flag set to 0", "scripts/chat.py",
+     "creationflags=NO_WINDOW)", "creationflags=0)", ""),
+    ("the launcher checks' NO_WINDOW bound to 0", "scripts/launcher_checks.py",
+     'NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0', "NO_WINDOW = 0", ""),
+    ("the screenshot server's no_window() given keep_console", "tools/console_screenshots.py",
+     "creationflags=no_window())", "creationflags=no_window(keep_console=True))", ""),
+    ("a start through a name imported from subprocess", "scripts/console_view_checks.py", None, None,
+     '\nfrom subprocess import Popen as _Started\n_Started(["x"])\n'),
+    ("an os.system start", "scripts/console_view_checks.py", None, None, '\nos.system("x")\n'),
+    ("an asyncio start with no flag", "scripts/console_view_checks.py", None, None,
+     '\nimport asyncio\nasyncio.create_subprocess_exec("x")\n'),
+)
 
 
 def _children_hidden():
+    import sys
+    tools = str(ROOT / "tools")
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import cloud_run_common
+    # The helper the screenshot server's start calls is accepted only because it ORs in the flag:
+    # executed here, as on Windows.
+    with patch.object(cloud_run_common, "windows", lambda: True):
+        if not (cloud_run_common.no_window() & WINDOWS_NO_WINDOW and cloud_run_common.no_window(4) & 4
+                and not cloud_run_common.no_window(keep_console=True) & WINDOWS_NO_WINDOW):
+            return ("FAIL", "cloud_run_common.no_window does not OR in 0x08000000 on Windows")
     sources = {name: (ROOT / name).read_text(encoding="utf-8") for name in HIDDEN_START_FILES}
-    starts = sum(source.count("subprocess.") for source in sources.values())
-    if _unflagged_starts(sources):
-        return ("FAIL", "child processes started without the no-window flag: %s" % _unflagged_starts(sources))
-    dropped = dict(sources)
-    needle = "bufsize=1,\n                creationflags=NO_WINDOW)"
-    if dropped["scripts/chat.py"].replace("\r\n", "\n").count(needle) != 1:
-        return ("FAIL", "the chat window's start moved: the neutralisation cannot be applied")
-    dropped["scripts/chat.py"] = dropped["scripts/chat.py"].replace("\r\n", "\n").replace(needle, "bufsize=1)")
-    if not _unflagged_starts(dropped):
-        return ("FAIL", "the chat window's flag dropped and the scan still passes")
-    if _unflagged_starts(sources):
-        return ("FAIL", "the restored sources do not pass")
-    return ("PASS", "every subprocess start in %s carries the no-window flag (%d subprocess references read); "
-                    "neutralised (the chat window's flag dropped): FAIL; restored: PASS"
-            % (", ".join(HIDDEN_START_FILES), starts))
+    for what, name, needle, replacement, appended in _HIDDEN_NEUTRALISATIONS:
+        changed = dict(sources)
+        if needle is not None:
+            if changed[name].count(needle) != 1:
+                return ("FAIL", "%s: the start moved, so the neutralisation cannot be applied" % what)
+            changed[name] = changed[name].replace(needle, replacement)
+        changed[name] += appended
+        found = _unflagged_starts(changed)[1]
+        if not found:
+            return ("FAIL", "neutralised (%s) and the scan still passes" % what)
+        if any(not entry.startswith(name + ":") for entry in found):
+            return ("FAIL", "neutralised (%s): the scan names another file: %s" % (what, found))
+    count, found = _unflagged_starts(sources)
+    if found:
+        return ("FAIL", "child processes started without the no-window flag: %s" % found)
+    return ("PASS", "every child-process start in %s (%d found; the scan counts subprocess's starters called on "
+                    "the module, an alias or an imported name, asyncio's two and os's own, which are never hidden) "
+                    "passes creationflags provably the no-window flag (CREATE_NO_WINDOW, a name bound once to it, "
+                    "or cloud_run_common.no_window(), executed: it ORs in 0x08000000 on Windows); neutralised in "
+                    "memory (%s): each FAIL naming the changed file; originals: PASS"
+            % (", ".join(HIDDEN_START_FILES), count, "; ".join(n[0] for n in _HIDDEN_NEUTRALISATIONS)))
 
 
 def check_console_views():
