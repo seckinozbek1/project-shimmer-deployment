@@ -16929,11 +16929,15 @@ def _fne_rendered_body():
         ctx2 = _rc.create_run(Path(td) / "draft")
         seen = {}
 
-        def _fake_call_claude(stable, dynamic, *, max_tokens=4096):
+        def _fake_call_gpt(stable, dynamic, *, max_tokens=4096):
             seen["call_id"] = getattr(w, "_cost_call_id", "")
             seen["chars"] = len(stable) + len(dynamic)
-            return _aw.CallResult(backend="claude_api", model="stub", raw_text="memo", ok=True)
-        w.call_claude = _fake_call_claude
+            return _aw.CallResult(backend="openai_api", model="stub", raw_text="memo", ok=True)
+        # The memo goes through the drafter's own backend (INC-031, check 312), so the
+        # stand-in replaces this wrapper's backend function: openai_api, set above.
+        if w.backend != "openai_api":
+            return _fail(f"the draft stand-in expects the openai_api wrapper set above, got {w.backend}")
+        w.call_gpt = _fake_call_gpt
         memo = _pl._draft_generate_with_evidence(w, "stable part", "dynamic part",
                                                  passages=[{"ref_id": "REF-0007", "text": "p"}],
                                                  run_ctx=ctx2)
@@ -25594,6 +25598,20 @@ def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
     from ordinary_final_launcher_checks import check
     return check()
 
+
+def check_312_draft_memo_uses_the_drafters_backend():
+    """INC-031 (loop S10): the draft memo goes through the backend the drafter resolved.
+    pipeline._draft_generate_with_evidence used to call call_claude whatever the backend, so a
+    local-profile draft went to the Claude client (L14b: backend claude_api with a local model id,
+    three blocked connection attempts, exit 5). Model-free (scripts/draft_backend_checks.py): the
+    real backend functions run on the stand-ins of scripts/reply_records_checks.py; a local drafter
+    whose call_claude raises must return the local text with its call evidence, activation row,
+    reply record and free_text outcome on one call id, and a Claude drafter still reaches the
+    Claude client. Neutralise (the old direct call_claude compiled beside the pipeline), fail,
+    restore, pass."""
+    from draft_backend_checks import check
+    return check()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -26018,6 +26036,8 @@ CHECKS = [
      check_310_chat_window_command_mode),
     ("311 arm L runs the launcher menu once from its sealed prompt map",
      check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
+    ("312 the draft memo goes through the drafter's own backend",
+     check_312_draft_memo_uses_the_drafters_backend),
 ]
 
 

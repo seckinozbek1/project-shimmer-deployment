@@ -772,10 +772,16 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
                   level="warning", agent=drafter.name,
                   run_id=getattr(run_ctx, "run_id", "") or "")
     drafter._cost_call_id = call_id
+    # INC-031: the memo goes through the backend the drafter resolved (dispatch, the one
+    # place that picks the backend function), its budget under the keyword that backend
+    # takes, as run_task passes it. It used to call call_claude whatever the backend.
+    import decoding_policy as _dp
+    budget = ({"max_new_tokens": 4096} if drafter.backend in _dp.LOCAL_BACKENDS
+              else {"max_tokens": 4096})
     try:
         # CallResult carries the response text in .raw_text (there is no .text).
         r = agent_activation.direct_call(drafter, call_id,
-            lambda: drafter.call_claude(stable, dynamic, max_tokens=4096),
+            lambda: drafter.dispatch(stable, dynamic, **budget),
             reason="draft_task_memo", source_phase="0", evidence={"task": "draft"})
     finally:
         drafter._cost_call_id = ""
