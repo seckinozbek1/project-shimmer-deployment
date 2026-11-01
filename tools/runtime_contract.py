@@ -118,8 +118,12 @@ def command(selection, *args):
     return [selection['executable'], '-B', *map(str, args)]
 
 
-def source_check(root, *, profile='experiment', contract=None):
-    """Compile actual bytes using this interpreter, then import the real probe graph."""
+def source_check(root, *, profile='experiment', contract=None, entrypoint='experiment'):
+    """Compile actual bytes using this interpreter, then import the real probe graph.
+
+    `entrypoint` 'launcher' (shimmer.sh, shimmer.bat) imports the menu's own entry modules in
+    place of the experiment probe: no launcher runs the probe, and the ordinary final archive a
+    launcher runs from does not carry it (L14 stopped there before the menu's first prompt)."""
     contract = contract or load_contract()
     selected = assert_current(profile, contract)
     root = Path(root).resolve()
@@ -144,7 +148,9 @@ def source_check(root, *, profile='experiment', contract=None):
     imported = []
     try:
         imports = list(contract['critical_imports'])
-        if profile == 'experiment':
+        if entrypoint == 'launcher':
+            imports += contract['launcher_entrypoint_imports']
+        elif profile == 'experiment':
             imports += contract['experiment_entrypoint_imports']
         for name in imports:
             try:
@@ -248,6 +254,7 @@ def main(argv=None):
     p.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
     p.add_argument('--source', type=Path)
     p.add_argument('--dependencies', type=Path)
+    p.add_argument('--entrypoint', choices=('experiment', 'launcher'), default='experiment')
     args = p.parse_args(argv)
     try:
         contract = load_contract(args.contract)
@@ -263,7 +270,7 @@ def main(argv=None):
             else:
                 sys.addaudithook(no_network)
             if args.source:
-                result = source_check(args.source, profile=args.profile, contract=contract)
+                result = source_check(args.source, profile=args.profile, contract=contract, entrypoint=args.entrypoint)
             if args.dependencies:
                 # Native package imports may start helper processes; still no network allowed.
                 result = dependency_check(args.dependencies, contract)

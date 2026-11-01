@@ -25463,7 +25463,10 @@ def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
     the REAL intake wizard run a review, then a draft, then Q with a stand-in pipeline, every
     Python child that loaded the sitecustomize network-denied (a Python-level denial: native code
     and non-Python children are neither denied nor counted, nor is a Python child that never loads
-    the sitecustomize); the menu environment is made from the runner's runtime; the
+    the sitecustomize); the REAL shimmer.sh, runtime check, preflight, wizard and pipeline start
+    from an extracted copy of the project archive the sealer builds for arm L, up to the
+    pipeline's first question (L14: the menu's runtime check imported a module that archive does
+    not carry); the menu environment is made from the runner's runtime; the
     assessment, the single-bundle rule, the stop of the menu's children and the report row.
     Each rule by neutralise, fail, restore, pass. No model, no pipeline, no network. SKIP where
     the tree holds no shimmer.sh (the container image) or no bash runs a script."""

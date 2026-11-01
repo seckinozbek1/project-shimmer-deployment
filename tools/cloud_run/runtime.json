@@ -27,6 +27,7 @@
     "execution_scheduler", "constitution", "message_bus", "run_context"
   ],
   "experiment_entrypoint_imports": ["remote_short_burst_probe"],
+  "launcher_entrypoint_imports": ["preflight", "intake_wizard"],
   "core_dependencies": {
     "torch": "torch",
     "transformers": "transformers",

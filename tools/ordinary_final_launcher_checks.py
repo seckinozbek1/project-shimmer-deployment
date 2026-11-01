@@ -9,6 +9,8 @@ from the map (and stopping on an unknown prompt, on answers used up and at its d
 REAL shimmer.sh and the REAL intake wizard driven through a review then a draft then Q with a
 stand-in pipeline (each Python child that loads the sealed sitecustomize network-denied by it;
 a Python-level denial, so native code and non-Python children are neither denied nor counted), the
+REAL shimmer.sh, runtime check, preflight, wizard and pipeline started from an extracted copy of
+the project archive the sealer builds for arm L, up to the pipeline's first question (L14), the
 menu's environment made from the runner's runtime, the arm-aware assessment, the controller's
 single-bundle rule and its stop of the menu's children, and the analyser's report row.
 
@@ -139,9 +141,29 @@ def bound_sources():
     return {n: (ROOT / n).read_bytes().replace(b'\r\n', b'\n') for n in runner.LAUNCHER_PROMPT_SOURCES}
 
 
+def ensemble_says_no(rule_text):
+    """A model-free stand-in for the five-voter redaction-intent decision: available, and no. The
+    sealer's own compiler still runs its declared-category and phrasing rules; the clinical
+    workload's real ensemble verdict (5 of 5 voters no on every convention) was measured once,
+    with the models, when the sealer's sensitivity rule was added."""
+    return False, (dict(available=True, result=False, stand_in=True) if str(rule_text or '').strip() else None)
+
+
+def ensemble_unavailable(rule_text):
+    return False, dict(available=False, reason='stand-in: no embedding model')
+
+
+def model_free_ensemble(stand_in=ensemble_says_no):
+    """Sealing an arm L workload compiles its conventions (launcher_sensitivity_error); the checks
+    load no model, so the ensemble's decision is the stand-in's."""
+    import sensitivity_layer.rules as rules
+    return patch.object(rules, '_ensemble_redaction_intent', stand_in)
+
+
 def launcher_block(question=QUESTION, members=None):
     """The sealer's own placed workload and launcher block for the clinical development workload."""
-    placed, block = sealer.launcher_fields(members or sealer.default_workload()[1], question, bound_sources())
+    with model_free_ensemble():
+        placed, block = sealer.launcher_fields(members or sealer.default_workload()[1], question, bound_sources())
     return placed, block
 
 
@@ -199,6 +221,57 @@ def launcher_project(root, block, placed):
     fake.write_text('#!/usr/bin/env bash\nexec "%s" "$@"\n' % Path(sys.executable).as_posix(), encoding='utf-8', newline='\n')
     os.chmod(fake, 0o755)
     return project, fake
+
+
+def git_usr_bin(bash):
+    """Git's usr/bin (dirname, cat, rm), which shimmer.sh calls by name; elsewhere bash's own folder."""
+    folder = Path(bash).parent
+    if os.name == 'nt' and folder.name.lower() == 'bin' and folder.parent.name.lower() != 'usr':
+        folder = folder.parent / 'usr' / 'bin'
+    return folder
+
+
+def tracked_source(source, extra=()):
+    """The sealer's runtime_source over this tree: its own selection (archive_names) of the tracked
+    files, read from the working tree where the sealer reads the same names from the bound commit."""
+    listed = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT, capture_output=True, timeout=120, check=True,
+                            stdin=subprocess.DEVNULL, creationflags=NO_WINDOW).stdout.decode('utf-8')
+    names = sealer.archive_names([n for n in listed.split('\0') if n], extra)
+    return {n: (ROOT / n).read_bytes().replace(b'\r\n', b'\n') for n in names if (ROOT / n).is_file()}
+
+
+def sealed_arm_l_project(root, ledger, harness):
+    """Seal an arm L bundle with the sealer's own prepare() over this tree's tracked files and
+    extract its project archive, as the instance does. Returns (project, manifest)."""
+    import tarfile
+    import multi_round_launch_checks as mr_checks
+    inputs = Path(root) / 'inputs'
+    inputs.mkdir(parents=True)
+    (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
+    write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[harness.A10_TYPE],
+                                                   images=[dict(harness.IMAGE)], observed_at='fixture'))
+    with mr_checks.sealing_stand_ins(), patch.object(sealer, 'runtime_source', tracked_source), model_free_ensemble():
+        sealer.prepare(Path(root) / 'bundle', budget=dict(ledgers=[ledger], forecast_minutes=harness.FORECAST_MINUTES,
+                                                          storage_forecast_usd=harness.STORAGE_USD, reaped=[ledger]),
+                       inputs_from=inputs, now_epoch=harness.FakeClock().now, arm='L', launcher_question=QUESTION)
+    manifest = read(Path(root) / 'bundle' / 'execution_manifest.json')
+    project = Path(root) / 'project'
+    with tarfile.open(Path(root) / 'bundle' / 'project.tar.gz') as archive:
+        archive.extractall(project, filter='data')
+    return project, manifest
+
+
+# One review cut at the pipeline's first question, which is declined: the pipeline then returns 6
+# before any model work and the menu quits. The draft's prompts are never met.
+REVIEW_TO_THE_PIPELINE = {'menu': ['1', 'Q'], 'task': ['R'], 'layer_override': ['n']}
+DRAFT_ONLY_PROMPTS = ('draft_question', 'redaction_override', 'proceed_calls', 'escalation_decision',
+                      'escalation_rationale')
+
+
+def review_to_the_pipeline(prompts):
+    """The sealed map cut to that review: every other review prompt keeps its first sealed answer."""
+    return [dict(p, answers=REVIEW_TO_THE_PIPELINE.get(p['id'], p['answers'][:1]))
+            for p in prompts if p['id'] not in DRAFT_ONLY_PROMPTS]
 
 
 def decoded_phase_script(transport, label):
@@ -325,7 +398,7 @@ class LauncherArmChecks:
         changed = [dict(p, prompt='Proceed? [Y/n]: ') if p['id'] == 'proceed' else p for p in block['prompts']]
         self.assertEqual(runner.launcher_prompt_error(changed, sources),
                          'A sealed prompt is not printed by the bound launcher, wizard or pipeline: proceed')
-        with self.assertRaisesRegex(RuntimeError, 'not printed by the bound launcher'):
+        with self.assertRaisesRegex(RuntimeError, 'not printed by the bound launcher'), model_free_ensemble():
             sealer.launcher_fields(sealer.default_workload()[1], QUESTION, dict(
                 bound_sources(), **{'scripts/pipeline.py': b'print("no prompts here")\n'}))
 
@@ -360,7 +433,7 @@ class LauncherArmChecks:
         (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
         write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[harness.A10_TYPE],
                                                        images=[dict(harness.IMAGE)], observed_at='fixture'))
-        with mr_checks.sealing_stand_ins():
+        with mr_checks.sealing_stand_ins(), model_free_ensemble():
             sealer.prepare(self.root / 'l', budget=dict(ledgers=[self.ledger], forecast_minutes=harness.FORECAST_MINUTES,
                                                         storage_forecast_usd=harness.STORAGE_USD, reaped=[self.ledger]),
                            inputs_from=inputs, now_epoch=harness.FakeClock().now, arm='L', launcher_question=QUESTION)
@@ -369,6 +442,25 @@ class LauncherArmChecks:
         self.assertTrue(set(placed) | set(runner.LAUNCHER_SOURCES) <= set(manifest['project_files']))
         self.assertFalse([n for n in manifest['project_files'] if n.startswith('input/')])
         self.assertEqual(mr_checks.instance_verify(self.root / 'l')['arm'], 'L')
+
+    def test_arm_l_is_sealed_only_for_a_workload_with_no_redaction_rule(self):
+        """Arm L's map declares every run NON-SENSITIVE, twice, and chooses Normal mode (no
+        redaction) with no operator present, so the sealer compiles the workload's conventions with
+        the pipeline's own parser and redaction compiler first: the clinical sheet (no operator
+        redaction rule) is sealed; the same workload with a confidentiality rule added, or with an
+        ensemble that cannot decide, is refused (S7 close, adversarial item 13)."""
+        self.need_launcher_files()
+        members = sealer.default_workload()[1]
+        conventions = {n.split('/', 1)[1]: d for n, d in members.items() if n.startswith('conventions/')}
+        with model_free_ensemble():
+            self.assertIsNone(sealer.launcher_sensitivity_error(conventions))
+        private = dict(members, **{'conventions/lab_conventions.md': members['conventions/lab_conventions.md'] +
+                                   b'\n## CONV-L06 , conv-confidentiality [required]\nRedact the patient name from every '
+                                   b'deliverable.\n'})
+        with self.assertRaisesRegex(RuntimeError, 'operator redaction or confidentiality rule'), model_free_ensemble():
+            sealer.launcher_fields(private, QUESTION, bound_sources())
+        with self.assertRaisesRegex(RuntimeError, 'ensemble could not decide'), model_free_ensemble(ensemble_unavailable):
+            sealer.launcher_fields(members, QUESTION, bound_sources())
 
     def test_the_session_answers_only_from_the_map_and_stops_on_anything_else(self):
         """The driver answers each prompt from the map in sealed order, at a line start, once the
@@ -468,6 +560,56 @@ class LauncherArmChecks:
         self.assertEqual(code, 2)
         self.assertEqual(result['reasons'], ['launcher_network_attempts:2'])
         self.assertEqual(result['launcher']['network']['blocked_kinds'], ['create_connection'])
+
+    def test_the_real_menu_starts_from_the_project_archive_the_sealer_builds(self):
+        """L14: on the instance shimmer.sh stopped one second in, before its first prompt, because
+        its runtime check imported a module the sealed project archive does not carry; the test
+        above runs the menu from the repository tree and could not see it. Here the REAL
+        shimmer.sh, its REAL runtime check, the REAL preflight, the REAL intake wizard and the REAL
+        pipeline run from an EXTRACTED copy of the project archive the sealer's own prepare()
+        builds for arm L, in the menu environment the runner makes (its venv, its sitecustomize,
+        every child Python network-denied, Git's usr/bin on PATH): a review answered from the
+        sealed map up to the pipeline's first question, declined, so the pipeline stops before
+        any model work, and the menu quits. A module the menu path imports that the archive
+        lacks fails it."""
+        self.need_launcher_files()
+        bash = git_bash()
+        if not bash:
+            self.skipTest('no bash that runs a script (Git Bash on Windows)')
+        if not (ROOT / '.git').exists():
+            self.skipTest('no git checkout to list the tracked files the sealer selects from')
+        project, manifest = sealed_arm_l_project(self.root / 'sealed', self.ledger, self.harness())
+        self.assertFalse((project / 'tools' / 'remote_short_burst_probe.py').exists())
+        work = self.root / 'session'
+        folders = {name: work / name for name in ('site', 'network', 'tmp')}
+        for folder in folders.values():
+            folder.mkdir(parents=True)
+        (folders['site'] / 'sitecustomize.py').write_text(runner.sitecustomize_source(), encoding='utf-8')
+        runner.launcher_venv(project)
+        fake = work / 'fakebin' / 'python3'
+        fake.parent.mkdir()
+        fake.write_text('#!/usr/bin/env bash\nexec "%s" "$@"\n' % Path(sys.executable).as_posix(), encoding='utf-8',
+                        newline='\n')
+        os.chmod(fake, 0o755)
+        environ = {k: v for k, v in os.environ.items()
+                   if not k.startswith(('SHIMMER_', 'LAUNCHER_', 'HF_', 'TRANSFORMERS_', 'VIRTUAL_ENV'))}
+        environ.update(PATH=os.pathsep.join([str(fake.parent), str(git_usr_bin(bash)), environ.get('PATH', '')]),
+                       PYTHONIOENCODING='utf-8')
+        env = runner.launcher_environment(environ, manifest['launcher'], folders['site'], folders['network'],
+                                          ROOT / 'tools', folders['tmp'])
+        prompts = runner.PromptMap(review_to_the_pipeline(manifest['launcher']['prompts']),
+                                   {runner.LAUNCHER_WORKLOAD_TOKEN: str(project / runner.LAUNCHER_WORKLOAD)})
+        session = runner.drive_session([bash, str(project / runner.LAUNCHER_SCRIPT)], project, env, prompts,
+                                       time.time() + 900)
+        output = session['output'].decode('utf-8', errors='replace')
+        self.assertNotIn('Source import failed', output)
+        self.assertEqual((session['stop_reason'], session['exit_code'], session['unused']), (None, 0, []),
+                         output[-2000:])
+        self.assertEqual((session['used']['menu'], session['used']['layer_override']), (2, 1))
+        self.assertIn('override not confirmed; aborting', output)
+        seen = runner.launcher_network(folders['network'])
+        self.assertGreater(seen['processes'], 0)
+        self.assertEqual(seen['blocked'], 0)
 
     def test_every_child_python_denies_its_network_and_says_how_far(self):
         """The sealed sitecustomize, loaded from PYTHONPATH by a child Python, records the
@@ -633,7 +775,14 @@ def environment_without_the_denial(environ, declaration, site, network, observer
     return env
 
 
+def archive_without_the_preflights_import(names, extra=(), extras=None):
+    """The sealer's archive less one module the menu's runtime check imports (through the
+    preflight), the shape of L14's gap."""
+    return [n for n in _ORIGINAL_ARCHIVE_NAMES(names, extra, extras) if n != 'scripts/run_choices.py']
+
+
 _ORIGINAL_RUN_RECORD = runner.launcher_run_record
+_ORIGINAL_ARCHIVE_NAMES = sealer.archive_names
 _ORIGINAL_NETWORK = runner.launcher_network
 _ORIGINAL_ENVIRONMENT = runner.launcher_environment
 _ORIGINAL_PROMPTS = sealer.launcher_prompts
@@ -664,6 +813,12 @@ LAUNCHER_NEUTRALIZATIONS = [
     # The children started without the network-denying sitecustomize.
     ('test_the_real_menu_runs_a_review_then_a_draft_from_the_map', runner, 'launcher_environment',
      environment_without_the_denial),
+    # Any workload sealed into arm L, its redaction rules unread.
+    ('test_arm_l_is_sealed_only_for_a_workload_with_no_redaction_rule', sealer, 'launcher_sensitivity_error',
+     lambda conventions: None),
+    # The project archive missing a module the menu's startup imports (L14).
+    ('test_the_real_menu_starts_from_the_project_archive_the_sealer_builds', sealer, 'archive_names',
+     archive_without_the_preflights_import),
     # The analyser's row written without reading the collected session.
     ('test_the_real_menu_runs_a_review_then_a_draft_from_the_map', analysis, 'launcher_status',
      launcher_status_without_the_transcript),
@@ -736,7 +891,9 @@ def check():
               'only, prompts word for word in the bound sources, the wizard\'s numbering, the session answering only '
               'from the map and stopping otherwise, the real menu and wizard through a review then a draft with every '
               'Python child that loaded the sitecustomize network-denied (native code and non-Python children neither '
-              'denied nor counted), the menu environment from the runtime, the assessment, a single bundle and the '
+              'denied nor counted), the real menu, preflight, wizard and pipeline started from an extracted sealed '
+              'arm L project archive, arm L sealed only for a workload with no operator redaction rule, the menu '
+              'environment from the runtime, the assessment, a single bundle and the '
               'stop of the menu\'s children' % (len(NAMES) - len(skipped), len(proofs)))
     if skipped:
         return 'SKIP', detail + '; skipped here: ' + ', '.join(skipped)

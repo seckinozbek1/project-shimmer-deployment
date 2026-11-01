@@ -50,7 +50,9 @@ if ! PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate 
     echo "The Python in .venv does not match tools/cloud_run/runtime.json. Remove .venv and run this script again."
     exit 1
 fi
-"$PYTHON_CMD" tools/runtime_contract.py --source . || exit 1
+# The menu's own entry modules, not the experiment probe: an ordinary final archive does not
+# carry the probe, and checking for it stopped the arm L menu before its first prompt (L14).
+"$PYTHON_CMD" tools/runtime_contract.py --source . --entrypoint launcher || exit 1
 # venv activate scripts can touch unset vars on older shells; relax nounset here.
 set +u
 # shellcheck disable=SC1090
