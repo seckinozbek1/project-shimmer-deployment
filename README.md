@@ -14,7 +14,7 @@ None of it is a held-out or sealed result, and none of it shows how well Shimmer
 works on documents it has not seen. A sealed evaluation is planned after v1. This
 version is not released as a Python package, and no package release is promised.
 
-On the four public benchmarks measured, Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1. Details: [docs/RESULTS.md](docs/RESULTS.md).
+On the four public benchmarks measured, Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. On the public benchmarks the rule items go instead to judging calls by PRACTICE_AUDITOR on the local auditor model, and in L12's six B3 entries 686 of its 803 answers copy the filled example in its own contract (VIOLATION, missing_field), 409 of 410 on CUAD; the quote rule refuses them, so nothing is kept (the parallel track's measurement on the saved runs, 1 November). The work that addresses it comes after v1: a document-level judging experiment (G1) and a Python-only refusal of answers with no quote, figures or earlier version behind them (R1), recorded as D-S22 in docs/loop/DECISIONS.md (D-176), then the sealed evaluation. Details: [docs/RESULTS.md](docs/RESULTS.md).
 
 ## What Shimmer is
 
@@ -140,6 +140,10 @@ If the two ever differ, the results page is the current one.
 
 What these figures do not show:
 
+- **B3's correct labels here come from saying nothing, not from detection.** An
+  item with no kept record is labelled the "nothing wrong" class; on L12, 27 of
+  B3's correct labels are of that kind (CUAD 7 present, ContractNLI 18
+  entailment, ContraDoc 2 not contradictory), in benchmark mode and as shipped.
 - **Samples are tiny.** One to three documents per benchmark, one counted run per
   document; runs that failed integrity were re-run up to twice. One item more or
   less changes a figure a great deal.
