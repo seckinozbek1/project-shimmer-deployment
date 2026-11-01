@@ -142,7 +142,8 @@ COPY tuning/producer_v3/dataset.json tuning/producer_v3/prepared_dev.json ./tuni
 # Declared synthetic inputs used by checks 236, 238 and 239. Their behavior
 # must be executable in the product image as well as the source checkout.
 COPY benchmark/fixtures/rule_condition_fixture.md benchmark/fixtures/severity_effect_fixture.md benchmark/fixtures/external_rules_fixture.json ./benchmark/fixtures/
-COPY README.md CLAUDE.md genesis.md ./
+# VERSION is the single version source (IV.1), shipped beside the root markdown files.
+COPY README.md CLAUDE.md genesis.md VERSION ./
 COPY docs/RUNTIME_REFERENCE.md ./docs/
 # Also at /app/requirements.txt, not only /tmp: gate check 118 (every
 # module-level third-party import under scripts/ is ==pinned) reads it from
@@ -150,7 +151,9 @@ COPY docs/RUNTIME_REFERENCE.md ./docs/
 COPY requirements.txt ./
 
 # Refuse populated usage-derived stores in the image; never clear host state.
-RUN /opt/shimmer-runtime/bin/python scripts/ship_gate.py
+# `python` is /opt/shimmer-runtime/bin/python (ENV PATH above). Gate check 252
+# requires this line exactly as written; keep it so (open item 7).
+RUN python scripts/ship_gate.py
 
 # pipeline.py and server.py each insert scripts/ and the repo root onto
 # sys.path THEMSELVES once they are running (ROOT = parent.parent of their own

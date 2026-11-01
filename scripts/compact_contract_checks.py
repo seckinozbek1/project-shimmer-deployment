@@ -10,7 +10,19 @@ import compact_contracts as cc
 from agent_wrapper import AgentWrapper
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = json.loads((ROOT/'docs/fix/compact_contract_ab/fixture.json').read_text())
+# S10 item 2.1 a: the container image ships no docs/fix/. The fixture is read only where it
+# exists, so the module imports there (gate check 121 imports every module); every test then
+# skips naming the absent file. It used to be read unconditionally, failing the import.
+FIXTURE_PATH = ROOT/'docs/fix/compact_contract_ab/fixture.json'
+FIXTURE = json.loads(FIXTURE_PATH.read_text()) if FIXTURE_PATH.is_file() else None
+
+
+def setUpModule():
+    if FIXTURE is None:
+        raise unittest.SkipTest('docs/fix/compact_contract_ab/fixture.json is not present here '
+                                '(the container image ships no docs/fix/)')
+
+
 REFS = ['REF-0001','REF-0002']
 REASON = 'Both labeled capacities and the missing reporting date are preserved without additions or omissions.'
 

@@ -25224,6 +25224,8 @@ def check_295_compact_producer_decodes_under_its_contract():
     from unittest.mock import patch
     import contract_decoding
     import contract_decoding_checks as checks
+    if checks.ABSENT:
+        return "SKIP", (", ".join(checks.ABSENT) + " not present here" + checks.ABSENT_NOTE)
 
     def passes(*names):
         suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
@@ -25353,6 +25355,8 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     from unittest.mock import patch
     import contract_decoding
     import envelope_decoding_checks as checks
+    if checks.ABSENT:
+        return "SKIP", (", ".join(checks.ABSENT) + " not present here (the container image ships no benchmark/)")
 
     def passes(*names):
         suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else             unittest.defaultTestLoader.loadTestsFromModule(checks)

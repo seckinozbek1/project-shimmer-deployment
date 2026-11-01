@@ -13,6 +13,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -296,7 +297,15 @@ def passes(*names):
     return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
 
 
+NO_GIT = ('git is not installed here (for example inside the container image); every proof runs on a '
+          'one-commit git repository with a lane worktree')
+
+
 def check():
+    # S10 item 2.1 a: the fixture is a real git repository, so without git nothing here can
+    # run; this used to report FAIL ("does not pass") in the image, which has no git.
+    if shutil.which('git') is None:
+        return 'SKIP', NO_GIT
     if not passes():
         return 'FAIL', 'tools/loop/request_ledger_check_checks.py does not pass'
     proofs = []

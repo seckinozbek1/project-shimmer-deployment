@@ -20,6 +20,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+NO_CHECKOUT = ("no git checkout here (the container image ships no .git and no git), so the files "
+               "tracked at HEAD cannot be listed")
 import agent_wrapper
 import decoding_policy
 import final_models
@@ -368,7 +370,12 @@ class DecodingPolicyChecks(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "absent from the bound commit"):
                 guard(partial)
         # And both files are tracked at HEAD, so a real seal passes the guard.
+        import shutil
         import subprocess
+        # S10 item 2.1 a: the container image ships no .git and no git, so "tracked at
+        # HEAD" cannot be read there; skip this last part naming why (the guard above ran).
+        if shutil.which("git") is None or not (ROOT / ".git").exists():
+            self.skipTest(NO_CHECKOUT)
         listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", "HEAD"], cwd=ROOT,
                                 capture_output=True, text=True).stdout.splitlines()
         for name in required:
@@ -403,6 +410,10 @@ def check():
     stream = io.StringIO()
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(DecodingPolicyChecks)
     result = unittest.TextTestRunner(stream=stream, verbosity=1).run(suite)
+    if result.wasSuccessful() and result.skipped:
+        return ("SKIP", "%d of %d checks passed; skipped: %s" % (
+            result.testsRun - len(result.skipped), result.testsRun,
+            "; ".join(sorted({reason for _, reason in result.skipped}))))
     if result.wasSuccessful():
         return ("PASS", "%d checks: protocol-sourced kwargs at both local generate sites, the pipeline budget kept, "
                         "drift refused before any load, failure module and frames recorded" % result.testsRun)
