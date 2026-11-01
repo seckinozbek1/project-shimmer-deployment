@@ -65,3 +65,7 @@ Every later side-gate run is compared with these figures.
 - **Dated correction (2026-10-29 23:07 +0300, S5 round 2, D-087).** In this worktree environment `tools/cloud_run_checks.py` fails `test_full_bundle_reproducible_and_readiness_last` with an AssertionError (`ready_to_provision`) and errors `test_preparation_refuses_existing_evidence` with FileNotFoundError, identically at `ea1c0d5` and at the S5 tip (and already in the S3 side-gate log of 28 October); the "FileNotFoundError for both" wording above was inaccurate.
 
 Dated note (2026-10-30, D-107): in a worktree, `tools/cloud_run_checks.py` fails `test_full_bundle_reproducible_and_readiness_last` and `test_preparation_refuses_existing_evidence`, because the untracked auditor adapter weights (`tuning/auditor_final/canonical_adapter/adapter_model.safetensors`) exist only in the main checkout, so a prepared bundle is not ready to provision there. In the main checkout both pass (2dea80f). An environment difference, not a code result; side gates are judged in the main checkout.
+
+## Note, 2026-11-01 (loop S10, D-168)
+
+Check 252 (listed above as failing on the Dockerfile's own text) passes from `49194bc` on: the Dockerfile line was restored (open item 7). The fresh-clone baseline (S10 item 1's final proof) and the container baseline (S10 item 2) are not yet recorded: both follow S11's merge and the pip cache purge (D-165, D-168), and S10 is tagged `-open` until they are.

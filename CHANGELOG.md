@@ -8,7 +8,7 @@ One entry per product version, in plain English. The version number lives in `VE
 - **`shimmer.sh` accepts the venv it makes under Git Bash.** The venv's Python is passed relative to the launcher's folder, which a Windows Python can open (INC-030); check 308 runs it with a real Windows venv.
 - **The chat window says what it checked.** Its startup line says the local model is configured and loads on the first request, and a request the model could not answer says the model was not used and why; check 310.
 - **The image ships `VERSION` and restores the shipping-gate line** check 252 looks for (open item 7); `seals/` is kept out of the build context; checks that need files the image lacks skip and say which.
-- **The 35 frozen launchers moved to `archive/frozen_launchers/`** (open item 20).
+- **The sixteen frozen launchers and their nineteen companion files (35 files) moved to `archive/frozen_launchers/`** (open item 20).
 
 ## 0.1.0.dev6 (S7 close, 1 November 2026)
 
