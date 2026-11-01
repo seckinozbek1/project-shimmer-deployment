@@ -191,6 +191,16 @@ page says which run each row uses. Changes made after `d6ce19a` were not
 measured (L12c, built from `5c3c129`, re-ran five entries for their integrity
 only; their scores were not computed). There is no release-candidate commit.
 
+**Which schedule was measured.** Every B3 run in the table used the
+`report_optimized` execution topology on the local backend profile, with paired
+review (the sealed runner's arguments, `ARGV` in `tools/ordinary_final_run.py`).
+The multi-round family 4 used `reference_serial` (`MULTI_ROUND_ARGV`). The
+pipeline's default is `reference_serial`, and the console, the menu launchers and
+the command above do not select `report_optimized`, so an ordinary review started
+from them runs a schedule no B3 figure here was measured on. The measured one
+needs `--execution-topology report_optimized` and a `--topology-config` lane file
+(the runner's is one lane on `cuda:0`, `TOPOLOGY` in the same file).
+
 **History.** The reports under `docs/fix/` from September 2026 describe runs on
 tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
 
