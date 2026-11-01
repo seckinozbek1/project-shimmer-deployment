@@ -25550,7 +25550,10 @@ def check_308_launchers_reach_their_menus():
     the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
     venv and honours SHIMMER_SKIP_INSTALL; shimmer.sh started from another folder with no
     /usr/bin on PATH reaches its menu (open item 54); the draft is announced only after its
-    setup; no dead batch label; start_shimmer.bat --check-entry answers."""
+    setup; no dead batch label; start_shimmer.bat --check-entry answers; shimmer.sh under Git
+    Bash accepts a real Windows venv (python -m venv in a temporary folder, the real runtime
+    contract) with MSYS argument conversion on and off (INC-030), skipped with its reason where
+    Git Bash or a Windows Python of the contract's version is absent."""
     from launcher_checks import check_bootstrap
     return check_bootstrap()
 
@@ -25567,7 +25570,11 @@ def check_310_chat_window_command_mode():
     command mode with no model: help, a cutoff written to a temporary scope file, a draft
     confirmed and a review cancelled, every wizard or pipeline launch recorded and none run. A
     request whose worker raises frees the window; before, every later message was answered
-    "Still working on the previous request". Skips where the chat file or Tk is absent."""
+    "Still working on the previous request". On stand-ins for the model's modules (S10, from the
+    S7 6e findings): the startup line says only what the probe checked (libraries import, a model
+    id is configured), and a request whose model failed to load or gave no usable answer keeps the
+    keyword parser's reply and says first that the model was not used and why. Skips where the
+    chat file or Tk is absent."""
     from launcher_checks import check_chat_window
     return check_chat_window()
 
