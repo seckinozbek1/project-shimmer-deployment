@@ -41,6 +41,10 @@ SEALED_REPORT_ROWS = (
 # DS7-8: the Annex B.4 reasons above are standing agent policy that every run
 # report carries, sealed runs included; they are not a test's per-flaw reasons, so
 # a sealed view shows them and this note names what is withheld precisely.
-SEALED_NOTE = ('Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons '
-               'given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding '
-               'FACT_CHECKER are standing agent policy, not results, and are shown.')
+# Open item 55: the note names the one section that shows those reasons (the
+# console's Agent switches section; the other sections do not show them), and
+# lists the document, file and target names a sealed view withholds as well.
+SEALED_NOTE = ('Sealed test: counts and timings only. Withheld: document, file and target names, finding text, '
+               'unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex '
+               'B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results; they are shown '
+               'under Agent switches.')

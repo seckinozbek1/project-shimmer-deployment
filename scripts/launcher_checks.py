@@ -14,7 +14,10 @@ the run must show it, and the restored text must pass again.
   check_bootstrap      shimmer.bat reaches its menu (the for /f quoting), keeps
                        its input through the venv's activate script, honours
                        SHIMMER_SKIP_INSTALL; shimmer.sh finds a Windows venv
-                       (Scripts/) and honours SHIMMER_SKIP_INSTALL; the draft
+                       (Scripts/) and honours SHIMMER_SKIP_INSTALL; shimmer.sh
+                       started from another folder with no /usr/bin on PATH
+                       finds its own folder and reaches its menu, /usr/bin
+                       appended for the tools after it (open item 54); the draft
                        path announces the draft only once setup succeeded; no
                        batch label is dead and no goto names a missing label;
                        start_shimmer.bat --check-entry answers.
@@ -227,6 +230,34 @@ def _drive_sh(bash, text, answers, timeout=PASS_BOUND_SECONDS, layout="Scripts")
         return _run([bash, _posix(tmp / "shimmer.sh")], tmp, env, answers, timeout)
 
 
+# The activate stand-in for the bare-PATH case calls an external tool by name, as the
+# real one calls cygpath on Git Bash (Python 3.12's activate: VIRTUAL_ENV=$(cygpath ...)).
+_ACTIVATE_CALLS_A_TOOL = 'cat </dev/null && echo "STUB_ACTIVATE cat ran"\n'
+
+
+def _drive_sh_bare_path(bash, text, answers, timeout=PASS_BOUND_SECONDS):
+    """shimmer.sh started as a scripted caller starts it from a non-login Git Bash
+    (open item 54): PATH holds only the python stand-in's folder, so neither Git's
+    usr/bin nor /usr/bin is on it, and the launcher is started from ANOTHER folder,
+    so finding its own folder matters. The stand-in's shebang names bash by absolute
+    path, since /usr/bin/env would look bash up on that PATH."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_launcher_sh_bare_", ignore_cleanup_errors=True) as td:
+        tmp = Path(td)
+        project = tmp / "project"
+        fake = _sh_fixture(project, text)
+        _write(project / ".venv" / "Scripts" / "activate", _ACTIVATE_CALLS_A_TOOL)
+        shell = "/usr/bin/bash" if _windows() else _posix(bash)
+        _write(fake, '#!%s\nif [ "$1" = "-m" ]; then echo "STUB_PYTHON refused -m $2"; exit 1; fi\n'
+                     'exec "%s" "$@"\n' % (shell, _posix(sys.executable)))
+        os.chmod(fake, 0o755)
+        elsewhere = tmp / "elsewhere"
+        elsewhere.mkdir()
+        env = _clean_env(tmp)
+        env["PATH"] = str(fake.parent)
+        env["LAUNCHER_CHECK_PYTHON"] = _posix(fake)
+        return _run([bash, _posix(project / "shimmer.sh")], elsewhere, env, answers, timeout)
+
+
 # --- proofs ---------------------------------------------------------------------
 
 def _loops(result):
@@ -401,6 +432,31 @@ def _sh_bootstrap(bash):
     _prove("sh draft is announced only after setup", quiet,
            "Drafting a memo" in broken["out"] and "Draft setup cancelled." in broken["out"],
            "Drafting a memo" not in again["out"])
+
+    # Open item 54: started from another folder with no /usr/bin on PATH, the launcher
+    # finds its own folder with no external tool and reaches its menu.
+    def reached(result):
+        return (_ended(result) and MENU_PROMPT in result["out"] and "Goodbye." in result["out"]
+                and "command not found" not in result["out"])
+
+    ok = _drive_sh_bare_path(bash, text, "L\nQ\n")
+    here = text[text.index('case "$0" in'):text.index('cd "$SHIMMER_HERE"\n') + len('cd "$SHIMMER_HERE"')]
+    broken = _drive_sh_bare_path(bash, _neutralise(text, here, 'cd "$(dirname "$0")"', "the own-folder lookup"),
+                                 "L\nQ\n")
+    again = _drive_sh_bare_path(bash, text, "L\nQ\n")
+    _prove("sh reaches its menu with no /usr/bin on PATH", reached(ok),
+           "dirname" in broken["out"] and "command not found" in broken["out"]
+           and MENU_PROMPT not in broken["out"] and broken["rc"] == 1,
+           reached(again))
+
+    # The tools reached after that (the real activate's cygpath on Git Bash, the menu's
+    # cat and rm) run because /usr/bin is appended where PATH lacks it.
+    appended = text[text.index('case ":$PATH:" in'):text.index('esac', text.index('case ":$PATH:" in')) + 4]
+    broken = _drive_sh_bare_path(bash, _neutralise(text, appended, ":", "the /usr/bin append"), "L\nQ\n")
+    again = _drive_sh_bare_path(bash, text, "L\nQ\n")
+    _prove("sh puts /usr/bin on a PATH that lacks it", "STUB_ACTIVATE cat ran" in ok["out"],
+           "STUB_ACTIVATE cat ran" not in broken["out"] and "command not found" in broken["out"],
+           "STUB_ACTIVATE cat ran" in again["out"] and reached(again))
 
 
 # --- the banner -------------------------------------------------------------------

@@ -189,7 +189,7 @@ def _proved(name, observe, verdict, neutralise, what):
 def check_replies_route():
     if not _has_fastapi():
         return SKIP_FASTAPI
-    with _served() as (client, headers, _server, _root):
+    with _served() as (client, headers, server, _root):
         def observe():
             return {"anonymous": client.get("/runs/" + RUN_ID + "/replies").status_code,
                     "authorised": _get(client, headers, "/replies")}
@@ -212,9 +212,89 @@ def check_replies_route():
                     "GET /runs/{run_id}/replies: 401 without a token; 3 calls with metadata, sizes and the latest "
                     "outcome, counts by outcome, no reply or payload text; call times are the fixed fixture times, "
                     "inside the run window that status.json, audit/run_completion.json and the telemetry agree on")
-        return _proved("replies_route", observe, verdict,
-                       lambda: patch.object(console_views, "REPLY_FIELDS", console_views.REPLY_FIELDS + ("reply",)),
-                       "the projection widened to carry the reply record")
+        route = _proved("replies_route", observe, verdict,
+                        lambda: patch.object(console_views, "REPLY_FIELDS", console_views.REPLY_FIELDS + ("reply",)),
+                        "the projection widened to carry the reply record")
+        if route[0] != "PASS":
+            return route
+        agree = _fixture_records_agree(server.RUNS_DIR / RUN_ID)
+        if agree[0] != "PASS":
+            return agree
+        return ("PASS", route[1] + "; " + agree[1])
+
+
+# Open item 55 (e): the committed fixture's activation and cost records said every call
+# was accepted and ok, while its third reply record is a backend failure with no outcome.
+# These are those records as they were, put back into a temporary copy to neutralise.
+OLD_FIXTURE_RECORDS = {"call-0003": {"state": "completed", "outcome": "accepted_to_bus", "ok": True}}
+
+
+def _record_disagreements(run_dir):
+    """Every way the run folder's activation and cost records disagree with its saved reply
+    records, call by call: a call whose reply failed must be a failed call with a failed cost
+    line in both, and a call whose reply succeeded a completed call, an ok cost line, and an
+    activation outcome the reply outcomes record for it."""
+    import reply_records
+    run_dir = Path(run_dir)
+    calls = console_views.replies(run_dir).get("calls") or []
+    rows = {r.get("call_id"): r for r in json.loads((run_dir / "audit" / "agent_activation.json")
+                                                     .read_text(encoding="utf-8"))["decisions"]}
+    states = {s.get("agent"): s.get("state") for s in json.loads(
+        (run_dir / "audit" / "agent_activation.json").read_text(encoding="utf-8"))["agent_states"]}
+    cost = {line.get("call_id"): line for line in console_views._jsonl(run_dir / "logs" / "cost_tracker.jsonl")}
+    outcomes = {}
+    for line in console_views._jsonl(run_dir / "audit" / reply_records.DIRNAME / reply_records.OUTCOMES_NAME):
+        outcomes.setdefault(line.get("call_id"), []).append(line.get("outcome"))
+    found = []
+    for call in calls:
+        cid, ok = call.get("call_id"), call.get("backend_ok") is True
+        row, line = rows.get(cid) or {}, cost.get(cid) or {}
+        if line.get("ok") is not ok:
+            found.append("%s: cost line ok=%s, reply backend_ok=%s" % (cid, line.get("ok"), ok))
+        want = "completed" if ok else "execution_failure"
+        if row.get("state") != want or states.get(row.get("agent")) != want:
+            found.append("%s: activation state %s, reply says %s" % (cid, row.get("state"), want))
+        if ok and row.get("outcome") not in (outcomes.get(cid) or []):
+            found.append("%s: activation outcome %s is not among the reply outcomes %s"
+                         % (cid, row.get("outcome"), outcomes.get(cid)))
+        if not ok and (row.get("outcome") != "backend_failure" or outcomes.get(cid)):
+            found.append("%s: a failed reply with activation outcome %s" % (cid, row.get("outcome")))
+    return len(calls), found
+
+
+def _fixture_records_agree(run_dir):
+    @contextlib.contextmanager
+    def old_records():
+        activation = Path(run_dir) / "audit" / "agent_activation.json"
+        costs = Path(run_dir) / "logs" / "cost_tracker.jsonl"
+        held = activation.read_bytes(), costs.read_bytes()
+        record = json.loads(held[0])
+        lines = [json.loads(line) for line in held[1].decode("utf-8").splitlines() if line.strip()]
+        for cid, old in OLD_FIXTURE_RECORDS.items():
+            for row in record["decisions"]:
+                if row.get("call_id") == cid:
+                    row.update(state=old["state"], outcome=old["outcome"])
+                    for state in record["agent_states"]:
+                        if state["agent"] == row["agent"]:
+                            state["state"] = old["state"]
+            for line in lines:
+                if line.get("call_id") == cid:
+                    line["ok"] = old["ok"]
+        activation.write_text(json.dumps(record), encoding="utf-8")
+        costs.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
+        try:
+            yield
+        finally:
+            activation.write_bytes(held[0])
+            costs.write_bytes(held[1])
+
+    def verdict(o):
+        count, found = o
+        return ("PASS" if count == 3 and not found else "FAIL",
+                "the fixture's audit/agent_activation.json and logs/cost_tracker.jsonl agree with its %d saved "
+                "reply records call by call (state, outcome, ok)%s" % (count, (": " + "; ".join(found)) if found else ""))
+    return _proved("fixture_records_agree", lambda: _record_disagreements(run_dir), verdict, old_records,
+                   "the fixture's former records put back: call-0003 completed, accepted_to_bus, ok")
 
 
 def check_model_findings_route():
@@ -660,8 +740,22 @@ process.stdout.write(JSON.stringify(out));
 VIEW_FUNCTIONS = ("repliesHtml", "modelFindingsHtml", "switchesHtml", "reportHtml", "roundReuseHtml",
                   "testChangesHtml", "activationSummaryHtml", "multiRoundHtml")
 # Views whose sealed note is shown by the section beside them, not by the view
-# itself: the multi-round heading sits above roundReuseHtml in one holder.
-NOTE_SHOWN_BESIDE = ("multiRoundHtml",)
+# itself: roundReuseHtml sits under the multi-round heading in one holder, and the
+# note is shown once, directly under that heading (open item 55).
+NOTE_SHOWN_BESIDE = ("roundReuseHtml",)
+# Open item 55: the note's two phrases, read once at import so a neutralised note is
+# compared with these and never with itself. The section it names must be the one that
+# lists the B.4 reasons.
+NOTE_WITHHOLDS_NAMES = "document, file and target names"
+NOTE_WITHHOLDS_NAMES_TR = "belge, dosya ve hedef adlar\u0131"
+NOTE_REASONS_SECTION = "Agent switches"
+# The sentence for one model-written finding and for more than one, as console.html writes them.
+ONE_KEPT = " model-written finding was kept, not promoted and not checked by Python."
+MANY_KEPT = " model-written findings were kept, none promoted and none checked by Python."
+# The note as it read before open item 55, put back to neutralise (b) and (d).
+OLD_SEALED_NOTE = ("Sealed test: counts and timings only. Withheld: finding text, unit ids, rule ids, the reasons "
+                   "given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding "
+                   "FACT_CHECKER are standing agent policy, not results, and are shown.")
 # A sealed run whose case WAS recorded, as /multi-round sends it (S7 close,
 # adversarial 4): the fixture records no case master, so the view case is built
 # from console_views.sealed_multi_round over a recorded case's own fields.
@@ -701,7 +795,8 @@ def _projections(runs_dir, sealed):
             "testChangesHtml": console_views.test_change_requests(ROOT),
             "activationSummaryHtml": activation,
             "multiRoundHtml": multi,
-            "multiRoundHtml:recorded": dict(recorded, exposure=state, round_reuse=reuse)}
+            "multiRoundHtml:recorded": dict(recorded, exposure=state, round_reuse=reuse),
+            "roundReuseHtml:recorded": dict(recorded, exposure=state, round_reuse=reuse)}
 
 
 def _render(html_path, cases):
@@ -726,8 +821,13 @@ def _views_observation(html_path):
             runs = Path(tmp) / ("sealed" if sealed else "exposed")
             _copy_fixture(runs)
             projections = _projections(runs, sealed)
+            if sealed:
+                # Open item 55: the count sentence for more than one finding, beside the
+                # fixture's one.
+                projections["modelFindingsHtml:two"] = dict(projections["modelFindingsHtml"], count=2)
+            extra = ("multiRoundHtml:recorded", "roundReuseHtml:recorded", "modelFindingsHtml:two")
             for lang in ("en", "tr"):
-                for fn in VIEW_FUNCTIONS + (("multiRoundHtml:recorded",) if sealed else ()):
+                for fn in VIEW_FUNCTIONS + (extra if sealed else ()):
                     cases.append({"fn": fn.split(":")[0], "lang": lang, "data": projections[fn]})
                     keys.append("%s/%s/%s" % ("sealed" if sealed else "exposed", lang, fn))
         rendered = _render(html_path, cases)
@@ -784,6 +884,45 @@ def _views_verdict(views):
             failures.append(lang + ": the sealed note is not the shared SEALED_NOTE text")
     if "the reasons given for findings" not in run_report_text.SEALED_NOTE:
         failures.append("the sealed note does not name the findings' reasons as what is withheld")
+    # Open item 55 (b, d): the note shown names the names it withholds and the one section
+    # that shows the B.4 reasons, that section (its heading in that language) lists them, and
+    # no other sealed section shows them.
+    for lang in ("en", "tr"):
+        heading = localization.text(NOTE_REASONS_SECTION, lang)
+        names = NOTE_WITHHOLDS_NAMES if lang == "en" else NOTE_WITHHOLDS_NAMES_TR
+        for fn in ("repliesHtml", "modelFindingsHtml", "switchesHtml", "reportHtml", "multiRoundHtml",
+                   "activationSummaryHtml"):
+            shown = html_module.unescape(views["sealed/%s/%s" % (lang, fn)])
+            note = shown[shown.find('sealed-note">'):]
+            note = note[:note.find("</p>")]
+            if names not in note or heading not in note:
+                failures.append("%s %s: the sealed note does not name the withheld names and the section that "
+                                "shows the B.4 reasons (%s)" % (lang, fn, heading))
+        if "<h2>%s</h2>" % heading not in views["sealed/%s/switchesHtml" % lang]:
+            failures.append(lang + ": the section the sealed note names is not the switches section")
+    for key, html in views.items():
+        if (key.startswith("sealed/en/") and not key.endswith("/switchesHtml")
+                and any(r[:60] in html_module.unescape(html) for r in REASONS)):
+            failures.append(key + ": shows the B.4 reasons, which the note places under Agent switches only")
+    # Open item 55 (c): on the multi-round section (the case view, then the rounds, in one
+    # holder) the sealed note comes directly under the heading, once.
+    for lang in ("en", "tr"):
+        for case, rounds in (("multiRoundHtml", "roundReuseHtml"), ("multiRoundHtml:recorded", "roundReuseHtml:recorded")):
+            holder = views["sealed/%s/%s" % (lang, case)] + views["sealed/%s/%s" % (lang, rounds)]
+            after = holder[holder.find("</h2>") + len("</h2>"):]
+            if not after.startswith('<p class="notice warn sealed-note">') or holder.count("sealed-note") != 1:
+                failures.append("%s %s: the sealed note is not directly under the multi-round heading, once"
+                                % (lang, case))
+    # Open item 55 (a): one model-written finding reads in the singular, more than one in the
+    # plural, in both languages.
+    for lang in ("en", "tr"):
+        one = html_module.unescape(views["sealed/%s/modelFindingsHtml" % lang])
+        two = html_module.unescape(views["sealed/%s/modelFindingsHtml:two" % lang])
+        one_text, many_text = localization.text(ONE_KEPT, lang), localization.text(MANY_KEPT, lang)
+        if lang == "tr" and (one_text == ONE_KEPT or one_text == many_text):
+            failures.append("tr: the singular sentence has no Turkish row of its own")
+        if ("<p>1" + one_text + "</p>") not in one or ("<p>2" + many_text + "</p>") not in two:
+            failures.append(lang + ": the model-findings count sentence does not agree with its count")
     page = (ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8")
     if "var SEALED_NOTE_TEXT = %s;" % json.dumps(run_report_text.SEALED_NOTE) not in page:
         failures.append("console.html's fallback sealed note differs from run_report_text.SEALED_NOTE")
@@ -808,7 +947,10 @@ def _views_verdict(views):
             "finding shows the mark first in both languages; a sealed view shows its note and no id, rule, "
             "finding reason or text (the activation view its decision counts only); a recorded sealed case "
             "is shown as recorded; the sealed switches view keeps the two B.4 reasons under the shared note "
-            "(DS7-8) in both languages; no reply text anywhere; every new label has a Turkish row")
+            "(DS7-8) in both languages; the sealed note names the document, file and target names it "
+            "withholds and the one section that shows the B.4 reasons (Agent switches), sits directly under "
+            "the multi-round heading once, and one model-written finding reads in the singular (open item "
+            "55); no reply text anywhere; every new label has a Turkish row")
 
 
 # The files that start the console's and the chat window's children (S7 close,
@@ -1018,6 +1160,16 @@ def check_console_views():
          "sealedNoteHtml never shows the note"),
         (lambda: patch.object(console_views, "exposure", lambda run_dir: console_views.EXPOSED),
          "a sealed run's projections built as exposed"),
+        # Open item 55, each defect put back on its own.
+        (lambda: replaced("data.count === 1 ? \"" + ONE_KEPT + "\" : ", "", "the singular count sentence"),
+         "the fixed plural sentence for a count of 1"),
+        (lambda: patch.object(run_report_text, "SEALED_NOTE", OLD_SEALED_NOTE),
+         "the former sealed note, which says 'are shown' and omits the names"),
+        (lambda: replaced("if (!data.recorded) return head + '<p>' + ui('No valid recorded case output.') + '</p>';",
+                          "if (!data.recorded) return '<h2>' + ui('Multi-round positioning') + '</h2><p>' + "
+                          "ui('No valid recorded case output.') + '</p>' + sealedNoteHtml(data);",
+                          "the multi-round note"),
+         "the multi-round note after the no-output sentence"),
     )
     details = []
     for neutralise, what in proofs:
