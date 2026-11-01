@@ -844,7 +844,7 @@ function nextActionSentence(run) {
          route requires at least one file under deliverables/). The cause
          is not asserted here, only that the log explains it, since this
          function cannot rule out a cause other than missing conventions. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui("Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.");
       }
       return ui("Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.");
@@ -920,7 +920,7 @@ function nextActionSentenceHuman(run) {
          not a filtering, in the other direction too: this empty case must
          be as visible here as it now is in the developer view, not
          smoothed over by the reviewer view's plainer language. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui('<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ') + mutedParen(ui("state: completed, no documents"));
       }
       return ui('<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ') + mutedParen(ui("state: completed"));
@@ -2532,6 +2532,11 @@ function renderDetailBody(run, allRuns) {
   if (run.documents && run.documents.length) {
     html += ui('<h2>Documents</h2>');
     html += renderDocuments(run);
+  } else if (run.exposure === "sealed" && run.document_count > 0) {
+    /* A sealed run's record carries its document counts only (Annex B.8). */
+    html += ui('<h2>Documents</h2>') + '<p>' + escapeHtml(String(run.document_count)) +
+      ui(" documents, done: ") + escapeHtml(String(run.documents_done)) +
+      ui(". Sealed test: the document names are withheld.") + '</p>';
   }
 
   var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });

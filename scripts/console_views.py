@@ -402,6 +402,36 @@ def sealed_approval(pending):
                 **{k: pending.get(k) for k in SEALED_APPROVAL_FIELDS})
 
 
+# Run-record fields that name a sealed test's material: each list is emptied and
+# replaced by its count under the paired key.
+SEALED_RECORD_LISTS = (("documents", "document_count"), ("files", "file_count"),
+                       ("prior_files", "prior_file_count"), ("review_targets", "review_target_count"))
+# Run-record text fields a sealed run withholds: the draft question can quote the
+# material, and an error (and the stop reason's detail) is the run log's tail, whose
+# route answers 403.
+SEALED_RECORD_TEXT = ("question", "error")
+
+
+def sealed_run_record(record):
+    """What a run record (GET /runs/{run_id}, GET /runs) keeps for a sealed run
+    (Annex B.8): document, file, prior and target names as counts only (and the
+    documents done), no question, no error text; state, outcome, stop code, timings
+    and progress counts as they are."""
+    out = dict(record, exposure=SEALED)
+    documents = record.get("documents") or []
+    out["documents_done"] = sum(1 for d in documents if isinstance(d, dict) and d.get("status") == "done")
+    for key, count in SEALED_RECORD_LISTS:
+        value = record.get(key)
+        out[key] = [] if isinstance(value, list) else value
+        out[count] = len(value) if isinstance(value, list) else 0
+    for key in SEALED_RECORD_TEXT:
+        if record.get(key):
+            out[key] = None
+    if isinstance(record.get("stop_reason"), dict):
+        out["stop_reason"] = dict(record["stop_reason"], detail=None)
+    return out
+
+
 def _base_sealed():
     return {"exposure": SEALED, "sealed_note": run_report_text.SEALED_NOTE}
 

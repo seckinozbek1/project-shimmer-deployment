@@ -1780,6 +1780,12 @@ def _run_record(job, run_dir):
     # cheap on-disk check _documents_for_run already makes for deliverables/.
     record["has_log"] = (run_dir / "logs" / "pipeline_stdout.log").is_file()
     record.update(_review_progress(run_dir, job.get("review_mode")))
+    # Loop S7 close: a sealed run's document, file and target names identify the
+    # sealed test's material (Annex B.8), so its record carries counts only, and no
+    # question or log text (console_views.sealed_run_record).
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        return console_views.sealed_run_record(record)
     return record
 
 

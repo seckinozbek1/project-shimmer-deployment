@@ -442,12 +442,21 @@ def _sealed_observation(client, headers):
                                   json={"expected": [{"unit": "u03-zone-beta", "rule": "CONV-002"}]}).status_code
     approvals = client.get("/approvals", headers=headers)
     out["approvals"] = approvals.json() if approvals.status_code == 200 else {"status": approvals.status_code}
+    # The run record and the run list (S7 close): a sealed run's documents as counts only.
+    record = client.get("/runs/" + RUN_ID, headers=headers)
+    out["run"] = record.json() if record.status_code == 200 else {"status": record.status_code}
+    listing = client.get("/runs", headers=headers)
+    out["runs"] = [r for r in (listing.json().get("runs") or [] if listing.status_code == 200 else [])
+                   if r.get("run_id") == RUN_ID]
     return out
 
 
 def _sealed_verdict(o):
-    text = json.dumps({k: o[k] for k in NEW_VIEWS + ("approvals",)})
+    text = json.dumps({k: o[k] for k in NEW_VIEWS + ("approvals", "run", "runs")})
+    # The document's own id names sealed material on the run record and the run list.
     leaks = [w for w in SEALED_FORBIDDEN + REPLY_SECRETS if w in text]
+    leaks += [DOC] if DOC in json.dumps({k: o[k] for k in ("run", "runs")}) else []
+    run_records = [o["run"]] + list(o["runs"])
     bodies = [(o[k] or {}).get("body") or {} for k in NEW_VIEWS]
     rows = [r["label"] for r in (o["/report"]["body"] or {}).get("rows") or []]
     activation = (o["/activation"] or {}).get("body") or {}
@@ -456,6 +465,9 @@ def _sealed_verdict(o):
           and activation.get("decisions") == [] and len(activation.get("agent_states") or []) == 4
           and (activation.get("decision_counts") or {}).get("dispatch_attempts") == 3
           and (activation.get("decision_counts") or {}).get("non_calls") == 1
+          and len(run_records) == 2
+          and all(r.get("documents") == [] and r.get("document_count") == 1 and r.get("files") == []
+                  and r.get("file_count") == 1 and r.get("exposure") == "sealed" for r in run_records)
           and len(pending) == 1 and pending[0].get("asked_at") == PENDING_APPROVAL["asked_at"]
           and pending[0].get("payload") == {} and pending[0].get("topic") is None
           and all(o[k]["status"] == 200 for k in NEW_VIEWS)
@@ -500,11 +512,13 @@ def check_sealed_filter():
             if name == "run_folder_marker":
                 # Each reduction on its own (S7 close, adversarial 1): the activation
                 # decisions and the pending question passed through unreduced.
-                for reducer in ("sealed_activation", "sealed_approval"):
+                unreduced = {"sealed_activation": lambda record: dict(record, exposure="sealed"),
+                             "sealed_approval": lambda record: dict(record, exposure="sealed"),
+                             "sealed_run_record": lambda record: dict(record, exposure="sealed")}
+                for reducer in ("sealed_activation", "sealed_approval", "sealed_run_record"):
                     status, detail = _proved(
                         "sealed_filter_" + reducer, observe, _sealed_verdict,
-                        lambda reducer=reducer: patch.object(console_views, reducer,
-                                                             lambda record: dict(record, exposure="sealed")),
+                        lambda reducer=reducer: patch.object(console_views, reducer, unreduced[reducer]),
                         "console_views.%s returns its input" % reducer)
                     if status != "PASS":
                         return ("FAIL", "%s: %s" % (reducer, detail))
@@ -535,10 +549,12 @@ def check_sealed_filter():
     return ("PASS", "a sealed run (marker in the run folder; seal.json three levels up in the cloud layout; "
                     "an unreadable or silent seal.json) shows counts and timings only on every new route and "
                     "on /activation (decisions as counts, no evidence), GET /approvals keeps a pending "
-                    "question's timings only, the report keeps only the allowlisted rows, per-flaw routes "
+                    "question's timings only, GET /runs/{run_id} and GET /runs carry the run's document "
+                    "and file counts and no document or file name, the report keeps only the allowlisted rows, per-flaw routes "
                     "(with /undated-documents and /convention-assignment) and POST /evidence answer 403; "
-                    "neutralised (exposure read as exposed; the activation and approval reductions each "
-                    "returning their input; the /evidence guard removed): FAIL; restored: PASS. "
+                    "neutralised (exposure read as exposed; the activation, approval and run-record "
+                    "reductions each returning their input; the /evidence guard removed): FAIL; "
+                    "restored: PASS. "
                     + " | ".join("%s: %s" % kv for kv in results.items()))
 
 

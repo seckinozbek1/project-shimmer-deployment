@@ -783,7 +783,9 @@ processing swarm governed by an append-only constitution.
   projections through token routes; saved replies are shown as metadata and outcomes, never text;
   every model finding carries `MODEL_FINDING_MARK`; a sealed run (a marker walk that fails closed)
   shows counts and timings only (`/activation` its decisions as counts, a pending question on
-  `/approvals` and `/runs/{run_id}` its timings only) and its per-flaw routes, with
+  `/approvals` and `/runs/{run_id}` its timings only; its run record on `/runs/{run_id}` and
+  `/runs` document, file and target counts and no name, question or error text) and its
+  per-flaw routes, with
   `/undated-documents` and `/convention-assignment`, answer 403; only `/health` and `/console`
   answer without a token (FastAPI's own documentation routes are off). The Annex B.4 reasons live
   once, in `scripts/run_report_text.py`. The screenshots in `docs/loop/ui/` are rendered by
