@@ -158,7 +158,9 @@ def _served(runs_dir=None, with_docs=True):
             server.RUNS_DIR = Path(runs_dir(root))
         _copy_fixture(server.RUNS_DIR)
         server._rebuild_jobs_from_disk()
-        if with_docs:
+        # S10 item 2.1 a: the log is copied only where this tree has it (the container image
+        # ships no docs/ beyond RUNTIME_REFERENCE.md); the copy used to fail every route check.
+        if with_docs and (ROOT / console_views.TEST_CHANGE_REQUESTS).is_file():
             (root / "docs").mkdir()
             shutil.copy2(ROOT / console_views.TEST_CHANGE_REQUESTS, root / console_views.TEST_CHANGE_REQUESTS)
         access = secrets.token_urlsafe(24)
@@ -476,6 +478,10 @@ def check_report_route():
 def check_test_change_requests_route():
     if not _has_fastapi():
         return SKIP_FASTAPI
+    if not (ROOT / console_views.TEST_CHANGE_REQUESTS).is_file():
+        # S10 item 2.1 a: with no log here there are no entries to compare the route with.
+        return ("SKIP", TCR_PATH.as_posix() + " is not present here (the container image ships no docs/ "
+                "beyond RUNTIME_REFERENCE.md), so the route's entries cannot be compared with it")
     source = (ROOT / console_views.TEST_CHANGE_REQUESTS).read_text(encoding="utf-8")
     headings = sum(1 for line in source.splitlines() if line.startswith("### TCR-"))
     with _served() as (client, headers, _server, root):
@@ -1007,8 +1013,12 @@ def _views_failures(views, html_path=None):
     page = Path(html_path or ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8")
     if "var SEALED_NOTE_TEXT = %s;" % json.dumps(run_report_text.SEALED_NOTE) not in page:
         failures.append("console.html's fallback sealed note differs from run_report_text.SEALED_NOTE")
-    if "TCR-001" not in views["exposed/en/testChangesHtml"]:
-        failures.append("test change requests page: no entry")
+    if (ROOT / TCR_PATH).is_file():
+        if "TCR-001" not in views["exposed/en/testChangesHtml"]:
+            failures.append("test change requests page: no entry")
+    # S10 item 2.1 a: a tree without the log (the container image) shows the page's absent text.
+    elif console_views.NOT_PRESENT not in views["exposed/en/testChangesHtml"]:
+        failures.append("test change requests page: an absent log is not said to be absent")
     if "u01-zone-alpha" not in views["exposed/en/roundReuseHtml"]:
         failures.append("rounds view: no unit rows")
     # S7 close, adversarial 1: the exposed activation view shows each decision in
