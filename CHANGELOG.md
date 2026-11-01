@@ -4,11 +4,12 @@ One entry per product version, in plain English. The version number lives in `VE
 
 ## 0.1.0.dev7 (S10, fresh-clone test)
 
+- **No local-profile path reaches a cloud provider.** After the draft fix, every model call site was swept; each goes through the backend the agent resolved, and gate check 313 runs the local paths with provider clients that refuse to be built.
 - **A draft under the local profile no longer calls the Claude API.** The draft memo goes through the drafter's own backend (INC-031); gate check 312. Local Draft makes no provider call; it is not yet proven end to end.
 - **`shimmer.sh` accepts the venv it makes under Git Bash.** The venv's Python is passed relative to the launcher's folder, which a Windows Python can open (INC-030); check 308 runs it with a real Windows venv.
 - **The chat window says what it checked.** Its startup line says the local model is configured and loads on the first request, and a request the model could not answer says the model was not used and why; check 310.
 - **The image ships `VERSION` and restores the shipping-gate line** check 252 looks for (open item 7); `seals/` is kept out of the build context; checks that need files the image lacks skip and say which.
-- **The 35 frozen launchers moved to `archive/frozen_launchers/`** (open item 20).
+- **The sixteen frozen launchers and their nineteen companion files (35 files) moved to `archive/frozen_launchers/`** (open item 20).
 - **The README is rewritten for v1** (S11, documents only) and links the results page (`docs/RESULTS.md`). It says what Shimmer is (established mechanisms put together), what it does and does not do, what has been measured (development, exposed, with what the figures do not show), the limitations, a measured hardware and cost summary, install from source and the container image, quickstart, configuration, the constitution and agents, the testing rules and how to reproduce the evaluation. It states that the privacy layer today refuses sensitive runs and does not mask, that switching masking on needs its own amendment, and that the server's one shared token makes Shimmer a single-operator system. The sealed evaluation comes after v1; no package release is promised.
 - `CLAUDE.md` narrows "domain-agnostic" to what the evidence supports. Links to README sections that moved now point to `docs/RUNTIME_REFERENCE.md`; the dated history and state documents get dated notes instead of rewrites.
 

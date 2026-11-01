@@ -38,9 +38,9 @@ import contract_decoding_checks as base
 import decoding_policy
 
 EOS = base.EOS
-# S10 item 2.1 a: the inputs this module's tests need that a tree may lack (the container image
-# ships no benchmark/); a test that needs one skips naming it.
-ABSENT = [] if base.REPLAY_TOOL.is_file() else [base.REPLAY_TOOL.relative_to(ROOT).as_posix()]
+# S10 item 2.1 a: the one input this module's tests need that a tree may lack is the replay tool
+# (the container image ships no benchmark/); the test that needs it skips naming it, and the gate
+# check runs the rest.
 # Pieces that cross the boundaries the envelope grammar cares about, so a token is admitted only
 # when its WHOLE text keeps the reply in the language.
 PIECES = ['{"agent": "', '", "doc_id": "', '", "items": [', '{"ref": "', '", "kind": "', '", "confidence": "',

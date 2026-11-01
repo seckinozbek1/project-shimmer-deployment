@@ -688,7 +688,7 @@ open-item sweep.
 ## 62. `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off (found at loop S7 close and S10, lanes) (issue #120)
 
 - **What it is.** `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off.
-- **Evidence.** `shimmer.sh` lines 230, 254 and 306 pass `${TMPDIR:-/tmp}/...` paths (the draft and review flags, the token-hash file). Read from the code by lane s10-fix1, not run. INC-030's failure needed path conversion off, which the loop's own hidden start had set (`MSYS_NO_PATHCONV=1`).
+- **Evidence.** `shimmer.sh` lines 234, 258 and 310 (at `7021a4a`) pass `${TMPDIR:-/tmp}/...` paths (the draft and review flags, the token-hash file). Read from the code by lane s10-fix1, not run. INC-030's failure needed path conversion off, which the loop's own hidden start had set (`MSYS_NO_PATHCONV=1`).
 - **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
 - **What would settle it.** A launcher case under conversion off that answers 1 and D, and paths a Windows Python can open.
 
@@ -705,3 +705,38 @@ open-item sweep.
 - **Evidence.** `tools/loop/amend_pinned_baselines.py` writes `"date": "2026-10-27"` for every amendment (lane s10-fix1's report); the S10 amendment was written by hand with its real date (D-165).
 - **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
 - **What would settle it.** The date taken from the clock or an argument, with a fixture check.
+
+## 65. `shimmer.sh`: a child process can consume piped input meant for the backend question (found at loop S10, D-S13 item 6b) (issue #123)
+
+- **What it is.** With its answers piped in, a child that `shimmer.sh` starts during the install (pip or Python) reads the buffered input, so the backend question finds end of input and takes the Cloud default.
+- **Evidence.** The 6b re-run on a fresh clone of loop/s10 at `74408d3` under Git Bash with input `L`: install finished (723 s, the CUDA torch build), menu reached, but the log says "Backend profile: cloud"; `shimmer.bat` with the same input chose Local (D-160, D-167).
+- **Why it was left.** It affects scripted callers only, not a person at a terminal; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The install's children started with standard input closed, and a launcher check that pipes `L` through a full install path.
+
+## 66. A local draft under the final profile is written by the tuned extraction adapter (found at loop S10 close, adversarial checker) (issue #124)
+
+- **What it is.** After INC-031's fix the draft memo goes through the drafter's backend; for `local_producer` in final mode that is `call_local`, which loads `final_models.resident('producer')`, the Producer adapter trained for compact extraction (`scripts/agent_wrapper.py:1101-1104`, `scripts/pipeline.py:779-785`). L14c ran the launcher with base models (`SHIMMER_MODEL_MODE=base`), so its memo came from the base model (`unsloth/Qwen2.5-7B-Instruct-bnb-4bit`); a final-mode draft would use the adapter. The README and the console say only "a local model".
+- **Evidence.** The S10 adversarial checker (private `analysis/s10close-round1.md`); L14c's reply record (model id, base mode).
+- **Why it was left.** Which weights write a memo is a model choice (P12: changing the default models is the operator's); Local Draft is already marked not yet proven.
+- **What would settle it.** The operator's choice of the draft's local weights in final mode, then a check that asserts the identity and the README naming it.
+
+## 67. A draft memo cut at its output cap goes to review with nothing saying so (found at loop S10 close, adversarial checker) (issue #125)
+
+- **What it is.** `scripts/pipeline.py` about 788 to 790 marks the memo `free_text` even when the call's usage says it was truncated; L14c's memo reached the 4,096-token cap.
+- **Evidence.** L14c (D-167): 4,096 output tokens; the S10 adversarial checker.
+- **Why it was left.** The function is pinned; a change needs an amendment and a run to see whether the memo is in fact cut (L14d, after v1).
+- **What would settle it.** A truncated memo marked in its outcome and the run summary, with a check, at L14d.
+
+## 68. Under the local profile a web-enabled agent can still reach the web (found at loop S10 close, lane s10-fix2) (issue #126)
+
+- **What it is.** Under the local profile a web-enabled agent can still reach the web.
+- **Evidence.** `scripts/search_router.py:201-274` opens web URLs with `urllib.request` for agents whose registry flag allows the web (`may_use_web`). It is not a provider client, so the S10 provider sweep (check 313) leaves it; under the local profile a review with a web-enabled agent would still reach the network (lane s10-fix2's report).
+- **Why it was left.** An operator choice (P12); recorded for S6 (P16).
+- **What would settle it.** The operator's choice: whether the local profile refuses the web, then a check either way.
+
+## 69. Check 313 copies the local remap of `pipeline.main` instead of calling it (found at loop S10 close, lane s10-fix2) (issue #127)
+
+- **What it is.** Check 313 copies the local remap of `pipeline.main` instead of calling it.
+- **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
+- **Why it was left.** recorded for S6 (P16).
+- **What would settle it.** The remap factored into a function when a change to `main` needs an amendment anyway, and 313 calling it.

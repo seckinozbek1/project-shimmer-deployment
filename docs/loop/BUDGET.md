@@ -281,4 +281,4 @@ Spent 64.73 by the reaper (17:07:00 UTC); 134.27 left under 199. The v1 line has
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| L14c | launcher-menu-l14c, arm L, sealed at 74408d3 after gate G1b and the side gates (D-165, D-166) | 1.48, cap 2.22 (53 minutes) | L14C_ACTUAL |
+| L14c | launcher-menu-l14c, arm L, sealed at 74408d3 after gate G1b and the side gates (D-165, D-166) | 1.48, cap 2.22 (53 minutes) | 17:19:34 (intent) to 18:49:54 (termination), 91 minutes, 1.96 USD; stopped by its deadline while the draft was still reviewing its memo (D-167). Usage seven-day 86 percent at launch (five-hour not reported), reaper 17:16:59 UTC. Reaper total after it 66.63; left 132.37. The v1 line is spent; the 0.88 past it comes from the moved steps at the end. |
