@@ -4,7 +4,7 @@ One entry per product version, in plain English. The version number lives in `VE
 
 ## 0.1.0.dev7 (S10, fresh-clone test)
 
-- **No local-profile path reaches a cloud provider.** After the draft fix, every model call site was swept; each goes through the backend the agent resolved, and gate check 313 runs the local paths with provider clients that refuse to be built.
+- **No local-profile path reaches a cloud provider.** After the draft fix, every model call site was swept; each run path goes through the backend the agent resolved, and gate check 313 runs the local paths with provider clients that refuse to be built. Two sites still build a provider client directly and are reachable only off the run path: `scripts/claim_classifier.py` (gate check 16 only) and `scripts/model_registry.py` (a catalogue listing behind a backend test).
 - **A draft under the local profile no longer calls the Claude API.** The draft memo goes through the drafter's own backend (INC-031); gate check 312. Local Draft makes no provider call; it is not yet proven end to end.
 - **`shimmer.sh` accepts the venv it makes under Git Bash.** The venv's Python is passed relative to the launcher's folder, which a Windows Python can open (INC-030); check 308 runs it with a real Windows venv.
 - **The chat window says what it checked.** Its startup line says the local model is configured and loads on the first request, and a request the model could not answer says the model was not used and why; check 310.

@@ -738,5 +738,5 @@ open-item sweep.
 
 - **What it is.** Check 313 copies the local remap of `pipeline.main` instead of calling it.
 - **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
-- **Why it was left.** recorded for S6 (P16).
-- **What would settle it.** The remap factored into a function when a change to `main` needs an amendment anyway, and 313 calling it.
+- **Why it was left.** `main` is pinned (IV.7), so the change needs an amendment of `main`; recorded for S6 (P16). The S10 round 2 adversarial checker adds: 313 builds the drafter with `pipeline._build_wrapper`, while `main` builds AMENDMENT_DRAFTER's wrapper directly from its own registry choice (`scripts/pipeline.py` about 4886 to 4901), so a change there would not reach 313 either.
+- **What would settle it.** The remap and the drafter's construction factored into functions when a change to `main` needs an amendment anyway, and 313 calling them.

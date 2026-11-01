@@ -253,7 +253,7 @@ def _harness_case(profile, root):
         try:
             result = run_agent.run_one("LEGAL_ANALYST", unit_id="u01", unit_text="Unit text.", rule_id="CONV-001",
                                        rule_text="A rule.", profile=run_agent.LOCAL, orch=run.orch, keys=KEYS)
-        except Exception as exc:
+        except (Exception, SystemExit) as exc:  # apply_profile exits when the agent is not in the table
             error = "%s: %s" % (type(exc).__name__, exc)
     problems = []
     if built:
@@ -318,7 +318,9 @@ def check():
              (draft_backend_checks._neutralised_function(), polish, profile)),
             ("polish pass with a direct call_claude", "polish pass", (draft, _polish_with_direct_call_claude(), profile)),
             ("_LOCAL_PROFILE without AMENDMENT_DRAFTER", "registry",
-             (draft, polish, {k: v for k, v in profile.items() if k != "AMENDMENT_DRAFTER"})))
+             (draft, polish, {k: v for k, v in profile.items() if k != "AMENDMENT_DRAFTER"})),
+            ("_LOCAL_PROFILE without LEGAL_ANALYST", "harness",
+             (draft, polish, {k: v for k, v in profile.items() if k != "LEGAL_ANALYST"})))
     except AssertionError as exc:
         return "FAIL", str(exc)
     proofs = []

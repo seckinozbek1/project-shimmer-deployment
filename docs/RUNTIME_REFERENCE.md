@@ -496,7 +496,7 @@ Mounted input/config/durable/output states are operator data, not image content.
 
 The image ships scripts/config/tools/corpus ingestion, root documentation, this
 runtime reference and three declared synthetic fixtures. It omits operator input, durable/ontology
-stores, runs, answer keys, full benchmark corpora and Windows launcher files. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), and the operator-side cloud tools that import the guard are not run there.
+stores, runs, answer keys, full benchmark corpora and Windows launcher files. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
 An unmounted image gate therefore has declared missing-input failures. Source
 parity proves shipped bytes, not end-to-end container review quality.
 

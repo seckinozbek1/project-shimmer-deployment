@@ -25643,7 +25643,9 @@ def check_312_draft_memo_uses_the_drafters_backend():
     whose call_claude raises must return the local text with its call evidence, activation row,
     reply record and free_text outcome on one call id, and a Claude drafter still reaches the
     Claude client; a qwen_local and an openai_api drafter reach their own backend the same way, and
-    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4).
+    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4); the
+    budget neutralisation proves this for the local backends only, since the cloud backends'
+    own default is also 4096 (S10 round 2).
     Neutralise (the old direct call_claude, and the budget emptied, each compiled beside the
     pipeline), fail, restore, pass."""
     from draft_backend_checks import check
