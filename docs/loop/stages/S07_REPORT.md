@@ -27,7 +27,7 @@ Round 1, three fresh checkers at the close (adversarial 13 items: 1 CRITICAL, 2 
 | Route table and checks 104 and 167 pass | Met: 36 routes; checks 104 and 165 to 167 ran and passed in lane s07-fix2's tree (merged at `015c388`) and check 116 in lane s07-exitcodes' tree (merged at `c2cce30`); at the tip they run in the full gate (GATE_RESULT) | D-156; private `analysis/lane_s07_exitcodes_report.md` |
 | Screenshots checked and reviewed | Met: all 27 images checked when rendered (lane s07-fix1); the ten sealed pages re-rendered at `015c388` reviewed by a fresh checker, 0 CRITICAL, 0 SERIOUS, 5 MINOR (open item 55, fixed in lane s07-r3fix); the ten re-rendered at `b2b2fb1` scanned and looked at by the lane and reviewed by round 3's adversarial checker | `docs/loop/ui/`; private `analysis/s7_shots_checker.md`, `analysis/lane_s07_r3fix_report.md`, `analysis/s7close-round3.md` |
 | Gate checks | Met: checks 298 to 311 added, 108 extended, each with neutralise, fail, restore, pass | D-156, D-157, merge `c2cce30` |
-| Checkers closed; stage merged; tag | Met: three rounds closed (D-159, D-160), merged into the loop branch, tag `loop-s07-v1` (TAG_LINE) | Checkers above; D-162 |
+| Checkers closed; stage merged; tag | Met: three rounds closed (D-159, D-160), merged into the loop branch, tag `loop-s07-v1` (on the merge commit `b2a98db`) | Checkers above; D-162 |
 
 ## Spend
 
@@ -35,7 +35,7 @@ L14: 13 billed minutes, 0.28 USD (forecast 1.68, cap 2.52; D-155). L14b: 53 bill
 
 ## Gate
 
-The full gate at `02fae41` (the loop branch merged into loop/s07) equals the S5 worktree baseline apart from check 28 (a worktree has no `input/`) and S7's route checks, which skip under py -3.12 without fastapi and pass in the loop venv. The reaper proof passes from the lead's shell at `c2cce30` (`all_passed`, saved in private `gate_logs/s07_c2cce30/reaper_proof.log`). At the tip `07e84e8` (D-160): PASS 270, WARN 1, SKIP 11, FAIL/ERROR 30 of 312, the non-pass set equal to `02fae41`'s apart from check 01 (empty `durable/` folders an earlier gate left in the worktree; open item 56, issue #114); checks 256 and 311 pass; every side gate exits 0 (final integration, the cloud run checks and the controller gate in the main checkout, which holds the ignored local files they read). The first run at `f1e7e2f` lost its table to a Tcl abort at shutdown (INC-029); gates run unbuffered since. LOOP_GATE
+The full gate at `02fae41` (the loop branch merged into loop/s07) equals the S5 worktree baseline apart from check 28 (a worktree has no `input/`) and S7's route checks, which skip under py -3.12 without fastapi and pass in the loop venv. The reaper proof passes from the lead's shell at `c2cce30` (`all_passed`, saved in private `gate_logs/s07_c2cce30/reaper_proof.log`). At the tip `07e84e8` (D-160): PASS 270, WARN 1, SKIP 11, FAIL/ERROR 30 of 312, the non-pass set equal to `02fae41`'s apart from check 01 (empty `durable/` folders an earlier gate left in the worktree; open item 56, issue #114); checks 256 and 311 pass; every side gate exits 0 (final integration, the cloud run checks and the controller gate in the main checkout, which holds the ignored local files they read). The first run at `f1e7e2f` lost its table to a Tcl abort at shutdown (INC-029); gates run unbuffered since. On the loop branch after the merge (`b2a98db`): PASS 270, WARN 1, SKIP 12, FAIL/ERROR 29 of 312, the non-pass set exactly `02fae41`'s; every side gate exits 0 in the main checkout at that commit (private `gate_logs/loop_b2a98db/`).
 
 ## Count line
 
