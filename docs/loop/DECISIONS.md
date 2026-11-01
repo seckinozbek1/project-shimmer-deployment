@@ -1292,3 +1292,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Item 2, money.** 12.3 USD moves from the parallel track's 30 to the moved steps that waited (the GNN run 1.70, the third re-run with the replays behind open items 47 and 48 6.6, the three S6 items 4.04): about 12.34, within D-S19's 13. The parallel track keeps about 17.7. Those steps keep their place after v1; the sealed evaluation's 60 floor, the 200 cap and the 199 hard stop stay. Re-forecast in BUDGET.md; FOR_SECKIN says what now fits.
 - **Item 3.** AUDIT_S05 findings 1 to 4 were fixed in D-149 before the merge.
 - **Rules.** D-S19, D-S18 items 6 and 7, H9, D-S12 item 6.
+
+## D-151. The merge gate on the loop branch: equal to the baseline; every side gate passes in the main checkout
+
+- **When, stage.** 2026-11-01 04:18 +0300 (system clock), the S5 close, after the second merge (`50364b6`) and D-150 (`9b03f5c`).
+- **Floor.** Free memory held at 2.6 to 2.8 GB from 03:00 to 03:55 +0300 (the operator's programs). D-013's 4 GB floor is the loop's own rule against paging, not a correctness condition; the merge gate ran at 2.62 GB free and finished in 18 minutes. D-S13 item 6b's 4 GB floor for the install is the operator's and is not touched.
+- **Main gate** (`scripts/verify_session1.py` in the main checkout at `9b03f5c`, 03:54 to 04:12): PASS 267, WARN 1, SKIP 3, FAIL or ERROR 27 of 298; the non-pass set is exactly the gate's at the first S5 merge (`gate_logs/loop_2dea80f/`), and check 31 passes here (the main checkout holds `input/`). Log `gate_logs/loop_9b03f5c/main_gate.log`.
+- **Side gates** in the main checkout: execution topology, report recommendations, localization, multi-round, final integration (the producer adapter is present here, so its three worktree errors are gone), the cloud run checks and the controller checks all exit 0. The final-integration gate rewrote its two tracked logs; restored.
+- **Next.** Tag `loop-s05-v1` on the loop branch tip, push the loop branch, `loop/s05` and the tag under D-S5 after the range scans.
+- **Rules.** IV.4, IV.7, D-S5 rules 1 and 2, D-013, D-141.
