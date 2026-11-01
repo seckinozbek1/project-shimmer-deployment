@@ -579,7 +579,7 @@ open-item sweep.
 ## 48. VERIFIER's one-item-per-reference list can run past 4,096 tokens (found at loop S5, R2c and L12b) (issue #103)
 
 - **What it is.** VERIFIER sometimes writes one item for each reference in the draft and does not stop; at 4,096 new tokens (D-134) most replies now end, but some still reach the allowance and the envelope never closes.
-- **Evidence.** R2c: 4 of 8 capped prompts still at 4,096. L12b: `cuad_527255a5c970` (one intervention) and `f3_s3102_vwmj` (none) at 4,096; three other entries expected to stay capped ended on their own. D-134, D-138.
+- **Evidence.** R2c: 4 of 8 capped prompts still at 4,096. L12b: `cuad_527255a5c970` (one intervention) and `f3_s3102_vwmj` (none) at 4,096; three other entries expected to stay capped ended on their own. L12c: `f1_s1102_mstx` at 4,096 (no intervention). D-134, D-138, D-146.
 - **Why it was left.** A larger allowance is unmeasured and the lists look unbounded; a structural bound (no more items than distinct references) needs a decision measured on development runs (P16).
 - **What would settle it.** A bound on VERIFIER's item count tied to its input (or a measured larger allowance), proven by a replay of these prompts, then a decision.
 
