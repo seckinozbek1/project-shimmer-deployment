@@ -41,6 +41,9 @@ WIZARD = SCRIPTS / "intake_wizard.py"
 SCOPE_PATH = ROOT / "config" / "review_scope.json"
 REGISTRY_PATH = ROOT / "config" / "agent_registry.json"
 RUNS_ROOT = ROOT / "output" / "runs"
+# The children this window starts write into the window, never into a console of
+# their own: the Windows no-window flag, nothing elsewhere (HIDDEN-A, S7 close).
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # Dark theme.
 BG = "#1e1e1e"
@@ -143,9 +146,10 @@ def _extract_date(s: str) -> "str | None":
 
 
 def _extract_question(text: str) -> str:
-    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic."""
+    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic. A bare
+    'draft' leaves no topic (it used to become the topic "draft")."""
     return re.sub(
-        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\s+(me\s+)?(a\s+)?"
+        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\b\s*(me\s+)?(a\s+)?"
         r"(memo|brief|note)?\s*(on|about|regarding|re)?\s*:?\s*",
         "", text.strip()).strip()
 
@@ -345,6 +349,17 @@ def latest_run_dir() -> "Path | None":
     # Sort by mtime: human-readable <date>__<slug> run names are not chronologically
     # sortable by name (they carry no time of day).
     return max(dirs, key=lambda d: d.stat().st_mtime) if dirs else None
+
+
+def results_hint(d: "Path | None") -> str:
+    """Where the run's deliverables are, relative to the project when they sit in it."""
+    if d is None:
+        return ""
+    try:
+        shown = d.relative_to(ROOT).as_posix()
+    except ValueError:
+        shown = d.as_posix()
+    return f" Results in {shown}/deliverables/ (start with _run_summary.md)"
 
 
 def _summarize_bus_line(line: str) -> str:
@@ -578,7 +593,17 @@ class ChatApp:
         target = (self._run_review if action == "review"
                   else self._run_draft if action == "draft"
                   else self._run_import)
-        threading.Thread(target=target, args=(cmd,), daemon=True).start()
+        threading.Thread(target=self._guarded, args=(target, cmd), daemon=True).start()
+
+    def _guarded(self, target, cmd: dict) -> None:
+        """A worker that raises must not leave the window busy for good: every later
+        message would be answered "Still working on the previous request"."""
+        try:
+            target(cmd)
+        except Exception as e:
+            self.ui(self.post, f"The request stopped with an error ({type(e).__name__}). "
+                               "See the messages above.")
+            self.ui(self._finish_run)
 
     def _stream_subprocess(self, argv: "list[str]", stdin_str: "str | None") -> int:
         try:
@@ -586,7 +611,8 @@ class ChatApp:
                 argv, cwd=str(ROOT),
                 stdin=subprocess.PIPE if stdin_str is not None else None,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, encoding="utf-8", errors="replace", bufsize=1)
+                text=True, encoding="utf-8", errors="replace", bufsize=1,
+                creationflags=NO_WINDOW)
         except OSError as e:
             self.ui(self.post, f"Could not start the process: {e}")
             return 1
@@ -645,9 +671,7 @@ class ChatApp:
         rc = self._stream_subprocess(
             [sys.executable, "-X", "utf8", str(PIPELINE)] + PIPELINE_NONINTERACTIVE + flags, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Review complete." + where)
         else:
             self.ui(self.post, f"Review ended with exit code {rc}. See the messages above.")
@@ -667,9 +691,7 @@ class ChatApp:
         self.ui(self.post, "Drafting a memo, then reviewing it...")
         rc = self._stream_subprocess(argv, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Draft and review complete." + where)
         else:
             self.ui(self.post, f"Draft ended with exit code {rc}. See the messages above.")

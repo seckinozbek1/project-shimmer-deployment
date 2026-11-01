@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "run_id": "0c0501e00c0501e00c0501e00c0501e0",
+  "state": "completed",
+  "started_at": "2026-10-29T09:00:05+00:00",
+  "finished_at": "2026-10-29T09:41:10+00:00",
+  "reached_end": true,
+  "exit_code": 0,
+  "document_count": 1,
+  "amendment_count": 0,
+  "error_type": null
+}

@@ -1,0 +1,27 @@
+{
+  "document_id": "sample_ledger",
+  "amendments": [],
+  "_validator_errors": [],
+  "model_findings_not_promoted": [
+    {
+      "agent": "STYLE_GUARDIAN",
+      "rule_id": "CONV-002",
+      "source_rule_id": "LEDGER-2",
+      "unit_id": "u03-zone-beta",
+      "relation": "above_band",
+      "value_a": 31.0,
+      "unit_a": "qm/zed",
+      "value_b": 24.6,
+      "unit_b": "qm/zed",
+      "source_refs": [
+        "REF-0003"
+      ],
+      "explanation": "The rate looks higher than the reference range.",
+      "model_claimed_verdict": "irregular",
+      "written_by": "model",
+      "promoted": false,
+      "checked_by_python": false,
+      "reader_notes": []
+    }
+  ]
+}

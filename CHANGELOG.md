@@ -2,6 +2,21 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## 0.1.0.dev6 (S7 close, 1 November 2026)
+
+- **The console shows what the pipeline records.** New read-only views for a run's saved model replies and their outcomes (metadata only, never the reply text), the findings a model wrote with their mark in both languages, multi-round runs and their reuse record, the agent switches (INST_FINDER on or off, and why FACT_CHECKER is withheld), the run report and cost rows, and the test-change request log.
+- **A sealed test's per-flaw results never reach the console.** Every new view shows a sealed run as counts and timings only; a sealed run's per-flaw routes answer 403 and `POST /evidence` refuses it.
+- **Only `/health` and `/console` answer without the token**; FastAPI's own `/docs`, `/redoc` and `/openapi.json` are switched off.
+- **The launchers work on Windows again.** `shimmer.bat` lost the quotes of one `for /f` line inside `cmd /c` and stopped before installing anything; fixed. The three launchers reach their menus, end cleanly at end of input, and `SHIMMER_SKIP_INSTALL` skips the install step.
+- **The chat window no longer hangs after an error**, and a bare `draft` asks for its topic instead of drafting a memo about the word "draft".
+- **A third sealed run arm, L, runs the launcher menu once on a cloud instance** (a review, then a draft) from a sealed list of prompts and answers, with the network denied to its Python children.
+- **A refused run no longer shows as a failure.** A multi-round run refused for its declaration (exit 8) and a run refused because `SHIMMER_INST_FINDER=off` has no ratified amendment (exit 9) show as the governance statuses `refused_multi_round` and `refused_inst_finder_unratified`, in the server and the console, in both languages.
+- **The launchers' start-up check imports what the menu runs** (`tools/runtime_contract.py --entrypoint launcher`: the readiness check and the intake wizard), not a cloud probe no launcher uses; arm L is sealed only for a workload with no operator redaction rule in force.
+- Gate checks 298 to 311 added; check 108 extended to exits 8 and 9.
+- **`shimmer.sh` starts from a scripted shell too.** It finds its own folder without `dirname` and adds `/usr/bin` to a PATH that lacks it, so a Git Bash started by a script reaches the menu (open item 54).
+- **The console's sealed pages say exactly what they withhold.** The sealed note names the document, file and target names it withholds and that the FACT_CHECKER reasons are shown under Agent switches, sits directly under the multi-round heading, and one model-written finding reads in the singular; the console fixture's records agree with each other, and ten sealed screenshots are re-rendered (open item 55).
+- **Checks that prove what they say.** Check 306 now proves the sealed note's wording on its own, refuses a hidden-start flag that Windows would ignore and sees more ways a process can start; check 298 compares the console fixture's records call by call in both directions; check 308 covers an empty PATH; check 311 runs the launcher's opening lines instead of matching one literal line; and check 32 removes the input folders it creates, so a gate leaves the tree as it found it.
+
 ## 0.1.0.dev5 (2026-11-01)
 
 - **Development runs on a cloud GPU, end to end.** A sealed bundle now carries the B3 pipeline arm and the B1 bare-model arm, runs several bundles in one instance session (`--batch`), and keeps every entry's evidence even past the soft budget. Each launch is a loop launch: a ledger line before the request, a budget guard, a reaper that ends an instance at its deadline, and up to two loop instances at once, with a third refused.

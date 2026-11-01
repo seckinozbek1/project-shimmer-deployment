@@ -345,7 +345,8 @@ governance stop is a square, a crash is a triangle, success is a circle; this is
 single most load-bearing visual decision in the whole design and it is deliberately
 redundant across two channels, not one; (3) copy, a governance stop's detail line names
 the actual rule (`stop_reason.code`, one of `stopped_model_approval` /
-`stopped_redaction_gate` / `blocked` / `refused_sensitivity_layer_inactive`, rendered as
+`stopped_redaction_gate` / `blocked` / `refused_sensitivity_layer_inactive` /
+`refused_multi_round` (exit 8) / `refused_inst_finder_unratified` (exit 9), rendered as
 a full sentence, never the bare code) and explains what happens next (see copy below); a
 crash's detail line shows `stop_reason.detail`, which per the server's own comment
 (`server.py:1252-1253`) can be a short phrase or up to a 2000-character subprocess log

@@ -44,6 +44,8 @@ import ordinary_final_watchdog as watchdog_module
 import prepare_ordinary_final_run as sealer
 from ordinary_final_run import read, write, sha
 import instance_reaper
+# Arm L (D-S13 item 6d): its tests and neutralisations, mixed into ControllerChecks below.
+from ordinary_final_launcher_checks import LAUNCHER_NEUTRALIZATIONS, LauncherArmChecks
 
 INSTANCE = 'a' * 32
 KEY_ID = 'b' * 32
@@ -593,7 +595,7 @@ def run_controller(root, base, plan, transport, provider, clock, credential, cal
     return transport, console.getvalue().splitlines(), ran
 
 
-class ControllerChecks(unittest.TestCase):
+class ControllerChecks(LauncherArmChecks, unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -4874,6 +4876,7 @@ NEUTRALIZATIONS = [
      lambda base, target: dict(before_workload=None, peak=None, peak_kind=None, after_workload=None, readings=None,
                                after_evidence=None, runner_file=False)),
 ]
+NEUTRALIZATIONS += LAUNCHER_NEUTRALIZATIONS
 
 
 if __name__ == '__main__':

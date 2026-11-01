@@ -62,10 +62,13 @@ def main(bundle):
             compared += 1
     sealed = seal.get('exposure') == 'sealed'
     generated = sorted(n for n in members if n not in tree)
+    launcher = m.get('arm') == 'L'
     for name in generated:
         # A generated member is the run's input (the workload, or a sealed test's documents)
-        # or the evidence folder of the development path; nothing else.
-        require(name.startswith('input/') or name.startswith('docs/fix/'),
+        # or the evidence folder of the development path; nothing else. Arm L (ARM-L-A) carries
+        # its workload under launcher_input/ for the menu to import; only arm L may.
+        require(name.startswith('input/') or name.startswith('docs/fix/')
+                or (launcher and name.startswith('launcher_input/')),
                 'Unexpected non-committed archive member: ' + ('a test file' if sealed else name))
     # HEAD may move after sealing, but never in a file that launches or seals the run: the
     # archived runtime, the bound controller and the preparation sources. (The run's evidence

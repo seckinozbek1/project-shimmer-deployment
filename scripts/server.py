@@ -169,7 +169,12 @@ from run_context import SERVER_RUN_ID_RE as _RUN_ID_RE
 # points: 0 success (or 5 if a redaction BLOCK), 2 snapshot conflict
 # (--save-snapshot only), 3 model-gate stop, 4 redaction-gate stop, 5 blocked
 # (dual meaning, see above), 6 sensitivity-layer-inactive refusal, 7 operator
-# abort (meta-signature decline). Anything else non-zero is a plain failure.
+# abort (meta-signature decline), 8 multi-round refusal (main() when the run is
+# not declared non-sensitive or redaction is enabled, and
+# multi_round_phase.execute on an invalid case state; the reason is in
+# audit/multi_round.json), 9 SHIMMER_INST_FINDER=off with no ratified
+# amendment allowing it (_inst_finder_startup_guard, before any model call).
+# Anything else non-zero is a plain failure.
 _EXIT_STATUS_MAP = {
     0: "completed",
     2: "snapshot_conflict",
@@ -178,11 +183,14 @@ _EXIT_STATUS_MAP = {
     5: "blocked",
     6: "refused_sensitivity_layer_inactive",
     7: "operator_abort",
+    8: "refused_multi_round",
+    9: "refused_inst_finder_unratified",
 }
 # Exit codes whose status is a governance outcome, not a failure: the console
 # must render these distinctly from a crash (item 4 of STEP 6).
 GOVERNANCE_STATUSES = {"blocked", "stopped_model_approval", "stopped_redaction_gate",
-                       "refused_sensitivity_layer_inactive"}
+                       "refused_sensitivity_layer_inactive", "refused_multi_round",
+                       "refused_inst_finder_unratified"}
 
 
 def _status_for_exit_code(exit_code):
@@ -220,7 +228,11 @@ async def _lifespan(app):
             raise RuntimeError("Shimmer could not stop every review worker; inspect the server log.")
 
 
-app = FastAPI(title="Project Shimmer front door", version="1.0", lifespan=_lifespan)
+# Loop S7 (plan closure 3, DS7-5): FastAPI's own /openapi.json, /docs,
+# /docs/oauth2-redirect and /redoc are switched off. They answered without a
+# token and described every route; only /health and /console answer without one.
+app = FastAPI(title="Project Shimmer front door", version="1.0", lifespan=_lifespan,
+              openapi_url=None, docs_url=None, redoc_url=None)
 
 
 # ---------------------------------------------------------------------------
@@ -871,7 +883,8 @@ def _run_job(run_id):
 
     # Record the outcome under the lock. productization STEP 6: a governance
     # outcome (blocked, stopped_model_approval, stopped_redaction_gate,
-    # refused_sensitivity_layer_inactive, snapshot_conflict, operator_abort) is
+    # refused_sensitivity_layer_inactive, refused_multi_round,
+    # refused_inst_finder_unratified, snapshot_conflict, operator_abort) is
     # a distinct status, not "failed": the pipeline refused or paused ON
     # PURPOSE. A run timeout has no exit_code to map (still "failed", with the
     # timeout reason already in `error`); any other non-zero code not in the
@@ -953,6 +966,21 @@ def _validated_run_dir(run_id):
     if not run_dir.is_dir():
         raise HTTPException(status_code=404, detail="run_id not found")
     return run_dir
+
+
+SEALED_REFUSAL = ("sealed run: this route serves per-flaw results, which a sealed test never "
+                  "shows (Annex B.8); its counts and timings are on /replies, /model-findings, "
+                  "/switches, /report, /activation and /multi-round")
+
+
+def _refuse_sealed(run_dir):
+    """Loop S7 item 2: a route that serves per-flaw results (finding text, unit or
+    rule ids, reasons) refuses a sealed run with 403. Sealed is decided by
+    console_views.exposure: a run_record.json or seal.json marker in the run
+    folder or up to three parent folders (plan closure 2), failing closed."""
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        raise HTTPException(status_code=403, detail=SEALED_REFUSAL)
 
 
 def _project_finding(item, *, agent, doc_id):
@@ -1469,7 +1497,7 @@ def _pending_approval_for(run_dir):
             timeout_at = (asked_dt + timedelta(seconds=wait_s)).isoformat()
         except ValueError:
             timeout_at = None
-    return {
+    pending = {
         "topic": record.get("topic"),
         "message": payload.get("message") if isinstance(payload.get("message"), str) else "",
         "payload": payload,
@@ -1477,6 +1505,13 @@ def _pending_approval_for(run_dir):
         "default_on_timeout": "DEFERRED",
         "timeout_at": timeout_at,
     }
+    # Loop S7 close (adversarial 1): a governed question's topic, message and
+    # payload can carry a finding, a rule or a unit, so a sealed run keeps the
+    # timings only, here, for GET /approvals and GET /runs/{run_id} alike.
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        return console_views.sealed_approval(pending)
+    return pending
 
 
 # Terminal `status` strings whose outcome is "governance_stop": the pipeline
@@ -1488,7 +1523,7 @@ _GOVERNANCE_OUTCOME_STATUSES = GOVERNANCE_STATUSES
 # governance stop or a timeout. snapshot_conflict and operator_abort are
 # distinct governance-adjacent outcomes upstream (see _EXIT_STATUS_MAP's own
 # comment) but neither is a rule refusing on purpose mid-review the way the
-# four GOVERNANCE_STATUSES are, and neither is "succeeded"; "crashed" is the
+# six GOVERNANCE_STATUSES are, and neither is "succeeded"; "crashed" is the
 # nearest of the four `outcome` values and is recorded here explicitly rather
 # than left to a catch-all, so the mapping is auditable in one place.
 # "interrupted" (a server restart mid-run, STEP 2) is not a pipeline decision
@@ -1754,6 +1789,12 @@ def _run_record(job, run_dir):
     # cheap on-disk check _documents_for_run already makes for deliverables/.
     record["has_log"] = (run_dir / "logs" / "pipeline_stdout.log").is_file()
     record.update(_review_progress(run_dir, job.get("review_mode")))
+    # Loop S7 close: a sealed run's document, file and target names identify the
+    # sealed test's material (Annex B.8), so its record carries counts only, and no
+    # question or log text (console_views.sealed_run_record).
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        return console_views.sealed_run_record(record)
     return record
 
 
@@ -2274,6 +2315,7 @@ async def deliverables(run_id: str):
         raise HTTPException(status_code=404, detail="run_id not found")
 
     run_dir = RUNS_DIR / run_id
+    _refuse_sealed(run_dir)
     deliv_dir = run_dir / "deliverables"
     if not deliv_dir.is_dir() or not any(deliv_dir.rglob("*")):
         raise HTTPException(status_code=404, detail="no deliverables exist yet for this run")
@@ -2328,6 +2370,7 @@ async def document_deliverables(run_id: str, doc_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="run_id not found")
 
+    _refuse_sealed(RUNS_DIR / run_id)
     doc_dir = (RUNS_DIR / run_id / "deliverables" / doc_id).resolve()
     deliv_root = (RUNS_DIR / run_id / "deliverables").resolve()
     if deliv_root not in doc_dir.parents and doc_dir != deliv_root:
@@ -2366,6 +2409,7 @@ async def run_log(run_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="run_id not found")
 
+    _refuse_sealed(RUNS_DIR / run_id)
     log_path = RUNS_DIR / run_id / "logs" / "pipeline_stdout.log"
     if not log_path.is_file():
         raise HTTPException(status_code=404, detail="no log written yet for this run")
@@ -2398,6 +2442,7 @@ async def findings(run_id: str):
     empty list, not a 404: "nothing found" and "no such run" are different answers
     and a poller must be able to tell them apart."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     records = _bus_findings(run_dir)
     return {"run_id": run_id, "count": len(records), "findings": records}
 
@@ -2415,6 +2460,7 @@ async def pairs(run_id: str):
     whose map was never written (a wide-mode run that failed before phase 5.5)
     is a 200 with an empty documents list."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     registry = _load_convention_registry()
     docs = [_pairs_view(p, registry) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
     return {"run_id": run_id, "document_count": len(docs), "documents": docs}
@@ -2439,6 +2485,7 @@ async def amendments(run_id: str):
     "nothing produced" and "unknown run" are different answers, matching the
     empty-but-200 convention every other run-scoped read here already uses."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _amendments_for_run(run_id, run_dir)
     return {"run_id": run_id, "count": len(items), "amendments": items}
 
@@ -2464,6 +2511,7 @@ async def amendment_refusals(run_id: str):
     do. 404 for a malformed/unknown run_id. 200 with an empty list, not an
     error, when nothing was refused: the common, expected case."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _amendment_refusals_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "refusals": items}
 
@@ -2488,6 +2536,7 @@ async def contract_violations(run_id: str):
     an empty list, not an error, when nothing failed its contract, the
     common, expected case."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     items = _contract_violations_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "violations": items}
 
@@ -2515,6 +2564,7 @@ async def undated_documents_route(run_id: str):
     malformed/unknown run_id. 200 with empty lists, not an error, for a run
     that predates this route."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     data = _undated_documents_for_run(run_dir)
     return {"run_id": run_id,
             "undated": data["undated"],
@@ -2555,6 +2605,7 @@ async def convention_assignment_route(run_id: str):
     import convention_assignment as _ca
 
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     data = _convention_assignment_for_run(run_dir)
     agents = _load_agent_registry_agents()
     idle = _ca.idle_agents_summary(data, agents)
@@ -2611,15 +2662,97 @@ async def agent_harness():
 
 @app.get("/runs/{run_id}/activation", dependencies=[Depends(verify_token)])
 async def run_activation(run_id: str):
-    """Recorded routing and completion evidence, including unavailable old runs."""
+    """Recorded routing and completion evidence, including unavailable old runs.
+    A sealed run keeps the routing profile, each agent's state and call count and
+    the decisions as counts only (console_views.sealed_activation): a decision's
+    evidence carries unit ids, rule ids, finding indexes and item ids."""
     from routing_view import read_activation
-    return read_activation(_validated_run_dir(run_id), run_id)
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    result = read_activation(run_dir, run_id)
+    state = console_views.exposure(run_dir)
+    if state == console_views.SEALED:
+        return console_views.sealed_activation(result)
+    return dict(result, exposure=state)
 
 
 @app.get("/runs/{run_id}/multi-round", dependencies=[Depends(verify_token)])
 async def run_multi_round(run_id: str):
+    """The validated case record (multi_round.read_saved) and, since loop S7, the
+    later-round reuse record (audit/round_reuse.json) as a rounds table under
+    `round_reuse`. A sealed run keeps whether a case was recorded, its outcome and
+    the reuse counts only (console_views.sealed_multi_round)."""
     from multi_round import read_saved
-    return read_saved(_validated_run_dir(run_id), run_id)
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    result = read_saved(run_dir, run_id)
+    state = console_views.exposure(run_dir)
+    if state == console_views.SEALED:
+        result = console_views.sealed_multi_round(result)
+    return dict(result, exposure=state, round_reuse=console_views.round_reuse(run_dir))
+
+
+# ---------------------------------------------------------------------------
+# Loop S7, item 1: read-only views of what S1 to S6 save in a run folder. Each
+# reads the run folder only (console_views), carries `exposure`, and for a sealed
+# run carries counts and timings only (item 2, Annex B.8).
+# ---------------------------------------------------------------------------
+@app.get("/runs/{run_id}/replies", dependencies=[Depends(verify_token)])
+async def run_replies(run_id: str):
+    """The run's saved model replies (audit/model_replies/, REPLIES-A): per call its
+    sequence, agent, backend, model id and mode, call id, phase, document, time,
+    backend result, payload and reply sizes and its latest outcome from
+    outcomes.jsonl; and counts by outcome. Never the reply or payload text (DS7-1):
+    the console is not a second copy of it. A sealed run: counts and first and
+    last call times only."""
+    import console_views
+    return dict(console_views.replies(_validated_run_dir(run_id)), run_id=run_id)
+
+
+@app.get("/runs/{run_id}/model-findings", dependencies=[Depends(verify_token)])
+async def run_model_findings(run_id: str):
+    """Each document master's `model_findings_not_promoted` (HONEST-OUTPUT-A), every
+    item carrying finding_record.MODEL_FINDING_MARK, with the producer counts
+    (summary_generators.findings_provenance) over the run's bus findings. A sealed
+    run: counts only."""
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    return dict(console_views.model_findings(run_dir, bus_findings=_bus_findings(run_dir)),
+                run_id=run_id)
+
+
+@app.get("/runs/{run_id}/switches", dependencies=[Depends(verify_token)])
+async def run_switches(run_id: str):
+    """INST_FINDER's setting for this run (audit/agent_switches.json: on, off and
+    ratified, or off and refused, with the amendment id or the refusal) and
+    FACT_CHECKER's withholding with the two Annex B.4 reasons (run_report_text,
+    the copy tools/analyze_ordinary_final_run.py also imports), read from the run's
+    activation record, else from this installation's current review scope, said so."""
+    import console_views
+    return dict(console_views.switches(_validated_run_dir(run_id), run_id, ROOT), run_id=run_id)
+
+
+@app.get("/runs/{run_id}/report", dependencies=[Depends(verify_token)])
+async def run_report(run_id: str):
+    """The run report: the Annex A 11.12 rows of a FINAL_STATUS.json found in the
+    run folder or up to three parent folders (a cloud session), else "no cloud
+    report for this run"; cost from that file, else the run folder's own cost
+    lines (logs/cost_tracker.jsonl, audit/infrastructure_cost.jsonl); budget from
+    the session's execution_manifest.json, else "not known". Estimates, never an
+    invoice. A sealed run drops the recall, attribution and per-flaw rows
+    (run_report_text.SEALED_REPORT_ROWS is the allowlist)."""
+    import console_views
+    return dict(console_views.report(_validated_run_dir(run_id)), run_id=run_id)
+
+
+@app.get("/test-change-requests", dependencies=[Depends(verify_token)])
+async def test_change_requests():
+    """docs/test_change_requests.md as rows (id, title, the entry's own fields),
+    read-only; "not present in this installation" when the file is absent (an
+    image that does not ship docs/). Exposed tests only: a sealed test's requests
+    never live in this file."""
+    import console_views
+    return console_views.test_change_requests(ROOT)
 
 
 @app.get("/runs/{run_id}/references", dependencies=[Depends(verify_token)])
@@ -2653,6 +2786,7 @@ async def run_references(run_id: str, ref_id: str = None):
     where content is the point rather than a leak.
     """
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     path = run_dir / "audit" / "reference_index.json"
     if not path.is_file():
         return {"run_id": run_id, "index_present": False, "count": 0, "references": []}
@@ -2833,10 +2967,15 @@ async def run_evidence(run_id: str, body: dict):
 
     A POST because the expected entries are the request body, not because it
     changes anything: this route writes nothing at all.
+
+    Loop S7 item 2: a sealed run is refused with 403 before the body is read. The
+    classification names units and rules per missed defect, which is a per-flaw
+    result a sealed test never shows (Annex B.8).
     """
     import fn_evidence as _fe
 
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     expected = body.get("expected")
     if not isinstance(expected, list) or not expected:
         raise HTTPException(

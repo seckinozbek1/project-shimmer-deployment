@@ -260,3 +260,17 @@ L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes abo
 ### D-S19: money for the waiting moved steps (2026-11-01 about 03:20 +0300, D-150)
 
 From the parallel track's 30 USD, 12.34 USD moves to the moved steps that waited (the GNN run 1.70, the third re-run with its replays 6.6, the three other S6 items 4.04); the track keeps 17.66. With about 135.8 left (reaper 63.18 at 20:26:59 UTC): v1 work about 2.5 (L14 1.5, slack 1.0), storage 1.0, the track 17.66, the sealed evaluation at least 60, the moved steps 54.6 (L13 17.4, L9a 12.3, L9b 12.3, then the 12.34 above): total about 135.8, so everything fits with nothing left over; L9b still depends on forecasts not growing by more than about 0.4. The 60 floor, the 200 cap and the 199 hard stop are unchanged.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L14 | 2026-11-01 01:54:25 (intent) to 02:07:10 (termination), launcher-menu-l14, arm L, sealed at 02fae41 | 1.68, cap 2.52 (60 minutes) | 13 minutes, 0.28 USD; integrity failed: the menu stopped before its first prompt (a startup module missing from the archive, D-155). Usage seven-day 72 percent; free memory 3.75 GB, disk 59.1 GB |
+
+Correction (D-161): the D-S19 line above says "everything fits with nothing left over". D-153 re-forecast the third re-run at about 7.3 USD (from 6.6), so the plan is about 0.7 USD over; the moved steps at the end wait if forecasts hold (FOR_SECKIN, D-153). The ledger's latest `budget_change` line (line 31) still names the D-S12 item 4 allocation; D-S18 item 7 and D-S19 replaced it, and this file, not the ledger, carries allocations (the ledger carries the budget, the hard stop and the A10 reference, which line 31 still gives correctly).
+
+### Running total and L14b (2026-11-01 16:50 +0300, D-161)
+
+Instances 62.87 USD over 22 terminations (ledger sum); reaper 63.57 at 13:31:59 UTC, so storage so far about 0.71; left under the 199 hard stop about 135.43. The v1 line had 2.5 (L14 1.5, slack 1.0); L14 used 0.28, so 2.22 is left. L14b's forecast, 1.68 USD (60 minutes x 1.29 USD an hour x 1.3), fits it; its per-run cap, 2.52 (1.5 x forecast), is 0.30 above the v1 line, and any spend past 2.22 comes from the moved steps at the end, which already wait. The launch passes the storage forecast 0.59 the bundle was sealed with; the loop's storage figure to its end is 1.0 (D-139) and about 0.71 is already spent, but the cap is the forecast rule's 2.52 either way (199 minus spend minus storage is far above it).
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L14b | launcher-menu-l14b, arm L, sealed at 2b8caa9 after the tip gate (D-160) | 1.68, cap 2.52 (60 minutes) | 13:48:19 (intent) to 14:40:46 (termination), 53 minutes, 1.14 USD; the review ran from the menu to its end, the draft stopped (INC-031, D-162). Usage seven-day 81 percent (five-hour not reported, reaper 13:46:59 UTC), free memory 4.9 GB, disk 48 GB at launch. Instances total after it: 64.01 over 23 terminations; reaper 64.72; left 134.28. The v1 line has about 1.08 left; L14c (about 1.2) passes it by about 0.1, taken from the moved steps at the end. |

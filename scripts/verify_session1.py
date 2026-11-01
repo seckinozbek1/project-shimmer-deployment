@@ -821,12 +821,37 @@ def check_31_three_input_subdirs():
     return _ok("input/{context,operational,conventions}/ present")
 
 
+def _absent_folders(*paths):
+    """The folders among `paths` (outermost first) that do not exist yet."""
+    return [p for p in paths if not p.exists()]
+
+
+def _remove_created_folders(folders):
+    """Remove the folders a check created, innermost first, each only when empty: never a
+    folder that existed before the check, never one that holds anything."""
+    for folder in reversed(folders):
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+
+
 @_nonmutating(CONFIG / "convention_registry.json")
 def check_32_convention_parser():
     """Part XVIII Section F: convention_parser produces valid convention_registry.json."""
     from convention_parser import parse_conventions, write_registry
-    # Seed a temp conventions file so the parser has something to work on.
+    # Seed a temp conventions file so the parser has something to work on. The folders this
+    # creates are removed afterwards (S7 round 3: input/ and input/conventions/ used to be
+    # left behind, which changed checks 01 and 28 on the next gate in that tree).
     conv_dir = ROOT / "input" / "conventions"
+    created = _absent_folders(ROOT / "input", conv_dir)
+    try:
+        return _check_32_with_seed(conv_dir, parse_conventions, write_registry)
+    finally:
+        _remove_created_folders(created)
+
+
+def _check_32_with_seed(conv_dir, parse_conventions, write_registry):
     conv_dir.mkdir(parents=True, exist_ok=True)
     seed_path = conv_dir / "_verify_seed.md"
     seed_text = (
@@ -4882,7 +4907,9 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
     """productization STEP 6 gate check (e): the exit-code map (server.py's
     _status_for_exit_code / _EXIT_STATUS_MAP) yields "blocked" for exit code 5
     and "stopped_model_approval" for exit code 3, matching the evidence's
-    exit-code table (pipeline.py's own `return N` points)."""
+    exit-code table (pipeline.py's own `return N` points). Open item 11 adds
+    exits 8 and 9 (multi-round refusal, unratified INST_FINDER switch) as
+    governance statuses, pinned to the `return` points that produce them."""
     import importlib
     server = importlib.import_module("server")
     importlib.reload(server)
@@ -4915,9 +4942,97 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
             return _fail(f"{governance_status!r} missing from GOVERNANCE_STATUSES "
                          f"(the console must render it as a governance outcome, not a failure)")
 
+    # Open item 11: exits 8 (multi-round refusal) and 9 (unratified
+    # SHIMMER_INST_FINDER=off) are governance refusals, read from the source
+    # (pipeline.py main() and multi_round_phase.execute, by AST, never run).
+    import ast as _ast
+
+    def _function(path, name):
+        return next(node for node in _ast.walk(_ast.parse(path.read_text(encoding="utf-8")))
+                    if isinstance(node, _ast.FunctionDef) and node.name == name)
+
+    def _constant_returns(fn):
+        return {node.value.value for node in _ast.walk(fn)
+                if isinstance(node, _ast.Return) and isinstance(node.value, _ast.Constant)
+                and isinstance(node.value.value, int)}
+
+    def _if_returning(fn, code):
+        return [node for node in _ast.walk(fn) if isinstance(node, _ast.If)
+                and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                        and s.value.value == code for s in node.body)]
+
+    pipeline_main = _function(SCRIPTS / "pipeline.py", "main")
+    phase_execute = _function(SCRIPTS / "multi_round_phase.py", "execute")
+    guard_names = {t.id for node in _ast.walk(pipeline_main) if isinstance(node, _ast.Assign)
+                   and isinstance(node.value, _ast.Call)
+                   and _ast.unparse(node.value.func) == "_inst_finder_startup_guard"
+                   for t in node.targets if isinstance(t, _ast.Name)}
+    if not any(isinstance(node.test, _ast.Name) and node.test.id in guard_names
+               for node in _if_returning(pipeline_main, 9)):
+        return _fail("pipeline.py main() no longer returns 9 on the _inst_finder_startup_guard "
+                     "refusal; the exit-9 status below would be pinned to the wrong cause")
+
+    def _refuses_multi_round(node):
+        return any(isinstance(c, _ast.Call) and _ast.unparse(c.func).endswith("activation")
+                   and any(k.arg == "eligible" and isinstance(k.value, _ast.Constant)
+                           and k.value.value is False for k in c.keywords)
+                   for s in node.body for c in _ast.walk(s))
+    multi_round_8 = [node for node in _if_returning(pipeline_main, 8) if _refuses_multi_round(node)]
+    if len(multi_round_8) != 2:
+        return _fail(f"pipeline.py main() has {len(multi_round_8)} multi-round refusals "
+                     f"returning 8 (activation eligible=False), expected 2")
+    if not any(isinstance(node, _ast.ExceptHandler) and _refuses_multi_round(node)
+               and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                       and s.value.value == 8 for s in node.body)
+               for node in _ast.walk(phase_execute)):
+        return _fail("multi_round_phase.execute no longer returns 8 on its refusal path")
+    if not any(isinstance(node, _ast.Return) and _ast.unparse(node.value) == "code"
+               for node in _ast.walk(pipeline_main)):
+        return _fail("pipeline.py main() no longer returns multi_round_phase.execute's code")
+    main_codes = _constant_returns(pipeline_main) | _constant_returns(phase_execute)
+
+    def _exit_map_problem():
+        for code, status in ((8, "refused_multi_round"), (9, "refused_inst_finder_unratified")):
+            if server._status_for_exit_code(code) != status:
+                return (f"exit code {code} mapped to {server._status_for_exit_code(code)!r}, "
+                        f"expected {status!r}")
+            if status not in server.GOVERNANCE_STATUSES:
+                return f"{status!r} missing from GOVERNANCE_STATUSES"
+            if server._outcome_for_status(status, code)[0] != "governance_stop":
+                return f"{status!r} does not reach the governance_stop outcome"
+        unmapped = sorted(code for code in main_codes if code not in server._EXIT_STATUS_MAP)
+        if unmapped:
+            return (f"pipeline.py main() / multi_round_phase.execute return {unmapped} with no "
+                    f"_EXIT_STATUS_MAP entry, so the console shows them as 'failed'")
+        return None
+
+    problem = _exit_map_problem()
+    if problem:
+        return _fail(problem)
+    # Neutralise, fail, restore, pass: removing exit 9's entry, then exit 8's
+    # governance membership, must each be caught.
+    saved_9 = server._EXIT_STATUS_MAP.pop(9)
+    try:
+        caught_entry = _exit_map_problem()
+    finally:
+        server._EXIT_STATUS_MAP[9] = saved_9
+    server.GOVERNANCE_STATUSES.discard("refused_multi_round")
+    try:
+        caught_governance = _exit_map_problem()
+    finally:
+        server.GOVERNANCE_STATUSES.add("refused_multi_round")
+    if not caught_entry or not caught_governance:
+        return _fail("the exit 8/9 proof did not fail with exit 9's map entry removed or "
+                     "refused_multi_round dropped from GOVERNANCE_STATUSES")
+    if _exit_map_problem():
+        return _fail(f"after restoring, the exit 8/9 proof still fails: {_exit_map_problem()}")
+
     return _ok("exit code 5 -> 'blocked', exit code 3 -> 'stopped_model_approval' "
-               "(plus 0/2/4/6/7/unknown all map correctly); the four governance "
-               "statuses are all present in GOVERNANCE_STATUSES")
+               "(plus 0/2/4/6/7/unknown all map correctly); 8 -> 'refused_multi_round' and "
+               "9 -> 'refused_inst_finder_unratified', the codes pipeline.py main() returns "
+               f"for those refusals (by AST; every constant it returns, {sorted(main_codes)}, "
+               "is mapped); the six governance statuses are in GOVERNANCE_STATUSES; removing "
+               "exit 9's entry or 8's governance membership is caught and restored")
 
 
 def check_109_served_html_leaks_nothing():
@@ -25334,6 +25449,151 @@ def check_287_built_bundles_stage_as_the_sealers_workload():
     return check()
 
 
+def check_298_console_replies_route():
+    """Loop stage S7 (console): the replies route serves metadata and outcomes, never reply text. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_replies_route
+    return check_replies_route()
+
+
+def check_299_console_model_findings_route():
+    """Loop stage S7 (console): the model-findings route carries the mark on every model finding. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_model_findings_route
+    return check_model_findings_route()
+
+
+def check_300_console_switches_route():
+    """Loop stage S7 (console): the switches route reads INST_FINDER and the shared B.4 reasons. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_switches_route
+    return check_switches_route()
+
+
+def check_301_console_report_route():
+    """Loop stage S7 (console): the report route reads the cloud report rows, else the run folder's cost lines. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_report_route
+    return check_report_route()
+
+
+def check_302_console_test_change_requests_route():
+    """Loop stage S7 (console): the test-change-requests route lists the log or says it is not present. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_test_change_requests_route
+    return check_test_change_requests_route()
+
+
+def check_303_console_multi_round_reuse_route():
+    """Loop stage S7 (console): the multi-round route carries the round reuse table. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_multi_round_reuse_route
+    return check_multi_round_reuse_route()
+
+
+def check_304_console_sealed_filter():
+    """Loop stage S7 (console): a sealed run shows counts and timings only, and per-flaw routes refuse it. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_sealed_filter
+    return check_sealed_filter()
+
+
+def check_305_every_route_needs_a_token_but_health_and_console():
+    """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console, and
+    FastAPI's own /openapi.json, /docs and /redoc stay off (a second neutralisation switches them back
+    on and must fail). Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_all_routes_need_a_token
+    return check_all_routes_need_a_token()
+
+
+def check_306_console_views_render_and_mark():
+    """Loop stage S7 (console): the console's new views render in both languages with the model-finding mark. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_console_views
+    return check_console_views()
+
+
+def check_307_launcher_menus_end_at_end_of_input():
+    """Loop S7 item 5: both launcher menus end when their input ends (shimmer.sh on a failed
+    read, shimmer.bat after three empty answers), and the Git Bash token question reads the end
+    of input as no. Driven on the real launcher text in temp folders with stand-ins; no install,
+    no model, no run. Skips where a launcher is absent (container image)."""
+    from launcher_checks import check_end_of_input
+    return check_end_of_input()
+
+
+def check_308_launchers_reach_their_menus():
+    """Loop S7 item 5: shimmer.bat reaches its menu (for /f quoting), keeps its answers through
+    the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
+    venv and honours SHIMMER_SKIP_INSTALL; shimmer.sh started from another folder with no
+    /usr/bin on PATH reaches its menu (open item 54); the draft is announced only after its
+    setup; no dead batch label; start_shimmer.bat --check-entry answers."""
+    from launcher_checks import check_bootstrap
+    return check_bootstrap()
+
+
+def check_309_launcher_banner_names_the_open_routes():
+    """Loop S7 item 5: the server banner in both launchers names exactly the routes the live app
+    answers without a token, read off the app."""
+    from launcher_checks import check_banner
+    return check_banner()
+
+
+def check_310_chat_window_command_mode():
+    """Loop D-S13 item 6e: menu option [2], the chat window, driven withdrawn (never shown) in
+    command mode with no model: help, a cutoff written to a temporary scope file, a draft
+    confirmed and a review cancelled, every wizard or pipeline launch recorded and none run. A
+    request whose worker raises frees the window; before, every later message was answered
+    "Still working on the previous request". Skips where the chat file or Tk is absent."""
+    from launcher_checks import check_chat_window
+    return check_chat_window()
+
+
+
+def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
+    """Loop D-S13 item 6d: arm L, the launcher menu as a third sealed arm of the ordinary final
+    controller (tools/ordinary_final_launcher_checks.py, mixed into the controller checks). The
+    sealed launcher block is admitted only as sealed and only exposed; every sealed prompt is
+    printed word for word by the bound shimmer.sh, wizard or pipeline; the sealer numbers the
+    review targets as the wizard lists them; the session driver answers only from the map and
+    stops on an unknown prompt, on answers used up and at its deadline; the REAL shimmer.sh and
+    the REAL intake wizard run a review, then a draft, then Q with a stand-in pipeline, every
+    Python child that loaded the sitecustomize network-denied (a Python-level denial: native code
+    and non-Python children are neither denied nor counted, nor is a Python child that never loads
+    the sitecustomize); the REAL shimmer.sh, runtime check, preflight, wizard and pipeline start
+    from an extracted copy of the project archive the sealer builds for arm L, up to the
+    pipeline's first question (L14: the menu's runtime check imported a module that archive does
+    not carry); the menu environment is made from the runner's runtime; the
+    assessment, the single-bundle rule, the stop of the menu's children and the report row.
+    Each rule by neutralise, fail, restore, pass. No model call and no network; the archive test
+    starts the real pipeline, which stops at its first question, declined, before any model work
+    (every other test runs a stand-in pipeline or none). SKIP where
+    the tree holds no shimmer.sh (the container image) or no bash runs a script."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from ordinary_final_launcher_checks import check
+    return check()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25732,6 +25992,32 @@ CHECKS = [
      check_296_request_ledger_check_catches_dropped_requests),
     ("297 the local auditor agents, ARCHIVIST and EDITOR_CLERK decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
      check_297_local_auditor_agents_decode_under_their_envelope_contract),
+    ("298 the replies route serves metadata and outcomes, never reply text",
+     check_298_console_replies_route),
+    ("299 the model-findings route carries the mark on every model finding",
+     check_299_console_model_findings_route),
+    ("300 the switches route reads INST_FINDER and the shared B.4 reasons",
+     check_300_console_switches_route),
+    ("301 the report route reads the cloud report rows, else the run folder's cost lines",
+     check_301_console_report_route),
+    ("302 the test-change-requests route lists the log or says it is not present",
+     check_302_console_test_change_requests_route),
+    ("303 the multi-round route carries the round reuse table",
+     check_303_console_multi_round_reuse_route),
+    ("304 a sealed run shows counts and timings only, and per-flaw routes refuse it",
+     check_304_console_sealed_filter),
+    ("305 every route answers 401 without a token except exactly /health and /console",
+     check_305_every_route_needs_a_token_but_health_and_console),
+    ("306 the console's new views render in both languages with the model-finding mark",
+     check_306_console_views_render_and_mark),
+    ("307 both launcher menus end at end of input", check_307_launcher_menus_end_at_end_of_input),
+    ("308 the launchers reach their menus with no install", check_308_launchers_reach_their_menus),
+    ("309 the launcher banner names exactly the routes open without a token",
+     check_309_launcher_banner_names_the_open_routes),
+    ("310 the chat window runs in command mode and a failed request frees it",
+     check_310_chat_window_command_mode),
+    ("311 arm L runs the launcher menu once from its sealed prompt map",
+     check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
 ]
 
 

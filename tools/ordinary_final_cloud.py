@@ -43,6 +43,21 @@ INSTANCE_NAME='shimmer-loop-ordinary-final-776d8c1'
 # The launch plan (dict), set by the bound wrapper; execute() refuses without one.
 LAUNCH=None
 BATCH_ARMS=('B3','B1')
+
+
+def stop_command(remote):
+    """What stop_workload runs: the runner, then any process whose command line runs from the
+    remote project (an arm L menu's bash and its Python children run there; the runner itself,
+    and everything the other arms start, does not)."""
+    return ("pkill -TERM -f '"+remote+"/[o]rdinary_final_run.py' || true; "
+            "pkill -TERM -f '"+remote+"/[p]roject/' || true")
+
+
+def single_bundle_arm(m,plan):
+    """Arm L (D-S13 item 6d) runs as one bundle in its own session, never as a batch entry."""
+    return runner.arm_of(m)!='L' or not plan['batch']
+
+
 BUDGET_KEYS=('soft_budget_usd','hard_ceiling_usd','instance_candidates','a10_reference_rate',
              'workload_stop_reserve_seconds','termination_reserve_seconds')
 
@@ -404,6 +419,7 @@ def execute():
     plan=launch_plan()
     workload=admit(m,seal,plan,BASE)
     sealed=workload['exposure']=='sealed'
+    require(single_bundle_arm(m,plan),'Arm L runs as a single bundle, never in a batch')
     batch=batch_entries(plan,m,assets,sealed)
     # The arm the session bundle runs as: the first batch entry's, else its own sealed arm.
     session_arm=batch[0]['arm'] if batch else runner.arm_of(m)
@@ -784,7 +800,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         if iid:
             if ssh:
                 try:
-                    remote('stop_workload',"pkill -TERM -f '"+REMOTE+"/[o]rdinary_final_run.py' || true",30,False)
+                    remote('stop_workload',stop_command(REMOTE),30,False)
                     remote('final_gpu_state','nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader',30,False)
                     collect('',BASE)
                 except Exception as exc:

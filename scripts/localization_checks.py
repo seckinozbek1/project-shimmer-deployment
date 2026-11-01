@@ -175,7 +175,7 @@ class LocalizationChecks(unittest.TestCase):
     def test_live_shipped_ui_offline(self):
         result=subprocess.run(['node',str(ROOT/'scripts/ui/localization_checks.js')],capture_output=True,text=True,timeout=20)
         self.assertEqual(result.returncode,0,result.stderr)
-        self.assertIn('16 offline localization UI checks',result.stdout)
+        self.assertIn('17 offline localization UI checks',result.stdout)
 
     def test_localization_failure_is_detected_and_restored(self):
         catalog=loc.catalog();saved=catalog['Completed']

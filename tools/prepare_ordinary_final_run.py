@@ -10,7 +10,10 @@ docs/fix/, an exposed run. Everything a loop launch or a sealed test needs is a 
                        the IV.3 inputs: the instance candidates and the soft and hard caps
                        are set from the live price in the inventory and the per-run cap
                        formula, never typed in;
-  --inputs-from        where runtime.candidate.lock and provider_inventory.json are read.
+  --inputs-from        where runtime.candidate.lock and provider_inventory.json are read;
+  --arm                B3 (default), B1 (with --items and --b1-checkpoints) or L (exposed only,
+                       with --launcher-question): the launcher menu once, a review then a draft,
+                       answered only from the sealed prompt map (D-S13 item 6d).
 """
 import argparse
 import ast
@@ -32,6 +35,7 @@ from cloud_run_common import credential_locations
 from ordinary_final_run import (ARGV, MULTI_ROUND_ARGV, TOPOLOGY, CASE_MANIFEST, EXPOSED_NO_MANIFEST, sha, read,
                                 write, require, cache_ref_bytes, validate_live_case_manifest, case_corpus_documents)
 from prepare_ordinary_final_assets import build_assets
+import ordinary_final_run as runner
 import loop_budget_guard as guard
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -332,9 +336,129 @@ def b1_fields(items, targets, checkpoints, replay=None):
     return value
 
 
+# Arm L (D-S13 item 6d): the prompts the launcher menu, the intake wizard and the pipeline print
+# on a review then a draft, each with its answers in the order it is asked. Every text is checked
+# word for word against the bound sources (runner.launcher_prompt_error) before the seal is
+# written. The two escalation prompts and the preflight's continue question may never be asked;
+# an escalation is deferred, since no operator is present.
+LAUNCHER_PREFLIGHT = 'Preflight reported issues above. Continue to the menu anyway? [y/N]: '
+LAUNCHER_DEFERRAL = 'No operator is present in a sealed launcher session; deferred.'
+
+
+def launcher_prompts(question, targets_answer, prior_answer):
+    """The sealed prompt map: (id, text, answers, optional, repeat_last) in the order the session
+    first meets each. `prior_answer` is None when no document is grounding (the wizard then
+    never asks for an earlier version)."""
+    rows = [
+        ('backend', 'Choose [C/L, Enter for Cloud]: ', ['L'], False, False),
+        ('preflight_continue', LAUNCHER_PREFLIGHT, ['y'], True, False),
+        ('menu', 'Choose an option [1-5, Q]: ', ['1', '1', 'Q'], False, False),
+        ('task', 'What would you like to do? [R] Review existing documents  [D] Draft a memo from a question  [R/D]: ',
+         ['R', 'D'], False, False),
+        ('folder', 'Enter the folder containing your documents: ', [runner.LAUNCHER_WORKLOAD_TOKEN], False, False),
+        ('cutoff', 'Change the cutoff? Enter a new date (YYYY-MM-DD) or press Enter to keep: ', [''], False, False),
+        ('privacy', 'Choose [1/2; Enter cancels]: ', ['1', '1'], False, False),
+        ('parallel', 'How many documents to review in parallel? (default 4, higher is faster but uses more API quota) '
+         '[Enter for default]: ', [''], False, False),
+        ('max_docs', 'How many documents to review at most? [Enter for all]: ', [''], False, False),
+        ('proceed', 'Proceed? [y/N]: ', ['y', 'y'], False, False),
+        ('targets', "Enter the numbers to review (comma-separated), 'all', or Enter to let the date cutoff decide: ",
+         [targets_answer], False, False),
+        ('draft_question', 'Enter your question or brief for the memo: ', [question], False, False),
+        ('layer_override', '--sensitivity-layer-inactive-override: declare THIS run NON-SENSITIVE and proceed with the '
+         'full sensitivity layer inactive? (yes/no): ', ['y', 'y'], False, False),
+        ('redaction_override', '--no-redaction-override: declare THIS run NON-SENSITIVE and run with NO redaction? '
+         '(yes/no): ', ['y', 'y'], False, False),
+        ('proceed_calls', 'Proceed with live API calls? (yes/no): ', ['y', 'y'], False, False),
+        ('escalation_decision', 'Decision (APPROVE / DENY / DEFER): ', ['DEFER'], True, True),
+        ('escalation_rationale', 'Rationale: ', [LAUNCHER_DEFERRAL], True, True),
+    ]
+    if prior_answer is not None:
+        rows.insert(11, ('prior', 'Is one of these an EARLIER VERSION of a document under review? Enter its number, '
+                         'or Enter for none: ', [prior_answer], False, False))
+    return [dict(id=i, prompt=p, answers=a, optional=o, repeat_last=r) for i, p, a, o, r in rows]
+
+
+def launcher_sensitivity_error(conventions):
+    """Why arm L's sealed answers may not declare this workload non-sensitive, or None. The map
+    answers yes to both NON-SENSITIVE overrides and chooses Normal mode (no redaction) with no
+    operator present, so the workload's conventions ({file name: bytes}, as the wizard places
+    them in input/conventions/) are compiled by the pipeline's own parser and redaction compiler:
+    an operator redaction or confidentiality rule in force, one that failed to compile, or a
+    redaction-intent decision the ensemble could not make refuses the seal."""
+    import convention_parser
+    from sensitivity_layer.rules import redaction_rules
+    with tempfile.TemporaryDirectory() as folder:
+        target = Path(folder)/'input'/'conventions'
+        target.mkdir(parents=True)
+        for name, data in conventions.items():
+            (target/name).write_bytes(data)
+        report = redaction_rules(convention_parser.parse_conventions(Path(folder)).as_dict())
+    if report['operator_in_force']:
+        return 'The launcher workload carries an operator redaction or confidentiality rule (%s); arm L declares ' \
+               'every run non-sensitive and redacts nothing' % ', '.join(r['id'] for r in report['operator_rules'])
+    if report['warnings']:
+        return 'The launcher workload carries a redaction-intent convention that does not compile (%s)' % ', '.join(
+            w['id'] for w in report['warnings'])
+    undecided = [v.get('id') for v in report.get('semantic_votes', []) if not v.get('available')]
+    if undecided:
+        return 'The ensemble could not decide whether the launcher workload\'s conventions are redaction rules (%s)' \
+               % ', '.join(map(str, undecided))
+    return None
+
+
+def launcher_fields(members, question, files):
+    """The arm L workload and its sealed launcher block. The menu's wizard reads ONE flat folder,
+    so the workload's context/ and conventions/ files go into launcher_input/ under their own
+    names; each must be classified by the wizard's own classify() as it was staged (a context
+    file a DOCUMENT, a conventions file the review rules). The review targets become the
+    numbers the wizard lists them under (sorted names, as its scan lists them on Linux) and the
+    declared earlier version its number among the grounding documents. The question must not
+    read as a meta-level change (the pipeline would then ask a question the map does not hold).
+    Returns ({project path: bytes}, launcher block)."""
+    require(isinstance(question, str) and question.strip() == question and question and '\n' not in question
+            and len(question) <= runner.LAUNCHER_QUESTION_LIMIT,
+            'Arm L needs --launcher-question: one line of at most %d characters' % runner.LAUNCHER_QUESTION_LIMIT)
+    import constitution_guard
+    require(not constitution_guard.scan_for_meta_signature(question, project_root=ROOT),
+            'The draft question reads like a meta-level change; the pipeline would ask a question the map does not hold')
+    import intake_wizard
+    targets_file = json.loads(members['_review_targets.json'].decode('utf-8'))
+    flat, kinds = {}, {}
+    with tempfile.TemporaryDirectory() as folder:
+        for name, data in members.items():
+            if name == '_review_targets.json':
+                continue
+            top, _, base = name.partition('/')
+            require(top in ('context', 'conventions') and base and '/' not in base,
+                    'The launcher wizard reads one flat folder: no file below context/ or conventions/')
+            require(base not in flat, 'Two workload files share one name; the wizard reads one flat folder')
+            (Path(folder)/base).write_bytes(data)
+            kind = intake_wizard.classify(Path(folder)/base)[0]
+            require(kind == ('DOCUMENT' if top == 'context' else 'CONVENTIONS'),
+                    'The wizard would not place ' + name + ' where the workload staged it')
+            flat[base], kinds[base] = data, kind
+    documents = sorted(n for n, k in kinds.items() if k == 'DOCUMENT')
+    require(any(k == 'CONVENTIONS' for k in kinds.values()), 'The launcher workload carries no conventions')
+    sensitivity = launcher_sensitivity_error({n: flat[n] for n, k in kinds.items() if k == 'CONVENTIONS'})
+    require(sensitivity is None, sensitivity or '')
+    targets = list(targets_file.get('targets') or [])
+    require(targets and all(t in documents for t in targets), 'The review targets are not documents of the launcher workload')
+    grounding = [d for d in documents if d not in targets]
+    prior = list(targets_file.get('prior') or [])
+    require(all(p in grounding for p in prior) and len(prior) <= 1, 'The earlier version is not one grounding document')
+    prior_answer = (str(grounding.index(prior[0]) + 1) if prior else '') if grounding else None
+    block = dict(script=runner.LAUNCHER_SCRIPT, workload=runner.LAUNCHER_WORKLOAD, question=question,
+                 prompts=launcher_prompts(question, ','.join(str(documents.index(t) + 1) for t in targets), prior_answer),
+                 child_environment=dict(runner.LAUNCHER_CHILD_ENVIRONMENT))
+    error = runner.launcher_prompt_error(block['prompts'], {n: files[n].decode('utf-8-sig') for n in runner.LAUNCHER_PROMPT_SOURCES})
+    require(error is None, error or '')
+    return {runner.LAUNCHER_WORKLOAD + '/' + n: d for n, d in flat.items()}, block
+
+
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
             test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
-            b1_checkpoints=None, replay_prompts=None):
+            b1_checkpoints=None, replay_prompts=None, launcher_question=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -345,7 +469,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle must be prepared outside the repository')
         require(workload is not None and Path(workload).is_file(), 'A sealed bundle is built from the test archive')
     require(not protected_test or sealed, 'Only a sealed bundle may set protected_test')
-    require(arm in ('B3', 'B1'), 'Arm is B3 or B1')
+    require(arm in ('B3', 'B1', 'L'), 'Arm is B3, B1 or L')
+    require(arm != 'L' or not sealed, 'Arm L runs exposed only: a sealed run carries no launcher arm')
+    require((launcher_question is not None) == (arm == 'L'), 'Arm L needs --launcher-question; no other arm takes one')
     require((b1_items is not None and b1_checkpoints is not None) == (arm == 'B1'),
             'A B1 bundle needs its items.json and its checkpoints; a B3 bundle takes neither')
     # D-061 item 4: replayed B3 prompts are development material, sealed only into an exposed B1 bundle.
@@ -364,7 +490,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     # so they travel with the runtime and are hash-bound like every other file.
     protocols = sorted(e['protocol'] for e in decoding_policy.declaration(ROOT)[0]['backends'].values()
                        if e.get('status') == 'restored')
-    files = runtime_source(source, extra=protocols)
+    # Arm L also carries the menu and the two files its runtime check reads, and names the
+    # sources its prompts are read from so their absence fails here in one line.
+    launcher_extra = [n for n in runner.LAUNCHER_SOURCES + runner.LAUNCHER_PROMPT_SOURCES if n not in protocols]
+    files = runtime_source(source, extra=protocols + (sorted(set(launcher_extra)) if arm == 'L' else []))
     # The declaration and the module that reads it are runtime source: the remote
     # exact-tree check would accept an archive without them and the run would then
     # refuse at admission. Bundling from git means an uncommitted file is silently
@@ -395,7 +524,14 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     require('_review_targets.json' in members, 'The workload names its review targets (_review_targets.json)')
     case = members.pop(CASE_MANIFEST, None)
     workload_hashes = {}
-    for name, data in members.items():
+    launcher = None
+    if arm == 'L':
+        # The menu places the workload itself: nothing under input/, the files in one flat folder.
+        require(case is None, 'An arm L bundle is never multi-round')
+        placed, launcher = launcher_fields(members, launcher_question, files)
+        files.update(placed)
+        workload_hashes = {n: hashlib.sha256(d).hexdigest() for n, d in members.items() if n != '_review_targets.json'}
+    for name, data in (members.items() if arm != 'L' else ()):
         if name == '_review_targets.json':
             files['input/context/_review_targets.json'] = data
             continue
@@ -493,6 +629,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                     'no protected data' if not protected_test else 'protected test only as sealed by role B',
                     'multi-round only as the sealed case manifest declares' if multi_round else 'no multi-round',
                     'no benchmark workload substitution']
+    if launcher:
+        restrictions.append('the launcher menu once, answered only from the sealed prompt map; base models as shipped, '
+                            'no install, every child Python network-denied')
     manifest = dict(schema_version=1,source_commit=source,source_archive_sha256=sha(OUT/'project.tar.gz'),
         classification='PREPARED_NOT_AUTHORIZED',max_runs=1,model_mode='final',multi_round=multi_round,
         protected_test=protected_test,arm=arm,workload=workload_record,
@@ -518,7 +657,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         preparation_source_hashes={n:sha(ROOT/n) for n in
             ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},
         packages=locked,wheels=wheels,runtime_file_hashes=runtime_files,
-        argv=MULTI_ROUND_ARGV if multi_round else ARGV,topology=TOPOLOGY,provider='Lambda',
+        argv=runner.LAUNCHER_ARGV if launcher else MULTI_ROUND_ARGV if multi_round else ARGV,topology=TOPOLOGY,provider='Lambda',
         instance=next(x for x in provider['instance_types'] if x['metadata']['type']==guard.PREFERRED_TYPE),
         provider_observed_at=provider['observed_at'],image=provider['images'][0],
         **budget_values,
@@ -532,6 +671,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         manifest['case_manifest_sha256'] = support[CASE_MANIFEST]
     if b1:
         manifest['b1'] = b1
+    if launcher:
+        manifest['launcher'] = launcher
+        # The runner's own reading, so the seal refuses exactly what the instance would.
+        runner.arm_declaration(manifest)
     if sealed:
         manifest['test_archive_sha256'] = seal_fields['test_archive_sha256']
     write(OUT/'execution_manifest.json', manifest)
@@ -571,7 +714,9 @@ if __name__ == '__main__':
     parser.add_argument('--ledger',type=Path,action='append',required=True,help='loop ledger(s) the IV.3 cap reads')
     parser.add_argument('--forecast-minutes',type=float,required=True,help='measured basis in minutes (docs/loop/BUDGET.md)')
     parser.add_argument('--storage-forecast-usd',type=float,required=True)
-    parser.add_argument('--arm',choices=('B3','B1'),default='B3',help='the arm this bundle runs (B1: bare_model.py)')
+    parser.add_argument('--arm',choices=('B3','B1','L'),default='B3',
+                        help='the arm this bundle runs (B1: bare_model.py; L: the launcher menu, exposed only)')
+    parser.add_argument('--launcher-question',default=None,help='arm L: the draft question the menu is answered with')
     parser.add_argument('--items',type=Path,default=None,help="B1: the adapter's items.json (ids, no gold)")
     parser.add_argument('--b1-checkpoints',type=Path,default=None,
                         help='B1: JSON list of passes {"name", "checkpoint", "args"} ("checkpoint" tuned or base, '
@@ -586,4 +731,4 @@ if __name__ == '__main__':
             workload=args.workload, exposure=args.exposure, test_manifest=args.test_manifest,
             protected_test=args.protected_test, inputs_from=args.inputs_from, arm=args.arm, b1_items=args.items,
             b1_checkpoints=read(args.b1_checkpoints) if args.b1_checkpoints else None,
-            replay_prompts=args.replay_prompts)
+            replay_prompts=args.replay_prompts, launcher_question=args.launcher_question)

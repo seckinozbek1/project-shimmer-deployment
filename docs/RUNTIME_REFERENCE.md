@@ -355,17 +355,22 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/amendments` | token | Read existing document masters; empty does not certify a clean review. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | Explicit AMENDMENT_REFUSED bus events, separate from findings. |
 | `GET` | `/runs/{run_id}/contract-violations` | token | Malformed agent contract events; not findings or successful non-calls. |
-| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. |
-| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. |
+| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. Refuses a sealed run (403). |
+| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. Refuses a sealed run (403). |
 | `GET` | `/harness` | token | Generated current agent description; not run-scoped or cluster-quality proof. |
-| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. |
-| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. |
+| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. Sealed run: routing profile, each agent's state and call count, and the decisions as counts only (no decision row, evidence, reason, document or call id). |
+| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. Also `round_reuse`: `audit/round_reuse.json` as a rounds table (units reused and computed). Sealed run: recorded, availability, outcome and the reuse counts only. |
 | `GET` | `/runs/{run_id}/references` | token | Run reference excerpts; optional ref_id, unknown ID 404, missing index explicitly absent. |
+| `GET` | `/runs/{run_id}/replies` | token | Saved model replies as metadata only: per call sequence, agent, backend, model id and mode, call id, phase, document, time, backend result, payload and reply sizes and latest outcome; counts by outcome. Never reply or payload text. Sealed run: counts and first and last call time only. |
+| `GET` | `/runs/{run_id}/model-findings` | token | Each document master's `model_findings_not_promoted`, every item carrying `finding_record.MODEL_FINDING_MARK`, with producer counts from the bus. Not checked by Python, not promoted. Sealed run: counts only. |
+| `GET` | `/runs/{run_id}/switches` | token | INST_FINDER setting saved for the run (on; off and ratified; off and refused; not recorded) and FACT_CHECKER withholding with both Annex B.4 reasons, from the run's activation record, else from the current review scope, said so. |
+| `GET` | `/runs/{run_id}/report` | token | Annex A 11.12 rows of a `FINAL_STATUS.json` in the run folder or up to three parent folders, else no cloud report; cost from it or from the run's own cost lines; budget from an `execution_manifest.json` on that path, else not known. Estimates, not an invoice. Sealed run: allowlisted rows only. |
+| `GET` | `/test-change-requests` | token | `docs/test_change_requests.md` entries as rows, read-only; "not present in this installation" when the file is absent. |
 | `GET` | `/ontology` | token | Cross-run provision provenance summary; not a review-agent retrieval path. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | Revisions/provenance for one provision; unknown ID 404. |
 | `GET` | `/ontology/gnn` | token | Persisted structural state; learned_relevance=false, tier2_signal empty. |
 | `GET` | `/ontology/candidates` | token | Structural candidate pairs, not model-confirmed relationships; top_k 1-50. |
-| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. |
+| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. Refuses a sealed run (403). |
 | `POST` | `/ontology/conflicts/{conflict_id}/answer` | token | Persist rule/store/refuse answer; no production review feedback loop is wired to this endpoint. |
 | `GET` | `/ontology/relations` | token | Stored relation summaries, preserving mechanisms and agreement. |
 | `GET` | `/ontology/conflicts` | token | Recorded ontology conflict answers and qualified override counts; not proof a review consumed them. |
@@ -374,6 +379,8 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/health` | none | Liveness, current backend/default review mode and layer posture; no model execution or readiness proof. |
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
+
+A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7 and on `/activation`; a pending governed question keeps its timings only on `GET /approvals` and `GET /runs/{run_id}` (topic, message and payload emptied); its run record on `GET /runs/{run_id}` and `GET /runs` lists no document, file, prior or target name (counts only: `document_count`, `documents_done`, `file_count`, `prior_file_count`, `review_target_count`) and carries no question, error text or stop-reason detail; and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log`, `/undated-documents`, `/convention-assignment` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 305).
 
 The route table is checked against the actual registered application routes.
 `/status`, `/queue`, `/results`, unscoped `/findings` or `/pairs`, and
@@ -394,6 +401,15 @@ requires explicit governance choices; the starter's Normal choice is not a globa
 waiver. `scripts/harness/run_agent.py` tests one chosen unit/rule/agent, not an
 entire cluster or full review. Legacy `shimmer.bat` / `shimmer.sh` perform setup
 and preflight work and are not the normal desktop start path.
+
+`shimmer.bat` and `shimmer.sh` install `requirements.txt` on every start. Set
+`SHIMMER_SKIP_INSTALL=1` (read by these two launchers only, so it has no row in the variables
+table) to skip that step and the CUDA torch swap when the environment is already installed or
+the machine is offline; the readiness preflight still reports anything missing. Both menus end
+when their input ends, so they can be driven from a file (`shimmer.bat < answers.txt`); on
+Windows feed a file, not a pipe, because cmd keeps only the first line of piped input.
+`shimmer.sh` runs under Git Bash on Windows and finds a `.venv/Scripts/` environment there. The
+menu banner names both routes that answer without a token, `/health` and `/console`.
 
 Ordinary final cloud entry points (operator tools, not server routes; full flag
 tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)):
@@ -437,7 +453,7 @@ outside source; this table contains no credentials.
 | `SHIMMER_LOCAL_RUN_TIMEOUT_S` | `7200` | overrides `RUN_TIMEOUT_S` when `SHIMMER_BACKEND_PROFILE=local`. Local inference is far slower than cloud API calls; 2 hours is the default. `0` means unbounded |
 | `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review uses local models with no provider API calls; Draft memo generation remains unsupported in Local). Unset defaults to Cloud; use the supported local/cloud profile values |
 | `SHIMMER_PROVIDER_TIMEOUT_S` | `600` | per-request wall-clock timeout (seconds) passed to the Anthropic and OpenAI clients; read by the pipeline subprocess, not the server process itself |
-| `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
+| `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9, the server's governance status `refused_inst_finder_unratified`). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
 | `SHIMMER_MAX_UPLOAD_MB` | `25` | per-file upload size cap in megabytes for `/submit` |
 | `SHIMMER_MAX_UPLOAD_TOTAL_MB` | `200` | whole-submission upload size cap in megabytes |
 | `SHIMMER_MAX_UPLOAD_FILES` | `50` | max number of files accepted in one `/submit` |

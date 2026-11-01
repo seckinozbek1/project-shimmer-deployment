@@ -123,7 +123,9 @@ processing swarm governed by an append-only constitution.
   the runner's `evidence/disk_usage.json` before, sampled during and after the workload, and
   the evidence packer's `disk_after_evidence.json`) changed `tools/ordinary_final_run.py` and
   `tools/ordinary_final_cloud.py`, so bundles sealed before it refuse the same way and must be
-  re-sealed.
+  re-sealed. Arm L (D-S13 item 6d, ARM-L-A) changed `tools/ordinary_final_run.py` and
+  `tools/ordinary_final_cloud.py` again, so bundles sealed before it refuse the same way and must
+  be re-sealed.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
@@ -210,6 +212,41 @@ processing swarm governed by an append-only constitution.
   B1 pass is `{name, checkpoint, args}` (D-056 condition 6): `name` is a free label (lower case,
   digits, underscore; unique) naming `evidence/b1/<name>`, `checkpoint` (tuned or base) is
   passed as `--checkpoint`, and a pass without `checkpoint` loads the checkpoint its name names.
+- ARM-L-A (D-S13 item 6d): a third sealed arm, `L`, runs the launcher menu as shipped on the
+  loop's own instance with the same controller, guard, ledger, reaper and binding; never on the
+  laptop. The sealer (`--arm L --launcher-question "..."`, exposed only, refused for a sealed run
+  by the sealer and by `admit_workload`) puts the workload's context and conventions files into
+  one flat `launcher_input/` (nothing under `input/`; each file where the wizard's own
+  `classify()` places it), adds `shimmer.sh`, `tools/runtime_contract.py` and
+  `tools/cloud_run/runtime.json` to the archive, and seals a `launcher` block: the draft question,
+  the children's environment exactly `ordinary_final_run.LAUNCHER_CHILD_ENVIRONMENT`
+  (`SHIMMER_MODEL_MODE=base`, `SHIMMER_SKIP_INSTALL=1`, hub and pip offline) and a prompt map,
+  each prompt with its answers in the order it is asked (menu `1`, `1`, `Q`; task `R`, `D`; the
+  wizard's target question answered with the numbers it lists the targets under; `y` to the
+  pipeline's three questions each run; the preflight's continue question and an escalation
+  optional, an escalation deferred). Every sealed prompt must be a printf text of the bound
+  `shimmer.sh` or one string constant of the bound wizard or pipeline
+  (`launcher_prompt_error`, at sealing and on the instance). The runner keeps every guard, makes
+  `project/.venv` from its own runtime (no pip; a `.pth` adds its site-packages), runs
+  `bash shimmer.sh` once with pipes in its own session and answers each prompt only from the map
+  at a line start once the output is quiet (`drive_session`); an unknown prompt, answers used up,
+  30 minutes with no output or the deadline (the budget stop less a minute) ends the session,
+  never a guess. A child Python that loads the sitecustomize from `PYTHONPATH` applies
+  `cloud_run_observer.deny_network` and logs to `evidence/launcher/network/`; the denial is a
+  Python-level patch, so native code and non-Python children are neither denied nor counted, and
+  a Python child that never loads the sitecustomize (`-I`, `-S`, `-E`, `PYTHONPATH` dropped)
+  leaves no log and is not counted (S7 close; an independent child count is an open item). The two runs move to `evidence/launcher/review|draft/`;
+  `assess_launcher` passes integrity only: the menu ended by itself with exit 0, every sealed
+  answer given, one run per task reaching its end with exit 0 and one pipeline_start and end, the
+  run summary and the memo, the draft's manifest and memo cleared, the socket layer denied in
+  every Python child that loaded the sitecustomize and the denial in full in every pipeline
+  process, and no blocked attempt among them (a measured count of those children, not a proof of
+  no network for the session); incomplete semantic
+  work is recorded and does not fail the arm, since base models as shipped carry no quality claim. The controller refuses arm L in a batch, and
+  `stop_workload` also ends what runs from the remote project; the analyser's `Launcher session`
+  row reports it, never comparable with B3 or B1. Its workload progress (PROGRESS-A) is the sealed
+  answers given, read off the runner's own answer lines (`ordinary_final_progress.launcher_workload`).
+  Check 311 (`tools/ordinary_final_launcher_checks.py`).
 - STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
   sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
   and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
@@ -741,6 +778,21 @@ processing swarm governed by an append-only constitution.
   `/runs/{run_id}/deliverables` stays the human artifact. The pairing map's `absence` record
   and a finding's `absence_path` are on disk and on the bus but not yet in the two routes'
   projections (recorded in docs/RUNTIME_REFERENCE.md).
+- CONSOLE-A (loop S7): the console's views of saved model replies, unpromoted model findings,
+  agent switches, the run report and the test change request log read `scripts/console_views.py`
+  projections through token routes; saved replies are shown as metadata and outcomes, never text;
+  every model finding carries `MODEL_FINDING_MARK`; a sealed run (a marker walk that fails closed)
+  shows counts and timings only (`/activation` its decisions as counts, a pending question on
+  `/approvals` and `/runs/{run_id}` its timings only; its run record on `/runs/{run_id}` and
+  `/runs` document, file and target counts and no name, question or error text) and its
+  per-flaw routes, with
+  `/undated-documents` and `/convention-assignment`, answer 403; only `/health` and `/console`
+  answer without a token (FastAPI's own documentation routes are off). The Annex B.4 reasons live
+  once, in `scripts/run_report_text.py`. The screenshots in `docs/loop/ui/` are rendered by
+  `tools/console_screenshots.py`: the run pages from the committed fixture only (replies under a
+  fixed clock inside the run window), the test-change-requests pages from the repository's own
+  `docs/test_change_requests.md` as of the render; two renders of one tree are byte-identical.
+  The sealed note names the document, file and target names it withholds and that the Annex B.4 reasons are shown under Agent switches; on the multi-round section it sits directly under the heading (open item 55). Checks 298 to 306.
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the
@@ -883,7 +935,7 @@ processing swarm governed by an append-only constitution.
   curl it started opened a visible window on the operator's screen. The controller check and
   gate check 292 scan every start's AST and run the controller, adapter, termination client
   and progress reader against fakes that record each start's flags. This changed six bound
-  controller files, so bundles sealed before it refuse with `Controller source changed`.
+  controller files, so bundles sealed before it refuse with `Controller source changed`. The console checks' start scan (check 306) refuses a `creationflags` that also sets CREATE_NEW_CONSOLE or DETACHED_PROCESS, beside which Windows ignores the no-window flag, and counts `os.exec*`, attribute chains and modules reached by `importlib.import_module` or `__import__` (loop S7 round 3).
 - WAVES-A (loop S5, D-076, INC-019): a semantic gather larger than the scheduler's
   `max_pending` (256) runs as consecutive waves of at most that many calls
   (`semantic_waves.run_waves`), in source order, every chunk shown the ONE bus snapshot and

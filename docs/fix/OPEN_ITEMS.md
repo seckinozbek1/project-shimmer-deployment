@@ -230,6 +230,8 @@ status labels are loop stage S7's work.
 **What would settle it.** A governance status for exit 9 (and a label for 8) in the server and
 the console, with its gate check, in S7.
 
+- **Closed at loop S7 (2026-11-01, lane `s07-exitcodes`).** `scripts/server.py` maps exit 8 to `refused_multi_round` and exit 9 to `refused_inst_finder_unratified`, both in `GOVERNANCE_STATUSES`, so both reach the `governance_stop` outcome. The console carries a developer and a plain sentence for each, with a Turkish row in `scripts/ui/localization_catalog.js`; `scripts/ui/localization_checks.js` now renders every governance code and requires both rows. Gate check 108 proves the two mappings, reads by AST that `pipeline.py` `main()` returns 9 on the `_inst_finder_startup_guard` refusal and 8 on its two multi-round refusals (and `multi_round_phase.execute` 8 on its own), requires an entry for every constant exit code those return, and removes exit 9's entry and 8's governance membership to show it fails before restoring. The entry above is kept as written.
+
 ---
 
 ## 12. The execution seal does not check the INST_FINDER ratification, and FINAL_STATUS does not state the setting (found at loop S1)
@@ -349,6 +351,7 @@ open-item sweep.
 
 - **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
 - **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
+- **2026-11-01, sweep 3 over S7 (D-158).** Part (2) will be settled by the parallel track's PATCH_2 (lane/readable: `reviewed_document.md` becomes the document itself, the per-agent record moves to `agent_record.md`) when it merges as a lane after v1 (D-137); it is not merged yet, so part (2) stays open; issue #13 moved to S6.
 
 ## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2) (issue #25)
 
@@ -603,3 +606,43 @@ open-item sweep.
 - **Evidence.** The S5 close review of intervened replies (L12b, seed recorded before reading): of 8 accepted PRACTICE_AUDITOR replies with interventions, 1 correct, 3 partly correct, 4 wrong; all 3 on uncomputable plans were wrong and kept as model-written records under D-068. The S5 report, "Intervened replies".
 - **Why it was left.** Whether to keep PRACTICE_AUDITOR under the constraint (more complete runs, more wrong advice) or take it out (contract failures return) is a product decision that needs a measurement on development runs (P9 reason b); v1 reports it as it is.
 - **What would settle it.** A development measurement of benchmark-mode precision with and without PRACTICE_AUDITOR's envelope constraint, under a rule written before it, then a decision with its D-number.
+
+## 52. Arm L counts only the Python children that report themselves (found at loop S7 close, adversarial checker) (issue #108)
+
+- **What it is.** Arm L's network accounting (`launcher_network`) counts processes from the logs its sitecustomize writes. A Python child that never loads it (`-I`, `-S`, `-E`, a dropped PYTHONPATH) leaves no log and is not counted; native code and non-Python children pass the Python-level denial unblocked and unrecorded. ARM-L-A and check 311 now say exactly that.
+- **Evidence.** `tools/ordinary_final_run.py` (the launcher network reading and the pass rule), `tools/cloud_run_observer.py`; D-148; lane s07-fix2's report.
+- **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b); it is taken up in S6, after L14b (sweep 3, D-158).
+- **What would settle it.** The sitecustomize logs every interpreter start; the runner counts child processes independently (sampling its session's process group); the pass rule requires the two counts of Python children to match and records non-Python children by name; a neutralisation hides one child from the sitecustomize; check 311.
+
+## 53. The replies view does not show decoding-constraint intervention counts (found at loop S7 close, lane s07-fix2) (issue #109)
+
+- **What it is.** Every constrained call records `decoding_constraint` (steps, interventions, dead end) on its reply record and in its usage; the console's replies view shows the reply metadata only, so where the constraint changed a token is not visible there.
+- **Evidence.** Lane s07-fix2's per-feature review of S5's later additions (private `analysis/lane_s07_fix2_report.md`); `scripts/console_views.py` (`REPLY_FIELDS`).
+- **Why it was left.** Developer detail per call, not needed for v1 (D-S18 item 3; P9 reason b).
+- **What would settle it.** The intervention count per call in the replies view, with a check, in S6.
+
+## 54. `shimmer.sh` fails at `dirname` when started from a non-login Git Bash with no `/usr/bin` on PATH (found at loop S7 final pass, lane s07-final) (issue #110)
+
+- **What it is.** A person starting Git Bash gets a login shell with `/usr/bin` on PATH; a scripted caller without it stops at `dirname` before the menu. The gate's launcher checks were fixed by putting the bash folder on PATH; the launcher itself was not.
+- **Evidence.** Lane s07-final's report (private `analysis/lane_s07_final_report.md`); lane s07-fix2 (checks 307 and 308).
+- **Why it was left.** It affects scripted callers only, not a person (P9 reason b).
+- **What would settle it.** `shimmer.sh` finding its own folder without external tools (or adding Git's `usr/bin` itself), with a check that starts it with that PATH, in S6.
+
+- **Closed at loop S7 round 3 (2026-11-01, commit `b2b2fb1`, lane s07-r3fix).** The "P9 reason b" above was wrong: the fix costs no money. `shimmer.sh` reads its own folder by parameter expansion on `$0` (no `dirname`), and appends `/usr/bin` to PATH only where the directory exists and PATH does not name it, for the tools reached after that (the venv's activate calls `cygpath` on Git Bash; the menu calls `cat` and `rm`); a PATH that names it is left as it is. Check 308 (`scripts/launcher_checks.py`) starts the launcher from another folder with PATH holding only the python stand-in's folder and requires its menu; neutralised by putting the `dirname` line back (stops at `dirname`, exit 1, no menu) and by dropping the append (the activate stand-in's tool is not found): FAIL; restored: PASS. The entry above is kept as written.
+- **Since lane s07-r4fix (2026-11-01, D-160).** The append adds no empty entry (an empty or colon-ended PATH gained one, which bash reads as the repository root after the cd); check 308 starts it with PATH empty and a `python3` planted in its folder, neutralised by the former line (the planted `python3` runs): FAIL; restored: PASS.
+
+## 55. Wording and fixture defects on the console's sealed pages (found at loop S7 close, sweep 3 and the screenshot checker) (issue #113)
+
+- **What it is.** `scripts/ui/console.html` renders the count before a fixed plural sentence, so a count of 1 reads "1 model-written findings were kept, none promoted and none checked by Python." (and its Turkish row the same way). The screenshot checker found four more, none a leak: the sealed note says the Annex B.4 reasons "are shown" in sections that do not show them; on the multi-round page the note comes after "No valid recorded case output." instead of under the heading; the note's "Withheld:" list omits document, file and target names, which the page withholds; and the replies page's counts come from the reply records written at render time and disagree with the committed fixture's `agent_activation.json` and `cost_tracker.jsonl`.
+- **Evidence.** Private `analysis/s7_shots_checker.md`; `docs/loop/ui/run_detail_sealed_model-findings_1280.png` and `_390.png`; `scripts/ui/console.html` (the sentence) and `scripts/ui/localization_catalog.js`.
+- **Why it was left.** Cosmetic; the fix needs a singular sentence and its Turkish row, and a re-render of the screenshots (P9 reason b, inside v1's date).
+- **What would settle it.** A singular form chosen by count, the sealed note naming where the B.4 reasons are shown and listing names among the withheld items, the note directly under each heading, the fixture's activation and cost records made to agree with its reply records, their catalog rows and localization checks, and the sealed screenshots re-rendered, in S6.
+
+- **Closed at loop S7 round 3 (2026-11-01, commit `b2b2fb1`, lane s07-r3fix).** The "P9 reason b" above was wrong: the fix costs no money. All five: (a) a count of 1 reads "1 model-written finding was kept, not promoted and not checked by Python." with its own Turkish row; (b, d) the sealed note (`run_report_text.SEALED_NOTE`, the console's fallback and its Turkish row) lists document, file and target names among the withheld items and says the B.4 reasons are shown under Agent switches, the one section that lists them; (c) on the multi-round section the note sits directly under the heading, once; (e) the committed fixture's `call-0003` is a failed call in `audit/agent_activation.json` (state `execution_failure`, outcome `backend_failure`, PRACTICE_AUDITOR's aggregate state with it) and in `logs/cost_tracker.jsonl` (`ok` false), agreeing with its reply records; fixture files only, no key. Checks 298 and 306 (`scripts/console_view_checks.py`) and the localization side gate (`scripts/ui/localization_checks.js`, 17 checks) hold each with neutralise, fail, restore, pass; since lane s07-r4fix, (b, d) has a neutralisation of its own (the former note as `SEALED_NOTE`, as the console's fallback and with its former Turkish row) whose FAIL is asserted to be the twelve (b, d) messages alone, the scan that keeps the B.4 reasons out of every other sealed section covers the Turkish views with each reason's Turkish row, and (e) also requires the three records to name the same calls (neutralised by one more cost line, and by one more activation row, for a call with no reply record). The ten sealed screenshots in `docs/loop/ui/` were re-rendered (two renders byte-identical); the exposed, Turkish and test-change-request shots did not change. The entry above is kept as written.
+
+## 56. A gate leaves an empty `durable/` tree behind, so check 01's result depends on whether a gate ran in that tree before (found at loop S7 close, the tip gate) (issue #114)
+
+- **What it is.** After a full gate in a tree with no `durable/`, the tree holds `durable/cache`, `durable/global`, `durable/learnings` and `durable/reference` (empty, no `governance`). The next gate's check 01 (Directory structure) then reports FAIL ("missing required dirs: ['durable/governance']") where a tree with no `durable/` reports SKIP. Gate checks must not mutate the tree (CLAUDE.md, The verify gate). Check 32 did the same with `input/`; lane s07-r4fix fixed that one (D-160).
+- **Evidence.** The s07-lead worktree: `durable/` created at 04:20 +0300 on 1 November during the gate at `02fae41`, its four subfolders touched again at 15:45 during the gate at `07e84e8`, no file in any of them; check 01 SKIP at `02fae41`, FAIL at `07e84e8` (private `gate_logs/s07_07e84e8/main_gate.log`). The writer is not yet found: `durable_paths.ensure_dirs` creates all five subfolders, including `governance`, so another path creates four and leaves them.
+- **Why it was left.** The defect sits in gate checks or modules S7 did not touch, it changes no product output and no check other than 01, and the folders it leaves are empty (P16: recorded for S6).
+- **What would settle it.** The check or module that creates the four folders found (a gate run with a watcher on `durable/`), made to remove what it created as check 32 now does, with a neutralise, fail, restore, pass proof, in S6.

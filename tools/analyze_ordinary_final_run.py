@@ -10,15 +10,14 @@ from ordinary_final_run import read, write, sha, require, DISK_USAGE
 from ordinary_final_summary import supplement, rows
 
 ROOT=Path(__file__).resolve().parents[1]
+if str(ROOT/'scripts') not in sys.path:
+    sys.path.insert(0,str(ROOT/'scripts'))
+# Annex B.4: both reasons, every report, whenever the bundle's own review scope withholds it.
+# One copy, shared with the console's GET /runs/{run_id}/switches (loop S7, DS7-3).
+from run_report_text import FACT_CHECKER_REASONS
+
 BASE=ROOT/'docs/fix/ordinary_final_cloud_run'
 EXPOSED_NO_MANIFEST='exposed, no manifest'
-# Annex B.4: both reasons, every report, whenever the bundle's own review scope withholds it.
-FACT_CHECKER_REASONS=(
-    'switched off, not deleted: deleting the agent needs operator approval under the constitution and cannot be '
-    'undone without code, while keeping it leaves LAW-III checks 87 and 127 unchanged and one cleared declaration '
-    'restores it',
-    'stays off: it returned five substantively wrong items in v7 and v8, byte-identical, and none correct in v5 '
-    '(runs 110990c1, 6f896263, a6649672)')
 ROLE_SEPARATION=('Role separation: separate sessions and folders on one Windows account; not enforced by the '
                  'operating system (Annex A, 11.2 options not in place; Annex B.11).')
 NOT_SCORED=('not computed by this tool: scoring belongs to the scorer (role C for a sealed test, '
@@ -97,6 +96,8 @@ def uncomputable_text(arm, status):
     kept, and what the counts do not show."""
     if arm=='B1':
         return 'not applicable: B1 makes no paired judging call'
+    if arm=='L':
+        return 'not reported for arm L: each menu run keeps its own audit/pairing_map.json under evidence/launcher'
     if not status.get('pipeline_started'):
         return 'not determined: the pipeline did not start'
     counts=status.get('uncomputable_judging')
@@ -181,6 +182,8 @@ def over_context_text(arm, status, events):
     context, refused before generating; each such document is a declared exclusion."""
     if arm=='B1':
         return 'not applicable: B1 checks every prompt against the context before generating (section 5.3)'
+    if arm=='L':
+        return 'not applicable: arm L runs no B3 entry; each menu run keeps its own telemetry under evidence/launcher'
     if not status.get('pipeline_started'):
         return 'not determined: the pipeline did not start'
     if not events:
@@ -191,7 +194,57 @@ def over_context_text(arm, status, events):
 
 
 ARM_TEXT={'B3':'B3: the full pipeline',
-          'B1':'B1: the bare-model baseline (benchmark/baselines/bare_model.py), one fixed prompt per item, no pipeline'}
+          'B1':'B1: the bare-model baseline (benchmark/baselines/bare_model.py), one fixed prompt per item, no pipeline',
+          'L':('L: the launcher menu as shipped (shimmer.sh once: a review, then a draft, then quit), answered only from '
+               'the sealed prompt map')}
+# D-S13 item 6d: what an arm L report says of every quality figure, and of its models.
+LAUNCHER_NOT_COMPARABLE=('base models as shipped (SHIMMER_MODEL_MODE=base, the checkpoints config/local_models.json '
+                         'names), under the topology the menu uses; not comparable with B3 or B1, and no quality claim')
+
+
+def launcher_status(target,result):
+    """An arm L entry's session and its two runs, from the runner's assessment and the session's
+    own transcript (evidence/launcher/transcript.json). Counts, states and seconds only."""
+    transcript=Path(target)/'evidence'/'launcher'/'transcript.json'
+    transcript=read(transcript) if transcript.is_file() else None
+    observation=(result or {}).get('launcher') or {}
+    return dict(transcript=transcript is not None,
+                answers=len((transcript or {}).get('steps') or []),
+                answer_ids=sorted({s.get('id') for s in (transcript or {}).get('steps') or []}),
+                seconds=(transcript or {}).get('seconds'),session=observation.get('session') or {},
+                runs=observation.get('runs') or {},network=observation.get('network') or {},
+                context=observation.get('context') or {},semantic=(result or {}).get('semantic_complete') or {})
+
+
+def launcher_text(status):
+    """The report row of an arm L entry: the session, each task's run, the children's network."""
+    seen=status.get('launcher')
+    if not seen or not seen['transcript']:
+        return 'no session transcript collected: the menu did not run or its evidence was not packed'
+    session=seen['session']
+    parts=['the menu %s with exit code %s after %s answers from the sealed map (%s s; %s)'%(
+        'stopped (%s%s)'%(session.get('stop_reason'),': '+str(session.get('unknown_prompt')) if session.get('unknown_prompt') else '')
+        if session.get('stop_reason') else 'ended by itself',session.get('exit_code'),seen['answers'],seen['seconds'],
+        'every sealed answer given' if not session.get('unused') else 'not given: '+', '.join(session['unused']))]
+    for task in ('review','draft'):
+        found=seen['runs'].get(task) or []
+        if len(found)!=1:
+            parts.append('%s: %d run folders'%(task,len(found)))
+            continue
+        run=found[0];completion=run.get('completion') or {}
+        parts.append('%s: state %s, reached its end %s, exit code %s, semantic work %s, pipeline_start %s and pipeline_end %s%s'%(
+            task,completion.get('state'),completion.get('reached_end'),completion.get('exit_code'),
+            'complete' if completion.get('semantic_complete') is True else 'incomplete' if completion.get('semantic_complete') is False
+            else 'not recorded',run.get('pipeline_starts'),run.get('pipeline_ends'),
+            ', run summary written' if run.get('run_summary') else ', memo written' if run.get('memos')==1 else ''))
+    network=seen['network']
+    parts.append('children: %s network logs, %s processes (%s of %s pipeline processes with the denial in full), '
+                 'denial installed in full in %s, at the socket layer only in %s, partial in %s; %s blocked attempts, '
+                 '%s loopback connections'%(network.get('logs'),network.get('processes'),network.get('pipelines_installed'),
+                                           network.get('pipelines'),network.get('denial_installed'),
+                                           network.get('denial_sockets_only'),network.get('denial_partial'),
+                                           network.get('blocked'),network.get('loopback')))
+    return '; '.join(parts)
 # The counts a B1 report row carries per checkpoint, read from its b1_summary.json (no text).
 B1_COUNTS=('items','parsed','abstain','undecided','backend_failures','repaired','length_reached_allowance')
 
@@ -394,6 +447,33 @@ def analyze_b1(base,manifest,target,analysis,launch,run_record,copy_receipt,reco
     print(json.dumps(status,indent=2))
 
 
+def analyze_launcher(base,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure):
+    """An arm L entry's status and report: it completed when the runner's own arm-aware
+    assessment (evidence/result.json, arm L) passed and its transcript was collected. Integrity
+    only; base models as shipped, never compared with B3 or B1."""
+    sys.path.insert(0,str(ROOT/'scripts'))
+    import model_telemetry
+    stages={p.stem.removesuffix('_timing'):read(p) for p in base.glob('*_timing.json')}
+    write(analysis/'stages.json',stages)
+    seen=launcher_status(target,result)
+    completed=bool(result and result.get('arm')=='L' and result.get('execution_integrity_passed') and seen['transcript'])
+    costs=model_telemetry.cost([record,api])
+    status=dict(status='ORDINARY_FINAL_CLOUD_RUN_COMPLETED' if completed else 'ORDINARY_FINAL_CLOUD_RUN_FAILED',
+        arm='L',pipeline_started=bool(seen['runs']),pipeline_completion=None,remote_result=result,terminal_error=failure,
+        disk=disk_record(base,target),launcher=seen,b1_checkpoints={},
+        semantic_call_receipts=None,producer168_receipts=None,auditor896_receipts=None,
+        cost_estimates=costs,within_hard_ceiling=costs['combined_estimate']<=manifest['hard_ceiling_usd'],
+        exactly_one_instance=True,maximum_one_workload_invocation=True,full_run_retried=False,
+        protected_data_accessed=False,multi_round_declared=False,multi_round_executed=False,
+        inventory_empty=True,temporary_ssh_removed=True,
+        evidence_verified=True,quality_claim=None,subsequent_roadmap_work_started=False)
+    report_rows=report_fields(base,manifest,run_record,launch,status,copy_receipt)
+    status['report']={k:v for k,v in report_rows}
+    write(base/'FINAL_STATUS.json',status)
+    write_report(base,report_rows)
+    print(json.dumps(status,indent=2))
+
+
 def withheld_agents(bundle):
     """The audit agents the bundle's OWN review scope withholds, read from its project archive."""
     archive=Path(bundle)/'project.tar.gz'
@@ -438,13 +518,18 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Scorer version',report.get('scorer_version') or NOT_SCORED),
         ('Arm',ARM_TEXT[arm]),
         ('Models and checkpoints',b1_models(status) if arm=='B1' else
+            '; '.join(m['model_id']+'@'+m['revision'][:12] for m in manifest.get('models',[]))+'; '+LAUNCHER_NOT_COMPARABLE
+            if arm=='L' else
             '; '.join(m['model_id']+'@'+m['revision'][:12] for m in manifest.get('models',[]))
             +'; adapter receipts: Producer 168 x%s, Auditor 896 x%s'%(status['producer168_receipts'],status['auditor896_receipts'])),
-        ('B1 checkpoints',b1_counts(status) if arm=='B1' else 'not applicable: a B3 entry runs the pipeline, not bare_model.py'),
+        ('B1 checkpoints',b1_counts(status) if arm=='B1' else
+            'not applicable: an arm L entry runs the launcher menu, not bare_model.py' if arm=='L' else
+            'not applicable: a B3 entry runs the pipeline, not bare_model.py'),
+        ('Launcher session',launcher_text(status) if arm=='L' else 'not applicable: only arm L runs the launcher menu'),
         ('Decoding settings','; '.join('%s: %s'%(k,v.get('status')) for k,v in sorted((manifest.get('decoding_policy') or {}).items()))
             or 'not recorded in the manifest'),
         ('Backend and machine','local open-weight models on one rented GPU; %s in %s; %s'%(launch.get('instance_type','gpu_1x_a10'),
-            launch.get('region','us-east-1'),producer_attention_text(manifest))),
+            launch.get('region','us-east-1'),LAUNCHER_NOT_COMPARABLE if arm=='L' else producer_attention_text(manifest))),
         ('B3 prompts over the model context',over_context_text(arm,status,status.get('b3_prompts_over_context') or [])),
         ('Judging calls Python could compute nothing for',uncomputable_text(arm,status)),
         ('Execution assessment',assessment_text(status.get('remote_result'))),
@@ -518,9 +603,15 @@ def analyze(bundle=BASE):
     analysis=BASE/'analysis';analysis.mkdir(exist_ok=True)
     (analysis/'cost_records.jsonl').write_text(json.dumps(record)+'\n'+json.dumps(api)+'\n',encoding='utf8')
     completions=list(target.rglob('audit/run_completion.json'))
-    require(len(completions)<=1,'More than one pipeline run observed')
     result=read(target/'evidence/result.json') if (target/'evidence/result.json').exists() else None
     failure=read(target/'evidence/terminal_error.json') if (target/'evidence/terminal_error.json').exists() else None
+    if manifest.get('arm','B3')=='L':
+        # The menu's two runs live under evidence/launcher/<task>/, one each; nowhere else.
+        launcher=(target/'evidence'/'launcher').resolve()
+        require(all(p.resolve().is_relative_to(launcher) for p in completions) and len(completions)<=2,
+                'An arm L entry keeps its two menu runs under evidence/launcher, and no other pipeline run')
+        return analyze_launcher(BASE,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure)
+    require(len(completions)<=1,'More than one pipeline run observed')
     if manifest.get('arm','B3')=='B1':
         require(not completions,'A B1 entry never runs the pipeline')
         return analyze_b1(BASE,manifest,target,analysis,launch,run_record,copy_receipt,record,api,result,failure)
