@@ -16,9 +16,14 @@ widely between the fields it has run on.
 - LAW-IV (privacy) is never edited. It outranks LAW-0 (operator sovereignty) for
   sensitive-content handling, with no exceptions. A single leak is irreversible.
 - The constitution is append-only. The INFRA-029 amendment-guard tripwire
-  (`scripts/constitution_guard.py`) intercepts any attempt to modify or delete an
-  existing `amendments[]` entry or seed law from any code path; adding a new id is the
-  only allowed change. No-gap rule: an amendment id is never reused, never inserted
+  (`scripts/constitution_guard.py`, `check_constitution_change`, called by
+  `Constitution.save` and the snapshot load) refuses a write that would modify or delete an
+  existing `amendments[]` entry or seed law unless the operator approves it in an interactive
+  session through the operator handler (LAW-0); with no handler, outside interactive mode or
+  without an approval it is refused (the snapshot load keeps the live constitution), and each
+  such decision is logged to `durable/governance/constitution_guard_log.jsonl`. A new amendment
+  is accepted only as one verified append per write, `operator_approved`, an INFRA id being the
+  next one. No-gap rule: an amendment id is never reused, never inserted
   between existing ids, never renumbered. Every numbered DELTA is recorded in
   `config/constitution.json` `amendments[]`, the single canonical record; no DELTA
   lives only in prose.

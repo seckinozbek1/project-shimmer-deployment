@@ -3,6 +3,16 @@
 State: this HEAD, the `productization` branch after STEP 11 of the polish chain.
 Written from what was verified in the code, with citations, not from intent.
 
+> Note (2026-11-01, loop S11): read again against the code at version `0.1.0.dev7`, and the
+> statements that had become false are corrected in place: the constitution guard (boundary 1,
+> T8), the deliverable routes and where the console keeps the token (T1), the governance paths
+> and the backup section's name, the local profile (boundary 5), intake validation (T7) and
+> model weights (T9). The audit maps cited below (`docs/audit/REALITY_MAP_P1..P4_7372321.md`)
+> are no longer in the repository; those citations are kept as written and point at the audit
+> of that day. Under the local backend profile no provider client is built (gate check 313), so
+> the provider spend and egress described here apply to cloud runs only. A tunnel is optional
+> and not part of ordinary startup: the desktop starter binds `127.0.0.1`.
+
 **Scope note.** The `/polish` step that commissioned this document referred to
 "the audit's section M table". No section M or N exists in the audit at this
 HEAD: `docs/audit/REALITY_MAP_P1..P4_7372321.md` are sectioned numerically
@@ -28,7 +38,7 @@ unattended.
 |---|---|---|---|
 | API keys | OUTSIDE the repository, via `$SHIMMER_CONFIG_PATH`, a sibling `../api_keys/config.py`, or the `.env_path` pointer (`REALITY_MAP_P4` 4.1 secrets row, 4.4) | direct financial loss and impersonation; a leaked key spends until rotated | rotate at the provider |
 | Sensitive document content | `input/`, `output/runs/<run>/`, and in transit to `api.anthropic.com` / `api.openai.com` (`REALITY_MAP_P4` 4.5) | LAW-IV: a single leak is irreversible | no |
-| Governance record | `durable/governance/` (model approvals, constitution-guard log, redaction waivers, sensitivity overrides, the LAW-IV exposure ledger, redaction format warnings; paths in `scripts/durable_paths.py:72-77`) | the only evidence of what was approved, waived or exposed, and by whom | **no** |
+| Governance record | `durable/governance/` (model approvals, constitution-guard log, redaction waivers, sensitivity overrides, the LAW-IV exposure ledger, redaction format warnings; paths in `scripts/durable_paths.py:137-148`, which also hold the operator decisions ledger) | the only evidence of what was approved, waived or exposed, and by whom | **no** |
 | The constitution | `config/constitution.json`, append-only, guarded by `scripts/constitution_guard.py` | the authority the whole system derives from | no |
 | Cross-run learning | `ontology/stores/*.jsonl` (append-masters), `durable/learnings/`, `durable/reference/` | accumulated work; `graph.json` and `gnn_state.json` rebuild from the JSONL masters | masters: **no**. Derived: yes |
 | The access token | in the operator's and the collaborator's hands; only its SHA-256 hash is in the server's environment | grants the ability to spend money and download deliverables | mint a new one |
@@ -36,15 +46,17 @@ unattended.
 
 The two **non-regenerable** trees are `durable/` and `ontology/stores/`. Until
 STEP 11 there was no backup mechanism for them at all. There is now:
-`scripts/backup_state.py` (see `docs/RUNBOOK.md` sections 10 and 11).
+`scripts/backup_state.py` (see the "Preserve and back up state" section of `docs/RUNBOOK.md`).
 
 ---
 
 ## 2. Trust boundaries
 
-1. **Operator to system.** The operator is SOVEREIGN under LAW-0. The guard
-   never hard-blocks the operator; it confirms and proceeds, or logs and
-   proceeds. This is deliberate and load-bearing: a guard that cages the
+1. **Operator to system.** The operator is SOVEREIGN under LAW-0. The
+   meta-signature check never hard-blocks the operator; it confirms and
+   proceeds, or logs and proceeds. A change to an existing amendment or seed
+   law is refused unless the operator approves it in an interactive session
+   through the operator handler. This is deliberate and load-bearing: a guard that cages the
    operator inverts LAW-0. It also means the operator is trusted, and an
    operator mistake is inside the trust boundary, not outside it.
 2. **Agents to governed structure.** Agents can NEVER amend governed structure.
@@ -52,12 +64,13 @@ STEP 11 there was no backup mechanism for them at all. There is now:
    (`scripts/constitution_guard.py`). Agents propose; the operator ratifies.
 3. **Network to server.** Everything except `GET /health` and the console shell
    `GET /console` requires a Bearer token whose SHA-256 matches
-   `SHIMMER_TOKEN_HASH` (`scripts/server.py:273-276`, gate check 104).
+   `SHIMMER_TOKEN_HASH` (`scripts/server.py:244-271`, gate checks 104 and 305).
 4. **System to model providers.** Prompts, and therefore document text, leave
    the machine on every cloud call (`REALITY_MAP_P4` 4.5). This is the boundary
    LAW-IV governs, and the one the outbound masking layer exists to police.
 5. **Local model.** The Qwen redactor runs in-process via `transformers`, on
-   local hardware. No Ollama, no HTTP model server (`REALITY_MAP_P4` 4.5, both
+   local hardware. Under the local backend profile every agent does, and no
+   provider client is built (gate check 313). No Ollama, no HTTP model server (`REALITY_MAP_P4` 4.5, both
    `NOT FOUND` rows).
 
 ---
@@ -72,11 +85,11 @@ Ordered by residual risk, highest first.
 One shared bearer token, no accounts, no expiry, no per-caller attribution, no
 rate limiting. Anyone holding it can submit runs that spend the operator's API
 budget and can download any completed run's deliverables through
-`GET /results/{run_id}`.
+`GET /runs/{run_id}/deliverables` and `GET /runs/{run_id}/deliverables/{doc_id}`.
 
 Mitigated: the token is never stored, only its SHA-256; comparison is
 constant-time (`hmac.compare_digest`); the token is never placed in a URL and
-the console keeps it in page memory only (gate check 109 proves the served HTML
+the console keeps it in the tab's session storage, never in local storage (gate check 109 proves the served HTML
 leaks no token, key pattern or environment value); the auth boundary fails
 CLOSED with no hash configured; upload caps bound a single submission
 (`SHIMMER_MAX_UPLOAD_FILES`, `_MB`, `_TOTAL_MB`, gate checks 93 and 113); jobs
@@ -230,17 +243,21 @@ the three upload caps reject before any file is written, and the file-count
 check runs before `mkdtemp` so a rejected over-count submission creates no
 staging directory at all (gate checks 93, 113); an orphaned staging directory
 for a job that is no longer running is removed at server import (gate check 91);
-the ingestion-contract validator runs on every submission before anything enters
-`input/context/`.
+a native submission is checked by the standalone intake plan, and a legacy
+submission with files by the ingestion-contract validator, before anything enters
+`input/`.
 
 ### T8. A governed change slipping through without ratification
 **Residual risk: LOW.**
 
-Mitigated: the amendment guard intercepts any attempt to modify or delete an
-existing `amendments[]` entry or a seed law from any code path; the only allowed
-change is appending a new id, and `verify_amendment_append` requires the next id
-(no reuse, no gaps, no renumbering), `operator_approved`, and a clean signature
-scan. `check_genesis_integrity` requires genesis Part I to mirror the guarded
+Mitigated: every writer of `config/constitution.json` (`Constitution.save`, the
+snapshot load) goes through `check_constitution_change`, which refuses a modify or
+delete of an existing `amendments[]` entry or seed law unless the operator approves
+it in an interactive session through the operator handler, and logs the decision.
+An append is accepted only as exactly one new amendment marked `operator_approved`,
+with an INFRA id the next number (no reuse, no gaps, no renumbering;
+`verify_amendment_append`). An agent-proposed DELTA is scanned for the meta-law
+signature and routed to the operator, never applied. `check_genesis_integrity` requires genesis Part I to mirror the guarded
 seed laws, so a tampered immutable core is flagged. The operator-approval relay
 never evaluates the decision it carries (gate check 107). Gate check 77 exercises
 the whole route.
@@ -261,8 +278,11 @@ entry. Model ids are read live from the provider and never hardcoded; a
 deprecated model STOPS the run for operator approval rather than auto-swapping.
 
 Not mitigated: no hash pinning (no `--require-hashes`), no lock file, no SBOM,
-no vulnerability scanning. Model WEIGHTS are downloaded from Hugging Face on
-first use with no pinned digest.
+no vulnerability scanning. The generation models load only from the local
+cache, and the final models at a pinned revision; but the embedding model falls
+back to a Hugging Face download on a first run with no cache, and a baked image
+build (`BAKE_WEIGHTS=true`) downloads the base weights, both with no pinned
+revision or digest.
 
 ### T10. A gate check that passes for the wrong reason
 **Residual risk: LOW, actively worked.**

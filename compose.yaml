@@ -7,8 +7,8 @@
 #   docker compose --profile serve up      the HTTP server (tools/entrypoint.sh serve)
 #   docker compose --profile run run review   one review (tools/entrypoint.sh run)
 #
-# Build the image first (see the Dockerfile for BAKE_WEIGHTS):
-#   docker compose build
+# Build the image first (no service has a build section; see the Dockerfile for BAKE_WEIGHTS):
+#   docker build -t shimmer:local .
 #
 # `verify`, the entrypoint's default command, has no service here: it needs
 # no port, no mounts beyond what the image already carries, and no compose

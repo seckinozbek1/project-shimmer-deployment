@@ -7,7 +7,7 @@ accept or reject. It never edits a source document. Every step leaves a record
 that a reader can inspect.
 
 **Status: v1, a prototype.** "v1" names this documented state of the repository;
-its code version is the one in [VERSION](VERSION) (`0.1.0.dev6` at this commit).
+its code version is the one in [VERSION](VERSION) (`0.1.0.dev7` at this commit; `CITATION.cff` states the same version, gate check 314).
 Every result in this repository is a development
 result on exposed material (material the project saw while it was being built).
 None of it is a held-out or sealed result, and none of it shows how well Shimmer
