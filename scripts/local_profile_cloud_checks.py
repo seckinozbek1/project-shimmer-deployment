@@ -25,10 +25,12 @@ scripts/reply_records_checks.py, and every run folder is a temporary directory.
   harness       harness.run_agent.run_one under its local profile, from the registry as
                 shipped (cloud backends).
 
-Each passes only with zero clients constructed and the local stand-in answering. Then three
+Each passes only with zero clients constructed and the local stand-in answering. Then four
 neutralisations, each required to fail and then pass again restored: the draft memo with its
 old direct call_claude put back, the polish pass with a direct call_claude put back in place
-of dispatch, and _LOCAL_PROFILE with AMENDMENT_DRAFTER left out.
+of dispatch, _LOCAL_PROFILE with AMENDMENT_DRAFTER left out, and _LOCAL_PROFILE mapping
+LEGAL_ANALYST to claude_api (the harness then builds a Claude client). A harness exit is
+caught and reported as a failure.
 """
 from __future__ import annotations
 
@@ -319,8 +321,8 @@ def check():
             ("polish pass with a direct call_claude", "polish pass", (draft, _polish_with_direct_call_claude(), profile)),
             ("_LOCAL_PROFILE without AMENDMENT_DRAFTER", "registry",
              (draft, polish, {k: v for k, v in profile.items() if k != "AMENDMENT_DRAFTER"})),
-            ("_LOCAL_PROFILE without LEGAL_ANALYST", "harness",
-             (draft, polish, {k: v for k, v in profile.items() if k != "LEGAL_ANALYST"})))
+            ("_LOCAL_PROFILE mapping LEGAL_ANALYST to claude_api", "harness",
+             (draft, polish, {**profile, "LEGAL_ANALYST": ("claude_api", profile["LEGAL_ANALYST"][1])})))
     except AssertionError as exc:
         return "FAIL", str(exc)
     proofs = []
