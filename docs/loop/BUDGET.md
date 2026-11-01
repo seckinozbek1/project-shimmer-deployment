@@ -273,4 +273,4 @@ Instances 62.87 USD over 22 terminations (ledger sum); reaper 63.57 at 13:31:59 
 
 | Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
 |---|---|---|---|
-| L14b | launcher-menu-l14b, arm L, sealed at 2b8caa9 after the tip gate (D-160) | 1.68, cap 2.52 (60 minutes) | L14B_ACTUAL |
+| L14b | launcher-menu-l14b, arm L, sealed at 2b8caa9 after the tip gate (D-160) | 1.68, cap 2.52 (60 minutes) | 13:48:19 (intent) to 14:40:46 (termination), 53 minutes, 1.14 USD; the review ran from the menu to its end, the draft stopped (INC-031, D-162). Usage seven-day 81 percent (five-hour not reported, reaper 13:46:59 UTC), free memory 4.9 GB, disk 48 GB at launch. Instances total after it: 64.01 over 23 terminations; reaper 64.72; left 134.28. The v1 line has about 1.08 left; L14c (about 1.2) passes it by about 0.1, taken from the moved steps at the end. |
