@@ -159,9 +159,11 @@ What these figures do not show:
 - **Public benchmark documents may have been seen by the models in training.**
 - **Every B3 flag on the external benchmarks came from a model-written record.**
   Counting only Python's findings (as shipped, S-8), B3 flagged nothing on them.
-  A review of model-written texts from one launch (L11: 15 of the 526 texts
-  written across its eight ContractNLI, SciTab and ContraDoc documents) found 1
-  correct, 5 partly correct and 9 wrong.
+  Reviews of model-written texts, a seeded sample of 15 per launch, found:
+  L11 (external benchmarks) 1 correct, 5 partly correct, 9 wrong; L8 (the
+  synthetic suite) 4 correct, 9 wrong, 2 empty; L12 (benchmarks and suite) 4
+  correct, 5 partly correct, 6 wrong; L12b (re-runs) 2 correct, 1 partly
+  correct, 12 wrong. The results page says which rows each launch counts for.
 - **Not every field a sealed result report needs is here.** The project's
   testing rules list the fields of a result report. The results page gives, for
   these development runs: the purpose, that they are exposed, the dates, the
@@ -452,7 +454,8 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
   options and the multi-round form.
 - **External benchmarks.** The adapters in `benchmark/adapters/` build test
   bundles from a benchmark file, label a run's output and score the labels
-  (`build`, `label --scoring benchmark|as_shipped`, `score`). `label` also writes
+  (`build`, `label --scoring benchmark|as_shipped`, `score`; the synthetic suite's
+  adapter names its first command `items`). `label` also writes
   the sensitivity analyses, S-8 among them; the "as shipped (S-8)" figures above
   are S-8, not `--scoring as_shipped`, which gives today's reading and can differ
   (on the suite, precision 42 of 46 against S-8's 40 of 40). The bare-model arm
