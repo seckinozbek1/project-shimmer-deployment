@@ -705,3 +705,10 @@ open-item sweep.
 - **Evidence.** `tools/loop/amend_pinned_baselines.py` writes `"date": "2026-10-27"` for every amendment (lane s10-fix1's report); the S10 amendment was written by hand with its real date (D-165).
 - **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
 - **What would settle it.** The date taken from the clock or an argument, with a fixture check.
+
+## 65. `shimmer.sh`: a child process can consume piped input meant for the backend question (found at loop S10, D-S13 item 6b) (issue #123)
+
+- **What it is.** With its answers piped in, a child that `shimmer.sh` starts during the install (pip or Python) reads the buffered input, so the backend question finds end of input and takes the Cloud default.
+- **Evidence.** The 6b re-run on a fresh clone of loop/s10 at `74408d3` under Git Bash with input `L`: install finished (723 s, the CUDA torch build), menu reached, but the log says "Backend profile: cloud"; `shimmer.bat` with the same input chose Local (D-160, D-167).
+- **Why it was left.** It affects scripted callers only, not a person at a terminal; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The install's children started with standard input closed, and a launcher check that pipes `L` through a full install path.
