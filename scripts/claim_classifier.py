@@ -25,6 +25,10 @@ Two consequences a later reader should not have to rediscover:
     live gate check is a wider change than an inventory warrants, so it is
     marked and left for the operator to delete if they want it gone.
 
+Under the local backend profile (SHIMMER_BACKEND_PROFILE=local) extract never
+builds the OpenAI client, key or not: it reads with the regex patterns only
+(D-183; gate check 313 runs it with a placeholder key and a raising client).
+
 The STRUCTURAL patterns here (a date format, a currency shape, a standard
 reference like ISO 9001) are reading rather than interpreting, and would stay as
 they are under WORDS-A in any case.
@@ -33,6 +37,7 @@ they are under WORDS-A in any case.
 from __future__ import annotations
 
 import json
+import os
 import re
 import uuid
 from dataclasses import dataclass
@@ -105,6 +110,8 @@ class ClaimExtractor:
     model: str = "gpt-4o"
 
     def extract(self, text, *, use_gpt=True):
+        if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":
+            use_gpt = False  # LAW-IV: no provider client under the local profile (D-183, check 313)
         if use_gpt and self.openai_key:
             try:
                 claims = self._gpt_extract(text)

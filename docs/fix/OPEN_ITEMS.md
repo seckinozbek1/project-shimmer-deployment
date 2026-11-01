@@ -778,3 +778,12 @@ open-item sweep.
 - **Evidence.** The S10 outside audit, finding 2; the S10 provider sweep (D-169).
 - **Why it was left.** Unconsumed today, so no output changes (P16: recorded for S6).
 - **What would settle it.** A check 313 case for it, or the module kept out of every run path by a check.
+- **Closed (2026-11-02, loop S11, D-183).** `ClaimExtractor.extract` builds no OpenAI client under the local backend profile, key or not; it reads with its regex patterns only. Check 313 has a `claim extractor` case (a placeholder key, a raising client) and a neutralisation that removes the guard and fails with an OpenAI client built.
+
+## 75. `scripts/model_registry.py` builds provider clients directly, outside the path check 313 covers (found at the deferral sweep of 2 November 2026, sweep row B-36) (issue #136)
+
+- **What it is.** `model_registry.list_available_models` builds an Anthropic or OpenAI client itself, not through the agent wrapper, to list a provider's models for the start-of-run model gate.
+- **Evidence.** D-169 and D-170 (the provider sweep); `CHANGELOG.md` dev7.
+- **Why it was left.** The sweep found no local-profile path that reaches it, so no output changes (Annex D D-S23 item 7 (c)).
+- **What would settle it.** A check 313 case that fails if a local-profile path builds a cloud client through it.
+- **Closed (2026-11-02, loop S11, D-183).** The model gate is the one run path that reaches the module, and check 313's `model gate` case runs `enforce_current_models` over the local-profile registry with raising clients. A new neutralisation gives the gate the registry as shipped (the profile applied after the gate instead of before) and the case fails with both clients built.
