@@ -454,7 +454,8 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
   options and the multi-round form.
 - **External benchmarks.** The adapters in `benchmark/adapters/` build test
   bundles from a benchmark file, label a run's output and score the labels
-  (`build`, `label --scoring benchmark|as_shipped`, `score`). `label` also writes
+  (`build`, `label --scoring benchmark|as_shipped`, `score`; the synthetic suite's
+  adapter names its first command `items`). `label` also writes
   the sensitivity analyses, S-8 among them; the "as shipped (S-8)" figures above
   are S-8, not `--scoring as_shipped`, which gives today's reading and can differ
   (on the suite, precision 42 of 46 against S-8's 40 of 40). The bare-model arm

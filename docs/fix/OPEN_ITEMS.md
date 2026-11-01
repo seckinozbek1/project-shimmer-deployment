@@ -761,6 +761,7 @@ open-item sweep.
 - **Evidence.** `docs/RESULTS.md` gives the L11 ContractNLI first run as 8 of 34 where `docs/loop/stages/S05_REPORT.md` (about line 198) says 9 of 34, and CUAD B1 as "answered 40" where the S5 report says 41 of 41 parsed. Settling them needs the run's label files, which are not committed (lane s11-readme's third pass).
 - **Why it was left.** It changes no product behaviour (P16: recorded for S6).
 - **What would settle it.** Both figures re-derived from the runs' label files and the page or the report corrected.
+- **Closed (2026-11-02 01:40 +0300, D-177).** Both are consistent once each figure's reading is named: the L11 ContractNLI first run is 8 of 34 in benchmark mode and 9 of 34 under the earlier as-shipped reading (private `analysis/an_l11_report.md`, the table at about line 132); CUAD's B1 parsed all 41 replies with 1 undecided, so 40 answered (private `analysis/an_l10_report.md`, about line 266). The results page now names both readings.
 
 ## 73. The README names the synthetic adapter's command differently from the code (found at loop S11 close) (issue #131)
 
@@ -768,6 +769,7 @@ open-item sweep.
 - **Evidence.** The README's adapter command list says `build` where `benchmark/adapters/synthetic/adapter.py` (about lines 555 to 568) takes `items` (lane s11-readme's report).
 - **Why it was left.** It changes no product behaviour (P16: recorded for S6).
 - **What would settle it.** The README naming the command the adapter takes.
+- **Closed (2026-11-02 01:40 +0300, D-177).** The external adapters do take `build`; only the synthetic suite's adapter takes `items`. The README now says so.
 
 ## 74. `scripts/claim_classifier.py` builds an OpenAI client that check 313 does not cover (found at the S10 outside audit) (issue #132)
 

@@ -51,7 +51,7 @@ Two development agreements, `0d98d9131a5b` (band A) and `01c9504b9c28` (band B),
 | B3 benchmark mode | L12 re-run, both agreements | both passed | 18 of 34 (0.529) | 5 | 0 | 2 | 0 of 11 | 63.5 | 2.73 |
 | B3 as shipped (S-8) | L12 re-run | both passed | 21 of 34 (0.618) | 0 | 0 | 2 | 0 of 11 | 63.5 | 2.73 |
 | B1 tuned | L11 | both passed | 18 of 34 (0.529) | 3 | 0 | 2 | 5 of 11 (13 labelled) | 5.4 | 0.23 |
-| B3 benchmark mode, first run | L11 | both failed (semantically incomplete) | 8 of 34 (0.235) | 19 | 1 | 2 | 0 of 11 | 53.0 | 2.28 |
+| B3 benchmark mode, first run | L11 | both failed (semantically incomplete) | 8 of 34 (0.235; benchmark mode, while the S5 report's 9 of 34 is the earlier as-shipped reading) | 19 | 1 | 2 | 0 of 11 | 53.0 | 2.28 |
 | B3 as shipped (S-8), first run | L11 | both failed | 21 of 34 (0.618) | 0 | 0 | 2 | 0 of 11 | 53.0 | 2.28 |
 
 On the L12 re-run benchmark mode and as-shipped primary give the same labels (25 advice records read, none attributed through the rule map).
@@ -105,7 +105,7 @@ One development contract, `527255a5c970` (band B, 2,664 words), 41 categories: g
 | B3 benchmark mode | L12b (code `d6ce19a`) | failed (semantically incomplete, required contract failure: VERIFIER's list ran to 4,096 tokens, open item 48) | 0.146 | 0 | 0 | 34 | 41 | 109.2 | 2.35 |
 | B3 as shipped (S-8) | L12b | failed | 0.146 | 0 | 0 | 34 | 41 | 109.2 | 2.35 |
 | B3, L12 | L12 re-run | failed (semantically incomplete) | 0.146 | 0 | 0 | 34 | 41 | 114.3 | 2.46 |
-| B1 tuned | L10 | passed | 0.593 | 27 | 24 | 34 | 40 | 9.7 | 0.21 |
+| B1 tuned | L10 | passed | 0.593 | 27 | 24 | 34 | 40 (41 parsed, 1 undecided) | 9.7 | 0.21 |
 | B3, first run | L10 | failed (semantically incomplete) | 0.146 | 0 | 0 | 34 | 41 | 98.9 | 2.13 |
 
 **What these figures do not show.** One contract. B3 failed integrity on all three runs (L10, L12, L12b) and is used as failed. B3 recorded no absence on this contract in any run (in L10 all 410 answers on uncomputable plans were refused, D-105). In a 41-rule bundle Python's own blank-field records are set aside in the primary analysis, so CUAD's absent class is reached only through a model-written absence record and S-8 cannot flag on it.

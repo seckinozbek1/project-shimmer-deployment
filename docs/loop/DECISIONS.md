@@ -1537,3 +1537,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **D-S23, after v1 (each SCHEDULED with its stage):** item 2 (money: the track's remainder after G1 and G2 covers the shortfall and L14d, then a sealed-evaluation reserve; storage forecast to the full finish), item 3 (stage S8-later, with its own preregistration, freeze and seal, and the FinDVer and CUAD development dry runs before it), item 4 (the draft's local weights chosen by measurement, with L14d), item 5's open items 67 (with L14d; marked in the deliverable meanwhile), 49, 16, 25, 22, 31 and 34 (before version 3 freezes), item 7 (c) open item 74 and the model listing's case in check 313, (d) the EDITOR_CLERK cloud replay placed after v1 with its forecast or cancelled with a reason, (e) loop/s06c's merge or its reason, (g) the sweep's open departures each given an end date or a reason. The sweep file `docs/loop/private/audit/DEFERRAL_SWEEP_2026-11-02.md` is read for each.
 - **Order for v1 from here:** S11's merge (after AUDIT_S11 or 08:15) with items 72 and 73; the local-no-internet lane if it fits; S13 (backup, mirror, rewrite, verify, gate, commit map, the force push only with its audit, the issue comments); the v1 report.
 - **Rules.** D-S15 item 2, D-S16, D-S18, D-S21, D-S22, D-S23, P9, P16.
+
+## D-177. Open items 72 and 73 closed for v1 (D-S23 item 5)
+
+- **When, stage.** 2026-11-02 01:40 +0300 (system clock), S11.
+- **72.** The two results-page figures that seemed to differ from the S5 report are each right under its own reading: L11's ContractNLI first run is 8 of 34 in benchmark mode and 9 of 34 under the earlier as-shipped reading; CUAD's B1 parsed 41 of 41 with 1 undecided, so 40 answered (private analyses of L11 and L10). The results page names both readings.
+- **73.** The README's adapter commands: the external adapters take `build`; only the synthetic suite's adapter takes `items`; the README says so.
+- Issues #130 and #131 are closed with this decision after the ledger check.
+- **Rules.** D-S23 item 5, P1, P14.
