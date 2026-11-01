@@ -10,7 +10,9 @@ One entry per product version, in plain English. The version number lives in `VE
 - **The launchers work on Windows again.** `shimmer.bat` lost the quotes of one `for /f` line inside `cmd /c` and stopped before installing anything; fixed. The three launchers reach their menus, end cleanly at end of input, and `SHIMMER_SKIP_INSTALL` skips the install step.
 - **The chat window no longer hangs after an error**, and a bare `draft` asks for its topic instead of drafting a memo about the word "draft".
 - **A third sealed run arm, L, runs the launcher menu once on a cloud instance** (a review, then a draft) from a sealed list of prompts and answers, with the network denied to its Python children.
-- Gate checks 298 to 311 added.
+- **A refused run no longer shows as a failure.** A multi-round run refused for its declaration (exit 8) and a run refused because `SHIMMER_INST_FINDER=off` has no ratified amendment (exit 9) show as the governance statuses `refused_multi_round` and `refused_inst_finder_unratified`, in the server and the console, in both languages.
+- **The launchers' start-up check imports what the menu runs** (`tools/runtime_contract.py --entrypoint launcher`: the readiness check and the intake wizard), not a cloud probe no launcher uses; arm L is sealed only for a workload with no operator redaction rule in force.
+- Gate checks 298 to 311 added; check 108 extended to exits 8 and 9.
 
 ## 0.1.0.dev5 (2026-11-01)
 

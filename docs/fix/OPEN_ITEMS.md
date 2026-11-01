@@ -351,6 +351,7 @@ open-item sweep.
 
 - **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
 - **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
+- **2026-11-01, sweep 3 over S7 (D-158).** Part (2) is settled by the parallel track's PATCH_2 (lane/readable: `reviewed_document.md` becomes the document itself, the per-agent record moves to `agent_record.md`), merged as a lane after v1 (D-137); issue #13 moved to S6.
 
 ## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2) (issue #25)
 
@@ -626,3 +627,10 @@ open-item sweep.
 - **Evidence.** Lane s07-final's report (private `analysis/lane_s07_final_report.md`); lane s07-fix2 (checks 307 and 308).
 - **Why it was left.** It affects scripted callers only, not a person (P9 reason b).
 - **What would settle it.** `shimmer.sh` finding its own folder without external tools (or adding Git's `usr/bin` itself), with a check that starts it with that PATH, in S6.
+
+## 55. Wording and fixture defects on the console's sealed pages (found at loop S7 close, sweep 3 and the screenshot checker) (issue #113)
+
+- **What it is.** `scripts/ui/console.html` renders the count before a fixed plural sentence, so a count of 1 reads "1 model-written findings were kept, none promoted and none checked by Python." (and its Turkish row the same way). The screenshot checker found four more, none a leak: the sealed note says the Annex B.4 reasons "are shown" in sections that do not show them; on the multi-round page the note comes after "No valid recorded case output." instead of under the heading; the note's "Withheld:" list omits document, file and target names, which the page withholds; and the replies page's counts come from the reply records written at render time and disagree with the committed fixture's `agent_activation.json` and `cost_tracker.jsonl`.
+- **Evidence.** Private `analysis/s7_shots_checker.md`; `docs/loop/ui/run_detail_sealed_model-findings_1280.png` and `_390.png`; `scripts/ui/console.html` (the sentence) and `scripts/ui/localization_catalog.js`.
+- **Why it was left.** Cosmetic; the fix needs a singular sentence and its Turkish row, and a re-render of the screenshots (P9 reason b, inside v1's date).
+- **What would settle it.** A singular form chosen by count, the sealed note naming where the B.4 reasons are shown and listing names among the withheld items, the note directly under each heading, the fixture's activation and cost records made to agree with its reply records, their catalog rows and localization checks, and the sealed screenshots re-rendered, in S6.
