@@ -792,7 +792,7 @@ processing swarm governed by an append-only constitution.
   `tools/console_screenshots.py`: the run pages from the committed fixture only (replies under a
   fixed clock inside the run window), the test-change-requests pages from the repository's own
   `docs/test_change_requests.md` as of the render; two renders of one tree are byte-identical.
-  Checks 298 to 306.
+  The sealed note names the document, file and target names it withholds and that the Annex B.4 reasons are shown under Agent switches; on the multi-round section it sits directly under the heading (open item 55). Checks 298 to 306.
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the

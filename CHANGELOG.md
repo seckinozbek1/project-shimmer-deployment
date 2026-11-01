@@ -13,6 +13,8 @@ One entry per product version, in plain English. The version number lives in `VE
 - **A refused run no longer shows as a failure.** A multi-round run refused for its declaration (exit 8) and a run refused because `SHIMMER_INST_FINDER=off` has no ratified amendment (exit 9) show as the governance statuses `refused_multi_round` and `refused_inst_finder_unratified`, in the server and the console, in both languages.
 - **The launchers' start-up check imports what the menu runs** (`tools/runtime_contract.py --entrypoint launcher`: the readiness check and the intake wizard), not a cloud probe no launcher uses; arm L is sealed only for a workload with no operator redaction rule in force.
 - Gate checks 298 to 311 added; check 108 extended to exits 8 and 9.
+- **`shimmer.sh` starts from a scripted shell too.** It finds its own folder without `dirname` and adds `/usr/bin` to a PATH that lacks it, so a Git Bash started by a script reaches the menu (open item 54).
+- **The console's sealed pages say exactly what they withhold.** The sealed note names the document, file and target names it withholds and that the FACT_CHECKER reasons are shown under Agent switches, sits directly under the multi-round heading, and one model-written finding reads in the singular; the console fixture's records agree with each other, and ten sealed screenshots are re-rendered (open item 55).
 
 ## 0.1.0.dev5 (2026-11-01)
 
