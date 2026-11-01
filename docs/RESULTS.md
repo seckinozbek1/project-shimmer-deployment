@@ -1,10 +1,12 @@
 # Shimmer v1 results: development, exposed
 
-**Every figure on this page is a development figure on exposed material.** The documents were seen while Shimmer was being built, the samples are a handful of documents per benchmark, and one run per document was made. No figure here is a held-out or sealed result, and none supports a claim about accuracy on unseen material. Sealed results, when they exist, are added to this page beside these and replace nothing on it.
+Purpose: development measurement and run health, on exposed material, with no seal and no manifest.
 
-**In one sentence.** On the four public benchmarks measured, Shimmer scores below the bare model on three (ContractNLI, ContraDoc and CUAD, where it found none of the gold flags) and about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1.
+**Every figure on this page is a development figure on exposed material.** The documents were seen while Shimmer was being built, the samples are a handful of documents per benchmark, and one run per document is counted; runs that failed integrity were re-run up to twice (L12c re-ran five entries once more, which this page does not score; see the L12b section). No figure here is a held-out or sealed result, and none supports a claim about accuracy on unseen material. Sealed results, when they exist, are added to this page beside these and replace nothing on it.
 
-Built on 31 October 2026 from runs already done (L4a to L12b). No launch was made for this page.
+**In one sentence.** On the four public benchmarks measured, Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals, 5 of 11 against 0), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. Today those computations rarely fire on the public benchmarks; the work that addresses it (more relations Python can compute, and the sealed evaluation) comes after v1.
+
+Built on 31 October 2026 from runs already done (L4a to L12b). No launch was made for this page. These development runs were not preregistered. For sealed results, the order of preregistration, freeze and sampling will be attested only by the project's local records.
 
 ## How to read the tables
 
@@ -38,7 +40,7 @@ Built on 31 October 2026 from runs already done (L4a to L12b). No launch was mad
 | | | B3 as shipped (S-8) | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | not measured | 10.6 | 0.114 |
 | | | B1 tuned | 35 of 66 (0.530) | 35 of 48 (0.729) | 0.614 | not measured | 2.5 | 0.031 |
 
-B3 rows that include a run which still failed execution integrity after its second re-run (L12b): CUAD (its one contract) and the synthetic suite (2 of 20 bundles); each is marked failed with its cause. Rows that use an L12b run are on newer code than L12 (sealed at `d6ce19a`: VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST). The suite row covers families 1, 2, 3, 5 and 6; the multi-round family 4 is reported in its section. Each section below gives the counts behind every figure, the runs, the documents left out or failed, and what the figures do not show.
+B3 rows that include a run which still failed execution integrity after its second re-run (L12b): CUAD (its one contract) and the synthetic suite (2 of 20 bundles); each is marked failed with its cause. Five suite bundles that count as passed here passed only because Python wrote EDITOR_CLERK's missing `kind` field, a change removed at the S5 close; they are named in the L12b section, with their re-run L12c. Rows that use an L12b run are on newer code than L12 (sealed at `d6ce19a`: VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST). The suite row covers families 1, 2, 3, 5 and 6; the multi-round family 4 is reported in its section. Each section below gives the counts behind every figure, the runs, the documents left out or failed, and what the figures do not show.
 
 ## ContractNLI (development, exposed)
 
@@ -56,7 +58,7 @@ On the L12 re-run benchmark mode and as-shipped primary give the same labels (25
 
 Earlier code, three other agreements (`04f58368963d`, `5db65ebc6ba5`, `e42dff968be2`; 51 items, gold 4 contradiction, 27 not mentioned): B3 (L6 for the first two, L4b for the third; all three semantically incomplete, never re-run) benchmark mode 16 of 51, 19 flagged, 2 correct (precision 0.105, recall 0.500), 1.74 USD per correct finding, 54.0 minutes a document; S-8 20 of 51, nothing flagged; not mentioned 0 of 27; benchmark mode and as-shipped primary agree. B1 tuned (L4a, L4b) 28 of 51, 3 flagged, 1 correct (precision 0.333, recall 0.250), not mentioned 15 of 27, 4.2 minutes, 0.27 USD per correct finding; B1 base 31 of 51, 1 flagged, 0 correct, not mentioned 16 of 27, 4.2 minutes.
 
-**What these figures do not show.** Two agreements and two gold contradictions: no difference between arms here means anything. Under S-8 B3 says nothing about any hypothesis, and silence counts as entailment, so S-8's 21 of 34 is what an arm that answers "entailment" to everything scores; it is not a reading. B3 never labels "not mentioned" (it is reached only through a refusal, and none occurred). Every B3 flag comes from a model-written record, and the model-text review of L11 found 9 of 15 sampled model texts wrong and 5 partly correct. The first-run figures are from runs that failed integrity.
+**What these figures do not show.** Two agreements and two gold contradictions: no difference between arms here means anything. Under S-8 B3 says nothing about any hypothesis, and silence counts as entailment, so S-8's 21 of 34 is what an arm that answers "entailment" to everything scores; it is not a reading. B3 never labels "not mentioned" (it is reached only through a refusal, and none occurred). Every B3 flag comes from a model-written record. The model-text review of L11 sampled 15 of the 526 model texts written across its eight documents (ContractNLI, SciTab and ContraDoc together): 1 correct, 5 partly correct, 9 wrong. The first-run figures are from runs that failed integrity.
 
 ## SciTab (development, exposed)
 
@@ -122,10 +124,10 @@ The suite's generators, seeds and answer keys are in this repository, so it is e
 
 | Arm | Runs | Integrity | Precision | Recall | F1 | Planted flaws located, reason confirmed | Twin items flagged | Records on unplanted units | Min per bundle | Set USD | USD per correct finding |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| B3 benchmark mode | L12b (code `d6ce19a`) for the 11 L12 left failed, L12 re-run for 8, L8 for `f3_s3102_bsqv` | 18 of 20 passed; 2 failed (below) | 42 of 48 (0.875) | 42 of 48 (0.875) | 0.875 | 114 of 134 (0.851) | 6 | 45 | 10.6 | 4.57 | 0.109 (0.040 per confirmed flaw) |
+| B3 benchmark mode | L12b (code `d6ce19a`) for the 11 L12 left failed, L12 re-run for 8, L8 for `f3_s3102_bsqv` | 18 of 20 passed (5 of them only through the removed stamp, below); 2 failed (below) | 42 of 48 (0.875) | 42 of 48 (0.875) | 0.875 | 114 of 134 (0.851) | 6 | 45 | 10.6 | 4.57 | 0.109 (0.040 per confirmed flaw) |
 | B3 as shipped (S-8) | same | same | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | 114 of 134 (0.851) | 0 | 0 | 10.6 | 4.57 | 0.114 |
 | B1 tuned | L8 | 20 of 20 passed | 35 of 66 (0.530) | 35 of 48 (0.729) | 0.614 | 5 of 134 located by a quote; reason not computed | 31 | 11 | 2.5 | 1.09 | 0.031 |
-| B3 benchmark mode, L12 | L12 re-run for 19, L8 for `f3_s3102_bsqv` | 9 of 20 passed; 11 failed (semantically incomplete) | 42 of 47 (0.894) | 42 of 48 (0.875) | 0.884 | 114 of 134 (0.851) | 5 | 51 | 10.9 | 4.67 | 0.111 |
+| B3 benchmark mode, L12 | L12 re-run for 19, L8 for `f3_s3102_bsqv` | 9 of 20 passed (2 of them only through the removed stamp); 11 failed (semantically incomplete) | 42 of 47 (0.894) | 42 of 48 (0.875) | 0.884 | 114 of 134 (0.851) | 5 | 51 | 10.9 | 4.67 | 0.111 |
 | B3 as shipped (S-8), L12 | same | same | 40 of 40 (1.000) | 40 of 48 (0.833) | 0.909 | 114 of 134 (0.851) | 0 | 0 | 10.9 | 4.67 | 0.117 |
 | B3 benchmark mode, first run | L8 | 1 of 20 passed; 10 bundles left out (VERIFIER out of GPU memory, a setup failure) | 17 of 19 (0.895) | 17 of 30 (0.567) | 0.694 | 45 of 79 | 2 | 5 | 7.3 | 3.15 | 0.186 |
 
@@ -148,17 +150,20 @@ The 11 bundles that failed integrity on L12 were re-run in L12b; 9 passed and 2 
 
 ## L12b: second re-run of 13 entries (development, exposed)
 
-L12b re-ran the 13 entries that still failed integrity after L12, in two sessions on two instances at once, sealed at `d6ce19a` (VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST), so newer code than L12. 10 of 13 passed (D-138). Of the 37 B3 entries that first failed integrity in L7, L8, L10 and L11, 24 passed in L12, 10 more in L12b and 3 still fail.
+L12b re-ran the 13 entries that still failed integrity after L12, in two sessions on two instances at once, sealed at `d6ce19a` (VERIFIER's output allowance 4,096 and the envelope constraint for VERIFIER, PRACTICE_AUDITOR and ARCHIVIST), so newer code than L12. 10 of 13 passed (D-138). Of the 37 B3 entries that first failed integrity in L7, L8, L10 and L11, 24 passed in L12, 10 more in L12b and 3 still failed.
+
+**Five of those passes depended on a removed change.** Python wrote EDITOR_CLERK's `kind` field where the model had written none, and a refused EDITOR_CLERK reply fails integrity, so five entries passed only through it: L12 `f3_s3101_htmn` and `f6_s6101_pfqp`, L12b `f1_s1102_mstx`, `f5_s5102_hcvm` and `f5_s5101_bmpd`, all suite bundles. The change was removed at the S5 close (D-143). L12c (code `5c3c129`, EDITOR_CLERK under its own decoding constraint) re-ran the five: four passed and `f1_s1102_mstx` failed (VERIFIER's list ran to 4,096 tokens, open item 48). So 33 of the 37 pass on their own and 4 still fail (D-146). The figures on this page use the L12 and L12b runs of the five; their L12c runs were not scored.
 
 | Entry | L12 | L12b |
 |---|---|---|
 | ContraDoc `06cd776dcc1a` | failed: semantically incomplete, required contract failure | passed |
 | CUAD `527255a5c970` | failed: same | failed: VERIFIER's list ran to 4,096 tokens (open item 48) |
-| Suite `f1_s1101_vxnf`, `f1_s1102_mstx`, `f2_s2101_sxwc`, `f2_s2102_pbnd`, `f5_s5101_bmpd`, `f5_s5101_hndk`, `f5_s5102_fpcw`, `f5_s5102_hcvm`, `f6_s6101_sgkh` | failed: same | passed |
+| Suite `f1_s1101_vxnf`, `f2_s2101_sxwc`, `f2_s2102_pbnd`, `f5_s5101_hndk`, `f5_s5102_fpcw`, `f6_s6101_sgkh` | failed: same | passed |
+| Suite `f1_s1102_mstx`, `f5_s5101_bmpd`, `f5_s5102_hcvm` | failed: same | passed only through the removed stamp; in L12c `f5_s5101_bmpd` and `f5_s5102_hcvm` passed and `f1_s1102_mstx` failed (open item 48) |
 | Suite `f1_s1101_cvjx` | failed: same | failed: two PRACTICE_AUDITOR replies ran to 768 tokens under the envelope constraint (open item 47) |
 | Suite `f3_s3102_vwmj` | failed: same | failed: VERIFIER's list ran to 4,096 tokens (open item 48) |
 
-The three that still fail are recorded with their causes and are not fixed before v1 (D-S18 item 2a); each needs a decision measured on development runs.
+The three that still failed after L12b, and `f1_s1102_mstx` after L12c, are recorded with their causes and are not fixed before v1 (D-S18 item 2a, D-146); each needs a decision measured on development runs.
 
 ## Left out, and why
 
@@ -180,12 +185,17 @@ The three that still fail are recorded with their causes and are not fixed befor
 | L4b | from 2026-10-29 11:38 +0300 | `344522f` | 204 | 4.39 | B1 on ContractNLI `5db65ebc6ba5` and `e42dff968be2`, B3 on `e42dff968be2`; FinDVer, all arms |
 | L6 | 2026-10-29 | `18eee21` | 174 | 3.74 | B3 earlier-code ContraDoc, SciTab, ContractNLI |
 | L11 | 2026-10-29 23:18 to 2026-10-30 02:29 UTC | `d50b299` | 191 | 4.11 | B3 first runs and two SciTab tables; B1 tuned on ContractNLI, SciTab, ContraDoc |
-| L7 | 2026-10-30 02:57 to 04:01 UTC | `55f1dd1` | 64 | 1.38 | family 4 first runs |
+| L7 | 2026-10-30 02:58 to 04:01 UTC | `55f1dd1` | 64 | 1.38 | family 4 first runs |
 | L10 | 2026-10-30 04:08 to 06:13 UTC | `55f1dd1` | 125 | 2.69 | CUAD B1 tuned, CUAD B3 first run |
 | L8 | 2026-10-30 07:41 to 12:12 UTC | `55f1dd1` | 271 | 5.83 | suite B1 tuned, suite B3 first runs, `f3_s3102_bsqv` |
 | L12 | 2026-10-30 16:26 to 2026-10-31 02:36 UTC | `2b585af` | 610 | 13.12 | B3 re-runs of 37 entries after the D-S14 fixes (contract-shaped decoding for the producer, D-116) |
 | L12b a, L12b b | 2026-10-31, two sessions on two instances at once | `d6ce19a` | 178 and 114 | 3.83 and 2.45 | B3 second re-runs of 13 entries (VERIFIER 4,096, the envelope constraint; D-138) |
+| L12c | 2026-10-31 from 19:09 UTC | `5c3c129` | 79 | 1.70 | not scored here: the integrity of the five stamp-only passes (D-146) |
 
 - **Code.** The labels and scores were computed on 31 October 2026 with the adapters' `label --scoring benchmark|as_shipped` and `score` commands and `tools/score_corpus.py` at `6fa01b9` (loop/s05), on the saved run outputs, into a scratch folder. Re-labelled as shipped, the saved label sets of L11 and L10 are reproduced exactly apart from the mode name, and those of L4a, L4b and L6 exactly apart from the mode name and the setup-failure fields the adapters added later (D-084); no label or score changed. Items and scoring bundles are the builds each launch was staged from (`external/s05/L11/build`, `external/s05/L10/build`, the S5 development build). Nothing here is from an S8 run.
 - **Models.** The producer is the tuned 7B checkpoint 168 under sdpa attention, prefilled in one shot (D-063), constrained to its contract on L12 and L12b (D-116), with the auditors' envelopes constrained on L12b (D-132); the auditors run on their own local checkpoints. B1 tuned and base load the same 7B model with and without the producer's adapter.
+- **Decoding.** Every local model call decodes under the frozen evaluation policy its checkpoint was evaluated with (`config/decoding_policy.json`: greedy, one beam, no sampling), under strict determinism; B1 reads the same policy.
+- **Agents withheld or settings changed.** FACT_CHECKER was withheld from every B3 run (`withheld_audit_agents` in the shipped `config/review_scope.json`: on an earlier test every item it returned was wrong). INST_FINDER ran (switching it off needs an amendment that is not ratified).
+- **Who wrote what.** The public benchmarks' documents and gold labels are their authors' (docs/benchmarks/SELECTION.md). The synthetic suite's generators and keys, the adapters that map a run to a benchmark label and compute its metric, and the repository scorer were written by this project, by the same model family that builds Shimmer.
+- **Catches that depended on a directive** (a `[scope:]` or `[requires:]` declaration) were not recorded per catch for these runs.
 - **Cost.** Instance cost only; no model API cost was incurred (every model ran on the instance). The per-finding figures leave out the session overhead and the storage share (4.00 USD a month for the asset filesystem).

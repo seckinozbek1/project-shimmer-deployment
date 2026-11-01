@@ -1,5 +1,7 @@
 # Unit context design (proposal, not built)
 
+> Dated note (2026-11-02, loop S11): parts of this proposal have since been built, and the text below is kept as it was written. Every unit carries an `index`, and a preamble unit (kind `preamble`, id `u00-` plus the title slug) holds the text before the first heading (UNITS-A). The paired payload carries the immediate neighbours (`preceding_unit_text`, `following_unit_text`, `neighbor_note`) and the document map (`document_map`, `structure_note`) (`paired_review.build_pair_payload`). Not built: keeping the document under review out of its own reference context (`pipeline._doc_refs_excerpt` still filters by document id alone). Line numbers below refer to the code when this was written.
+
 This document is a proposal. Nothing in it is built. It exists because a read-only trace,
 run while a real local pipeline run was in flight, found that paired review judges a unit
 in complete isolation from its neighbors, and the operator asked for a design before any
