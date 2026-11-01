@@ -548,7 +548,9 @@ widely between the fields it has run on.
   it: check 269 still holds that only Python-computed findings become amendments.
   `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
   folded), including inside a staged archive such as the controller's collected evidence
-  `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+  `.tar.gz`, which has been force-committed under `docs/fix/` before. It refuses an archive
+  with bytes after its last compressed stream and one whose suffix names a format it cannot
+  read (`.lz`, `.lzma`, `.Z` among them), fail closed (D-183). Checks 275 and 276.
 - UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
   comparison), the model's answer is kept as a model-written Finding record, never discarded:
   stamped by Python with the judged-absence stamping and the PLAN's rule

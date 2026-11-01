@@ -204,18 +204,21 @@ force-added or not; it also reads every staged archive from the index (`git show
 chooses the reader by the file's suffix, never by sniffing the bytes. A `.tar`,
 `.tar.gz`, `.tgz`, `.tar.xz`, `.txz`, `.tar.bz2` or `.tbz2` is streamed header by header
 and never held in memory; the decompressor continues through every gzip member or
-bz2/xz stream, and everything after the tar's end marker must be zero bytes, so two
+bz2/xz stream, any bytes after the last compressed stream that are not a whole stream
+of the same format are refused (D-183; Python's own bz2 and xz readers skip them),
+and everything after the tar's end marker must be zero bytes, so two
 tars joined end to end, or a tar followed by any other bytes, are refused as
 unreadable rather than passed half read. A `.zip` is read whole only up to 512 MiB and
 refused above that ("archive too large to inspect (over 512 MiB); repack as
 .tar.gz"). A suffix that names an archive or compression the guard cannot read
-(`.7z`, `.rar`, `.zst`, `.tzst`, `.lz4`, and a bare `.gz`, `.bz2` or `.xz` that is not one
-of the tar forms) is refused unread (fail closed). An archive is also refused if any
-member path carries either segment, if it cannot be read in full, or if git fails or
-runs past 300 seconds; a failed listing of the staged paths refuses the whole check.
-Archives nested inside archives are not opened, other archive suffixes (for example
-`.lz` or `.lzma`) are not recognised and are not read, and staged deletions are
-allowed (gate check 275); structured log
+(`.7z`, `.rar`, `.zst`, `.tzst`, `.lz4`, a bare `.gz`, `.bz2` or `.xz` that is not one
+of the tar forms, and since D-183 `.lz`, `.lzma`, `.Z` and the other common formats
+listed in `UNREADABLE_SUFFIXES`) is refused unread (fail closed). An archive is also
+refused if any member path carries either segment, if it cannot be read in full, or
+if git fails or runs past 300 seconds; a failed listing of the staged paths refuses
+the whole check. Archives nested inside archives are not opened, a suffix in no list
+(an archive renamed to `.dat`, for one) is not recognised as an archive and is not
+read, and staged deletions are allowed (gate check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation

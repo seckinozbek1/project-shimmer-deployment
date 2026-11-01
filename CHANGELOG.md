@@ -11,6 +11,7 @@ One entry per product version, in plain English. The version number lives in `VE
 - **No agent reaches the web under the local backend profile**; web access opens only under the cloud profile. The run summary and the console say which profile is in force and whether web access was open (D-S23 item 1, gate check 316).
 - **The claim extractor builds no provider client under the local profile** (`scripts/claim_classifier.py`, which no run path imports today, reads by its regex patterns only there), and gate check 313 now also proves that the start-of-run model gate (`scripts/model_registry.py`) builds no client under the local profile, each with a neutralisation (D-183; issues #132, #136).
 - **In the chat window, the mode you set is the mode the review runs in.** A review request the model read as another mode, or a bare `review` the keyword parser read as normal, no longer replaces it; the window says it kept your setting (D-183; issue #118).
+- **The staged-archive guard closes two gaps** (`scripts/guard_secrets.py --staged`): a bz2 or xz tar with bytes after its last stream, and an archive in a format the guard cannot read (`.lz`, `.lzma`, `.Z` and others), are refused (D-183; issue #11).
 - **The results page and the README report every model-text review** behind the counted rows (L8, L11, L12, L12b; a seeded sample of 15 texts each), with which benchmark each covers.
 
 ## 0.1.0.dev7 (S10, fresh-clone test)

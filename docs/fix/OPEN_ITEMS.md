@@ -271,6 +271,14 @@ covered, and S1 had used its three checker rounds (D-016).
 stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
 open-item sweep.
 
+**Closed (2026-11-02, loop S11, D-183).** The bz2 and xz tars are decompressed by the guard's
+own forward reader: what follows a stream must be another whole stream of the same format, or
+the archive is refused as unreadable (gzip already refused non-zero trailing bytes). The
+unreadable suffixes now include `.lz`, `.tlz`, `.lzma`, `.Z`, `.taz` and the other common
+formats the guard has no reader for. Check 275 has a case for each, each with a neutralisation
+(Python's own BZ2File and LZMAFile put back; the suffix list as it was) that passes the archive
+unseen, then fails restored. A suffix in no list is still not recognised as an archive.
+
 ## 15. Converted SummEdits data is tracked in the repository (found at loop S4)
 
 - **What it is.** `tuning/auditor_external_relation_v1/` tracks files built from the SummEdits and SummExecEdit releases (for example `examples.jsonl`, `document_registry.jsonl`), from a task before the loop. The loop's rule for third-party data (S4b) says never commit third-party data, raw or converted.
