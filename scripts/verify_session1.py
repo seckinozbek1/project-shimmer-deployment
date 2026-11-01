@@ -25686,42 +25686,83 @@ def _citation_version_mismatch(root):
     return None
 
 
+def _citation_verdict(root):
+    """The verdict of check 314 on the tree at `root`: ("pass", None), ("fail", reason) or
+    ("skip", reason). `VERSION` ships in the source tree and in the container image, so its
+    absence fails everywhere. `CITATION.cff` ships in the source tree only, so its absence is
+    skipped only in an image-shaped tree, one with no `.git` at `root` (a folder in a clone, a
+    file in a git worktree; the image's build context excludes `.git/`); in a source checkout
+    its absence fails."""
+    root = Path(root)
+    if not (root / "VERSION").is_file():
+        return "fail", "VERSION is absent (the source tree and the container image both ship it)"
+    if not (root / "CITATION.cff").is_file():
+        if (root / ".git").exists():
+            return "fail", "CITATION.cff is absent from a source checkout (.git is present)"
+        return "skip", ("CITATION.cff absent and no .git here: the container image, which ships "
+                        "VERSION and not CITATION.cff")
+    problem = _citation_version_mismatch(root)
+    return ("fail", problem) if problem else ("pass", None)
+
+
 def check_314_citation_version_equals_version_file():
     """Loop S11 item 6, DS11-2 option (ii): `CITATION.cff` cannot read a file, so its `version`
-    is compared with `VERSION`, the single version source. On copies of both files in a
-    temporary folder: neutralise (CITATION.cff given a different version), fail; a second
-    `version` line, fail; restore, pass; then the real files. SKIP, naming the file, where either
-    file is absent (the container image ships `VERSION` and not `CITATION.cff`)."""
+    is compared with `VERSION`, the single version source. Every proof runs `_citation_verdict`,
+    the same function that judges the real tree, on temporary layouts, never on the real tree:
+    neutralise (CITATION.cff given a different version), fail; a second `version` line, fail;
+    a source-shaped layout (`.git` present) with CITATION.cff deleted, fail; restore, pass; an
+    image-shaped layout (VERSION only, no `.git`), skip; a layout without VERSION, fail. Then
+    the real tree: it SKIPS only where CITATION.cff is absent and no `.git` is at ROOT (the
+    container image), and FAILS where CITATION.cff is absent from a source checkout."""
     import shutil
     import tempfile
-    missing = [name for name in ("VERSION", "CITATION.cff") if not (ROOT / name).is_file()]
-    if missing:
-        return _skip(f"{', '.join(missing)} absent from this tree, nothing to compare (the "
-                     f"container image ships VERSION and not CITATION.cff)")
-    real = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    if not (ROOT / "VERSION").is_file():
+        return _fail("VERSION is absent (the source tree and the container image both ship it)")
     want = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    if (ROOT / "CITATION.cff").is_file():
+        real = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    else:
+        # The image has no CITATION.cff; the proofs run on a minimal one of the same shape.
+        real = f'cff-version: 1.2.0\ntitle: "proof"\nversion: "{want}"\n'
     with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        shutil.copyfile(ROOT / "VERSION", tmp / "VERSION")
-        cff = tmp / "CITATION.cff"
+        src = Path(tmp) / "source"
+        (src / ".git").mkdir(parents=True)
+        shutil.copyfile(ROOT / "VERSION", src / "VERSION")
+        cff = src / "CITATION.cff"
         base = re.sub(r'(?m)^version:.*$', lambda _m: f'version: "{want}"', real)
         neutralised = re.sub(r'(?m)^version:.*$', 'version: "0.0.0.neutralised"', real)
         if neutralised == real:
             raise FixtureNotAsIntended("CITATION.cff has no top-level version line to neutralise")
         cff.write_text(neutralised, encoding="utf-8")
-        if _citation_version_mismatch(tmp) is None:
+        if _citation_verdict(src)[0] != "fail":
             return _fail("a CITATION.cff version differing from VERSION was accepted")
         cff.write_text(base + f'version: "{want}"\n', encoding="utf-8")
-        if _citation_version_mismatch(tmp) is None:
+        if _citation_verdict(src)[0] != "fail":
             return _fail("a CITATION.cff with two version lines was accepted")
+        cff.unlink()
+        if _citation_verdict(src)[0] != "fail":
+            return _fail(f"a source checkout without CITATION.cff did not fail: "
+                         f"{_citation_verdict(src)}")
         cff.write_text(base, encoding="utf-8")
-        if _citation_version_mismatch(tmp) is not None:
-            return _fail(f"the restored copy failed: {_citation_version_mismatch(tmp)}")
-    problem = _citation_version_mismatch(ROOT)
-    if problem:
-        return _fail(problem)
-    return _ok(f"CITATION.cff version equals VERSION ({want}); a different version and a second "
-               f"version line each fail on a copy, the restored copy passes")
+        if _citation_verdict(src) != ("pass", None):
+            return _fail(f"the restored copy did not pass: {_citation_verdict(src)}")
+        image = Path(tmp) / "image"
+        image.mkdir()
+        shutil.copyfile(ROOT / "VERSION", image / "VERSION")
+        if _citation_verdict(image)[0] != "skip":
+            return _fail(f"an image-shaped tree without CITATION.cff did not skip: "
+                         f"{_citation_verdict(image)}")
+        (image / "VERSION").unlink()
+        if _citation_verdict(image)[0] != "fail":
+            return _fail(f"a tree without VERSION did not fail: {_citation_verdict(image)}")
+    verdict, reason = _citation_verdict(ROOT)
+    if verdict == "skip":
+        return _skip(reason)
+    if verdict == "fail":
+        return _fail(reason)
+    return _ok(f"CITATION.cff version equals VERSION ({want}); on temporary layouts a different "
+               f"version, a second version line and a source checkout without CITATION.cff each "
+               f"fail, the restored copy passes, an image-shaped tree skips")
 
 
 CHECKS = [
