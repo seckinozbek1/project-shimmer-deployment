@@ -498,8 +498,13 @@ def check_15_search():
         except (json.JSONDecodeError, KeyError, ValueError):
             pass  # fall through and re-run live
 
+    import os as _os
+    from unittest.mock import patch as _patch
     router = SearchRouter.open(ROOT)
-    result = router.search(query, claim_type="institutional")
+    # Web access opens only under the cloud profile (D-S23 item 1, check 316); this live
+    # smoke test is of the cloud path, whatever profile the gate's shell carries.
+    with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+        result = router.search(query, claim_type="institutional")
     if result.strategy_used not in {"ddg", "brave", "api", "direct", "exhausted"}:
         return _fail(f"strategy: {result.strategy_used!r}")
     if result.verdict not in {"FOUND", "UNVERIFIABLE"}:
@@ -2409,13 +2414,18 @@ def check_69_chokepoint_query_masked():
     masker = S.make_query_masker(sensitive=True, operator_rules=rules, project_root=str(d),
                                  run_id="R", ledger_path=str(d / "l.jsonl"))
     saved = S.LAYER_ACTIVE
+    import os as _os
+    from unittest.mock import patch as _patch
     try:
         S.LAYER_ACTIVE = True
         router = SR.SearchRouter(project_root=d, keys={}, registry={}, query_masker=masker)
         seen = {}
         router._ddg_search = lambda q, max_results=5: (seen.update(ddg=q) or ([], ""))
         router._brave_search = lambda q: (seen.update(brave=q) or ([], ""))
-        router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
+        # Web egress opens only under the cloud profile (D-S23 item 1, check 316), so the
+        # masker is exercised on the one profile where a query can leave the machine.
+        with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+            router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
         recorded = seen.get("ddg", "")
         if "12-345-6789" in recorded or "[REDACTED" not in recorded:
             return _fail(f"query reached the engine unmasked: {recorded!r}")
@@ -25341,6 +25351,24 @@ def check_296_request_ledger_check_catches_dropped_requests():
     return check()
 
 
+def check_315_issue_deferral_check_catches_unowned_deferrals():
+    """Loop D-S24 item 4 (the stage gate of D-S16 item 2, extended): the sibling
+    tools/loop/issue_deferral_check.py reads the open issues from gh's JSON (never fetched),
+    the private request ledger through request_ledger_check's parser and DECISIONS.md, and
+    fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no stage
+    milestone (S05 to S14), a `honesty-or-release` issue in a milestone after v1 (D-S18 item
+    3) labelled `loop-deferred`, a SCHEDULED or DEFERRED ledger row naming no issue, and, from
+    D-179 on, a decision's Moves, Defers, Drops or Skips marker line naming no issue (earlier
+    decisions grandfathered, counted). Runs tools/loop/issue_deferral_check_checks.py on
+    fixtures only (nothing private is read, nothing fetched), then neutralises each of the
+    four rules in turn, requires its proof to fail, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from issue_deferral_check_checks import check
+    return check()
+
+
 def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
     PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
@@ -25763,6 +25791,23 @@ def check_314_citation_version_equals_version_file():
     return _ok(f"CITATION.cff version equals VERSION ({want}); on temporary layouts a different "
                f"version, a second version line and a source checkout without CITATION.cff each "
                f"fail, the restored copy passes, an image-shaped tree skips")
+
+
+def check_316_no_web_under_the_local_profile():
+    """Loop S11, D-S23 item 1 (open item 68): under the local backend profile no agent reaches
+    the web, whatever its registry flag says; web access opens only under the cloud profile.
+    scripts/web_access_checks.py runs SearchRouter.search, the one place web access is opened,
+    for a may_use_web agent and a system caller with urlopen, socket.create_connection and
+    socket.connect recording and refusing (the ddgs package a recorder): under the local
+    profile, and under an empty one, no non-local connection may be attempted and both callers
+    are refused with a web_access_refused event; under the cloud profile every engine is tried
+    (and refused by the stand-ins). The run summary's own writer states the profile and whether
+    web access was open under both. No function in search_router.py but search() and the egress
+    methods reaches an engine or urlopen (a planted second caller is flagged). Neutralise (the
+    refusal removed from search(); the rule opened for every profile), fail, restore, pass. No
+    network, no weights, temporary folders only."""
+    from web_access_checks import check
+    return check()
 
 
 CHECKS = [
@@ -26195,6 +26240,10 @@ CHECKS = [
      check_313_no_local_profile_path_reaches_a_cloud_client),
     ("314 CITATION.cff version equals VERSION",
      check_314_citation_version_equals_version_file),
+    ("315 the issue deferral check fails on an unplanned issue, a loop-deferred honesty issue after v1, or a deferral naming no issue (D-S24)",
+     check_315_issue_deferral_check_catches_unowned_deferrals),
+    ("316 no agent reaches the web under the local profile",
+     check_316_no_web_under_the_local_profile),
 ]
 
 

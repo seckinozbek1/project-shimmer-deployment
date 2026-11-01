@@ -733,6 +733,7 @@ open-item sweep.
 - **Evidence.** `scripts/search_router.py:201-274` opens web URLs with `urllib.request` for agents whose registry flag allows the web (`may_use_web`). It is not a provider client, so the S10 provider sweep (check 313) leaves it; under the local profile a review with a web-enabled agent would still reach the network (lane s10-fix2's report).
 - **Why it was left.** An operator choice (P12); recorded for S6 (P16).
 - **What would settle it.** The operator's choice: whether the local profile refuses the web, then a check either way.
+- **Closed (2026-11-02, D-180).** The operator chose that the local profile refuses the web (D-S23 item 1). Commit 0e2b387 (lane s11-noweb): `SearchRouter.search` refuses every caller, roster agents and system callers alike, under any profile but cloud, before the query masker and every engine; the refusal is logged, and the run summary and the console state the profile and whether web access was open; gate check 316 (`scripts/web_access_checks.py`). Left out: `scripts/corpus_validator.py`'s corpus download (`_attempt_download`, urlopen) is an operator corpus tool that no agent and no run calls, so it is outside the profile rule.
 
 ## 69. Check 313 copies the local remap of `pipeline.main` instead of calling it (found at loop S10 close, lane s10-fix2) (issue #127)
 
