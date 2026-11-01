@@ -1,5 +1,12 @@
 # Historical README at 13144755a7493713060c76256352657c3f5cc1d1
 
+> Note (2026-10-31): this snapshot is history. Several of its statements are contradicted by
+> later evidence and must not be quoted: its recall percentages (one is said in its own text to
+> be not reproducible), the corpora it calls held-out (every test the project had built or read
+> by then is exposed, so none of them is held-out), and its "domain-agnostic by construction"
+> (it holds only in the narrow sense the current README states). Current development figures,
+> all on exposed material, are in [docs/RESULTS.md](../RESULTS.md).
+
 Preserved verbatim below, including superseded claims, measurements and instructions. Statements using "current", "today" or "HEAD" describe their original checkpoint, not the current build. Relative paths in the snapshot are relative to the repository root. Use the [current README](../../README.md), [runbook](../RUNBOOK.md) and [routing audit](../fix/ROUTING_UI_AUDIT.md) for current behavior and corrections.
 
 ---

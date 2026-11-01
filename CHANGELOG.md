@@ -9,6 +9,8 @@ One entry per product version, in plain English. The version number lives in `VE
 - **The chat window says what it checked.** Its startup line says the local model is configured and loads on the first request, and a request the model could not answer says the model was not used and why; check 310.
 - **The image ships `VERSION` and restores the shipping-gate line** check 252 looks for (open item 7); `seals/` is kept out of the build context; checks that need files the image lacks skip and say which.
 - **The 35 frozen launchers moved to `archive/frozen_launchers/`** (open item 20).
+- **The README is rewritten for v1** (S11, documents only) and links the results page (`docs/RESULTS.md`). It says what Shimmer is (established mechanisms put together), what it does and does not do, what has been measured (development, exposed, with what the figures do not show), the limitations, a measured hardware and cost summary, install from source and the container image, quickstart, configuration, the constitution and agents, the testing rules and how to reproduce the evaluation. It states that the privacy layer today refuses sensitive runs and does not mask, that switching masking on needs its own amendment, and that the server's one shared token makes Shimmer a single-operator system. The sealed evaluation comes after v1; no package release is promised.
+- `CLAUDE.md` narrows "domain-agnostic" to what the evidence supports. Links to README sections that moved now point to `docs/RUNTIME_REFERENCE.md`; the dated history and state documents get dated notes instead of rewrites.
 
 ## 0.1.0.dev6 (S7 close, 1 November 2026)
 
