@@ -383,8 +383,9 @@ widely between the fields it has run on.
   `<Linux home>/shimmer-rehearsal`, read through its own shell at run time; it refuses an
   empty, root or relative home, and builds every `rm -rf` through one guard that refuses
   anything outside that folder (checked in `tools/ordinary_final_controller_checks.py`).
-  No run has used the asset copy; it is unauthorized until the
-  operator says otherwise, and it changes nothing when undeclared.
+  Every loop launch since L1 used the asset copy under the operator's D-S4 authorization
+  (MATCH; D-057, D-109); outside that it is unauthorized until the operator says otherwise,
+  and it changes nothing when undeclared.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.

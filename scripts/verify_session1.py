@@ -25643,7 +25643,9 @@ def check_312_draft_memo_uses_the_drafters_backend():
     whose call_claude raises must return the local text with its call evidence, activation row,
     reply record and free_text outcome on one call id, and a Claude drafter still reaches the
     Claude client; a qwen_local and an openai_api drafter reach their own backend the same way, and
-    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4).
+    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4); the
+    budget neutralisation runs on local_producer only, so it proves the allowance there; the
+    cloud backends' own default is also 4096 (S10 rounds 2 and 3).
     Neutralise (the old direct call_claude, and the budget emptied, each compiled beside the
     pipeline), fail, restore, pass."""
     from draft_backend_checks import check
@@ -25659,7 +25661,8 @@ def check_313_no_local_profile_path_reaches_a_cloud_client():
     lists no provider, dispatch for every agent, the draft memo, the --amendment-polish pass and
     the harness under its local profile each construct no client. Neutralise (the draft memo's
     direct call_claude put back; a direct call_claude in the polish pass; AMENDMENT_DRAFTER left
-    out of _LOCAL_PROFILE), fail, restore, pass. No network, no weights, temporary folders only."""
+    out of _LOCAL_PROFILE; LEGAL_ANALYST mapped to claude_api, so the harness builds a Claude
+    client), fail, restore, pass. No network, no weights, temporary folders only."""
     from local_profile_cloud_checks import check
     return check()
 
