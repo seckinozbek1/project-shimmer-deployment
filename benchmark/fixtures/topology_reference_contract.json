@@ -63,7 +63,7 @@
     "_structural_inventory": "336876ba2164ad5f3a6d19e2d24016a25b66f4091e5cb66811325cb6f105cd1d",
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
-    "write_deliverables_run_summary": "13246a48f2db809788abd3ff8ec59d465fa46ccaff653fdfaa9c4bd3777ee9a0",
+    "write_deliverables_run_summary": "708c65899e73e929a9ef4b7515e22e53d4011a0badb30e6fb25ce6ac55717b5e",
     "phase_6_synthesis": "ad5de80128999f7643624ce31dedacde8d2a2c8f69d54c3edccbb6d97ec74e5a",
     "_prior_refusals_for": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
@@ -392,6 +392,17 @@
         "_draft_generate_with_evidence": {
           "from": "0f424f48b9e9ab223d260a75a8cc2d679f2f9ad4449e7afac72991a7ec7c7a0a",
           "to": "35a84f2fe132acd4abb137523a18513d119b9f51b5274c649904a0645a894270"
+        }
+      }
+    },
+    {
+      "date": "2026-11-02",
+      "reason": "Operator-directed, 2026-11-02, loop stage S11: D-S23 item 1 (open item 68, D-180), the run summary states the backend profile in force and whether web access was open for the run, read from search_router.web_access_open, the same rule the search router refuses by; nothing else in the summary changes; gate check 316.",
+      "document": "docs/loop/DECISIONS.md",
+      "functions": {
+        "write_deliverables_run_summary": {
+          "from": "13246a48f2db809788abd3ff8ec59d465fa46ccaff653fdfaa9c4bd3777ee9a0",
+          "to": "708c65899e73e929a9ef4b7515e22e53d4011a0badb30e6fb25ce6ac55717b5e"
         }
       }
     }

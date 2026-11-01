@@ -525,6 +525,19 @@ widely between the fields it has run on.
   `PRODUCTION_AGENTS_CORPUS_LEVEL` and the registry; the loop (header unchanged) skips it,
   records `not_called` with state `switched_off`, and labels results from the dispatched list.
   The setting is saved in `audit/agent_switches.json` and the run summary. Check 277.
+- NO-WEB-LOCAL-A (loop S11, D-S23 item 1, open item 68, D-180): under the local backend profile
+  no agent reaches the web, whatever its registry flag (`may_use_web`) says; web access opens
+  only under the cloud profile. The one place web access is opened is
+  `search_router.SearchRouter.search`. Before the query masker and before every engine (api
+  plan, direct fetch, ddgs, the DDG scrape, Brave), it refuses for roster agents and system
+  callers alike when `search_router.web_access_open()` is false. That function is true only for
+  exactly `cloud` in `SHIMMER_BACKEND_PROFILE` (unset means cloud; empty or unknown stays
+  closed). The refusal is logged `web_access_refused backend_profile=<p> agent=<a>` and raised
+  as a PermissionError. `_run_summary.md` states the backend profile and whether web access was
+  open from the same function (`write_deliverables_run_summary`, amended in both pinned
+  baselines), and the console's startup backend line says whether it is closed or open (read
+  from the profile `/health` reports). Outside the rule: `scripts/corpus_validator.py`'s corpus
+  download, an operator tool no agent and no run calls. Check 316 (`scripts/web_access_checks.py`).
 - REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
   through `reply_records.write`, inside the backend function that holds the raw text
   (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in
@@ -754,7 +767,8 @@ widely between the fields it has run on.
   network flow without explicit operator activation; while the layer is inactive the run
   hard-gates and refuses to start unless the operator passes
   `--sensitivity-layer-inactive-override` (logged). `may_use_web` is an enforced control:
-  an agent reaches the web only if its registry flag permits it.
+  an agent reaches the web only if its registry flag permits it, and only under the cloud
+  backend profile (NO-WEB-LOCAL-A).
 
 ## Three-input-type model (genesis Part XVIII)
 

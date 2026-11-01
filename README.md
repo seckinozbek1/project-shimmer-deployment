@@ -353,6 +353,11 @@ refuses to start (exit code 9, shown by the server and the console as the
 governance status `refused_inst_finder_unratified`, not as a failure). Each run
 records the setting in `audit/agent_switches.json` and its run summary.
 
+Under the local backend profile nothing in Shimmer reaches the web: the search
+router refuses every web lookup, and the run summary and the console say so. Web
+access opens only under the cloud profile, and only for agents whose registry entry
+allows it.
+
 4. Read the results in `output/runs/<UTC time>__<run id>/deliverables/`: one folder per
    document, plus `_run_summary.md`. `docs/OUTPUT_FORMAT.md` describes the run
    folder.
