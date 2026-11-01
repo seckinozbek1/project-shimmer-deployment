@@ -1301,3 +1301,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Side gates** in the main checkout: execution topology, report recommendations, localization, multi-round, final integration (the producer adapter is present here, so its three worktree errors are gone), the cloud run checks and the controller checks all exit 0. The final-integration gate rewrote its two tracked logs; restored.
 - **Next.** Tag `loop-s05-v1` on the loop branch tip, push the loop branch, `loop/s05` and the tag under D-S5 after the range scans.
 - **Rules.** IV.4, IV.7, D-S5 rules 1 and 2, D-013, D-141.
+
+## D-152. S5 tagged; the push waits for push rights the session no longer has
+
+- **When, stage.** 2026-11-01 04:19 +0300 (system clock), the S5 close.
+- **Tag.** `loop-s05-v1` on the loop branch tip `8dc2777` (the second merge `50364b6`, D-150, D-151), a local annotated tag. VERSION 0.1.0.dev5, CHANGELOG entry 0.1.0.dev5.
+- **The push.** The range `ea1c0d5..loop/2026-10-27` (212 commits) passes D-S5 rule 1's scans: the name pattern and the private patterns 0 in added lines and messages, no personal path, no forbidden path, no key, no em dash. But the pre-push hook passes only with `SHIMMER_PUSH_OK=1` in the operator's environment, which `.claude/start_loop.ps1` sets in its own process; this session runs without it (it continued after the operator's restart of 29 October 18:15 without that launcher), so `git push` would be refused. The loop does not set the flag itself (it is the operator's guard) and does not restart itself through the launcher now (D-S5 rule 6 was a one-time restart, and a new window breaks the hidden-window rule of 29 October and would drop the running lanes). So the push of the loop branch, `loop/s05` and `loop-s05-v1` waits; the tag and branches stay local, and FOR_SECKIN says what would release it. Nothing after S5 depends on the push except S13's force push, which waits the same way.
+- **Rules.** D-S5 rules 1, 2 and 6, H1, the hidden-window rule (D-079).
