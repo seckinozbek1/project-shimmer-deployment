@@ -22,8 +22,12 @@ the run must show it, and the restored text must pass again.
                        own folder never runs (S7 round 3); the draft
                        path announces the draft only once setup succeeded; no
                        batch label is dead and no goto names a missing label;
-                       start_shimmer.bat --check-entry answers.
-  check_banner         the server banner in both launchers names exactly the
+                       start_shimmer.bat --check-entry answers; shimmer.sh under
+                       Git Bash accepts a REAL venv made by this Windows python
+                       (python -m venv) through the REAL runtime contract, with
+                       MSYS argument conversion on and off (INC-030: a /c/...
+                       path reached Windows Python and the venv was refused).
+  check_banner        the server banner in both launchers names exactly the
                        routes the app answers without a token.
   check_chat_window    menu option [2], the chat window, withdrawn so it is never
                        shown, in command mode with no model: help, a cutoff
@@ -31,7 +35,12 @@ the run must show it, and the restored text must pass again.
                        review cancelled, every launch recorded and none run; a
                        request whose worker raises frees the window instead of
                        answering "Still working" to everything after it; a bare
-                       "draft" asks for its topic instead of drafting on "draft".
+                       "draft" asks for its topic instead of drafting on "draft";
+                       on stand-ins for the model's modules (no library, weight
+                       or memory touched), the startup line says only what the
+                       probe checked, and a request whose model failed to load
+                       or gave no usable answer says the model was not used and
+                       why before the keyword parser's reply (S7 6e).
 
 A launcher file that is absent (the container image ships none) is skipped with
 that reason. The batch half needs cmd.exe and runs on Windows only; the shell
@@ -492,6 +501,91 @@ def _sh_bootstrap(bash):
            not again["timed_out"] and PLANTED_MARK not in again["out"])
 
 
+# --- shimmer.sh with a real Windows venv (INC-030) ----------------------------------
+
+CONTRACT = ROOT / "tools" / "runtime_contract.py"
+RUNTIME = ROOT / "tools" / "cloud_run" / "runtime.json"
+VENV_REFUSED = "The Python in .venv does not match tools/cloud_run/runtime.json."
+# The source preflight needs the whole tree; only the interpreter resolution is under test, so
+# a --source call is answered by a stand-in and everything else runs the REAL contract.
+_CONTRACT_WRAPPER = """import sys
+if "--source" in sys.argv:
+    print("STUB_SOURCE_CHECK")
+    sys.exit(0)
+sys.path.insert(0, __file__.rsplit("runtime_contract.py", 1)[0])
+import runtime_contract_real
+sys.exit(runtime_contract_real.main())
+"""
+# MSYS converts a /c/... argument for a Windows program unless told not to; INC-030's record
+# shows the path reaching Python unconverted, so the venv step runs with conversion off too.
+NO_PATH_CONVERSION = {"MSYS2_ARG_CONV_EXCL": "*", "MSYS_NO_PATHCONV": "1"}
+
+
+def _windows_venv_unavailable():
+    """None where the Git Bash venv case can run, else why not (it needs Windows, Git Bash and
+    the Windows Python this check runs under, of the contract's version, to make a venv)."""
+    if not _windows():
+        return "Git Bash and a Windows Python exist only on Windows (the container image, Linux)"
+    if not _bash():
+        return "no Git Bash found beside git"
+    if not Path(sys.executable).name.lower().endswith(".exe"):
+        return "this interpreter is not a Windows python.exe"
+    contract = json.loads(RUNTIME.read_text(encoding="utf-8-sig"))["python_compatibility"]
+    if tuple(sys.version_info[:2]) != (contract["major"], contract["minor"]):
+        return "this interpreter is %d.%d, the contract asks for %d.%d" % (
+            sys.version_info[0], sys.version_info[1], contract["major"], contract["minor"])
+    return None
+
+
+def _drive_sh_windows_venv(bash, text, answers, environment, timeout=120):
+    """shimmer.sh in a temporary folder holding a REAL venv made by this Windows interpreter
+    (python -m venv --without-pip), the REAL runtime contract and its runtime.json; python3 on
+    PATH runs this interpreter. Nothing is installed (SHIMMER_SKIP_INSTALL), the preflight and
+    the wizard are stand-ins."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_launcher_winvenv_", ignore_cleanup_errors=True) as td:
+        tmp = Path(td)
+        _write(tmp / "shimmer.sh", text)
+        _write(tmp / "tools" / "runtime_contract.py", _CONTRACT_WRAPPER)
+        (tmp / "tools" / "runtime_contract_real.py").write_bytes(CONTRACT.read_bytes())
+        (tmp / "tools" / "cloud_run").mkdir(parents=True)
+        (tmp / "tools" / "cloud_run" / "runtime.json").write_bytes(RUNTIME.read_bytes())
+        _write(tmp / "scripts" / "preflight.py", _PREFLIGHT_STUB)
+        _write(tmp / "scripts" / "intake_wizard.py", _WIZARD_STUB)
+        made = subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(tmp / ".venv")],
+                              capture_output=True, timeout=120, creationflags=NO_WINDOW)
+        if made.returncode != 0 or not (tmp / ".venv" / "Scripts" / "python.exe").is_file():
+            raise AssertionError("python -m venv did not make a Windows venv: %r" % made.stderr[-300:])
+        fake = tmp / "fakebin" / "python3"
+        _write(fake, '#!/usr/bin/env bash\nexec "%s" "$@"\n' % _posix(sys.executable))
+        os.chmod(fake, 0o755)
+        env = _clean_env(tmp)
+        env["PATH"] = os.pathsep.join((str(fake.parent), str(Path(bash).parent), env.get("PATH", "")))
+        env.update(environment)
+        return _run([bash, _posix(tmp / "shimmer.sh")], tmp, env, answers, timeout)
+
+
+def _sh_windows_venv(bash):
+    """INC-030: shimmer.sh under Git Bash accepts the Windows venv it finds or makes, with MSYS
+    argument conversion on (the default) and off (the incident's record)."""
+    text = SH.read_text(encoding="utf-8")
+
+    def accepted(result):
+        return (_ended(result) and VENV_REFUSED not in result["out"] and MENU_PROMPT in result["out"]
+                and "Goodbye." in result["out"])
+
+    shipped = [_drive_sh_windows_venv(bash, text, "L\nQ\n", env) for env in ({}, NO_PATH_CONVERSION)]
+    if not all(accepted(r) for r in shipped):
+        raise AssertionError("shimmer.sh refused a real Windows venv: %s"
+                             % " | ".join(r["out"][-400:] for r in shipped if not accepted(r)))
+    broken = _drive_sh_windows_venv(bash, _neutralise(text, 'VENV_PYTHON="$VENV_BIN/python"',
+                                                      'VENV_PYTHON="$PWD/$VENV_BIN/python"', "the venv python path"),
+                                    "L\nQ\n", NO_PATH_CONVERSION)
+    again = [_drive_sh_windows_venv(bash, text, "L\nQ\n", env) for env in ({}, NO_PATH_CONVERSION)]
+    _prove("sh accepts a real Windows venv under Git Bash", True,
+           VENV_REFUSED in broken["out"] and broken["rc"] == 1 and MENU_PROMPT not in broken["out"],
+           all(accepted(r) for r in again))
+
+
 # --- the banner -------------------------------------------------------------------
 
 def _open_routes():
@@ -562,10 +656,11 @@ _CHAT_GUARD = "threading.Thread(target=self._guarded, args=(target, cmd), daemon
 _CHAT_UNGUARDED = "threading.Thread(target=target, args=(cmd,), daemon=True).start()"
 
 
-def _load_chat(text, tmp):
+def _load_chat(text, tmp, probe=False):
     """The chat module from TEXT, its files pointed into TMP. Nothing it would
     start runs: each launch is recorded, and the first one raises, as a wizard
-    that cannot start or a flags file that cannot be written would."""
+    that cannot start or a flags file that cannot be written would. With PROBE the
+    window's own startup probe is kept (its imports are stand-ins, see _model_stand_ins)."""
     import importlib.util
     path = tmp / "chat_under_check.py"
     _write(path, text)
@@ -587,24 +682,111 @@ def _load_chat(text, tmp):
         self.ui(self.post, "Local AI model not available. Using command mode.")
 
     module.ChatApp._stream_subprocess = recorded
-    module.ChatApp._check_qwen = no_model
+    if not probe:
+        module.ChatApp._check_qwen = no_model
     return module, launches
 
 
-def _drive_chat(text, typed):
+# --- the chat window's model path, on stand-ins (S7 6e) ------------------------------
+
+class _ModelInputs(dict):
+    def to(self, device):
+        return self
+
+
+class _ModelTokenizer:
+    """Tokenizer stand-in: decode returns the model's reply as written."""
+    def __init__(self, reply):
+        self.reply = reply
+
+    def __call__(self, prompt, **kw):
+        return _ModelInputs(input_ids=type("Ids", (), {"shape": (1, 3)})())
+
+    def decode(self, ids, **kw):
+        return self.reply
+
+
+class _ModelStandIn:
+    device = "cpu"
+
+    def generate(self, **kw):
+        return [[1, 2, 3, 4]]
+
+
+def _model_stand_ins(load):
+    """The four modules the window imports for its model path, as stand-ins: the startup
+    probe reports a configured model, the decoding policy is empty, torch only gives no_grad,
+    and agent_wrapper._load_qwen is LOAD. No library, weight or memory is touched."""
+    import contextlib
+    import types
+    gate = types.ModuleType("redaction_gate")
+    gate.qwen_backend_status = lambda root: {"configured": True}
+    policy = types.ModuleType("decoding_policy")
+    policy.policy = lambda backend: {"kwargs": {}}
+    torch = types.ModuleType("torch")
+    torch.no_grad = contextlib.nullcontext
+    wrapper = types.ModuleType("agent_wrapper")
+    wrapper._load_qwen = load
+    return {"redaction_gate": gate, "decoding_policy": policy, "torch": torch, "agent_wrapper": wrapper}
+
+
+def _load_fails(model_id):
+    raise MemoryError("stand-in: the weights do not fit")
+
+
+def _answers(reply):
+    return lambda model_id: (_ModelTokenizer(reply), _ModelStandIn())
+
+
+class _GenerateFails(_ModelStandIn):
+    def generate(self, **kw):
+        raise RuntimeError("stand-in: CUDA out of memory in generate")
+
+
+def _generation_fails(model_id):
+    """The model loads, then fails while generating (out of GPU memory, for one)."""
+    return _ModelTokenizer("unused"), _GenerateFails()
+
+
+def _drive_chat(text, typed, model=None):
     """Type each line into a withdrawn chat window (never shown) and return the
-    transcript after each, and the recorded launches."""
+    transcript after each, and the recorded launches. With MODEL (a stand-in for
+    agent_wrapper._load_qwen) the window's own startup probe runs on stand-ins and
+    reports a configured model, so each line goes to the model path; the whole
+    transcript, startup line included, is returned as a fourth value."""
     import tkinter as tk
     import time
+    saved = {}
+    if model is not None:
+        stand_ins = _model_stand_ins(model)
+        saved = {name: sys.modules.get(name) for name in stand_ins}
+        sys.modules.update(stand_ins)
+    try:
+        return _drive_chat_window(tk, time, text, typed, model)
+    finally:
+        for name, value in saved.items():
+            if value is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = value
+
+
+def _drive_chat_window(tk, time, text, typed, model):
     with tempfile.TemporaryDirectory(prefix="shimmer_chat_", ignore_cleanup_errors=True) as td:
         tmp = Path(td)
-        module, launches = _load_chat(text, tmp)
+        module, launches = _load_chat(text, tmp, probe=model is not None)
         root = tk.Tk()
         root.withdraw()
         app = module.ChatApp(root)
         replies = []
 
         def script():
+            if model is not None:
+                # the startup probe runs on a worker; wait for its line
+                deadline = time.monotonic() + 5
+                while not app.qwen_available and time.monotonic() < deadline:
+                    yield
+                yield
             for line in typed:
                 before = len(app.msg.get("1.0", "end"))
                 app.entry.delete(0, "end")
@@ -618,11 +800,13 @@ def _drive_chat(text, typed):
                 replies.append(app.msg.get("1.0", "end")[before:])
 
         steps = script()
+        transcript = []
 
         def tick():
             try:
                 next(steps)
             except StopIteration:
+                transcript.append(app.msg.get("1.0", "end"))
                 root.destroy()
                 return
             root.after(20, tick)
@@ -637,6 +821,8 @@ def _drive_chat(text, typed):
             threading.excepthook = hook
         scope = (json.loads(module.SCOPE_PATH.read_text(encoding="utf-8"))
                  if module.SCOPE_PATH.is_file() else None)
+        if model is not None:
+            return replies, launches, scope, "".join(transcript)
         return replies, launches, scope
 
 
@@ -673,6 +859,76 @@ def _chat():
     neutral = _neutralise(text, lead_in, old_lead_in, "the draft lead-in")
     _prove("a bare draft asks for its topic", shipped,
            topic_draft(_drive_chat(neutral, typed)), passes(_drive_chat(text, typed)))
+    _chat_model_path(text)
+
+
+# The window's lines as chat.py writes them, and as they were before S7 6e's findings.
+_CONFIGURED_LINE = ("Local model configured (its libraries import and a model is named); "
+                    "it loads on your first request.")
+_OLD_AVAILABLE_LINE = "Local AI model available."
+_STARTUP_CALL = "self.ui(self.post, LOCAL_MODEL_CONFIGURED)"
+_OLD_STARTUP_CALL = 'self.ui(self.post, "Local AI model available. Describe what you want in plain language.")'
+_NOT_USED_CALL = "            self.post(MODEL_NOT_USED % not_used)\n"
+_SILENT_FALLBACK = "            pass\n"
+# A generation error reported as its own reason, and as it was before (one reason for both).
+_GENERATION_FAILED = ('                cmd, not_used = None, MODEL_FAILED_WHILE_ANSWERING\n'
+                      '            if not_used is None and (not cmd or "action" not in cmd):\n')
+_GENERATION_AS_NO_ANSWER = ('                cmd = None\n'
+                            '            if not cmd or "action" not in cmd:\n')
+
+
+def _chat_model_path(text):
+    """S7 6e (a) and (b), on stand-ins with no library, weight or memory touched: the startup
+    line says only what the probe checked; a request whose model fails to load, fails while
+    answering (an error in generate, out of GPU memory for one) or answers nothing usable still
+    gets the keyword parser's reply, preceded by a line saying the model was not used and why,
+    each with its own reason; a model that answers is used, with no such line."""
+    def says_configured(result):
+        transcript = result[3]
+        return _CONFIGURED_LINE in transcript and _OLD_AVAILABLE_LINE not in transcript
+
+    def not_used(result, why):
+        replies = result[0]
+        return (len(replies) == 1 and ("The local model was not used for this request (%s)." % why) in replies[0]
+                and "draft a memo on <topic>" in replies[0]
+                and replies[0].index("was not used") < replies[0].index("draft a memo on <topic>"))
+
+    def used(result):
+        replies = result[0]
+        return len(replies) == 1 and "draft a memo on <topic>" in replies[0] and "was not used" not in replies[0]
+
+    failing = _drive_chat(text, ["help"], model=_load_fails)
+    garbled = _drive_chat(text, ["help"], model=_answers("I think you want some help."))
+    crashed = _drive_chat(text, ["help"], model=_generation_fails)
+    answered = _drive_chat(text, ["what can you do?"], model=_answers('{"action": "help"}'))
+    if not used(answered):
+        raise AssertionError("a model that answers {\"action\": \"help\"} was not used: %r" % answered[0])
+    # The shipped window is judged before any neutralisation, so its own failure is the one named.
+    if not says_configured(failing):
+        raise AssertionError("the startup line claims more than the probe checked: %r" % failing[3][:200])
+    if not not_used(failing, "it failed to load"):
+        raise AssertionError("a model that failed to load was not said unused: %r" % failing[0])
+    if not not_used(garbled, "it gave no usable answer"):
+        raise AssertionError("a model with no usable answer was not said unused: %r" % garbled[0])
+    if not not_used(crashed, "it failed while answering"):
+        raise AssertionError("a model that failed while answering was not said so: %r" % crashed[0])
+    neutral = _neutralise(text, _STARTUP_CALL, _OLD_STARTUP_CALL, "the startup line")
+    _prove("the chat's startup line says only what was checked", says_configured(failing),
+           not says_configured(_drive_chat(neutral, ["help"], model=_load_fails)),
+           says_configured(_drive_chat(text, ["help"], model=_load_fails)))
+    neutral = _neutralise(text, _NOT_USED_CALL, _SILENT_FALLBACK, "the not-used line")
+    _prove("a model that failed to load is said not used", not_used(failing, "it failed to load"),
+           not not_used(_drive_chat(neutral, ["help"], model=_load_fails), "it failed to load"),
+           not_used(_drive_chat(text, ["help"], model=_load_fails), "it failed to load"))
+    _prove("a model with no usable answer is said not used", not_used(garbled, "it gave no usable answer"),
+           not not_used(_drive_chat(neutral, ["help"], model=_answers("I think you want some help.")),
+                        "it gave no usable answer"),
+           not_used(_drive_chat(text, ["help"], model=_answers("I think you want some help.")),
+                    "it gave no usable answer"))
+    neutral = _neutralise(text, _GENERATION_FAILED, _GENERATION_AS_NO_ANSWER, "the generation failure reason")
+    _prove("a model that failed while answering is said so", not_used(crashed, "it failed while answering"),
+           not not_used(_drive_chat(neutral, ["help"], model=_generation_fails), "it failed while answering"),
+           not_used(_drive_chat(text, ["help"], model=_generation_fails), "it failed while answering"))
 
 
 def _tk_unavailable():
@@ -733,6 +989,8 @@ def check_bootstrap():
         ("start_shimmer.bat", _missing(START, RESOLVE) or (windows_only if not _windows() else _start_entry)),
         ("shimmer.sh", _missing(SH) or ("no bash outside the WSL launcher" if not bash
                                         else (lambda: _sh_bootstrap(bash)))),
+        ("shimmer.sh with a Windows venv", _missing(SH, CONTRACT, RUNTIME) or _windows_venv_unavailable()
+         or (lambda: _sh_windows_venv(bash))),
     ])
 
 

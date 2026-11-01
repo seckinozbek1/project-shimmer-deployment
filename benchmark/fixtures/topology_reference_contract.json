@@ -24,7 +24,7 @@
     "_prewarm_qwen": "ed82178f194ef037479e87b958df19b1598af0f4f1e3ae252ce909c599393294",
     "_truncate": "e65efb4682baed8fcc48cfca80ea58d02220556f4c7c6cca7cedd173788f4037",
     "_resolve_review_scope": "f021ad0349008fd15ba7b44bb38c60a66cb3c1077eaca2f501195710996c034e",
-    "_draft_generate_with_evidence": "0f424f48b9e9ab223d260a75a8cc2d679f2f9ad4449e7afac72991a7ec7c7a0a",
+    "_draft_generate_with_evidence": "35a84f2fe132acd4abb137523a18513d119b9f51b5274c649904a0645a894270",
     "build_draft_prompt": "d7acf8d46e562ba3f27d9837e273d614c70bdf7fe9c3740d307ee1c3daeec4b1",
     "_slug_from_question": "f2da3211bc443af5b8869af72a9dee0bf6a90ab06f2b32563aed9778d52d1f26",
     "_question_suffix": "713aec0dd974463218a7f4c0b1ffb474bc4c010e5ecb77e707d2a35e156d9893",
@@ -381,6 +381,17 @@
         "phase_5_audit": {
           "from": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
           "to": "95d3a868616f4b9d28c84cc0559811187e525e4d33262f999c3bc07134713c96"
+        }
+      }
+    },
+    {
+      "date": "2026-11-01",
+      "reason": "Operator-directed, 2026-11-01, loop stage S10: INC-031 (D-162, D-165), the draft memo call goes through the drafter's own backend (AgentWrapper.dispatch) instead of always calling call_claude, so a draft under the local profile makes no provider call; the call evidence, prompt record, activation row, reply record and outcome are unchanged; gate check 312.",
+      "document": "docs/loop/stages/S10_REPORT.md",
+      "functions": {
+        "_draft_generate_with_evidence": {
+          "from": "0f424f48b9e9ab223d260a75a8cc2d679f2f9ad4449e7afac72991a7ec7c7a0a",
+          "to": "35a84f2fe132acd4abb137523a18513d119b9f51b5274c649904a0645a894270"
         }
       }
     }

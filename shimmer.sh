@@ -62,7 +62,11 @@ if [ ! -f "$(venv_bin)/activate" ]; then
     fi
 fi
 VENV_BIN="$(venv_bin)"
-VENV_PYTHON="$PWD/$VENV_BIN/python"
+# Relative to the launcher's folder, the current folder since the cd above: under Git Bash
+# "$PWD" is a POSIX path (/c/...), which a Windows Python opens only when MSYS happens to
+# convert the argument, and the launcher refused the venv it had just made (INC-030). The
+# contract answers with the interpreter's own absolute path either way.
+VENV_PYTHON="$VENV_BIN/python"
 [ -f "$VENV_PYTHON.exe" ] && VENV_PYTHON="$VENV_PYTHON.exe"
 if ! PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$VENV_PYTHON" --path-only); then
     echo "The Python in .venv does not match tools/cloud_run/runtime.json. Remove .venv and run this script again."

@@ -1860,7 +1860,7 @@ function renderSubmit() {
       '<div id="s-file-roles"></div>' +
       ui('<label for="s-question">Question</label>') +
       ui('<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>') +
-      ui('<p class="field-hint">Required for a draft. Optional framing for a review. Draft memo generation currently requires Cloud; Local Draft is unsupported.</p>') +
+      ui('<p class="field-hint">Required for a draft. Optional framing for a review. The memo of a draft comes from the drafter model of the chosen backend (Claude under Cloud, a local model under Local); Local Draft is not yet proven.</p>') +
       ui('<label for="s-sensitive">Privacy</label>') +
       '<select id="s-sensitive" class="form-control">' +
         ui('<option value="">Choose Normal or Sensitive</option>') +

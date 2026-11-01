@@ -71,7 +71,7 @@ supported private configuration path.
 | Choice | Behavior |
 |---|---|
 | Review | Reviews selected targets against conventions and supporting material, with optional prior-version comparison. |
-| Draft | Generates an initial memo through Claude, then reviews it. Local Draft is unsupported. |
+| Draft | Generates an initial memo with the drafter model of the chosen backend (Claude under Cloud, a local model under Local), then reviews it. Local Draft makes no provider call; it is not yet proven end to end. |
 | Local backend | Uses the local producer/auditor model profiles for Review and defaults to paired review. Cached packages and models are required. |
 | Cloud backend | Uses configured provider models and defaults to wide review. Provider credentials and charges apply. |
 | Normal privacy | The operator declares the input non-sensitive; full content is reviewed with the recorded inactive-layer/no-redaction overrides. |
@@ -235,7 +235,7 @@ Shimmer remains a prototype with corpus-dependent coverage. Deterministic checks
 depend on usable fields and scope; model output can be incomplete, incorrectly
 grounded or internally inconsistent. Ontology views expose persistent structural
 records but do not feed learned relevance back into ordinary agent tasks. Local
-Draft, usable Sensitive review and automatic mid-run resume are not supported.
+Draft is not yet proven end to end; usable Sensitive review and automatic mid-run resume are not supported.
 
 Saved synthetic runs establish narrow observations, not general quality or
 latency guarantees. Measurements and their qualifications live in the

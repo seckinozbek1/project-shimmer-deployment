@@ -147,7 +147,7 @@ async function main() {
   }
   context.apiJson = async () => ({ok: true, body: {backend_profile: 'local'}});
   context.renderSubmit(); await Promise.resolve(); await Promise.resolve();
-  assert(context.app.innerHTML.includes('Local Draft is unsupported'));
+  assert(context.app.innerHTML.includes('Local Draft is not yet proven'));
   assert(elements['startup-backend'].textContent.includes('Local, models on this machine'));
   console.log('PASS: executed console rendering, API binding, unavailable/stale states, view separation, citations, mutation/restoration and no-op refusal');
 }

@@ -44,8 +44,38 @@ EOS, PAD, UNK = 0, 1, 2
 PIECES = ['{"items":[', '{"claims":[', '"questions":[', '"refs":[', '"span":"', '"status":"',
           '"uncertainty":[', 'extracted', 'empty', 'refused', '"],"', '"]', '","', '],"', ']}', ']}]}',
           ',{', '}', 'CLM-', 'REF-', '"CLM-', '"REF-', 'Gap: ', '\\"', '\\n', '\n', 'missing ', 'date']
-FIXTURE = json.loads((ROOT / 'docs/fix/compact_contract_ab/fixture.json').read_text(encoding='utf-8'))
+# S10 item 2.1 a: the container image ships no docs/fix/ and no benchmark/. Each of these is
+# read only where it exists, and a test that needs an absent one skips naming it (the gate's
+# own check reports the skipped tests and runs the rest). The fixture used to be read at import,
+# so the module (and envelope_decoding_checks, which imports it) failed to import there.
+FIXTURE_PATH = ROOT / 'docs/fix/compact_contract_ab/fixture.json'
+FIXTURE = json.loads(FIXTURE_PATH.read_text(encoding='utf-8')) if FIXTURE_PATH.is_file() else None
 DEV_REPLIES = ROOT / 'docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/full_dev.jsonl'
+REPLAY_TOOL = ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py'
+ABSENT_NOTE = ' (the container image ships no docs/fix/ and no benchmark/)'
+
+
+def need(test, *paths):
+    """Skip `test`, naming each absent input, when one of `paths` is not in this tree."""
+    missing = [Path(p).relative_to(ROOT).as_posix() for p in paths if not Path(p).is_file()]
+    if missing:
+        test.skipTest(', '.join(missing) + ' not present here' + ABSENT_NOTE)
+
+
+def skipped_tests(result):
+    """{test name: skip reason} of a unittest result (checks 295 and 297: a tree that lacks an
+    input skips only the tests that need it, and a neutralisation is tried only where the tests
+    it targets ran)."""
+    return {test._testMethodName: reason for test, reason in result.skipped}
+
+
+def partial_detail(result, skipped, tried, mutants):
+    """The gate detail of a run in which some tests skipped: what ran and what did not."""
+    return ('%d of %d tests ran and passed, %d of %d neutralisations failed and restored; not run here: %s'
+            % (result.testsRun - len(skipped), result.testsRun, tried, mutants,
+               '; '.join('%s (%s)' % item for item in sorted(skipped.items()))))
+
+
 PRODUCER_TOKENIZER = 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit'
 DEV_TOKEN_ROWS = 12
 
@@ -230,6 +260,7 @@ class ContractDecodingChecks(unittest.TestCase):
         self.assertEqual(sorted(e.value for e in fields.elts), value['item_keys'])
         self.assertIn(cd.canonical(value['refusal']), cc.PRODUCER)
         self.assertTrue({value['status_values']['semantic'], value['status_values']['none']} <= literals)
+        need(self, DEV_REPLIES)  # the frozen replies' form, last: everything above has run
         rows = [json.loads(line) for line in DEV_REPLIES.read_text(encoding='utf-8').splitlines() if line.strip()]
         self.assertEqual(len(rows), 84)
         for row in rows:
@@ -298,6 +329,7 @@ class ContractDecodingChecks(unittest.TestCase):
         record and the usage carry the constraint. A call that is not the compact producer's
         (unbound PROCESSOR, CITATION_RESOLVER on local_producer, an undeclared envelope agent) carries none; VERIFIER on
         local_auditor carries the envelope constraint instead (envelope_decoding_checks)."""
+        need(self, FIXTURE_PATH)
         real = FIXTURE['real_document']
         text, doc = real['source'], real['doc']
         spans = extraction.ledger(text, doc)
@@ -359,6 +391,7 @@ class ContractDecodingChecks(unittest.TestCase):
         """A replay reads the declaration back from the rendered prompt's canonical payload: the
         same aliases and claim sets as the binding, and refs that are the binding's (every
         passage indexed once, so the shown markers are the whole grounded set)."""
+        need(self, FIXTURE_PATH)
         real = FIXTURE['real_document']
         text, doc = real['source'], real['doc']
         spans = extraction.ledger(text, doc)
@@ -383,6 +416,7 @@ class ContractDecodingChecks(unittest.TestCase):
         """replay_prompts.run with the constrained path beside sdpa, on a backend whose model is
         the stand-in (the real constraint, built from the prompt's payload): sdpa reproduces
         the saved failure byte for byte and the validator refuses it; sdpa_constrained passes."""
+        need(self, REPLAY_TOOL)
         import replay_prompts
         owned, citable = owned_spans()
         source = [(s.id, s.text.replace('recorded.', 'recorded (REF-0001).') if s.id == 's0' else
@@ -441,6 +475,7 @@ class ContractDecodingChecks(unittest.TestCase):
         """--dev adds the 84 DEV rows (prompts held to the protocol's digests, the protocol's cap,
         the frozen replies' digests as references), each a compact producer prompt; --call-ids
         keeps only the listed calls and refuses one it cannot find."""
+        need(self, REPLAY_TOOL)
         import reply_records
         import replay_prompts
         with tempfile.TemporaryDirectory() as tmp:
@@ -471,6 +506,7 @@ class ContractDecodingChecks(unittest.TestCase):
         With the producer's tokenizer in the local cache, the first 12 rows are fed token by
         token through the real processor: every token the checkpoint wrote is admitted and the
         constraint intervenes nowhere."""
+        need(self, DEV_REPLIES)
         rows = [json.loads(line) for line in DEV_REPLIES.read_text(encoding='utf-8').splitlines() if line.strip()]
         value = spec()
         valid = refused = 0

@@ -173,6 +173,8 @@ earlier comparison record put this red down to the missing `fastapi`; it is not.
 (if the image's `python` resolves to the runtime environment) or correct the check under the
 loop's evidence rule for gate checks, with its own neutralise, fail, restore, pass proof.
 
+**Closed at loop S10 (2026-11-01, commit `49194bc`, lane s10-image, D-165).** The Dockerfile line is restored to exactly `RUN python scripts/ship_gate.py`; the image's `python` is the runtime environment's (`ENV PATH=/opt/shimmer-runtime/bin:$PATH`). Check 252 alone: FAIL before, PASS after; the check was not changed.
+
 ---
 
 ## 8. (Closed 2026-10-27, loop S1 commit C3.) Gate check 112 and a log-event name
@@ -359,6 +361,7 @@ open-item sweep.
 - **Evidence.** S2 checker round 2 (adversarial item 15) and the controller fix lane's read-only inventory: every launch request goes through `LambdaExperiment.request` (`tools/lambda_experiment_provider.py`); the only common barrier is each launcher's refusal when its `docs/fix/<run>/LAUNCH_INTENT.json` exists (all exist and are tracked); most also require HEAD to equal an old commit (for example `tools/auditor_final_cloud.py` around lines 40 to 42); `auditor_blocker_closure_cloud`, `auditor_final_retry_cloud` and `run_first_real_tuning` have no HEAD check (the last checks only its marker and two hashes; its frozen source commit is only written into its manifest).
 - **Why it was left.** They are frozen tools, bound to past runs; S2c item 16 keeps frozen tools as they are, and changing what a frozen record would do is not the loop's to decide (P9 reason a: needs an operator decision). The loop never runs them.
 - **What would settle it.** An operator decision either to retire them (an archive folder outside `tools/`, keeping the records), or to route every remaining launcher through the loop guard.
+- **Closed (loop S6, 2026-10-31, D-S13 item 2).** Retired, none routed: a read-only trace found nothing live that calls any of the sixteen (no gate check, no `scripts/` module, no loop tool, the container or a document outside the run records). Commit b61e9bd moves them with `git mv`, bytes unchanged, to `archive/frozen_launchers/` with the nineteen frozen companions that import a launcher or read its source, so nothing left in the tree points at a moved file; the folder's `README.md` says what they are and why they were retired, its `.gitattributes` keeps their attributes, and every record under `docs/fix/` is unchanged. From there a launcher cannot import the provider adapter. Frozen post-run checks that re-hash a moved file at its old `tools/` path (for example `tuning/second_tuning_eval_runtime_v2_1/legacy_checks.py` test_01, which reads `tools/checkpoint120_cloud.py`) would now not find it; nothing live runs them, and the recorded hash still holds at the new path.
 
 ## 21. An in-range value under a range the rule states costs a model call (found at loop S2) (issue #26)
 
@@ -646,3 +649,94 @@ open-item sweep.
 - **Evidence.** The s07-lead worktree: `durable/` created at 04:20 +0300 on 1 November during the gate at `02fae41`, its four subfolders touched again at 15:45 during the gate at `07e84e8`, no file in any of them; check 01 SKIP at `02fae41`, FAIL at `07e84e8` (private `gate_logs/s07_07e84e8/main_gate.log`). The writer is not yet found: `durable_paths.ensure_dirs` creates all five subfolders, including `governance`, so another path creates four and leaves them.
 - **Why it was left.** The defect sits in gate checks or modules S7 did not touch, it changes no product output and no check other than 01, and the folders it leaves are empty (P16: recorded for S6).
 - **What would settle it.** The check or module that creates the four folders found (a gate run with a watcher on `durable/`), made to remove what it created as check 32 now does, with a neutralise, fail, restore, pass proof, in S6.
+
+## 57. The chat window loads the local model on the first request with no memory guard (found at loop S7 close and S10, lanes) (issue #115)
+
+- **What it is.** The chat window loads the local model on the first request with no memory guard.
+- **Evidence.** `scripts/chat.py:553` (`_qwen_parse`) loads the model at the first plain-language request; the window has no memory limit of its own. On the laptop the 7B model loads from full-size weights and took free memory from 4.84 to 0.98 GB on its first file (private `analysis/s7_6e_plain_language.md`, D-162).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** A check of free memory against the model's measured need before the first load, with a plain message when it is not enough, and a gate case.
+
+## 58. The chat window sends the model raw text, not the instruct model's chat template (found at loop S7 close and S10, lanes) (issue #116)
+
+- **What it is.** The chat window sends the model raw text, not the instruct model's chat template.
+- **Evidence.** `scripts/chat.py:558` passes the request as plain text to an instruction-tuned model (lane s10-fix1's report).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The prompt built through the tokenizer's own chat template, with a check on the built input.
+
+## 59. The chat window offers the model no `qa` action (found at loop S7 close and S10, lanes) (issue #117)
+
+- **What it is.** The chat window offers the model no `qa` action.
+- **Evidence.** `scripts/chat.py:57-63`: the action list given to the model has no `qa`, so a question such as why something was flagged reaches the run search only through the keyword fallback.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** `qa` added to the model's action list, with a check case.
+
+## 60. A review mode the model proposes replaces the mode the person set (found at loop S7 close and S10, lanes) (issue #118)
+
+- **What it is.** A review mode the model proposes replaces the mode the person set.
+- **Evidence.** `scripts/chat.py:583`: `cmd.setdefault("mode", self.pending_mode)` keeps a model-supplied mode over the person's earlier choice.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The person's mode wins, or the window asks; a check case.
+
+## 61. The chat window's set cutoff writes a tracked config file (found at loop S7 close and S10, lanes) (issue #119)
+
+- **What it is.** The chat window's set cutoff writes a tracked config file.
+- **Evidence.** `scripts/chat.py:282` onward (`write_cutoff`) writes `config/review_scope.json`, a tracked file.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The cutoff written where operator settings for a run belong, or the tracked file's role stated in the docs; a check case.
+
+## 62. `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off (found at loop S7 close and S10, lanes) (issue #120)
+
+- **What it is.** `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off.
+- **Evidence.** `shimmer.sh` lines 234, 258 and 310 (at `7021a4a`) pass `${TMPDIR:-/tmp}/...` paths (the draft and review flags, the token-hash file). Read from the code by lane s10-fix1, not run. INC-030's failure needed path conversion off, which the loop's own hidden start had set (`MSYS_NO_PATHCONV=1`).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** A launcher case under conversion off that answers 1 and D, and paths a Windows Python can open.
+
+## 63. A comment in `pipeline.main` calls the draft model the strong Claude model (found at loop S7 close and S10, lanes) (issue #121)
+
+- **What it is.** A comment in `pipeline.main` calls the draft model the strong Claude model.
+- **Evidence.** `scripts/pipeline.py` about line 4873: wrong under the local profile since INC-031's fix (D-165). `main` is pinned (IV.7), so the comment waits for the next change that needs an amendment of `main`.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The comment corrected together with the next amendment of `main`.
+
+## 64. The loop's pinned-baseline helper writes a fixed date (found at loop S7 close and S10, lanes) (issue #122)
+
+- **What it is.** The loop's pinned-baseline helper writes a fixed date.
+- **Evidence.** `tools/loop/amend_pinned_baselines.py` writes `"date": "2026-10-27"` for every amendment (lane s10-fix1's report); the S10 amendment was written by hand with its real date (D-165).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The date taken from the clock or an argument, with a fixture check.
+
+## 65. `shimmer.sh`: a child process can consume piped input meant for the backend question (found at loop S10, D-S13 item 6b) (issue #123)
+
+- **What it is.** With its answers piped in, a child that `shimmer.sh` starts during the install (pip or Python) reads the buffered input, so the backend question finds end of input and takes the Cloud default.
+- **Evidence.** The 6b re-run on a fresh clone of loop/s10 at `74408d3` under Git Bash with input `L`: install finished (723 s, the CUDA torch build), menu reached, but the log says "Backend profile: cloud"; `shimmer.bat` with the same input chose Local (D-160, D-167).
+- **Why it was left.** It affects scripted callers only, not a person at a terminal; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The install's children started with standard input closed, and a launcher check that pipes `L` through a full install path.
+
+## 66. A local draft under the final profile is written by the tuned extraction adapter (found at loop S10 close, adversarial checker) (issue #124)
+
+- **What it is.** After INC-031's fix the draft memo goes through the drafter's backend; for `local_producer` in final mode that is `call_local`, which loads `final_models.resident('producer')`, the Producer adapter trained for compact extraction (`scripts/agent_wrapper.py:1101-1104`, `scripts/pipeline.py:779-785`). L14c ran the launcher with base models (`SHIMMER_MODEL_MODE=base`), so its memo came from the base model (`unsloth/Qwen2.5-7B-Instruct-bnb-4bit`); a final-mode draft would use the adapter. The README and the console say only "a local model".
+- **Evidence.** The S10 adversarial checker (private `analysis/s10close-round1.md`); L14c's reply record (model id, base mode).
+- **Why it was left.** Which weights write a memo is a model choice (P12: changing the default models is the operator's); Local Draft is already marked not yet proven.
+- **What would settle it.** The operator's choice of the draft's local weights in final mode, then a check that asserts the identity and the README naming it.
+
+## 67. A draft memo cut at its output cap goes to review with nothing saying so (found at loop S10 close, adversarial checker) (issue #125)
+
+- **What it is.** `scripts/pipeline.py` about 788 to 790 marks the memo `free_text` even when the call's usage says it was truncated; L14c's memo reached the 4,096-token cap.
+- **Evidence.** L14c (D-167): 4,096 output tokens; the S10 adversarial checker.
+- **Why it was left.** The function is pinned; a change needs an amendment and a run to see whether the memo is in fact cut (L14d, after v1).
+- **What would settle it.** A truncated memo marked in its outcome and the run summary, with a check, at L14d.
+
+## 68. Under the local profile a web-enabled agent can still reach the web (found at loop S10 close, lane s10-fix2) (issue #126)
+
+- **What it is.** Under the local profile a web-enabled agent can still reach the web.
+- **Evidence.** `scripts/search_router.py:201-274` opens web URLs with `urllib.request` for agents whose registry flag allows the web (`may_use_web`). It is not a provider client, so the S10 provider sweep (check 313) leaves it; under the local profile a review with a web-enabled agent would still reach the network (lane s10-fix2's report).
+- **Why it was left.** An operator choice (P12); recorded for S6 (P16).
+- **What would settle it.** The operator's choice: whether the local profile refuses the web, then a check either way.
+
+## 69. Check 313 copies the local remap of `pipeline.main` instead of calling it (found at loop S10 close, lane s10-fix2) (issue #127)
+
+- **What it is.** Check 313 copies the local remap of `pipeline.main` instead of calling it.
+- **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
+- **Why it was left.** `main` is pinned (IV.7), so the change needs an amendment of `main`; recorded for S6 (P16). The S10 round 2 adversarial checker adds: 313 builds the drafter with `pipeline._build_wrapper`, while `main` builds AMENDMENT_DRAFTER's wrapper directly from its own registry choice (`scripts/pipeline.py` about 4886 to 4901), so a change there would not reach 313 either.
+- **What would settle it.** The remap and the drafter's construction factored into functions when a change to `main` needs an amendment anyway, and 313 calling them.

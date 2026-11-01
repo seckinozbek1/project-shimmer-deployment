@@ -42,14 +42,27 @@ import compact_contracts as cc
 from agent_wrapper import AgentWrapper, CallResult
 from reference_builder import ReferenceIndex, paragraph_ranges, _PARA_RE
 
-FIXTURE = json.loads((ROOT / "docs/fix/compact_contract_ab/fixture.json").read_text(encoding="utf-8"))
-REAL = FIXTURE["real_document"]
+# S10 item 2.1 a: the container image ships no docs/fix/, so this fixture is read only
+# where it exists; a test that needs it skips with FIXTURE_ABSENT, and every other test
+# of the module still runs (the read used to be unconditional at import, so all eleven
+# checks built on this module errored in the image before any test ran).
+FIXTURE_PATH = ROOT / "docs/fix/compact_contract_ab/fixture.json"
+FIXTURE_ABSENT = ("docs/fix/compact_contract_ab/fixture.json is not present here "
+                  "(the container image ships no docs/fix/)")
+FIXTURE = json.loads(FIXTURE_PATH.read_text(encoding="utf-8")) if FIXTURE_PATH.is_file() else None
+REAL = FIXTURE["real_document"] if FIXTURE is not None else None
 V5 = ROOT / "docs/fix/ordinary_final_cloud_run_v5/downloaded/evidence/run"
 V5_SHEET = ROOT / "benchmark/corpora/clinical_reference/context/result_sheet.md"
 V5_SHEET_SHA256 = "d0f332c85d4a1ef419adfa7b18355f28ff129fffeefaeecc8bf2a4c9a4b368a2"
 VALIDATED_KEYS = ["context_only_spans", "production_contract", "required_refs", "role",
                   "routed_rules", "source_spans", "supplied_refs"]
 CHAT_TEMPLATE = "<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
+
+
+def need_fixture(test):
+    """Skip `test`, naming the absent file, when the compact-contract fixture is not here."""
+    if FIXTURE is None:
+        test.skipTest(FIXTURE_ABSENT)
 
 
 def contracts():
@@ -175,6 +188,7 @@ class CorrectionChecks(unittest.TestCase):
     # ---- A1: grounding by Python's passage placement ------------------------------
 
     def test_grounding_places_each_indexed_passage_in_its_span(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         self.assertNotRegex(text, r"REF-\d{4}|CLM-")
         entries = index_twice(text, doc)
@@ -200,6 +214,7 @@ class CorrectionChecks(unittest.TestCase):
         self.assertNotIn("REF-7777", [r for g in extraction.grounding(text, spans, entries + [foreign])[0].values() for r in g])
 
     def test_grounding_correct_citation_passes_fabricated_and_mismatched_fail(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         entries = index_twice(text, doc)
         spans = extraction.ledger(text, doc)
@@ -257,6 +272,7 @@ class CorrectionChecks(unittest.TestCase):
     # ---- A2: the validated prompt shape --------------------------------------------
 
     def test_prompt_validated_messages_shape(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         entries = index_twice(text, doc)
         spans = extraction.ledger(text, doc)
@@ -325,6 +341,7 @@ class CorrectionChecks(unittest.TestCase):
         w._stable_agent_block = lambda: "STABLE"
         w._execution_instructions = lambda: "EXEC"
         pkg = SimpleNamespace(stable_text=lambda: "CTX", dynamic_sections=lambda: [("X", "y")], rendered=None)
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         spans = extraction.ledger(text, doc)
         system, user, citable, supplied = cc.validated_messages(text, spans, spans, index_twice(text, doc))
@@ -616,9 +633,13 @@ class CorrectionChecks(unittest.TestCase):
         PROCESSOR is sent are unchanged. Measured against the identities pinned
         BEFORE the change, on all twelve documents."""
         import bounded_extraction
+        # The corpus is looked for first (S10 item 2.1 a): with no corpus document the test
+        # skips naming that, before the pinned file is read; with a corpus, a missing pinned
+        # file still fails as before.
+        documents = self._corpus_documents()
         pinned = json.loads((ROOT / "benchmark/fixtures/unit_identity_before_preamble.json").read_text(encoding="utf-8"))["documents"]
         seen = 0
-        for path in self._corpus_documents():
+        for path in documents:
             path = Path(path)
             name = f"{path.parent.parent.name}/{path.name}"
             if name not in pinned:
@@ -1313,15 +1334,22 @@ def _grouped(prefix):
 
 
 def _verdict(prefixes, summary):
-    ran, skipped, log = 0, 0, ""
+    ran, skipped, log, reasons = 0, 0, "", set()
     for prefix in prefixes:
         result, text = _grouped(prefix)
         ran += result.testsRun
         skipped += len(result.skipped)
+        reasons |= {reason for _, reason in result.skipped}
         log += text
         if not result.wasSuccessful():
             return ("FAIL", text[-3000:])
-    return ("PASS", "%d checks (%d skipped for absent v5 evidence): %s" % (ran, skipped, summary))
+    if skipped:
+        # S10 item 2.1 a: a test whose evidence or fixture is not in this tree (the container
+        # image ships no docs/fix/ and no benchmark corpus) is reported as a SKIP with its
+        # reasons; it used to be folded into a PASS line.
+        return ("SKIP", "%d of %d checks passed, %d skipped (%s); with every input present it proves: %s" % (
+            ran - skipped, ran, skipped, "; ".join(sorted(reasons)), summary))
+    return ("PASS", "%d checks (0 skipped for absent v5 evidence or fixtures): %s" % (ran, summary))
 
 
 def check_grounding():

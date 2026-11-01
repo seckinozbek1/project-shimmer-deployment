@@ -38,6 +38,9 @@ import contract_decoding_checks as base
 import decoding_policy
 
 EOS = base.EOS
+# S10 item 2.1 a: the one input this module's tests need that a tree may lack is the replay tool
+# (the container image ships no benchmark/); the test that needs it skips naming it, and the gate
+# check runs the rest.
 # Pieces that cross the boundaries the envelope grammar cares about, so a token is admitted only
 # when its WHOLE text keeps the reply in the language.
 PIECES = ['{"agent": "', '", "doc_id": "', '", "items": [', '{"ref": "', '", "kind": "', '", "confidence": "',
@@ -464,6 +467,7 @@ class EnvelopeDecodingChecks(unittest.TestCase):
         prompt's agent and backend, counted under the set its --call-ids entry names; run validates their replies with the envelope validator and,
         on the constrained path, builds the envelope constraint of the prompt's own agent; a
         prompts file mixing models is refused."""
+        base.need(self, base.REPLAY_TOOL)  # S10 item 2.1 a: the image ships no benchmark/
         import hashlib
         import reply_records
         import replay_prompts
