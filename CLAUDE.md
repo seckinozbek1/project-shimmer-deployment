@@ -966,7 +966,15 @@ widely between the fields it has run on.
   `git worktree list` shows its branch, and a role session or agent never (no offline record),
   so a row naming only those is not exempt. One count line; exit 1 on any failure. Run it whenever the ledger
   changes, in every checker round, and before every merge, tag and push. Check 296 runs its
-  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`).
+  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`). Its sibling
+  `tools/loop/issue_deferral_check.py` (D-S24 item 4; `--issues` is gh's open-issue JSON, never
+  fetched) fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no
+  stage milestone S05 to S14, a `honesty-or-release` issue after v1 (S06, S08, S09, S12, S14, from
+  D-S18 item 3) labelled `loop-deferred`, a SCHEDULED or DEFERRED row naming no `#nnn`, and,
+  from D-179 on, a decision's `**Moves.**`, `**Defers.**`, `**Drops.**` or `**Skips.**` marker
+  line naming no issue (a declared marker, not a word list, under WORDS-A; earlier decisions
+  are grandfathered and counted); check 315 runs its proofs on fixtures, and it runs at every
+  stage gate beside this one.
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from
