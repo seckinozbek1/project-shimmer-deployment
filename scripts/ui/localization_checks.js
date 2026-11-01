@@ -55,6 +55,16 @@ async function main(){
       const run={state,outcome,documents:[{}],stop_reason:{code:'blocked'},task:'review'};
       noEnglish(context.nextActionSentence(run));noEnglish(context.nextActionSentenceHuman(run));
     }
+    for(const code of Object.keys(context.GOVERNANCE_SENTENCES_HUMAN)){
+      assert(code in context.GOVERNANCE_SENTENCES,code+' has no developer sentence');
+      const run={state:'stopped',outcome:'governance_stop',documents:[{}],stop_reason:{code},task:'review'};
+      const dev=context.nextActionSentence(run),human=context.nextActionSentenceHuman(run);
+      noEnglish(dev);noEnglish(human);
+      assert(dev.includes(context.ui(context.GOVERNANCE_SENTENCES[code])),code+' developer sentence not rendered');
+      assert(human.includes(context.ui(context.GOVERNANCE_SENTENCES_HUMAN[code])),code+' human sentence not rendered');
+      assert.notEqual(context.ui(context.GOVERNANCE_SENTENCES[code]),context.GOVERNANCE_SENTENCES[code],code+' developer sentence has no Turkish row');
+      assert.notEqual(context.ui(context.GOVERNANCE_SENTENCES_HUMAN[code]),context.GOVERNANCE_SENTENCES_HUMAN[code],code+' human sentence has no Turkish row');
+    }
   });
   check('Submit chrome',()=>{context.renderSubmit();noEnglish(elements.app.innerHTML);assert(elements.app.innerHTML.includes('Çıktı dili'));assert(elements.app.innerHTML.includes('value="review"'));assert(elements.app.innerHTML.includes('id="s-files" multiple hidden'));});
   await Promise.resolve();await Promise.resolve();

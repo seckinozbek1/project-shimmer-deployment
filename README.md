@@ -99,7 +99,8 @@ The corpus-level agent INST_FINDER can be switched off for a run with
 `SHIMMER_INST_FINDER=off`. Because switching an agent off changes how the agents
 check each other, it takes effect only after the operator ratifies the amendment
 drafted in `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`; until then a run with that
-setting refuses to start (exit code 9). Unset, the agent stays on. Each run records
+setting refuses to start (exit code 9, shown by the server and the console as the
+governance status `refused_inst_finder_unratified`, not as a failure). Unset, the agent stays on. Each run records
 the setting in its `audit/agent_switches.json` and its run summary.
 Every amendment is rendered from a finding Python computed from the document's own
 figures; a finding a model wrote stays on the bus and in the console but never

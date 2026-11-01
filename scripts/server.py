@@ -169,7 +169,12 @@ from run_context import SERVER_RUN_ID_RE as _RUN_ID_RE
 # points: 0 success (or 5 if a redaction BLOCK), 2 snapshot conflict
 # (--save-snapshot only), 3 model-gate stop, 4 redaction-gate stop, 5 blocked
 # (dual meaning, see above), 6 sensitivity-layer-inactive refusal, 7 operator
-# abort (meta-signature decline). Anything else non-zero is a plain failure.
+# abort (meta-signature decline), 8 multi-round refusal (main() when the run is
+# not declared non-sensitive or redaction is enabled, and
+# multi_round_phase.execute on an invalid case state; the reason is in
+# audit/multi_round.json), 9 SHIMMER_INST_FINDER=off with no ratified
+# amendment allowing it (_inst_finder_startup_guard, before any model call).
+# Anything else non-zero is a plain failure.
 _EXIT_STATUS_MAP = {
     0: "completed",
     2: "snapshot_conflict",
@@ -178,11 +183,14 @@ _EXIT_STATUS_MAP = {
     5: "blocked",
     6: "refused_sensitivity_layer_inactive",
     7: "operator_abort",
+    8: "refused_multi_round",
+    9: "refused_inst_finder_unratified",
 }
 # Exit codes whose status is a governance outcome, not a failure: the console
 # must render these distinctly from a crash (item 4 of STEP 6).
 GOVERNANCE_STATUSES = {"blocked", "stopped_model_approval", "stopped_redaction_gate",
-                       "refused_sensitivity_layer_inactive"}
+                       "refused_sensitivity_layer_inactive", "refused_multi_round",
+                       "refused_inst_finder_unratified"}
 
 
 def _status_for_exit_code(exit_code):
@@ -875,7 +883,8 @@ def _run_job(run_id):
 
     # Record the outcome under the lock. productization STEP 6: a governance
     # outcome (blocked, stopped_model_approval, stopped_redaction_gate,
-    # refused_sensitivity_layer_inactive, snapshot_conflict, operator_abort) is
+    # refused_sensitivity_layer_inactive, refused_multi_round,
+    # refused_inst_finder_unratified, snapshot_conflict, operator_abort) is
     # a distinct status, not "failed": the pipeline refused or paused ON
     # PURPOSE. A run timeout has no exit_code to map (still "failed", with the
     # timeout reason already in `error`); any other non-zero code not in the
@@ -1514,7 +1523,7 @@ _GOVERNANCE_OUTCOME_STATUSES = GOVERNANCE_STATUSES
 # governance stop or a timeout. snapshot_conflict and operator_abort are
 # distinct governance-adjacent outcomes upstream (see _EXIT_STATUS_MAP's own
 # comment) but neither is a rule refusing on purpose mid-review the way the
-# four GOVERNANCE_STATUSES are, and neither is "succeeded"; "crashed" is the
+# six GOVERNANCE_STATUSES are, and neither is "succeeded"; "crashed" is the
 # nearest of the four `outcome` values and is recorded here explicitly rather
 # than left to a catch-all, so the mapping is auditable in one place.
 # "interrupted" (a server restart mid-run, STEP 2) is not a pipeline decision
