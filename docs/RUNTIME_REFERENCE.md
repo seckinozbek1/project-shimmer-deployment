@@ -451,7 +451,7 @@ outside source; this table contains no credentials.
 | `SHIMMER_LOG_LEVEL` | `info` | uvicorn log level |
 | `SHIMMER_RUN_TIMEOUT_S` | `0` | seconds before a run's pipeline subprocess is terminated then killed; `0` means unbounded (prior behavior). On expiry the job is marked `failed` with a timeout reason and `exit_code: null`; cleanup still runs |
 | `SHIMMER_LOCAL_RUN_TIMEOUT_S` | `7200` | overrides `RUN_TIMEOUT_S` when `SHIMMER_BACKEND_PROFILE=local`. Local inference is far slower than cloud API calls; 2 hours is the default. `0` means unbounded |
-| `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review uses local models with no provider API calls; Draft memo generation remains unsupported in Local). Unset defaults to Cloud; use the supported local/cloud profile values |
+| `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review and Draft use local models with no provider API calls; Local Draft is not yet proven). Unset defaults to Cloud; use the supported local/cloud profile values |
 | `SHIMMER_PROVIDER_TIMEOUT_S` | `600` | per-request wall-clock timeout (seconds) passed to the Anthropic and OpenAI clients; read by the pipeline subprocess, not the server process itself |
 | `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9, the server's governance status `refused_inst_finder_unratified`). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
 | `SHIMMER_MAX_UPLOAD_MB` | `25` | per-file upload size cap in megabytes for `/submit` |
@@ -496,7 +496,7 @@ Mounted input/config/durable/output states are operator data, not image content.
 
 The image ships scripts/config/tools/corpus ingestion, root documentation, this
 runtime reference and three declared synthetic fixtures. It omits operator input, durable/ontology
-stores, runs, answer keys, full benchmark corpora and Windows launcher files.
+stores, runs, answer keys, full benchmark corpora and Windows launcher files. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: nothing in the image runs it except gate check 296 on fixtures, which skips where git is absent.
 An unmounted image gate therefore has declared missing-input failures. Source
 parity proves shipped bytes, not end-to-end container review quality.
 

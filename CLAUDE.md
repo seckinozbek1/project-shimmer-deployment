@@ -518,7 +518,7 @@ processing swarm governed by an append-only constitution.
 - REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
   through `reply_records.write`, inside the backend function that holds the raw text
   (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in
-  `dispatch` or `run_task` (the draft memo calls `call_claude` directly). Records go to
+  `dispatch` or `run_task` (the draft memo calls `dispatch` directly, on the drafter's own backend; INC-031, check 312). Records go to
   `<run_dir>/audit/model_replies/`; outcomes are appended separately by call id to
   `outcomes.jsonl`; a redaction-enabled run keeps `sha256:` and `length_bytes:` only; a call with
   no run context writes nothing (never a fallback to `output/`). Saving a reply never promotes
@@ -656,7 +656,7 @@ processing swarm governed by an append-only constitution.
   `--infer-roles` (off by default). With NO manifest, `_populate_operational` behaves
   exactly as the date-cutoff-only mechanism did. Preserve that backward compatibility.
 - Task modes are `--task review` (default) and `--task draft`. Draft mode phase 0 generates
-  a memo from `--question` with the AMENDMENT_DRAFTER (Opus) model, writes it to
+  a memo from `--question` with the AMENDMENT_DRAFTER model of the run's profile (Opus under Cloud, the local drafter under Local; Local Draft not yet proven), writes it to
   `input/context/`, marks it the review target with `source=system_draft`, and the existing
   phases review it. A `source=system_draft` manifest is run-scoped: it is cleared at run-end
   (`role_resolution.clear_system_draft`) so it never persists as a stale tier-1 target. An
@@ -768,7 +768,7 @@ processing swarm governed by an append-only constitution.
   Option [1] offers Review or Draft; [2] chat; [3] server; [4] gate; [5] import wizard.
 - `scripts/intake_wizard.py`: scan, classify, place, set the cutoff, choose mode, write the
   review-targets manifest. Driven by the launcher and by chat (as a subprocess).
-- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode).
+- `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode). Its startup line says only what the probe checked (libraries import, a model is named) and a request the model did not answer says so before the command parser's reply (check 310).
 - `scripts/server.py`: the token-gated FastAPI dock. Config is env-driven (`SHIMMER_*`,
   read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The
   [runtime reference](docs/RUNTIME_REFERENCE.md) route table is the complete route list and gate check 167 fails if it and the app disagree
