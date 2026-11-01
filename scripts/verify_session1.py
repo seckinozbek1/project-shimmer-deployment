@@ -25341,6 +25341,24 @@ def check_296_request_ledger_check_catches_dropped_requests():
     return check()
 
 
+def check_315_issue_deferral_check_catches_unowned_deferrals():
+    """Loop D-S24 item 4 (the stage gate of D-S16 item 2, extended): the sibling
+    tools/loop/issue_deferral_check.py reads the open issues from gh's JSON (never fetched),
+    the private request ledger through request_ledger_check's parser and DECISIONS.md, and
+    fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no stage
+    milestone (S05 to S14), a `honesty-or-release` issue in a milestone after v1 (D-S18 item
+    3) labelled `loop-deferred`, a SCHEDULED or DEFERRED ledger row naming no issue, and, from
+    D-179 on, a decision's Moves, Defers, Drops or Skips marker line naming no issue (earlier
+    decisions grandfathered, counted). Runs tools/loop/issue_deferral_check_checks.py on
+    fixtures only (nothing private is read, nothing fetched), then neutralises each of the
+    four rules in turn, requires its proof to fail, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from issue_deferral_check_checks import check
+    return check()
+
+
 def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
     PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
@@ -26195,6 +26213,8 @@ CHECKS = [
      check_313_no_local_profile_path_reaches_a_cloud_client),
     ("314 CITATION.cff version equals VERSION",
      check_314_citation_version_equals_version_file),
+    ("315 the issue deferral check fails on an unplanned issue, a loop-deferred honesty issue after v1, or a deferral naming no issue (D-S24)",
+     check_315_issue_deferral_check_catches_unowned_deferrals),
 ]
 
 

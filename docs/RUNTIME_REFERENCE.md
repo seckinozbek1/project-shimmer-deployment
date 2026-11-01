@@ -501,7 +501,7 @@ The image ships `scripts/`, `config/`, `tools/`, `corpus_ingest/`, `README.md`, 
 the Producer DEV rows and three declared synthetic fixtures. It omits operator input,
 durable/ontology stores, runs, answer keys, full benchmark corpora and the root launchers
 (`shimmer.bat`, `shimmer.sh`, `start_shimmer.bat`); the Windows helpers under `tools/` ship
-with `tools/` but are not used there. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
+with `tools/` but are not used there. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, check 315 on fixtures, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
 An unmounted image gate therefore has declared missing-input failures. Source
 parity proves shipped bytes, not end-to-end container review quality.
 
