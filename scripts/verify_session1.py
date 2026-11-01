@@ -821,12 +821,37 @@ def check_31_three_input_subdirs():
     return _ok("input/{context,operational,conventions}/ present")
 
 
+def _absent_folders(*paths):
+    """The folders among `paths` (outermost first) that do not exist yet."""
+    return [p for p in paths if not p.exists()]
+
+
+def _remove_created_folders(folders):
+    """Remove the folders a check created, innermost first, each only when empty: never a
+    folder that existed before the check, never one that holds anything."""
+    for folder in reversed(folders):
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+
+
 @_nonmutating(CONFIG / "convention_registry.json")
 def check_32_convention_parser():
     """Part XVIII Section F: convention_parser produces valid convention_registry.json."""
     from convention_parser import parse_conventions, write_registry
-    # Seed a temp conventions file so the parser has something to work on.
+    # Seed a temp conventions file so the parser has something to work on. The folders this
+    # creates are removed afterwards (S7 round 3: input/ and input/conventions/ used to be
+    # left behind, which changed checks 01 and 28 on the next gate in that tree).
     conv_dir = ROOT / "input" / "conventions"
+    created = _absent_folders(ROOT / "input", conv_dir)
+    try:
+        return _check_32_with_seed(conv_dir, parse_conventions, write_registry)
+    finally:
+        _remove_created_folders(created)
+
+
+def _check_32_with_seed(conv_dir, parse_conventions, write_registry):
     conv_dir.mkdir(parents=True, exist_ok=True)
     seed_path = conv_dir / "_verify_seed.md"
     seed_text = (
