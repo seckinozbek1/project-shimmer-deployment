@@ -1,3 +1,5 @@
+> Note (2026-11-01, loop S11): this ledger's entries are dated records, the newest of 17 September 2026, and are not rewritten. Later work is recorded in `CHANGELOG.md` (version `0.1.0.dev7`) and in the loop's records under `docs/loop/`; the current state is in `README.md`, `docs/RESULTS.md` and `docs/fix/OPEN_ITEMS.md`.
+
 # Report Recommendations, 2026-09-15
 
 Bounded inference continuation after f3e8424/ec276cb: identified mixed host

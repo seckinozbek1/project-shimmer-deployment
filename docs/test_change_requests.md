@@ -106,7 +106,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/producer_coverage_amendment_v1`.
 - **What was noticed**: a tuning-curation dataset recorded as NOT_READY, with a reserve-selection governance failure; superseded by later amendments (v3 is the current one).
-- **Evidence**: `docs/fix/RESUME.md`, around lines 74 to 91.
+- **Evidence**: `docs/fix/RESUME.md`, around lines 76 to 93.
 - **Who noticed it**: the loop lead, from the repository records.
 - **From a run's output?**: no.
 - **Proposal**: keep as a frozen record, and list it as superseded in a retired-tests register rather than adding a file inside a folder whose contents may be hash-bound.
@@ -117,7 +117,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/producer_coverage_amendment_v2`.
 - **What was noticed**: every candidate packet is quarantined because a target-reading regression ran before the label freeze; the record says not to use these labels for training.
-- **Evidence**: `docs/fix/RESUME.md`, around lines 54 to 70.
+- **Evidence**: `docs/fix/RESUME.md`, around lines 56 to 72.
 - **Who noticed it**: the loop lead, from the repository records.
 - **From a run's output?**: no.
 - **Proposal**: as TCR-007.
@@ -128,7 +128,7 @@ Nothing here changes a test. A test is never edited in place after a result has 
 - **Date**: 2026-10-27.
 - **Test and version**: `benchmark/machine_adjudication_v1`.
 - **What was noticed**: the first blinded machine review was recorded NOT_READY and was followed by a second review (v2).
-- **Evidence**: `docs/fix/RESUME.md`, around lines 95 to 148.
+- **Evidence**: `docs/fix/RESUME.md`, around lines 97 to 150.
 - **Who noticed it**: the loop lead, from the repository records.
 - **From a run's output?**: no.
 - **Proposal**: as TCR-007.

@@ -733,6 +733,7 @@ open-item sweep.
 - **Evidence.** `scripts/search_router.py:201-274` opens web URLs with `urllib.request` for agents whose registry flag allows the web (`may_use_web`). It is not a provider client, so the S10 provider sweep (check 313) leaves it; under the local profile a review with a web-enabled agent would still reach the network (lane s10-fix2's report).
 - **Why it was left.** An operator choice (P12); recorded for S6 (P16).
 - **What would settle it.** The operator's choice: whether the local profile refuses the web, then a check either way.
+- **Closed (2026-11-02, D-180).** The operator chose that the local profile refuses the web (D-S23 item 1). Commit 0e2b387 (lane s11-noweb): `SearchRouter.search` refuses every caller, roster agents and system callers alike, under any profile but cloud, before the query masker and every engine; the refusal is logged, and the run summary and the console state the profile and whether web access was open; gate check 316 (`scripts/web_access_checks.py`). Left out: `scripts/corpus_validator.py`'s corpus download (`_attempt_download`, urlopen) is an operator corpus tool that no agent and no run calls, so it is outside the profile rule.
 
 ## 69. Check 313 copies the local remap of `pipeline.main` instead of calling it (found at loop S10 close, lane s10-fix2) (issue #127)
 
@@ -740,6 +741,36 @@ open-item sweep.
 - **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
 - **Why it was left.** `main` is pinned (IV.7), so the change needs an amendment of `main`; recorded for S6 (P16). The S10 round 2 adversarial checker adds: 313 builds the drafter with `pipeline._build_wrapper`, while `main` builds AMENDMENT_DRAFTER's wrapper directly from its own registry choice (`scripts/pipeline.py` about 4886 to 4901), so a change there would not reach 313 either.
 - **What would settle it.** The remap and the drafter's construction factored into functions when a change to `main` needs an amendment anyway, and 313 calling them.
+
+## 70. Gate check 256 fails now and then inside the full gate and passes alone (found at loop S11 close) (issue #128)
+
+- **What it is.** Gate check 256 fails now and then inside the full gate and passes alone.
+- **Evidence.** Check 256 (startup readiness is explicit and non-mutating) failed with "sensitive health imported a model probe while inactive" in the full gate at `f1e7e2f` (S7) and at `dca0f4a` (S11), passed alone each time and in every other full gate; nothing it covers changed in S7 or S11. Most likely a thread left by an earlier check makes a socket or process call inside 256's patched window (the same kind of leftover as INC-029's Tk abort).
+- **Why it was left.** It changes no product output and has not been reproduced alone (P16: recorded for S6).
+- **What would settle it.** The leftover thread found (a run with each check's thread list recorded before and after), the earlier check made to stop its threads, and 256 passing in five full gates in a row.
+
+## 71. Corrections to the format drafts held for the next preregistration version (found at loop S11 close) (issue #129)
+
+- **What it is.** Corrections to the format drafts held for the next preregistration version.
+- **Evidence.** Lane s11-readme's third pass verified 16 corrections to `docs/INPUT_FORMAT.md` (5) and `docs/OUTPUT_FORMAT.md` (11) against the code (private `analysis/lane_s11_readme_report.md`, "Format corrections held for the next version"): among them exit code 4's unreachable-Qwen cause, every exit 2 shown as `snapshot_conflict`, the full B1 and arm L reason lists, and that only `strategic_options` and `recommendation` call a model. S3a item 5 allows only additions the scorer does not read after C0's last run, so they were put back (D-172).
+- **Why it was left.** P9 reason d: until C0 run 5 the output format may change only by additions the scorer does not read (S3a item 5).
+- **What would settle it.** Applied in the format drafts together with preregistration version 3 and C0 run 5, if a new version is still allowed (D-S13 item 10, D-S18 item 5), before the formats freeze. If no new version is allowed, the formats freeze as they are and each correction is a post-freeze defect reported beside the S8 results (P9 reason d).
+
+## 72. Two figures on the results page differ from the S5 report (found at loop S11 close) (issue #130)
+
+- **What it is.** Two figures on the results page differ from the S5 report.
+- **Evidence.** `docs/RESULTS.md` gives the L11 ContractNLI first run as 8 of 34 where `docs/loop/stages/S05_REPORT.md` (about line 198) says 9 of 34, and CUAD B1 as "answered 40" where the S5 report says 41 of 41 parsed. Settling them needs the run's label files, which are not committed (lane s11-readme's third pass).
+- **Why it was left.** It changes no product behaviour (P16: recorded for S6).
+- **What would settle it.** Both figures re-derived from the runs' label files and the page or the report corrected.
+- **Closed (2026-11-02 01:40 +0300, D-177).** Both are consistent once each figure's reading is named: the L11 ContractNLI first run is 8 of 34 in benchmark mode and 9 of 34 under the earlier as-shipped reading (private `analysis/an_l11_report.md`, the table at about line 132); CUAD's B1 parsed all 41 replies with 1 undecided, so 40 answered (private `analysis/an_l10_report.md`, about line 266). The results page now names both readings.
+
+## 73. The README names the synthetic adapter's command differently from the code (found at loop S11 close) (issue #131)
+
+- **What it is.** The README names the synthetic adapter's command differently from the code.
+- **Evidence.** The README's adapter command list says `build` where `benchmark/adapters/synthetic/adapter.py` (about lines 555 to 568) takes `items` (lane s11-readme's report).
+- **Why it was left.** It changes no product behaviour (P16: recorded for S6).
+- **What would settle it.** The README naming the command the adapter takes.
+- **Closed (2026-11-02 01:40 +0300, D-177).** The external adapters do take `build`; only the synthetic suite's adapter takes `items`. The README now says so.
 
 ## 74. `scripts/claim_classifier.py` builds an OpenAI client that check 313 does not cover (found at the S10 outside audit) (issue #132)
 

@@ -5,8 +5,10 @@ For the lead session only, started by Seckin in the main checkout: if `docs/loop
 This file is the operating contract for an AI coding agent (Claude Code) working in
 this repository. It is terse and rule-shaped, not a tutorial (the newcomer guide is
 README.md). The founding specification is [genesis.md](genesis.md), Parts I to XXVII:
-read it before making any change. Shimmer is a standalone, domain-agnostic document
-processing swarm governed by an append-only constitution.
+read it before making any change. Shimmer is a standalone document processing swarm
+governed by an append-only constitution. It is domain-agnostic only in a narrow sense:
+no domain vocabulary appears in code (the vocabulary rule below), and its results differ
+widely between the fields it has run on.
 
 ## Hard rules
 
@@ -14,9 +16,14 @@ processing swarm governed by an append-only constitution.
 - LAW-IV (privacy) is never edited. It outranks LAW-0 (operator sovereignty) for
   sensitive-content handling, with no exceptions. A single leak is irreversible.
 - The constitution is append-only. The INFRA-029 amendment-guard tripwire
-  (`scripts/constitution_guard.py`) intercepts any attempt to modify or delete an
-  existing `amendments[]` entry or seed law from any code path; adding a new id is the
-  only allowed change. No-gap rule: an amendment id is never reused, never inserted
+  (`scripts/constitution_guard.py`, `check_constitution_change`, called by
+  `Constitution.save` and the snapshot load) refuses a write that would modify or delete an
+  existing `amendments[]` entry or seed law unless the operator approves it in an interactive
+  session through the operator handler (LAW-0); with no handler, outside interactive mode or
+  without an approval it is refused (the snapshot load keeps the live constitution), and each
+  such decision is logged to `durable/governance/constitution_guard_log.jsonl`. A new amendment
+  is accepted only as one verified append per write, `operator_approved`, an INFRA id being the
+  next one. No-gap rule: an amendment id is never reused, never inserted
   between existing ids, never renumbered. Every numbered DELTA is recorded in
   `config/constitution.json` `amendments[]`, the single canonical record; no DELTA
   lives only in prose.
@@ -177,8 +184,9 @@ processing swarm governed by an append-only constitution.
   by the sealer from the provider inventory it is given and the guard's formula; the type rule
   polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
   hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
-  exactly: the loop's budget rule (the 1-dollar margin, the 1.5 cap factor,
-  the 1.3 forecast factor, the type rule's factor 2) in `tools/loop_budget_guard.py`, the two
+  exactly: the loop's budget rule (the 1-dollar margin, `instance_reaper.MARGIN_USD`, read by
+  the guard; the 1.5 cap factor, the 1.3 forecast factor and the type rule's factor 2 in
+  `tools/loop_budget_guard.py`), the two
   reserves (`WORKLOAD_STOP_RESERVE_SECONDS` 900, `TERMINATION_RESERVE_SECONDS` 180) in the
   sealer, and the run's own hardware floors. No per-run cap is a code default:
   `cloud_run_common.budget_deadlines` and the general watchdog (`--soft-usd`, `--hard-usd`)
@@ -196,8 +204,8 @@ processing swarm governed by an append-only constitution.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
-- B1-ARM-A (loop S5): the sealer writes `arm` (B3 or B1) into every manifest; a manifest
-  without one is B3. A B1 manifest carries `b1` (its sealed checkpoints `{name, args}`, the
+- B1-ARM-A (loop S5): the sealer writes `arm` (B3, B1 or L) into every manifest; a manifest
+  without one is B3. A B1 manifest carries `b1` (its sealed passes `{name, checkpoint, args}`, the
   item ids of its one document, the `items.json` digest) and `items.json` as a support file;
   a sealed checkpoint carries only the options `benchmark/baselines/bare_model.py`'s parser
   takes (`ordinary_final_run.B1_SEALED_ARGS`, refused at sealing otherwise; that parser takes
@@ -331,7 +339,7 @@ processing swarm governed by an append-only constitution.
   a label no paired rule names recomputes nothing) and its units of measure
   (`SIGNATURE_INPUTS`), reused records and model asks are rebased onto the new unit id, the
   record is `audit/round_reuse.json`, and the round findings are posted on the run bus (backend
-  `paired`, model `python`, one envelope per round document); nothing downstream reads them yet.
+  `paired`, model `python`, one envelope per round document); nothing in the pipeline reads them yet (`tools/score_corpus.py` scores them).
   The case's typed records are computed in Python, with no model call (open item 35, INC-023:
   the one free-form PROCESSOR call over the whole case ran to its output cap on real execution):
   one position per declared (round, actor, issue), accepted only on exactly one accepted source,
@@ -376,8 +384,9 @@ processing swarm governed by an append-only constitution.
   `<Linux home>/shimmer-rehearsal`, read through its own shell at run time; it refuses an
   empty, root or relative home, and builds every `rm -rf` through one guard that refuses
   anything outside that folder (checked in `tools/ordinary_final_controller_checks.py`).
-  No run has used the asset copy; it is unauthorized until the
-  operator says otherwise, and it changes nothing when undeclared.
+  Every loop launch since L1 used the asset copy under the operator's D-S4 authorization
+  (MATCH; D-057, D-109); outside that it is unauthorized until the operator says otherwise,
+  and it changes nothing when undeclared.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
@@ -472,8 +481,9 @@ processing swarm governed by an append-only constitution.
   requires genesis Part I to mirror the guarded `seed_laws` (a missing seed law flags a
   tampered immutable core). The VERIFIED no-gap DELTA path is the SOLE route to change
   governed structure: `verify_amendment_append` (enforced inside `check_constitution_change`)
-  requires a new amendment to carry the next id (`prior_max + 1`, never reused, never a gap),
-  be `operator_approved`, and clear the signature scan. Never bypass this path to change
+  requires a new INFRA-NNN amendment to carry the next id (`prior_max + 1`, never reused, never a gap; ids other than INFRA-NNN, such as the runtime AMEND-NNN, are checked for operator approval and one per write only),
+  be `operator_approved`, and add one amendment per write (the signature scan is a separate
+  flag on operator and agent text, not part of this check). Never bypass this path to change
   governed structure.
 - The LAW-0 asymmetry is load-bearing, not a preference. The guard refuses AGENTS (they can
   never amend governed structure; a signature-carrying agent DELTA is refused and routed to
@@ -515,6 +525,19 @@ processing swarm governed by an append-only constitution.
   `PRODUCTION_AGENTS_CORPUS_LEVEL` and the registry; the loop (header unchanged) skips it,
   records `not_called` with state `switched_off`, and labels results from the dispatched list.
   The setting is saved in `audit/agent_switches.json` and the run summary. Check 277.
+- NO-WEB-LOCAL-A (loop S11, D-S23 item 1, open item 68, D-180): under the local backend profile
+  no agent reaches the web, whatever its registry flag (`may_use_web`) says; web access opens
+  only under the cloud profile. The one place web access is opened is
+  `search_router.SearchRouter.search`. Before the query masker and before every engine (api
+  plan, direct fetch, ddgs, the DDG scrape, Brave), it refuses for roster agents and system
+  callers alike when `search_router.web_access_open()` is false. That function is true only for
+  exactly `cloud` in `SHIMMER_BACKEND_PROFILE` (unset means cloud; empty or unknown stays
+  closed). The refusal is logged `web_access_refused backend_profile=<p> agent=<a>` and raised
+  as a PermissionError. `_run_summary.md` states the backend profile and whether web access was
+  open from the same function (`write_deliverables_run_summary`, amended in both pinned
+  baselines), and the console's startup backend line says whether it is closed or open (read
+  from the profile `/health` reports). Outside the rule: `scripts/corpus_validator.py`'s corpus
+  download, an operator tool no agent and no run calls. Check 316 (`scripts/web_access_checks.py`).
 - REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
   through `reply_records.write`, inside the backend function that holds the raw text
   (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in
@@ -744,7 +767,8 @@ processing swarm governed by an append-only constitution.
   network flow without explicit operator activation; while the layer is inactive the run
   hard-gates and refuses to start unless the operator passes
   `--sensitivity-layer-inactive-override` (logged). `may_use_web` is an enforced control:
-  an agent reaches the web only if its registry flag permits it.
+  an agent reaches the web only if its registry flag permits it, and only under the cloud
+  backend profile (NO-WEB-LOCAL-A).
 
 ## Three-input-type model (genesis Part XVIII)
 
@@ -804,7 +828,7 @@ processing swarm governed by an append-only constitution.
   every sample so the peaks survive a kill.
 - `Dockerfile` / `compose.yaml` / `tools/entrypoint.sh`: the container. The image copies
   source (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
-  files, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
+  files, `VERSION`, `docs/RUNTIME_REFERENCE.md`, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
   read from (`tuning/producer_v3/evaluation_protocol.json`,
   `tuning/auditor_canonical_execution/evaluation_protocol.json`), the Producer DEV rows
   and rendered prompts check 263 reproduces (`tuning/producer_v3/dataset.json`,
@@ -956,7 +980,15 @@ processing swarm governed by an append-only constitution.
   `git worktree list` shows its branch, and a role session or agent never (no offline record),
   so a row naming only those is not exempt. One count line; exit 1 on any failure. Run it whenever the ledger
   changes, in every checker round, and before every merge, tag and push. Check 296 runs its
-  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`).
+  proofs on fixtures only (`tools/loop/request_ledger_check_checks.py`). Its sibling
+  `tools/loop/issue_deferral_check.py` (D-S24 item 4; `--issues` is gh's open-issue JSON, never
+  fetched) fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no
+  stage milestone S05 to S14, a `honesty-or-release` issue after v1 (S06, S08, S09, S12, S14, from
+  D-S18 item 3) labelled `loop-deferred`, a SCHEDULED or DEFERRED row naming no `#nnn`, and,
+  from D-179 on, a decision's `**Moves.**`, `**Defers.**`, `**Drops.**` or `**Skips.**` marker
+  line naming no issue (a declared marker, not a word list, under WORDS-A; earlier decisions
+  are grandfathered and counted); check 315 runs its proofs on fixtures, and it runs at every
+  stage gate beside this one.
 - EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
   checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
   contract plus the frozen semantic policy as the system turn, read from
@@ -1078,13 +1110,16 @@ processing swarm governed by an append-only constitution.
   (`provisions_log.jsonl`) with supersession decided at the query layer, and supersede built
   but delete deliberately not. `tools/archive_ontology_stores.py` archives and empties the
   stores outside the repository.
-  THREE NODE TYPES share one scope and each has its own reader: `Provision` (capture),
-  `Relation` (job 2) and `Resolution` (job 3). `ontology_reader.provenance_summary` tests an
+  FOUR NODE TYPES share one scope and each has its own reader: `Provision` (capture),
+  `Relation` (job 2), `Resolution` (job 3) and `ExternalRuleResolution` (external-rule
+  answers, `scripts/external_rules.py`). `ontology_reader.provenance_summary` tests an
   ALLOWLIST (`node == "Provision"`, a record with no node being one), never a list of types
   to exclude: both later node types leaked into the provision count when they were added, and
-  an allowlist is what stops a fourth from doing it again.
-  `scripts/ontology_reader.py` is the store's only reader (`GET /ontology`,
-  `/ontology/provisions/{id}`, the console's Agents page, and its own CLI inspector). It
+  an allowlist is what kept the fourth out of it.
+  `scripts/ontology_reader.py` reads provisions and relations (`GET /ontology`,
+  `/ontology/provisions/{id}`, `/ontology/relations`, the console's Agents page, and its own
+  CLI inspector); `ontology_conflicts` and `external_rules` read their own resolution nodes
+  through the same scoped storage layer (`GET /ontology/conflicts`, the external-rule answers). It
   carries identifiers and provenance ONLY, never a provision's text.
   `scripts/relation_extract.py` finds relations between units; EVERY pattern lives in
   `config/relation_patterns.json` and none in code (S5), the embedding ranker is INJECTED
@@ -1094,7 +1129,8 @@ processing swarm governed by an append-only constitution.
   ontology under a stable conflict id so the same conflict is never put to the operator
   twice, "keep refusing" is a real third answer, an unrecognised answer is refused rather
   than stored, and the override rate carries its own not-statistically-meaningful caveat
-  inside the return value. NOTHING in a review reads a relation or a conflict today.
+  inside the return value. NOTHING in a review reads a relation or a store-versus-rule conflict today; a review
+  reads stored external-rule answers only when `input/external_rules/` exists.
   `scripts/ontology_candidates.py` (job 4) proposes candidate provision pairs from the
   persisted encoder: a forward pass only, it never trains and never writes state. THE GNN
   DOES NOT RESET ITS WEIGHTS EACH RUN (a belief stated for weeks and corrected 2026-09-11):

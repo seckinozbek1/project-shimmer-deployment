@@ -297,3 +297,5 @@ Counted in the git index of S1 commit C5 (after C1 to C4 were merged; `loop/s01`
 
 The difference is S1 Part 3 (commit C2): the four live controller tools no longer hard-code the credential path (four F2 hits) and the rehearsal no longer hard-codes its Linux folder (one F4 hit). Every other file is unchanged; the history rewrite (S13) handles the rest.
 
+
+> Note (2026-11-01, loop S11): recounted over every tracked file at the S11 documents lane tip, with one union pattern for the forms (counts only): 181 files, 15433 hits, the same as at C5. Twelve of the class (b) tools are not under `tools/` any more: open item 20 moved the frozen launchers and their companion files to `archive/frozen_launchers/` (16 files there carry a form), so the paths in the class (b) table name where they were. The history rewrite (S13) has not run yet.

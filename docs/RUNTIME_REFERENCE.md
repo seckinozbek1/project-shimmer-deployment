@@ -399,8 +399,9 @@ resource sampling. CLI flags select backend, paired/wide, dense/sparse, task,
 privacy overrides, objectives, output directory and operator channel. Raw CLI
 requires explicit governance choices; the starter's Normal choice is not a global
 waiver. `scripts/harness/run_agent.py` tests one chosen unit/rule/agent, not an
-entire cluster or full review. Legacy `shimmer.bat` / `shimmer.sh` perform setup
-and preflight work and are not the normal desktop start path.
+entire cluster or full review. `shimmer.bat` and `shimmer.sh` set up the
+environment, run the readiness check and show a menu (review or draft, chat,
+server, gate, import); the desktop start path is `start_shimmer.bat`.
 
 `shimmer.bat` and `shimmer.sh` install `requirements.txt` on every start. Set
 `SHIMMER_SKIP_INSTALL=1` (read by these two launchers only, so it has no row in the variables
@@ -409,7 +410,8 @@ the machine is offline; the readiness preflight still reports anything missing. 
 when their input ends, so they can be driven from a file (`shimmer.bat < answers.txt`); on
 Windows feed a file, not a pipe, because cmd keeps only the first line of piped input.
 `shimmer.sh` runs under Git Bash on Windows and finds a `.venv/Scripts/` environment there. The
-menu banner names both routes that answer without a token, `/health` and `/console`.
+banner each launcher prints when it starts the server (menu option [3]) names both routes
+that answer without a token, `/health` and `/console` (check 309).
 
 Ordinary final cloud entry points (operator tools, not server routes; full flag
 tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)):
@@ -494,9 +496,12 @@ that every source change must redownload models. `compose.yaml` uses its named
 image and does not build it. `tools/entrypoint.sh` accepts `serve`, `run`, `verify`.
 Mounted input/config/durable/output states are operator data, not image content.
 
-The image ships scripts/config/tools/corpus ingestion, root documentation, this
-runtime reference and three declared synthetic fixtures. It omits operator input, durable/ontology
-stores, runs, answer keys, full benchmark corpora and Windows launcher files. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
+The image ships `scripts/`, `config/`, `tools/`, `corpus_ingest/`, `README.md`, `CLAUDE.md`,
+`genesis.md`, `requirements.txt`, this runtime reference, the two frozen evaluation protocols,
+the Producer DEV rows and three declared synthetic fixtures. It omits operator input,
+durable/ontology stores, runs, answer keys, full benchmark corpora and the root launchers
+(`shimmer.bat`, `shimmer.sh`, `start_shimmer.bat`); the Windows helpers under `tools/` ship
+with `tools/` but are not used there. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, check 315 on fixtures, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
 An unmounted image gate therefore has declared missing-input failures. Source
 parity proves shipped bytes, not end-to-end container review quality.
 

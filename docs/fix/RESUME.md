@@ -1,3 +1,5 @@
+> Note (2026-11-01, loop S11): the handoffs below are dated records, the newest from mid-September 2026 (last changed on 17 September); "current" in their headings means the day each was written. The current state is in `CHANGELOG.md` (version `0.1.0.dev7`), `README.md`, `docs/RESULTS.md` and `docs/fix/OPEN_ITEMS.md`.
+
 # Current handoff: first real tuning experiment completed
 
 `FIRST_TUNING_EXPERIMENT_COMPLETED`

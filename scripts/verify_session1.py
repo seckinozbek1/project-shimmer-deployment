@@ -498,8 +498,13 @@ def check_15_search():
         except (json.JSONDecodeError, KeyError, ValueError):
             pass  # fall through and re-run live
 
+    import os as _os
+    from unittest.mock import patch as _patch
     router = SearchRouter.open(ROOT)
-    result = router.search(query, claim_type="institutional")
+    # Web access opens only under the cloud profile (D-S23 item 1, check 316); this live
+    # smoke test is of the cloud path, whatever profile the gate's shell carries.
+    with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+        result = router.search(query, claim_type="institutional")
     if result.strategy_used not in {"ddg", "brave", "api", "direct", "exhausted"}:
         return _fail(f"strategy: {result.strategy_used!r}")
     if result.verdict not in {"FOUND", "UNVERIFIABLE"}:
@@ -2409,13 +2414,18 @@ def check_69_chokepoint_query_masked():
     masker = S.make_query_masker(sensitive=True, operator_rules=rules, project_root=str(d),
                                  run_id="R", ledger_path=str(d / "l.jsonl"))
     saved = S.LAYER_ACTIVE
+    import os as _os
+    from unittest.mock import patch as _patch
     try:
         S.LAYER_ACTIVE = True
         router = SR.SearchRouter(project_root=d, keys={}, registry={}, query_masker=masker)
         seen = {}
         router._ddg_search = lambda q, max_results=5: (seen.update(ddg=q) or ([], ""))
         router._brave_search = lambda q: (seen.update(brave=q) or ([], ""))
-        router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
+        # Web egress opens only under the cloud profile (D-S23 item 1, check 316), so the
+        # masker is exercised on the one profile where a query can leave the machine.
+        with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+            router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
         recorded = seen.get("ddg", "")
         if "12-345-6789" in recorded or "[REDACTED" not in recorded:
             return _fail(f"query reached the engine unmasked: {recorded!r}")
@@ -25341,6 +25351,24 @@ def check_296_request_ledger_check_catches_dropped_requests():
     return check()
 
 
+def check_315_issue_deferral_check_catches_unowned_deferrals():
+    """Loop D-S24 item 4 (the stage gate of D-S16 item 2, extended): the sibling
+    tools/loop/issue_deferral_check.py reads the open issues from gh's JSON (never fetched),
+    the private request ledger through request_ledger_check's parser and DECISIONS.md, and
+    fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no stage
+    milestone (S05 to S14), a `honesty-or-release` issue in a milestone after v1 (D-S18 item
+    3) labelled `loop-deferred`, a SCHEDULED or DEFERRED ledger row naming no issue, and, from
+    D-179 on, a decision's Moves, Defers, Drops or Skips marker line naming no issue (earlier
+    decisions grandfathered, counted). Runs tools/loop/issue_deferral_check_checks.py on
+    fixtures only (nothing private is read, nothing fetched), then neutralises each of the
+    four rules in turn, requires its proof to fail, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from issue_deferral_check_checks import check
+    return check()
+
+
 def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
     PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
@@ -25665,6 +25693,122 @@ def check_313_no_local_profile_path_reaches_a_cloud_client():
     client), fail, restore, pass. No network, no weights, temporary folders only."""
     from local_profile_cloud_checks import check
     return check()
+
+
+_CITATION_VERSION_LINE = re.compile(r'^version:\s*(?P<q>["\']?)(?P<v>[^"\'\s#]+)(?P=q)\s*(?:#.*)?$')
+
+
+def _citation_version_mismatch(root):
+    """None when `CITATION.cff` states exactly one top-level `version` equal to the content of
+    `VERSION`; otherwise the reason. The two files are read from `root`; a missing one is the
+    caller's to skip, never a pass."""
+    root = Path(root)
+    want = (root / "VERSION").read_text(encoding="utf-8").strip()
+    found = [m.group("v") for m in
+             (_CITATION_VERSION_LINE.match(line) for line in
+              (root / "CITATION.cff").read_text(encoding="utf-8").splitlines()) if m]
+    if len(found) != 1:
+        return f"CITATION.cff states {len(found)} top-level version lines, expected exactly 1"
+    if found[0] != want:
+        return f"CITATION.cff version {found[0]!r} differs from VERSION {want!r}"
+    return None
+
+
+def _citation_verdict(root):
+    """The verdict of check 314 on the tree at `root`: ("pass", None), ("fail", reason) or
+    ("skip", reason). `VERSION` ships in the source tree and in the container image, so its
+    absence fails everywhere. `CITATION.cff` ships in the source tree only, so its absence is
+    skipped only in an image-shaped tree, one with no `.git` at `root` (a folder in a clone, a
+    file in a git worktree; the image's build context excludes `.git/`); in a source checkout
+    its absence fails."""
+    root = Path(root)
+    if not (root / "VERSION").is_file():
+        return "fail", "VERSION is absent (the source tree and the container image both ship it)"
+    if not (root / "CITATION.cff").is_file():
+        if (root / ".git").exists():
+            return "fail", "CITATION.cff is absent from a source checkout (.git is present)"
+        return "skip", ("CITATION.cff absent and no .git here: the container image, which ships "
+                        "VERSION and not CITATION.cff")
+    problem = _citation_version_mismatch(root)
+    return ("fail", problem) if problem else ("pass", None)
+
+
+def check_314_citation_version_equals_version_file():
+    """Loop S11 item 6, DS11-2 option (ii): `CITATION.cff` cannot read a file, so its `version`
+    is compared with `VERSION`, the single version source. Every proof runs `_citation_verdict`,
+    the same function that judges the real tree, on temporary layouts, never on the real tree:
+    neutralise (CITATION.cff given a different version), fail; a second `version` line, fail;
+    a source-shaped layout (`.git` present) with CITATION.cff deleted, fail; restore, pass; an
+    image-shaped layout (VERSION only, no `.git`), skip; a layout without VERSION, fail. Then
+    the real tree: it SKIPS only where CITATION.cff is absent and no `.git` is at ROOT (the
+    container image), and FAILS where CITATION.cff is absent from a source checkout."""
+    import shutil
+    import tempfile
+    if not (ROOT / "VERSION").is_file():
+        return _fail("VERSION is absent (the source tree and the container image both ship it)")
+    want = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    if (ROOT / "CITATION.cff").is_file():
+        real = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    else:
+        # The image has no CITATION.cff; the proofs run on a minimal one of the same shape.
+        real = f'cff-version: 1.2.0\ntitle: "proof"\nversion: "{want}"\n'
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "source"
+        (src / ".git").mkdir(parents=True)
+        shutil.copyfile(ROOT / "VERSION", src / "VERSION")
+        cff = src / "CITATION.cff"
+        base = re.sub(r'(?m)^version:.*$', lambda _m: f'version: "{want}"', real)
+        neutralised = re.sub(r'(?m)^version:.*$', 'version: "0.0.0.neutralised"', real)
+        if neutralised == real:
+            raise FixtureNotAsIntended("CITATION.cff has no top-level version line to neutralise")
+        cff.write_text(neutralised, encoding="utf-8")
+        if _citation_verdict(src)[0] != "fail":
+            return _fail("a CITATION.cff version differing from VERSION was accepted")
+        cff.write_text(base + f'version: "{want}"\n', encoding="utf-8")
+        if _citation_verdict(src)[0] != "fail":
+            return _fail("a CITATION.cff with two version lines was accepted")
+        cff.unlink()
+        if _citation_verdict(src)[0] != "fail":
+            return _fail(f"a source checkout without CITATION.cff did not fail: "
+                         f"{_citation_verdict(src)}")
+        cff.write_text(base, encoding="utf-8")
+        if _citation_verdict(src) != ("pass", None):
+            return _fail(f"the restored copy did not pass: {_citation_verdict(src)}")
+        image = Path(tmp) / "image"
+        image.mkdir()
+        shutil.copyfile(ROOT / "VERSION", image / "VERSION")
+        if _citation_verdict(image)[0] != "skip":
+            return _fail(f"an image-shaped tree without CITATION.cff did not skip: "
+                         f"{_citation_verdict(image)}")
+        (image / "VERSION").unlink()
+        if _citation_verdict(image)[0] != "fail":
+            return _fail(f"a tree without VERSION did not fail: {_citation_verdict(image)}")
+    verdict, reason = _citation_verdict(ROOT)
+    if verdict == "skip":
+        return _skip(reason)
+    if verdict == "fail":
+        return _fail(reason)
+    return _ok(f"CITATION.cff version equals VERSION ({want}); on temporary layouts a different "
+               f"version, a second version line and a source checkout without CITATION.cff each "
+               f"fail, the restored copy passes, an image-shaped tree skips")
+
+
+def check_316_no_web_under_the_local_profile():
+    """Loop S11, D-S23 item 1 (open item 68): under the local backend profile no agent reaches
+    the web, whatever its registry flag says; web access opens only under the cloud profile.
+    scripts/web_access_checks.py runs SearchRouter.search, the one place web access is opened,
+    for a may_use_web agent and a system caller with urlopen, socket.create_connection and
+    socket.connect recording and refusing (the ddgs package a recorder): under the local
+    profile, and under an empty one, no non-local connection may be attempted and both callers
+    are refused with a web_access_refused event; under the cloud profile every engine is tried
+    (and refused by the stand-ins). The run summary's own writer states the profile and whether
+    web access was open under both. No function in search_router.py but search() and the egress
+    methods reaches an engine or urlopen (a planted second caller is flagged). Neutralise (the
+    refusal removed from search(); the rule opened for every profile), fail, restore, pass. No
+    network, no weights, temporary folders only."""
+    from web_access_checks import check
+    return check()
+
 
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
@@ -26094,6 +26238,12 @@ CHECKS = [
      check_312_draft_memo_uses_the_drafters_backend),
     ("313 no local-profile path constructs a cloud provider client",
      check_313_no_local_profile_path_reaches_a_cloud_client),
+    ("314 CITATION.cff version equals VERSION",
+     check_314_citation_version_equals_version_file),
+    ("315 the issue deferral check fails on an unplanned issue, a loop-deferred honesty issue after v1, or a deferral naming no issue (D-S24)",
+     check_315_issue_deferral_check_catches_unowned_deferrals),
+    ("316 no agent reaches the web under the local profile",
+     check_316_no_web_under_the_local_profile),
 ]
 
 
