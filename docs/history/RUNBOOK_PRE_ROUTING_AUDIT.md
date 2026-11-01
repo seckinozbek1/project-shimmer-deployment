@@ -1,5 +1,7 @@
 # Historical runbook at 1314475
 
+> Dated note (2026-11-02, loop S11): commit 1314475 is of 13 September 2026. Where the text below differs from the code today: the runtime is Python 3.12, not 3.9 (`requirements.txt`, `tools/cloud_run/runtime.json`); exits 8 and 9 are governance outcomes shown as `refused_multi_round` and `refused_inst_finder_unratified`, not `failed`; and no pre-commit hook ships (there is no `.githooks/` folder, at that commit or now), so run `scripts/guard_secrets.py --staged` by hand.
+
 Preserved verbatim below. Superseded by the [current runbook](../RUNBOOK.md); relative paths refer to the repository root.
 
 ---

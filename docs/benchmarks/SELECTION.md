@@ -351,3 +351,7 @@ Development, counts only. Two of the five chosen benchmarks left the S8 priority
 ### Development note, 2026-10-29 (S5 checker round 1): what "209 of 255" counts
 
 Development, counts only. Two figures that read alike are not the same kind. The number of FinDVer development filings the section 5.3 cut shortens, 209 of 255, is a count: the real counter (the main reading agent's pinned tokenizer, a 32,768-token context and a 2,048-token output allowance) was run on every development filing (private run summary `cut_summary.json`). The number of filings B3 would then run over its context on, and so the number section 5.3 would exclude from B3, is an estimate from one filing, not a count: only `e61777d6327c` was run under B3 at full length (L3e and L4b, three over-context calls each), and the estimate assumes every cut filing behaves the same way, because whole-document agents add their own text to a document already cut to about 30,500 tokens. D-078 relies on that estimate for FinDVer leaving the S8 priority list; D-086 records the label. The text above is kept as it was written.
+
+### Dated note, 2026-11-02 (loop S11): FinDVer kept in the evaluation
+
+The note of 2026-10-29 above is kept as written. On 30 October 2026 the operator's decision D-S13 item 7 overruled D-078 and kept FinDVer in the evaluation, with a revised B1 prompt and a segmented B3 reading (`docs/benchmarks/FINDVER_B1_REVISION.md`, D-117); CUAD returns as a claim check, a secondary arm (D-113). Their sizes come with preregistration version 3, which is drafted and not frozen (D-118).

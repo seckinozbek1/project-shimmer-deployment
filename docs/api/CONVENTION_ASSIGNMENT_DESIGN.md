@@ -1,5 +1,7 @@
 # Convention assignment design (proposal, not built)
 
+> Dated note (2026-11-02, loop S11): this proposal has since been built, and the text below is kept as it was written. `scripts/convention_assignment.py` (`assign_conventions`) assigns each rule to agents by the `subjects` each agent declares in `config/agent_registry.json`; the route `/runs/{run_id}/convention-assignment` serves it; gate check 206 holds it. The paired judging agent is chosen per rule from that assignment (`pipeline._paired_judging_agent`), no longer pinned to the first convention-review agent. The English keyword table `_CATEGORY_KEYWORDS` is deleted (CLASSIFIER-B; an id-less heading keeps its own first word); a heading's bracket tags now carry the severity and subjects; prose before the first heading no longer becomes rules. Check 195's known unresolved parts are now `ontology` only, and the route table check 167 reads is in `docs/RUNTIME_REFERENCE.md`. Line numbers below refer to the code when this was written. See also the addendum at the end.
+
 This document is a proposal. Nothing in it is built. It exists because W2 of the night chain
 (`docs/fix/STEP_W2_REPORT.md`) stopped at its own premise check: no agent declares what it
 handles in a form an assignment could be derived from, no convention declares what it is

@@ -287,3 +287,10 @@ No rule of the frozen text changes. The S8 report adds, beside the preregistered
 - **What it says**: the span-part threshold that depends on A (1.15 USD a document) is a section 2 change, not section 12's; the single-claim analysis (intervals only) is a section 7 change, not section 4's. S8c packs sessions as version 2's sizing computed, one benchmark per session, in priority order (D-108).
 - **What it changes**: nothing in the frozen text.
 - **Holdout result seen**: no.
+
+### Note of 2026-11-02 (loop S11): code changes after DEV-021 not yet entered
+
+- **Qualifies**: this file's purpose line, which says every change to the code a benchmark result depends on is recorded here.
+- **What it says**: after DEV-021 the benchmark code changed with no entry here yet: the B3 segment reading of long filings (`benchmark/adapters/common/segments.py`, FinDVer's `B3_SEGMENT_TOKENS`), the two scoring modes (`--scoring benchmark|as_shipped`, D-113), the `cuad_claim` adapter, and FinDVer's B1 prompt, revision 5, in `benchmark/baselines/b1_prompt.json` (D-117; version 2's prompt is `benchmark/baselines/b1_prompt_v2.json`). Their entry, DEV-022, is drafted with preregistration version 3 (D-126, lane `lane/s05-prereg3`, `da569f0`) and is not in this file until version 3 is merged.
+- **What it changes**: nothing in the frozen text.
+- **Holdout result seen**: no.

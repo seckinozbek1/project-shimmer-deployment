@@ -184,8 +184,9 @@ widely between the fields it has run on.
   by the sealer from the provider inventory it is given and the guard's formula; the type rule
   polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
   hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
-  exactly: the loop's budget rule (the 1-dollar margin, the 1.5 cap factor,
-  the 1.3 forecast factor, the type rule's factor 2) in `tools/loop_budget_guard.py`, the two
+  exactly: the loop's budget rule (the 1-dollar margin, `instance_reaper.MARGIN_USD`, read by
+  the guard; the 1.5 cap factor, the 1.3 forecast factor and the type rule's factor 2 in
+  `tools/loop_budget_guard.py`), the two
   reserves (`WORKLOAD_STOP_RESERVE_SECONDS` 900, `TERMINATION_RESERVE_SECONDS` 180) in the
   sealer, and the run's own hardware floors. No per-run cap is a code default:
   `cloud_run_common.budget_deadlines` and the general watchdog (`--soft-usd`, `--hard-usd`)
@@ -203,8 +204,8 @@ widely between the fields it has run on.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
-- B1-ARM-A (loop S5): the sealer writes `arm` (B3 or B1) into every manifest; a manifest
-  without one is B3. A B1 manifest carries `b1` (its sealed checkpoints `{name, args}`, the
+- B1-ARM-A (loop S5): the sealer writes `arm` (B3, B1 or L) into every manifest; a manifest
+  without one is B3. A B1 manifest carries `b1` (its sealed passes `{name, checkpoint, args}`, the
   item ids of its one document, the `items.json` digest) and `items.json` as a support file;
   a sealed checkpoint carries only the options `benchmark/baselines/bare_model.py`'s parser
   takes (`ordinary_final_run.B1_SEALED_ARGS`, refused at sealing otherwise; that parser takes
@@ -338,7 +339,7 @@ widely between the fields it has run on.
   a label no paired rule names recomputes nothing) and its units of measure
   (`SIGNATURE_INPUTS`), reused records and model asks are rebased onto the new unit id, the
   record is `audit/round_reuse.json`, and the round findings are posted on the run bus (backend
-  `paired`, model `python`, one envelope per round document); nothing downstream reads them yet.
+  `paired`, model `python`, one envelope per round document); nothing in the pipeline reads them yet (`tools/score_corpus.py` scores them).
   The case's typed records are computed in Python, with no model call (open item 35, INC-023:
   the one free-form PROCESSOR call over the whole case ran to its output cap on real execution):
   one position per declared (round, actor, issue), accepted only on exactly one accepted source,
@@ -481,7 +482,8 @@ widely between the fields it has run on.
   tampered immutable core). The VERIFIED no-gap DELTA path is the SOLE route to change
   governed structure: `verify_amendment_append` (enforced inside `check_constitution_change`)
   requires a new amendment to carry the next id (`prior_max + 1`, never reused, never a gap),
-  be `operator_approved`, and clear the signature scan. Never bypass this path to change
+  be `operator_approved`, and add one amendment per write (the signature scan is a separate
+  flag on operator and agent text, not part of this check). Never bypass this path to change
   governed structure.
 - The LAW-0 asymmetry is load-bearing, not a preference. The guard refuses AGENTS (they can
   never amend governed structure; a signature-carrying agent DELTA is refused and routed to
@@ -812,7 +814,7 @@ widely between the fields it has run on.
   every sample so the peaks survive a kill.
 - `Dockerfile` / `compose.yaml` / `tools/entrypoint.sh`: the container. The image copies
   source (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
-  files, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
+  files, `VERSION`, `docs/RUNTIME_REFERENCE.md`, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
   read from (`tuning/producer_v3/evaluation_protocol.json`,
   `tuning/auditor_canonical_execution/evaluation_protocol.json`), the Producer DEV rows
   and rendered prompts check 263 reproduces (`tuning/producer_v3/dataset.json`,
@@ -1086,13 +1088,16 @@ widely between the fields it has run on.
   (`provisions_log.jsonl`) with supersession decided at the query layer, and supersede built
   but delete deliberately not. `tools/archive_ontology_stores.py` archives and empties the
   stores outside the repository.
-  THREE NODE TYPES share one scope and each has its own reader: `Provision` (capture),
-  `Relation` (job 2) and `Resolution` (job 3). `ontology_reader.provenance_summary` tests an
+  FOUR NODE TYPES share one scope and each has its own reader: `Provision` (capture),
+  `Relation` (job 2), `Resolution` (job 3) and `ExternalRuleResolution` (external-rule
+  answers, `scripts/external_rules.py`). `ontology_reader.provenance_summary` tests an
   ALLOWLIST (`node == "Provision"`, a record with no node being one), never a list of types
   to exclude: both later node types leaked into the provision count when they were added, and
-  an allowlist is what stops a fourth from doing it again.
-  `scripts/ontology_reader.py` is the store's only reader (`GET /ontology`,
-  `/ontology/provisions/{id}`, the console's Agents page, and its own CLI inspector). It
+  an allowlist is what kept the fourth out of it.
+  `scripts/ontology_reader.py` reads provisions and relations (`GET /ontology`,
+  `/ontology/provisions/{id}`, `/ontology/relations`, the console's Agents page, and its own
+  CLI inspector); `ontology_conflicts` and `external_rules` read their own resolution nodes
+  through the same scoped storage layer (`GET /ontology/conflicts`, the external-rule answers). It
   carries identifiers and provenance ONLY, never a provision's text.
   `scripts/relation_extract.py` finds relations between units; EVERY pattern lives in
   `config/relation_patterns.json` and none in code (S5), the embedding ranker is INJECTED
@@ -1102,7 +1107,8 @@ widely between the fields it has run on.
   ontology under a stable conflict id so the same conflict is never put to the operator
   twice, "keep refusing" is a real third answer, an unrecognised answer is refused rather
   than stored, and the override rate carries its own not-statistically-meaningful caveat
-  inside the return value. NOTHING in a review reads a relation or a conflict today.
+  inside the return value. NOTHING in a review reads a relation or a store-versus-rule conflict today; a review
+  reads stored external-rule answers only when `input/external_rules/` exists.
   `scripts/ontology_candidates.py` (job 4) proposes candidate provision pairs from the
   persisted encoder: a forward pass only, it never trains and never writes state. THE GNN
   DOES NOT RESET ITS WEIGHTS EACH RUN (a belief stated for weeks and corrected 2026-09-11):
