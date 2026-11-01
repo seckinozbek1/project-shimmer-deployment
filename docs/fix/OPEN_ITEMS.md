@@ -740,3 +740,17 @@ open-item sweep.
 - **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
 - **Why it was left.** `main` is pinned (IV.7), so the change needs an amendment of `main`; recorded for S6 (P16). The S10 round 2 adversarial checker adds: 313 builds the drafter with `pipeline._build_wrapper`, while `main` builds AMENDMENT_DRAFTER's wrapper directly from its own registry choice (`scripts/pipeline.py` about 4886 to 4901), so a change there would not reach 313 either.
 - **What would settle it.** The remap and the drafter's construction factored into functions when a change to `main` needs an amendment anyway, and 313 calling them.
+
+## 70. Gate check 256 fails now and then inside the full gate and passes alone (found at loop S11 close) (issue #128)
+
+- **What it is.** Gate check 256 fails now and then inside the full gate and passes alone.
+- **Evidence.** Check 256 (startup readiness is explicit and non-mutating) failed with "sensitive health imported a model probe while inactive" in the full gate at `f1e7e2f` (S7) and at `dca0f4a` (S11), passed alone each time and in every other full gate; nothing it covers changed in S7 or S11. Most likely a thread left by an earlier check makes a socket or process call inside 256's patched window (the same kind of leftover as INC-029's Tk abort).
+- **Why it was left.** It changes no product output and has not been reproduced alone (P16: recorded for S6).
+- **What would settle it.** The leftover thread found (a run with each check's thread list recorded before and after), the earlier check made to stop its threads, and 256 passing in five full gates in a row.
+
+## 71. Corrections to the format drafts held for the next preregistration version (found at loop S11 close) (issue #129)
+
+- **What it is.** Corrections to the format drafts held for the next preregistration version.
+- **Evidence.** Lane s11-readme's third pass verified 16 corrections to `docs/INPUT_FORMAT.md` (5) and `docs/OUTPUT_FORMAT.md` (11) against the code (private `analysis/lane_s11_readme_report.md`, "Format corrections held for the next version"): among them exit code 4's unreachable-Qwen cause, every exit 2 shown as `snapshot_conflict`, the full B1 and arm L reason lists, and that only `strategic_options` and `recommendation` call a model. S3a item 5 allows only additions the scorer does not read after C0's last run, so they were put back (D-172).
+- **Why it was left.** P9 reason d: until C0 run 5 the output format may change only by additions the scorer does not read (S3a item 5).
+- **What would settle it.** Applied in the format drafts together with preregistration version 3 and C0 run 5 (D-S18 item 5), before the formats freeze (P9 reason d until then).
