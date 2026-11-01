@@ -419,7 +419,7 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-149 (D-089 onward after the reopening):
+`docs/loop/DECISIONS.md`, D-055 to D-153 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -516,6 +516,10 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 - D-147: S7's final pass during the S5 audit wait: D-S13 items 6a and 6e done as far as a script can; 6d gets a third sealed arm
 - D-148: Arm L built for D-S13 item 6d (launch L14)
 - D-149: The outside audit of S5: 6 found, 4 fixed by the loop, 2 the operator's; the merge proceeds
+- D-150: D-S19 applied: the loop may apply INFRA-045 from PATCH_1 (after v1, as a lane); 12.3 USD moves from the parallel track to the waiting moved steps
+- D-151: The merge gate on the loop branch: equal to the baseline; every side gate passes in the main checkout
+- D-152: S5 tagged; the push waits for push rights the session no longer has
+- D-153: The S5 stage gate as it was run, corrections after the S5 close, and the third re-run re-forecast
 
 ## Bound controller files and pinned functions changed in S5
 
@@ -539,7 +543,7 @@ Every bundle sealed before each of these merges refuses with `Controller source 
 
 ## Gate
 
-**At the reopened close (D-144).** The full main gate on the lead worktree at `5c3c129` (code as at `8548995`): PASS 266, WARN 1, SKIP 2, FAIL or ERROR 29 of 298, the non-pass set equal to the first merge's gate apart from check 31, which a worktree fails for the same reason as check 01 (no `input/` folders); checks 285 to 297 pass. The side gates on the same commit: execution topology, report recommendations, localization and multi-round OK, each ending in the worktree's check 01; final integration 156 tests with the 3 adapter errors; cloud run checks the two known worktree failures; controller checks OK. Logs: private `gate_logs/s05_close/`. Thirteen lane merges after the first close were gated by chunks of the checks they touched, recorded in their decisions (D-098 to D-145); bundles sealed on those commits before this full gate are a recorded departure (D-139 (a)). The merge gate in the main checkout runs at the second merge.
+**At the reopened close (D-144).** The full main gate on the lead worktree at `5c3c129` (code as at `8548995`): PASS 266, WARN 1, SKIP 2, FAIL or ERROR 29 of 298, the non-pass set equal to the first merge's gate apart from check 31, which a worktree fails for the same reason as check 01 (no `input/` folders); checks 285 to 297 pass. The side gates on the same commit: execution topology, report recommendations, localization and multi-round OK, each ending in the worktree's check 01; final integration 156 tests with the 3 adapter errors; cloud run checks the two known worktree failures; controller checks OK. Logs: private `gate_logs/s05_close/`. Thirteen lane merges after the first close were gated by chunks of the checks they touched, recorded in their decisions (D-098 to D-145); bundles sealed on those commits before this full gate are a recorded departure (D-139 (a)). The merge gate in the main checkout at the second merge (D-151): the non-pass set equal to the first merge's, every side gate passing there (the producer adapter and the input folders are present).
 
 **The first close (29 October), as it was written then:**
 
@@ -555,9 +559,9 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 - **Done.** Items 1 to 10, with item 2 settled on real execution (D-100, D-101; the nine multi-round entries reviewed and activated in L12), item 3 (L7, D-106; L12's re-runs scored, D-141), item 4 (B3 on the suite in L8, L12, L12b; scores in "Development scores after the reopening"), item 5 (CUAD measured in L10, dry runs to five documents in L11, D-100, D-105), item 8 (reviews of L6 to L12b and of intervened replies, D-141), item 9 (the measurement tables after D-S12, open items 37 to 40 closed, D-128). Exit criteria: smoke run; regression scored; development suite and adapter dry runs; B1 and B2 proven; every failure classified (D-112, D-128, D-138, D-143); C0 in full agreement on version 2 (run 4) and version 2 frozen (`0c1884fb...`; version 3 drafted, D-126, after v1); measurements recorded; spend within its allocation (D-092, D-115, D-133).
 - **Moved after v1 by the operator (D-S18 item 3; SCHEDULED in S8, not dropped).** L9a and L9b (the 56 probes), L13 (FinDVer and CUAD-claim development runs), preregistration version 3 (ContractNLI and SciTab only) and the sealed evaluation.
-- **Recorded and not fixed in S5 (D-S14 item 7, D-S18 item 2a).** The 3 entries that still fail (open items 47 and 48); PRACTICE_AUDITOR's forced explanations (open item 51); and after L12c (D-146) 33 of the 37 first failures pass on their own; 4 still fail, `f1_s1101_cvjx` (open item 47) and `cuad_527255a5c970`, `f3_s3102_vwmj`, `f1_s1102_mstx` (open item 48).
+- **Recorded and not fixed in S5 (D-S14 item 7, D-S18 item 2a).** The entries that still fail (open items 47 and 48); PRACTICE_AUDITOR's forced explanations (open item 51); and after L12c (D-146) 33 of the 37 first failures pass on their own; 4 still fail, `f1_s1101_cvjx` (open item 47) and `cuad_527255a5c970`, `f3_s3102_vwmj`, `f1_s1102_mstx` (open item 48).
 - **Not now (P9 reason b, with FOR_SECKIN entries).** D-S13 item 6b, the launcher install on a fresh clone (memory below 4 GB; with 6c after the S7 merge, then S10).
-- **At close.** The outside audit's findings fixed, stage merged, VERSION 0.1.0.dev5, tag `loop-s05-v1`, push under D-S5.
+- **At close.** The outside audit's findings fixed (D-149), stage merged (`50364b6`), merge gate equal to the baseline (D-151), VERSION 0.1.0.dev5, tag `loop-s05-v1` (local, on `c4c2339`). The push under D-S5 waits for push rights the session does not have (D-152).
 
 **The first close (29 October), as it was written then:**
 
@@ -569,7 +573,7 @@ Per-commit chunked gates in the lead worktree (the gate's own CHECKS in foregrou
 
 ## Stage boundary
 
-**At the reopened close.** No loop instance is running: the reaper's reading at 20:26:59 UTC on 31 October listed 0 instances, total spend 63.18 USD (instances 62.59 by the ledger's 21 terminations, storage about 0.59), about 135.8 left under the 199 hard stop. Storage to the loop's end is forecast at about 1.0 USD (0.13 a day for the shared filesystem). Lanes still open: s06-launchers (open item 20), s07-sync (S7), v1-results and v1-readme (S11), s05-prereg3 (version 3, after v1); none runs a launch. The parallel track's two patches wait for after v1 (D-137). The asset copy `shimmer-filesystem` stays as the operator created it. Free disk about 60 GB, above the 30 GB floor. The first S5 merge `2dea80f` (never pushed) is superseded by the second merge.
+**At the reopened close.** No loop instance is running: the reaper's reading at 01:41:59 UTC on 1 November listed 0 instances, total spend 63.23 USD (the reading of 20:26:59 UTC on 31 October gave 63.18) (instances 62.59 by the ledger's 21 terminations, storage about 0.59), about 135.8 left under the 199 hard stop. Storage to the loop's end is forecast at about 1.0 USD (0.13 a day for the shared filesystem). Lanes still open: s06-launchers (open item 20), S7's lanes merged into loop/s07 and its fix lane, v1-results, v1-readme and v1-int (S11 and S10), s05-prereg3 (version 3, after v1); none runs a launch. The parallel track's two patches wait for after v1 (D-137). The asset copy `shimmer-filesystem` stays as the operator created it. Free disk about 60 GB, above the 30 GB floor. The first S5 merge `2dea80f` (never pushed) is superseded by the second merge.
 
 **The first close (29 October), as it was written then:** No loop instance is running: the reaper's reading at 19:56:59 UTC on 29 October (`reaper_status.json`, the same reading as in `BUDGET.md`'s S5 closing line) listed 0 instances, with total spend 20.99 USD (20.9904; instances 20.64, storage share 0.35). No role session and no lane runs. The asset copy `shimmer-filesystem` stays as the operator created it. The system disk had 37.6 GB free at 22:14 +0300, above the 30 GB floor.
 
