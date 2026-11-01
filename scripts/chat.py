@@ -41,6 +41,9 @@ WIZARD = SCRIPTS / "intake_wizard.py"
 SCOPE_PATH = ROOT / "config" / "review_scope.json"
 REGISTRY_PATH = ROOT / "config" / "agent_registry.json"
 RUNS_ROOT = ROOT / "output" / "runs"
+# The children this window starts write into the window, never into a console of
+# their own: the Windows no-window flag, nothing elsewhere (HIDDEN-A, S7 close).
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # Dark theme.
 BG = "#1e1e1e"
@@ -608,7 +611,8 @@ class ChatApp:
                 argv, cwd=str(ROOT),
                 stdin=subprocess.PIPE if stdin_str is not None else None,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, encoding="utf-8", errors="replace", bufsize=1)
+                text=True, encoding="utf-8", errors="replace", bufsize=1,
+                creationflags=NO_WINDOW)
         except OSError as e:
             self.ui(self.post, f"Could not start the process: {e}")
             return 1

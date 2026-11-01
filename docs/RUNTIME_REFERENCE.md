@@ -355,10 +355,10 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/amendments` | token | Read existing document masters; empty does not certify a clean review. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | Explicit AMENDMENT_REFUSED bus events, separate from findings. |
 | `GET` | `/runs/{run_id}/contract-violations` | token | Malformed agent contract events; not findings or successful non-calls. |
-| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. |
-| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. |
+| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. Refuses a sealed run (403). |
+| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. Refuses a sealed run (403). |
 | `GET` | `/harness` | token | Generated current agent description; not run-scoped or cluster-quality proof. |
-| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. |
+| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. Sealed run: routing profile, each agent's state and call count, and the decisions as counts only (no decision row, evidence, reason, document or call id). |
 | `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. Also `round_reuse`: `audit/round_reuse.json` as a rounds table (units reused and computed). Sealed run: recorded, availability, outcome and the reuse counts only. |
 | `GET` | `/runs/{run_id}/references` | token | Run reference excerpts; optional ref_id, unknown ID 404, missing index explicitly absent. |
 | `GET` | `/runs/{run_id}/replies` | token | Saved model replies as metadata only: per call sequence, agent, backend, model id and mode, call id, phase, document, time, backend result, payload and reply sizes and latest outcome; counts by outcome. Never reply or payload text. Sealed run: counts and first and last call time only. |
@@ -380,7 +380,7 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
 
-A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7, and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 305).
+A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7 and on `/activation`; a pending governed question keeps its timings only on `GET /approvals` and `GET /runs/{run_id}` (topic, message and payload emptied); and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log`, `/undated-documents`, `/convention-assignment` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 305).
 
 The route table is checked against the actual registered application routes.
 `/status`, `/queue`, `/results`, unscoped `/findings` or `/pairs`, and

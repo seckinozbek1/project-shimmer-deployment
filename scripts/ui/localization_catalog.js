@@ -316,6 +316,7 @@ var SHIMMER_TR = {
   ", trigger": ", tetikleyici",
   "Loading recorded activity...": "Kayıtlı etkinlik yükleniyor...",
   "Multi-round positioning": "Çok turlu konum analizi",
+  "A case output was recorded. Outcome: ": "Bir vaka çıktısı kaydedildi. Sonuç: ",
   "No valid recorded case output.": "Geçerli kayıtlı vaka çıktısı yok.",
   "SYNTHETIC FIXTURE.": "YAPAY TEST VERİSİ.",
   "Case:": "Vaka:",

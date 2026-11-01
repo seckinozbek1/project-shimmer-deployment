@@ -80,7 +80,10 @@
       "activated": true,
       "activation_mode": "dense",
       "reason": "reference_scheduled",
-      "evidence": {},
+      "evidence": {
+        "unit_id": "u03-zone-beta",
+        "rule_id": "CONV-002"
+      },
       "trigger_source": "phase_schedule",
       "decision_kind": "structural",
       "source_phase": "5.5",

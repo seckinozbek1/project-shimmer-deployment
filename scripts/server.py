@@ -961,7 +961,7 @@ def _validated_run_dir(run_id):
 
 SEALED_REFUSAL = ("sealed run: this route serves per-flaw results, which a sealed test never "
                   "shows (Annex B.8); its counts and timings are on /replies, /model-findings, "
-                  "/switches and /report")
+                  "/switches, /report, /activation and /multi-round")
 
 
 def _refuse_sealed(run_dir):
@@ -1488,7 +1488,7 @@ def _pending_approval_for(run_dir):
             timeout_at = (asked_dt + timedelta(seconds=wait_s)).isoformat()
         except ValueError:
             timeout_at = None
-    return {
+    pending = {
         "topic": record.get("topic"),
         "message": payload.get("message") if isinstance(payload.get("message"), str) else "",
         "payload": payload,
@@ -1496,6 +1496,13 @@ def _pending_approval_for(run_dir):
         "default_on_timeout": "DEFERRED",
         "timeout_at": timeout_at,
     }
+    # Loop S7 close (adversarial 1): a governed question's topic, message and
+    # payload can carry a finding, a rule or a unit, so a sealed run keeps the
+    # timings only, here, for GET /approvals and GET /runs/{run_id} alike.
+    import console_views
+    if console_views.exposure(run_dir) == console_views.SEALED:
+        return console_views.sealed_approval(pending)
+    return pending
 
 
 # Terminal `status` strings whose outcome is "governance_stop": the pipeline
@@ -2542,6 +2549,7 @@ async def undated_documents_route(run_id: str):
     malformed/unknown run_id. 200 with empty lists, not an error, for a run
     that predates this route."""
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     data = _undated_documents_for_run(run_dir)
     return {"run_id": run_id,
             "undated": data["undated"],
@@ -2582,6 +2590,7 @@ async def convention_assignment_route(run_id: str):
     import convention_assignment as _ca
 
     run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
     data = _convention_assignment_for_run(run_dir)
     agents = _load_agent_registry_agents()
     idle = _ca.idle_agents_summary(data, agents)
@@ -2638,9 +2647,18 @@ async def agent_harness():
 
 @app.get("/runs/{run_id}/activation", dependencies=[Depends(verify_token)])
 async def run_activation(run_id: str):
-    """Recorded routing and completion evidence, including unavailable old runs."""
+    """Recorded routing and completion evidence, including unavailable old runs.
+    A sealed run keeps the routing profile, each agent's state and call count and
+    the decisions as counts only (console_views.sealed_activation): a decision's
+    evidence carries unit ids, rule ids, finding indexes and item ids."""
     from routing_view import read_activation
-    return read_activation(_validated_run_dir(run_id), run_id)
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    result = read_activation(run_dir, run_id)
+    state = console_views.exposure(run_dir)
+    if state == console_views.SEALED:
+        return console_views.sealed_activation(result)
+    return dict(result, exposure=state)
 
 
 @app.get("/runs/{run_id}/multi-round", dependencies=[Depends(verify_token)])
