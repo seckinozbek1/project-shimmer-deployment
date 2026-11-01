@@ -1545,3 +1545,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **73.** The README's adapter commands: the external adapters take `build`; only the synthetic suite's adapter takes `items`; the README says so.
 - Issues #130 and #131 are closed with this decision after the ledger check.
 - **Rules.** D-S23 item 5, P1, P14.
+
+## D-178. The S11 outside audit: 2 found, 2 fixed; the not-now placements (D-S23 item 6)
+
+- **When, stage.** 2026-11-02 01:44 +0300 (system clock), S11.
+- **Outside audit S11** (private `AUDIT_S11.md`, inside the window). 1 (SERIOUS, text): the results page and the README gave the wrong reason for the public-benchmark gap. Fixed (lane s11-readme, `e3e0dfd`): the measured cause (the judging calls go to PRACTICE_AUDITOR on the local auditor model, 686 of 803 answers in L12's six B3 entries copy the contract's filled example, CUAD 409 of 410, the quote rule refuses them), the after-v1 work named (G1, R1; D-S22, D-176); B3's correct labels there come from saying nothing (L12: 27); CUAD's labeller turns one unit's absence into the document's, so 0 of 34 against 24 of 34 does not measure detection. 2 (MINOR): `CITATION.cff`'s `date-released` is checked as part of the v1 tag step (S13 plan).
+- **Not-now placements.** Every item D-S23 item 6 names is in FOR_SECKIN. The sweep rows the records gave no stage: B-13, B-14, B-32, B-36 and open items 63 and 69 go to S6 after v1; B-44, B-46, B-47 and B-49 start S6 by finding their evidence or closing as unfounded; B-10 (open item 45) moves before preregistration version 3 freezes (D-S18 item 3).
+- **Rules.** IV.4 item 6, D-S23 item 6, P16.
