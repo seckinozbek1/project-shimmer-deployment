@@ -18670,10 +18670,13 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     Two things changed, both asserted here with real call machinery, no model:
 
     1. The budget is per CALL TYPE, not one number for every local call
-       (pipeline.py's five named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       (pipeline.py's six named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       VERIFIER_MAX_TOKENS=4096 (D-134, measured by replay R2c),
        AUDIT_MAX_TOKENS/PRODUCTION_MAX_TOKENS/DEEPEN_MAX_TOKENS/
        WIDE_REVIEW_MAX_TOKENS=2048, each wired to the real call site an AST
-       walk of pipeline.py confirms still calls it). agent_wrapper.py's own
+       walk of pipeline.py confirms still calls it; phase_5_audit is driven
+       with dispatch stubbed to show VERIFIER's call gets 4096 and
+       FACT_CHECKER's 2048, with neutralise, fail, restore, pass). agent_wrapper.py's own
        hardcoded `min(max_tokens, 1024)` is gone, replaced by
        LOCAL_MAX_OUTPUT_TOKENS, an outer backstop above the defaults for the
        five, never the budget itself.
@@ -18882,6 +18885,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     budgets = {
         "PAIRED_JUDGING_MAX_TOKENS": _pl.PAIRED_JUDGING_MAX_TOKENS,
         "AUDIT_MAX_TOKENS": _pl.AUDIT_MAX_TOKENS,
+        "VERIFIER_MAX_TOKENS": _pl.VERIFIER_MAX_TOKENS,
         "PRODUCTION_MAX_TOKENS": _pl.PRODUCTION_MAX_TOKENS,
         "DEEPEN_MAX_TOKENS": _pl.DEEPEN_MAX_TOKENS,
         "WIDE_REVIEW_MAX_TOKENS": _pl.WIDE_REVIEW_MAX_TOKENS,
@@ -18895,7 +18899,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
         return _fail("PAIRED_JUDGING_MAX_TOKENS must not sit below the largest real, "
                      "uncapped observed call (645 tokens): that would reduce it below what "
                      "this call type has already been shown to need")
-    for name in ("AUDIT_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
+    for name in ("AUDIT_MAX_TOKENS", "VERIFIER_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
         if budgets[name] <= 1024:
             return _fail(f"{name} must be raised above the old 1024 ceiling: real evidence "
                          f"(this call type hit 1024 and lost output) rules out leaving it "
@@ -18914,19 +18918,109 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
             for kw in getattr(node, "keywords", []):
                 if kw.arg == "max_tokens" and isinstance(kw.value, _ast.Name):
                     max_tokens_names_seen.add(kw.value.id)
+                # phase 5's one call site picks VERIFIER's budget or the audit
+                # budget by agent name (D-134); both branches must be names.
+                if (kw.arg == "max_tokens" and isinstance(kw.value, _ast.IfExp)
+                        and isinstance(kw.value.body, _ast.Name)
+                        and isinstance(kw.value.orelse, _ast.Name)):
+                    max_tokens_names_seen.update((kw.value.body.id, kw.value.orelse.id))
     missing = set(budgets) - max_tokens_names_seen
     if missing:
         return _fail(f"the following budget constants are defined but no call site in "
                      f"pipeline.py passes them as max_tokens=<name>: {sorted(missing)}. "
                      f"Constants seen at a call site: {sorted(max_tokens_names_seen)}")
 
+    # Part 4 (D-134): VERIFIER's own budget reaches VERIFIER's real call and
+    # FACT_CHECKER keeps the audit budget, executed through phase_5_audit itself
+    # with dispatch stubbed (no model), read from the max_new_tokens the wrapper
+    # hands the local backend. Measured: replay R2c of the 8 VERIFIER prompts cut
+    # at 2048 ended 4 on their own at 2342 to 3590 tokens under 4096.
+    if budgets["VERIFIER_MAX_TOKENS"] != 4096 or budgets["AUDIT_MAX_TOKENS"] != 2048:
+        return _fail(f"VERIFIER_MAX_TOKENS={budgets['VERIFIER_MAX_TOKENS']} and "
+                     f"AUDIT_MAX_TOKENS={budgets['AUDIT_MAX_TOKENS']}: D-134 measured 4096 for "
+                     f"VERIFIER and left FACT_CHECKER at 2048")
+    seen = _phase_5_output_budgets(_pl)
+    if seen != {"VERIFIER": 4096, "FACT_CHECKER": 2048}:
+        return _fail(f"phase_5_audit handed the local backend {seen}, expected VERIFIER 4096 "
+                     f"and FACT_CHECKER 2048")
+    # NEUTRALISE: VERIFIER's constant set back to the audit budget must reach
+    # VERIFIER's call (so the constant, not a literal, decides it); RESTORE: 4096.
+    saved_budget = _pl.VERIFIER_MAX_TOKENS
+    try:
+        _pl.VERIFIER_MAX_TOKENS = _pl.AUDIT_MAX_TOKENS
+        neutralised = _phase_5_output_budgets(_pl)
+    finally:
+        _pl.VERIFIER_MAX_TOKENS = saved_budget
+    if neutralised != {"VERIFIER": 2048, "FACT_CHECKER": 2048}:
+        return _fail(f"neutralise (VERIFIER_MAX_TOKENS=2048) reached the backend as "
+                     f"{neutralised}: the constant does not decide VERIFIER's call")
+    restored = _phase_5_output_budgets(_pl)
+    if restored != seen:
+        return _fail(f"restore: {restored} differs from {seen}")
+
     return _ok("call_local/call_qwen detect a cut from generated length alone "
                "(truncated=True at the cap, False short of it); run_task carries it onto "
                "both a CONTRACT_VIOLATION post and an AGENT_OUTPUT post (parsed but "
-               "possibly incomplete) and onto the returned dict; five named budgets "
-               "(PAIRED_JUDGING 768, the rest 2048) replace the old blanket 1024, each "
-               f"below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each wired by name to its real "
-               "call site; neutralise (no usage key) reads falsy, restore reads accurately")
+               "possibly incomplete) and onto the returned dict; six named budgets "
+               "(PAIRED_JUDGING 768, VERIFIER 4096 per D-134, the rest 2048) replace the old "
+               f"blanket 1024, each below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each "
+               "wired by name to its real call site; phase_5_audit hands VERIFIER 4096 and "
+               "FACT_CHECKER 2048 (neutralised to 2048 the constant reaches VERIFIER's call, "
+               "restored 4096); neutralise (no usage key) reads falsy, restore reads accurately")
+
+
+def _phase_5_output_budgets(_pl):
+    """Drive the real phase_5_audit under the local profile with AgentWrapper.dispatch
+    stubbed (no model, no network) and return each auditor's max_new_tokens as the
+    wrapper handed it to the backend. The setup is check 133's."""
+    import os as _os
+    import copy as _copy
+    import json as _json
+    import tempfile as _tempfile
+    import asyncio
+    import agent_wrapper as _aw
+    from orchestrator import TopOrchestrator
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from reference_builder import ReferenceIndex
+    saved = _os.environ.get("SHIMMER_BACKEND_PROFILE")
+    orig_dispatch = _aw.AgentWrapper.dispatch
+    seen = {}
+
+    def _stub_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
+        seen[self.name] = kwargs.get("max_new_tokens")
+        return _aw.CallResult(backend=self.backend, model="stub", raw_text="",
+                              ok=False, error="stubbed, no model call")
+    try:
+        with _tempfile.TemporaryDirectory() as td:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = "local"
+            c = Constitution.load(Path("config/constitution.json"))
+            bus = MessageBus.open(Path(td) / "bus.jsonl")
+            reg = _copy.deepcopy(
+                _json.loads(Path("config/agent_registry.json").read_text(encoding="utf-8"))["agents"])
+            contracts = _json.loads(Path("config/agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+            for a in ("VERIFIER", "FACT_CHECKER"):
+                reg[a]["backend"] = "local_auditor"
+            orch = TopOrchestrator(root=Path("."), constitution=c, bus=bus, registry=reg, contracts=contracts)
+            doc = {"id": "synthetic_d1", "name": "synthetic.md", "text": "A short synthetic source."}
+            production = [{"scope": "doc", "doc_id": "synthetic_d1", "agent": "PROCESSOR",
+                           "ok": True, "parsed": {"agent": "PROCESSOR", "doc_id": "synthetic_d1", "items": []},
+                           "raw_text": "", "contract_missing": [], "error": None}]
+            _aw.AgentWrapper.dispatch = _stub_dispatch
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(_pl.phase_5_audit(
+                    orch, {"_stub": ""}, [doc], production, "review the document",
+                    convention_registry=None, reference_index=ReferenceIndex(project_root=Path(td))))
+            finally:
+                loop.close()
+    finally:
+        _aw.AgentWrapper.dispatch = orig_dispatch
+        if saved is None:
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        else:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = saved
+    return seen
 
 
 def check_217_a_gap_between_two_timestamps_is_computed_in_python():
@@ -22938,11 +23032,42 @@ def check_221_dating_cascade_local_precise_and_loud():
         if not DD.resolve_dates([late])[0]["date"]:
             return _fail("restore failed: the late-dated document no longer resolves")
 
+        # 4. A year below 1000 keeps four digits on every platform. Linux
+        # strftime wrote year 288 as "288-01-01", and the cascade's
+        # int(iso[:4]) raised ValueError at phase 0 (two L8 entries). Windows
+        # pads, so the neutralisation EMULATES the Linux spelling.
+        if DD._iso(288) != "0288-01-01" or DD._iso(146, 2, 30) != "0146-01-01":
+            return _fail("_iso(288)=%r, _iso(146, 2, 30)=%r; expected four year digits"
+                         % (DD._iso(288), DD._iso(146, 2, 30)))
+        early = tmpdir / "early_year_sheet.md"
+        early.write_text("# Sheet\n\nLot 0288 counted.\n", encoding="utf-8")
+        rec_early = DD.resolve_dates([early])[0]
+        if rec_early["date"] is not None or rec_early["date_source"] != "unresolved":
+            return _fail("a document whose only four-digit token is 0288 resolved to %r (%r); "
+                         "it is outside the year range and must stay unresolved"
+                         % (rec_early["date"], rec_early["date_source"]))
+        original_iso = DD._iso
+        DD._iso = lambda y, m=1, d=1: "%d-%02d-%02d" % (y, m, d)
+        try:
+            DD.resolve_dates([early])
+            raised = False
+        except ValueError:
+            raised = True
+        finally:
+            DD._iso = original_iso
+        if not raised:
+            return _fail("with _iso neutralised to the unpadded Linux spelling the cascade did "
+                         "not raise; this check does not reach the year-below-1000 path")
+        if DD.resolve_dates([early])[0]["date_source"] != "unresolved":
+            return _fail("restore failed: the 0288 document no longer resolves unresolved")
+
     return _ok("filename 2024_09_23 keeps its month and day (was 2024-01-01); a date stated "
                "past character 3000 resolves from the document's own text; a document with no "
                "year anywhere stays unresolved, is dropped by the cutoff, and is named in "
                "audit/undated_documents.json with excluded apart from reviewed_anyway, served "
-               "by a route and rendered in the console; neutralise/restore proved")
+               "by a route and rendered in the console; a year below 1000 keeps four digits "
+               "(0288-01-01) and takes the out-of-range branch instead of raising; "
+               "neutralise/restore proved")
 
 
 def check_220_local_profile_reaches_the_menu_and_is_passed_on():
@@ -24629,7 +24754,15 @@ def check_264_core_field_alias_is_read_and_recorded():
     key alone. The alias is declared in config/agent_contracts.json, read by the
     parser only when the canonical key is absent and the value maps without
     interpretation, and every application is recorded on the result, the bus post
-    and the observation row."""
+    and the observation row.
+
+    The K8 stamp (ENVELOPE-B, D-S14) that supplied EDITOR_CLERK's missing `kind` was
+    removed at the S5 close (H9: a contract edit no stage called for). Proven here: no
+    contract declares a stamp, the wrapper carries no stamping code, and a missing kind
+    is refused for every agent as before K8, a contract failure on the result, the bus
+    post, the observation row and the telemetry call record. Each proof is neutralised
+    by putting K8 back (a validator that lets a missing kind through, an alias pass that
+    stamps one). The cause is fixed in decoding instead (check 297)."""
     from ordinary_final_correction_checks import check_alias
     return check_alias()
 
@@ -24768,7 +24901,13 @@ def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     run before it. The delivery-level refusal in auditor_pairs.build applies to a
     single call's best-effort object; a partition-merged delivery pairs its
     accepted, receipt-bound items and marks each pair and the coverage figures
-    partial. Phase 5 hands such a partial draft to its auditors, noted."""
+    partial. Phase 5 hands such a partial draft to its auditors, noted.
+
+    D-S14 K2: VERIFIER's rendered payload carries each pair and draft item without
+    the runtime identity it cannot use (ten L8 VERIFIER prompts of 44,467 to 54,657
+    tokens ran out of GPU memory on the A10; projected, the same prompts measure
+    17,932 to 23,668). The pair records, telemetry and bus keep every identifier,
+    and pair_id, the join key, is still shown."""
     from ordinary_final_correction_checks import check_pairing
     return check_pairing()
 
@@ -24933,6 +25072,66 @@ def check_290_uncomputable_judgment_is_kept_as_a_model_record():
     return check()
 
 
+def check_294_pipeline_time_before_phase_3_is_in_phase_latencies():
+    """Loop stage S5, open item 38: phase_latencies began at phase 3, because only the five
+    decorated phase functions emitted phase_enter/phase_exit and main's work before phase
+    3-4 is inline. main now times it with execution_topology.pre_phase_span, contiguous
+    spans from argument parsing to phase 3-4's boundary (start, ingestion and roles, boot
+    and index, phase 1), marked pre_phase_3 so they add no consumer barrier. Reads the
+    spans from main's AST, drives them through a real topology Runtime on a temporary run
+    folder before a fixture phase 3-4, and reads model_telemetry.recompute's summary;
+    neutralise, fail, restore, pass for the span calls, the helper and the mark."""
+    from pre_phase_span_checks import check
+    return check()
+
+
+def check_295_compact_producer_decodes_under_its_contract():
+    """Loop stage S5, D-S14 item 3 (DECODING-B, s5_diag_b3 K3 to K7): the tuned producer failed
+    52 of 283 compact partitions in L7, L8, L10 and L11 (invented CLM ids, a dropped
+    uncertainty key, a context-only alias, one item for two spans, the neighbouring span's REF,
+    runaway id lists), each one repeated byte for byte by a deterministic re-ask. The compact
+    producer now decodes under a logits constraint built from its request's own declaration
+    (scripts/contract_decoding.py, config/contract_decoding.json), compact_contracts.producer
+    unchanged behind it. Runs scripts/contract_decoding_checks.py: with a fixture tokenizer and
+    a stand-in model, every failure kind is prevented and the validator passes, the constraint
+    off reproduces every failure with the runs' own reason, a valid reply and the refusal are
+    never changed, the real call_local carries it and records it, the replay measures it, and
+    every frozen DEV reply of checkpoint 168 is inside the constrained language. Then
+    neutralises, in turn, the processor's admission (every token admitted), the wrapper's
+    binding (no constraint built) and the status and emptiness rule; requires a failure;
+    restores; requires a pass."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import contract_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/contract_decoding_checks.py does not pass'
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_kind_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_call', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (contract_decoding.Grammar, 'close_rule', lambda grammar, j, it, used: (True, True),
+         ('test_language_rules',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: 6 failure kinds prevented with the validator unchanged and reproduced with the '
+                    'constraint off; wrapper, reply record, replay and the 84 frozen DEV replies hold; '
+                    '3 neutralisations fail and restore'
+                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+
+
 def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
     """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
     (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
@@ -24989,6 +25188,109 @@ def check_292_every_controller_path_child_process_starts_without_a_window():
                     'controller run, adapter, termination client and progress reader); neutralised, failed, '
                     'restored, passed: ' + ', '.join(proofs))
 
+
+
+def check_296_request_ledger_check_catches_dropped_requests():
+    """Loop D-S16 item 1: tools/loop/request_ledger_check.py reads every Annex C row and every
+    D-S entry with its numbered and lettered items from the loop specification, the ids in the
+    operator's private request ledger and DECISIONS.md, and fails on a specification item with
+    no row, a row that matches no item, a DONE row whose decision, commit or path does not
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running (a launch
+    open in the budget ledger, a lane in `git worktree list`). Runs
+    tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
+    specification, ledger, budget ledger and DECISIONS.md, a one-commit git repository with a
+    lane worktree; the private ledger is never read), then neutralises in turn the coverage
+    rule, the evidence rule, the stale rule and its running-state test, requires a failure,
+    restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from request_ledger_check_checks import check
+    return check()
+
+
+def check_297_local_auditor_agents_decode_under_their_envelope_contract():
+    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
+    PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
+    contract in L8, L11 and L12 (the envelope left unclosed, an item without a required key, a
+    raw control character in a string, text after a string closed too early). They now decode under the envelope
+    constraint of their own declared contract (scripts/contract_decoding.py EnvelopeGrammar,
+    config/envelope_decoding.json), the envelope validator unchanged behind it. Runs
+    scripts/envelope_decoding_checks.py: with a fixture tokenizer and a stand-in model each
+    shape is prevented and the validator passes, the constraint off reproduces each with the
+    validator's own reason, a reply that runs to the output cap is not prevented and is refused
+    as before, every valid form the saved replies take is never changed, the real call_local
+    carries and records it for a declared agent only, the saved-reply measurement tool and the
+    replay path hold. Then neutralises, in turn, the processor's admission (every token
+    admitted), the wrapper's routing (no envelope constraint built), the closing rule (the stop
+    token admitted anywhere) and the required-key rule (any declared key in any slot); requires
+    a failure; restores; requires a pass. At the S5 close EDITOR_CLERK (local_producer) joined
+    the declaration in place of the removed K8 kind stamp: its saved shape without `kind` is
+    prevented through the real call_local, the validator supplying nothing, neutralised by
+    dropping it from the declaration and by an item that may close with a required key
+    unwritten."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import envelope_decoding_checks as checks
+
+    def passes(*names):
+        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else             unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
+    if not passes():
+        return "FAIL", 'scripts/envelope_decoding_checks.py does not pass'
+    grammar = contract_decoding.EnvelopeGrammar
+
+    def any_name(self, j, opt):
+        return tuple(sorted(set(self.contract.optional) | {s for names in self.contract.spellings for s in names}))
+    declaration = contract_decoding.envelope_declaration
+
+    def without_editor_clerk(root=None):
+        value, digest = declaration(root)
+        return dict(value, agents={k: v for k, v in value['agents'].items() if k != 'EDITOR_CLERK'}), digest
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_envelope', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (grammar, 'accepting', lambda self, state: True, ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (grammar, 'names', any_name, ('test_language_rules',)),
+        # S5 close (the K8 kind stamp removed): EDITOR_CLERK left out of the declaration, and an
+        # item allowed to close before every required key is written.
+        (contract_decoding, 'envelope_declaration', without_editor_clerk,
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)),
+        (grammar, 'closable', lambda self, j, opt: j == len(self.contract.leading),
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)))
+    for owner, attribute, mutant, names in mutants:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
+                    'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
+                    'and replay hold; EDITOR_CLERK missing kind prevented through the wrapper with no stamp; '
+                    '%d neutralisations fail and restore'
+                    % (unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases(), len(checks.KINDS),
+                       len(checks.VALID_FORMS), len(mutants)))
+
+
+def check_293_scorer_reads_the_key_parts_d042_added():
+    """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
+    reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
+    unit, reported by kind, or by a rename Python matched, which is then no false positive; a
+    rename only a model's record matches satisfies nothing; a fabricated withdrawal named),
+    scores a multi-round run (audit/multi_round.json) from Python's round findings on bus
+    channel multi_round, each only for the entry of its own round and document, refuses a
+    round-scoped key on any other run and a multi-round run whose key has no such entries,
+    and reports the four relations Python never writes apart, located only by a model-written
+    record and never by a Python post. Executed on synthetic run folders (the multi-round bus
+    written by multi_round_rounds.post_findings itself); each reader proven by neutralise,
+    fail, restore, pass."""
+    from scorer_section9_checks import check
+    return check()
 
 def check_283_benchmark_adapters_follow_the_preregistration():
     """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
@@ -25420,6 +25722,16 @@ CHECKS = [
      check_291_over_bound_gather_runs_as_shared_snapshot_waves),
     ("292 every child process the controller path starts runs with no window (D-079)",
      check_292_every_controller_path_child_process_starts_without_a_window),
+    ("293 the scorer reads expected refusals by kind, a multi-round run by round and document, and the relations Python never writes apart",
+     check_293_scorer_reads_the_key_parts_d042_added),
+    ("294 the pipeline's time before phase 3 is in phase_latencies (open item 38)",
+     check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
+    ("295 the compact producer decodes under its request's own contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_295_compact_producer_decodes_under_its_contract),
+    ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
+     check_296_request_ledger_check_catches_dropped_requests),
+    ("297 the local auditor agents, ARCHIVIST and EDITOR_CLERK decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_297_local_auditor_agents_decode_under_their_envelope_contract),
 ]
 
 

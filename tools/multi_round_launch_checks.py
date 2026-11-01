@@ -51,6 +51,7 @@ import ordinary_final_run as runner
 import prepare_ordinary_final_run as sealer
 import agent_activation
 import decoding_policy
+import execution_topology
 import final_models
 import localization
 import multi_round as mr
@@ -201,7 +202,9 @@ def pipeline_admission(argv, environment, final_test=None):
         block = next(s for s in prefix if isinstance(s, ast.If) and ast.unparse(s.test) == FINAL_MODE_TEST)
         refusal = next(s for s in block.body if isinstance(s, ast.If) and 'parser.error' in ast.unparse(s.body[0]))
         refusal.test = ast.parse(final_test, mode='eval').body
-    scope = dict(argparse=argparse, agent_activation=agent_activation, json=json, Path=Path, localization=localization)
+    # main's first statements now open a pre-phase-3 span: a no-op outside a topology runtime.
+    scope = dict(argparse=argparse, agent_activation=agent_activation, json=json, Path=Path, localization=localization,
+                 execution_topology=execution_topology)
     exec(compile(ast.Module(body=[functions['_build_arg_parser']], type_ignores=[]), 'pipeline_parser', 'exec'), scope)
     build = scope['_build_arg_parser']
 

@@ -266,3 +266,24 @@ Each entry has these fields, in this order:
 ### Dated note (2026-10-29 23:39 +0300, D-089): reporting duties on B's synthetic tests, entered before any sample is drawn
 
 No rule of the frozen text changes. The S8 report adds, beside the preregistered measures and labelled as reporting duties: location recall on rules with exactly one planted flaw, for every arm; B3's attributed count beside B1's located count; the count of B1 FLAG items whose quotes locate no unit and of quotes matching several units; the count of B1 synthetic location disagreements between C and the adapter with the unit-text reading reported; and an exploratory B1 location under section 3.2's two-way containment, labelled not preregistered.
+
+## Version 2 entries (they change the design; entered before version 2's freeze)
+
+### DEV-021. Version 2: the S8 allocation is 89.34 USD and section 2 is re-sized
+
+- **Entered**: 2026-10-30 00:41 (system clock, +0300), loop stage S5, reopened under the operator's decision D-S12 (as revised at 00:20 on 30 October 2026). It replaces a draft of this entry written at 00:13 for the superseded 00:10 version of D-S12 (A = 60 USD; withdrawn, D-091).
+- **Decision**: D-093, applying D-S12 items 4 and 5 and the allocation of D-092.
+- **What changes**: preregistration version 2. Section 0: the S8 allocation A is 89.34 USD, fixed by the version (it was 36 USD). Section 2: S4e item 2's rule, unchanged, re-run on the unchanged S5 measurements: B's synthetic tests first (about 10.4 USD); ContractNLI 30 documents (about 62.9 USD, qualifies); SciTab 30 documents (about 10.2 USD, qualifies); ContraDoc a pilot of about 17 documents (its minimum of 100 documents costs about 28.4 USD; about 5.9 USD left); no raise, no B4. Two corrections the re-run exposed: ContractNLI's pool band mix is 36, 84 and 3 documents in bands A, B and C (version 1 printed the development counts, 13 and 48, as the pool's), and its band C takes clarification 4's scaled minutes. Three planning rules for S8c added: sessions of at most 600 minutes of document time (a session may hold more than one benchmark; saved overhead goes to the bottom pilot); S8c uses only this version's measurements, except the B1 minutes per synthetic bundle, replaced by S5's measurement if one exists; a higher B1 figure is taken from ContraDoc's pilot first and then by the S8c cut rule's steps 2 and 3, a lower one goes to ContraDoc's pilot, never from or to A. Version 1's sentence on a band with development documents but no measured document is kept. Section 4: a quoting rule for benchmark results (Annex A 11.11.3), McNemar only for a non-pilot ContraDoc, no test on the single-claim analysis. Section 9: SciTab's few clusters. Section 11: the version 2 attacks. Section 12: up to three C0 runs on version 2, whose last scorer hash replaces version 1's. The span-part threshold that depends on A (1.15 USD a document); the trigger stays undecided. Section 4: H1 is tested on ContractNLI and SciTab. Section 7 and section 13.6: the sentences that said H1 is not tested. This entry supersedes DEV-019's "H1 is not tested in S8" and DEV-020's 36 USD and 12 to 13 documents for version 2; both stay as the record of version 1.
+- **Why**: the operator raised the budget to 200 USD and asked that S8's larger share be used through a new version while one is allowed (D-S12 item 5).
+- **Allowed**: no holdout sample had been drawn and no sealed result existed (checked 2026-10-30 00:27 +0300 by file names in the shared hand-off folder and the private ledger; D-093).
+- **Decided from**: S5's measured minutes per band and the pool's counts per band; no score.
+- **Holdout result seen**: no.
+- **Development scores existing when decided**: B1, B2 and B3 development scores; not read. The cost per correct FLAG item on development items (open item 40) is computed only after version 2 is frozen.
+- **Status**: draft; applied at version 2's freeze, after C0's run on it and a fresh checker's attack (D-S12 item 5).
+
+### Note of 2026-10-30 (D-108): DEV-021's section labels
+
+- **Qualifies**: DEV-021, "What changes".
+- **What it says**: the span-part threshold that depends on A (1.15 USD a document) is a section 2 change, not section 12's; the single-claim analysis (intervals only) is a section 7 change, not section 4's. S8c packs sessions as version 2's sizing computed, one benchmark per session, in priority order (D-108).
+- **What it changes**: nothing in the frozen text.
+- **Holdout result seen**: no.

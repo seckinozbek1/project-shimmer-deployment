@@ -266,13 +266,16 @@ def read_synthetic_items(path) -> list:
     return rows
 
 
-def label(items_path, arm, bundles_root, runs=None, run_map=None) -> dict:
-    """Every analysis of one arm on the items (cli.label's set, for this adapter)."""
+def label(items_path, arm, bundles_root, runs=None, run_map=None,
+          scoring=mapping.SCORING_AS_SHIPPED) -> dict:
+    """Every analysis of one arm on the items (cli.label's set, for this adapter), under
+    `scoring` (docs/benchmarks/SCORING_MODES.md), which every analysis carries."""
+    mapping.check_scoring(scoring)
     items = read_synthetic_items(items_path)
     if arm == "B0":
-        primary = mapping.label_b0(SPEC, items)
+        primary = mapping.label_b0(SPEC, items, scoring=scoring)
     elif arm == "B1":
-        primary = mapping.label_b1(SPEC, items, None, run_dirs_for(items, runs, run_map))
+        primary = mapping.label_b1(SPEC, items, None, run_dirs_for(items, runs, run_map), scoring=scoring)
         owner = _documents(items, bundles_root)
         cache = {}
         for row in primary["labels"]:
@@ -286,7 +289,7 @@ def label(items_path, arm, bundles_root, runs=None, run_map=None) -> dict:
                 row.get("evidence"), cache[doc])
     elif arm in mapping.ARMS:
         dirs = run_dirs_for(items, runs, run_map)
-        primary = mapping.label_pipeline_arm(SPEC, items, None, arm, dirs, detail=True)
+        primary = mapping.label_pipeline_arm(SPEC, items, None, arm, dirs, detail=True, scoring=scoring)
         texts = {doc: deliverable_texts(path, doc) for doc, path in dirs.items()}
         for row in primary["labels"]:
             for view in (row, row.get("s3"), row.get("s5"), row.get("s8")):
@@ -522,7 +525,8 @@ def score_analysis(result, bundles_root, key_map=None) -> dict:
     totals["documents_semantic_incomplete"] = sum(1 for r in per_bundle if r["semantic_incomplete"])
     totals["documents_complete"] = len(per_bundle) - totals["documents_semantic_incomplete"]
     totals["run_failure_documents"] = sum(1 for r in per_bundle if r["run_failure"])
-    return {"arm": arm, "analysis": result.get("analysis", "primary"), "totals": totals,
+    return {"arm": arm, "analysis": result.get("analysis", "primary"),
+            mapping.SCORING_FIELD: mapping.scoring_of(result), "totals": totals,
             "by_role": {k: _total(v, arm) for k, v in sorted(roles.items())},
             "bundles": per_bundle, "not_scored": skipped,
             "left_out_excluded": left_out,
@@ -558,6 +562,9 @@ def main(argv=None) -> int:
     lab.add_argument("--runs", help="one run (B2, B3, B4) or bare_model.py output (B1) folder per bundle")
     lab.add_argument("--run-map", help="a JSON object {bundle: run folder}, instead of --runs")
     lab.add_argument("--out", required=True)
+    lab.add_argument("--scoring", choices=mapping.SCORING_MODES, default=mapping.SCORING_AS_SHIPPED,
+                     help="benchmark: advice the pipeline shows counts as a finding (the main "
+                          "figure); as_shipped: today's reading (the default)")
     sc = sub.add_parser("score")
     sc.add_argument("--labels", required=True)
     sc.add_argument("--bundles", required=True)
@@ -570,7 +577,7 @@ def main(argv=None) -> int:
             print(json.dumps(write_items(args.root, args.out), indent=2))
             return 0
         if args.command == "label":
-            labels = label(args.items, args.arm, args.bundles, args.runs, _map(args.run_map))
+            labels = label(args.items, args.arm, args.bundles, args.runs, _map(args.run_map), args.scoring)
             bundle.write_json(Path(args.out), labels)
             print(json.dumps(labels["primary"]["counts"], indent=2))
             return 0

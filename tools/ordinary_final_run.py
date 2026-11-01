@@ -235,7 +235,7 @@ REPLAY_PROMPTS = 'replay_prompts.json'
 REPLAY_MEASUREMENT = 'replay_measurement.json'
 REPLAY_RUNNER_ARGS = ('--prompts', '--out')
 REPLAY_SEALED_ARGS = {'--paths': True, '--decision': True, '--max-new-tokens': True}
-REPLAY_PATHS = {'e': True, 'one_shot': True, 'sdpa': False, 'e_repeat': True}
+REPLAY_PATHS = {'e': True, 'one_shot': True, 'sdpa': False, 'e_repeat': True, 'sdpa_constrained': False}
 REPLAY_DEFAULT_PATHS = ('e', 'one_shot', 'sdpa', 'e_repeat')
 
 
@@ -555,11 +555,22 @@ def semantic_incomplete(completion):
                 and completion.get('semantic_complete') is False)
 
 
+def model_call_required(multi_round):
+    """Whether the run's telemetry must hold a Producer 168 model call. Every run that is not
+    a declared multi-round run must. A declared multi-round run (`multi_round` not None) asks no
+    model by design (open item 35: its case records and round review are computed in Python), so
+    its own evidence is the pipeline_start and pipeline_end pair and the case record checks.
+    Measured, not preferred: L7 (2026-10-30) failed all nine multi-round entries that reached
+    `reviewed` and `activated` on this requirement alone (D-100)."""
+    return multi_round is None
+
+
 def assess(completion, raw, multi_round=None, arm='B3', b1=None):
     """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
     record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
     reviewed, a Python round review recorded (`round_review.availability`);
-    quality is reported separately and is never a pass. A B1 entry is assessed on its own
+    quality is reported separately and is never a pass. Its telemetry needs exactly one
+    pipeline_start and one pipeline_end and does not require a model call (model_call_required, D-101). A B1 entry is assessed on its own
     records (assess_b1, `b1` maps each checkpoint to its observation and exit code)."""
     if arm == 'B1':
         return assess_b1(b1)
@@ -584,7 +595,8 @@ def assess(completion, raw, multi_round=None, arm='B3', b1=None):
         reasons.append('pipeline_not_completed')
     if not (sum(r['event']=='pipeline_start' for r in raw)==1 and
             sum(r['event']=='pipeline_end' for r in raw)==1 and
-            any(r['event']=='model_call' and r.get('adapter_checkpoint')==168 for r in raw)):
+            (not model_call_required(multi_round) or
+             any(r['event']=='model_call' and r.get('adapter_checkpoint')==168 for r in raw))):
         reasons.append('required_telemetry_missing')
     if any(r['event'] == 'auditor_pair' and r.get('classifier_status') == 'failed' for r in raw):
         reasons.append('auditor_pair_failure')
@@ -665,6 +677,83 @@ def hardware_admission(base, torch, psutil, candidate):
             and memory.available>=candidate['run_ram_available_bytes'],'Host resource admission')
     require(value['disk_free_bytes']>=candidate['run_disk_free_bytes'],'Storage admission')
     return value
+
+
+def disk_reading(path):
+    """One reading of the filesystem holding `path`, in bytes, as `df -B1` reports it (used is
+    the total less the free blocks; available is what an unprivileged writer may still use).
+    Never raises: a failed reading says why. Self-contained, because the controller's evidence
+    packer carries this function's own source to the instance."""
+    import os
+    import time
+    try:
+        stat = os.statvfs(str(path))
+        total = stat.f_blocks*stat.f_frsize
+        return dict(path=str(path), epoch=time.time(), total_bytes=total,
+                    used_bytes=total-stat.f_bfree*stat.f_frsize, available_bytes=stat.f_bavail*stat.f_frsize)
+    except Exception as exc:
+        return dict(path=str(path), epoch=time.time(), unavailable=(type(exc).__name__+': '+str(exc))[:200])
+
+
+DISK_SAMPLE_SECONDS = 15
+DISK_USAGE = 'disk_usage.json'
+DISK_PEAK_KIND = ('sampled: the largest of the readings taken before the workload, every %d s during it '
+                  'and after it; not a continuous maximum' % DISK_SAMPLE_SECONDS)
+
+
+class DiskSampler:
+    """Disk in use on the run root's filesystem (environment, wheels, model cache, assets and
+    run folder together): before the workload, sampled during it, after it. The file is
+    rewritten after every reading, so a budget stop keeps what was read. Never fails a run."""
+
+    def __init__(self, root, path, interval=DISK_SAMPLE_SECONDS, reading=None):
+        self.root, self.path, self.interval = str(root), Path(path), interval
+        self.reading = reading or (lambda where: disk_reading(where))
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.value = dict(path=self.root, sample_seconds=interval, peak_kind=DISK_PEAK_KIND, before_workload=None,
+                          peak=None, after_workload=None, readings=0, unavailable_readings=0, last_unavailable=None)
+
+    def take(self, slot=None):
+        reading = self.reading(self.root)
+        if 'used_bytes' in reading:
+            self.value['readings'] += 1
+            if self.value['peak'] is None or reading['used_bytes'] > self.value['peak']['used_bytes']:
+                self.value['peak'] = reading
+        else:
+            self.value['unavailable_readings'] += 1
+            self.value['last_unavailable'] = reading.get('unavailable')
+        if slot:
+            self.value[slot] = reading
+        try:
+            write(self.path, self.value)
+        except Exception:
+            pass
+
+    def loop(self):
+        while not self.stop_event.wait(self.interval):
+            try:
+                self.take()
+            except Exception:
+                pass
+
+    def start(self):
+        try:
+            self.take('before_workload')
+            self.thread = threading.Thread(target=self.loop, name='ordinary-disk-sampler', daemon=True)
+            self.thread.start()
+        except Exception:
+            pass
+        return self
+
+    def stop(self):
+        try:
+            self.stop_event.set()
+            if self.thread is not None:
+                self.thread.join(timeout=5)
+            self.take('after_workload')
+        except Exception:
+            pass
 
 
 BARE_MODEL = 'benchmark/baselines/bare_model.py'
@@ -821,10 +910,15 @@ def execute(base):
     evidence.mkdir(exist_ok=False)
     rec = Recorder(evidence/'network.jsonl')
     deny_network(rec)
+    # Open item 37: disk in use before, during and after the workload, in the evidence.
+    disk = DiskSampler(base, evidence/DISK_USAGE).start()
     if arm_of(manifest) == 'B1':
         # Every guard above holds for B1 as for B3 (authorization with its arm, RUN_CLAIMED,
         # the budget stop thread, the sealed cache, the pinned runtime, the network denial).
-        return execute_b1(base, manifest, project, evidence, rec)
+        try:
+            return execute_b1(base, manifest, project, evidence, rec)
+        finally:
+            disk.stop()
     # Every inherited runtime flag was removed; only the manifest flags survive.
     argv = list(argv_for(manifest))
     if '--topology-config' in argv:
@@ -839,6 +933,7 @@ def execute(base):
     except BaseException as exc:
         write(evidence/'terminal_error.json', failure_identity(exc, project))
     finally:
+        disk.stop()
         rec.close()
         import model_telemetry, run_completion
         # The runtime may rename its output folder at completion.

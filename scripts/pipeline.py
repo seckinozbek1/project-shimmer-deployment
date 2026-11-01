@@ -367,11 +367,24 @@ PAIRED_JUDGING_MAX_TOKENS = 768       # PRACTICE_AUDITOR etc: one unit, one rule
                                        # a handful of findings at most; the
                                        # largest of 5 real, uncapped calls was
                                        # 645 tokens (see above)
-AUDIT_MAX_TOKENS = 2048               # VERIFIER, FACT_CHECKER: an open-ended
-                                       # audit of one document's whole draft,
-                                       # capped at 1024 with direct evidence of
-                                       # a lost finding (VERIFIER's contract
-                                       # violation, 13:11:26Z on the run above)
+AUDIT_MAX_TOKENS = 2048               # FACT_CHECKER (VERIFIER before D-134): an
+                                       # open-ended audit of one document's whole
+                                       # draft, capped at 1024 with direct
+                                       # evidence of a lost finding (VERIFIER's
+                                       # contract violation, 13:11:26Z on the run
+                                       # above)
+VERIFIER_MAX_TOKENS = 4096            # VERIFIER alone (D-134, D-S14 item 3).
+                                       # Measured, not preferred: replay R2c (A10,
+                                       # sdpa_constrained, the run's own loader)
+                                       # of the 8 VERIFIER prompts whose saved
+                                       # replies stopped at 2048: 4 ended on
+                                       # their own at 2342 to 3590 tokens and
+                                       # passed the unchanged validator, 4 still
+                                       # reached 4096; no out-of-memory failure
+                                       # (largest prompt 41371 tokens), peak
+                                       # 21.89 GB allocated as at 2048.
+                                       # FACT_CHECKER keeps AUDIT_MAX_TOKENS: it
+                                       # was not measured.
 PRODUCTION_MAX_TOKENS = 2048          # ARCHIVIST, INST_FINDER, CITATION_RESOLVER,
                                        # PROCESSOR, SPEECH_ACT_TAGGER, LEGAL_ANALYST
                                        # pass one: 4 of 6 on the run above hit
@@ -1672,7 +1685,7 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             names.append(name)
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
-                                  max_tokens=AUDIT_MAX_TOKENS,
+                                  max_tokens=VERIFIER_MAX_TOKENS if name == "VERIFIER" else AUDIT_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=_doc_refs_excerpt(reference_index, doc['id']),
                                   activation={"reason": "source_and_draft_audit", "source_phase": "5",
@@ -4568,6 +4581,9 @@ def main(argv=None):
     parser = _build_arg_parser()
     localization.localize_parser(parser)
     args = parser.parse_args(argv)
+    # Pre-phase-3 spans (open item 38): main's inline work before phase 3-4, timed
+    # contiguously into phase_latencies under a topology runtime; no-ops otherwise.
+    execution_topology.pre_phase_span("phase_0_start")
 
     import final_models
     if final_models.mode() == 'final':
@@ -4936,6 +4952,7 @@ def main(argv=None):
         return code
 
     # Date cascade + cutoff -> populate input/operational/
+    execution_topology.pre_phase_span("phase_0_ingestion_and_roles")
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,
               phase="0")
     # chokepoint 4 (INFRA-041 P2): there is no BOOT date-web egress to suppress any
@@ -4984,7 +5001,8 @@ def main(argv=None):
             print("[pipeline] aborted by operator.", file=sys.stderr); return 0
 
     # BOOT orchestrator (adaptive_spawn fires if first run)
-    handler = _resolve_operator_handler(args, run_ctx)
+    execution_topology.pre_phase_span("phase_0_boot_and_index")
+    handler =_resolve_operator_handler(args, run_ctx)
     orch = TopOrchestrator.boot(ROOT, interactive=not args.non_interactive,
                                  operator_handler=handler, cost_tracker=cost_tracker,
                                  run_adaptive_spawn=True, run_context=run_ctx,
@@ -5176,6 +5194,7 @@ def main(argv=None):
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 
     # PHASE 1
+    execution_topology.pre_phase_span("phase_1_situation_assessment")
     _emit_progress(event="start", docs=len(op_docs), status="running")
     _emit_progress(phase=1, status="running")
     orch.deliberation_round({"phase": "situation_assessment",
@@ -5185,6 +5204,8 @@ def main(argv=None):
 
     # R6: the default sentence, plus the review question when the operator gave one.
     run_objectives = _effective_run_objectives(args.run_objectives, args.task, args.question)
+    # Genesis phase 2 has no code of its own here; phase 3-4 is the next boundary.
+    execution_topology.pre_phase_span(None)
 
     production, audit, conv_review = [], [], []
     deliverables = {}

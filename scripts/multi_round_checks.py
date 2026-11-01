@@ -340,9 +340,19 @@ class MultiRoundChecks(unittest.TestCase):
         with patch.object(AgentWrapper, "dispatch", authored):
             code = phase.execute(ctx, r, f["documents"], refs, factory, sensitive=False)
         self.assertEqual(code, 0, r.get("activation"))
-        self.assertEqual(calls, ["PROCESSOR", "VERIFIER"])
+        # Open item 35: the trajectory records are computed in Python; no model is asked.
+        self.assertEqual(calls, [])
         self.assertEqual(r["outcome"], "reviewed")
-        self.assertTrue(any(msg["body"].get("event") == "MULTI_ROUND_REVIEWED" for msg in bus.read_all()))
+        self.assertTrue(r["records"] and all(x["written_by"] == "python" for x in r["records"]))
+        self.assertEqual({x["kind"] for x in r["records"]}, {"position", "movement"})
+        self.assertTrue(all(x["movement"] == "unknown" for x in r["records"] if x["kind"] == "movement"))
+        # One position per declared source here, and one movement per consecutive pair.
+        self.assertEqual(sum(x["kind"] == "position" for x in r["records"]), len(m["sources"]))
+        self.assertEqual(sum(x["kind"] == "movement" for x in r["records"]), 2)
+        posts = [msg["body"] for msg in bus.read_all() if msg["body"].get("event") == "MULTI_ROUND_REVIEWED"]
+        self.assertEqual([(b["backend"], b["model"]) for b in posts], [("computed", "python")])
+        saved_view = mr.read_saved(ctx.run_dir, ctx.run_id)
+        self.assertEqual((saved_view["outcome"], saved_view["activation"]["activated"]), ("reviewed", True))
         for name, content in before.items():
             if not name.startswith(str(ctx.run_dir.relative_to(self.root))):
                 self.assertEqual((self.root / name).read_bytes(), content)

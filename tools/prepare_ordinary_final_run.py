@@ -267,7 +267,7 @@ def budget_fields(provider, budget, now_epoch):
     rate = candidates[0]['max_hourly_rate']
     decision = guard.check(ledgers=budget['ledgers'], forecast_minutes=budget['forecast_minutes'], hourly_rate=rate,
                            storage_forecast_usd=budget['storage_forecast_usd'], now_epoch=now_epoch,
-                           provider_names=[i.get('name') for i in provider['instances']],
+                           provider_names=guard.loop_inventory(provider['instances']),
                            reserve_minutes=WORKLOAD_STOP_RESERVE_SECONDS / 60, reaped=budget.get('reaped'))
     return dict(instance_candidates=candidates, region=guard.PREFERRED_REGION,
         max_hourly_rate=max(c['max_hourly_rate'] for c in candidates), a10_reference_rate=reference,
@@ -478,7 +478,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             support_names.append('replay_prompts.json')
     support = {n:sha(OUT/n) for n in support_names}
     provider = read(OUT/'provider_inventory.json')
-    require(provider['instances']==[], 'Provider inventory not empty')
+    # D-S17: only loop instances, fewer than the limit; budget_fields' guard counts the ledgers too.
+    guard.refuse_full_inventory(provider['instances'])
     import time
     budget_values = budget_fields(provider, budget, time.time() if now_epoch is None else now_epoch)
     if reuse_assets:

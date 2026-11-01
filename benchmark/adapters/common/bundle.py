@@ -266,7 +266,13 @@ def is_empty(doc) -> bool:
 
 
 def build_document(benchmark: str, doc: dict, cut=None):
-    """(document text, parts record, answer rows) for one document. `doc` carries
+    """(document text, parts record, answer rows) for one document: `_build` without the
+    kept part texts."""
+    return _build(benchmark, doc, cut)[:3]
+
+
+def _build(benchmark: str, doc: dict, cut=None):
+    """(document text, parts record, answer rows, kept part texts) for one document. `doc` carries
     document_id, source_document_id, split_key, side, cluster, parts ([{text, words,
     source}]), rules ([{rule_id, name, text}]) and items ([{item_id, source_item_id,
     rule_id, gold, location_measurable, evidence_parts or evidence_texts, extra}]).
@@ -324,13 +330,15 @@ def build_document(benchmark: str, doc: dict, cut=None):
         "items_evidence_beyond_cut": [a["item_id"] for a in answers if a["evidence_beyond_cut"]],
     }
     record.update(doc.get("record_extra") or {})
-    return text, record, answers
+    return text, record, answers, texts
 
 
 def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=None,
-                  build_extra=None, refuse_holdout=False) -> dict:
+                  build_extra=None, refuse_holdout=False, segment=None) -> dict:
     """Write one bundle per document under `out_dir`, the item table and the parts
-    record beside them. Refuses a non-empty `out_dir`, and refuses the whole build
+    record beside them. `segment(out_dir, doc, kept part texts, record, answers)`, where
+    given (common/segments.py, `plan`), writes B3's segment bundle of a long document and
+    records it in the document's parts record. Refuses a non-empty `out_dir`, and refuses the whole build
     (writing nothing) when a document's recorded side differs from `declared_side`, or,
     with `refuse_holdout` (a development build that declares no side), when a document
     is on the holdout side. A document with no text is skipped and listed. Returns the
@@ -360,7 +368,7 @@ def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=No
             skipped.append({"document_id": doc_id, "source_document_id": doc["source_document_id"],
                             "reason": "no text", "items": len(doc["items"])})
             continue
-        text, record, answers = build_document(benchmark, doc, cut)
+        text, record, answers, kept = _build(benchmark, doc, cut)
         name = doc_id + ".md"
         bundle = out / doc_id
         write_text(bundle / CONTEXT_DIR / name, text)
@@ -378,6 +386,8 @@ def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=No
                           "rule_id": item["rule_id"], "benchmark": benchmark,
                           "source_item_id": ids.key_string(item["source_item_id"]),
                           "source_document_id": ids.key_string(doc["source_document_id"])})
+        if segment is not None:
+            segment(out, doc, kept, record, answers)
         records.append(record)
     write_json(out / ITEM_TABLE_NAME, {"benchmark": benchmark, "items": table})
     parts_record = {"benchmark": benchmark, "input_format": INPUT_FORMAT_VERSION,
@@ -385,6 +395,9 @@ def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=No
     parts_record.update(build_extra or {})
     parts_record.update(documents=records, skipped=skipped)
     write_json(out / PARTS_RECORD_NAME, parts_record)
-    return {"benchmark": benchmark, "documents": len(records), "items": len(table),
-            "cut_documents": sum(1 for r in records if r["cut"]["cut"]),
-            "skipped_documents": skipped}
+    summary = {"benchmark": benchmark, "documents": len(records), "items": len(table),
+               "cut_documents": sum(1 for r in records if r["cut"]["cut"]),
+               "skipped_documents": skipped}
+    if segment is not None:
+        summary["segmented_documents"] = sum(1 for r in records if r.get("b3_segments"))
+    return summary

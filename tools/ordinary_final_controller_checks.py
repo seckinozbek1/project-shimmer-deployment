@@ -1564,14 +1564,16 @@ class ControllerChecks(unittest.TestCase):
             with self.assertRaisesRegex(guard.GuardRefusal, 'not one the reaper reads'):
                 guard.require_reaped(fresh_spend)
             guard.require_reaped(private)
-        # Another loop instance: an open launch in a ledger, or a loop name in the inventory.
+        # Two loop instances running (D-S17): open launches in a ledger, each counted once with
+        # its inventory name; a listed loop instance no ledger records is refused on its own.
         other = self.root / 'g2' / 'ledger.jsonl'
         open_ledger(other)
-        write_lines(other, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                 price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
-            decide(ledgers=[other])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(other, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                     price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60))])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            decide(ledgers=[other], provider_names=['shimmer-loop-open', 'shimmer-loop-open2'])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'no ledger records is running \\(shimmer-loop-elsewhere\\)'):
             decide(ledgers=[fresh_spend], provider_names=['shimmer-loop-elsewhere'])
         # R_INPUTS.json: the allocation left, the instance type and R's cap.
         fresh = self.root / 'g3' / 'ledger.jsonl'
@@ -1589,15 +1591,155 @@ class ControllerChecks(unittest.TestCase):
                 decide(ledgers=[fresh], r_inputs=inputs, instance_type='gpu_1x_a10')
 
     def test_controller_launch_is_refused_by_the_guard_before_any_instance(self):
-        """S2c item 5 wired into the launch path: an open loop launch in the ledger refuses
-        this launch after the inventory and price reads and before any key or instance."""
-        write_lines(self.ledger, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        """S2c item 5 wired into the launch path: two open loop launches in the ledger (D-S17)
+        refuse this launch after the inventory and price reads and before any key or instance."""
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(self.ledger, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                           price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'Two loop instances are running'):
             self.execute()
         self.assertEqual(FakeProvider.state['launches'], 0)
         self.assertEqual(FakeProvider.state['keys'], [])
         self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+
+    def two_instance_ledger(self, folder, caps, minutes_ago=1):
+        """A fresh loop ledger with one open launch per cap, each requested `minutes_ago`."""
+        ledger = self.root / folder / 'ledger.jsonl'
+        open_ledger(ledger)
+        now = 1_000_000.0 + 3600
+        for index, cap in enumerate(caps):
+            write_lines(ledger, [dict(event='launch', instance_id=str(index + 1) * 32, instance_name='shimmer-loop-run%d' % index,
+                                      cap_usd=cap, price_usd_per_hour=1.29, launch_requested_utc=guard.utc(now - 60 * minutes_ago),
+                                      deadline_utc=guard.utc(now + 7200))])
+        return ledger, now
+
+    def test_a_second_loop_instance_is_admitted_while_one_runs_and_its_cap_counts_the_first(self):
+        """D-S17 item 1: with one loop instance running a second launch is admitted, still
+        forecast and capped, its per-run cap counting the first one's cap; the controller
+        launches it beside the first and its cleanup requires only its own instance gone."""
+        ledger, now = self.two_instance_ledger('second', [43.0])
+        decide = lambda path: guard.check(ledgers=[path], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=3.9,
+                                          now_epoch=now, reserve_minutes=15, reaped=[], provider_names=['shimmer-loop-run0'])
+        decision = decide(ledger)
+        self.assertEqual(decision['running_caps_usd'], 43.0)
+        # The cap is the ceiling less spend, the first one's cap and storage, not 1.5 x forecast.
+        self.assertLess(decision['cap_usd'], 1.5 * decision['forecast_usd'])
+        self.assertAlmostEqual(decision['cap_usd'], decision['cap_ceiling_usd'] - decision['spend_usd'] - 43.0 - 3.9, places=3)
+        # A first cap one dollar larger leaves the second less than its forecast.
+        with self.assertRaisesRegex(guard.GuardRefusal, 'leaves less than the forecast'):
+            decide(self.two_instance_ledger('second44', [44.0])[0])
+        # The controller, with the first loop instance listed and recorded.
+        first = ('f' * 32, 'shimmer-loop-first')
+        FakeProvider.state = dict(instances=[first], keys=[], launches=0, terminate_calls=0, status={first[0]: 'active'},
+                                  credentials=[], type_reads=0)
+        write_lines(self.ledger, [dict(event='launch', instance_id=first[0], instance_name=first[1], cap_usd=5.0,
+                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0),
+                                       deadline_utc=guard.utc(1_000_000.0 + 86400))])
+        _, _, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(FakeProvider.state['launches'], 1)
+        self.assertEqual(read(self.base / 'launch_preflight.json')['budget']['running_caps_usd'], 5.0)
+        confirm = read(self.base / 'independent_inventory_confirmation.json')
+        self.assertEqual((confirm['instances'], confirm['other_loop_instances']), ([], [first[1]]))
+        cleanup = read(self.base / 'cleanup.json')
+        self.assertEqual((cleanup['own_instance_absent'], cleanup['inventory_empty']), (True, False))
+        self.assertEqual((FakeProvider.state['instances'], FakeProvider.state['status'][first[0]]), ([first], 'active'))
+
+    def test_a_third_loop_instance_is_refused_before_any_instance(self):
+        """D-S17 item 1: with two loop instances running a third launch is refused in one line,
+        by the guard and by the controller before any key, intent or instance."""
+        ledger, now = self.two_instance_ledger('third', [2.0, 2.0])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=3.9, now_epoch=now,
+                        reserve_minutes=15, reaped=[], provider_names=['shimmer-loop-run0', 'shimmer-loop-run1'])
+        running = [('1' * 32, 'shimmer-loop-run0'), ('2' * 32, 'shimmer-loop-run1')]
+        FakeProvider.state = dict(instances=list(running), keys=[], launches=0, terminate_calls=0,
+                                  status={i: 'active' for i, _ in running}, credentials=[], type_reads=0)
+        for ident, name in running:
+            write_lines(self.ledger, [dict(event='launch', instance_id=ident, instance_name=name, cap_usd=2.0, price_usd_per_hour=1.29,
+                                           launch_requested_utc=guard.utc(1_000_000.0), deadline_utc=guard.utc(1_000_000.0 + 86400))])
+        with self.assertRaisesRegex(guard.GuardRefusal, '^Two loop instances are running; at most two at a time$'):
+            self.execute()
+        self.assertEqual((FakeProvider.state['launches'], FakeProvider.state['keys']), (0, []))
+        self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+        self.assertFalse(Path(str(self.ledger) + '.lock').exists())
+        self.assertEqual(FakeProvider.state['instances'], running)
+
+    def two_loop_instances(self, folder, launches, opening=None):
+        """A mock provider listing one active loop instance per launch line not terminated, and its ledger."""
+        ended = {r['instance_name'] for r in launches if r['event'] == 'termination'}
+        ledger = self.root / folder / 'ledger.jsonl'
+        write_lines(ledger, [opening or dict(event='budget_open', time_utc='2026-10-27T03:00:00+00:00',
+                                             loop_start_utc='2026-10-27T03:00:00+00:00', budget_usd=200.0,
+                                             hard_stop_usd=199.0, storage_usd_per_day=0.0)] + launches)
+        state = self.root / folder / 'state.json'
+        write(state, dict(instances=[dict(instance_id=r['instance_id'], name=r['instance_name'], status='active')
+                                     for r in launches if r['event'] == 'launch' and r['instance_name'] not in ended]))
+        return ledger, state, instance_reaper.MockProvider(state)
+
+    def test_the_reaper_sees_both_loop_instances_and_ends_each_after_its_deadline(self):
+        """D-S17 item 1: the reaper judges each of two running loop instances on its own
+        deadline: both left alone before, the first ended after its deadline while the second
+        runs on, then the second, one ledger line each."""
+        from datetime import timedelta
+        start = instance_reaper.parse_time('2026-10-27T10:00:00+00:00')
+        launch = lambda ident, name, minutes: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=1.29,
+                                                    cap_usd=2.0, launch_requested_utc=start.isoformat(),
+                                                    deadline_utc=(start + timedelta(minutes=minutes)).isoformat())
+        ledger, state, provider = self.two_loop_instances('both', [launch('a', 'shimmer-loop-one', 30),
+                                                                   launch('b', 'shimmer-loop-two', 60)])
+        statuses = lambda: [i['status'] for i in read(state)['instances']]
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=10))
+        self.assertEqual((status['loop_running'], status['terminated'], statuses()), (2, [], ['active', 'active']))
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=31))
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-one', reason='deadline_passed')])
+        self.assertEqual(statuses(), ['terminated', 'active'])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=61))
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-two', reason='deadline_passed')])
+        self.assertEqual(statuses(), ['terminated', 'terminated'])
+        ends = [(r['instance_name'], r['reason']) for r in ledger_rows(ledger) if r['event'] == 'termination']
+        self.assertEqual(ends, [('shimmer-loop-one', 'deadline_passed'), ('shimmer-loop-two', 'deadline_passed')])
+
+    def test_the_hard_stop_counts_both_loop_instances_together(self):
+        """D-S17 item 1: the 199 dollar hard stop is reached by the two instances together. 150
+        dollars closed and one instance accrued to 30 leaves it alone at 180; a second accrued
+        to 30 brings the total to 210 and both are terminated, one line each."""
+        from datetime import timedelta
+        now = instance_reaper.parse_time('2026-10-27T12:00:00+00:00')
+        launch = lambda ident, name: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=30.0,
+                                          cap_usd=40.0, launch_requested_utc=(now - timedelta(minutes=60)).isoformat(),
+                                          deadline_utc=(now + timedelta(minutes=60)).isoformat())
+        closed = [dict(event='launch', instance_id='9' * 32, instance_name='shimmer-loop-old', price_usd_per_hour=1.29,
+                       launch_requested_utc='2026-10-27T04:00:00+00:00'),
+                  dict(event='termination', instance_id='9' * 32, instance_name='shimmer-loop-old', actual_cost=150.0)]
+        ledger, state, provider = self.two_loop_instances('hard1', closed + [launch('a', 'shimmer-loop-one')])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual((status['terminated'], round(status['total_spend_usd'], 2)), ([], 180.0))
+        ledger, state, provider = self.two_loop_instances('hard2', closed + [launch('a', 'shimmer-loop-one'),
+                                                                             launch('b', 'shimmer-loop-two')])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual(round(status['total_spend_usd'], 2), 210.0)
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-one', reason='hard_stop_spend_reached'),
+                                                dict(instance_name='shimmer-loop-two', reason='hard_stop_spend_reached')])
+        self.assertEqual([i['status'] for i in read(state)['instances']], ['terminated', 'terminated'])
+        self.assertEqual(len([r for r in ledger_rows(ledger) if r['event'] == 'termination' and r.get('by') == 'reaper']), 2)
+
+    def test_the_reaper_ends_a_loop_instance_beyond_the_limit(self):
+        """D-S17 item 1, the reaper's side: three loop instances inside their deadlines (which
+        the guard never admits) leave the two requested first running and end the latest."""
+        from datetime import timedelta
+        now = instance_reaper.parse_time('2026-10-27T12:00:00+00:00')
+        launch = lambda ident, name, ago: dict(event='launch', instance_id=ident * 32, instance_name=name, price_usd_per_hour=1.29,
+                                               cap_usd=2.0, launch_requested_utc=(now - timedelta(minutes=ago)).isoformat(),
+                                               deadline_utc=(now + timedelta(minutes=60)).isoformat())
+        ledger, state, provider = self.two_loop_instances('three', [launch('c', 'shimmer-loop-late', 5),
+                                                                    launch('a', 'shimmer-loop-early', 30),
+                                                                    launch('b', 'shimmer-loop-middle', 20)])
+        status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-late', reason='over_instance_limit')])
+        self.assertEqual({i['name']: i['status'] for i in read(state)['instances']},
+                         {'shimmer-loop-late': 'terminated', 'shimmer-loop-early': 'active', 'shimmer-loop-middle': 'active'})
+        self.assertLessEqual(set(ledger_rows(ledger)[-1]), set(guard.LEDGER_FIELDS))
 
     def test_the_general_cloud_path_refuses_loop_names_and_ledgers(self):
         """R4: the general cloud tools are not a loop launch path."""
@@ -2953,6 +3095,61 @@ class ControllerChecks(unittest.TestCase):
                       'trained with, and v5 to v12 ran it eager), prefilled in chunks of 1024 tokens under decision D-064 '
                       '(a measurement run)', (measured / 'RUN_REPORT.md').read_text(encoding='utf8'))
 
+    def test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call(self):
+        """D-100 (L7): a declared multi-round run asks no model (open item 35), so it passes on
+        exactly one pipeline_start and one pipeline_end and its case record checks; the same run
+        not reviewed fails; a run that is not multi-round still needs its Producer 168 call."""
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        case = dict(outcome='reviewed', activation=dict(activated=True), round_review=dict(availability='recorded'))
+        passed = runner.assess(completion, rows, case)
+        self.assertEqual(passed['reasons'], [])
+        self.assertTrue(passed['execution_integrity_passed'])
+        self.assertEqual(runner.assess(completion, rows, dict(case, outcome='refused'))['reasons'],
+                         ['multi_round_not_reviewed'])
+        self.assertEqual(runner.assess(completion, rows[:1], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows + rows[1:], case)['reasons'], ['required_telemetry_missing'])
+        self.assertEqual(runner.assess(completion, rows)['reasons'], ['required_telemetry_missing'])
+        call = dict(event='model_call', agent='PROCESSOR', adapter_checkpoint=168)
+        self.assertEqual(runner.assess(completion, rows[:1] + [call] + rows[1:])['reasons'], [])
+
+    def test_a_multi_round_run_reports_its_own_step_times(self):
+        """Open item 39: a multi-round run has no topology runtime, so the report row carries the
+        step times its audit/multi_round.json saved; a run before them says so; a run that is not
+        multi-round says the row does not apply."""
+        import analyze_ordinary_final_run as analysis
+        timings = dict(unit='seconds', clock='time.perf_counter', rounds=[dict(round_id='r1', seconds=0.004631),
+                       dict(round_id='r2', seconds=0.001152)], round_review=0.011972, records=0.001151, phase=0.038369)
+        rows = [dict(event='pipeline_start', monotonic_s=0.5), dict(event='pipeline_end', monotonic_s=0.54)]
+        run = 'evidence/run/r1/'
+        completion = dict(state='completed', reached_end=True, exit_code=0, semantic_complete=True)
+
+        def folder_with(name, saved):
+            evidence = {run + 'audit/run_completion.json': json.dumps(dict(completion, schema_version=1, run_id='r1',
+                                                                           finished_at='2026-10-30T00:00:00+00:00')).encode(),
+                        run + 'logs/model_telemetry.jsonl': ''.join(json.dumps(r) + '\n' for r in rows).encode(),
+                        run + 'audit/execution_topology.jsonl': b'',
+                        run + 'audit/multi_round.json': json.dumps(saved).encode(),
+                        'evidence/result.json': json.dumps(dict(execution_integrity_passed=True, reasons=[],
+                                                                pipeline_exit_code=0)).encode()}
+            folder = self.root / name
+            self.analysis_folder(folder, evidence=evidence, multi_round=True, case_manifest_sha256='c' * 64)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            return read(folder / 'FINAL_STATUS.json')['report']['Multi-round step times']
+        self.assertEqual(folder_with('analysis_mr_times', dict(outcome='reviewed', timings=timings)),
+                         'round review 0.011972 s (r1 0.004631 s; r2 0.001152 s), record computation 0.001151 s, '
+                         'whole phase 0.038369 s (time.perf_counter, measured by the phase itself; the multi-round run '
+                         'has no topology runtime, so its phase_latencies are empty)')
+        self.assertTrue(folder_with('analysis_mr_before', dict(outcome='reviewed')).startswith(
+            'not recorded: the run\'s audit/multi_round.json carries no step times'))
+        plain = self.root / 'analysis_not_mr'
+        self.analysis_folder(plain)
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(plain)
+        self.assertEqual(read(plain / 'FINAL_STATUS.json')['report']['Multi-round step times'],
+                         'not applicable: no multi-round run was declared')
+
     def test_a_semantically_incomplete_run_is_reported_as_such(self):
         """D-061 (b): a run that reached its end with exit 0 and a completion record marking the
         semantic work incomplete is assessed `semantic_incomplete` by the runner, and the
@@ -3091,9 +3288,10 @@ class ControllerChecks(unittest.TestCase):
         runs = self.root / 'outside' / 'runs'
         blocked = self.root / 'blocked' / 'ledger.jsonl'
         open_ledger(blocked)
-        write_lines(blocked, [dict(event='launch', instance_id='e' * 32, instance_name='shimmer-loop-open', cap_usd=2.0,
-                                   price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
+        for ident, name in (('e', 'shimmer-loop-open'), ('f', 'shimmer-loop-open2')):
+            write_lines(blocked, [dict(event='launch', instance_id=ident * 32, instance_name=name, cap_usd=2.0,
+                                       price_usd_per_hour=1.29, launch_requested_utc=guard.utc(1_000_000.0))])
+        with self.assertRaisesRegex(guard.GuardRefusal, 'Two loop instances are running'):
             self.execute(root=repo, base=bundle, call=lambda: bound.execute(bundle, fixture_plan(blocked), runs))
         self.assertFalse(bound.consumed(bundle))
         self.assertTrue((runs / 'bundle').exists())
@@ -3126,7 +3324,19 @@ class ControllerChecks(unittest.TestCase):
             FakeProvider.state['instances'].append(('e' * 32, 'shimmer-loop-elsewhere'))
             return [A10_TYPE]
         FakeProvider.types = appearing
-        with self.assertRaisesRegex(RuntimeError, 'Provider inventory not empty'):
+        with self.assertRaisesRegex(guard.GuardRefusal, 'no ledger records is running'):
+            self.execute()
+        self.assertEqual(FakeProvider.state['launches'], 0)
+        self.assertFalse(Path(str(self.ledger) + '.lock').exists())
+        # An instance outside the loop appearing then is refused as an inventory that was not
+        # empty always was (D-S17 admits loop instances only).
+        self.setUp()
+
+        def foreign(reads):
+            FakeProvider.state['instances'].append(('e' * 32, 'someone-else'))
+            return [A10_TYPE]
+        FakeProvider.types = foreign
+        with self.assertRaisesRegex(guard.GuardRefusal, 'not a loop instance'):
             self.execute()
         self.assertEqual(FakeProvider.state['launches'], 0)
         self.assertFalse(Path(str(self.ledger) + '.lock').exists())
@@ -3446,9 +3656,10 @@ class ControllerChecks(unittest.TestCase):
         provider = instance_reaper.MockProvider(state)
         status = instance_reaper.reap(provider, [ledger], ledger, now=instance_reaper.parse_time('2026-10-27T11:00:00+00:00'))
         self.assertEqual((status['closed_without_instance'], len(ledger_rows(ledger))), ([], 2))
-        with self.assertRaisesRegex(guard.GuardRefusal, 'Another loop instance'):
-            guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0, now_epoch=now.timestamp(),
-                        reserve_minutes=15, reaped=[])
+        # Until it is closed the open intent counts as a running loop instance, its cap a running cap.
+        self.assertEqual([r['instance_name'] for r in guard.ledger_state([ledger], now.timestamp())[1]], ['shimmer-loop-lost'])
+        self.assertEqual(guard.check(ledgers=[ledger], forecast_minutes=60, hourly_rate=1.29, storage_forecast_usd=0,
+                                     now_epoch=now.timestamp(), reserve_minutes=15, reaped=[])['running_caps_usd'], 2.0)
         status = instance_reaper.reap(provider, [ledger], ledger, now=now)
         self.assertEqual(status['closed_without_instance'], [dict(instance_name='shimmer-loop-lost', reason='intent_without_instance')])
         self.assertEqual(status['terminated'], [])
@@ -3745,6 +3956,176 @@ class ControllerChecks(unittest.TestCase):
         # The type rule reads it: at twice 1.59 the H100's 2.99 is admitted, at twice 1.29 it was not.
         self.assertEqual([c['type'] for c in guard.instance_candidates(self.TYPES, guard.a10_reference_rate([ledger, other]))],
                          ['gpu_1x_a10', 'gpu_1x_a6000', 'gpu_1x_a100_sxm4', 'gpu_1x_h100_pcie'])
+
+    # ---- Open item 37: disk in use on the instance ------------------------------------------
+
+    def test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not(self):
+        """The runner's disk_reading: total, used (total less free) and available bytes of the
+        filesystem holding the run root, from statvfs as df -B1 reports them; a failed reading
+        is a record with its reason, never an exception."""
+        stat = SimpleNamespace(f_blocks=1000, f_frsize=4096, f_bfree=400, f_bavail=300)
+        with patch.object(os, 'statvfs', lambda path: stat, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes']),
+                         (4_096_000, 2_457_600, 1_228_800))
+        self.assertEqual(value['path'], str(self.root))
+
+        def refused(path):
+            raise OSError(5, 'Input/output error')
+        with patch.object(os, 'statvfs', refused, create=True):
+            value = runner.disk_reading(self.root)
+        self.assertNotIn('used_bytes', value)
+        self.assertIn('OSError', value['unavailable'])
+
+    def test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails(self):
+        """The runner's DiskSampler: a reading before the workload, the largest of every reading
+        as the sampled peak, a reading after it; the file is rewritten after every reading (a
+        budget stop keeps what was read); an unavailable reading is counted with its reason and
+        a reader that raises fails nothing. execute() starts it after the network denial,
+        before either arm, and stops it in both arms' finally (read from its source)."""
+        used = iter([10, 70, 40, 20])
+        reading = lambda where: dict(path=where, epoch=1.0, total_bytes=100, used_bytes=next(used), available_bytes=5)
+        path = self.root / 'evidence' / runner.DISK_USAGE
+        path.parent.mkdir()
+        sampler = runner.DiskSampler(self.root, path, interval=3600, reading=reading).start()
+        self.assertEqual(read(path)['before_workload']['used_bytes'], 10)
+        sampler.take()
+        sampler.take()
+        # As a budget stop would leave it: before and the peak so far, no after.
+        kept = read(path)
+        self.assertEqual((kept['peak']['used_bytes'], kept['readings'], kept['after_workload']), (70, 3, None))
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['before_workload']['used_bytes'], value['peak']['used_bytes'],
+                          value['after_workload']['used_bytes'], value['readings']), (10, 70, 20, 4))
+        self.assertEqual((value['sample_seconds'], value['peak_kind']), (3600, runner.DISK_PEAK_KIND))
+        self.assertIn('not a continuous maximum', value['peak_kind'])
+        # Unavailable readings: recorded with their reason, counted apart, no peak invented.
+        path.unlink()
+        sampler = runner.DiskSampler(self.root, path, interval=3600,
+                                     reading=lambda where: dict(path=where, epoch=1.0, unavailable='OSError: fixture')).start()
+        sampler.stop()
+        value = read(path)
+        self.assertEqual((value['peak'], value['readings'], value['unavailable_readings'], value['last_unavailable']),
+                         (None, 0, 2, 'OSError: fixture'))
+        self.assertEqual(value['before_workload']['unavailable'], 'OSError: fixture')
+
+        def raising(where):
+            raise RuntimeError('reader fault')
+        runner.DiskSampler(self.root, self.root / 'never.json', interval=3600, reading=raising).start().stop()
+        # The sampling thread itself reads on its interval.
+        path.unlink()
+        values = iter(range(1, 1000))
+        sampler = runner.DiskSampler(self.root, path, interval=0.01, reading=lambda where: dict(
+            path=where, epoch=1.0, total_bytes=1000, used_bytes=next(values), available_bytes=1)).start()
+        time_module.sleep(0.2)
+        sampler.stop()
+        self.assertGreater(read(path)['readings'], 3)
+        # The wiring in execute(), from its source.
+        tree = ast.parse(runner_source())
+        execute = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'execute')
+        body = [ast.unparse(s) for s in execute.body]
+        start = body.index('disk = DiskSampler(base, evidence / DISK_USAGE).start()')
+        self.assertEqual(body[start - 1], 'deny_network(rec)')
+        b1 = execute.body[start + 1]
+        self.assertEqual(ast.unparse(b1.test), "arm_of(manifest) == 'B1'")
+        self.assertEqual([ast.unparse(s) for s in b1.body[0].finalbody], ['disk.stop()'])
+        b3 = next(s for s in execute.body[start + 2:] if isinstance(s, ast.Try))
+        self.assertEqual(ast.unparse(b3.finalbody[0]), 'disk.stop()')
+
+    def test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence(self):
+        """The controller's evidence packer carries the runner's own disk_reading and prints one
+        marked reading after the archive is written; the controller saves it as
+        disk_after_evidence.json in the run folder it collects into (the session's, and each
+        batch entry's). No new phase. A packer output with no reading is saved as unavailable
+        with its reason, and the run completes exactly as before."""
+        reading = dict(path=controller.REMOTE, epoch=2.0, total_bytes=500, used_bytes=300, available_bytes=150)
+        marked = lambda value: (b'packed\n' + (controller.DISK_MARK + json.dumps(value)).encode() + b'\n')
+        transport, console, failure = self.execute(outputs={'pack_evidence': marked(reading)})
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE), reading)
+        self.assertNotIn('disk', ' '.join(transport.started))
+        # The packer's own script, as launched, executed here: the archive, then the reading.
+        launch = next(argv[-1] for argv, _ in transport.calls if argv[0] == 'ssh' and '/pack_evidence.pid' in argv[-1])
+        script = base64.b64decode(re.search(r"printf %s '?([A-Za-z0-9+/=]+)'?", launch).group(1)).decode()
+        code = shlex.split(script)[shlex.split(script).index('-c') + 1]
+        self.assertIn(controller.DISK_AFTER_PACK, code)
+        packed = self.root / 'packed'
+        packed.mkdir()
+        (packed / 'evidence').mkdir()
+        write(packed / 'evidence' / 'result.json', dict(fixture=True))
+        stat = SimpleNamespace(f_blocks=10, f_frsize=1024, f_bfree=4, f_bavail=3)
+        here, out = os.getcwd(), io.StringIO()
+        try:
+            os.chdir(packed)
+            with patch.object(os, 'statvfs', lambda path: stat, create=True), contextlib.redirect_stdout(out):
+                exec(compile(code, 'pack', 'exec'), {})
+        finally:
+            os.chdir(here)
+        self.assertTrue((packed / 'collected_evidence.tar.gz').is_file())
+        value = controller.disk_after_evidence(out.getvalue().encode())
+        self.assertEqual((value['total_bytes'], value['used_bytes'], value['available_bytes'], value['path']),
+                         (10240, 6144, 3072, str(packed.resolve())))
+        # No reading in the packer's output: unavailable with its reason, the run unchanged.
+        self.setUp()
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(read(self.base / controller.DISK_AFTER_EVIDENCE),
+                         dict(unavailable='no disk reading in the evidence packer output'))
+        self.assertIn('unreadable', controller.disk_after_evidence((controller.DISK_MARK + '{oops').encode())['unavailable'])
+        self.assert_torn_down()
+        # A batch: each entry's run folder holds the reading its own collection printed.
+        self.setUp()
+        bundles, entries = self.batch_bundles()
+        outputs = {'batch_pack_evidence_%d' % k: marked(dict(reading, used_bytes=300 + k)) for k in range(4)}
+        transport, console, failure = self.execute(plan=fixture_plan(self.ledger, batch=entries), outputs=outputs)
+        self.assertIsNone(failure, failure)
+        folders = sorted(p for p in (self.base / 'batch').iterdir() if p.is_dir())
+        self.assertEqual([read(p / controller.DISK_AFTER_EVIDENCE)['used_bytes'] for p in folders], [300, 301, 302, 303])
+
+    def test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence(self):
+        """FINAL_STATUS carries the readings under `disk` and RUN_REPORT.md a 'Disk on the
+        instance' row; a reading that is missing or failed says so."""
+        gib = 2 ** 30
+        at = lambda used: dict(path='/r', epoch=1.0, total_bytes=100 * gib, used_bytes=used * gib, available_bytes=(100 - used) * gib)
+        usage = dict(before_workload=at(40), peak=at(55), after_workload=at(50), readings=12, unavailable_readings=0,
+                     peak_kind=runner.DISK_PEAK_KIND, sample_seconds=runner.DISK_SAMPLE_SECONDS)
+        folder = self.root / 'analysis_disk'
+        self.analysis_folder(folder, evidence={'evidence/' + runner.DISK_USAGE: json.dumps(usage).encode()})
+        write(folder / 'disk_after_evidence.json', at(51))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        status = read(folder / 'FINAL_STATUS.json')
+        self.assertEqual([status['disk'][k]['used_bytes'] // gib for k in ('before_workload', 'peak', 'after_workload', 'after_evidence')],
+                         [40, 55, 50, 51])
+        row = status['report']['Disk on the instance']
+        self.assertEqual(row, 'before the workload: 40.00 GiB in use of 100.00 GiB, 60.00 GiB available; peak: 55.00 GiB in use '
+                              'of 100.00 GiB, 45.00 GiB available (12 readings; %s); after the workload: 50.00 GiB in use of '
+                              '100.00 GiB, 50.00 GiB available; after evidence packing: 51.00 GiB in use of 100.00 GiB, '
+                              '49.00 GiB available' % runner.DISK_PEAK_KIND)
+        self.assertIn('- **Disk on the instance.** before the workload: 40.00 GiB', (folder / 'RUN_REPORT.md').read_text(encoding='utf8'))
+        # Nothing recorded (a run before open item 37), and a failed reading.
+        folder = self.root / 'analysis_no_disk'
+        self.analysis_folder(folder)
+        write(folder / 'disk_after_evidence.json', dict(unavailable='OSError: fixture'))
+        with contextlib.redirect_stdout(io.StringIO()):
+            analysis.analyze(folder)
+        row = read(folder / 'FINAL_STATUS.json')['report']['Disk on the instance']
+        self.assertIn('before the workload: not recorded (no evidence/disk_usage.json', row)
+        self.assertIn('after evidence packing: unavailable (OSError: fixture)', row)
+
+
+def runner_source():
+    """The runner's source, read for the disk sampler's wiring in execute()."""
+    return Path(runner.__file__).read_text(encoding='utf-8')
+
+
+def runner_source_without_the_b3_disk_stop():
+    source = Path(runner.__file__).read_text(encoding='utf-8')
+    changed = source.replace('    finally:\r\n        disk.stop()\r\n        rec.close()', '    finally:\r\n        rec.close()', 1)
+    changed = changed.replace('    finally:\n        disk.stop()\n        rec.close()', '    finally:\n        rec.close()', 1)
+    assert changed != source, 'the B3 disk stop is not in the runner any more'
+    return changed
 
 
 def shlex_quote(value):
@@ -4110,6 +4491,18 @@ def ledger_view_by_key_only(rows, now):
     return _ORIGINAL_LEDGER_VIEW(stripped, now)
 
 
+_ORIGINAL_LOOP_INSTANCES = instance_reaper.loop_instances
+
+
+def spend_per_instance_view(rows, now):
+    """A hard stop counted one instance at a time: of the open launches' accrued spend, only
+    the largest single one counts, as if the other instance were not there."""
+    by_name, closed, spend = _ORIGINAL_LEDGER_VIEW(rows, now)
+    opens = [instance_reaper.accrued(rec, now, to_deadline=True) for rec in by_name.values()
+             if rec['ident'] not in closed and (rec.get('event') == 'launch' or rec.get('launch_requested_utc'))]
+    return by_name, closed, spend - sum(opens) + max(opens, default=0.0)
+
+
 def declaration_written_when_absent(base, digest):
     """A controller that writes a declaration of its own: what C34 forbids."""
     path = Path(base) / 'asset_copy_declaration.json'
@@ -4236,6 +4629,21 @@ def child_process_starts(source):
 
 
 NEUTRALIZATIONS = [
+    # D-S17 item 1: the limit set back to one, so a second launch is refused again.
+    ('test_a_second_loop_instance_is_admitted_while_one_runs_and_its_cap_counts_the_first', guard, 'admits_another',
+     lambda running: running < 1),
+    # D-S17 item 1: the limit set to three, so a third launch is admitted.
+    ('test_a_third_loop_instance_is_refused_before_any_instance', guard, 'admits_another', lambda running: running < 3),
+    # A reaper that sees one loop instance only, as if one could ever run.
+    ('test_the_reaper_sees_both_loop_instances_and_ends_each_after_its_deadline', instance_reaper, 'loop_instances',
+     lambda listed: _ORIGINAL_LOOP_INSTANCES(listed)[:1]),
+    ('test_the_hard_stop_counts_both_loop_instances_together', instance_reaper, 'ledger_view', spend_per_instance_view),
+    ('test_the_reaper_ends_a_loop_instance_beyond_the_limit', instance_reaper, 'over_limit', lambda kept, by_name: []),
+    # D-100: the model-call requirement applied to a declared multi-round run again, as L7 ran.
+    ('test_a_multi_round_run_is_assessed_on_its_own_evidence_without_a_model_call', runner, 'model_call_required',
+     lambda multi_round: True),
+    # Open item 39: the analyser stops reading the run's saved step times.
+    ('test_a_multi_round_run_reports_its_own_step_times', analysis, 'multi_round_timings', lambda target: None),
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),
@@ -4449,6 +4857,22 @@ NEUTRALIZATIONS = [
     # D-079: the helper no longer adds the flag, so every executed start would show a window.
     ('test_every_child_process_on_the_controller_path_starts_without_a_window', cloud_run_common, 'windows',
      lambda: False),
+    # Open item 37: a reading that never reads the filesystem.
+    ('test_a_disk_reading_is_the_filesystems_df_figures_or_says_why_not', runner, 'disk_reading',
+     lambda path: dict(path=str(path), epoch=0.0, unavailable='neutralised')),
+    # Open item 37: a sampler that keeps nothing it read.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', runner.DiskSampler, 'take',
+     lambda self, slot=None: None),
+    # Open item 37: the B3 arm no longer stops the sampler, so no after-workload reading.
+    ('test_the_runner_records_disk_before_during_and_after_the_workload_and_never_fails', sys.modules[__name__],
+     'runner_source', runner_source_without_the_b3_disk_stop),
+    # Open item 37: the controller drops the packer's reading.
+    ('test_disk_after_evidence_packing_is_saved_beside_the_collected_evidence', controller, 'disk_after_evidence',
+     lambda stdout: dict(unavailable='neutralised')),
+    # Open item 37: the analyser reads no disk record.
+    ('test_the_analyser_reports_disk_before_the_workload_at_its_peak_after_it_and_after_evidence', analysis, 'disk_record',
+     lambda base, target: dict(before_workload=None, peak=None, peak_kind=None, after_workload=None, readings=None,
+                               after_evidence=None, runner_file=False)),
 ]
 
 

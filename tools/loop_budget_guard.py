@@ -8,8 +8,11 @@ tools/loop/instance_reaper.py) beside any it is given, needs a `budget_open` lin
 them, and refuses a launch whose own ledger is not one the reaper reads, so a wrong or new
 path can never read as zero spend while the reaper kills the unrecorded instance. It
 refuses a launch, in one line, when:
-  * another loop instance runs (an open launch in a ledger, or a `shimmer-loop-` name
-    in the provider inventory the caller listed);
+  * `MAX_LOOP_INSTANCES` loop instances (two, D-S17 item 1) already run, counted once each
+    over the open launches in the ledgers and the `shimmer-loop-` names in the provider
+    inventory the caller listed, so a third is refused while two run;
+  * the inventory lists a loop instance no ledger read records as running: its cap could
+    not be counted among the running caps (the reaper ends such an instance);
   * the per-run cap formula leaves less than the forecast:
         cap = min(1.5 x forecast, ceiling - spend - caps of running loop instances
                   - storage forecast),  ceiling = min(hard stop, budget - 1),
@@ -53,6 +56,9 @@ PREFIX = instance_reaper.PREFIX
 # (the reaper's own), the cap and forecast factors and the type-rule factor. The total
 # budget is not one of them: it is read from the ledger (D-S9).
 RESERVE_USD = instance_reaper.MARGIN_USD
+# D-S17 item 1: at most two loop instances at once, a third refused. Declared once, in the
+# reaper this module reads (which ends any beyond it), and used here under this name.
+MAX_LOOP_INSTANCES = instance_reaper.MAX_LOOP_INSTANCES
 CAP_FACTOR = 1.5
 FORECAST_FACTOR = 1.3
 TYPE_RULE_FACTOR = 2.0
@@ -179,6 +185,36 @@ def a10_reference_rate(ledgers):
     return number(max(timed, key=lambda item: (item[0], item[1]))[2], 'A10 reference price')
 
 
+_COUNT_WORDS = ('No', 'One', 'Two', 'Three', 'Four', 'Five')
+
+
+def admits_another(running):
+    """True while fewer than MAX_LOOP_INSTANCES loop instances run (D-S17 item 1)."""
+    return running < MAX_LOOP_INSTANCES
+
+
+def instances_running(count):
+    """The one-line refusal for a launch with `count` loop instances running."""
+    word = lambda n: _COUNT_WORDS[n] if n < len(_COUNT_WORDS) else str(n)
+    return '%s loop instance%s %s running; at most %s at a time' % (
+        word(count), '' if count == 1 else 's', 'is' if count == 1 else 'are', word(MAX_LOOP_INSTANCES).lower())
+
+
+def loop_inventory(inventory):
+    """The names of the loop instances in a provider inventory. Any instance that is not a
+    loop instance refuses the launch, as an inventory that was not empty always did."""
+    names = [str(item.get('name') or '') for item in inventory]
+    refuse(all(n.startswith(PREFIX) for n in names), 'Provider inventory holds an instance that is not a loop instance')
+    return sorted(names)
+
+
+def refuse_full_inventory(inventory):
+    """Before any guard decision: only loop instances listed, and fewer than the limit."""
+    names = loop_inventory(inventory)
+    refuse(admits_another(len(names)), instances_running(len(names)))
+    return names
+
+
 def read_r_inputs(path):
     value = json.loads(Path(path).read_text(encoding='utf-8'))
     refuse(isinstance(value, dict) and all(k in value for k in R_INPUT_FIELDS), 'R_INPUTS.json lacks a budget field')
@@ -206,8 +242,12 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
         refuse(instance_type is None or r['instance_type'] == instance_type, 'Instance type differs from R_INPUTS.json')
         refuse(forecast <= number(r['allocation_left_usd'], 'R allocation', positive=False),
                'Forecast %.2f dollars exceeds the allocation left %.2f dollars' % (forecast, r['allocation_left_usd']))
-    others = sorted(n for n in provider_names if str(n).startswith(PREFIX))
-    refuse(not running and not others, 'Another loop instance is running; at most one at a time')
+    recorded = {rec.get('instance_name') for rec in running}
+    listed = {str(n) for n in provider_names if str(n).startswith(PREFIX)}
+    unrecorded = sorted(listed - recorded)
+    refuse(not unrecorded, 'A loop instance no ledger records is running (%s); its cap cannot be counted'
+           % ', '.join(unrecorded))
+    refuse(admits_another(len(recorded | listed)), instances_running(len(recorded | listed)))
     ceiling = cap_ceiling(budget, hard_stop)
     cap = per_run_cap(forecast, spend, running_caps, storage, ceiling)
     if r_inputs is not None:

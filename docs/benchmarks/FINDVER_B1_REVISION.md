@@ -1,0 +1,81 @@
+# FinDVer: the B1 revision and B3's reading of long filings
+
+Development only. Loop stage S5, lane `lane/s05-findver`, carrying out the operator's decision D-S13 item 7 (30 October 2026), which overrules D-078 and keeps FinDVer in the evaluation. FinDVer's held-out (`test`) labels have been public since 14 July 2026 (MIT licence); every report that gives a FinDVer figure states it.
+
+## 1. The revision rule (written 2026-10-30 13:50 +0300, committed as `85c9f49` at 13:50:47, before any B1 reply was read)
+
+Written before this lane opened any B1 reply, any FinDVer score, metric, label, gold value or answer key. It governs every change below to the B1 arm on FinDVer (preregistration section 5.4, "Development check").
+
+**What may change.**
+
+1. The structure of FinDVer's B1 prompt for long inputs: the order of the user turn's blocks (the ITEM and LABELS blocks may stand before the DOCUMENT, after it, or both), a closing reminder after the document that restates the required last line, and a bound on the length of the working the system turn asks for. The question line and the three label lines are kept word for word.
+2. The chunking of a filing into the B1 prompt: the filing after section 5.3's cut (the same text every arm receives) split into consecutive windows of whole parts, each prompt with its output allowance under the model's context, one reply per window and item, the windows' labels combined by a rule fixed in writing before any window reply exists. The combination rule reads only the window labels, never gold, never which items are right.
+3. The parser's tolerance for well-defined formats: a format is admitted only when it is stated as a structural rule (what the reply's text must look like), applies identically to every FinDVer reply, never changes the label of a reply the frozen parser already parses, reads the label only from the reply's own label field or label line by the frozen normalisation and label names, and never reads `evidence`, `reason`, the item id's correctness or anything outside the reply.
+
+Only FinDVer's entry changes. The system turn and the user template for ContraDoc, CUAD, SciTab, ContractNLI and B's synthetic tests, and their parsing, stay byte for byte as frozen in version 2.
+
+**What may not change.** The label set and the label names; the decision rule (FinDVer: refuted is FLAG, entailed is CLEAR, undecided and every unparseable reply are ABSTAIN, section 5.2); the cut rule and the same-text-for-every-arm rule (section 5.3); the main reading agent, its checkpoints, decoding policy, attention and prefill, and its 2,048-token output allowance (section 12 items 8, 12, 13); anything chosen by looking at which items a reply gets right or wrong. No gold label, `labels.json`, `metrics.json`, `SUMMARY.json`, answer key or score is read for this revision, by this lane or for it.
+
+**How a change is accepted.** By parse rate on development items only, never by accuracy:
+
+- A parser change is measured now, offline, by re-parsing the saved S5 FinDVer B1 replies (L3e and L4b, development, exposed) under the frozen parser and under the changed one: for each reply, whether it parses and by which rule. Only the reply text's format is read. The saved set is a handful of replies on one filing, so the figure is reported as counts with its n, never as a rate that decides anything alone.
+- A prompt-structure or chunking change cannot be measured on saved replies. It is accepted only by a development B1 run on both checkpoints whose pooled FinDVer development parse rate (`bare_model.py pool`) reaches the 95 percent floor of section 5.4. Until that run, the change is proposed and unmeasured, and FinDVer's B1 stays under section 5.4's rule for a benchmark below the floor.
+- Order fixed now: the parser change first (measurable now); then the prompt structure (item 1), measured by a development run; chunking (item 2) only if that run stays below the floor.
+- Each accepted change counts as one of the three revisions section 5.4 allows before the freeze, is logged in `docs/benchmarks/DEVIATIONS.md` with its development parse counts, and, as section 12 item 12 requires after any section 5.4 revision, both checkpoints are re-run on the items it touches and the checkpoint rule is applied again. The change enters the frozen design only through preregistration version 3 (D-S13 item 10).
+
+**Recorded.** Which saved replies were read is listed in section 4, with what was read from each.
+
+## 2. The B1 change (candidate, not frozen)
+
+`benchmark/baselines/b1_prompt_findver_candidate.json` is `b1_prompt.json` with FinDVer's entry alone changed (the checks hold every other key and every other benchmark's rendering byte for byte). It replaces `b1_prompt.json` only through preregistration version 3; until then `bare_model.py` sends the frozen prompt. When this lane merged with the CUAD claim check (`3d4e4e2`), `b1_prompt.json` had gained the `cuad_claim` entry, so the candidate carries it too, copied unchanged; FinDVer's entry and its rendering are untouched, and the candidate's SHA-256 moved from `1eb2313b...cc93` (the figure section 5's measurements name) to `9d6dba34...c2d9`.
+
+- **Prompt structure (rule item 1).** FinDVer's user turn puts the ITEM and LABELS blocks, then the conventions (which hold the claim), before the DOCUMENT, and after the document an `END OF DOCUMENT` line and the item again (`The item again: Item id: ... Rule id: ... <question> Work briefly, then end with the one-line JSON object, the label first, as the instructions say.`). The system turn asks for brief working: at most three short passages, each a sentence or a single table row, never a whole table. The question line and the three label lines are unchanged.
+- **The last line (beyond the rule's literal items; see below).** FinDVer's required last line puts `label` second, after `item_id` and before `reason` and `evidence`, and bounds `evidence` to the exact sentence or table row, at most 60 words.
+- **Parser (rule item 3).** For an entry carrying `parse_truncated_label` (FinDVer's candidate only), where the frozen parser parses nothing, the parser looks at the last line that opens a JSON object and is never closed, and reads the first `"label"` field in it whose string value is complete; the label is then matched exactly as the frozen parser matches it. A reply the frozen parser parses keeps its result exactly; a label cut mid-string, a label not in the list, and an empty reply stay unparsed. The label file records `parse_truncated_object` and `b1_summary.json` counts it per benchmark.
+- **Renderer.** `common/prompt.py` lets a benchmark entry carry its own `system` and `user_template`; an entry without them renders as before. The cut rule counts the same rendering (`prompt.overhead`), so a build with `--b1-prompt <candidate>` cuts every filing to the budget the candidate prompt leaves.
+
+**What the saved replies showed, and a departure from the rule's literal items.** Both saved replies (section 4) are 2,048 tokens long, reached the output allowance, and contain no `"label"` key: each opens the final JSON object at once, with no working, and copies table after table into `evidence` until the allowance cuts it, so `label`, the last key the frozen line asks for, is never written. No parser reading can recover a label that was never written (section 5). The rule's item 1 names the order of the blocks, a closing reminder and a bound on the working; it does not name the order of the keys in the last line or a bound on `evidence`. Those two changes were chosen after reading the two replies' format (the label's position and the runaway field), never a label or a score, and are proposed to the lead as an amendment of item 1 for the record, not applied under the rule as written: the lead accepts them or the candidate drops them before any development run. The truncated-label reading is what makes the reordering count: with `label` second, a reply cut short in `evidence` still carries a complete label.
+
+**Acceptance.** Not yet measurable: the parser change parses 0 of the 2 saved replies, as the frozen parser does, and the prompt change needs a development B1 run on both checkpoints (section 6). Section 5.4's floor applies to that run's pooled rate.
+
+## 3. B3's reading of a long filing (segments)
+
+`common/segments.py`, used by the FinDVer build whenever the cut rule's token counter is given. The cut rule is unchanged: every arm receives the same text. For B3 alone, that kept text is split into consecutive segments of whole parts, each segment's document file at most `B3_SEGMENT_TOKENS` (2,500) tokens of the main reading agent's tokenizer; a part alone above the limit is a segment of its own and listed `over_limit` (a part is never split, so a unit is never cut in two). A filing of more than one segment gets a second bundle, `b3_segments/<document id>/`, whose targets are the segment documents `<document id>-sNN.md`, each under the document's own part headings (`## P-00034` stays `## P-00034`), each with every rule of the filing. B3 runs that bundle in one run folder named by the document id; the pipeline reviews each segment document as a document of its own, serially on the local profile. `parts.json` records `b3_bundle`, `b3_segments` (id, first and last part, tokens, `over_limit`) and `b3_segment_limit` per filing, and the build's `b3_segment_rule`.
+
+At labelling (`label --arm B3|B4`), the segments are read from the `parts.json` beside `items.json`; every segment's records are read from the one run under the segment's own document id and pooled as one document's records, each record's `unit_id` translated from the segment's (`u01-p-00034`) to the document's (`u34-p-00034`), so section 5.1's order (irregular, then ok, then refusal, then silence) runs over the whole filing as before and location is scored on the document's own units. A call over the context, or a setup failure, anywhere in the run excludes the whole filing (section 5.3, D-084). B2 still reads the document's own bundle.
+
+**Why segments, and why 2,500.** The one filing B3 read at full length (`e61777d6327c`, L3e and L4b) made three calls over the context each time: SPEECH_ACT_TAGGER (35,339 tokens) and LEGAL_ANALYST (36,412) on the 32,768-token producer, each the whole 30,124-token document plus 5,215 and 6,288 tokens of its own; and VERIFIER (349,634 and 336,958 auditor tokens, of 131,072), whose payload carries the source, the PROCESSOR draft (156 and 152 items) and the auditor pair context, about 11.6 auditor tokens per document token. Merging parts (ContractNLI's route) changes how many units there are, not how much text a whole-document call carries, so it cannot bring these calls under the context; only giving each call less of the document can. The limit is set by VERIFIER, and by GPU memory before context: the largest VERIFIER prompt that ran on the A10 is 41,519 tokens (`5db65ebc6ba5`, L4b and L6) and one of 106,212 ran out of memory (L6s2), which is a setup failure under D-084 and excludes the document just as a call over the context does. At 2,500 tokens a segment's VERIFIER prompt is about 29,000 tokens by the measured ratio, and its whole-document producer prompts about 8,800. The ratio is an estimate from one filing; `--b3-segment-tokens N` replaces the limit, and the first development launch should read every segment's VERIFIER prompt size from its reply records before the limit is frozen.
+
+**Limitation.** A claim whose evidence spans two segments is judged by no single call that sees both passages. The per-unit judging calls of phase 5.5 already see one unit at a time, so this changes what the whole-document agents and VERIFIER see, not what decides most items; it is a limitation to state in section 9.
+
+## 4. Saved replies read (rule: format and parse only)
+
+| Saved reply record | Read |
+|---|---|
+| `external/s05/L4b/bundles/contractnli_e42dff968be2_B3/batch/05_findver_e61777d6327c_B1/downloaded/evidence/b1/base/audit/model_replies/000001_40a21dc4446a4c1390bde7ede2d57fd9.json` | the record's structural fields and the reply text's format: its first 700 and last 900 characters, its token length, whether it holds a `"label"` key, and both parsers' results (parsed or not, failure kind). Reply SHA-256 `a5d74eab...5521`. |
+| `external/s05/L4b/bundles/contractnli_e42dff968be2_B3/batch/05_findver_e61777d6327c_B1/downloaded/evidence/b1/tuned/audit/model_replies/000001_2c7a42a5816f4a6ca32d7694db0a0769.json` | the same. Reply SHA-256 `835b3ae9...0cc`. |
+
+L3e's FinDVer B1 entry (`03_findver_e61777d6327c_B1`) has no reply: it did not start (S5 report item 9, "FinDVer B1 did not start"); its folder holds launch and cleanup records only. No B1 `labels/` folder, `b1_summary.json`, `labels.json`, `metrics.json`, `SUMMARY.json` or answer key was opened for FinDVer. B3's reply records of `e61777d6327c` (L3e and L4b) were read for their structural fields only (agent, phase, `context`, `backend_ok`, `error_category`) and, for the three calls over the context, the section sizes of the rendered prompt and the token count of the document inside it. The same structural fields were read, for the VERIFIER memory bound, from every `audit/model_replies/*.json` under `external/s05/`; that first survey's pattern also matched reply records kept under `external/s05/labels/` (copies of run folders), whose structural fields (agent, prompt tokens, `backend_ok`, `error_category`) were counted with the rest; no label, metric or score file there was opened, and the later survey left that folder out.
+
+## 5. Measurements (development, no model; 2026-10-30)
+
+Two full development builds of the 255 testmini filings with the pinned producer tokenizer (`benchmark/dryrun/token_counter.py`), context 32,768, output allowance 2,048: **before**, the frozen B1 prompt and no segments (the code at `dcdfc4d`, B1 prompt SHA-256 `092ffb11...9ce1`); **after**, the candidate prompt (`1eb2313b...cc93`) and segments at 2,500 tokens. Only `parts.json`, `items.json` (ids) and the bundle documents were read; no answer key.
+
+| | Before | After |
+|---|---|---|
+| Filings cut by section 5.3 (count, `parts.json`) | 209 of 255 | 210 of 255 (the candidate prompt is longer, so one more filing is cut) |
+| Document tokens B3 read in one call (median, max) | 29,874, 30,227 | segments of at most 2,500 (one lone part up to 5,494) |
+| Filings with a predicted whole-document producer prompt over 32,768 less 2,048 | 226 | 0 |
+| Filings with a predicted VERIFIER prompt over 131,072 less 2,048 | 250 | 0 |
+| Filings with any predicted call over its model's context | **250** | **0** |
+| Filings with a predicted VERIFIER prompt above the largest that ran on the A10 (41,519) | 255 | 4 (each from a lone part over the limit) |
+| Filings in segments; segments per filing (min, median, max; total) | none | 255; 3, 13, 16; 3,215 (band B median 4, C 12, D 13) |
+| Segments over the limit (lone parts) | none | 8, in 7 filings |
+
+The document token counts and the cut counts are counts. The call sizes are predictions from one filing (`e61777d6327c`: whole-document producer prompts the document plus up to 6,288 tokens, plus 100 a further rule; VERIFIER 11.6 auditor tokens per document token); no B3 run has yet read a filing in segments.
+
+Parse rate on the saved FinDVer B1 replies (section 4; n = 2, one filing, both checkpoints; not a rate): frozen parser 0 of 2, candidate parser 0 of 2. Neither reply holds a `"label"` key, so no parser change can read one; the candidate prompt's effect needs a run (section 6).
+
+## 6. Next: the development measurement
+
+A development launch with B3 on the segment bundles and B1 on the document bundles (both checkpoints, the candidate prompt; section 5.4's floor on FinDVer's pooled parse rate) on filings chosen by the S5 dry-run rule (`benchmark/dryrun/choose.py`, FinDVer's plan B 1, C 2, D 2), reading every segment's VERIFIER and whole-document prompt sizes from its reply records before the limit is frozen. The candidate prompt has to be the one `bare_model.py` sends: either `b1_prompt.json` takes the candidate's FinDVer entry with version 3's section 5.4 text, or the sealed B1 arguments gain a prompt-file option (a change to a bound controller file).

@@ -14,6 +14,10 @@ What it does on every run:
    from a number in this file: the hard stop is that line's ``hard_stop_usd``, else its
    ``budget_usd`` less the one-dollar margin. With no budget line at all, no loop launch
    is allowed (the budget guard refuses one), so every loop instance found is terminated.
+   Spend is the total over every launch, so the hard stop counts every running loop
+   instance together (D-S17: up to ``MAX_LOOP_INSTANCES`` of them). When more loop
+   instances than that are left running, the latest-requested ones beyond the limit are
+   terminated (reason ``over_instance_limit``); the budget guard never admits one.
 4. Closes every launch the ledger still holds open past its recorded deadline when no
    instance of that name is listed: an intent whose launch created no instance
    (reason ``intent_without_instance``) or a launch whose instance is gone (reason
@@ -45,6 +49,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = 'shimmer-loop-'
+# D-S17 item 1: at most this many loop instances run at once. The budget guard refuses a
+# launch that would make one more (`loop_budget_guard.MAX_LOOP_INSTANCES` is this figure),
+# and a pass here that lists more ends the latest-requested ones (``over_instance_limit``).
+# A loop rule, not a budget figure: the budget and the hard stop stay in the ledger (D-S9).
+MAX_LOOP_INSTANCES = 2
 # The margin between the budget and the hard stop when a budget line names no hard stop
 # (IV.3's one dollar). The budget itself is never a code constant.
 MARGIN_USD = 1.0
@@ -235,6 +244,23 @@ def write_line(paths, line):
             handle.write(json.dumps(line, sort_keys=True) + '\n')
 
 
+def loop_instances(listed):
+    """The listed instances that are loop instances and not already ending: every one of
+    them, however many, is judged on its own record."""
+    return [item for item in listed
+            if str(item.get('name') or '').startswith(PREFIX)
+            and item.get('status') not in ('terminated', 'terminating')]
+
+
+def over_limit(kept, by_name):
+    """The loop instances beyond ``MAX_LOOP_INSTANCES`` among those a pass leaves running:
+    the latest by recorded launch request (name breaks a tie), so the earliest keep running."""
+    def order(item):
+        rec = by_name.get(item['name']) or {}
+        return (str(rec.get('launch_requested_utc') or rec.get('time_utc') or ''), item['name'])
+    return sorted(kept, key=order)[MAX_LOOP_INSTANCES:]
+
+
 def reap(provider, ledger_paths, append_path, now=None):
     """One reaper pass. Returns a status dict with no key material.
 
@@ -254,13 +280,12 @@ def reap(provider, ledger_paths, append_path, now=None):
     by_name, closed, spend = ledger_view(rows, now)
     budget, hard_stop = budget_figures(rows)
     listed = provider.request('instances')['data']
-    running = [item for item in listed
-               if str(item.get('name') or '').startswith(PREFIX)
-               and item.get('status') not in ('terminated', 'terminating')]
+    running = loop_instances(listed)
     terminated = []
+    due = []
+    kept = []
     for item in running:
-        name = item['name']
-        rec = by_name.get(name)
+        rec = by_name.get(item['name'])
         if hard_stop is None:
             reason = 'no_budget_recorded'
         elif spend >= hard_stop:
@@ -270,7 +295,13 @@ def reap(provider, ledger_paths, append_path, now=None):
         elif now >= parse_time(rec['deadline_utc']):
             reason = 'deadline_passed'
         else:
+            kept.append(item)
             continue
+        due.append((item, reason))
+    due.extend((item, 'over_instance_limit') for item in over_limit(kept, by_name))
+    for item, reason in due:
+        name = item['name']
+        rec = by_name.get(name)
         provider.terminate(item['instance_id'])
         minutes = None
         cost = None
@@ -286,8 +317,8 @@ def reap(provider, ledger_paths, append_path, now=None):
     # A launch still open in the ledger past its recorded deadline, with no instance of its
     # name listed, is closed here: an intent whose launch created no instance (the
     # controller died between the intent line and the launch reply), or a launch whose
-    # instance is already gone. Left open, it would keep the guard refusing every launch as
-    # "another loop instance". Its line is charged to the deadline: a ceiling, counted as
+    # instance is already gone. Left open, it would keep counting as a running loop instance
+    # (and its cap as a running cap) in every guard decision. Its line is charged to the deadline: a ceiling, counted as
     # actual and never refunded, which its reason names. It is written to every ledger file
     # that holds the launch, so R's guard, which reads R's ledger, sees it closed too.
     listed_names = {item['name'] for item in running}
