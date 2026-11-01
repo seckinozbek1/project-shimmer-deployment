@@ -45,15 +45,14 @@ PIECES = ['{"items":[', '{"claims":[', '"questions":[', '"refs":[', '"span":"', 
           '"uncertainty":[', 'extracted', 'empty', 'refused', '"],"', '"]', '","', '],"', ']}', ']}]}',
           ',{', '}', 'CLM-', 'REF-', '"CLM-', '"REF-', 'Gap: ', '\\"', '\\n', '\n', 'missing ', 'date']
 # S10 item 2.1 a: the container image ships no docs/fix/ and no benchmark/. Each of these is
-# read only where it exists, and a test that needs an absent one skips naming it (ABSENT is
-# the list, for the gate's own check to report). The fixture used to be read at import, so the
-# module (and envelope_decoding_checks, which imports it) failed to import there.
+# read only where it exists, and a test that needs an absent one skips naming it (the gate's
+# own check reports the skipped tests and runs the rest). The fixture used to be read at import,
+# so the module (and envelope_decoding_checks, which imports it) failed to import there.
 FIXTURE_PATH = ROOT / 'docs/fix/compact_contract_ab/fixture.json'
 FIXTURE = json.loads(FIXTURE_PATH.read_text(encoding='utf-8')) if FIXTURE_PATH.is_file() else None
 DEV_REPLIES = ROOT / 'docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/full_dev.jsonl'
 REPLAY_TOOL = ROOT / 'benchmark' / 'baselines' / 'replay_prompts.py'
 ABSENT_NOTE = ' (the container image ships no docs/fix/ and no benchmark/)'
-ABSENT = [p.relative_to(ROOT).as_posix() for p in (FIXTURE_PATH, DEV_REPLIES, REPLAY_TOOL) if not p.is_file()]
 
 
 def need(test, *paths):
@@ -61,6 +60,22 @@ def need(test, *paths):
     missing = [Path(p).relative_to(ROOT).as_posix() for p in paths if not Path(p).is_file()]
     if missing:
         test.skipTest(', '.join(missing) + ' not present here' + ABSENT_NOTE)
+
+
+def skipped_tests(result):
+    """{test name: skip reason} of a unittest result (checks 295 and 297: a tree that lacks an
+    input skips only the tests that need it, and a neutralisation is tried only where the tests
+    it targets ran)."""
+    return {test._testMethodName: reason for test, reason in result.skipped}
+
+
+def partial_detail(result, skipped, tried, mutants):
+    """The gate detail of a run in which some tests skipped: what ran and what did not."""
+    return ('%d of %d tests ran and passed, %d of %d neutralisations failed and restored; not run here: %s'
+            % (result.testsRun - len(skipped), result.testsRun, tried, mutants,
+               '; '.join('%s (%s)' % item for item in sorted(skipped.items()))))
+
+
 PRODUCER_TOKENIZER = 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit'
 DEV_TOKEN_ROWS = 12
 

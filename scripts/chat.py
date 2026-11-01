@@ -86,6 +86,7 @@ LOCAL_MODEL_CONFIGURED = ("Local model configured (its libraries import and a mo
 MODEL_NOT_USED = "The local model was not used for this request (%s). Using the command parser instead."
 MODEL_FAILED_TO_LOAD = "it failed to load"
 MODEL_GAVE_NO_ANSWER = "it gave no usable answer"
+MODEL_FAILED_WHILE_ANSWERING = "it failed while answering"
 
 _STOPWORDS = {
     "why", "did", "you", "flag", "flagged", "the", "a", "an", "is", "was", "for",
@@ -562,8 +563,10 @@ class ChatApp:
                 raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
                 cmd = extract_json(raw)
             except Exception:
-                cmd = None
-            if not cmd or "action" not in cmd:
+                # A generation error (out of GPU memory in generate, for one) is its own
+                # reason, never reported as an answer that was not usable.
+                cmd, not_used = None, MODEL_FAILED_WHILE_ANSWERING
+            if not_used is None and (not cmd or "action" not in cmd):
                 not_used = MODEL_GAVE_NO_ANSWER
         if not_used is not None:
             cmd = command_mode_parse(text)  # graceful fallback for this input

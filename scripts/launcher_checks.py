@@ -738,6 +738,16 @@ def _answers(reply):
     return lambda model_id: (_ModelTokenizer(reply), _ModelStandIn())
 
 
+class _GenerateFails(_ModelStandIn):
+    def generate(self, **kw):
+        raise RuntimeError("stand-in: CUDA out of memory in generate")
+
+
+def _generation_fails(model_id):
+    """The model loads, then fails while generating (out of GPU memory, for one)."""
+    return _ModelTokenizer("unused"), _GenerateFails()
+
+
 def _drive_chat(text, typed, model=None):
     """Type each line into a withdrawn chat window (never shown) and return the
     transcript after each, and the recorded launches. With MODEL (a stand-in for
@@ -860,13 +870,19 @@ _STARTUP_CALL = "self.ui(self.post, LOCAL_MODEL_CONFIGURED)"
 _OLD_STARTUP_CALL = 'self.ui(self.post, "Local AI model available. Describe what you want in plain language.")'
 _NOT_USED_CALL = "            self.post(MODEL_NOT_USED % not_used)\n"
 _SILENT_FALLBACK = "            pass\n"
+# A generation error reported as its own reason, and as it was before (one reason for both).
+_GENERATION_FAILED = ('                cmd, not_used = None, MODEL_FAILED_WHILE_ANSWERING\n'
+                      '            if not_used is None and (not cmd or "action" not in cmd):\n')
+_GENERATION_AS_NO_ANSWER = ('                cmd = None\n'
+                            '            if not cmd or "action" not in cmd:\n')
 
 
 def _chat_model_path(text):
     """S7 6e (a) and (b), on stand-ins with no library, weight or memory touched: the startup
-    line says only what the probe checked; a request whose model fails to load, or answers
-    nothing usable, still gets the keyword parser's reply, preceded by a line saying the model
-    was not used and why; a model that answers is used, with no such line."""
+    line says only what the probe checked; a request whose model fails to load, fails while
+    answering (an error in generate, out of GPU memory for one) or answers nothing usable still
+    gets the keyword parser's reply, preceded by a line saying the model was not used and why,
+    each with its own reason; a model that answers is used, with no such line."""
     def says_configured(result):
         transcript = result[3]
         return _CONFIGURED_LINE in transcript and _OLD_AVAILABLE_LINE not in transcript
@@ -883,6 +899,7 @@ def _chat_model_path(text):
 
     failing = _drive_chat(text, ["help"], model=_load_fails)
     garbled = _drive_chat(text, ["help"], model=_answers("I think you want some help."))
+    crashed = _drive_chat(text, ["help"], model=_generation_fails)
     answered = _drive_chat(text, ["what can you do?"], model=_answers('{"action": "help"}'))
     if not used(answered):
         raise AssertionError("a model that answers {\"action\": \"help\"} was not used: %r" % answered[0])
@@ -893,6 +910,8 @@ def _chat_model_path(text):
         raise AssertionError("a model that failed to load was not said unused: %r" % failing[0])
     if not not_used(garbled, "it gave no usable answer"):
         raise AssertionError("a model with no usable answer was not said unused: %r" % garbled[0])
+    if not not_used(crashed, "it failed while answering"):
+        raise AssertionError("a model that failed while answering was not said so: %r" % crashed[0])
     neutral = _neutralise(text, _STARTUP_CALL, _OLD_STARTUP_CALL, "the startup line")
     _prove("the chat's startup line says only what was checked", says_configured(failing),
            not says_configured(_drive_chat(neutral, ["help"], model=_load_fails)),
@@ -906,6 +925,10 @@ def _chat_model_path(text):
                         "it gave no usable answer"),
            not_used(_drive_chat(text, ["help"], model=_answers("I think you want some help.")),
                     "it gave no usable answer"))
+    neutral = _neutralise(text, _GENERATION_FAILED, _GENERATION_AS_NO_ANSWER, "the generation failure reason")
+    _prove("a model that failed while answering is said so", not_used(crashed, "it failed while answering"),
+           not not_used(_drive_chat(neutral, ["help"], model=_generation_fails), "it failed while answering"),
+           not_used(_drive_chat(text, ["help"], model=_generation_fails), "it failed while answering"))
 
 
 def _tk_unavailable():

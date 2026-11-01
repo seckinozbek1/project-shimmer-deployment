@@ -9,19 +9,19 @@ place that picks the backend function.
 No provider, no network, no weights: the model boundaries are the stand-ins of
 scripts/reply_records_checks.py (a recording tokenizer and model for the local
 backends, a recording SDK for the cloud ones), so the REAL backend functions run
-and write their reply records. Two cases, each in its own temporary run folder:
+and write their reply records. One case per backend (local_producer, qwen_local,
+claude_api, openai_api), each in its own temporary run folder, with every backend
+function but the drafter's own replaced by one that raises: the memo must be that
+backend's stand-in text, no other stand-in may be sent anything, and the call
+evidence, the activation row, the reply record and its free_text outcome must all
+name the drafter's backend and the same call id. The reply record must state the
+requested output allowance, 4096, under the key that backend takes (max_new_tokens
+for a local backend, max_tokens for a provider; S10 adversarial MINOR 4).
 
-  local   the drafter on local_producer, its call_claude replaced by one that
-          raises: the memo must be the local stand-in's text, the Claude client
-          must see nothing, and the call evidence, the activation row, the reply
-          record and its free_text outcome must all name the local backend and
-          the same call id;
-  cloud   the drafter on claude_api, its call_local replaced by one that raises:
-          the memo must be the Claude stand-in's text (the cloud path unchanged).
-
-Neutralise, fail, restore, pass: the function's own source with the old line put
-back (a direct call_claude) is compiled beside the pipeline and must fail the
-local case; the shipped function must pass before and after.
+Neutralise, fail, restore, pass: the function's own source with the memo call put
+back to a direct call_claude, and with its budget emptied, is compiled beside the
+pipeline and must fail the local case; the shipped function must pass before and
+after.
 """
 from __future__ import annotations
 
@@ -38,9 +38,23 @@ LOCAL_MEMO = "LOCAL STAND-IN MEMO"
 CLOUD_MEMO = "CLOUD STAND-IN MEMO"
 
 
-def _neutralised_function():
-    """The shipped function with its memo call put back to a direct call_claude,
-    compiled in the pipeline's own namespace."""
+EMPTY_BUDGET_CALL = "lambda: drafter.dispatch(stable, dynamic, **{}),"
+# The memo's output allowance, as the reply record states it (S10 adversarial MINOR 4).
+BUDGET = 4096
+# backend -> (the backend function dispatch must reach, the stand-in it talks to, the memo
+# that stand-in answers, the decoding key the reply record carries the allowance under)
+BACKENDS = {
+    "local_producer": ("call_local", "local", LOCAL_MEMO, "max_new_tokens"),
+    "qwen_local": ("call_qwen", "local", LOCAL_MEMO, "max_new_tokens"),
+    "claude_api": ("call_claude", "claude", CLOUD_MEMO, "max_tokens"),
+    "openai_api": ("call_gpt", "gpt", CLOUD_MEMO, "max_tokens"),
+}
+FUNCTIONS = ("call_claude", "call_gpt", "call_qwen", "call_local")
+
+
+def _neutralised_function(new=OLD_CALL):
+    """The shipped function with its memo call replaced by NEW (by default the old direct
+    call_claude), compiled in the pipeline's own namespace."""
     import pipeline
     source = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8")
     node = next(n for n in ast.parse(source).body
@@ -49,16 +63,18 @@ def _neutralised_function():
     if segment.count(NEW_CALL) != 1:
         raise AssertionError("cannot neutralise: the memo call is not written as %r" % NEW_CALL)
     namespace = dict(vars(pipeline))
-    exec(compile(segment.replace(NEW_CALL, OLD_CALL), "pipeline_neutralised", "exec"), namespace)
+    exec(compile(segment.replace(NEW_CALL, new), "pipeline_neutralised", "exec"), namespace)
     return namespace[FUNCTION]
 
 
 def _case(function, backend):
-    """Run FUNCTION once for a drafter on BACKEND. Returns (problems, summary)."""
+    """Run FUNCTION once for a drafter on BACKEND, every other backend function replaced by
+    one that raises. Returns (problems, summary)."""
     import agent_activation
     import call_evidence
     import reply_records
     import reply_records_checks as rrc
+    own, stand_in, expected, budget_key = BACKENDS[backend]
     problems = []
     with tempfile.TemporaryDirectory(prefix="shimmer_draft_backend_", ignore_cleanup_errors=True) as td:
         fx = rrc.Fixture(td)
@@ -66,33 +82,34 @@ def _case(function, backend):
         audit = agent_activation.initialize(fx.ctx, ["AMENDMENT_DRAFTER"])
         drafter = fx.wrapper("AMENDMENT_DRAFTER")
         refused = []
-        other = "call_claude" if backend != "claude_api" else "call_local"
 
-        def refuse(*args, **kwargs):
-            refused.append(other)
-            raise RuntimeError("the %s path was taken for a %s drafter" % (other, backend))
-        setattr(drafter, other, refuse)
+        def refuser(name):
+            def refuse(*args, **kwargs):
+                refused.append(name)
+                raise RuntimeError("the %s path was taken for a %s drafter" % (name, backend))
+            return refuse
+        for name in FUNCTIONS:
+            if name != own:
+                setattr(drafter, name, refuser(name))
         seen = {"claude": [], "gpt": [], "local": []}
         memo, error = None, None
-        with rrc.backends(claude=[CLOUD_MEMO], local=[LOCAL_MEMO], seen=seen):
+        with rrc.backends(claude=[CLOUD_MEMO], gpt=[CLOUD_MEMO], local=[LOCAL_MEMO], seen=seen):
             try:
                 memo = function(drafter, "Draft a memo.", "## Question\nA question",
                                 passages=[{"ref_id": "REF-0003", "text": "p"}], run_ctx=fx.ctx)
             except Exception as exc:  # the neutralised local case raises here
                 error = "%s: %s" % (type(exc).__name__, exc)
-        expected = LOCAL_MEMO if backend != "claude_api" else CLOUD_MEMO
         if error:
             problems.append("the call raised (%s)" % error)
         if refused:
             problems.append("the %s path was taken" % refused[0])
         if memo != expected:
             problems.append("memo %r, expected %r" % (memo, expected))
-        if backend != "claude_api" and seen["claude"]:
-            problems.append("the Claude client was sent %d request(s)" % len(seen["claude"]))
-        if backend != "claude_api" and len(seen["local"]) != 1:
-            problems.append("the local stand-in saw %d prompt(s), expected 1" % len(seen["local"]))
-        if backend == "claude_api" and len(seen["claude"]) != 1:
-            problems.append("the Claude stand-in saw %d request(s), expected 1" % len(seen["claude"]))
+        for other, sent in seen.items():
+            if other != stand_in and sent:
+                problems.append("the %s stand-in was sent %d request(s)" % (other, len(sent)))
+        if len(seen[stand_in]) != 1:
+            problems.append("the %s stand-in saw %d request(s), expected 1" % (stand_in, len(seen[stand_in])))
         evidence = call_evidence.load(fx.ctx.run_dir)
         call_id = evidence[0].get("call_id") if len(evidence) == 1 else None
         if len(evidence) != 1 or evidence[0].get("backend") != backend or evidence[0].get("task") != "draft_memo":
@@ -102,38 +119,47 @@ def _case(function, backend):
                 or rows[0].get("call_id") != call_id:
             problems.append("activation rows %r" % [(r.get("state"), r.get("outcome")) for r in rows])
         records = [r for r in reply_records.records(fx.replies) if r.get("agent") == "AMENDMENT_DRAFTER"]
+        allowance = None
         if len(records) != 1 or records[0].get("backend") != backend or records[0].get("call_id") != call_id:
             problems.append("reply records %r" % [(r.get("backend"), r.get("call_id")) for r in records])
-        elif reply_records.outcome_of(fx.replies, call_id) != "free_text":
-            problems.append("outcome %r" % reply_records.outcome_of(fx.replies, call_id))
+        else:
+            allowance = (records[0].get("decoding") or {}).get(budget_key)
+            if allowance != BUDGET:
+                problems.append("the reply record's requested output allowance (decoding.%s) is %r, expected %d"
+                                % (budget_key, allowance, BUDGET))
+            if reply_records.outcome_of(fx.replies, call_id) != "free_text":
+                problems.append("outcome %r" % reply_records.outcome_of(fx.replies, call_id))
         if getattr(drafter, "_cost_call_id", "") != "":
             problems.append("the drafter's call id was not cleared")
-    return problems, "%s: memo %r" % (backend, memo)
+    return problems, "%s: memo %r, allowance %r" % (backend, memo, allowance)
 
 
 def check():
     """(status, detail) for the gate."""
     import pipeline
     shipped = getattr(pipeline, FUNCTION)
-    local, local_summary = _case(shipped, "local_producer")
-    if local:
-        return "FAIL", "the shipped draft call on a local drafter: " + "; ".join(local)
-    cloud, cloud_summary = _case(shipped, "claude_api")
-    if cloud:
-        return "FAIL", "the shipped draft call on a Claude drafter: " + "; ".join(cloud)
-    try:
-        neutralised = _neutralised_function()
-    except AssertionError as exc:
-        return "FAIL", str(exc)
-    broken, _ = _case(neutralised, "local_producer")
-    if not broken:
-        return "FAIL", "with the old direct call_claude put back the local case still passed; the check proves nothing"
-    again, _ = _case(shipped, "local_producer")
-    if again:
-        return "FAIL", "after restoring, the local case fails: " + "; ".join(again)
-    return "PASS", ("%s, %s; the real local and Claude backend functions ran on stand-ins, evidence, "
-                    "activation row, reply record and free_text outcome on one call id; neutralise (direct "
-                    "call_claude) FAILS: %s; restore PASSES" % (local_summary, cloud_summary, "; ".join(broken)))
+    summaries = []
+    for backend in BACKENDS:
+        problems, summary = _case(shipped, backend)
+        if problems:
+            return "FAIL", "the shipped draft call on a %s drafter: %s" % (backend, "; ".join(problems))
+        summaries.append(summary)
+    proofs = []
+    for label, new in (("direct call_claude", OLD_CALL), ("budget empty", EMPTY_BUDGET_CALL)):
+        try:
+            neutralised = _neutralised_function(new)
+        except AssertionError as exc:
+            return "FAIL", str(exc)
+        broken, _ = _case(neutralised, "local_producer")
+        if not broken:
+            return "FAIL", "with the memo call neutralised (%s) the local case still passed; the check proves nothing" % label
+        again, _ = _case(shipped, "local_producer")
+        if again:
+            return "FAIL", "after restoring (%s), the local case fails: %s" % (label, "; ".join(again))
+        proofs.append("%s FAILS: %s" % (label, "; ".join(broken)))
+    return "PASS", ("%s; the real backend functions ran on stand-ins, every other backend function raising, evidence, "
+                    "activation row, reply record (allowance %d) and free_text outcome on one call id; neutralise: %s; "
+                    "restore PASSES" % ("; ".join(summaries), BUDGET, " | ".join(proofs)))
 
 
 if __name__ == "__main__":
