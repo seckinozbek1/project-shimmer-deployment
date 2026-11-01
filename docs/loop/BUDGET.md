@@ -260,3 +260,7 @@ L12c (5 re-runs, 85 minutes, about 2.4 USD) is v1 work: v1 work left becomes abo
 ### D-S19: money for the waiting moved steps (2026-11-01 about 03:20 +0300, D-150)
 
 From the parallel track's 30 USD, 12.34 USD moves to the moved steps that waited (the GNN run 1.70, the third re-run with its replays 6.6, the three other S6 items 4.04); the track keeps 17.66. With about 135.8 left (reaper 63.18 at 20:26:59 UTC): v1 work about 2.5 (L14 1.5, slack 1.0), storage 1.0, the track 17.66, the sealed evaluation at least 60, the moved steps 54.6 (L13 17.4, L9a 12.3, L9b 12.3, then the 12.34 above): total about 135.8, so everything fits with nothing left over; L9b still depends on forecasts not growing by more than about 0.4. The 60 floor, the 200 cap and the 199 hard stop are unchanged.
+
+| Launch | Window (UTC, ledger) | Forecast (USD, cap) | Actual |
+|---|---|---|---|
+| L14 | 2026-11-01 about 01:53 to 02:09, launcher-menu-l14, arm L, sealed at 02fae41 | 1.68, cap 2.52 (60 minutes) | 13 minutes, 0.28 USD; integrity failed: the menu stopped before its first prompt (a startup module missing from the archive, D-155). Usage seven-day 72 percent; free memory 3.75 GB, disk 59.1 GB |
