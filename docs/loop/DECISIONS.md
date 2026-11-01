@@ -1584,3 +1584,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Fixed.** #141 (`a46b6be`: the README says the B3 figures were measured on `report_optimized` while the defaults run `reference_serial`, and how to run the measured one), #145 (`b8de549`: L12c has no model-text review, stated), #119 (`39942dd`: setting the cutoff rewrites the tracked `config/review_scope.json`, stated). Merged at `c236dc3`; check 260 passed after each. #141 closes with the push; #145 and #119 keep their behaviour part open.
 - **Defers.** The code and measurement parts stay open in S11 under the tag: #11, #32, #37, #48, #106, #118, #119, #132, #133, #134, #135, #136, #145, #169.
 - **Rules.** D-S24 item 3, P16.
+
+## D-183. Four v1 issues fixed in code (#132, #136, #118, #11)
+
+- **When, stage.** 2026-11-02 02:41 +0300 (system clock), S11, while the gate waits (D-181).
+- **#132, #136** (`8ecf0bf`): under the local profile `ClaimExtractor.extract` uses only its patterns and never builds the OpenAI client; `model_registry.py` is reached only by the start-of-run model gate, which check 313 already ran with clients that raise when built. Check 313 gains the claim extractor case and two neutralisations (the registry as shipped; the guard cut out), each failing and passing restored. Open items 74 and 75 closed.
+- **#118** (`cef8c0f`): in the chat window a mode the person set is kept over a mode the model proposes, and over the keyword parser's default (a bare `review` used to reset "sensitive"); the window says it kept the setting. Check 310 gains both cases, neutralised. Open item 60 closed.
+- **#11** (`eea3c6d`): the staged-archive guard reads `.tar.bz2` and `.tar.xz` with a reader that accounts for every byte and refuses trailing data, and refuses unread 18 more compression and archive suffixes. Check 275 gains both cases, neutralised. A renamed archive in no list is still unrecognised; `docs/THREAT_MODEL.md` says so. Open item 13 closed.
+- Merged at `d18ba37`. Each check run alone (313, 16, 310, 275, 276, 122, 116, 260): PASS. No pinned function, no constitution and no bound controller file changed. The issues close with the push.
+- **Rules.** D-S24 item 3, P16.
