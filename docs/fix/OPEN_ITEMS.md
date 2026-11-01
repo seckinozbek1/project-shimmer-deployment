@@ -173,6 +173,8 @@ earlier comparison record put this red down to the missing `fastapi`; it is not.
 (if the image's `python` resolves to the runtime environment) or correct the check under the
 loop's evidence rule for gate checks, with its own neutralise, fail, restore, pass proof.
 
+**Closed at loop S10 (2026-11-01, commit `49194bc`, lane s10-image, D-165).** The Dockerfile line is restored to exactly `RUN python scripts/ship_gate.py`; the image's `python` is the runtime environment's (`ENV PATH=/opt/shimmer-runtime/bin:$PATH`). Check 252 alone: FAIL before, PASS after; the check was not changed.
+
 ---
 
 ## 8. (Closed 2026-10-27, loop S1 commit C3.) Gate check 112 and a log-event name
@@ -647,3 +649,59 @@ open-item sweep.
 - **Evidence.** The s07-lead worktree: `durable/` created at 04:20 +0300 on 1 November during the gate at `02fae41`, its four subfolders touched again at 15:45 during the gate at `07e84e8`, no file in any of them; check 01 SKIP at `02fae41`, FAIL at `07e84e8` (private `gate_logs/s07_07e84e8/main_gate.log`). The writer is not yet found: `durable_paths.ensure_dirs` creates all five subfolders, including `governance`, so another path creates four and leaves them.
 - **Why it was left.** The defect sits in gate checks or modules S7 did not touch, it changes no product output and no check other than 01, and the folders it leaves are empty (P16: recorded for S6).
 - **What would settle it.** The check or module that creates the four folders found (a gate run with a watcher on `durable/`), made to remove what it created as check 32 now does, with a neutralise, fail, restore, pass proof, in S6.
+
+## 57. The chat window loads the local model on the first request with no memory guard (found at loop S7 close and S10, lanes) (issue #115)
+
+- **What it is.** The chat window loads the local model on the first request with no memory guard.
+- **Evidence.** `scripts/chat.py:553` (`_qwen_parse`) loads the model at the first plain-language request; the window has no memory limit of its own. On the laptop the 7B model loads from full-size weights and took free memory from 4.84 to 0.98 GB on its first file (private `analysis/s7_6e_plain_language.md`, D-162).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** A check of free memory against the model's measured need before the first load, with a plain message when it is not enough, and a gate case.
+
+## 58. The chat window sends the model raw text, not the instruct model's chat template (found at loop S7 close and S10, lanes) (issue #116)
+
+- **What it is.** The chat window sends the model raw text, not the instruct model's chat template.
+- **Evidence.** `scripts/chat.py:558` passes the request as plain text to an instruction-tuned model (lane s10-fix1's report).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The prompt built through the tokenizer's own chat template, with a check on the built input.
+
+## 59. The chat window offers the model no `qa` action (found at loop S7 close and S10, lanes) (issue #117)
+
+- **What it is.** The chat window offers the model no `qa` action.
+- **Evidence.** `scripts/chat.py:57-63`: the action list given to the model has no `qa`, so a question such as why something was flagged reaches the run search only through the keyword fallback.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** `qa` added to the model's action list, with a check case.
+
+## 60. A review mode the model proposes replaces the mode the person set (found at loop S7 close and S10, lanes) (issue #118)
+
+- **What it is.** A review mode the model proposes replaces the mode the person set.
+- **Evidence.** `scripts/chat.py:583`: `cmd.setdefault("mode", self.pending_mode)` keeps a model-supplied mode over the person's earlier choice.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The person's mode wins, or the window asks; a check case.
+
+## 61. The chat window's set cutoff writes a tracked config file (found at loop S7 close and S10, lanes) (issue #119)
+
+- **What it is.** The chat window's set cutoff writes a tracked config file.
+- **Evidence.** `scripts/chat.py:282` onward (`write_cutoff`) writes `config/review_scope.json`, a tracked file.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The cutoff written where operator settings for a run belong, or the tracked file's role stated in the docs; a check case.
+
+## 62. `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off (found at loop S7 close and S10, lanes) (issue #120)
+
+- **What it is.** `shimmer.sh` hands `/tmp` paths to Python, which a Windows Python cannot open when Git Bash's path conversion is off.
+- **Evidence.** `shimmer.sh` lines 230, 254 and 306 pass `${TMPDIR:-/tmp}/...` paths (the draft and review flags, the token-hash file). Read from the code by lane s10-fix1, not run. INC-030's failure needed path conversion off, which the loop's own hidden start had set (`MSYS_NO_PATHCONV=1`).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** A launcher case under conversion off that answers 1 and D, and paths a Windows Python can open.
+
+## 63. A comment in `pipeline.main` calls the draft model the strong Claude model (found at loop S7 close and S10, lanes) (issue #121)
+
+- **What it is.** A comment in `pipeline.main` calls the draft model the strong Claude model.
+- **Evidence.** `scripts/pipeline.py` about line 4873: wrong under the local profile since INC-031's fix (D-165). `main` is pinned (IV.7), so the comment waits for the next change that needs an amendment of `main`.
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The comment corrected together with the next amendment of `main`.
+
+## 64. The loop's pinned-baseline helper writes a fixed date (found at loop S7 close and S10, lanes) (issue #122)
+
+- **What it is.** The loop's pinned-baseline helper writes a fixed date.
+- **Evidence.** `tools/loop/amend_pinned_baselines.py` writes `"date": "2026-10-27"` for every amendment (lane s10-fix1's report); the S10 amendment was written by hand with its real date (D-165).
+- **Why it was left.** It does not change what a review finds or reports; v1 comes first (P16: recorded for S6).
+- **What would settle it.** The date taken from the clock or an argument, with a fixture check.
