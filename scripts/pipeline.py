@@ -3199,6 +3199,7 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     # Imported here, not only at module level: the localization gate executes this
     # function's own definition in an isolated namespace.
     import finding_record
+    import search_router
     import summary_generators
     deliv_dir = Path(deliv_dir)
     deliv_dir.mkdir(parents=True, exist_ok=True)
@@ -3243,6 +3244,13 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         if _inst is not None:
             lines.append(f"{localization.text('- INST_FINDER model calls in this run: ')}{_inst.get('actual_calls', 0)}"
                          + (localization.text(' (it produced no output)') if not _inst.get('actual_calls') else ""))
+    # D-S23 item 1: the backend profile in force and whether web access was open,
+    # decided by the one rule the search router refuses by.
+    if search_router.web_access_open():
+        lines.append(localization.text('- backend profile: cloud; web access: open for this run to agents whose registry allows it'))
+    else:
+        lines.append(f"{localization.text('- backend profile: ')}{search_router.backend_profile() or 'empty'}"
+                     f"{localization.text('; web access: closed for this run, no agent may reach the web')}")
     lines += [
         "",
         localization.text('## Documents'),

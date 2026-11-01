@@ -1916,6 +1916,7 @@ function renderSubmit() {
     }
     document.getElementById('startup-backend').textContent =
       ui('Backend: ') + (serverHealth.backend_profile === 'local' ? ui('Local, models on this machine.') : ui('Cloud, provider processing can incur charges.')) +
+      (serverHealth.backend_profile === 'local' ? ui(' Web access: closed, no agent reaches the web under the local profile.') : ui(' Web access: open to agents whose registry allows it.')) +
       ui(' To change backend, stop Shimmer in the startup window and start it again.');
   }
   function fileRoles() {
