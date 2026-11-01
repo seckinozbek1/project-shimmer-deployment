@@ -25452,6 +25452,25 @@ def check_310_chat_window_command_mode():
     return check_chat_window()
 
 
+
+def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
+    """Loop D-S13 item 6d: arm L, the launcher menu as a third sealed arm of the ordinary final
+    controller (tools/ordinary_final_launcher_checks.py, mixed into the controller checks). The
+    sealed launcher block is admitted only as sealed and only exposed; every sealed prompt is
+    printed word for word by the bound shimmer.sh, wizard or pipeline; the sealer numbers the
+    review targets as the wizard lists them; the session driver answers only from the map and
+    stops on an unknown prompt, on answers used up and at its deadline; the REAL shimmer.sh and
+    the REAL intake wizard run a review, then a draft, then Q with a stand-in pipeline, every
+    child Python network-denied; the menu environment is made from the runner's runtime; the
+    assessment, the single-bundle rule, the stop of the menu's children and the report row.
+    Each rule by neutralise, fail, restore, pass. No model, no pipeline, no network. SKIP where
+    the tree holds no shimmer.sh (the container image) or no bash runs a script."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from ordinary_final_launcher_checks import check
+    return check()
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25874,6 +25893,8 @@ CHECKS = [
      check_309_launcher_banner_names_the_open_routes),
     ("310 the chat window runs in command mode and a failed request frees it",
      check_310_chat_window_command_mode),
+    ("311 arm L runs the launcher menu once from its sealed prompt map",
+     check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
 ]
 
 

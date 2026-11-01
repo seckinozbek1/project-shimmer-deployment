@@ -131,7 +131,10 @@ def case_corpus_documents(members, pipeline_source):
 
 
 def argv_for(manifest):
-    """The one sealed flag list for the workload the manifest declares."""
+    """The one sealed flag list for the workload the manifest declares. An arm L bundle seals
+    none: the launcher menu builds its own flags from the answers it is given."""
+    if manifest.get('arm') == 'L':
+        return LAUNCHER_ARGV
     return MULTI_ROUND_ARGV if manifest.get('multi_round') is True else ARGV
 
 
@@ -143,7 +146,9 @@ def argv_for(manifest):
 # A pass's name is a free label (lower case, digits, underscore; unique in the bundle) and its
 # output folder; a pass sealed without `checkpoint` loads the checkpoint its name names, as
 # every pass did before D-056 condition 6 (so `base` and `tuned` keep their meaning).
-ARMS = ('B3', 'B1')
+# Arm L (D-S13 item 6d) is the launcher menu as shipped: shimmer.sh once, a review then a draft,
+# answered only from the sealed prompt map (launcher_declaration, execute_launcher).
+ARMS = ('B3', 'B1', 'L')
 B1_ITEMS = 'items.json'
 B1_NAME = re.compile(r'[a-z0-9][a-z0-9_]{0,31}')
 # The checkpoints bare_model.py loads (its --checkpoint choices; a controller check holds them equal).
@@ -342,6 +347,14 @@ def arm_declaration(manifest):
     the sealed items.json and is never multi-round; a B3 bundle carries none of them."""
     arm = arm_of(manifest)
     support = manifest.get('support_files', {})
+    if arm == 'L':
+        launcher_declaration(manifest)
+        require(manifest.get('multi_round') is False and manifest.get('protected_test') is False,
+                'An arm L bundle is never multi-round and never a protected test')
+        require('b1' not in manifest and B1_ITEMS not in support and REPLAY_PROMPTS not in support,
+                'B1 fields sealed in an arm L bundle')
+        return arm
+    require('launcher' not in manifest, 'A launcher block sealed in a %s bundle' % arm)
     if arm == 'B1':
         b1_checkpoints(manifest)
         b1_item_ids(manifest)
@@ -357,6 +370,11 @@ def arm_declaration(manifest):
         require('b1' not in manifest and B1_ITEMS not in support and REPLAY_PROMPTS not in support,
                 'B1 fields sealed in a B3 bundle')
     return arm
+
+
+def launcher_exposed(arm, exposure):
+    """False only for an arm L bundle in a sealed run: the menu runs development material."""
+    return not (arm == 'L' and exposure == 'sealed')
 
 
 def admit_arm(manifest, permit):
@@ -406,6 +424,8 @@ def admit_workload(manifest, seal, base=None):
     # D-061 item 4: replayed B3 prompts are development material, never part of a sealed run.
     require(not (arm == 'B1' and manifest['b1'].get('replay') is not None and exposure == 'sealed'),
             'Replay prompts are development material: a sealed run carries none')
+    # D-S13 item 6d: the launcher menu runs base models on a development workload; never sealed.
+    require(launcher_exposed(arm, exposure), 'Arm L runs exposed only: a sealed run carries no launcher arm')
     return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure, arm=arm)
 
 
@@ -565,15 +585,18 @@ def model_call_required(multi_round):
     return multi_round is None
 
 
-def assess(completion, raw, multi_round=None, arm='B3', b1=None):
+def assess(completion, raw, multi_round=None, arm='B3', b1=None, launcher=None):
     """Run health. A declared multi-round run (D-011 choice 11) also needs its saved case
     record (multi_round.read_saved) to show outcome `reviewed`, activation `activated` and, when
     reviewed, a Python round review recorded (`round_review.availability`);
     quality is reported separately and is never a pass. Its telemetry needs exactly one
     pipeline_start and one pipeline_end and does not require a model call (model_call_required, D-101). A B1 entry is assessed on its own
-    records (assess_b1, `b1` maps each checkpoint to its observation and exit code)."""
+    records (assess_b1, `b1` maps each checkpoint to its observation and exit code), an arm L
+    entry on its session and its two run folders (assess_launcher)."""
     if arm == 'B1':
         return assess_b1(b1)
+    if arm == 'L':
+        return assess_launcher(launcher)
     reasons = []
     if multi_round is not None:
         if not (isinstance(multi_round, dict) and multi_round.get('outcome') == 'reviewed'):
@@ -856,6 +879,569 @@ def execute_b1(base, manifest, project, evidence, rec):
     return 0 if result['execution_integrity_passed'] else 2
 
 
+# Arm L (D-S13 item 6d): a real review and a real draft started from the launcher menu, on the
+# loop's own instance, never on the laptop. shimmer.sh runs once with pipes; every prompt the
+# menu, the intake wizard or the pipeline prints is answered ONLY from the sealed prompt map, by
+# its exact text: the menu's [1] then R (the wizard: the sealed folder, the cutoff kept, Normal
+# mode, the defaults, y, the sealed review targets), the pipeline's three questions, then [1]
+# then D (the sealed question, Normal mode, y), the same three questions, then Q. A prompt the
+# map does not hold, an answer list used up, or the deadline ends the session and is recorded;
+# nothing is ever guessed. The children run the base checkpoints as shipped
+# (SHIMMER_MODEL_MODE=base, config/local_models.json; the sealed asset archive carries them)
+# with every child Python's network denied by a sitecustomize that applies the observer's own
+# deny_network and records into its own log. Integrity only: base models as shipped make no
+# claim comparable with B3 or B1.
+LAUNCHER_ARGV = []
+LAUNCHER_SCRIPT = 'shimmer.sh'
+LAUNCHER_WORKLOAD = 'launcher_input'
+LAUNCHER_WORKLOAD_TOKEN = '{launcher_workload}'
+LAUNCHER_TASKS = ('review', 'draft')
+# What every child of the menu runs under, exactly: the shipped base models, no install (the
+# instance's pinned runtime is the environment), the hub and pip offline, unbuffered output.
+LAUNCHER_CHILD_ENVIRONMENT = {'SHIMMER_MODEL_MODE': 'base', 'SHIMMER_SKIP_INSTALL': '1', 'HF_HUB_OFFLINE': '1',
+                              'TRANSFORMERS_OFFLINE': '1', 'PIP_NO_INDEX': '1', 'PIP_DISABLE_PIP_VERSION_CHECK': '1',
+                              'PYTHONUNBUFFERED': '1'}
+# Files the menu reads that the runtime archive does not otherwise carry (the sealer adds them).
+LAUNCHER_SOURCES = ('shimmer.sh', 'tools/runtime_contract.py', 'tools/cloud_run/runtime.json')
+# Where a sealed prompt must be written, word for word: a printf text of shimmer.sh or one
+# string constant of the wizard or the pipeline.
+LAUNCHER_PROMPT_SOURCES = ('shimmer.sh', 'scripts/intake_wizard.py', 'scripts/pipeline.py')
+# Answers that fix what the session is: the menu's [1] twice then Q, a review then a draft.
+LAUNCHER_FIXED_ANSWERS = {'menu': ['1', '1', 'Q'], 'task': ['R', 'D']}
+LAUNCHER_PROMPT_KEYS = {'id', 'prompt', 'answers', 'optional', 'repeat_last'}
+LAUNCHER_PROMPT_ID = re.compile(r'[a-z][a-z_]{0,31}')
+LAUNCHER_QUESTION_LIMIT = 300
+# A prompt is answered once the output has been quiet this long after it (it then waits on input).
+LAUNCHER_QUIET_SECONDS = 0.5
+# Output quiet this long on a line ending in ':' or '?' that no sealed prompt matches: an
+# unknown prompt, and the session stops (a model load or a generation prints whole lines).
+LAUNCHER_UNKNOWN_PROMPT_SECONDS = 60
+# No output at all for this long stops the session (a hung child, or a prompt followed by a line
+# another thread printed, which the map cannot see); a model call prints well within it.
+LAUNCHER_IDLE_SECONDS = 1800
+# The session is stopped this long before the runner's own budget stop, so it is recorded.
+LAUNCHER_STOP_MARGIN_SECONDS = 60
+LAUNCHER_NETWORK_DIR_ENV = 'SHIMMER_LAUNCHER_NETWORK_DIR'
+LAUNCHER_OBSERVER_ENV = 'SHIMMER_LAUNCHER_OBSERVER'
+# Every child Python of the menu loads this from PYTHONPATH (a -I interpreter loads nothing, and
+# the runtime contract's own -I probes run nothing but a version query). It never fails a child:
+# a denial that could not be installed in full is recorded as partial.
+LAUNCHER_SITECUSTOMIZE = '''import os as _os
+
+
+def _shimmer_deny_network():
+    where = _os.environ.get(%(network)r)
+    observer = _os.environ.get(%(observer)r)
+    if not where or not observer:
+        return
+    import sys
+    sys.path.insert(0, observer)
+    try:
+        import cloud_run_observer
+    finally:
+        sys.path.remove(observer)
+    rec = cloud_run_observer.Recorder(_os.path.join(where, 'network_%%d.jsonl' %% _os.getpid()))
+    rec.event('process_start', pid=_os.getpid(), parent=_os.getppid(),
+              program=_os.path.basename(sys.argv[0]) if getattr(sys, 'argv', None) else '')
+    import socket
+    before = (socket.socket.connect, socket.socket.connect_ex, socket.create_connection, socket.getaddrinfo)
+    try:
+        cloud_run_observer.deny_network(rec)
+        rec.event('network_denial', status='installed')
+    except Exception as exc:
+        # deny_network replaces the socket layer first, then the HTTP clients; an interpreter
+        # without those clients (the image's own python3 the menu starts with) keeps the socket
+        # layer denied, which every client goes through.
+        after = (socket.socket.connect, socket.socket.connect_ex, socket.create_connection, socket.getaddrinfo)
+        sockets = all(a is not b for a, b in zip(after, before))
+        rec.event('network_denial', status='sockets' if sockets else 'partial', error_type=type(exc).__name__)
+
+
+try:
+    _shimmer_deny_network()
+except Exception:
+    pass
+''' % dict(network=LAUNCHER_NETWORK_DIR_ENV, observer=LAUNCHER_OBSERVER_ENV)
+# Called by the budget stop before it ends the runner, so the menu's children end with it.
+STOP_HOOKS = []
+
+
+def sitecustomize_source():
+    """The sitecustomize every child Python of the menu loads (LAUNCHER_SITECUSTOMIZE)."""
+    return LAUNCHER_SITECUSTOMIZE
+
+
+def launcher_declaration(manifest):
+    """The sealed launcher block, validated, or a one-line refusal: the menu script and the
+    workload folder by name, the draft question, the children's environment exactly
+    LAUNCHER_CHILD_ENVIRONMENT, and a prompt map whose answers make the session a review then a
+    draft then Q. Each prompt {id, prompt, answers, optional, repeat_last}: ids and texts unique,
+    no answer spanning a line, and only an optional prompt (one that may never be printed, such
+    as an escalation) repeating its last answer."""
+    value = manifest.get('launcher')
+    require(isinstance(value, dict) and set(value) == {'script', 'workload', 'question', 'prompts', 'child_environment'},
+            'Arm L declared without its sealed launcher block')
+    require(value['script'] == LAUNCHER_SCRIPT and value['workload'] == LAUNCHER_WORKLOAD,
+            'The launcher block names another script or workload folder')
+    require(value['child_environment'] == LAUNCHER_CHILD_ENVIRONMENT,
+            'The launcher children run the base models offline with no install, exactly as sealed')
+    question = value['question']
+    require(isinstance(question, str) and question.strip() == question and question
+            and len(question) <= LAUNCHER_QUESTION_LIMIT and '\n' not in question and '\r' not in question,
+            'The draft question is one line of at most %d characters' % LAUNCHER_QUESTION_LIMIT)
+    prompts = value['prompts']
+    require(isinstance(prompts, list) and prompts, 'The launcher block carries no prompt map')
+    ids, texts = [], []
+    for entry in prompts:
+        require(isinstance(entry, dict) and set(entry) == LAUNCHER_PROMPT_KEYS and isinstance(entry['id'], str)
+                and LAUNCHER_PROMPT_ID.fullmatch(entry['id']) and isinstance(entry['prompt'], str)
+                and entry['prompt'].strip() and '\n' not in entry['prompt'] and isinstance(entry['answers'], list)
+                and entry['answers'] and all(isinstance(a, str) and '\n' not in a and '\r' not in a for a in entry['answers'])
+                and type(entry['optional']) is bool and type(entry['repeat_last']) is bool,
+                'A sealed prompt needs an id, its text, its answers and whether it is optional')
+        require(not entry['repeat_last'] or entry['optional'], 'Only an optional prompt repeats its last answer')
+        ids.append(entry['id'])
+        texts.append(entry['prompt'])
+    require(len(set(ids)) == len(ids) and len(set(texts)) == len(texts), 'A sealed prompt repeats')
+    by_id = {e['id']: e for e in prompts}
+    for key, answers in LAUNCHER_FIXED_ANSWERS.items():
+        require(key in by_id and by_id[key]['answers'] == answers and not by_id[key]['optional'],
+                'The prompt map does not run a review, then a draft, then quit')
+    require('draft_question' in by_id and by_id['draft_question']['answers'] == [question],
+            'The prompt map does not answer the draft question with the sealed question')
+    require('folder' in by_id and by_id['folder']['answers'] == [LAUNCHER_WORKLOAD_TOKEN],
+            'The prompt map does not answer the folder question with the sealed workload')
+    files = manifest.get('project_files') or {}
+    require(LAUNCHER_SCRIPT in files and any(n.startswith(LAUNCHER_WORKLOAD + '/') for n in files),
+            'The project carries no launcher or no launcher workload')
+    return value
+
+
+def launcher_prompt_texts(sources):
+    """Every text a prompt can be in the bound sources ({name: text}): each printf text of a
+    shell script, each string constant of a Python file (adjacent literals joined, as Python
+    joins them)."""
+    import ast
+    texts = set()
+    for name, text in sources.items():
+        if name.endswith('.sh'):
+            texts.update(re.findall(r'printf "((?:[^"\\]|\\.)*)"', text))
+        else:
+            texts.update(n.value for n in ast.walk(ast.parse(text)) if isinstance(n, ast.Constant) and isinstance(n.value, str))
+    return texts
+
+
+def launcher_prompt_error(prompts, sources):
+    """None, or a one-line reason naming the first sealed prompt the bound launcher, wizard and
+    pipeline do not print word for word, so a map can never wait on a prompt that is not there."""
+    texts = launcher_prompt_texts(sources)
+    for entry in prompts:
+        if entry['prompt'] not in texts:
+            return 'A sealed prompt is not printed by the bound launcher, wizard or pipeline: ' + entry['id']
+    return None
+
+
+class PromptMap:
+    """The sealed answers, given in sealed order per prompt, and how many of each were used."""
+
+    def __init__(self, prompts, substitutions=None):
+        self.prompts = list(prompts)
+        self.used = {p['id']: 0 for p in self.prompts}
+        self.substitutions = dict(substitutions or {})
+
+    def match(self, pending):
+        """The sealed prompt the pending output (everything since the last answer) ends with, at
+        the start of a line, the longest when several do; None otherwise."""
+        tail = pending.rstrip(' \t')
+        best = None
+        for entry in self.prompts:
+            text = entry['prompt'].rstrip(' \t')
+            if text and tail.endswith(text):
+                start = len(tail) - len(text)
+                if (start == 0 or tail[start - 1] in '\r\n') and (best is None or len(text) > len(best['prompt'].rstrip(' \t'))):
+                    best = entry
+        return best
+
+    def answer(self, entry):
+        """The next sealed answer to `entry`, its substitutions applied, or None when its answers
+        are used up (an optional prompt that repeats gives its last answer again)."""
+        count = self.used[entry['id']]
+        if count < len(entry['answers']):
+            value = entry['answers'][count]
+        elif entry['repeat_last']:
+            value = entry['answers'][-1]
+        else:
+            return None
+        self.used[entry['id']] += 1
+        for token, replacement in self.substitutions.items():
+            value = value.replace(token, replacement)
+        return value
+
+    def required_total(self):
+        return sum(len(p['answers']) for p in self.prompts if not p['optional'])
+
+    def required_given(self):
+        return sum(min(self.used[p['id']], len(p['answers'])) for p in self.prompts if not p['optional'])
+
+    def unused(self):
+        """The ids of the required prompts whose sealed answers were not all given."""
+        return [p['id'] for p in self.prompts if not p['optional'] and self.used[p['id']] != len(p['answers'])]
+
+
+def last_segment(text):
+    return re.split(r'[\r\n]', text)[-1].rstrip(' \t')
+
+
+def session_idle(silent, idle_after):
+    """True once the menu has printed nothing for `idle_after` seconds."""
+    return silent >= idle_after
+
+
+def stop_session(proc):
+    """End the menu and everything it started: its own process group on Linux (it was started
+    in a new session), the process tree on Windows (the checks)."""
+    if proc.poll() is not None and os.name != 'nt':
+        try:
+            os.killpg(proc.pid, 15)
+        except OSError:
+            pass
+        return
+    try:
+        if os.name == 'nt':
+            import subprocess
+            subprocess.run(['taskkill', '/PID', str(proc.pid), '/T', '/F'], capture_output=True, timeout=30,
+                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        else:
+            os.killpg(proc.pid, 15)
+            try:
+                proc.wait(timeout=10)
+            except Exception:
+                os.killpg(proc.pid, 9)
+    except OSError:
+        pass
+
+
+def drive_session(argv, cwd, env, prompts, deadline, on_answer=None, quiet=LAUNCHER_QUIET_SECONDS,
+                  unknown_after=LAUNCHER_UNKNOWN_PROMPT_SECONDS, active=None, idle_after=LAUNCHER_IDLE_SECONDS):
+    """Run `argv` once with pipes and answer each prompt only from `prompts` (a PromptMap).
+    Returns the session record: exit code, why it stopped (None when it ended by itself), the
+    unknown prompt's last line, every answer given (id, occurrence, seconds, and what
+    `on_answer()` adds) and the whole output as bytes."""
+    import subprocess
+    extra = dict(creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)) if os.name == 'nt' else dict(start_new_session=True)
+    began = time.time()
+    proc = subprocess.Popen(argv, cwd=str(cwd), env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, **extra)
+    if active is not None:
+        active['proc'] = proc
+    chunks, lock, last = [], threading.Lock(), [time.time()]
+
+    def reader():
+        while True:
+            data = os.read(proc.stdout.fileno(), 65536)
+            if not data:
+                return
+            with lock:
+                chunks.append(data)
+                last[0] = time.time()
+    thread = threading.Thread(target=reader, name='launcher-session-reader', daemon=True)
+    thread.start()
+    steps, mark, stop, unknown, total = [], 0, None, None, prompts.required_total()
+    while True:
+        if proc.poll() is not None and not thread.is_alive():
+            break
+        now = time.time()
+        if now >= deadline:
+            stop = 'deadline'
+            break
+        with lock:
+            data = b''.join(chunks)
+            silent = now - last[0]
+        pending = data[mark:].decode('utf-8', errors='replace')
+        if pending and silent >= quiet and proc.poll() is None:
+            entry = prompts.match(pending)
+            if entry is not None:
+                answer = prompts.answer(entry)
+                if answer is None:
+                    stop, unknown = 'answers_used_up', entry['id']
+                    break
+                try:
+                    proc.stdin.write((answer + '\n').encode('utf-8'))
+                    proc.stdin.flush()
+                except OSError:
+                    stop = 'input_closed'
+                    break
+                mark = len(data)
+                step = dict(id=entry['id'], occurrence=prompts.used[entry['id']], answer=answer,
+                            seconds=round(time.time() - began, 3))
+                if on_answer is not None:
+                    step.update(on_answer())
+                steps.append(step)
+                # PROGRESS-A: the controller tails this, a measured count of the sealed answers.
+                print('[launcher] answered %s: %d of %d sealed answers to the required prompts given at %.0f s'
+                      % (entry['id'], prompts.required_given(), total, time.time() - began), file=sys.stderr, flush=True)
+                continue
+            segment = last_segment(pending)
+            if silent >= unknown_after and segment.endswith((':', '?')):
+                stop, unknown = 'unknown_prompt', segment[-200:]
+                break
+        if session_idle(silent, idle_after) and proc.poll() is None:
+            # Nothing printed for this long: a prompt the map cannot see (another line printed
+            # after it) or a hung child; the session stops instead of spending the budget.
+            stop, unknown = 'output_idle', last_segment(pending)[-200:] or None
+            break
+        time.sleep(0.2)
+    if stop is not None:
+        stop_session(proc)
+    try:
+        proc.stdin.close()
+    except OSError:
+        pass
+    try:
+        code = proc.wait(timeout=60)
+    except Exception:
+        stop_session(proc)
+        code = proc.poll()
+    thread.join(timeout=10)
+    with lock:
+        output = b''.join(chunks)
+    return dict(exit_code=code, stop_reason=stop, unknown_prompt=unknown, steps=steps, used=dict(prompts.used),
+                unused=prompts.unused(), required_answers=total, seconds=round(time.time() - began, 3), output=output)
+
+
+def launcher_environment(environ, declaration, site, network, observer, tmp):
+    """The children's environment: the runner's (already cleaned of every inherited SHIMMER_,
+    HF_, TRANSFORMERS_ and credential variable) with the sealed child environment over it, the
+    backend profile left to the menu's own question, the network-denying sitecustomize first on
+    PYTHONPATH, and temporary files under the evidence."""
+    env = {k: v for k, v in environ.items() if k not in ('SHIMMER_BACKEND_PROFILE', 'PYTHONPATH', 'VIRTUAL_ENV')}
+    env.update(declaration['child_environment'])
+    env.update({'PYTHONPATH': str(site), LAUNCHER_NETWORK_DIR_ENV: str(network), LAUNCHER_OBSERVER_ENV: str(observer),
+                'TMPDIR': str(tmp)})
+    return env
+
+
+def launcher_venv(project, runner=None):
+    """project/.venv as shimmer.sh expects it, made from the pinned runtime the runner runs in:
+    a fresh environment with no pip whose .pth adds the runner's own site-packages, so the menu's
+    runtime check passes and SHIMMER_SKIP_INSTALL needs no install."""
+    import subprocess
+    venv = Path(project)/'.venv'
+    require(not venv.exists(), 'The menu environment already exists')
+    run = runner or subprocess.run
+    result = run([sys.executable, '-m', 'venv', '--without-pip', str(venv)], capture_output=True, timeout=300,
+                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    require(result.returncode == 0, 'The menu environment could not be created')
+    found = list(venv.glob('lib/python*/site-packages')) + list(venv.glob('Lib/site-packages'))
+    require(len(found) == 1, 'The menu environment has no site-packages folder')
+    (found[0]/'_shimmer_runtime.pth').write_text('\n'.join(runtime_site_paths()) + '\n', encoding='utf8')
+    return venv
+
+
+def runtime_site_paths():
+    """The site-packages folders the runner's own interpreter imports from, in its order (the
+    pinned runtime's; a runtime that also sees its system site sees it here too)."""
+    import sysconfig
+    found = [sysconfig.get_paths()['purelib'], sysconfig.get_paths()['platlib']]
+    found += [p for p in sys.path if p and Path(p).name in ('site-packages', 'dist-packages')]
+    return list(dict.fromkeys(str(Path(p)) for p in found if Path(p).is_dir()))
+
+
+def launcher_shell():
+    """The shell shimmer.sh is run with on the instance."""
+    return 'bash'
+
+
+def run_names(project):
+    runs = Path(project)/'output'/'runs'
+    return sorted(p.name for p in runs.iterdir() if p.is_dir()) if runs.is_dir() else []
+
+
+def launcher_run_record(folder, task):
+    """What one menu run left (counts and states, never text): its completion record, its
+    telemetry's pipeline_start and pipeline_end, and the deliverable its task must write."""
+    folder = Path(folder)
+    try:
+        completion = read(folder/'audit'/'run_completion.json')
+    except (OSError, ValueError):
+        completion = None
+    events = []
+    telemetry = folder/'logs'/'model_telemetry.jsonl'
+    if telemetry.is_file():
+        for line in telemetry.read_text(encoding='utf8').splitlines():
+            try:
+                events.append(json.loads(line).get('event'))
+            except (ValueError, AttributeError):
+                events.append(None)
+    completion = completion if isinstance(completion, dict) else None
+    return dict(name=folder.name, task=task,
+                completion={k: completion.get(k) for k in ('state', 'reached_end', 'exit_code', 'semantic_complete', 'task')}
+                if completion else None,
+                telemetry=telemetry.is_file(), pipeline_starts=events.count('pipeline_start'),
+                pipeline_ends=events.count('pipeline_end'),
+                run_summary=(folder/'deliverables'/'_run_summary.md').is_file(),
+                memos=len(list(folder.glob('deliverables/*/memo.md'))))
+
+
+def launcher_network(folder):
+    """The children's own network logs: how many processes recorded one, how many installed the
+    denial in full, and every blocked attempt (loopback is allowed and counted apart)."""
+    logs = sorted(Path(folder).glob('network_*.jsonl')) if Path(folder).is_dir() else []
+    events, pipelines, pipelines_installed = [], 0, 0
+    for path in logs:
+        own = []
+        for line in path.read_text(encoding='utf8', errors='replace').splitlines():
+            try:
+                own.append(json.loads(line))
+            except ValueError:
+                own.append({'event': 'unreadable'})
+        events += own
+        if any(e.get('event') == 'process_start' and e.get('program') == 'pipeline.py' for e in own):
+            pipelines += 1
+            pipelines_installed += any(e.get('event') == 'network_denial' and e.get('status') == 'installed' for e in own)
+    denial = [e for e in events if e.get('event') == 'network_denial']
+    return dict(logs=len(logs), processes=sum(e.get('event') == 'process_start' for e in events),
+                pipelines=pipelines, pipelines_installed=pipelines_installed,
+                denial_installed=sum(e.get('status') == 'installed' for e in denial),
+                denial_sockets_only=sum(e.get('status') == 'sockets' for e in denial),
+                denial_partial=sum(e.get('status') == 'partial' for e in denial),
+                blocked=sum(e.get('event') == 'network_blocked' for e in events),
+                blocked_kinds=sorted({str(e.get('network_kind')) for e in events if e.get('event') == 'network_blocked'}),
+                loopback=sum(e.get('event') == 'local_ipc' for e in events))
+
+
+def launcher_observation(evidence, project, session):
+    """Move each menu run into evidence/launcher/<task>/ (the review's are the runs that existed
+    when the draft was chosen, the draft's the rest) and read what the session left: the
+    session record, each run's record, input/context after the draft, the children's network."""
+    launcher = Path(evidence)/'launcher'
+    session = session or {}
+    at_draft = next((s.get('runs') for s in session.get('steps') or [] if s.get('id') == 'task' and s.get('answer') == 'D'), None)
+    present = run_names(project)
+    review = sorted(at_draft if at_draft is not None else present)
+    groups = dict(review=[n for n in review if n in present], draft=[n for n in present if n not in review])
+    runs = {}
+    for task, names in groups.items():
+        target = launcher/task
+        target.mkdir(parents=True, exist_ok=True)
+        runs[task] = []
+        for name in names:
+            shutil.move(str(Path(project)/'output'/'runs'/name), str(target/name))
+            runs[task].append(launcher_run_record(target/name, task))
+    context = Path(project)/'input'/'context'
+    try:
+        manifest = read(context/'_review_targets.json') if (context/'_review_targets.json').is_file() else None
+    except (OSError, ValueError):
+        manifest = {'source': 'unreadable'}
+    return dict(session={k: session.get(k) for k in ('exit_code', 'stop_reason', 'unknown_prompt', 'used', 'unused',
+                                                       'required_answers', 'seconds')},
+                answers=len(session.get('steps') or []), runs=runs,
+                context=dict(system_draft_manifest=isinstance(manifest, dict) and manifest.get('source') == 'system_draft',
+                             draft_memo_files=len(list(context.glob('draft_memo_*'))) if context.is_dir() else 0),
+                network=launcher_network(launcher/'network'))
+
+
+def assess_launcher(observation):
+    """An arm L entry's health, integrity only: the menu ended by itself with exit 0 after Q,
+    every sealed answer given and no prompt outside the map; exactly one review run and one draft
+    run, each reaching its end with exit 0 and one pipeline_start and one pipeline_end in its
+    telemetry; the review's run summary and the draft's memo written; the draft's system manifest
+    and memo cleared from input/context at its end; every child Python logging its network with
+    at least its socket layer denied (the image's own python3, which has no HTTP clients, can
+    deny no more), every pipeline process (one per run at least) with the denial installed in
+    full, and no blocked attempt. A run whose semantic work is incomplete is
+    reported as such and does not fail the arm: base models as shipped carry no quality claim."""
+    reasons = []
+    o = observation or {}
+    session = o.get('session') or {}
+    if session.get('stop_reason'):
+        reasons.append('launcher_stopped:' + str(session['stop_reason']))
+    if session.get('exit_code') != 0:
+        reasons.append('launcher_exit_nonzero')
+    for name in session.get('unused') or []:
+        reasons.append('launcher_answer_not_given:' + name)
+    runs = o.get('runs') or {}
+    semantic = {}
+    for task in LAUNCHER_TASKS:
+        found = runs.get(task) or []
+        if len(found) != 1:
+            reasons.append('launcher_%s_runs:%d' % (task, len(found)))
+            continue
+        run = found[0]
+        completion = run.get('completion') or {}
+        if not (completion.get('reached_end') is True and completion.get('exit_code') == 0
+                and completion.get('state') in ('completed', 'stopped')):
+            reasons.append(task + '_not_completed')
+        semantic[task] = completion.get('semantic_complete')
+        if not (run.get('telemetry') and run.get('pipeline_starts') == 1 and run.get('pipeline_ends') == 1):
+            reasons.append(task + '_telemetry')
+        if task == 'review' and not run.get('run_summary'):
+            reasons.append('review_run_summary_missing')
+        if task == 'draft' and run.get('memos') != 1:
+            reasons.append('draft_memo_missing')
+    context = o.get('context') or {}
+    if context.get('system_draft_manifest') or context.get('draft_memo_files'):
+        reasons.append('draft_context_not_cleared')
+    network = o.get('network') or {}
+    if not network.get('logs') or ((network.get('denial_installed') or 0) + (network.get('denial_sockets_only') or 0)
+                                   != network.get('processes')) \
+            or network.get('pipelines_installed') != network.get('pipelines') \
+            or (network.get('pipelines') or 0) < sum(len(runs.get(t) or []) for t in LAUNCHER_TASKS):
+        reasons.append('launcher_network_denial_incomplete')
+    if network.get('blocked'):
+        reasons.append('launcher_network_attempts:%d' % network['blocked'])
+    return {'execution_integrity_passed': not reasons, 'reasons': reasons, 'arm': 'L', 'launcher': o,
+            'semantic_complete': semantic, 'failed_backend_attempts': None,
+            'collection_and_teardown_pending': True, 'quality_claim': None}
+
+
+def execute_launcher(base, manifest, project, evidence, rec, deadline):
+    """The arm L entry after every guard execute() applies: the menu once, answered only from
+    the sealed map, its children base and network-denied, then the arm-aware assessment."""
+    import signal
+    declaration = launcher_declaration(manifest)
+    launcher = Path(evidence)/'launcher'
+    folders = {name: launcher/name for name in ('network', 'site', 'tmp')}
+    for folder in folders.values():
+        folder.mkdir(parents=True, exist_ok=False)
+    (folders['site']/'sitecustomize.py').write_text(sitecustomize_source(), encoding='utf8')
+    session, active = None, {}
+
+    def stop_children():
+        if active.get('proc') is not None:
+            stop_session(active['proc'])
+    STOP_HOOKS.append(stop_children)
+
+    def terminated(signum, frame):
+        stop_children()
+        raise SystemExit(143)
+    previous = signal.signal(signal.SIGTERM, terminated)
+    try:
+        error = launcher_prompt_error(declaration['prompts'],
+                                      {n: (Path(project)/n).read_text(encoding='utf8') for n in LAUNCHER_PROMPT_SOURCES})
+        require(error is None, error or '')
+        launcher_venv(project)
+        env = launcher_environment(os.environ, declaration, folders['site'], folders['network'], Path(base), folders['tmp'])
+        prompts = PromptMap(declaration['prompts'], {LAUNCHER_WORKLOAD_TOKEN: str(Path(project)/LAUNCHER_WORKLOAD)})
+        session = drive_session([launcher_shell(), str(Path(project)/LAUNCHER_SCRIPT)], project, env, prompts,
+                                deadline - LAUNCHER_STOP_MARGIN_SECONDS, on_answer=lambda: dict(runs=run_names(project)),
+                                active=active)
+    except BaseException as exc:
+        write(Path(evidence)/'terminal_error.json', failure_identity(exc, project))
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+        stop_children()
+        rec.close()
+        if session is not None:
+            (launcher/'session_output.log').write_bytes(session['output'])
+            write(launcher/'transcript.json', {k: v for k, v in session.items() if k != 'output'})
+        observation = launcher_observation(evidence, project, session)
+        result = assess(None, [], arm='L', launcher=observation)
+        result['pipeline_exit_code'] = None
+        write(Path(evidence)/'result.json', result)
+    return 0 if result['execution_integrity_passed'] else 2
+
+
 def execute(base):
     base = Path(base).resolve()
     manifest = verify(base)
@@ -876,6 +1462,12 @@ def execute(base):
     def budget_stop():
         time.sleep(max(0, deadline-time.time()))
         write(base/'BUDGET_WORKLOAD_STOP.json', {'epoch':time.time(), 'completed':False})
+        # An arm L session's children end with the runner (STOP_HOOKS is empty otherwise).
+        for hook in list(STOP_HOOKS):
+            try:
+                hook()
+            except Exception:
+                pass
         # A blocked CUDA call must not outlive the collection reserve. Raw
         # telemetry is append-and-close; this is never reported as completion.
         os._exit(124)
@@ -917,6 +1509,12 @@ def execute(base):
         # the budget stop thread, the sealed cache, the pinned runtime, the network denial).
         try:
             return execute_b1(base, manifest, project, evidence, rec)
+        finally:
+            disk.stop()
+    if arm_of(manifest) == 'L':
+        # Every guard above holds for arm L too; the menu then runs once, in its own session.
+        try:
+            return execute_launcher(base, manifest, project, evidence, rec, deadline)
         finally:
             disk.stop()
     # Every inherited runtime flag was removed; only the manifest flags survive.

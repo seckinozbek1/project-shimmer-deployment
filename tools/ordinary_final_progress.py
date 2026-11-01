@@ -19,6 +19,7 @@ each reader against a finished run's own evidence.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -155,12 +156,44 @@ def b1_workload(context, phase):
                          'one reply record per item per pass, all written')
 
 
+LAUNCHER_ROOT = 'evidence/launcher'
+LAUNCHER_LINE = re.compile(r'(\d+) of (\d+) sealed answers to the required prompts given')
+
+
+def launcher_workload(context, phase):
+    """An arm L entry (D-S13 item 6d): the runner prints one line per answer it gives the menu,
+    naming how many of the sealed answers to the required prompts are given of how many; the
+    last such line is the reading. None when the workload is not arm L or the instance did not
+    answer (the pipeline's own observation then says so)."""
+    raw = context['look'](
+        "cd %s && if [ -d %s ]; then echo L; (grep -o '[0-9]* of [0-9]* sealed answers to the required prompts given' "
+        "workload.stderr.log 2>/dev/null | tail -1 || true); else echo OTHER; fi" % (REMOTE_ROOT, LAUNCHER_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', ''])[:2]
+    if lines[0].strip() != 'L':
+        return None
+    found = LAUNCHER_LINE.search(lines[1])
+    elapsed = max(context['elapsed'], 0)
+    if not found:
+        return ('%s progress: no sealed answer given yet, %.1f min elapsed; the menu asks nothing before its '
+                'runtime check and preflight end, so there is nothing to measure yet' % (phase, elapsed / 60))
+    # The answers come in bursts between the menu's two runs, so a rate over them would predict
+    # nothing: the count and the elapsed time are the reading, and no remaining time is claimed.
+    return ('%s progress: %s of %s sealed answers to the required prompts given (measured from the runner\'s '
+            'own answer lines), %.1f min elapsed; no rate or remaining time: the answers come in bursts between '
+            'the two runs, whose length the menu decides' % (phase, found.group(1), found.group(2), elapsed / 60))
+
+
 def ordinary_workload(context):
     """The run itself: count the telemetry records it writes as it goes (a B1 entry: its
-    reply records, b1_workload)."""
+    reply records, b1_workload; an arm L entry: the sealed answers given, launcher_workload)."""
     b1 = b1_workload(context, 'ordinary_workload')
     if b1 is not None:
         return b1
+    launcher = launcher_workload(context, 'ordinary_workload')
+    if launcher is not None:
+        return launcher
     raw = context['look'](
         "cd %s && (grep -c '\"event\": \"model_call\"' %s 2>/dev/null || echo 0); "
         "(grep -c '\"event\": \"auditor_pair\"' %s 2>/dev/null || echo 0); "
