@@ -419,7 +419,7 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 
 ## Decisions
 
-`docs/loop/DECISIONS.md`, D-055 to D-146 (D-089 onward after the reopening):
+`docs/loop/DECISIONS.md`, D-055 to D-149 (D-089 onward after the reopening):
 
 - D-055: S5 plan decisions DS5-1 to DS5-12 and revisions R1 to R25, after plan check 1.
 - D-056: B1 on sdpa with a pinned memory-efficient backend (option A, amended, ten conditions).
@@ -513,6 +513,9 @@ L12b (D-136, D-138) re-ran the 13 that still failed, on VERIFIER's 4,096 allowan
 - D-144: The full main gate and the side gates at the S5 close
 - D-145: The records consistency check before L12c: 16 found, 16 fixed; the ledger check's running-state test merged and its 6 rows settled
 - D-146: L12c read: 4 of 5 pass; 33 of the 37 first failures pass on their own; EDITOR_CLERK's envelope holds on the model
+- D-147: S7's final pass during the S5 audit wait: D-S13 items 6a and 6e done as far as a script can; 6d gets a third sealed arm
+- D-148: Arm L built for D-S13 item 6d (launch L14)
+- D-149: The outside audit of S5: 6 found, 4 fixed by the loop, 2 the operator's; the merge proceeds
 
 ## Bound controller files and pinned functions changed in S5
 
@@ -524,7 +527,7 @@ Every bundle sealed before each of these merges refuses with `Controller source 
 
 ## Checkers
 
-**After the reopening (30 and 31 October).** A D-S12 checker (`s5_dS12_check1.md`, D-107) and a second reading (D-108); two fresh attacks on preregistration version 2 (D-094) and one on the scorer (D-098). Three records consistency checks before launches: D-121 (25 found, 25 fixed), D-130 (21 and 21), D-135 (22 and 22), and a fourth before L12c, D-145 (16 and 16). The close round (D-139): adversarial 15 items (9 SERIOUS, 6 MINOR), completeness 22 gaps, claims 14 items, and a fresh attack on four lead positions; the attack's verdicts were all accepted (moved rows SCHEDULED in S8, not DEFERRED; EDITOR_CLERK's stamp removed for H9, INC-027; the reserve gone under D-S18 with storage given its own line; the label `seckin-request`). Every item was closed in the records or by a lane: the full gate and side gates (D-144), the ledger check's running-state test (D-145), the K8 removal (D-143), the measurements and reviews (D-141). Sweep 2 (D-140): 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin. The outside audit was requested at 19:46 +0300 (`docs/loop/private/audit/REQUEST_S05.md`); AUDIT_RESULT_HERE
+**After the reopening (30 and 31 October).** A D-S12 checker (`s5_dS12_check1.md`, D-107) and a second reading (D-108); two fresh attacks on preregistration version 2 (D-094) and one on the scorer (D-098). Three records consistency checks before launches: D-121 (25 found, 25 fixed), D-130 (21 and 21), D-135 (22 and 22), and a fourth before L12c, D-145 (16 and 16). The close round (D-139): adversarial 15 items (9 SERIOUS, 6 MINOR), completeness 22 gaps, claims 14 items, and a fresh attack on four lead positions; the attack's verdicts were all accepted (moved rows SCHEDULED in S8, not DEFERRED; EDITOR_CLERK's stamp removed for H9, INC-027; the reserve gone under D-S18 with storage given its own line; the label `seckin-request`). Every item was closed in the records or by a lane: the full gate and side gates (D-144), the ledger check's running-state test (D-145), the K8 removal (D-143), the measurements and reviews (D-141). Sweep 2 (D-140): 38 found, 1 brought back, 19 decided, 16 kept, 2 to Seckin. The outside audit was requested at 19:46 +0300 (`docs/loop/private/audit/REQUEST_S05.md`); `AUDIT_S05.md` arrived at about 02:56 +0300 with 6 findings, none blocking: 4 fixed by the loop and 2 the operator's (D-149).
 
 **The first close (29 October), as it was written then:**
 
