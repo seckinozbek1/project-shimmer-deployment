@@ -740,3 +740,10 @@ open-item sweep.
 - **Evidence.** Check 313 reproduces `main`'s inline local remap (the same table and overwrite) because `main` is pinned; if that remap changes, 313 still checks the table, not the new code (lane s10-fix2's report).
 - **Why it was left.** `main` is pinned (IV.7), so the change needs an amendment of `main`; recorded for S6 (P16). The S10 round 2 adversarial checker adds: 313 builds the drafter with `pipeline._build_wrapper`, while `main` builds AMENDMENT_DRAFTER's wrapper directly from its own registry choice (`scripts/pipeline.py` about 4886 to 4901), so a change there would not reach 313 either.
 - **What would settle it.** The remap and the drafter's construction factored into functions when a change to `main` needs an amendment anyway, and 313 calling them.
+
+## 74. `scripts/claim_classifier.py` builds an OpenAI client that check 313 does not cover (found at the S10 outside audit) (issue #132)
+
+- **What it is.** `ClaimExtractor._gpt_extract` (about line 118) builds an OpenAI client when given a key. Only gate check 16 imports the module, so no run path reaches it; if a run path ever used it, check 313 would not see it unless that path were among its cases.
+- **Evidence.** The S10 outside audit, finding 2; the S10 provider sweep (D-169).
+- **Why it was left.** Unconsumed today, so no output changes (P16: recorded for S6).
+- **What would settle it.** A check 313 case for it, or the module kept out of every run path by a check.
