@@ -25218,21 +25218,29 @@ def check_295_compact_producer_decodes_under_its_contract():
     every frozen DEV reply of checkpoint 168 is inside the constrained language. Then
     neutralises, in turn, the processor's admission (every token admitted), the wrapper's
     binding (no constraint built) and the status and emptiness rule; requires a failure;
-    restores; requires a pass."""
+    restores; requires a pass. A tree that lacks an input a test needs (the container image: no
+    docs/fix/, no benchmark/) skips only those tests, runs the rest and every neutralisation whose
+    tests ran, and reports SKIP naming what did not run."""
     import io
     import unittest
     from unittest.mock import patch
     import contract_decoding
     import contract_decoding_checks as checks
-    if checks.ABSENT:
-        return "SKIP", (", ".join(checks.ABSENT) + " not present here" + checks.ABSENT_NOTE)
 
-    def passes(*names):
+    def run(*names):
         suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
             unittest.defaultTestLoader.loadTestsFromModule(checks)
-        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
-    if not passes():
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite)
+
+    def passes(*names):
+        return run(*names).wasSuccessful()
+    # S10 (adversarial MINOR 5): a tree without an input a test needs (the container image ships
+    # no docs/fix/ and no benchmark/) skips only the tests that need it; the rest still run, and a
+    # neutralisation is tried wherever the tests it targets ran.
+    full = run()
+    if not full.wasSuccessful():
         return "FAIL", 'scripts/contract_decoding_checks.py does not pass'
+    skipped = checks.skipped_tests(full)
     mutants = (
         (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
          ('test_each_failure_kind_is_prevented_and_the_validator_passes',)),
@@ -25240,13 +25248,16 @@ def check_295_compact_producer_decodes_under_its_contract():
          ('test_the_wrapper_carries_the_constraint_and_records_it',)),
         (contract_decoding.Grammar, 'close_rule', lambda grammar, j, it, used: (True, True),
          ('test_language_rules',)))
-    for owner, attribute, mutant, names in mutants:
+    tried = [m for m in mutants if not set(m[3]) & set(skipped)]
+    for owner, attribute, mutant, names in tried:
         with patch.object(owner, attribute, mutant):
             failed = not passes(*names)
         restored = passes(*names)
         if not (failed and restored):
             return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
                 getattr(owner, '__name__', owner), attribute, failed, restored)
+    if skipped:
+        return "SKIP", checks.partial_detail(full, skipped, len(tried), len(mutants))
     return "PASS", ('%d checks: 6 failure kinds prevented with the validator unchanged and reproduced with the '
                     'constraint off; wrapper, reply record, replay and the 84 frozen DEV replies hold; '
                     '3 neutralisations fail and restore'
@@ -25349,20 +25360,29 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
     the declaration in place of the removed K8 kind stamp: its saved shape without `kind` is
     prevented through the real call_local, the validator supplying nothing, neutralised by
     dropping it from the declaration and by an item that may close with a required key
-    unwritten."""
+    unwritten. A tree without benchmark/baselines/replay_prompts.py (the container image) skips
+    only the replay test, runs the rest and every neutralisation, and reports SKIP naming it."""
     import io
     import unittest
     from unittest.mock import patch
     import contract_decoding
+    import contract_decoding_checks
     import envelope_decoding_checks as checks
-    if checks.ABSENT:
-        return "SKIP", (", ".join(checks.ABSENT) + " not present here (the container image ships no benchmark/)")
+
+    def run(*names):
+        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite)
 
     def passes(*names):
-        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else             unittest.defaultTestLoader.loadTestsFromModule(checks)
-        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite).wasSuccessful()
-    if not passes():
+        return run(*names).wasSuccessful()
+    # S10 (adversarial MINOR 5): a tree without benchmark/baselines/replay_prompts.py (the
+    # container image) skips only the replay test; every other test and every neutralisation
+    # whose tests ran still runs.
+    full = run()
+    if not full.wasSuccessful():
         return "FAIL", 'scripts/envelope_decoding_checks.py does not pass'
+    skipped = contract_decoding_checks.skipped_tests(full)
     grammar = contract_decoding.EnvelopeGrammar
 
     def any_name(self, j, opt):
@@ -25385,13 +25405,16 @@ def check_297_local_auditor_agents_decode_under_their_envelope_contract():
          ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)),
         (grammar, 'closable', lambda self, j, opt: j == len(self.contract.leading),
          ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)))
-    for owner, attribute, mutant, names in mutants:
+    tried = [m for m in mutants if not set(m[3]) & set(skipped)]
+    for owner, attribute, mutant, names in tried:
         with patch.object(owner, attribute, mutant):
             failed = not passes(*names)
         restored = passes(*names)
         if not (failed and restored):
             return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
                 getattr(owner, '__name__', owner), attribute, failed, restored)
+    if skipped:
+        return "SKIP", contract_decoding_checks.partial_detail(full, skipped, len(tried), len(mutants))
     return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
                     'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
                     'and replay hold; EDITOR_CLERK missing kind prevented through the wrapper with no stamp; '
@@ -25576,8 +25599,9 @@ def check_310_chat_window_command_mode():
     request whose worker raises frees the window; before, every later message was answered
     "Still working on the previous request". On stand-ins for the model's modules (S10, from the
     S7 6e findings): the startup line says only what the probe checked (libraries import, a model
-    id is configured), and a request whose model failed to load or gave no usable answer keeps the
-    keyword parser's reply and says first that the model was not used and why. Skips where the
+    id is configured), and a request whose model failed to load, failed while answering (an error
+    in generate, out of GPU memory for one) or gave no usable answer keeps the keyword parser's
+    reply and says first that the model was not used and why, each with its own reason. Skips where the
     chat file or Tk is absent."""
     from launcher_checks import check_chat_window
     return check_chat_window()
@@ -25618,9 +25642,25 @@ def check_312_draft_memo_uses_the_drafters_backend():
     real backend functions run on the stand-ins of scripts/reply_records_checks.py; a local drafter
     whose call_claude raises must return the local text with its call evidence, activation row,
     reply record and free_text outcome on one call id, and a Claude drafter still reaches the
-    Claude client. Neutralise (the old direct call_claude compiled beside the pipeline), fail,
-    restore, pass."""
+    Claude client; a qwen_local and an openai_api drafter reach their own backend the same way, and
+    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4).
+    Neutralise (the old direct call_claude, and the budget emptied, each compiled beside the
+    pipeline), fail, restore, pass."""
     from draft_backend_checks import check
+    return check()
+
+
+def check_313_no_local_profile_path_reaches_a_cloud_client():
+    """Loop S10, outside audit finding 1 (LAW-IV): INC-031 was one site, so every local-profile
+    path the S10 sweep found that reaches a model runs here with the two provider SDKs replaced
+    by stand-ins whose client construction raises and is recorded, both credentials set to
+    placeholders, and the local model a recording stand-in (scripts/local_profile_cloud_checks.py):
+    the local-profile registry puts no agent on a provider backend, the start-of-run model gate
+    lists no provider, dispatch for every agent, the draft memo, the --amendment-polish pass and
+    the harness under its local profile each construct no client. Neutralise (the draft memo's
+    direct call_claude put back; a direct call_claude in the polish pass; AMENDMENT_DRAFTER left
+    out of _LOCAL_PROFILE), fail, restore, pass. No network, no weights, temporary folders only."""
+    from local_profile_cloud_checks import check
     return check()
 
 CHECKS = [
@@ -26049,6 +26089,8 @@ CHECKS = [
      check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
     ("312 the draft memo goes through the drafter's own backend",
      check_312_draft_memo_uses_the_drafters_backend),
+    ("313 no local-profile path constructs a cloud provider client",
+     check_313_no_local_profile_path_reaches_a_cloud_client),
 ]
 
 
