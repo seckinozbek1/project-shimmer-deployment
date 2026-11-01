@@ -160,9 +160,10 @@ What these figures do not show:
 - **Every B3 flag on the external benchmarks came from a model-written record.**
   Counting only Python's findings (as shipped, S-8), B3 flagged nothing on them.
   Reviews of model-written texts, a seeded sample of 15 per launch, found:
-  L11 (first runs) 1 correct, 5 partly correct, 9 wrong; L8 4 correct, 9
-  wrong, 2 empty; L12 4 correct, 5 partly correct, 6 wrong; L12b 2 correct, 1
-  partly correct, 12 wrong. The counted B3 rows come from L8, L12 and L12b.
+  L11 (external benchmarks) 1 correct, 5 partly correct, 9 wrong; L8 (the
+  synthetic suite) 4 correct, 9 wrong, 2 empty; L12 (benchmarks and suite) 4
+  correct, 5 partly correct, 6 wrong; L12b (re-runs) 2 correct, 1 partly
+  correct, 12 wrong. The results page says which rows each launch counts for.
 - **Not every field a sealed result report needs is here.** The project's
   testing rules list the fields of a result report. The results page gives, for
   these development runs: the purpose, that they are exposed, the dates, the

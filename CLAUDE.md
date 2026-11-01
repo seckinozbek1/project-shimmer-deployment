@@ -481,7 +481,7 @@ widely between the fields it has run on.
   requires genesis Part I to mirror the guarded `seed_laws` (a missing seed law flags a
   tampered immutable core). The VERIFIED no-gap DELTA path is the SOLE route to change
   governed structure: `verify_amendment_append` (enforced inside `check_constitution_change`)
-  requires a new INFRA-NNN amendment to carry the next id (`prior_max + 1`, never reused, never a gap; AMEND-NNN entries are checked for append shape and approval only),
+  requires a new INFRA-NNN amendment to carry the next id (`prior_max + 1`, never reused, never a gap; ids other than INFRA-NNN, such as the runtime AMEND-NNN, are checked for operator approval and one per write only),
   be `operator_approved`, and add one amendment per write (the signature scan is a separate
   flag on operator and agent text, not part of this check). Never bypass this path to change
   governed structure.
