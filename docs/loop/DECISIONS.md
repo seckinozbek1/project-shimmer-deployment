@@ -1576,3 +1576,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Decision.** The gate is not restarted by the loop on its own. The tag `loop-s11-v1-open` and the push of the loop branch, `loop/s11` and the tag wait for a full gate on `ff79835` (D-S16 item 2, IV.4); the operator is told in FOR_SECKIN. Evidence meanwhile: the full traced gate on `loop/s11` at `c1168a9` (PASS 274 of 315, no new failure) and the integration lane's own runs of every check its commits touch (15, 69, 116, 259, 260, 261, 296, 315, 316 and the topology pin test, all passing). Work that needs no gate (the S13 plan, the v1 report draft) goes on.
 - **Skips.** The full gate at `ff79835`, until memory allows or the operator starts it; tracked in #178.
 - **Rules.** IV.4, D-S16 item 2, P12.
+
+## D-182. The 15 v1 issues sorted; three reader-facing fixes merged
+
+- **When, stage.** 2026-11-02 02:27 +0300 (system clock), S11, while the gate waits (D-181).
+- **Sorted.** Lane s11-v1issues read the 15 issues D-180 moved into v1: 3 are fixed by reader-facing text alone, 7 need code (#11, #32, #37, #48, #118, #132 with #136, #133, #134, #135), 2 need a run or a measurement (#106, #169; #37 parts 3 and 5 wait on counts or version 3).
+- **Fixed.** #141 (`a46b6be`: the README says the B3 figures were measured on `report_optimized` while the defaults run `reference_serial`, and how to run the measured one), #145 (`b8de549`: L12c has no model-text review, stated), #119 (`39942dd`: setting the cutoff rewrites the tracked `config/review_scope.json`, stated). Merged at `c236dc3`; check 260 passed after each. #141 closes with the push; #145 and #119 keep their behaviour part open.
+- **Defers.** The code and measurement parts stay open in S11 under the tag: #11, #32, #37, #48, #106, #118, #119, #132, #133, #134, #135, #136, #145, #169.
+- **Rules.** D-S24 item 3, P16.
