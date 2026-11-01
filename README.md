@@ -167,7 +167,9 @@ What these figures do not show:
   L11 (external benchmarks) 1 correct, 5 partly correct, 9 wrong; L8 (the
   synthetic suite) 4 correct, 9 wrong, 2 empty; L12 (benchmarks and suite) 4
   correct, 5 partly correct, 6 wrong; L12b (re-runs) 2 correct, 1 partly
-  correct, 12 wrong. The results page says which rows each launch counts for.
+  correct, 12 wrong. L12c (the integrity re-run of five suite entries, not
+  scored) has no model-text review. The results page says which rows each
+  launch counts for.
 - **Not every field a sealed result report needs is here.** The project's
   testing rules list the fields of a result report. The results page gives, for
   these development runs: the purpose, that they are exposed, the dates, the
@@ -190,6 +192,16 @@ CUAD contract and 11 suite bundles) are on newer code than the rest; the results
 page says which run each row uses. Changes made after `d6ce19a` were not
 measured (L12c, built from `5c3c129`, re-ran five entries for their integrity
 only; their scores were not computed). There is no release-candidate commit.
+
+**Which schedule was measured.** Every B3 run in the table used the
+`report_optimized` execution topology on the local backend profile, with paired
+review (the sealed runner's arguments, `ARGV` in `tools/ordinary_final_run.py`).
+The multi-round family 4 used `reference_serial` (`MULTI_ROUND_ARGV`). The
+pipeline's default is `reference_serial`, and the console, the menu launchers and
+the command above do not select `report_optimized`, so an ordinary review started
+from them runs a schedule no B3 figure here was measured on. The measured one
+needs `--execution-topology report_optimized` and a `--topology-config` lane file
+(the runner's is one lane on `cuda:0`, `TOPOLOGY` in the same file).
 
 **History.** The reports under `docs/fix/` from September 2026 describe runs on
 tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
@@ -368,7 +380,10 @@ allows it.
   that declare its severity, its scope (`[scope: ...]`) and the fields it requires
   (`[requires: ...]`).
 - `config/review_scope.json`: the date cutoff that decides which documents are
-  under review, and agents withheld for a review scope.
+  under review, and agents withheld for a review scope. It is a tracked file:
+  setting the cutoff from the import wizard or the chat window rewrites it in
+  place, so the change shows in `git status` and holds for every later run until
+  it is set again.
 - `input/context/_review_targets.json`: an explicit list of the documents under
   review, and earlier versions to compare with. It wins over the date cutoff.
 - `config/agent_registry.json`: which provider model each agent uses under the
