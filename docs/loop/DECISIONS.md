@@ -1618,3 +1618,29 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Tag.** `loop-s11-v1-open` on `1444618`. Open: S11 item 7 (the image, waiting for disk) and the five v1 issues still open under it (#37, #48, #134, #106, #169; D-184).
 - **Then.** Push the loop branch, `loop/s11` and the tag; close the fixed issues (#141, #132, #136, #118, #11, #133, #135, #32, #126) and #178; then S13.
 - **Rules.** IV.1, IV.4, D-S16 item 2, D-S24 item 4, D-S25.
+
+## D-187. The S13 plan, and its revision after plan check 2
+
+- **When, stage.** 2026-11-02 05:54 +0300 (system clock), S13, start of stage.
+- **What.** `docs/loop/stages/S13_PLAN.md` on `loop/s13` (from `f07667b`, the commit that records the S11 tag, equal to `origin/loop/2026-10-27`): the history rewrite on a mirror outside the repository, its checks and gates, and its force push under D-S5 rule 4 (D-S18 item 2e), as drafted and revised after plan check 1. Plan check 2 found 12 gaps; the plan now closes them:
+  1. Memory: every gate in S13 follows D-S25, D-135 and D-141. The whole gate only at 4 GB free or more; below that, chunks with the scratchpad runner (`<progress> [start] [stop]`), model-free checks at 1 GB and model-loading checks only at 4 GB, waiting for memory between chunks; a host stop for memory resumes in chunks from the check where it stopped without asking, said in FOR_SECKIN (D-185). The side gates' model-loading parts only at 4 GB.
+  2. The stage gate runs before the push and again at Close: the request ledger check, `tools/loop/issue_deferral_check.py` (check 315, D-180) on a fresh `gh issue list`, and the S13 milestone. At Close a FOR_SECKIN block lists every loop-deferred issue opened or moved in S13 (D-S24 item 5).
+  3. The v1 report and the v1 tag: v1 is the annotated tag `loop-v1`, created in the mirror on the rewritten commit that holds `docs/loop/V1_REPORT.md` and the `CITATION.cff` date, and published at step 10. `date-released` is the system date of that commit; if the push lands on a later day, V1_REPORT says the date v1 was cut and that it was published at the push, with no second edit. That commit touches a product file (`CITATION.cff`), a recorded departure from the plan's header and from S14's opening, covered by G1, the full gate on the pre-rewrite tip, which includes check 314. V1_REPORT lists the open v1 items (the image, S11 item 7; #37, #48, #134, #106, #169) and says, per D-S22 item 5, that the README-only fresh-clone proof is the last step before S14's final report and that the installs already done (D-157, D-160) stand for v1.
+  4. The cut-off: the mirror is made from one named commit, the V1_REPORT commit (`loop/2026-10-27` at that point). From step 0 until the push nothing is pushed from the local repository; work committed after the cut-off is not in v1 and reaches GitHub only through S14 item 8 (DS13-3). Just before step 10, a fresh `git ls-remote` is compared with step 0's record and the local loop branch with the cut-off; if the remote moved, steps 0 to 6 are redone on a fresh mirror; local commits after the cut-off do not move the mirror.
+  5. An audit finding that changes the expression file or the mirror redoes steps 3 to 6 on a fresh mirror, with their verification and gates, and the auditor is told the new tip.
+  6. Refusing D-S16 item 4's 8-hour go-ahead for the force push is a Class R departure, recorded on its own (D-188, DS13-5).
+  7. Tag leases: each annotated tag is pushed with `--force-with-lease=refs/tags/<t>:<tag object id>`, the id from the `ls-remote` line of the tag itself and not the peeled `^{}` line, with the rewritten tag object as the new side; `loop-v1`, new on the remote, with an empty lease.
+  8. At step 10: the rewritten `main` and the other public branches of group (a), the loop branch, the stage branches already on the remote, the stage tags and `loop-v1`. Never `loop/s13` (its records go out with S14 item 8, step 11.5) and never `loop/s06c` (never pushed, unmerged).
+  9. The header: `loop/s13` starts at `f07667b`; the ref counts of step 0.3 are recounted at step 0, not fixed in the plan.
+  10. Step 0.1: step 0's `ls-remote` and `fetch`, the stage gate's `gh` reads and the `ls-remote` just before the push are the only contacts with GitHub before it, all reads.
+  11. The folders paragraph and the specification map: the five outside folders are permitted by I.0, not H7 (H7 lists forbidden folders).
+- **Rules.** I.3 step 5, IV.4, III.2, D-S5 rules 1, 2 and 4, D-S16 items 2 and 4, D-S18 items 2e and 2f, D-S22 item 5, D-S24 item 5, D-S25, D-135, D-141, D-142, D-159, D-180, D-185.
+
+## D-188. The 8-hour go-ahead refused for the force push (Class R departure)
+
+- **When, stage.** 2026-11-02 05:54 +0300 (system clock), S13, start of stage.
+- **Decision.** D-S16 item 4 lets a stage go ahead 8 hours after its outside audit request with no audit file. S13 does not use that go-ahead for step 10's force push: the push waits until `AUDIT_S13.md` has arrived and every finding is fixed, and FOR_SECKIN says so while it waits. The stage's local merge and tag may still go ahead after 8 hours as usual.
+- **Why.** The force push replaces the public history and cannot be undone (P12, P18): a fault in the rewritten history (a missed form or name, a wrong ref) is public the moment it lands, and copies made of it cannot be recalled by a second push. Because waiting can hold v1 back past its due time (D-S18 item 1), this departs from D-S16 item 4 and is Class R, recorded here on its own.
+- **Reverse.** The operator's word to push without the audit file, or the audit file arriving with its findings fixed.
+- **Skips.** The 8-hour go-ahead for the push in #59 (the force push, S13 milestone) until `AUDIT_S13.md` arrives and its findings are fixed.
+- **Rules.** D-S16 item 4, D-S5 rule 4, D-S18 items 1 and 2e, P12, P18, III.2.
