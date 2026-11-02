@@ -1603,3 +1603,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - Checks run alone: 293, 218, 228, 285, 311, 116, 260 PASS. The full controller gate waits for memory with the main gate (D-181).
 - **Defers.** Still open in v1 under the tag: #37, #48, #134 (code), #106, #169 (a run or a measurement).
 - **Rules.** D-S24 item 3, P16.
+
+## D-185. D-S25 applied: the operator's word to run the gate; the gate restarted whole
+
+- **When, stage.** 2026-11-02 04:58 +0300 (system clock), the S11 merge.
+- **What.** Annex D D-S25 (2 November 03:46): the operator, after freeing memory, gave the word to start the full gate that the host stopped (D-181). Free memory read at the start: about 6.1 GB, above the 4 GB floor, so the traced gate runs whole on the loop branch at `c379a01` (the S11 merge plus D-182 to D-184). The scratchpad runner now takes a start and stop check, so a later stop for memory resumes in chunks from where it stopped, model-free chunks at 1 GB and model-loading checks only at 4 GB (D-135, D-141), without asking again; FOR_SECKIN says so if it happens.
+- **Then.** With a gate that has no failure the loop branch's last gate did not have: side gates, the tag `loop-s11-v1-open`, the range scan, the ledger and deferral checks, the push, and the fixed issues closed (#178 with it).
+- **Rules.** D-S25, D-S16 item 2, IV.4.
