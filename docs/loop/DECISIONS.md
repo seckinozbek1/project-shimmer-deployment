@@ -1610,3 +1610,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **What.** Annex D D-S25 (2 November 03:46): the operator, after freeing memory, gave the word to start the full gate that the host stopped (D-181). Free memory read at the start: about 6.1 GB, above the 4 GB floor, so the traced gate runs whole on the loop branch at `c379a01` (the S11 merge plus D-182 to D-184). The scratchpad runner now takes a start and stop check, so a later stop for memory resumes in chunks from where it stopped, model-free chunks at 1 GB and model-loading checks only at 4 GB (D-135, D-141), without asking again; FOR_SECKIN says so if it happens.
 - **Then.** With a gate that has no failure the loop branch's last gate did not have: side gates, the tag `loop-s11-v1-open`, the range scan, the ledger and deferral checks, the push, and the fixed issues closed (#178 with it).
 - **Rules.** D-S25, D-S16 item 2, IV.4.
+
+## D-186. S11 merged, gated and tagged `loop-s11-v1-open`
+
+- **When, stage.** 2026-11-02 05:42 +0300 (system clock), the S11 merge.
+- **Gate.** On the loop branch at `c379a01` (the S11 merge `ff79835` plus D-182 to D-184), started on the operator's word (D-S25, D-185): PASS 276, WARN 1, SKIP 11, FAIL/ERROR 29 of 317 (traced runner), no failure the a12c8f8 gate lacked (check 1 failed only for an empty untracked folder the cleanup had removed; with it back it skips as at a12c8f8), check 256 passing. Side gates in the main checkout at `1444618`: all pass (the five no-generation gates, cloud_run_checks, the controller gate with 119 tests). Request ledger check PASS (D-S18.7 marked standing); deferral check PASS (152 open issues); range scan of the 65 commits after the pushed loop branch CLEAN.
+- **Tag.** `loop-s11-v1-open` on `1444618`. Open: S11 item 7 (the image, waiting for disk) and the five v1 issues still open under it (#37, #48, #134, #106, #169; D-184).
+- **Then.** Push the loop branch, `loop/s11` and the tag; close the fixed issues (#141, #132, #136, #118, #11, #133, #135, #32, #126) and #178; then S13.
+- **Rules.** IV.1, IV.4, D-S16 item 2, D-S24 item 4, D-S25.
