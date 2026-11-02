@@ -1593,3 +1593,13 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **#11** (`eea3c6d`): the staged-archive guard reads `.tar.bz2` and `.tar.xz` with a reader that accounts for every byte and refuses trailing data, and refuses unread 18 more compression and archive suffixes. Check 275 gains both cases, neutralised. A renamed archive in no list is still unrecognised; `docs/THREAT_MODEL.md` says so. Open item 13 closed.
 - Merged at `d18ba37`. Each check run alone (313, 16, 310, 275, 276, 122, 116, 260): PASS. No pinned function, no constitution and no bound controller file changed. The issues close with the push.
 - **Rules.** D-S24 item 3, P16.
+
+## D-184. Three more v1 issues fixed in code (#133, #135, #32)
+
+- **When, stage.** 2026-11-02 03:12 +0300 (system clock), S11, while the gate waits (D-181).
+- **#133** (`cddccf4`): the analyser reads every run's own `audit/agent_switches.json` and reports it beside the sealed INST_FINDER setting, marked `DIFFERS FROM THE SEAL` when it differs or cannot be read; `FINAL_STATUS.json` carries both. A controller-checks case covers agree, differ, absent and unreadable, neutralised.
+- **#135** (`0ee44f1`): the sealer (not a bound controller file; no sealed bundle is affected) refuses an arm L workload holding any file that is not, byte for byte, tracked at the bound commit. This narrows D-159, which also allowed public material: the code cannot tell what is public, so outside material is refused until committed. Check 311 gains the case, neutralised (alone: PASS, 14 tests, 20 neutralisations).
+- **#32** (`90e30ff`): `tools/score_corpus.py` skips an unstamped post whose call a judging-call record names as a judged absence, the rule the benchmark adapters use since D-092, and counts kept and refused answers apart. Check 293 gains the case, neutralised twice. Open item 24 closed; `docs/OUTPUT_FORMAT.md` section 13 still calls it open and stays as frozen (S3a item 5), noted in open item 24.
+- Checks run alone: 293, 218, 228, 285, 311, 116, 260 PASS. The full controller gate waits for memory with the main gate (D-181).
+- **Defers.** Still open in v1 under the tag: #37, #48, #134 (code), #106, #169 (a run or a measurement).
+- **Rules.** D-S24 item 3, P16.
