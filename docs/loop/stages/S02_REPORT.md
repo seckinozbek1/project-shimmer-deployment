@@ -74,3 +74,5 @@ S2 named 48 specification and exit items (the round-2 completeness checker's cou
 ## Spend
 
 0.00 USD on instances in S2. The storage share of `shimmer-filesystem` accrues to the reserve (about 0.13 USD a day).
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

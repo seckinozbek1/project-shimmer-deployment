@@ -67,3 +67,5 @@ The operator installed `.claude/settings.local.json` (identical to the privately
 | Connectors (15) | Every claude.ai connector is now blocked by the organisation's policy (`disableClaudeAiConnectors`); MEMBUS, TRISMEGISTUS and the rest are no longer available as tools | PASS |
 
 Consequences: decision D-027 lifts D-007; role sessions may run (one at a time, IV.10a), so S4c's B-dev step, S5's C0 and S8 onward are no longer blocked by this session. The deny rules bind the file tools; a shell command is not stopped by them (IV.10, "a commitment backed by settings"). The probe transcripts' results are kept privately in `docs/loop/private/s0_probes/`.
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

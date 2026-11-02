@@ -296,3 +296,5 @@ The gate on the loop branch after the merge, with the six side gates in the main
 ## Spend
 
 0.00 USD on instances in S3. The storage share of `shimmer-filesystem` accrues to the reserve and is recorded in `BUDGET.md` at the stage boundary.
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

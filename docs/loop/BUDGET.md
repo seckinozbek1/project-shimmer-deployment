@@ -286,3 +286,5 @@ Spent 64.73 by the reaper (17:07:00 UTC); 134.27 left under 199. The v1 line has
 ### L14d (forecast only, after v1; D-167, D-170)
 
 A complete draft from the launcher menu: L14c's review took about 35 minutes and the draft's memo plus its unfinished review more than 75; forecast about 130 minutes x 1.29 x 1.3 = about 3.6 USD, cap about 5.4. Among the moved steps after v1 (D-S18 item 3), in D-S18 item 7's order; not launched in v1.
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

@@ -45,3 +45,5 @@ Instances: none (reaper 0 listed). Storage as in S10's report. Loop-until-certai
 ## Effort
 
 Opus, medium effort from 28 October 2026 (Annex D, D-S11).
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

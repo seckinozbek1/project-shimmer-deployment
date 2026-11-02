@@ -91,3 +91,5 @@ Version 1's rows above stay as they are. From this freeze, version 2's hash is t
 | `docs/INPUT_FORMAT.md` and `docs/OUTPUT_FORMAT.md` put back byte for byte to `cf19d5d` (D-172): input `5a0400fa9532bf69addd7ef71833e961f262032e98b0811065f184fc72c8a463`, output `17f326b02aa48851735788190a238de88ef97521a68aba8388d29c43d03ccc20`; the two rows above name hashes no tracked file has | | 2026-11-02 00:14 +0300, loop/s11 |
 | `docs/INPUT_FORMAT.md` (correction appended to the row above: the hash in its column; it supersedes `8ffb417d...`, the S11 lane's row of 1 November) | `5a0400fa9532bf69addd7ef71833e961f262032e98b0811065f184fc72c8a463` | 2026-11-02 00:50 +0300, loop/s11, D-174 |
 | `docs/OUTPUT_FORMAT.md` (correction appended to the row above: the hash in its column; it supersedes `047fb0a4...`, the S11 lane's row of 1 November) | `17f326b02aa48851735788190a238de88ef97521a68aba8388d29c43d03ccc20` | 2026-11-02 00:50 +0300, loop/s11, D-174 |
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.

@@ -2,7 +2,7 @@
 
 # Report Recommendations, 2026-09-15
 
-Bounded inference continuation after f3e8424/ec276cb: identified mixed host
+Bounded inference continuation after ff82242/acbdd52: identified mixed host
 PyTorch files and proved a process-local repair using the hash-verified existing
 Conda package cache. No environment mutation or unsafe OpenMP suppression.
 Qwen load reached the RAM stop before completion. Phi loaded through Shimmer,
@@ -16,7 +16,7 @@ critical path remain null. Status LOCAL_TARGET_INDETERMINATE. See report section
 Eight offline checks plus the 49-pass/1-skip ordinary safe gate pass. Historical
 evidence, operator files, source architecture and model selection are preserved.
 
-Starting source 69dce11. Added an opt-in ordinary local execution path with
+Starting source 8137e62. Added an opt-in ordinary local execution path with
 lossless bounded PROCESSOR source-span reconstruction, sibling waves, eligible
 exact-comparison reason rendering, native templates, EOS/completeness telemetry,
 deterministic ledger reuse and incomplete-run propagation. Reference defaults,
@@ -42,7 +42,7 @@ quality. Detailed measurements, limitations and continuation inputs are in
 
 ## Localization completion, 2026-09-14
 
-Starting commit: `2a84becd825163487842476b8807a269b73078bf`.
+Starting commit: `d14476218542b769f5405169db4f8560d3767bb2`.
 Turkish mode is now intended to provide complete user-facing localization across
 the supported current console, report, DOCX and CLI presentation surfaces.
 
@@ -106,7 +106,7 @@ It has not started.
 
 # Briefs, languages and strategic support implementation, 2026-09-14
 
-Entry: clean main at `6b92ed3b17c9ae7123a72a474d8267724a11839e`, matching the
+Entry: clean main at `381c91e097b500071ecf236010aeec149852e0d2`, matching the
 locally recorded tracking ref. See
 [BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md](BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md)
 and [API/UI configuration](../api/RUN_LANGUAGE_AND_STRATEGY.md).
@@ -150,7 +150,7 @@ below remain preserved; their earlier next-item wording is superseded here.
 
 # Execution topology implementation, 2026-09-14
 
-Baseline `804afa57537a7d80b8df9622fc884fc065b4a4ba` is preserved.
+Baseline `b38c4a7096521365227d7a2af211857cd333e432` is preserved.
 See [EXECUTION_TOPOLOGY_OPTIMIZATION.md](EXECUTION_TOPOLOGY_OPTIMIZATION.md).
 Explicit `dependency_dag` scheduling and device-resident workers are implemented;
 `reference_serial` remains the ordinary default. Backend, dense/sparse activation
@@ -188,7 +188,7 @@ The canonical historical roadmap itself is unchanged.
 # Current-version A100 smoke stage, 2026-09-14
 
 Report: [A100_CURRENT_VERSION_SMOKE.md](A100_CURRENT_VERSION_SMOKE.md).
-At source d15b544, one unchanged dense/paired synthetic Review completed on one
+At source 4984b45, one unchanged dense/paired synthetic Review completed on one
 A100 40GB SXM4: 1,958 s native wall, 20 calls, three amendments, exit 0. All measured
 calls reconcile. Multi-round entry guards false; source hashes unchanged; no case
 artifacts or task calls. Remote no-generation gate 27 PASS / 1 SKIP / 0 FAIL.
@@ -232,8 +232,8 @@ not inferred by deterministic heuristics. Advice is separately opt-in. No derive
 case state enters durable, convention, precedent or ontology stores.
 
 Report: [MULTI_ROUND_IMPLEMENTATION.md](MULTI_ROUND_IMPLEMENTATION.md).
-Pinned baseline: `47c63aca09603ab5c7ad662753d647397a623ce8`; entry HEAD:
-`68c2c55891b31d15ad155d5c758fc0a17587707c`. Ordinary pipeline function contracts
+Pinned baseline: `4d63e68e11409a464051243a85ad30db23de26cc`; entry HEAD:
+`1da4c98d243d01825cf0b71c894beeeacde98621`. Ordinary pipeline function contracts
 match the pinned baseline after excluding only explicitly gated case additions.
 
 Closure subset: **26 PASS, 2 SKIP, 0 FAIL** (17 dedicated tests and 9 selected
@@ -266,7 +266,7 @@ files pass the full-file credential scan. See the implementation report for proo
 
 ## Documentation-only session close
 
-Audit closure commit: `47c63aca09603ab5c7ad662753d647397a623ce8`. This subsequent
+Audit closure commit: `4d63e68e11409a464051243a85ad30db23de26cc`. This subsequent
 local documentation-only closeout records the operator's post-commit execution
 restriction and current roadmap status in [RESUME.md](RESUME.md#session-close-operator-correction-and-current-status);
 its hash is in the final handback/git log. No model generation, Review/Draft,
@@ -278,7 +278,7 @@ unstarted; no agent push. Entry main matched local origin/main; no remote operat
 
 ## README + UPSTREAM/DOWNSTREAM ROUTING + UI AUDIT COMPLETE, 2026-09-13
 
-Entered at 1314475 with a clean tracked tree and local origin/main...HEAD 0 0;
+Entered at 07f1e4b with a clean tracked tree and local origin/main...HEAD 0 0;
 no remote operation. [ROUTING_UI_AUDIT.md](ROUTING_UI_AUDIT.md) contains the
 consolidated trace and decision record. Current README/runbook replace stale
 operator/architecture claims; original text survives in docs/history/. API/UI
@@ -305,7 +305,7 @@ sealed. Authorized local commit only; nothing pushed. Next locked item is exactl
 
 ## CONDITIONAL AGENT ACTIVATION AUDIT COMPLETE, NO NEW SUPPRESSION, 2026-09-13
 
-Entered at `8ca92cd` with clean tracked state and two local commits ahead of the
+Entered at `4d48a34` with clean tracked state and two local commits ahead of the
 unchanged origin/main ref. Existing untracked handoff/durable state is preserved.
 No fetch or push. The all-18-agent source/consumer inventory is in
 [AGENT_ACTIVATION_AUDIT.md](AGENT_ACTIVATION_AUDIT.md). Corpus indexing, institution
@@ -344,7 +344,7 @@ routing + UI audit** remains unstarted.
 
 ## LOCAL SPEED-OPTIMIZATION AUDIT COMPLETE, NO OPTIMIZATION ACCEPTED, 2026-09-13
 
-Entered at quality baseline `1293041`, with diagnostic `0d2d152` present and
+Entered at quality baseline `c91ef62`, with diagnostic `8cc2b17` present and
 local origin/main at the diagnostic commit. Tracked tree was clean. No fetch or
 push. Dense behavior remains fixed; the operator explicitly authorized local
 synthetic probes. See [LOCAL_SPEED_OPTIMIZATION.md](LOCAL_SPEED_OPTIMIZATION.md).
@@ -405,7 +405,7 @@ Next operator-directed locked handoff, without changing the canonical roadmap:
 
 Scoring addendum to the completed performance diagnostic, not a new roadmap item
 and not the start of Local speed-optimization audit. The operator had pushed
-`0d2d152a1eb6d6dae0ccbe206253d7d465c543c2`; main and origin/main both pointed to it
+`8cc2b17277b3535f4fb04cf0d172e969bbf447dc`; main and origin/main both pointed to it
 at entry. This addendum closes with the local documentation commit
 `Record dense quality baseline from saved diagnostic run`, one ahead of the
 unchanged tracking ref. No fetch, push or history rewrite.
@@ -475,7 +475,7 @@ is unchanged; **Local speed-optimization audit** remains next and unstarted.
 ## LOCAL PERFORMANCE DIAGNOSTIC COMPLETE, 2026-09-13
 
 Locked roadmap item 2 is complete. The operator had pushed the human-startable
-work: entry main and origin/main both `5b72b16c67b02890ffc8be39096b5bad10e1c05c`.
+work: entry main and origin/main both `5d7bbdd37bb561f444827877d81c5aecab9f632a`.
 This item closes in the local commit `Record local performance diagnostic baseline`,
 one commit ahead of that unchanged tracking ref. No fetch, push or history rewrite.
 The locked next item is exactly **Local speed-optimization audit**; it has not begun.
@@ -555,8 +555,8 @@ release-readiness work started. Roadmap order and conditional VM item are intact
 
 ## HUMAN-STARTABLE ITEM COMPLETE, 2026-09-13
 
-Locked roadmap item 1 is complete. Preserved local closure `83866c9` above pushed
-`b733188`; the new focused local commit is titled
+Locked roadmap item 1 is complete. Preserved local closure `1df182d` above pushed
+`a522a15`; the new focused local commit is titled
 `Make Shimmer human-clickable and human-startable`. No push or history rewrite.
 Main is two commits ahead of the unchanged origin/main tracking ref. Intentional
 untracked handoff/durable state remains untracked.
@@ -643,7 +643,7 @@ performance diagnostic** as next. Stop after this local commit.
 
 ## SESSION CLOSED, 2026-09-13
 
-The operator pushed main through `b733188cb038dbcc482e68aecf69cbefb04587e4`.
+The operator pushed main through `a522a151320cc168ed2633d28918bc176beabdce`.
 Guarded status, branch and log reads confirmed local main and origin/main equal,
 with no tracked edits and only intentional untracked `SHIMMER_HANDOFF.md` and
 `durable/`. This focused documentation closure adds one local commit above that
@@ -670,7 +670,7 @@ Current image remains `shimmer:baseline`,
 Its full unmounted gate is 243 PASS, 10 SKIP, 2 FAIL (28/31, absent intake tree).
 The latest separate six-step offline probe is the TWENTY-ONE result, zero guarded
 network attempts, no mounts. It was not relabelled as a fresh baseline probe.
-The 126-path parity report was measured at b733188. Closure changes README prose
+The 126-path parity report was measured at a522a15. Closure changes README prose
 and repository reports only; the image retains the earlier README. No runtime code,
 model, configuration, gate implementation or gate fixture changed. Expensive gates/builds/probes were not
 repeated for this documentation-only closure. RESUME names the existing tools,
@@ -756,7 +756,7 @@ Gathered so they can be read together. Each is one line plus its reason.
 
 User explicitly requested normalization of documented baseline checks 01/145,
 with SKIP for intentionally unavailable coverage and FAIL for invalid inputs or
-regressions. Recovered clean tracked HEAD 2562578, ahead 52, preserved untracked
+regressions. Recovered clean tracked HEAD 9c80f44, ahead 52, preserved untracked
 handoff and durable data. Independent read-only agent review completed.
 
 Check 01 retains REQUIRED_DIRS. Only wholly absent named local roots are optional;
@@ -807,7 +807,7 @@ The ordered takeover backlog is complete. The commit containing this checkpoint
 also contains PROTOTYPE_CHECKPOINT.md, the requested full report and commit inventory.
 No new full document review is claimed or permitted on this machine.
 
-TWENTY closed in 2b863d2 and detailed-answer follow-up ffd8c9c. Traced the real
+TWENTY closed in 42c4235 and detailed-answer follow-up 4b59054. Traced the real
 phase 5.5 planner, quote/refusal branches and run-summary writer. The historic
 14 counts are judged plans, not guaranteed claims; 7 computed plans need no quote.
 Added a machine-readable forecast, per-run audit updated before and after each
@@ -847,12 +847,12 @@ Adversarial read complete. README/image debt paid. No push.
 
 ## TWENTY CLOSED, 2026-09-13
 
-Implementation/docs checkpoint 2b863d2. The existing docs ignore rule excluded the
+Implementation/docs checkpoint 42c4235. The existing docs ignore rule excluded the
 new detailed answer from that commit. A documentation-only follow-up explicitly
 tracks it; runtime, gate inputs, README and the verified image are unchanged.
 The same completed full gate and image evidence therefore cover the final source.
 
-NINETEEN committed 5af01db. Full answer in TWENTY_LEARNING_SIGNAL.md and concise
+NINETEEN committed 30f15c8. Full answer in TWENTY_LEARNING_SIGNAL.md and concise
 answer in README. Recommendation: retain the candidate finder, measure against
 the deterministic baseline at a fixed reviewer budget, and leave any learned
 relevance build to the operator. Third-source answer: deterministic arithmetic
@@ -905,7 +905,7 @@ Adversarial read complete. README/image debt paid. No push.
 
 ## NINETEEN CLOSED, 2026-09-13
 
-EIGHTEEN committed 0a6a0fe. Ruling: document_dates.json is usage-derived, because
+EIGHTEEN committed 50190c0. Ruling: document_dates.json is usage-derived, because
 it records conclusions about documents rather than an operator instruction or a
 ratified law. Its operator-specific filenames make empty shipping more necessary.
 ARTIFACT_POLICIES now names its path, category, shipping omission and reason;
@@ -954,7 +954,7 @@ Adversarial read complete. README/image debt paid. No push.
 
 ## EIGHTEEN CLOSED, 2026-09-13
 
-SEVENTEEN committed d2b22ba. Audited all 47 local commits at that point against
+SEVENTEEN committed 2cd71b5. Audited all 47 local commits at that point against
 origin/main: 36 changed source/config/tools or build inputs, 25 of those changed
 README in the same commit, 11 did not. A README filename in a commit is not proof
 of coverage; read the current descriptions against the affected code. Inventory:
@@ -963,14 +963,14 @@ current README descriptions:
 
 | Commit(s) | Behavior now described |
 |---|---|
-| 5496cff | file-channel verdict subject, graph node/edge, unlinked unknown subjects and unchanged GNN features |
-| b146d82 | knowledge authority, usage-derived manifest, ontology reset and protected state |
-| f1f09cd, a499bfa | field/rule unless, unresolved target, real suspension and actionable declaration refusal |
-| 1721eb5, 9b7b25c | local external-rule input, proposed standing, structural conflict limits, persisted answers and promotion boundary |
-| 3753314 | advisory withholding, finding retained, refusal surface, suspension audit and conflict summary |
-| 7d07e5a, 2b699ea | undeclared required fallback, retired prose severity decision, declared action and scoped refusal/proof doctrine |
-| c7f23ee | five voters, retained scores/references, measured thresholds and missing-voter REFUSES |
-| 31744ad | removed category keyword table and dormant claim classifier |
+| bfc4325 | file-channel verdict subject, graph node/edge, unlinked unknown subjects and unchanged GNN features |
+| 2bd34cc | knowledge authority, usage-derived manifest, ontology reset and protected state |
+| dd3c9b7, 36a313d | field/rule unless, unresolved target, real suspension and actionable declaration refusal |
+| 1cb3d8a, b8bc4ec | local external-rule input, proposed standing, structural conflict limits, persisted answers and promotion boundary |
+| bb301ed | advisory withholding, finding retained, refusal surface, suspension audit and conflict summary |
+| 08bafff, 01a57d4 | undeclared required fallback, retired prose severity decision, declared action and scoped refusal/proof doctrine |
+| 49f4786 | five voters, retained scores/references, measured thresholds and missing-voter REFUSES |
+| fe5db91 | removed category keyword table and dormant claim classifier |
 
 Fixed README's direct contradiction that severity still came from prose. It now
 names all three severities, structured unknown-severity refusal versus unknown
@@ -1029,7 +1029,7 @@ Adversarial read complete. README/image debt paid. No push.
 
 ## SEVENTEEN CLOSED, 2026-09-12
 
-SIXTEEN committed b768481. Re-read Dockerfile, original build logs, archived
+SIXTEEN committed b9931d0. Re-read Dockerfile, original build logs, archived
 rebuild reports and inherited BuildKit history jz2a69nwrl13bqysol1hwthx2. Logs show
 bge/Phi CACHED while Qwen ran 165.7 s and 165.5 s. The inherited history still
 exists and confirms 170.4 s. output/seventeen_build_evidence.json and
@@ -1071,7 +1071,7 @@ Adversarial read complete. README/image debt paid. No push.
 
 ## SIXTEEN CLOSED, 2026-09-12
 
-FIFTEEN committed bdcaf01. Rechecked the complete current product image rather
+FIFTEEN committed 801622c. Rechecked the complete current product image rather
 than relying only on earlier ZERO-C/FOUR evidence. shimmer:fifteen full gate with
 --network none --gpus all and no mounts: PASS=239 WARN=0 SKIP=8 FAIL/ERROR=4
 TOTAL=251, 140.9 seconds. Checks 139 and 193 both PASS. The latter's real cached
@@ -1122,7 +1122,7 @@ source faults. README/image debt paid. Continue SEVENTEEN after this commit.
 
 ## FIFTEEN CLOSED, 2026-09-12
 
-FOURTEEN committed c014f21. The fallback was not similarity in the production
+FOURTEEN committed 0f09a57. The fallback was not similarity in the production
 path. embedding_store builds/loads a dictionary, while embedding_ranker called
 .query on it; AttributeError was swallowed and the candidates returned in registry
 order. Reversing candidate order reversed the result with the document unchanged.
@@ -1183,7 +1183,7 @@ loss and limits; image debt paid. Continue SIXTEEN after this commit.
 
 ## FOURTEEN CLOSED, 2026-09-12
 
-THIRTEEN committed 08c0095. The current typed minting/writing path already retains
+THIRTEEN committed a1a99d1. The current typed minting/writing path already retains
 relation, field label, both figures and units. The audit uncovered two actual
 scorer gaps: _load_amendments and _load_review_data each read hits[0], dropping all
 later document masters; and an all-untyped located result was reported as a key
@@ -1233,7 +1233,7 @@ Continue FIFTEEN after this commit.
 
 ## THIRTEEN CLOSED, 2026-09-12
 
-TWELVE committed df27b83. Re-read the six recorded failure shapes and both failed
+TWELVE committed 99dd729. Re-read the six recorded failure shapes and both failed
 coarse scans. No repeat keyword scan. The bounded structural solution is the new
 scripts/effect_proof.py protocol, replayed by check 248 on every gate. Its caller
 must supply valid parsed INPUTS, an independent stable consumer observation, the
@@ -1270,7 +1270,7 @@ debt paid. Continue FOURTEEN after this commit.
 
 ## TWELVE CLOSED, 2026-09-12
 
-ELEVEN committed 046ba2a. The saved renamed reviews reopened as folder labels
+ELEVEN committed 0b22e88. The saved renamed reviews reopened as folder labels
 1doc_review and 1doc_review__479f3219 although their calls recorded 2f174664 and
 479f3219. The server minted a timestamp plus six hex characters while its pipeline
 context used only the suffix. CLI ids were eight hex characters. Baseline evidence
@@ -1307,7 +1307,7 @@ THIRTEEN after this commit.
 
 ## ELEVEN CLOSED, 2026-09-12
 
-TEN committed 6ddea2a. Baseline execution of the actual console JavaScript found
+TEN committed f546c01. Baseline execution of the actual console JavaScript found
 36 identical reviewer/developer rows: testing_against_cluster and fires_at_all
 for all 18 agents. A part lacking a summary silently returned its technical
 condition. output/eleven_harness_baseline.json preserves that measurement.
@@ -1350,7 +1350,7 @@ follow-up cap. README/image debt is paid. Continue TWELVE after this commit.
 
 ## TEN CLOSED, 2026-09-12
 
-NINE committed b5eaad0. The handoff's directory-shape gap was real for CLI runs,
+NINE committed b5aff38. The handoff's directory-shape gap was real for CLI runs,
 but its claim of no on-disk completion evidence anywhere was stale: the server
 already writes status.json. The scorer ignored that process record too. An early
 pipeline return can be 0 (operator abort before boot), so exit code alone cannot
@@ -1413,7 +1413,7 @@ after this commit.
 
 ## NINE CLOSED, 2026-09-12
 
-EIGHT committed b688d26. Current-source measurement in output/nine_rowan_proof.py
+EIGHT committed 1b8ecc7. Current-source measurement in output/nine_rowan_proof.py
 reads only the device document, class reference and conventions, not the answer
 key. It uses the real parser and records source hashes in nine_rowan_report.json.
 Validity first: eight parsed rules, one ROWAN unit, Class-B sensor, reading 61,
@@ -1453,7 +1453,7 @@ README/image debt paid. Continue TEN after this commit.
 
 ## EIGHT CLOSED, 2026-09-12
 
-FOUR scope follow-up committed c07c0b44bc40d13ce885e9c16507df5aa8a353ab.
+FOUR scope follow-up committed 7b556a217ff402cc223d0da5ef1438bd9f38bd7e.
 The suspected runtime gap was already closed by generic typed-relation scoring.
 Proof output/eight_date_proof.py uses declared source timestamps, real extraction
 and duration arithmetic (48 hours versus 24), real Finding and amendment builders,
@@ -1483,7 +1483,7 @@ README and image debt are paid. Continue NINE after this commit.
 
 ## FOUR scope follow-up CLOSED, 2026-09-12
 
-SEVEN closed in 3e1fc361f294b225b9d92fdc629fa8ba0b709b09. Before opening EIGHT,
+SEVEN closed in 4c1865b3a64e6ee541bc25a37ecd57746f704865. Before opening EIGHT,
 a caller audit found FOUR's scope statement was too broad: the editorial board
 also calls AgentWrapper.run_task and requests 8192 from config/editorial_board.json.
 The previous 4096 local backstop suppressed that request. Raising the shared cap
@@ -1520,7 +1520,7 @@ FAIL/ERROR=2 TOTAL=246, known failures 01 and 145 only
 
 ## SEVEN CLOSED, 2026-09-12
 
-SIX closed in f772a84d7a9c6a9eb0d381a79821a83c2571bd77.
+SIX closed in 8e4cc8c6d9c8080a1d81fe8f129a4f45fb648bb7.
 The scorer already read convention_assignment.json; the handoff's claim that it
 never did was stale. The remaining defect was real: every assigned rule became
 asked=True, without consulting calls or per-unit suspension. The new review-state
@@ -1588,7 +1588,7 @@ were reused. No GPU model probe repeated for this scorer-only change.
 
 ## SIX CLOSED, 2026-09-12
 
-FIVE closed in 2ff8e23762ade7958a3e2a236e6fe425f362db13.
+FIVE closed in 5eda8d64d9e20659b4b1519ef9459d3b40e5e0c6.
 The two saved runs agree between cost_tracker.jsonl and call_evidence.jsonl:
 29/39 calls, ten distinct called agents, the same eight uncalled agents. The
 machine-readable accounting is output/six_agent_accounting.json. No answer key
@@ -1631,7 +1631,7 @@ FAIL/ERROR=2 TOTAL=246, known failures 01 and 145 only (output/six_host_gate.log
 
 ## FIVE CLOSED, 2026-09-12
 
-FOUR closed in f928fa92eb8263fcc0ced334059a777e72bcd58c.
+FOUR closed in c0834f2b5cad27ea35bdd96d158a0ea5e920ddbc.
 Read-only replay disproves the claimed three wrapper-only failures in the second
 saved run. With the configured cached producer tokenizer, LEGAL_ANALYST has
 6552 characters / 2048 tokens and no balanced JSON; PROCESSOR has 7420 / 2048,
@@ -1671,7 +1671,7 @@ unchanged known failures 01 and 145 (output/five_host_gate.log). No new failure.
 
 ## FOUR CLOSED, 2026-09-12
 
-ZERO-C closed in 963cae2. FOUR traced the PROCESSOR -> phase-5 audit dependency;
+ZERO-C closed in 3889748. FOUR traced the PROCESSOR -> phase-5 audit dependency;
 paired unit planning and arithmetic read source directly, while optional recent
 bus context may still carry prior output. Both saved local PROCESSOR replies hit
 2048 tokens; the preserved replies contain 21/19 complete items and 17/7 distinct
@@ -1717,11 +1717,11 @@ This proves capacity and data flow with mocked dispatch, not a new review run.
 
 ## Recovery and ZERO-C, 2026-09-12
 
-Recovered main at 64b83e0, ahead of origin/main (2c88112) by 31 commits.
-Starting local-only commits, newest first: `64b83e0`, `e1fbad7`, `31744ad`, `6877744`, `c7f23ee`, `2b699ea`, `7d07e5a`, `3753314`, `45aae4d`, `9b7b25c`, `d08fc17`, `1721eb5`, `a499bfa`, `a6bd658`, `f1f09cd`, `a4d86de`, `b146d82`, `61c1f34`, `5496cff`, `44e3168`, `b17c4be`, `9b4f027`, `015e062`, `119bf60`, `ce05cbd`, `dc6a271`, `139083a`, `4afe561`, `72651b4`, `524770c`, `2bd395f`.
+Recovered main at dfbb160, ahead of origin/main (01fa6a0) by 31 commits.
+Starting local-only commits, newest first: `dfbb160`, `a528a61`, `fe5db91`, `4f0bc87`, `49f4786`, `01a57d4`, `08bafff`, `bb301ed`, `72f1db1`, `b8bc4ec`, `2aebd5c`, `1cb3d8a`, `36a313d`, `25578a9`, `dd3c9b7`, `6159d15`, `2bd34cc`, `a43741b`, `bfc4325`, `5fe1aed`, `3870c70`, `d6d6b38`, `1b877e0`, `ac3cfa2`, `f5bf335`, `d6f6630`, `590b6d4`, `527371e`, `62896be`, `8c42dda`, `a96e8d8`.
 
 No staged or tracked edits. Preserved the untracked handoff, durable state, and
-tools/container_offline_probe.py. ZERO-A and ZERO-B were completed in 64b83e0;
+tools/container_offline_probe.py. ZERO-A and ZERO-B were completed in dfbb160;
 the RESUME label "ONE: image" means ZERO-C, not the already closed learning item.
 The ledger and WORDS_TODO were older than the code and RESUME.
 
@@ -1731,7 +1731,7 @@ Python 3.9 command with host access returned 242 PASS, 0 WARN, 0 SKIP, 2 FAIL
 (01 and 145), TOTAL 244. No checks were changed to recover that baseline.
 Docker is installed per user under AppData/Local/Programs/DockerDesktop.
 
-Inherited image shimmer:baked2 (1f7c5a1c05de) was built from 64b83e0 on this day.
+Inherited image shimmer:baked2 (1f7c5a1c05de) was built from dfbb160 on this day.
 Build history jz2a69nwrl13bqysol1hwthx2 completed at 14:50:14 UTC. Checked source
 hashes, including the untracked probe, matched the working tree. Thus the rebuild
 had already happened, but offline proof and documentation were unfinished.
@@ -1866,7 +1866,7 @@ No pipeline, provider model call, paid operation, reset, or push was performed.
 
 Opened 2026-09-12. Kept because the operator moved the README pass and the image
 rebuild to the end of a working run rather than before every commit (see README
-section L, the discipline boundary at `9b4f027`). This is the record of what those
+section L, the discipline boundary at `d6d6b38`). This is the record of what those
 two deferred passes will have to catch up on, so neither has to be inferred from a
 diff.
 
@@ -1877,22 +1877,22 @@ Two sections. **Owed before this run** is the backlog that already existed.
 
 ## Owed before this run started
 
-Image last built at `139083a`. Seven commits have landed since. The image ships
+Image last built at `590b6d4`. Seven commits have landed since. The image ships
 `scripts/`, `config/`, `tools/` and `corpus_ingest/` only, so a commit touching
 only `README.md` or `benchmark/` does not affect it.
 
 | commit | what it changed | image affected |
 |---|---|---|
-| `dc6a271` | container figures recorded | no |
-| `ce05cbd` | README figures pinned to their commit | no |
-| `119bf60` | scorer checks a reason, not only a location; typed `claim` in the device key | **yes**: `tools/score_corpus.py`, `scripts/verify_session1.py` |
-| `015e062` | `quote` field on the contract; twin detector | **yes**: `config/agent_contracts.json`, `scripts/paired_review.py`, `scripts/pipeline.py`, `tools/score_corpus.py`, `scripts/verify_session1.py` |
-| `9b4f027` | advisory items withheld; typed amendments; deepening cap | **yes**: `scripts/agent_wrapper.py`, `scripts/paired_review.py`, `scripts/pipeline.py`, `tools/score_corpus.py`, `scripts/verify_session1.py` |
-| `b17c4be` | discipline boundary named | no |
-| `44e3168` | quote required on absence claims, forward only | **yes**: `scripts/paired_review.py`, `scripts/pipeline.py`, `scripts/verify_session1.py` |
-| `1721eb5` | two rule sets: operator conventions vs external rules | **yes**: `scripts/external_rules.py` (new), `scripts/verify_session1.py` |
-| `9b7b25c` | external answers persist; `input/external_rules/` entry point; conflict-list limit notice | **yes**: `scripts/external_rules.py`, `scripts/verify_session1.py` |
-| `3753314` | severity decides; suspensions reach the pairing map; the two rule sets meet a run | **yes**: `scripts/pipeline.py`, `scripts/paired_review.py`, `scripts/verify_session1.py` |
+| `d6f6630` | container figures recorded | no |
+| `f5bf335` | README figures pinned to their commit | no |
+| `ac3cfa2` | scorer checks a reason, not only a location; typed `claim` in the device key | **yes**: `tools/score_corpus.py`, `scripts/verify_session1.py` |
+| `1b877e0` | `quote` field on the contract; twin detector | **yes**: `config/agent_contracts.json`, `scripts/paired_review.py`, `scripts/pipeline.py`, `tools/score_corpus.py`, `scripts/verify_session1.py` |
+| `d6d6b38` | advisory items withheld; typed amendments; deepening cap | **yes**: `scripts/agent_wrapper.py`, `scripts/paired_review.py`, `scripts/pipeline.py`, `tools/score_corpus.py`, `scripts/verify_session1.py` |
+| `3870c70` | discipline boundary named | no |
+| `5fe1aed` | quote required on absence claims, forward only | **yes**: `scripts/paired_review.py`, `scripts/pipeline.py`, `scripts/verify_session1.py` |
+| `1cb3d8a` | two rule sets: operator conventions vs external rules | **yes**: `scripts/external_rules.py` (new), `scripts/verify_session1.py` |
+| `b8bc4ec` | external answers persist; `input/external_rules/` entry point; conflict-list limit notice | **yes**: `scripts/external_rules.py`, `scripts/verify_session1.py` |
+| `bb301ed` | severity decides; suspensions reach the pairing map; the two rule sets meet a run | **yes**: `scripts/pipeline.py`, `scripts/paired_review.py`, `scripts/verify_session1.py` |
 
 ### MODEL-A / TWO-K: the ensemble's weights, the image, and what offline now means
 
@@ -1938,7 +1938,7 @@ operator finds out by its absence.** That is the wording, and it is the one
 change in this batch an operator meets without being told.
 
 Specifically: a convention whose heading declares `[advisory]` now produces its
-FINDING and NO AMENDMENT (`3753314`, the operator's own ruling). Before that
+FINDING and NO AMENDMENT (`bb301ed`, the operator's own ruling). Before that
 commit every convention produced an amendment regardless of its declared
 severity, because the severity was parsed and consumed by nothing.
 
@@ -1959,12 +1959,12 @@ an UNDECLARED severity falls back to `required` rather than being guessed
 
 **Four of the seven affect the image.** The gate total moved 228 to 234 across
 them, so the container figure recorded in the README (`PASS=215 SKIP=7 FAIL=6
-TOTAL=228`, measured at `139083a`) is stale by six checks and will need
+TOTAL=228`, measured at `590b6d4`) is stale by six checks and will need
 remeasuring, not editing.
 
 **README items already owed from those seven:** none. Each of the seven carried
-its own README pass at the time, under the pre-`9b4f027` discipline. The boundary
-starts at `9b4f027`, and `b17c4be` and `44e3168` both updated the README in the
+its own README pass at the time, under the pre-`d6d6b38` discipline. The boundary
+starts at `d6d6b38`, and `3870c70` and `5fe1aed` both updated the README in the
 same commit. So the backlog for the README is empty and the backlog for the image
 is four commits.
 
@@ -1981,7 +1981,7 @@ Current status: TWENTY-ONE implements this forecast in config/run_predictions.js
 and the live phase 5.5 audit/run-summary path. The paragraph below is the historical
 prediction; its 14 saved-map entries are questions, not guaranteed emitted claims.
 
-The quote requirement (`44e3168`) predicts that on the next run **14 judged
+The quote requirement (`5fe1aed`) predicts that on the next run **14 judged
 absence claims** (5 on the flawed twin, 9 on the clean, from the saved pairing
 maps) will either carry a quote or be refused and recorded under
 `absence_refused`. The 7 computed absences are Python's own arithmetic and need
@@ -1992,7 +1992,7 @@ than left in a report so the next run can be checked against it. If the model
 complies, `absence_refused` stays empty and 14 findings carry quotes. If it does
 not, the refused count says how often, and the refusal reason says which.
 
-### 5496cff  Item ONE: operator verdict joined to its subject
+### bfc4325  Item ONE: operator verdict joined to its subject
 
 **README will have to say:** a new durable store,
 `durable/governance/operator_decisions.jsonl`, holding an operator verdict joined
@@ -2012,7 +2012,7 @@ produces are not a training set (order of one DeltaProposal and zero conflicts
 per run), and they are worth creating for audit and for conflict memory, not on
 the argument that the GNN will learn from them.
 
-### b146d82  Knowledge categories, and the reset hole they expose
+### 2bd34cc  Knowledge categories, and the reset hole they expose
 
 **README will have to say:** three declared knowledge categories
 (constitution-derived, rule-derived, usage-derived) with the membership test;
@@ -2037,7 +2037,7 @@ signal).
 **Also records the reshaped item TWO proposal** (one relation, `[unless: <field>]`)
 which is NOT yet built.
 
-### f1f09cd  Item TWO: a rule condition points at a field AND at another rule
+### dd3c9b7  Item TWO: a rule condition points at a field AND at another rule
 
 **README will have to say:** a third heading declaration, `[unless: <target>]`,
 alongside `scope` and `requires`, with both target kinds decided from the
@@ -2059,9 +2059,9 @@ previously proceeded with that instruction silently reinterpreted.
 
 ---
 
-### a499bfa  TWO-A, TWO-B, TWO-C: a usable refusal, a visible loss, a suspension that suspends
+### 36a313d  TWO-A, TWO-B, TWO-C: a usable refusal, a visible loss, a suspension that suspends
 
-**README will have to say:** that the refusal introduced by `f1f09cd` now names
+**README will have to say:** that the refusal introduced by `dd3c9b7` now names
 the offending declaration and LISTS the recognised ones, derived from the
 parser's own regex rather than restated, and explains that `priority`,
 `immutable` and `outranked_by` belong to the constitution and not to a
@@ -2073,7 +2073,7 @@ was parsed, carried into the payload and drawn as a graph edge, and NEVER
 EVALUATED. It suspended nothing at all. It now applies per unit in
 `plan_calls`, so the same rule can be suspended on one entry and in force on the
 next, which is what the declaration actually says. Anything that reported on the
-`f1f09cd` feature before this commit was describing something inert.
+`dd3c9b7` feature before this commit was describing something inert.
 
 **Two edges settled by registry membership rather than by shape:** a document
 field literally named `conv-status` parsed as a rule condition, and is now
@@ -2094,7 +2094,7 @@ Gate total moves 236 to 237.
 
 ---
 
-### 1721eb5  Item THREE: two rule sets, authority and information kept apart
+### 1cb3d8a  Item THREE: two rule sets, authority and information kept apart
 
 **README will have to say:** that a second, separate rule set exists. The
 operator's conventions carry AUTHORITY; a rule found outside carries only
@@ -2164,7 +2164,7 @@ with THREE), TWO.
   Worsened by TWO and THREE landing, since more rules will legitimately not be
   asked.
 - **SEVEN** the scorer cannot tell not-asked from asked-and-found-nothing.
-  **AMENDED BY THE OPERATOR (addendum, after `1721eb5`): THREE STATES, not
+  **AMENDED BY THE OPERATOR (addendum, after `1cb3d8a`): THREE STATES, not
   two.** A rule suspended by `unless` now produces no pair, so the scorer reads
   it as not asked when it was DELIBERATELY not asked, which is a third fact and
   the most defensible of the three. The states to distinguish when this item is
@@ -2208,7 +2208,7 @@ with THREE), TWO.
   somewhere a run reads).
 
 
-## 2026-09-15: Remote bounded feasibility attempt after c514d5b
+## 2026-09-15: Remote bounded feasibility attempt after e395411
 
 Authorized one Lambda A10 instance ($1.29/hour, $2 ceiling), source-only transfer,
 ordinary bounded probes, and verified shutdown. Result CLOUD_FULL_RUN_INDETERMINATE:
@@ -2242,8 +2242,8 @@ Details: REMOTE_RUNTIME_HARDENING.md. Next bounded retry needs operator cloud ap
 
 ## 2026-09-15 ? Runtime-gated retry, emergency stop before SSH readiness
 
-Source d3ebb06 adds persisted stage/checkpoint evidence to runtime-hardening base
-60a55af; 26 runtime and 83 cloud tests pass. One Lambda A10 in us-east-1 used an
+Source da2cb45 adds persisted stage/checkpoint evidence to runtime-hardening base
+aa0909d; 26 runtime and 83 cloud tests pass. One Lambda A10 in us-east-1 used an
 explicit Python3.12 image family at $1.29/hour. A temporary Jupyter token was
 accidentally displayed from raw provider metadata; stopped and terminated before
 SSH readiness, source transfer, runtime gates or model work. Operator approved
@@ -2259,9 +2259,9 @@ provider-metadata sanitization before persistence/display.
 
 ## 2026-09-15 ? Secure ordinary short-burst measurement completed: NOT ELIGIBLE
 
-6308374/c342033 close raw-provider metadata escape and add the maintained safe
+a9b571b/732ef31 close raw-provider metadata escape and add the maintained safe
 bounded controller. 135 local gates pass before one A10 launch ($1.29/h, us-east-1).
-Executed source c342033; source transfer 1,268,892 bytes/3.846s; Python 3.12.3,
+Executed source 732ef31; source transfer 1,268,892 bytes/3.846s; Python 3.12.3,
 source/critical-import/dependency checkpoint green; real pinned models acquired.
 Four calls, one truncated, one structurally valid reference output, zero semantic
 acceptance. Compact producer 12.365 s/259 tokens (20.971 tok/s) disobeys source aliases
@@ -2274,7 +2274,7 @@ Accepted-run projections stay unknown; conditional failed-attempt role screen
 321?322s/$0.115 is explicitly not an accepted-run forecast.
 Instance 4871e6caa9b44b4288be5932ea6bb6ea terminated 09:29:29.821609 UTC, verified
 absent again; cost upper $0.181719681/507.125 s; temporary SSH keys removed.
-545ca1d strips unnecessary pip report metadata; no provider/account credential
+bf73295 strips unnecessary pip report metadata; no provider/account credential
 was exposed. New artifact credential/auth-field scans zero; 55 historical hashes
 unchanged. Report REMOTE_SHORT_BURST_SECURE_FEASIBILITY.md and hashed evidence in
 remote_short_burst_secure_20260915/. No full pipeline, multi-round, paid inference
@@ -2289,4 +2289,4 @@ Root cause unresolved. Added fail-closed hidden-feature diagnostics and offline 
 
 ## 2026-09-17: Authorized A10 feature diagnostic completed
 
-REMOTE_BLOCKER_NOT_REPRODUCED. Source `f8dbcd1`; one A10/us-east-1/$1.29 per hour, $1soft/$2hard. Stages A/B/C completed38 forwards; all raw/pooled vectors finite and all new vectors bitwise equal to historical cache. Original31-vector drift remains unexplained; no fix inferred. No normalization, fitting, optimizer, HPO or evaluation. Archive verified before termination; independent empty inventory and SSH cleanup confirmed. Conservative cost$0.241891. See `AUDITOR_FEATURE_REMOTE_DIAGNOSTIC_RESULTS.md` and saved-artifact verifier. Await operator authorization for any final1792-row/896-update training retry. No image/dependency change or general README change required; no push.
+REMOTE_BLOCKER_NOT_REPRODUCED. Source `47ff703`; one A10/us-east-1/$1.29 per hour, $1soft/$2hard. Stages A/B/C completed38 forwards; all raw/pooled vectors finite and all new vectors bitwise equal to historical cache. Original31-vector drift remains unexplained; no fix inferred. No normalization, fitting, optimizer, HPO or evaluation. Archive verified before termination; independent empty inventory and SSH cleanup confirmed. Conservative cost$0.241891. See `AUDITOR_FEATURE_REMOTE_DIAGNOSTIC_RESULTS.md` and saved-artifact verifier. Await operator authorization for any final1792-row/896-update training retry. No image/dependency change or general README change required; no push.

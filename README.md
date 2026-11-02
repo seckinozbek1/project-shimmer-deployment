@@ -520,11 +520,26 @@ deployment readiness.
 
 ## History of this repository
 
-The public history of this repository is to be rewritten to remove personal paths
-and a collaborator's project name from earlier commits. Once it is, a commit map
-at `docs/history/COMMIT_MAP.md` will give the new hash of every old commit, so that
-a hash cited in the project's records can still be found. Dated copies of earlier
-documents are kept under `docs/history/`.
+The public history of this repository was rewritten on 2 November 2026 to remove
+personal paths and a collaborator's project name from earlier commits. The first
+commit that carried one of them and every commit after it, 769 in all, have new
+hashes; the 39 commits before it, among them all 23 commits of the `api`, `console`
+and `docker` branches, keep theirs. The commit map at `docs/history/COMMIT_MAP.md`
+gives the new hash of every old commit, in full and in its 7-character short form,
+so that a hash cited in the project's records can still be found.
+
+The rewrite also changed the commit hashes cited inside commit messages to the new
+ones; the 37 references to commits that are not in this history were left as they
+were. `docs/loop/DECISIONS.md`, `docs/loop/VERSIONS.md`, `docs/loop/BUDGET.md` and
+the stage reports of stages S00, S01, S02, S03, S04, S05, S07, S10 and S11 in
+`docs/loop/stages/` keep the hashes they cited and end with a dated line pointing to
+the map. Of the four older prose records under `docs/fix/` whose commit numbers were
+checked, two were updated to the new hashes (`docs/fix/LEDGER.md`,
+`docs/fix/SESSION_HANDOFF.md`) and two needed no change
+(`docs/fix/STEP_DOCKER_REPORT.md`, `docs/fix/STEP_W7_REPORT.md`). Some evidence
+records hold the content hash of a file the rewrite changed; they were left as they
+were, describe the file before the rewrite, and are listed in the map. Dated copies
+of earlier documents are kept under `docs/history/`.
 
 ## Citation and licence
 

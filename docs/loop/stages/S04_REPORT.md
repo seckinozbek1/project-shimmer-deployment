@@ -87,3 +87,5 @@ Opus, medium effort from 28 October 2026 (Annex D, D-S11). Before that, Opus at 
 ## Spend
 
 0.00 USD on instances in S4. The storage share of `shimmer-filesystem` accrues to the reserve.
+
+> Note (2026-11-02, loop S13 step 6): the commit hashes cited above are from before the history rewrite of 2 November 2026; each maps to its new commit through `docs/history/COMMIT_MAP.md`.
