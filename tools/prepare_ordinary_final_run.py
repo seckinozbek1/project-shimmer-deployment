@@ -407,6 +407,42 @@ def launcher_sensitivity_error(conventions):
     return None
 
 
+def tracked_blob_ids(listing):
+    """The blob ids in a `git ls-tree -r -z` listing (bytes)."""
+    ids = set()
+    for entry in listing.decode('utf-8', 'replace').split('\0'):
+        meta = entry.partition('\t')[0].split()
+        if len(meta) == 3 and meta[1] == 'blob':
+            ids.add(meta[2])
+    return ids
+
+
+def repository_material(source):
+    """The blob ids of every file tracked at the bound commit `source`."""
+    return tracked_blob_ids(git(ROOT, 'ls-tree', '-r', '-z', '--full-tree', source))
+
+
+def blob_id(data, length=40):
+    """Git's object id of `data` as a blob (SHA-1, or SHA-256 in a repository whose ids have 64 digits)."""
+    digest = hashlib.sha256 if length == 64 else hashlib.sha1
+    return digest(b'blob %d\0' % len(data) + data).hexdigest()
+
+
+def launcher_material_error(members, material):
+    """Why this workload may not be sealed for arm L, or None. Arm L seals a run that redacts
+    nothing, so D-159 allows it only on development material already in the repository: every
+    workload file (the targets file, which names files and holds no material, aside) must be,
+    byte for byte as staged, a file tracked at the bound commit (`material`, its blob ids).
+    Public material not in the repository is committed first (benchmark/corpora/), then sealed
+    (issue #135, D-184)."""
+    length = len(next(iter(material), '0' * 40))
+    outside = sorted(n for n, d in members.items() if n != '_review_targets.json' and blob_id(d, length) not in material)
+    if outside:
+        return ('Arm L seals only development material already in the repository (D-159); not a file tracked at '
+                'the bound commit: ' + ', '.join(outside))
+    return None
+
+
 def launcher_fields(members, question, files):
     """The arm L workload and its sealed launcher block. The menu's wizard reads ONE flat folder,
     so the workload's context/ and conventions/ files go into launcher_input/ under their own
@@ -528,6 +564,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     if arm == 'L':
         # The menu places the workload itself: nothing under input/, the files in one flat folder.
         require(case is None, 'An arm L bundle is never multi-round')
+        material = launcher_material_error(members, repository_material(source))
+        require(material is None, material or '')
         placed, launcher = launcher_fields(members, launcher_question, files)
         files.update(placed)
         workload_hashes = {n: hashlib.sha256(d).hexdigest() for n, d in members.items() if n != '_review_targets.json'}

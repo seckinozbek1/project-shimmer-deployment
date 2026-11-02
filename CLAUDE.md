@@ -223,7 +223,10 @@ widely between the fields it has run on.
 - ARM-L-A (D-S13 item 6d): a third sealed arm, `L`, runs the launcher menu as shipped on the
   loop's own instance with the same controller, guard, ledger, reaper and binding; never on the
   laptop. The sealer (`--arm L --launcher-question "..."`, exposed only, refused for a sealed run
-  by the sealer and by `admit_workload`) puts the workload's context and conventions files into
+  by the sealer and by `admit_workload`; and, D-159 and D-184 (issue #135), sealed only from
+  development material already in the repository: every workload file must be, byte for byte as
+  staged, a file tracked at the bound commit, else `launcher_material_error` refuses naming it)
+  puts the workload's context and conventions files into
   one flat `launcher_input/` (nothing under `input/`; each file where the wizard's own
   `classify()` places it), adds `shimmer.sh`, `tools/runtime_contract.py` and
   `tools/cloud_run/runtime.json` to the archive, and seals a `launcher` block: the draft question,

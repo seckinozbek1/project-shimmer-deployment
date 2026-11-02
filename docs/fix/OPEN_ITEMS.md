@@ -625,6 +625,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 - **Evidence.** `tools/ordinary_final_run.py` (the launcher network reading and the pass rule), `tools/cloud_run_observer.py`; D-148; lane s07-fix2's report.
 - **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b); it is taken up in S6, after L14b (sweep 3, D-158).
 - **What would settle it.** The sitecustomize logs every interpreter start; the runner counts child processes independently (sampling its session's process group); the pass rule requires the two counts of Python children to match and records non-Python children by name; a neutralisation hides one child from the sitecustomize; check 311.
+- **Companion work landed (2026-11-02, loop S11, D-184; issue #135).** D-159's sealer guard: `tools/prepare_ordinary_final_run.py` (`launcher_material_error`) refuses an arm L workload holding any file that is not, byte for byte as staged, a file tracked at the bound commit, naming it, before any launcher field is built. Public material outside the repository is refused until it is committed. The sealer is not a controller-bound file, so no sealed bundle is affected. Check 311 (`test_arm_l_is_sealed_only_from_material_already_in_the_repository`), neutralised by admitting any material. This item itself (the child count) stays open.
 
 ## 53. The replies view does not show decoding-constraint intervention counts (found at loop S7 close, lane s07-fix2) (issue #109)
 
