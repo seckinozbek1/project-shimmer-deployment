@@ -396,6 +396,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 - **What would settle it.** A decision that a scorer reads only Python's stamped copy (and counts refused answers apart), then the repository's scorer changed to match, with a gate check on a fixture bus holding both copies and a refused answer.
 
 - **Split at loop S5 (2026-10-30, D-092).** The adapters' half is settled: one record reader for every benchmark adapter (R22) reads Python's stamped copy and counts refused answers apart. The repository scorer's half stays open as written above.
+- **Closed (2026-11-02, loop S11, D-184).** The repository scorer's half: `tools/score_corpus.py` reads a judged absence from Python's stamped copy only, by the adapters' rule (a post without `stamped_by` whose `call_id` a judging-call record names with plan kind `absence_judged`, from `audit/pairing_map.json` or a bus line's `judging_calls`), in `_load_bus_findings` and in the reader for the relations Python never writes; the raw replies' records and the refused answers are printed apart on a `judged absences` line. Check 293 runs a fixture bus holding both copies and a refused answer, neutralised by reading the raw reply and by dropping the line. `docs/OUTPUT_FORMAT.md` section 13 point 2 still describes the point as open; that file is held for the format's next version.
 
 ## 25. An amendment's severity is always "required" (found at loop S3, OUTPUT_FORMAT section 13 point 3) (issue #33)
 

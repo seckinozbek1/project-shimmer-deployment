@@ -475,7 +475,9 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
 ```
 
   [benchmark/dev_suite/README.md](benchmark/dev_suite/README.md) gives the twin
-  options and the multi-round form.
+  options and the multi-round form. The scorer reads a judged absence from
+  Python's stamped copy only; the model's raw reply, and any answer Python
+  refused, are counted apart and locate nothing.
 - **External benchmarks.** The adapters in `benchmark/adapters/` build test
   bundles from a benchmark file, label a run's output and score the labels
   (`build`, `label --scoring benchmark|as_shipped`, `score`; the synthetic suite's

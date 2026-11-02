@@ -401,8 +401,10 @@ widely between the fields it has run on.
   refusal kind (a rename Python matched is no false positive; one only a model's record matches
   satisfies nothing), scores a run holding `audit/multi_round.json` per round and document from
   Python's round findings only (a round-scoped key is refused on any other run), and reports
-  the four relations Python never writes apart, located only by a marked model-written record
-  (check 293). Development cases built from
+  the four relations Python never writes apart, located only by a marked model-written record;
+  it reads a judged absence from Python's stamped copy only, the model's raw reply to that call
+  (refused answers included) locating nothing and counted apart with the refused answers
+  (D-184, issue #32; check 293). Development cases built from
   repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline

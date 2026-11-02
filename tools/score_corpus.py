@@ -8,7 +8,10 @@ never reads. Matching is MECHANICAL and prose-free, on typed fields only:
                 (logs/agent_bus.jsonl) names its unit and carries its relation, or
                 when an amendment in review_data.json names its unit and carries
                 its operator rule id. Relation and unit id are typed; nothing here
-                reads a sentence.
+                reads a sentence. A judged absence is read from Python's stamped
+                copy only: the model's raw reply to that call (refused answers
+                included) locates nothing, and its records and the refused answers
+                are counted apart (docs/OUTPUT_FORMAT.md section 5.5; D-184).
   reason        located is NOT the same as detected. When the key's planted entry
                 carries a typed `claim` (relation, field_label, value_a/value_b,
                 in the Finding record's own vocabulary) the located finding is
@@ -175,21 +178,107 @@ def _load_amendments(run_dir):
     return [a for a in data.get("amendments") or [] if isinstance(a, dict)]
 
 
-def _load_bus_findings(run_dir):
-    """Typed Finding records off the append-only bus: unit_id, relation, rule_id."""
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import finding_record  # noqa: E402
+# docs/OUTPUT_FORMAT.md section 5.5: a judged absence reaches the bus twice, the model's raw
+# reply (a post whose call_id a judging-call record names with this plan kind) and, when
+# Python kept the answer, Python's stamped copy (body.stamped_by python). Only the stamped
+# copy is read; the raw reply, refused answers included, locates nothing (issue #32, D-184;
+# the benchmark adapters' record reader has read it so since D-092).
+JUDGED_ABSENCE_PLAN = "absence_judged"
 
+
+def _bus_lines(run_dir):
     path = Path(run_dir) / "logs" / "agent_bus.jsonl"
-    out = []
     if not path.is_file():
-        return out
+        return []
+    out = []
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         try:
             msg = json.loads(line)
         except ValueError:
             continue
+        if isinstance(msg, dict):
+            out.append(msg)
+    return out
+
+
+def judged_absences(run_dir):
+    """The run's judged-absence calls: {calls: their call ids, refused: the answers Python
+    refused}, read from audit/pairing_map.json (one object per document) and from the bus
+    lines' body.judging_calls. The refused count is the pairing map's absence_refused list
+    where the map has one, else the judging-call records' absence_refused."""
+    calls, refused_by_call, refused_in_map = set(), {}, None
+    sources = []
+    path = Path(run_dir) / "audit" / "pairing_map.json"
+    if path.is_file():
+        try:
+            pairing = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError:
+            pairing = None
+        if isinstance(pairing, dict):
+            documents = [d for d in pairing.values() if isinstance(d, dict)] or [pairing]
+            for document in documents:
+                sources.extend(document.get("judging_calls") or [])
+                if isinstance(document.get("absence_refused"), list):
+                    refused_in_map = (refused_in_map or 0) + len(document["absence_refused"])
+    for msg in _bus_lines(run_dir):
         body = msg.get("body")
+        if isinstance(body, dict):
+            sources.extend(body.get("judging_calls") or [])
+    for call in sources:
+        if isinstance(call, dict) and call.get("plan_kind") == JUDGED_ABSENCE_PLAN and call.get("call_id"):
+            calls.add(str(call["call_id"]))
+            try:
+                refused_by_call[str(call["call_id"])] = int(call.get("absence_refused") or 0)
+            except (TypeError, ValueError):
+                refused_by_call.setdefault(str(call["call_id"]), 0)
+    refused = refused_in_map if refused_in_map is not None else sum(refused_by_call.values())
+    return {"calls": calls, "refused": refused}
+
+
+def is_raw_judged_absence(body, calls):
+    """True for the model's raw reply to a judged-absence call: not Python's stamped copy,
+    and its call id is a judged-absence call's."""
+    return (isinstance(body, dict) and not body.get("stamped_by") and bool(body.get("call_id"))
+            and str(body["call_id"]) in calls)
+
+
+def raw_judged_absence_records(run_dir):
+    """How many typed records the raw judged-absence replies carry, none of them read."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finding_record  # noqa: E402
+    calls = judged_absences(run_dir)["calls"]
+    count = 0
+    for msg in _bus_lines(run_dir):
+        body = msg.get("body")
+        payload = body.get("payload") if isinstance(body, dict) else None
+        if is_raw_judged_absence(body, calls) and isinstance(payload, dict):
+            count += sum(1 for item in payload.get("items") or [] if finding_record.is_finding(item))
+    return count
+
+
+def _print_judged_absences(run_dir):
+    """One line when the run made judged-absence calls: the stamped copy is what is counted,
+    the raw replies' records and the refused answers are counted apart and locate nothing."""
+    judged = judged_absences(run_dir)
+    if not judged["calls"]:
+        return
+    print("judged absences : %d call(s); only Python's stamped copy is counted; %d record(s) in the "
+          "models' raw replies not counted; %d answer(s) Python refused, counted apart, locating nothing"
+          % (len(judged["calls"]), raw_judged_absence_records(run_dir), judged["refused"]))
+
+
+def _load_bus_findings(run_dir):
+    """Typed Finding records off the append-only bus: unit_id, relation, rule_id. A judged
+    absence is read from Python's stamped copy only, never from the model's raw reply."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finding_record  # noqa: E402
+
+    out = []
+    calls = judged_absences(run_dir)["calls"]
+    for msg in _bus_lines(run_dir):
+        body = msg.get("body")
+        if is_raw_judged_absence(body, calls):
+            continue
         payload = body.get("payload") if isinstance(body, dict) else None
         # S2a, item 7: who wrote each record, read off the post it travelled in,
         # kept beside the record (underscore: the scorer's own annotation).
@@ -203,19 +292,16 @@ def _load_bus_findings(run_dir):
 
 
 def _bus_items(run_dir):
-    """Every item on the bus with the line it travelled in: (line, item, written by)."""
+    """Every item on the bus with the line it travelled in: (line, item, written by). A
+    judged absence's raw model reply is skipped, as in _load_bus_findings."""
     sys.path.insert(0, str(ROOT / "scripts"))
     import finding_record  # noqa: E402
 
-    path = Path(run_dir) / "logs" / "agent_bus.jsonl"
-    if not path.is_file():
-        return
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        try:
-            msg = json.loads(line)
-        except ValueError:
+    calls = judged_absences(run_dir)["calls"]
+    for msg in _bus_lines(run_dir):
+        body = msg.get("body")
+        if is_raw_judged_absence(body, calls):
             continue
-        body = msg.get("body") if isinstance(msg, dict) else None
         payload = body.get("payload") if isinstance(body, dict) else None
         if not isinstance(payload, dict):
             continue
@@ -1247,6 +1333,7 @@ def score(corpus, run_dir, key_path=None, twin_key=None, twin_run=None):
     print("task            : %s" % key.get("task_given_to_the_pipeline", ""))
     print("run completeness: %s" % _completeness_note(run_dir, amendments))
     print("amendments      : %d   (typed findings on the bus: %d)" % (len(amendments), len(findings)))
+    _print_judged_absences(run_dir)
     print("recall          : %d/%d   (every planted entry, LOCATION ONLY)"
           % (sum(found), len(planted)))
     # The third outcome. A located finding whose stated reason is not the key's
