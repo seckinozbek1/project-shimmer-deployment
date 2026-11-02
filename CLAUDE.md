@@ -223,7 +223,10 @@ widely between the fields it has run on.
 - ARM-L-A (D-S13 item 6d): a third sealed arm, `L`, runs the launcher menu as shipped on the
   loop's own instance with the same controller, guard, ledger, reaper and binding; never on the
   laptop. The sealer (`--arm L --launcher-question "..."`, exposed only, refused for a sealed run
-  by the sealer and by `admit_workload`) puts the workload's context and conventions files into
+  by the sealer and by `admit_workload`; and, D-159 and D-184 (issue #135), sealed only from
+  development material already in the repository: every workload file must be, byte for byte as
+  staged, a file tracked at the bound commit, else `launcher_material_error` refuses naming it)
+  puts the workload's context and conventions files into
   one flat `launcher_input/` (nothing under `input/`; each file where the wizard's own
   `classify()` places it), adds `shimmer.sh`, `tools/runtime_contract.py` and
   `tools/cloud_run/runtime.json` to the archive, and seals a `launcher` block: the draft question,
@@ -307,8 +310,10 @@ widely between the fields it has run on.
   item by item (B3 then B1 per item), each with its own run folder under `batch/`, seal entry,
   authorization and evidence, so a stop leaves every finished pair complete. The analyser
   (`tools/analyze_ordinary_final_run.py`, `--batch` for a session) writes `RUN_REPORT.md`
-  (Annex A 11.12: purpose and sealed-or-exposed lines first, the `SHIMMER_INST_FINDER` value,
-  FACT_CHECKER withheld with both B.4 reasons, instance type and price, asset copy MATCH or
+  (Annex A 11.12: purpose and sealed-or-exposed lines first, the `SHIMMER_INST_FINDER` value
+  sealed in the manifest beside the one each pipeline run saved in `audit/agent_switches.json`,
+  a difference or an unreadable record named `DIFFERS FROM THE SEAL` and kept in
+  `FINAL_STATUS.json` under `inst_finder` (D-184, issue #133), FACT_CHECKER withheld with both B.4 reasons, instance type and price, asset copy MATCH or
   not, the role-separation sentence for a sealed run; a field that does not apply says why) and
   the same rows in `FINAL_STATUS.json` under `report`. The sealer refuses an unratified
   `SHIMMER_INST_FINDER=off` with the pipeline's own ratification test, read from the bound
@@ -396,8 +401,10 @@ widely between the fields it has run on.
   refusal kind (a rename Python matched is no false positive; one only a model's record matches
   satisfies nothing), scores a run holding `audit/multi_round.json` per round and document from
   Python's round findings only (a round-scoped key is refused on any other run), and reports
-  the four relations Python never writes apart, located only by a marked model-written record
-  (check 293). Development cases built from
+  the four relations Python never writes apart, located only by a marked model-written record;
+  it reads a judged absence from Python's stamped copy only, the model's raw reply to that call
+  (refused answers included) locating nothing and counted apart with the refused answers
+  (D-184, issue #32; check 293). Development cases built from
   repository material live in `benchmark/dev_cases/`: exposed, development only.
 
 ## Change discipline

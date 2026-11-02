@@ -354,6 +354,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 ## Corrections to items 12, 18 and 19 (loop S2 checker round 1)
 
 - **Item 12 (closed).** "Both halves landed" overstates the report half: the run report states the setting sealed in the manifest (`tools/analyze_ordinary_final_run.py`), not the setting the run observed in `audit/agent_switches.json`. The seal refuses an unratified `off`, so the sealed value is the run's value; reading the run's own record as a cross-check is left for S6.
+- **Item 12, the report half (closed 2026-11-02, loop S11, D-184; issue #133).** The analyser now reads every `audit/agent_switches.json` in the collected evidence and states it beside the sealed setting; a recorded setting that differs from the seal, or a record that cannot be read, is named `DIFFERS FROM THE SEAL` in the report and kept in `FINAL_STATUS.json` under `inst_finder`. A B1 entry, which runs no pipeline, says so. Proof: `test_the_report_states_the_runs_own_inst_finder_setting_and_any_difference` in `tools/ordinary_final_controller_checks.py`, neutralised by reporting the sealed value as the run's.
 - **Item 18.** "None of these files is changed by S2" is wrong for one file: `scripts/ui/localization_catalog.js` was changed by S2 and still holds the one dash whose key must match the agent registry word for word (stated in the same item).
 - **Item 19 (1).** The absence-prediction section is translated in Turkish runs (`scripts/absence_prediction.py` localizes each sentence); only the raw status token is untranslated.
 
@@ -395,6 +396,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 - **What would settle it.** A decision that a scorer reads only Python's stamped copy (and counts refused answers apart), then the repository's scorer changed to match, with a gate check on a fixture bus holding both copies and a refused answer.
 
 - **Split at loop S5 (2026-10-30, D-092).** The adapters' half is settled: one record reader for every benchmark adapter (R22) reads Python's stamped copy and counts refused answers apart. The repository scorer's half stays open as written above.
+- **Closed (2026-11-02, loop S11, D-184).** The repository scorer's half: `tools/score_corpus.py` reads a judged absence from Python's stamped copy only, by the adapters' rule (a post without `stamped_by` whose `call_id` a judging-call record names with plan kind `absence_judged`, from `audit/pairing_map.json` or a bus line's `judging_calls`), in `_load_bus_findings` and in the reader for the relations Python never writes; the raw replies' records and the refused answers are printed apart on a `judged absences` line. Check 293 runs a fixture bus holding both copies and a refused answer, neutralised by reading the raw reply and by dropping the line. `docs/OUTPUT_FORMAT.md` section 13 point 2 still describes the point as open; that file is held for the format's next version.
 
 ## 25. An amendment's severity is always "required" (found at loop S3, OUTPUT_FORMAT section 13 point 3) (issue #33)
 
@@ -624,6 +626,7 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 - **Evidence.** `tools/ordinary_final_run.py` (the launcher network reading and the pass rule), `tools/cloud_run_observer.py`; D-148; lane s07-fix2's report.
 - **Why it was left.** The fix changes `tools/ordinary_final_run.py`, a bound controller file, while L14 is being re-sealed (P9 reason b); it is taken up in S6, after L14b (sweep 3, D-158).
 - **What would settle it.** The sitecustomize logs every interpreter start; the runner counts child processes independently (sampling its session's process group); the pass rule requires the two counts of Python children to match and records non-Python children by name; a neutralisation hides one child from the sitecustomize; check 311.
+- **Companion work landed (2026-11-02, loop S11, D-184; issue #135).** D-159's sealer guard: `tools/prepare_ordinary_final_run.py` (`launcher_material_error`) refuses an arm L workload holding any file that is not, byte for byte as staged, a file tracked at the bound commit, naming it, before any launcher field is built. Public material outside the repository is refused until it is committed. The sealer is not a controller-bound file, so no sealed bundle is affected. Check 311 (`test_arm_l_is_sealed_only_from_material_already_in_the_repository`), neutralised by admitting any material. This item itself (the child count) stays open.
 
 ## 53. The replies view does not show decoding-constraint intervention counts (found at loop S7 close, lane s07-fix2) (issue #109)
 

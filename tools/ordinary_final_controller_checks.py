@@ -1994,6 +1994,38 @@ class ControllerChecks(LauncherArmChecks, unittest.TestCase):
         self.assertIn('MATCH: the sealed archive was read from the operator-declared copy', '\n'.join(lines))
         self.assertIn('d' * 64, '\n'.join(lines))
 
+    def test_the_report_states_the_runs_own_inst_finder_setting_and_any_difference(self):
+        """Issue #133 (D-184): the report states the INST_FINDER setting the run saved in
+        audit/agent_switches.json beside the sealed one, and names a difference; a run with no
+        saved record, or one that cannot be read, says so and never reads as the seal."""
+        import analyze_ordinary_final_run as analysis
+        switches = 'evidence/run/r1/audit/agent_switches.json'
+
+        def report(name, saved, **manifest_changes):
+            folder = self.root / name
+            evidence = {} if saved is None else {switches: saved if isinstance(saved, bytes) else json.dumps(
+                dict(schema_version=1, variable='SHIMMER_INST_FINDER', value=saved, agent='INST_FINDER', setting=saved,
+                     switched_off=['INST_FINDER'] if saved == 'off' else [], ratified_by=None, refusal=None)).encode()}
+            self.analysis_folder(folder, evidence=evidence, **manifest_changes)
+            with contextlib.redirect_stdout(io.StringIO()):
+                analysis.analyze(folder)
+            status = read(folder / 'FINAL_STATUS.json')
+            return status['report']['SHIMMER_INST_FINDER'], status['inst_finder']
+        text, record = report('switch_same', 'on')
+        self.assertEqual(text, 'on (sealed in the manifest); the run recorded on (audit/agent_switches.json)')
+        self.assertEqual((record['sealed'], record['recorded'], record['differs']), ('on', ['on'], False))
+        text, record = report('switch_differs', 'off')
+        self.assertIn('DIFFERS FROM THE SEAL: the run recorded off', text)
+        self.assertEqual((record['recorded'], record['differs']), (['off'], True))
+        text, record = report('switch_absent', None)
+        self.assertIn('not recorded by the run', text)
+        self.assertEqual((record['recorded'], record['differs']), ([], False))
+        text, record = report('switch_unreadable', b'{')
+        self.assertIn('DIFFERS FROM THE SEAL: 1 of 1 saved records', text)
+        self.assertTrue(record['differs'])
+        self.assertIn('DIFFERS FROM THE SEAL', read(self.root / 'switch_differs' / 'FINAL_STATUS.json')['report'][
+            'Agents withheld or settings changed'])
+
     def test_the_analyser_reads_a_completed_pipeline_run_through_its_telemetry(self):
         """S5 join: analyze() on a collected run that reached the pipeline's end reads its
         telemetry and scheduler logs with the imported rows() reader. A local named `rows` in
@@ -4695,6 +4727,9 @@ NEUTRALIZATIONS = [
      lambda exposure, test_manifest, test_archive, source: dict(exposure=exposure)),
     # S2c item 3: the bundle's withholding not read, so FACT_CHECKER's reasons vanish.
     ('test_report_states_every_11_12_field', analysis, 'withheld_agents', lambda bundle: []),
+    # Issue #133 (D-184): the run's own record not read, the sealed value reported as the run's.
+    ('test_the_report_states_the_runs_own_inst_finder_setting_and_any_difference', analysis, 'recorded_inst_finder',
+     lambda target: [dict(setting='on', refused=False, ratified_by=None)]),
     # S2c item 8: a sealed run handled as exposed (phase names printed, the copy attached).
     ('test_sealed_run_writes_nothing_in_the_repository_but_ledger_lines_and_prints_counts_only', controller, 'admit',
      admit_as_exposed),

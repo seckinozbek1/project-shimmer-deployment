@@ -286,7 +286,7 @@ python tools/prepare_ordinary_final_run.py --output-dir BUNDLE_FOLDER --ledger L
 | `--protected-test` | Only on a sealed bundle prepared by role B. |
 | `--ledger` (repeatable), `--forecast-minutes`, `--storage-forecast-usd` | The IV.3 inputs. All three are required. |
 | `--arm` | `B3` (default, the full pipeline), `B1` (the bare-model baseline `benchmark/baselines/bare_model.py`) or `L` (the launcher menu as shipped, exposed bundles only; CLAUDE.md ARM-L-A). Written into every manifest as `arm`. |
-| `--launcher-question` | Arm L only, and required for it: the one-line draft question the menu is answered with. |
+| `--launcher-question` | Arm L only, and required for it: the one-line draft question the menu is answered with. An arm L workload is sealed only when every file in it is, byte for byte, a file tracked at the bound commit (D-159, D-184). |
 | `--items` | B1 only: the adapter's `items.json` (item ids, no gold), sealed as a support file. |
 | `--b1-checkpoints` | B1 only: a JSON list of passes `{"name", "checkpoint", "args"}` (`checkpoint` may be left out, see below), run in that order, each into `evidence/b1/<name>`. Each `args` list may hold only options `bare_model.py` itself takes (see below). A replay pass `{"name", "replay": true, "args"}` runs `replay_prompts.py` instead (section "The E evidence run"). |
 | `--replay-prompts` | Exposed B1 only: the `replay_prompts.json` a replay pass reads (D-061 item 4), sealed as a support file. |

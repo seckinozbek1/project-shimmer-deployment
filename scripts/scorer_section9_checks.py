@@ -28,7 +28,12 @@ folders:
    ordinary run (refused, input format section 12 item 4);
 3. the relations Python never writes: a single-version key with one entry located by a
    model-written record whose reason matches, one whose only record sits on a Python post
-   with an amendment of another relation on its unit, and one with nothing.
+   with an amendment of another relation on its unit, and one with nothing;
+4. judged absences (issue #32, D-184): a judged-absence call whose raw reply carries two
+   answers, one kept (Python's stamped copy also on the bus) and one refused, with a flaw
+   planted on each answer's unit: only the stamped copy is read (one typed finding, the
+   refused answer locating nothing), and the raw records and the refused answer are counted
+   apart.
 
 Each is proven by neutralise, fail, restore, pass (scripts/effect_proof.py). No model, no
 pipeline run, no provider, no network.
@@ -481,6 +486,65 @@ def python_post_counted():
                                                     for r in real(run_dir, relations)])
 
 
+# ---- 4. judged absences (issue #32, D-184) ----------------------------------------------
+
+def judged_absence_fixture(root):
+    """A judged-absence call whose raw reply carries two absence answers: Python kept one
+    (its stamped copy is on the bus too) and refused the other. The key plants a flaw on each
+    answer's unit."""
+    key = {"document": "sheet_y.md", "task_given_to_the_pipeline": "fixture",
+           "planted": [{"unit": "u02-sample-alder", "rule": "CONV-SA", "relation": "missing_field",
+                        "kind": "absence"},
+                       {"unit": "u05-sample-birch", "rule": "CONV-SA", "relation": "missing_field",
+                        "kind": "absence"}],
+           "clean": []}
+    _write(root / "key" / "answer_key.json", json.dumps(key))
+    kept = _record("missing_field", "u02-sample-alder", rule_id="CONV-003", field_label="calibration date")
+    refused = _record("missing_field", "u05-sample-birch", rule_id="CONV-003", field_label="calibration date")
+
+    def post(items, **body):
+        return json.dumps({"sender": "PRACTICE_AUDITOR", "channel": "main", "body": dict({
+            "event": "AGENT_OUTPUT", "backend": "local_auditor", "model": "fixture-model",
+            "payload": {"agent": "PRACTICE_AUDITOR", "doc_id": "sheet_y", "items": items}}, **body)})
+    run = root / "run"
+    _write(run / "logs" / "agent_bus.jsonl", "\n".join([
+        post([dict(kept), dict(refused)], call_id="call-absence-1"),
+        post([dict(kept, unit_id="u02-sample-alder")], stamped_by="python", absence_path="judged")]) + "\n")
+    _write(run / "audit" / "pairing_map.json", json.dumps({"sheet_y": {
+        "judging_calls": [{"call_id": "call-absence-1", "agent": "PRACTICE_AUDITOR", "unit_id": "u05-sample-birch",
+                           "rule_id": "CONV-003", "plan_kind": "absence_judged", "absence_listed": 1,
+                           "absence_refused": 1, "outcome": "judged_absence"}],
+        "absence_refused": [{"unit_id": "u05-sample-birch", "rule_id": "CONV-003", "reason": "quote not in the unit"}]}}))
+    return root / "key" / "answer_key.json", run
+
+
+def observe_judged_absences():
+    with tempfile.TemporaryDirectory(prefix="shimmer_scorer_absence_") as td:
+        key, run = judged_absence_fixture(Path(td))
+        status, lines = run_scorer(["--key", str(key), "--run", str(run)])
+        return {"status": status, "lines": _lines(lines, "amendments", "judged absences", "recall          :")}
+
+
+JUDGED_ABSENCES = {
+    "status": 0,
+    "lines": [
+        "amendments      : 0   (typed findings on the bus: 1)",
+        "judged absences : 1 call(s); only Python's stamped copy is counted; 2 record(s) in the models' raw "
+        "replies not counted; 1 answer(s) Python refused, counted apart, locating nothing",
+        "recall          : 1/2   (every planted entry, LOCATION ONLY)"]}
+
+
+def raw_judged_absence_read():
+    """The model's raw judged-absence reply read like any post, as before: the kept answer
+    counted twice and the refused one locating its flaw."""
+    return patch.object(_scorer(), "is_raw_judged_absence", lambda body, calls: False)
+
+
+def judged_absences_not_counted_apart():
+    """The raw replies' records and the refused answers not reported."""
+    return patch.object(_scorer(), "_print_judged_absences", lambda run_dir: None)
+
+
 class ScorerSection9Checks(unittest.TestCase):
     evidence = []
 
@@ -546,6 +610,16 @@ class ScorerSection9Checks(unittest.TestCase):
         """Neutralised: a record on a Python post counted as located."""
         self.prove("unwritten_never_python", observe_unwritten, UNWRITTEN, python_post_counted)
 
+    def test_a_judged_absence_is_read_from_pythons_stamped_copy_only(self):
+        """Neutralised: the raw reply read too (issue #32)."""
+        self.prove("judged_absence_stamped_only", observe_judged_absences, JUDGED_ABSENCES,
+                   raw_judged_absence_read)
+
+    def test_refused_judged_answers_are_counted_apart(self):
+        """Neutralised: the raw records and refused answers not reported (issue #32)."""
+        self.prove("judged_absence_counted_apart", observe_judged_absences, JUDGED_ABSENCES,
+                   judged_absences_not_counted_apart)
+
 
 def check():
     ScorerSection9Checks.evidence = []
@@ -564,7 +638,9 @@ def check():
                     "round findings only, a key without multi-round entries refused there and a "
                     "round-scoped key refused on an ordinary run; a relation Python never writes "
                     "located only by a "
-                    "model-written record, marked, never by a Python post" % result.testsRun)
+                    "model-written record, marked, never by a Python post; a judged absence read "
+                    "from Python's stamped copy only, its raw records and refused answers counted "
+                    "apart" % result.testsRun)
 
 
 def main():

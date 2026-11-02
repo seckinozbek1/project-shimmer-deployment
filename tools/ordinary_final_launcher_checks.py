@@ -6,7 +6,8 @@ model call and no network (one test starts the real pipeline, which stops at its
 question, declined, before any model work; every other test runs a stand-in pipeline or
 none): the sealed launcher block and its exposed-only rule, the
 prompt map read word for word from the bound launcher, wizard and pipeline sources, the
-sealer's mapping of the workload as the wizard lists it, the session driver answering only
+sealer's mapping of the workload as the wizard lists it, the sealer's refusal of a workload
+holding material the repository does not track (D-159, D-184, issue #135), the session driver answering only
 from the map (and stopping on an unknown prompt, on answers used up and at its deadline), the
 REAL shimmer.sh and the REAL intake wizard driven through a review then a draft then Q with a
 stand-in pipeline (each Python child that loads the sealed sitecustomize network-denied by it;
@@ -259,6 +260,14 @@ def tracked_source(source, extra=()):
     return {n: (ROOT / n).read_bytes().replace(b'\r\n', b'\n') for n in names if (ROOT / n).is_file()}
 
 
+def tracked_material(source):
+    """The sealer's repository_material over this tree's HEAD (the sealing stand-ins replace git
+    with a fixed commit id, so the sealer cannot list the bound commit itself here)."""
+    listed = subprocess.run(['git', 'ls-tree', '-r', '-z', '--full-tree', 'HEAD'], cwd=ROOT, capture_output=True,
+                            timeout=120, check=True, stdin=subprocess.DEVNULL, creationflags=NO_WINDOW).stdout
+    return sealer.tracked_blob_ids(listed)
+
+
 def sealed_arm_l_project(root, ledger, harness):
     """Seal an arm L bundle with the sealer's own prepare() over this tree's tracked files and
     extract its project archive, as the instance does. Returns (project, manifest)."""
@@ -269,7 +278,8 @@ def sealed_arm_l_project(root, ledger, harness):
     (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
     write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[harness.A10_TYPE],
                                                    images=[dict(harness.IMAGE)], observed_at='fixture'))
-    with mr_checks.sealing_stand_ins(), patch.object(sealer, 'runtime_source', tracked_source), model_free_ensemble():
+    with mr_checks.sealing_stand_ins(), patch.object(sealer, 'runtime_source', tracked_source), model_free_ensemble(), \
+            patch.object(sealer, 'repository_material', tracked_material):
         sealer.prepare(Path(root) / 'bundle', budget=dict(ledgers=[ledger], forecast_minutes=harness.FORECAST_MINUTES,
                                                           storage_forecast_usd=harness.STORAGE_USD, reaped=[ledger]),
                        inputs_from=inputs, now_epoch=harness.FakeClock().now, arm='L', launcher_question=QUESTION)
@@ -452,7 +462,7 @@ class LauncherArmChecks:
         (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
         write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[harness.A10_TYPE],
                                                        images=[dict(harness.IMAGE)], observed_at='fixture'))
-        with mr_checks.sealing_stand_ins(), model_free_ensemble():
+        with mr_checks.sealing_stand_ins(), model_free_ensemble(), patch.object(sealer, 'repository_material', tracked_material):
             sealer.prepare(self.root / 'l', budget=dict(ledgers=[self.ledger], forecast_minutes=harness.FORECAST_MINUTES,
                                                         storage_forecast_usd=harness.STORAGE_USD, reaped=[self.ledger]),
                            inputs_from=inputs, now_epoch=harness.FakeClock().now, arm='L', launcher_question=QUESTION)
@@ -480,6 +490,42 @@ class LauncherArmChecks:
             sealer.launcher_fields(private, QUESTION, bound_sources())
         with self.assertRaisesRegex(RuntimeError, 'ensemble could not decide'), model_free_ensemble(ensemble_unavailable):
             sealer.launcher_fields(members, QUESTION, bound_sources())
+
+    def test_arm_l_is_sealed_only_from_material_already_in_the_repository(self):
+        """Issue #135 (D-159, D-184): arm L redacts nothing, so it seals only development material
+        already in the repository. The clinical development workload (every file tracked at the
+        commit) passes; the same workload with one file changed by a line, or a file the
+        repository does not hold, is refused naming the file, and the sealer's own prepare()
+        refuses a workload folder carrying it before any launcher field is built."""
+        self.need_launcher_files()
+        members = sealer.default_workload()[1]
+        material = tracked_material('HEAD')
+        self.assertIsNone(sealer.launcher_material_error(members, material))
+        changed = dict(members, **{'context/result_sheet.md': members['context/result_sheet.md'] + b'\nOne more line.\n'})
+        self.assertEqual(sealer.launcher_material_error(changed, material),
+                         'Arm L seals only development material already in the repository (D-159); not a file tracked '
+                         'at the bound commit: context/result_sheet.md')
+        added = dict(members, **{'context/outside_note.md': b'# Outside note\n\nNot in the repository.\n'})
+        self.assertIn('context/outside_note.md', sealer.launcher_material_error(added, material))
+        import multi_round_launch_checks as mr_checks
+        harness = self.harness()
+        inputs = self.root / 'inputs_material'
+        inputs.mkdir()
+        (inputs / 'runtime.candidate.lock').write_text('', encoding='utf-8')
+        write(inputs / 'provider_inventory.json', dict(instances=[], instance_types=[harness.A10_TYPE],
+                                                       images=[dict(harness.IMAGE)], observed_at='fixture'))
+        workload = self.root / 'outside_workload'
+        for name, data in changed.items():
+            (workload / name).parent.mkdir(parents=True, exist_ok=True)
+            (workload / name).write_bytes(data)
+        with mr_checks.sealing_stand_ins(), model_free_ensemble(), \
+                patch.object(sealer, 'repository_material', tracked_material), \
+                patch.object(sealer, 'launcher_fields', side_effect=AssertionError('launcher fields built')), \
+                self.assertRaisesRegex(RuntimeError, 'already in the repository'):
+            sealer.prepare(self.root / 'l_outside', budget=dict(ledgers=[self.ledger], forecast_minutes=harness.FORECAST_MINUTES,
+                                                                 storage_forecast_usd=harness.STORAGE_USD, reaped=[self.ledger]),
+                           inputs_from=inputs, now_epoch=harness.FakeClock().now, workload=workload, arm='L',
+                           launcher_question=QUESTION)
 
     def test_the_session_answers_only_from_the_map_and_stops_on_anything_else(self):
         """The driver answers each prompt from the map in sealed order, at a line start, once the
@@ -847,6 +893,9 @@ LAUNCHER_NEUTRALIZATIONS = [
     # Any workload sealed into arm L, its redaction rules unread.
     ('test_arm_l_is_sealed_only_for_a_workload_with_no_redaction_rule', sealer, 'launcher_sensitivity_error',
      lambda conventions: None),
+    # Issue #135: any material sealed into arm L, whether or not the repository holds it.
+    ('test_arm_l_is_sealed_only_from_material_already_in_the_repository', sealer, 'launcher_material_error',
+     lambda members, material: None),
     # The project archive missing a module the menu's startup imports (L14).
     ('test_the_real_menu_starts_from_the_project_archive_the_sealer_builds', sealer, 'archive_names',
      archive_without_the_preflights_import),
@@ -923,7 +972,8 @@ def check():
               'from the map and stopping otherwise, the real menu and wizard through a review then a draft with every '
               'Python child that loaded the sitecustomize network-denied (native code and non-Python children neither '
               'denied nor counted), the real menu, preflight, wizard and pipeline started from an extracted sealed '
-              'arm L project archive, arm L sealed only for a workload with no operator redaction rule, the menu '
+              'arm L project archive, arm L sealed only for a workload with no operator redaction rule and only '
+              'from material the repository tracks, the menu '
               'environment from the runtime, the assessment, a single bundle and the '
               'stop of the menu\'s children' % (len(NAMES) - len(skipped), len(proofs)))
     if skipped:

@@ -488,6 +488,50 @@ def withheld_agents(bundle):
         return None
 
 
+def recorded_inst_finder(target):
+    """INST_FINDER's setting as each pipeline run of this entry saved it at start-up
+    (audit/agent_switches.json, the pipeline's own record of the decision it made), read
+    from the collected evidence. One entry per saved record, in path order; a record that
+    cannot be read is kept as setting None, never guessed (issue #133, D-184)."""
+    found=[]
+    for path in sorted(Path(target).rglob('audit/agent_switches.json')):
+        try:
+            saved=json.loads(path.read_text(encoding='utf8'))
+        except (OSError,ValueError):
+            saved=None
+        if isinstance(saved,dict) and saved.get('setting') in ('on','off'):
+            found.append(dict(setting=saved['setting'],refused=bool(saved.get('refusal')),ratified_by=saved.get('ratified_by')))
+        else:
+            found.append(dict(setting=None,refused=False,ratified_by=None))
+    return found
+
+
+def inst_finder_comparison(manifest, arm, recorded):
+    """The sealed INST_FINDER setting beside the one the run recorded: the sealed value as the
+    pipeline reads it (`off` is off, anything else on), the recorded settings, and whether
+    any recorded setting differs from the sealed one or could not be read. The report states
+    both and names a difference; it never reports the sealed value alone (issue #133)."""
+    value=manifest.get('environment',{}).get('SHIMMER_INST_FINDER')
+    sealed='off' if value=='off' else 'on'
+    settings=[r['setting'] for r in recorded]
+    differs=any(s!=sealed for s in settings)
+    if arm=='B1':
+        run_text='not recorded by the run: a B1 entry runs bare_model.py, not the pipeline'
+    elif not recorded:
+        run_text='not recorded by the run: the collected evidence holds no audit/agent_switches.json'
+    elif None in settings:
+        run_text='DIFFERS FROM THE SEAL: %d of %d saved records (audit/agent_switches.json) cannot be read'%(
+            settings.count(None),len(settings))
+    elif differs:
+        run_text='DIFFERS FROM THE SEAL: the run recorded %s (audit/agent_switches.json)'%', '.join(settings)
+    else:
+        run_text='the run recorded %s (audit/agent_switches.json)'%', '.join(settings)
+    if any(r['refused'] for r in recorded):
+        run_text+='; the run refused the setting at start (no ratified amendment)'
+    return dict(sealed_value=value,sealed=sealed,recorded=settings,differs=differs,
+                text='%s (sealed in the manifest); %s'%(str(value),run_text))
+
+
 def report_fields(bundle, manifest, record, launch, status, receipt):
     """Every field 11.12 lists, plus B.1's purpose and sealed-or-exposed lines, the
     SHIMMER_INST_FINDER value, B.4's FACT_CHECKER withholding with both reasons, the
@@ -506,6 +550,8 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         fact_checker='FACT_CHECKER ran: not withheld in this bundle\'s config/review_scope.json'
     authors=report.get('authors') or {}
     arm=manifest.get('arm','B3')
+    inst_finder=inst_finder_comparison(manifest,arm,recorded_inst_finder(Path(bundle)/'downloaded'))
+    status['inst_finder']={k:v for k,v in inst_finder.items() if k!='text'}
     from datetime import datetime, timezone
     rows=[
         ('Purpose',record.get('purpose') or 'not recorded: the launch predates the S2 launch record'),
@@ -546,9 +592,8 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Layer that produced each catch',NOT_SCORED),
         ('Catches that depended on a directive',NOT_SCORED),
         ('Model-text review verdicts','not part of this tool: every model text is reviewed by the scorer\'s review (11.8, B.1)'),
-        ('Agents withheld or settings changed',fact_checker+' SHIMMER_INST_FINDER='+str(manifest.get('environment',{}).get('SHIMMER_INST_FINDER'))
-            +' (the operator\'s INST_FINDER setting, sealed in the manifest).'),
-        ('SHIMMER_INST_FINDER',str(manifest.get('environment',{}).get('SHIMMER_INST_FINDER'))),
+        ('Agents withheld or settings changed',fact_checker+' SHIMMER_INST_FINDER='+inst_finder['text']+'.'),
+        ('SHIMMER_INST_FINDER',inst_finder['text']),
         ('Multi-round','declared and sealed with case manifest '+str(manifest.get('case_manifest_sha256'))
             if manifest.get('multi_round') else 'not applicable: no multi-round run was declared'),
         ('Multi-round step times',multi_round_step_times_text(manifest,status.get('multi_round_timings'))),

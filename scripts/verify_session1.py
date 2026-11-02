@@ -25460,7 +25460,9 @@ def check_293_scorer_reads_the_key_parts_d042_added():
     channel multi_round, each only for the entry of its own round and document, refuses a
     round-scoped key on any other run and a multi-round run whose key has no such entries,
     and reports the four relations Python never writes apart, located only by a model-written
-    record and never by a Python post. Executed on synthetic run folders (the multi-round bus
+    record and never by a Python post; and (issue #32, D-184) reads a judged absence from
+    Python's stamped copy only, the model's raw reply and its refused answers counted apart and
+    locating nothing. Executed on synthetic run folders (the multi-round bus
     written by multi_round_rounds.post_findings itself); each reader proven by neutralise,
     fail, restore, pass."""
     from scorer_section9_checks import check
