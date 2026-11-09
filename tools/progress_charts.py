@@ -1,13 +1,17 @@
 """The public progress page (D-S98): charts and tables of every measured attempt, from records only.
 
-    py -3.12 -X utf8 tools/progress_charts.py --root <the loop worktree> --out docs/progress
+    py -3.12 -X utf8 tools/progress_charts.py --root <the loop worktree> --scoreboard <file>
+        --ledger <file> --item-sets <folder> --out docs/progress
 
-`--root` is the checkout that holds the committed records (the loop worktree); `--private-root` the one
-that holds the gitignored private records (`docs/loop/private/`, the main checkout; default `--root`);
-`--out` is the folder the page is written to (`docs/progress/` of the branch that is pushed). Nothing is typed by hand: every figure comes
-from one of these records under `--root`, and a record that is missing leaves its section saying so.
+`--root` is the checkout that holds the committed records (the loop worktree). The private records are
+named on the command line, each required and with no default, and never named in this file:
+`--scoreboard` the private scoreboard file, `--ledger` the budget ledger (`--r-ledger` role R's, when
+it exists) and `--item-sets` the item-set folder, which is read for nothing and only refused in the
+output. `--out` is the folder the page is written to (`docs/progress/` of the branch that is pushed).
+Nothing is typed by hand: every figure comes from one of these records, and a record that is missing
+leaves its section saying so.
 
-- The gate (D-S92, D-S94): `docs/loop/private/GATE_SCOREBOARD.md`, its table rows, newest first. Per
+- The gate (D-S92, D-S94): the private scoreboard file, its table rows, newest first. Per
   benchmark, the system, B1 and the cloud reference over attempts, with the two bars as dashed lines
   (B1 + 10 points, the cloud reference - 5 points). A row on a sealed, test or fresh set is refused here:
   the fresh set appears only after its single read, through its own record.
@@ -15,8 +19,8 @@ from one of these records under `--root`, and a record that is missing leaves it
   declares (`TRAINED_SCHEMAS`), against the untrained form and the written margin, labelled in-sample
   (the tuning half chose the candidate); held-out openings, pass or fail only, from
   `docs/loop/HELDOUT_OPENINGS.md`, in a table.
-- Cost: every ledger with launch lines (`docs/loop/private/budget_ledger.jsonl`, and role R's ledger when
-  `--r-ledger` names it): cumulative actual spend at each run's end against the budget and the hard stop
+- Cost: every ledger with launch lines (the budget ledger, and role R's ledger when `--r-ledger`
+  names it): cumulative actual spend at each run's end against the budget and the hard stop
   now in force, and the cumulative forecast at each launch. A launch is counted once across ledgers.
 - Time: `docs/loop/stages/TIME_BUDGET.md`'s targets table, measured before the measurements were
   standardised, so a table only (D-S98 item 5).
@@ -37,8 +41,6 @@ import sys
 from pathlib import Path
 
 PLOTLY = "https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"  # pinned, jsDelivr
-SCOREBOARD = Path("docs/loop/private/GATE_SCOREBOARD.md")
-LEDGER = Path("docs/loop/private/budget_ledger.jsonl")
 OPENINGS = Path("docs/loop/HELDOUT_OPENINGS.md")
 TIME_BUDGET = Path("docs/loop/stages/TIME_BUDGET.md")
 COMPARABILITY = Path("docs/loop/stages/REPORT_COMPARABILITY.md")
@@ -56,7 +58,7 @@ TARGETS = Path("docs/loop/stages/targets/TARGET_TABLE.md")
 PRE_STANDARD = re.compile(r"direction only|pre-standard|not a gate figure", re.I)
 BAR_ABOVE_B1, BAR_BELOW_CLOUD = 10.0, 5.0  # D-S92's defaults, as the scoreboard states them
 REFUSED_SETS = re.compile(r"seal|test|fresh", re.I)
-LOCAL_PATH = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/](?!/)|/Users/|/home/|\\Users\\|external/s05|docs/loop/private")
+LOCAL_PATH = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/](?!/)|/Users/|/home/|\\Users\\")
 EM_DASH = chr(0x2014)
 NOT_RECORDED = "not recorded"
 
@@ -88,10 +90,9 @@ def _numbers(cell):
     return (out + [None, None, None])[:3]
 
 
-def gate_rows(root):
-    path = root / SCOREBOARD
+def gate_rows(path):
     if not path.is_file():
-        return [], [], "the scoreboard is not in this checkout"
+        return [], [], "the scoreboard file was not found"
     text = path.read_text(encoding="utf-8")
     header = next((l for l in text.splitlines() if l.startswith("| Time")), "")
     columns = [c.strip() for c in header.strip().strip("|").split("|")]
@@ -238,9 +239,14 @@ def cost_series(lines):
     return spend, forecast, budget
 
 
+HIDDEN_FOLDERS = []  # the private inputs' folders (last two parts), set by `build` from its arguments
+
+
 def _plain(cell):
-    """A record's cell as page text: no evidence path, no markup line break, no backticks."""
-    text = re.sub(r"`[^`]*(?:external/|/evidence/|private/|\.json)[^`]*`", "(record)", cell)
+    """A record's cell as page text: no evidence path, no markup line break, no backticks. A backticked
+    path in a private input's folder, an evidence folder or a JSON record is shown as "(record)"."""
+    parts = ["/evidence/", r"\.json"] + [re.escape(name + "/") for name in HIDDEN_FOLDERS]
+    text = re.sub(r"`[^`]*(?:%s)[^`]*`" % "|".join(parts), "(record)", cell)
     text = text.replace("<br>", " ").replace("`", "")
     return re.sub(r"\s+", " ", text).strip()
 
@@ -453,7 +459,22 @@ def dashboard(panels, gate_made, gate_note, cost_made, tabs):
             % (PLOTLY, html.escape(INTRO), "\n".join(body), script))
 
 
-def check_output(out):
+def private_names(paths):
+    """What the output must never name of the private inputs: each file's name and, for each file's
+    folder and the item-set folder, its last two path parts (read from the arguments, never typed)."""
+    names = set()
+    for given, is_folder in paths:
+        if not given:
+            continue
+        given = Path(given).resolve()
+        folder = given if is_folder else given.parent
+        if not is_folder:
+            names.add(given.name)
+        names.add("/".join(folder.parts[-2:]))
+    return sorted(n for n in names if n)
+
+
+def check_output(out, refused=()):
     for path in sorted(out.rglob("*")):
         if path.suffix in (".md", ".html"):
             text = path.read_text(encoding="utf-8")
@@ -462,23 +483,27 @@ def check_output(out):
             found = LOCAL_PATH.search(text)
             if found:
                 raise SystemExit("refused: a local, private or evidence path in %s: %r" % (path.name, found.group(0)))
+            for name in refused:
+                if name in text or name.replace("/", chr(92)) in text:
+                    raise SystemExit("refused: a private input named in %s: %r" % (path.name, name))
 
 
-def build(root, out, private_root=None, r_ledger=None):
+def build(root, out, scoreboard, ledger, item_sets, r_ledger=None):
     root, out = Path(root), Path(out)
-    private_root = Path(private_root) if private_root else root
+    refused = private_names([(scoreboard, False), (ledger, False), (r_ledger, False), (item_sets, True)])
+    HIDDEN_FOLDERS[:] = [name for name in refused if "/" in name]
     out.mkdir(parents=True, exist_ok=True)
     panels = []
-    rows, scoreboard_earlier, note = gate_rows(private_root)
+    rows, scoreboard_earlier, note = gate_rows(Path(scoreboard))
     gate_made = gate_charts(rows, panels, published_bars(root))
     trained = trained_records(root)
-    spend, forecast, budget = cost_series(ledger_lines([private_root / LEDGER, r_ledger]))
+    spend, forecast, budget = cost_series(ledger_lines([Path(ledger), r_ledger]))
     cost_made = cost_chart(spend, forecast, budget, panels)
     tabs = tables(openings(root), time_targets(root), earlier_results(root), gate_made, scoreboard_earlier,
                   other_published(root), trained, causal_published(root))
     (out / "index.html").write_text(dashboard(panels, gate_made, note, cost_made, tabs),
                                     encoding="utf-8", newline="\n")
-    check_output(out)
+    check_output(out, refused)
     return {"gate_charts": len(gate_made), "trained_rows": len(trained), "cost_runs": len(spend)}
 
 
@@ -495,17 +520,21 @@ def self_test():
     target = "**Comparable bar, ContraDoc: 0.681 document-level accuracy.** Source: a planted line.\n"
     with tempfile.TemporaryDirectory(prefix="progress_selftest_") as td:
         root = Path(td) / "root"
-        (root / SCOREBOARD).parent.mkdir(parents=True)
+        board_file = Path(td) / "kept" / "board.md"
+        ledger_file = Path(td) / "kept" / "ledger.jsonl"
+        item_sets = Path(td) / "sets" / "items"
+        board_file.parent.mkdir(parents=True)
+        (root / STAGES).mkdir(parents=True)
         (root / TARGETS).parent.mkdir(parents=True)
         (root / TARGETS).write_text(target, encoding="utf-8")
         planted = {"schema": "auditor-rule-check-half-a-v1", "part": "planted_part", "attempt": 1,
                    "selected": "planted_candidate", "half_a_macro_f1": {"base": 0.5, "planted_candidate": 0.6},
                    "margin_required": 0.05, "passed_half_a": True}
         (root / STAGES / "PLANTED_HALF_A_1.json").write_text(json.dumps(planted), encoding="utf-8")
-        (root / SCOREBOARD).write_text(board % (standard + early), encoding="utf-8")
-        summary = build(root, Path(td) / "a")
+        board_file.write_text(board % (standard + early), encoding="utf-8")
+        summary = build(root, Path(td) / "a", board_file, ledger_file, item_sets)
         page_a = (Path(td) / "a" / "index.html").read_text(encoding="utf-8")
-        build(root, Path(td) / "b")
+        build(root, Path(td) / "b", board_file, ledger_file, item_sets)
         results.append(("one standardised row charted per benchmark", summary["gate_charts"] == 2))
         results.append(("the published bar drawn", "Published comparable bar" in page_a))
         results.append(("the direction-only row in the table, not the chart",
@@ -518,23 +547,24 @@ def self_test():
                 "\n|---|---|---|---|---|---|---|---|---|\n"
                 "| 2026-11-10 10:00 | a later benchmark | held-out quick | 61.0 / 55.0 / 70.0 | | 50.0 / 48.0 / 66.0 | "
                 "| 40.0 / 38.0 / 52.0 | |\n")
-        (root / SCOREBOARD).write_text(wide, encoding="utf-8")
-        summary = build(root, Path(td) / "e")
+        board_file.write_text(wide, encoding="utf-8")
+        summary = build(root, Path(td) / "e", board_file, ledger_file, item_sets)
         page_e = (Path(td) / "e" / "index.html").read_text(encoding="utf-8")
         panel = page_e[page_e.index('Plotly.newPlot("gate_pubhealth"'):]
         panel = panel[:panel.index("\n")]
         results.append(("a benchmark added as a scoreboard column is charted, with no gate bars",
                         summary["gate_charts"] == 3 and "Bar (a)" not in panel and "out-of-domain check" in panel))
-        (root / SCOREBOARD).write_text(board % standard.replace("held-out quick", "sealed test"), encoding="utf-8")
+        board_file.write_text(board % standard.replace("held-out quick", "sealed test"), encoding="utf-8")
         try:
-            build(root, Path(td) / "c")
+            build(root, Path(td) / "c", board_file, ledger_file, item_sets)
             results.append(("a sealed set refused", False))
         except SystemExit:
             results.append(("a sealed set refused", True))
-        for planted, what in ((chr(0x2014), "an em dash"), ("C:" + chr(92) + "Users" + chr(92) + "x", "a local path")):
-            (root / SCOREBOARD).write_text(board % standard.replace("the first signal", planted), encoding="utf-8")
+        for planted, what in ((chr(0x2014), "an em dash"), ("C:" + chr(92) + "Users" + chr(92) + "x", "a local path"),
+                              ("see sets/items/x", "the item-set folder"), ("see " + board_file.name, "the scoreboard's name")):
+            board_file.write_text(board % standard.replace("the first signal", planted), encoding="utf-8")
             try:
-                build(root, Path(td) / "d")
+                build(root, Path(td) / "d", board_file, ledger_file, item_sets)
                 results.append(("%s refused at the output" % what, False))
             except SystemExit:
                 results.append(("%s refused at the output" % what, True))
@@ -548,15 +578,19 @@ def main(argv=None):
     parser.add_argument("--root", help="the checkout that holds the records (the loop worktree)")
     parser.add_argument("--out", help="the folder the page is written to, docs/progress")
     parser.add_argument("--self-test", action="store_true", help="run the script's own proofs on planted records")
-    parser.add_argument("--private-root", default=None,
-                        help="the checkout that holds docs/loop/private (the main checkout); default --root")
+    parser.add_argument("--scoreboard", help="the private scoreboard file (required, no default)")
+    parser.add_argument("--ledger", help="the budget ledger (required, no default)")
+    parser.add_argument("--item-sets", help="the item-set folder, refused in the output (required, no default)")
     parser.add_argument("--r-ledger", default=None, help="role R's ledger, when it exists")
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
-    if not (args.root and args.out):
-        parser.error("--root and --out are required")
-    print(json.dumps(build(args.root, args.out, args.private_root, args.r_ledger), sort_keys=True))
+    missing = [flag for flag, value in (("--root", args.root), ("--out", args.out), ("--scoreboard", args.scoreboard),
+                                        ("--ledger", args.ledger), ("--item-sets", args.item_sets)) if not value]
+    if missing:
+        parser.error("required: %s" % ", ".join(missing))
+    print(json.dumps(build(args.root, args.out, args.scoreboard, args.ledger, args.item_sets, args.r_ledger),
+                     sort_keys=True))
     return 0
 
 
