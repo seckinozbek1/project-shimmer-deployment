@@ -1,5 +1,7 @@
 # Project Shimmer
 
+Progress: [charts of every measured attempt](https://seckinozbek1.github.io/project-shimmer-deployment/progress/)
+
 Shimmer is a governed document-review prototype. It reviews documents against
 operator-supplied conventions and reference material, proposes cited amendments,
 and records the reasoning workflow in inspectable artifacts. Source documents
