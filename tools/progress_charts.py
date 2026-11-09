@@ -221,7 +221,7 @@ def figure(cell):
     return tuple(float(g) if g is not None else None for g in found.groups())
 
 
-def scoreboard(path):
+def scoreboard(path, root=None):
     """The scoreboard's three tables and its two bars, as written there."""
     board = {"rows": [], "earlier": [], "roles": [], "evals": [], "bars": BAR_DEFAULTS,
              "bars_from": "D-S92's defaults (the scoreboard does not state them)", "note": None}
@@ -247,7 +247,75 @@ def scoreboard(path):
         board["note"] = "the scoreboard holds no standardised measurement yet"
     board["roles"] = named_rows(text, "Role")[1]
     board["evals"] = named_rows(text, "Evaluation")[1]
+    for row in rows + board["roles"] + board["evals"]:
+        no_steering(row, root)
     return board
+
+
+# ---- no steering check as a figure (D-S104 item 1) -----------------------------------------------
+# A copy of benchmark/baselines/claim_guard.py's rule (lane/cloud f6b41d82), carried until that lane
+# merges; then this imports it. A steering check run on the subscription is never a page figure.
+
+STEERING_LABEL = "subscription, steering only"
+STEERING_KIND = "cloud-reference-steering"
+
+
+def is_steering(value):
+    """True when the steering label, the steering kind or `claim: false` stands anywhere in `value`
+    (dicts and lists walked; strings compared whole), as claim_guard.is_steering."""
+    if isinstance(value, dict):
+        if value.get("claim") is False or value.get("kind") == STEERING_KIND or value.get("label") == STEERING_LABEL:
+            return True
+        return any(is_steering(v) for v in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(is_steering(v) for v in value)
+    return value == STEERING_LABEL
+
+
+def refuse_claim(value, where="a claim figure"):
+    """Raise when `value` is or holds a steering check; return it unchanged otherwise (claim_guard's)."""
+    if is_steering(value):
+        raise ValueError("A subscription steering check is never %s (D-S104 item 1)" % where)
+    return value
+
+
+def _evidence_records(cell, root):
+    """The JSON records a row's evidence names, where they can be read: a .json file, or the .json files
+    directly inside a folder; a path is read as written, else under `root`."""
+    if not cell:
+        return []
+    out = []
+    for given in re.findall(r"`([^`]+)`", cell) or [cell]:
+        given = given.strip()
+        for path in (Path(given), Path(root) / given) if root else (Path(given),):
+            try:
+                files = ([path] if path.is_file() and path.suffix == ".json"
+                         else sorted(path.glob("*.json")) if path.is_dir() else [])
+            except OSError:
+                files = []
+            for f in files:
+                try:
+                    out.append(json.loads(f.read_text(encoding="utf-8")))
+                except ValueError:
+                    continue
+            if files:
+                break
+    return out
+
+
+def no_steering(row, root=None):
+    """Refuses a scoreboard row that is, holds or rests on a steering check: the row itself, any cell
+    that writes the steering label (as claim_guard compares it, or inside a longer cell), and every
+    JSON record its evidence names."""
+    try:
+        refuse_claim(row, "on the page")
+        for cell in row.values():
+            if cell and STEERING_LABEL in cell:
+                refuse_claim(STEERING_LABEL, "on the page")
+        for record in _evidence_records(row.get("Evidence"), root):
+            refuse_claim(record, "on the page")
+    except ValueError as refused:
+        raise SystemExit("refused: %s: %r" % (refused, row.get("Row") or row.get("Role") or row.get("Evaluation")))
 
 
 def other_published(root):
@@ -836,7 +904,7 @@ def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None):
     HIDDEN_FOLDERS[:] = [name for name in refused if "/" in name]
     out.mkdir(parents=True, exist_ok=True)
     panels = []
-    board = scoreboard(Path(scoreboard_file))
+    board = scoreboard(Path(scoreboard_file), root)
     made = bench_charts(board, panels, reference_lines(root))
     trained = trained_records(root)
     spend, forecast, budget = cost_series(ledger_lines([Path(ledger), r_ledger]))
@@ -998,6 +1066,39 @@ def self_test():
                 results.append(("%s refused at the output" % what, False))
             except SystemExit:
                 results.append(("%s refused at the output" % what, True))
+        # A subscription steering check is never a page figure (D-S104 item 1): the label as a whole cell,
+        # inside a longer cell, in a role or evaluation row, or in a JSON record the evidence names.
+        steering_json = Path(td) / "steer" / "steering_result.json"
+        steering_json.parent.mkdir(parents=True)
+        steering_json.write_text(json.dumps({"figures": {"accuracy_points": 71.0}, "claim": False}), encoding="utf-8")
+        claim_json = Path(td) / "steer" / "claim_result.json"
+        claim_json.write_text(json.dumps({"figures": {"value": 71.0}, "claim": True}), encoding="utf-8")
+        steering_cases = (
+            ("the steering label as a whole cell", [dict(first, **{"Cloud reference (95% CI)": STEERING_LABEL})], ""),
+            ("the steering label inside a cell",
+             [dict(first, **{"Cloud reference (95% CI)": "71.0 [60.0, 80.0] (%s)" % STEERING_LABEL})], ""),
+            ("a steering record named as evidence", [dict(first, Evidence="`%s`" % steering_json)], ""),
+            ("a steering role row", [first], roles.replace("the read record", STEERING_LABEL) + evals),
+            ("a steering evaluation row", [first], roles + evals.replace("the cases record", STEERING_LABEL)))
+        for what, rows, extra in steering_cases:
+            write(rows, extra) if extra else write(rows)
+            try:
+                run("s")
+                results.append(("%s refused" % what, False))
+            except SystemExit:
+                results.append(("%s refused" % what, True))
+        write([dict(first, Evidence="`%s`" % claim_json)])
+        results.append(("a claim record named as evidence passes", run("t")[0]["bench_charts"] == 1))
+        guard = globals()["refuse_claim"]
+        globals()["refuse_claim"] = lambda value, where=None: value  # neutralised: the guard does nothing
+        try:
+            write(steering_cases[1][1])
+            neutral = STEERING_LABEL in run("u")[1]
+        except SystemExit:
+            neutral = False
+        finally:
+            globals()["refuse_claim"] = guard
+        results.append(("neutralised, the steering figure reaches the page (the guard is what refuses it)", neutral))
         write([dict(first, Evidence=str(item_sets / "run" / "result.json"))])
         results.append(("an evidence path in a private folder shown as (record)",
                         "evidence: (record)" in _traces(run("f")[1], "gate_contradoc")[0]["text"][0]))
