@@ -125,6 +125,37 @@ def other_published(root):
     return [["PUBHEALTH"] + [_plain(c) for c in r[:6]] for r in rows if len(r) >= 6]
 
 
+CAUSAL_PLAN = Path("docs/loop/stages/CAUSAL_PROBE_PLAN.md")
+
+
+def causal_published(root):
+    """The causal plan's published-figure tables (its section 6), each named by the benchmark its lead-in
+    line names: listed beside the probe, never drawn, since none is like for like."""
+    path = root / CAUSAL_PLAN
+    if not path.is_file():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    start = text.find("## 6.")
+    if start < 0:
+        return {}
+    end = text.find("### 6.1", start)
+    lines = text[start:end if end > 0 else len(text)].splitlines()
+    out, last_named = {}, None
+    for i, line in enumerate(lines):
+        named = [b for b in ("CLadder", "Corr2Cause") if b in line and not line.startswith("|")]
+        if named:
+            last_named = named[0]
+        if line.startswith("| Model") and last_named:
+            head = [c.strip() for c in line.strip().strip("|").split("|")]
+            rows = []
+            for row in lines[i + 2:]:
+                if not row.startswith("|"):
+                    break
+                rows.append([_plain(c.strip()) for c in row.strip().strip("|").split("|")])
+            out["causal_%s published figures (not like for like)" % last_named] = (head, rows)
+    return out
+
+
 def published_bars(root):
     """{benchmark: (value in percent, sentence)} from the target table's bold "Comparable bar" lines."""
     path = root / TARGETS
@@ -282,28 +313,6 @@ def gate_charts(rows, panels, bars):
     return made
 
 
-def trained_charts(records, panels):
-    made = []
-    for part in sorted({r["part"] for r in records}):
-        rs = [r for r in records if r["part"] == part]
-        x = [r["attempt"] for r in rs]
-        label_metric = rs[0]["metric"].replace("_", " ")
-        name = "trained_%s" % part
-        hover = ["attempt %s, candidate %s<br>passed the tuning half: %s<br>record %s<br>date, item count, machine: "
-                 "%s in this record" % (r["attempt"], r["selected"], r["passed"], r["source"], NOT_RECORDED) for r in rs]
-        traces = [{"x": x, "y": [r[k] for r in rs], "name": label, "mode": "lines+markers", "text": hover,
-                   "hovertemplate": "%{text}<br>" + label + ": %{y:.3f}<extra></extra>"}
-                  for k, label in (("trained", "Trained candidate"), ("untrained", "Untrained form"))]
-        traces.append({"x": x, "y": [r["untrained"] + r["margin"] for r in rs], "name": "Untrained + margin",
-                       "mode": "lines", "line": {"dash": "dash"}, "hoverinfo": "skip"})
-        _panel(panels, name, "%s: tuning half (in-sample)" % part.replace("_", " "), traces,
-               {"xaxis": {"title": {"text": "Attempt"}, "dtick": 1}, "yaxis": {"title": {"text": label_metric}}},
-               "The trained candidate against its untrained form on the tuning half, where it was chosen, "
-               "so these figures are in-sample. The held-out result is pass or fail only, in the openings table.")
-        made.append((part, name))
-    return made
-
-
 def cost_chart(spend, forecast, budget, panels):
     if not spend:
         return None
@@ -347,6 +356,9 @@ OTHER_NOTE = ("PUBHEALTH (an out-of-domain check) and CLadder and Corr2Cause (a 
               "measured against B1 on the same items. No comparable published system exists for them, so the bar "
               "is B1 (D-S73 item 2); the published figures are listed beside, with their settings, never as a "
               "line. A benchmark with no measurement yet is listed as not yet measured.")
+TRAINED_NOTE = ("Each trained part's figures on its tuning half, where the candidate was chosen: in-sample, so a "
+                "table, never a chart (D-S98 item 5). The held-out result is pass or fail only, in the openings "
+                "table below it.")
 SCOREBOARD_EARLIER_NOTE = ("Rows the scoreboard itself marks as direction only (a first signal on a set that is not "
                            "untuned): a table, never on the charts.")
 EARLIER_NOTE = ("Development runs measured before the gate set, the scoreboard and the comparability rule. Each "
@@ -357,8 +369,14 @@ def _cell(text):
     return str(text).replace("|", "/").replace("\n", " ")
 
 
-def tables(open_rows, times, earlier, gate_made, scoreboard_earlier, other_pub):
-    return {
+def tables(open_rows, times, earlier, gate_made, scoreboard_earlier, other_pub, trained, causal):
+    out = {
+        "trained": (["Part", "Attempt", "Candidate chosen on the tuning half", "Metric", "Trained", "Untrained",
+                     "Margin required", "Passed the tuning half", "Record"],
+                    [[r["part"], r["attempt"], r["selected"], r["metric"].replace("_", " "),
+                      "%.3f" % r["trained"] if r["trained"] is not None else NOT_RECORDED,
+                      "%.3f" % r["untrained"] if r["untrained"] is not None else NOT_RECORDED,
+                      r["margin"], r["passed"], r["source"]] for r in trained]),
         "other_published": (["Benchmark", "System", "Model (size)", "Setting", "Metric", "Figure", "Source"],
                             other_pub),
         "benchmarks": benchmark_list(gate_made),
@@ -373,6 +391,9 @@ def tables(open_rows, times, earlier, gate_made, scoreboard_earlier, other_pub):
         "earlier": (["Run", "What it measured", "Integrity", "How the rule counts it"],
                     [[r[k] for k in ("run", "measured", "integrity", "outcome")] for r in earlier]),
     }
+    for key, (head, rows) in causal.items():
+        out[key] = (head, rows)
+    return out
 
 
 def _html_table(head, rows):
@@ -390,15 +411,14 @@ def benchmark_list(gate_made):
               "charted below" if b in made else "not yet measured"] for b in BENCHMARKS_IN_USE])
 
 
-def dashboard(panels, gate_made, gate_note, trained_made, cost_made, tabs):
+def dashboard(panels, gate_made, gate_note, cost_made, tabs):
     sections = [("Every benchmark in use", [], "", "benchmarks"),
                 ("The gate", [p for p in panels if p["id"] in ("gate_contradoc", "gate_scitab")],
                  "" if gate_made else GATE_PENDING % gate_note, None),
                 ("Out-of-domain check and causal probe",
                  [p for p in panels if p["id"].startswith("gate_") and p["id"] not in ("gate_contradoc", "gate_scitab")],
-                 OTHER_NOTE, "other_published"),
-                ("Trained parts", [p for p in panels if p["id"].startswith("trained_")],
-                 "" if trained_made else "No trained part has a read record yet.", "openings"),
+                 OTHER_NOTE, ["other_published"] + sorted(k for k in tabs if k.startswith("causal_"))),
+                ("Trained parts", [], TRAINED_NOTE, ["trained", "openings"]),
                 ("The ontology", [], ONTOLOGY, None),
                 ("Cost", [p for p in panels if p["id"] == "cost"], "" if cost_made else "No ledger in this checkout.", None),
                 ("Time", [], TIME_NOTE, "time"),
@@ -412,8 +432,10 @@ def dashboard(panels, gate_made, gate_note, trained_made, cost_made, tabs):
         for p in ps:
             body.append("<figure><div id=\"%s\" class=\"chart\"></div><figcaption>%s</figcaption></figure>"
                         % (p["id"], html.escape(p["caption"])))
-        if table:
-            body.append(_html_table(*tabs[table]))
+        for key in ([table] if isinstance(table, str) else table or []):
+            if key.startswith("causal_"):
+                body.append("<h3>%s</h3>" % html.escape(key[len("causal_"):]))
+            body.append(_html_table(*tabs[key]))
         body.append("</section>")
     script = "".join("Plotly.newPlot(%s, %s, %s, {responsive: true});\n"
                      % (json.dumps(p["id"]), json.dumps(p["traces"], sort_keys=True),
@@ -449,15 +471,15 @@ def build(root, out, private_root=None, r_ledger=None):
     panels = []
     rows, scoreboard_earlier, note = gate_rows(private_root)
     gate_made = gate_charts(rows, panels, published_bars(root))
-    trained_made = trained_charts(trained_records(root), panels)
+    trained = trained_records(root)
     spend, forecast, budget = cost_series(ledger_lines([private_root / LEDGER, r_ledger]))
     cost_made = cost_chart(spend, forecast, budget, panels)
     tabs = tables(openings(root), time_targets(root), earlier_results(root), gate_made, scoreboard_earlier,
-                  other_published(root))
-    (out / "index.html").write_text(dashboard(panels, gate_made, note, trained_made, cost_made, tabs),
+                  other_published(root), trained, causal_published(root))
+    (out / "index.html").write_text(dashboard(panels, gate_made, note, cost_made, tabs),
                                     encoding="utf-8", newline="\n")
     check_output(out)
-    return {"gate_charts": len(gate_made), "trained_charts": len(trained_made), "cost_runs": len(spend)}
+    return {"gate_charts": len(gate_made), "trained_rows": len(trained), "cost_runs": len(spend)}
 
 
 def self_test():
@@ -476,6 +498,10 @@ def self_test():
         (root / SCOREBOARD).parent.mkdir(parents=True)
         (root / TARGETS).parent.mkdir(parents=True)
         (root / TARGETS).write_text(target, encoding="utf-8")
+        planted = {"schema": "auditor-rule-check-half-a-v1", "part": "planted_part", "attempt": 1,
+                   "selected": "planted_candidate", "half_a_macro_f1": {"base": 0.5, "planted_candidate": 0.6},
+                   "margin_required": 0.05, "passed_half_a": True}
+        (root / STAGES / "PLANTED_HALF_A_1.json").write_text(json.dumps(planted), encoding="utf-8")
         (root / SCOREBOARD).write_text(board % (standard + early), encoding="utf-8")
         summary = build(root, Path(td) / "a")
         page_a = (Path(td) / "a" / "index.html").read_text(encoding="utf-8")
@@ -484,6 +510,8 @@ def self_test():
         results.append(("the published bar drawn", "Published comparable bar" in page_a))
         results.append(("the direction-only row in the table, not the chart",
                         "direction only, not a gate figure" in page_a and page_a.count('"x": [1]') >= 2))
+        results.append(("a trained part's in-sample figures in the table, never a chart",
+                        "planted_candidate" in page_a and "0.600" in page_a and 'Plotly.newPlot("trained_' not in page_a))
         results.append(("two builds identical", page_a == (Path(td) / "b" / "index.html").read_text(encoding="utf-8")))
         wide = ("| Time | What changed | Set | ContraDoc: system / B1 / cloud ref | gap to (a) / (b) | "
                 "SciTab: system / B1 / cloud ref | gap to (a) / (b) | PUBHEALTH: system / B1 / cloud ref | Since last |"
