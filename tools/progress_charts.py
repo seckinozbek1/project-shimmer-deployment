@@ -592,7 +592,7 @@ def cost_series(lines):
         ftotal += float(r["forecast_usd"])
         forecast.append({"time": r.get("time_utc", ""), "total": round(ftotal, 4), "purpose": r.get("purpose") or ""})
     budget = [(float(r["budget_usd"]), float(r.get("hard_stop_usd") or float(r["budget_usd"]) - 1),
-               r.get("time_utc", ""))
+               r.get("time_utc", ""), _usd(r.get("warning_usd")))
               for r in sorted((r for r in lines if r.get("event") in ("budget_open", "budget_change")),
                               key=lambda r: r.get("time_utc", ""))]
     return spend, forecast, budget
@@ -835,6 +835,74 @@ def storage_accrued(storage, when):
     return round(total, 4)
 
 
+def _usd(value):
+    """A dollar figure a record writes as a number, else None (never read from a sentence)."""
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
+# Two ceilings, kept apart (D-S121, D-453): Lambda in the budget ledger, the API in its own spend store.
+# There is no total. Each figure is read from a field; one a record does not hold is "not recorded".
+API_NOT_RECORDED = "API ceiling: not recorded"
+
+
+def api_series(path):
+    """The API (cloud reference) spend store: (cumulative spend points, ceiling, warning, when). A spend
+    line carries `spent_usd` (its run's spend; the last line per run counts); the ceiling is the latest
+    line's `ceiling_usd`, the warning its `warning_usd`."""
+    if not path or not Path(path).is_file():
+        return None
+    rows = []
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        try:
+            row = json.loads(raw)
+        except ValueError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    rows.sort(key=lambda r: str(r.get("time_utc", "")))
+    by_run, order = {}, []
+    for r in rows:
+        if _usd(r.get("spent_usd")) is not None:
+            key = r.get("run_id") or r.get("time_utc")
+            if key not in by_run:
+                order.append(key)
+            by_run[key] = r
+    points, total = [], 0.0
+    for key in order:
+        r = by_run[key]
+        total += _usd(r["spent_usd"])
+        points.append({"time": str(r.get("time_utc", "")), "total": round(total, 4), "cost": _usd(r["spent_usd"]),
+                       "model": _plain(str(r.get("model") or NOT_RECORDED)),
+                       "state": "complete" if r.get("complete") else "stopped" if r.get("stopped") else NOT_RECORDED})
+    limits = [r for r in rows if _usd(r.get("ceiling_usd")) is not None]
+    last = limits[-1] if limits else {}
+    return {"points": points, "ceiling": _usd(last.get("ceiling_usd")), "warning": _usd(last.get("warning_usd")),
+            "when": str(last.get("time_utc", ""))}
+
+
+def api_chart(api, panels):
+    if not api or not api["points"]:
+        return None
+    xs = list(range(1, len(api["points"]) + 1))
+    traces = [{"x": xs, "y": [p["total"] for p in api["points"]], "name": "API spent", "mode": "lines+markers",
+               "text": ["%s UTC, the cloud reference on %s, %s, run cost %.2f USD"
+                        % (p["time"][:16].replace("T", " "), p["model"], p["state"], p["cost"]) for p in api["points"]],
+               "hovertemplate": "%{text}<br>cumulative %{y:.2f} USD<extra></extra>"}]
+    shapes = [{"type": "line", "xref": "paper", "x0": 0, "x1": 1, "y0": v, "y1": v, "line": {"dash": d}}
+              for v, d in ((api["ceiling"], "dash"), (api["warning"], "dot")) if v is not None]
+    annotations = ([] if api["ceiling"] is not None else
+                   [{"text": API_NOT_RECORDED, "xref": "paper", "yref": "paper", "x": 0, "y": 1.06, "showarrow": False}])
+    _panel(panels, "api_cost", "API cost (the cloud reference)", traces,
+           {"xaxis": {"title": {"text": "Run, in order"}, "dtick": 1}, "yaxis": {"title": {"text": "USD"}},
+            "shapes": shapes, "annotations": annotations},
+           "Cumulative API spend at each run, against the API's own ceiling (dashed) and its warning (dotted), "
+           "kept apart from Lambda (D-S121): %s." % (
+               "ceiling %.2f USD, warning %s" % (api["ceiling"], "%.2f USD" % api["warning"] if api["warning"]
+                                                 is not None else NOT_RECORDED) if api["ceiling"] is not None
+               else API_NOT_RECORDED))
+    return "api_cost"
+
+
 def cost_chart(spend, forecast, budget, panels, storage=None):
     if not spend:
         return None
@@ -873,12 +941,18 @@ def cost_chart(spend, forecast, budget, panels, storage=None):
     shapes = []
     if budget:
         shapes = [{"type": "line", "xref": "paper", "x0": 0, "x1": 1, "y0": v, "y1": v, "line": {"dash": d}}
-                  for v, d in ((budget[-1][0], "dash"), (budget[-1][1], "dashdot"))]
-    _panel(panels, "cost", "Cloud cost", traces,
+                  for v, d in ((budget[-1][0], "dash"), (budget[-1][1], "dashdot"), (budget[-1][3], "dot"))
+                  if v is not None]
+        if budget[-1][3] is None:
+            annotations.append({"text": "Lambda warning: not recorded", "xref": "paper", "yref": "paper", "x": 1,
+                                "xanchor": "right", "y": 1.06, "showarrow": False})
+    _panel(panels, "cost", "Lambda cost (its own ceiling)", traces,
            {"xaxis": {"title": {"text": "Run, in order"}, "dtick": 5}, "yaxis": {"title": {"text": "USD"}},
             "shapes": shapes, "annotations": annotations},
-           "Cumulative spend at each run's end and cumulative forecast at each launch, against the budget "
-           "(dashed) and the hard stop (dash-dot) now in force. The filesystem's storage cost is GB held times "
+           "Cumulative Lambda spend at each run's end and cumulative forecast at each launch, against Lambda's "
+           "own budget (dashed), hard stop (dash-dot) and warning (dotted) now in force, read from the budget "
+           "ledger's latest budget line; the API has its own ceiling, charted apart, and there is no total "
+           "(D-S121). The filesystem's storage cost is GB held times "
            "the price per GB a month, accrued by day from %s (D-S109 item 5): %s.%s"
            % (storage["since"][:10] if storage else STORAGE_SINCE,
               "drawn to each run's day, alone and added to the spend" if storage else STORAGE_NOT_RECORDED,
@@ -922,6 +996,12 @@ STANDING_NOTE = ("Every public standing order (D-S110), green when the last run 
                  "found it kept and red when it found it broken. An order proven by a record rather than a script is "
                  "not checked by code. Only the orders marked public are shown.")
 STANDING_KEPT, STANDING_BROKEN = "kept", "broken"
+STANDING_ALARM = "unable to check (an alarm)"
+# The check's page states (ledger-sweep, lane/standing-orders f20b98b8; D-426, D-429, D-430), as the page
+# words them. Red is what the check itself lists as blocking: broken, or unable on the orders it names.
+STANDING_LABELS = {"kept": STANDING_KEPT, "kept_in_part": "kept in part", "code_only": "code proven, not the order",
+                   "nothing_yet": "nothing to check yet", "broken": STANDING_BROKEN, "not_built": "check not built",
+                   "unable": "unable to check", "not_checked": None, "unchecked": None, "withdrawn": "withdrawn"}
 STANDING_NOT_CODE = "not checked by code"
 
 
@@ -965,17 +1045,18 @@ def standing_orders(orders_file, check_file, names=()):
     head = ["#", "Standing order", "State"]
     if not orders_file or not Path(orders_file).is_file():
         return head, [], "the standing orders file is not given"
-    states, when = {}, None
+    states, when, blocking = {}, None, set()
     if check_file and Path(check_file).is_file():
         try:
             check = json.loads(Path(check_file).read_text(encoding="utf-8"))
         except ValueError:
             check = {}
         when = check.get("checked_utc") or check.get("time_utc") if isinstance(check, dict) else None
+        blocking = {str(n) for n in (check.get("blocking") or [])} if isinstance(check, dict) else set()
         for order in (check.get("orders") or []) if isinstance(check, dict) else []:
             if isinstance(order, dict):
                 number = order.get("n", order.get("number"))
-                states[str(number)] = str(order.get("state") or "")
+                states[str(number)] = str(order.get("page_state") or order.get("state") or "")
     rows = []
     records = private_record_names(Path(orders_file).parent)
     for cells in table_rows(Path(orders_file).read_text(encoding="utf-8"), "#"):
@@ -988,12 +1069,10 @@ def standing_orders(orders_file, check_file, names=()):
             shown = STANDING_NOT_CODE
         elif when is None:
             shown = "not checked yet (no run of the check)"
-        elif state in (STANDING_KEPT, STANDING_BROKEN):
-            shown = state
-        elif state == "withdrawn":
-            shown = "withdrawn"
-        elif state in ("unchecked", "not_checked"):
-            shown = STANDING_NOT_CODE
+        elif state in STANDING_LABELS:
+            shown = STANDING_LABELS[state] or STANDING_NOT_CODE
+            if number in blocking and state != "broken":
+                shown = STANDING_ALARM if state == "unable" else "%s (an alarm)" % shown
         else:
             shown = "not in the check's last run"
         rows.append([number, text, shown])
@@ -1058,7 +1137,7 @@ def evals_table(board):
     return head, rows
 
 
-def thresholds_table(board, trained, times, budget):
+def thresholds_table(board, trained, times, budget, api=None):
     a, b = board["bars"]
     rows = [["Bar (a), the gate's two benchmarks", "the system at least %g points above B1 in the primary "
              "metric" % a, board["bars_from"]],
@@ -1068,9 +1147,17 @@ def thresholds_table(board, trained, times, budget):
     rows += [["Margin, %s attempt %s" % (field(r, "Role"), field(r, "Attempt") or NOT_RECORDED),
               _plain(field(r, "Margin written")), "the scoreboard"] for r in board["roles"] if field(r, "Margin written")]
     rows += [["Time target (D-S80)", t["target"], "TIME_BUDGET.md"] for t in times]
-    rows += [["Budget line %d" % (i + 1), "budget %.2f USD, hard stop %.2f USD" % (v, h),
-              "the budget ledger, %s UTC" % (when[:16].replace("T", " ") or NOT_RECORDED)]
-             for i, (v, h, when) in enumerate(budget)]
+    # Two ceilings, kept apart, each as its record now holds it (D-S121); no total, no earlier line.
+    line = budget[-1] if budget else None
+    where = ("the budget ledger's latest budget line, %s UTC" % (line[2][:16].replace("T", " ") or NOT_RECORDED)
+             if line else "the budget ledger")
+    for label, value in (("Lambda budget", line[0] if line else None), ("Lambda hard stop", line[1] if line else None),
+                         ("Lambda warning", line[3] if line else None)):
+        rows.append([label, "%.2f USD" % value if value is not None else NOT_RECORDED, where])
+    api_where = ("the API spend store, %s UTC" % (api["when"][:16].replace("T", " ") or NOT_RECORDED)
+                 if api and api["ceiling"] is not None else "the API spend store")
+    for label, value in (("API ceiling", api["ceiling"] if api else None), ("API warning", api["warning"] if api else None)):
+        rows.append([label, "%.2f USD" % value if value is not None else NOT_RECORDED, api_where])
     return ["Threshold", "Value", "From"], rows
 
 
@@ -1086,7 +1173,7 @@ def factors_table(changes):
 
 
 def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, registry, budget, candidates,
-           standing=(["#", "Standing order", "State"], [], "the standing orders file is not given")):
+           standing=(["#", "Standing order", "State"], [], "the standing orders file is not given"), api=None):
     (b1, b1_size, how), _, candidate_rows = candidates
     out = {
         "b1_model": (["B1's model", "Size (billions of parameters)", "How it was read"],
@@ -1106,7 +1193,7 @@ def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, r
         "evaluations": evals_table(board),
         "ablations": ablations_table(board),
         "standing": (standing[0], standing[1] + [["", standing[2], ""]]),
-        "thresholds": thresholds_table(board, trained, times, budget),
+        "thresholds": thresholds_table(board, trained, times, budget, api),
         "factors": factors_table(machine_changes(board["rows"], [b for b, _ in made])),
         "scoreboard_earlier": (["Row", "Time", "What changed", "Set", "Benchmark", "Primary metric (D-S99)",
                                 "System (95% CI)", "B1 (95% CI)", "Cloud reference (95% CI)"],
@@ -1132,7 +1219,8 @@ def _html_table(head, rows):
     cells = "".join("<th>%s</th>" % html.escape(h) for h in head)
 
     def td(c):
-        mark = {STANDING_KEPT: " class=\"kept\"", STANDING_BROKEN: " class=\"broken\""}.get(str(c), "")
+        mark = (" class=\"kept\"" if str(c) == STANDING_KEPT else
+                " class=\"broken\"" if str(c) == STANDING_BROKEN or str(c).endswith("(an alarm)") else "")
         return "<td%s>%s</td>" % (mark, html.escape(str(c)))
     body = "".join("<tr>%s</tr>" % "".join(td(c) for c in row) for row in rows)
     return "<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (cells, body or
@@ -1164,7 +1252,9 @@ def dashboard(panels, made, gate_note, cost_made, tabs):
                 ("Thresholds", [], THRESHOLDS_NOTE, "thresholds"),
                 ("Factor records and machine changes", [], FACTORS_NOTE, "factors"),
                 ("The ontology", [], ONTOLOGY, None),
-                ("Cost", [p for p in panels if p["id"] == "cost"], "" if cost_made else "No ledger in this checkout.", None),
+                ("Cost", [p for p in panels if p["id"] in ("cost", "api_cost")],
+                 "Two ceilings, kept apart: Lambda in the budget ledger and the API in its own spend store; there "
+                 "is no total (D-S121)." + ("" if cost_made else " No ledger in this checkout."), None),
                 ("Time", [], TIME_NOTE, "time"),
                 ("Scoreboard lines before standardisation", [], SCOREBOARD_EARLIER_NOTE, "scoreboard_earlier"),
                 ("Earlier results, before standardisation", [], EARLIER_NOTE, "earlier")]
@@ -1230,10 +1320,10 @@ def check_output(out, refused=()):
 
 
 def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None, storage_file=None,
-          orders_file=None, check_file=None, names=None):
+          orders_file=None, check_file=None, names=None, api_file=None):
     root, out = Path(root), Path(out)
     refused = private_names([(scoreboard_file, False), (ledger, False), (r_ledger, False), (item_sets, True),
-                             (storage_file, False), (orders_file, False), (check_file, False)])
+                             (storage_file, False), (orders_file, False), (check_file, False), (api_file, False)])
     HIDDEN_FOLDERS[:] = [name for name in refused if "/" in name]
     out.mkdir(parents=True, exist_ok=True)
     panels = []
@@ -1242,10 +1332,12 @@ def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None, storage_
     trained = trained_records(root)
     spend, forecast, budget = cost_series(ledger_lines([Path(ledger), r_ledger]))
     cost_made = cost_chart(spend, forecast, budget, panels, storage_record(storage_file))
+    api = api_series(api_file)
+    api_chart(api, panels)
     times = time_targets(root)
     tabs = tables(openings(root), times, earlier_results(root), made, board, other_published(root), trained,
                   causal_published(root), registry_roles(root), budget, reference_candidates(root),
-                  standing_orders(orders_file, check_file, operator_names(root) if names is None else names))
+                  standing_orders(orders_file, check_file, operator_names(root) if names is None else names), api)
     (out / "index.html").write_text(dashboard(panels, made, board["note"], cost_made, tabs),
                                     encoding="utf-8", newline="\n")
     check_output(out, refused)
@@ -1555,6 +1647,25 @@ def self_test():
         results.append(("a record-proven order is not checked by code, whatever the check says",
                         "<td>5</td><td>No loose ends.</td><td>%s</td>" % STANDING_NOT_CODE in section))
         results.append(("nothing of the check's own reading reaches the page", "private reading" not in page_o))
+        # The check's newer page states and its blocking list (D-430): each worded, red only when blocking.
+        check.write_text(json.dumps({"time_utc": "2026-11-09T18:00:00Z", "blocking": [1], "tablet_sha256": "ab" * 32,
+                                     "orders": [{"number": 1, "state": "unable", "page_state": "unable"},
+                                                {"number": 4, "state": "kept_in_part", "page_state": "kept_in_part"},
+                                                {"number": 5, "state": "kept", "page_state": "kept"}]}),
+                         encoding="utf-8")
+        build(root, Path(td) / "o3", board_file, ledger_file, item_sets, orders_file=orders, check_file=check)
+        page_o3 = (Path(td) / "o3" / "index.html").read_text(encoding="utf-8")
+        results.append(("the check's newer states worded, red only for what it lists as blocking",
+                        '<td class="broken">%s</td>' % STANDING_ALARM in page_o3 and "<td>kept in part</td>" in page_o3
+                        and "<td>5</td><td>No loose ends.</td><td>%s</td>" % STANDING_NOT_CODE in page_o3
+                        and "ab" * 32 not in page_o3))
+        check.write_text(json.dumps({"time_utc": "2026-11-09T18:00:00Z", "blocking": [],
+                                     "orders": [{"number": 1, "state": "unable", "page_state": "unable"}]}),
+                         encoding="utf-8")
+        build(root, Path(td) / "o4", board_file, ledger_file, item_sets, orders_file=orders, check_file=check)
+        page_o4 = (Path(td) / "o4" / "index.html").read_text(encoding="utf-8")
+        results.append(("unable to check on an order the check does not list as blocking is not red",
+                        "<td>unable to check</td>" in page_o4 and 'class="broken"' not in page_o4))
         check.unlink()
         page_o = build(root, Path(td) / "o2", board_file, ledger_file, item_sets, orders_file=orders) and \
             (Path(td) / "o2" / "index.html").read_text(encoding="utf-8")
@@ -1591,6 +1702,44 @@ def self_test():
         results.append(("neutralised, the name and the record reach the page (the guard is what refuses them)", leaked))
         results.append(("no run of the check: not checked yet, never green",
                         "not checked yet (no run of the check)" in page_o and '<td class="kept">' not in page_o))
+        # Two ceilings, kept apart (D-S121): Lambda from the latest budget line, the API from its store.
+        ledger_file.write_text("\n".join(json.dumps(r) for r in (
+            {"event": "budget_open", "time_utc": "2026-11-01T00:00:00Z", "budget_usd": 300, "hard_stop_usd": 299},
+            {"event": "budget_change", "time_utc": "2026-11-09T14:00:00Z", "budget_usd": 500, "hard_stop_usd": 499},
+            {"event": "budget_change", "time_utc": "2026-11-09T19:41:00Z", "budget_usd": 300, "hard_stop_usd": 299,
+             "warning_usd": 270},
+            {"event": "termination", "time_utc": "2026-11-09T20:00:00Z", "actual_cost": 5.0, "purpose": "p",
+             "launch_requested_utc": "a"})) + "\n", encoding="utf-8")
+        api_file = Path(td) / "kept" / "api.jsonl"
+        api_file.write_text("\n".join(json.dumps(r) for r in (
+            {"time_utc": "2026-11-09T09:08:00Z", "run_id": "r1", "spent_usd": 7.07, "complete": True, "model": "m"},
+            {"time_utc": "2026-11-09T19:45:00Z", "event": "ceiling", "ceiling_usd": 60, "warning_usd": 50})) + "\n",
+            encoding="utf-8")
+        write([first])
+        build(root, Path(td) / "k", board_file, ledger_file, item_sets, api_file=api_file)
+        page_k = (Path(td) / "k" / "index.html").read_text(encoding="utf-8")
+        lam = _traces(page_k, "cost")
+        layout_k = page_k[page_k.index('Plotly.newPlot("cost"'):].split("\n")[0]
+        results.append(("two ceilings apart: Lambda 300, 299 and 270 from its latest line, the API 60 and 50 from "
+                        "its store, no total and no 500",
+                        all(x in page_k for x in ("<td>Lambda budget</td><td>300.00 USD</td>",
+                                                  "<td>Lambda hard stop</td><td>299.00 USD</td>",
+                                                  "<td>Lambda warning</td><td>270.00 USD</td>",
+                                                  "<td>API ceiling</td><td>60.00 USD</td>",
+                                                  "<td>API warning</td><td>50.00 USD</td>"))
+                        and "500" not in layout_k and "500.00" not in page_k and "800" not in page_k
+                        and _traces(page_k, "api_cost")[0]["y"] == [7.07] and lam[0]["y"] == [5.0]))
+        ledger_file.write_text(ledger_file.read_text(encoding="utf-8").replace(', "warning_usd": 270', ""),
+                               encoding="utf-8")
+        api_file.write_text(json.dumps({"time_utc": "2026-11-09T09:08:00Z", "run_id": "r1", "spent_usd": 7.07})
+                            + "\n", encoding="utf-8")
+        build(root, Path(td) / "k2", board_file, ledger_file, item_sets, api_file=api_file)
+        page_k2 = (Path(td) / "k2" / "index.html").read_text(encoding="utf-8")
+        results.append(("a ceiling or warning no field holds is not recorded, never read from a sentence",
+                        "<td>Lambda warning</td><td>not recorded</td>" in page_k2
+                        and "<td>API ceiling</td><td>not recorded</td>" in page_k2
+                        and API_NOT_RECORDED in page_k2 and "Lambda warning: not recorded" in page_k2))
+        ledger_file.unlink()
         # Ablations (D-418): none yet says so; a row is shown with its interval; a steering one is refused.
         ablation = ("\n| Part | Switch | Items | Metric and setting | On (95% CI) | Off (95% CI) | Difference (95% CI) "
                     "| Evidence |\n|---|---|---|---|---|---|---|---|\n"
@@ -1632,6 +1781,7 @@ def main(argv=None):
     parser.add_argument("--r-ledger", default=None, help="role R's ledger, when it exists")
     parser.add_argument("--storage-record", default=None,
                         help="the storage record image-build names (GB held); without it, storage: not recorded")
+    parser.add_argument("--api-spend", default=None, help="the API (cloud reference) spend store")
     parser.add_argument("--standing-orders", default=None, help="the standing orders file (its public lines only)")
     parser.add_argument("--standing-check", default=None, help="the standing-orders check's last-run file")
     args = parser.parse_args(argv)
@@ -1645,7 +1795,8 @@ def main(argv=None):
     if missing:
         parser.error("required: %s" % ", ".join(missing))
     print(json.dumps(build(args.root, args.out, args.scoreboard, args.ledger, args.item_sets, args.r_ledger,
-                           args.storage_record, args.standing_orders, args.standing_check),
+                           args.storage_record, args.standing_orders, args.standing_check,
+                           api_file=args.api_spend),
                      sort_keys=True))
     return 0
 
