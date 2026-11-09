@@ -34,6 +34,9 @@ reads them (D-S102 item 4), each column with its meaning, for the lead to adopt 
 - Cost: every ledger with launch lines (the budget ledger, and role R's ledger when `--r-ledger`
   names it): cumulative actual spend at each run's end against the budget and the hard stop
   now in force, and the cumulative forecast at each launch. A launch is counted once across ledgers.
+  The filesystem's storage cost (D-S109 item 5): GB held, read from the storage record image-build
+  names (`--storage-record`, optional), times the price per GB a month, accrued by day; without the
+  record the chart says "storage: not recorded".
 - Time: `docs/loop/stages/TIME_BUDGET.md`'s targets table, measured before the measurements were
   standardised, so a table only (D-S98 item 5).
 - Earlier results: `docs/loop/stages/REPORT_COMPARABILITY.md`'s inventory, a table only.
@@ -51,6 +54,7 @@ import html
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 PLOTLY = "https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"  # pinned, jsDelivr
@@ -162,8 +166,18 @@ EVAL_COLUMNS = (
     ("Factor record", "the D-S82 factor record"),
     ("State", "requested, in progress, done or verified (D-S101), with its evidence for the last two"),
 )
+ABLATION_COLUMNS = (
+    ("Part", "the part switched (a role, a step or a rule)"),
+    ("Switch", "what is turned on and off, in plain words"),
+    ("Items", "the items read, with their count"),
+    ("Metric and setting", "the metric, with its class setting"),
+    ("On (95% CI)", "the figure with the part on, value [low, high]"),
+    ("Off (95% CI)", "the figure with the part off, value [low, high]"),
+    ("Difference (95% CI)", "on minus off, value [low, high], over the bootstrap unit the evidence names"),
+    ("Evidence", "the record; a private path shows on the page as (record)"),
+)
 SCHEMA = (("Benchmark rows", BENCH_COLUMNS), ("Model-backed roles", ROLE_COLUMNS),
-          ("Other measured evaluations", EVAL_COLUMNS))
+          ("Other measured evaluations", EVAL_COLUMNS), ("Ablations", ABLATION_COLUMNS))
 EVALUATIONS_EXPECTED = ("Development-case recall", "Clean-twin false positives", "Meaningful-output sample",
                         "Computed path scored apart", "Flag precision", "Fresh-read scorer",
                         "S8 sealed evaluation")
@@ -242,7 +256,7 @@ def figure(cell):
 
 def scoreboard(path, root=None):
     """The scoreboard's three tables and its two bars, as written there."""
-    board = {"rows": [], "earlier": [], "roles": [], "evals": [], "bars": BAR_DEFAULTS,
+    board = {"rows": [], "earlier": [], "roles": [], "evals": [], "ablations": [], "bars": BAR_DEFAULTS,
              "bars_from": "D-S92's defaults (the scoreboard does not state them)", "note": None}
     if not path.is_file():
         board["note"] = "the scoreboard file was not found"
@@ -266,7 +280,8 @@ def scoreboard(path, root=None):
         board["note"] = "the scoreboard holds no standardised measurement yet"
     board["roles"] = named_rows(text, "Role")[1]
     board["evals"] = named_rows(text, "Evaluation")[1]
-    for row in rows + board["roles"] + board["evals"]:
+    board["ablations"] = named_rows(text, "Part")[1]
+    for row in rows + board["roles"] + board["evals"] + board["ablations"]:
         no_steering(row, root)
     return board
 
@@ -736,7 +751,91 @@ def bench_charts(board, panels, refs):
     return made
 
 
-def cost_chart(spend, forecast, budget, panels):
+# The filesystem's storage cost (D-S109 item 5, D-409): GB held times the price per GB a month, accrued by
+# day. The GB held is read from the storage record image-build names (`--storage-record`), never typed;
+# the price and the start day are the record's own when it states them, else D-409's figures below.
+STORAGE_USD_PER_GB_MONTH = 0.20  # D-409: "about 0.20 USD per GB a month"
+STORAGE_SINCE = "2026-11-05"  # D-409: accrued by day from 5 November
+STORAGE_NOT_RECORDED = "storage: not recorded"
+
+
+def storage_record(path):
+    """The storage record, as {"gb_held": number or [{"from": "YYYY-MM-DD", "gb": number}, ...],
+    "usd_per_gb_month": number (optional), "since": "YYYY-MM-DD" (optional)}; None when it is not given,
+    missing or holds no GB figure."""
+    if not path or not Path(path).is_file():
+        return None
+    try:
+        record = json.loads(Path(path).read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    held = record.get("gb_held") if isinstance(record, dict) else None
+    if isinstance(held, (int, float)) and not isinstance(held, bool):
+        steps = [(record.get("since") or STORAGE_SINCE, float(held))]
+    elif isinstance(held, list) and held and all(isinstance(h, dict) and isinstance(h.get("gb"), (int, float))
+                                                 and h.get("from") for h in held):
+        steps = sorted((str(h["from"]), float(h["gb"])) for h in held)
+    else:
+        return None
+    price = record.get("usd_per_gb_month")
+    price = float(price) if isinstance(price, (int, float)) and not isinstance(price, bool) else STORAGE_USD_PER_GB_MONTH
+    note = storage_note(record.get("added_since_last_read"))
+    return {"since": str(record.get("since") or STORAGE_SINCE), "steps": steps, "price": price,
+            "price_from": "the record" if isinstance(record.get("usd_per_gb_month"), (int, float)) else "D-409",
+            "unit": str(record.get("unit") or "GB").split(",")[0].strip(),
+            # composed from the record's fields, never its sentence (D-420): a note, never a figure
+            "note": note}
+
+
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December")
+
+
+def storage_note(added):
+    """The note on what was added after the last reading, composed from the record's fields only
+    (`added_since_last_read`: [{"date": "YYYY-MM-DD", "bytes": n, "kind": "archive"}]): its size in GB
+    (bytes / 10^9) and its day, never a name, digest or byte count; None when the fields are not there.
+    The record's free sentence (`known_since_last_read`) is never shown (D-420)."""
+    if not isinstance(added, list):
+        return None
+    out = []
+    for entry in added:
+        if not isinstance(entry, dict) or not isinstance(entry.get("bytes"), int) or isinstance(entry.get("bytes"), bool):
+            continue
+        try:
+            day = date.fromisoformat(str(entry.get("date"))[:10])
+        except ValueError:
+            continue
+        kind = "archive" if entry.get("kind") == "archive" else "addition"
+        out.append("A %.2f GB %s was added on %d %s after this reading (not a reading)."
+                   % (entry["bytes"] / 1e9, kind, day.day, MONTHS[day.month - 1]))
+    return " ".join(out) or None
+
+
+def storage_unread_days(storage):
+    """The days from the start day to the first reading, which no reading covers: accrued as nothing and
+    said so, never filled with a later reading."""
+    first = date.fromisoformat(min(since for since, _ in storage["steps"])[:10])
+    return max(0, (first - date.fromisoformat(storage["since"][:10])).days)
+
+
+def storage_accrued(storage, when):
+    """USD accrued from the start day up to the day of `when` (a UTC time), day by day: each whole day
+    costs the GB held that day times the monthly price times 12 / 365."""
+    start = date.fromisoformat(storage["since"][:10])
+    end = date.fromisoformat(when[:10])
+    total, day = 0.0, start
+    while day < end:
+        held = 0.0
+        for since, gb in storage["steps"]:
+            if date.fromisoformat(since[:10]) <= day:
+                held = gb
+        total += held * storage["price"] * 12 / 365
+        day = date.fromordinal(day.toordinal() + 1)
+    return round(total, 4)
+
+
+def cost_chart(spend, forecast, budget, panels, storage=None):
     if not spend:
         return None
     xs = list(range(1, len(spend) + 1))
@@ -750,14 +849,43 @@ def cost_chart(spend, forecast, budget, panels):
                "line": {"dash": "dot"},
                "text": ["%s UTC, %s" % (f["time"][:16].replace("T", " "), f["purpose"]) for f in forecast],
                "hovertemplate": "%{text}<br>cumulative forecast %{y:.2f} USD<extra></extra>"}]
+    annotations = []
+    if storage:
+        accrued = [storage_accrued(storage, s["time"]) for s in spend]
+        unit = storage["unit"]
+        held = "; ".join("%g %s from %s" % (gb, unit, since[:10]) for since, gb in storage["steps"])
+        unread = storage_unread_days(storage)
+        gap = (" The %d days from %s to the first reading are not read and accrue nothing here." %
+               (unread, storage["since"][:10]) if unread else "")
+        note = (" %s" % storage["note"]) if storage["note"] else ""
+        text = ["storage accrued to %s: %.2f USD (%s, %.2f USD per %s a month, from %s; price from %s).%s%s"
+                % (s["time"][:10], a, held, storage["price"], unit, storage["since"][:10], storage["price_from"],
+                   gap, note)
+                for s, a in zip(spend, accrued)]
+        traces += [{"x": xs, "y": accrued, "name": "Storage accrued", "mode": "lines", "line": {"dash": "dot"},
+                    "text": text, "hovertemplate": "%{text}<extra></extra>"},
+                   {"x": xs, "y": [round(s["total"] + a, 4) for s, a in zip(spend, accrued)],
+                    "name": "Spent plus storage", "mode": "lines", "text": text,
+                    "hovertemplate": "%{text}<br>spent plus storage %{y:.2f} USD<extra></extra>"}]
+    else:
+        annotations = [{"text": STORAGE_NOT_RECORDED, "xref": "paper", "yref": "paper", "x": 0, "y": 1.06,
+                        "showarrow": False}]
     shapes = []
     if budget:
         shapes = [{"type": "line", "xref": "paper", "x0": 0, "x1": 1, "y0": v, "y1": v, "line": {"dash": d}}
                   for v, d in ((budget[-1][0], "dash"), (budget[-1][1], "dashdot"))]
     _panel(panels, "cost", "Cloud cost", traces,
-           {"xaxis": {"title": {"text": "Run, in order"}, "dtick": 5}, "yaxis": {"title": {"text": "USD"}}, "shapes": shapes},
+           {"xaxis": {"title": {"text": "Run, in order"}, "dtick": 5}, "yaxis": {"title": {"text": "USD"}},
+            "shapes": shapes, "annotations": annotations},
            "Cumulative spend at each run's end and cumulative forecast at each launch, against the budget "
-           "(dashed) and the hard stop (dash-dot) now in force.")
+           "(dashed) and the hard stop (dash-dot) now in force. The filesystem's storage cost is GB held times "
+           "the price per GB a month, accrued by day from %s (D-S109 item 5): %s.%s"
+           % (storage["since"][:10] if storage else STORAGE_SINCE,
+              "drawn to each run's day, alone and added to the spend" if storage else STORAGE_NOT_RECORDED,
+              ("" if not storage else
+               ("" if not storage_unread_days(storage) else " The %d days before the first reading are not read "
+                "and accrue nothing." % storage_unread_days(storage))
+               + (" %s" % storage["note"] if storage["note"] else ""))))
     return "cost"
 
 
@@ -790,6 +918,92 @@ ROLES_NOTE = ("Every model-backed role: each agent of the registry and each trai
 TRAINED_NOTE = ("Each trained part's figures on its tuning half, where the candidate was chosen: in-sample, so a "
                 "table, never a chart (D-S98 item 5). The held-out value with its interval is in the roles table "
                 "above; the openings table gives each opening's result as it was written.")
+STANDING_NOTE = ("Every public standing order (D-S110), green when the last run of the standing-orders check "
+                 "found it kept and red when it found it broken. An order proven by a record rather than a script is "
+                 "not checked by code. Only the orders marked public are shown.")
+STANDING_KEPT, STANDING_BROKEN = "kept", "broken"
+STANDING_NOT_CODE = "not checked by code"
+
+
+def operator_names(root):
+    """The operator's name, as the checkout's git configuration gives it (user.name), split into words of
+    three letters or more: read at build time, never typed in this file."""
+    import subprocess
+    try:
+        name = subprocess.run(["git", "-C", str(root), "config", "user.name"], capture_output=True, text=True,
+                              timeout=20).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        name = ""
+    return sorted({w for w in re.findall(r"[^\W\d_]{3,}", name)})
+
+
+def private_record_names(folder):
+    """The names of the private records beside the orders file: every file there whose name is in capitals
+    (names like PLANTED_RECORD), read from the folder, never typed in this file."""
+    if not folder or not Path(folder).is_dir():
+        return []
+    return sorted({f.name.split(".")[0] for f in Path(folder).iterdir()
+                   if f.is_file() and re.fullmatch(r"[A-Z][A-Z0-9_]{3,}", f.name.split(".")[0])})
+
+
+def refuse_private_words(text, names, records):
+    """Refuses a public order text that names the operator (any word of the name, any case) or a private
+    record (its capitalised name, as written, or with spaces for underscores)."""
+    for word in names:
+        if re.search(r"(?<![^\W_])%s(?![^\W_])" % re.escape(word), text, re.I):
+            raise SystemExit("refused: a public standing order names the operator: %r" % text[:60])
+    for record in records:
+        for form in {record, record.replace("_", " ")}:
+            if re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(form), text):
+                raise SystemExit("refused: a public standing order names a private record (%s): %r" % (record, text[:60]))
+
+
+def standing_orders(orders_file, check_file, names=()):
+    """(head, rows, when) for the public standing orders: the order text and the public mark read from the
+    orders file itself, never from the check; the state from the check's last run, by number. A record-
+    proven order is "not checked by code" whatever the check says; nothing else of the check is shown."""
+    head = ["#", "Standing order", "State"]
+    if not orders_file or not Path(orders_file).is_file():
+        return head, [], "the standing orders file is not given"
+    states, when = {}, None
+    if check_file and Path(check_file).is_file():
+        try:
+            check = json.loads(Path(check_file).read_text(encoding="utf-8"))
+        except ValueError:
+            check = {}
+        when = check.get("checked_utc") or check.get("time_utc") if isinstance(check, dict) else None
+        for order in (check.get("orders") or []) if isinstance(check, dict) else []:
+            if isinstance(order, dict):
+                number = order.get("n", order.get("number"))
+                states[str(number)] = str(order.get("state") or "")
+    rows = []
+    records = private_record_names(Path(orders_file).parent)
+    for cells in table_rows(Path(orders_file).read_text(encoding="utf-8"), "#"):
+        if len(cells) < 4 or not cells[1].startswith("[public]"):
+            continue
+        number, text, proof = cells[0], _plain(cells[1][len("[public]"):]), cells[3].strip().lower()
+        refuse_private_words(text, names, records)
+        state = states.get(number)
+        if proof.startswith("record"):
+            shown = STANDING_NOT_CODE
+        elif when is None:
+            shown = "not checked yet (no run of the check)"
+        elif state in (STANDING_KEPT, STANDING_BROKEN):
+            shown = state
+        elif state == "withdrawn":
+            shown = "withdrawn"
+        elif state in ("unchecked", "not_checked"):
+            shown = STANDING_NOT_CODE
+        else:
+            shown = "not in the check's last run"
+        rows.append([number, text, shown])
+    return head, rows, ("the check's last run: %s UTC" % str(when)[:16].replace("T", " ")) if when else \
+        "the standing-orders check has not run yet"
+
+
+ABLATIONS_NOTE = ("Every on/off result (D-S113): the same items read with one part on and with it off, in the "
+                  "benchmark's own metric, the difference with its 95 percent interval. A difference is a gain only "
+                  "when its interval says so. None yet until the first result is on the scoreboard.")
 EVALS_NOTE = ("Every other measured evaluation, with its metric, n and interval as the scoreboard writes them. One "
               "the scoreboard does not yet hold is listed as such.")
 THRESHOLDS_NOTE = ("Every threshold a figure here is read against: the gate's bars, each part's margin, the time "
@@ -824,6 +1038,12 @@ def roles_table(board, registry, trained, open_rows):
             rows.append([name, backend] + [NOT_RECORDED] * (len(head) - 3)
                         + ["the scoreboard has no row for it yet"])
     return head, rows
+
+
+def ablations_table(board):
+    head = [c for c, _ in ABLATION_COLUMNS]
+    return head, [[_evidence(field(r, c)) if c == "Evidence" else _figure_cell(field(r, c)) for c in head]
+                  for r in board["ablations"]]
 
 
 def evals_table(board):
@@ -865,7 +1085,8 @@ def factors_table(changes):
     return ["Row", "Time", "Benchmark", "Machine type", "Machine change", "Factor record (D-S82)"], rows
 
 
-def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, registry, budget, candidates):
+def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, registry, budget, candidates,
+           standing=(["#", "Standing order", "State"], [], "the standing orders file is not given")):
     (b1, b1_size, how), _, candidate_rows = candidates
     out = {
         "b1_model": (["B1's model", "Size (billions of parameters)", "How it was read"],
@@ -883,6 +1104,8 @@ def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, r
                             other_pub),
         "benchmarks": benchmark_list(made),
         "evaluations": evals_table(board),
+        "ablations": ablations_table(board),
+        "standing": (standing[0], standing[1] + [["", standing[2], ""]]),
         "thresholds": thresholds_table(board, trained, times, budget),
         "factors": factors_table(machine_changes(board["rows"], [b for b, _ in made])),
         "scoreboard_earlier": (["Row", "Time", "What changed", "Set", "Benchmark", "Primary metric (D-S99)",
@@ -907,7 +1130,11 @@ def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, r
 
 def _html_table(head, rows):
     cells = "".join("<th>%s</th>" % html.escape(h) for h in head)
-    body = "".join("<tr>%s</tr>" % "".join("<td>%s</td>" % html.escape(str(c)) for c in row) for row in rows)
+
+    def td(c):
+        mark = {STANDING_KEPT: " class=\"kept\"", STANDING_BROKEN: " class=\"broken\""}.get(str(c), "")
+        return "<td%s>%s</td>" % (mark, html.escape(str(c)))
+    body = "".join("<tr>%s</tr>" % "".join(td(c) for c in row) for row in rows)
     return "<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (cells, body or
                                                                           "<tr><td colspan=\"%d\">none yet</td></tr>" % len(head))
 
@@ -932,6 +1159,8 @@ def dashboard(panels, made, gate_note, cost_made, tabs):
                 ("Model-backed roles", [], ROLES_NOTE, "roles"),
                 ("Trained parts", [], TRAINED_NOTE, ["trained", "openings"]),
                 ("Other measured evaluations", [], EVALS_NOTE, "evaluations"),
+                ("Ablations", [], ABLATIONS_NOTE, "ablations"),
+                ("Standing orders", [], STANDING_NOTE, "standing"),
                 ("Thresholds", [], THRESHOLDS_NOTE, "thresholds"),
                 ("Factor records and machine changes", [], FACTORS_NOTE, "factors"),
                 ("The ontology", [], ONTOLOGY, None),
@@ -941,7 +1170,8 @@ def dashboard(panels, made, gate_note, cost_made, tabs):
                 ("Earlier results, before standardisation", [], EARLIER_NOTE, "earlier")]
     body = []
     for title, ps, note, table in sections:
-        body.append("<section><h2>%s</h2>" % html.escape(title))
+        body.append("<section id=\"%s\"><h2>%s</h2>" % (re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-"),
+                                                           html.escape(title)))
         if note:
             body.append("<p class=\"note\">%s</p>" % html.escape(note))
         for p in ps:
@@ -958,12 +1188,13 @@ def dashboard(panels, made, gate_note, cost_made, tabs):
     return ("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">\n"
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
             "<title>Shimmer progress</title>\n<script src=\"%s\"></script>\n<style>\n"
-            ":root{--fg:#1d1d1b;--bg:#fbfaf7;--muted:#5b5a55;--line:#d9d6cc}\n"
-            "@media (prefers-color-scheme: dark){:root{--fg:#ecebe6;--bg:#161615;--muted:#a9a79f;--line:#3a3934}}\n"
+            ":root{--fg:#1d1d1b;--bg:#fbfaf7;--muted:#5b5a55;--line:#d9d6cc;--ok:#1e7a3a;--bad:#b3261e}\n"
+            "@media (prefers-color-scheme: dark){:root{--fg:#ecebe6;--bg:#161615;--muted:#a9a79f;--line:#3a3934;--ok:#6fd08c;--bad:#ff8a80}}\n"
             "body{margin:0 auto;max-width:72rem;padding:16px;background:var(--bg);color:var(--fg);"
             "font:16px/1.5 system-ui,sans-serif}\n.chart{width:100%%;height:420px}\n.note{color:var(--muted)}\n"
             "table{border-collapse:collapse;width:100%%;font-size:14px}th,td{border-bottom:1px solid var(--line);"
-            "padding:6px;text-align:left;vertical-align:top}\n"
+            "padding:6px;text-align:left;vertical-align:top}\ntd.kept{color:var(--ok);font-weight:600}"
+            "td.broken{color:var(--bad);font-weight:600}\n"
             "section{overflow-x:auto}\n</style></head>\n<body>\n"
             "<h1>Progress: charts of every measured attempt</h1>\n<p>%s</p>\n%s\n<script>\n%s</script>\n</body></html>\n"
             % (PLOTLY, html.escape(INTRO), "\n".join(body), script))
@@ -998,9 +1229,11 @@ def check_output(out, refused=()):
                     raise SystemExit("refused: a private input named in %s: %r" % (path.name, name))
 
 
-def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None):
+def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None, storage_file=None,
+          orders_file=None, check_file=None, names=None):
     root, out = Path(root), Path(out)
-    refused = private_names([(scoreboard_file, False), (ledger, False), (r_ledger, False), (item_sets, True)])
+    refused = private_names([(scoreboard_file, False), (ledger, False), (r_ledger, False), (item_sets, True),
+                             (storage_file, False), (orders_file, False), (check_file, False)])
     HIDDEN_FOLDERS[:] = [name for name in refused if "/" in name]
     out.mkdir(parents=True, exist_ok=True)
     panels = []
@@ -1008,15 +1241,17 @@ def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None):
     made = bench_charts(board, panels, reference_lines(root))
     trained = trained_records(root)
     spend, forecast, budget = cost_series(ledger_lines([Path(ledger), r_ledger]))
-    cost_made = cost_chart(spend, forecast, budget, panels)
+    cost_made = cost_chart(spend, forecast, budget, panels, storage_record(storage_file))
     times = time_targets(root)
     tabs = tables(openings(root), times, earlier_results(root), made, board, other_published(root), trained,
-                  causal_published(root), registry_roles(root), budget, reference_candidates(root))
+                  causal_published(root), registry_roles(root), budget, reference_candidates(root),
+                  standing_orders(orders_file, check_file, operator_names(root) if names is None else names))
     (out / "index.html").write_text(dashboard(panels, made, board["note"], cost_made, tabs),
                                     encoding="utf-8", newline="\n")
     check_output(out, refused)
     return {"bench_charts": len(made), "trained_rows": len(trained), "cost_runs": len(spend),
-            "roles": len(tabs["roles"][1]), "evaluations": len(tabs["evaluations"][1])}
+            "roles": len(tabs["roles"][1]), "evaluations": len(tabs["evaluations"][1]),
+            "ablations": len(tabs["ablations"][1]), "standing_orders": len(tabs["standing"][1]) - 1}
 
 
 # ---- the script's own proofs ----------------------------------------------------------------------
@@ -1248,6 +1483,136 @@ def self_test():
         write([dict(first, Evidence=str(item_sets / "run" / "result.json"))])
         results.append(("an evidence path in a private folder shown as (record)",
                         "evidence: (record)" in _traces(run("f")[1], "gate_contradoc")[0]["text"][0]))
+        # Storage (D-409): none recorded says so; a record of 20 GB from 5 November accrues by day.
+        ledger_file.write_text("\n".join(json.dumps(r) for r in (
+            {"event": "termination", "time_utc": "2026-11-07T10:00:00Z", "actual_cost": 1.5, "purpose": "p1",
+             "launch_requested_utc": "a"},
+            {"event": "termination", "time_utc": "2026-11-10T09:00:00Z", "actual_cost": 2.0, "purpose": "p2",
+             "launch_requested_utc": "b"})) + "\n", encoding="utf-8")
+        write([first])
+        cost = _traces(run("v")[1], "cost")
+        results.append(("no storage record: the cost chart says storage: not recorded",
+                        STORAGE_NOT_RECORDED in run("v")[1] and [t["name"] for t in cost] == ["Spent", "Forecast"]))
+        storage_file = Path(td) / "kept" / "storage.json"
+        storage_file.write_text(json.dumps({"gb_held": 20, "since": "2026-11-05"}), encoding="utf-8")
+        page_w = build(root, Path(td) / "w", board_file, ledger_file, item_sets, storage_file=storage_file) and \
+            (Path(td) / "w" / "index.html").read_text(encoding="utf-8")
+        cost = {t["name"]: t for t in _traces(page_w, "cost")}
+        day = 20 * STORAGE_USD_PER_GB_MONTH * 12 / 365
+        results.append(("a storage record of 20 GB accrues by day from 5 November, alone and added to the spend",
+                        cost["Storage accrued"]["y"] == [round(2 * day, 4), round(5 * day, 4)]
+                        and cost["Spent plus storage"]["y"] == [round(1.5 + 2 * day, 4), round(3.5 + 5 * day, 4)]
+                        and "20 GB from 2026-11-05" in cost["Storage accrued"]["text"][1]
+                        and STORAGE_NOT_RECORDED not in page_w))
+        storage_file.write_text(json.dumps({
+            "gb_held": [{"from": "2026-11-08", "gb": 12.02, "bytes_used": 12903487114, "source": "a read"}],
+            "usd_per_gb_month": 0.2, "since": "2026-11-05", "unit": "GiB, as the provider bills",
+            "known_since_last_read": "SEEDROLE seeded assets-0123abcd (22,248,529,920 bytes) after this read",
+            "added_since_last_read": [{"date": "2026-11-08", "bytes": 22248529920, "kind": "archive",
+                                       "name": "assets-0123abcd"}]}), encoding="utf-8")
+        build(root, Path(td) / "y", board_file, ledger_file, item_sets, storage_file=storage_file)
+        page_y = (Path(td) / "y" / "index.html").read_text(encoding="utf-8")
+        cost = {t["name"]: t for t in _traces(page_y, "cost")}
+        day = 12.02 * 0.2 * 12 / 365
+        results.append(("the record as image-build writes it: GiB, the unread days accrue nothing, the note as a note",
+                        cost["Storage accrued"]["y"] == [0.0, round(2 * day, 4)]
+                        and "12.02 GiB from 2026-11-08" in cost["Storage accrued"]["text"][1]
+                        and "The 3 days from 2026-11-05 to the first reading are not read" in cost["Storage accrued"]["text"][0]
+                        and "A 22.25 GB archive was added on 8 November after this reading (not a reading)." in page_y
+                        and not any(w in page_y for w in ("SEEDROLE", "assets-0123abcd", "22,248,529,920",
+                                                          "22248529920"))
+                        and 22.25 not in cost["Storage accrued"]["y"] + cost["Spent plus storage"]["y"]))
+        storage_file.write_text(json.dumps({"gb": 20}), encoding="utf-8")
+        results.append(("a record with no GB figure is not recorded, never a guess",
+                        STORAGE_NOT_RECORDED in (build(root, Path(td) / "x", board_file, ledger_file, item_sets,
+                                                       storage_file=storage_file) and
+                                                 (Path(td) / "x" / "index.html").read_text(encoding="utf-8"))))
+        ledger_file.unlink()
+        # Standing orders (D-S110 item 3b): public lines only, green or red from the check, record-proven
+        # ones not checked by code, and nothing of the check's private reading.
+        orders = Path(td) / "kept" / "orders.md"
+        orders.write_text("| # | Order | Source, since | How it is proven to hold now |\n|---|---|---|---|\n"
+                          "| 1 | [public] Launch from the current image. | D-1 | script: the copy check |\n"
+                          "| 2 | A private order about a key. | D-2 | script: the key check |\n"
+                          "| 4 | [public] Four states, never mixed. | D-4 | script: the status check |\n"
+                          "| 5 | [public] No loose ends. | D-5 | record: the loose ends file |\n", encoding="utf-8")
+        check = Path(td) / "kept" / "check.json"
+        check.write_text(json.dumps({"time_utc": "2026-11-09T18:00:00Z", "checked_utc": "2026-11-09T18:00:00Z",
+                                     "orders": [{"number": 1, "n": 1, "state": "kept", "line": "a private reading one"},
+                                                {"number": 2, "n": 2, "state": "broken", "line": "a private reading two"},
+                                                {"number": 4, "n": 4, "state": "broken", "line": "a private reading four"},
+                                                {"number": 5, "n": 5, "state": "kept", "line": "a private reading five"}]}),
+                         encoding="utf-8")
+        write([first])
+        summary_o = build(root, Path(td) / "o", board_file, ledger_file, item_sets, orders_file=orders, check_file=check)
+        page_o = (Path(td) / "o" / "index.html").read_text(encoding="utf-8")
+        section = page_o[page_o.index('<section id="standing-orders">'):]
+        section = section[:section.index("</section>")]
+        results.append(("standing orders: public lines only, green kept and red broken from the check",
+                        summary_o["standing_orders"] == 3 and '<td class="kept">kept</td>' in section
+                        and '<td class="broken">broken</td>' in section and "Launch from the current image." in section
+                        and "a private order" not in page_o and "[public]" not in section))
+        results.append(("a record-proven order is not checked by code, whatever the check says",
+                        "<td>5</td><td>No loose ends.</td><td>%s</td>" % STANDING_NOT_CODE in section))
+        results.append(("nothing of the check's own reading reaches the page", "private reading" not in page_o))
+        check.unlink()
+        page_o = build(root, Path(td) / "o2", board_file, ledger_file, item_sets, orders_file=orders) and \
+            (Path(td) / "o2" / "index.html").read_text(encoding="utf-8")
+        # A public order that names the operator or a private record refuses the build (D-421).
+        (orders.parent / "PLANTED_RECORD.md").write_text("planted", encoding="utf-8")
+        clean = orders.read_text(encoding="utf-8")
+        for planted_text, what in (("Ask Planted before a launch.", "the operator's name"),
+                                   ("Ask PLANTED before a launch.", "the operator's name in capitals"),
+                                   ("Every change goes to PLANTED_RECORD first.", "a private record's name"),
+                                   ("Every change goes to PLANTED RECORD first.", "a private record's name, spaced")):
+            orders.write_text(clean.replace("No loose ends.", planted_text), encoding="utf-8")
+            try:
+                build(root, Path(td) / "n", board_file, ledger_file, item_sets, orders_file=orders,
+                      names=["Planted", "Person"])
+                results.append(("a public order naming %s refused" % what, False))
+            except SystemExit:
+                results.append(("a public order naming %s refused" % what, True))
+        orders.write_text(clean.replace("No loose ends.", "Every change is recorded as open."), encoding="utf-8")
+        results.append(("a public order naming neither builds", build(root, Path(td) / "n2", board_file, ledger_file,
+                        item_sets, orders_file=orders, names=["Planted", "Person"])["standing_orders"] == 3))
+        guard = globals()["refuse_private_words"]
+        globals()["refuse_private_words"] = lambda text, names, records: None  # neutralised
+        orders.write_text(clean.replace("No loose ends.", "Ask Planted; see PLANTED_RECORD."), encoding="utf-8")
+        try:
+            build(root, Path(td) / "n3", board_file, ledger_file, item_sets, orders_file=orders,
+                  names=["Planted", "Person"])
+            leaked = "Ask Planted; see PLANTED_RECORD." in (Path(td) / "n3" / "index.html").read_text(encoding="utf-8")
+        except SystemExit:
+            leaked = False
+        finally:
+            globals()["refuse_private_words"] = guard
+            orders.write_text(clean, encoding="utf-8")
+            (orders.parent / "PLANTED_RECORD.md").unlink()
+        results.append(("neutralised, the name and the record reach the page (the guard is what refuses them)", leaked))
+        results.append(("no run of the check: not checked yet, never green",
+                        "not checked yet (no run of the check)" in page_o and '<td class="kept">' not in page_o))
+        # Ablations (D-418): none yet says so; a row is shown with its interval; a steering one is refused.
+        ablation = ("\n| Part | Switch | Items | Metric and setting | On (95% CI) | Off (95% CI) | Difference (95% CI) "
+                    "| Evidence |\n|---|---|---|---|---|---|---|---|\n"
+                    "| VERIFIER | the call on and off | ContraDoc quick, 60 | binary judgment accuracy, 2 classes | "
+                    "63.0 [51.0, 75.0] | 61.0 [49.0, 73.0] | 2.0 [-3.0, 7.0] | the ablation record |\n")
+        write([first])
+        page_z = run("z")[1]
+        section = page_z[page_z.index('<section id="ablations">'):]
+        section = section[:section.index("</section>")]
+        results.append(("no ablation yet: the Ablations section says none yet", "none yet" in section))
+        write([first], roles + evals + ablation)
+        page_z = run("z2")[1]
+        section = page_z[page_z.index('<section id="ablations">'):]
+        section = section[:section.index("</section>")]
+        results.append(("an ablation row in its own section, its difference with the interval",
+                        "2.0 [-3.0, 7.0]" in section and "63.0 [51.0, 75.0]" in section and "VERIFIER" in section))
+        write([first], roles + evals + ablation.replace("the ablation record", STEERING_LABEL))
+        try:
+            run("z3")
+            results.append(("a steering ablation row refused", False))
+        except SystemExit:
+            results.append(("a steering ablation row refused", True))
         board_file.write_text(preamble + "| Time | What changed | Set |\n|---|---|---|\n", encoding="utf-8")
         results.append(("an earlier-form scoreboard says so", "not yet in the D-S102 form" in run("g")[1]))
     for what, ok in results:
@@ -1265,6 +1630,10 @@ def main(argv=None):
     parser.add_argument("--ledger", help="the budget ledger (required, no default)")
     parser.add_argument("--item-sets", help="the item-set folder, refused in the output (required, no default)")
     parser.add_argument("--r-ledger", default=None, help="role R's ledger, when it exists")
+    parser.add_argument("--storage-record", default=None,
+                        help="the storage record image-build names (GB held); without it, storage: not recorded")
+    parser.add_argument("--standing-orders", default=None, help="the standing orders file (its public lines only)")
+    parser.add_argument("--standing-check", default=None, help="the standing-orders check's last-run file")
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
@@ -1275,7 +1644,8 @@ def main(argv=None):
                                         ("--ledger", args.ledger), ("--item-sets", args.item_sets)) if not value]
     if missing:
         parser.error("required: %s" % ", ".join(missing))
-    print(json.dumps(build(args.root, args.out, args.scoreboard, args.ledger, args.item_sets, args.r_ledger),
+    print(json.dumps(build(args.root, args.out, args.scoreboard, args.ledger, args.item_sets, args.r_ledger,
+                           args.storage_record, args.standing_orders, args.standing_check),
                      sort_keys=True))
     return 0
 

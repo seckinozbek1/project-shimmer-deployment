@@ -1,6 +1,6 @@
 # Project Shimmer
 
-Progress: [charts of every measured attempt](https://seckinozbek1.github.io/project-shimmer-deployment/progress/)
+Progress: [charts of every measured attempt](https://seckinozbek1.github.io/project-shimmer-deployment/progress/), with an [Ablations](https://seckinozbek1.github.io/project-shimmer-deployment/progress/#ablations) section of every on/off result
 
 Shimmer is a governed document-review prototype. It reviews documents against
 operator-supplied conventions and reference material, proposes cited amendments,
