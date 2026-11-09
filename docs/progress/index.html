@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shimmer progress</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
 <style>
 :root{--fg:#1d1d1b;--bg:#fbfaf7;--muted:#5b5a55;--line:#d9d6cc}
 @media (prefers-color-scheme: dark){:root{--fg:#ecebe6;--bg:#161615;--muted:#a9a79f;--line:#3a3934}}
@@ -15,10 +15,14 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px
 <h1>Progress: charts of every measured attempt</h1>
 <p>Written by `tools/progress_charts.py` from the project&#x27;s own records; no figure here is typed by hand. Figures are labelled development (read while building), held-out development (kept apart from tuning) or fresh (read once, at the end), and never mixed. No sealed or benchmark test material appears here. Charts start at the first standardised measurement; everything measured before it is in the tables further down, never on the same axes.</p>
 <section><h2>Every benchmark in use</h2>
-<table><thead><tr><th>Benchmark</th><th>Primary metric (D-S99)</th><th>State</th></tr></thead><tbody><tr><td>ContraDoc</td><td>binary judgment accuracy</td><td>not yet measured</td></tr><tr><td>SciTab</td><td>macro-F1</td><td>not yet measured</td></tr><tr><td>PUBHEALTH</td><td>its paper&#x27;s primary metric, to be confirmed against the paper</td><td>not yet measured</td></tr><tr><td>CLadder</td><td>its paper&#x27;s primary metric, to be confirmed against the paper</td><td>not yet measured</td></tr><tr><td>Corr2Cause</td><td>its paper&#x27;s primary metric, to be confirmed against the paper</td><td>not yet measured</td></tr></tbody></table>
+<table><thead><tr><th>Benchmark</th><th>Primary metric (D-S99)</th><th>State</th></tr></thead><tbody><tr><td>ContraDoc</td><td>binary judgment accuracy</td><td>not yet measured</td></tr><tr><td>SciTab</td><td>macro-F1</td><td>not yet measured</td></tr><tr><td>PUBHEALTH</td><td>macro-F1</td><td>not yet measured</td></tr><tr><td>CLadder</td><td>accuracy</td><td>not yet measured</td></tr><tr><td>Corr2Cause</td><td>F1 of the valid class</td><td>not yet measured</td></tr></tbody></table>
 </section>
 <section><h2>The gate</h2>
 <p class="note">No standardised measurement yet (the scoreboard holds no standardised measurement yet). The first one is the starting gap of the whole system against B1 and the cloud reference on the held-out development items.</p>
+</section>
+<section><h2>Out-of-domain check and causal probe</h2>
+<p class="note">PUBHEALTH (an out-of-domain check) and CLadder and Corr2Cause (a causal-readiness probe) are measured against B1 on the same items. No comparable published system exists for them, so the bar is B1 (D-S73 item 2); the published figures are listed beside, with their settings, never as a line. A benchmark with no measurement yet is listed as not yet measured.</p>
+<table><thead><tr><th>Benchmark</th><th>System</th><th>Model (size)</th><th>Setting</th><th>Metric</th><th>Figure</th><th>Source</th></tr></thead><tbody><tr><td colspan="7">none yet</td></tr></tbody></table>
 </section>
 <section><h2>Trained parts</h2>
 <figure><div id="trained_auditor_rule_check" class="chart"></div><figcaption>The trained candidate against its untrained form on the tuning half, where it was chosen, so these figures are in-sample. The held-out result is pass or fail only, in the openings table.</figcaption></figure>

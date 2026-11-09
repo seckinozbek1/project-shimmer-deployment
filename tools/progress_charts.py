@@ -36,7 +36,7 @@ import re
 import sys
 from pathlib import Path
 
-PLOTLY = "https://cdn.plot.ly/plotly-2.35.2.min.js"
+PLOTLY = "https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"  # pinned, jsDelivr
 SCOREBOARD = Path("docs/loop/private/GATE_SCOREBOARD.md")
 LEDGER = Path("docs/loop/private/budget_ledger.jsonl")
 OPENINGS = Path("docs/loop/HELDOUT_OPENINGS.md")
@@ -47,8 +47,11 @@ TRAINED_SCHEMAS = {"auditor-rule-check-half-a-v1": "half_a_macro_f1"}
 BENCHMARKS = ("ContraDoc", "SciTab")  # the gate's two, on the scoreboard
 # Every benchmark in use (D-S98 item 8); one not yet measured is listed as such, never left out.
 BENCHMARKS_IN_USE = ("ContraDoc", "SciTab", "PUBHEALTH", "CLadder", "Corr2Cause")
-# Each benchmark's own paper's primary metric (D-S99); the bars are read in it.
-METRIC = {"ContraDoc": "binary judgment accuracy", "SciTab": "macro-F1"}
+# Each benchmark's own paper's primary metric (D-S99), as the rules written before any read name it
+# (TARGET_TABLE.md for the gate's two, OTHER_DOMAIN_RULES.md for the others); the bars are read in it.
+METRIC = {"ContraDoc": "binary judgment accuracy", "SciTab": "macro-F1", "PUBHEALTH": "macro-F1",
+          "CLadder": "accuracy", "Corr2Cause": "F1 of the valid class"}
+OTHER_RULES = Path("docs/loop/stages/targets/OTHER_DOMAIN_RULES.md")
 TARGETS = Path("docs/loop/stages/targets/TARGET_TABLE.md")
 PRE_STANDARD = re.compile(r"direction only|pre-standard|not a gate figure", re.I)
 BAR_ABOVE_B1, BAR_BELOW_CLOUD = 10.0, 5.0  # D-S92's defaults, as the scoreboard states them
@@ -89,20 +92,37 @@ def gate_rows(root):
     path = root / SCOREBOARD
     if not path.is_file():
         return [], [], "the scoreboard is not in this checkout"
+    text = path.read_text(encoding="utf-8")
+    header = next((l for l in text.splitlines() if l.startswith("| Time")), "")
+    columns = [c.strip() for c in header.strip().strip("|").split("|")]
+    # Every column headed "<benchmark>: system / B1 / cloud ref" is read, so a benchmark added to the
+    # scoreboard is charted with no change here (D-S98 item 8).
+    benches = [(i, c.split(":")[0].strip()) for i, c in enumerate(columns) if c.endswith("system / B1 / cloud ref")]
     out, earlier = [], []
-    for cells in reversed(table_rows(path.read_text(encoding="utf-8"), "Time")):  # newest first in the file
-        if len(cells) < 8 or cells[0].startswith("("):
+    for cells in reversed(table_rows(text, "Time")):  # newest first in the file
+        if len(cells) < len(columns) or cells[0].startswith("("):
             continue
         if REFUSED_SETS.search(cells[2]):
             raise SystemExit("refused: a scoreboard row names a sealed, test or fresh set: %r" % cells[2])
-        row = {"time": cells[0], "changed": cells[1], "set": cells[2] or NOT_RECORDED}
-        for name, cell in (("ContraDoc", cells[3]), ("SciTab", cells[5])):
-            system, b1, cloud = _numbers(cell)
-            row[name] = {"system": system, "b1": b1, "cloud": cloud, "cell": cell}
+        row = {"time": cells[0], "changed": cells[1], "set": cells[2] or NOT_RECORDED, "benches": []}
+        for i, name in benches:
+            system, b1, cloud = _numbers(cells[i])
+            row[name] = {"system": system, "b1": b1, "cloud": cloud, "cell": cells[i]}
+            row["benches"].append(name)
         # A row the scoreboard itself marks pre-standard (a first signal on a set that is not untuned)
         # goes to the earlier table, never on the charts (D-S98 item 5).
         (earlier if PRE_STANDARD.search(" ".join(cells)) else out).append(row)
     return out, earlier, None if out else "the scoreboard holds no standardised measurement yet"
+
+
+def other_published(root):
+    """The published-figure table of each other-domain benchmark, as its rules file writes it (a table
+    beside the benchmark, never a bar: no comparable published figure exists, so its bar is B1)."""
+    path = root / OTHER_RULES
+    if not path.is_file():
+        return []
+    rows = table_rows(path.read_text(encoding="utf-8"), "System")
+    return [["PUBHEALTH"] + [_plain(c) for c in r[:6]] for r in rows if len(r) >= 6]
 
 
 def published_bars(root):
@@ -223,14 +243,16 @@ def _panel(panels, name, title, traces, layout, caption):
 
 def gate_charts(rows, panels, bars):
     made = []
-    for bench in BENCHMARKS:
-        points = [(i + 1, r) for i, r in enumerate(rows) if r[bench]["system"] is not None]
+    for bench in BENCHMARKS_IN_USE:
+        points = [(i + 1, r) for i, r in enumerate([r for r in rows if bench in r])
+                  if r[bench]["system"] is not None]
         if not points:
             continue
         x = [i for i, _ in points]
         series = {k: [r[bench][k] for _, r in points] for k in ("system", "b1", "cloud")}
-        bar_a = [b + BAR_ABOVE_B1 if b is not None else None for b in series["b1"]]
-        bar_b = [c - BAR_BELOW_CLOUD if c is not None else None for c in series["cloud"]]
+        gate = bench in BENCHMARKS  # D-S92's two bars hold for the gate's two benchmarks only
+        bar_a = [b + BAR_ABOVE_B1 if (gate and b is not None) else None for b in series["b1"]]
+        bar_b = [c - BAR_BELOW_CLOUD if (gate and c is not None) else None for c in series["cloud"]]
         name = "gate_%s" % bench.lower()
         hover = ["%s, attempt %d, set %s<br>what changed: %s<br>as the scoreboard writes it (system / B1 / cloud "
                  "reference): %s<br>bars: (a) %s, (b) %s<br>run time, machine and evidence: %s on the scoreboard"
@@ -239,16 +261,18 @@ def gate_charts(rows, panels, bars):
         traces = [{"x": x, "y": series[k], "name": label, "mode": "lines+markers", "text": hover,
                    "hovertemplate": "%{text}<br>" + label + ": %{y}<extra></extra>"}
                   for k, label in (("system", "Shimmer"), ("b1", "B1"), ("cloud", "Cloud reference"))]
-        traces += [{"x": x, "y": bar, "name": label, "mode": "lines", "line": {"dash": "dash"}, "hoverinfo": "skip"}
-                   for bar, label in ((bar_a, "Bar (a): B1 + %g" % BAR_ABOVE_B1),
-                                      (bar_b, "Bar (b): cloud reference - %g" % BAR_BELOW_CLOUD))]
+        if gate:
+            traces += [{"x": x, "y": bar, "name": label, "mode": "lines", "line": {"dash": "dash"},
+                        "hoverinfo": "skip"}
+                       for bar, label in ((bar_a, "Bar (a): B1 + %g" % BAR_ABOVE_B1),
+                                          (bar_b, "Bar (b): cloud reference - %g" % BAR_BELOW_CLOUD))]
         if bench in bars:
             value, sentence = bars[bench]
             traces.append({"x": [x[0], x[-1]], "y": [value, value], "name": "Published comparable bar (reference)",
                            "mode": "lines", "line": {"dash": "dot"}, "text": [sentence, sentence],
                            "hovertemplate": "%{text}<extra></extra>"})
         metric = METRIC[bench]
-        _panel(panels, name, "%s: the gate (%s)" % (bench, metric), traces,
+        _panel(panels, name, "%s: %s (%s)" % (bench, "the gate" if gate else "out-of-domain check", metric), traces,
                {"xaxis": {"title": {"text": "Attempt"}, "dtick": 1}, "yaxis": {"title": {"text": "%s (percent)" % metric}}},
                "%s, in %s's own paper's primary metric (D-S99), on the held-out development items, attempt by "
                "attempt: the whole system, B1 (the bare model) and the cloud reference model (a reference, never "
@@ -319,6 +343,10 @@ ONTOLOGY = ("No standardised ontology measurement has a machine-readable record 
 TIME_NOTE = ("No standardised timed measurement yet; the time-focused work starts after the gate. The figures "
              "below were measured on 8 November 2026 from saved runs on the A10, before the measurements were "
              "standardised, so they are a table only.")
+OTHER_NOTE = ("PUBHEALTH (an out-of-domain check) and CLadder and Corr2Cause (a causal-readiness probe) are "
+              "measured against B1 on the same items. No comparable published system exists for them, so the bar "
+              "is B1 (D-S73 item 2); the published figures are listed beside, with their settings, never as a "
+              "line. A benchmark with no measurement yet is listed as not yet measured.")
 SCOREBOARD_EARLIER_NOTE = ("Rows the scoreboard itself marks as direction only (a first signal on a set that is not "
                            "untuned): a table, never on the charts.")
 EARLIER_NOTE = ("Development runs measured before the gate set, the scoreboard and the comparability rule. Each "
@@ -329,13 +357,15 @@ def _cell(text):
     return str(text).replace("|", "/").replace("\n", " ")
 
 
-def tables(open_rows, times, earlier, gate_made, scoreboard_earlier):
+def tables(open_rows, times, earlier, gate_made, scoreboard_earlier, other_pub):
     return {
+        "other_published": (["Benchmark", "System", "Model (size)", "Setting", "Metric", "Figure", "Source"],
+                            other_pub),
         "benchmarks": benchmark_list(gate_made),
         "scoreboard_earlier": (["Time", "What changed", "Set", "ContraDoc (system / B1 / cloud reference)",
                                 "SciTab (system / B1 / cloud reference)"],
                                [[r["time"], r["changed"], r["set"], r["ContraDoc"]["cell"], r["SciTab"]["cell"]]
-                                for r in scoreboard_earlier]),
+                                for r in scoreboard_earlier if "ContraDoc" in r and "SciTab" in r]),
         "openings": (["Part", "Opening", "Alpha", "Attempt", "Written", "Result"],
                      [[r[k] for k in ("part", "k", "alpha", "attempt", "written", "result")] for r in open_rows]),
         "time": (["Target", "Measured (8 November, before standardisation)"],
@@ -362,8 +392,11 @@ def benchmark_list(gate_made):
 
 def dashboard(panels, gate_made, gate_note, trained_made, cost_made, tabs):
     sections = [("Every benchmark in use", [], "", "benchmarks"),
-                ("The gate", [p for p in panels if p["id"].startswith("gate_")],
+                ("The gate", [p for p in panels if p["id"] in ("gate_contradoc", "gate_scitab")],
                  "" if gate_made else GATE_PENDING % gate_note, None),
+                ("Out-of-domain check and causal probe",
+                 [p for p in panels if p["id"].startswith("gate_") and p["id"] not in ("gate_contradoc", "gate_scitab")],
+                 OTHER_NOTE, "other_published"),
                 ("Trained parts", [p for p in panels if p["id"].startswith("trained_")],
                  "" if trained_made else "No trained part has a read record yet.", "openings"),
                 ("The ontology", [], ONTOLOGY, None),
@@ -419,7 +452,8 @@ def build(root, out, private_root=None, r_ledger=None):
     trained_made = trained_charts(trained_records(root), panels)
     spend, forecast, budget = cost_series(ledger_lines([private_root / LEDGER, r_ledger]))
     cost_made = cost_chart(spend, forecast, budget, panels)
-    tabs = tables(openings(root), time_targets(root), earlier_results(root), gate_made, scoreboard_earlier)
+    tabs = tables(openings(root), time_targets(root), earlier_results(root), gate_made, scoreboard_earlier,
+                  other_published(root))
     (out / "index.html").write_text(dashboard(panels, gate_made, note, trained_made, cost_made, tabs),
                                     encoding="utf-8", newline="\n")
     check_output(out)
@@ -451,6 +485,18 @@ def self_test():
         results.append(("the direction-only row in the table, not the chart",
                         "direction only, not a gate figure" in page_a and page_a.count('"x": [1]') >= 2))
         results.append(("two builds identical", page_a == (Path(td) / "b" / "index.html").read_text(encoding="utf-8")))
+        wide = ("| Time | What changed | Set | ContraDoc: system / B1 / cloud ref | gap to (a) / (b) | "
+                "SciTab: system / B1 / cloud ref | gap to (a) / (b) | PUBHEALTH: system / B1 / cloud ref | Since last |"
+                "\n|---|---|---|---|---|---|---|---|---|\n"
+                "| 2026-11-10 10:00 | a later benchmark | held-out quick | 61.0 / 55.0 / 70.0 | | 50.0 / 48.0 / 66.0 | "
+                "| 40.0 / 38.0 / 52.0 | |\n")
+        (root / SCOREBOARD).write_text(wide, encoding="utf-8")
+        summary = build(root, Path(td) / "e")
+        page_e = (Path(td) / "e" / "index.html").read_text(encoding="utf-8")
+        panel = page_e[page_e.index('Plotly.newPlot("gate_pubhealth"'):]
+        panel = panel[:panel.index("\n")]
+        results.append(("a benchmark added as a scoreboard column is charted, with no gate bars",
+                        summary["gate_charts"] == 3 and "Bar (a)" not in panel and "out-of-domain check" in panel))
         (root / SCOREBOARD).write_text(board % standard.replace("held-out quick", "sealed test"), encoding="utf-8")
         try:
             build(root, Path(td) / "c")
