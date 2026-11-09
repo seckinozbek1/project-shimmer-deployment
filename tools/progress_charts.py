@@ -75,8 +75,10 @@ TARGETS = Path("docs/loop/stages/targets/TARGET_TABLE.md")
 CAUSAL_PLAN = Path("docs/loop/stages/CAUSAL_PROBE_PLAN.md")
 # The published figure drawn as each other benchmark's reference line (D-388, D-392). The QUALIFYING rows
 # are a declared reading of each record: the open models with no training on the task, zero-shot, in the
-# paper's primary metric. Among them the line is the one nearest in parameter count to B1's model; a tie in
-# that distance, or a size neither side states, draws no line. The lowest figure is never chosen as such,
+# paper's primary metric. One qualifying row is the line whatever its size (no choice to bias). Among
+# several, the line is the one nearest in parameter count to B1's model; a tie in that distance, B1's size
+# not stated, or ANY qualifying row with no size draws no line, never a choice among the sized rows only
+# (D-396). The lowest figure is never chosen as such,
 # and every qualifying row is listed beside the chart with its distance. Figures and sizes are read from
 # the records (a size from a "<number>B" in the model's name), never typed here.
 # (benchmark: (record, column, the qualifying rows: (system cell starts with or None, model starts with)))
@@ -86,9 +88,12 @@ REFERENCE_ROWS = {"PUBHEALTH": (OTHER_RULES, "Figure", (("Zero-shot, single prom
                   "CLadder": (CAUSAL_PLAN, "Overall", ((None, "LLaMa"), (None, "Alpaca"))),
                   "Corr2Cause": (CAUSAL_PLAN, "F1", ((None, "RoBERTa MNLI (open"),))}
 REFERENCE_RULE = ("Each published reference line is the open model with no training on the task, zero-shot, in "
-                  "the paper's primary metric; among several, the one nearest in parameter count to B1's model. A "
-                  "tie in that distance, or a size not stated, draws no line, and the lowest figure is never chosen "
-                  "as such. Every qualifying row is listed in the table below with its distance (D-388, D-392).")
+                  "the paper's primary metric. When only one row qualifies, it is the line whatever its size: with "
+                  "one row there is no choice to bias. When several qualify, the line is the one nearest in "
+                  "parameter count to B1's model, and no line is drawn when any of them states no size (never a "
+                  "choice among the sized ones only) or when two are equally near. The lowest figure is never "
+                  "chosen as such. Every qualifying row is listed in the table below with its distance "
+                  "(D-388, D-392, D-396).")
 BARE_MODEL = Path("benchmark/baselines/bare_model.py")
 LOCAL_MODELS = Path("config/local_models.json")
 SIZE = re.compile(r"(?<![0-9.])([0-9]+(?:\.[0-9]+)?)\s?B\b")
@@ -460,8 +465,9 @@ def reference_candidates(root):
             distances = sorted((abs(f[1] - b1_size), f[0]) for f in sized) if b1_size is not None else []
             if b1_size is None:
                 pick, why = None, "no line: B1's size is not stated"
-            elif not distances:
-                pick, why = None, "no line: no qualifying row states its size"
+            elif len(sized) < len(found):  # never a choice among the sized rows only (D-396)
+                pick, why = None, "no line: several rows qualify and %d of %d state no size" % (
+                    len(found) - len(sized), len(found))
             elif len(distances) > 1 and distances[0][0] == distances[1][0]:
                 pick, why = None, "no line: a tie in distance to B1's size"
             else:
@@ -1153,6 +1159,17 @@ def self_test():
         results.append(("a tie in distance draws no line, both rows listed",
                         "no line: a tie in distance to B1&#x27;s size" in tied and "LLaMa-6B" in tied
                         and len(_traces(tied, "gate_cladder")) == 3))
+        plan.write_text(kept.replace("Alpaca-8B (open model)", "Alpaca (open model)").replace(
+            "### 6.1", "Corr2Cause test split, in percent:\n\n| Model (label per D-S73) | F1 | Accuracy |\n"
+                       "|---|---|---|\n| RoBERTa MNLI (open, small) | 22.79 | 82.50 |\n\n### 6.1"), encoding="utf-8")
+        _, picked, listed = reference_candidates(root)
+        results.append(("one qualifying row with no size is the line (no choice to bias)",
+                        picked.get("Corr2Cause", (None,))[0] == 22.79
+                        and any(r[0] == "Corr2Cause" and r[5] == "the only qualifying row" for r in listed)))
+        results.append(("several qualifying, one with no size: no line, never the sized one alone, the reason given",
+                        "CLadder" not in picked and all(r[5] == "no line: several rows qualify and 1 of 2 state no size"
+                                                        for r in listed if r[0] == "CLadder")
+                        and len([r for r in listed if r[0] == "CLadder"]) == 2))
         lowest = globals()["reference_candidates"]
 
         def lowest_figure(root_):  # neutralised: the lowest figure chosen, as the rule forbids
