@@ -73,7 +73,7 @@ METRIC = {"ContraDoc": "binary judgment accuracy, 2 classes", "SciTab": "macro-F
 OTHER_RULES = Path("docs/loop/stages/targets/OTHER_DOMAIN_RULES.md")
 TARGETS = Path("docs/loop/stages/targets/TARGET_TABLE.md")
 CAUSAL_PLAN = Path("docs/loop/stages/CAUSAL_PROBE_PLAN.md")
-# The published figure drawn as each other benchmark's reference line: the open model with no training on
+# The published figure drawn as each other benchmark's reference line, by the rule D-388 accepted: the open model with no training on
 # the task, zero-shot, in the paper's primary metric. The figure is read from the record, never typed here;
 # the full tables are listed beside the chart. (benchmark: (record, row's first cell starts with, column))
 REFERENCE_ROWS = {"PUBHEALTH": (OTHER_RULES, ("Zero-shot, single prompt", "Mistral-7B"), "Figure"),
@@ -617,8 +617,9 @@ OTHER_NOTE = ("PUBHEALTH (an out-of-domain check) and CLadder and Corr2Cause (th
               "Shimmer benchmark) are measured as the gate's two are: the system, B1 and the cloud reference on the "
               "same items, each with its interval, and the published figure drawn as a labelled reference line, its "
               "source and setting differences in its hover and in the tables below. No comparable published system "
-              "exists for them, so their bar is B1 (D-S73 item 2); the gate's two bars do not apply. A benchmark "
-              "with no measurement yet is listed as not yet measured.")
+              "exists for them, so their bar is B1 (D-S73 item 2); the gate's two bars do not apply. The reference "
+              "line is chosen by one rule (D-388): the open model with no training on the task, zero-shot, in the "
+              "paper's primary metric. A benchmark with no measurement yet is listed as not yet measured.")
 ROLES_NOTE = ("Every model-backed role: each agent of the registry and each trained part. Where the scoreboard "
               "has a row, its trained and untrained figures, the margin written before the read, the held-out "
               "value with its interval and the attempt; otherwise the stated reason it is not trained, or that "
