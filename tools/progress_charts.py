@@ -73,12 +73,25 @@ METRIC = {"ContraDoc": "binary judgment accuracy, 2 classes", "SciTab": "macro-F
 OTHER_RULES = Path("docs/loop/stages/targets/OTHER_DOMAIN_RULES.md")
 TARGETS = Path("docs/loop/stages/targets/TARGET_TABLE.md")
 CAUSAL_PLAN = Path("docs/loop/stages/CAUSAL_PROBE_PLAN.md")
-# The published figure drawn as each other benchmark's reference line, by the rule D-388 accepted: the open model with no training on
-# the task, zero-shot, in the paper's primary metric. The figure is read from the record, never typed here;
-# the full tables are listed beside the chart. (benchmark: (record, row's first cell starts with, column))
-REFERENCE_ROWS = {"PUBHEALTH": (OTHER_RULES, ("Zero-shot, single prompt", "Mistral-7B"), "Figure"),
-                  "CLadder": (CAUSAL_PLAN, ("LLaMa",), "Overall"),
-                  "Corr2Cause": (CAUSAL_PLAN, ("RoBERTa MNLI (open",), "F1")}
+# The published figure drawn as each other benchmark's reference line (D-388, D-392). The QUALIFYING rows
+# are a declared reading of each record: the open models with no training on the task, zero-shot, in the
+# paper's primary metric. Among them the line is the one nearest in parameter count to B1's model; a tie in
+# that distance, or a size neither side states, draws no line. The lowest figure is never chosen as such,
+# and every qualifying row is listed beside the chart with its distance. Figures and sizes are read from
+# the records (a size from a "<number>B" in the model's name), never typed here.
+# (benchmark: (record, column, the qualifying rows: (system cell starts with or None, model starts with)))
+REFERENCE_ROWS = {"PUBHEALTH": (OTHER_RULES, "Figure", (("Zero-shot, single prompt", "Mistral-7B"),
+                                                        ("Zero-shot", "Vicuna-13B"), ("Zero-shot", "Llama-70B"),
+                                                        ("Zero-shot", "Falcon-180B"))),
+                  "CLadder": (CAUSAL_PLAN, "Overall", ((None, "LLaMa"), (None, "Alpaca"))),
+                  "Corr2Cause": (CAUSAL_PLAN, "F1", ((None, "RoBERTa MNLI (open"),))}
+REFERENCE_RULE = ("Each published reference line is the open model with no training on the task, zero-shot, in "
+                  "the paper's primary metric; among several, the one nearest in parameter count to B1's model. A "
+                  "tie in that distance, or a size not stated, draws no line, and the lowest figure is never chosen "
+                  "as such. Every qualifying row is listed in the table below with its distance (D-388, D-392).")
+BARE_MODEL = Path("benchmark/baselines/bare_model.py")
+LOCAL_MODELS = Path("config/local_models.json")
+SIZE = re.compile(r"(?<![0-9.])([0-9]+(?:\.[0-9]+)?)\s?B\b")
 PRE_STANDARD = re.compile(r"direction only|pre-standard|not a gate figure", re.I)
 BAR_DEFAULTS = (10.0, 5.0)  # D-S92's defaults; the scoreboard's own sentences are read first
 REFUSED_SETS = re.compile(r"seal|test|fresh", re.I)
@@ -122,8 +135,8 @@ ROLE_COLUMNS = (
     ("Trained", "yes or no"),
     ("Attempt", "the attempt number"),
     ("Metric and setting", "the metric the part is read in, with its class setting"),
-    ("Untrained (95% CI)", "the untrained form on the tuning half, value [low, high]"),
-    ("Trained (95% CI)", "the chosen candidate on the tuning half (in-sample), value [low, high]"),
+    ("Untrained, tuning half, in-sample (95% CI)", "the untrained form on the tuning half, value [low, high]"),
+    ("Trained, tuning half, in-sample (95% CI)", "the chosen candidate on the tuning half, value [low, high]"),
     ("Margin written", "the margin written before the read"),
     ("Held-out value (95% CI)", "the held-out read as a value, value [low, high]"),
     ("Held-out n", "the held-out items scored"),
@@ -149,6 +162,7 @@ SCHEMA = (("Benchmark rows", BENCH_COLUMNS), ("Model-backed roles", ROLE_COLUMNS
 EVALUATIONS_EXPECTED = ("Development-case recall", "Clean-twin false positives", "Meaningful-output sample",
                         "Computed path scored apart", "Flag precision", "Fresh-read scorer",
                         "S8 sealed evaluation")
+UNTRAINED_HEAD, TRAINED_HEAD = "Untrained, tuning half, in-sample (95% CI)", "Trained, tuning half, in-sample (95% CI)"
 HOVER_FIELDS = ("n", "Bootstrap unit", "System (95% CI)", "B1 (95% CI)", "Cloud reference (95% CI)",
                 "Gap to (a) / (b)", "Machine type", "Price (USD/h)", "Region", "Minutes", "Speed (items/h)",
                 "Run cost (USD)", "Cumulative cost (USD)", "Factor record", "Since last")
@@ -355,10 +369,118 @@ def causal_published(root):
     return out
 
 
+def b1_model(root):
+    """B1's model and size as bare_model.resolve_reader reads them under the local profile: the reading
+    agent named in bare_model.py, its registry `local` block, then config/local_models.json's active id
+    for that backend. (model id, size in billions or None, how it was read)."""
+    found = None
+    if (root / BARE_MODEL).is_file():
+        found = re.search(r'^READING_AGENT\s*=\s*"([A-Z_]+)"', (root / BARE_MODEL).read_text(encoding="utf-8"), re.M)
+    if not found or not (root / REGISTRY).is_file():
+        return None, None, "the reading agent or the registry is not in this checkout"
+    entry = json.loads((root / REGISTRY).read_text(encoding="utf-8")).get("agents", {}).get(found.group(1), {})
+    local = entry.get("local") if isinstance(entry.get("local"), dict) else {}
+    backend, model = local.get("backend"), local.get("model")
+    try:
+        chosen = json.loads((root / LOCAL_MODELS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        chosen = {}
+    key = {"local_producer": "active_producer", "local_auditor": "active_auditor"}.get(backend)
+    if key and str(chosen.get(key) or "").strip():
+        model = chosen[key].strip()
+    if not model:
+        return None, None, "the reading agent %s has no local model" % found.group(1)
+    size = SIZE.search(model)
+    return model, float(size.group(1)) if size else None, ("the reading agent %s, backend %s, as bare_model.py "
+                                                            "resolves it; size read from the id" % (found.group(1), backend))
+
+
+def _qualifying(root, bench):
+    """The qualifying rows of one benchmark's record: (model, size or None, value, the row's words)."""
+    record, column, wanted = REFERENCE_ROWS[bench]
+    path = root / record
+    if not path.is_file():
+        return None, []
+    text = path.read_text(encoding="utf-8")
+    if record == CAUSAL_PLAN:
+        section = text[text.find("## 6."):]
+        section = section[:section.find("### 6.1")] if "### 6.1" in section else section
+        begin = section.find(bench)
+        block = section[begin:] if begin >= 0 else ""
+        unlike = re.search(r"(None of these is like for like:[^.]*)\.", re.sub(r"\s+", " ", section))
+    else:
+        block = text
+        unlike = re.search(r"never a like-for-like comparison \(([^)]*)\)", re.sub(r"\s+", " ", text))
+    lines = block.splitlines()
+    head = next((_cells(l) for l in lines if l.startswith("| ") and column in _cells(l)), None)
+    if head is None:
+        return None, []
+    model_col = next((h for h in head if h.startswith("Model")), None)
+    start = next(i for i, l in enumerate(lines) if l.startswith("| ") and _cells(l) == head)
+    out = []
+    for row in lines[start + 2:]:
+        if not row.startswith("|"):
+            break
+        cells = dict(zip(head, _cells(row)))
+        models = [m.strip() for m in cells.get(model_col, "").split(" / ")]
+        values = [v.strip() for v in cells.get(column, "").split(" / ")]
+        if len(models) != len(values):
+            continue
+        for model, value in zip(models, values):
+            for system, name in wanted:
+                if model.startswith(name) and (system is None or cells.get(head[0], "").startswith(system)):
+                    figure_value = figure(value)[0]
+                    if figure_value is None:
+                        continue
+                    size = SIZE.search(model)
+                    words = ", ".join(_plain(c) for h, c in cells.items()
+                                      if h not in (column, model_col) and c and figure(c)[0] is None)
+                    out.append((_plain(model), float(size.group(1)) if size else None, figure_value,
+                                "%s; %s %s" % (words, column, value)))
+                    break
+    unique = []
+    for entry in out:
+        if entry[0] not in [u[0] for u in unique]:
+            unique.append(entry)
+    return (_plain(unlike.group(1)) if unlike else "its setting differences are in the table"), unique
+
+
+def reference_candidates(root):
+    """(B1's model, size, how read), and per benchmark the qualifying rows with the one chosen and why."""
+    b1, b1_size, how = b1_model(root)
+    chosen, rows = {}, []
+    for bench in REFERENCE_ROWS:
+        unlike, found = _qualifying(root, bench)
+        if not found:
+            continue
+        if len(found) == 1:
+            pick, why = found[0], "the only qualifying row"
+        else:
+            sized = [f for f in found if f[1] is not None]
+            distances = sorted((abs(f[1] - b1_size), f[0]) for f in sized) if b1_size is not None else []
+            if b1_size is None:
+                pick, why = None, "no line: B1's size is not stated"
+            elif not distances:
+                pick, why = None, "no line: no qualifying row states its size"
+            elif len(distances) > 1 and distances[0][0] == distances[1][0]:
+                pick, why = None, "no line: a tie in distance to B1's size"
+            else:
+                pick = next(f for f in sized if f[0] == distances[0][1])
+                why = "nearest in parameter count to B1's model"
+        if pick:
+            chosen[bench] = (pick[2], "published figure (D-S73), a reference, not like for like: %s, %s. %s"
+                             % (pick[0], pick[3], unlike))
+        for f in found:
+            distance = ("%g" % abs(f[1] - b1_size)) if (f[1] is not None and b1_size is not None) else NOT_RECORDED
+            rows.append([bench, f[0], ("%gB" % f[1]) if f[1] is not None else "not stated in the record",
+                         "%g" % f[2], distance, why if (pick and f is pick) or not pick else "listed, not chosen",
+                         f[3]])
+    return (b1, b1_size, how), chosen, rows
+
+
 def reference_lines(root):
     """{benchmark: (value in percent, sentence)}: the gate's two from the target table's bold "Comparable
-    bar" lines; the others from the row `REFERENCE_ROWS` names, with the record's own statement of why
-    it is not like for like."""
+    bar" lines (the comparable systems, D-S73); the others by `REFERENCE_RULE` among the qualifying rows."""
     out = {}
     path = root / TARGETS
     if path.is_file():
@@ -366,40 +488,7 @@ def reference_lines(root):
         for bench, value, rest in re.findall(r"\*\*Comparable bar, (\w+): ([0-9.]+) (.*?)\*\*", text):
             out[bench] = (round(float(value) * 100, 4) if float(value) <= 1 else float(value),
                           "published comparable bar (D-S73): %s %s" % (value, rest.rstrip(".")))
-    for bench, (record, starts, column) in REFERENCE_ROWS.items():
-        path = root / record
-        if not path.is_file():
-            continue
-        text = path.read_text(encoding="utf-8")
-        if record == CAUSAL_PLAN:
-            section = text[text.find("## 6."):]
-            section = section[:section.find("### 6.1")] if "### 6.1" in section else section
-            begin = section.find(bench)
-            block = section[begin:] if begin >= 0 else ""
-            unlike = re.search(r"(None of these is like for like:[^.]*)\.", re.sub(r"\s+", " ", section))
-        else:
-            block = text
-            unlike = re.search(r"never a like-for-like comparison \(([^)]*)\)", re.sub(r"\s+", " ", text))
-        lines = block.splitlines()
-        head = next((_cells(l) for l in lines if l.startswith("| ") and column in _cells(l)), None)
-        if head is None:
-            continue
-        start = next(i for i, l in enumerate(lines) if l.startswith("| ") and _cells(l) == head)
-        for row in lines[start + 2:]:
-            if not row.startswith("|"):
-                break
-            cells = dict(zip(head, _cells(row)))
-            if all(any(c.startswith(s) for c in list(cells.values())[:2]) for s in starts):
-                value, _, _ = figure(cells.get(column, ""))
-                if value is None:
-                    break
-                # the row's words (system, model, setting, source), not its other figures
-                described = ", ".join(_plain(c) for h, c in cells.items()
-                                      if h != column and c and figure(c)[0] is None)
-                out[bench] = (value, "published figure (D-S73), a reference, not like for like: %s; %s %s. %s"
-                              % (described, column, cells[column],
-                                 _plain(unlike.group(1)) if unlike else "its setting differences are in the table"))
-                break
+    out.update(reference_candidates(root)[1])
     return out
 
 
@@ -685,11 +774,11 @@ OTHER_NOTE = ("PUBHEALTH (an out-of-domain check) and CLadder and Corr2Cause (th
               "Shimmer benchmark) are measured as the gate's two are: the system, B1 and the cloud reference on the "
               "same items, each with its interval, and the published figure drawn as a labelled reference line, its "
               "source and setting differences in its hover and in the tables below. No comparable published system "
-              "exists for them, so their bar is B1 (D-S73 item 2); the gate's two bars do not apply. The reference "
-              "line is chosen by one rule (D-388): the open model with no training on the task, zero-shot, in the "
-              "paper's primary metric. A benchmark with no measurement yet is listed as not yet measured.")
+              "exists for them, so their bar is B1 (D-S73 item 2); the gate's two bars do not apply. "
+              + REFERENCE_RULE + " A benchmark with no measurement yet is listed as not yet measured.")
 ROLES_NOTE = ("Every model-backed role: each agent of the registry and each trained part. Where the scoreboard "
-              "has a row, its trained and untrained figures, the margin written before the read, the held-out "
+              "has a row, its trained and untrained figures on the tuning half, in-sample (the tuning half chose "
+              "the candidate), the margin written before the read, the held-out "
               "value with its interval and the attempt; otherwise the stated reason it is not trained, or that "
               "the scoreboard has no row for it yet.")
 TRAINED_NOTE = ("Each trained part's figures on its tuning half, where the candidate was chosen: in-sample, so a "
@@ -712,8 +801,8 @@ def _figure_cell(text):
 
 
 def roles_table(board, registry, trained, open_rows):
-    head = ["Role", "Local backend and model", "Trained", "Attempt", "Metric and setting", "Untrained (95% CI)",
-            "Trained (95% CI)", "Margin written", "Held-out value (95% CI)", "Held-out n", "Bootstrap unit",
+    head = ["Role", "Local backend and model", "Trained", "Attempt", "Metric and setting",
+            "Untrained, tuning half, in-sample (95% CI)", "Trained, tuning half, in-sample (95% CI)", "Margin written", "Held-out value (95% CI)", "Held-out n", "Bootstrap unit",
             "Result", "Evidence", "Reason not trained"]
     backends = dict(registry)
     rows, named = [], set()
@@ -770,8 +859,13 @@ def factors_table(changes):
     return ["Row", "Time", "Benchmark", "Machine type", "Machine change", "Factor record (D-S82)"], rows
 
 
-def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, registry, budget):
+def tables(open_rows, times, earlier, made, board, other_pub, trained, causal, registry, budget, candidates):
+    (b1, b1_size, how), _, candidate_rows = candidates
     out = {
+        "b1_model": (["B1's model", "Size (billions of parameters)", "How it was read"],
+                     [[b1 or NOT_RECORDED, "%g" % b1_size if b1_size is not None else "not stated in its id", how]]),
+        "reference_candidates": (["Benchmark", "Qualifying model", "Size", "Figure",
+                                  "Distance to B1's size (billions)", "Chosen", "The row"], candidate_rows),
         "roles": roles_table(board, registry, trained, open_rows),
         "trained": (["Part", "Attempt", "Candidate chosen on the tuning half", "Metric", "Trained", "Untrained",
                      "Margin required", "Passed the tuning half", "Record"],
@@ -828,7 +922,7 @@ def dashboard(panels, made, gate_note, cost_made, tabs):
                  "" if any(b in BENCHMARKS for b, _ in made) else GATE_PENDING % gate_note, None),
                 ("Out-of-domain check and causal probe",
                  [p for p in panels if p["id"].startswith("gate_") and p["id"] not in gate_ids],
-                 OTHER_NOTE, ["other_published"] + sorted(k for k in tabs if k.startswith("causal_"))),
+                 OTHER_NOTE, ["b1_model", "reference_candidates", "other_published"] + sorted(k for k in tabs if k.startswith("causal_"))),
                 ("Model-backed roles", [], ROLES_NOTE, "roles"),
                 ("Trained parts", [], TRAINED_NOTE, ["trained", "openings"]),
                 ("Other measured evaluations", [], EVALS_NOTE, "evaluations"),
@@ -911,7 +1005,7 @@ def build(root, out, scoreboard_file, ledger, item_sets, r_ledger=None):
     cost_made = cost_chart(spend, forecast, budget, panels)
     times = time_targets(root)
     tabs = tables(openings(root), times, earlier_results(root), made, board, other_published(root), trained,
-                  causal_published(root), registry_roles(root), budget)
+                  causal_published(root), registry_roles(root), budget, reference_candidates(root))
     (out / "index.html").write_text(dashboard(panels, made, board["note"], cost_made, tabs),
                                     encoding="utf-8", newline="\n")
     check_output(out, refused)
@@ -958,7 +1052,7 @@ def self_test():
                  "Cloud reference (95% CI)": "63.0 [58.0, 68.0]"})
     early = dict(first, Row="A0", Time="2026-11-09 18:00", **{"What changed": "direction only, not a gate figure",
                  "Set": "interim"})
-    roles = ("\n| Role | Trained | Attempt | Metric and setting | Untrained (95% CI) | Trained (95% CI) | Margin written "
+    roles = ("\n| Role | Trained | Attempt | Metric and setting | Untrained, tuning half, in-sample (95% CI) | Trained, tuning half, in-sample (95% CI) | Margin written "
              "| Held-out value (95% CI) | Held-out n | Bootstrap unit | Result | Evidence | Reason not trained |\n"
              "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
              "| JUDGE | yes | 2 | macro-F1, 3 classes | 70.3 [61.0, 79.0] | 79.7 [71.0, 87.0] | 5 points | "
@@ -971,8 +1065,11 @@ def self_test():
     target = ("**Comparable bar, ContraDoc: 0.681 binary judgment accuracy.** Source: a planted line.\n")
     causal = ("## 6. Published figures\n\nNone of these is like for like: the prompts differ.\n\nCLadder v1, in "
               "percent:\n\n| Model (label per D-S73) | Overall | Rung 1 |\n|---|---|---|\n"
-              "| Random | 49.27 | 50.28 |\n| LLaMa (open model) | 45.22 | 63.33 |\n\n### 6.1 Search\n")
-    registry = {"agents": {"JUDGE": {"model": "m-judge", "backend": "local_auditor"},
+              "| Random | 49.27 | 50.28 |\n| LLaMa-3B (open model) | 40.10 | 51.00 |\n"
+              "| Alpaca-8B (open model) | 45.22 | 63.33 |\n\n### 6.1 Search\n")
+    registry = {"agents": {"PROCESSOR": {"model": "m-cloud", "backend": "claude_api",
+                                         "local": {"backend": "local_producer", "model": "org/Base-7B-Instruct"}},
+                           "JUDGE": {"model": "m-judge", "backend": "local_auditor"},
                            "REDACTOR": {"model": "m-red", "backend": "qwen_local"},
                            "VERIFIER": {"model": "m-cloud", "backend": "openai_api",
                                         "local": {"backend": "local_auditor", "model": "m-local"}}}}
@@ -982,7 +1079,8 @@ def self_test():
         ledger_file = Path(td) / "kept" / "ledger.jsonl"
         item_sets = Path(td) / "sets" / "items"
         board_file.parent.mkdir(parents=True)
-        for rel, text in ((TARGETS, target), (CAUSAL_PLAN, causal), (REGISTRY, json.dumps(registry))):
+        for rel, text in ((TARGETS, target), (CAUSAL_PLAN, causal), (REGISTRY, json.dumps(registry)),
+                          (BARE_MODEL, 'READING_AGENT = "PROCESSOR"   # planted\n')):
             (root / rel).parent.mkdir(parents=True, exist_ok=True)
             (root / rel).write_text(text, encoding="utf-8")
         planted = {"schema": "auditor-rule-check-half-a-v1", "part": "planted_part", "attempt": 1,
@@ -1029,7 +1127,7 @@ def self_test():
         results.append(("every registry role and trained part has a row, held-out values as values",
                         all(n in page_a for n in ("VERIFIER", "local_auditor, m-local", "planted_part",
                                                   "66.1 [55.0, 76.0]", "rules only, no labelled spans to train on"))
-                        and summary["roles"] == 4))
+                        and summary["roles"] == 5))
         results.append(("every evaluation D-S102 names listed, the held one with its figure",
                         "82.5 [70.0, 92.5]" in page_a and summary["evaluations"] == len(EVALUATIONS_EXPECTED)
                         and page_a.count("not on the scoreboard yet") == len(EVALUATIONS_EXPECTED) - 1))
@@ -1040,6 +1138,37 @@ def self_test():
         results.append(("a trained part's in-sample figures in the table, never a chart",
                         "planted_candidate" in page_a and "0.600" in page_a and 'Plotly.newPlot("trained_' not in page_a))
         results.append(("two builds identical", page_a == run("b")[1]))
+        results.append(("B1's model and size named on the page", "org/Base-7B-Instruct" in page_a
+                        and "<td>7</td>" in page_a))
+        results.append(("the reference line nearest B1's size, not the lowest figure, the other row listed",
+                        "nearest in parameter count to B1&#x27;s model" in page_a and "LLaMa-3B (open model)" in page_a
+                        and "listed, not chosen" in page_a and _traces(page_a, "gate_cladder")[3]["y"] == [45.22, 45.22]))
+        results.append(("the rule stated on the page", html.escape(REFERENCE_RULE) in page_a))
+        results.append(("the roles table says in-sample", html.escape(UNTRAINED_HEAD) in page_a
+                        and html.escape(TRAINED_HEAD) in page_a and "in-sample (the tuning half chose" in page_a))
+        plan = root / CAUSAL_PLAN
+        kept = plan.read_text(encoding="utf-8")
+        plan.write_text(kept.replace("LLaMa-3B", "LLaMa-6B"), encoding="utf-8")
+        tied = run("tie")[1]
+        results.append(("a tie in distance draws no line, both rows listed",
+                        "no line: a tie in distance to B1&#x27;s size" in tied and "LLaMa-6B" in tied
+                        and len(_traces(tied, "gate_cladder")) == 3))
+        lowest = globals()["reference_candidates"]
+
+        def lowest_figure(root_):  # neutralised: the lowest figure chosen, as the rule forbids
+            info, chosen, rows = lowest(root_)
+            for bench in chosen:
+                unlike, found = _qualifying(root_, bench)
+                pick = min(found, key=lambda f: f[2])
+                chosen[bench] = (pick[2], chosen[bench][1])
+            return info, chosen, rows
+        globals()["reference_candidates"] = lowest_figure
+        plan.write_text(kept, encoding="utf-8")
+        try:
+            caught = _traces(run("low")[1], "gate_cladder")[3]["y"] != [45.22, 45.22]
+        finally:
+            globals()["reference_candidates"] = lowest
+        results.append(("neutralised, the lowest-figure choice is caught by the proof above", caught))
         write(lines + [dict(first, Benchmark="NewBench")])
         summary, page_e = run("e")
         results.append(("a benchmark added on the scoreboard is charted, with no gate bars",
