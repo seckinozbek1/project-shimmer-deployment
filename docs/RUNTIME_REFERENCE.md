@@ -36,7 +36,7 @@ flowchart TD
   M --> N[O and L: document masters and rendered files]
   Q --> Z[O and L: final run summary index]
   M --> Q[D: phase 8 end-work]
-  Q --> T[P: best-effort ontology capture, graph and structural GNN state]
+  Q --> T[P: best-effort ontology capture and graph; no GNN training]
   Q --> U[L: run completion and identity]
   H --> V[O: authenticated API and console]
   I --> V
@@ -50,9 +50,11 @@ verification (5), convention review (5.5), synthesis (6), editorial review (6.5)
 audit synthesis and governed DELTA escalation (7), redaction (9), then end-work (8).
 The diagram groups audit/end records for readability: audit synthesis is written
 **before** redaction; the final deliverables index follows end-work. Draft adds
-phase 0 before ordinary review. Ontology capture and GNN maintenance are best
-effort at the end; their failure does not itself fail a completed review. There
-is no ontology/GNN-to-review-agent feedback arrow in the current runtime.
+phase 0 before ordinary review. Ontology capture and the graph rebuild are best
+effort at the end; their failure does not itself fail a completed review. No run
+trains the GNN (D-S112 item 1): it is trained only by its own command,
+`scripts/ontology_gnn.py train`, on a declared training set. There is no
+ontology/GNN-to-review-agent feedback arrow in the current runtime.
 
 ### Input, role and governance routing
 
@@ -82,7 +84,7 @@ Some older relevance/label mechanisms remain heuristic. External rule proposals
 and answered structural conflicts are loaded, but applicable external rules are
 not automatically merged into the compiled convention registry.
 
-### All 18 agents: actual tasks, profiles and downstream consumers
+### All 19 agents: actual tasks, profiles and downstream consumers
 
 Model values below are the shipped registry's Cloud configuration and pipeline's
 Local overrides resolved through `config/local_models.json`. That file selects the
@@ -97,6 +99,7 @@ model used by a historical run; use that run's bus and cost/call records for tha
 | `VERIFIER` | Check draft fidelity | V | `openai_api` / `gpt-4o` | `local_auditor` / `unsloth/Phi-3.5-mini-instruct-bnb-4bit` | accepted draft + source -> findings -> synthesis/report/bus |
 | `FACT_CHECKER` | Check draft claims | V | `openai_api` / `gpt-4o` | `local_auditor` / `unsloth/Phi-3.5-mini-instruct-bnb-4bit` | accepted draft + source; permitted search -> verdicts/references -> synthesis/report/bus |
 | `PRACTICE_AUDITOR` | Convention conformance | J | `openai_api` / `gpt-4o` | `local_auditor` / `unsloth/Phi-3.5-mini-instruct-bnb-4bit` | assigned rules + units -> typed findings -> amendments; wide also sees inventory |
+| `JUDGE` | One narrow question from its own answer probabilities (INFRA-049) | D | `local_auditor` / `unsloth/phi-4-bnb-4bit` | `local_auditor` / `unsloth/phi-4-bnb-4bit` | Python-selected cells and claim, or two passages, plus declared tools' results -> decision -> model record (never an amendment); tool records in `audit/judge_tools.jsonl`. No shipped rule declares a judge task yet, so no run has reached JUDGE |
 | `LEGAL_ANALYST` | Legal basis/precedent and bounded deepening | P+L | `claude_api` / `claude-opus-4-8` | `local_producer` / `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` | source + ARCHIVIST inventory -> findings -> amendments/report/bus |
 | `STYLE_GUARDIAN` | Wording conventions | J | `claude_api` / `claude-haiku-4-5` | `local_producer` / `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` | assigned wording rules + units -> typed findings -> amendments |
 | `ARCHIVIST` | Corpus structure and chronology | C | `claude_api` / `claude-sonnet-4-6` | `local_producer` / `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` | corpus digest -> inventory -> legal and wide practice tasks; bus |
@@ -121,6 +124,7 @@ Gate/trigger keys define eligibility, activation, repeat bounds and UI exposure:
 | L | Local LEGAL pass-one findings trigger `local_finding_deepening`, up to `DEEPEN_MAX_FINDINGS=6`, serially. Empty/unavailable first pass or cap is recorded; retained initial findings are not silently discarded. | Deepened legal findings; no automatic retry for a malformed contract. |
 | V | Once per operational document in phase 5; accepted PROCESSOR projection plus source and draft-availability metadata. | Findings, report, references and synthesis. Missing draft is not invented content. |
 | J | Wide: assigned or untagged rules. Paired: first eligible consumer for the rule; untagged defaults to PRACTICE_AUDITOR. Per-plan semantic questions; computed cases can need no call. Missing consumer/refused applicability/no work remains explicit. | Pairing map, typed findings, refusals and amendments. |
+| D | A rule declaring a task the judge's contract declares (`[compare: cells]`; `[compare: passages]` under the decision form), with a measured threshold; one question per selected table or per pair order, its declared tools run by Python. No declaration, no threshold or a refused selection asks nothing and says so. No shipped rule declares such a task yet, so JUDGE has not been called in any run. | Pairing map decision rows, model records marked and never promoted, tool records. |
 | M | Fresh bus payload bypasses polish; otherwise `--amendment-polish` permits one call per typed irregular finding. Default is deterministic templates. Only explanation/proposed text may be polished. Draft separately makes one free-text memo call. | Master and rendered amendments; memo for Draft. |
 | E0-E5 | Readable master and permissible privacy posture. Clerk starts; each next rank requires lower confidence than the configured threshold (default 0.7) or enabled out-of-mandate trigger. Configured board cap bounds climbs; failure does not summon a contract retry. | Advisory records and annotations only; board does not rewrite the master or decide whether it ships. |
 | R | Active sensitivity layer, no waiver, compiled rules and readable master. Phase entry alone is not a call. | Redaction state and regenerated deliverables. HELD_WARNING differs from NONE; BLOCKED produces nonzero exit. |
@@ -136,8 +140,10 @@ retry. Draft's initial free-text call bypasses this envelope path.
 `audit/agent_activation.json` records eligibility, requested activation, actual
 dispatch attempt, reason, phase, trigger, repeat bound and outcome. A dispatch is
 not necessarily successful generation. `phase_not_reached` has unknown eligibility;
-`ineligible`, `eligible_inactive`, `activated_not_dispatched`, preparation failure,
-execution failure, completion, recovery and truncation must not be collapsed.
+`ineligible`, `eligible_inactive`, `activated_not_dispatched`, `switched_off` (an
+agent the operator switched off under a ratified amendment, for example INST_FINDER),
+preparation failure, execution failure, completion, recovery and truncation must not
+be collapsed.
 
 ## Outputs and operator surfaces
 
@@ -169,6 +175,40 @@ ontology/GNN processing. It does not produce conventional review amendments or
 promote negotiation state into durable memory. Existing startup model/privacy
 governance still applies; Sensitive case analysis is unavailable.
 
+Before the PROCESSOR and VERIFIER calls, the case phase reviews the declared rounds
+in sequence in Python only (`scripts/multi_round_rounds.py`), with the same pairing
+map and arithmetic as paired review. A unit is recomputed only when something its
+computation reads changed: its own text, the full rules paired to it, the
+document's field labels, the units of measure the document writes, or the text of
+another unit a copy or carry check reads (RELATIONS-A). An unchanged
+unit's findings are reused from the earliest round that computed them, under this
+round's unit id, and the reuse is recorded in `audit/round_reuse.json`; a plan that
+would need a model is recorded as `needs_model` (rebased onto the new unit id when
+reused) and not asked. The round findings are posted on the run bus, channel
+`multi_round`, backend `paired`, model `python`, one envelope per round document with
+an item id naming the round, so `GET /runs/{run_id}/findings` serves them as
+Python's; nothing in the case phase reads them. The case master's `round_review`
+records the availability and the number of envelopes posted. A failure of this
+review, or of the post, is recorded there and never takes the case phase down. Every
+model call of a case run saves its reply like any other call, with outcome
+`advisory_not_record` (or `refused` for a refusal).
+
+In a prior-version comparison, a term that vanished while its section states a
+newly stated term in the same unit of measure that no value-corroborated rename
+claims is refused ("possible rename with a moved value, not a confirmed
+withdrawal", `paired_review.possible_successor`), never minted as
+`absent_since_prior`. Two figures with no unit count as the same measure here: the
+unit cannot tell them apart, so the withdrawal is refused under its own reason
+("possible rename of a figure with no unit, not a confirmed withdrawal"). The rule
+is structural; whether the new term is the same term is a word-meaning decision
+left to a later measured ensemble rule.
+
+With `SHIMMER_MODEL_MODE=final`, the frozen final models serve ordinary Review and
+a declared multi-round Review (`--multi-round` and `--multi-round-manifest`
+together). Draft, the flag alone and the manifest alone are refused by the
+final-mode admission in `main()`. A sealed cloud bundle declares a multi-round
+Review under `reference_serial` (see [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)).
+
 Ordinary runs require no case artifact, read no case manifest, use no case contract
 and gain no model call. Fixture success establishes contracts, not model quality.
 
@@ -184,16 +224,110 @@ output/runs/<run folder>/
     grounding_summary.md       document_summary.md
     review_data.json           review_findings.md
     tracked_changes.docx       reviewed_document.md
-    memo.md                    (Draft only)
+    agent_record.md            memo.md (Draft only)
+    version_changes.md         case_positions.md (a multi-round run's two deliverables)
   logs/agent_bus.jsonl         cost_tracker.jsonl / cost_tracker.json
   logs/call_evidence.jsonl     pipeline_stdout.log (server runs)
   audit/reference_index.json  pairing_map.json / convention_assignment.json
   audit/agent_activation.json run_completion.json / run_identity.json
+  audit/model_replies/         <sequence>_<call_id>.json per call, outcomes.jsonl
 ```
+
+**Paired judging calls.** Every model call the paired review makes to judge a unit
+is recorded with its outcome by `paired_review.judging_call_record`: under the key
+`judging_calls` on the computed bus post and in `audit/pairing_map.json`, and, when
+no computed finding carries it, on a `PAIRED_JUDGING_CALLS` bus post of its own. A
+failed call is recorded as `reply_failed` whatever it was asked; a judged-absence call
+that returned carries `absence_listed` and `absence_refused`, the counts of its claims
+listed as a model's items and refused by Python. The deliverables state how many calls
+were made, how many of them could carry a note, how many were judged-absence calls
+(never asked for one) and how many were on a rule Python could not compute (the same), and how many model notes were kept on Python's findings, counted
+one per finding carrying one, the same count in every file.
+
+**Saved model replies.** Every model call writes exactly one record into
+`audit/model_replies/`, from inside the backend function that holds the raw text
+(`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and from Auditor896's
+`predict`, through `scripts/reply_records.py`. A record holds the sequence number
+(taken under a lock), call id, run id, agent, backend, model id and mode as resolved
+at run time, timestamp, phase, document id, decoding settings, and the payload and
+reply, each with its SHA-256 and byte length and, in a run without redaction, its
+full text. For the two local backend functions (`call_qwen`, `call_local`, serving
+the `qwen_local`, `local_producer` and `local_auditor` backends) the payload is the
+exact rendered prompt given to the model; for the two cloud backend functions it is
+a canonical JSON form of the messages list sent (sorted keys, compact separators),
+not the SDK's own wire bytes; for Auditor896 it is the classifier's input messages. With redaction enabled the text is never stored. The outcome is appended
+later to `outcomes.jsonl` by call id (`accepted_to_bus`, `advisory_not_record`,
+`not_promoted`, `contract_violation`, `refused`, `backend_failure`, `classified`,
+`classifier_failed`, `free_text`, `decided`); a later line for the same call wins, and a call
+with no line reads as `not_decided`. A call with no run context writes nothing.
+Embedding calls are not saved. No server route serves these files yet. They are
+gitignored, and `scripts/guard_secrets.py --staged` refuses any staged path with the
+segment `audit/model_replies/` at any depth, and any staged tar or `.zip` archive (for
+example a collected evidence `.tar.gz`) whose members include such a path; other
+compressed files it recognises but cannot read are refused (gate checks 275 and 276;
+the full rule is in `docs/THREAT_MODEL.md`).
 
 `review_data.json` is the amendment master; Markdown and DOCX are renders, not
 independent findings. Audit synthesis, editorial records, DELTA proposals,
-contract-violation dumps and approval artifacts also live under `audit/`.
+contract-violation dumps and approval artifacts also live under `audit/`. A
+multi-round run also writes `audit/round_reuse.json` (see above).
+
+**Who wrote a finding.** Every finding is stamped `written_by` from the bus post it
+travelled in: `python` only for Python's own records (backend `paired` or
+`computed` with a model id starting `python`), `model` for everything else. A
+`provenance` field a model writes is removed when its item is stamped, so only
+Python's records enter the earlier-version comparison and its band list. A
+model-written finding never becomes an amendment and is never hidden: the master
+keeps it apart under `model_findings_not_promoted` (rendered in
+`review_findings.md` under "Written by a model: not checked by Python, not
+promoted"), with `model_claimed_verdict`, `checked_by_python: false` and
+`promoted: false` and without `confidence`, `record_verdict` or `verdict`.
+`document_summary.md`, `reviewed_document.md`, `agent_record.md`, `_run_summary.md`
+and the console mark each one "Written by a model. Not promoted to an amendment. Not checked by
+Python." The sentence naming who produced a document's findings is generated from
+those stamps (log event `findings_provenance`), Python findings and model items
+are counted separately, and relations only a model reported are listed apart from
+the relations Python computed. `audit_synthesis.md` counts audit-trail patterns
+and says they are not findings about the document under review; a DELTA proposal
+gives its reason as "N escalation messages on this topic". An escalation counts
+once per distinct topic and payload; one with no topic or no payload is reported
+apart ("not counted as a pattern") and never yields a pattern or a proposal.
+Deliverable headings use colons, not em dashes. `reviewed_document.md` is the
+document under review for a person to read: the document's own text in order, each
+finding shown under the unit it concerns (an amendment by its comment and suggested
+change, a Python finding with no amendment by its sentence and the reason, a model's
+finding with the mark on the line that states it, an answer Python refused and a rule
+left unchecked in plain words), after a header with what was asked (the operator's
+objectives and question), the counts of each kind (amendments and model findings equal
+to `review_data.json`, Python's findings to the document summary, refusals and unchecked
+rules to the pairing map) and what was not checked
+(`scripts/reviewed_document.py`; gate check 320). The per-agent record, which carried
+that name until open item 19 (2) was closed, is `agent_record.md`: it is titled as
+each agent's raw reply for the document (a technical record), lists each agent's
+judging calls, ends with every registered agent and its recorded state and model
+calls, carries the editorial board's observations, and for Python's records states
+the backend and model the bus post records and the models that wrote notes. When the
+sensitivity layer is active, which it is not as shipped, the redaction stage scrubs both on
+disk (`sensitivity_layer.scrub.TEXT_ARTIFACT_KEYS`), and first renders the reviewed document
+again from scrubbed inputs (`reviewed_document.write_from_scrubbed`). The run summary adds INST_FINDER's
+recorded model calls. The Turkish JSON-block renderer `run_options.review_markdown`
+was removed: the Turkish `review_findings.md` has the English layout, titled
+"Flagged passages" when every entry is a flag with no proposed text, with an
+evidence line in words. The paired review's computed bus post and result carry
+`model: python` and `note_models` (the models whose sentences sit in the records as
+notes); each such record carries `explanation_model`, `explanation_backend` and
+`explanation_call_id`. The reference index's `cited_by` records the amendments and
+the grounding summary that cite each passage.
+
+**Amendment comments.** Each comment opens with one plain sentence naming the unit
+(with its heading), the rule, both figures with their units and the relation; a
+sum names the values it added, a product its two factors, a rate its three figures by
+their labels, and a copy or a carry the other unit it read from; an absence says what
+was checked in code. The rule's own words follow, quoted, and a model's sentence
+comes last, labelled as the model's. An amendment and its finding sit at the
+unit's own passage when exactly one indexed passage holds the unit's first line; a
+figure compared from elsewhere is cited separately; a unit Python cannot place sits
+at document level and the comment says so.
 Scorers join saved bus, pairing/assignment, call evidence, master and completion;
 they do not infer clean coverage from empty output.
 
@@ -209,7 +343,9 @@ REF citation clicks read this run's `reference_index.json`. Unknown IDs return
 in the console. Rule clicks read the **current** compiled registry and now say
 they may differ from the rule used by the run. Historical rule snapshots are not
 served. Findings/pair projections omit some on-disk absence, band-condition and
-prior-comparison detail; inspect the original artifacts when diagnosing coverage.
+prior-comparison detail, the pairing map's `relation_refusals` and a finding's
+rate and compared-unit fields (`rate_fields`, `rate_figures`, `compared_unit_id`,
+`compared_field`); inspect the original artifacts when diagnosing coverage.
 
 Downloads archive existing files, including partial output. A document marked
 done means its folder contains a file, not that all stages completed. The whole-run
@@ -236,22 +372,27 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/deliverables` | token | ZIP existing deliverables; whole-run partial flag reflects server outcome, not completeness/privacy. |
 | `GET` | `/runs/{run_id}/deliverables/{doc_id}` | token | ZIP an existing document folder; presence of files is not completed-stage proof. |
 | `GET` | `/runs/{run_id}/log` | token | Merged server-child stdout/stderr; 404 if not yet recorded. |
-| `GET` | `/runs/{run_id}/findings` | token | Typed bus finding projection; some full on-disk fields are omitted. |
+| `GET` | `/runs/{run_id}/findings` | token | Typed bus finding projection; each record carries `written_by` (`python` or `model`, read off its bus post); some full on-disk fields are omitted. |
 | `GET` | `/runs/{run_id}/pairs` | token | Pairing map projection, counts, refusals and unjudged plans; full absence/band detail remains on disk. |
 | `GET` | `/runs/{run_id}/amendments` | token | Read existing document masters; empty does not certify a clean review. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | Explicit AMENDMENT_REFUSED bus events, separate from findings. |
 | `GET` | `/runs/{run_id}/contract-violations` | token | Malformed agent contract events; not findings or successful non-calls. |
-| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. |
-| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. |
+| `GET` | `/runs/{run_id}/undated-documents` | token | Recorded undated/excluded/reviewed-anyway documents; old missing artifact can yield empty projection. Refuses a sealed run (403). |
+| `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. Refuses a sealed run (403). |
 | `GET` | `/harness` | token | Generated current agent description; not run-scoped or cluster-quality proof. |
-| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. |
-| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. |
+| `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. Sealed run: routing profile, each agent's state and call count, and the decisions as counts only (no decision row, evidence, reason, document or call id). |
+| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. Also `round_reuse`: `audit/round_reuse.json` as a rounds table (units reused and computed). Sealed run: recorded, availability, outcome and the reuse counts only. |
 | `GET` | `/runs/{run_id}/references` | token | Run reference excerpts; optional ref_id, unknown ID 404, missing index explicitly absent. |
+| `GET` | `/runs/{run_id}/replies` | token | Saved model replies as metadata only: per call sequence, agent, backend, model id and mode, call id, phase, document, time, backend result, payload and reply sizes and latest outcome; counts by outcome. Never reply or payload text. Sealed run: counts and first and last call time only. |
+| `GET` | `/runs/{run_id}/model-findings` | token | Each document master's `model_findings_not_promoted`, every item carrying `finding_record.MODEL_FINDING_MARK`, with producer counts from the bus. Not checked by Python, not promoted. Sealed run: counts only. |
+| `GET` | `/runs/{run_id}/switches` | token | INST_FINDER setting saved for the run (on; off and ratified; off and refused; not recorded) and FACT_CHECKER withholding with both Annex B.4 reasons, from the run's activation record, else from the current review scope, said so. |
+| `GET` | `/runs/{run_id}/report` | token | Annex A 11.12 rows of a `FINAL_STATUS.json` in the run folder or up to three parent folders, else no cloud report; cost from it or from the run's own cost lines; budget from an `execution_manifest.json` on that path, else not known. Estimates, not an invoice. Sealed run: allowlisted rows only. |
+| `GET` | `/test-change-requests` | token | `docs/test_change_requests.md` entries as rows, read-only; "not present in this installation" when the file is absent. |
 | `GET` | `/ontology` | token | Cross-run provision provenance summary; not a review-agent retrieval path. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | Revisions/provenance for one provision; unknown ID 404. |
 | `GET` | `/ontology/gnn` | token | Persisted structural state; learned_relevance=false, tier2_signal empty. |
 | `GET` | `/ontology/candidates` | token | Structural candidate pairs, not model-confirmed relationships; top_k 1-50. |
-| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. |
+| `POST` | `/runs/{run_id}/evidence` | token | Read-only classification of caller-supplied expected entries from saved evidence; no key file accepted. Refuses a sealed run (403). |
 | `POST` | `/ontology/conflicts/{conflict_id}/answer` | token | Persist rule/store/refuse answer; no production review feedback loop is wired to this endpoint. |
 | `GET` | `/ontology/relations` | token | Stored relation summaries, preserving mechanisms and agreement. |
 | `GET` | `/ontology/conflicts` | token | Recorded ontology conflict answers and qualified override counts; not proof a review consumed them. |
@@ -260,6 +401,15 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/health` | none | Liveness, current backend/default review mode and layer posture; no model execution or readiness proof. |
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
+| `GET` | `/cloud` | token | Cloud mode ("On a rented cloud machine", D-S49 item 3): whether a provider credential file is found (yes or no, never its path or contents), the operator's `output/cloud/console_settings.json`, the budget as the guard reads it (read-only), the machines running (no instance limit exists, D-S95), and every plan. |
+| `POST` | `/cloud/plans` | token | Stage and seal one exposed B3 review for a rented machine (`files` and `roles`, each file a `target`, `grounding` or `conventions`); refused for `exposure` other than `exposed`, with no credential file found, with no `budget_open` line, or without the settings. Spends nothing. |
+| `GET` | `/cloud/plans/{plan_id}` | token | One plan: its preparation steps, the sealed forecast (measured or estimate, as `config/cloud_forecast_basis.json` says) and cap, measured progress from `tools/ordinary_final_progress.py`, then the actual time and cost (the ledger's termination line), the minutes per part and whether the machine was shut down. |
+| `POST` | `/cloud/plans/{plan_id}/confirmation` | token | A one-time code for the plan's sealed cap, valid for 15 minutes, kept only in the server process. |
+| `POST` | `/cloud/plans/{plan_id}/launch` | token | Starts `tools/ordinary_final_bound_cloud.py --detach` under the purpose `console-<plan id>` on the private ledger; refused unless `code` is the plan's unused, unexpired code and `confirm_cap_usd` equals the cap shown, to the cent. A code is spent on its first use. |
+| `GET` | `/cloud/plans/{plan_id}/deliverables/{doc_id}` | token | One document's deliverables of a finished cloud run as a .zip (the same zip helper as `/runs/{run_id}/deliverables/{doc_id}`), read from the collected run under the run folder's `downloaded/evidence/run/deliverables/`; only a document the listing names is served, 404 otherwise. |
+| `GET` | `/cloud/plans/{plan_id}/files/{doc_id}/{name:path}` | token | One deliverable file of a finished cloud run (`doc_id` `_run` for `_run_summary.md` and the run's other own files); the name is matched against the listing before any path is built, 404 otherwise. |
+
+A sealed run (a `run_record.json` or `seal.json` saying `exposure: sealed` in the run folder or up to three parent folders, a `seal.json` that does not say `exposed`, or a marker that cannot be read) shows counts and timings only on the console routes added in loop stage S7 and on `/activation`; a pending governed question keeps its timings only on `GET /approvals` and `GET /runs/{run_id}` (topic, message and payload emptied); its run record on `GET /runs/{run_id}` and `GET /runs` lists no document, file, prior or target name (counts only: `document_count`, `documents_done`, `file_count`, `prior_file_count`, `review_target_count`) and carries no question, error text or stop-reason detail; and `/findings`, `/pairs`, `/amendments`, `/amendment-refusals`, `/contract-violations`, `/references`, `/deliverables` (both), `/log`, `/undated-documents`, `/convention-assignment` and `POST /evidence` answer 403. FastAPI's `/openapi.json`, `/docs`, `/docs/oauth2-redirect` and `/redoc` are switched off; exactly `/health` and `/console` answer without a token (gate check 305).
 
 The route table is checked against the actual registered application routes.
 `/status`, `/queue`, `/results`, unscoped `/findings` or `/pairs`, and
@@ -278,8 +428,36 @@ resource sampling. CLI flags select backend, paired/wide, dense/sparse, task,
 privacy overrides, objectives, output directory and operator channel. Raw CLI
 requires explicit governance choices; the starter's Normal choice is not a global
 waiver. `scripts/harness/run_agent.py` tests one chosen unit/rule/agent, not an
-entire cluster or full review. Legacy `shimmer.bat` / `shimmer.sh` perform setup
-and preflight work and are not the normal desktop start path.
+entire cluster or full review. `shimmer.bat` and `shimmer.sh` set up the
+environment, run the readiness check and show a menu (review or draft, chat,
+server, gate, import); the desktop start path is `start_shimmer.bat`.
+
+`shimmer.bat` and `shimmer.sh` install `requirements.txt` on every start. Set
+`SHIMMER_SKIP_INSTALL=1` (read by these two launchers only, so it has no row in the variables
+table) to skip that step and the CUDA torch swap when the environment is already installed or
+the machine is offline; the readiness preflight still reports anything missing. Both menus end
+when their input ends, so they can be driven from a file (`shimmer.bat < answers.txt`); on
+Windows feed a file, not a pipe, because cmd keeps only the first line of piped input.
+`shimmer.sh` runs under Git Bash on Windows and finds a `.venv/Scripts/` environment there. The
+banner each launcher prints when it starts the server (menu option [3]) names both routes
+that answer without a token, `/health` and `/console` (check 309).
+
+Ordinary final cloud entry points (operator tools, not server routes; full flag
+tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)):
+
+| Tool | Flags added in loop S2 |
+|---|---|
+| `tools/prepare_ordinary_final_run.py` (sealer) | `--inputs-from`, `--workload`, `--exposure`, `--test-manifest`, `--protected-test`, and the required `--ledger`, `--forecast-minutes`, `--storage-forecast-usd` |
+| `tools/ordinary_final_bound_cloud.py` (bound wrapper) | `--output-dir`, the required `--ledger`, `--purpose`, `--forecast-minutes`, `--storage-forecast-usd`, and `--read-ledger`, `--r-inputs`, `--forecast-includes-upload`, `--test-manifest`, `--frozen-tag`, `--batch`, `--test-version`, `--test-author`, `--key-author`, `--scorer-author`, `--scorer-version`, `--detach` |
+| `tools/analyze_ordinary_final_run.py` (analyser) | `--batch`; writes `RUN_REPORT.md` beside `FINAL_STATUS.json` |
+| `tools/cloud_run_watchdog.py` (general path watchdog) | the required `--soft-usd` and `--hard-usd` |
+| `tools/prepare_cloud_run.py` (general path sealer) | the required `--soft-usd` and `--hard-usd`, sealed into `experiment.json` |
+| `tools/run_remote_experiment.py` (general path controller) | `--soft-usd` and `--hard-usd`, required by `prepare` |
+
+`tools/loop_budget_guard.py` is the budget guard, instance-type rule and ledger
+writer every ordinary final launch passes through; it calls no provider. The bound
+wrapper's `--purpose` is a short identifier, and its `--ledger` must be a ledger the
+reaper reads.
 
 ### Server environment
 
@@ -304,8 +482,9 @@ outside source; this table contains no credentials.
 | `SHIMMER_LOG_LEVEL` | `info` | uvicorn log level |
 | `SHIMMER_RUN_TIMEOUT_S` | `0` | seconds before a run's pipeline subprocess is terminated then killed; `0` means unbounded (prior behavior). On expiry the job is marked `failed` with a timeout reason and `exit_code: null`; cleanup still runs |
 | `SHIMMER_LOCAL_RUN_TIMEOUT_S` | `7200` | overrides `RUN_TIMEOUT_S` when `SHIMMER_BACKEND_PROFILE=local`. Local inference is far slower than cloud API calls; 2 hours is the default. `0` means unbounded |
-| `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review uses local models with no provider API calls; Draft memo generation remains unsupported in Local). Unset defaults to Cloud; use the supported local/cloud profile values |
+| `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review and Draft use local models with no provider API calls; Local Draft is not yet proven). Unset defaults to Cloud; use the supported local/cloud profile values |
 | `SHIMMER_PROVIDER_TIMEOUT_S` | `600` | per-request wall-clock timeout (seconds) passed to the Anthropic and OpenAI clients; read by the pipeline subprocess, not the server process itself |
+| `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9, the server's governance status `refused_inst_finder_unratified`). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
 | `SHIMMER_MAX_UPLOAD_MB` | `25` | per-file upload size cap in megabytes for `/submit` |
 | `SHIMMER_MAX_UPLOAD_TOTAL_MB` | `200` | whole-submission upload size cap in megabytes |
 | `SHIMMER_MAX_UPLOAD_FILES` | `50` | max number of files accepted in one `/submit` |
@@ -346,9 +525,12 @@ that every source change must redownload models. `compose.yaml` uses its named
 image and does not build it. `tools/entrypoint.sh` accepts `serve`, `run`, `verify`.
 Mounted input/config/durable/output states are operator data, not image content.
 
-The image ships scripts/config/tools/corpus ingestion, root documentation, this
-runtime reference and three declared synthetic fixtures. It omits operator input, durable/ontology
-stores, runs, answer keys, full benchmark corpora and Windows launcher files.
+The image ships `scripts/`, `config/`, `tools/`, `corpus_ingest/`, `README.md`, `CLAUDE.md`,
+`genesis.md`, `requirements.txt`, this runtime reference, the two frozen evaluation protocols,
+the Producer DEV rows and three declared synthetic fixtures. It omits operator input,
+durable/ontology stores, runs, answer keys, full benchmark corpora and the root launchers
+(`shimmer.bat`, `shimmer.sh`, `start_shimmer.bat`); the Windows helpers under `tools/` ship
+with `tools/` but are not used there. It also ships `VERSION` and `tools/loop/`, the autonomous loop's own tooling, which ships inert: in the image only gate checks load it (check 296 on fixtures, which skips where git is absent, check 315 on fixtures, and check 292, whose controller checks import the loop budget guard and scan `tools/loop/`), where the controller, provider adapter, termination client and progress reader run only against fakes; no real cloud tool runs in the image.
 An unmounted image gate therefore has declared missing-input failures. Source
 parity proves shipped bytes, not end-to-end container review quality.
 
@@ -377,7 +559,8 @@ rank dependencies remain. The historical one-document shape maps to five groups,
 not a certified universal five-wave bound.
 
 PROCESSOR uses existing unit IDs/indexes with a complete source-offset ledger.
-Each request owns up to four 1200-character spans. A compact alias is expanded
+Each request owns at most `owned_spans_per_request` 1200-character spans
+(declared in `config/compact_extraction_prompt.json`, today 2; EXTRACTION-C). A compact alias is expanded
 into exact source text by Python before the canonical extraction reaches readers.
 Claims/questions and uncertainty remain model judgments. Ownership, coverage,
 duplicate and completeness checks refuse ambiguous results. One failed partition

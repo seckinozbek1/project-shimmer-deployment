@@ -17,17 +17,21 @@ the whole system first passes a gate on development items no attempt was tuned o
 been measured, and the loop's deadline for it is 14 November 2026. This
 version is not released as a Python package, and no package release is promised.
 
-On the four public benchmarks measured, Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. On the public benchmarks the rule items go instead to judging calls by PRACTICE_AUDITOR on the local auditor model, and in L12's six B3 entries 686 of its 803 answers copy the filled example in its own contract (VIOLATION, missing_field), 409 of 410 on CUAD; the quote rule refuses them, so nothing is kept (the parallel track's measurement on the saved runs, 1 November). The work after v1 that addressed it, recorded as D-S22 in docs/loop/DECISIONS.md (D-176): a Python-only refusal of answers with no quote, figures or earlier version behind them (R1) is merged (D-210), and a document-level judging experiment (G1) gave no usable signal on either model (D-248). The gate above is the next step. Details: [docs/RESULTS.md](docs/RESULTS.md).
+In development, on the four public benchmarks measured by 31 October 2026 (ContraDoc, SciTab, ContractNLI and CUAD), Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. On the public benchmarks the rule items go instead to judging calls by PRACTICE_AUDITOR on the local auditor model, and in L12's six B3 entries 686 of its 803 answers copy the filled example in its own contract (VIOLATION, missing_field), 409 of 410 on CUAD; the quote rule refuses them, so nothing is kept (the parallel track's measurement on the saved runs, 1 November). The work after v1 that addressed it, recorded as D-S22 in docs/loop/DECISIONS.md (D-176): a Python-only refusal of answers with no quote, figures or earlier version behind them (R1) is merged (D-210), and a document-level judging experiment (G1) gave no usable signal on either model (D-248). The gate above is the next step. Details: [docs/RESULTS.md](docs/RESULTS.md).
+
+**Which benchmarks count now.** On 4 November 2026 the operator cancelled CUAD and ContractNLI for all further development work, for poor fit, after their development scores were known (D-S34, applied in D-226 in docs/loop/DECISIONS.md); the record gives no reason beyond poor fit. The gate (D-S92, 9 November 2026, D-371) is read on ContraDoc and SciTab only. PUBHEALTH is a separate out-of-domain check, not part of the gate, and CLadder and Corr2Cause are a causal probe, an indicator rather than a Shimmer benchmark (D-335, D-357); as of 11 November 2026 none of the three has been measured.
 
 ## Where Shimmer is now, and where it is going
 
-This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 11 November 2026, 17:20 +03:00.
+This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 11 November 2026, 19:00 +03:00.
+
+**Which code these documents describe.** The README, CHANGELOG, docs/RUNTIME_REFERENCE.md, docs/RESULTS.md and the guides describe the loop branch's current code: 19 agents, JUDGE among them. The code files on GitHub's main branch are still September 2026's, with 18 agents. They reach main only with the 14 November package (S14 item 8). Until then, main's code and these documents differ, by design.
 
 **Now.** Every figure below is development, exposed and in-sample. None is a gate result.
 
 - The gate (D-S92) has not been measured. To pass, on each of ContraDoc and SciTab, Shimmer must score at least 10 points above the bare model (B1), with the lower 95 percent bound of the difference above zero. It must also be no more than 5 points below a cloud model reference.
 - ContraDoc: no configuration has yet come within 5 points of the cloud model on development items. The best is 0.733 accuracy, against the cloud model's 0.867 to 0.900 (D-297, in-sample). Bar (b) does not look reachable on ContraDoc today.
-- SciTab: the leading candidate configuration (K1, a judge model deciding table claims) has a macro-F1 of 0.703 on development half A, against B1's 0.838 (D-477, in-sample). Bar (a) does not look reachable on SciTab today.
+- SciTab: the leading candidate configuration (K1, a judge model deciding table claims) has a 2-class macro-F1 of 0.703 on development half A, against B1's 2-class 0.838 (D-477, in-sample). Bar (a) does not look reachable on SciTab today.
 - The document-level judging experiment G1 gave no usable signal (D-248).
 - Spend so far: rented GPU time 154.17 USD (hard stop 299), API 7.07 USD (ceiling 60).
 
@@ -98,7 +102,9 @@ It does not:
   the chosen backend (Claude under Cloud, a local model under Local, with no
   provider call), then reviews it; local Draft is not yet proven end to end.
 - Resume a stopped run from the middle.
-- Feed what it stores across runs (the ontology) back into a review.
+- Feed what it stores across runs (the ontology) back into a review. The one
+  exception is the operator's own stored answers to external-rule conflicts, read
+  only when `input/external_rules/` exists.
 - Show any accuracy on unseen documents. Nothing measured so far can.
 
 ## How a review works
@@ -420,6 +426,10 @@ allows it.
   cloud backend. Model names are read from the provider, never typed into code.
   The local backend's models come from its local profile, which
   `config/local_models.json` can override.
+- The backend. With no backend named, a command-line run and the server use Cloud (provider
+  models; `SHIMMER_BACKEND_PROFILE` unset means `cloud`). The desktop starter and the import
+  wizard make you choose, the menu launchers take Cloud when you press Enter, and
+  `tools/run_local_demo.py` adds Local. Every figure on the results page used Local.
 - `config/decoding_policy.json`: the frozen decoding settings for local models.
 - `config/domain_vocabulary.json`: domain words that must never appear in code.
 - Server settings are `SHIMMER_*` environment variables, listed in the

@@ -25,9 +25,9 @@ It creates a new environment, installs the packages, runs Shimmer's computing la
 
 ## Three ways in
 
-- Demo: no installation, saved examples. The console opens on the two worked cases' saved results, with nothing to install and nothing to type. Your documents go nowhere, because the demo shows only the saved examples. It is not in this version yet.
+- Demo: no installation, saved examples. A static page of the two worked cases' saved results, with nothing to install and nothing to type: `tools/build_demo.py` builds it into a demo folder, opened with open_demo.bat, with no server and no token. Your documents go nowhere, because the demo shows only the saved examples. No built demo ships in this repository yet; the console's footer names it.
 - On your own computer with a strong graphics card. Shimmer reviews your documents with models on your machine. Your documents stay on your computer. It needs the configured model files in the model cache and a CUDA graphics card, and the packages above do not include those files. All our measured runs used a rented card with 24 GB of memory; on an 8 GB laptop card a run takes hours. To see what is missing, run `python scripts/preflight.py --check-startup --backend-profile local`, which changes nothing.
-- On a rented cloud machine. A machine is rented for the run and shut down after it. Your documents go to the rented machine and are deleted with it. It cannot be started from the console in this version yet: a rented run is started today with the operator tools in `docs/CLOUD_RUN_PREPARATION.md`.
+- On a rented cloud machine. A machine is rented for the run and shut down after it. Your documents go to the rented machine and are deleted with it. The console has this mode (`docs/CLOUD_CONSOLE.md`), but it is proven on fakes only and has not yet started a real machine; until it has, a rented run is started with the operator tools in `docs/CLOUD_RUN_PREPARATION.md`.
 
 The starter window's **Cloud** choice is something else again: provider models instead of models on your machine. The text of your documents then goes to the providers, and each call is charged. It needs Anthropic and OpenAI keys in a file outside the repository, found through `SHIMMER_CONFIG_PATH`, a sibling `../api_keys/config.py`, or a path named in `.env_path`. Never put a key in the repository.
 
