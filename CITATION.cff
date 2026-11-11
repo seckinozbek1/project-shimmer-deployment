@@ -6,4 +6,5 @@ authors:
     given-names: Seckin
 repository-code: "https://github.com/seckinozbek1/project-shimmer-deployment"
 license: MIT
-date-released: "2026-01-01"
+version: "0.1.0.dev8"
+date-released: "2026-11-02"
