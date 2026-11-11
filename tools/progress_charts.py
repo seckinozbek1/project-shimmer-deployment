@@ -71,7 +71,10 @@ PROBE_LABEL = "indicator, not a Shimmer benchmark"
 BENCHMARKS_IN_USE = ("ContraDoc", "SciTab", "PUBHEALTH", "CLadder", "Corr2Cause")
 # Each benchmark's own paper's primary metric with its class setting (D-S99, D-376, D-S102 item 5), as
 # the rules written before any read name it; a scoreboard row's own metric and setting are shown first.
-METRIC = {"ContraDoc": "binary judgment accuracy, 2 classes", "SciTab": "macro-F1, 3 classes",
+METRIC = {"ContraDoc": "binary judgment accuracy, 2 classes",
+          # SciTab's class setting is declared after the draw, from the drawn claim set's gold counts
+          # (gate_set.class_setting, D-458), so it is not fixed here.
+          "SciTab": "macro-F1, 2 or 3 classes, declared from the drawn claim set (D-458)",
           "PUBHEALTH": "macro-F1, 4 classes", "CLadder": "accuracy over yes and no answers, 2 classes",
           "Corr2Cause": "F1 of the valid class, 2 classes"}
 OTHER_RULES = Path("docs/loop/stages/targets/OTHER_DOMAIN_RULES.md")
@@ -514,17 +517,28 @@ def reference_lines(root):
 
 
 def registry_roles(root):
-    """Every agent of the registry, with its backend and model under the local profile."""
+    """Every agent of the registry, with its backend and model under the local profile, resolved as the
+    pipeline resolves them (_registry_local_profile, then _resolve_local_models): the `local` block,
+    then config/local_models.json's active id for that backend; a block naming no model, or no block,
+    keeps the agent's own spec.model."""
     path = root / REGISTRY
     if not path.is_file():
         return []
     agents = json.loads(path.read_text(encoding="utf-8")).get("agents", {})
+    try:
+        chosen = json.loads((root / LOCAL_MODELS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        chosen = {}
     out = []
     for name in sorted(agents):
         spec = agents[name] if isinstance(agents[name], dict) else {}
         local = spec.get("local") if isinstance(spec.get("local"), dict) else {}
-        out.append((name, "%s, %s" % (local.get("backend") or spec.get("backend") or NOT_RECORDED,
-                                      local.get("model") or spec.get("model") or NOT_RECORDED)))
+        backend = local.get("backend") or spec.get("backend")
+        model = local.get("model")
+        key = {"local_producer": "active_producer", "local_auditor": "active_auditor"}.get(backend)
+        if model and key and str(chosen.get(key) or "").strip():
+            model = chosen[key].strip()
+        out.append((name, "%s, %s" % (backend or NOT_RECORDED, model or spec.get("model") or NOT_RECORDED)))
     return out
 
 
@@ -988,7 +1002,9 @@ ROLES_NOTE = ("Every model-backed role: each agent of the registry and each trai
               "has a row, its trained and untrained figures on the tuning half, in-sample (the tuning half chose "
               "the candidate), the margin written before the read, the held-out "
               "value with its interval and the attempt; otherwise the stated reason it is not trained, or that "
-              "the scoreboard has no row for it yet.")
+              "the scoreboard has no row for it yet. The local model is the one a run loads, after "
+              "config/local_models.json. JUDGE takes only a task a rule's heading declares ([compare: cells], "
+              "[compare: passages]); no shipped rule declares one yet, so no run has reached it (JUDGE-AGENT-A).")
 TRAINED_NOTE = ("Each trained part's figures on its tuning half, where the candidate was chosen: in-sample, so a "
                 "table, never a chart (D-S98 item 5). The held-out value with its interval is in the roles table "
                 "above; the openings table gives each opening's result as it was written.")
@@ -1479,6 +1495,17 @@ def self_test():
         results.append(("the rule stated on the page", html.escape(REFERENCE_RULE) in page_a))
         results.append(("the roles table says in-sample", html.escape(UNTRAINED_HEAD) in page_a
                         and html.escape(TRAINED_HEAD) in page_a and "in-sample (the tuning half chose" in page_a))
+        lm_root = Path(td) / "lm"
+        (lm_root / REGISTRY).parent.mkdir(parents=True)
+        (lm_root / REGISTRY).write_text(json.dumps(registry), encoding="utf-8")
+        before = dict(registry_roles(lm_root))
+        (lm_root / LOCAL_MODELS).write_text(json.dumps({"active_auditor": "q/auditor-4bit"}), encoding="utf-8")
+        after = dict(registry_roles(lm_root))
+        results.append(("each role's local model resolved as the pipeline resolves it, a judge keeping its own",
+                        before["VERIFIER"] == "local_auditor, m-local"
+                        and after["VERIFIER"] == "local_auditor, q/auditor-4bit"
+                        and after["JUDGE"] == "local_auditor, m-judge"
+                        and after["PROCESSOR"] == "local_producer, org/Base-7B-Instruct"))
         plan = root / CAUSAL_PLAN
         kept = plan.read_text(encoding="utf-8")
         plan.write_text(kept.replace("LLaMa-3B", "LLaMa-6B"), encoding="utf-8")
