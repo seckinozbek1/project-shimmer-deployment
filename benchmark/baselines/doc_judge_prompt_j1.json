@@ -1,0 +1,74 @@
+{
+  "schema": "doc-judge-prompt-v1",
+  "status": "development, exposed (J1, P1 of D-S38; D-261, D-262)",
+  "note": "J1: this file names one candidate on the auditor's route in two groups. It sends no document prompt. Each group replays C1's saved PRACTICE_AUDITOR prompts (agent form) and B1's own prompt. judge_direct: the agent prompt as sent, and B1 with its reasoning line replaced. judge_reason: the agent prompt with the note, and B1 as shipped, which already says to work through the item first. Every reply is read for its last JSON object, and a reply that ran to its allowance is unreadable, so reasoning is never read as the answer. The rest of this file is G1's, kept because check_config and the reply reader read it.",
+  "user_template": "Read the document below and answer one question about it.\n\nDOCUMENT\n{document}\n\nIn the document, heading lines (starting with #) and lines reading Passage: part only divide it into passages; they are not part of its content.\n\nQUESTION\n{rule_text}\n\nOUTCOMES\n{outcome_lines}\n\nANSWER\nReply with one JSON object and nothing else. It has exactly three keys:\noutcome: one outcome name from the list above, written exactly as it is written there.\nquote: the words of the document your outcome rests on, copied exactly from it. Required when the outcome is holds or not met. When the outcome is cannot be settled, write an empty string.\nreason: one short sentence.",
+  "outcomes": [
+    {
+      "value": "holds",
+      "class": "CLEAR",
+      "line": "holds: the document meets what the question asks.",
+      "accepted": [
+        "holds"
+      ]
+    },
+    {
+      "value": "not met",
+      "class": "FLAG",
+      "line": "not met: the document does not meet what the question asks.",
+      "accepted": [
+        "not met"
+      ]
+    },
+    {
+      "value": "cannot be settled",
+      "class": "UNDECIDED",
+      "line": "cannot be settled: the document does not let you decide.",
+      "accepted": [
+        "cannot be settled",
+        "cannot be settled from this document",
+        "uncertain"
+      ]
+    }
+  ],
+  "accepted_note": "An outcome is read by its normalised spelling (lower case, trimmed, underscores as spaces) against `accepted`, exact match only. `uncertain` is accepted for the third outcome because a rule that says to emit UNCERTAIN means the undecided answer (the same reading bare_model.py's section 5.4 parser applies). Anything else is refused as not declared.",
+  "quote_required_for": [
+    "holds",
+    "not met"
+  ],
+  "marker_patterns": [
+    "^#+ [DP]-\\S+[ \\t]*$",
+    "^Passage: \\w+[ \\t]*$"
+  ],
+  "marker_note": "Open item 84, decided before any G1 result (D-239): a quote is read against the document with its heading and passage label lines taken out. One not found there, one with no letter or digit, and one cut from inside a word or a number (a decimal or grouped figure included, whatever punctuation it starts or ends on) is refused as quote_not_content. A word cut at its own punctuation (a hyphen, an apostrophe, an underscore) passes, and a whole table cell passes however short, so every kept claim on a scored item is listed beside the verdict (D-243).",
+  "quote_rule": "A kept holds or not met carries a quote that occurs in the document under review once both are whitespace-normalised (every run of whitespace one space, trimmed); case and punctuation are kept. A missing or empty quote, one not found, or one that is not the document's content (marker_note) refuses the answer. cannot be settled is kept with or without a quote.",
+  "max_new_tokens": 256,
+  "models": [
+    {
+      "group": "judge_direct",
+      "backend": "local_auditor",
+      "agent": "PRACTICE_AUDITOR",
+      "checkpoint": "base",
+      "model_id": "unsloth/phi-4-bnb-4bit",
+      "reasoning": false
+    },
+    {
+      "group": "judge_reason",
+      "backend": "local_auditor",
+      "agent": "PRACTICE_AUDITOR",
+      "checkpoint": "base",
+      "model_id": "unsloth/phi-4-bnb-4bit",
+      "reasoning": true
+    }
+  ],
+  "models_note": "Both groups load the named model through bare_model.py's LocalBackend and agent_wrapper._load_qwen, under the auditor backend's greedy decoding with the model's own stop and pad ids (doc_judge.own_stops), sdpa pinned, one-shot prefill (D-063). The envelope constraint is not applied in a replay, so a reply off the JSON shape is counted unreadable.",
+  "j1": {
+    "b1_direct": {
+      "from": "Work through the item first: quote the passages of the document that bear on it, and do any calculation step by step. Then decide which label applies.\n\nEnd your reply with one line holding one JSON object, and write nothing after it:",
+      "to": "Reply with one line holding one JSON object, and write nothing else:"
+    },
+    "agent_note": "Before the JSON, think through the rule and the unit step by step in plain sentences. Then end your reply with the JSON, with nothing after it.",
+    "agent_allowance": 768,
+    "agent_reason_allowance": 1536
+  }
+}

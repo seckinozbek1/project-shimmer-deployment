@@ -1,0 +1,87 @@
+{
+  "schema": "auditor-questions-v1",
+  "description": "The narrow questions of the auditor backend's roles (D-S57 item 1, D-S56 item 1, D-S62 item 3), read by scripts/auditor_questions.py. Each is one question with fixed answers, asked of evidence Python selects, decided from the model's own probabilities in one forward pass (choice_decision.py, D-S41): the model writes no text, the quote is Python's echo of the evidence it selected, and Python writes the record from the answer. The prompt carries the question and the answers only, never an agent contract. Nothing here is asked until its form is decision AND config/semantic_thresholds.json holds its family's measured threshold; until then each role runs as shipped (form reply). Adopting decision is a recorded decision after the measurement. No result of either has been measured on a model.",
+  "rule_check": {
+    "agent": "PRACTICE_AUDITOR",
+    "plan_kinds": [
+      "absence_judged",
+      "uncomputable"
+    ],
+    "plan_kinds_note": "The two paired plans that put a unit and a rule to a model with no figure Python computed: a scoped rule that declares no required field (absence_judged) and a rule on which Python could compute nothing (uncomputable). Measured on the 253 saved pairing maps under external/s05: 3,818 uncomputable calls and 16 judged absences.",
+    "form": "reply",
+    "form_note": "reply: the shipped generative call (the paired review's payload and the agent contract). decision: the block below. A value this code does not know is refused.",
+    "evidence": "the rule's own text (the operator's words) and the text of the one unit the plan names, nothing else: no neighbour, no registry, no bus",
+    "max_prompt_chars": 12000,
+    "max_prompt_chars_note": "A question over this size is not asked and says so. Conventional limit, no evidence for this exact figure.",
+    "decision": {
+      "template": "A rule from a review framework and one part of a document follow.\n\nRULE\n{rule}\n\nPART\n{unit}\n\nJudge only from the part's own text. Does the part meet the rule?\n\nAnswer with one word.\nYes: the part meets the rule, or what the rule requires does not apply to it.\nNo: the rule applies to the part and the part does not meet it.\nUnclear: the part does not let you decide.",
+      "threshold_family": "auditor_rule_check",
+      "answers": [
+        {
+          "label": "met",
+          "surface": "Yes"
+        },
+        {
+          "label": "not_met",
+          "surface": "No"
+        },
+        {
+          "label": "cannot be settled",
+          "surface": "Unclear"
+        }
+      ],
+      "record": {
+        "absence_judged": {
+          "not_met": {
+            "relation": "missing_field",
+            "record_verdict": "irregular"
+          }
+        },
+        "uncomputable": {
+          "not_met": {
+            "relation": "rule_not_met",
+            "record_verdict": "irregular"
+          }
+        }
+      },
+      "record_note": "Only a settled not_met writes a record: a model-written Finding record (written_by model, never promoted) with the plan's unit and rule and the unit's own text as its quote (Python's verbatim echo). On an absence_judged plan it is missing_field, written only when Python finds exactly one field the rule names that the unit lacks. On an uncomputable plan it is rule_not_met (INFRA-051), held by paired_review to the rule-check step, the uncomputable plan, irregular and the unit's own text. Every other answer writes none. Every call is on the judging-call record.",
+      "answers_note": "Three answers, the three of a natural-language inference set (entailment, contradiction, neutral), so public training sets map onto them with no invented class: a rule whose condition does not apply is met, as the absence path has always read it."
+    }
+  },
+  "pair_fidelity": {
+    "agent": "VERIFIER",
+    "form": "reply",
+    "form_note": "reply: the shipped generative VERIFIER call over the draft, the source and the advisory pairs. decision: one question per pair Python built (auditor_pairs.build), the block below. A value this code does not know is refused.",
+    "evidence": "one pair: the source span Python placed the producer item in, and the producer item's semantic fields, the same two Auditor896 is shown (auditor_pairs.predict)",
+    "max_prompt_chars": 12000,
+    "max_prompt_chars_note": "A pair over this size is not asked and says so. Conventional limit, no evidence for this exact figure.",
+    "decision": {
+      "template": "A passage from a document and an extraction made from it follow.\n\nPASSAGE\n{source}\n\nEXTRACTION\n{extraction}\n\nCompare the extraction with the passage.\n\nAnswer with one word.\nSame: the extraction states what the passage states.\nChanged: the extraction states something the passage states differently.\nMissing: the extraction leaves out something the passage states.\nAdded: the extraction states something the passage does not.\nUnclear: the two do not let you decide.",
+      "threshold_family": "auditor_pair_fidelity",
+      "answers": [
+        {
+          "label": "MATCH",
+          "surface": "Same"
+        },
+        {
+          "label": "DIVERGENCE",
+          "surface": "Changed"
+        },
+        {
+          "label": "OMISSION",
+          "surface": "Missing"
+        },
+        {
+          "label": "ADDITION",
+          "surface": "Added"
+        },
+        {
+          "label": "cannot be settled",
+          "surface": "Unclear"
+        }
+      ],
+      "record_note": "A settled answer writes one VERIFIER item for its pair: finding the answer's label, auditor_pair_id the pair's id (so the join with Auditor896 is direct), the pair's source refs, the passage as its quote (Python's echo), written by the model and never promoted. An unsettled answer writes none and is counted."
+    },
+    "status_note": "Not adopted and not trained: measured on the 263 Auditor896 pairs saved in L12, L12b, L12c and L13, the extraction a pair shows carries no claim id and no text (248 of 263 extraction_status empty), so the question has no content on the shipped path; where claim ids exist Python decides coverage exactly."
+  }
+}

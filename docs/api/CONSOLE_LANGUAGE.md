@@ -1,4 +1,4 @@
-> Historical design/audit record. Current implementation and endpoint names are in the [README](../../README.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
+> Historical design/audit record. Current implementation and endpoint names are in the [runtime reference](../RUNTIME_REFERENCE.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
 
 # Console language: developer view and human view, side by side
 
@@ -16,10 +16,13 @@ different words. Nothing awkward is dropped.
 
 ## Findings, one per relation
 
-The Finding record's 13 relations (`config/agent_contracts.json`, `finding_record`
-schema) split into two families: nine compare two figures WITHIN this document or
-against a reference table; five compare a field with the SAME field in an earlier
-version of the document (`INFRA-044`, `changed_from_prior` through `absent_since_prior`).
+The Finding record's 19 relations (`config/agent_contracts.json`, `finding_record`
+schema) split into three families: twelve compare figures WITHIN this document or
+against a reference table (the last four, `rate_mismatch` through `unit_mismatch`, were
+appended by `INFRA-045`); five compare a field with the SAME field in an earlier
+version of the document (`INFRA-044`, `changed_from_prior` through `absent_since_prior`);
+two compare in words: `contradiction` (`INFRA-046`), two passages, and `claim_not_met`
+(`INFRA-048`), a claim and a table's selected cells.
 Every example below uses the same running example unit (`u01`, a figure the document
 states) so the difference in wording is the only thing changing.
 
@@ -162,6 +165,49 @@ states) so the difference in wording is the only thing changing.
 > 100 tonnes. The current version does not state one at all. *(u01, compared to the
 > earlier version; this is reported as a withdrawal only when the system found nothing
 > that looks like the same field renamed, see the gap noted at the end of this document)*
+
+### `claim_not_met` (INFRA-048)
+
+A model decides it, from its own answer probabilities, on the cells Python selected; only the
+cell step records it. `quote` is the cells and `quote_b` the claim. The findings view reads the
+unscrubbed bus, so it shows neither; the model findings view shows both, from the scrubbed master.
+
+**Developer view:** `claim_not_met · irregular · u01 · CONV-QC`
+
+**Human view:**
+> **The selected cells do not meet the claim.** A model decided this. The claim and the cells are
+> shown with the model findings. *(CONV-QC · u01, "irregular")*
+
+### `contradiction` (INFRA-046)
+
+Only a model writes it, and only a judged path or the passage pair step keeps it. `quote` and
+`quote_b` are the two passages, which that step alone may find in two units, naming the second
+in `compared_unit_id` (INFRA-047); there are no figures. The findings view reads the unscrubbed bus and carries no quote
+field, so its sentence names no passage (the model's own explanation is shown there, as for any
+finding); the model findings view shows both, from the scrubbed master.
+
+**Developer view:** `contradiction · irregular · u01 · CONV-QC`
+
+**Human view:**
+> **Two passages of this unit contradict each other.** A model wrote this. Both passages are
+> shown with the model findings. *(CONV-QC · u01, "irregular")*
+
+### `rate_mismatch`, `unit_mismatch`, `copy_mismatch`, `carry_mismatch` (INFRA-045)
+
+`value_a` is the figure Python computed, `value_b` the figure the document states.
+
+**Human view:**
+> **This figure does not match the rate the unit states.** The document states 4 zed. The
+> unit's own rate and figures give 3.35 zed. *(CONV-QC · u05, "irregular")*
+
+> **This figure is written in another measure.** The document states 0.004 kg. In the
+> measure its comparison uses, that is 4 g. *(CONV-QG · u11, "irregular")*
+
+> **This copied figure does not match its source.** The document states 25 zed. The unit
+> it names states 20 zed. *(CONV-QD · u05, "irregular")*
+
+> **This carried figure does not match the unit before.** The document states 18 box. The
+> unit before adds up to 15 box. *(CONV-QF · u08, "irregular")*
 
 ## Run state and outcome, all seven combinations
 
@@ -422,6 +468,13 @@ Reasoning:
   in both views.
 
 ## What I could not translate without losing meaning
+
+- **Which unit a copy or a carry was compared with, and which three figures a rate used
+  (INFRA-045).** The human sentences above say "the unit it names" and "the unit before"
+  rather than naming that unit, and "the unit's own rate and figures" rather than naming
+  them, because `GET /runs/{run_id}/findings` does not project `compared_unit_id`,
+  `compared_field`, `rate_fields` or `rate_figures`. The amendment comment in the
+  deliverables names them; the console could too once the projection carries them.
 
 - **`absent_since_prior`'s own uncertainty.** The developer view already refuses to mint
   this relation outright when a renamed-not-removed field is detected within tolerance

@@ -7,6 +7,7 @@
       "does": ["Extract content from source documents", "Draft outputs in prose or structured form", "Compile findings from other agents into deliverables"],
       "does_not": ["Verify its own work", "Override other agents", "Correct source data"],
       "model": "claude-sonnet-4-6", "backend": "claude_api", "category": "content_production",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "No convention-review path reaches PROCESSOR today (it runs in production, before any convention is in scope); an empty list rather than a subject nobody can act on, per the convention assignment design."
     },
@@ -14,13 +15,23 @@
       "does": ["Cross-check outputs against source documents", "Flag divergence between draft and source", "Report findings in structured form"],
       "does_not": ["Fix problems (report only)", "Search the web", "Draft content"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["fidelity"]
+    },
+    "JUDGE": {
+      "does": ["Answer one narrow question with fixed choices from its own answer probabilities: whether the cells Python selected meet a claim, whether two passages contradict each other", "Take only the tasks its contract declares, wherever an operator's rule declares one"],
+      "does_not": ["Write text", "Choose its evidence or its tools (Python selects the evidence and runs every declared tool)", "Do arithmetic", "Search the web"],
+      "model": "unsloth/phi-4-bnb-4bit", "backend": "local_auditor", "category": "verification",
+      "local": {"backend": "local_auditor", "model": null},
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "Takes a rule by the task its heading declares ([compare: cells], [compare: passages]), never by subject (INFRA-049, D-S55). An empty list rather than a subject that would route rules it does not read."
     },
     "FACT_CHECKER": {
       "does": ["Extract verifiable claims from drafts", "Search external sources for evidence", "Produce factual verdicts with source citations"],
       "does_not": ["Judge procedures", "Draft content", "Check style", "Correct source"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": true, "may_handle_sensitive": false,
       "subjects": ["facts"]
     },
@@ -29,6 +40,7 @@
                 "Perform absence detection: compare the operational document against the corpus structural inventory and flag elements present in a majority of context documents but absent here"],
       "does_not": ["Verify raw facts", "Draft content", "Assess legal basis"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": true, "may_handle_sensitive": false,
       "subjects": ["conformance"]
     },
@@ -37,6 +49,7 @@
                 "Perform absence detection on legal mechanisms (redress, conformity, post-market monitoring) using the corpus structural inventory"],
       "does_not": ["Draft correspondence", "Make policy judgments", "Search the web independently"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "analysis",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["basis"]
     },
@@ -44,6 +57,7 @@
       "does": ["Enforce linguistic register", "Check style consistency", "Evaluate terminology/rephrasing/borrowing conventions"],
       "does_not": ["Change content (style only)", "Draft", "Verify facts"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "style",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["wording"],
       "note": "Per Part XVIII Section C, STYLE_GUARDIAN participates in convention review. When Qwen local is unavailable, falls back to Claude with a tight prompt."
@@ -53,6 +67,7 @@
                 "Produce a structural inventory of the corpus, listing structural elements and the count of documents containing each (indexing across documents, not evaluating their merit)"],
       "does_not": ["Draft", "Analyze (evaluative judgment, not structural indexing)", "Recommend"],
       "model": "claude-sonnet-4-6", "backend": "claude_api", "category": "organization",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "No convention-review path reaches ARCHIVIST today; its own does_not rules out the evaluative judgment a routed rule would ask for. An empty list rather than a subject nobody can act on."
     },
@@ -60,6 +75,7 @@
       "does": ["Map topics to institutions", "Build institution registries"],
       "does_not": ["Draft correspondence", "Make policy judgments"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "organization",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
     },
@@ -67,6 +83,7 @@
       "does": ["Build cross-document reference graphs", "Map citation chains"],
       "does_not": ["Interpret citations (that is PROCESSOR's role)", "Search external"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "organization",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
     },
@@ -74,6 +91,7 @@
       "does": ["Classify pragmatic intent of utterances", "Build speech act taxonomy"],
       "does_not": ["Make policy judgments from speech acts"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "analysis",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "No convention-review path reaches SPEECH_ACT_TAGGER today; no consumer of its tags exists. An empty list rather than a subject nobody can act on."
     },
@@ -97,6 +115,7 @@
         "Produce content without a reference citation"
       ],
       "model": "claude-opus-4-8", "backend": "claude_api",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "category": "amendment", "may_use_web": false, "may_handle_sensitive": false,
       "subjects": [], "subjects_note": "Reads findings other agents reported, not rules directly, and its model call is off by default; declaring a subject would let an operator tag a rule for AMENDMENT_DRAFTER and get silence. An empty list rather than a subject nobody can act on."
     },
@@ -105,6 +124,7 @@
                 "Emit advisory editorial observations, one per item, each carrying a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     },
@@ -113,6 +133,7 @@
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     },
@@ -121,6 +142,7 @@
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
+      "local": {"backend": "local_producer", "model": "Qwen/Qwen2.5-7B-Instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     },
@@ -129,6 +151,7 @@
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     },
@@ -137,6 +160,7 @@
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     },
@@ -145,6 +169,7 @@
                 "Render the board's terminal editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
+      "local": {"backend": "local_auditor", "model": "microsoft/Phi-3.5-mini-instruct"},
       "may_use_web": false, "may_handle_sensitive": false,
       "subjects": ["editorial"]
     }

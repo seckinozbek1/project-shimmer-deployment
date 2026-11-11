@@ -1,4 +1,4 @@
-"""Qwen-required startup gate for the always-on redaction phase (INFRA-035).
+"""Qwen-required startup gate for the redaction phase (INFRA-035).
 
 Redaction is the final pipeline phase (INFRA-034) and runs on the local Qwen
 backend. Before any agent runs, the pipeline confirms that backend is

@@ -136,7 +136,8 @@ class LocalizationChecks(unittest.TestCase):
         self.assertIn('Operative summary',summary_generators.render_operative_summary(**args))
 
     def test_prior_report_headings_do_not_change_records(self):
-        item=dict(relation='absent_since_prior',provenance='computed',value_b=3.5,unit_b='t/ha',unit_id='U-1',rule_id='CONV-1',source_refs=['REF-1'])
+        # Stamped as Python's own record: an unstamped one is never shown as computed.
+        item=dict(relation='absent_since_prior',provenance='computed',written_by='python',value_b=3.5,unit_b='t/ha',unit_id='U-1',rule_id='CONV-1',source_refs=['REF-1'])
         original=deepcopy(item)
         tr='\n'.join(finding_record.render_prior_comparison([item],output_language='tr'))
         self.assertIn('Önceki sürümle karşılaştırma',tr);self.assertIn('3.5t/ha',tr);self.assertNotIn('Moved toward',tr)
@@ -157,6 +158,25 @@ class LocalizationChecks(unittest.TestCase):
         result=render({'id':'DOC-1','name':'Evidence.pdf'},[],[],[],output_language='tr')
         self.assertIn('ajan bazında çıktı',result);self.assertIn('ajan çalışmadı',result);self.assertIn('PROCESSOR',result)
 
+    def test_reviewed_document_renders_in_turkish(self):
+        # Open item 19 (2): the reviewed document's own templates are rendered, the
+        # document's text and the master stay exact; amendments naming no unit of the
+        # document are shown after it, said to be from an agent, not from Python.
+        import reviewed_document
+        original=deepcopy(PAYLOAD)
+        result=reviewed_document.render(document_id='DOC-1',document_name='Evidence.pdf',document_text=SOURCE,
+                                        master=PAYLOAD,python_findings=[],output_language='tr')
+        self.assertEqual(PAYLOAD,original)
+        self.assertIn('Evidence.pdf: incelenmiş belge',result);self.assertIn(SOURCE,result)
+        self.assertIn('Burada bulgu yok.',result);self.assertIn('## Belgenin hiçbir bölümüne bağlanamayan bulgular',result)
+        self.assertIn('Python tarafından hesaplanmadı',result);self.assertIn('Gerekçe.',result)
+        # Both amendments here carry no derived_from: the header counts them apart
+        # from the amendments Python built from its own findings (none).
+        self.assertIn("- Önerilen değişiklikler (her biri Python'un kendi bulgularından birinden üretildi): 0.",result)
+        self.assertIn("- Bir ajanın kendi kaydından alınan, Python'un hesaplamadığı değişiklikler: 2.",result)
+        for english in ('reviewed document','What was asked','No finding here','Suggested change','not computed by Python'):
+            self.assertNotIn(english,result)
+
     def test_context_isolation_and_english_restoration(self):
         @loc.presentation
         def render():return loc.text('Completed')
@@ -174,7 +194,7 @@ class LocalizationChecks(unittest.TestCase):
     def test_live_shipped_ui_offline(self):
         result=subprocess.run(['node',str(ROOT/'scripts/ui/localization_checks.js')],capture_output=True,text=True,timeout=20)
         self.assertEqual(result.returncode,0,result.stderr)
-        self.assertIn('16 offline localization UI checks',result.stdout)
+        self.assertIn('17 offline localization UI checks',result.stdout)
 
     def test_localization_failure_is_detected_and_restored(self):
         catalog=loc.catalog();saved=catalog['Completed']
@@ -225,7 +245,7 @@ class LocalizationChecks(unittest.TestCase):
         amendment=amendment_from_finding(item,unit_texts={'U-1':{'text':SOURCE}})
         before=deepcopy(amendment)
         shown=loc.message(amendment['comment'],'tr')
-        self.assertIn('Hesaplanan değer 3.5 t/ha',shown)
+        self.assertIn("'value' değeri 3.5 t/ha",shown)
         self.assertIn('üst sınırı 2 t/ha',shown)
         self.assertIn('model tarafından değerlendirilmedi',shown)
         self.assertIn('CONV-001',shown);self.assertIn('REF-0001',shown)

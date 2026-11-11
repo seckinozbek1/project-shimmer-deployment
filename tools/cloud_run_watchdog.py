@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import time
 
-from cloud_run_common import budget_deadlines, require, safe_metadata, write_json, provider_instance
+from cloud_run_common import budget_deadlines, no_window, require, safe_metadata, write_json, provider_instance
 
 
 def load_credential(credential_file=None):
@@ -55,7 +55,8 @@ def operator_preflight(credential_file=None, identity_file=None):
         from cloud_run_common import InvalidPreparation
         raise InvalidPreparation('SSH public key encoding invalid') from None
     require(bool(public_bytes), 'SSH public key is empty')
-    validation = subprocess.run(['ssh-keygen', '-l', '-f', str(public)], capture_output=True, timeout=10)
+    validation = subprocess.run(['ssh-keygen', '-l', '-f', str(public)], capture_output=True, timeout=10,
+                                creationflags=no_window())
     require(validation.returncode == 0, 'SSH public key is not valid for provisioning')
     return {'ssh_available': True, 'scp_available': True, 'curl_available': True, 'credential_loaded': loaded,
             'ssh_private_file_exists': True, 'ssh_public_file_exists': True, 'ssh_public_key_validated': True,
@@ -98,7 +99,7 @@ class LambdaTermination:
         args += ['https://cloud.lambda.ai/api/v1/' + path]
         try:
             response = subprocess.run(args, input=config, capture_output=True,
-                                      text=True, timeout=25, check=False)
+                                      text=True, timeout=25, check=False, creationflags=no_window())
         except Exception:
             from cloud_run_common import InvalidPreparation
             raise InvalidPreparation('provider transport failed') from None
@@ -140,17 +141,31 @@ def utc():
     return datetime.now(timezone.utc).isoformat()
 
 
-def watch(provider, instance_id, rate, running_epoch, directory, sleep=time.sleep, now=time.time):
+def watch(provider, instance_id, rate, running_epoch, directory, *, soft_usd, hard_usd, sleep=time.sleep, now=time.time):
+    """Guard one instance until its termination is verified. The soft and hard caps are the
+    experiment's own sealed values, passed in by the caller; none is a default here."""
     directory = Path(directory)
-    limits = budget_deadlines(rate, running_epoch)
+    limits = budget_deadlines(rate, running_epoch, soft_usd=soft_usd, hard_usd=hard_usd)
     write_json(directory / 'WATCHDOG_ARMED.json', {'instance_id': instance_id, 'pid': os.getpid(),
-               'armed_utc': utc(), 'hourly_rate': rate, **limits})
+               'armed_utc': utc(), 'hourly_rate': rate, 'soft_usd': soft_usd, 'hard_usd': hard_usd, **limits})
+    return terminate_when_due(provider, instance_id, rate, running_epoch, directory, limits, sleep, now)
+
+
+def terminate_now(provider, instance_id, rate, running_epoch, directory, sleep=time.sleep, now=time.time):
+    """Emergency termination with no budget at all: the request is already made, so no cap
+    is read or assumed. Used when a deployment fails after an instance may exist."""
+    directory = Path(directory)
+    (directory / 'TERMINATE_REQUEST').touch()
+    return terminate_when_due(provider, instance_id, rate, running_epoch, directory, None, sleep, now)
+
+
+def terminate_when_due(provider, instance_id, rate, running_epoch, directory, limits, sleep, now):
     requested = None
     while True:
         current = now()
-        if current >= limits['soft_epoch']:
+        if limits and current >= limits['soft_epoch']:
             write_json(directory / 'SOFT_BUDGET_REACHED.json', {'estimated_usd': (current-running_epoch)*rate/3600})
-        if requested or current >= limits['terminate_epoch'] or (directory / 'TERMINATE_REQUEST').exists():
+        if requested or (limits and current >= limits['terminate_epoch']) or (directory / 'TERMINATE_REQUEST').exists():
             if requested is None:
                 requested = utc()
             try:
@@ -165,7 +180,7 @@ def watch(provider, instance_id, rate, running_epoch, directory, sleep=time.slee
             except Exception as exc:
                 write_json(directory / 'TERMINATION_RETRY.json', {'instance_id': instance_id,
                     'error_type': type(exc).__name__, 'termination_requested_utc': requested,
-                    'ceiling_at_risk': now() >= limits['ceiling_epoch']})
+                    'ceiling_at_risk': bool(limits) and now() >= limits['ceiling_epoch']})
         write_json(directory / 'WATCHDOG_HEARTBEAT.json', {'epoch': now(), 'termination_requested': requested is not None})
         sleep(10)
 
@@ -178,11 +193,14 @@ def main(argv=None):
     parser.add_argument('--running-epoch', type=float, required=True)
     parser.add_argument('--directory', type=Path, required=True)
     parser.add_argument('--credential-file', type=Path)
+    parser.add_argument('--soft-usd', type=float, required=True, help='the experiment\'s sealed soft cap')
+    parser.add_argument('--hard-usd', type=float, required=True, help='the experiment\'s sealed hard cap')
     args = parser.parse_args(argv)
     require(args.arm, 'watchdog requires explicit arm')
     require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
     load_credential(args.credential_file)
-    watch(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, args.running_epoch, args.directory)
+    watch(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, args.running_epoch, args.directory,
+          soft_usd=args.soft_usd, hard_usd=args.hard_usd)
 
 
 if __name__ == '__main__':

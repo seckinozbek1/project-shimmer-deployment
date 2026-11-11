@@ -82,27 +82,121 @@ def _extract_pdf_pages(path):
         return []
 
 
+# A .docx is read as it would stand with every tracked change accepted. python-docx's own
+# `.text` takes only a paragraph's direct w:r and w:hyperlink children, so text inside w:ins
+# or w:moveTo was lost with no warning. Text inside w:del or w:moveFrom stays out, and so does
+# an insertion later deleted (w:ins/w:del). A paragraph whose mark is deleted joins the next.
+_ACCEPTED_CONTENT = ("w:r | w:hyperlink | w:ins/w:r | w:ins/w:hyperlink"
+                     " | w:moveTo/w:r | w:moveTo/w:hyperlink")
+_REMOVED_MARK = "w:pPr/w:rPr/w:del | w:pPr/w:rPr/w:moveFrom"
+_REMOVED_ROW = "w:trPr/w:del"
+
+
+# The reading keeps the document's structure in the form the rest of the pipeline reads
+# (docs/INPUT_FORMAT.md section 2): a heading as `#` lines, paragraphs apart by a blank line, a
+# table as `|` rows where it stands. Without it a whole .docx was one unit and its tables gave
+# no figures. A heading is read from its OUTLINE LEVEL, on the paragraph or through its style's
+# chain, never from a style's name, so it holds in every language. Word's levels run 0 to 8, and
+# 9 is body text.
+_OUTLINE_LEVEL = "w:pPr/w:outlineLvl/@w:val"
+_BODY_LEVEL = 9
+_MAX_STYLE_CHAIN = 16
+_PARAGRAPH_GAP = "\n\n"
+
+
+def _outline_level(paragraph):
+    """The paragraph's outline level, or None for body text."""
+    found = paragraph._p.xpath(_OUTLINE_LEVEL)
+    style = paragraph.style
+    for _ in range(_MAX_STYLE_CHAIN):
+        if found or style is None:
+            break
+        found = style.element.xpath(_OUTLINE_LEVEL)
+        style = style.base_style
+    level = int(found[0]) if found else _BODY_LEVEL
+    return level if level < _BODY_LEVEL else None
+
+
+def _accepted_paragraphs(paragraphs) -> list:
+    """[(paragraph, text)] as they stand accepted. A joined text keeps the paragraph whose mark
+    survives, as Word does."""
+    out, joined, last = [], "", None
+    for paragraph in paragraphs:
+        last = paragraph
+        text = joined + "".join(e.text for e in paragraph._p.xpath(_ACCEPTED_CONTENT))
+        joined = ""
+        if paragraph._p.xpath(_REMOVED_MARK):
+            joined = text
+        else:
+            out.append((paragraph, text))
+    if joined:
+        out.append((last, joined))
+    return out
+
+
+def _table_block(table) -> str:
+    """A table as `|` rows, its first standing row the header. A row is one line, so a cell's
+    paragraphs join with a space."""
+    rows = []
+    for row in table.rows:
+        if row._tr.xpath(_REMOVED_ROW):
+            continue
+        cells = [" ".join(t for _, t in _accepted_paragraphs(cell.paragraphs)).replace("\n", " ")
+                 for cell in row.cells]
+        rows.append("| %s |" % " | ".join(cells))
+        if len(rows) == 1:
+            rows.append("|%s|" % "|".join("---" for _ in cells))
+    return "\n".join(rows)
+
+
+def _heading_marks(level, shift) -> str:
+    return "#" * min(level + 1 + shift, 6) + " "
+
+
 def _extract_docx(path) -> str:
     try:
         import docx  # python-docx
+        from docx.table import Table
     except ImportError:
         _warn_missing_lib("python-docx", path)
         return ""
     try:
         document = docx.Document(str(path))
-        parts = [p.text for p in document.paragraphs]
-        for table in document.tables:
-            for row in table.rows:
-                parts.append("\t".join(cell.text for cell in row.cells))
-        return "\n".join(parts)
+        blocks, waiting = [], []
+
+        def flush():
+            blocks.extend((text, _outline_level(p)) for p, text in _accepted_paragraphs(waiting))
+            waiting.clear()
+
+        for item in document.iter_inner_content():
+            if isinstance(item, Table):
+                flush()
+                blocks.append((_table_block(item), None))
+            else:
+                waiting.append(item)
+        flush()
+        blocks = [(text, level) for text, level in blocks if text.strip()]
+        # A level-1 heading is the title, and a later one starts no unit (INPUT_FORMAT section
+        # 2), so a top level used more than once is a section level and every heading moves down
+        # one. Measured: a document of Heading 1 sections otherwise stays one unit.
+        shift = 1 if sum(level == 0 for _, level in blocks) > 1 else 0
+        return _PARAGRAPH_GAP.join(
+            text if level is None else _heading_marks(level, shift) + text.replace("\n", " ")
+            for text, level in blocks)
     except Exception as e:
         _warn_read_error("DOCX", path, e)
         return ""
 
 
+# A text file may open with a UTF-8 byte-order mark. Read as plain utf-8 the mark stays in
+# the text as a character, so a first heading no longer reads as a heading and a
+# conventions file yields no rules, silently.
+TEXT_ENCODING = "utf-8-sig"
+
+
 def _extract_html(path) -> str:
     try:
-        raw = Path(path).read_text(encoding="utf-8", errors="replace")
+        raw = Path(path).read_text(encoding=TEXT_ENCODING, errors="replace")
     except Exception as e:
         _warn_read_error("HTML", path, e)
         return ""
@@ -123,7 +217,7 @@ def _extract_html(path) -> str:
 
 def _extract_plaintext(path) -> str:
     try:
-        return Path(path).read_text(encoding="utf-8", errors="replace")
+        return Path(path).read_text(encoding=TEXT_ENCODING, errors="replace")
     except Exception as e:
         _warn_read_error("text", path, e)
         return ""

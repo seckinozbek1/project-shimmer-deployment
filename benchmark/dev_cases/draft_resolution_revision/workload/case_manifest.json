@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "case_id": "draft-resolution-revision",
+  "fixture": false,
+  "rounds": [
+    {
+      "round_id": "l34",
+      "sequence": 1,
+      "document_ids": [
+        "draft_resolution_l34"
+      ]
+    },
+    {
+      "round_id": "rev1",
+      "sequence": 2,
+      "document_ids": [
+        "draft_resolution_l34_rev1"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "sponsors"
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "name-of-the-day"
+    },
+    {
+      "issue_id": "call-to-states"
+    },
+    {
+      "issue_id": "implementing-body"
+    },
+    {
+      "issue_id": "costs"
+    },
+    {
+      "issue_id": "observance"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "l34-name-of-the-day",
+      "round_id": "l34",
+      "actor_id": "sponsors",
+      "issue_id": "name-of-the-day",
+      "document_id": "draft_resolution_l34",
+      "unit_id": "u09-operative-paragraph-1",
+      "char_start": 6629,
+      "char_end": 6688,
+      "quote": "designate 15 November as the International Day for Blue Sky",
+      "state": "accepted"
+    },
+    {
+      "source_id": "rev1-name-of-the-day",
+      "round_id": "rev1",
+      "actor_id": "sponsors",
+      "issue_id": "name-of-the-day",
+      "document_id": "draft_resolution_l34_rev1",
+      "unit_id": "u11-operative-paragraph-1",
+      "char_start": 4835,
+      "char_end": 4909,
+      "quote": "designate 7 September as the International Day of Clean Air for blue skies",
+      "state": "accepted"
+    },
+    {
+      "source_id": "l34-call-to-states",
+      "round_id": "l34",
+      "actor_id": "sponsors",
+      "issue_id": "call-to-states",
+      "document_id": "draft_resolution_l34",
+      "unit_id": "u10-operative-paragraph-2",
+      "char_start": 6780,
+      "char_end": 6871,
+      "quote": "Urges Member States to devote the International Day, as appropriate in the national context",
+      "state": "accepted"
+    },
+    {
+      "source_id": "rev1-call-to-states",
+      "round_id": "rev1",
+      "actor_id": "sponsors",
+      "issue_id": "call-to-states",
+      "document_id": "draft_resolution_l34_rev1",
+      "unit_id": "u12-operative-paragraph-2",
+      "char_start": 5001,
+      "char_end": 5136,
+      "quote": "Invites all Member States, organizations of the United Nations system, other international and regional organizations and civil society",
+      "state": "accepted"
+    },
+    {
+      "source_id": "l34-implementing-body",
+      "round_id": "l34",
+      "actor_id": "sponsors",
+      "issue_id": "implementing-body",
+      "document_id": "draft_resolution_l34",
+      "unit_id": "u11-operative-paragraph-3",
+      "char_start": 7387,
+      "char_end": 7478,
+      "quote": "Invites the United Nations Environment Programme, within its responsibilities and functions",
+      "state": "accepted"
+    },
+    {
+      "source_id": "rev1-implementing-body",
+      "round_id": "rev1",
+      "actor_id": "sponsors",
+      "issue_id": "implementing-body",
+      "document_id": "draft_resolution_l34_rev1",
+      "unit_id": "u13-operative-paragraph-3",
+      "char_start": 5537,
+      "char_end": 5639,
+      "quote": "Invites the United Nations Environment Programme to facilitate the observance of the International Day",
+      "state": "accepted"
+    },
+    {
+      "source_id": "l34-costs",
+      "round_id": "l34",
+      "actor_id": "sponsors",
+      "issue_id": "costs",
+      "document_id": "draft_resolution_l34",
+      "unit_id": "u12-operative-paragraph-4",
+      "char_start": 7906,
+      "char_end": 8054,
+      "quote": "Stresses that the cost of all activities that may arise from the implementation of the present resolution should be met from voluntary contributions",
+      "state": "accepted"
+    },
+    {
+      "source_id": "rev1-costs",
+      "round_id": "rev1",
+      "actor_id": "sponsors",
+      "issue_id": "costs",
+      "document_id": "draft_resolution_l34_rev1",
+      "unit_id": "u14-operative-paragraph-4",
+      "char_start": 5866,
+      "char_end": 6014,
+      "quote": "Stresses that the cost of all activities that may arise from the implementation of the present resolution should be met from voluntary contributions",
+      "state": "accepted"
+    },
+    {
+      "source_id": "l34-observance",
+      "round_id": "l34",
+      "actor_id": "sponsors",
+      "issue_id": "observance",
+      "document_id": "draft_resolution_l34",
+      "unit_id": "u13-operative-paragraph-5",
+      "char_start": 8335,
+      "char_end": 8398,
+      "quote": "to ensure the observance of the International Day for Blue Sky.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "rev1-observance",
+      "round_id": "rev1",
+      "actor_id": "sponsors",
+      "issue_id": "observance",
+      "document_id": "draft_resolution_l34_rev1",
+      "unit_id": "u15-operative-paragraph-5",
+      "char_start": 6295,
+      "char_end": 6346,
+      "quote": "to promote the observance of the International Day.",
+      "state": "accepted"
+    }
+  ]
+}

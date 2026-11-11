@@ -1,6 +1,6 @@
 """LAW-IV privacy redaction stage (relocated + collapsed in Phase 1c).
 
-This is the always-on final privacy pass (Mechanism 1) that used to live in the
+This is the final privacy pass (Mechanism 1), run when the sensitivity layer is active, that used to live in the
 editorial-side pipeline as `phase_9_redaction`. It now lives in the privacy home so
 the editorial side holds NO privacy logic. The pipeline calls INTO this module for
 the redaction pass (editorial->privacy direction, allowed); this module imports
@@ -19,10 +19,11 @@ model-veto NOT_APPLIED path that could ship a document UNREDACTED, so the collap
 STRENGTHENS LAW-IV: every proposed + detected span is now applied and verified.
 
 BOUNDARY (shape (a), from Phase 1b): the editorial RENDER stays on the pipeline
-side. The pipeline injects two callbacks: `build_wrapper(name)` (closes over the
-orchestrator + keys) and `render_deliverable(scrubbed_master, body_text, doc, info)`
-(closes over amendment_render + the convention registry). This module never imports
-those; it only calls the injected functions. So there is no privacy->editorial edge.
+side. The pipeline injects `build_wrapper(name)` (closes over the orchestrator + keys),
+`render_deliverable(scrubbed_master, body_text, doc, info, scrub)` (closes over
+amendment_render, the reviewed document and the convention registry) and
+`unit_ids(text, doc_id)`. This module never imports those; it only calls the injected
+functions. So there is no privacy->editorial edge.
 """
 
 from __future__ import annotations
@@ -39,7 +40,7 @@ import agent_activation
 
 from . import redaction_detect
 from .rules import redaction_rules
-from .scrub import (scrub_master_and_body, scrub_text_artifacts_and_verify,
+from .scrub import (scrub_master_and_body, scrub_text_artifacts_and_verify, _redact_obj, _redact_text,
                     _merge_redaction_proposals)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -258,9 +259,73 @@ def _persist_redactor_output(run_ctx, stage, doc_id, result) -> "str | None":
         return None
 
 
+def _run_spans(*proposal_lists):
+    """The spans every document's artifacts are scrubbed and grepped with: every span
+    proposed in the run, in every written form. Only identical strings collapse.
+    `_merge_redaction_proposals` is not used here: it exists to keep one attribution per
+    document, and this list has no need to drop anything."""
+    out, seen = [], set()
+    for proposals in proposal_lists:
+        for item in proposals or []:
+            span = str(item.get("span") or item.get("text") or "").strip() if isinstance(item, dict) else ""
+            if span and span not in seen:
+                seen.add(span)
+                # The span alone: every other key of a proposal came from a model.
+                out.append({"span": span})
+    return out
+
+
+def _neutral_unit_ids(doc, spans, unit_ids):
+    """Unit ids that carry a span, as redaction items: a unit id writes its heading's words
+    (lowercased, cut at 40 characters, non-ASCII letters dropped), in a form no span
+    matcher reads, and it is copied into every finding and amendment. So each id is
+    derived again from the scrubbed text and the old id is scrubbed as an exact string,
+    whatever form the heading took, the survivor grep then reading for it like any span.
+    Units pair by position. If the scrub changed how many there are, no pairing can be
+    trusted, so every id of the document takes one no unit of the scrubbed text can have,
+    and all its findings are shown after the document rather than under the wrong part."""
+    if unit_ids is None:
+        return []
+    before = list(unit_ids(doc.get("text", ""), doc["id"]))
+    after = list(unit_ids(_redact_text(doc.get("text", ""), spans)[0], doc["id"]))
+    pairs = zip(before, after) if len(before) == len(after) else (
+        (old, old.split("-", 1)[0] + "-no-longer-a-part") for old in before)
+    return [{"span": old, "neutral_id": new} for old, new in pairs if old != new]
+
+
+def _detected_in_grounding(info, rules):
+    """The authorised shapes in the context passages a document's grounding summary shows
+    whole. The passages phase 6 recorded, never the file: its header carries the run's own
+    date, which re-rendered files write again, so reading it would block every run."""
+    return [item for passage in info.get("grounding_passages") or []
+            for item in redaction_detect.detect(_PROJECT_ROOT, str(passage), rules, warn_sink=[])]
+
+
+def _no_span_at_all(redactions, scrub_spans):
+    """Nothing of this document's own and nothing in the run: nothing to apply or render."""
+    return not redactions and not scrub_spans
+
+
+def _held_no_other_span(redactions, rep, body_red, doc):
+    """No span of its own, and no other document's span met in its text or artifacts."""
+    return not redactions and not rep["total_subs"] and body_red == doc.get("text", "")
+
+
+def _only_others(redactions):
+    """True for a document with no span of its own: what it reports as applied came from
+    other documents' spans, and it says so instead of 0 spans and nothing else."""
+    return not redactions
+
+
+def _unknown_documents(op_docs, read_docs):
+    """The documents whose redactor gave no usable reply: what it would have marked in
+    them is unknown, so the report of every document that reached the scrub says so."""
+    return [doc["id"] for doc in op_docs if doc["id"] not in read_docs]
+
+
 def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registry,
-                        *, build_wrapper, render_deliverable, redaction_enabled=True):
-    """FINAL always-on privacy pass (LAW-IV). Runs every run, regardless of whether
+                        *, build_wrapper, render_deliverable, redaction_enabled=True, unit_ids=None):
+    """FINAL privacy pass (LAW-IV), run when the sensitivity layer is active, regardless of whether
     anything is redacted. The SINGLE Qwen agent REDACTOR proposes redaction spans and
     APPLIES the operator redaction rules (LAW-IV's own phrase, "content marked for
     redaction") - the model does NOT judge sensitivity on its own; it applies the
@@ -287,8 +352,18 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
     the startup gate), this phase still runs structurally but performs no redaction:
     it records REDACTION_SKIPPED (operator_waived) per document on the bus.
 
-    `build_wrapper(name)` and `render_deliverable(scrubbed_master, body_text, doc, info)`
-    are injected by the pipeline (shape (a)); this module imports nothing editorial."""
+    Every document's spans are proposed first; then every document that reaches the scrub
+    is scrubbed, and grepped, with every span of the run (`_run_spans`), as a precaution:
+    a context passage can hold text any document's span names. A document held or blocked
+    at the redactor is scrubbed with what is known, and is BLOCKED if a known span survives
+    or its render fails. Only a document's
+    own spans must be located in it.
+
+    `build_wrapper(name)`, `render_deliverable(scrubbed_master, body_text, doc, info, scrub)`
+    and `unit_ids(text, doc_id)` (the document's unit ids, in order) are injected by the
+    pipeline (shape (a)); `scrub(obj)` scrubs every free-text string of an object with the
+    same spans, so the pipeline can render from scrubbed inputs. This module imports
+    nothing editorial."""
     summary = {}
     if not redaction_enabled:
         for doc in op_docs:
@@ -334,6 +409,19 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
               "warnings": rr["warnings"]},
         constitution_check={"laws_consulted": ["LAW-IV", "LAW-V"], "result": "RESOLVED",
                             "resolution": "operator redaction rules compiled for the redaction pass"})
+    # Two passes: every document's spans are proposed first, then every document's
+    # artifacts are scrubbed with all of them (see `run_spans` below). The deterministic
+    # spans are read from the text alone, before any redactor call, so a document whose
+    # redactor reply is refused or held below still gives them to the run. The passages a
+    # grounding summary shows are read too: they come from context documents, which are
+    # not documents under review, so nothing else would look at them.
+    detected, quoted = {}, []
+    for doc in op_docs:
+        unapplied = []
+        detected[doc["id"]] = (redaction_detect.detect(_PROJECT_ROOT, doc["text"], rr["operator_rules"],
+                                                       warn_sink=unapplied), unapplied)
+        quoted += _detected_in_grounding(deliverables.get(doc["id"]) or {}, rr["operator_rules"])
+    pending, held = [], []
     for doc in op_docs:
         info = deliverables.get(doc["id"]) or {}
         master_path = info.get("amendments_json")
@@ -346,8 +434,17 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         except Exception:
             agent_activation.not_called(run_ctx, "REDACTOR", reason="unreadable_master",
                 source_phase="9", doc_id=doc["id"], state="no_execution_path")
+            esc = build_redaction_escalation(
+                doc_id=doc["id"], document_name=doc["name"], stage="REDACT_APPLY",
+                failure_kind="pii_survives_in_deliverable", raw_output_path=None,
+                detail={"unreadable_master": True})
+            _post_redaction_block(orch, esc)
+            summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
+                                  "failure_kind": esc["failure_kind"], "escalation": esc}
+            held.append({"doc": doc, "info": info, "master": None})
             continue
         amendments = master.get("amendments", [])
+        reachable = {"doc": doc, "info": info, "master": master}
 
         redactor = build_wrapper("REDACTOR")
         redactor_r = redactor.run_task(
@@ -428,6 +525,7 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
                 _post_redaction_block(orch, esc)
                 summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
                                       "failure_kind": esc["failure_kind"], "escalation": esc}
+            held.append(reachable)
             continue
         # Valid wrapper. Detect redactions STRUCTURALLY (span + replacement/method/
         # category), not by the kind tag alone - a redaction mis-tagged kind='finding'
@@ -445,6 +543,7 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
                                   "failure_kind": esc["failure_kind"], "escalation": esc,
                                   "reason": "non-empty but no item resolved to a valid redaction"}
+            held.append(reachable)
             continue
         # 1b: DETERMINISTIC local detection for operator-AUTHORIZED regular shapes
         # (identifier / figure) + name-via-local-cues. Runs over the document text,
@@ -458,10 +557,7 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         # compiled and can never fire must not be silent. LAW-IV's direction
         # again: an unapplied redaction rule leaves protected content in the
         # deliverable and shows nowhere.
-        _unapplied = []
-        det_items = redaction_detect.detect(_PROJECT_ROOT, doc["text"],
-                                            rr["operator_rules"],
-                                            warn_sink=_unapplied)
+        det_items, _unapplied = detected[doc["id"]]
         if _unapplied:
             # Posted to the bus, this module's own reporting idiom, rather than
             # logged: a log line is not an operator-facing artifact and this has
@@ -470,11 +566,77 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
                             {"count": len(_unapplied), "rules": _unapplied})
         redactions = _merge_redaction_proposals(
             det_items, redactor_reds if outcome == "PROPOSE" else [])
-        if not redactions:
+        pending.append({"doc": doc, "info": info, "master": master, "amendments": amendments,
+                        "redactor_r": redactor_r, "redactor_raw_path": redactor_raw_path,
+                        "redactions": redactions,
+                        "proposed": redactor_reds if outcome == "PROPOSE" else []})
+
+    # Every document that reaches the scrub is scrubbed, and grepped, with every span of
+    # the run. A precaution: a document's grounding summary quotes context documents, and
+    # a context document can hold text a span of any document names, so a span approved
+    # in one document is not shipped in another's deliverable in any form the matcher reads. Only a document's OWN
+    # spans must be located in it (a span of another document need not occur here). A
+    # document whose redactor gave no usable reply adds only its deterministic spans, so
+    # what the model would have marked in it is unknown, and the other documents' reports says so.
+    run_spans = _run_spans(*[items for items, _ in detected.values()], quoted, *[p["proposed"] for p in pending])
+    read_docs = {p["doc"]["id"] for p in pending}
+    spans_unknown_from = _unknown_documents(op_docs, read_docs)
+    def spans_for(doc):
+        # This document's own ids, listed first so that a merged range holding an id and a
+        # span inside it takes the neutral id, not the placeholder.
+        return _neutral_unit_ids(doc, run_spans, unit_ids) + run_spans
+
+    for h in held:
+        # A held or blocked document's files are scrubbed with what is known; it keeps its
+        # state unless a known span survives or the render fails. With no readable master
+        # there is nothing to render.
+        doc, info = h["doc"], h["info"]
+        doc_spans = spans_for(doc)
+        if h["master"] is None:
+            located, by_artifact, body_red = {}, {}, _redact_text(doc.get("text", ""), doc_spans)[0]
+        else:
+            scrubbed_master, body_red, located, by_artifact = scrub_master_and_body(
+                h["master"], doc_spans, doc.get("text", ""), own=[])
+            try:
+                render_deliverable(scrubbed_master, body_red, doc, info,
+                                   lambda obj, spans=doc_spans: _redact_obj(obj, spans)[0])
+            except Exception as e:
+                # This loop runs first: a raise here must not stop the other documents.
+                esc = build_redaction_escalation(
+                    doc_id=doc["id"], document_name=doc["name"], stage="REDACT_APPLY",
+                    failure_kind="pii_survives_in_deliverable", raw_output_path=None,
+                    detail={"render_failed": type(e).__name__})
+                _post_redaction_block(orch, esc)
+                summary[doc["id"]].update(state="BLOCKED", first_failure_kind=summary[doc["id"]].get("failure_kind"),
+                                          failure_kind=esc["failure_kind"], escalation=esc)
+                scrub_text_artifacts_and_verify(doc_spans, info, located, by_artifact,
+                                                also=("amendments_json", "amendments_md"))
+                info["scrubbed_body"] = body_red
+                continue
+        rep = scrub_text_artifacts_and_verify(doc_spans, info, located, by_artifact)
+        info["scrubbed_body"] = body_red
+        summary[doc["id"]]["known_spans_applied"] = True
+        if rep["survivors"]:
+            # A known span still in a file is a real survivor, whatever held the document.
+            esc = build_redaction_escalation(
+                doc_id=doc["id"], document_name=doc["name"], stage="REDACT_APPLY",
+                failure_kind="pii_survives_in_deliverable", raw_output_path=None,
+                detail={"survivors": rep["survivors"], "by_artifact": rep["by_artifact"]})
+            _post_redaction_block(orch, esc)
+            summary[doc["id"]].update(state="BLOCKED", first_failure_kind=summary[doc["id"]].get("failure_kind"),
+                                      failure_kind=esc["failure_kind"], escalation=esc)
+    for p in pending:
+        doc, info, master, amendments, redactions = (p["doc"], p["info"], p["master"], p["amendments"],
+                                                      p["redactions"])
+        redactor_r, redactor_raw_path = p["redactor_r"], p["redactor_raw_path"]
+        scrub_spans = spans_for(doc)
+        unknown = {"spans_unknown_from": spans_unknown_from} if spans_unknown_from else {}
+        if _no_span_at_all(redactions, scrub_spans):
             # genuine NONE: the redactor found nothing AND no authorized shape detected
             _post_redaction(orch, doc["id"], "REDACTION_NONE",
-                            {"screened_amendments": len(amendments), "raw_output_path": redactor_raw_path})
-            summary[doc["id"]] = {"redacted": False, "state": "NONE", "redactions": 0}
+                            {"screened_amendments": len(amendments), "raw_output_path": redactor_raw_path,
+                             **unknown})
+            summary[doc["id"]] = {"redacted": False, "state": "NONE", "redactions": 0, **unknown}
             continue
 
         # APPLY across EVERY operator-facing artifact, conserve spans (a span that lands
@@ -485,10 +647,29 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         # _category_for_conv), then this home scrubs the text artifacts and VERIFIES.
         # The scrubber never renders and never looks up conventions; no privacy->editorial edge.
         scrubbed_master, body_red, located, by_artifact = scrub_master_and_body(
-            master, redactions, doc.get("text", ""))
+            master, scrub_spans, doc.get("text", ""), own=redactions)
         master.clear(); master.update(scrubbed_master)
-        render_deliverable(scrubbed_master, body_red, doc, info)
-        rep = scrub_text_artifacts_and_verify(redactions, info, located, by_artifact)
+        info["scrubbed_body"] = body_red
+        try:
+            render_deliverable(scrubbed_master, body_red, doc, info,
+                               lambda obj, spans=scrub_spans: _redact_obj(obj, spans)[0])
+        except Exception as e:
+            # A file left unrendered may still hold what it held: never a silent pass, and
+            # never a crash that leaves later documents unscrubbed and unreported.
+            esc = build_redaction_escalation(
+                doc_id=doc["id"], document_name=doc["name"], stage="REDACT_APPLY",
+                failure_kind="pii_survives_in_deliverable",
+                raw_output_path=redactor_r.get("raw_text_path") or redactor_raw_path,
+                detail={"render_failed": type(e).__name__})
+            _post_redaction_block(orch, esc)
+            summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
+                                  "failure_kind": esc["failure_kind"], "escalation": esc}
+            # Its files are still scrubbed, the master's own too, since no render rewrote
+            # them: blocked is not left as written. The docx, a binary file, stays as it was.
+            scrub_text_artifacts_and_verify(scrub_spans, info, located, by_artifact,
+                                            also=("amendments_json", "amendments_md"))
+            continue
+        rep = scrub_text_artifacts_and_verify(scrub_spans, info, located, by_artifact)
         if rep["dropped"]:
             esc = build_redaction_escalation(
                 doc_id=doc["id"], document_name=doc["name"], stage="REDACT_APPLY",
@@ -509,13 +690,29 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
                                   "failure_kind": esc["failure_kind"], "escalation": esc}
             continue
+        if _held_no_other_span(redactions, rep, body_red, doc):
+            # This document has no span of its own and no other document's span
+            # occurred in its text or artifacts (verified absent above): a genuine NONE.
+            _post_redaction(orch, doc["id"], "REDACTION_NONE",
+                            {"screened_amendments": len(amendments), "raw_output_path": redactor_raw_path,
+                             "run_spans_checked": len(scrub_spans), **unknown})
+            summary[doc["id"]] = {"redacted": False, "state": "NONE", "redactions": 0, **unknown}
+            continue
         # APPLIED means: every proposed span located and VERIFIED ABSENT from every
         # shipped artifact. Report spans, not documents; reconcile so proposed/applied
         # cannot silently diverge.
         _post_redaction(orch, doc["id"], "REDACTION_APPLIED",
                         {"proposed_spans": rep["proposed"], "applied_spans": rep["applied"],
-                         "substitutions": rep["total_subs"], "by_artifact": rep["by_artifact"]})
+                         "substitutions": rep["total_subs"], "by_artifact": rep["by_artifact"],
+                         "only_other_documents_spans": _only_others(redactions), **unknown})
+        # A document with no span of its own that held another document's reports that
+        # plainly, not as "0 spans applied" and nothing else.
         summary[doc["id"]] = {"redacted": True, "state": "APPLIED",
                               "proposed_spans": rep["proposed"], "applied_spans": rep["applied"],
-                              "substitutions": rep["total_subs"]}
+                              "substitutions": rep["total_subs"],
+                              "only_other_documents_spans": _only_others(redactions), **unknown}
+    # Whatever state a document ended in, its report says what is unknown.
+    if spans_unknown_from:
+        for entry in summary.values():
+            entry["spans_unknown_from"] = spans_unknown_from
     return summary

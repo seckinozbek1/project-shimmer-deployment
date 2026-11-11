@@ -1,0 +1,145 @@
+{
+  "auditor_pairing": {
+    "agreements": 0,
+    "auditor_to_verifier": [],
+    "classifier_calls": 0,
+    "classifier_failures": 0,
+    "classifier_forwards": 0,
+    "classifier_service_seconds": 0,
+    "disagreements": 0,
+    "eligible_producer_items": 0,
+    "forward_count_unknown": 0,
+    "interpretation": "Advisory pair and independent finding layers; disagreement is not an error label",
+    "joined_findings": 0,
+    "pairs_constructed": 0,
+    "pairs_from_partial_delivery": 0,
+    "partial_deliveries": 0,
+    "producer_items": 0,
+    "producer_to_auditor": [],
+    "relation_distribution": {
+      "ADDITION": 0,
+      "DIVERGENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 0
+    },
+    "unavailable": 0,
+    "unjoined_findings": 0
+  },
+  "call_wall_union_seconds": 0,
+  "caveats": [
+    "Service sums include overlap; wall union does not.",
+    "EOS establishes transport completion, not semantic correctness.",
+    "Resource peaks are sampled peaks at recorded intervals; CPU time includes inference and telemetry."
+  ],
+  "consumer_barriers": [],
+  "costs": {
+    "combined_estimate": null,
+    "infrastructure_estimate": null,
+    "invoice": false,
+    "model_api_estimate": null,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "counts": {
+    "cap_hit": 0,
+    "contract_valid": 0,
+    "empty_output": 0,
+    "refused": 0,
+    "truncated": 0
+  },
+  "critical_path_model_service": {},
+  "critical_path_unavailable": "No complete scheduler DAG",
+  "emitted": {
+    "measured_calls": 0,
+    "total_calls": 0,
+    "value": null
+  },
+  "failed_calls": 0,
+  "generation_wall_union_seconds": null,
+  "handoffs": [],
+  "input_tokens": {
+    "measured_calls": 0,
+    "total_calls": 0,
+    "value": null
+  },
+  "maximum_concurrency": 0,
+  "model_lifecycle": [],
+  "output_tokens": {
+    "measured_calls": 0,
+    "total_calls": 0,
+    "value": null
+  },
+  "per_agent_service": {},
+  "phase_latencies": [],
+  "pipeline_wall_seconds": 0.03529770000022836,
+  "process_cpu_seconds": 0.03125,
+  "resources": {
+    "cuda_allocated_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "cuda_reserved_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "gpu_power_watts": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "gpu_utilization": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "process_cpu_percent": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "process_rss_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "swap_used_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "system_cpu_percent": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "system_ram_free_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "system_ram_used_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    },
+    "vram_used_bytes": {
+      "median": null,
+      "peak": null,
+      "samples": 0
+    }
+  },
+  "retained": {
+    "measured_calls": 0,
+    "total_calls": 0,
+    "value": null
+  },
+  "scheduler_lane_idle_seconds": 0,
+  "scheduler_timing_available": false,
+  "scheduler_wait_seconds": 0,
+  "schema_version": 1,
+  "semantic_critical_path": null,
+  "service_totals": {},
+  "wave_count": 0,
+  "wave_intervals": {}
+}

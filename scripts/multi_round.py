@@ -1,7 +1,8 @@
 """Case-scoped typed positioning. No semantic classification is computed here.
 
-The input is operator-declared identity and source spans. PROCESSOR supplies
-interpretations and VERIFIER reviews them through the existing agent boundary.
+The input is operator-declared identity and source spans. The case phase computes
+its position and movement records in Python from them (multi_round_phase,
+open item 35); a movement's semantic category is never computed and stays unknown.
 All projections below also accept pre-authored envelopes for offline proofs.
 """
 from __future__ import annotations
@@ -40,6 +41,15 @@ def finite_number(value):
         return False
 
 
+def declared_unit(value):
+    """True for an issue's declared unit (D-S70 item 4): the operator's own words for the measure
+    the issue's figures are written in, as a quote writes them right after a figure ("days",
+    "credits per month"). Declared syntax only: a non-empty string, no digit (it would read as a
+    figure), single spaces, no leading or trailing space, one line. No unit is named in code."""
+    return (isinstance(value, str) and 0 < len(value) <= 64 and value == " ".join(value.split())
+            and not any(c.isdigit() for c in value))
+
+
 def index(rows, key):
     require(isinstance(rows, list), "expected_list")
     out = {}
@@ -62,6 +72,7 @@ def validate_manifest(value):
     issues = index(value.get("issues"), "issue_id")
     sources = index(value.get("sources"), "source_id")
     require(len(rounds) >= 2 and actors and issues, "case_needs_rounds_actors_issues")
+    require(all("unit" not in i or declared_unit(i["unit"]) for i in issues.values()), "issue_unit")
     orders, docs = set(), set()
     for r in rounds.values():
         n = r.get("sequence")
@@ -281,6 +292,7 @@ def read_saved(run_dir, run_id):
             strategic = {"availability": "invalid", "state": "recommendation_unavailable", "layers": [], "quality": "UNVERIFIED"}
         return {"recorded": True, "run_id": run_id, "activation": a, "fixture": r["fixture"], "view": view,
                 "strategic_support": strategic,
-                "availability": "recorded", "outcome": r.get("outcome", "phase_not_completed"), "baseline_commit": BASELINE}
+                "availability": "recorded", "outcome": r.get("outcome", "phase_not_completed"), "baseline_commit": BASELINE,
+                "round_review": r.get("round_review")}
     except (OSError, ValueError, KeyError, TypeError):
         return {"recorded": False, "availability": "invalid", "activation": activation(True, eligible=False, reason="invalid_saved_state")}

@@ -1,0 +1,630 @@
+{
+  "schema_version": 1,
+  "case_id": "seat-agreement-three-rounds",
+  "fixture": false,
+  "rounds": [
+    {
+      "round_id": "r1",
+      "sequence": 1,
+      "document_ids": [
+        "seat_agreement_round_1",
+        "note_host_state_round_1",
+        "note_organisation_round_1"
+      ]
+    },
+    {
+      "round_id": "r2",
+      "sequence": 2,
+      "document_ids": [
+        "seat_agreement_round_2",
+        "note_host_state_round_2",
+        "note_organisation_round_2"
+      ]
+    },
+    {
+      "round_id": "r3",
+      "sequence": 3,
+      "document_ids": [
+        "seat_agreement_round_3",
+        "note_host_state_round_3",
+        "note_organisation_round_3"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "host_state"
+    },
+    {
+      "actor_id": "organisation",
+      "supported": true
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "premises-access"
+    },
+    {
+      "issue_id": "tax-relief",
+      "unit": "EUR",
+      "open": true,
+      "text_units": [
+        "article-8-exemption-from-taxes-and-dutie",
+        "article-10-officials"
+      ],
+      "position": "Exemption on every purchase for official use, with no threshold.",
+      "fallback": "A threshold of 1,000 EUR, with refunds decided in the Agreement itself.",
+      "closed_units": [
+        "article-12-waiver-of-immunity",
+        "article-2-legal-personality",
+        "article-5-public-services",
+        "article-7-archives-and-communications"
+      ]
+    },
+    {
+      "issue_id": "entry-period",
+      "unit": "days",
+      "open": true,
+      "text_units": [
+        "article-9-entry-and-residence",
+        "article-10-officials"
+      ],
+      "position": "Every application decided within 14 days.",
+      "fallback": "Every application decided within 21 days.",
+      "closed_units": [
+        "article-12-waiver-of-immunity",
+        "article-2-legal-personality",
+        "article-5-public-services",
+        "article-7-archives-and-communications"
+      ]
+    },
+    {
+      "issue_id": "dependants",
+      "open": true,
+      "text_units": [
+        "article-9-entry-and-residence"
+      ],
+      "position": "Dependants may take up employment.",
+      "fallback": "Dependants may apply for a work authorisation.",
+      "closed_units": [
+        "article-12-waiver-of-immunity",
+        "article-2-legal-personality",
+        "article-5-public-services",
+        "article-7-archives-and-communications"
+      ]
+    },
+    {
+      "issue_id": "dispute-settlement"
+    },
+    {
+      "issue_id": "termination-notice",
+      "unit": "months"
+    },
+    {
+      "issue_id": "annual-contribution",
+      "unit": "EUR",
+      "open": true,
+      "text_units": [
+        "annex-ii-annual-contribution-of-the-host"
+      ],
+      "position": "An annual contribution of 2,600,000 EUR.",
+      "fallback": "An annual contribution of 2,200,000 EUR.",
+      "closed_units": [
+        "article-12-waiver-of-immunity",
+        "article-2-legal-personality",
+        "article-5-public-services",
+        "article-7-archives-and-communications"
+      ]
+    },
+    {
+      "issue_id": "security-provision",
+      "open": true,
+      "text_units": [
+        "article-4-inviolability-of-the-premises",
+        "article-11-security-and-cooperation"
+      ],
+      "position": "No entry without the express consent of the Director-General.",
+      "fallback": "Entry without consent only in a fire or a like emergency, as Article 4 already says.",
+      "closed_units": [
+        "article-12-waiver-of-immunity",
+        "article-2-legal-personality",
+        "article-5-public-services",
+        "article-7-archives-and-communications"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "r1-host_state-premises-access-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "premises-access",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 344,
+      "char_end": 429,
+      "quote": "The competent authorities must be able to enter the premises in urgent circumstances.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-premises-access-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "premises-access",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 276,
+      "char_end": 335,
+      "quote": "Unqualified inviolability is the core of any seat agreement",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-premises-access-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "premises-access",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 259,
+      "char_end": 299,
+      "quote": "It restores express consent in Article 4",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-premises-access-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "premises-access",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 298,
+      "char_end": 334,
+      "quote": "accepts express consent in Article 4",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-tax-relief-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "tax-relief",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 430,
+      "char_end": 503,
+      "quote": "Relief from value added tax should apply only above 5,000 EUR per invoice",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-tax-relief-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "tax-relief",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 526,
+      "char_end": 600,
+      "quote": "a threshold of 5,000 EUR would exclude most of what the Organisation buys.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-tax-relief-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "tax-relief",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 363,
+      "char_end": 453,
+      "quote": "It accepts a refund scheme with a threshold of 1,000 EUR and a decision within sixty days.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-tax-relief-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "tax-relief",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 474,
+      "char_end": 566,
+      "quote": "The refund procedure is better placed in an administrative arrangement outside the Agreement",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-tax-relief-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "tax-relief",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 455,
+      "char_end": 554,
+      "quote": "It wishes to see the administrative arrangement on refunds before it agrees to move that procedure.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-entry-period-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "entry-period",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 717,
+      "char_end": 748,
+      "quote": "Visa applications need 30 days.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-entry-period-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "entry-period",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 714,
+      "char_end": 760,
+      "quote": "A decision on visas within 14 days is the norm",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-entry-period-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "entry-period",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 455,
+      "char_end": 500,
+      "quote": "It proposes 21 days for visas as a compromise",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-host_state-entry-period-1",
+      "round_id": "r2",
+      "actor_id": "host_state",
+      "issue_id": "entry-period",
+      "document_id": "note_host_state_round_2",
+      "unit_id": "u01-position",
+      "char_start": 360,
+      "char_end": 405,
+      "quote": "It can accept 21 days for visas in principle.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-entry-period-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "entry-period",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 632,
+      "char_end": 712,
+      "quote": "The term visa is replaced by entry clearance, which is the term of national law.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-dependants-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "dependants",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 749,
+      "char_end": 813,
+      "quote": "The employment of dependants is a matter for national labour law",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-dependants-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "dependants",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 816,
+      "char_end": 882,
+      "quote": "it continues to attach importance to the employment of dependants.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-dependants-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "dependants",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 606,
+      "char_end": 667,
+      "quote": "it now asks only that they may apply for a work authorisation",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-host_state-dependants-1",
+      "round_id": "r2",
+      "actor_id": "host_state",
+      "issue_id": "dependants",
+      "document_id": "note_host_state_round_2",
+      "unit_id": "u01-position",
+      "char_start": 407,
+      "char_end": 506,
+      "quote": "It can accept in principle that dependants may apply for a work authorisation, subject to drafting.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-dependants-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "dependants",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 321,
+      "char_end": 401,
+      "quote": "It asks that the text provide that dependants may apply for a work authorisation",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-dispute-settlement-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 608,
+      "char_end": 669,
+      "quote": "Disputes between the parties belong in the diplomatic channel",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-dispute-settlement-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 601,
+      "char_end": 639,
+      "quote": "An arbitration clause is indispensable",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-dispute-settlement-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 541,
+      "char_end": 590,
+      "quote": "It restores arbitration, which it cannot give up.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-host_state-dispute-settlement-1",
+      "round_id": "r2",
+      "actor_id": "host_state",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_host_state_round_2",
+      "unit_id": "u01-position",
+      "char_start": 264,
+      "char_end": 359,
+      "quote": "It can consider arbitration if its security interests are protected elsewhere in the Agreement.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-dispute-settlement-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 240,
+      "char_end": 293,
+      "quote": "It accepts arbitration at the request of either party",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-dispute-settlement-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "dispute-settlement",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 182,
+      "char_end": 220,
+      "quote": "welcomes the acceptance of arbitration",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-termination-notice-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "termination-notice",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 851,
+      "char_end": 899,
+      "quote": "A termination notice of 12 months is sufficient.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-termination-notice-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "termination-notice",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 884,
+      "char_end": 929,
+      "quote": "It asks for a termination notice of 24 months",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-termination-notice-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "termination-notice",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 506,
+      "char_end": 540,
+      "quote": "a termination notice of 18 months.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-host_state-termination-notice-1",
+      "round_id": "r2",
+      "actor_id": "host_state",
+      "issue_id": "termination-notice",
+      "document_id": "note_host_state_round_2",
+      "unit_id": "u01-position",
+      "char_start": 566,
+      "char_end": 621,
+      "quote": "A termination notice of 12 months remains its position.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-termination-notice-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "termination-notice",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 654,
+      "char_end": 699,
+      "quote": "It accepts a termination notice of 18 months.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-termination-notice-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "termination-notice",
+      "document_id": "seat_agreement_round_3",
+      "unit_id": "u15-annex-i-schedule-of-periods",
+      "char_start": 8254,
+      "char_end": 8290,
+      "quote": "Termination notice period: 18 months",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-annual-contribution-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "annual-contribution",
+      "document_id": "note_host_state_round_1",
+      "unit_id": "u01-position",
+      "char_start": 900,
+      "char_end": 945,
+      "quote": "The annual contribution can be 2,000,000 EUR.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-organisation-annual-contribution-1",
+      "round_id": "r1",
+      "actor_id": "organisation",
+      "issue_id": "annual-contribution",
+      "document_id": "note_organisation_round_1",
+      "unit_id": "u01-position",
+      "char_start": 939,
+      "char_end": 978,
+      "quote": "an annual contribution of 2,600,000 EUR",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-annual-contribution-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "annual-contribution",
+      "document_id": "note_organisation_round_2",
+      "unit_id": "u01-position",
+      "char_start": 705,
+      "char_end": 757,
+      "quote": "It proposes an annual contribution of 2,200,000 EUR.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-host_state-annual-contribution-1",
+      "round_id": "r2",
+      "actor_id": "host_state",
+      "issue_id": "annual-contribution",
+      "document_id": "note_host_state_round_2",
+      "unit_id": "u01-position",
+      "char_start": 507,
+      "char_end": 565,
+      "quote": "An annual contribution of 2,200,000 EUR can be considered.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-annual-contribution-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "annual-contribution",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 769,
+      "char_end": 813,
+      "quote": "contribution is maintained at 2,200,000 EUR.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-annual-contribution-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "annual-contribution",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 713,
+      "char_end": 765,
+      "quote": "the annual contribution be restored to 2,400,000 EUR",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-host_state-security-provision-1",
+      "round_id": "r3",
+      "actor_id": "host_state",
+      "issue_id": "security-provision",
+      "document_id": "note_host_state_round_3",
+      "unit_id": "u01-position",
+      "char_start": 414,
+      "char_end": 472,
+      "quote": "it has added a provision on public security in Article 11.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-organisation-security-provision-1",
+      "round_id": "r3",
+      "actor_id": "organisation",
+      "issue_id": "security-provision",
+      "document_id": "note_organisation_round_3",
+      "unit_id": "u01-position",
+      "char_start": 556,
+      "char_end": 652,
+      "quote": "It is still studying the new paragraphs of Articles 10 and 11 and reserves its position on them.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r1-host_state-security-provision-1",
+      "round_id": "r1",
+      "actor_id": "host_state",
+      "issue_id": "security-provision",
+      "document_id": "seat_agreement_round_1",
+      "unit_id": "u11-article-11-security-and-cooperation",
+      "char_start": 5842,
+      "char_end": 5886,
+      "quote": "precautions in the interest of its security.",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-organisation-security-provision-1",
+      "round_id": "r2",
+      "actor_id": "organisation",
+      "issue_id": "security-provision",
+      "document_id": "seat_agreement_round_2",
+      "unit_id": "u11-article-11-security-and-cooperation",
+      "char_start": 6255,
+      "char_end": 6370,
+      "quote": "after consulting the Director-General and so far as possible without interfering with the work of the Organisation.",
+      "state": "accepted"
+    }
+  ]
+}

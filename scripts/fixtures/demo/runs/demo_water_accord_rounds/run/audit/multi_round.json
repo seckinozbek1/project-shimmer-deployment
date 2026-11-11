@@ -1,0 +1,571 @@
+{
+  "schema_version": 1,
+  "run_id": "21f05edc6ecd4f29b79566ddc0c4f7c9",
+  "baseline_commit": "47c63aca09603ab5c7ad662753d647397a623ce8",
+  "activation": {
+    "requested": true,
+    "eligible": true,
+    "activated": true,
+    "state": "activated",
+    "reason": null
+  },
+  "manifest": {
+    "schema_version": 1,
+    "case_id": "demo_water_accord",
+    "fixture": false,
+    "rounds": [
+      {
+        "round_id": "r1",
+        "sequence": 1,
+        "document_ids": [
+          "accord_round_1",
+          "note_north_round_1",
+          "note_south_round_1"
+        ]
+      },
+      {
+        "round_id": "r2",
+        "sequence": 2,
+        "document_ids": [
+          "accord_round_2",
+          "note_north_round_2",
+          "note_south_round_2"
+        ]
+      },
+      {
+        "round_id": "r3",
+        "sequence": 3,
+        "document_ids": [
+          "accord_round_3",
+          "note_north_round_3",
+          "note_south_round_3"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "actor_id": "party_north",
+        "supported": true
+      },
+      {
+        "actor_id": "party_south"
+      }
+    ],
+    "issues": [
+      {
+        "issue_id": "annual_share",
+        "open": true,
+        "text_units": [
+          "article-2-annual-share"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "source_id": "s_party_north_r1",
+        "round_id": "r1",
+        "actor_id": "party_north",
+        "issue_id": "annual_share",
+        "document_id": "note_north_round_1",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party North asks for a share of 61 units.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_party_south_r1",
+        "round_id": "r1",
+        "actor_id": "party_south",
+        "issue_id": "annual_share",
+        "document_id": "note_south_round_1",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party South asks for a share of 40 units.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_party_north_r2",
+        "round_id": "r2",
+        "actor_id": "party_north",
+        "issue_id": "annual_share",
+        "document_id": "note_north_round_2",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party North asks for a share of 58 units.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_party_south_r2",
+        "round_id": "r2",
+        "actor_id": "party_south",
+        "issue_id": "annual_share",
+        "document_id": "note_south_round_2",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party South asks for a share of 45 units.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_party_north_r3",
+        "round_id": "r3",
+        "actor_id": "party_north",
+        "issue_id": "annual_share",
+        "document_id": "note_north_round_3",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party North asks for a share of 62 units.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_party_south_r3",
+        "round_id": "r3",
+        "actor_id": "party_south",
+        "issue_id": "annual_share",
+        "document_id": "note_south_round_3",
+        "unit_id": "u01-share",
+        "char_start": 42,
+        "char_end": 83,
+        "quote": "Party South asks for a share of 50 units.",
+        "state": "accepted"
+      }
+    ]
+  },
+  "fixture": false,
+  "records": [
+    {
+      "record_id": "position.r1.party_north.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "round_id": "r1",
+      "source_ids": [
+        "s_party_north_r1"
+      ],
+      "ref_ids": [
+        "REF-0001"
+      ],
+      "position": "Party North asks for a share of 61 units.",
+      "text": "Party North asks for a share of 61 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 61.0,
+      "unit": "units",
+      "item_id": "position.r1.party_north.annual_share",
+      "revision": 1,
+      "ref": "position.r1.party_north.annual_share"
+    },
+    {
+      "record_id": "position.r1.party_south.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "round_id": "r1",
+      "source_ids": [
+        "s_party_south_r1"
+      ],
+      "ref_ids": [
+        "REF-0002"
+      ],
+      "position": "Party South asks for a share of 40 units.",
+      "text": "Party South asks for a share of 40 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 40.0,
+      "unit": "units",
+      "item_id": "position.r1.party_south.annual_share",
+      "revision": 1,
+      "ref": "position.r1.party_south.annual_share"
+    },
+    {
+      "record_id": "position.r2.party_north.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "round_id": "r2",
+      "source_ids": [
+        "s_party_north_r2"
+      ],
+      "ref_ids": [
+        "REF-0003"
+      ],
+      "position": "Party North asks for a share of 58 units.",
+      "text": "Party North asks for a share of 58 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 58.0,
+      "unit": "units",
+      "item_id": "position.r2.party_north.annual_share",
+      "revision": 1,
+      "ref": "position.r2.party_north.annual_share"
+    },
+    {
+      "record_id": "position.r2.party_south.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "round_id": "r2",
+      "source_ids": [
+        "s_party_south_r2"
+      ],
+      "ref_ids": [
+        "REF-0004"
+      ],
+      "position": "Party South asks for a share of 45 units.",
+      "text": "Party South asks for a share of 45 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 45.0,
+      "unit": "units",
+      "item_id": "position.r2.party_south.annual_share",
+      "revision": 1,
+      "ref": "position.r2.party_south.annual_share"
+    },
+    {
+      "record_id": "position.r3.party_north.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "round_id": "r3",
+      "source_ids": [
+        "s_party_north_r3"
+      ],
+      "ref_ids": [
+        "REF-0005"
+      ],
+      "position": "Party North asks for a share of 62 units.",
+      "text": "Party North asks for a share of 62 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 62.0,
+      "unit": "units",
+      "item_id": "position.r3.party_north.annual_share",
+      "revision": 1,
+      "ref": "position.r3.party_north.annual_share"
+    },
+    {
+      "record_id": "position.r3.party_south.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "round_id": "r3",
+      "source_ids": [
+        "s_party_south_r3"
+      ],
+      "ref_ids": [
+        "REF-0006"
+      ],
+      "position": "Party South asks for a share of 50 units.",
+      "text": "Party South asks for a share of 50 units.",
+      "written_by": "python",
+      "provenance": "computed",
+      "value": 50.0,
+      "unit": "units",
+      "item_id": "position.r3.party_south.annual_share",
+      "revision": 1,
+      "ref": "position.r3.party_south.annual_share"
+    },
+    {
+      "record_id": "movement.r1.r2.party_north.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "movement",
+      "state": "accepted",
+      "category": "semantic_interpretation",
+      "confidence": "UNCERTAIN",
+      "movement": "concession",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "round_id": "r2",
+      "previous_round_id": "r1",
+      "previous_position_id": "position.r1.party_north.annual_share",
+      "current_position_id": "position.r2.party_north.annual_share",
+      "source_ids": [
+        "s_party_north_r1",
+        "s_party_north_r2"
+      ],
+      "ref_ids": [
+        "REF-0001",
+        "REF-0003"
+      ],
+      "text": "Party North asks for a share of 61 units.\nParty North asks for a share of 58 units.",
+      "written_by": "model",
+      "provenance": "model_decided",
+      "item_id": "movement.r1.r2.party_north.annual_share",
+      "revision": 1,
+      "ref": "movement.r1.r2.party_north.annual_share",
+      "movement_answer": "toward",
+      "movement_confidence": 0.9,
+      "movement_decided_by": "model",
+      "movement_model": "stub-not-a-model",
+      "checked_by_python": false,
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python."
+    },
+    {
+      "record_id": "movement.r2.r3.party_north.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "movement",
+      "state": "accepted",
+      "category": "semantic_interpretation",
+      "confidence": "UNCERTAIN",
+      "movement": "hardening",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "round_id": "r3",
+      "previous_round_id": "r2",
+      "previous_position_id": "position.r2.party_north.annual_share",
+      "current_position_id": "position.r3.party_north.annual_share",
+      "source_ids": [
+        "s_party_north_r2",
+        "s_party_north_r3"
+      ],
+      "ref_ids": [
+        "REF-0003",
+        "REF-0005"
+      ],
+      "text": "Party North asks for a share of 58 units.\nParty North asks for a share of 62 units.",
+      "written_by": "model",
+      "provenance": "model_decided",
+      "item_id": "movement.r2.r3.party_north.annual_share",
+      "revision": 1,
+      "ref": "movement.r2.r3.party_north.annual_share",
+      "movement_answer": "away",
+      "movement_confidence": 0.9,
+      "movement_decided_by": "model",
+      "movement_model": "stub-not-a-model",
+      "checked_by_python": false,
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python."
+    },
+    {
+      "record_id": "movement.r1.r2.party_south.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "movement",
+      "state": "accepted",
+      "category": "semantic_interpretation",
+      "confidence": "UNCERTAIN",
+      "movement": "concession",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "round_id": "r2",
+      "previous_round_id": "r1",
+      "previous_position_id": "position.r1.party_south.annual_share",
+      "current_position_id": "position.r2.party_south.annual_share",
+      "source_ids": [
+        "s_party_south_r1",
+        "s_party_south_r2"
+      ],
+      "ref_ids": [
+        "REF-0002",
+        "REF-0004"
+      ],
+      "text": "Party South asks for a share of 40 units.\nParty South asks for a share of 45 units.",
+      "written_by": "model",
+      "provenance": "model_decided",
+      "item_id": "movement.r1.r2.party_south.annual_share",
+      "revision": 1,
+      "ref": "movement.r1.r2.party_south.annual_share",
+      "movement_answer": "toward",
+      "movement_confidence": 0.9,
+      "movement_decided_by": "model",
+      "movement_model": "stub-not-a-model",
+      "checked_by_python": false,
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python."
+    },
+    {
+      "record_id": "movement.r2.r3.party_south.annual_share",
+      "case_id": "demo_water_accord",
+      "kind": "movement",
+      "state": "accepted",
+      "category": "semantic_interpretation",
+      "confidence": "UNCERTAIN",
+      "movement": "concession",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "round_id": "r3",
+      "previous_round_id": "r2",
+      "previous_position_id": "position.r2.party_south.annual_share",
+      "current_position_id": "position.r3.party_south.annual_share",
+      "source_ids": [
+        "s_party_south_r2",
+        "s_party_south_r3"
+      ],
+      "ref_ids": [
+        "REF-0004",
+        "REF-0006"
+      ],
+      "text": "Party South asks for a share of 45 units.\nParty South asks for a share of 50 units.",
+      "written_by": "model",
+      "provenance": "model_decided",
+      "item_id": "movement.r2.r3.party_south.annual_share",
+      "revision": 1,
+      "ref": "movement.r2.r3.party_south.annual_share",
+      "movement_answer": "toward",
+      "movement_confidence": 0.9,
+      "movement_decided_by": "model",
+      "movement_model": "stub-not-a-model",
+      "checked_by_python": false,
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python."
+    }
+  ],
+  "evidence": [
+    {
+      "source_id": "s_party_north_r1",
+      "round_id": "r1",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "document_id": "note_north_round_1",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party North asks for a share of 61 units.",
+      "state": "accepted",
+      "ref_id": "REF-0001"
+    },
+    {
+      "source_id": "s_party_south_r1",
+      "round_id": "r1",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "document_id": "note_south_round_1",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party South asks for a share of 40 units.",
+      "state": "accepted",
+      "ref_id": "REF-0002"
+    },
+    {
+      "source_id": "s_party_north_r2",
+      "round_id": "r2",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "document_id": "note_north_round_2",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party North asks for a share of 58 units.",
+      "state": "accepted",
+      "ref_id": "REF-0003"
+    },
+    {
+      "source_id": "s_party_south_r2",
+      "round_id": "r2",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "document_id": "note_south_round_2",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party South asks for a share of 45 units.",
+      "state": "accepted",
+      "ref_id": "REF-0004"
+    },
+    {
+      "source_id": "s_party_north_r3",
+      "round_id": "r3",
+      "actor_id": "party_north",
+      "issue_id": "annual_share",
+      "document_id": "note_north_round_3",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party North asks for a share of 62 units.",
+      "state": "accepted",
+      "ref_id": "REF-0005"
+    },
+    {
+      "source_id": "s_party_south_r3",
+      "round_id": "r3",
+      "actor_id": "party_south",
+      "issue_id": "annual_share",
+      "document_id": "note_south_round_3",
+      "unit_id": "u01-share",
+      "char_start": 42,
+      "char_end": 83,
+      "quote": "Party South asks for a share of 50 units.",
+      "state": "accepted",
+      "ref_id": "REF-0006"
+    }
+  ],
+  "round_review": {
+    "record": "audit/round_reuse.json",
+    "availability": "recorded",
+    "bus_envelopes": 2
+  },
+  "version_changes": {
+    "availability": "recorded",
+    "record": "audit/version_changes.json",
+    "deliverables": [
+      "deliverables/accord_round_2/version_changes.md",
+      "deliverables/accord_round_3/version_changes.md"
+    ]
+  },
+  "strategic_layer": {
+    "schema_version": 1,
+    "mode": "trajectory_only",
+    "state": "trajectory_only",
+    "items": [],
+    "reviewed": false
+  },
+  "case_questions": {
+    "availability": "recorded",
+    "record": "audit/case_questions.json",
+    "deliverable": "deliverables/accord_round_3/case_positions.md",
+    "asked": {
+      "movements": true,
+      "suggestions": true
+    },
+    "failed": 0,
+    "not_asked": {},
+    "judging_calls": {}
+  },
+  "outcome": "reviewed",
+  "timings": {
+    "unit": "seconds",
+    "clock": "time.perf_counter",
+    "rounds": [
+      {
+        "round_id": "r1",
+        "seconds": 0.051962
+      },
+      {
+        "round_id": "r2",
+        "seconds": 0.002067
+      },
+      {
+        "round_id": "r3",
+        "seconds": 0.006373
+      }
+    ],
+    "round_review": 0.069671,
+    "records": 0.014557,
+    "phase": 0.412048
+  }
+}

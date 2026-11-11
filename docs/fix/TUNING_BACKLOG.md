@@ -8,7 +8,9 @@ file is authorized, started, or scheduled. An entry is a record, not a plan.
 **Status:** withheld for the `clinical_reference` review scope on 2026-09-19
 (`config/review_scope.json`, `withheld_audit_agents`). Not removed from
 `config/agent_registry.json` or from `AUDIT_AGENTS_PER_DOC`, so LAW-III enforcement is unchanged
-and another corpus gets the agent back by clearing one declaration.
+and another corpus gets the agent back by clearing one declaration. The declaration sits in the
+shipped `config/review_scope.json`, so every run that uses that file withholds FACT_CHECKER,
+whatever its corpus, until the declaration is cleared.
 
 **What ruled it out.** Three instrumented cloud runs on this corpus, no substantively correct
 item in any of them. The agent runs on the untuned `unsloth/Phi-3.5-mini-instruct-bnb-4bit`

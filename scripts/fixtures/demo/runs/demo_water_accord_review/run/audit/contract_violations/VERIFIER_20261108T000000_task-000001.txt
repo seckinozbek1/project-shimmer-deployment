@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: VERIFIER
+# timestamp: 2026-11-08T00:00:00+00:00
+# missing_fields: ['not a canonical envelope {agent:str, doc_id:str, items:list}']
+# raw_text_bytes: 13263
+# sensitive: False
+# ---
+[the fixture withholds the reply]

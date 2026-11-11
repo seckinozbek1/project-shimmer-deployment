@@ -19,6 +19,7 @@ each reader against a finished run's own evidence.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -27,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools')]
 from ordinary_final_run import read
+from cloud_run_common import no_window
 
 # The phases worth a reading, with what each one's total is and where its work can be seen.
 REMOTE_ROOT = '/home/ubuntu/shimmer-ordinary-final'
@@ -39,7 +41,18 @@ COMPLETION_ONLY = ('archive_integrity', 'extract_payload', 'create_environment',
                    'watchdog_receipt_transfer', 'stop_workload', 'terminate_instance',
                    # The copy phases: the probe is one hash of a file already in place and the
                    # use is a local copy on the instance, both over in seconds with one answer.
-                   'asset_copy_probe', 'asset_copy_use')
+                   'asset_copy_probe', 'asset_copy_use',
+                   # D-S108: binding the checked layers read-only, a few mount calls with one answer.
+                   'image_bind',
+                   # After a failed bind, the unmount and one reading of the mount table; after an
+                   # image phase's deadline, one kill of its process group. One answer each.
+                   'image_release', 'stop_image_phase',
+                   # A batch session's per-bundle steps (S2c item 11): moving the finished
+                   # bundle aside, sending the next bundle's sealed files, checking and
+                   # unpacking them, and collecting each bundle's evidence. Each is one
+                   # command with one answer; the long step is batch_workload, read below.
+                   'batch_park', 'batch_transfer', 'batch_integrity', 'batch_extract',
+                   'batch_pack_evidence', 'batch_evidence_hash', 'batch_evidence_download')
 SSH_OPTIONS = ['-o', 'IdentitiesOnly=yes', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new',
                '-o', 'ConnectTimeout=15']
 
@@ -49,7 +62,7 @@ def observe(bundle, host, command, timeout=40):
     argv = ['ssh', '-i', str(bundle / 'ssh_identity'), *SSH_OPTIONS,
             '-o', 'UserKnownHostsFile=' + str(bundle / 'known_hosts'), host, command]
     try:
-        result = subprocess.run(argv, capture_output=True, timeout=timeout)
+        result = subprocess.run(argv, capture_output=True, timeout=timeout, creationflags=no_window())
     except (subprocess.TimeoutExpired, OSError):
         return None
     if result.returncode != 0:
@@ -126,8 +139,111 @@ def install_pinned_wheels(context):
             '(not one to one), %.1f min elapsed, %.1f entries/min' % (done, total, elapsed / 60, rate * 60))
 
 
+B1_ROOT = 'evidence/b1'
+
+
+def training_command(root):
+    """The one read-only shell observation of a training pass, run from `root`. A mix's questions are
+    its own folder's reply records and its own passes' (`<folder>/audit/model_replies` and
+    `<folder>/passes/<name>/audit/model_replies`), at those depths only: permissive_mix's folder is
+    the parent of dev_mix's, so a recursive count there read dev_mix's records as its own."""
+    return ("cd %s && f=$(ls -t %s/*/training/progress.json %s/*/*/training/progress.json 2>/dev/null | head -1); "
+            "if [ -n \"$f\" ]; then echo TRAINING; tr -d '\\n' < \"$f\"; echo; "
+            "u=$(tr -d '\\n' < \"$f\" | grep -o '\"records_under\": *\"[^\"]*\"' | cut -d'\"' -f4); u=${u:-%s}; "
+            "( (find \"$u/audit/model_replies\" -mindepth 1 -maxdepth 1 -name '*.json' 2>/dev/null; "
+            "find \"$u/passes\" -mindepth 4 -maxdepth 4 -path '*/audit/model_replies/*.json' 2>/dev/null) | wc -l); "
+            "date +%%s; else echo NONE; fi" % (root, B1_ROOT, B1_ROOT, B1_ROOT))
+
+
+def training_reading(context, phase):
+    """A judge training pass (benchmark/baselines/judge_train.py, T of D-S42): no reply record exists
+    while it trains, so its reading is its own progress file, which states the update reached, the
+    updates planned, the seconds spent and the measured seconds an update. Once the questions run,
+    it is the reply records of every pass against the total the file states, timed from the start
+    the file states, counted under the folder the file names (a session's recipes each have one).
+    None when no such file exists: the reply-record reading then applies."""
+    raw = context['look'](training_command(REMOTE_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', '', '', ''])[:4]
+    if lines[0].strip() != 'TRAINING':
+        return None
+    try:
+        state = json.loads(lines[1])
+    except ValueError:
+        return unreadable(phase, 'the training progress file is being written')
+    mix = (' (%s)' % state['mix']) if state.get('mix') else ''
+    if state.get('phase') == 'questions':
+        if digits(lines[2]) > state['questions_total']:
+            return unreadable(phase + mix, '%d reply records counted against %d stated: they are not this pass\'s alone'
+                              % (digits(lines[2]), state['questions_total']))
+        return count_reading(phase + mix, digits(lines[2]), state['questions_total'], digits(lines[3]) - state['started_epoch'],
+                             'reply records', 'every pass of the questions written')
+    done, total, each = state['update'], state['of'], state['seconds_per_update']
+    return ('%s progress: %d of %d training updates (%.1f%%) measured, %.1f min elapsed, %.1f s/update, ~%.1f min remaining at that rate'
+            % (phase + mix, done, total, 100 * done / total, state['elapsed_seconds'] / 60, each, (total - done) * each / 60))
+
+
+def b1_workload(context, phase):
+    """A B1 entry (S5 R19): bare_model.py writes one reply record per item per sealed pass under
+    evidence/b1/<pass name>/audit/model_replies (every pass's folder is counted, whatever
+    checkpoint it loads), and the runner writes the total it expects (items times passes)
+    beside them first. None when the workload is not a B1 run (the pipeline's reading applies)
+    or the instance did not answer (the pipeline's own observation then says so)."""
+    reading = training_reading(context, phase)
+    if reading is not None:
+        return reading
+    raw = context['look'](
+        "cd %s && if [ -d %s ]; then echo B1; (find %s -path '*/audit/model_replies/*.json' 2>/dev/null | wc -l); "
+        "(cat %s/expected_records 2>/dev/null || echo 0); else echo PIPELINE; fi" % (REMOTE_ROOT, B1_ROOT, B1_ROOT, B1_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', '', ''])[:3]
+    if lines[0].strip() != 'B1':
+        return None
+    done, total = digits(lines[1]), digits(lines[2])
+    return count_reading(phase, done, total or None, context['elapsed'], 'reply records',
+                         'one reply record per item per pass, all written')
+
+
+LAUNCHER_ROOT = 'evidence/launcher'
+LAUNCHER_LINE = re.compile(r'(\d+) of (\d+) sealed answers to the required prompts given')
+
+
+def launcher_workload(context, phase):
+    """An arm L entry (D-S13 item 6d): the runner prints one line per answer it gives the menu,
+    naming how many of the sealed answers to the required prompts are given of how many; the
+    last such line is the reading. None when the workload is not arm L or the instance did not
+    answer (the pipeline's own observation then says so)."""
+    raw = context['look'](
+        "cd %s && if [ -d %s ]; then echo L; (grep -o '[0-9]* of [0-9]* sealed answers to the required prompts given' "
+        "workload.stderr.log 2>/dev/null | tail -1 || true); else echo OTHER; fi" % (REMOTE_ROOT, LAUNCHER_ROOT))
+    if raw is None:
+        return None
+    lines = (raw.splitlines() + ['', ''])[:2]
+    if lines[0].strip() != 'L':
+        return None
+    found = LAUNCHER_LINE.search(lines[1])
+    elapsed = max(context['elapsed'], 0)
+    if not found:
+        return ('%s progress: no sealed answer given yet, %.1f min elapsed; the menu asks nothing before its '
+                'runtime check and preflight end, so there is nothing to measure yet' % (phase, elapsed / 60))
+    # The answers come in bursts between the menu's two runs, so a rate over them would predict
+    # nothing: the count and the elapsed time are the reading, and no remaining time is claimed.
+    return ('%s progress: %s of %s sealed answers to the required prompts given (measured from the runner\'s '
+            'own answer lines), %.1f min elapsed; no rate or remaining time: the answers come in bursts between '
+            'the two runs, whose length the menu decides' % (phase, found.group(1), found.group(2), elapsed / 60))
+
+
 def ordinary_workload(context):
-    """The run itself: count the telemetry records it writes as it goes."""
+    """The run itself: count the telemetry records it writes as it goes (a B1 entry: its
+    reply records, b1_workload; an arm L entry: the sealed answers given, launcher_workload)."""
+    b1 = b1_workload(context, 'ordinary_workload')
+    if b1 is not None:
+        return b1
+    launcher = launcher_workload(context, 'ordinary_workload')
+    if launcher is not None:
+        return launcher
     raw = context['look'](
         "cd %s && (grep -c '\"event\": \"model_call\"' %s 2>/dev/null || echo 0); "
         "(grep -c '\"event\": \"auditor_pair\"' %s 2>/dev/null || echo 0); "
@@ -151,8 +267,39 @@ def ordinary_workload(context):
             'nothing before its first model call, so there is nothing to measure yet' % (max(elapsed, 0) / 60))
 
 
+def batch_workload(context):
+    """A batch bundle's run: the same records in the same place (the finished bundle was moved
+    aside before this one started), so the same reading under this phase's name."""
+    return ordinary_workload(context).replace('ordinary_workload', 'batch_workload', 1)
+
+
+def image_layers_reading(phase):
+    """D-S108: the image tool's own progress file in the run root (tools/image_layers.py writes it
+    every two seconds): the bytes hashed, copied or read, or the distributions installed, of the
+    stage in hand, against its total, with that stage's own start for the rate."""
+    def reader(context):
+        raw = context['look']('cat %s/image_progress.json 2>/dev/null || echo none' % REMOTE_ROOT)
+        if raw is None:
+            return unreadable(phase, 'the instance did not answer')
+        try:
+            record = json.loads(raw)
+        except ValueError:
+            return unreadable(phase, 'the image tool has written no progress yet')
+        done, total = record.get('done') or 0, record.get('total') or 0
+        stage_elapsed = max(0.0, float(record.get('epoch', 0)) - float(record.get('stage_started', 0)))
+        if record.get('unit') == 'bytes':
+            line = size_reading(phase, done, total, stage_elapsed, 'the ' + str(record.get('stage')))
+        else:
+            line = count_reading(phase, done, total, stage_elapsed, str(record.get('unit')),
+                                 'no remaining time can be read')
+        return '%s (stage: %s; the phase %.1f min elapsed)' % (line, record.get('stage'), context['elapsed'] / 60)
+    return reader
+
+
 READERS = dict(assets_transfer=assets_transfer, asset_copy_seed=asset_copy_seed,
-               install_pinned_wheels=install_pinned_wheels, ordinary_workload=ordinary_workload)
+               install_pinned_wheels=install_pinned_wheels, ordinary_workload=ordinary_workload,
+               batch_workload=batch_workload,
+               **{p: image_layers_reading(p) for p in ('image_check', 'image_recheck', 'image_build', 'image_measure')})
 
 
 def digits(text):

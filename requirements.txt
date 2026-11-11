@@ -14,7 +14,7 @@ openai==2.38.0
 #   import it directly). It is currently pulled in transitively by sentence-transformers,
 #   but a directly-imported package belongs here explicitly so the redactor never depends
 #   on a transitive chain.
-transformers==4.52.3
+transformers==4.51.3
 
 # Input-format support (shared text_extract family: .pdf/.docx/.html/.htm/
 #   .txt/.md/.rst/.log/.json). Heavy libs are imported lazily; a missing one

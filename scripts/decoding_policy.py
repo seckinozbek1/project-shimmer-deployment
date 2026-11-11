@@ -94,6 +94,13 @@ def effective_eos(decoding, model):
     return getattr(getattr(model, "generation_config", None), "eos_token_id", None)
 
 
+def deterministic(kwargs):
+    """True when the generate() kwargs a call recorded decode greedily with one beam: under the
+    frozen policy the same request then gives the same reply, so a retry can only repeat it
+    (D-061 (c)). False for anything else, including kwargs not recorded (a cloud call)."""
+    return isinstance(kwargs, dict) and kwargs.get("do_sample") is False and kwargs.get("num_beams", 1) == 1
+
+
 def usage_fields(decoding):
     """Payload-free provenance of the decoding in force, carried on the call's usage record."""
     return dict(decoding_policy_status=decoding["status"], decoding_policy_source=decoding["source"],

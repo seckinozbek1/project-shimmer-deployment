@@ -41,6 +41,9 @@ WIZARD = SCRIPTS / "intake_wizard.py"
 SCOPE_PATH = ROOT / "config" / "review_scope.json"
 REGISTRY_PATH = ROOT / "config" / "agent_registry.json"
 RUNS_ROOT = ROOT / "output" / "runs"
+# The children this window starts write into the window, never into a console of
+# their own: the Windows no-window flag, nothing elsewhere (HIDDEN-A, S7 close).
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # Dark theme.
 BG = "#1e1e1e"
@@ -74,6 +77,19 @@ HELP_TEXT = (
     "When a local AI model is available you can also just describe what you want in\n"
     "plain language and I will work out the command."
 )
+
+# What the window says about the local model (S7 6e). The startup probe checks only that the
+# libraries import and that a model id is configured, so the line claims nothing more; a
+# request the model did not answer says so before the keyword parser's reply.
+LOCAL_MODEL_CONFIGURED = ("Local model configured (its libraries import and a model is named); "
+                          "it loads on your first request. Describe what you want in plain language.")
+MODEL_NOT_USED = "The local model was not used for this request (%s). Using the command parser instead."
+MODEL_FAILED_TO_LOAD = "it failed to load"
+MODEL_GAVE_NO_ANSWER = "it gave no usable answer"
+MODEL_FAILED_WHILE_ANSWERING = "it failed while answering"
+# The person's own mode setting is kept over the one the request was read as (issue #118).
+MODE_KEPT = ("Keeping the %s mode you set; the request was read as %s mode. "
+             "Type 'mode %s' first to change it.")
 
 _STOPWORDS = {
     "why", "did", "you", "flag", "flagged", "the", "a", "an", "is", "was", "for",
@@ -143,9 +159,10 @@ def _extract_date(s: str) -> "str | None":
 
 
 def _extract_question(text: str) -> str:
-    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic."""
+    """Strip a 'draft/write a memo on ...' lead-in, leaving the topic. A bare
+    'draft' leaves no topic (it used to become the topic "draft")."""
     return re.sub(
-        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\s+(me\s+)?(a\s+)?"
+        r"(?i)^\s*(please\s+)?(draft|write|prepare|compose)\b\s*(me\s+)?(a\s+)?"
         r"(memo|brief|note)?\s*(on|about|regarding|re)?\s*:?\s*",
         "", text.strip()).strip()
 
@@ -347,6 +364,17 @@ def latest_run_dir() -> "Path | None":
     return max(dirs, key=lambda d: d.stat().st_mtime) if dirs else None
 
 
+def results_hint(d: "Path | None") -> str:
+    """Where the run's deliverables are, relative to the project when they sit in it."""
+    if d is None:
+        return ""
+    try:
+        shown = d.relative_to(ROOT).as_posix()
+    except ValueError:
+        shown = d.as_posix()
+    return f" Results in {shown}/deliverables/ (start with _run_summary.md)"
+
+
 def _summarize_bus_line(line: str) -> str:
     try:
         obj = json.loads(line)
@@ -406,6 +434,7 @@ class ChatApp:
         self.busy = False
         self.pending = None        # a parsed command awaiting y/n confirmation
         self.pending_mode = "normal"
+        self.mode_set_by_person = False  # True once the person sets a mode themselves
         self.qwen_available = False
 
         root.title("Shimmer")
@@ -475,7 +504,10 @@ class ChatApp:
             configured = False
         self.qwen_available = configured
         if configured:
-            self.ui(self.post, "Local AI model available. Describe what you want in plain language.")
+            # The probe checks only that torch and transformers import and that a model id is
+            # configured (redaction_gate.qwen_backend_status), never the weights or the memory,
+            # so the line says that much and no more (S7 6e).
+            self.ui(self.post, LOCAL_MODEL_CONFIGURED)
         else:
             self.ui(self.post, "Local AI model not available. Using command mode. "
                                "Type 'help' for available commands.")
@@ -514,7 +546,7 @@ class ChatApp:
             self.post("Please answer y or n.")
 
     def _qwen_parse(self, text: str) -> None:
-        cmd = None
+        cmd, not_used = None, None
         try:
             from agent_wrapper import _load_qwen
             import decoding_policy
@@ -524,27 +556,46 @@ class ChatApp:
             # call site (config/decoding_policy.json): greedy, single beam.
             decoding = decoding_policy.policy("qwen_local")
             tok, mdl = _load_qwen(mid)
-            prompt = QWEN_SYSTEM_PROMPT + "\n\nUser: " + text + "\n\nJSON:"
-            inputs = tok(prompt, return_tensors="pt").to(mdl.device)
-            with torch.no_grad():
-                out = mdl.generate(**inputs, max_new_tokens=256, **decoding["kwargs"])
-            raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-            cmd = extract_json(raw)
         except Exception:
-            cmd = None
-        if not cmd or "action" not in cmd:
+            not_used = MODEL_FAILED_TO_LOAD
+        if not_used is None:
+            try:
+                prompt = QWEN_SYSTEM_PROMPT + "\n\nUser: " + text + "\n\nJSON:"
+                inputs = tok(prompt, return_tensors="pt").to(mdl.device)
+                with torch.no_grad():
+                    out = mdl.generate(**inputs, max_new_tokens=256, **decoding["kwargs"])
+                raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+                cmd = extract_json(raw)
+            except Exception:
+                # A generation error (out of GPU memory in generate, for one) is its own
+                # reason, never reported as an answer that was not usable.
+                cmd, not_used = None, MODEL_FAILED_WHILE_ANSWERING
+            if not_used is None and (not cmd or "action" not in cmd):
+                not_used = MODEL_GAVE_NO_ANSWER
+        if not_used is not None:
             cmd = command_mode_parse(text)  # graceful fallback for this input
-        self.ui(self._after_parse, cmd, text)
+        self.ui(self._after_parse, cmd, text, not_used)
 
-    def _after_parse(self, cmd: dict, text: str) -> None:
+    def _after_parse(self, cmd: dict, text: str, not_used=None) -> None:
         self.busy = False
+        if not_used is not None:
+            # The fallback is kept, and said (S7 6e): the reply below is the keyword parser's.
+            self.post(MODEL_NOT_USED % not_used)
         self._on_parsed(cmd, text)
 
     def _on_parsed(self, cmd: dict, text: str) -> None:
         action = cmd.get("action", "unknown")
         if action in ("review", "draft", "import"):
             if action == "review":
-                cmd.setdefault("mode", self.pending_mode)
+                # A mode the person set wins over a mode in the parsed request, which the
+                # model may have proposed or the keyword parser defaulted (D-183, issue #118).
+                if self.mode_set_by_person:
+                    proposed = cmd.get("mode")
+                    cmd["mode"] = self.pending_mode
+                    if proposed and proposed != self.pending_mode:
+                        self.post(MODE_KEPT % (self.pending_mode, proposed, proposed))
+                else:
+                    cmd.setdefault("mode", self.pending_mode)
             self.pending = cmd
             self.post(f"Understood: {describe(cmd)}. Proceed? [y/n]")
         elif action == "set_cutoff":
@@ -556,6 +607,7 @@ class ChatApp:
                 self.post("That date is not valid. Use YYYY-MM-DD, for example 2025-06-01.")
         elif action == "set_mode":
             self.pending_mode = "sensitive" if cmd.get("mode") == "sensitive" else "normal"
+            self.mode_set_by_person = True
             self.post(f"Run mode set to {self.pending_mode} for the next review.")
         elif action == "status":
             self.post(status_text(self.pending_mode))
@@ -578,7 +630,17 @@ class ChatApp:
         target = (self._run_review if action == "review"
                   else self._run_draft if action == "draft"
                   else self._run_import)
-        threading.Thread(target=target, args=(cmd,), daemon=True).start()
+        threading.Thread(target=self._guarded, args=(target, cmd), daemon=True).start()
+
+    def _guarded(self, target, cmd: dict) -> None:
+        """A worker that raises must not leave the window busy for good: every later
+        message would be answered "Still working on the previous request"."""
+        try:
+            target(cmd)
+        except Exception as e:
+            self.ui(self.post, f"The request stopped with an error ({type(e).__name__}). "
+                               "See the messages above.")
+            self.ui(self._finish_run)
 
     def _stream_subprocess(self, argv: "list[str]", stdin_str: "str | None") -> int:
         try:
@@ -586,7 +648,8 @@ class ChatApp:
                 argv, cwd=str(ROOT),
                 stdin=subprocess.PIPE if stdin_str is not None else None,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, encoding="utf-8", errors="replace", bufsize=1)
+                text=True, encoding="utf-8", errors="replace", bufsize=1,
+                creationflags=NO_WINDOW)
         except OSError as e:
             self.ui(self.post, f"Could not start the process: {e}")
             return 1
@@ -645,9 +708,7 @@ class ChatApp:
         rc = self._stream_subprocess(
             [sys.executable, "-X", "utf8", str(PIPELINE)] + PIPELINE_NONINTERACTIVE + flags, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Review complete." + where)
         else:
             self.ui(self.post, f"Review ended with exit code {rc}. See the messages above.")
@@ -667,9 +728,7 @@ class ChatApp:
         self.ui(self.post, "Drafting a memo, then reviewing it...")
         rc = self._stream_subprocess(argv, None)
         if rc == 0:
-            d = latest_run_dir()
-            where = (f" Results in {d.relative_to(ROOT).as_posix()}/deliverables/ "
-                     f"(start with _run_summary.md)") if d else ""
+            where = results_hint(latest_run_dir())
             self.ui(self.post, "Draft and review complete." + where)
         else:
             self.ui(self.post, f"Draft ended with exit code {rc}. See the messages above.")

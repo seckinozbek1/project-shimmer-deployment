@@ -730,11 +730,13 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
         # leaves the table with no key column at all: refused whole, and said so.
         return {}, [{"label": "", "ref_id": table["ref_id"],
                      "reason": "no key column identifies the rows (a duplicated or empty "
-                               "key cell leaves none)"}]
+                               "key cell leaves none)",
+                     "reason_kind": "no_key_column"}]
     if len(values) != 1:
         return {}, [{"label": "", "ref_id": table["ref_id"],
                      "reason": "table has %d value column(s); exactly one is required"
-                               % len(values)}]
+                               % len(values),
+                     "reason_kind": "value_column_count"}]
     col = values[0]
     hits, refused, by_row = {}, [], {}
     for label in sorted(scalars):
@@ -745,7 +747,7 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
             continue
         if len(rows) > 1:
             refused.append({"label": " ".join(label), "ref_id": table["ref_id"],
-                            "reason": "tie between %d rows" % len(rows)})
+                            "reason": "tie between %d rows" % len(rows), "reason_kind": "tie"})
             continue
         ri = rows[0]
         row = table["rows"][ri]
@@ -771,7 +773,8 @@ def prior_values_for_scalars(table, scalars, rule_text=""):
             for label in labels:
                 refused.append({"label": " ".join(label), "ref_id": table["ref_id"],
                                 "reason": "reverse tie: %d document labels match one row"
-                                          % len(labels)})
+                                          % len(labels),
+                                "reason_kind": "reverse_tie"})
                 hits.pop(label, None)
     return hits, refused
 
@@ -832,31 +835,58 @@ def bands_for_unit(tables, unit_text, rule_text):
     return bands
 
 
-def band_conditions_for_unit(tables, unit_text, rules, *, vocabulary=None):
+def _compared_labels(scalars, columns, band):
+    """The field labels of each comparison a band makes in a unit, read by the finding
+    path's own two readers: `paired_review._band_comparisons` for a figure in the band's
+    measure, `relation_checks.band_unit_checks` for one written in another. One empty entry
+    when it compares nothing."""
+    import paired_review
+    import relation_checks
+
+    low, high, unit = band["low"], band["high"], band["unit"]
+    same = [c[-1] for c in paired_review._band_comparisons(scalars, columns, low, high, unit)]
+    other = [c["_labels"] for c in relation_checks.band_unit_checks(
+        paired_review.band_direct(scalars, columns), low, high, unit) if "_labels" in c]
+    return same + other or [()]
+
+
+def band_conditions_for_unit(tables, unit_text, rules, *, vocabulary=None, known_units=None):
     """The pairing map's record of what the band check could and could not decide.
 
     Written into <run>/audit/pairing_map.json per unit BEFORE any band verdict
     fires, so the reason a low figure was or was not stated as a finding is on the
     record rather than inside a model's head. It records the raw evidence, not a
-    conclusion: which band was matched from which reference passage, which fields
-    the rule names beyond the row key, and which of those the unit actually
-    carries."""
+    conclusion: which band was matched from which reference passage, which figure of the
+    unit it compares, which fields the rule names beyond that figure and the row key, and
+    which of those the unit actually carries. One record per comparison, each judged as
+    the finding path judges it (`paired_review.compute_checks`: the row key and the compared
+    field are both used), through the same readers (`_compared_labels`) and the document's
+    own `known_units`, the ones the finding path reads the unit's figures with; without
+    them the unit's own tokens stand in. A band that compares nothing in this unit keeps
+    one record with no compared field."""
+    import paired_review
+
     unit_labels = pairing_map.unit_fields(unit_text or "")
+    if known_units is None:
+        known_units = document_unit_tokens(unit_text)
+    scalars, columns, _ = paired_review.extract_fields(unit_text or "", known_units=known_units)
     out = []
     for rule in rules or []:
         rule_text = rule.get("rule", "")
         for band in bands_for_unit(tables, unit_text, rule_text):
-            condition, verdict = low_side_condition(
-                rule_text, vocabulary, band["key_labels"], unit_labels)
-            out.append({
-                "rule_id": rule.get("id"),
-                "ref_id": band["ref_id"],
-                "row_label": band["row_label"],
-                "column_label": band["column_label"],
-                "low": band["low"], "high": band["high"], "unit": band["unit"],
-                "condition_fields": [" ".join(c) for c in condition],
-                "condition_fields_present": [" ".join(c) for c in condition
-                                             if c in unit_labels],
-                "low_side_verdict": verdict,
-            })
+            for labels in _compared_labels(scalars, columns, band):
+                condition, verdict = low_side_condition(
+                    rule_text, vocabulary, set(band["key_labels"]) | set(labels), unit_labels)
+                out.append({
+                    "rule_id": rule.get("id"),
+                    "ref_id": band["ref_id"],
+                    "row_label": band["row_label"],
+                    "column_label": band["column_label"],
+                    "low": band["low"], "high": band["high"], "unit": band["unit"],
+                    "compared_fields": [" ".join(label) for label in labels],
+                    "condition_fields": [" ".join(c) for c in condition],
+                    "condition_fields_present": [" ".join(c) for c in condition
+                                                 if c in unit_labels],
+                    "low_side_verdict": verdict,
+                })
     return out

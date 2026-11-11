@@ -20,8 +20,8 @@ read-only, authenticated activation/completion projection. No review routing,
 model, prompt, generation budget, suppression policy, constitution, governance
 decision or performance optimization changes are accepted.
 
-The [README architecture map](../../README.md#end-to-end-architecture) is the one
-current end-to-end map. Its [all-18-agent routing table](../../README.md#all-18-agents-actual-tasks-profiles-and-downstream-consumers)
+The [runtime reference architecture map](../RUNTIME_REFERENCE.md#end-to-end-architecture) is the one
+current end-to-end map. Its [all-18-agent routing table](../RUNTIME_REFERENCE.md#all-18-agents-actual-tasks-profiles-and-downstream-consumers)
 joins actual tasks, both model/backend profiles, eligibility/activation keys,
 repeat bounds, outputs and downstream consumers. This report supplies the deeper
 entry/artifact tables and contradiction record instead of duplicating that table.
@@ -145,7 +145,7 @@ zero work or quality. Run-local artifacts are retained output, not durable learn
 | Editorial observations / board audit | editorial loop -> next rank, advisory annotations and audit | Run-local; affects escalation, does not replace master or release gate | Deliverable commentary and developer evidence | Waiver, privacy restriction, missing master, failed lower rank or no escalation |
 | `deliverables/<doc>/review_data.json` | synthesis / allowed polish / redaction -> renderers, server amendments and scorer | Run-local canonical amendment master | Amendment view and downloaded master | No qualifying amendment, refusal, failed phase or no document; not clean coverage |
 | `review_findings.md`, `tracked_changes.docx` | amendment_render from master -> operator/download | Run-local pure renders, not independent semantic decisions | Readable amendments / tracked-change DOCX | Rendering may not have completed; “done” folder is only file presence |
-| `grounding_summary.md`, `document_summary.md`, `reviewed_document.md` | pipeline report writers -> operator | Run-local summaries/per-agent content; not a complete coverage certificate | Downloaded document folder | Phase/document may be absent or incomplete |
+| `grounding_summary.md`, `document_summary.md`, `reviewed_document.md`, `agent_record.md` | pipeline report writers -> operator | Run-local summaries, the reader's document and the per-agent record; not a complete coverage certificate | Downloaded document folder | Phase/document may be absent or incomplete |
 | `memo.md` | Draft generation, preservation copy -> review input and final operator file | Run-local saved memo; temporary source can be cleaned | Draft download | Review task, unsupported Local Draft or failed generation |
 | `audit/audit_synthesis.md`, `delta_proposals.json` | phase 7 AuditSynthesizer -> orch.escalate_delta_proposals, governed operator evaluation and existing durable-learning controls | Run-local audit/proposals; proposals do not auto-amend constitution or rules | Files and review summary | Phase not reached or no proposal; not evidence that governance was changed |
 | `audit/absence_quote_prediction.json` | absence evidence prediction -> later scorer comparison | Run-local audit forecast, not routing policy | Developer/scorer evidence | No forecast/usable comparison; no measured quote-recall claim |

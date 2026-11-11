@@ -22,10 +22,21 @@ from reference_builder import ReferenceIndex
 from run_context import for_run_dir
 
 ROOT = Path(__file__).resolve().parent.parent
+# S10 item 2.1 a: the container image ships neither of these benchmark/fixtures/ files. A test
+# whose input is absent skips naming it (it used to error, failing the check, in the image).
+FIXTURE = ROOT / "benchmark/fixtures/multi_round_fixture.json"
+BASELINE_CONTRACT = ROOT / "benchmark/fixtures/multi_round_baseline_contract.json"
+
+
+def need(test, *paths):
+    missing = [p.relative_to(ROOT).as_posix() for p in paths if not p.is_file()]
+    if missing:
+        test.skipTest(", ".join(missing) + " not present here (the container image ships no benchmark/fixtures/ "
+                      "beyond the three named in the Dockerfile)")
 
 
 def fixture():
-    return json.loads((ROOT / "benchmark/fixtures/multi_round_fixture.json").read_text(encoding="utf-8"))
+    return json.loads(FIXTURE.read_text(encoding="utf-8"))
 
 
 def saved(ctx):
@@ -44,6 +55,7 @@ def saved(ctx):
 
 class MultiRoundChecks(unittest.TestCase):
     def setUp(self):
+        need(self, FIXTURE)
         self.tmp = tempfile.TemporaryDirectory(prefix="shimmer_multi_round_")
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
@@ -197,7 +209,8 @@ class MultiRoundChecks(unittest.TestCase):
             mr.normalize_request(False, fixture()["manifest"])
 
     def test_pre_multi_round_pipeline_contract_is_unchanged(self):
-        baseline = json.loads((ROOT / "benchmark/fixtures/multi_round_baseline_contract.json").read_text(encoding="utf-8"))
+        need(self, BASELINE_CONTRACT)
+        baseline = json.loads(BASELINE_CONTRACT.read_text(encoding="utf-8"))
         self.assertEqual(baseline["baseline_commit"], mr.BASELINE)
         from execution_topology_checks import reference_tree
         tree = reference_tree((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
@@ -340,9 +353,19 @@ class MultiRoundChecks(unittest.TestCase):
         with patch.object(AgentWrapper, "dispatch", authored):
             code = phase.execute(ctx, r, f["documents"], refs, factory, sensitive=False)
         self.assertEqual(code, 0, r.get("activation"))
-        self.assertEqual(calls, ["PROCESSOR", "VERIFIER"])
+        # Open item 35: the trajectory records are computed in Python; no model is asked.
+        self.assertEqual(calls, [])
         self.assertEqual(r["outcome"], "reviewed")
-        self.assertTrue(any(msg["body"].get("event") == "MULTI_ROUND_REVIEWED" for msg in bus.read_all()))
+        self.assertTrue(r["records"] and all(x["written_by"] == "python" for x in r["records"]))
+        self.assertEqual({x["kind"] for x in r["records"]}, {"position", "movement"})
+        self.assertTrue(all(x["movement"] == "unknown" for x in r["records"] if x["kind"] == "movement"))
+        # One position per declared source here, and one movement per consecutive pair.
+        self.assertEqual(sum(x["kind"] == "position" for x in r["records"]), len(m["sources"]))
+        self.assertEqual(sum(x["kind"] == "movement" for x in r["records"]), 2)
+        posts = [msg["body"] for msg in bus.read_all() if msg["body"].get("event") == "MULTI_ROUND_REVIEWED"]
+        self.assertEqual([(b["backend"], b["model"], b["payload"]["agent"]) for b in posts], [("computed", "python", "python")])
+        saved_view = mr.read_saved(ctx.run_dir, ctx.run_id)
+        self.assertEqual((saved_view["outcome"], saved_view["activation"]["activated"]), ("reviewed", True))
         for name, content in before.items():
             if not name.startswith(str(ctx.run_dir.relative_to(self.root))):
                 self.assertEqual((self.root / name).read_bytes(), content)
@@ -389,7 +412,8 @@ def check():
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(MultiRoundChecks)
     result = unittest.TestResult()
     suite.run(result)
-    return ("SKIP" if result.skipped else "PASS", f"{result.testsRun - len(result.skipped)} fixture-only cases passed; {len(result.skipped)} unavailable checks; no generation") if result.wasSuccessful() else (
+    reasons = "; ".join(sorted({reason for _, reason in result.skipped}))
+    return ("SKIP" if result.skipped else "PASS", f"{result.testsRun - len(result.skipped)} fixture-only cases passed; {len(result.skipped)} unavailable checks{' (' + reasons + ')' if reasons else ''}; no generation") if result.wasSuccessful() else (
         "FAIL", f"{len(result.failures)} failures, {len(result.errors)} errors")
 
 

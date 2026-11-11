@@ -32,6 +32,28 @@ DEFAULT_STATE_PATH = ROOT / "ontology" / "stores" / "gnn_state.json"
 RANKED_ON_STRUCTURE = ("graph structure only (node type, degree, edges); the Tier-2 "
                        "signal is empty, so nothing here is learned relevance")
 
+# D-S112 item 1 (D-417, D-432): a state is used only when it says which declared training sets
+# trained it, the whole chain in order. A state with no such provenance (every state written at a
+# run's end before D-417) is refused by every reader and by the training command.
+PROVENANCE_KEY = "training_sets"
+
+
+class StateRefused(ValueError):
+    """A GNN state with no training-set provenance: never used."""
+
+
+def provenance_refusal(state):
+    """None when `state` carries its training chain, else the reason it is refused."""
+    chain = state.get(PROVENANCE_KEY) if isinstance(state, dict) else None
+    if not isinstance(chain, list) or not chain:
+        return ("this GNN state names no declared training set (trained at a run's end before D-417); "
+                "it is never used")
+    for link in chain:
+        if not (isinstance(link, dict) and link.get("name") and link.get("graph_sha256")
+                and link.get("declared_by")):
+            return "a link of this GNN state's training chain is incomplete; it is never used"
+    return None
+
 
 def load_state(state_path=None):
     """The persisted state as a dict, or None when it has never been written."""
@@ -60,11 +82,18 @@ def state_summary(state_path=None):
             "tier2_signal": "empty",
             "learned_relevance": False,
             "ranked_on": RANKED_ON_STRUCTURE,
-            "note": ("no GNN state has been written; the state is created at the end of "
-                     "a run, and no run has been made since the store was scoped"),
+            "note": ("no GNN state has been written; a state is made only by the GNN's own "
+                     "training command on a declared training set, never by a run"),
         }
+    refused = provenance_refusal(prior)
+    if refused:
+        return {"exists": True, "usable": False, "refused": refused, "tier2_signal": "empty",
+                "learned_relevance": False, "ranked_on": RANKED_ON_STRUCTURE}
     return {
         "exists": True,
+        "usable": True,
+        "training_sets": [{k: link.get(k) for k in ("name", "graph_sha256", "declared_by")}
+                          for link in prior[PROVENANCE_KEY]],
         "schema": prior.get("schema"),
         "tier": prior.get("tier"),
         "scope": prior.get("scope"),

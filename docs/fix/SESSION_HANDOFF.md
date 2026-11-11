@@ -16,13 +16,13 @@ Written 11 September 2026, at the close of a three-day session.
 | repository | `<USER_HOME>\local\shimmer-deployment` |
 | remote | `origin` = `seckinozbek1/project-shimmer-deployment` (the ONLY permitted remote) |
 | branch | `main` |
-| HEAD | `9e3302f` container: the image rebuilt on the console-audit tree |
-| pushed | **Yes, fully.** `origin/main` == `main` == `9e3302f`. Nothing is waiting to be pushed. |
+| HEAD | `7bee3af` container: the image rebuilt on the console-audit tree |
+| pushed | **Yes, fully.** `origin/main` == `main` == `7bee3af`. Nothing is waiting to be pushed. |
 | uncommitted | Nothing. The tree is clean. |
 | half-done | Nothing. Every piece of work in this session ended at a commit with a green gate. |
 
 `<USER_HOME>\local\shimmer-fix` is a DIFFERENT repository (the private one, remote
-`an external project`). Never touch it. Its dirty working tree is the operator's.
+`a private repository, not named here`). Never touch it. Its dirty working tree is the operator's.
 
 Gate: **215 checks**. The green line on this machine is
 `PASS=213 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=215`. The two failures are permanent here and
@@ -127,7 +127,7 @@ Run the device corpus, flawed and clean twin, paired mode, local models, scored 
 `tools/score_corpus.py`. Blocked by the no-runs rule until development moves to a rented GPU
 box. The corpus, its declarations, its answer key and the scorer are all ready. The question
 it answers first: did the neighbour mechanism catch the neighbour-dependent flaws.
-The declarations are applied (`45f6838`) and plan 37 calls on the flawed log and 43 on the
+The declarations are applied (`92e387b`) and plan 37 calls on the flawed log and 43 on the
 clean twin.
 
 **3. Two console findings left open**, both in the Agents page and both the same shape: a
@@ -218,7 +218,7 @@ initial `[scope: class=A]` matched nothing, because the value test is equality o
 normalised value and the document writes `Class-A sensor`. D04 and D05 as first written
 (`[scope: device] [requires: ...]`) turned a duration rule into a presence rule: 34 and 17
 computed absences, identical on the clean twin, while the one entry each rule is actually
-about got no plan at all. The corrected forms are applied in `45f6838`. The general lesson,
+about got no plan at all. The corrected forms are applied in `92e387b`. The general lesson,
 which will apply to the next declaration: **a scope value must be written as the document
 writes it, and a rule with a declared requirement never reaches the model, so a rule about a
 duration can only be expressed as a scope with the question left to the model.** Python
@@ -247,5 +247,5 @@ computes no duration between two timestamps.
 
 ---
 
-Written at HEAD `9e3302f`, everything pushed, tree clean, gate green at 213 of 215 with the
+Written at HEAD `7bee3af`, everything pushed, tree clean, gate green at 213 of 215 with the
 two permanent failures.

@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "description": "RELATIONS-A. The measurement-system facts Python needs to compare two figures written in different measures, and to read a percentage of a figure. Nothing here names a domain, a quantity or a language: `prefixes` are the decimal prefixes of the SI (BIPM), written as their symbols, and `dimensionless_scales` are symbols that stand for a pure number of a fixed size (the percent sign is one hundredth). A unit token is read as a prefix and a base only when both figures being compared write units that differ by exactly such a prefix on the same base, so `mL` against `L` converts and `kg` against `box` does not. A unit written with a digit or a caret (`m2`, `m^2`) is never converted, because the unit reader drops the exponent. `bases` are the SI base and coherent derived unit symbols, plus the litre, that a prefix may stand before; a token is read as a prefix and a base only when that base is declared here, so `ha` against `a`, `dB` against `B`, `min` against `in` and `cd` against `d` are never converted (D-198). The operator may add a prefix, a base or a scale here; removing one stops that conversion and the comparison is refused on the pairing map instead.",
+  "prefixes": {
+    "G": 1000000000,
+    "M": 1000000,
+    "k": 1000,
+    "h": 100,
+    "d": 0.1,
+    "c": 0.01,
+    "m": 0.001,
+    "µ": 1e-06,
+    "μ": 1e-06,
+    "n": 1e-09
+  },
+  "bases": [
+    "m",
+    "g",
+    "s",
+    "A",
+    "K",
+    "mol",
+    "cd",
+    "L",
+    "l",
+    "Hz",
+    "N",
+    "Pa",
+    "J",
+    "W",
+    "V",
+    "C",
+    "F",
+    "Wb",
+    "T",
+    "H",
+    "S",
+    "lm",
+    "lx",
+    "Bq",
+    "Gy",
+    "Sv",
+    "kat"
+  ],
+  "dimensionless_scales": {
+    "%": 0.01,
+    "‰": 0.001
+  }
+}

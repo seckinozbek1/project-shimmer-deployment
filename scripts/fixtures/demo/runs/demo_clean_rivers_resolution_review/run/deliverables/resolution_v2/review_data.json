@@ -1,0 +1,24 @@
+{
+  "document_id": "resolution_v2",
+  "amendments": [],
+  "_validator_errors": [],
+  "model_findings_not_promoted": [
+    {
+      "agent": "PRACTICE_AUDITOR",
+      "rule_id": "CONV-001",
+      "source_rule_id": "conv-a01",
+      "unit_id": "u03-operative-paragraph-2",
+      "relation": "missing_field",
+      "field_label": "observance",
+      "source_refs": [
+        "REF-0003"
+      ],
+      "explanation": "The paragraph no longer says how the day is to be observed.",
+      "model_claimed_verdict": "irregular",
+      "written_by": "model",
+      "promoted": false,
+      "checked_by_python": false,
+      "reader_notes": []
+    }
+  ]
+}

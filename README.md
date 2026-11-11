@@ -35,7 +35,7 @@ This section is updated in the same step as every measurement and every stage ch
 - The document-level judging experiment G1 gave no usable signal (D-248).
 - Spend so far: rented GPU time 154.17 USD (hard stop 299), API 7.07 USD (ceiling 60).
 
-**Going.** The target stage is a gate read on items no attempt was tuned on, by 14 November 2026, 11:00 +03:00. The steps planned until then:
+**Going.** The target stage is a gate read on items no attempt was tuned on, by 14 November 2026, 14:30 +03:00 (moved from 11:00 by Seckin on 11 November, D-492). The steps planned until then:
 
 1. A ready machine image on the provider's filesystem, built and measured (M1), then tested before use (M2), so no launch downloads its assets from scratch.
 2. The gate set: a separate session draws a quick subset and a claim set from sealed pools under the leakage protocol, after the leakage fingerprints are computed.

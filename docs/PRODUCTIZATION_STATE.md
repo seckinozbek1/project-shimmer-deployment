@@ -1,5 +1,13 @@
 # Productization state at this HEAD
 
+> Note (2026-10-31): this whole document describes the repository as it was on 2026-09-11.
+> It is history, not the current state, and "this HEAD" below means that day's commit. One
+> later edit: commit `d18cf93` (2026-10-29) updated the D-068 row of its debt table.
+> "README section F" and "README section L" below refer to the README of
+> 2026-09-11. Its lettered sections, as they stood on 2026-09-13 (commit `1314475`), are kept in
+> [docs/history/README_PRE_ROUTING_AUDIT.md](history/README_PRE_ROUTING_AUDIT.md).
+> The current README has no lettered sections.
+
 One honest picture of this repository for a reader who has not followed the work. Every
 claim carries a citation to a file, a report or a commit in this repository. Nothing here is
 a plan; it is what is true now.
@@ -169,7 +177,7 @@ written scope.
 | No shipped corpus carries a subject tag; every real run routes as before tagging existed | `STEP_CONVASSIGN_3_REPORT.md` | waits on the operator tagging rules |
 | The device corpus's operational status rode on a web lookup (no filename year; the first year sits past the 3000-character scan); the smoke runs used a tier-1 manifest instead | `STEP_CONVASSIGN_3_REPORT.md` | not fixed; a measurement must never depend on a search result |
 | A local run commits about 12 GB and this machine pages below about 3 GB free | `STEP_CONVASSIGN_3_REPORT.md` | not fixed; free memory before a measurement run or accept the pace |
-| An uncomputable paired plan's model judgment is never captured into a Finding | `STEP_CONVASSIGN_3_REPORT.md` | not fixed |
+| An uncomputable paired plan's model judgment is never captured into a Finding | `STEP_CONVASSIGN_3_REPORT.md` | fixed in loop stage S5 (D-068): kept as a model-written record, stamped by Python, never promoted (gate check 290) |
 | D6 pass two's deepened item reaches the bus at revision 1 under a fresh id; only the in-process result carries the supersession | `STEP_W6_REPORT.md` finding 2 | not fixed; a record living only in a return value is not a record |
 | `unit_id` is never stamped by Python in paired mode though known by construction | `STEP_W6_REPORT.md` finding 4 | not fixed |
 | Prose reference bands: nothing computable on the device corpus; the arithmetic path is idle there | `STEP_W6_REPORT.md` finding 6 | a corpus matter (write the bands as a table) |

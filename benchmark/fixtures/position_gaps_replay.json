@@ -1,0 +1,542 @@
+{
+ "about": "The quotes of an independent checker's synthetic three-round case (two parties, six issues), replayed by scripts/position_gaps_checks.py. Each quote is one party's position on one issue in one round, as the case manifest declares it. Synthetic, written for the check; development only.",
+ "rounds": [
+  "r1",
+  "r2",
+  "r3"
+ ],
+ "actors": [
+  "lessor",
+  "lessee"
+ ],
+ "issues": [
+  "rent",
+  "deposit",
+  "lease-term",
+  "subletting",
+  "notice",
+  "maintenance-cap"
+ ],
+ "quotes": [
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "rent",
+   "quote": "The rent is 9,000 EUR per month."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "deposit",
+   "quote": "The deposit is 3 months of rent."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "lease-term",
+   "quote": "The lease runs for 10 years."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "subletting",
+   "quote": "No part of the premises may be sublet without the written consent of the lessor."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "notice",
+   "quote": "Either party may terminate on a notice of 90 days."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessor",
+   "issue_id": "maintenance-cap",
+   "quote": "The lessee bears maintenance up to 20,000 EUR per year."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "rent",
+   "quote": "The lessee offers a rent of 6,000 EUR per month."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "deposit",
+   "quote": "A deposit of 2 months is customary."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "lease-term",
+   "quote": "The lessee seeks a lease of 5 years."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "subletting",
+   "quote": "The lessee must be free to sublet to its affiliates."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "notice",
+   "quote": "A notice of 30 days is enough."
+  },
+  {
+   "round_id": "r1",
+   "actor_id": "lessee",
+   "issue_id": "maintenance-cap",
+   "quote": "Maintenance borne by the lessee should be capped at 10,000 EUR per year."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "rent",
+   "quote": "The lessor lowers the rent to 8,500 EUR per month."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "deposit",
+   "quote": "Given the market, the deposit must now be 4 months."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "lease-term",
+   "quote": "The lessor can accept a lease of 9 years."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "subletting",
+   "quote": "Subletting still requires the written consent of the lessor."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "notice",
+   "quote": "The notice stays at 90 days."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessor",
+   "issue_id": "maintenance-cap",
+   "quote": "The maintenance cap can be 18,000 EUR per year."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "rent",
+   "quote": "The lessee raises its offer to 6,500 EUR per month."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "deposit",
+   "quote": "The deposit remains 2 months."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "lease-term",
+   "quote": "The lessee now asks for a lease of 4 years."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "subletting",
+   "quote": "Subletting to affiliates remains essential to the lessee."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "notice",
+   "quote": "The lessee rejects the 90 days asked by the lessor and offers 45 days."
+  },
+  {
+   "round_id": "r2",
+   "actor_id": "lessee",
+   "issue_id": "maintenance-cap",
+   "quote": "The lessee is still reviewing the maintenance cap with its insurers."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "rent",
+   "quote": "The lessor's final rent is 8,000 EUR per month."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "deposit",
+   "quote": "The deposit stays at 4 months."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "lease-term",
+   "quote": "The lessor proposes a lease of 8 years."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "subletting",
+   "quote": "Consent to subletting will not be unreasonably withheld, but it remains required."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "notice",
+   "quote": "The lessor accepts a notice of 60 days."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessor",
+   "issue_id": "maintenance-cap",
+   "quote": "The maintenance cap stays at 18,000 EUR per year."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "rent",
+   "quote": "The lessee offers a rent of 7,000 EUR per month, payable on day 5 of each month."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "deposit",
+   "quote": "The lessee can now give a deposit of 1 month only."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "lease-term",
+   "quote": "The lessee accepts a lease of 6 years."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "subletting",
+   "quote": "Subletting to affiliates must not need consent."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "notice",
+   "quote": "The notice remains 45 days."
+  },
+  {
+   "round_id": "r3",
+   "actor_id": "lessee",
+   "issue_id": "maintenance-cap",
+   "quote": "The lessee accepts a maintenance cap of 12,000 EUR per year."
+  }
+ ],
+ "about_attacks": "Rounds 2 and 3 of the same checker (its attack.py and attack2.py, every call): two parties, two rounds, one issue. Group A and D: the two figures are the same money in different measures (9,000 a month and 108,000 a year), so any computed movement is a confident wrong record. Group B: one measure written two ways. Group C: figures that are not positions. Group E: shapes around a measure, the last (a label and a colon) the one shape that is the same sentence with only the figure changed.",
+ "attacks": [
+  {
+   "name": "a1_4-word_unit_truncated",
+   "probe": "attack.py",
+   "r1": [
+    "10 EUR per square metre",
+    "100 EUR per square foot"
+   ],
+   "r2": [
+    "11 EUR per square metre",
+    "90 EUR per square foot"
+   ],
+   "declared_unit": "EUR per square metre"
+  },
+  {
+   "name": "a2_period_in_parentheses",
+   "probe": "attack.py",
+   "r1": [
+    "9,000 EUR (per month)",
+    "108,000 EUR (per year)"
+   ],
+   "r2": [
+    "9,000 EUR (per month)",
+    "100,000 EUR (per year)"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "a3_period_before_figure",
+   "probe": "attack.py",
+   "r1": [
+    "Per month, 9,000 EUR",
+    "per year, 108,000 EUR"
+   ],
+   "r2": [
+    "Per month, 9,000 EUR",
+    "per year, 100,000 EUR"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "a4_one-round_adverbs",
+   "probe": "attack.py",
+   "r1": [
+    "9,000 EUR monthly",
+    "108,000 EUR annually"
+   ],
+   "r2": [
+    "9,000 EUR a month",
+    "100,000 EUR a year"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "a5_symbol_prefix",
+   "probe": "attack.py",
+   "r1": [
+    "€9,000 a month",
+    "€108,000 a year"
+   ],
+   "r2": [
+    "€9,000 monthly",
+    "€100,000 yearly"
+   ],
+   "declared_unit": "a month"
+  },
+  {
+   "name": "b1_plural",
+   "probe": "attack.py",
+   "r1": [
+    "1 month",
+    "2 months"
+   ],
+   "r2": [
+    "1 month",
+    "3 months"
+   ],
+   "declared_unit": "months"
+  },
+  {
+   "name": "b2_slash_vs_words",
+   "probe": "attack.py",
+   "r1": [
+    "9,000 EUR/month",
+    "8,000 EUR per month"
+   ],
+   "r2": [
+    "9,000 EUR/month",
+    "8,500 EUR per month"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "b3_qualifier_phrase",
+   "probe": "attack.py",
+   "r1": [
+    "30 calendar days",
+    "20 days"
+   ],
+   "r2": [
+    "30 calendar days",
+    "25 days"
+   ],
+   "declared_unit": "days"
+  },
+  {
+   "name": "b4_trailing_words_known",
+   "probe": "attack.py",
+   "r1": [
+    "3 months of rent",
+    "2 months"
+   ],
+   "r2": [
+    "4 months of rent",
+    "2 months"
+   ],
+   "declared_unit": "months"
+  },
+  {
+   "name": "b5_code_vs_word",
+   "probe": "attack.py",
+   "r1": [
+    "EUR 9,000",
+    "9,000 euros"
+   ],
+   "r2": [
+    "EUR 8,000",
+    "8,500 euros"
+   ],
+   "declared_unit": "euros"
+  },
+  {
+   "name": "c1_article_number",
+   "probe": "attack.py",
+   "r1": [
+    "Under Article 4, 30 days",
+    "10 days"
+   ],
+   "r2": [
+    "Under Article 4, 25 days",
+    "10 days"
+   ],
+   "declared_unit": "days"
+  },
+  {
+   "name": "c2_written_number",
+   "probe": "attack.py",
+   "r1": [
+    "thirty days",
+    "10 days"
+   ],
+   "r2": [
+    "25 days",
+    "10 days"
+   ],
+   "declared_unit": "days"
+  },
+  {
+   "name": "d1_period_in_subject_no_punct",
+   "probe": "attack2.py",
+   "r1": [
+    "The monthly rent is 9,000 EUR.",
+    "The yearly rent is 108,000 EUR."
+   ],
+   "r2": [
+    "The monthly rent is 9,000 EUR.",
+    "The yearly rent is 100,000 EUR."
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "d2_period_after_comma",
+   "probe": "attack2.py",
+   "r1": [
+    "9,000 EUR, per month",
+    "108,000 EUR, per year"
+   ],
+   "r2": [
+    "9,000 EUR, per month",
+    "100,000 EUR, per year"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "d3_period_after_dash",
+   "probe": "attack2.py",
+   "r1": [
+    "9,000 EUR - monthly",
+    "108,000 EUR - yearly"
+   ],
+   "r2": [
+    "9,000 EUR - monthly",
+    "100,000 EUR - yearly"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "d4_no_punct_before_figure",
+   "probe": "attack2.py",
+   "r1": [
+    "Per month 9,000 EUR",
+    "Per year 108,000 EUR"
+   ],
+   "r2": [
+    "Per month 9,000 EUR",
+    "Per year 100,000 EUR"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "d5_words_set_not_order",
+   "probe": "attack2.py",
+   "r1": [
+    "Per month, 9,000 EUR; not per year",
+    "Per year, 108,000 EUR; not per month"
+   ],
+   "r2": [
+    "Per month, 9,000 EUR; not per year",
+    "Per year, 100,000 EUR; not per month"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "d6_sentence_after",
+   "probe": "attack2.py",
+   "r1": [
+    "9,000 EUR. That is per month",
+    "108,000 EUR. That is per year"
+   ],
+   "r2": [
+    "9,000 EUR. That is per month",
+    "100,000 EUR. That is per year"
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "e1_3-word_measure_then_verb",
+   "probe": "attack2.py",
+   "r1": [
+    "9,000 EUR per month is fair",
+    "8,000 EUR per month."
+   ],
+   "r2": [
+    "9,000 EUR per month.",
+    "8,500 EUR per month."
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "e2_bracket_not_a_measure",
+   "probe": "attack2.py",
+   "r1": [
+    "30 days (see Annex I)",
+    "10 days."
+   ],
+   "r2": [
+    "30 days.",
+    "20 days."
+   ],
+   "declared_unit": "days"
+  },
+  {
+   "name": "e3_shape_that_computes",
+   "probe": "attack2.py",
+   "r1": [
+    "The rent is 9,000 EUR per month.",
+    "The lessee offers 6,000 EUR per month."
+   ],
+   "r2": [
+    "The rent is 8,500 EUR per month.",
+    "The lessee offers 6,500 EUR per month."
+   ],
+   "declared_unit": "EUR per month"
+  },
+  {
+   "name": "e4_label_colon",
+   "probe": "attack2.py",
+   "r1": [
+    "Notice: 90 days",
+    "Notice: 30 days"
+   ],
+   "r2": [
+    "Notice: 60 days",
+    "Notice: 45 days"
+   ],
+   "declared_unit": "days"
+  }
+ ],
+ "about_declared_unit": "Each attack's declared_unit is the unit an operator would declare for the issue (D-S70 item 4): the measure the first party writes, \"EUR per month\" for the rent attacks. Read against it, every same-money attack is refused, and the shapes that state one measure compute.",
+ "perturbation_renames": [
+  [
+   "days",
+   "jours"
+  ],
+  [
+   "months",
+   "mois"
+  ],
+  [
+   "EUR",
+   "USD"
+  ]
+ ]
+}

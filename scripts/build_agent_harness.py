@@ -26,7 +26,7 @@ SHARED_PARTS = {
     "constitution_by_default": {
         "decided": True,
         "summary": "Every structured agent task checks the constitution before dispatch. Draft memo generation has a separate free-text path after startup governance.",
-        "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls call_claude directly, bypassing run_task.",
+        "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls dispatch directly on the drafter's own backend, bypassing run_task.",
     },
     "receive_format": {
         "decided": True,
@@ -49,12 +49,13 @@ SHARED_PARTS = {
 # End-of-run capture and human/API readers exist; this is not a write-only store.
 ONTOLOGY_PART = {
     "decided": False,
-    "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented.",
+    "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented.",
 }
 
 # Part 8 (fires at all): traced per-agent group against scripts/pipeline.py directly,
-# not assumed. Six distinct firing shapes exist in this codebase today: production
-# and audit agents (unconditional), the two convention-review agents (the W3 firing
+# not assumed. Seven distinct firing shapes exist in this codebase today: production
+# and audit agents (unconditional), INST_FINDER (unconditional unless switched off
+# by the ratified operator setting), the two convention-review agents (the W3 firing
 # gate and the subject-chosen paired judging agent), LEGAL_ANALYST (production plus
 # the D6 pass-two calls under the local profile), REDACTOR (layer-gated),
 # AMENDMENT_DRAFTER (bus-dedup-gated) and the editorial board (parsimony escalation).
@@ -67,6 +68,28 @@ FIRES_UNCONDITIONALLY = {
              "audit agent has no per-agent gate: it produces the material the "
              "convention review consumes, so gating it on rules would starve "
              "the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3).",
+}
+# INST_FINDER fires like any corpus-level production agent, unless the operator
+# switched it off for the run with SHIMMER_INST_FINDER=off, which the pipeline
+# honours only under a ratified constitution amendment naming both. Switched off is
+# a declared state recorded in audit/agent_activation.json, never a failure.
+FIRES_INST_FINDER = {
+    "summary": "Runs once per review in its scheduled stage, unless you switch it "
+               "off for the run with the SHIMMER_INST_FINDER setting, which is "
+               "honoured only after you ratify the amendment that allows it. A "
+               "switched-off run records it as not called, with the reason.",
+    "condition": "Once in phase 3-4 as a corpus-level production agent, unless "
+                 "SHIMMER_INST_FINDER=off and config/constitution.json holds an "
+                 "operator-approved amendment whose change names INST_FINDER and "
+                 "SHIMMER_INST_FINDER; then it is not dispatched and is recorded "
+                 "as not called (state switched_off, reason 'switched off by "
+                 "operator setting'). Without that amendment a run with the "
+                 "setting off refuses to start. Any other value, or none, keeps it on.",
+    "where": "scripts/pipeline.py: PRODUCTION_AGENTS_CORPUS_LEVEL (it stays in the "
+             "list), _inst_finder_switch, _inst_finder_startup_guard (main) and the "
+             "corpus loop of phase_3_4_content_production; the setting is saved "
+             "in <run>/audit/agent_switches.json. Gate check 277 "
+             "(scripts/inst_finder_switch_checks.py).",
 }
 FIRES_CONVENTION_REVIEW = {
     "summary": "In whole-document review, runs when it receives a matching rule "
@@ -124,7 +147,7 @@ FIRES_AMENDMENT_DRAFTER = {
                  "findings make no call. Failure retains the original finding. "
                  "The deterministic template builds amendments either way. "
                  "Separately, Draft task mode uses this identity for one free-text "
-                 "memo through the direct Claude call path before review.",
+                 "memo through a direct call on its own backend before review.",
     "where": "scripts/pipeline.py: phase_6_synthesis, _polish_findings, "
              "main's Draft branch and _draft_generate_with_evidence.",
 }
@@ -147,12 +170,31 @@ FIRES_EDITORIAL_BOARD = {
              "_observation_triggers_escalation(obs, tunables)).",
 }
 
+FIRES_JUDGE = {
+    "summary": "Answers one narrow question, from its own answer probabilities, wherever a "
+               "rule declares a task its contract takes (a claim against a table's "
+               "cells, two passages that may contradict). Python chooses what it is "
+               "shown and runs its declared tools. A rule that declares no such task "
+               "never reaches it.",
+    "condition": "Phase 5.5, paired mode: once per selected table for a rule declaring "
+                 "[compare: cells], and once per pair order for a rule declaring "
+                 "[compare: passages] when the pair step asks in the decision form; "
+                 "nothing is asked until a threshold is measured for the task. The "
+                 "agent whose contract declares the task takes it; with none declaring "
+                 "it the rule's subject chooses, as before.",
+    "where": "scripts/judge_agent.py: role_for, declared_tools, claim_tools; "
+             "scripts/pipeline.py: _judging_role, _cell_claim_review and "
+             "_passage_pair_review; tool records in <run>/audit/judge_tools.jsonl. "
+             "Gate check 331 (scripts/judge_agent_checks.py).",
+}
+
 AGENT_FIRING = {
+    "JUDGE": FIRES_JUDGE,
     "PROCESSOR": FIRES_UNCONDITIONALLY,
     "SPEECH_ACT_TAGGER": FIRES_UNCONDITIONALLY,
     "LEGAL_ANALYST": FIRES_LEGAL_ANALYST,
     "ARCHIVIST": FIRES_UNCONDITIONALLY,
-    "INST_FINDER": FIRES_UNCONDITIONALLY,
+    "INST_FINDER": FIRES_INST_FINDER,
     "CITATION_RESOLVER": FIRES_UNCONDITIONALLY,
     "VERIFIER": FIRES_UNCONDITIONALLY,
     "FACT_CHECKER": FIRES_UNCONDITIONALLY,

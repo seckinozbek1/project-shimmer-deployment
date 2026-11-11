@@ -4,6 +4,8 @@ One entry per product version, in plain English. The version number lives in `VE
 
 ## Unreleased (after v1)
 
+- **`requirements.txt` pins transformers 4.51.3, not 4.52.3**: the version the laptop and the cloud runtime lock already run, and the one `config/final_models.json` records. A container built from `requirements.txt` now installs 4.51.3, so an image built before this carries 4.52.3 and differs from one built after. The gate on a rented machine (arm G) could not be sealed before this change: its sealer requires every pin to be in the runtime lock. It now also reads a lock's CUDA build label as the same version (`2.5.1+cu121` holds the pin `2.5.1`), and nothing else is loosened.
+
 - **No limit on the number of loop instances** (D-S95, D-382): the guard no longer refuses a launch while another loop instance runs, which the 0.1.0.dev2 entry below describes. Each instance's cap and an overrun reserve are counted within the total budget instead. Every launch still runs on the A10 until a faster machine type has its reference pair measured.
 
 - **A nineteenth agent, JUDGE** (constitution amendment INFRA-049, approved by the operator on 2026-11-08): it answers one narrow question with fixed choices (whether the cells Python selected meet a rule's claim, whether two passages contradict) from its own answer probabilities, writes no text, and runs on `local_auditor` with its own model, Phi-4 (`unsloth/phi-4-bnb-4bit`), under both profiles. Python selects its evidence and runs its declared tools; its answers are model records, never amendments. No shipped rule declares a judge task yet, so no run has reached it. Gate check 331.

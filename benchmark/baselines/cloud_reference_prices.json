@@ -1,0 +1,11 @@
+{
+  "note": "The provider's prices per million tokens for the cloud reference (D-S70 item 5, D-326), recorded by the lead from the provider's own pricing page before a run, with the page and the date. benchmark/baselines/cloud_reference.py refuses a run whose prices differ from the row for the model id it resolved live, and a run whose model has no row. Row for claude-opus-4-8 read from the page on 2026-11-09 and checked by the lead (D-359).",
+  "models": {
+    "claude-opus-4-8": {
+      "input_per_mtok": 5.0,
+      "output_per_mtok": 25.0,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "read_on": "2026-11-09"
+    }
+  }
+}

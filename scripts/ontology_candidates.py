@@ -97,6 +97,11 @@ def embed_nodes(graph, *, state_path=None, hidden=DEFAULT_HIDDEN, seed=DEFAULT_S
     model = GraphAutoencoder(FEATURE_DIM, hidden).to(dev)
 
     prior = _load_state(state_path if state_path else DEFAULT_STATE_PATH)
+    if prior:
+        import ontology_gnn_state
+        refused = ontology_gnn_state.provenance_refusal(prior)
+        if refused:
+            raise ontology_gnn_state.StateRefused(refused)
     weights_from = "initialised"
     if prior and prior.get("feature_dim") == FEATURE_DIM and prior.get("hidden") == hidden:
         with torch.no_grad():

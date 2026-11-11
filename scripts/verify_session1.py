@@ -69,7 +69,7 @@ EXPECTED_AGENTS = {
     "SPEECH_ACT_TAGGER", "REDACTOR",
     "AMENDMENT_DRAFTER", "EDITOR_CLERK",
     "EDITOR_HEAD_OF_UNIT", "EDITOR_HEAD_OF_SECTION", "EDITOR_HEAD_OF_DEPARTMENT",
-    "EDITOR_DEPUTY_DG", "EDITOR_DG",
+    "EDITOR_DEPUTY_DG", "EDITOR_DG", "JUDGE",
 }
 
 SEED_LAW_IDS = {"LAW-0", "LAW-I", "LAW-II", "LAW-III", "LAW-IV", "LAW-V", "LAW-VI"}
@@ -275,7 +275,7 @@ def check_03_agent_registry():
     for name, spec in agents.items():
         for k in ("does", "does_not", "model"):
             if k not in spec: return _fail(f"{name} missing {k!r}")
-    return _ok(f"{len(agents)} agents with DOES/DOES NOT/model (18 incl. AMENDMENT_DRAFTER + EDITOR_CLERK + 5 board ranks)")
+    return _ok(f"{len(agents)} agents with DOES/DOES NOT/model (19 incl. AMENDMENT_DRAFTER + EDITOR_CLERK + 5 board ranks + JUDGE)")
 
 
 def check_04_contracts():
@@ -498,8 +498,13 @@ def check_15_search():
         except (json.JSONDecodeError, KeyError, ValueError):
             pass  # fall through and re-run live
 
+    import os as _os
+    from unittest.mock import patch as _patch
     router = SearchRouter.open(ROOT)
-    result = router.search(query, claim_type="institutional")
+    # Web access opens only under the cloud profile (D-S23 item 1, check 316); this live
+    # smoke test is of the cloud path, whatever profile the gate's shell carries.
+    with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+        result = router.search(query, claim_type="institutional")
     if result.strategy_used not in {"ddg", "brave", "api", "direct", "exhausted"}:
         return _fail(f"strategy: {result.strategy_used!r}")
     if result.verdict not in {"FOUND", "UNVERIFIABLE"}:
@@ -821,12 +826,37 @@ def check_31_three_input_subdirs():
     return _ok("input/{context,operational,conventions}/ present")
 
 
+def _absent_folders(*paths):
+    """The folders among `paths` (outermost first) that do not exist yet."""
+    return [p for p in paths if not p.exists()]
+
+
+def _remove_created_folders(folders):
+    """Remove the folders a check created, innermost first, each only when empty: never a
+    folder that existed before the check, never one that holds anything."""
+    for folder in reversed(folders):
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+
+
 @_nonmutating(CONFIG / "convention_registry.json")
 def check_32_convention_parser():
     """Part XVIII Section F: convention_parser produces valid convention_registry.json."""
     from convention_parser import parse_conventions, write_registry
-    # Seed a temp conventions file so the parser has something to work on.
+    # Seed a temp conventions file so the parser has something to work on. The folders this
+    # creates are removed afterwards (S7 round 3: input/ and input/conventions/ used to be
+    # left behind, which changed checks 01 and 28 on the next gate in that tree).
     conv_dir = ROOT / "input" / "conventions"
+    created = _absent_folders(ROOT / "input", conv_dir)
+    try:
+        return _check_32_with_seed(conv_dir, parse_conventions, write_registry)
+    finally:
+        _remove_created_folders(created)
+
+
+def _check_32_with_seed(conv_dir, parse_conventions, write_registry):
     conv_dir.mkdir(parents=True, exist_ok=True)
     seed_path = conv_dir / "_verify_seed.md"
     seed_text = (
@@ -1086,7 +1116,7 @@ def check_38_embedding_store():
 
 def check_39_canonical_envelope():
     """INFRA-037: every agent's output payload is the canonical wrapper
-    {agent, doc_id, items:[flat items]}. For ALL 18 agents, a valid wrapper of one
+    {agent, doc_id, items:[flat items]}. For ALL 19 agents, a valid wrapper of one
     flat core-bearing item validates; a bare list, a bare dict, and an item with a
     nested object are all rejected; an empty items list is valid."""
     from agent_wrapper import AgentWrapper, is_envelope, decode_items
@@ -1122,7 +1152,7 @@ def check_39_canonical_envelope():
     _, m_empty = w.parse_contract_output(json.dumps({"agent": name, "doc_id": "d", "items": []}))
     bus_path.unlink(missing_ok=True)
     if m_empty: return _fail(f"empty items rejected: {m_empty}")
-    return _ok("all 18 agents enforce the canonical wrapper of flat core-bearing items")
+    return _ok("all 19 agents enforce the canonical wrapper of flat core-bearing items")
 
 
 def check_40_highest_revision():
@@ -1336,10 +1366,20 @@ def check_46_redaction_applies_to_all_artifacts():
     # stage invokes the injected render callback between produce and verify, and
     # (iii) the pipeline wires write_amendment_deliverables as that callback. So the
     # render is editorial-side and there is no privacy->editorial edge.
+    # Open item 19 (2): the keys are module constants the function reads, and every
+    # per-document deliverable is covered: each Markdown file that is not the master's
+    # own render is scrubbed on disk, and every deliverable is re-read by the survivor
+    # grep (the reviewed document carries the document's whole text).
+    from sensitivity_layer import scrub as _scrub
+    from run_context import DELIVERABLE_FILENAMES as _names
     vsrc = inspect.getsource(scrub_text_artifacts_and_verify)
-    for key in ("per_agent_deliverable", "context_summary", "operative_summary"):
-        if key not in vsrc:
-            return _fail(f"verify path does not target {key} (defect A: master-only apply)")
+    if "TEXT_ARTIFACT_KEYS" not in vsrc or "VERIFY_KEYS" not in vsrc:
+        return _fail("verify path no longer reads TEXT_ARTIFACT_KEYS and VERIFY_KEYS")
+    for key, basename in _names.items():
+        if basename.endswith(".md") and key != "amendments_md" and key not in _scrub.TEXT_ARTIFACT_KEYS:
+            return _fail(f"verify path does not scrub {key} ({basename}) (defect A: master-only apply)")
+        if key not in _scrub.VERIFY_KEYS:
+            return _fail(f"verify path does not re-read {key} ({basename}) for survivors")
     if "render_deliverable(" not in inspect.getsource(run_redaction_phase):
         return _fail("relocated stage no longer invokes the injected render callback")
     # the real edge test: the privacy stage MODULE must not import the editorial
@@ -1374,15 +1414,19 @@ def check_47_redaction_outcome_verified():
     from sensitivity_layer.redaction_stage import (build_redaction_escalation,
                           _REDACTION_FAILURE, _REDACTION_PUBLIC_KINDS)
 
-    def _run(artifact_text, reds):
+    from run_context import DELIVERABLE_FILENAMES as _names
+
+    def _run(artifact_text, reds, key="per_agent_deliverable"):
         # Drive the LIVE function on a throwaway on-disk text artifact (it scrubs in
         # place, then re-greps). Seed located/by_artifact exactly as the live caller does.
         d = Path(tempfile.mkdtemp(prefix="shimmer_v47_"))
-        p = d / "x__reviewed_document.md"
+        p = d / _names[key]
         p.write_text(artifact_text, encoding="utf-8")
-        info = {"per_agent_deliverable": str(p)}
+        info = {key: str(p)}
         located = {span: 0 for span, _ in _span_list(reds)}
-        return scrub_text_artifacts_and_verify(reds, info, located, {})
+        out = scrub_text_artifacts_and_verify(reds, info, located, {})
+        out["_text_after"] = p.read_text(encoding="utf-8")
+        return out
 
     # (a) all-clean: both spans present and cleanly scrubbed
     clean = _run("x خالد المنصور y 0000-1111-2222 z",
@@ -1394,16 +1438,34 @@ def check_47_redaction_outcome_verified():
     # (D) counts are span-based ACTUAL substitutions, never the proposal count
     if clean["by_artifact"].get("per_agent_deliverable") != 2:
         return _fail(f"by_artifact counts are not span-based actual substitutions: {clean['by_artifact']}")
+    # Open item 19 (2): the reviewed document carries the document's whole text, so the
+    # LIVE path scrubs it on disk and counts it under its own key.
+    reviewed = _run("x خالد المنصور y", [{"span": "خالد المنصور", "replacement": "[REDACTED]"}],
+                    key="reviewed_document")
+    if (reviewed["by_artifact"].get("reviewed_document") != 1 or "خالد المنصور" in reviewed["_text_after"]
+            or reviewed["survivors"] or reviewed["applied"] != reviewed["proposed"]):
+        return _fail(f"the reviewed document was not scrubbed: by_artifact={reviewed['by_artifact']} "
+                     f"survivors={reviewed['survivors']}")
     # (b) a span located NOWHERE -> dropped (no silent zero-match)
     drop = _run("nothing here", [{"span": "غير موجود", "replacement": "[REDACTED]"}])
     if not drop["dropped"] or drop["applied"] != 0:
         return _fail(f"a span located nowhere must be 'dropped' (no silent zero-match): {drop}")
     # (c) planted survivor: the replacement re-introduces the span -> the re-grep must
-    # catch it. THIS is what fails if the survivor grep is removed.
+    # catch it. THIS is what fails if the survivor grep is removed. Planted through
+    # `neutral_id`, the one replacement a redaction item can still carry: a model's own
+    # `replacement` is ignored since D-214, so it can no longer plant anything.
     surv = _run("خالد المنصور",
-                [{"span": "خالد المنصور", "replacement": "خالد المنصور (kept)"}])
+                [{"span": "خالد المنصور", "neutral_id": "خالد المنصور (kept)"}])
     if not surv["survivors"]:
         return _fail("LIVE survivor grep did not catch a surviving span (real gate inert)")
+    # The same planted survivor in the reviewed document (it carries the document's
+    # whole text): the re-grep must catch it there too, under its own key.
+    surv_reviewed = _run("خالد المنصور",
+                         [{"span": "خالد المنصور", "neutral_id": "خالد المنصور (kept)"}],
+                         key="reviewed_document")
+    if "reviewed_document" not in (surv_reviewed["survivors"].get("خالد المنصور") or []):
+        return _fail("LIVE survivor grep did not catch a surviving span in the reviewed document "
+                     f"(real gate inert there): {surv_reviewed['survivors']}")
     # the two application-layer BLOCK kinds exist and surface to the operator
     for fk in ("span_dropped", "pii_survives_in_deliverable"):
         if fk not in _REDACTION_FAILURE or fk not in _REDACTION_PUBLIC_KINDS:
@@ -1414,7 +1476,9 @@ def check_47_redaction_outcome_verified():
         if esc["failure_kind"] != fk or "detail" not in esc:
             return _fail(f"escalation for {fk} not surfaced with detail")
     return _ok("LIVE survivor path executed (scrub_text_artifacts_and_verify): clean OK, "
-               "located-nowhere -> dropped, planted survivor -> survivors+BLOCK")
+               "the reviewed document scrubbed and counted, "
+               "located-nowhere -> dropped, planted survivor -> survivors+BLOCK "
+               "(in the agent record and in the reviewed document)")
 
 
 def check_48_qwen_shared_model_cache():
@@ -1785,7 +1849,7 @@ def check_57_oge_capture_wired():
     id Q2, dedup-merge C1). Non-mutating: writes only to a tempdir, never the real ontology/stores."""
     import inspect, tempfile
     import pipeline, ontology_capture
-    msrc = inspect.getsource(pipeline.main)
+    msrc = _run_end_source(pipeline)
     for needle in ("ontology_capture", "capture_run("):
         if needle not in msrc:
             return _fail(f"capture hook not wired into pipeline.main: {needle!r} absent (dormant scaffold)")
@@ -1987,6 +2051,16 @@ def check_60_oge_ingest_payload_free():
                "zero CITES/EXHIBITS matched against a placeholder; no unmasking, no nesting")
 
 
+def _run_end_source(pipeline):
+    """main's source followed by its run-end ontology step's, when main calls it (D-432 item 5
+    moved the block into _ontology_run_end); main's source alone otherwise."""
+    import inspect
+    src = inspect.getsource(pipeline.main)
+    if "_ontology_run_end(run_ctx, op_docs, deliverables)" in src and hasattr(pipeline, "_ontology_run_end"):
+        src = src + "\n" + inspect.getsource(pipeline._ontology_run_end)
+    return src
+
+
 def check_61_oge_graph_rebuilt_at_run_end():
     """OGE build B2 wiring: the Tier-1 graph is rebuilt at run-end, right after the capture hook.
     WIRED (not dormant): pipeline.main imports ontology_graph and calls build_graph at run-end,
@@ -1996,7 +2070,7 @@ def check_61_oge_graph_rebuilt_at_run_end():
     captured provision appears as a node. Non-mutating: tempdir only, never the real graph.json."""
     import inspect, tempfile
     import pipeline, ontology_capture, ontology_graph
-    msrc = inspect.getsource(pipeline.main)
+    msrc = _run_end_source(pipeline)
     if "ontology_graph" not in msrc or "build_graph(" not in msrc:
         return _fail("graph rebuild not wired into pipeline.main (build_graph absent -> dormant)")
     # the rebuild must sit AFTER the capture call (run-end, post-capture), not before it
@@ -2051,7 +2125,7 @@ def check_62_oge_gnn_executed():
     does NOT depend on GPU presence). Proves MACHINERY, NOT LEARNING -- one fwd + one delta-only
     backprop runs without error, the weights MOVE after backward, state persists, and a SECOND
     invocation trains only over newly-added delta nodes (incremental, not full retrain). The learning
-    signal is Tier 2 (empty until task flow), so nothing is asserted to have been *learned*."""
+    signal is Tier 2 (empty; run outputs are never its signal, D-S112 item 1), so nothing is asserted to have been *learned*."""
     import tempfile
     import ontology_gnn
     d = Path(tempfile.mkdtemp(prefix="shimmer_oge62_"))
@@ -2073,8 +2147,11 @@ def check_62_oge_gnn_executed():
     spath = d / "gnn_state.json"
     gpath.write_text(json.dumps(_oge_gnn_graph(nodes, edges)), encoding="utf-8")
 
-    s1 = ontology_gnn.gnn_update(graph_path=str(gpath), state_path=str(spath), device="cpu",
-                                 seed=7, log=False)
+    # D-S112 item 1 (D-417): the GNN trains only on a declared set, through its own command.
+    decl = d / "training_set.json"
+    ontology_gnn.declare_training_set(decl, gpath, "check 62 fixture", "a fixture graph made for training", domain_agnostic=True,
+        case_agnostic=True, declared_by="gate check fixture")
+    s1 = ontology_gnn.gnn_update(str(decl), str(spath), device="cpu", seed=7, log=False)
     if s1["nodes"] != 3 or s1["delta_size"] != 3:
         return _fail(f"first run delta should equal all 3 nodes: {s1}")
     if not (s1["weight_delta_norm"] > 0):
@@ -2091,15 +2168,20 @@ def check_62_oge_gnn_executed():
     edges2 = edges + [{"type": "EXHIBITS", "source_type": "Provision", "source": "docA::REF-1",
                        "target_type": "SpeechAct", "target": "decide"}]
     gpath.write_text(json.dumps(_oge_gnn_graph(nodes2, edges2)), encoding="utf-8")
-    s2 = ontology_gnn.gnn_update(graph_path=str(gpath), state_path=str(spath), device="cpu",
-                                 seed=7, log=False)
+    ontology_gnn.declare_training_set(decl, gpath, "check 62 fixture", "a fixture graph made for training", domain_agnostic=True,
+        case_agnostic=True, declared_by="gate check fixture")
+    if ontology_gnn.main(["train", "--training-set", str(decl), "--state", str(spath), "--device", "cpu",
+                          "--seed", "7"]) != 0:
+        return _fail("the training command refused a declared training set")
+    s2 = {"delta_size": json.loads(spath.read_text(encoding="utf-8")).get("last_delta_size")}
     if s2["delta_size"] != 1:
         return _fail(f"second run must train only the 1 newly-added node (got delta={s2['delta_size']})")
     st2 = json.loads(spath.read_text(encoding="utf-8"))
     if st2.get("trained_count") != 4 or st2.get("n_updates") != 2:
         return _fail(f"incremental high-water mark wrong after second run: trained={st2.get('trained_count')}, "
                      f"n_updates={st2.get('n_updates')}")
-    return _ok("OGE GNN EXECUTED (MACHINERY not learning): fwd+delta-backprop ran on CPU, weights moved "
+    return _ok("OGE GNN EXECUTED through its training command on a declared set (MACHINERY not learning): "
+               "fwd+delta-backprop ran on CPU, weights moved "
                f"(|dW|={s1['weight_delta_norm']:.4f}), state persisted; 2nd run trained only the 1 new "
                "delta node (incremental, not full retrain)")
 
@@ -2134,7 +2216,12 @@ def check_63_oge_gnn_payload_free():
     gpath = d / "graph.json"
     spath = d / "gnn_state.json"
     gpath.write_text(json.dumps(g), encoding="utf-8")
-    ontology_gnn.gnn_update(graph_path=str(gpath), state_path=str(spath), device="cpu", seed=3, log=False)
+    decl = d / "training_set.json"
+    ontology_gnn.declare_training_set(decl, gpath, "check 63 fixture", "a fixture graph made for training", domain_agnostic=True,
+        case_agnostic=True, declared_by="gate check fixture")
+    if ontology_gnn.main(["train", "--training-set", str(decl), "--state", str(spath), "--device", "cpu",
+                          "--seed", "3"]) != 0:
+        return _fail("the training command refused a declared training set")
     state_text = spath.read_text(encoding="utf-8")
     for needle in (secret, "REDACTED", "original_text", "comment"):
         if needle in state_text:
@@ -2143,21 +2230,21 @@ def check_63_oge_gnn_payload_free():
                "no raw or placeholder token in gnn_state (weights + structural metadata only)")
 
 
-def check_64_oge_gnn_wired_at_run_end():
-    """OGE build B3 wiring: the GNN runs at run-end, AFTER build_graph. WIRED (not dormant):
-    pipeline.main calls gnn_update after build_graph after capture_run (source-order check). WORKS
-    end-to-end (executed coverage): the full run-end sequence capture_run -> build_graph -> gnn_update
-    is reproduced on a tempdir and gnn_state.json is produced. CPU-deterministic, tempdir only,
-    non-mutating (never the real ontology/stores/*)."""
-    import inspect, tempfile
-    import pipeline, ontology_capture, ontology_graph, ontology_gnn
-    msrc = inspect.getsource(pipeline.main)
-    if "ontology_gnn" not in msrc or "gnn_update(" not in msrc:
-        return _fail("gnn_update not wired into pipeline.main (dormant)")
-    i_cap, i_build, i_gnn = msrc.find("capture_run("), msrc.find("build_graph("), msrc.find("gnn_update(")
-    if not (0 <= i_cap < i_build < i_gnn):
-        return _fail(f"run-end order must be capture_run < build_graph < gnn_update "
-                     f"(got {i_cap}, {i_build}, {i_gnn})")
+def check_64_oge_gnn_never_at_run_end():
+    """D-S112 item 1 (D-417): the GNN never learns from runs. Inverted from "wired at run end": no
+    run path calls gnn_update (an AST scan of scripts/ and tools/), the pipeline does not import
+    ontology_gnn, the run-captured store is never a training set, and an undeclared, non-agnostic or
+    changed training set is refused; each proof neutralised (scripts/ontology_gnn_rule_checks.py).
+    Then the run end's capture and graph rebuild are still executed on a tempdir, and leave no GNN
+    state. CPU-deterministic, tempdir only, non-mutating (never the real ontology/stores/*)."""
+    import contextlib, io, tempfile
+    import pipeline, ontology_capture, ontology_graph, ontology_gnn_rule_checks
+    out_text = io.StringIO()
+    with contextlib.redirect_stdout(out_text):
+        code = ontology_gnn_rule_checks.main()
+    last = out_text.getvalue().strip().splitlines()[-1] if out_text.getvalue().strip() else ""
+    if code != 0:
+        return _fail("the GNN rule proofs failed: " + last)
 
     # executed: reproduce the run-end sequence on a tempdir
     d = Path(tempfile.mkdtemp(prefix="shimmer_oge64_"))
@@ -2182,14 +2269,12 @@ def check_64_oge_gnn_wired_at_run_end():
     ontology_capture.capture_run(_RC(), op_docs, deliverables, sensitive=False, stores_dir=str(stores))
     out = d / "graph.json"
     ontology_graph.build_graph(sources={"provisions": stores / "provisions.jsonl"}, out_path=str(out))
-    spath = d / "gnn_state.json"
-    s = ontology_gnn.gnn_update(graph_path=str(out), state_path=str(spath), device="cpu", seed=5, log=False)
-    if not spath.exists():
-        return _fail("run-end GNN sequence did not persist gnn_state.json")
-    if s["nodes"] < 1:
-        return _fail(f"run-end GNN saw no nodes from the rebuilt graph: {s}")
-    return _ok("run-end GNN WIRED + EXECUTED: pipeline.main calls gnn_update after build_graph after "
-               f"capture_run; reproduced sequence persisted gnn_state.json over {s['nodes']} nodes")
+    if not out.exists():
+        return _fail("the run end's graph rebuild produced no graph")
+    if list(d.rglob("gnn_state.json")):
+        return _fail("the run end's sequence left a GNN state")
+    return _ok("the GNN never learns from runs: " + last + "; the run end's capture and graph rebuild "
+               "executed on a tempdir and left no GNN state")
 
 
 def _p1_masking_fixture(d):
@@ -2384,13 +2469,18 @@ def check_69_chokepoint_query_masked():
     masker = S.make_query_masker(sensitive=True, operator_rules=rules, project_root=str(d),
                                  run_id="R", ledger_path=str(d / "l.jsonl"))
     saved = S.LAYER_ACTIVE
+    import os as _os
+    from unittest.mock import patch as _patch
     try:
         S.LAYER_ACTIVE = True
         router = SR.SearchRouter(project_root=d, keys={}, registry={}, query_masker=masker)
         seen = {}
         router._ddg_search = lambda q, max_results=5: (seen.update(ddg=q) or ([], ""))
         router._brave_search = lambda q: (seen.update(brave=q) or ([], ""))
-        router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
+        # Web egress opens only under the cloud profile (D-S23 item 1, check 316), so the
+        # masker is exercised on the one profile where a query can leave the machine.
+        with _patch.dict(_os.environ, {"SHIMMER_BACKEND_PROFILE": "cloud"}):
+            router.search("lookup ID 12-345-6789 today", agent=None, claim_type="x")
         recorded = seen.get("ddg", "")
         if "12-345-6789" in recorded or "[REDACTED" not in recorded:
             return _fail(f"query reached the engine unmasked: {recorded!r}")
@@ -4882,7 +4972,9 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
     """productization STEP 6 gate check (e): the exit-code map (server.py's
     _status_for_exit_code / _EXIT_STATUS_MAP) yields "blocked" for exit code 5
     and "stopped_model_approval" for exit code 3, matching the evidence's
-    exit-code table (pipeline.py's own `return N` points)."""
+    exit-code table (pipeline.py's own `return N` points). Open item 11 adds
+    exits 8 and 9 (multi-round refusal, unratified INST_FINDER switch) as
+    governance statuses, pinned to the `return` points that produce them."""
     import importlib
     server = importlib.import_module("server")
     importlib.reload(server)
@@ -4915,9 +5007,97 @@ def check_108_exit_code_map_blocked_and_stopped_model_approval():
             return _fail(f"{governance_status!r} missing from GOVERNANCE_STATUSES "
                          f"(the console must render it as a governance outcome, not a failure)")
 
+    # Open item 11: exits 8 (multi-round refusal) and 9 (unratified
+    # SHIMMER_INST_FINDER=off) are governance refusals, read from the source
+    # (pipeline.py main() and multi_round_phase.execute, by AST, never run).
+    import ast as _ast
+
+    def _function(path, name):
+        return next(node for node in _ast.walk(_ast.parse(path.read_text(encoding="utf-8")))
+                    if isinstance(node, _ast.FunctionDef) and node.name == name)
+
+    def _constant_returns(fn):
+        return {node.value.value for node in _ast.walk(fn)
+                if isinstance(node, _ast.Return) and isinstance(node.value, _ast.Constant)
+                and isinstance(node.value.value, int)}
+
+    def _if_returning(fn, code):
+        return [node for node in _ast.walk(fn) if isinstance(node, _ast.If)
+                and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                        and s.value.value == code for s in node.body)]
+
+    pipeline_main = _function(SCRIPTS / "pipeline.py", "main")
+    phase_execute = _function(SCRIPTS / "multi_round_phase.py", "execute")
+    guard_names = {t.id for node in _ast.walk(pipeline_main) if isinstance(node, _ast.Assign)
+                   and isinstance(node.value, _ast.Call)
+                   and _ast.unparse(node.value.func) == "_inst_finder_startup_guard"
+                   for t in node.targets if isinstance(t, _ast.Name)}
+    if not any(isinstance(node.test, _ast.Name) and node.test.id in guard_names
+               for node in _if_returning(pipeline_main, 9)):
+        return _fail("pipeline.py main() no longer returns 9 on the _inst_finder_startup_guard "
+                     "refusal; the exit-9 status below would be pinned to the wrong cause")
+
+    def _refuses_multi_round(node):
+        return any(isinstance(c, _ast.Call) and _ast.unparse(c.func).endswith("activation")
+                   and any(k.arg == "eligible" and isinstance(k.value, _ast.Constant)
+                           and k.value.value is False for k in c.keywords)
+                   for s in node.body for c in _ast.walk(s))
+    multi_round_8 = [node for node in _if_returning(pipeline_main, 8) if _refuses_multi_round(node)]
+    if len(multi_round_8) != 2:
+        return _fail(f"pipeline.py main() has {len(multi_round_8)} multi-round refusals "
+                     f"returning 8 (activation eligible=False), expected 2")
+    if not any(isinstance(node, _ast.ExceptHandler) and _refuses_multi_round(node)
+               and any(isinstance(s, _ast.Return) and isinstance(s.value, _ast.Constant)
+                       and s.value.value == 8 for s in node.body)
+               for node in _ast.walk(phase_execute)):
+        return _fail("multi_round_phase.execute no longer returns 8 on its refusal path")
+    if not any(isinstance(node, _ast.Return) and _ast.unparse(node.value) == "code"
+               for node in _ast.walk(pipeline_main)):
+        return _fail("pipeline.py main() no longer returns multi_round_phase.execute's code")
+    main_codes = _constant_returns(pipeline_main) | _constant_returns(phase_execute)
+
+    def _exit_map_problem():
+        for code, status in ((8, "refused_multi_round"), (9, "refused_inst_finder_unratified")):
+            if server._status_for_exit_code(code) != status:
+                return (f"exit code {code} mapped to {server._status_for_exit_code(code)!r}, "
+                        f"expected {status!r}")
+            if status not in server.GOVERNANCE_STATUSES:
+                return f"{status!r} missing from GOVERNANCE_STATUSES"
+            if server._outcome_for_status(status, code)[0] != "governance_stop":
+                return f"{status!r} does not reach the governance_stop outcome"
+        unmapped = sorted(code for code in main_codes if code not in server._EXIT_STATUS_MAP)
+        if unmapped:
+            return (f"pipeline.py main() / multi_round_phase.execute return {unmapped} with no "
+                    f"_EXIT_STATUS_MAP entry, so the console shows them as 'failed'")
+        return None
+
+    problem = _exit_map_problem()
+    if problem:
+        return _fail(problem)
+    # Neutralise, fail, restore, pass: removing exit 9's entry, then exit 8's
+    # governance membership, must each be caught.
+    saved_9 = server._EXIT_STATUS_MAP.pop(9)
+    try:
+        caught_entry = _exit_map_problem()
+    finally:
+        server._EXIT_STATUS_MAP[9] = saved_9
+    server.GOVERNANCE_STATUSES.discard("refused_multi_round")
+    try:
+        caught_governance = _exit_map_problem()
+    finally:
+        server.GOVERNANCE_STATUSES.add("refused_multi_round")
+    if not caught_entry or not caught_governance:
+        return _fail("the exit 8/9 proof did not fail with exit 9's map entry removed or "
+                     "refused_multi_round dropped from GOVERNANCE_STATUSES")
+    if _exit_map_problem():
+        return _fail(f"after restoring, the exit 8/9 proof still fails: {_exit_map_problem()}")
+
     return _ok("exit code 5 -> 'blocked', exit code 3 -> 'stopped_model_approval' "
-               "(plus 0/2/4/6/7/unknown all map correctly); the four governance "
-               "statuses are all present in GOVERNANCE_STATUSES")
+               "(plus 0/2/4/6/7/unknown all map correctly); 8 -> 'refused_multi_round' and "
+               "9 -> 'refused_inst_finder_unratified', the codes pipeline.py main() returns "
+               f"for those refusals (by AST; every constant it returns, {sorted(main_codes)}, "
+               "is mapped); the six governance statuses are in GOVERNANCE_STATUSES; removing "
+               "exit 9's entry or 8's governance membership is caught and restored")
 
 
 def check_109_served_html_leaks_nothing():
@@ -7647,6 +7827,10 @@ def check_140_local_progress_display_emits_correct_events():
                 _aw._QWEN_MODELS["zqprobe/Something-Else"] = (object(), object())
                 w = _aw.AgentWrapper(name=agent, constitution=c, bus=bus, registry=reg_local,
                                      contracts=contracts, keys={"_stub": ""})
+                # Gate checks never write the tree: the fixture's contract violation is
+                # persisted in this temporary folder, not under output/ (D-206).
+                w.run_context = _run_context_mod.RunContext(
+                    project_root=Path(td), run_id="check140", run_dir=Path(td) / "run")
 
                 def _run(raw=None, ok=True, error=""):
                     def _stub(stable_prefix, dynamic_suffix="", **kw):
@@ -7878,7 +8062,7 @@ def check_143_oge_masks_on_whether_masking_actually_ran():
     import inspect
     import pipeline as _pl
 
-    src = inspect.getsource(_pl.main)
+    src = _run_end_source(_pl)
     oge_start = src.find("OGE capture-at-run-end")
     if oge_start == -1:
         return _fail("could not locate the OGE capture section in pipeline.main's source")
@@ -11811,7 +11995,9 @@ def check_179_an_earlier_version_is_read_by_label_compared_in_python_and_never_a
     rel = list(fr.get("relations") or [])
     new_rel = ["changed_from_prior", "unchanged_from_prior", "moved_toward", "moved_away",
                "absent_since_prior"]
-    if rel[:1] != ["sum_mismatch"] or rel[-5:] != new_rel:
+    # INFRA-044 appended the five after the first eight; a later append (INFRA-045's
+    # four, check 319) follows them and moves none of them.
+    if rel[:1] != ["sum_mismatch"] or rel[8:13] != new_rel:
         return _fail(f"the five relations must be APPENDED after the existing ones with "
                      f"sum_mismatch still first; relations are {rel!r}")
     if tuple(new_rel) != tuple(_fr.PRIOR_RELATIONS) or not set(new_rel) <= set(_fr.relations()):
@@ -12224,7 +12410,10 @@ def check_181_the_comparison_is_rendered_in_both_deliverables_and_is_never_an_am
     # --- the renderer ------------------------------------------------------------------
     def _cat(f):
         f = dict(f); f["category"] = "conv-a01"; return f
-    findings = [_cat(band), _cat(unchanged), _cat(toward), _cat(absent), _cat(model_emitted)]
+    # Python's records carry the written_by stamp their bus post gives them (WRITTEN-BY-A); an
+    # unstamped record is never Python's, so the model-emitted one stays unstamped.
+    _py = lambda f: dict(f, written_by="python")
+    findings = [_cat(_py(band)), _cat(_py(unchanged)), _cat(_py(toward)), _cat(_py(absent)), _cat(model_emitted)]
     text = _render(document_id="x", document_name="x.md",
                    conventions_by_category={"conv-a01": registry["conventions"]},
                    findings=findings, question="ZQ_QUESTION",
@@ -12234,7 +12423,10 @@ def check_181_the_comparison_is_rendered_in_both_deliverables_and_is_never_an_am
                    "### Moved toward the mandate", "alpha rate: 30kes -> 45kes (delta +15) band distance -10",
                    "### Unchanged", "total declared extent: 25zed -> 25zed", "### Absent since the earlier version",
                    "eta rate: 50kes -> (not stated)", "### Outside a stated band now", "above_band",
-                   "### Not comparable", "delta span: units differ", "theta: no counterpart", "- findings: 5"):
+                   "### Not comparable", "delta span: units differ", "theta: no counterpart",
+                   "- findings computed by Python from the document's figures: 4",
+                   "- required fields Python checked in code and found absent: 0",
+                   "- items written by a model (not checked by Python): 1"):
         if needle not in text:
             return _fail(f"document_summary render lacks {needle!r}")
     section = text.split("## Compared with the earlier version", 1)[1]
@@ -12677,32 +12869,30 @@ def check_184_a_text_column_with_one_incidental_figure_is_not_a_measurement_colu
 
 
 def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
-    """G2 (docs/fix/STEP_F1..F3, STEP_G1..G2): absent_checks used to decide a
-    prior-version field was withdrawn by exact label-tuple membership alone, with
-    no fallback: a rewording that kept the same figure was indistinguishable from
-    a genuine withdrawal, and both were minted as ok-verdict absent_since_prior
-    records with full citations and rule attribution. The fix adds a value-
-    proximity corroboration pass, scoped to this unit's own newly-appearing
-    labels, before the mint: a vanished label is refused rather than minted when
-    some label this unit states that the earlier version did not carries a value
-    within rename_tolerance() of the vanished label's value, in the same unit.
+    """G2 (docs/fix/STEP_F1..F3, STEP_G1..G2), extended by S2b item 5 (loop stage S2):
+    absent_checks used to decide a prior-version field was withdrawn by exact
+    label-tuple membership alone. G2 added a value-proximity corroboration pass
+    (a newcomer in the same unit within rename_tolerance() refuses the mint). S2b
+    item 5 closes the edge G2 accepted: a label renamed between rounds whose VALUE
+    ALSO MOVED was still minted as withdrawn. A vanished label is now refused, not
+    minted, while its section states an unclaimed newcomer in the same unit of
+    measure (paired_review.possible_successor); whether that newcomer is the same
+    term is a word-meaning decision measured in S5, so until then the structure
+    refuses. A label with no possible successor still mints.
 
     Asserted, executed on the real functions with no model call:
-      - a label kept identical still round-trips as unchanged_from_prior, and a
-        field with no successor at all still correctly mints absent_since_prior
-        (the fix must not regress the true case);
-      - a label reworded by one content word, value UNCHANGED, produces NO
-        absent_since_prior record and instead a refusal naming both labels and
-        both values, while a true withdrawal in the same run still mints;
-      - a label reworded, value drifted PAST the tolerance, still mints
-        absent_since_prior: nothing corroborates the rename, so minting is the
-        honest answer, not a defect (the accepted edge of the design);
-      - the pre-existing citation-only refusal path is unaffected by the new
-        check (regression guard);
+      - a label kept identical still round-trips, and a field with no successor
+        (the only newcomer is in another unit of measure) still mints
+        absent_since_prior;
+      - a same-measure newcomer makes the withdrawal unconfirmed: refused as a
+        possible rename with a moved value, never minted;
+      - a label reworded, value unchanged, is refused naming both labels and both
+        values, and a true withdrawal beside it still mints;
+      - a label reworded, value drifted PAST rename_tolerance(), is refused (the
+        S2b change; G2 minted it);
+      - the citation-only refusal path is unaffected;
       - NEUTRALISE AND RESTORE: calling absent_checks with no scalars/hits (the
-        pre-fix call shape) brings the false absent_since_prior record back,
-        proving the corroboration pass, not some other change, is the mechanism;
-        the real call shape restores the refusal.
+        pre-fix shape, no newcomer pool) brings the false record back.
     """
     import pairing_map as _pm
     import paired_review as _pr
@@ -12713,9 +12903,9 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     def _ref(_i):
         return "REF-0001"
 
-    def _drive(v2_beta_label, v2_beta_value, *, with_corroboration=True):
-        v2 = ("## Section One\n\nAlpha count: 42 units\n%s: %s units\n"
-              "Delta share: 3 units\n" % (v2_beta_label, v2_beta_value))
+    def _drive(v2_beta_label, v2_beta_value, *, newcomer="Delta share: 3 kg", with_corroboration=True):
+        v2 = ("## Section One\n\nAlpha count: 42 units\n%s: %s units\n%s\n"
+              % (v2_beta_label, v2_beta_value, newcomer))
         index = _pr.prior_index(v1, _ref, known_units=set())
         units_v2 = _pm.split_units(v2, document_id="v2")
         present_all = set()
@@ -12729,15 +12919,20 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
             return _pr.absent_checks(index, present_all, slug, scalars=scalars, hits=hits)
         return _pr.absent_checks(index, present_all, slug)
 
-    # --- baseline: label unchanged, true withdrawal still fires -----------------------
     absent, refused = _drive("Beta level", 17)
     fields = {c["stated_field"]: c["relation"] for c in absent}
     if fields.get("gamma total") != "absent_since_prior":
-        return _fail(f"a genuinely withdrawn field must still mint absent_since_prior: {fields!r}")
+        return _fail(f"a field with no possible successor must still mint absent_since_prior: {fields!r}")
     if "beta level" in fields or refused:
         return _fail(f"an unchanged label must not be touched: absent={fields!r} refused={refused!r}")
 
-    # --- reworded, value unchanged: refuse, not mint -----------------------------------
+    absent_s, refused_s = _drive("Beta level", 17, newcomer="Delta share: 3 units")
+    if any(c["stated_field"] == "gamma total" for c in absent_s):
+        return _fail("a same-measure newcomer leaves the withdrawal unconfirmed; it must not mint")
+    hit_s = next((r for r in refused_s if r["label"] == "gamma total"), None)
+    if hit_s is None or not hit_s["reason"].startswith("possible rename with a moved value"):
+        return _fail(f"the unconfirmed withdrawal must be refused with its reason: {refused_s!r}")
+
     absent2, refused2 = _drive("Beta score", 17)
     fields2 = {c["stated_field"]: c["relation"] for c in absent2}
     if "beta level" in fields2:
@@ -12748,21 +12943,18 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     if hit is None or "beta score" not in hit["reason"] or "17" not in hit["reason"]:
         return _fail(f"the refusal must name both labels and both values: {refused2!r}")
 
-    # --- reworded, value drifted past tolerance: mint is the honest answer ------------
     tol = _pr.rename_tolerance()
     far_value = round(17 * (1 + tol) * 1.5, 2)
     absent3, refused3 = _drive("Beta score", far_value)
-    fields3 = {c["stated_field"]: c["relation"] for c in absent3}
-    if fields3.get("beta level") != "absent_since_prior":
-        return _fail(f"a rename drifted past tolerance ({tol!r}) must still mint, since nothing "
-                     f"corroborates the rename: absent={fields3!r} refused={refused3!r}")
+    if any(c["stated_field"] == "beta level" for c in absent3):
+        return _fail(f"a rename whose value moved past tolerance ({tol!r}) must not be reported "
+                     f"as withdrawn: absent={absent3!r}")
+    hit3 = next((r for r in refused3 if r["label"] == "beta level"), None)
+    if hit3 is None or "beta score" not in hit3["reason"]:
+        return _fail(f"the moved rename must be refused naming both labels: {refused3!r}")
 
-    # --- citation-only refusal path is unaffected --------------------------------------
-    def _ref_none(_i):
-        return ""
-    v1_uncited = v1
-    index_u = _pr.prior_index(v1_uncited, _ref_none, known_units=set())
-    v2_u = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nDelta share: 3 units\n"
+    index_u = _pr.prior_index(v1, lambda _i: "", known_units=set())
+    v2_u = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nDelta share: 3 kg\n"
     units_u = _pm.split_units(v2_u, document_id="v2u")
     present_u = set()
     for u in units_u:
@@ -12771,31 +12963,25 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
     scalars_u, _, _ = _pr.extract_fields(unit_u.get("text", ""), known_units=set())
     slug_u = unit_u["unit_id"].split("-", 1)[1] if "-" in unit_u["unit_id"] else ""
     hits_u, _ = _pr.prior_lookup(index_u, scalars_u, slug_u)
-    absent_u, refused_u = _pr.absent_checks(index_u, present_u, slug_u,
-                                            scalars=scalars_u, hits=hits_u)
+    absent_u, refused_u = _pr.absent_checks(index_u, present_u, slug_u, scalars=scalars_u, hits=hits_u)
     if absent_u or not any(r["reason"] == "no citation on file for the earlier statement"
                            for r in refused_u):
         return _fail(f"the citation-only refusal path must be unaffected: "
                      f"absent={absent_u!r} refused={refused_u!r}")
 
-    # --- NEUTRALISE AND RESTORE ---------------------------------------------------------
-    absent_neutral, refused_neutral = _drive("Beta score", 17, with_corroboration=False)
-    fields_neutral = {c["stated_field"]: c["relation"] for c in absent_neutral}
-    if fields_neutral.get("beta level") != "absent_since_prior":
-        return _fail("NEUTRALISE: calling absent_checks without scalars/hits must bring back "
-                     f"the false absent_since_prior record; got {fields_neutral!r}")
+    absent_neutral, _ = _drive("Beta score", 17, with_corroboration=False)
+    if {c["stated_field"]: c["relation"] for c in absent_neutral}.get("beta level") != "absent_since_prior":
+        return _fail("NEUTRALISE: absent_checks without scalars/hits must bring back the false record")
     absent_restored, refused_restored = _drive("Beta score", 17)
-    fields_restored = {c["stated_field"]: c["relation"] for c in absent_restored}
-    if "beta level" in fields_restored or not any(r["label"] == "beta level" for r in refused_restored):
-        return _fail(f"RESTORE: the corroboration pass no longer refuses the rename: "
-                     f"absent={fields_restored!r} refused={refused_restored!r}")
+    if any(c["stated_field"] == "beta level" for c in absent_restored) or \
+            not any(r["label"] == "beta level" for r in refused_restored):
+        return _fail("RESTORE: the corroboration pass no longer refuses the rename")
 
-    return _ok("a rewording with the same value refuses (naming both labels and both values) "
-               "instead of minting absent_since_prior, a true withdrawal alongside it still "
-               "mints, a rename drifted past rename_tolerance() still mints as the honest "
-               "answer, the pre-existing citation-only refusal is unaffected, and calling "
-               "absent_checks with no scalars/hits (the pre-fix shape) brings the false "
-               "record back, proving the corroboration pass is the mechanism")
+    return _ok("a field with no possible successor still mints absent_since_prior; a same-measure "
+               "newcomer, a rewording with the same value and a rewording whose value moved past "
+               "rename_tolerance() are all refused (naming both labels and values), never minted; "
+               "the citation-only refusal is unaffected; and calling absent_checks with no "
+               "scalars/hits brings the false record back")
 
 
 class _BlockingLinePopen:
@@ -16814,11 +17000,15 @@ def _fne_rendered_body():
         ctx2 = _rc.create_run(Path(td) / "draft")
         seen = {}
 
-        def _fake_call_claude(stable, dynamic, *, max_tokens=4096):
+        def _fake_call_gpt(stable, dynamic, *, max_tokens=4096):
             seen["call_id"] = getattr(w, "_cost_call_id", "")
             seen["chars"] = len(stable) + len(dynamic)
-            return _aw.CallResult(backend="claude_api", model="stub", raw_text="memo", ok=True)
-        w.call_claude = _fake_call_claude
+            return _aw.CallResult(backend="openai_api", model="stub", raw_text="memo", ok=True)
+        # The memo goes through the drafter's own backend (INC-031, check 312), so the
+        # stand-in replaces this wrapper's backend function: openai_api, set above.
+        if w.backend != "openai_api":
+            return _fail(f"the draft stand-in expects the openai_api wrapper set above, got {w.backend}")
+        w.call_gpt = _fake_call_gpt
         memo = _pl._draft_generate_with_evidence(w, "stable part", "dynamic part",
                                                  passages=[{"ref_id": "REF-0007", "text": "p"}],
                                                  run_ctx=ctx2)
@@ -17933,15 +18123,16 @@ def _candidate_finder_body():
 
     # The update path persists weights and a high-water mark. (The operator's own
     # correction: it does NOT reset each run. This asserts it.)
-    first = _gnn.gnn_update(graph_path=gpath, state_path=spath, log=False,
-                            device="cpu")
+    decl = d / "training_set.json"
+    _gnn.declare_training_set(decl, gpath, "check 213 fixture", "a fixture graph made for training", domain_agnostic=True,
+        case_agnostic=True, declared_by="gate check fixture")
+    first = _gnn.gnn_update(decl, spath, log=False, device="cpu")
     if first["delta_size"] != len(graph["nodes"]):
         return _fail("the first update should train on every node: %r" % (first,))
     state_one = _json.loads(spath.read_text(encoding="utf-8"))
     if not state_one.get("encoder_weight") or not state_one.get("trained_node_ids"):
         return _fail("the first update must persist weights and a high-water mark")
-    second = _gnn.gnn_update(graph_path=gpath, state_path=spath, log=False,
-                             device="cpu")
+    second = _gnn.gnn_update(decl, spath, log=False, device="cpu")
     if second["delta_size"] != 0:
         return _fail("a second update over the same graph has nothing new to train on, "
                      "so the delta must be 0 (weights persist, they do not reset): %r"
@@ -18670,10 +18861,13 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     Two things changed, both asserted here with real call machinery, no model:
 
     1. The budget is per CALL TYPE, not one number for every local call
-       (pipeline.py's five named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       (pipeline.py's six named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       VERIFIER_MAX_TOKENS=4096 (D-134, measured by replay R2c),
        AUDIT_MAX_TOKENS/PRODUCTION_MAX_TOKENS/DEEPEN_MAX_TOKENS/
        WIDE_REVIEW_MAX_TOKENS=2048, each wired to the real call site an AST
-       walk of pipeline.py confirms still calls it). agent_wrapper.py's own
+       walk of pipeline.py confirms still calls it; phase_5_audit is driven
+       with dispatch stubbed to show VERIFIER's call gets 4096 and
+       FACT_CHECKER's 2048, with neutralise, fail, restore, pass). agent_wrapper.py's own
        hardcoded `min(max_tokens, 1024)` is gone, replaced by
        LOCAL_MAX_OUTPUT_TOKENS, an outer backstop above the defaults for the
        five, never the budget itself.
@@ -18882,6 +19076,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
     budgets = {
         "PAIRED_JUDGING_MAX_TOKENS": _pl.PAIRED_JUDGING_MAX_TOKENS,
         "AUDIT_MAX_TOKENS": _pl.AUDIT_MAX_TOKENS,
+        "VERIFIER_MAX_TOKENS": _pl.VERIFIER_MAX_TOKENS,
         "PRODUCTION_MAX_TOKENS": _pl.PRODUCTION_MAX_TOKENS,
         "DEEPEN_MAX_TOKENS": _pl.DEEPEN_MAX_TOKENS,
         "WIDE_REVIEW_MAX_TOKENS": _pl.WIDE_REVIEW_MAX_TOKENS,
@@ -18895,7 +19090,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
         return _fail("PAIRED_JUDGING_MAX_TOKENS must not sit below the largest real, "
                      "uncapped observed call (645 tokens): that would reduce it below what "
                      "this call type has already been shown to need")
-    for name in ("AUDIT_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
+    for name in ("AUDIT_MAX_TOKENS", "VERIFIER_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
         if budgets[name] <= 1024:
             return _fail(f"{name} must be raised above the old 1024 ceiling: real evidence "
                          f"(this call type hit 1024 and lost output) rules out leaving it "
@@ -18914,19 +19109,109 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
             for kw in getattr(node, "keywords", []):
                 if kw.arg == "max_tokens" and isinstance(kw.value, _ast.Name):
                     max_tokens_names_seen.add(kw.value.id)
+                # phase 5's one call site picks VERIFIER's budget or the audit
+                # budget by agent name (D-134); both branches must be names.
+                if (kw.arg == "max_tokens" and isinstance(kw.value, _ast.IfExp)
+                        and isinstance(kw.value.body, _ast.Name)
+                        and isinstance(kw.value.orelse, _ast.Name)):
+                    max_tokens_names_seen.update((kw.value.body.id, kw.value.orelse.id))
     missing = set(budgets) - max_tokens_names_seen
     if missing:
         return _fail(f"the following budget constants are defined but no call site in "
                      f"pipeline.py passes them as max_tokens=<name>: {sorted(missing)}. "
                      f"Constants seen at a call site: {sorted(max_tokens_names_seen)}")
 
+    # Part 4 (D-134): VERIFIER's own budget reaches VERIFIER's real call and
+    # FACT_CHECKER keeps the audit budget, executed through phase_5_audit itself
+    # with dispatch stubbed (no model), read from the max_new_tokens the wrapper
+    # hands the local backend. Measured: replay R2c of the 8 VERIFIER prompts cut
+    # at 2048 ended 4 on their own at 2342 to 3590 tokens under 4096.
+    if budgets["VERIFIER_MAX_TOKENS"] != 4096 or budgets["AUDIT_MAX_TOKENS"] != 2048:
+        return _fail(f"VERIFIER_MAX_TOKENS={budgets['VERIFIER_MAX_TOKENS']} and "
+                     f"AUDIT_MAX_TOKENS={budgets['AUDIT_MAX_TOKENS']}: D-134 measured 4096 for "
+                     f"VERIFIER and left FACT_CHECKER at 2048")
+    seen = _phase_5_output_budgets(_pl)
+    if seen != {"VERIFIER": 4096, "FACT_CHECKER": 2048}:
+        return _fail(f"phase_5_audit handed the local backend {seen}, expected VERIFIER 4096 "
+                     f"and FACT_CHECKER 2048")
+    # NEUTRALISE: VERIFIER's constant set back to the audit budget must reach
+    # VERIFIER's call (so the constant, not a literal, decides it); RESTORE: 4096.
+    saved_budget = _pl.VERIFIER_MAX_TOKENS
+    try:
+        _pl.VERIFIER_MAX_TOKENS = _pl.AUDIT_MAX_TOKENS
+        neutralised = _phase_5_output_budgets(_pl)
+    finally:
+        _pl.VERIFIER_MAX_TOKENS = saved_budget
+    if neutralised != {"VERIFIER": 2048, "FACT_CHECKER": 2048}:
+        return _fail(f"neutralise (VERIFIER_MAX_TOKENS=2048) reached the backend as "
+                     f"{neutralised}: the constant does not decide VERIFIER's call")
+    restored = _phase_5_output_budgets(_pl)
+    if restored != seen:
+        return _fail(f"restore: {restored} differs from {seen}")
+
     return _ok("call_local/call_qwen detect a cut from generated length alone "
                "(truncated=True at the cap, False short of it); run_task carries it onto "
                "both a CONTRACT_VIOLATION post and an AGENT_OUTPUT post (parsed but "
-               "possibly incomplete) and onto the returned dict; five named budgets "
-               "(PAIRED_JUDGING 768, the rest 2048) replace the old blanket 1024, each "
-               f"below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each wired by name to its real "
-               "call site; neutralise (no usage key) reads falsy, restore reads accurately")
+               "possibly incomplete) and onto the returned dict; six named budgets "
+               "(PAIRED_JUDGING 768, VERIFIER 4096 per D-134, the rest 2048) replace the old "
+               f"blanket 1024, each below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each "
+               "wired by name to its real call site; phase_5_audit hands VERIFIER 4096 and "
+               "FACT_CHECKER 2048 (neutralised to 2048 the constant reaches VERIFIER's call, "
+               "restored 4096); neutralise (no usage key) reads falsy, restore reads accurately")
+
+
+def _phase_5_output_budgets(_pl):
+    """Drive the real phase_5_audit under the local profile with AgentWrapper.dispatch
+    stubbed (no model, no network) and return each auditor's max_new_tokens as the
+    wrapper handed it to the backend. The setup is check 133's."""
+    import os as _os
+    import copy as _copy
+    import json as _json
+    import tempfile as _tempfile
+    import asyncio
+    import agent_wrapper as _aw
+    from orchestrator import TopOrchestrator
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from reference_builder import ReferenceIndex
+    saved = _os.environ.get("SHIMMER_BACKEND_PROFILE")
+    orig_dispatch = _aw.AgentWrapper.dispatch
+    seen = {}
+
+    def _stub_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
+        seen[self.name] = kwargs.get("max_new_tokens")
+        return _aw.CallResult(backend=self.backend, model="stub", raw_text="",
+                              ok=False, error="stubbed, no model call")
+    try:
+        with _tempfile.TemporaryDirectory() as td:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = "local"
+            c = Constitution.load(Path("config/constitution.json"))
+            bus = MessageBus.open(Path(td) / "bus.jsonl")
+            reg = _copy.deepcopy(
+                _json.loads(Path("config/agent_registry.json").read_text(encoding="utf-8"))["agents"])
+            contracts = _json.loads(Path("config/agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+            for a in ("VERIFIER", "FACT_CHECKER"):
+                reg[a]["backend"] = "local_auditor"
+            orch = TopOrchestrator(root=Path("."), constitution=c, bus=bus, registry=reg, contracts=contracts)
+            doc = {"id": "synthetic_d1", "name": "synthetic.md", "text": "A short synthetic source."}
+            production = [{"scope": "doc", "doc_id": "synthetic_d1", "agent": "PROCESSOR",
+                           "ok": True, "parsed": {"agent": "PROCESSOR", "doc_id": "synthetic_d1", "items": []},
+                           "raw_text": "", "contract_missing": [], "error": None}]
+            _aw.AgentWrapper.dispatch = _stub_dispatch
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(_pl.phase_5_audit(
+                    orch, {"_stub": ""}, [doc], production, "review the document",
+                    convention_registry=None, reference_index=ReferenceIndex(project_root=Path(td))))
+            finally:
+                loop.close()
+    finally:
+        _aw.AgentWrapper.dispatch = orig_dispatch
+        if saved is None:
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        else:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = saved
+    return seen
 
 
 def check_217_a_gap_between_two_timestamps_is_computed_in_python():
@@ -19527,6 +19812,8 @@ def check_242_no_new_literal_word_list_in_a_decision_path():
         ("document_dating", "_FILENAME_PATTERNS"): "structural: date formats",
         ("document_dating", "_TEXT_DATE_PATTERNS"): "structural: date formats; REFUSES",
         ("document_dating", "_MONTHS"): "structural: calendar names",
+        ("product_package_checks", "FILE_SHAPED"): "structural: file extensions and path shape in the guides (D-286)",
+        ("demo_checks", "_ASSET"): "structural: HTML tag and attribute names in a page's asset links (D-433)",
         # SEMANTIC, converted or unioned with the ensemble.
         ("sensitivity_layer.rules", "_REDACT_VERB_RE"): "semantic, unioned with the ensemble (TWO-K)",
         ("sensitivity_layer.rules", "_PROHIBITION_RE"): "semantic, unioned with the ensemble (TWO-K)",
@@ -21500,31 +21787,61 @@ def check_233_absence_claim_requires_a_quote():
     if "MUST set" not in psrc:
         return _fail("the absence question does not tell the model the quote is required")
 
-    # NEUTRALISE on the real file.
-    pr_path = ROOT / "scripts" / "paired_review.py"
-    original = pr_path.read_text(encoding="utf-8")
-    neutralised = original.replace(
-        '    if not str(item.get("quote") or "").strip():\n',
-        '    if False:\n', 1)
-    if neutralised == original:
-        return _fail("could not neutralise: the quote requirement was not found")
+    # EXECUTED on the real phase 5.5: both judged paths (a judged absence, and D-068's
+    # uncomputable plan) refuse an absence claim with no quote, or a blank one, through
+    # paired_review.judged_item_refusal.
     try:
-        pr_path.write_text(neutralised, encoding="utf-8")
-        gone = '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8")
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the requirement itself, FAIL, RESTORE, PASS. The neutralised function is
+    # compiled from the real paired_review.py with only the no-quote test inside
+    # refuses_judged_absence replaced, read and never written. (This used to write the
+    # real file, replacing the first textual copy of that line, and then only confirm the
+    # text had changed; D-068 added a second copy in judged_item_refusal, so the
+    # confirmation failed, and nothing was ever executed under the neutralisation.)
+    neutral_fn = _jrc.refuses_judged_absence_without_quote_test()
+    if neutral_fn is None:
+        return _fail("could not neutralise: the quote requirement was not found in "
+                     "paired_review.refuses_judged_absence")
+    original = _pr.refuses_judged_absence
+    _pr.refuses_judged_absence = neutral_fn
+    try:
+        neutral_unit = neutral_fn({"relation": "missing_field",
+                                   "stated_field": "calibration authority signature"},
+                                  rule, present)
+        neutralised_obs = _jrc.observe()
+        neutralised = _jrc.verdict(neutralised_obs, _jrc.NO_QUOTE_REASON)
     finally:
-        pr_path.write_text(original, encoding="utf-8")
-    if not gone:
-        return _fail("neutralise did not take effect on the real file")
-    if '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
-            encoding="utf-8"):
-        return _fail("restore failed: the quote requirement is gone")
+        _pr.refuses_judged_absence = original
+    if neutral_unit is not False:
+        return _fail("neutralise did not take effect: a claim with no quote is still refused")
+    # Since R1 (D-S22 item 1 (d)) a quote-less missing_field claim is still refused with
+    # this test neutralised, by judged_item_refusal's later absence-relation test under its
+    # own reason (check 322 proves that refusal). What this neutralisation proves is the
+    # reason label: refuses_judged_absence's no-quote test is the one that names it
+    # "absence claim supplies no quote", on both judged paths.
+    labelled = [path for path, got in sorted(neutralised_obs.items())
+                if _jrc.NO_QUOTE_REASON in got["refused"]]
+    if neutralised[0] != "FAIL" or labelled:
+        return _fail("with refuses_judged_absence's no-quote test neutralised, the reason "
+                     "label '%s' still appears (%s): %s"
+                     % (_jrc.NO_QUOTE_REASON, ", ".join(labelled) or "verdict passed",
+                        neutralised[1]))
+    restored = _jrc.verdict(_jrc.observe(), _jrc.NO_QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("an absence claim with no quote, or an empty one, is refused; one with a "
                "quote naming a field the unit lacks passes; a non-absence relation is "
                "untouched; the contract does NOT require the field, so no past run "
                "becomes a violation and the requirement applies from this commit "
-               "forward; the model is told it is required; neutralise/restore proved")
+               "forward; the model is told it is required; the real phase 5.5 %s; "
+               "neutralise/fail/restore/pass proved on that path" % shipped[1])
 
 
 def check_232_typed_amendment_and_bounded_deepening():
@@ -21918,32 +22235,45 @@ def check_229_quoted_span_must_appear_in_the_unit():
                     {"quote": "next calibration visit logged"}, real) is not False:
                 return _fail("the real VETCH entry refuses a span it actually contains")
 
-    # WIRED: the paired path checks it, and the model is asked for it.
+    # The model is asked for it.
     src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
-    if "quote_not_in_unit" not in src:
-        return _fail("pipeline.py never calls quote_not_in_unit, so nothing checks a quote")
     if "`quote`" not in src and "quote`" not in src:
         return _fail("the absence question does not ask the model for a quote")
 
-    # NEUTRALISE: accept any quote.
+    # WIRED, EXECUTED: the real phase 5.5 refuses a quote the unit lacks on BOTH judged
+    # paths (a judged absence, and D-068's uncomputable plan), through
+    # paired_review.judged_item_refusal. (This used to look for the name
+    # quote_not_in_unit in pipeline.py, which D-068 moved into the helper.)
+    try:
+        import judged_refusal_checks as _jrc
+    except Exception as exc:
+        return _fail("cannot import judged_refusal_checks: %s" % exc)
+    shipped = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if shipped[0] != "PASS":
+        return _fail("the live path: %s" % shipped[1])
+
+    # NEUTRALISE the real enforcement (accept any quote), FAIL, RESTORE, PASS.
     original = _pr.quote_not_in_unit
     _pr.quote_not_in_unit = lambda _i, _t: False
     try:
-        if _pr.quote_not_in_unit({"quote": "not in the unit"}, unit):
-            return _fail("neutralise did not take effect")
+        neutralised = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
     finally:
         _pr.quote_not_in_unit = original
-    if _pr.quote_not_in_unit({"quote": "the next calibration visit is not stated"},
-                             unit) is not True:
-        return _fail("restore failed: a hallucinated span is accepted again")
+    if neutralised[0] != "FAIL":
+        return _fail("with quote_not_in_unit neutralised the live path still passed: %s"
+                     % neutralised[1])
+    restored = _jrc.verdict(_jrc.observe(), _jrc.QUOTE_REASON)
+    if restored[0] != "PASS":
+        return _fail("after restore: %s" % restored[1])
 
     return _ok("a finding quoting words the unit does not contain is refused, including "
                "the real VETCH span from the corpus; a quote the unit carries passes "
                "through folded whitespace and case; no quote and an empty quote are never "
-               "refused because the field is optional by measurement (requiring it would "
-               "have made all 62 findings of the two saved runs violations at once); the "
-               "contract carries `quote` unrequired and the absence question asks for it; "
-               "neutralise/restore proved")
+               "refused by this test because the field is optional by measurement (requiring "
+               "it would have made all 62 findings of the two saved runs violations at once); "
+               "the contract carries `quote` unrequired and the absence question asks for it; "
+               "the real phase 5.5 %s; neutralise/fail/restore/pass proved on that path"
+               % shipped[1])
 
 
 def check_228_scorer_checks_the_reason_not_only_the_location():
@@ -22710,18 +23040,21 @@ def check_222_launcher_server_url_and_token_handshake():
     if neutralised == original:
         return _fail("could not neutralise: the console URL line was not found in "
                      "shimmer.sh as this check expects it")
+    # The launcher's exact bytes are kept and put back, so a run of the gate leaves the
+    # tree unchanged (text mode on Windows would write CRLF over the LF the repo pins).
+    original_bytes = sh.read_bytes()
     try:
-        sh.write_text(neutralised, encoding="utf-8")
+        sh.write_bytes(neutralised.encode("utf-8"))
         body = sh.read_text(encoding="utf-8", errors="replace")
         still_bad = "http://localhost:8000 ..." in body
     finally:
-        sh.write_text(original, encoding="utf-8")
+        sh.write_bytes(original_bytes)
     if not still_bad:
         return _fail("neutralise did not reintroduce the bare URL; the check is not "
                      "reading the real launcher")
-    # RESTORE verified.
-    if "http://localhost:8000 ..." in sh.read_text(encoding="utf-8", errors="replace"):
-        return _fail("restore failed: shimmer.sh still carries the bare URL")
+    # RESTORE verified, byte for byte.
+    if sh.read_bytes() != original_bytes:
+        return _fail("restore failed: shimmer.sh differs from its bytes before the check")
 
     return _ok("both launchers point at /console and /health on SHIMMER_PORT (the app "
                "registers no bare / route), and generate the token, hold the hash and "
@@ -22902,11 +23235,42 @@ def check_221_dating_cascade_local_precise_and_loud():
         if not DD.resolve_dates([late])[0]["date"]:
             return _fail("restore failed: the late-dated document no longer resolves")
 
+        # 4. A year below 1000 keeps four digits on every platform. Linux
+        # strftime wrote year 288 as "288-01-01", and the cascade's
+        # int(iso[:4]) raised ValueError at phase 0 (two L8 entries). Windows
+        # pads, so the neutralisation EMULATES the Linux spelling.
+        if DD._iso(288) != "0288-01-01" or DD._iso(146, 2, 30) != "0146-01-01":
+            return _fail("_iso(288)=%r, _iso(146, 2, 30)=%r; expected four year digits"
+                         % (DD._iso(288), DD._iso(146, 2, 30)))
+        early = tmpdir / "early_year_sheet.md"
+        early.write_text("# Sheet\n\nLot 0288 counted.\n", encoding="utf-8")
+        rec_early = DD.resolve_dates([early])[0]
+        if rec_early["date"] is not None or rec_early["date_source"] != "unresolved":
+            return _fail("a document whose only four-digit token is 0288 resolved to %r (%r); "
+                         "it is outside the year range and must stay unresolved"
+                         % (rec_early["date"], rec_early["date_source"]))
+        original_iso = DD._iso
+        DD._iso = lambda y, m=1, d=1: "%d-%02d-%02d" % (y, m, d)
+        try:
+            DD.resolve_dates([early])
+            raised = False
+        except ValueError:
+            raised = True
+        finally:
+            DD._iso = original_iso
+        if not raised:
+            return _fail("with _iso neutralised to the unpadded Linux spelling the cascade did "
+                         "not raise; this check does not reach the year-below-1000 path")
+        if DD.resolve_dates([early])[0]["date_source"] != "unresolved":
+            return _fail("restore failed: the 0288 document no longer resolves unresolved")
+
     return _ok("filename 2024_09_23 keeps its month and day (was 2024-01-01); a date stated "
                "past character 3000 resolves from the document's own text; a document with no "
                "year anywhere stays unresolved, is dropped by the cutoff, and is named in "
                "audit/undated_documents.json with excluded apart from reviewed_anyway, served "
-               "by a route and rendered in the console; neutralise/restore proved")
+               "by a route and rendered in the console; a year below 1000 keeps four digits "
+               "(0288-01-01) and takes the out-of-range branch instead of raising; "
+               "neutralise/restore proved")
 
 
 def check_220_local_profile_reaches_the_menu_and_is_passed_on():
@@ -23643,20 +24007,121 @@ def check_246_run_completion_reaches_the_scorer():
         return _fail("terminal evidence failed to follow the renamed run directory")
     # Structural wiring, separate from the executed lifecycle proof above. No
     # pipeline invocation: its real entry point must wrap every post-start return
-    # and mark the end only after the final progress update and thread shutdown.
-    tree = ast.parse((SCRIPTS / "pipeline.py").read_text(encoding="utf-8"))
+    # and mark each end it reaches only at that return path's boundary.
+    source = (SCRIPTS / "pipeline.py").read_text(encoding="utf-8")
+    error = _check_246_completion_marks(source)
+    if error:
+        return _fail(error)
+    # The rule must still refuse what it exists to refuse (each mutation of the real source must fail).
+    for what, old, new in _CHECK_246_MUTATIONS:
+        if source.count(old) != 1:
+            return _fail("check 246's mutation no longer applies to the pipeline source: %s" % what)
+        if _check_246_completion_marks(source.replace(old, new)) is None:
+            return _fail("check 246's completion rule accepts a mutated pipeline: %s" % what)
+    return _ok("completed empty work, early zero/nonzero returns, exceptions, interruption and rename "
+               "produce distinct disk evidence consumed by both scorer routes; old/absent records stay qualified; "
+               "each return path's end mark sits at its own boundary (%d mutations refused)"
+               % len(_CHECK_246_MUTATIONS))
+
+
+# Each is (what it breaks, the text in pipeline.py, its replacement); check 246 requires each refused.
+_CHECK_246_MUTATIONS = (
+    ("the multi-round path loses its end mark",
+     "        if code == 0:\n            completion.reached_end(document_count=len(case_docs), amendment_count=0)\n",
+     ""),
+    ("work runs between the multi-round end mark and its return",
+     "amendment_count=0)\n        return code\n",
+     "amendment_count=0)\n        print('after the mark')\n        return code\n"),
+    ("the final end mark comes before the progress thread is stopped",
+     "    _LOCAL_PROGRESS_STOP.set()  # local progress display: stop the memory sampler thread\n"
+     "    completion.reached_end(document_count=len(op_docs), amendment_count=total_amendments)\n",
+     "    completion.reached_end(document_count=len(op_docs), amendment_count=total_amendments)\n"
+     "    _LOCAL_PROGRESS_STOP.set()  # local progress display: stop the memory sampler thread\n"),
+    ("a statement runs between the final end mark and main's final return",
+     "    completion.reached_end(document_count=len(op_docs), amendment_count=total_amendments)\n",
+     "    completion.reached_end(document_count=len(op_docs), amendment_count=total_amendments)\n"
+     "    print('after the final mark')\n"),
+    ("the multi-round return returns a call, work after its end mark",
+     "amendment_count=0)\n        return code\n",
+     "amendment_count=0)\n        return execute2(code)\n"),
+    # Only the returned-call rule refuses this one: a plain `return code` still follows, so the
+    # multi-round return path's own test is satisfied.
+    ("a returned call stands between the multi-round end mark and its plain return",
+     "amendment_count=0)\n        return code\n",
+     "amendment_count=0)\n        return execute2(code)\n        return code\n"),
+    ("an end mark is reached while the progress thread runs, outside the final boundary",
+     "    _emit_progress(event=\"start\", docs=len(op_docs), status=\"running\")\n",
+     "    _emit_progress(event=\"start\", docs=len(op_docs), status=\"running\")\n"
+     "    if op_docs:\n        completion.reached_end(document_count=len(op_docs), amendment_count=0)\n"
+     "        return 0\n"),
+)
+
+
+def _check_246_completion_marks(source):
+    """None when pipeline.main marks each end at its own return path, else the reason. One mark per return
+    path: the final mark at main's top level, after the one progress stop and before the final return;
+    every other mark followed by nothing but its return, and before the progress thread starts (so there
+    is no thread for it to stop). The multi-round return, whose code comes from the multi-round phase,
+    keeps its mark (added by d15b544e, two days after this check was written)."""
+    tree = ast.parse(source)
     main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
     decorators = [ast.unparse(n) for n in main.decorator_list]
-    calls = [(ast.unparse(n.func), n.lineno) for n in ast.walk(main) if isinstance(n, ast.Call)]
-    names = [name for name, line in calls]
+    calls = [n for n in ast.walk(main) if isinstance(n, ast.Call)]
+    names = [ast.unparse(n.func) for n in calls]
     if "run_completion_mod.tracked" not in decorators or names.count("run_completion_mod.begin") != 1:
-        return _fail("pipeline main is not wired to the executed lifecycle boundary")
-    end = [line for name, line in calls if name == "completion.reached_end"]
-    stop = [line for name, line in calls if name == "_LOCAL_PROGRESS_STOP.set"]
-    if len(end) != 1 or len(stop) != 1 or end[0] <= stop[0] or end[0] >= main.body[-1].lineno:
-        return _fail("pipeline completion is not marked at its final return boundary")
-    return _ok("completed empty work, early zero/nonzero returns, exceptions, interruption and rename "
-               "produce distinct disk evidence consumed by both scorer routes; old/absent records stay qualified")
+        return "pipeline main is not wired to the executed lifecycle boundary"
+    marks = [n.lineno for n in calls if ast.unparse(n.func) == "completion.reached_end"]
+    stops = [n.lineno for n in calls if ast.unparse(n.func) == "_LOCAL_PROGRESS_STOP.set"]
+    sampler = [n.lineno for n in calls if ast.unparse(n.func) == "threading.Thread"
+               and any(k.arg == "target" and ast.unparse(k.value) == "_local_progress_memory_sampler"
+                       for k in n.keywords)]
+    final = [s.lineno for s in main.body if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+             and ast.unparse(s.value.func) == "completion.reached_end"]
+    if len(final) != 1 or len(stops) != 1 or len(sampler) != 1 or not (stops[0] < final[0] < main.body[-1].lineno):
+        return "pipeline completion is not marked at its final return boundary"
+    at = next(i for i, s in enumerate(main.body) if s.lineno == final[0])
+    if not (at + 2 == len(main.body) and isinstance(main.body[at + 1], ast.Return)):
+        return "something runs between the final end mark and main's final return"
+    # Every statement list in main, with each statement's parent list, to see what follows a mark.
+    parents = {}
+    for node in ast.walk(main):
+        for field in ("body", "orelse", "finalbody", "handlers"):
+            block = getattr(node, field, None)
+            if isinstance(block, list):
+                for i, stmt in enumerate(block):
+                    parents[id(stmt)] = (block, i, node)
+
+    def returns_next(stmt):
+        """True when nothing but a return runs after `stmt` on its path: a return of nothing, a name or a
+        constant, so no call can run after the mark (a returned call is work after the end)."""
+        while True:
+            block, i, owner = parents[id(stmt)]
+            if i + 1 < len(block):
+                after = block[i + 1]
+                return isinstance(after, ast.Return) and (after.value is None
+                                                          or isinstance(after.value, (ast.Name, ast.Constant)))
+            if owner is main or not isinstance(owner, ast.If):
+                return False
+            stmt = owner
+    statements = {s.lineno: s for s in ast.walk(main) if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+                  and ast.unparse(s.value.func) == "completion.reached_end"}
+    for line in marks:
+        if line == final[0]:
+            continue
+        if line > sampler[0]:
+            return "an end mark at line %d is reached while the progress thread runs" % line
+        if line not in statements or not returns_next(statements[line]):
+            return "the end mark at line %d is not at its return path's boundary" % line
+    # The multi-round return path: the code its phase returns is returned, with a mark on its success.
+    phase = [n for n in ast.walk(main) if isinstance(n, ast.Assign) and isinstance(n.value, ast.Call)
+             and ast.unparse(n.value.func) == "execute"]
+    for assign in phase:
+        target = ast.unparse(assign.targets[0])
+        returned = [r for r in ast.walk(main) if isinstance(r, ast.Return) and r.value is not None
+                    and ast.unparse(r.value) == target and r.lineno > assign.lineno]
+        if not returned or not any(assign.lineno < m < returned[0].lineno for m in marks):
+            return "the multi-round return path has no end mark"
+    return None
 
 
 def _run_identity_fixture():
@@ -24593,7 +25058,15 @@ def check_264_core_field_alias_is_read_and_recorded():
     key alone. The alias is declared in config/agent_contracts.json, read by the
     parser only when the canonical key is absent and the value maps without
     interpretation, and every application is recorded on the result, the bus post
-    and the observation row."""
+    and the observation row.
+
+    The K8 stamp (ENVELOPE-B, D-S14) that supplied EDITOR_CLERK's missing `kind` was
+    removed at the S5 close (H9: a contract edit no stage called for). Proven here: no
+    contract declares a stamp, the wrapper carries no stamping code, and a missing kind
+    is refused for every agent as before K8, a contract failure on the result, the bus
+    post, the observation row and the telemetry call record. Each proof is neutralised
+    by putting K8 back (a validator that lets a missing kind through, an alias pass that
+    stamps one). The cause is fixed in decoding instead (check 297)."""
     from ordinary_final_correction_checks import check_alias
     return check_alias()
 
@@ -24732,7 +25205,13 @@ def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     run before it. The delivery-level refusal in auditor_pairs.build applies to a
     single call's best-effort object; a partition-merged delivery pairs its
     accepted, receipt-bound items and marks each pair and the coverage figures
-    partial. Phase 5 hands such a partial draft to its auditors, noted."""
+    partial. Phase 5 hands such a partial draft to its auditors, noted.
+
+    D-S14 K2: VERIFIER's rendered payload carries each pair and draft item without
+    the runtime identity it cannot use (ten L8 VERIFIER prompts of 44,467 to 54,657
+    tokens ran out of GPU memory on the A10; projected, the same prompts measure
+    17,932 to 23,668). The pair records, telemetry and bus keep every identifier,
+    and pair_id, the join key, is still shown."""
     from ordinary_final_correction_checks import check_pairing
     return check_pairing()
 
@@ -24756,11 +25235,1221 @@ def check_268_record_example_carries_declared_values():
     return check_record()
 
 
+def check_275_staged_seal_paths_are_refused():
+    """Annex B.3 (loop of 2026-10-27): seal manifests live in the gitignored
+    `seals/` folder and are never committed, even force-added. Before this,
+    guard_secrets.py scanned file contents across the whole tree and had no
+    git, index or path logic at all, while the threat model said it scanned the
+    staged diff. `guard_secrets.py --staged` now reads git's staged-name list
+    (force-added paths included) and refuses any path under `seals/`."""
+    from staged_path_checks import check
+    return check()
+
+
+def check_276_every_model_reply_is_saved_once_with_its_outcome():
+    """Annex A 11.6.4 (loop of 2026-10-27, S1 Part 4): every model reply is saved,
+    including replies the pipeline withholds. Before this, the raw text of a reply
+    reached disk only when it broke its output contract; v12's one call aimed at the
+    missed flaw was neither promoted nor kept. Each backend function (call_claude,
+    call_gpt, call_qwen, call_local) and Auditor896's predict now write exactly one
+    record through reply_records.write into <run_dir>/audit/model_replies/, the
+    outcome is appended later by call id, a redaction-enabled run keeps only SHA-256
+    and byte lengths, and a call with no run context writes nothing anywhere."""
+    from reply_records_checks import check
+    return check()
+
+
+def check_277_inst_finder_switch_needs_a_ratified_amendment():
+    """Loop of 2026-10-27, S1 Part 7: an operator setting SHIMMER_INST_FINDER (default
+    on) can switch the corpus-level agent INST_FINDER off. Switching an agent off
+    changes governed inter-agent structure, so the setting is honoured only under an
+    operator-approved constitution amendment naming INST_FINDER and SHIMMER_INST_FINDER;
+    without one the run refuses at start, never ignoring the setting silently. When off,
+    the agent stays in the corpus list and the registry, is recorded not_called, and
+    every corpus result carries the name of the agent actually called, with semantic
+    waves on and off."""
+    from inst_finder_switch_checks import check
+    return check()
+
+
+def check_278_honest_deliverables():
+    """Loop of 2026-10-27, S2a: every model finding is marked, kept apart and never
+    promoted in every reader-facing deliverable (both languages); the producer sentence
+    is generated from what ran; one plain sentence per relation names the unit, the
+    rule, both figures and the addends; an amendment sits at its unit's own passage;
+    the audit synthesis does not present audit patterns as findings; relations only a
+    model reported are listed apart; the reader-check rounds 1 and 2 items and the S2
+    checker round 1 items (A4, A5, A8, C3) stay closed."""
+    from honest_output_checks import check
+    return check()
+
+
+def check_279_multi_round_rounds():
+    """Loop of 2026-10-27, S2b: later multi-round rounds reuse unchanged units through
+    a Python-only per-round review, every model call saves one reply record, a rename
+    whose value moved is refused, and check 261's stripped statements stay pinned."""
+    from multi_round_rounds_checks import check
+    return check()
+
+
+def check_280_multi_round_launch_end_to_end():
+    """R2 (loop S2): a declared multi-round Review sealed by the sealer, admitted by the
+    instance, launched by the real controller against fakes, admitted by pipeline main()
+    in final mode (Draft, flag alone, manifest alone refused) and assessed only on
+    outcome reviewed and activation activated."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from multi_round_launch_checks import check
+    return check()
+
+
+
+def check_281_synthetic_generators():
+    """Loop of 2026-10-27, S3 items 8 to 10, revised by D-042: the generators' self-validation
+    against their own ground truth (figure audit and ground-truth scanners), determinism and
+    catches; family 4's case manifests agree with the controller's published rules. No case
+    compares a key with Shimmer's output; agreement is generator_checks.report_agreement,
+    never a gate."""
+    from generator_checks import check
+    return check()
+
+
+def check_284_prior_refusal_kinds():
+    """Loop of 2026-10-27, S3 round 1 (D-042 decision 10): every refusal of a change record
+    carries a typed reason_kind from paired_review.PRIOR_REFUSAL_KINDS, written where it is
+    made and kept in review_data.json's prior_refusals. Numbered 284 because loop/s04 holds
+    282 and 283 (D-047)."""
+    from prior_refusal_checks import check
+    return check()
+
+def check_282_baseline_arms_hold_their_contracts():
+    """Loop stage S4f: B2 (benchmark/baselines/python_only.py) makes no model call,
+    imports no model library (fresh subprocess), writes the pipeline's completion
+    record and marks every file an ablation; B1 (bare_model.py) verifies its model once
+    and stops before generating on a load, identity, context or record failure, writes
+    one reply record per item, parses with escape repair or abstains, and sends the
+    preregistered prompt through the one renderer. SKIP when benchmark/baselines/ is
+    absent."""
+    from baseline_checks import check
+    return check()
+
+
+def check_288_b3_local_attention_is_pinned_and_recorded():
+    """Loop stage S5, D-058, D-060, D-061 and D-063: B3 ran out of GPU memory on a ContraDoc
+    document (INC-015). E (eager, chunked prefill) missed its declared threshold and D-061's
+    declared fallback adopted option A (D-063): the producer loads with a sealed attention
+    setting (sdpa by default under D-063, eager only with a recorded decision) and a sealed
+    prefill setting (one shot by default under D-063, chunked only with a recorded decision);
+    every producer call runs through the one shared generate helper, pinned to the
+    memory-efficient sdpa backend on CUDA, as every _load_qwen call does; each records its
+    kernel and prefill in its reply record; the Auditor896 classifier stays eager as its
+    runtime contract says; out of memory or a refused kernel is one named failure never
+    retried; a prompt over the model's context is refused and recorded, never truncated. Mocked
+    models and one tiny CPU model built in the check (an eager measurement call of three chunks
+    and the tail replies byte for byte as one-shot)."""
+    from local_attention_checks import check
+    return check()
+
+
+def check_289_l2_diagnosis_fixes_hold():
+    """Loop stage S5, D-061 (a), (b) and (c), from the L2 diagnosis: a VERIFIER reply that is not
+    a JSON object is a recorded contract failure in auditor_pairs, never a crash (L2 entry 06); the
+    runner reports a run that reached its end with exit 0 but semantically incomplete as
+    `semantic_incomplete`, not `pipeline_not_completed`; a failed producer partition under
+    deterministic decoding is not retried (it can only repeat itself, P13) and is recorded
+    `retry_skipped_deterministic` on the observation and the reply outcome. Fixtures only."""
+    from l2_diagnosis_checks import check
+    return check()
+
+
+def check_290_uncomputable_judgment_is_kept_as_a_model_record():
+    """Loop stage S5, D-068: where Python's checks produce no comparison for a unit and a
+    rule, the model's answer used to be discarded (judging-call outcome advisory_not_kept),
+    so a rule only reading can decide had no answer in the run. It is kept now as a
+    model-written Finding record: unit and rule stamped from the plan, never the reply; the
+    judged-absence refusals and the quote check applied, refusals listed; a failed or refused
+    reply keeps nothing and says why; posted once with the model's backend, marked in the
+    deliverables, never promoted. Real phase 5.5 and phase 6 on a mocked run, no model;
+    neutralise, fail, restore, pass for each property."""
+    from uncomputable_judgment_checks import check
+    return check()
+
+
+def check_294_pipeline_time_before_phase_3_is_in_phase_latencies():
+    """Loop stage S5, open item 38: phase_latencies began at phase 3, because only the five
+    decorated phase functions emitted phase_enter/phase_exit and main's work before phase
+    3-4 is inline. main now times it with execution_topology.pre_phase_span, contiguous
+    spans from argument parsing to phase 3-4's boundary (start, ingestion and roles, boot
+    and index, phase 1), marked pre_phase_3 so they add no consumer barrier. Reads the
+    spans from main's AST, drives them through a real topology Runtime on a temporary run
+    folder before a fixture phase 3-4, and reads model_telemetry.recompute's summary;
+    neutralise, fail, restore, pass for the span calls, the helper and the mark."""
+    from pre_phase_span_checks import check
+    return check()
+
+
+def check_295_compact_producer_decodes_under_its_contract():
+    """Loop stage S5, D-S14 item 3 (DECODING-B, s5_diag_b3 K3 to K7): the tuned producer failed
+    52 of 283 compact partitions in L7, L8, L10 and L11 (invented CLM ids, a dropped
+    uncertainty key, a context-only alias, one item for two spans, the neighbouring span's REF,
+    runaway id lists), each one repeated byte for byte by a deterministic re-ask. The compact
+    producer now decodes under a logits constraint built from its request's own declaration
+    (scripts/contract_decoding.py, config/contract_decoding.json), compact_contracts.producer
+    unchanged behind it. Runs scripts/contract_decoding_checks.py: with a fixture tokenizer and
+    a stand-in model, every failure kind is prevented and the validator passes, the constraint
+    off reproduces every failure with the runs' own reason, a valid reply and the refusal are
+    never changed, the real call_local carries it and records it, the replay measures it, and
+    every frozen DEV reply of checkpoint 168 is inside the constrained language. Then
+    neutralises, in turn, the processor's admission (every token admitted), the wrapper's
+    binding (no constraint built) and the status and emptiness rule; requires a failure;
+    restores; requires a pass. A tree that lacks an input a test needs (the container image: no
+    docs/fix/, no benchmark/) skips only those tests, runs the rest and every neutralisation whose
+    tests ran, and reports SKIP naming what did not run."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import contract_decoding_checks as checks
+
+    def run(*names):
+        suite = unittest.TestSuite(checks.ContractDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite)
+
+    def passes(*names):
+        return run(*names).wasSuccessful()
+    # S10 (adversarial MINOR 5): a tree without an input a test needs (the container image ships
+    # no docs/fix/ and no benchmark/) skips only the tests that need it; the rest still run, and a
+    # neutralisation is tried wherever the tests it targets ran.
+    full = run()
+    if not full.wasSuccessful():
+        return "FAIL", 'scripts/contract_decoding_checks.py does not pass'
+    skipped = checks.skipped_tests(full)
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_kind_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_call', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (contract_decoding.Grammar, 'close_rule', lambda grammar, j, it, used: (True, True),
+         ('test_language_rules',)))
+    tried = [m for m in mutants if not set(m[3]) & set(skipped)]
+    for owner, attribute, mutant, names in tried:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    if skipped:
+        return "SKIP", checks.partial_detail(full, skipped, len(tried), len(mutants))
+    return "PASS", ('%d checks: 6 failure kinds prevented with the validator unchanged and reproduced with the '
+                    'constraint off; wrapper, reply record, replay and the 84 frozen DEV replies hold; '
+                    '3 neutralisations fail and restore'
+                    % unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases())
+
+
+def check_291_over_bound_gather_runs_as_shared_snapshot_waves():
+    """Loop stage S5, D-076 (INC-019): phase 5.5 makes one judging call per uncomputable
+    (unit, rule) pair, and semantic_waves.execute_plans refused a whole run whose gather held
+    more calls than the scheduler admits at once (289 on a real development agreement, bound
+    256). An over-bound gather now runs as consecutive waves of at most the bound, in source
+    order, every chunk shown the ONE pre-gather bus snapshot and depending on the ONE
+    pre-gather parent set, posts published in source order; a gather at or below the bound
+    is one wave exactly as before. execute_plans on fixture wrappers with a small bound;
+    neutralise, fail, restore, pass for each property."""
+    from execution_topology_checks import wave_admission_check
+    return wave_admission_check()
+
+
+def check_292_every_controller_path_child_process_starts_without_a_window():
+    """Loop stage S5, D-079: the detached controller and its watchdog have no console, and a
+    console program (ssh, scp, ssh-keygen, curl, git, python) started from such a process
+    opens a visible window on Windows; they kept popping up on the operator's screen. Every
+    child-process start in the operator-side controller files and every file under
+    tools/loop/ passes its creation flags through cloud_run_common.no_window (the Windows
+    no-window flag ORed with any flags it had; nothing changes elsewhere, and a child that
+    must keep the operator's console says so with keep_console). Runs the controller check's
+    two legs (an AST scan of every start; the real controller, adapter, termination client
+    and progress reader executed against fakes that record each start's flags), then
+    neutralises each in turn (one start's flag dropped from the source; the helper adding no
+    flag), requires a failure, restores and requires a pass."""
+    import io
+    import os
+    import unittest
+    from unittest.mock import patch
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import cloud_run_common
+    import ordinary_final_controller_checks as checks
+    name = 'test_every_child_process_on_the_controller_path_starts_without_a_window'
+
+    def passes():
+        result = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(checks.ControllerChecks(name))
+        return result.wasSuccessful()
+    if not passes():
+        return "FAIL", 'a child process on the controller path starts without no_window (run %s)' % name
+    if os.name != 'nt':
+        return "SKIP", 'the scan passed; the executed leg proves the flag only on Windows'
+    proofs = []
+    for owner, attribute, mutant in ((checks, 'hidden_path_sources', checks.sources_with_one_flag_dropped),
+                                     (cloud_run_common, 'windows', lambda: False)):
+        with patch.object(owner, attribute, mutant):
+            failed = not passes()
+        restored = passes()
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (owner.__name__, attribute, failed, restored)
+        proofs.append(attribute)
+    return "PASS", ('every child-process start on the controller path passes no_window (AST scan and an executed '
+                    'controller run, adapter, termination client and progress reader); neutralised, failed, '
+                    'restored, passed: ' + ', '.join(proofs))
+
+
+
+def check_296_request_ledger_check_catches_dropped_requests():
+    """Loop D-S16 item 1: tools/loop/request_ledger_check.py reads every Annex C row and every
+    D-S entry with its numbered and lettered items from the loop specification, the ids in the
+    operator's private request ledger and DECISIONS.md, and fails on a specification item with
+    no row, a row that matches no item, a DONE row whose decision, commit or path does not
+    resolve, and a RUNNING row unchanged for 24 hours that names nothing running (a launch
+    open in the budget ledger, a lane in `git worktree list`). Runs
+    tools/loop/request_ledger_check_checks.py on fixtures in a temporary folder (a tiny
+    specification, ledger, budget ledger and DECISIONS.md, a one-commit git repository with a
+    lane worktree; the private ledger is never read), then neutralises in turn the coverage
+    rule, the evidence rule, the stale rule and its running-state test, requires a failure,
+    restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from request_ledger_check_checks import check
+    return check()
+
+
+def check_350_no_upload_while_the_asset_copy_could_be_used():
+    """Loop D-S107 item 1: tools/loop/asset_copy_launch_check.py reads every loop launch since 5
+    November 2026 through tools/loop/upload_losses.py (the budget ledger, each launch's bundle by its
+    instance name, its asset copy receipt and upload timing) and fails on each launch in us-east-1,
+    exposed, that uploaded the archive while the copy could have been used (no declaration, or the
+    digest already on the filesystem). Runs tools/loop/asset_copy_launch_check_checks.py on a fixture
+    ledger and fixture bundles, then neutralises the rule and the sealed-run exemption in turn,
+    requires a failure, restores and requires a pass. The real ledger is read by the tool's own CLI,
+    never by the gate."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from asset_copy_launch_check_checks import check
+    return check()
+
+
+def check_343_status_evidence_check_refuses_unproven_done():
+    """Loop D-S101 item 3 (D-383): tools/loop/status_evidence_check.py reads the request ledger's
+    DONE and VERIFIED rows, LOOSE_ENDS.md by its State column, the return brief, FOR_SECKIN.md,
+    PUSH_RECORD.md and AFTER_V1_PLAN.md in declared claim forms (done, verified, closed, merged,
+    measured, applied and the Turkish words), every PROGRESS.json object whose status is done or
+    verified, and gh's closed-issue JSON given as a file (never fetched), and fails on a claim that
+    names no evidence or a pointer that does not resolve: a decision heading (naming the claim's
+    own id for a ledger row or a PROGRESS stage), a commit that is an ancestor of the loop branch
+    and changed the tracked path it is cited for, an existing file, a run folder with a result.json
+    or FINAL_STATUS.json; and on a record holding a state word with no claim it can read. Runs tools/loop/status_evidence_check_checks.py on fixtures
+    in a temporary folder (a fixture git repository with a side branch; nothing private is read),
+    then neutralises each rule in turn, requires a failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from status_evidence_check_checks import check
+    return check()
+
+
+def check_348_session_end_hook_salvages_with_no_password():
+    """D-S107 item 3: tools/loop/session_end_salvage.py, started by a Task Scheduler task that runs
+    only in the operator's own session (InteractiveToken, least privilege, no password;
+    tools/loop/register_session_hook.py) on sign-out, shutdown, sleep and modern standby events,
+    terminates first (D-412): a session-end episode naming every running loop instance, their
+    requests written, then every loop instance listed terminated at once with no wait (never
+    another), each in its own try, one ledger line each (R's ledger for R's launch, the append
+    ledger for an unrecorded one), the salvage report naming the event, the FOR_SECKIN entry and its
+    run log; one pass at a time; a stale session-end episode closed, never applied to a newer
+    launch (the reaper's rule too); every path the main checkout's through git's common directory;
+    registration refused without the main checkout's script or a pythonw.exe. Runs
+    tools/loop/session_hook_checks.py on the reaper's MockProvider, fixture files and a fixture git
+    repository with a second worktree, and on the registration's dry-run XML and a fake schtasks,
+    then neutralises each rule in turn, requires a failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from session_hook_checks import check
+    return check()
+
+
+def check_349_standing_orders_are_checked():
+    """D-S110 items 2 and 3a: tools/loop/standing_orders_check.py reads the tablet
+    (docs/loop/private/STANDING_ORDERS.md) on every run, fails on a row it cannot read, checks every
+    script-proven order (a registered checker guarded by its order's text, or the gate checks the
+    proof names), prints record-proven orders as not checked by code, and exits nonzero on a broken
+    order; tools/loop/session_start.py prints the tablet and the last result. Runs
+    tools/loop/standing_orders_checks.py on fixtures in a temporary folder (a fixture git repository
+    with a bare origin; nothing private is read), then neutralises each rule in turn, requires a
+    failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from standing_orders_checks import check
+    return check()
+
+
+def check_315_issue_deferral_check_catches_unowned_deferrals():
+    """Loop D-S24 item 4 (the stage gate of D-S16 item 2, extended): the sibling
+    tools/loop/issue_deferral_check.py reads the open issues from gh's JSON (never fetched),
+    the private request ledger through request_ledger_check's parser and DECISIONS.md, and
+    fails on an open issue with neither `operator-deferred` nor `loop-deferred` and no stage
+    milestone (S05 to S14), a `honesty-or-release` issue in a milestone after v1 (D-S18 item
+    3) labelled `loop-deferred`, a SCHEDULED or DEFERRED ledger row naming no issue, and, from
+    D-179 on, a decision's Moves, Defers, Drops or Skips marker line naming no issue (earlier
+    decisions grandfathered, counted). Runs tools/loop/issue_deferral_check_checks.py on
+    fixtures only (nothing private is read, nothing fetched), then neutralises each of the
+    four rules in turn, requires its proof to fail, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from issue_deferral_check_checks import check
+    return check()
+
+
+def check_342_every_result_carries_a_factor_record():
+    """D-S82: every change in a figure is attributed to its cause. tools/factor_record.py writes,
+    from a run's own sealed records, the factors a result rests on (arm, machine, models,
+    checkpoint, training recipe, calibration, prompt or context, decoding, item set, scorer,
+    seed, the rest of the code; the files each reads declared in config/factor_record.json),
+    names those that differ between two results, gives a gain to one factor only when it alone
+    changed or an isolating run measures it (else the change is joint and not split), and reads a
+    machine effect only from the fixed reference set run on both machines with the machine alone
+    differing. The analyser writes the record into FINAL_STATUS.json and RUN_REPORT.md. Runs
+    tools/factor_record_checks.py on fixture manifests, then neutralises the file assignment, the
+    difference test, the attribution and the comparison in turn, requires a failure, restores and
+    requires a pass."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from factor_record_checks import check
+    return check()
+
+
+def check_347_the_negotiation_measurement_tools():
+    """D-S102 item 8 (docs/loop/stages/NEGOTIATION_MEASUREMENT_PLAN.md, step 2): the tools that will
+    score positions toward or away and the round-3 wording on held-out cases, proven on fixtures
+    with no model and no held-out case. Runs tools/negotiation_measure_checks.py: the label mapping
+    (no_answer always wrong), Macro-F1 over the key's classes and the floors, coverage apart from
+    recall, no score without a committed opening and at most two, a claim only when the BCa and
+    jackknife bounds and the permutation p agree at 0.05/2^k/5 (with recall and coverage for
+    precision), an indicator never shown, the exact bootstrap, round 3 good only with Python's checks
+    and the sheet, one rule for a quote in agreed text, both B1 forms
+    (benchmark/baselines/negotiation_b1.py), the freeze's leakage refusal and labeller 3, the power
+    simulation and the replay hook; each neutralised, failed, restored and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from negotiation_measure_checks import check
+    return check()
+
+
+def check_297_local_auditor_agents_decode_under_their_envelope_contract():
+    """Loop stage S5, D-S14 (DECODING-B extended, s5_diag_b3 K9 to K11): VERIFIER and
+    PRACTICE_AUDITOR on local_auditor and ARCHIVIST on local_producer failed their envelope
+    contract in L8, L11 and L12 (the envelope left unclosed, an item without a required key, a
+    raw control character in a string, text after a string closed too early). They now decode under the envelope
+    constraint of their own declared contract (scripts/contract_decoding.py EnvelopeGrammar,
+    config/envelope_decoding.json), the envelope validator unchanged behind it. Runs
+    scripts/envelope_decoding_checks.py: with a fixture tokenizer and a stand-in model each
+    shape is prevented and the validator passes, the constraint off reproduces each with the
+    validator's own reason, a reply that runs to the output cap is not prevented and is refused
+    as before, every valid form the saved replies take is never changed, the real call_local
+    carries and records it for a declared agent only, the saved-reply measurement tool and the
+    replay path hold. Then neutralises, in turn, the processor's admission (every token
+    admitted), the wrapper's routing (no envelope constraint built), the closing rule (the stop
+    token admitted anywhere) and the required-key rule (any declared key in any slot); requires
+    a failure; restores; requires a pass. At the S5 close EDITOR_CLERK (local_producer) joined
+    the declaration in place of the removed K8 kind stamp: its saved shape without `kind` is
+    prevented through the real call_local, the validator supplying nothing, neutralised by
+    dropping it from the declaration and by an item that may close with a required key
+    unwritten. A tree without benchmark/baselines/replay_prompts.py (the container image) skips
+    only the replay test, runs the rest and every neutralisation, and reports SKIP naming it."""
+    import io
+    import unittest
+    from unittest.mock import patch
+    import contract_decoding
+    import contract_decoding_checks
+    import envelope_decoding_checks as checks
+
+    def run(*names):
+        suite = unittest.TestSuite(checks.EnvelopeDecodingChecks(n) for n in names) if names else \
+            unittest.defaultTestLoader.loadTestsFromModule(checks)
+        return unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite)
+
+    def passes(*names):
+        return run(*names).wasSuccessful()
+    # S10 (adversarial MINOR 5): a tree without benchmark/baselines/replay_prompts.py (the
+    # container image) skips only the replay test; every other test and every neutralisation
+    # whose tests ran still runs.
+    full = run()
+    if not full.wasSuccessful():
+        return "FAIL", 'scripts/envelope_decoding_checks.py does not pass'
+    skipped = contract_decoding_checks.skipped_tests(full)
+    grammar = contract_decoding.EnvelopeGrammar
+
+    def any_name(self, j, opt):
+        return tuple(sorted(set(self.contract.optional) | {s for names in self.contract.spellings for s in names}))
+    declaration = contract_decoding.envelope_declaration
+
+    def without_editor_clerk(root=None):
+        value, digest = declaration(root)
+        return dict(value, agents={k: v for k, v in value['agents'].items() if k != 'EDITOR_CLERK'}), digest
+    mutants = (
+        (contract_decoding.ContractProcessor, 'admitted', lambda processor, state: (list(range(processor.table.size)), None),
+         ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (contract_decoding, 'for_envelope', lambda *args, **kwargs: None,
+         ('test_the_wrapper_carries_the_constraint_and_records_it',)),
+        (grammar, 'accepting', lambda self, state: True, ('test_each_failure_shape_is_prevented_and_the_validator_passes',)),
+        (grammar, 'names', any_name, ('test_language_rules',)),
+        # S5 close (the K8 kind stamp removed): EDITOR_CLERK left out of the declaration, and an
+        # item allowed to close before every required key is written.
+        (contract_decoding, 'envelope_declaration', without_editor_clerk,
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)),
+        (grammar, 'closable', lambda self, j, opt: j == len(self.contract.leading),
+         ('test_editor_clerk_missing_kind_is_prevented_through_the_wrapper',)))
+    tried = [m for m in mutants if not set(m[3]) & set(skipped)]
+    for owner, attribute, mutant, names in tried:
+        with patch.object(owner, attribute, mutant):
+            failed = not passes(*names)
+        restored = passes(*names)
+        if not (failed and restored):
+            return "FAIL", '%s.%s neutralised: failed=%s, restored pass=%s' % (
+                getattr(owner, '__name__', owner), attribute, failed, restored)
+    if skipped:
+        return "SKIP", contract_decoding_checks.partial_detail(full, skipped, len(tried), len(mutants))
+    return "PASS", ('%d checks: %d envelope failure shapes prevented with the validator unchanged and reproduced with '
+                    'the constraint off; the output cap not prevented; %d valid forms unchanged; wrapper, measurement '
+                    'and replay hold; EDITOR_CLERK missing kind prevented through the wrapper with no stamp; '
+                    '%d neutralisations fail and restore'
+                    % (unittest.defaultTestLoader.loadTestsFromModule(checks).countTestCases(), len(checks.KINDS),
+                       len(checks.VALID_FORMS), len(mutants)))
+
+
+def check_293_scorer_reads_the_key_parts_d042_added():
+    """Loop stage S5, open item 17 (D-042, docs/INPUT_FORMAT.md section 9): tools/score_corpus.py
+    reads expected_refusals (each renamed term satisfied by a refusal on its earlier label and
+    unit, reported by kind, or by a rename Python matched, which is then no false positive; a
+    rename only a model's record matches satisfies nothing; a fabricated withdrawal named),
+    scores a multi-round run (audit/multi_round.json) from Python's round findings on bus
+    channel multi_round, each only for the entry of its own round and document, refuses a
+    round-scoped key on any other run and a multi-round run whose key has no such entries,
+    and reports the four relations Python never writes apart, located only by a model-written
+    record and never by a Python post, under the record as it was before INFRA-045 (which
+    appended all four), and scores them like any other relation under the current record; and
+    (issue #32, D-184) reads a judged absence from
+    Python's stamped copy only, the model's raw reply and its refused answers counted apart and
+    locating nothing. Executed on synthetic run folders (the multi-round bus
+    written by multi_round_rounds.post_findings itself); each reader proven by neutralise,
+    fail, restore, pass."""
+    from scorer_section9_checks import check
+    return check()
+
+def check_283_benchmark_adapters_follow_the_preregistration():
+    """Loop stage S4c: the five benchmark adapters under benchmark/adapters/ on synthetic
+    items in each documented schema (D-019, D-S3): byte-identical builds; per-document cut
+    budget; sides, ContraDoc's frozen groups and FinDVer's testmini enforced at build;
+    no source id in a bundle; bundles read back as input-format-v1-draft and as
+    pairing_map.split_units splits them; the section 5.1 and 5.2 mapping on synthetic
+    run outputs (B2, B1, B0, S-1, S-2; B3 and B4 read from the run's bus, adopted in D-056); the
+    metrics against hand computations. SKIP when benchmark/adapters/ is absent."""
+    from adapter_checks import check
+    return check()
+
+
+def check_285_scorer_reads_a_key_and_twin_by_path():
+    """Loop stage S5, item 0.10 (R5, R21): tools/score_corpus.py scores a bundle outside
+    benchmark/corpora/ by an explicit --key path, and its clean twin by --twin-key and
+    --twin-run; the --corpus name and the absolute path the cloud caller passes are
+    unchanged. Each case is proven by neutralise, fail, restore, pass. SKIP when
+    benchmark/generators/ is absent."""
+    from scorer_path_checks import check
+    return check()
+
+
+def check_286_negotiation_dev_case_is_a_valid_live_case():
+    """Loop stage S5, item 0.9 (DS5-10): the negotiation multi-round development case under
+    benchmark/dev_cases/ is read by the sealer's own reader, accepted by the controller's
+    validate_live_case_manifest and bound span by span by multi_round.bind_sources, and is
+    exactly its builder's output from the anonymised corpus files. Each case is proven by
+    neutralise, fail, restore, pass. SKIP when benchmark/dev_cases/ is absent."""
+    from dev_case_checks import check
+    return check()
+
+
+def check_287_built_bundles_stage_as_the_sealers_workload():
+    """Loop stage S5 join, item 3: tools/stage_workload.py stages an adapter build and a
+    multi-round generator bundle into the folder the sealer's --workload reads (accepted by
+    workload_members, no key file, every source byte kept) and writes each B1 bundle's own
+    item table for --items; a file named like a key refuses the staging. Each case is proven
+    by neutralise, fail, restore, pass."""
+    from stage_workload_checks import check
+    return check()
+
+
+def check_298_console_replies_route():
+    """Loop stage S7 (console): the replies route serves metadata and outcomes, never reply text. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_replies_route
+    return check_replies_route()
+
+
+def check_299_console_model_findings_route():
+    """Loop stage S7 (console): the model-findings route carries the mark on every model finding. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_model_findings_route
+    return check_model_findings_route()
+
+
+def check_300_console_switches_route():
+    """Loop stage S7 (console): the switches route reads INST_FINDER and the shared B.4 reasons. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_switches_route
+    return check_switches_route()
+
+
+def check_301_console_report_route():
+    """Loop stage S7 (console): the report route reads the cloud report rows, else the run folder's cost lines. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_report_route
+    return check_report_route()
+
+
+def check_302_console_test_change_requests_route():
+    """Loop stage S7 (console): the test-change-requests route lists the log or says it is not present. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_test_change_requests_route
+    return check_test_change_requests_route()
+
+
+def check_303_console_multi_round_reuse_route():
+    """Loop stage S7 (console): the multi-round route carries the round reuse table. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_multi_round_reuse_route
+    return check_multi_round_reuse_route()
+
+
+def check_304_console_sealed_filter():
+    """Loop stage S7 (console): a sealed run shows counts and timings only, and per-flaw routes refuse it. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_sealed_filter
+    return check_sealed_filter()
+
+
+def check_305_every_route_needs_a_token_but_health_and_console():
+    """Loop stage S7 (console): every route answers 401 without a token except exactly /health and /console, and
+    FastAPI's own /openapi.json, /docs and /redoc stay off (a second neutralisation switches them back
+    on and must fail). Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_all_routes_need_a_token
+    return check_all_routes_need_a_token()
+
+
+def check_306_console_views_render_and_mark():
+    """Loop stage S7 (console): the console's new views render in both languages with the model-finding mark. Runs on the committed synthetic fixture
+    under scripts/fixtures/console/ with neutralise, fail, restore, pass inside the
+    check (scripts/console_view_checks.py). SKIP with the reason when fastapi (or,
+    for the views, Node) is absent."""
+    from console_view_checks import check_console_views
+    return check_console_views()
+
+
+def check_307_launcher_menus_end_at_end_of_input():
+    """Loop S7 item 5: both launcher menus end when their input ends (shimmer.sh on a failed
+    read, shimmer.bat after three empty answers), and the Git Bash token question reads the end
+    of input as no. Driven on the real launcher text in temp folders with stand-ins; no install,
+    no model, no run. Skips where a launcher is absent (container image)."""
+    from launcher_checks import check_end_of_input
+    return check_end_of_input()
+
+
+def check_308_launchers_reach_their_menus():
+    """Loop S7 item 5: shimmer.bat reaches its menu (for /f quoting), keeps its answers through
+    the venv's activate script and honours SHIMMER_SKIP_INSTALL; shimmer.sh finds a Scripts/
+    venv and honours SHIMMER_SKIP_INSTALL; shimmer.sh started from another folder with no
+    /usr/bin on PATH reaches its menu (open item 54); the draft is announced only after its
+    setup; no dead batch label; start_shimmer.bat --check-entry answers; shimmer.sh under Git
+    Bash accepts a real Windows venv (python -m venv in a temporary folder, the real runtime
+    contract) with MSYS argument conversion on and off (INC-030), skipped with its reason where
+    Git Bash or a Windows Python of the contract's version is absent."""
+    from launcher_checks import check_bootstrap
+    return check_bootstrap()
+
+
+def check_309_launcher_banner_names_the_open_routes():
+    """Loop S7 item 5: the server banner in both launchers names exactly the routes the live app
+    answers without a token, read off the app."""
+    from launcher_checks import check_banner
+    return check_banner()
+
+
+def check_310_chat_window_command_mode():
+    """Loop D-S13 item 6e: menu option [2], the chat window, driven withdrawn (never shown) in
+    command mode with no model: help, a cutoff written to a temporary scope file, a draft
+    confirmed and a review cancelled, every wizard or pipeline launch recorded and none run. A
+    request whose worker raises frees the window; before, every later message was answered
+    "Still working on the previous request". On stand-ins for the model's modules (S10, from the
+    S7 6e findings): the startup line says only what the probe checked (libraries import, a model
+    id is configured), and a request whose model failed to load, failed while answering (an error
+    in generate, out of GPU memory for one) or gave no usable answer keeps the keyword parser's
+    reply and says first that the model was not used and why, each with its own reason. A mode the
+    person set wins over a mode in the parsed request, one the model proposed or the keyword parser
+    defaulted, and the confirmation says so (D-183, issue #118). Skips where the
+    chat file or Tk is absent."""
+    from launcher_checks import check_chat_window
+    return check_chat_window()
+
+
+
+def check_311_launcher_arm_runs_the_menu_from_its_sealed_map():
+    """Loop D-S13 item 6d: arm L, the launcher menu as a third sealed arm of the ordinary final
+    controller (tools/ordinary_final_launcher_checks.py, mixed into the controller checks). The
+    sealed launcher block is admitted only as sealed and only exposed; every sealed prompt is
+    printed word for word by the bound shimmer.sh, wizard or pipeline; the sealer numbers the
+    review targets as the wizard lists them; the session driver answers only from the map and
+    stops on an unknown prompt, on answers used up and at its deadline; the REAL shimmer.sh and
+    the REAL intake wizard run a review, then a draft, then Q with a stand-in pipeline, every
+    Python child that loaded the sitecustomize network-denied (a Python-level denial: native code
+    and non-Python children are neither denied nor counted, nor is a Python child that never loads
+    the sitecustomize); the REAL shimmer.sh, runtime check, preflight, wizard and pipeline start
+    from an extracted copy of the project archive the sealer builds for arm L, up to the
+    pipeline's first question (L14: the menu's runtime check imported a module that archive does
+    not carry); the menu environment is made from the runner's runtime; the
+    assessment, the single-bundle rule, the stop of the menu's children and the report row.
+    Each rule by neutralise, fail, restore, pass. No model call and no network; the archive test
+    starts the real pipeline, which stops at its first question, declined, before any model work
+    (every other test runs a stand-in pipeline or none). SKIP where
+    the tree holds no shimmer.sh (the container image) or no bash runs a script."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from ordinary_final_launcher_checks import check
+    return check()
+
+
+def check_312_draft_memo_uses_the_drafters_backend():
+    """INC-031 (loop S10): the draft memo goes through the backend the drafter resolved.
+    pipeline._draft_generate_with_evidence used to call call_claude whatever the backend, so a
+    local-profile draft went to the Claude client (L14b: backend claude_api with a local model id,
+    three blocked connection attempts, exit 5). Model-free (scripts/draft_backend_checks.py): the
+    real backend functions run on the stand-ins of scripts/reply_records_checks.py; a local drafter
+    whose call_claude raises must return the local text with its call evidence, activation row,
+    reply record and free_text outcome on one call id, and a Claude drafter still reaches the
+    Claude client; a qwen_local and an openai_api drafter reach their own backend the same way, and
+    every reply record states the requested output allowance 4096 (S10 adversarial MINOR 4); the
+    budget neutralisation runs on local_producer only, so it proves the allowance there; the
+    cloud backends' own default is also 4096 (S10 rounds 2 and 3).
+    Neutralise (the old direct call_claude, and the budget emptied, each compiled beside the
+    pipeline), fail, restore, pass."""
+    from draft_backend_checks import check
+    return check()
+
+
+def check_313_no_local_profile_path_reaches_a_cloud_client():
+    """Loop S10, outside audit finding 1 (LAW-IV): INC-031 was one site, so every local-profile
+    path the S10 sweep found that reaches a model runs here with the two provider SDKs replaced
+    by stand-ins whose client construction raises and is recorded, both credentials set to
+    placeholders, and the local model a recording stand-in (scripts/local_profile_cloud_checks.py):
+    the local-profile registry puts no agent on a provider backend, the start-of-run model gate
+    lists no provider, ClaimExtractor.extract with a key reads by regex only (D-183), dispatch
+    for every agent, the draft memo, the --amendment-polish pass and the harness under its local
+    profile each construct no client. Neutralise (the draft memo's direct call_claude put back;
+    a direct call_claude in the polish pass; AMENDMENT_DRAFTER left out of _LOCAL_PROFILE;
+    LEGAL_ANALYST mapped to claude_api, so the harness builds a Claude client; the model gate
+    given the registry as shipped, so model_registry builds both clients; ClaimExtractor.extract
+    without its local-profile guard), fail, restore, pass. No network, no weights, temporary
+    folders only."""
+    from local_profile_cloud_checks import check
+    return check()
+
+
+_CITATION_VERSION_LINE = re.compile(r'^version:\s*(?P<q>["\']?)(?P<v>[^"\'\s#]+)(?P=q)\s*(?:#.*)?$')
+
+
+def _citation_version_mismatch(root):
+    """None when `CITATION.cff` states exactly one top-level `version` equal to the content of
+    `VERSION`; otherwise the reason. The two files are read from `root`; a missing one is the
+    caller's to skip, never a pass."""
+    root = Path(root)
+    want = (root / "VERSION").read_text(encoding="utf-8").strip()
+    found = [m.group("v") for m in
+             (_CITATION_VERSION_LINE.match(line) for line in
+              (root / "CITATION.cff").read_text(encoding="utf-8").splitlines()) if m]
+    if len(found) != 1:
+        return f"CITATION.cff states {len(found)} top-level version lines, expected exactly 1"
+    if found[0] != want:
+        return f"CITATION.cff version {found[0]!r} differs from VERSION {want!r}"
+    return None
+
+
+def _citation_verdict(root):
+    """The verdict of check 314 on the tree at `root`: ("pass", None), ("fail", reason) or
+    ("skip", reason). `VERSION` ships in the source tree and in the container image, so its
+    absence fails everywhere. `CITATION.cff` ships in the source tree only, so its absence is
+    skipped only in an image-shaped tree, one with no `.git` at `root` (a folder in a clone, a
+    file in a git worktree; the image's build context excludes `.git/`); in a source checkout
+    its absence fails."""
+    root = Path(root)
+    if not (root / "VERSION").is_file():
+        return "fail", "VERSION is absent (the source tree and the container image both ship it)"
+    if not (root / "CITATION.cff").is_file():
+        if (root / ".git").exists():
+            return "fail", "CITATION.cff is absent from a source checkout (.git is present)"
+        return "skip", ("CITATION.cff absent and no .git here: the container image, which ships "
+                        "VERSION and not CITATION.cff")
+    problem = _citation_version_mismatch(root)
+    return ("fail", problem) if problem else ("pass", None)
+
+
+def check_314_citation_version_equals_version_file():
+    """Loop S11 item 6, DS11-2 option (ii): `CITATION.cff` cannot read a file, so its `version`
+    is compared with `VERSION`, the single version source. Every proof runs `_citation_verdict`,
+    the same function that judges the real tree, on temporary layouts, never on the real tree:
+    neutralise (CITATION.cff given a different version), fail; a second `version` line, fail;
+    a source-shaped layout (`.git` present) with CITATION.cff deleted, fail; restore, pass; an
+    image-shaped layout (VERSION only, no `.git`), skip; a layout without VERSION, fail. Then
+    the real tree: it SKIPS only where CITATION.cff is absent and no `.git` is at ROOT (the
+    container image), and FAILS where CITATION.cff is absent from a source checkout."""
+    import shutil
+    import tempfile
+    if not (ROOT / "VERSION").is_file():
+        return _fail("VERSION is absent (the source tree and the container image both ship it)")
+    want = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    if (ROOT / "CITATION.cff").is_file():
+        real = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    else:
+        # The image has no CITATION.cff; the proofs run on a minimal one of the same shape.
+        real = f'cff-version: 1.2.0\ntitle: "proof"\nversion: "{want}"\n'
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "source"
+        (src / ".git").mkdir(parents=True)
+        shutil.copyfile(ROOT / "VERSION", src / "VERSION")
+        cff = src / "CITATION.cff"
+        base = re.sub(r'(?m)^version:.*$', lambda _m: f'version: "{want}"', real)
+        neutralised = re.sub(r'(?m)^version:.*$', 'version: "0.0.0.neutralised"', real)
+        if neutralised == real:
+            raise FixtureNotAsIntended("CITATION.cff has no top-level version line to neutralise")
+        cff.write_text(neutralised, encoding="utf-8")
+        if _citation_verdict(src)[0] != "fail":
+            return _fail("a CITATION.cff version differing from VERSION was accepted")
+        cff.write_text(base + f'version: "{want}"\n', encoding="utf-8")
+        if _citation_verdict(src)[0] != "fail":
+            return _fail("a CITATION.cff with two version lines was accepted")
+        cff.unlink()
+        if _citation_verdict(src)[0] != "fail":
+            return _fail(f"a source checkout without CITATION.cff did not fail: "
+                         f"{_citation_verdict(src)}")
+        cff.write_text(base, encoding="utf-8")
+        if _citation_verdict(src) != ("pass", None):
+            return _fail(f"the restored copy did not pass: {_citation_verdict(src)}")
+        image = Path(tmp) / "image"
+        image.mkdir()
+        shutil.copyfile(ROOT / "VERSION", image / "VERSION")
+        if _citation_verdict(image)[0] != "skip":
+            return _fail(f"an image-shaped tree without CITATION.cff did not skip: "
+                         f"{_citation_verdict(image)}")
+        (image / "VERSION").unlink()
+        if _citation_verdict(image)[0] != "fail":
+            return _fail(f"a tree without VERSION did not fail: {_citation_verdict(image)}")
+    verdict, reason = _citation_verdict(ROOT)
+    if verdict == "skip":
+        return _skip(reason)
+    if verdict == "fail":
+        return _fail(reason)
+    return _ok(f"CITATION.cff version equals VERSION ({want}); on temporary layouts a different "
+               f"version, a second version line and a source checkout without CITATION.cff each "
+               f"fail, the restored copy passes, an image-shaped tree skips")
+
+
+def check_316_no_web_under_the_local_profile():
+    """Loop S11, D-S23 item 1 (open item 68): under the local backend profile no agent reaches
+    the web, whatever its registry flag says; web access opens only under the cloud profile.
+    scripts/web_access_checks.py runs SearchRouter.search, the one place web access is opened,
+    for a may_use_web agent and a system caller with urlopen, socket.create_connection and
+    socket.connect recording and refusing (the ddgs package a recorder): under the local
+    profile, and under an empty one, no non-local connection may be attempted and both callers
+    are refused with a web_access_refused event; under the cloud profile every engine is tried
+    (and refused by the stand-ins). The run summary's own writer states the profile and whether
+    web access was open under both. No function in search_router.py but search() and the egress
+    methods reaches an engine or urlopen (a planted second caller is flagged). Neutralise (the
+    refusal removed from search(); the rule opened for every profile), fail, restore, pass. No
+    network, no weights, temporary folders only."""
+    from web_access_checks import check
+    return check()
+
+
+def check_317_detection_dev_scoring_measures_detection():
+    """Annex D D-S26 item 1, decision D-194: the development scoring `detection_dev` of the
+    benchmark adapters (benchmark/adapters/common/detection.py, one helper for every adapter).
+    On synthetic run folders and a built ContractNLI fixture: an item with no kept claim is
+    silence, ABSTAIN in every measure, its v2_primary label kept and reported apart by the
+    score; CUAD's "in at least one passage" is read per document (present from one unit that
+    holds, absent only when every unit of the run's own unit list lacks); ContractNLI's not
+    mentioned is reached when every unit is unsettled (UNCERTAIN or an absence relation), an
+    absence relation never a contradiction, a refused answer no claim; ContraDoc is CLEAR only
+    when every unit holds; v2_primary and benchmark unchanged; a benchmark with no declared
+    reading refused; S-8 rows carry their own v2_primary reading; no S-4; the counts name the
+    v2_primary reading apart; development builds only (D-195). Neutralised (silence given its
+    v2_primary label; S-8 silence given its v2_primary class; S-8 rows with the primary's
+    v2_primary fields; CUAD absent from one unit; the not-mentioned reading removed; ContraDoc
+    CLEAR from one unit; the paired-view refusal removed; the counts hook removed; the
+    development-only refusal removed), each must fail, then restored. D-472: a cell decision in the
+    pairing map's cell_claims row is read (holding is CLEAR, not settled never CLEAR, no decision and
+    no record is silence; neutralised by reading none, and by reading every one as holding), a claim
+    is CLEAR only when no unit carries a settled "not met" decision (D-478, two units; neutralised
+    by reading none), and the scorer labels B3 under detection_dev on request. The adapter checks' `detection` group; temporary folders only. SKIP when
+    benchmark/adapters/ is absent."""
+    from adapter_checks import check_group
+    return check_group("detection")
+
+
+def check_318_miss_diagnosis_puts_every_lost_finding_in_one_loss_class():
+    """Recall work, lane eval: tools/miss_diagnosis.py scores (run, key) pairs through
+    tools/score_corpus.py, the only reader of a key, and puts every expected finding a run
+    lost into one loss class (scripts/fn_evidence.py's four, a suspension, a wrong or
+    unverifiable reason, an adapter item excluded), with a sub-cause read from the saved
+    artifacts and the code sites that decide it. Executed on twelve curated run folders (one a
+    batch session's collected_evidence.tar.gz beside a B1 entry, adapter-style items among
+    them, a document-level item read over every unit with its weakest unit deciding, and an
+    uncomputable answer Python refused named apart) and on generator tests f1 to f3 replayed up to the first model call with the
+    pipeline's own functions; the key is traced to the scorer, the archive unpacked under
+    evidence/ only with reply records stripped of their text, fn_evidence reads an
+    undecided pair. Each case is proven by neutralise, fail, restore, pass."""
+    from miss_diagnosis_checks import check
+    return check()
+
+
+def check_319_the_four_relations_infra_045_appended_are_computed_by_python():
+    """RELATIONS-A (constitution amendment INFRA-045, operator-approved 2026-10-31):
+    rate_mismatch, carry_mismatch, copy_mismatch and unit_mismatch are appended to the typed
+    Finding record and computed by Python (scripts/relation_checks.py) from the document's own
+    figures, only for a rule whose own words name them: a rate over a part, a whole and a
+    percentage; a stated total or a reading in another measure than its column or band,
+    converted by a prefix config/unit_conversions.json declares; a table row that does not
+    carry the unit it names; a first row that does not carry the column sum of the unit
+    before. A tied third figure, a measure that does not convert, a row naming two units and
+    a unit before that does not add up are refused into the pairing map's relation_refusals.
+    Executed on an invented-vocabulary fixture through paired_review.plan_calls, through
+    pipeline._paired_convention_review with the judging call stubbed (Python's records on the
+    bus, compared passages cited, amendments with each relation's sentence and its row for
+    the second output language), through a two-round multi-round case (a unit whose neighbour changed is recomputed),
+    and against the governed record (INFRA-045 the verified next id). D-198 (the fresh
+    review): a unit mismatch is attributed to the rule whose declared scope or requirement
+    names its figure or measure, or refused; figures fitting another plain reading and a zero
+    whole are refused; an unconvertible band measure is refused on the record; an agreeing
+    rate settles only a rule naming nothing else; a prefix converts only before a declared
+    base; a refused copy's changed source is recomputed in a later round. Each proof is
+    neutralise, fail, restore, pass."""
+    from relation_checks_checks import check
+    return check()
+
+
+def check_320_reviewed_document_is_the_reviewed_document():
+    """Open item 19, part 2 (issue #13): reviewed_document.md is the document under
+    review in its own words and order, each finding at the unit it concerns, with a
+    header saying what was asked, how many findings of each kind there are and what was
+    not checked; the per-agent record moved to agent_record.md. Runs
+    scripts/reviewed_document_checks.py on the mocked runs of check 278 (the real phase-6
+    writer, no model): the document's text whole and in order, every amendment and model
+    finding at its unit in English and tr, and Python's other findings, refusals and
+    unchecked rules in English, the mark on every model finding and on no Python finding, the header's counts equal
+    to review_data.json, the document summary and the pairing map, no English template
+    left in tr, and the redaction reaching the file; all but two plain tests by neutralise,
+    fail, restore, pass."""
+    from reviewed_document_checks import run_checks
+    return run_checks()
+def check_321_g1_document_level_judging_runs_through_the_sealed_replay_pass():
+    """G1 (operator-approved GPU experiment, 2026-11-01): benchmark/baselines/doc_judge.py
+    judges each (document, rule) once over the whole document with the rule's own text, one
+    neutral user turn and no filled example (benchmark/baselines/doc_judge_prompt.json). On
+    three invented workloads and canned models: the prompts are built once per model group,
+    document and rule; replay_prompts.py's own `run` (the runner's sealed replay pass, no bound
+    controller file changed) hands the file to doc_judge.run, which sends one user turn per
+    prompt and writes one reply record with its text each, counted by the runner and named by
+    the analyser; the judge keeps a holds or not met only with a quote found in the document
+    (whitespace-normalised) and refuses a missing or unfound quote, an unparseable reply and an
+    undeclared outcome; bare_model-format labels are scored through tools/score_corpus.py
+    (the adapters' label_b1 and Spec), silence counted apart and never a detection; the key is
+    opened only by the scorer; and the file passes the sealer's replay declaration and the
+    runner's B1 pass validation. Each proof is neutralise, fail, restore, pass."""
+    from doc_judge_checks import check
+    return check()
+
+
+def check_326_cell_selection_keeps_what_bears_on_a_claim_and_refuses_the_rest():
+    """P2 (b) of D-S38 and D-S42: Python selects the rows and columns of a table that bear on a claim,
+    by the one tokeniser's words, written figures and an injected embedding, and refuses no table, no
+    match and a tie. No model, no key. Runs scripts/cell_selection_checks.py."""
+    from cell_selection_checks import run_checks
+    return run_checks()
+
+
+def check_324_find_then_judge_pairs_passages_and_scores_where_a_flag_stands():
+    """P2 (a) of D-S38 and D-S39: Python proposes pairs of passages of one document, a model judges each
+    pair in both orders, and a flag counts only on a pair touching the passage the key marks. Real readers,
+    no model; neutralise, fail, restore, pass for each. Runs scripts/pair_judge_checks.py."""
+    from pair_judge_checks import run_checks
+    return run_checks()
+
+
+def check_327_version_changes_are_computed_and_rendered_for_a_round_review():
+    """What changed between versions, sentence by sentence and cell by cell, and numbered references
+    that lead nowhere, in Python, written as a multi-round run's one deliverable. Neutralise, fail,
+    restore, pass for each. Runs scripts/version_changes_checks.py."""
+    from version_changes_checks import check
+    return check()
+
+
+def check_328_case_questions_are_narrow_injected_and_marked():
+    """Toward or away and suggested wording: Python selects, one narrow injected call answers, an
+    answered movement is the model's and a suggestion is cited, marked and never an amendment.
+    Neutralise, fail, restore, pass for each. Runs scripts/case_questions_checks.py."""
+    from case_questions_checks import check
+    return check()
+
+
+def check_330_the_judges_training_rows_and_pass():
+    """D-S42 T: the judge's training rows (two mixes, the publishable one with no share-alike row) and
+    the training pass on the replay route, proved on planted sources and a tiny random model on the
+    CPU, with each proof neutralised where the script says so. Not 4-bit training, which only the
+    first real run can show. Runs tools/judge_training_checks.py in its own process."""
+    import subprocess
+    script = Path(__file__).resolve().parents[1] / "tools" / "judge_training_checks.py"
+    done = subprocess.run([sys.executable, "-X", "utf8", str(script)], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", timeout=900,
+                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    lines = [l for l in done.stdout.splitlines() if l.strip()]
+    failed = [l for l in lines if l.startswith("FAIL ")]
+    detail = (lines[-1] if lines else "no output") + ("; " + "; ".join(failed[:5]) if failed else "")
+    if done.returncode != 0 and not failed:
+        detail += "; exit %d: %s" % (done.returncode, (done.stderr or "").strip()[-300:])
+    return ("PASS" if done.returncode == 0 else "FAIL"), detail
+
+
+def check_333_the_auditor_backends_roles():
+    """D-S57 items 1 and 2, the auditor backend (lane/auditor): a unit carrying only its heading
+    is asked no model question and says so; the envelope grammar's declared enumerations and
+    string bounds; the four RELATIONS-A relations make no judging call. Neutralise, fail,
+    restore, pass for each. Runs scripts/auditor_roles_checks.py."""
+    from auditor_roles_checks import check
+    return check()
+
+
+def check_331_the_judge_is_a_registered_agent():
+    """D-S55 items 1, 2, 4 and 5 and D-S56 item 1: the agent whose contract declares a narrow task
+    takes it on the real phase 5.5 and no other task, two declaring are refused, nothing is asked
+    without the rule's declaration, its question is the replay's byte for byte with the declared
+    tools' results, a checking role on the model it checks or an unknown tool stops boot, and each
+    tool call is one record joined to its call. A fixture judge, no model; neutralise, fail,
+    restore, pass for each. Runs scripts/judge_agent_checks.py."""
+    from judge_agent_checks import run_checks
+    return run_checks()
+
+
+def check_335_the_producers_training_pass_and_its_test():
+    """D-S57 item 3: the producer's candidate for checkpoint 168 is trained on the replay route in
+    168's own recipe and encoding (prompt masked, one end-of-turn token in the answer), then tested
+    beside the resident 168 on the same rows, the candidate on the pinned base with its adapter held
+    to its digests; a training payload inside a test prompt is refused. Proved on a tiny random
+    model on the CPU with three neutralisations (docs/loop/PRODUCER_TRAINING_PLAN.md). Not 4-bit
+    training, which only the first real run can show. Runs tools/producer_training_checks.py in its
+    own process."""
+    import subprocess
+    script = Path(__file__).resolve().parents[1] / "tools" / "producer_training_checks.py"
+    done = subprocess.run([sys.executable, "-X", "utf8", str(script)], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", timeout=900,
+                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    lines = [l for l in done.stdout.splitlines() if l.strip()]
+    failed = [l for l in lines if l.startswith("FAIL ")]
+    detail = (lines[-1] if lines else "no output") + ("; " + "; ".join(failed[:5]) if failed else "")
+    if done.returncode != 0 and not failed:
+        detail += "; exit %d: %s" % (done.returncode, (done.stderr or "").strip()[-300:])
+    return ("PASS" if done.returncode == 0 else "FAIL"), detail
+
+
+def check_338_the_cloud_mode_goes_through_the_bound_path():
+    """D-S49 item 3: the console's cloud mode ("On a rented cloud machine") stages, seals, verifies,
+    binds, reverifies and preflights through the existing tools, launches only the bound wrapper
+    detached on the private ledger under console-<plan id>, needs the cap to the cent and a one-time
+    code, refuses a sealed run, no credential file or no budget_open line, shows the forecast as
+    measured or estimate and no instance limit (there is none, D-S95), reads progress with the tracked
+    reader and the actual time and cost from the ledger and the receipts, and never shows the key.
+    On fakes only; neutralise, fail, restore, pass. Runs scripts/console_cloud_checks.py in its own
+    process."""
+    import subprocess
+    script = SCRIPTS / "console_cloud_checks.py"
+    done = subprocess.run([sys.executable, "-X", "utf8", str(script)], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", timeout=600,
+                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    lines = [l for l in done.stdout.splitlines() if l.strip()]
+    failed = [l for l in lines if l.startswith("FAIL ")]
+    detail = (lines[-1] if lines else "no output") + ("; " + "; ".join(failed[:5]) if failed else "")
+    if done.returncode != 0 and not failed:
+        detail += "; exit %d: %s" % (done.returncode, (done.stderr or "").strip()[-300:])
+    return ("PASS" if done.returncode == 0 else "FAIL"), detail
+
+
+def check_336_the_producer_backends_narrowed_roles():
+    """INFRA-050: the producer backend's wide roles narrowed to one question per unit or passage
+    Python selects (config/producer_questions.json): off as shipped and with no measured threshold,
+    speech acts only from the operator's own declared set, Python's evidence only in each prompt,
+    Unclear always offered, a settled answer the declared record and an unsettled one none, a
+    citation to exactly one other document resolved by Python with no call, a span kept only when
+    the unit holds it verbatim with the document count Python's, and an editorial observation on a
+    model's finding routed to a rank of the other model family. Neutralise, fail, restore, pass.
+    Runs scripts/producer_questions_checks.py."""
+    from producer_questions_checks import check
+    return check()
+
+
+def check_339_the_cloud_reference_sends_half_a_under_the_cap_and_no_key():
+    """D-S70 item 5, D-326, D-S102 item 12, D-S104 item 1: benchmark/baselines/cloud_reference.py
+    sends only half A of the prompts file J1's bar names, holds its cap to what is left of the total
+    budget, stops before any provider call on a deprecated, ambiguous or unverifiable model or a key
+    in a prompt, writes no key anywhere, seats the registry's Anthropic model with the registry
+    unedited, and reads half A only; the subscription steering checks
+    (cloud_reference_steering.py) carry "subscription, steering only" in every file and are refused
+    as a claim by the scorer and by claim_guard. The B1-layout path (cloud_reference_b1.py) runs bare_model's own loop
+    on a pinned build, holdout reads only under an opening, Seckin's evet required, role C's form
+    with its spend file, and a provider refusal stopping cleanly with a resume. Fakes only; neutralise, fail, restore, pass. Runs
+    benchmark/baselines/cloud_reference_checks.py and cloud_reference_steering_checks.py, each in
+    its own process."""
+    import subprocess
+    details, passed = [], True
+    for name in ("cloud_reference_checks.py", "cloud_reference_steering_checks.py", "cloud_reference_b1_checks.py"):
+        script = ROOT / "benchmark" / "baselines" / name
+        done = subprocess.run([sys.executable, "-X", "utf8", str(script)], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=600,
+                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        lines = [l for l in done.stdout.splitlines() if l.strip()]
+        failed = [l for l in lines if l.startswith("FAIL ")]
+        detail = (lines[-1] if lines else "no output") + ("; " + "; ".join(failed[:5]) if failed else "")
+        if done.returncode != 0 and not failed:
+            detail += "; exit %d: %s" % (done.returncode, (done.stderr or "").strip()[-300:])
+        passed = passed and done.returncode == 0
+        details.append(detail)
+    return ("PASS" if passed else "FAIL"), "; ".join(details)
+
+
+def check_329_user_guides_and_the_clean_install_check():
+    """What the two user guides name is in the repository and on screen, and the clean-install check
+    fails when it should. Neutralise, fail, restore, pass. Runs scripts/product_package_checks.py."""
+    from product_package_checks import check
+    return check()
+
+
+def check_341_the_demo_opens_with_nothing_to_type_and_no_request():
+    """D-S48: the console's demo, built by tools/build_demo.py from the committed invented fixture
+    (scripts/fixtures/demo), run in Node with every request and token source trapped and every button
+    clicked in both languages: nothing touched, every model item marked, two builds byte-identical,
+    benchmark/, external/ and a sealed run refused. Neutralise, fail, restore, pass for each. Runs
+    scripts/demo_checks.py; SKIP without Node."""
+    from demo_checks import check
+    return check()
+
+
+def check_325_a_narrow_question_is_decided_from_the_models_own_probabilities():
+    """D-S41: a question with fixed answers is decided from next-token probabilities, by one forward
+    pass with no text, on the replay and on the passage pair step, where it stays off until a
+    decision adopts it. Invented logits and a stand-in model; neutralise, fail, restore, pass for
+    each. Runs scripts/choice_decision_checks.py, the reader's scripts/choice_read_checks.py and the
+    gate set's scripts/gate_set_checks.py (the declared class setting of D-380 both ways, the shared
+    leakage check of D-S100 and the seeded draw)."""
+    from choice_decision_checks import run_checks
+    from choice_read_checks import run_checks as reader_checks
+    from either_test_checks import run_checks as either_checks
+    from fresh_test_checks import run_checks as fresh_checks
+    from system_test_checks import run_checks as system_checks
+    from gate_set_checks import run_checks as gate_set_checks
+    results = (run_checks(), reader_checks(), either_checks(), fresh_checks(), system_checks(), gate_set_checks())
+    return (("PASS" if all(r[0] == "PASS" for r in results) else "FAIL"),
+            results[0][1] + "; the reader: " + results[1][1] + "; D-S45's test: " + results[2][1] + "; D-S56's test: " + results[3][1]
+            + "; D-S70's system test: " + results[4][1] + "; the gate set (D-380, D-S100): " + results[5][1])
+
+
+def check_337_the_gap_between_the_parties_is_computed():
+    """D-S46 item 2: where both parties state an issue as figures in consecutive rounds, the gap
+    between them is computed and written as an INFRA-044 relation on a trajectory record, scored
+    against a key written first and a perturbation it was not written against. Neutralise, fail,
+    restore, pass. Runs scripts/position_gaps_checks.py."""
+    from position_gaps_checks import check
+    return check()
+
+
+def check_340_the_live_view_of_an_exposed_run():
+    """Loop Annex D D-S66: tools/ordinary_final_live.py shows an exposed cloud run call by call
+    (passed, refused with its reason, out of memory, crashed, and its seconds), the running counts,
+    the phase, cost and measured progress, a stall judged by the run's own measured time, and an
+    ALERT line per failure pattern; a sealed bundle gets counts and timings only and fails closed.
+    Its remote program sends no reply text and writes nothing on the instance; every child runs
+    with no window (HIDDEN-A); it is not in the controller binding. Replayed from observations the
+    reader saved from three exposed runs, no network; neutralise, fail, restore, pass for each
+    proof. Runs tools/ordinary_final_live_checks.py."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from ordinary_final_live_checks import check
+    return check()
+
+
+def check_323_honesty_items_before_version_3():
+    """Loop Annex D D-S23 item 5 and D-S31 item 2: the band record agrees with the finding below
+    the band (open item 22); a date window's label keeps its own line's word order and a
+    byte-order mark drops nothing (open item 16); an amendment states its rule's severity (open
+    item 25); both summaries count and list the master's model findings, and the listed malformed fields
+    in a model's item stop nothing (open item 80). Real readers, no model; neutralise, fail, restore, pass for each. Runs
+    scripts/honesty_items_checks.py."""
+    from honesty_items_checks import run_checks
+    return run_checks()
+
+
+def check_322_judged_paths_refuse_claims_python_cannot_check():
+    """R1 (operator decision D-S22 item 1 (d)): on both judged paths (a judged absence, and
+    D-068's plan Python could compute nothing for) paired_review.judged_item_refusal also
+    refuses an answer with an absence relation (finding_record.ABSENCE_RELATIONS) and no
+    quote, a figure relation (finding_record.figure_relations(), read off the declared
+    schema) whose value_a and value_b are neither a number nor a date, and an earlier-version relation
+    (finding_record.PRIOR_RELATIONS) when the run declared no earlier version (the loaded
+    earlier versions _prior_comparison runs on), each with its own reason in the pairing
+    map's absence_refused or uncomputable_refused, tested after today's refusals so none of
+    those moves. The same answer is kept with a quote, with figures, or with an earlier
+    version declared. INFRA-046: a contradiction in words is kept only irregular and with two
+    different passages of its unit. Real phase 5.5 on a mocked run, no model; neutralise, fail,
+    restore, pass for each refusal and for the pipeline's passing of the declared earlier version."""
+    from judged_unchecked_claims_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
     ("02 constitution.json has 7 seed laws", check_02_constitution),
-    ("03 agent_registry.json has 18 agents", check_03_agent_registry),
+    ("03 agent_registry.json has 19 agents", check_03_agent_registry),
     ("04 agent_contracts.json has schemas", check_04_contracts),
     ("05 constitution.check() against 4 layers", check_05_constitution_check),
     ("06 match_tf_law() returns confidence", check_06_match_tf_law),
@@ -24821,7 +26510,7 @@ CHECKS = [
     ("61 OGE graph rebuilt at run-end (build_graph wired after capture_run)", check_61_oge_graph_rebuilt_at_run_end),
     ("62 OGE GNN executed end-to-end (MACHINERY not learning: fwd+delta-backprop, weights move, incremental)", check_62_oge_gnn_executed),
     ("63 OGE GNN payload-free (SAFE-only features; no RAW/placeholder in state)", check_63_oge_gnn_payload_free),
-    ("64 OGE GNN wired at run-end (gnn_update after build_graph after capture_run)", check_64_oge_gnn_wired_at_run_end),
+    ("64 the GNN never learns from runs: no run path calls gnn_update; it trains only on a declared set (D-S112)", check_64_oge_gnn_never_at_run_end),
     ("65 masking engine x/y split + typed placeholders + exposure ledger (INFRA-041 P1)", check_65_masking_engine_splits),
     ("66 masking rejoin restores held-local y + dedupes by item_id/revision (INFRA-041 P1)", check_66_masking_rejoin_dedupe),
     ("67 masking idempotent + inert under non-sensitive + no silent passthrough (INFRA-041 P1)", check_67_masking_idempotent_and_inert),
@@ -25108,7 +26797,146 @@ CHECKS = [
      check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header),
     ("274 every long phase reports a measured progress reading or refuses in words",
      check_274_every_long_phase_reports_a_measured_reading_or_refuses),
+    ("275 a staged or force-added seal manifest path is refused before commit",
+     check_275_staged_seal_paths_are_refused),
+    ("276 every model reply is saved once per call with its outcome",
+     check_276_every_model_reply_is_saved_once_with_its_outcome),
+    ("277 the INST_FINDER switch is honoured only under a ratified amendment",
+     check_277_inst_finder_switch_needs_a_ratified_amendment),
+    ("278 model findings are marked and never promoted in every deliverable",
+     check_278_honest_deliverables),
+    ("279 later multi-round rounds reuse unchanged units and refuse moved renames",
+     check_279_multi_round_rounds),
+    ("280 a declared multi-round Review is sealed, launched, admitted in final mode and assessed",
+     check_280_multi_round_launch_end_to_end),
+    ("281 the synthetic generators validate against their own ground truth, and family 4's case manifests agree with the controller",
+     check_281_synthetic_generators),
+    ("282 the baseline arms: B2 calls and imports no model, B1 verifies once and records every reply",
+     check_282_baseline_arms_hold_their_contracts),
+    ("283 the benchmark adapters build, cut, split, map and score as the preregistration says",
+     check_283_benchmark_adapters_follow_the_preregistration),
+    ("284 every refused change record carries a typed reason_kind kept in review_data.json",
+     check_284_prior_refusal_kinds),
+    ("285 the scorer reads a key and a clean twin by explicit path, the corpus path unchanged",
+     check_285_scorer_reads_a_key_and_twin_by_path),
+    ("286 the negotiation development case is a valid live multi-round case",
+     check_286_negotiation_dev_case_is_a_valid_live_case),
+    ("287 built benchmark bundles stage as the sealer's workload with no key file",
+     check_287_built_bundles_stage_as_the_sealers_workload),
+    ("288 B3's producer runs sdpa pinned with sealed one-shot prefill (D-063), _load_qwen calls pinned sdpa, each recorded; the classifier stays eager (D-058, D-061, D-063)",
+     check_288_b3_local_attention_is_pinned_and_recorded),
+    ("289 L2 diagnosis fixes: VERIFIER non-object reply recorded, semantic_incomplete reported, no deterministic retry (D-061)",
+     check_289_l2_diagnosis_fixes_hold),
+    ("290 a model's answer where Python could compute nothing is kept as a stamped, model-written, never-promoted record (D-068)",
+     check_290_uncomputable_judgment_is_kept_as_a_model_record),
+    ("291 a gather over the scheduler's bound runs as waves sharing one snapshot and one parent set (D-076)",
+     check_291_over_bound_gather_runs_as_shared_snapshot_waves),
+    ("292 every child process the controller path starts runs with no window (D-079)",
+     check_292_every_controller_path_child_process_starts_without_a_window),
+    ("293 the scorer reads expected refusals by kind, a multi-round run by round and document, and the relations Python never writes apart",
+     check_293_scorer_reads_the_key_parts_d042_added),
+    ("294 the pipeline's time before phase 3 is in phase_latencies (open item 38)",
+     check_294_pipeline_time_before_phase_3_is_in_phase_latencies),
+    ("295 the compact producer decodes under its request's own contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_295_compact_producer_decodes_under_its_contract),
+    ("296 the request ledger check fails on a dropped, unmatched, unevidenced or stale request row (D-S16)",
+     check_296_request_ledger_check_catches_dropped_requests),
+    ("297 the local auditor agents, ARCHIVIST and EDITOR_CLERK decode under their own envelope contract, the validator unchanged behind it (DECODING-B, D-S14)",
+     check_297_local_auditor_agents_decode_under_their_envelope_contract),
+    ("298 the replies route serves metadata and outcomes, never reply text",
+     check_298_console_replies_route),
+    ("299 the model-findings route carries the mark on every model finding",
+     check_299_console_model_findings_route),
+    ("300 the switches route reads INST_FINDER and the shared B.4 reasons",
+     check_300_console_switches_route),
+    ("301 the report route reads the cloud report rows, else the run folder's cost lines",
+     check_301_console_report_route),
+    ("302 the test-change-requests route lists the log or says it is not present",
+     check_302_console_test_change_requests_route),
+    ("303 the multi-round route carries the round reuse table",
+     check_303_console_multi_round_reuse_route),
+    ("304 a sealed run shows counts and timings only, and per-flaw routes refuse it",
+     check_304_console_sealed_filter),
+    ("305 every route answers 401 without a token except exactly /health and /console",
+     check_305_every_route_needs_a_token_but_health_and_console),
+    ("306 the console's new views render in both languages with the model-finding mark",
+     check_306_console_views_render_and_mark),
+    ("307 both launcher menus end at end of input", check_307_launcher_menus_end_at_end_of_input),
+    ("308 the launchers reach their menus with no install", check_308_launchers_reach_their_menus),
+    ("309 the launcher banner names exactly the routes open without a token",
+     check_309_launcher_banner_names_the_open_routes),
+    ("310 the chat window runs in command mode and a failed request frees it",
+     check_310_chat_window_command_mode),
+    ("311 arm L runs the launcher menu once from its sealed prompt map",
+     check_311_launcher_arm_runs_the_menu_from_its_sealed_map),
+    ("312 the draft memo goes through the drafter's own backend",
+     check_312_draft_memo_uses_the_drafters_backend),
+    ("313 no local-profile path constructs a cloud provider client",
+     check_313_no_local_profile_path_reaches_a_cloud_client),
+    ("314 CITATION.cff version equals VERSION",
+     check_314_citation_version_equals_version_file),
+    ("315 the issue deferral check fails on an unplanned issue, a loop-deferred honesty issue after v1, or a deferral naming no issue (D-S24)",
+     check_315_issue_deferral_check_catches_unowned_deferrals),
+    ("316 no agent reaches the web under the local profile",
+     check_316_no_web_under_the_local_profile),
+    ("317 the development scoring never counts silence as detection (D-S26 item 1, D-194)",
+     check_317_detection_dev_scoring_measures_detection),
+    ("318 the miss diagnosis puts every lost expected finding in one loss class, through the scorer, from saved artifacts",
+     check_318_miss_diagnosis_puts_every_lost_finding_in_one_loss_class),
+    ("319 rate, carry, copy and unit mismatches are computed by Python only where a rule names them, refused when undecided (RELATIONS-A, INFRA-045)",
+     check_319_the_four_relations_infra_045_appended_are_computed_by_python),
+    ("320 reviewed_document.md is the document under review with each finding at its unit, marked and counted as the master (open item 19)",
+     check_320_reviewed_document_is_the_reviewed_document),
+    ("321 G1 document-level judging is built, run through the sealed replay pass, judged by its quote rule and scored through the scorer",
+     check_321_g1_document_level_judging_runs_through_the_sealed_replay_pass),
+    ("322 on both judged paths Python refuses an absence relation with no quote, a figure relation with no figures and an earlier-version relation with no earlier version declared (D-S22 item 1 (d), R1)",
+     check_322_judged_paths_refuse_claims_python_cannot_check),
+    ("323 honesty items before version 3: the band record agrees with the finding below the band, a date label keeps its line's order, a byte-order mark drops nothing, an amendment states its severity, the summaries count the master's model findings, a model's listed malformed fields stop nothing",
+     check_323_honesty_items_before_version_3),
+    ("324 find then judge: Python proposes pairs of passages, a flag needs both orders and the passage the key marks",
+     check_324_find_then_judge_pairs_passages_and_scores_where_a_flag_stands),
+    ("326 cell selection: Python keeps the rows and columns that bear on a claim and refuses the rest",
+     check_326_cell_selection_keeps_what_bears_on_a_claim_and_refuses_the_rest),
+    ("325 a choice decision: one forward pass, probabilities over a fixed answer set on the reply record, no text; off until adopted",
+     check_325_a_narrow_question_is_decided_from_the_models_own_probabilities),
+    ("327 Version changes computed and rendered for a round review",
+     check_327_version_changes_are_computed_and_rendered_for_a_round_review),
+    ("328 Case questions narrow, injected and marked", check_328_case_questions_are_narrow_injected_and_marked),
+    ("329 User guides and the clean-install check", check_329_user_guides_and_the_clean_install_check),
+    ("330 The judge's training rows and pass", check_330_the_judges_training_rows_and_pass),
+    ("331 The judge is a registered agent: its declared tasks, tools and records, and no check on its own model",
+     check_331_the_judge_is_a_registered_agent),
+    ("333 The auditor backend's roles: narrow questions, declared values, no call where Python decides",
+     check_333_the_auditor_backends_roles),
+    ("335 The producer's training pass and its test", check_335_the_producers_training_pass_and_its_test),
+    ("336 The producer backend's narrowed roles (INFRA-050)", check_336_the_producer_backends_narrowed_roles),
+    ("337 The gap between the parties is computed", check_337_the_gap_between_the_parties_is_computed),
+    ("338 The cloud mode goes through the sealed, bound path, with the cap confirmed and no key shown",
+     check_338_the_cloud_mode_goes_through_the_bound_path),
+    ("339 The cloud reference sends half A only, under the cap, with no key written; subscription steering is never a claim",
+     check_339_the_cloud_reference_sends_half_a_under_the_cap_and_no_key),
+    ("340 The live view of an exposed run, call by call, counts only when sealed",
+     check_340_the_live_view_of_an_exposed_run),
+    ("341 The demo opens with nothing to type and no request",
+     check_341_the_demo_opens_with_nothing_to_type_and_no_request),
+    ("342 Every result carries a factor record; a gain goes to one factor only when it alone changed or is isolated",
+     check_342_every_result_carries_a_factor_record),
+    ("343 No record calls something done or verified without evidence that resolves (D-S101)",
+     check_343_status_evidence_check_refuses_unproven_done),
+    ("347 The negotiation measurement tools: labels, figures, openings, claims, forms, freeze and power",
+     check_347_the_negotiation_measurement_tools),
+    ("348 The session-end hook salvages and stops every loop instance, with no password (D-S107)",
+     check_348_session_end_hook_salvages_with_no_password),
+    ("350 No loop launch uploads the asset archive while the copy could have been used (D-S107 item 1)",
+     check_350_no_upload_while_the_asset_copy_could_be_used),
+    ("349 Every standing order is checked: the script-proven by code, the rest named (D-S110)",
+     check_349_standing_orders_are_checked),
 ]
+
+
+def _check_number(title):
+    """A check's number, the first word of its CHECKS title."""
+    return int(str(title).split()[0])
 
 
 def main(argv=None):
@@ -25119,13 +26947,26 @@ def main(argv=None):
                              "report SKIP instead of PASS/WARN/FAIL. The chain's red line "
                              "(W2) is the ONLINE gate; --offline is for a hermetic run "
                              "(e.g. STEP 6's UI acceptance tests).")
+    parser.add_argument("--results", default=None,
+                        help="D-S75: after each check, one JSON line (number, title, status, "
+                             "seconds) to this file, written as it goes")
+    parser.add_argument("--checks", default=None,
+                        help="D-S75: run only these check numbers, n,n, in CHECKS order")
     args = parser.parse_args(argv)
 
     global OFFLINE
     OFFLINE = bool(args.offline)
+    chosen = None if args.checks is None else {int(n) for n in args.checks.split(",") if n.strip()}
+    selected = [(t, f) for t, f in CHECKS if chosen is None or _check_number(t) in chosen]
+    if chosen is not None and {_check_number(t) for t, _ in selected} != chosen:
+        print("--checks names a number the gate has not: "
+              + ", ".join(str(n) for n in sorted(chosen - {_check_number(t) for t, _ in selected})))
+        return 2
+    sink = open(args.results, "w", encoding="utf-8") if args.results else None
 
     results = []
-    for title, fn in CHECKS:
+    for title, fn in selected:
+        began = time.perf_counter()
         try:
             status, detail = fn()
         except FixtureNotAsIntended as e:
@@ -25138,6 +26979,12 @@ def main(argv=None):
         except Exception as e:
             status, detail = "ERROR", f"{type(e).__name__}: {e}\n{traceback.format_exc().splitlines()[-2]}"
         results.append((title, status, detail))
+        if sink is not None:
+            sink.write(json.dumps({"number": _check_number(title), "title": title, "status": status,
+                                   "seconds": round(time.perf_counter() - began, 3)}) + "\n")
+            sink.flush()
+    if sink is not None:
+        sink.close()
     title_w = max(len(t) for t, _, _ in results); status_w = 8
     print(f"\n{'Check'.ljust(title_w)}  {'Status'.ljust(status_w)}  Detail")
     print("-" * (title_w + status_w + 60))

@@ -14,6 +14,7 @@ from pathlib import Path
 import threading
 
 from execution_scheduler import Edge, Lane, Scheduler, Task
+import role_graph
 
 ACTIVE = ContextVar("shimmer_execution_topology", default=None)
 WORK = threading.local()
@@ -61,7 +62,9 @@ def read_lanes(path):
 
 
 class Runtime:
-    def __init__(self, lanes):
+    def __init__(self, lanes, graph=None):
+        # D-S59: the run's role graph, loaded (and so checked for cycles) before any task.
+        self.role_graph = graph if graph is not None else role_graph.load()
         self.scheduler = Scheduler(lanes)
         self.lock = threading.RLock()
         self.previous = None
@@ -69,6 +72,7 @@ class Runtime:
         self.optimized = False
         self.run_context = None
         self.written = 0
+        self.span = None
 
     def write(self):
         if self.run_context is None:
@@ -81,6 +85,10 @@ class Runtime:
         self.written = len(self.scheduler.events)
         summary = dict(schema_version=1, execution_topology="report_optimized" if self.optimized else "dependency_dag",
                        run_id=self.run_context.run_id, **self.scheduler.summary())
+        # D-S59: the declared role graph as it ran, beside the measured times: each role's tasks,
+        # the declared edges among the roles that ran, and any task that started before a task of
+        # a role it needs had ended.
+        summary["role_graph"] = role_graph.as_run(self.role_graph, self.scheduler.tasks, self.scheduler.events)
         path = directory / "execution_topology.json"
         temp = path.with_suffix(".json.tmp")
         temp.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -151,6 +159,10 @@ class Runtime:
 
     def close(self):
         try:
+            if self.span is not None:
+                # main returned or raised inside a pre-phase-3 span: its time is still real.
+                self.scheduler.emit("phase_exit", phase=self.span, state="run_ended", pre_phase_3=True)
+                self.span = None
             self.scheduler.close()
         finally:
             self.write()
@@ -228,6 +240,25 @@ def phase_boundary(function):
     return synchronous
 
 
+def pre_phase_span(name):
+    """Close the open pre-phase-3 span and open `name` (None only closes).
+
+    main's work before phase 3-4 is inline, not a decorated phase function, so
+    phase_boundary never saw it and phase_latencies began at phase 3. The spans
+    are recorded as the same phase_enter/phase_exit pair, marked pre_phase_3 so
+    they add no consumer barrier. A no-op outside a topology runtime."""
+    runtime = ACTIVE.get()
+    if runtime is None:
+        return
+    if runtime.span is not None:
+        runtime.scheduler.emit("phase_exit", phase=runtime.span, state="completed", pre_phase_3=True)
+        runtime.span = None
+    if name is not None:
+        runtime.scheduler.emit("phase_enter", phase=name, pre_phase_3=True)
+        runtime.span = name
+    runtime.write()
+
+
 def entrypoint(function):
     @wraps(function)
     def run(argv=None):
@@ -247,6 +278,10 @@ def entrypoint(function):
             lanes = read_lanes(args.topology_config)
         except (OSError, ValueError, TypeError):
             parser.error("Invalid topology lane configuration")
+        try:
+            graph = role_graph.load()
+        except (OSError, ValueError) as exc:
+            parser.error("Invalid role graph (config/role_graph.json): %s" % exc)
         import agent_wrapper
         if agent_wrapper._QWEN_MODELS:
             parser.error("dependency_dag requires a fresh process without a reference model cache")
@@ -259,7 +294,7 @@ def entrypoint(function):
                                                        agent_wrapper._local_checkpoint_path)
             except (OSError, ValueError, KeyError):
                 parser.error("Cannot establish independent cached local model families")
-        runtime = Runtime(lanes)
+        runtime = Runtime(lanes, graph)
         runtime.optimized = args.execution_topology == "report_optimized"
         token = ACTIVE.set(runtime)
         try:

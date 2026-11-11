@@ -48,6 +48,7 @@ import execution_topology
 import run_options
 import semantic_waves
 import agent_activation
+import reply_records
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
 import amendment_render
@@ -56,7 +57,6 @@ from constitution import Constitution
 from message_bus import MessageBus
 import ontology_capture
 import ontology_graph
-import ontology_gnn
 import ontology_store
 from convention_parser import parse_conventions, write_registry
 import convention_assignment
@@ -76,7 +76,9 @@ from shimmer_logging import get_logger, log_phase_done, log_event
 from orchestrator import OperatorDecision, TopOrchestrator
 import finding_record
 import paired_review as paired_review_mod
+import judge_agent as _judge_agent_mod
 import pairing_map as pairing_map_mod
+import reviewed_document as reviewed_document_mod
 import absence_prediction
 import reference_tables as reference_tables_mod
 from pipeline_amendment_validator import validate_amendment_payload
@@ -92,6 +94,7 @@ import run_completion as run_completion_mod
 from review_scope import apply_cutoff
 from search_router import SearchRouter
 from summary_generators import render_context_summary, render_operative_summary
+import summary_generators
 import text_extract
 
 
@@ -345,6 +348,9 @@ PRODUCTION_AGENTS_PER_DOC = ["PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST"]
 PRODUCTION_AGENTS_CORPUS_LEVEL = ["ARCHIVIST", "INST_FINDER", "CITATION_RESOLVER"]
 AUDIT_AGENTS_PER_DOC = ["VERIFIER", "FACT_CHECKER"]
 CONVENTION_REVIEW_AGENTS = ["PRACTICE_AUDITOR", "STYLE_GUARDIAN"]
+# Open item 80: the other agents whose model findings the master lists, so the document's
+# summaries count and show the same model findings the master does.
+SUMMARY_ONLY_FINDING_AGENTS = ("VERIFIER", "FACT_CHECKER", "LEGAL_ANALYST")
 
 # Job B: an output budget per CALL TYPE, not one blanket number for every call.
 # Before this, every local call (agent_wrapper.py's own hardcoded ceiling) was
@@ -365,11 +371,24 @@ PAIRED_JUDGING_MAX_TOKENS = 768       # PRACTICE_AUDITOR etc: one unit, one rule
                                        # a handful of findings at most; the
                                        # largest of 5 real, uncapped calls was
                                        # 645 tokens (see above)
-AUDIT_MAX_TOKENS = 2048               # VERIFIER, FACT_CHECKER: an open-ended
-                                       # audit of one document's whole draft,
-                                       # capped at 1024 with direct evidence of
-                                       # a lost finding (VERIFIER's contract
-                                       # violation, 13:11:26Z on the run above)
+AUDIT_MAX_TOKENS = 2048               # FACT_CHECKER (VERIFIER before D-134): an
+                                       # open-ended audit of one document's whole
+                                       # draft, capped at 1024 with direct
+                                       # evidence of a lost finding (VERIFIER's
+                                       # contract violation, 13:11:26Z on the run
+                                       # above)
+VERIFIER_MAX_TOKENS = 4096            # VERIFIER alone (D-134, D-S14 item 3).
+                                       # Measured, not preferred: replay R2c (A10,
+                                       # sdpa_constrained, the run's own loader)
+                                       # of the 8 VERIFIER prompts whose saved
+                                       # replies stopped at 2048: 4 ended on
+                                       # their own at 2342 to 3590 tokens and
+                                       # passed the unchanged validator, 4 still
+                                       # reached 4096; no out-of-memory failure
+                                       # (largest prompt 41371 tokens), peak
+                                       # 21.89 GB allocated as at 2048.
+                                       # FACT_CHECKER keeps AUDIT_MAX_TOKENS: it
+                                       # was not measured.
 PRODUCTION_MAX_TOKENS = 2048          # ARCHIVIST, INST_FINDER, CITATION_RESOLVER,
                                        # PROCESSOR, SPEECH_ACT_TAGGER, LEGAL_ANALYST
                                        # pass one: 4 of 6 on the run above hit
@@ -428,30 +447,27 @@ def _convention_review_firing_agents(convention_assignment):
 
 # local RUNDAY: the local-profile checkpoint ids are operator-selectable via
 # config/local_models.json (active_producer / active_auditor) so the original
-# full-precision checkpoints stay available by editing one file. The literals below are
+# full-precision checkpoints stay available by editing one file. The registry's ids are
 # the FALLBACK used when that file is absent or unreadable, so deleting it restores the
 # pre-existing behaviour byte for byte. _resolve_local_models() rewrites the ids at
 # import time; the backend column (which decides the LAW-III family split) is never
-# touched by config, only the model id is.
-_LOCAL_PROFILE = {
-    "PROCESSOR":               ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "LEGAL_ANALYST":           ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "STYLE_GUARDIAN":          ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "ARCHIVIST":               ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "INST_FINDER":             ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "CITATION_RESOLVER":       ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "SPEECH_ACT_TAGGER":       ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "AMENDMENT_DRAFTER":       ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "EDITOR_CLERK":            ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "EDITOR_HEAD_OF_UNIT":     ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "EDITOR_HEAD_OF_SECTION":  ("local_producer", "Qwen/Qwen2.5-7B-Instruct"),
-    "VERIFIER":                ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-    "FACT_CHECKER":            ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-    "PRACTICE_AUDITOR":        ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-    "EDITOR_HEAD_OF_DEPARTMENT": ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-    "EDITOR_DEPUTY_DG":        ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-    "EDITOR_DG":               ("local_auditor", "microsoft/Phi-3.5-mini-instruct"),
-}
+# touched by local_models.json, only the model id is.
+#
+# D-S57 item 2 (lane/auditor): the role-to-model map itself lives in
+# config/agent_registry.json, each agent's `local` block (backend and model), beside its cloud
+# backend and model, so model choice has one owner. It was this module's own literal table; the
+# table moved unchanged, every row the same. JUDGE's block names no model (INFRA-049): its model
+# is its own spec.model, which _resolve_local_models reads for an entry whose model is None.
+def _registry_local_profile(project_root: Path) -> dict:
+    """{agent: (local backend, model)} from config/agent_registry.json's `local` blocks. An agent
+    without one is left out, which check 127 refuses; an unreadable registry raises, since no
+    run can start without it."""
+    registry = json.loads((project_root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
+    return {name: (spec["local"]["backend"], spec["local"]["model"])
+            for name, spec in registry["agents"].items() if isinstance(spec.get("local"), dict)}
+
+
+_LOCAL_PROFILE = _registry_local_profile(ROOT)
 
 
 def _resolve_local_models(profile: dict, project_root: Path) -> dict:
@@ -463,18 +479,29 @@ def _resolve_local_models(profile: dict, project_root: Path) -> dict:
     missing/blank key leaves that role's original id in place and logs which id is in
     force, so a config typo can never quietly load a model the operator did not choose.
     The backend column is NEVER read from config, so LAW-III's producer/auditor family
-    split cannot be reconfigured away (gate check 87 keeps its meaning)."""
+    split cannot be reconfigured away (gate check 87 keeps its meaning).
+
+    An entry whose model is None runs a model of its own (INFRA-049, D-313: the judge is the
+    model that was trained, calibrated and tested): it takes the agent's spec.model from
+    config/agent_registry.json, never the producer's or the auditor's checkpoint, and with no
+    readable registry entry it keeps None, which the wrapper refuses as no model configured."""
     cfg = {}
     path = project_root / "config" / "local_models.json"
     try:
         cfg = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         cfg = {}
+    try:
+        agents = json.loads((project_root / "config" / "agent_registry.json").read_text(encoding="utf-8")).get("agents", {})
+    except Exception:
+        agents = {}
     producer = (cfg.get("active_producer") or "").strip()
     auditor = (cfg.get("active_auditor") or "").strip()
     out = {}
     for agent, (backend, model) in profile.items():
-        if backend == "local_producer" and producer:
+        if model is None:
+            out[agent] = (backend, ((agents.get(agent) or {}).get("model") or "").strip() or None)
+        elif backend == "local_producer" and producer:
             out[agent] = (backend, producer)
         elif backend == "local_auditor" and auditor:
             out[agent] = (backend, auditor)
@@ -566,13 +593,17 @@ def _local_progress_reset(expected: int) -> None:
     _LOCAL_PROGRESS_STOP.clear()
 
 
-def _local_progress_baseline(num_op_docs: int) -> int:
+def _local_progress_baseline(num_op_docs: int, run_ctx=None) -> int:
     """The known-minimum agent-call count for the calls _run_one covers (see the scope
-    note above): corpus-level (always 3), per-doc production/audit/convention-review
+    note above): corpus-level (3, less any agent the operator switched off by a
+    ratified SHIMMER_INST_FINDER setting, a declared state and never counted as a
+    missing call), per-doc production/audit/convention-review
     (always run once per op doc), AMENDMENT_DRAFTER (usually once per doc; the rare
     bus-reuse skip is not subtracted, an accepted small overcount for a progress display,
-    not a correctness-critical count)."""
-    return (len(PRODUCTION_AGENTS_CORPUS_LEVEL)
+    not a correctness-critical count). The switch is the decision main() saved in
+    `run_ctx` at start-up (_inst_finder_decision)."""
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
+    return (len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
             + len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
             + len(AUDIT_AGENTS_PER_DOC) * num_op_docs
             + len(CONVENTION_REVIEW_AGENTS) * num_op_docs
@@ -753,13 +784,22 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
                   level="warning", agent=drafter.name,
                   run_id=getattr(run_ctx, "run_id", "") or "")
     drafter._cost_call_id = call_id
+    # INC-031: the memo goes through the backend the drafter resolved (dispatch, the one
+    # place that picks the backend function), its budget under the keyword that backend
+    # takes, as run_task passes it. It used to call call_claude whatever the backend.
+    import decoding_policy as _dp
+    budget = ({"max_new_tokens": 4096} if drafter.backend in _dp.LOCAL_BACKENDS
+              else {"max_tokens": 4096})
     try:
         # CallResult carries the response text in .raw_text (there is no .text).
         r = agent_activation.direct_call(drafter, call_id,
-            lambda: drafter.call_claude(stable, dynamic, max_tokens=4096),
+            lambda: drafter.dispatch(stable, dynamic, **budget),
             reason="draft_task_memo", source_phase="0", evidence={"task": "draft"})
     finally:
         drafter._cost_call_id = ""
+    reply_records.write_outcome(run_ctx, call_id, "free_text" if getattr(r, "ok", False)
+                                else "backend_failure", source="draft_memo",
+                                truncated=(getattr(r, "usage", None) or {}).get("truncated"))
     return r.raw_text if getattr(r, "ok", False) else ""
 
 
@@ -1307,6 +1347,87 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
     return out
 
 
+def _inst_finder_switch(root):
+    """The operator's INST_FINDER setting for this run, read from the environment
+    variable SHIMMER_INST_FINDER, as a flat record.
+
+    The value `off` asks for INST_FINDER to be switched off; any other value, or
+    no value, means on, and on is the default. Switching a production agent off
+    changes governed inter-agent structure, so `off` is honoured ONLY when
+    <root>/config/constitution.json holds an amendment with operator_approved
+    true whose `change` names both INST_FINDER and SHIMMER_INST_FINDER (no
+    amendment id is written here; docs/INST_FINDER_SWITCH_DELTA_DRAFT.md is the
+    draft). Otherwise the record carries a one-line refusal and the run must not
+    start: the setting is never ignored silently.
+
+    The agent is never removed from PRODUCTION_AGENTS_CORPUS_LEVEL or from the
+    registry: `switched_off` names the agents phase 3-4 does not dispatch."""
+    value = os.environ.get("SHIMMER_INST_FINDER")
+    record = {"variable": "SHIMMER_INST_FINDER", "value": value, "agent": "INST_FINDER",
+              "setting": "off" if value == "off" else "on",
+              "switched_off": [], "ratified_by": None, "refusal": None}
+    if record["setting"] == "on":
+        return record
+    try:
+        amendments = json.loads((Path(root) / "config" / "constitution.json").read_text(
+            encoding="utf-8")).get("amendments") or []
+    except (OSError, ValueError, AttributeError):
+        amendments = []
+    for amendment in amendments:
+        if not isinstance(amendment, dict) or amendment.get("operator_approved") is not True:
+            continue
+        change = amendment.get("change")
+        text = change if isinstance(change, str) else json.dumps(change, ensure_ascii=False)
+        if (re.search(r"(?<![A-Za-z0-9_])INST_FINDER(?![A-Za-z0-9_])", text)
+                and re.search(r"(?<![A-Za-z0-9_])SHIMMER_INST_FINDER(?![A-Za-z0-9_])", text)):
+            record["switched_off"] = ["INST_FINDER"]
+            record["ratified_by"] = str(amendment.get("id") or "")
+            return record
+    record["refusal"] = (
+        "[inst-finder-switch] STOP: SHIMMER_INST_FINDER=off switches INST_FINDER off, a change "
+        "to governed inter-agent structure, and config/constitution.json holds no "
+        "operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER; "
+        "ratify the DELTA drafted in docs/INST_FINDER_SWITCH_DELTA_DRAFT.md, or unset the variable.")
+    return record
+
+
+def _inst_finder_startup_guard(run_ctx, root):
+    """The start-up guard for SHIMMER_INST_FINDER: saves the setting in the run
+    folder beside the run options (audit/agent_switches.json, written on every
+    run, `on` included) and returns the one-line refusal when `off` is not
+    ratified, else None. main() prints the refusal and exits 9 before any model
+    call."""
+    switch = _inst_finder_switch(root)
+    path = run_ctx.audit_dir() / "agent_switches.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(dict(schema_version=1, **switch), indent=2, ensure_ascii=False)
+                    + "\n", encoding="utf-8")
+    return switch["refusal"]
+
+
+def _inst_finder_decision(run_ctx, root):
+    """The INST_FINDER decision for this run, made ONCE. main() makes it at start
+    and saves it (audit/agent_switches.json, through _inst_finder_startup_guard);
+    phase 3-4, the progress baseline and the cost projection read that saved
+    record, so a constitution or environment changed after start-up cannot change
+    what is dispatched or counted. Only where no record was saved (a fixture, or a
+    helper called with no run context) is the decision computed here from `root`.
+    A saved record that cannot be read refuses rather than being recomputed."""
+    audit_dir = getattr(run_ctx, "audit_dir", None)
+    path = audit_dir() / "agent_switches.json" if callable(audit_dir) else None
+    if path is None or not path.exists():
+        return _inst_finder_switch(root)
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        record = None
+    if not (isinstance(record, dict) and isinstance(record.get("switched_off"), list)
+            and all(key in record for key in ("variable", "value", "ratified_by", "refusal"))):
+        raise RuntimeError("[inst-finder-switch] STOP: the decision saved at start-up "
+                           "(audit/agent_switches.json) cannot be read; the run does not guess it.")
+    return record
+
+
 # ---------- pipeline phases ----------------------------------------------------------------
 
 @execution_topology.phase_boundary
@@ -1322,8 +1443,27 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     digest = "\n\n=========\n\n".join(
         f"### Document: {d['name']}\n\n{_truncate(d['text'], 1200)}" for d in all_docs
     )
+    # SHIMMER_INST_FINDER: an agent the operator switched off (ratified DELTA only)
+    # stays in PRODUCTION_AGENTS_CORPUS_LEVEL and is skipped here, recorded as not
+    # called. `dispatched` labels the gathered results, so each carries its own name.
+    # The decision is the one main() saved at start-up (_inst_finder_decision).
+    switch = _inst_finder_decision(getattr(orch, "run_context", None),
+                                   getattr(getattr(orch, "run_context", None), "project_root", None) or ROOT)
+    if switch["refusal"]:
+        raise RuntimeError(switch["refusal"])
+    switched_off = set(switch["switched_off"])
+    dispatched = [name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off]
     corpus_calls = []
     for agent_name in PRODUCTION_AGENTS_CORPUS_LEVEL:
+        if agent_name in switched_off:
+            agent_activation.not_called(getattr(orch, "run_context", None), agent_name,
+                reason="switched off by operator setting", source_phase="3-4", eligible=False,
+                state="switched_off", trigger_source="operator_setting",
+                evidence={"variable": switch["variable"], "value": switch["value"],
+                          "ratified_by": switch["ratified_by"]})
+            log_event(_LOG, f"production_agent_switched_off agent={agent_name} source=SHIMMER_INST_FINDER",
+                      run_id=_run_id_of(orch), phase="3-4", agent=agent_name)
+            continue
         wrapper = _build_wrapper(agent_name, orch, keys)
         payload = {"task": "corpus_level_analysis",
                    "documents": [d["name"] for d in all_docs],
@@ -1341,7 +1481,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     if corpus_calls:
         corpus_results = await _gather_or_serial(corpus_calls)
         results.extend({"scope": "corpus", "agent": name, **r}
-                       for name,r in zip(PRODUCTION_AGENTS_CORPUS_LEVEL,corpus_results))
+                       for name,r in zip(dispatched,corpus_results))
     # Per-doc only for OPERATIONAL docs (context is reference only).
     # Per Part XXI amendment, LEGAL_ANALYST gets provision-aware context refs.
     # Per Part XXVI, LEGAL_ANALYST also receives the structural inventory
@@ -1561,10 +1701,21 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             if name == 'VERIFIER':
                 wrapper._auditor_pair_request = dict(document=doc, producer=proc,
                     references=[entry.as_dict() for entry in reference_index.find_by_document(doc['id'])])
+                # D-S57 item 1 (lane/auditor): VERIFIER as one narrow question per pair Python
+                # built, decided from the model's own probabilities, once its form is adopted
+                # and its threshold measured (config/auditor_questions.json); otherwise the
+                # shipped call below, unchanged.
+                import auditor_pairs
+                import auditor_questions
+                question = auditor_questions.load_config()["pair_fidelity"]
+                if auditor_pairs.eligible(wrapper, payload) and auditor_questions.asks(question, name):
+                    names.append(name)
+                    tasks.append(asyncio.to_thread(_verifier_pair_decisions, orch, doc, wrapper, payload, question))
+                    continue
             names.append(name)
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
-                                  max_tokens=AUDIT_MAX_TOKENS,
+                                  max_tokens=VERIFIER_MAX_TOKENS if name == "VERIFIER" else AUDIT_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=_doc_refs_excerpt(reference_index, doc['id']),
                                   activation={"reason": "source_and_draft_audit", "source_phase": "5",
@@ -1578,6 +1729,72 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
     for sub in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         out.extend(sub)
     return out
+
+
+def _verifier_pair_decisions(orch, doc, wrapper, payload, question):
+    """D-S57 item 1 (lane/auditor): VERIFIER's pair fidelity, one narrow question per pair
+    auditor_pairs built (the same pairs and evidence Auditor896 is shown, which still runs on
+    each), decided from the model's own probabilities with no text (config/auditor_questions.json).
+    A settled answer is one VERIFIER item joined to its pair by auditor_pair_id, posted under the
+    model's backend and model (written by the model, never promoted); an unsettled or failed one
+    writes none and is listed in `pair_decisions`. The join with Auditor896 is recorded as for the
+    shipped call (auditor_pairs.compare). Returns the result phase 5 keeps for VERIFIER."""
+    import auditor_pairs
+    import auditor_questions
+    import choice_decision
+    shown = auditor_pairs.prepare_context(wrapper, payload)
+    records = {r["pair_id"]: r for r in (getattr(wrapper, "_auditor_pair_state", None) or [])}
+    seen, call_of = {}, {}
+    ask = _narrow_ask(
+        orch, doc, wrapper, "VERIFIER", {"id": ""}, {}, task="pair_fidelity_decision",
+        plan_kind="pair_fidelity", context=doc.get("text", ""), decided=True, phase="5",
+        trigger_source="operational_document",
+        send=lambda stable, dynamic: wrapper.call_choice(
+            stable + ("\n\n" + dynamic if dynamic else ""), auditor_questions.answers(question),
+            auditor_questions.threshold_of(question)),
+        answer_of=lambda res: res.parsed if getattr(res, "ok", False) else None,
+        outcome_of=lambda res: "decided" if getattr(res, "ok", False) else "backend_failure",
+        seen=seen, call_of=call_of)
+    items, decisions = [], []
+    for view in (shown.get("auditor_pair_context") or {}).get("pairs") or []:
+        record = records.get(view.get("pair_id"))
+        source = (view.get("source_evidence") or {}).get("text", "")
+        prompt, decision, why = None, None, None
+        try:
+            prompt = auditor_questions.render_pair(question, source, view.get("producer_item"))
+            decision = ask(prompt)
+        except choice_decision.ChoiceRefused as e:
+            why = str(e)
+        item = auditor_questions.pair_item(decision, question, record, source) if decision and record else None
+        if item is not None:
+            item["item_id"] = "VERIFIER:finding:%s" % record["pair_id"]
+            items.append(item)
+        decisions.append({"pair_id": view.get("pair_id"), "call_id": call_of.get(prompt),
+                          "decided": (decision or {}).get("decided"), "settled": bool((decision or {}).get("settled")),
+                          "confidence": (decision or {}).get("confidence"), "not_asked": why,
+                          "failed": prompt is not None and decision is None})
+    envelope = agent_wrapper.make_envelope("VERIFIER", str(doc["id"]), items)
+    backend, model = seen.get("backend") or wrapper.backend, seen.get("model") or wrapper.model
+    if items:
+        try:
+            wrapper.post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "AGENT_OUTPUT", "backend": backend or "", "model": model or "",
+                      "item_count": len(items), "parse_trace": {}, "payload": envelope, "stamped_by": "python"},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "pair fidelity: the model's answer on each pair, read from "
+                                                  "its probabilities; the item written by the pipeline that asked"})
+        except Exception as e:
+            log_event(_LOG, f"pair_fidelity_bus_post_error error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5", doc_id=doc["id"])
+    failed = sum(d["failed"] for d in decisions)
+    result = {"ok": not failed, "parsed": envelope, "raw_text": json.dumps(envelope), "contract_missing": [],
+              "error": ("%d pair decisions failed" % failed) if failed else None, "item_count": len(items),
+              "backend": backend, "model": model, "pair_decisions": decisions}
+    auditor_pairs.compare(wrapper, result)
+    log_event(_LOG, f"pair_fidelity_decisions pairs={len(decisions)} items={len(items)} failed={failed}",
+              run_id=_run_id_of(orch), phase="5", doc_id=doc["id"])
+    return result
 
 
 def _prior_docs_for(ctx_docs, manifest, op_docs):
@@ -1660,10 +1877,12 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
         ref_tables = reference_tables_mod.tables_from_entries(
             context_refs, exclude_document_id=doc["id"], known_units=known_units)
         # Every label ANY unit of this document carries: a term is "absent" only
-        # when no unit states it any more, not when it moved between headings.
+        # when no unit states it any more, not when it moved between headings. A table
+        # row still standing states its term too (D-275).
         present_all = set()
         for u in unit_text.values():
             present_all |= pairing_map_mod.unit_fields(u.get("text", ""))
+            present_all |= paired_review_mod.table_row_labels(u.get("text", ""), known_units)
 
         records, n_checks, n_refused = [], 0, 0
         for entry in pairing.get("units", []):
@@ -1709,6 +1928,7 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
                 if c.get("stated_field") not in minted_fields:
                     refused2.append({"label": c.get("stated_field", ""),
                                      "reason": "no rule to cite for this comparison",
+                                     "reason_kind": "no_rule",
                                      "ref_ids": list(c.get("ref_ids") or [])})
             entry["prior_comparisons"] = {
                 "hit_count": len(hits),
@@ -1726,7 +1946,8 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
         slugs_here = {e["unit_id"].split("-", 1)[1] for e in pairing.get("units", [])
                       if "-" in e["unit_id"]}
         orphan = [{"label": " ".join(x["label"]), "unit_slug": x.get("unit_slug", ""),
-                   "reason": "the earlier document's heading has no counterpart here"}
+                   "reason": "the earlier document's heading has no counterpart here",
+                   "reason_kind": "orphan"}
                   for x in index["lines"]
                   if x["label"] not in present_all and x.get("unit_slug") not in slugs_here]
         if orphan:
@@ -1813,6 +2034,12 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
             )
             pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
             doc["_pairing"] = pairing
+            # Reader check RC2/RC3: where Python can place each unit's own passage
+            # in the reference index, a computed finding cites THAT passage, not
+            # whichever document excerpt happened to rank first.
+            doc["_unit_refs"] = paired_review_mod.unit_passage_refs(
+                paired_review_mod.unit_texts_for(doc["text"], doc["id"]),
+                reference_index.entries, doc["id"])
             log_event(_LOG,
                       f"pairing_map units={pairing['unit_count']} rules={pairing['rule_count']} "
                       f"pairs={pairing['pair_count']} rejected={pairing['rejected_count']} "
@@ -1861,7 +2088,8 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                 orch, keys, doc, pairing, convention_registry, refs_excerpt,
                 run_objectives, doc_pos, n_docs, pairs_per_unit,
                 context_refs=all_context_refs,
-                convention_assignment=convention_assignment, prediction=prediction)
+                convention_assignment=convention_assignment, prediction=prediction,
+                prior_declared=bool(prior_docs))
             if pairing is not None:
                 prediction.finished(doc["id"])
             return prior_results + reviewed
@@ -2162,12 +2390,19 @@ def _wide_registry_for_agent(convention_registry, convention_assignment, agent_n
 
 def _wide_not_judged(convention_registry, convention_assignment):
     """The rules no convention-review agent is shown in wide mode, for the
-    pairing map's record: one entry per rule, no unit (wide mode has no plans)."""
+    pairing map's record: one entry per rule, no unit (wide mode has no plans). A rule declaring
+    `compare` is here whoever is shown it: its questions are asked only in a paired review."""
     if convention_assignment is None:
         return []
     out = []
     for c in convention_registry.get("conventions", []):
-        if _paired_judging_agent(c, convention_assignment) is None:
+        if c.get("compare"):
+            cells = c.get("compare") == "cells"
+            out.append({"unit_id": None, "rule_id": c.get("id"), "kind": "wide",
+                        "reason": ("nothing asked: a claim on cells is asked only in a paired review" if cells else
+                                   "no pair asked: pairs of passages are asked only in a paired review"),
+                        "why": "cells_in_wide" if cells else "compare_in_wide", "consumer_agents": [], "status": "not_asked"})
+        elif _paired_judging_agent(c, convention_assignment) is None:
             reason, consumers, status = _not_judged_reason(c, convention_assignment)
             out.append({"unit_id": None, "rule_id": c.get("id"), "kind": "wide",
                         "reason": reason, "consumer_agents": consumers, "status": status})
@@ -2177,7 +2412,8 @@ def _wide_not_judged(convention_registry, convention_assignment):
 async def _paired_convention_review(orch, keys, doc, pairing, convention_registry,
                                     refs_excerpt, run_objectives, doc_pos, n_docs,
                                     pairs_per_unit, *, context_refs=(),
-                                    convention_assignment=None, prediction=None):
+                                    convention_assignment=None, prediction=None,
+                                    prior_declared=False):
     """structure H5. One narrow call per (unit, rule) pair, arithmetic in Python.
 
     Three arithmetic outcomes per pair; a disagreement or an uncomputable
@@ -2222,7 +2458,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     for unit in unit_text.values():
         vocabulary |= pairing_map_mod.unit_fields(unit.get("text", ""))
 
-    pairs, dropped = paired_review_mod.pairs_from_map(pairing, cap_per_unit=pairs_per_unit)
+    pairs, dropped = paired_review_mod.pairs_from_map(
+        pairing, cap_per_unit=pairs_per_unit,
+        not_unit_rules={c.get("id") for c in convention_registry.get("conventions", []) if c.get("compare")})
     # structure H7: ONE call per distinct computed disagreement, not one per pair.
     # Measuring the plan showed the first version making 40 calls on the operator's
     # document, a projected 52 to 57 minutes against the 40.3 minute wide run it
@@ -2275,7 +2513,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         if unit is None:
             continue
         entry["band_conditions"] = reference_tables_mod.band_conditions_for_unit(
-            ref_tables, unit.get("text", ""), rules, vocabulary=vocabulary)
+            ref_tables, unit.get("text", ""), rules, vocabulary=vocabulary, known_units=known_units)
     try:
         pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
     except Exception as e:  # a map that fails to rewrite must not take the review down
@@ -2287,11 +2525,17 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # it a scorer reads a suspended rule as NOT ASKED, when it was deliberately
     # not asked, and those are different facts.
     _suspensions = []
+    # RELATIONS-A: every rate, unit, copy or carry comparison Python could not
+    # decide, on the pairing map with its reason, never guessed.
+    _relation_refusals = []
+    # D-S57 item 1: the model questions not asked of a unit that carries only its heading.
+    _heading_only = []
     plans = paired_review_mod.plan_calls(
         unit_text, pairs, rules_by_id, vocabulary,
         needed_fields_for=lambda text: pairing_map_mod.needed_fields(text, vocabulary),
         reference_bands_for=_bands_for, known_units=known_units,
-        duration_bound_for=_duration_bound_for, suspension_sink=_suspensions)
+        duration_bound_for=_duration_bound_for, suspension_sink=_suspensions,
+        relation_refusal_sink=_relation_refusals, unasked_sink=_heading_only)
     if _suspensions:
         log_event(_LOG, f"paired_review_suspended count={len(_suspensions)}",
                   run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
@@ -2331,11 +2575,21 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     refused_judged = []
     judged_items_by_agent: dict = {}
     judged_provenance: dict = {}
+    # D-068: the kept answers on plans Python could compute nothing for, by agent,
+    # with the call that wrote them, and the answers Python refused.
+    uncomputable_items_by_agent: dict = {}
+    uncomputable_provenance: dict = {}
+    uncomputable_judged = []
+    refused_uncomputable = []
     if prediction is not None:
         prediction.planned(doc["id"], plans)
     if not plans:
         unresolved = bool(pairing.get("undecided_count") or pairing.get("rejected_count"))
+        # A rule declaring `compare` has no plan, and its agent has model work below.
+        pair_agents = {_paired_judging_agent(r, convention_assignment) for r in rules if r.get("compare")}
         for name in CONVENTION_REVIEW_AGENTS:
+            if name in pair_agents:
+                continue
             agent_activation.not_called(orch.run_context, name,
                 reason="existing_pairing_refusal" if unresolved else "planner_no_model_work",
                 source_phase="5.5", doc_id=doc["id"], trigger_source="paired_planner",
@@ -2344,6 +2598,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                           "undecided_count": pairing.get("undecided_count", 0),
                           "rejected_count": pairing.get("rejected_count", 0)})
     pending_judgments = []
+    # Reader check round 3 (item 2): every judging call, with what became of its
+    # reply (a note kept, no note returned, nothing to attach it to, a failed
+    # call), by agent; carried on the computed bus post and in the pairing map so
+    # a call the run counts is never missing from the record.
+    judging_calls_by_agent: dict = {}
     def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
@@ -2358,20 +2617,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             kept = []
             refusal_start = len(refused_judged)
             for item in judged:
-                refusal = None
-                if paired_review_mod.refuses_judged_absence(
-                        item, rule, fields_present_by_unit.get(unit["unit_id"])):
-                    if not str(item.get("quote") or "").strip():
-                        refusal = "absence claim supplies no quote"
-                    elif not pairing_map_mod._norm_label(item.get("stated_field") or item.get("field_label") or ""):
-                        refusal = "absence claim names no field"
-                    else:
-                        refusal = "claims a field absent that this unit carries"
-                elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
-                    # The finding quotes words the unit does not contain, so the
-                    # claim rests on text that is not there. Checked against the
-                    # same unit text the model was shown as document_text.
-                    refusal = "quotes text that does not appear in this unit"
+                # The quote is checked against the same unit text the model was
+                # shown as document_text (paired_review.judged_item_refusal).
+                refusal = paired_review_mod.judged_item_refusal(
+                    item, rule, fields_present_by_unit.get(unit["unit_id"]), unit.get("text"),
+                    prior_declared=prior_declared,
+                    # INFRA-051: only the rule-check step's reply names its plan kind.
+                    rule_check_plan=r.get("rule_check") if isinstance(r, dict) else None)
                 if refusal:
                     refused_judged.append({
                         "unit_id": unit["unit_id"], "rule_id": rule["id"],
@@ -2381,12 +2633,19 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                                     f"unit={unit['unit_id']} rule={rule['id']}",
                               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
                     continue
-                kept.append(item)
+                kept.append(paired_review_mod.mark_screened(item))
             if prediction is not None:
                 prediction.outcome(
                     doc["id"], plan_index, "returned", raw=judged, kept=kept,
                     refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
                     response_ok=isinstance(r, dict) and r.get("ok") is True)
+            # S2 checker round 3 (item 1): recorded once its items are known, with
+            # the claims listed and the claims refused; a failed call says so.
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                absence_listed=len(paired_review_mod.dedupe(kept)),
+                absence_refused=len(refused_judged) - refusal_start))
             judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
@@ -2399,12 +2658,75 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                       run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
             results.append(r)
             return
+        if plan.get("kind") == paired_review_mod.UNCOMPUTABLE_PLAN:
+            # D-068. Python could compute nothing for this unit and rule, so the
+            # model's answer on the text is the only answer there is. It used to
+            # be discarded (`advisory_not_kept`): a rule Python cannot check by
+            # arithmetic then had no answer at all. It is kept now as a MODEL's
+            # record, after the same stamping a judged absence gets (unit, item id
+            # and revision set by Python), the rule of the plan (never one the
+            # reply names) and the same refusals (judged_item_refusal); a failed
+            # or refused reply keeps nothing and says why. Posted with the model's
+            # backend and model, so it is written by `model`: never a Python
+            # finding, never promoted to an amendment (the promoter reads only
+            # Python's records), marked wherever model findings are shown.
+            not_kept = paired_review_mod.reply_kept_reason(r)
+            judged = [] if not_kept else paired_review_mod.stamp_from_plan(
+                _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id),
+                rule_id=rule["id"], source_rule_id=source_rule_id)
+            # Items without the Finding record's shape are not records; counted.
+            not_finding_shaped = 0 if not_kept else len(paired_review_mod.reply_items(r)) - len(judged)
+            kept, refused_here = [], 0
+            for item in judged:
+                refusal = paired_review_mod.judged_item_refusal(
+                    item, rule, fields_present_by_unit.get(unit["unit_id"]), unit.get("text"),
+                    prior_declared=prior_declared,
+                    # INFRA-051: only the rule-check step's reply names its plan kind.
+                    rule_check_plan=r.get("rule_check") if isinstance(r, dict) else None)
+                if refusal:
+                    refused_uncomputable.append({
+                        "unit_id": unit["unit_id"], "rule_id": rule["id"],
+                        "relation": item.get("relation"), "reason": refusal})
+                    refused_here += 1
+                    log_event(_LOG, f"paired_review_uncomputable_refused "
+                                    f"unit={unit['unit_id']} rule={rule['id']}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                    continue
+                kept.append(paired_review_mod.mark_screened(item))
+            kept = paired_review_mod.dedupe(kept)
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                judged_listed=len(kept), judged_refused=refused_here))
+            uncomputable_items_by_agent.setdefault(agent, []).extend(kept)
+            if kept:
+                uncomputable_provenance[agent] = (r.get("backend"), r.get("model"))
+                reply_records.write_outcome(orch.run_context, r.get("call_id"), "not_promoted",
+                                            source="paired_uncomputable", findings_withheld=len(kept))
+            uncomputable_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                                        "items": len(kept), "refused": refused_here,
+                                        "not_finding_shaped": not_finding_shaped,
+                                        "not_kept_reason": not_kept,
+                                        "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            log_event(_LOG, f"paired_review_uncomputable unit={unit['unit_id']} rule={rule['id']} "
+                            f"items={len(kept)} refused={refused_here}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            results.append(r)
+            return
         explanation = _first_explanation(r)
+        notes_kept = 0
         for check in paired_review_mod.disagreements(checks):
-            computed_items_by_agent.setdefault(agent, []).append(
-                paired_review_mod.finding_from_check(
-                    unit_id=unit["unit_id"], rule=rule, check=check,
-                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
+            item = paired_review_mod.finding_from_check(
+                unit_id=unit["unit_id"], rule=rule, check=check,
+                source_rule_id=source_rule_id, refs=refs, explanation=explanation,
+                unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"]))
+            # Reader check RD1: the record names the model call that wrote its note.
+            paired_review_mod.stamp_note_writer(item, r)
+            notes_kept += item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
+            computed_items_by_agent.setdefault(agent, []).append(item)
+        judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+            r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"], plan_kind=plan.get("kind"),
+            notes_kept=notes_kept, has_note=bool(explanation)))
         results.append(r)
 
     for plan_index, plan in enumerate(plans):
@@ -2471,6 +2793,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     evidence={"selected_agent": agent, "rule_id": rule["id"],
                               "unit_id": unit["unit_id"], "plan_index": plan_index})
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
+        # Reader check RC2/RC3 and S2 checker A8: the finding cites the unit's own
+        # passage when Python placed it, nothing when it could not (the record then
+        # sits at the document level); a compared passage is carried apart. The
+        # excerpt refs go to the model's payload only.
+        unit_ref = paired_review_mod.unit_ref_for(doc, unit["unit_id"])
+        # RELATIONS-A: a copy or carry cites the other unit's passage as compared.
+        paired_review_mod.attach_compared_unit_refs(checks, doc)
         # D, option 2, Python first: a declared required field absent from a unit
         # in scope is a finding Python decides, no call made; the record says so.
         if plan.get("kind") == "absence_computed":
@@ -2482,7 +2811,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             check = checks[0]
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
-                source_rule_id=source_rule_id, refs=refs)
+                source_rule_id=source_rule_id, refs=refs, unit_ref=unit_ref)
             if prediction is not None:
                 prediction.outcome(doc["id"], plan_index, "computed")
             item["absence_path"] = "computed"
@@ -2497,13 +2826,54 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             for check in paired_review_mod.disagreements(checks):
                 computed_items_by_agent.setdefault(agent, []).append(
                     paired_review_mod.finding_from_check(unit_id=unit["unit_id"], rule=rule,
-                        check=check, source_rule_id=source_rule_id, refs=refs))
+                        check=check, source_rule_id=source_rule_id, refs=refs,
+                        unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"])))
             agent_activation.not_called(orch.run_context, agent,
                 reason="exact_comparison_reason_rendered", source_phase="5.5", doc_id=doc["id"],
                 trigger_source="paired_plan", consumer="typed_finding_and_deterministic_reason",
                 evidence={"unit_id":unit["unit_id"],"rule_id":rule["id"],"plan_index":plan_index})
             continue
         wrapper = _build_wrapper(agent, orch, keys)
+        if plan.get("kind") in ("absence_judged", paired_review_mod.UNCOMPUTABLE_PLAN):
+            # D-S57 item 1 (lane/auditor): the rule check, one narrow question on the rule's words
+            # and the unit's text decided from the model's own probabilities
+            # (config/auditor_questions.json), only once its form is adopted and its threshold
+            # measured; otherwise the shipped call below, unchanged. The decision reaches
+            # consume_judgment as the reply it reads for its plan kind, so it is stamped, screened,
+            # counted and posted exactly as a model's answer is.
+            import auditor_questions
+            import choice_decision
+            question = auditor_questions.load_config()["rule_check"]
+            if auditor_questions.applies_to(question, plan["kind"]) and auditor_questions.asks(question, agent):
+                seen, call_of = {}, {}
+                ask = _narrow_ask(
+                    orch, doc, wrapper, agent, rule, {}, task="rule_check_decision",
+                    plan_kind=plan["kind"], context=doc.get("text", ""), decided=True,
+                    send=lambda stable, dynamic: wrapper.call_choice(
+                        stable + ("\n\n" + dynamic if dynamic else ""), auditor_questions.answers(question),
+                        auditor_questions.threshold_of(question)),
+                    answer_of=lambda res: res.parsed if getattr(res, "ok", False) else None,
+                    outcome_of=lambda res: "decided" if getattr(res, "ok", False) else "backend_failure",
+                    seen=seen, call_of=call_of)
+                prompt, decision = None, None
+                try:
+                    prompt = auditor_questions.render_rule_check(question, rule.get("rule", ""), unit.get("text", ""))
+                    decision = await asyncio.to_thread(ask, prompt)
+                except choice_decision.ChoiceRefused as e:
+                    log_event(_LOG, f"rule_check_decision_not_asked unit={unit['unit_id']} rule={rule['id']} "
+                                    f"reason={e}", run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                reply = auditor_questions.rule_check_reply(
+                    decision, question, plan_kind=plan["kind"], unit_text=unit.get("text", ""),
+                    ref=unit_ref if isinstance(unit_ref, str) else "",
+                    field_label=auditor_questions.absent_named_field(rule.get("rule", ""), unit.get("text", ""),
+                                                                     vocabulary),
+                    ok=decision is not None, call_id=call_of.get(prompt),
+                    backend=seen.get("backend") or wrapper.backend, model=seen.get("model") or wrapper.model)
+                if reply["unwritten"]:
+                    log_event(_LOG, f"rule_check_decision_unwritten unit={unit['unit_id']} rule={rule['id']} "
+                                    f"kind={plan['kind']}", run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, reply)
+                continue
         # docs/api/UNIT_CONTEXT_DESIGN.md, option B reached through D's scaffold:
         # unit_text (this document's own units, every one carrying index since
         # the order fix) lets build_pair_payload find this unit's real
@@ -2556,7 +2926,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         # explanation, so the reply's own items must not reach the bus as typed
         # findings. Posting them put 23 findings carrying no rule_id and no
         # unit_id on the 2026-09-11 clean run's bus, which nothing could check,
-        # cite or score, two of them plainly false.
+        # cite or score, two of them plainly false. D-068: an uncomputable plan's
+        # reply stays advisory on this post too; its kept answers travel only in
+        # Python's stamped copy (posted below), so each is counted once.
         advisory = plan.get("kind") != "absence_judged"
         planned_judgment = _run_one(
             wrapper, payload,
@@ -2581,6 +2953,19 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         judgment_results = await _gather_or_serial([p for p,c in pending_judgments])
         for (_, context), result in zip(pending_judgments, judgment_results):
             consume_judgment(*context, result)
+
+    # P2 (a): a rule declaring `[compare: passages]` has pairs of the document's passages
+    # judged. Its records are a model's, kept on the D-068 path: marked, never promoted.
+    pairing["passage_pairs"] = await asyncio.to_thread(
+        _passage_pair_review, orch, keys, doc, rules, unit_text, convention_assignment, convention_registry,
+        not_judged, uncomputable_items_by_agent, uncomputable_provenance,
+        fields_present_by_unit, refused_uncomputable, judging_calls_by_agent)
+    # P2 (b): a rule declaring `[compare: cells]` has its claim decided on each table's selected
+    # cells. A decision stands in this row and writes no finding (cell_selection.finding).
+    pairing["cell_claims"] = await asyncio.to_thread(
+        _cell_claim_review, orch, keys, doc, rules, unit_text, convention_assignment, convention_registry,
+        not_judged, uncomputable_items_by_agent, uncomputable_provenance,
+        fields_present_by_unit, refused_uncomputable, judging_calls_by_agent)
 
     # Every unit the map matched to nothing is still a finding, not a
     # silence, routed by its own nearest-miss rule's subject the same way a
@@ -2611,6 +2996,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # The judged answers Python refused, on the record beside the ones it kept.
     pairing["absence_refused"] = refused_judged
     pairing["absence_refused_count"] = len(refused_judged)
+    # D-068: every call on a plan Python could compute nothing for, with the answers
+    # kept as a model's records, the answers refused and why a reply gave none; the
+    # refusals listed apart from the absence refusals (they are not absences).
+    pairing["uncomputable_judged"] = uncomputable_judged
+    pairing["uncomputable_kept_count"] = sum(e["items"] for e in uncomputable_judged)
+    pairing["uncomputable_refused"] = refused_uncomputable
+    pairing["uncomputable_refused_count"] = len(refused_uncomputable)
     log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
                     f"reattributed={len(reattributed)} absence_computed="
                     f"{pairing['absence_computed_count']} absence_judged="
@@ -2621,7 +3013,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # logged numbers to discover that a plan of 75 produced 19 calls, and the
     # neighbour rule's 13 dropped plans looked like a model failure rather than
     # a question never asked. planned = made + not_judged + absence_computed.
-    pairing["calls_made"] = len(results)
+    pairing["calls_made"] = len(results) + sum(row["made"] for row in pairing["passage_pairs"] + pairing["cell_claims"])
+    # Reader check round 3 (item 2): what became of every call, beside the count.
+    pairing["judging_calls"] = [c for calls in judging_calls_by_agent.values() for c in calls]
     # SEVEN-A: the suspension evidence lands in the pairing map, which is the
     # artifact that already carries per-unit evidence (band_conditions,
     # prior_comparisons) and which a scorer already reads. A third fact beside
@@ -2636,6 +3030,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
              "detail": s["detail"]}
             for s in _suspensions]
         pairing["suspended_count"] = len(_suspensions)
+    pairing["relation_refusals"] = _relation_refusals
+    pairing["relation_refusals_count"] = len(_relation_refusals)
+    pairing["heading_only_unasked"] = _heading_only
     log_event(_LOG, f"paired_review_calls planned={len(plans)} made={len(results)} "
                     f"not_judged={len(not_judged)} "
                     f"absence_computed={pairing['absence_computed_count']}",
@@ -2666,7 +3063,13 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 _build_wrapper(agent, orch, keys).post_to_bus(
                     recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
                     body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
-                          "item_count": len(items), "parse_trace": {}, "payload": envelope},
+                          "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                          # Reader check RD1: the models whose sentences sit in
+                          # these records as notes, recorded where the records are.
+                          "note_models": paired_review_mod.note_models(items),
+                          # Reader check round 3 (item 2): every judging call this
+                          # agent made, kept note or not.
+                          "judging_calls": judging_calls_by_agent.get(agent, [])},
                     constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
                                         "resolution": "computed in code from the unit's own "
                                                       "figures; no model judged these values"})
@@ -2677,7 +3080,27 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
                             "parsed": envelope, "raw_text": "", "contract_missing": [],
                             "error": None, "item_count": len(items),
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python",
+                            "note_models": paired_review_mod.note_models(items)})
+
+    # Reader check round 3 (item 2): an agent whose judging calls produced no
+    # computed finding has no computed post to carry them, so they are posted on
+    # their own (no finding, no envelope: a record of calls and their outcomes).
+    for agent, calls in judging_calls_by_agent.items():
+        if computed_items_by_agent.get(agent) or not calls:
+            continue
+        try:
+            _build_wrapper(agent, orch, keys).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "PAIRED_JUDGING_CALLS", "backend": "paired", "model": "python",
+                      "doc_id": str(doc["id"]), "judging_calls": calls},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "judging calls recorded with their outcomes; "
+                                                  "no computed finding on these pairs"})
+        except Exception as e:  # a bus that refuses must not take the review down
+            log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                            f"error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     # D, option 2: the model's judged absence findings, stamped with the unit and
     # rule Python knows by construction and with absence_path=judged, posted under
@@ -2709,6 +3132,39 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             "error": None, "item_count": len(items),
                             "backend": backend or "", "model": model or ""})
 
+    # D-068: the model's kept answers on plans Python could compute nothing for, in
+    # one post per agent like a judged absence's stamped copy: the model's own
+    # backend and model (never "python", so written by `model`), stamped_by python
+    # and judged_path uncomputable on the body, and returned for phase 6, where they
+    # are shown as a model's findings, marked, and never promoted.
+    for agent, raw_items in uncomputable_items_by_agent.items():
+        items = paired_review_mod.dedupe(raw_items)
+        if not items:
+            continue
+        backend, model = uncomputable_provenance.get(agent, (None, None))
+        log_event(_LOG, f"paired_review_uncomputable_findings agent={agent} count={len(items)}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        envelope = agent_wrapper.make_envelope(agent, str(doc["id"]), items)
+        try:
+            _build_wrapper(agent, orch, keys).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "AGENT_OUTPUT", "backend": backend or "", "model": model or "",
+                      "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                      "stamped_by": "python",
+                      paired_review_mod.JUDGED_PATH_FIELD: paired_review_mod.JUDGED_PATH_UNCOMPUTABLE},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "a model's answer where Python could compute "
+                                                  "nothing: its unit and rule stamped by the "
+                                                  "pipeline that asked; not checked by Python"})
+        except Exception as e:
+            log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                            f"error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
+                            "parsed": envelope, "raw_text": "", "contract_missing": [],
+                            "error": None, "item_count": len(items),
+                            "backend": backend or "", "model": model or ""})
+
     # No plan and no missing-field finding at all: the document had nothing to
     # pair, but the phase still owes a result so downstream progress counting
     # and _items_for's per-agent lookups behave exactly as before this
@@ -2728,8 +3184,175 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": default_agent,
                             "ok": True, "parsed": envelope, "raw_text": "",
                             "contract_missing": [], "error": None, "item_count": 0,
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python", "note_models": []})
     return out_results
+
+
+def _judging_role(task, rule, convention_assignment, orch, deciding=True):
+    """(agent, contracts) of one narrow task (D-S55 item 4b): the registered agent whose contract
+    declares the task takes it, with its contracts, so its declared tools run; with none declaring
+    it the rule's subject chooses as before (`_paired_judging_agent`) and no tool is declared ({}),
+    which leaves the question and the review exactly as they were. Boot has already refused a
+    contract `judge_agent.refusals` names, so choosing here cannot raise."""
+    import judge_agent
+    registry, contracts = getattr(orch, "registry", None), getattr(orch, "contracts", None)
+    judge = judge_agent.role_for(task, registry, contracts, deciding)
+    if judge:
+        return judge, contracts
+    return _paired_judging_agent(rule, convention_assignment), {}
+
+
+def _write_tool_rows(orch, calls, call_of):
+    """The judge's tool records out of `calls` and into `<run>/audit/judge_tools.jsonl`, each joined
+    to its call by its question's digest; the pairing map row keeps none of them."""
+    import judge_agent
+    rows = calls.pop("tool_rows", None) or []
+    by_digest = {judge_agent.sha256(prompt): call_id for prompt, call_id in call_of.items()}
+    return judge_agent.write_tool_rows(getattr(orch, "run_context", None), rows, by_digest)
+
+
+def _narrow_ask(orch, doc, wrapper, agent, rule, judging_calls, **call):
+    """`ask(user)`, the one narrow call of the judging path (P2, D-S41): `narrow_call.narrow_ask`,
+    which the multi-round case phase uses too, on this orchestrator's run."""
+    import narrow_call
+    return narrow_call.narrow_ask(orch.run_context, _run_id_of(orch), doc, wrapper, agent, rule, judging_calls, **call)
+
+
+def _cell_claim_review(orch, keys, doc, rules, unit_text, convention_assignment,
+                       convention_registry, not_judged, items_by_agent, provenance,
+                       fields_present, refused, judging_calls):
+    """P2 (b), D-S42: each rule declaring `[compare: cells]` has its claim put, on each table's
+    selected cells, to its judging agent, one narrow question decided from the model's own
+    probabilities (D-S41). The row of each rule holds the decisions, identifiers and numbers only;
+    a decision writes no finding until a relation is ratified (`cell_selection.finding`). It runs in
+    a thread and is no scheduler task, as `_passage_pair_review` is. [] when no rule declares it."""
+    import cell_selection
+    import generation_observation
+    import passage_pairs
+    declared = cell_selection.declared(rules)
+    if not declared:
+        return []
+    config = cell_selection.load_config()
+    units = sorted(unit_text.values(), key=lambda u: u.get("index", 0))
+    context = "\n\n".join(str(u.get("text") or "") for u in units)
+    rows = []
+    for rule in declared:
+        agent, judge_contracts = _judging_role("cell_claim", rule, convention_assignment, orch)
+        if agent is None:
+            reason, consumers, status = _not_judged_reason(rule, convention_assignment)
+            not_judged.append({"unit_id": None, "rule_id": rule["id"], "kind": "cell_claim",
+                               "reason": reason, "consumer_agents": consumers, "status": status})
+            continue
+        wrapper = _build_wrapper(agent, orch, keys)
+        wrapper._optimized_semantics = True   # the model's own chat template, as measured
+        wrapper._free_form_call = True        # no envelope: the answer is a decision
+        seen, call_of = {}, {}
+        ask = _narrow_ask(orch, doc, wrapper, agent, rule, judging_calls, task="cell_claim",
+                          plan_kind=paired_review_mod.CELL_CLAIM_PLAN, context=context, decided=True,
+                          send=lambda stable, dynamic: cell_selection.call(wrapper, stable, dynamic, config),
+                          answer_of=cell_selection.answer_of, outcome_of=cell_selection.outcome_of,
+                          seen=seen, call_of=call_of)
+
+        def not_promoted(prompts):
+            for prompt in prompts:
+                reply_records.write_outcome(orch.run_context, call_of.get(prompt), "not_promoted",
+                                            source="cell_claim", findings_withheld=1)
+
+        source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
+        kept, calls = cell_selection.review(units, rule, source_rule_id, ask, config, embed_with=passage_pairs.embed,
+                                            fields_present=fields_present, on_kept=not_promoted,
+                                            contracts=judge_contracts)
+        _write_tool_rows(orch, calls, call_of)
+        items_by_agent.setdefault(agent, []).extend(kept)
+        refused.extend(calls["refused"])
+        if calls["failed"] or calls["raised"]:
+            generation_observation.mark_incomplete(orch.run_context)
+        entry = cell_selection.unjudged(rule["id"], calls)
+        if entry:
+            not_judged.append(entry)
+        if kept:
+            provenance[agent] = (seen.get("backend"), seen.get("model"))
+        rows.append(dict(calls, rule_id=rule["id"], agent=agent, kept=len(kept)))
+        log_event(_LOG, f"paired_review_cell_claims rule={rule['id']} made={calls['made']} "
+                        f"not_met={calls['not_met']}", run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+    return rows
+
+
+def _passage_pair_review(orch, keys, doc, rules, unit_text, convention_assignment,
+                         convention_registry, not_judged, items_by_agent, provenance,
+                         fields_present, refused, judging_calls):
+    """Find then judge (P2 (a), D-S38): each rule declaring `[compare: passages]` has the
+    document's proposed pairs put to its judging agent, one narrow question per pair and order,
+    in the shape the replay measured (one user turn through the model's own chat template, no
+    envelope). Returns the record for the pairing map, one row per rule; [] when none declares it.
+    It blocks on its calls, so it runs in a thread, as `_run_one`'s run_task does: `to_thread`
+    carries the context variables, this document's review waits for it, and under a topology
+    documents run one at a time. Its calls go to dispatch directly, so they are no scheduler task.
+    A pair across two units is a record naming both (INFRA-047), counted in the row as
+    `cross_unit_kept`. An answer Python refused joins `refused`, D-068's list. Every call made
+    joins `judging_calls`, as every plan's does. Under the config's `decision` form each
+    question is decided from the model's probabilities instead (D-S41), and the row carries
+    them; nothing else here differs."""
+    import generation_observation
+    import passage_pairs
+    import decoding_policy as _dp
+    declared = passage_pairs.declared(rules)
+    if not declared:
+        return []
+    config = passage_pairs.load_config()
+    units = sorted(unit_text.values(), key=lambda u: u.get("index", 0))
+    rows = []
+    prepared = None          # once per document, whatever number of rules declares it
+    answered = {}            # per model: its replies, what it reports itself as, their call ids
+    for rule in declared:
+        agent, judge_contracts = _judging_role("passage_pair", rule, convention_assignment, orch,
+                                               deciding=passage_pairs.deciding(config))
+        if agent is None:
+            reason, consumers, status = _not_judged_reason(rule, convention_assignment)
+            not_judged.append({"unit_id": None, "rule_id": rule["id"], "kind": "passage_pair",
+                               "reason": reason, "consumer_agents": consumers, "status": status})
+            continue
+        wrapper = _build_wrapper(agent, orch, keys)
+        wrapper._optimized_semantics = True   # the model's own chat template, as measured
+        wrapper._free_form_call = True        # the reply is the pair's own JSON, no envelope
+        budget = ({"max_new_tokens": config["max_new_tokens"]} if wrapper.backend in _dp.LOCAL_BACKENDS
+                  else {"max_tokens": config["max_new_tokens"]})
+        prepared = prepared or passage_pairs.prepare(units, config)
+        memo, seen, call_of = answered.setdefault(passage_pairs.model_of(wrapper), ({}, {}, {}))
+
+        ask = _narrow_ask(orch, doc, wrapper, agent, rule, judging_calls, task="passage_pair",
+                          plan_kind=paired_review_mod.PASSAGE_PAIR_PLAN, context=prepared["context"],
+                          decided=passage_pairs.deciding(config),
+                          send=lambda stable, dynamic: passage_pairs.call(wrapper, stable, dynamic, config, budget),
+                          answer_of=lambda r: passage_pairs.answer_of(r, config),
+                          outcome_of=lambda r: passage_pairs.outcome_of(r, config), seen=seen, call_of=call_of)
+
+        def not_promoted(prompts):
+            # A kept pair ends as D-068's kept answers do: a model's, never an amendment.
+            for prompt in prompts:
+                reply_records.write_outcome(orch.run_context, call_of.get(prompt), "not_promoted",
+                                            source="passage_pair", findings_withheld=1)
+
+        source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
+        kept, calls = passage_pairs.review(prepared, rule, source_rule_id, ask, config, memo=memo,
+                                           fields_present=fields_present, on_kept=not_promoted,
+                                           contracts=judge_contracts)
+        _write_tool_rows(orch, calls, call_of)
+        items_by_agent.setdefault(agent, []).extend(kept)
+        refused.extend(calls["refused"])
+        # A failed or raised call leaves a declared question unanswered: the run is not called
+        # semantically complete, as run_task's failed call under this wrapper setting is not.
+        if calls["failed"] or calls["raised"]:
+            generation_observation.mark_incomplete(orch.run_context)
+        entry = passage_pairs.unjudged(rule["id"], calls, kept)
+        if entry:
+            not_judged.append(entry)
+        if kept:
+            provenance[agent] = (seen.get("backend"), seen.get("model"))
+        rows.append(dict(calls, rule_id=rule["id"], agent=agent, kept=len(kept)))
+        log_event(_LOG, f"paired_review_passage_pairs rule={rule['id']} made={calls['made']} "
+                        f"kept={len(kept)}", run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+    return rows
 
 
 def _stamped_judged_items(result, agent, unit_id, rule_id, source_rule_id):
@@ -2750,14 +3373,11 @@ def _stamped_judged_items(result, agent, unit_id, rule_id, source_rule_id):
         raw = []
     out = []
     for idx, it in enumerate(raw):
-        if not isinstance(it, dict) or not finding_record.is_finding(it):
+        if not isinstance(it, dict) or not finding_record.is_finding_shaped(it):
             continue
-        item = dict(it)
+        item = dict(finding_record.with_readable_ids(it))
         item["unit_id"] = unit_id
-        if not finding_record.resolved_rule_id(item):
-            item["rule_id"] = rule_id
-        if source_rule_id and not item.get("source_rule_id"):
-            item["source_rule_id"] = source_rule_id
+        item = paired_review_mod.plan_rule(item, rule_id=rule_id, source_rule_id=source_rule_id)
         item["absence_path"] = "judged"
         item["item_id"] = f"{agent}:finding:{unit_id}:{rule_id}:{idx}"
         item["revision"] = 1
@@ -2919,12 +3539,17 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     own: two places to look means one of them goes unread. Omitted entirely when
     there are no external rules, which is every installation today, so the
     ordinary run summary is byte-for-byte what it was."""
+    # Imported here, not only at module level: the localization gate executes this
+    # function's own definition in an isolated namespace.
+    import finding_record
+    import search_router
+    import summary_generators
     deliv_dir = Path(deliv_dir)
     deliv_dir.mkdir(parents=True, exist_ok=True)
     total_amendments = sum((deliverables.get(d["id"]) or {}).get("amendment_count", 0)
                            for d in op_docs)
     lines = [
-        f'{localization.text('# Run summary (')}{task})',
+        f'{localization.text('# Run summary (')}{localization.label(task)})',
         "",
     ]
     if (question or "").strip():
@@ -2934,6 +3559,46 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         f'{localization.text('- documents reviewed: ')}{len(op_docs)}',
         f'{localization.text('- total amendments: ')}{total_amendments}',
         f'{localization.text('- total cost: $')}{total_cost_usd:.4f}',
+    ]
+    # SHIMMER_INST_FINDER, stated in every run summary from the record main() saved
+    # in this run's audit folder before any model call (a summary written outside a
+    # run has no record, and says so rather than guessing).
+    switch_path = deliv_dir.parent / "audit" / "agent_switches.json"
+    try:
+        switch = json.loads(switch_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        switch = None
+    if not isinstance(switch, dict):
+        lines.append(localization.text('- INST_FINDER: setting not recorded for this summary'))
+    # Reader check round 3 (item 9): the setting in plain words; the setting's
+    # internal name stays in audit/agent_switches.json.
+    elif switch.get("switched_off"):
+        lines.append(f'{localization.text('- INST_FINDER: switched off for this run by the operator, as ratified in amendment ')}{switch.get('ratified_by')}')
+    elif switch.get("setting") == "off":
+        lines.append(localization.text('- INST_FINDER: switched off without a ratified amendment, so the run refused to start'))
+    else:
+        lines.append(localization.text('- INST_FINDER: switched on for this run'))
+        try:
+            _states = json.loads((deliv_dir.parent / "audit" / "agent_activation.json")
+                                 .read_text(encoding="utf-8")).get("agent_states") or []
+        except (OSError, ValueError):
+            _states = None
+        _inst = next((r for r in (_states or []) if r.get("agent") == "INST_FINDER"), None)
+        if _inst is not None:
+            lines.append(f"{localization.text('- INST_FINDER model calls in this run: ')}{_inst.get('actual_calls', 0)}"
+                         + (localization.text(' (it produced no output)') if not _inst.get('actual_calls') else ""))
+    # D-S23 item 1: the backend profile in force and whether web access was open,
+    # decided by the one rule the search router refuses by.
+    if search_router.web_access_open():
+        lines.append(localization.text('- backend profile: cloud; web access: open for this run to agents whose registry allows it'))
+    else:
+        lines.append(f"{localization.text('- backend profile: ')}{search_router.backend_profile() or 'empty'}"
+                     f"{localization.text('; web access: closed for this run, no agent may reach the web')}")
+    # Open item 67: a memo that reached its output limit goes to review as it is, and says so.
+    import reply_records
+    if task == "draft" and reply_records.draft_memo_cut(deliv_dir.parent / "audit" / "model_replies"):
+        lines.append(localization.text('- draft memo: it reached its output limit, so its text may be cut off'))
+    lines += [
         "",
         localization.text('## Documents'),
         "",
@@ -2951,7 +3616,15 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
             absent = info.get("prior_absent_count", 0)
             if absent:
                 suffix += f', {absent}{localization.text(' absent since it')}'
+        # S2a, item 1: the run report names the model findings that were not
+        # promoted, with the same mark every other deliverable carries.
+        unpromoted = info.get("model_findings_not_promoted", 0)
+        if unpromoted:
+            suffix += (f', {unpromoted}{localization.text(' model finding(s) not promoted')}'
+                       f' ({localization.text(finding_record.MODEL_FINDING_MARK)})')
         lines.append(f'- [{doc['name']}]({doc['id']}/): {n}{localization.text(' amendment(s)')}{suffix}')
+    # S2a, item 7: relations Python computed, apart from relations only a model reported.
+    lines += summary_generators.relation_report_lines(deliverables, op_docs)
 
     # THREE-D: the refused pairs, on the surface the operator already reads.
     # Nothing is emitted when no external rules were supplied, so a run without
@@ -2986,7 +3659,7 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
 async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                             run_objectives, convention_registry, reference_index,
                             embed_store=None, max_concurrent_docs=4,
-                            amendment_polish=False, question=""):
+                            amendment_polish=False, question="", context_texts=None):
     """Produce context_summary, operative_summary, amendments JSON+md, amendments.docx.
 
     `question` (R6) is the operator's framing question for a review run, echoed in
@@ -3000,6 +3673,10 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
     `embed_store` (genesis Part XXI): when provided, per-doc context filtering
     uses cosine-similarity retrieval instead of Zipfian term matching. The
     REF-* citation format is identical regardless of which path runs.
+
+    `context_texts` ({document id: text} of the context documents) lets the grounding
+    summary show each cited passage whole, read again from its document
+    (reference_builder.with_whole_passages); the index's stored excerpt is clipped.
     """
     # Per-run deliverables folder (Part XXVII §A): output/runs/<run>/deliverables/.
     deliv_dir = orch.run_context.deliverables_dir()
@@ -3041,20 +3718,61 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
     # and returns (doc_id, info); the deliverables map is assembled from the returns.
     # The cross-doc steps above (WEB-REF minting, verifiability gate) stay serial.
     async def _process_doc(doc):
+        # S2a: every item is stamped with who wrote it, read off the envelope it was
+        # posted under (finding_record.written_by), BEFORE any copy is made: the
+        # promoter's input, the withheld list, the summaries, the master and the run
+        # summary all read that one stamp, so no file can call a model's finding
+        # computed or Python's finding a model's. (The identity test that used to
+        # decide _withheld below compared copies and counted computed findings as
+        # model findings in the run log.)
+        upstream_findings = {
+            name: _stamp_source_rule_ids(finding_record.stamp_written_by(
+                results, _items_for(results, name, doc_id=doc["id"]) or []), convention_registry)
+            for name, results in (("PRACTICE_AUDITOR", conv_review), ("STYLE_GUARDIAN", conv_review),
+                                  ("VERIFIER", audit), ("FACT_CHECKER", audit),
+                                  ("LEGAL_ANALYST", production))
+                                 # D-S55: a judge's records ride the convention review's results,
+                                 # under the agent its contract names (judge_agent.judges).
+                                 + tuple((n, conv_review) for n in _judge_agent_mod.judges(
+                                     getattr(orch, "registry", None), getattr(orch, "contracts", None)))}
         # Findings first: they determine the topical scope for context_summary too.
-        pa_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]) or [], convention_registry)
-        sg_findings = _stamp_source_rule_ids(
-            _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]) or [], convention_registry)
+        # Reader check RC6/RC7: a model's record reaches the deliverables without
+        # the fields that would make it read as checked, and says whether the unit
+        # it names states its figures at all.
+        _doc_units = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
+        _doc_unit_refs = paired_review_mod.unit_passage_refs(_doc_units, reference_index.entries, doc["id"])
+        model_findings = [finding_record.model_finding_for_reader(dict(
+                              f, agent=f.get("agent") or name,
+                              figures_in_unit=paired_review_mod.figures_in_unit(f, _doc_units),
+                              reader_notes=paired_review_mod.model_item_notes(
+                                  f, _doc_units, _doc_unit_refs, doc.get("_pairing"))))
+                          for name, group in upstream_findings.items() for f in group
+                          if finding_record.is_finding(f) and finding_record.is_model_written(f)]
         findings = []
+        other_model_findings = []
         categories_with_findings = set()
-        for agent, raw_findings in (("PRACTICE_AUDITOR", pa_findings),
-                                     ("STYLE_GUARDIAN", sg_findings)):
+        _rule_words = {c.get("id"): c.get("rule") for c in convention_registry.get("conventions", [])}
+        for agent, raw_findings in upstream_findings.items():
+            summary_only = agent in SUMMARY_ONLY_FINDING_AGENTS
+            if not summary_only and agent not in CONVENTION_REVIEW_AGENTS:
+                continue
             for f in raw_findings:
+                if summary_only and not (finding_record.is_finding(f) and finding_record.is_model_written(f)):
+                    continue
                 cat = _category_for_conv(finding_record.resolved_rule_id(f), convention_registry) or "unclassified"
                 normalized = _normalize_finding(f)
                 normalized["category"] = cat
                 normalized["agent"] = agent
+                # Reader check round 3 (item 7): the summaries format a figure with
+                # the same formatter and the same written numbers as the comment.
+                normalized["_written_tokens"] = paired_review_mod.written_tokens(f, _doc_units, _rule_words)
+                if finding_record.is_model_written(normalized):
+                    normalized["figures_in_unit"] = paired_review_mod.figures_in_unit(f, _doc_units)
+                    normalized["reader_notes"] = paired_review_mod.model_item_notes(
+                        f, _doc_units, _doc_unit_refs, doc.get("_pairing"))
+                if summary_only:
+                    other_model_findings.append(normalized)
+                    continue
                 findings.append(normalized)
                 categories_with_findings.add(cat)
 
@@ -3065,13 +3783,31 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         ctx_refs = _semantic_filter_context_refs(
             all_context_refs, doc["text"], embed_store, n=20,
         ) or _filter_context_refs_for_doc(all_context_refs, doc["text"])
+        # PATCH_2 review round 4 (item 4): each passage whole, for the scrub to match.
+        ctx_refs = reference_builder.with_whole_passages(ctx_refs, context_texts)
         topics = sorted(categories_with_findings) if categories_with_findings \
             else list(conventions_by_category.keys())
-        ctx_body = (
-            f"This document was reviewed against {n_total_conventions} conventions. "
-            f"{len(findings)} findings were produced by PRACTICE_AUDITOR and STYLE_GUARDIAN. "
-            f"The context references below are filtered for topical relevance to {doc['name']}."
-        )
+        # Reader check RC16: a topic is shown with its rules' ids and words, not
+        # as the bare category slug.
+        topics = [summary_generators.topic_line(t, conventions_by_category.get(t, []))
+                  for t in topics]
+        # S2a, item 2: the producer sentence is generated from what happened in this
+        # run: who wrote each finding (the stamp above) and which agents' model
+        # replies carried one. It used to name PRACTICE_AUDITOR and STYLE_GUARDIAN
+        # as producers whatever ran, including when STYLE_GUARDIAN never ran and
+        # Python computed every finding. The same counts go to the run log.
+        _judging_calls = (doc.get("_pairing") or {}).get("judging_calls") or []
+        # Open item 80: a model's untyped item is no finding in the master either (only
+        # reviewed_document.md counts it, as untyped_items), so the summaries leave it out too.
+        summary_findings = [f for f in findings if finding_record.is_finding(f)
+                            or not finding_record.is_model_written(f)] + other_model_findings
+        provenance = summary_generators.findings_provenance(summary_findings, judging_calls=_judging_calls)
+        log_event(_LOG, f"findings_provenance computed={provenance['computed']} "
+                        f"model={provenance['model']} "
+                        f"model_agents={','.join(provenance['model_agents']) or 'none'}",
+                  run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+        ctx_body = summary_generators.context_findings_sentence(
+            n_total_conventions, provenance, doc["name"])
         # BP-16: every artifact for this doc goes into deliverables/<doc_id>/,
         # with the doc-name prefix stripped from the filename.
         doc_dir = orch.run_context.doc_deliverables_dir(doc["id"])
@@ -3086,10 +3822,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 
         op_summary = render_operative_summary(
             document_id=doc["id"], document_name=doc["name"],
-            conventions_by_category=conventions_by_category, findings=findings,
-            body_text="Findings are produced by PRACTICE_AUDITOR and STYLE_GUARDIAN in PHASE 5.5 "
-                       "against the convention registry. Each finding cites the convention ID and "
-                       "the operational reference ID(s).",
+            conventions_by_category=conventions_by_category, findings=summary_findings,
+            body_text=summary_generators.operative_findings_sentence(provenance),
             question=question, prior_refusals=_prior_refusals_for(doc),
             prior_orphans=_prior_orphans_for(doc),
         )
@@ -3123,18 +3857,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # largest prefill, and two local runs died inside it or beside it to a
             # GPU engine timeout. Removing it removes that exposure. It does not
             # remove TDR, which also hit a Phi-3.5 generation with no swap at all.
-            upstream_findings = {
-                "PRACTICE_AUDITOR": _stamp_source_rule_ids(
-                    _items_for(conv_review, "PRACTICE_AUDITOR", doc_id=doc["id"]), convention_registry),
-                "STYLE_GUARDIAN": _stamp_source_rule_ids(
-                    _items_for(conv_review, "STYLE_GUARDIAN", doc_id=doc["id"]), convention_registry),
-                "VERIFIER": _stamp_source_rule_ids(
-                    _items_for(audit, "VERIFIER", doc_id=doc["id"]), convention_registry),
-                "FACT_CHECKER": _stamp_source_rule_ids(
-                    _items_for(audit, "FACT_CHECKER", doc_id=doc["id"]), convention_registry),
-                "LEGAL_ANALYST": _stamp_source_rule_ids(
-                    _items_for(production, "LEGAL_ANALYST", doc_id=doc["id"]), convention_registry),
-            }
+            # (upstream_findings is built once, stamped, at the top of _process_doc.)
             # refine R2: NO amendment is ever taken from the model. The template
             # builds every one of them from the typed Findings below, so an
             # amendment the arithmetic did not produce cannot exist by
@@ -3211,18 +3934,27 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # the PROMOTER's input that narrows, which is what makes "no
             # amendment is ever taken from the model" true by construction.
             _promotable = [f for f in computed_findings if finding_record.is_finding(f)]
+            # S2a: decided by the written_by stamp, not by object identity, which
+            # never held once the items above were copied.
             _withheld = [f for f in all_upstream
                          if finding_record.is_finding(f)
                          and str(f.get("record_verdict") or "").lower() == "irregular"
-                         and not any(f is c for c in computed_findings)]
+                         and finding_record.is_model_written(f)]
             if _withheld:
                 log_event(_LOG,
                           f"model_findings_not_promoted count={len(_withheld)} "
                           f"agents={sorted({str(f.get('agent') or '?') for f in _withheld})}",
                           run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+                reply_records.mark_not_promoted(orch.run_context, (production, audit, conv_review),
+                                                _withheld, doc_id=doc["id"])
+            # S2a, item 5: where Python can place a unit's own passage in the
+            # reference index, an absence amendment points there.
+            _unit_refs = paired_review_mod.unit_passage_refs(
+                _unit_texts, reference_index.entries, doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, _promotable, unit_texts=_unit_texts,
-                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
+                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id,
+                unit_refs=_unit_refs)
             # Never silently drop a finding this function could not turn into
             # an amendment: a real, irregular finding a model wrote under a
             # field name this pipeline did not yet recognise is not an error
@@ -3287,14 +4019,21 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # R6 / INFRA-044: the comparison with the earlier version travels in the
             # MASTER too, so review_data.json and review_findings.md carry it in its
             # own section. Never an amendment: every such record is ok-verdict.
+            # S2 checker A4: a model can write `provenance`; only Python's own
+            # records (by the post they travelled in) enter the comparison.
             _prior_records = [f for f in all_upstream
                               if f.get("relation") in finding_record.PRIOR_RELATIONS
-                              and f.get("provenance") == "computed"]
+                              and f.get("provenance") == "computed"
+                              and not finding_record.is_model_written(f)]
             amendments_payload = {"document_id": doc["id"], "amendments": raw_amendments,
                                   "prior_comparisons": _prior_records,
                                   "prior_refusals": _prior_refusals_for(doc),
                                   "prior_orphans": _prior_orphans_for(doc)}
 
+        # S2a, item 1: every finding a model wrote for this document travels in the
+        # master, labelled by the renders, never removed from view and never an
+        # amendment (only computed findings are promoted).
+        amendments_payload[amendment_render.MODEL_FINDINGS_KEY] = model_findings
         # INFRA-042: in the empty-registry state the CONV-* requirement is relaxed (an amendment
         # grounds on >=1 REF-* or >=1 WEB-REF-*); when conventions exist the rule holds unchanged.
         ok_payload, errs = validate_amendment_payload(
@@ -3316,10 +4055,44 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                   file=sys.stderr)
         docx_path = doc_dir / names["amendments_docx"]
 
-        # Per-agent deliverable (the reviewed document record)
+        # The agent record: each agent's raw reply for this document, its judging
+        # calls and every registered agent's state (a technical record).
         per_agent_path = doc_dir / names["per_agent_deliverable"]
-        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review),
+        try:
+            _activation = json.loads((orch.run_context.audit_dir() / "agent_activation.json")
+                                     .read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            _activation = None
+        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review,
+                                                       activation=_activation, unit_refs=_doc_unit_refs,
+                                                       judging_calls=_judging_calls),
                                   encoding="utf-8")
+
+        # Open item 19 (2): the reviewed document, for a person to read: the
+        # document's own text in order, each finding at its unit, rendered from the
+        # master just written (its amendments and model findings), Python's findings
+        # as the document summary counts them and the pairing map's records. It
+        # decides nothing; every finding, count and mark comes from above.
+        _suffix = _question_suffix("review", question)
+        _objectives = str(run_objectives or "")
+        _objectives = (_objectives[:-len(_suffix)] if _suffix and _objectives.endswith(_suffix)
+                       else _objectives).strip()
+        reviewed_path = doc_dir / names["reviewed_document"]
+        # Phase 9 renders this file again from these inputs, scrubbed, so no span reaches
+        # the renderer's escapes or the finding blocks it sets into the text.
+        _reviewed_inputs = dict(
+            document_id=doc["id"], document_name=doc["name"], document_text=doc["text"],
+            master=amendments_payload, python_findings=findings, pairing=doc.get("_pairing"),
+            rules=convention_registry.get("conventions", []),
+            source_files=convention_registry.get("source_files", []),
+            objectives="" if _objectives == DEFAULT_RUN_OBJECTIVES else _objectives,
+            question=question, activation=_activation,
+            untyped_items=sum(1 for group in upstream_findings.values() for f in group
+                              if isinstance(f, dict) and finding_record.is_model_written(f)
+                              and not finding_record.is_finding(f)),
+            # Set around this phase only, so phase 9 is told it.
+            output_language=localization.current())
+        reviewed_path.write_text(reviewed_document_mod.render(**_reviewed_inputs), encoding="utf-8")
 
         # The dict KEYS below are internal identifiers consumed by the redaction stage and
         # OGE capture (by key, not by filename); the VALUES are the BP-16 per-doc subdir paths.
@@ -3330,28 +4103,54 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             "amendments_md": str(doc_dir / names["amendments_md"]),
             "amendments_docx": str(docx_path) if docx_path.exists() else None,
             "per_agent_deliverable": str(per_agent_path),
+            "reviewed_document": str(reviewed_path),
+            "reviewed_render_inputs": _reviewed_inputs,
+            "grounding_passages": [r.get("passage") or r.get("text_excerpt") for r in ctx_refs],
             "validator_errors": errs,
             "amendment_count": len(amendments_payload.get("amendments", [])),
             "prior_comparison_count": len(amendments_payload.get("prior_comparisons") or []),
             "prior_absent_count": sum(
                 1 for f in (amendments_payload.get("prior_comparisons") or [])
                 if f.get("relation") == "absent_since_prior"),
+            # S2a, items 1 and 7: what the run summary reports, from the stamps.
+            "model_findings_not_promoted": len(model_findings),
+            "context_refs_cited": [str(r.get("ref_id")) for r in ctx_refs if r.get("ref_id")],
+            "relations_computed": summary_generators.relation_counts(
+                [f for g in upstream_findings.values() for f in g
+                 if finding_record.is_finding(f) and not finding_record.is_model_written(f)]),
+            "relations_model_only": summary_generators.relation_counts(model_findings),
         }
 
     for doc_id, info in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         deliverables[doc_id] = info
+    # Reader check RD11: the reference index records which deliverable cites each
+    # passage, so it agrees with the files a reader follows.
+    try:
+        for doc_id, info in deliverables.items():
+            master = json.loads(Path(info["amendments_json"]).read_text(encoding="utf-8"))
+            for amendment in master.get("amendments") or []:
+                for ref in amendment.get("ref_ids") or []:
+                    reference_index.cite(ref, "amendment")
+            for ref in info.get("context_refs_cited") or []:
+                reference_index.cite(ref, "grounding_summary")
+        reference_index.save()
+    except Exception as e:  # a citation record must not take synthesis down (type only)
+        log_event(_LOG, f"reference_cited_by_error error_type={type(e).__name__}",
+                  run_id=_run_id_of(orch), phase="6")
     return deliverables
 
 
 def _prior_refusals_for(doc):
     """The comparisons the prior-version step refused, per unit, read from the
     pairing map phase 5.5 left on the document (R6). Empty when no earlier version
-    was declared, so every existing caller renders as before."""
+    was declared, so every existing caller renders as before. `reason_kind` is the
+    typed kind (paired_review.PRIOR_REFUSAL_KINDS) a scorer reads; `reason` stays the
+    sentence for a human."""
     out = []
     for entry in ((doc.get("_pairing") or {}).get("units") or []):
         for r in ((entry.get("prior_comparisons") or {}).get("refused") or []):
             out.append({"unit_id": entry.get("unit_id"), "label": r.get("label", ""),
-                        "reason": r.get("reason", "")})
+                        "reason": r.get("reason", ""), "reason_kind": r.get("reason_kind", "")})
     return out
 
 
@@ -3587,7 +4386,7 @@ def _consolidate_board(passes):
 
 
 def _append_board_to_deliverable(info, consolidated):
-    """Append the advisory editorial-board section to the per-agent reviewed_document.md,
+    """Append the advisory editorial-board section to the agent record (agent_record.md),
     grouping observations by ref: per ref it shows the GOVERNING verdict and the rank that
     set it, plus any SUPERSEDED lower-rank verdict (visible, not dropped). Does NOT touch the
     amendments master (advisory annotation only). Best-effort."""
@@ -3595,7 +4394,9 @@ def _append_board_to_deliverable(info, consolidated):
     if not p or not Path(p).exists():
         return
     try:
-        lines = ["", "## Editorial review board (advisory)", ""]
+        # S2a: the board's observations are model output; the heading says so.
+        lines = ["", "## Editorial review board (advisory: written by models, "
+                     "not promoted to amendments, not checked by Python)", ""]
         if not consolidated:
             lines.append("_(no observations)_")
         for c in consolidated:
@@ -3756,26 +4557,102 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
 
 
 @localization.presentation
-def _render_per_agent_md(doc, production, audit, conv_review):
-    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable')}', "",
+def _render_per_agent_md(doc, production, audit, conv_review, activation=None, unit_refs=None,
+                         judging_calls=None):
+    # Reader check RC17/RD18: the title says what the file holds (each agent's raw
+    # reply for this document). Open item 19 (2): the file is the agent record,
+    # agent_record.md; reviewed_document.md is the reader-facing document
+    # (scripts/reviewed_document.py).
+    import agent_activation
+    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable (each agent\'s raw reply for this document, a technical record)')}', "",
              f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}']
     all_results = (production + audit + conv_review)
     by_agent = {}
     for r in all_results:
         if r.get("doc_id") == doc["id"]:
             by_agent.setdefault(r["agent"], []).append(r)
+    # Reader check round 3 (item 2): every judging call an agent made, by agent.
+    calls_by_agent = {}
+    for call in judging_calls or []:
+        if isinstance(call, dict):
+            calls_by_agent.setdefault(call.get("agent"), []).append(call)
+    units = None
+    notes_by_agent = {}
     for agent in ("PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST",
                   "VERIFIER", "FACT_CHECKER",
                   "PRACTICE_AUDITOR", "STYLE_GUARDIAN"):
         lines.append(f"\n## {agent}")
-        if agent not in by_agent:
+        if agent not in by_agent and not calls_by_agent.get(agent):
             lines.append(localization.text('_(agent did not run)_')); continue
-        for r in by_agent[agent]:
+        for r in by_agent.get(agent, []):
             if not r.get("ok"):
                 lines.append(f'{localization.text('_(failed: ')}{r.get('error')})_'); continue
+            # S2a, item 1: each reply says who wrote it, and every model finding in
+            # it carries the mark, before its JSON. Nothing is removed.
+            import finding_record
+            if finding_record.written_by(r.get("backend"), r.get("model")) == finding_record.WRITTEN_BY_PYTHON:
+                # Reader check RC5: the backend and model as recorded, and what the
+                # label means: the figures are Python's; a model asked to explain a
+                # disagreement wrote only the sentence marked as a model's note.
+                # Reader check RD1: exactly what the run log records for these
+                # records (backend and model of the post), and the models the
+                # records name as writers of their notes, or that none is recorded.
+                # Reader check round 3 (item 6): the absences Python checked in code
+                # are counted apart from the findings computed from figures.
+                records = [i for i in decode_items(r.get("parsed")) if isinstance(i, dict)]
+                # S2 checker round 3 (item 2): the notes kept, counted as every file counts them.
+                import paired_review as _pr
+                notes_by_agent[agent] = notes_by_agent.get(agent, 0) + _pr.notes_on_python_findings(
+                    [dict(i, written_by=finding_record.WRITTEN_BY_PYTHON) for i in records])
+                writers = sorted({str(i.get("explanation_model") or localization.text("not recorded"))
+                                  for i in records
+                                  if i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
+                checked = sum(1 for i in records if i.get("relation") in finding_record.ABSENCE_RELATIONS)
+                lines.append('_' + localization.text(
+                                 "Written by Python: {figures} computed from the document's own figures, "
+                                 "{checked} required field(s) checked in code and found absent.",
+                                 figures=len(records) - checked, checked=checked)
+                             + f'{localization.text(' Backend ')}`{r.get('backend') or '?'}`'
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`.'
+                             + (f'{localization.text(' Notes written by a model, not checked by Python: ')}'
+                                + ", ".join(f"`{w}`" for w in writers) + "." if writers else "") + "_")
+            else:
+                import paired_review as _pr
+                if units is None:
+                    units = _pr.unit_texts_for(doc.get("text") or "", doc["id"])
+                lines.append(f'{localization.text('_Written by a model: backend ')}`{r.get('backend') or '?'}`'
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`._')
+                for item in decode_items(r.get("parsed")):
+                    if finding_record.is_finding(item):
+                        lines.append(f'- {finding_record.reader_line(dict(item, written_by=finding_record.WRITTEN_BY_MODEL))} '
+                                     f'({localization.text(finding_record.MODEL_FINDING_MARK)})')
+                        # Reader check round 3 (item 5): what Python can say about
+                        # the item, the same notes every other file shows.
+                        for note in _pr.model_item_notes(item, units, unit_refs or {}, doc.get("_pairing")):
+                            lines.append(f"  - {localization.message(note)}")
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")
+        calls = calls_by_agent.get(agent) or []
+        if calls:
+            import paired_review as _pr
+            lines += ["", localization.text(
+                "Judging calls this agent made on this document: {calls}; {counts}.", calls=len(calls),
+                counts=summary_generators.calls_and_notes_text(calls, notes_by_agent.get(agent, 0)))]
+            lines += [f"- {_pr.judging_call_line(c)}" for c in calls]
+    # Reader check RD13: every registered agent, with the state the run recorded
+    # for it, so the list above (the agents that review one document) is never
+    # read as the whole run. Round 3 (item 9): the state in words, never the code.
+    states = (activation or {}).get("agent_states") or []
+    if states:
+        lines += ["", localization.text("## Every registered agent in this run"), ""]
+        for row in states:
+            calls = calls_by_agent.get(row.get("agent")) or []
+            kept = (localization.text("; judging calls: {calls}; {counts}", calls=len(calls),
+                                      counts=summary_generators.calls_and_notes_text(
+                                          calls, notes_by_agent.get(row.get("agent"), 0))) if calls else "")
+            lines.append(f"- {row.get('agent')}: {agent_activation.state_words(row.get('state'))}"
+                         f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}{kept}")
     return "\n".join(lines)
 
 
@@ -3963,7 +4840,7 @@ def _resolve_operator_handler(args, run_ctx):
 
 # ---------- main ----------------------------------------------------------------------------
 
-def _cost_projection(num_op_docs, num_ctx_docs):
+def _cost_projection(num_op_docs, num_ctx_docs, run_ctx=None):
     # Editorial review board (INFRA-040): WORST-CASE ceiling = all six ranks fire on every
     # operational deliverable, split by family 3 Claude (EDITOR_CLERK / EDITOR_HEAD_OF_UNIT /
     # EDITOR_HEAD_OF_SECTION) + 3 GPT (EDITOR_HEAD_OF_DEPARTMENT / EDITOR_DEPUTY_DG /
@@ -3973,8 +4850,12 @@ def _cost_projection(num_op_docs, num_ctx_docs):
     # its real contribution is 0. We project the ceiling so the estimate never under-counts.
     board_claude_calls = 3 * num_op_docs   # WORST CASE: CLERK + HEAD_OF_UNIT + HEAD_OF_SECTION
     board_gpt_calls = 3 * num_op_docs      # WORST CASE: HEAD_OF_DEPARTMENT + DEPUTY_DG + DG
+    # A corpus-level agent switched off by the ratified SHIMMER_INST_FINDER setting
+    # is not called, so it is not projected (a declared state, not a failure). The
+    # switch is the decision main() saved in `run_ctx` at start-up.
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
     claude_calls = (len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
-                    + len(PRODUCTION_AGENTS_CORPUS_LEVEL)
+                    + len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
                     + len(CONVENTION_REVIEW_AGENTS) * num_op_docs  # style_guardian via Claude
                     + num_op_docs  # AMENDMENT_DRAFTER
                     + board_claude_calls)  # editorial board, Claude ranks (worst-case ceiling)
@@ -4105,6 +4986,60 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _ontology_run_end(run_ctx, op_docs, deliverables):
+    """The run-end ontology step (OGE builds B1 and B2): capture this run's provisions and
+    rebuild the Tier-1 graph. It never trains the GNN (D-S112 item 1, D-417): the GNN is
+    trained only by its own command on a declared training set. Best-effort throughout."""
+    # OGE capture-at-run-end (build B1; ontology/SCHEMA.md Q1). The run is finalized: append
+    # this run's provisions (amendments master) + DELTA proposals into the durable cross-run
+    # OGE stores under ontology/. Masked-write gate keyed on whether the sensitivity layer
+    # ACTUALLY RAN this run (sensitivity_layer.is_active(), the same signal phase 9's own
+    # gate above reads), not on redaction_enabled. redaction_enabled is the operator's
+    # declared redaction POLICY for the run (flips True whenever --no-redaction-override is
+    # omitted, whether or not anything downstream ever masks a byte); is_active() is whether
+    # LAYER_ACTIVE is actually on. Confirmed live on the completed run (cb4c557b,
+    # post-run diagnosis): redaction_enabled was True (the operator omitted the waiver on
+    # purpose, to test REDACTOR) while LAYER_ACTIVE was still False (an operator DELTA never
+    # made, so phase 9 was skipped and REDACTOR never ran, zero bus messages) -- yet OGE, keyed
+    # to redaction_enabled, masked its own durable copy of a deliverable that itself held real,
+    # unmasked text one directory over. Best-effort: a capture failure never fails a completed run.
+    try:
+        oge_sensitive = sensitivity_layer.is_active()
+        # night W7 c: the storage scope. One value today (ontology_store.DEFAULT_SCOPE);
+        # this is the single place a real engagement identifier will be bound later.
+        # The store enforces it on every read and write; nothing here filters.
+        oge_scope = ontology_store.DEFAULT_SCOPE
+        oge = ontology_capture.capture_run(
+            run_ctx, op_docs, deliverables, sensitive=oge_sensitive, scope=oge_scope)
+        log_event(_LOG, f"oge_capture scope={oge['scope']} "
+                        f"provisions_appended={oge['provisions_appended']} "
+                        f"provisions_superseded={oge['provisions_superseded']} "
+                        f"stubs_skipped={oge['stubs_skipped']} "
+                        f"accumulator_size={oge['accumulator_size']} sensitive={oge['sensitive']}",
+                  run_id=run_ctx.run_id, phase="8")
+        # OGE Tier-1 graph rebuild (build B2). The capture above just updated the durable stores,
+        # so rebuild ontology/stores/graph.json from them (build_graph defaults = the real durable
+        # sources + the real out_path). The graph is built from ALREADY-STORED data (already masked
+        # if the run was sensitive), so no new masking decision is introduced here. Best-effort: a
+        # rebuild failure never fails a completed run (the graph is a derived artifact).
+        try:
+            # INFRA-041 P4: mask Convention.rule + CitationForm.examples under sensitive mode.
+            # Same signal as capture_run just above (oge_sensitive = is_active()), not
+            # redaction_enabled -- see the fix note above capture_run.
+            g = ontology_graph.build_graph(sensitive=oge_sensitive, scope=oge_scope)
+            log_event(_LOG, f"oge_graph_rebuilt scope={g['scope']} "
+                            f"nodes={g['stats']['nodes_total']} "
+                            f"edges={g['stats']['edges_total']}",
+                      run_id=run_ctx.run_id, phase="8")
+            # D-S112 item 1 (D-417): no run trains the GNN. It is trained only by its own
+            # command on a declared training set (scripts/ontology_gnn.py train); check 64.
+        except Exception as e:
+            print(f"[pipeline] OGE graph rebuild skipped (non-fatal): {type(e).__name__}: {e}",
+                  file=sys.stderr)
+    except Exception as e:
+        print(f"[pipeline] OGE capture skipped (non-fatal): {type(e).__name__}: {e}", file=sys.stderr)
+
+
 @run_completion_mod.tracked
 @execution_topology.entrypoint
 @localization.cli_presentation
@@ -4112,11 +5047,18 @@ def main(argv=None):
     parser = _build_arg_parser()
     localization.localize_parser(parser)
     args = parser.parse_args(argv)
+    # Pre-phase-3 spans (open item 38): main's inline work before phase 3-4, timed
+    # contiguously into phase_latencies under a topology runtime; no-ops otherwise.
+    execution_topology.pre_phase_span("phase_0_start")
 
     import final_models
     if final_models.mode() == 'final':
-        if args.multi_round or args.multi_round_manifest or args.task != 'review':
-            parser.error('Frozen final models are limited to ordinary Review')
+        # D-011 choice 1: the frozen adapters also serve a DECLARED multi-round
+        # Review (the flag and its case manifest together; the manifest is then
+        # validated below exactly as in base mode). Anything else stays refused:
+        # Draft, a flag without a manifest, a manifest without the flag.
+        if args.task != 'review' or bool(args.multi_round) != bool(args.multi_round_manifest):
+            parser.error('Frozen final models are limited to Review: ordinary, or multi-round with a declared case manifest')
         if args.backend_profile != 'local':
             parser.error('Frozen final models require explicit --backend-profile local')
         for role in ('producer', 'auditor'):
@@ -4181,6 +5123,12 @@ def main(argv=None):
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)
     run_options.configure(run_ctx, args.input_language, args.output_language, args.agent_briefs)
+    # SHIMMER_INST_FINDER: saved beside the run options on every run; `off` without a
+    # ratified DELTA refuses here, before any model call, and is never ignored silently.
+    inst_finder_refusal = _inst_finder_startup_guard(run_ctx, ROOT)
+    if inst_finder_refusal:
+        print(inst_finder_refusal, file=sys.stderr)
+        return 9
     if multi_manifest is not None:
         multi_record = multi_round.begin(run_ctx, multi_manifest)
         if not (args.no_redaction_override and args.sensitivity_layer_inactive_override):
@@ -4342,7 +5290,7 @@ def main(argv=None):
               f"agents remapped to local backends", file=sys.stderr, flush=True)
         resolved_agents = reg["agents"]
 
-    # Qwen-required startup gate (INFRA-035): redaction is the always-on final pass
+    # Qwen-required startup gate (INFRA-035): redaction is the final pass under an active layer
     # (INFRA-034) and runs on the local Qwen backend. Refuse to start if Qwen is not
     # reachable/configured, UNLESS the operator waives redaction for THIS run.
     qstat = redaction_gate.qwen_backend_status(ROOT)
@@ -4470,6 +5418,7 @@ def main(argv=None):
         return code
 
     # Date cascade + cutoff -> populate input/operational/
+    execution_topology.pre_phase_span("phase_0_ingestion_and_roles")
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,
               phase="0")
     # chokepoint 4 (INFRA-041 P2): there is no BOOT date-web egress to suppress any
@@ -4502,7 +5451,7 @@ def main(argv=None):
     log_event(_LOG, f"corpus_loaded context_docs={len(ctx_docs)} operational_docs={len(op_docs)}",
               run_id=run_ctx.run_id, phase="0")
 
-    projection = _cost_projection(len(op_docs), len(ctx_docs))
+    projection = _cost_projection(len(op_docs), len(ctx_docs), run_ctx=run_ctx)
     print("\n=== PROJECT SHIMMER: pre-run estimate ===", file=sys.stderr)
     print(f"  Operational documents: {len(op_docs)}", file=sys.stderr)
     print(f"  Context documents:     {len(ctx_docs)}", file=sys.stderr)
@@ -4518,7 +5467,8 @@ def main(argv=None):
             print("[pipeline] aborted by operator.", file=sys.stderr); return 0
 
     # BOOT orchestrator (adaptive_spawn fires if first run)
-    handler = _resolve_operator_handler(args, run_ctx)
+    execution_topology.pre_phase_span("phase_0_boot_and_index")
+    handler =_resolve_operator_handler(args, run_ctx)
     orch = TopOrchestrator.boot(ROOT, interactive=not args.non_interactive,
                                  operator_handler=handler, cost_tracker=cost_tracker,
                                  run_adaptive_spawn=True, run_context=run_ctx,
@@ -4705,11 +5655,12 @@ def main(argv=None):
     # run (stopped at the "complete" emission below); daemon=True so it can never keep
     # the process alive on its own.
     if _is_local_profile():
-        _local_progress_reset(_local_progress_baseline(len(op_docs)))
+        _local_progress_reset(_local_progress_baseline(len(op_docs), run_ctx=run_ctx))
         threading.Thread(target=_local_progress_memory_sampler,
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 
     # PHASE 1
+    execution_topology.pre_phase_span("phase_1_situation_assessment")
     _emit_progress(event="start", docs=len(op_docs), status="running")
     _emit_progress(phase=1, status="running")
     orch.deliberation_round({"phase": "situation_assessment",
@@ -4719,6 +5670,8 @@ def main(argv=None):
 
     # R6: the default sentence, plus the review question when the operator gave one.
     run_objectives = _effective_run_objectives(args.run_objectives, args.task, args.question)
+    # Genesis phase 2 has no code of its own here; phase 3-4 is the next boundary.
+    execution_topology.pre_phase_span(None)
 
     production, audit, conv_review = [], [], []
     deliverables = {}
@@ -4780,7 +5733,8 @@ def main(argv=None):
             orch, keys, op_docs, production, audit, conv_review,
             run_objectives, conv_registry_dict, reference_index,
             embed_store=embed_store, max_concurrent_docs=args.max_concurrent_docs,
-            amendment_polish=args.amendment_polish, question=args.question))
+            amendment_polish=args.amendment_polish, question=args.question,
+            context_texts={d["id"]: d["text"] for d in ctx_docs}))
         log_phase_done(_LOG, "6", run_id=run_ctx.run_id,
                        duration_ms=int((time.perf_counter() - _t6) * 1000))
         for doc_id, paths in deliverables.items():
@@ -4858,7 +5812,7 @@ def main(argv=None):
                     reason="no_operational_documents", source_phase="review",
                     evidence={"operational_document_count": 0})
 
-    # Phase 9: redaction (ALWAYS runs, final privacy pass over the deliverables,
+    # Phase 9: redaction (runs when the sensitivity layer is active, final privacy pass over the deliverables,
     # LAW-IV). The privacy redaction stage now lives in the sensitivity_layer home
     # (Phase 1c); the pipeline calls INTO it (editorial->privacy) and injects the two
     # editorial-side callbacks it needs: build_wrapper (closes over the orchestrator +
@@ -4871,11 +5825,16 @@ def main(argv=None):
               run_id=run_ctx.run_id, phase="9")
     _emit_progress(phase=9, status="running")
 
-    def _render_redaction_deliverable(scrubbed_master, body_text, doc, info):
+    def _render_redaction_deliverable(scrubbed_master, body_text, doc, info, scrub):
         amendment_render.write_amendment_deliverables(
             scrubbed_master, deliv_dir=run_ctx.deliverables_dir(), doc_id=doc["id"],
             document_name=doc["name"], body_text=body_text,
             category_for_conv=lambda c: _category_for_conv(c, conv_registry_dict))
+        try:
+            activation = json.loads((run_ctx.audit_dir() / "agent_activation.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            activation = None
+        reviewed_document_mod.write_from_scrubbed(info, scrubbed_master, body_text, scrub, activation=activation)
 
     # ARCHITECTURE: the LAW-IV redaction (scrub/apply) phase now lives UNDER the
     # sensitivity layer. In non-sensitive mode (the layer is INACTIVE) the entire
@@ -4896,7 +5855,8 @@ def main(argv=None):
             orch, op_docs, deliverables, run_ctx, conv_registry_dict,
             build_wrapper=lambda name: _build_wrapper(name, orch, keys),
             render_deliverable=_render_redaction_deliverable,
-            redaction_enabled=redaction_enabled)
+            redaction_enabled=redaction_enabled,
+            unit_ids=lambda text, doc_id: [u["unit_id"] for u in pairing_map_mod.split_units(text, document_id=doc_id)])
         log_phase_done(_LOG, "9", run_id=run_ctx.run_id,
                        duration_ms=int((time.perf_counter() - _t9) * 1000))
 
@@ -4924,7 +5884,9 @@ def main(argv=None):
                     raw_output_path=esc.get("raw_output_path"))
             print(f"[pipeline] redaction WARNING: {n_held} deliverable(s) HELD (redactor format "
                   f"failure, not a privacy violation): {held_docs}. Logged to the governance ledger; "
-                  f"the run continues. Repair the redaction model/prompt if it persists.",
+                  f"the run continues. Repair the redaction model/prompt if it persists. What the "
+                  f"model would have marked in them is unknown, so a document quoting them may "
+                  f"still carry it; their files were scrubbed with the spans that are known.",
                   file=sys.stderr)
             _emit_progress(event="warning", phase=9, note="redaction_held", count=n_held,
                            status="warning")
@@ -4956,64 +5918,9 @@ def main(argv=None):
     print(f"  calls: {final['total_calls']}  failures: {final['total_failures']}", file=sys.stderr)
     print(f"  bus messages: {summary.get('total', 0)}", file=sys.stderr)
 
-    # OGE capture-at-run-end (build B1; ontology/SCHEMA.md Q1). The run is finalized: append
-    # this run's provisions (amendments master) + DELTA proposals into the durable cross-run
-    # OGE stores under ontology/. Masked-write gate keyed on whether the sensitivity layer
-    # ACTUALLY RAN this run (sensitivity_layer.is_active(), the same signal phase 9's own
-    # gate above reads), not on redaction_enabled. redaction_enabled is the operator's
-    # declared redaction POLICY for the run (flips True whenever --no-redaction-override is
-    # omitted, whether or not anything downstream ever masks a byte); is_active() is whether
-    # LAYER_ACTIVE is actually on. Confirmed live on the completed run (cb4c557b,
-    # post-run diagnosis): redaction_enabled was True (the operator omitted the waiver on
-    # purpose, to test REDACTOR) while LAYER_ACTIVE was still False (an operator DELTA never
-    # made, so phase 9 was skipped and REDACTOR never ran, zero bus messages) -- yet OGE, keyed
-    # to redaction_enabled, masked its own durable copy of a deliverable that itself held real,
-    # unmasked text one directory over. Best-effort: a capture failure never fails a completed run.
-    try:
-        oge_sensitive = sensitivity_layer.is_active()
-        # night W7 c: the storage scope. One value today (ontology_store.DEFAULT_SCOPE);
-        # this is the single place a real engagement identifier will be bound later.
-        # The store enforces it on every read and write; nothing here filters.
-        oge_scope = ontology_store.DEFAULT_SCOPE
-        oge = ontology_capture.capture_run(
-            run_ctx, op_docs, deliverables, sensitive=oge_sensitive, scope=oge_scope)
-        log_event(_LOG, f"oge_capture scope={oge['scope']} "
-                        f"provisions_appended={oge['provisions_appended']} "
-                        f"provisions_superseded={oge['provisions_superseded']} "
-                        f"stubs_skipped={oge['stubs_skipped']} "
-                        f"accumulator_size={oge['accumulator_size']} sensitive={oge['sensitive']}",
-                  run_id=run_ctx.run_id, phase="8")
-        # OGE Tier-1 graph rebuild (build B2). The capture above just updated the durable stores,
-        # so rebuild ontology/stores/graph.json from them (build_graph defaults = the real durable
-        # sources + the real out_path). The graph is built from ALREADY-STORED data (already masked
-        # if the run was sensitive), so no new masking decision is introduced here. Best-effort: a
-        # rebuild failure never fails a completed run (the graph is a derived artifact).
-        try:
-            # INFRA-041 P4: mask Convention.rule + CitationForm.examples under sensitive mode.
-            # Same signal as capture_run just above (oge_sensitive = is_active()), not
-            # redaction_enabled -- see the fix note above capture_run.
-            g = ontology_graph.build_graph(sensitive=oge_sensitive, scope=oge_scope)
-            log_event(_LOG, f"oge_graph_rebuilt scope={g['scope']} "
-                            f"nodes={g['stats']['nodes_total']} "
-                            f"edges={g['stats']['edges_total']}",
-                      run_id=run_ctx.run_id, phase="8")
-            # OGE GNN incremental update (build B3). Sequence: capture_run -> build_graph -> gnn.
-            # MACHINERY not learning: one fwd + one delta-only backprop over the rebuilt graph, then
-            # persist weights + high-water mark. GPU optional (warn-not-fail). Best-effort: a GNN
-            # failure (or a missing GPU) NEVER fails a completed run -- the GNN state is a derived asset.
-            try:
-                gs = ontology_gnn.gnn_update()
-                log_event(_LOG, f"oge_gnn_updated delta={gs['delta_size']} nodes={gs['nodes']} "
-                                f"loss={gs['loss']:.6f} device={gs['device']}",
-                          run_id=run_ctx.run_id, phase="8")
-            except Exception as e:
-                print(f"[pipeline] OGE GNN update skipped (non-fatal): {type(e).__name__}: {e}",
-                      file=sys.stderr)
-        except Exception as e:
-            print(f"[pipeline] OGE graph rebuild skipped (non-fatal): {type(e).__name__}: {e}",
-                  file=sys.stderr)
-    except Exception as e:
-        print(f"[pipeline] OGE capture skipped (non-fatal): {type(e).__name__}: {e}", file=sys.stderr)
+    # The run-end ontology step: capture and the graph rebuild, never GNN training
+    # (D-S112 item 1, D-417); check 64 runs this function with gnn_update recorded.
+    _ontology_run_end(run_ctx, op_docs, deliverables)
 
     # Draft run-end: PRESERVE then CLEAN. First copy the generated memo into this run's
     # deliverables folder so the run keeps the complete record (the generated memo plus its
@@ -5032,7 +5939,11 @@ def main(argv=None):
                     doc_id = Path(fname).stem
                     dest_dir = run_ctx.doc_deliverables_dir(doc_id)
                     dest_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, dest_dir / run_context_mod.DRAFT_MEMO_NAME)
+                    memo_id = next((d["id"] for d in op_docs if d["name"] == fname), doc_id)
+                    reviewed_document_mod.ship_memo(src, dest_dir / run_context_mod.DRAFT_MEMO_NAME,
+                                                    deliverables.get(memo_id))
+                    reply_records.note_cut_memo(dest_dir / run_context_mod.DRAFT_MEMO_NAME,
+                                                reply_records.folder(run_ctx))
                     print(f"[pipeline] draft memo preserved in deliverables: "
                           f"{doc_id}/{run_context_mod.DRAFT_MEMO_NAME}",
                           file=sys.stderr, flush=True)

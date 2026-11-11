@@ -1,0 +1,53 @@
+{
+  "note": "A hand-written synthetic test for scripts/adapter_checks.py (group synthetic): three bundles, each as files (path: text) and its key under `gold`, materialised in a temporary folder as answer_key.json. Invented vocabulary; no real document.",
+  "bundles": {
+    "flawed_a": {
+      "files": {
+        "context/_review_targets.json": "{\"targets\": [\"log_q1.md\"], \"grounding\": [\"ref_g.md\"], \"prior\": [], \"source\": \"operator\", \"resolved_at\": \"\"}\n",
+        "context/log_q1.md": "# Gauge log\n\nRecorded by the bench team.\n\n## Entry alpha\n\nReading: 12 units\nLimit: 10 units\n\n## Entry beta\n\n| Part | Count (units) |\n|---|---|\n| left | 3 |\n| right | 4 |\n\nTotal count: 9 units\n\n## Entry gamma\n\nReading: 8 units\nLimit: 10 units\n",
+        "context/ref_g.md": "# Bench reference\n\nA gauge reading is written in units.\n",
+        "conventions/rules.md": "# Bench rules\n\nThese rules govern the gauge log.\n\n## CONV-GA Reading limit [required] [conformance]\n\nThe reading must not exceed the limit.\n\n## CONV-GB Count total [required] [conformance]\n\nThe total count must equal the sum of the count column.\n"
+      },
+      "gold": {
+        "document": "log_q1.md",
+        "task_given_to_the_pipeline": "Review the gauge log against the bench rules.",
+        "twin_of": "twin_b",
+        "planted": [
+          {"unit": "u01-entry-alpha", "rule": "CONV-GA", "relation": "above_band", "kind": "band",
+           "claim": {"relation": "above_band", "field_label": "reading", "value_a": 12, "value_b": 10}},
+          {"unit": "u02-entry-beta", "rule": "CONV-GB", "relation": "sum_mismatch", "kind": "sum",
+           "claim": {"relation": "sum_mismatch", "field_label": "total count", "value_a": 7, "value_b": 9}}
+        ],
+        "clean": ["u03-entry-gamma"]
+      }
+    },
+    "twin_b": {
+      "files": {
+        "context/_review_targets.json": "{\"targets\": [\"log_q2.md\"], \"grounding\": [\"ref_g.md\"], \"prior\": [], \"source\": \"operator\", \"resolved_at\": \"\"}\n",
+        "context/log_q2.md": "# Gauge log\n\nRecorded by the bench team.\n\n## Entry alpha\n\nReading: 9 units\nLimit: 10 units\n\n## Entry beta\n\n| Part | Count (units) |\n|---|---|\n| left | 3 |\n| right | 4 |\n\nTotal count: 7 units\n\n## Entry gamma\n\nReading: 8 units\nLimit: 10 units\n",
+        "context/ref_g.md": "# Bench reference\n\nA gauge reading is written in units.\n",
+        "conventions/rules.md": "# Bench rules\n\nThese rules govern the gauge log.\n\n## CONV-GA Reading limit [required] [conformance]\n\nThe reading must not exceed the limit.\n\n## CONV-GB Count total [required] [conformance]\n\nThe total count must equal the sum of the count column.\n"
+      },
+      "gold": {
+        "document": "log_q2.md",
+        "task_given_to_the_pipeline": "Review the gauge log against the bench rules.",
+        "twin_of": "flawed_a",
+        "planted": [],
+        "clean": ["u01-entry-alpha", "u02-entry-beta", "u03-entry-gamma"]
+      }
+    },
+    "rounds_c": {
+      "files": {
+        "_review_targets.json": "{\"targets\": [\"log_q3.md\"], \"grounding\": [], \"prior\": [], \"source\": \"operator\", \"resolved_at\": \"\"}\n",
+        "context/log_q3.md": "# Gauge log\n\n## Entry alpha\n\nReading: 9 units\n",
+        "conventions/rules.md": "# Bench rules\n\n## CONV-GA Reading limit [required] [conformance]\n\nThe reading must not exceed the limit.\n"
+      },
+      "gold": {
+        "document": "log_q3.md",
+        "task_given_to_the_pipeline": "Compare the two versions.",
+        "prior_records": [],
+        "band_irregularities": []
+      }
+    }
+  }
+}

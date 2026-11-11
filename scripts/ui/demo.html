@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- D-S48: the demo makes no request of any kind. This policy forbids every fetch, socket, frame,
+     font, image or script from anywhere; the page's own inline script and style are all it has. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Shimmer demo</title>
+<style>
+:root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #5b5a55; --line: #d9d6cc; --panel: #ffffff;
+        --python: #e8f1ea; --python-line: #2f6b3d; --model: #fbf0dc; --model-line: #8a5a00; --accent: #1f4e79; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161615; --fg: #ecebe6; --muted: #a9a79f; --line: #3a3934; --panel: #1f1f1d;
+          --python: #1c2b20; --python-line: #7cc08c; --model: #2e2617; --model-line: #e2b45a; --accent: #8fbbe6; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.55 Georgia, "Times New Roman", serif; }
+header, nav, main { max-width: 72rem; margin: 0 auto; padding: 0 16px; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; padding-top: 20px; }
+h1 { font-size: 1.6rem; margin: 0; }
+h2 { font-size: 1.3rem; margin: 1.6rem 0 0.6rem; }
+h3 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; }
+.mode { font: 600 0.95rem/1.3 system-ui, sans-serif; color: var(--accent); }
+button { font: 600 0.95rem/1.2 system-ui, sans-serif; padding: 8px 14px; border: 1px solid var(--line);
+         background: var(--panel); color: var(--fg); border-radius: 6px; cursor: pointer; }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.note { color: var(--muted); }
+.intro { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; margin-top: 16px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 12px; }
+.col { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; margin-bottom: 12px; }
+.cols .col { margin-bottom: 0; }
+.doc { white-space: pre-wrap; overflow-wrap: anywhere; font: 0.95rem/1.5 ui-monospace, Consolas, monospace;
+       background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.item { border-left: 4px solid var(--line); padding: 8px 12px; margin: 8px 0; background: var(--panel); border-radius: 0 6px 6px 0; }
+.python-item { border-left-color: var(--python-line); background: var(--python); }
+.model-item { border-left-color: var(--model-line); background: var(--model); }
+.mark { font: 600 0.85rem/1.35 system-ui, sans-serif; margin: 0 0 4px; }
+.python-item .mark { color: var(--python-line); }
+.model-item .mark { color: var(--model-line); }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+th { font: 600 0.9rem/1.3 system-ui, sans-serif; color: var(--muted); }
+a { color: var(--accent); }
+.status { border-left: 4px solid var(--python-line); padding: 6px 12px; margin: 6px 0; border-radius: 0 6px 6px 0; }
+.status-failed { border-left-color: #b3261e; background: var(--model); }
+.banner { font: 600 0.95rem/1.4 system-ui, sans-serif; border: 2px dashed var(--model-line); border-radius: 6px; padding: 8px 12px; margin-top: 16px; }
+p { margin: 0.4rem 0; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="title"></h1><div class="mode" id="mode"></div></div>
+  <div class="bar" id="languages"></div>
+</header>
+<nav><div class="bar" id="cases"></div><div class="bar" id="sections"></div></nav>
+<main id="main"></main>
+<script>
+/*DEMO_DATA*/
+(function () {
+  "use strict";
+  var state = { lang: "en", view: "start", section: "documents" };
+  var SECTIONS = [["documents", "Documents"], ["rounds", "Rounds side by side"], ["changes", "What changed"],
+                  ["findings", "Findings"], ["positions", "Positions"], ["suggestions", "Suggested wording"],
+                  ["downloads", "Downloads"]];
+  var KIND_LABEL = { synthetic: "Synthetic case", "public": "Public UN text" };
+  var KIND_NOTE = { synthetic: "Made up for this demonstration. No real organisation or state is meant.",
+                    "public": "A real public United Nations draft and its revision." };
+  var MOVED = { toward: "Moved toward the other party", away: "Moved away from the other party",
+                neither: "Moved neither way", "cannot be settled": "The model could not settle it" };
+
+  function T(key, values) {
+    var table = DEMO_TEXT[state.lang] || DEMO_TEXT.en;
+    var held = Object.prototype.hasOwnProperty.call(table, key);
+    if (!held) { (window.__demo_misses = window.__demo_misses || []).push(key); }
+    var text = held ? table[key] : key;
+    Object.keys(values || {}).forEach(function (name) { text = text.split("{" + name + "}").join(String(values[name])); });
+    return text;
+  }
+  function el(tag, cls, children) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    (children || []).forEach(function (child) {
+      node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+    });
+    return node;
+  }
+  function words(id) { return String(id == null ? "" : id).split("_").join(" "); }
+  // A part's id is its number and its heading's words (u02-article-2-annual-share); a reader is
+  // shown the words, and the id in brackets so it can be found in the downloaded files.
+  function part(id) {
+    var text = String(id == null ? "" : id), cut = text.indexOf("-");
+    var name = cut > 0 ? text.slice(cut + 1).split("-").join(" ") : text;
+    return T("Part") + " \"" + name + "\" (" + text + ")";
+  }
+  function both(value) { return value && typeof value === "object" ? (value[state.lang] || value.en) : String(value || ""); }
+  function modelItem(children) {
+    return el("div", "item model-item", [el("p", "mark", [T(DEMO_TEXT.marks.model)])].concat(children));
+  }
+  function pythonItem(children) { return el("div", "item python-item", children); }
+  function missing() { return el("p", "note", [T("This record is not part of this demo build.")]); }
+  function none() { return el("p", "note", [T("None.")]); }
+  function button(label, pressed, onClick, nav) {
+    var b = el("button", "", [label]);
+    b.setAttribute("type", "button");
+    b.setAttribute("aria-pressed", pressed ? "true" : "false");
+    b.setAttribute("data-nav", nav);
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function currentCase() {
+    return DEMO.cases.filter(function (c) { return c.key === state.view; })[0] || null;
+  }
+  function table(heads, rows) {
+    var t = el("table", "", [el("tr", "", heads.map(function (h) { return el("th", "", [T(h)]); }))]);
+    rows.forEach(function (cells) { t.appendChild(el("tr", "", cells.map(function (c) { return el("td", "", [c]); }))); });
+    return t;
+  }
+
+  // Python's own outcome codes for a question not asked, said in words.
+  var NOT_ASKED = {
+    not_asked_no_threshold: "No measured threshold exists yet for deciding toward or away, so this question was not put to a model.",
+    not_asked_no_other_position: "No other party's position is recorded on this issue to compare with, so this question was not asked.",
+    no_supported_party_declared: "No suggestion was asked: the case declares no party whose position the wording should support." };
+  var REASONS = { semantic_incomplete: "Part of the review could not be completed, so some rules were not checked.",
+                  required_contract_failure: "A required agent's answer did not have the required form." };
+  var RUN_LABEL = { rounds: "Review of all rounds", review: "Ordinary review of the last version against the one before" };
+  // How each run of the case ended, from its own records: the integrity check, the reasons recorded,
+  // and each answer set aside with Python's own description of why. A failure is said first and plainly.
+  function statusBlock(c, brief) {
+    var box = el("div", "", []);
+    ["rounds", "review"].forEach(function (key) {
+      var s = (c.status || {})[key];
+      if (!s) { return; }
+      var failed = s.recorded && !s.integrity_passed;
+      var parts = [el("p", "", [el("strong", "", [T(RUN_LABEL[key]) + ": "]),
+        T(!s.recorded ? "No integrity record was included for this run." : (failed
+          ? "This run finished, but did not pass its integrity check. Part of its work is incomplete: what is shown here is everything it produced, and nothing more."
+          : "This run finished and passed its integrity check."))])];
+      if (failed && !brief) {
+        (s.reasons || []).forEach(function (r) {
+          parts.push(el("p", "", [T("Reason recorded:") + " " + (REASONS[r] ? T(REASONS[r]) + " (" + r + ")" : r)]));
+        });
+        (s.violations || []).forEach(function (v) {
+          parts.push(el("p", "", [T("Set aside: the answer of {agent} did not have the form the system requires, so the parts it covered were not checked.", { agent: v.agent })]));
+          parts.push(el("p", "note", [T("Why it was set aside, as the system recorded it:") + " " + v.missing.join("; ")
+            + (v.bytes != null ? " " + T("Size of the answer set aside: {bytes} bytes.", { bytes: v.bytes }) : "")]));
+        });
+      }
+      box.appendChild(el("div", failed ? "status status-failed" : "status status-ok", parts));
+    });
+    return box;
+  }
+
+  function startScreen() {
+    var box = el("div", "intro", [
+      el("p", "", [T("This page shows the saved results of two demonstration cases: one synthetic, one a public UN text. They are not benchmark evidence and say nothing about how well the system does on other documents.")]),
+      el("p", "", [T("Nothing here runs. No model, no internet connection, no key and no password is used. The documents stay on this computer: this page only reads the copies saved in its own folder.")]),
+      el("p", "note", [T("Read only. Nothing you do here changes a saved result.")])]);
+    var list = el("div", "", [el("h2", "", [T("Choose a case to begin.")])]);
+    DEMO.cases.forEach(function (c) {
+      list.appendChild(el("div", "col", [el("h3", "", [T(KIND_LABEL[c.kind])]), el("p", "", [T(KIND_NOTE[c.kind])]), statusBlock(c, true),
+        button(T("Case") + ": " + T(KIND_LABEL[c.kind]), false, function () { go(c.key, "documents"); }, "start-" + c.key)]));
+    });
+    return el("div", "", [box, list]);
+  }
+
+  function documentsScreen(c) {
+    if (!c.documents) { return el("div", "", [el("p", "note", [T("The document texts were not included in this demo build.")])]); }
+    var out = el("div", "", []);
+    c.documents.forEach(function (d) {
+      out.appendChild(el("h3", "", [d.name + (d.round_id ? " (" + T("Round") + " " + d.round_id + ")" : "")]));
+      out.appendChild(el("div", "doc", [d.text]));
+    });
+    return out;
+  }
+
+  function roundsScreen(c) {
+    if (!c.rounds) { return missing(); }
+    var cols = el("div", "cols", []);
+    c.rounds.forEach(function (r) {
+      var col = el("div", "col", [el("h3", "", [T("Round") + " " + r.round_id])]);
+      r.documents.forEach(function (d) {
+        col.appendChild(el("p", "", [el("strong", "", [T("Document") + ": " + d.document_id])]));
+        var text = (c.documents || []).filter(function (x) { return x.document_id === d.document_id; })[0];
+        if (text) { col.appendChild(el("div", "doc", [text.text])); }
+        (d.units || []).forEach(function (u) {
+          col.appendChild(el("p", "note", [part(u.unit_id) + ": " +(u.status === "reused"
+            ? T("Unchanged since round {round}: its findings were reused", { round: u.reused_from })
+            : T("Checked again in this round"))]));
+        });
+        d.findings.forEach(function (f) { col.appendChild(pythonItem([el("p", "", [both(f.line)])])); });
+      });
+      cols.appendChild(col);
+    });
+    return el("div", "", [el("p", "note", [T(DEMO_TEXT.marks.python)]), cols]);
+  }
+
+  function changesScreen(c) {
+    if (!c.changes) { return missing(); }
+    var out = el("div", "", [el("p", "note", [T(DEMO_TEXT.marks.changes)])]);
+    c.changes.forEach(function (ch) {
+      out.appendChild(el("h3", "", [T("From round {before} to round {after}", { before: ch.round_before, after: ch.round_after })
+        + ": " + ch.before + " / " + ch.after]));
+      if (!ch.sentences.length && !ch.figures.length) { out.appendChild(none()); }
+      ch.sentences.forEach(function (s) {
+        var label = s.change === "added" ? "Sentence added" : (s.change === "removed" ? "Sentence removed" : "Sentence changed");
+        var parts = [el("p", "", [el("strong", "", [T(label)]), " (" + part(s.unit_id) + ")"])];
+        if (s.before != null) { parts.push(el("p", "", [T("Before") + ": " + s.before])); }
+        if (s.after != null) { parts.push(el("p", "", [T("After") + ": " + s.after])); }
+        out.appendChild(pythonItem(parts));
+      });
+      ch.figures.forEach(function (f) {
+        out.appendChild(pythonItem([el("p", "", [el("strong", "", [T("Figure changed")]), " (" + part(f.unit_id) + ", " + f.label + ")"]),
+          el("p", "", [T("Earlier") + ": " + f.earlier + " " + (f.measure || "") + "; " + T("Now") + ": " + f.now + " " + (f.measure || "")])]));
+      });
+    });
+    return out;
+  }
+
+  function findingsScreen(c) {
+    var py = el("div", "", [el("h2", "", [T("Found by Python")]),
+      el("p", "note", [T("Python computed these from the document's own figures and the rules. No model wrote them.")])]);
+    var model = el("div", "", [el("h2", "", [T("Written by a model")]),
+      el("p", "note", [T("A model wrote these. They are shown so you can read them, not because anyone checked them.")])]);
+    var nPy = 0, nModel = 0;
+    (c.rounds || []).forEach(function (r) {
+      r.documents.forEach(function (d) {
+        d.findings.forEach(function (f) {
+          nPy += 1;
+          py.appendChild(pythonItem([el("p", "note", [T("Round") + " " + r.round_id + ", " + d.document_id]), el("p", "", [both(f.line)])]));
+        });
+      });
+    });
+    (c.review || []).forEach(function (doc) {
+      doc.amendments.forEach(function (a) {
+        var parts = [el("p", "note", [T("Ordinary review of the last version against the one before") + ", " + doc.document_id + ", " + T("Rule") + " " + a.rule_id]),
+          el("p", "", [T("Comment") + ": " + a.comment])];
+        if (a.original_text) { parts.push(el("p", "", [T("The text as it stands") + ": " + a.original_text])); }
+        if (a.proposed_text) { parts.push(el("p", "", [T("Suggested change to the text") + ": " + a.proposed_text])); }
+        if (a.written_by === "python") { nPy += 1; py.appendChild(pythonItem(parts)); }
+        else { nModel += 1; model.appendChild(modelItem(parts)); }
+      });
+      doc.model_findings.forEach(function (f) {
+        nModel += 1;
+        var parts = [el("p", "note", [doc.document_id + ", " + part(f.unit_id)]), el("p", "", [both(f.line)])];
+        if (f.model_wrote) { parts.push(el("p", "", [T("The model wrote") + ": \"" + f.model_wrote + "\""])); }
+        model.appendChild(modelItem(parts));
+      });
+    });
+    if (!nPy) { py.appendChild(c.rounds || c.review ? none() : missing()); }
+    if (!nModel) { model.appendChild(c.review ? none() : missing()); }
+    return el("div", "", [py, model]);
+  }
+
+  function positionsScreen(c) {
+    if (!c.positions) { return missing(); }
+    var out = el("div", "", [el("h2", "", [T("Stated positions")]), el("p", "note", [T(DEMO_TEXT.marks.selected)])]);
+    out.appendChild(c.positions.length ? table(["Round", "Party", "Issue", "Statement", "Source"], c.positions.map(function (p) {
+      return [p.round_id, words(p.actor_id), words(p.issue_id), p.text, p.ref_ids.join(", ")];
+    })) : none());
+    out.appendChild(el("h2", "", [T("Movement between rounds")]));
+    out.appendChild(el("p", "note", [T("Toward or away is a model's reading of three statements. It is never computed.")]));
+    if (!c.movements) { out.appendChild(missing()); return out; }
+    if (!c.movements.length) { out.appendChild(none()); }
+    c.movements.forEach(function (m) {
+      var head = words(m.actor_id) + ", " + words(m.issue_id) + ", " + T("From round {before} to round {after}", { before: m.round_before, after: m.round_after });
+      if (m.written_by === "model") {
+        out.appendChild(modelItem([el("p", "", [el("strong", "", [head]), ": " + T(MOVED[m.answer] || m.answer)])]));
+      } else {
+        var why = String(m.outcome || "").indexOf("not_asked") === 0 ? "Unknown: not asked" : "Unknown: the question could not be asked";
+        var parts = [el("p", "", [el("strong", "", [head]), ": " + T(why) + " (" + m.outcome + ")"])];
+        if (NOT_ASKED[m.outcome]) { parts.push(el("p", "note", [T(NOT_ASKED[m.outcome])])); }
+        out.appendChild(pythonItem(parts));
+      }
+    });
+    return out;
+  }
+
+  function suggestionsScreen(c) {
+    if (!c.support) { return missing(); }
+    var out = el("div", "", [el("p", "note", [T("Python chose the passages; a model wrote the wording. Nothing here is an amendment.")])]);
+    if (!c.support.suggestions.length) { out.appendChild(el("p", "note", [T("No suggestion was kept for this case.")])); }
+    (c.support.outcomes || []).forEach(function (o) {
+      if (!o.issue_id) {
+        out.appendChild(pythonItem([el("p", "", [T(NOT_ASKED[o.outcome] || "No suggestion was asked. Python's record says:")
+          + (NOT_ASKED[o.outcome] ? " (" + o.outcome + ")" : " " + o.outcome)])]));
+        return;
+      }
+      out.appendChild(pythonItem([el("p", "", [el("strong", "", [words(o.issue_id)]), ": " + T("No suggestion was kept on this issue. Python's record says:")
+        + " " + o.outcome + (o.reason ? " (" + o.reason + ")" : "")])]));
+    });
+    c.support.suggestions.forEach(function (s) {
+      var cites = el("div", "", [el("p", "", [el("strong", "", [T("Passages it rests on")])])]);
+      s.citations.forEach(function (q) {
+        cites.appendChild(el("p", "", [q.passage_id + " (" + T("Round") + " " + q.round_id + (q.actor_id ? ", " + words(q.actor_id) : "") + "): \"" + q.text + "\""]));
+      });
+      out.appendChild(el("h2", "", [T("Suggested wording for {party}", { party: words(s.party) }) + ": " + words(s.issue_id)]));
+      out.appendChild(modelItem([el("p", "", [el("strong", "", [T("Suggested wording")]), ": \"" + s.wording + "\""]),
+        el("p", "", [T("Why, as the model gave it") + ": " + s.why]), cites]));
+    });
+    return out;
+  }
+
+  function downloadsScreen(c) {
+    var out = el("div", "", [el("p", "note", [T("Files from the saved run, as the run wrote them.")])]);
+    if (!c.downloads.length) { out.appendChild(none()); return out; }
+    out.appendChild(table(["Document", "Text", "Download"], c.downloads.map(function (d) {
+      var a = el("a", "", [d.file]);
+      a.setAttribute("href", d.href);
+      a.setAttribute("download", d.file);
+      a.setAttribute("data-nav", "file-" + d.href);
+      return [d.document_id + " (" + T(d.source === "review" ? "Ordinary review of the last version against the one before" : "Review of all rounds") + ")", T(d.label), a];
+    })));
+    return out;
+  }
+
+  var SCREENS = { documents: documentsScreen, rounds: roundsScreen, changes: changesScreen, findings: findingsScreen,
+                  positions: positionsScreen, suggestions: suggestionsScreen, downloads: downloadsScreen };
+
+  // A screen can be opened directly as index.html#synthetic/findings (or #public/rounds); the
+  // address changes as you move, so a screen can be bookmarked. Nothing is sent anywhere.
+  function fromAddress() {
+    var hash = typeof location !== "undefined" ? String(location.hash || "").replace(/^#/, "").split("/") : [];
+    if (DEMO.cases.some(function (c) { return c.key === hash[0]; })) { state.view = hash[0]; }
+    if (SECTIONS.some(function (s) { return s[0] === hash[1]; })) { state.section = hash[1]; }
+  }
+  function toAddress() {
+    if (typeof location === "undefined" || typeof history === "undefined" || !history.replaceState) { return; }
+    try { history.replaceState(null, "", state.view === "start" ? "#" : "#" + state.view + "/" + state.section); } catch (e) { /* a file page may refuse; the screen still changes */ }
+  }
+  function go(view, section) { state.view = view; if (section) { state.section = section; } toAddress(); render(); }
+  function setLang(lang) { state.lang = lang; render(); }
+
+  function render() {
+    document.documentElement.setAttribute("lang", state.lang);
+    document.title = T("Shimmer demo");
+    document.getElementById("title").textContent = T("Shimmer demo");
+    document.getElementById("mode").textContent = T("Demo: no installation, saved examples");
+    var langs = document.getElementById("languages");
+    langs.textContent = "";
+    langs.appendChild(button(T("English"), state.lang === "en", function () { setLang("en"); }, "lang-en"));
+    langs.appendChild(button(T("Türkçe"), state.lang === "tr", function () { setLang("tr"); }, "lang-tr"));
+    var cases = document.getElementById("cases");
+    cases.textContent = "";
+    cases.appendChild(button(T("Start"), state.view === "start", function () { go("start"); }, "view-start"));
+    DEMO.cases.forEach(function (c) {
+      cases.appendChild(button(T(KIND_LABEL[c.kind]), state.view === c.key, function () { go(c.key); }, "view-" + c.key));
+    });
+    var sections = document.getElementById("sections");
+    sections.textContent = "";
+    var main = document.getElementById("main");
+    main.textContent = "";
+    if (DEMO.test_material) {
+      main.appendChild(el("p", "banner", [T("This build uses invented test material, not the worked cases' saved results.")]));
+    }
+    var c = currentCase();
+    if (!c) { main.appendChild(startScreen()); return; }
+    SECTIONS.forEach(function (s) {
+      sections.appendChild(button(T(s[1]), state.section === s[0], function () { go(c.key, s[0]); }, "section-" + s[0]));
+    });
+    main.appendChild(el("h2", "", [T(KIND_LABEL[c.kind]) + ": " + T(SECTIONS.filter(function (s) { return s[0] === state.section; })[0][1])]));
+    main.appendChild(el("p", "note", [T(KIND_NOTE[c.kind])]));
+    main.appendChild(el("h3", "", [T("How the run ended")]));
+    main.appendChild(statusBlock(c, false));
+    main.appendChild(SCREENS[state.section](c));
+  }
+
+  fromAddress();
+  render();
+})();
+</script>
+</body>
+</html>

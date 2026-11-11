@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "case_id": "demo_clean_rivers_resolution",
+  "written_by": "python",
+  "provenance": "computed",
+  "comparisons": [
+    {
+      "before": "resolution_v1",
+      "after": "resolution_v2",
+      "sentences": [
+        {
+          "change": "changed",
+          "unit_id": "u03-operative-paragraph-2",
+          "before": {
+            "document_id": "resolution_v1",
+            "unit_id": "u03-operative-paragraph-2",
+            "text": "Urges all Member States to observe the day;"
+          },
+          "after": {
+            "document_id": "resolution_v2",
+            "unit_id": "u03-operative-paragraph-2",
+            "text": "Invites all Member States to observe the day;"
+          }
+        },
+        {
+          "change": "changed",
+          "unit_id": "u02-operative-paragraph-1",
+          "before": {
+            "document_id": "resolution_v1",
+            "unit_id": "u02-operative-paragraph-1",
+            "text": "Decides to proclaim 15 March as an international day for clean rivers;"
+          },
+          "after": {
+            "document_id": "resolution_v2",
+            "unit_id": "u02-operative-paragraph-1",
+            "text": "Decides to proclaim 7 June as an international day for clean rivers;"
+          }
+        }
+      ],
+      "fields": [],
+      "cells": [],
+      "cells_not_compared": [],
+      "figures": [],
+      "figure_refusals": [],
+      "units_added": [],
+      "units_removed": [],
+      "round_before": "r1",
+      "round_after": "r2"
+    },
+    {
+      "before": "sponsor_v1",
+      "after": "sponsor_v2",
+      "sentences": [
+        {
+          "change": "changed",
+          "unit_id": "u01-observance",
+          "before": {
+            "document_id": "sponsor_v1",
+            "unit_id": "u01-observance",
+            "text": "The main sponsor wants Member States to be urged to observe the day."
+          },
+          "after": {
+            "document_id": "sponsor_v2",
+            "unit_id": "u01-observance",
+            "text": "The main sponsor now accepts that Member States are invited to observe the day."
+          }
+        }
+      ],
+      "fields": [],
+      "cells": [],
+      "cells_not_compared": [],
+      "figures": [],
+      "figure_refusals": [],
+      "units_added": [],
+      "units_removed": [],
+      "round_before": "r1",
+      "round_after": "r2"
+    }
+  ],
+  "references": [],
+  "not_compared": []
+}

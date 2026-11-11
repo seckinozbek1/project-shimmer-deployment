@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "case_id": "demo_clean_rivers_resolution",
+  "rule": "a later round re-runs only what changed; an unchanged unit's computed findings are reused from the round that computed them",
+  "rounds": [
+    {
+      "round_id": "r1",
+      "sequence": 1,
+      "documents": [
+        {
+          "document_id": "resolution_v1",
+          "units": [
+            {
+              "unit_id": "u01-preambular-paragraph-1",
+              "signature": "630c45e9401287e0fc2bea03c077619e10a38091da8a29123a35d5fda9c9782d",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-operative-paragraph-1",
+              "signature": "e7f1a466c4a39315bd9a0870009805c6c0652d819865d043af883d6b68b2ba23",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u03-operative-paragraph-2",
+              "signature": "122ee728f4f97a2a50db7538da65ae9033c9077ecfb3abce6227b070c0dd53e3",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 3,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "sponsor_v1",
+          "units": [
+            {
+              "unit_id": "u01-observance",
+              "signature": "89d35b3447b95d49691af3e64f3921f7d6509bc78b0cbdd1d22dfe07d027bc09",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        }
+      ],
+      "seconds": 0.001024
+    },
+    {
+      "round_id": "r2",
+      "sequence": 2,
+      "documents": [
+        {
+          "document_id": "resolution_v2",
+          "units": [
+            {
+              "unit_id": "u01-preambular-paragraph-1",
+              "signature": "630c45e9401287e0fc2bea03c077619e10a38091da8a29123a35d5fda9c9782d",
+              "status": "reused",
+              "reused_from": {
+                "round_id": "r1",
+                "document_id": "resolution_v1",
+                "unit_id": "u01-preambular-paragraph-1"
+              },
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-operative-paragraph-1",
+              "signature": "6687dbb613a0064d42a754127c603dad0bf0d01a24d8abb2ff00f94cb85ce40c",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u03-operative-paragraph-2",
+              "signature": "199ba43730e075053bdecbf30eed7ef21ffa86450001e4a9803d0c2040cd29c3",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 1,
+          "units_computed": 2,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "sponsor_v2",
+          "units": [
+            {
+              "unit_id": "u01-observance",
+              "signature": "e24d87e01ad27a62c7b593219a7d125e7b624936ce47c209b27e106965a1622b",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        }
+      ],
+      "seconds": 0.002331
+    }
+  ],
+  "availability": "recorded"
+}

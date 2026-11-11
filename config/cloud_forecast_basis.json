@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "note": "The forecast the console's cloud mode (On a rented cloud machine) seals and shows. Each entry says whether it is MEASURED (one console run of this kind, with its date and machine) or an ESTIMATE (with what it rests on). An estimate is never shown as a measured figure. D-S49 item 4, D-S51 step 5: the first console launch measures it and a measured entry replaces the estimate by a new decision.",
+  "entries": {
+    "with_asset_copy": {
+      "kind": "estimate",
+      "minutes": 32.6,
+      "machine": "gpu_1x_a10, us-east-1",
+      "rests_on": "L8 (2026-10-30, gpu_1x_a10 us-east-1, asset copy MATCH): 15.4 minutes of session overhead, 15.2 minutes for one development document reviewed, 2 minutes an entry (docs/loop/BUDGET.md). Not yet measured for a console run; a longer document takes longer, the size is not scaled.",
+      "parts": {
+        "start_machine": {"minutes": 3.1, "kind": "measured", "measured_on": "C base, 2026-11-07, gpu_1x_a10 us-east-1 (activation.json)"},
+        "review": {"minutes": 15.2, "kind": "estimate", "rests_on": "L8 mean per development document, 2026-10-30"},
+        "shut_down": {"minutes": 1.2, "kind": "measured", "measured_on": "C base, 2026-11-07 (termination requested to verified)"}
+      }
+    },
+    "without_asset_copy": {
+      "kind": "estimate",
+      "minutes": 95.9,
+      "machine": "gpu_1x_a10, us-east-1",
+      "rests_on": "the with_asset_copy estimate plus the asset upload C base measured (2026-11-07, gpu_1x_a10 us-east-1: 22.25 GB in 63.3 minutes, assets_transfer_timing.json). Not yet measured for a console run.",
+      "parts": {
+        "start_machine": {"minutes": 3.1, "kind": "measured", "measured_on": "C base, 2026-11-07, gpu_1x_a10 us-east-1 (activation.json)"},
+        "copy_files": {"minutes": 63.3, "kind": "measured", "measured_on": "C base, 2026-11-07, gpu_1x_a10 us-east-1 (assets_transfer_timing.json)"},
+        "review": {"minutes": 15.2, "kind": "estimate", "rests_on": "L8 mean per development document, 2026-10-30"},
+        "shut_down": {"minutes": 1.2, "kind": "measured", "measured_on": "C base, 2026-11-07 (termination requested to verified)"}
+      }
+    }
+  }
+}

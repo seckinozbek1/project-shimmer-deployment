@@ -38,6 +38,7 @@ import role_resolution
 # the sibling framework modules import by bare name (same convention as pipeline).
 import convention_parser
 import preflight
+import text_extract
 from run_choices import privacy_flags, resolve_backend_profile
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -76,7 +77,7 @@ def _carries_rule_headings(path: Path) -> bool:
     try:
         if path.stat().st_size > CONVENTION_SNIFF_BYTES:
             return False
-        text = path.read_text(encoding="utf-8")
+        text = path.read_text(encoding=text_extract.TEXT_ENCODING)
     except (OSError, UnicodeDecodeError):
         return False
     return convention_parser.text_carries_rule_headings(text)
@@ -286,7 +287,7 @@ def summarize_conventions(paths) -> dict:
                "scoped": 0, "requires": 0, "unreadable": []}
     for path in paths:
         try:
-            text = Path(path).read_text(encoding="utf-8")
+            text = Path(path).read_text(encoding=text_extract.TEXT_ENCODING)
             rules = convention_parser._parse_text_lines(text, Path(path).name, [1])
         except (OSError, UnicodeDecodeError, ValueError):
             summary["unreadable"].append(Path(path).name)

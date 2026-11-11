@@ -1,0 +1,432 @@
+{
+ "gold_classes_seen": {
+  "contradoc": [
+   "CLEAR",
+   "FLAG"
+  ],
+  "scitab": [
+   "CLEAR",
+   "FLAG"
+  ]
+ },
+ "label": "Reference: a paid cloud model on development items already read. Not Shimmer's performance.",
+ "labels": [
+  "a paid cloud model on development items already read",
+  "exposed",
+  "in-sample: half A chose C's thresholds (REPORT_COMPARABILITY 3a)",
+  "not Shimmer's performance"
+ ],
+ "method": "SciTab: 3-class macro-F1 over the FIXED three gold classes (an absent class scores F1 0, its support 0 noted), resampled over tables (a SciTab document is one table), since claims cluster by table. ContraDoc: binary judgment accuracy (an ABSTAIN wrong), with precision, recall and F1 of the contradictory class (FLAG), resampled over documents. Percentile intervals, 10,000 resamples, seed 20261109.",
+ "paths_are": "relative to the repository root; the driver finds the main checkout from git's common directory",
+ "resamples": 10000,
+ "runs": {
+  "j1_local": {
+   "judge_direct/b1": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.6,
+     "contradictory_f1": 0.5,
+     "contradictory_precision": 0.8571,
+     "contradictory_recall": 0.3529,
+     "documents": 30,
+     "fn": 11,
+     "fp": 1,
+     "interval_95_over_documents": [
+      0.4333,
+      0.7667
+     ],
+     "items": 30,
+     "tp": 6
+    },
+    "scitab": {
+     "abstain": 4,
+     "gold_support": {
+      "CLEAR": 23,
+      "FLAG": 22
+     },
+     "interval_95_over_tables": [
+      0.6349,
+      0.8582
+     ],
+     "items": 45,
+     "macro_f1_classes_present": 0.7342,
+     "macro_f1_fixed_three": 0.7342,
+     "tables": 15
+    }
+   },
+   "judge_direct/judge": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.25,
+     "contradictory_f1": 0.4,
+     "contradictory_precision": 0.2857,
+     "contradictory_recall": 0.6667,
+     "documents": 8,
+     "fn": 1,
+     "fp": 5,
+     "interval_95_over_documents": [
+      0.0,
+      0.625
+     ],
+     "items": 8,
+     "tp": 2
+    },
+    "scitab": {
+     "abstain": 1,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.2222,
+      0.3333
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.2632,
+     "macro_f1_fixed_three": 0.2632,
+     "tables": 4
+    }
+   },
+   "judge_direct/strict": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.25,
+     "contradictory_f1": 0.5,
+     "contradictory_precision": 0.4,
+     "contradictory_recall": 0.6667,
+     "documents": 8,
+     "fn": 1,
+     "fp": 3,
+     "interval_95_over_documents": [
+      0.0,
+      0.625
+     ],
+     "items": 8,
+     "tp": 2
+    },
+    "scitab": {
+     "abstain": 1,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.0,
+      0.1765
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.0833,
+     "macro_f1_fixed_three": 0.0833,
+     "tables": 4
+    }
+   },
+   "judge_reason/b1": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.5667,
+     "contradictory_f1": 0.381,
+     "contradictory_precision": 1.0,
+     "contradictory_recall": 0.2353,
+     "documents": 30,
+     "fn": 13,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.4,
+      0.7333
+     ],
+     "items": 30,
+     "tp": 4
+    },
+    "scitab": {
+     "abstain": 0,
+     "gold_support": {
+      "CLEAR": 23,
+      "FLAG": 22
+     },
+     "interval_95_over_tables": [
+      0.8531,
+      0.9722
+     ],
+     "items": 45,
+     "macro_f1_classes_present": 0.9181,
+     "macro_f1_fixed_three": 0.9181,
+     "tables": 15
+    }
+   },
+   "judge_reason/judge": {
+    "contradoc": {
+     "abstain": 6,
+     "accuracy": 0.125,
+     "contradictory_f1": 0.4,
+     "contradictory_precision": 0.5,
+     "contradictory_recall": 0.3333,
+     "documents": 8,
+     "fn": 2,
+     "fp": 1,
+     "interval_95_over_documents": [
+      0.0,
+      0.375
+     ],
+     "items": 8,
+     "tp": 1
+    },
+    "scitab": {
+     "abstain": 0,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.1667,
+      0.581
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.4269,
+     "macro_f1_fixed_three": 0.4269,
+     "tables": 4
+    }
+   },
+   "judge_reason/strict": {
+    "contradoc": {
+     "abstain": 6,
+     "accuracy": 0.0,
+     "contradictory_f1": 0.0,
+     "contradictory_precision": 0.0,
+     "contradictory_recall": 0.0,
+     "documents": 8,
+     "fn": 3,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.0,
+      0.0
+     ],
+     "items": 8,
+     "tp": 0
+    },
+    "scitab": {
+     "abstain": 0,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.0,
+      0.0
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.0,
+     "macro_f1_fixed_three": 0.0,
+     "tables": 4
+    }
+   }
+  },
+  "reference": {
+   "judge_direct/b1": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.9,
+     "contradictory_f1": 0.9091,
+     "contradictory_precision": 0.9375,
+     "contradictory_recall": 0.8824,
+     "documents": 30,
+     "fn": 2,
+     "fp": 1,
+     "interval_95_over_documents": [
+      0.8,
+      1.0
+     ],
+     "items": 30,
+     "tp": 15
+    },
+    "scitab": {
+     "abstain": 6,
+     "gold_support": {
+      "CLEAR": 23,
+      "FLAG": 22
+     },
+     "interval_95_over_tables": [
+      0.7366,
+      1.0
+     ],
+     "items": 45,
+     "macro_f1_classes_present": 0.8914,
+     "macro_f1_fixed_three": 0.8914,
+     "tables": 15
+    }
+   },
+   "judge_direct/judge": {
+    "contradoc": {
+     "abstain": 4,
+     "accuracy": 0.5,
+     "contradictory_f1": 0.8,
+     "contradictory_precision": 1.0,
+     "contradictory_recall": 0.6667,
+     "documents": 8,
+     "fn": 1,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.125,
+      0.875
+     ],
+     "items": 8,
+     "tp": 2
+    },
+    "scitab": {
+     "abstain": 9,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.0,
+      0.2727
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.1,
+     "macro_f1_fixed_three": 0.1,
+     "tables": 4
+    }
+   },
+   "judge_direct/strict": {
+    "contradoc": {
+     "abstain": 4,
+     "accuracy": 0.0,
+     "contradictory_f1": 0.0,
+     "contradictory_precision": 0.0,
+     "contradictory_recall": 0.0,
+     "documents": 8,
+     "fn": 3,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.0,
+      0.0
+     ],
+     "items": 8,
+     "tp": 0
+    },
+    "scitab": {
+     "abstain": 9,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.0,
+      0.2727
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.1111,
+     "macro_f1_fixed_three": 0.1111,
+     "tables": 4
+    }
+   },
+   "judge_reason/b1": {
+    "contradoc": {
+     "abstain": 0,
+     "accuracy": 0.8667,
+     "contradictory_f1": 0.8824,
+     "contradictory_precision": 0.8824,
+     "contradictory_recall": 0.8824,
+     "documents": 30,
+     "fn": 2,
+     "fp": 2,
+     "interval_95_over_documents": [
+      0.7333,
+      0.9667
+     ],
+     "items": 30,
+     "tp": 15
+    },
+    "scitab": {
+     "abstain": 6,
+     "gold_support": {
+      "CLEAR": 23,
+      "FLAG": 22
+     },
+     "interval_95_over_tables": [
+      0.7212,
+      0.9872
+     ],
+     "items": 45,
+     "macro_f1_classes_present": 0.8884,
+     "macro_f1_fixed_three": 0.8884,
+     "tables": 15
+    }
+   },
+   "judge_reason/judge": {
+    "contradoc": {
+     "abstain": 1,
+     "accuracy": 0.875,
+     "contradictory_f1": 1.0,
+     "contradictory_precision": 1.0,
+     "contradictory_recall": 1.0,
+     "documents": 8,
+     "fn": 0,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.625,
+      1.0
+     ],
+     "items": 8,
+     "tp": 3
+    },
+    "scitab": {
+     "abstain": 7,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.1429,
+      0.775
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.3838,
+     "macro_f1_fixed_three": 0.3838,
+     "tables": 4
+    }
+   },
+   "judge_reason/strict": {
+    "contradoc": {
+     "abstain": 1,
+     "accuracy": 0.0,
+     "contradictory_f1": 0.0,
+     "contradictory_precision": 0.0,
+     "contradictory_recall": 0.0,
+     "documents": 8,
+     "fn": 3,
+     "fp": 0,
+     "interval_95_over_documents": [
+      0.0,
+      0.0
+     ],
+     "items": 8,
+     "tp": 0
+    },
+    "scitab": {
+     "abstain": 7,
+     "gold_support": {
+      "CLEAR": 7,
+      "FLAG": 7
+     },
+     "interval_95_over_tables": [
+      0.0,
+      0.75
+     ],
+     "items": 14,
+     "macro_f1_classes_present": 0.2361,
+     "macro_f1_fixed_three": 0.2361,
+     "tables": 4
+    }
+   }
+  }
+ },
+ "scitab_fixed_classes": [
+  "CLEAR",
+  "FLAG"
+ ],
+ "scitab_metric_note": "The scorer's gold classes on these SciTab claims are CLEAR (supported) and FLAG (refuted) only: 23 and 22 on the 45 B1 claims, 7 and 7 on the 14 judging-step claims. G1's development sample holds no not-enough-info claim, so the paper's 3-class macro-F1 (arXiv 2305.13186, Table 4) cannot be reproduced on this set. macro_f1_fixed_three here is the macro-F1 over the classes the scorer defines for these claims, which equals the classes present; it is a 2-class macro-F1, not the paper's figure, and is labelled so.",
+ "scored_at": "2026-11-09, code at loop-lead c963752e (cloud_reference 4f43cacb, judge_read 5b326931, score_corpus 4ac1c92b)",
+ "script_sha256": "829a6625c4815a365d5569a0a0a4a5005cb72c7b33293a498596ac669be2a22f",
+ "seed": 20261109
+}

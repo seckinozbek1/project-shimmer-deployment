@@ -17,6 +17,17 @@
       "why": "The long-range case this job exists for: a unit that points back at where a term was defined (a glossary, a definitions section) rather than at a numbered unit. The target is the named place, matched against unit titles."
     }
   ],
+  "numbered_references": {
+    "description": "Operator-declared shapes for the structural check in scripts/version_changes.py: does a reference to a numbered unit or paragraph name one the document has? Separate from `patterns`, which relates units to each other. `targets` read a unit's own heading; `paragraphs` read a numbered line inside it, and `deleted_regex` says which of those stand for a deleted paragraph; `references` read the text, in order, the first match of a stretch winning. A number is matched case-sensitively with (?-i:...) so a lower-case word is not read as a Roman numeral. A reference naming another instrument is left out by the negative lookahead. Not read: a bare `paragraph N`, whose meaning depends on the unit it stands in, and a list such as `Articles 10 and 11`. An operator whose documents use other words replaces this block.",
+    "targets": [
+      {"name": "numbered-heading", "regex": "^(article|annex)\\s+((?-i:[0-9]+|[IVXLC]+))\\b", "kind_group": 1, "number_group": 2}
+    ],
+    "paragraphs": {"regex": "^([0-9]+)\\.\\s", "number_group": 1, "deleted_regex": "^[0-9]+\\.\\s*\\[deleted\\]"},
+    "references": [
+      {"name": "paragraph-of-unit", "regex": "\\bparagraph\\s+([0-9]+)\\s+of\\s+(article|annex)\\s+((?-i:[0-9]+|[IVXLC]+))\\b", "paragraph_group": 1, "kind_group": 2, "number_group": 3},
+      {"name": "unit", "regex": "\\b(article|annex)\\s+((?-i:[0-9]+|[IVXLC]+))\\b(?!\\s+of\\s+the\\s+(?-i:[A-Z]))", "kind_group": 1, "number_group": 2}
+    ]
+  },
   "similarity": {
     "description": "The second deterministic mechanism: embedding similarity over units of the same document, which needs no pattern at all and so carries no vocabulary. Operator-tunable because how close two units must be before the relation is worth recording is a judgement about the operator's documents, not a constant.",
     "min_score": 0.75,

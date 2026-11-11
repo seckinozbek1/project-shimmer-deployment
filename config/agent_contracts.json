@@ -23,7 +23,8 @@
       "delta",
       "band_distance_change",
       "provenance",
-      "quote"
+      "quote",
+      "quote_b"
     ],
     "required": [
       "rule_id",
@@ -44,7 +45,14 @@
       "unchanged_from_prior",
       "moved_toward",
       "moved_away",
-      "absent_since_prior"
+      "absent_since_prior",
+      "rate_mismatch",
+      "carry_mismatch",
+      "copy_mismatch",
+      "unit_mismatch",
+      "contradiction",
+      "claim_not_met",
+      "rule_not_met"
     ],
     "verdicts": [
       "ok",
@@ -58,7 +66,7 @@
       "unit_a": "the unit of value_a, as a short string",
       "value_b": "the figure it is compared against, as a number: a stated total, a band bound, or the same field's figure in the earlier version of the document",
       "unit_b": "the unit of value_b",
-      "relation": "what kind of comparison this is, one of the declared relations: a disagreement between two figures of this document, or (changed_from_prior, unchanged_from_prior, moved_toward, moved_away, absent_since_prior) a comparison of a field with the same field in an operator-declared earlier version of the document",
+      "relation": "what kind of comparison this is, one of the declared relations: a disagreement between two figures of this document, or (changed_from_prior, unchanged_from_prior, moved_toward, moved_away, absent_since_prior) a comparison of a field with the same field in an operator-declared earlier version of the document, or (contradiction) two passages of this unit, in words, that cannot both be true, with no figures to compare",
       "record_verdict": "ok when the unit satisfies the rule, irregular when it does not. This is the record's OWN verdict field and is separate from your agent verdict: keep setting `verdict` from your own contract's list as well. A comparison with the earlier version is always ok: movement is information, not an irregularity",
       "source_refs": "the REF-* or WEB-REF-* ids this finding rests on",
       "explanation": "one or two sentences for the person reading the review; no other agent reads this field",
@@ -66,7 +74,8 @@
       "delta": "optional: value_a minus value_b, only when both carry the same unit",
       "band_distance_change": "optional: how far the field moved relative to the band the rule states, now minus the earlier version; negative is toward the band, positive away, zero unchanged; omit when no single band applies",
       "provenance": "optional: computed when the pipeline minted this record from figures it read itself; leave it unset when you write the record",
-      "quote": "the exact words you are relying on, copied verbatim from the unit text you were shown. Required when you claim something is ABSENT: quote the line that should have carried it, or the line that shows it is missing. Python checks the quote appears in the unit, so a claim about text the unit does not contain is refused rather than published. Leave it out when the relation is not an absence claim."
+      "quote": "the exact words you are relying on, copied verbatim from the unit text you were shown. Required when you claim something is ABSENT: quote the line that should have carried it, or the line that shows it is missing. Required for a contradiction too: the first of its two passages. Python checks the quote appears in the unit, so a claim about text the unit does not contain is refused rather than published. Leave it out when the relation is neither an absence claim nor a contradiction.",
+      "quote_b": "only for a contradiction: the second passage, the exact words that cannot be true together with `quote`, copied word for word from the unit text you were shown, at least three words. Python checks that both quotes appear in the unit and that they are two different passages; a contradiction with one quote, or not marked irregular, is refused. Leave it out for every other relation."
     }
   },
   "contracts": {
@@ -106,6 +115,37 @@
         "severity",
         "reasoning"
       ]
+    },
+    "JUDGE": {
+      "item_kind": "decision",
+      "note": "INFRA-049 (D-S55, D-S56 item 1). No envelope and no text: one forward pass decides among the task's declared answers (choice_decision, D-S41) and the decision is the reply record's `parsed`. The question is the task's template, read from its config and filled only by Python; nothing of this contract is sent. The quote is Python's: the cells or the two passages it selected, echoed into the record.",
+      "fields": {
+        "decided": "one declared answer label, or none when not settled",
+        "settled": "bool: the top answer reached the measured threshold",
+        "confidence": "float: the top answer's probability",
+        "answers": "each declared answer's probability",
+        "declared_mass": "float: the probability held by the declared answers together",
+        "quote": "the evidence Python selected and showed, never written by the model"
+      },
+      "required": ["decided", "settled", "confidence", "answers", "declared_mass"],
+      "checks": [],
+      "judge": {
+        "answers_from": "next-token probabilities of each declared answer's first token",
+        "tasks": {
+          "cell_claim": {
+            "declared_by": "[compare: cells]",
+            "question": "config/cell_selection.json decision",
+            "evidence": ["cells", "claim"],
+            "tools": ["find_cells", "locate_figures", "check_quote"]
+          },
+          "passage_pair": {
+            "declared_by": "[compare: passages]",
+            "question": "config/passage_pairs.json decision",
+            "evidence": ["passage_a", "passage_b"],
+            "tools": ["check_quote"]
+          }
+        }
+      }
     },
     "FACT_CHECKER": {
       "item_kind": "finding",

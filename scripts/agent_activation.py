@@ -31,6 +31,31 @@ _PURPOSES = {
 }
 
 
+# Reader check round 3 (item 9): how a recorded state READS in a deliverable. The
+# states themselves stay exactly as recorded in agent_activation.json; only the
+# words a reader sees change. Each has a rendering in the second output language
+# (tr) in scripts/ui/localization_catalog.js. An unknown state is shown as recorded.
+STATE_WORDS = {
+    "phase_not_reached": "not run (its phase was not reached)",
+    "eligible_inactive": "eligible, not called",
+    "ineligible": "not eligible",
+    "activated_not_dispatched": "selected, never called",
+    "dispatch_started": "called, no outcome recorded",
+    "completed": "called and completed",
+    "execution_failure": "called, and the call failed",
+    "pre_dispatch_failure": "failed before its call",
+    "no_execution_path": "not called (nothing in this run could call it)",
+    "switched_off": "switched off by the operator",
+}
+
+
+def state_words(state) -> str:
+    """A recorded state in a reader's words, in the run's output language."""
+    import localization
+    state = str(state or "?")
+    return localization.text(STATE_WORDS[state]) if state in STATE_WORDS else state
+
+
 class ActivationAudit:
     def __init__(self, run_context, agents, profile="dense"):
         if profile not in PROFILES:
@@ -171,14 +196,16 @@ def call_dispatch(wrapper, call_id, *args, **kwargs):
     return wrapper.dispatch(*args, **kwargs)
 
 
-def direct_call(wrapper, call_id, call, *, reason, source_phase, evidence=None):
-    """The free-text Draft entry bypasses run_task and has no envelope contract."""
+def direct_call(wrapper, call_id, call, *, reason, source_phase, evidence=None,
+                consumer="draft_memo_then_review", trigger_source="task_mode", doc_id="", outcome="free_text"):
+    """A free-text call that bypasses run_task and has no envelope contract: the Draft entry,
+    whose words the defaults are, and a passage pair's question."""
     audit = get(getattr(wrapper, "run_context", None))
     if audit is None:
         return call()
     row = audit.decision(wrapper.name, eligible=True, activated=True, reason=reason,
                          source_phase=source_phase, evidence=evidence,
-                         consumer="draft_memo_then_review", trigger_source="task_mode")
+                         consumer=consumer, trigger_source=trigger_source, doc_id=doc_id)
     audit.update(row, actual_call=True, call_id=call_id, state="dispatch_started")
     try:
         result = call()
@@ -186,5 +213,5 @@ def direct_call(wrapper, call_id, call, *, reason, source_phase, evidence=None):
         audit.update(row, state="execution_failure", error_type=type(exc).__name__)
         raise
     audit.update(row, state="completed" if result.ok else "execution_failure",
-                 outcome="free_text" if result.ok else "backend_failure")
+                 outcome=outcome if result.ok else "backend_failure")
     return result

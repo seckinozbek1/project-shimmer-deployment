@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "asked": {
+    "movements": true,
+    "suggestions": true
+  },
+  "failed": 0,
+  "movements": [
+    {
+      "written_by": "python",
+      "provenance": "computed",
+      "movement_id": "movement.r1.r2.main_sponsor.observance",
+      "issue_id": "observance",
+      "actor_id": "main_sponsor",
+      "round_before": "r1",
+      "round_after": "r2",
+      "outcome": "not_asked_no_other_position"
+    }
+  ],
+  "support": [
+    {
+      "written_by": "python",
+      "provenance": "computed",
+      "item": "outcome",
+      "outcome": "no_supported_party_declared"
+    }
+  ]
+}

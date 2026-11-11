@@ -11,7 +11,25 @@
 # ===========================================================================
 
 set -u
-cd "$(dirname "$0")"
+# The script's own folder, read with bash parameter expansion rather than dirname:
+# a non-login Git Bash started by a script can have no /usr/bin on PATH, and the
+# launcher used to stop here before its menu (open item 54).
+case "$0" in
+    */*) SHIMMER_HERE="${0%/*}"; [ -n "$SHIMMER_HERE" ] || SHIMMER_HERE="/" ;;
+    *)   SHIMMER_HERE="." ;;
+esac
+cd "$SHIMMER_HERE"
+# The same caller's PATH lacks the tools reached later: the venv's activate script
+# calls cygpath on Git Bash, and the menu calls cat and rm. Where /usr/bin exists and
+# PATH does not name it, it is appended (never put first); a PATH that names it, as
+# every login shell's and Linux's does, is left exactly as it is. The append adds no
+# empty entry: an empty or colon-ended PATH would otherwise gain one, and an empty
+# entry is the current folder, which after the cd above is the repository root.
+case ":$PATH:" in
+    *:/usr/bin:*) ;;
+    *) [ -d /usr/bin ] && SHIMMER_PATH_HEAD="${PATH%:}" \
+           && PATH="${SHIMMER_PATH_HEAD:+$SHIMMER_PATH_HEAD:}/usr/bin" && export PATH ;;
+esac
 
 # --- 1. Bootstrap discovery only; the contract selects the executable ------
 PYTHON_CMD=""
@@ -26,47 +44,80 @@ fi
 echo "Using Python: $PYTHON_CMD"
 
 # --- 2. Virtual environment (.venv in the repo root) -----------------------
-if [ ! -f ".venv/bin/activate" ]; then
+# A Windows Python lays a venv out under Scripts/ rather than bin/, which is what
+# a Git Bash shell on Windows meets. The script used to look for bin/ only, so it
+# tried to create .venv again over an existing one on every start there.
+venv_bin() {
+    if [ -f ".venv/Scripts/activate" ] && [ ! -f ".venv/bin/activate" ]; then
+        echo ".venv/Scripts"
+    else
+        echo ".venv/bin"
+    fi
+}
+if [ ! -f "$(venv_bin)/activate" ]; then
     echo "Creating a local virtual environment in .venv ..."
     if ! "$PYTHON_CMD" -m venv .venv; then
         echo "Failed to create the virtual environment. See the error above."
         exit 1
     fi
 fi
-PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$PWD/.venv/bin/python" --path-only) || exit 1
-"$PYTHON_CMD" tools/runtime_contract.py --source . || exit 1
+VENV_BIN="$(venv_bin)"
+# Relative to the launcher's folder, the current folder since the cd above: under Git Bash
+# "$PWD" is a POSIX path (/c/...), which a Windows Python opens only when MSYS happens to
+# convert the argument, and the launcher refused the venv it had just made (INC-030). The
+# contract answers with the interpreter's own absolute path either way.
+VENV_PYTHON="$VENV_BIN/python"
+[ -f "$VENV_PYTHON.exe" ] && VENV_PYTHON="$VENV_PYTHON.exe"
+if ! PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$VENV_PYTHON" --path-only); then
+    echo "The Python in .venv does not match tools/cloud_run/runtime.json. Remove .venv and run this script again."
+    exit 1
+fi
+# The menu's own entry modules, not the experiment probe: an ordinary final archive does not
+# carry the probe, and checking for it stopped the arm L menu before its first prompt (L14).
+"$PYTHON_CMD" tools/runtime_contract.py --source . --entrypoint launcher || exit 1
 # venv activate scripts can touch unset vars on older shells; relax nounset here.
 set +u
-# shellcheck disable=SC1091
-. ".venv/bin/activate"
+# shellcheck disable=SC1090
+. "$VENV_BIN/activate"
 set -u
 
 # --- 3. Dependencies -------------------------------------------------------
-echo "Installing dependencies (this is quick after the first run) ..."
-if ! "$PYTHON_CMD" -m pip install -r requirements.txt --quiet; then
-    echo "Dependency installation failed. See the error above."
-    exit 1
-fi
-
-# --- 3b. CUDA torch swap (only when a GPU is present but torch is CPU-only) -
-# A bare `torch==2.5.1` from PyPI installs the CPU-only wheel, which makes the local
-# Qwen redactor run on CPU (slow). If a CUDA GPU is physically present (nvidia-smi
-# succeeds) but torch reports no CUDA, replace the CPU wheel with the CUDA build.
-# Probe exit codes: 0 = CUDA already available (skip), 1 = torch present but CPU-only
-# (swap if GPU present), 2 = torch absent (skip).
-torch_rc=0
-"$PYTHON_CMD" -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)" || torch_rc=$?
-if [ "$torch_rc" -eq 1 ]; then
-    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
-        echo "A CUDA GPU is present but torch is CPU-only. Installing the CUDA build (large download, one time) ..."
-        if "$PYTHON_CMD" -m pip install "torch==2.5.1+cu121" --index-url https://download.pytorch.org/whl/cu121; then
-            echo "CUDA torch installed. The Qwen redactor will use the GPU."
-        else
-            echo "CUDA torch install failed; continuing with CPU-only torch. Redaction will be slow."
-        fi
-    else
-        echo "No NVIDIA GPU detected by nvidia-smi; keeping the CPU-only torch build."
+# SHIMMER_SKIP_INSTALL=1 skips this step and the CUDA torch swap below, for an
+# environment that is already installed or a machine with no network. The
+# readiness preflight that follows still reports anything missing.
+install_dependencies() {
+    echo "Installing dependencies (this is quick after the first run) ..."
+    if ! "$PYTHON_CMD" -m pip install -r requirements.txt --quiet; then
+        echo "Dependency installation failed. See the error above."
+        return 1
     fi
+
+    # --- 3b. CUDA torch swap (only when a GPU is present but torch is CPU-only) -
+    # A bare `torch==2.5.1` from PyPI installs the CPU-only wheel, which makes the local
+    # Qwen redactor run on CPU (slow). If a CUDA GPU is physically present (nvidia-smi
+    # succeeds) but torch reports no CUDA, replace the CPU wheel with the CUDA build.
+    # Probe exit codes: 0 = CUDA already available (skip), 1 = torch present but CPU-only
+    # (swap if GPU present), 2 = torch absent (skip).
+    torch_rc=0
+    "$PYTHON_CMD" -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)" || torch_rc=$?
+    if [ "$torch_rc" -eq 1 ]; then
+        if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+            echo "A CUDA GPU is present but torch is CPU-only. Installing the CUDA build (large download, one time) ..."
+            if "$PYTHON_CMD" -m pip install "torch==2.5.1+cu121" --index-url https://download.pytorch.org/whl/cu121; then
+                echo "CUDA torch installed. The Qwen redactor will use the GPU."
+            else
+                echo "CUDA torch install failed; continuing with CPU-only torch. Redaction will be slow."
+            fi
+        else
+            echo "No NVIDIA GPU detected by nvidia-smi; keeping the CPU-only torch build."
+        fi
+    fi
+}
+
+if [ "${SHIMMER_SKIP_INSTALL:-}" = "1" ]; then
+    echo "SHIMMER_SKIP_INSTALL=1: the dependency install and the CUDA torch swap are skipped."
+else
+    install_dependencies || exit 1
 fi
 
 # --- 4. Backend profile ----------------------------------------------------
@@ -122,14 +173,17 @@ fi
 # --- Server start, with a URL that actually serves something ---------------
 # The launcher used to print the host root with no path, where NO route exists:
 # the app registers no bare "/" handler, so the first thing an operator saw was
-# a 404. Every console screen lives at /console, and /health is the one route
-# that needs no token. The port follows SHIMMER_PORT rather than being
-# hardcoded, since the server reads it from there.
+# a 404. Every console screen lives at /console. /health and /console are the
+# two routes that answer without a token; the console page holds no data and
+# asks for the token before it shows anything. The port follows SHIMMER_PORT
+# rather than being hardcoded, since the server reads it from there.
 _shimmer_start_server() {
     _port="${SHIMMER_PORT:-8000}"
     echo "Starting the server ..."
     echo "  Console:  http://localhost:${_port}/console"
-    echo "  Health:   http://localhost:${_port}/health   (the only route with no token)"
+    echo "  Health:   http://localhost:${_port}/health"
+    echo "  Only /health and /console answer without a token. The console page holds"
+    echo "  no data: it asks for the token before it shows anything."
     echo "  There is no page at / , the console is the entry point."
     echo "Press Ctrl+C to stop it and return here."
     "$PYTHON_CMD" scripts/server.py
@@ -149,7 +203,13 @@ while true; do
     echo "  [Q] Quit"
     echo
     printf "Choose an option [1-5, Q]: "
-    read -r choice
+    # read fails at the end of input. The menu used to ignore that and redraw
+    # forever, so a scripted or closed input never ended.
+    if ! read -r choice; then
+        echo
+        echo "End of input. Goodbye."
+        exit 0
+    fi
     case "$choice" in
         1)
             # Two task modes: review an existing document, or draft a memo from a question.
@@ -236,7 +296,8 @@ while true; do
                 echo "No server access token is configured (SHIMMER_TOKEN_HASH is not set)."
                 echo "An open server would let anyone in, so one is required."
                 printf "Generate one and start the server now? [Y/n]: "
-                read -r gen
+                # The end of input is not a yes: no token, no server.
+                read -r gen || gen="n"
                 case "$gen" in
                     n|N)
                         echo "No token generated. The server was not started."

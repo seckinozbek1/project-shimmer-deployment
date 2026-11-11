@@ -1,0 +1,39 @@
+{
+  "schema": "doc-judge-prompt-v1",
+  "status": "development, exposed (D-S41, inside P2 of D-S38)",
+  "note": "Questions decided from a model's next-token probabilities, ridden on doc_judge.py's replay pass as form `choice`. Each answer's surface is what the prompt tells the model to write, and the three differ at their first letter, so their first tokens differ on any tokenizer that does not cut a word's first letter off it; a pass refuses at its first prompt if they do not. The file's document template and outcomes are never sent.",
+  "user_template": "{document}{rule_text}{outcome_lines}",
+  "choice": {
+    "forms": {
+      "pair": {
+        "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide.",
+        "limit": 40,
+        "answers": [
+          {"label": "contradicts", "surface": "Yes", "class": "FLAG"},
+          {"label": "does not", "surface": "No", "class": "CLEAR"},
+          {"label": "cannot tell", "surface": "Unclear", "class": "UNDECIDED"}
+        ]
+      },
+      "claim": {
+        "template": "A table's caption and the cells selected for a claim follow.\n\nCELLS\n{cells}\n\nCLAIM\n{claim}\n\n{tools}Do the cells show that the claim holds?\n\nAnswer with one word.\nYes: the claim holds.\nNo: the claim does not hold.\nUnclear: the cells do not settle it.",
+        "answers": [
+          {"label": "holds", "surface": "Yes", "class": "CLEAR"},
+          {"label": "not met", "surface": "No", "class": "FLAG"},
+          {"label": "cannot be settled", "surface": "Unclear", "class": "UNDECIDED"}
+        ]
+      }
+    }
+  },
+  "outcomes": [
+    {"value": "holds", "class": "CLEAR", "line": "holds", "accepted": ["holds"]},
+    {"value": "not met", "class": "FLAG", "line": "not met", "accepted": ["not met"]},
+    {"value": "cannot be settled", "class": "UNDECIDED", "line": "cannot be settled", "accepted": ["cannot be settled"]}
+  ],
+  "quote_required_for": [],
+  "marker_patterns": ["^#+ [DP]-\\S+[ \\t]*$", "^Passage: \\w+[ \\t]*$"],
+  "max_new_tokens": 1,
+  "models": [
+    {"group": "choice_direct", "backend": "local_auditor", "agent": "PRACTICE_AUDITOR", "checkpoint": "base", "model_id": "unsloth/phi-4-bnb-4bit", "reasoning": false}
+  ],
+  "models_note": "The candidate J1 loaded, on the auditor's route. A forward pass stops on nothing, so the model's own stop tokens do not arise."
+}

@@ -1,0 +1,28 @@
+{
+  "schema": "negotiation-b1-prompt-v1",
+  "status": "development, exposed (D-S102 item 8, docs/loop/stages/NEGOTIATION_MEASUREMENT_PLAN.md sections 3.1 and 4.2); fixed before any reply",
+  "note": "B1 and the cloud reference on the negotiation features. One user turn through the model's own chat template, no system turn. The movement form shows one issue's four declared quotes (both parties, both rounds) and asks one question with four declared answers; the suggestion form is the system's own suggestion question (scripts/case_questions.py suggestion_question, config/case_questions.json) asked over the whole last round instead of the system's selection, so every arm's reply is read by the same Python checks (case_questions.read_suggestion). Slots are written {name} and each is filled once.",
+  "movement": {
+    "template": "Two parties are negotiating. Below are what each party wrote on one issue in two consecutive rounds.\n\nISSUE\n{issue}\n{unit}\n\nWHAT EACH PARTY WROTE\n{quotes}\n\nQUESTION\nThe gap between the parties on this issue is the difference between the two parties' figures in one round. From the earlier round to the later round, what happened to the gap?\n\nANSWERS\n{answer_lines}\n\nReply with one answer's name, written exactly as it is written above, and nothing else.",
+    "unit_declared": "The case declares the unit of this issue's figures as: {unit_value}",
+    "unit_none": "The case declares no unit for this issue's figures.",
+    "silent": "(this party states nothing on this issue in this round)",
+    "quote_line": "- {actor}, round {round}: {quote}",
+    "answers": [
+      {"label": "moved_toward", "value": "narrowed", "line": "narrowed: the gap is smaller in the later round.", "accepted": ["narrowed"]},
+      {"label": "moved_away", "value": "widened", "line": "widened: the gap is larger in the later round.", "accepted": ["widened"]},
+      {"label": "unchanged_from_prior", "value": "stayed the same", "line": "stayed the same: the gap is the same in both rounds.", "accepted": ["stayed the same"]},
+      {"label": "not_computable", "value": "cannot be told", "line": "cannot be told: these quotes do not let you tell.", "accepted": ["cannot be told"]}
+    ],
+    "accepted_note": "A reply is read by its normalised spelling (lower case, trimmed, one trailing full stop dropped, inner whitespace collapsed) against `accepted`, exact match only. Anything else is no_answer, a label never in the key (plan section 3.2).",
+    "max_new_tokens": 16
+  },
+  "suggestion": {
+    "from": "config/case_questions.json",
+    "note": "The template, the size limits and the 384-token allowance are config/case_questions.json's `suggestion` block, read at build time and copied with its SHA-256 into the prompts file, so B1's question is the system's question over the whole last round."
+  },
+  "models": [
+    {"group": "b1", "backend": "local_producer", "agent": "PROCESSOR", "checkpoint": "tuned"}
+  ],
+  "models_note": "The gate's B1 runs bare_model.py's tuned producer first; this group is that model, loaded through bare_model.LocalBackend with bare_model.resolve_reader(agent, checkpoint), sdpa pinned, one shot (D-063). The lead may name another B1 group before the opening line is written; the config's SHA-256 is in that line."
+}

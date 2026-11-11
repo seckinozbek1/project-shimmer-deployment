@@ -1,0 +1,88 @@
+{
+ "label": "SYNTHETIC: measured on this repository's own generator tests only (blocks 910 and 920 trained, 930 held out). Not a measurement on documents people wrote, not comparable with any published figure, and no claim about the system.",
+ "measurement": {
+  "alpha": 0.025,
+  "at_k": {
+   "10": {
+    "family_mean_difference": {
+     "f2": 0.9,
+     "f5": 0.6136,
+     "f5L": 0.3364,
+     "f6": 0.625
+    },
+    "losses": 0,
+    "mean_over_control": 0.5875,
+    "mean_over_earlier_best": -0.0146,
+    "mean_over_ranker": 0.6188,
+    "p_one_sided": 0.0,
+    "reached": 171,
+    "wins": 39
+   },
+   "40": {
+    "family_mean_difference": {
+     "f2": 1.0,
+     "f5": 1.0,
+     "f5L": 0.9,
+     "f6": 0.7875
+    },
+    "losses": 0,
+    "mean_over_control": 0.6125,
+    "mean_over_earlier_best": -0.0068,
+    "mean_over_ranker": 0.9219,
+    "p_one_sided": 0.0,
+    "reached": 302,
+    "wins": 40
+   }
+  },
+  "attempt": 2,
+  "bar": {
+   "alpha": 0.025,
+   "family_loss_limit": 0.05,
+   "ks": [
+    10,
+    40
+   ],
+   "margin": 0.05,
+   "progress_min": 0.03
+  },
+  "control": {
+   "10": 13,
+   "40": 89
+  },
+  "device": "cpu",
+  "documents": 40,
+  "earlier_best": {
+   "10": 187,
+   "40": 305
+  },
+  "gold_pairs": 313,
+  "limit": "synthetic only: this repository's own generator tests, the same four families on the training and held-out sides; no reach on documents people wrote is shown, and no published figure is comparable",
+  "measured": 40,
+  "opening_k": 1,
+  "power": "with 40 untied documents the sign test at 0.025000 needs 27 wins; power 0.897 if a document is a win with probability 0.75",
+  "ranker": {
+   "10": 3,
+   "40": 17
+  },
+  "real_progress": false,
+  "training": {
+   "epochs": 60,
+   "first_loss": 0.347366,
+   "graphs": 80,
+   "last_loss": 0.08207,
+   "updates": 1,
+   "weights_from": "initialised",
+   "weights_sha256": "a584b173d5307232ccce8cb4597e0279ad8dfbfe6d548d9007968c15a0b54eea"
+  },
+  "verdict": "beats"
+ },
+ "page_label": "Ontology pair proposer, attempt 2: synthetic generator tests only",
+ "source": {
+  "decisions": "D-330, D-359; lesson L-9",
+  "gnn_state_sha256": "abe7998e68aa8596905e0ec623f04c17fa91bdb6fa26750419e9636b317868c7 (gnn_s_state.json, not moved: weights, 100 KB)",
+  "rule": "tools/ontology_pairs_measure.py at lane/ontology 84307a38 (MARGIN 0.05, PROGRESS_MIN 0.03, ALPHA 0.05 / 2^k)",
+  "scratch_file": "shimmer-scratch/ontology_pairs/attempt2/measurement.json (outside the repository)",
+  "sha256": "b577da32e5816f6b3f831b83cb83922526030ad205ff5fd3e36f30d57a6814a9"
+ },
+ "what": "Ontology attempt 2 (the unit-pair GNN proposer), its one opening under D-330 (HELDOUT_OPENINGS row ontology-pairs, k 1, alpha .025), moved from the scratch store into the repository (D-S102 item 7, D-384)."
+}

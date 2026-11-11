@@ -44,6 +44,27 @@ Every record carrying one is ok-verdict by construction, reaches the bus, GET
 never an amendment: movement, sameness and absence are information, not an
 irregularity. absent_since_prior carries the earlier figure as value_b and no value_a.
 
+INFRA-046 appends `contradiction` and the optional field `quote_b`: two passages of one
+unit, in words, that cannot both be true. Only a model writes it (TEXT_RELATIONS), with
+both passages quoted from the unit in `quote` and `quote_b`; Python checks the words are in
+the unit and are two passages, never that they contradict, and it is never an amendment.
+Such an item is a finding only once Python has screened it on a judged path
+(SCREENED_FIELD): from any other agent, or refused, it is an ordinary item, as a relation
+the record did not declare always was. INFRA-047: a pair the passage step chose may stand
+in two units, the second named in `compared_unit_id`, each quote held to its own unit.
+
+INFRA-048 appends `claim_not_met`: a model's settled "not met" on a claim, under a rule declaring
+`[compare: cells]`. `quote` holds the cells Python selected and `quote_b` the claim, the rule's own
+text, so no field is new. Only the cell step writes it (CELL_RELATIONS): Python checks that the
+cells stand in the unit, never that the claim fails, and it is never an amendment.
+
+INFRA-051 appends `rule_not_met`: a model's settled No to the rule check (config/auditor_questions.json
+`rule_check`) on a plan where Python computed no figure (kind uncomputable), decided from its choice
+probabilities with no text written. `quote` is the unit's own text, which Python copies verbatim, so
+no field is new. Only the rule-check step writes it (RULE_CHECK_RELATIONS): Python checks the plan
+was uncomputable and the quote is the unit's text, never that the rule is not met, and it is never
+an amendment.
+
 The schema lives in config/agent_contracts.json under `finding_record`; this
 module reads it rather than carrying a second copy, the same discipline
 pipeline_amendment_validator follows for `required` and `field_forms`.
@@ -78,12 +99,14 @@ _FALLBACK = {
     "fields": ["rule_id", "source_rule_id", "unit_id", "value_a", "unit_a",
                "value_b", "unit_b", "relation", "record_verdict", "source_refs",
                "explanation", "field_label", "delta", "band_distance_change",
-               "provenance"],
+               "provenance", "quote", "quote_b"],
     "required": ["rule_id", "unit_id", "relation", "record_verdict"],
     "relations": ["sum_mismatch", "above_band", "below_band", "missing_field",
                   "product_mismatch", "ratio_out_of_range", "date_window",
                   "licence_missing", "changed_from_prior", "unchanged_from_prior",
-                  "moved_toward", "moved_away", "absent_since_prior"],
+                  "moved_toward", "moved_away", "absent_since_prior",
+                  "rate_mismatch", "carry_mismatch", "copy_mismatch", "unit_mismatch",
+                  "contradiction", "claim_not_met", "rule_not_met"],
     "verdicts": ["ok", "irregular"],
 }
 
@@ -117,16 +140,62 @@ def relations() -> tuple:
     return tuple(schema()["relations"])
 
 
-def is_finding(item) -> bool:
-    """True when an item is shaped like a Finding record.
+# Fields the contracts declare as strings and the readers use as keys or text, and fields
+# they declare as lists. The rule id aliases, declared below, count as strings too.
+STRING_FIELDS = ("source_rule_id", "unit_id", "compared_unit_id", "verdict", "finding",
+                 "recommendation", "procedure_text", "evidence", "source_url", "reference_url")
+LIST_FIELDS = ("ref_ids", "source_refs")
 
-    Deliberately structural, not a guess about intent: an item counts when it
-    carries a relation from the declared set and a verdict field. An agent's other
-    items (an extraction, a redaction, an editorial observation) are untouched.
-    """
+
+def _item_id_text(value):
+    """A stable string for an `item_id` that is not one: supersession joins revisions by
+    this id, so it is kept, never removed."""
+    return json.dumps(value, sort_keys=True, default=str)
+
+
+def with_readable_ids(item):
+    """An item with its declared fields safe to read, applied by the decoder
+    (`agent_wrapper.decode_items`) and the judged path, which reads a reply before any
+    envelope. A model can write any JSON, and the contract check accepts a list of scalars
+    anywhere. A value of the wrong shape is removed, as if the model had written none, and
+    the field is named in `unreadable_fields`; an `item_id` becomes a string instead. Other
+    fields (`value_a`, `field_label`) are not touched here. The item stays in view, and the
+    model's reply stays whole in the saved record. Returns the same object when nothing
+    needed changing, so a clean item keeps its identity for `stamp_written_by`."""
+    if not isinstance(item, dict):
+        return item
+    bad = [k for k in STRING_FIELDS + RULE_ID_FIELD_ALIASES if item.get(k) is not None and not isinstance(item[k], str)]
+    bad += [k for k in LIST_FIELDS if item.get(k) is not None and not isinstance(item[k], (list, tuple))]
+    bad_id = item.get("item_id") is not None and not isinstance(item["item_id"], str)
+    if not bad and not bad_id:
+        return item
+    out = {k: v for k, v in item.items() if k not in bad}
+    if bad_id:
+        out["item_id"] = _item_id_text(item["item_id"])
+    out["unreadable_fields"] = bad + (["item_id"] if bad_id else [])
+    return out
+
+
+def is_finding_shaped(item) -> bool:
+    """True when an item carries a relation from the declared set and a verdict field.
+    The judged paths read a reply with this, before Python has screened anything."""
     if not isinstance(item, dict):
         return False
     return item.get("relation") in relations() and "record_verdict" in item
+
+
+def is_finding(item) -> bool:
+    """True when an item is a Finding record.
+
+    Deliberately structural, not a guess about intent: an item counts when it is
+    shaped like one (is_finding_shaped). An agent's other items (an extraction, a
+    redaction, an editorial observation) are untouched. INFRA-046: a relation in
+    words counts only once Python screened it (SCREENED_FIELD): its quotes are all
+    there is to check, and only the judged paths check them.
+    """
+    if not is_finding_shaped(item):
+        return False
+    return item.get("relation") not in TEXT_RELATIONS or item.get(SCREENED_FIELD) is True
 
 
 def validate_finding(item, *, registry_ids=None) -> tuple[bool, list]:
@@ -174,6 +243,275 @@ def validate_finding(item, *, registry_ids=None) -> tuple[bool, list]:
                 if not (_REF_PATTERN.fullmatch(str(r)) or _WEBREF_PATTERN.fullmatch(str(r))):
                     errors.append(f"source_refs entry {r!r} is not a REF-* or WEB-REF-* id")
     return (not errors, errors)
+
+
+# ---------------------------------------------------------------------------
+# S2a (honest deliverables): who wrote a finding, said the same way everywhere.
+#
+# The discriminator is the one paired_review.computed_finding_items already
+# uses, read off the result envelope a finding was posted under: Python's own
+# records go out under backend "paired" (paired review) or "computed" (the
+# comparison with an earlier version) with a model id starting "python". Every
+# other backend is a model's reply, whatever agent name it carries. Nothing
+# here reads an agent name, and an unknown provenance is never called computed.
+COMPUTED_BACKENDS = ("paired", "computed")
+WRITTEN_BY_PYTHON = "python"
+WRITTEN_BY_MODEL = "model"
+# The mark a reader sees beside every model finding that did not become an
+# amendment. A model finding never becomes one (check 269), so the mark is
+# true of every model finding. Plain words, one sentence per fact.
+MODEL_FINDING_MARK = ("Written by a model. Not promoted to an amendment. "
+                      "Not checked by Python.")
+COMPUTED_FINDING_MARK = "Computed by Python from the document's own figures."
+# Reader check RD14: an absence is checked, not computed from figures.
+CHECKED_ABSENCE_MARK = "Checked in code: the field is absent from this unit's text."
+# The relations that say a field is absent (the one copy; paired_review reads it).
+ABSENCE_RELATIONS = ("missing_field", "licence_missing")
+# The relations that compare two passages in words, with no figure (INFRA-046; the one
+# copy). Python never writes one: only a model does, with both passages quoted.
+TEXT_RELATIONS = ("contradiction", "claim_not_met", "rule_not_met")
+# INFRA-048: the relation in words whose evidence is a table's cells, not two passages. Python
+# writes it from a model's decision, at `cell_selection.finding` alone.
+CELL_RELATIONS = ("claim_not_met",)
+# INFRA-051: the relation a settled No to the rule check writes on an uncomputable plan, its
+# evidence the unit's own text, which Python quotes verbatim. Written at the rule-check step alone
+# (auditor_questions.rule_check_reply, held to paired_review._rule_check_refusal).
+RULE_CHECK_RELATIONS = ("rule_not_met",)
+# Set by Python alone, on a judged path, after judged_item_refusal kept the item
+# (paired_review.mark_screened). A model's own copy is removed where its reply becomes an
+# envelope (agent_wrapper._finalize_envelope, through without_screened_mark), so an item
+# carrying it was screened. Not on every read: Python's own envelopes are read back too.
+SCREENED_FIELD = "text_screened"
+
+
+def without_screened_mark(item):
+    """A model's item with no mark of Python's, whatever the model wrote."""
+    if isinstance(item, dict) and SCREENED_FIELD in item:
+        return {k: v for k, v in item.items() if k != SCREENED_FIELD}
+    return item
+# Reader check RD1/RD4/RD6: what a model's note says when no record names the model
+# that wrote it (the one copy; paired_review and summary_generators read it).
+NOTE_MODEL_NOT_RECORDED = "not recorded"
+# Reader check RD9: how a relation READS in a deliverable. The relation names are
+# the Finding record's vocabulary and stay exactly as they are everywhere else;
+# only the words a reader sees change (the irregular reading, then the ok one).
+RELATION_WORDS = {
+    "above_band": ("above the allowed range", "inside the allowed range"),
+    "below_band": ("below the allowed range", "inside the allowed range"),
+    "ratio_out_of_range": ("ratio outside the allowed range", "ratio inside the allowed range"),
+    "sum_mismatch": ("total does not match its parts", "total matches its parts"),
+    "product_mismatch": ("product does not match the stated figure", "product matches the stated figure"),
+    "missing_field": ("required field missing", "required field present"),
+    "date_window": ("dates further apart than allowed", "dates within the allowed gap"),
+    "licence_missing": ("required reference missing", "required reference present"),
+    "changed_from_prior": ("changed since the earlier version", "changed since the earlier version"),
+    "unchanged_from_prior": ("unchanged since the earlier version", "unchanged since the earlier version"),
+    "moved_toward": ("moved toward the allowed range", "moved toward the allowed range"),
+    "moved_away": ("moved away from the allowed range", "moved away from the allowed range"),
+    "absent_since_prior": ("absent since the earlier version", "absent since the earlier version"),
+    "rate_mismatch": ("figure does not match its stated rate", "figure matches its stated rate"),
+    "carry_mismatch": ("carried figure does not match the unit before",
+                       "carried figure matches the unit before"),
+    "copy_mismatch": ("copied figure does not match its source", "copied figure matches its source"),
+    "unit_mismatch": ("figure written in another measure", "figure written in its own measure"),
+    "contradiction": ("two passages contradict each other", "two passages contradict each other"),
+    "claim_not_met": ("the selected cells do not meet the claim", "the selected cells do not meet the claim"),
+    "rule_not_met": ("the part does not meet the rule", "the part does not meet the rule"),
+}
+
+
+@localization.presentation
+def relation_words(relation, verdict="irregular") -> str:
+    """A relation in a reader's words, in the run's output language."""
+    words = RELATION_WORDS.get(str(relation))
+    if not words:
+        return str(relation)
+    return localization.text(words[0] if str(verdict or "irregular").lower() != "ok" else words[1])
+
+
+def written_by(backend, model) -> str:
+    """"python" when the envelope is Python's own record, else "model"."""
+    if str(backend or "") in COMPUTED_BACKENDS and str(model or "").startswith("python"):
+        return WRITTEN_BY_PYTHON
+    return WRITTEN_BY_MODEL
+
+
+def stamp_written_by(results, items):
+    """Copies of `items`, each stamped with `written_by`, decided from the
+    result envelope the item object was posted under (by object identity, so a
+    copy made later cannot change the answer). An item no envelope claims is
+    stamped "model": provenance that cannot be shown is never called computed."""
+    owner = {}
+    for result in results or []:
+        if not isinstance(result, dict):
+            continue
+        parsed = result.get("parsed")
+        found = parsed.get("items") if isinstance(parsed, dict) else None
+        who = written_by(result.get("backend"), result.get("model"))
+        for item in found or []:
+            if isinstance(item, dict):
+                owner[id(item)] = who
+    out = []
+    for item in items or []:
+        if isinstance(item, dict):
+            who = owner.get(id(item), WRITTEN_BY_MODEL)
+            stamped = dict(item, written_by=who)
+            if who == WRITTEN_BY_MODEL:
+                # S2 checker A4: `provenance` is Python's claim about its own
+                # record; a model that writes it does not get to make that claim.
+                stamped.pop("provenance", None)
+            out.append(stamped)
+        else:
+            out.append(item)
+    return out
+
+
+def is_model_written(item) -> bool:
+    """True unless the item was stamped as Python's own record."""
+    return not (isinstance(item, dict) and item.get("written_by") == WRITTEN_BY_PYTHON)
+
+
+@localization.presentation
+def provenance_mark(item) -> str:
+    """The reader-facing mark for one finding, in the run's output language."""
+    if is_model_written(item):
+        return localization.text(MODEL_FINDING_MARK)
+    if item.get("relation") in ABSENCE_RELATIONS:
+        return localization.text(CHECKED_ABSENCE_MARK)
+    return localization.text(COMPUTED_FINDING_MARK)
+
+
+# Reader check round 1 (RC7): the fields that make a record read as checked. A
+# model's record keeps its claim, but these are never shown on it as if they
+# described a checked finding; the model's own verdict travels as
+# `model_claimed_verdict`, and its confidence is not carried into a deliverable.
+CHECKED_SOUNDING_FIELDS = ("confidence", "record_verdict", "verdict")
+
+
+def model_finding_for_reader(item) -> dict:
+    """A model-written record as the deliverables carry it: its claim and figures,
+    marked unchecked, without the fields that would make it read as checked."""
+    out = {k: v for k, v in dict(item).items() if k not in CHECKED_SOUNDING_FIELDS and k != "provenance"}
+    claimed = item.get("record_verdict") or item.get("verdict")
+    if claimed:
+        out["model_claimed_verdict"] = claimed
+    out.update(written_by=WRITTEN_BY_MODEL, promoted=False, checked_by_python=False)
+    return out
+
+
+def written_form(value, tokens):
+    """Reader check RD18: `value` as one of `tokens` (numbers as a text writes
+    them) writes it, or None when none does."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    for token in tokens or ():
+        try:
+            if float(token) == float(value):
+                return token
+        except ValueError:
+            continue
+    return None
+
+
+def figure_text(value, unit, tokens=None) -> str:
+    """Reader check round 3 (item 7): THE figure formatter, used by every file a
+    reader receives (the amendment comment, the summaries, the evidence line). A
+    figure the unit's own text writes is shown as written ("61", not "61.0"); a
+    figure it does not write keeps the record's own format ("16.0", which checks
+    171 and 172 hold). The unit follows, except a bare ratio's unit "1"."""
+    unit = str(unit or "").strip()
+    shown = written_form(value, tokens) or "%s" % (value,)
+    return ("%s %s" % (shown, unit)) if unit and unit != "1" else shown
+
+
+def value_a_text(item, tokens=None) -> str:
+    """A record's first figure through the one formatter. A sum of addends the text
+    writes as whole numbers is written the same way ("8 kg" for 3 + 5 kg, not
+    "8.0 kg"), whether or not the total itself is written anywhere."""
+    a = item.get("value_a")
+    addends = item.get("addends")
+    if item.get("relation") == "sum_mismatch" and isinstance(addends, list) and addends \
+            and isinstance(a, float) and a.is_integer() and not written_form(a, tokens):
+        shown = [written_form(v, tokens) for v in addends]
+        if all(shown) and all("." not in t for t in shown):
+            return figure_text(int(a), item.get("unit_a"))
+    return figure_text(a, item.get("unit_a"), tokens)
+
+
+def addends_text(item, tokens=None):
+    """The addends a sum record names ("3 + 5 kg"), each as the text writes it,
+    or None when the record names none (reader check round 3, item 7)."""
+    addends = item.get("addends") if isinstance(item, dict) else None
+    if not isinstance(addends, list) or not addends:
+        return None
+    shown = [written_form(v, tokens) or "%s" % (v,) for v in addends]
+    return figure_text(" + ".join(shown), item.get("unit_a"))
+
+
+def _shown(value, unit, tokens):
+    return figure_text(value, unit, tokens)
+
+
+@localization.presentation
+def reader_line(item) -> str:
+    """One finding as a READER sees it (deliverables only; prompts keep
+    typed_line). The relation is named in words, a declared field the unit lacks
+    is said as such rather than as "0 values against 1 required", and a model's
+    line carries no verdict (RC6, RC12, RC13)."""
+    if not isinstance(item, dict):
+        return str(item)
+    parts = []
+    rule = resolved_rule_id(item)
+    if rule:
+        src = item.get("source_rule_id")
+        parts.append(f"{rule} ({src})" if src and src != rule else str(rule))
+    if item.get("unit_id"):
+        parts.append(localization.text("unit ") + str(item["unit_id"]))
+    relation = item.get("relation")
+    if relation:
+        # RD9: in words; a model's item reads as what the model claimed.
+        claimed = item.get("record_verdict") or item.get("model_claimed_verdict") or "irregular"
+        parts.append(relation_words(relation, claimed))
+    if relation == "missing_field" and str(item.get("unit_b") or "") == "required":
+        parts.append(localization.text("required field: ") + str(item.get("field_label") or "?")
+                     + localization.text("; found: none"))
+    else:
+        tokens = item.get("_written_tokens")
+        if item.get("value_a") is not None:
+            shown = localization.text("figure: ") + value_a_text(item, tokens)
+            # Reader check round 3 (item 7): a sum names the values it added.
+            added = addends_text(item, tokens) if relation == "sum_mismatch" else None
+            if added:
+                shown += " " + localization.text("(the sum of '{field}': {values})",
+                                                 field=item.get("addend_field") or "?", values=added)
+            parts.append(shown)
+        if item.get("value_b") is not None:
+            parts.append(localization.text("compared with: ") + _shown(item["value_b"], item.get("unit_b"), tokens))
+    if relation in RULE_CHECK_RELATIONS:
+        # INFRA-051: a model's decision on the part's own text, which Python quoted whole.
+        parts.append(localization.text('the part "{part}" was judged not to meet the rule',
+                                       part=" ".join(str(item.get("quote") or "?").split())))
+    elif relation in CELL_RELATIONS:
+        # INFRA-048: the claim and the cells Python selected are the finding; a reader sees both.
+        parts.append(localization.text('the claim "{claim}" against the cells "{cells}"',
+                                       claim=" ".join(str(item.get("quote_b") or "?").split()),
+                                       cells=" ".join(str(item.get("quote") or "?").split())))
+    elif relation in TEXT_RELATIONS:
+        # INFRA-046: the two passages are the finding; a reader sees both, whole.
+        first = " ".join(str(item.get("quote") or "?").split())
+        second = " ".join(str(item.get("quote_b") or "?").split())
+        if item.get("compared_unit_id") and item.get(SCREENED_FIELD):
+            # INFRA-047: the reader is told both units, by Python's own mark, never a model's word.
+            parts.append(localization.text('one passage, in {unit_a}, says "{first}", another, in {unit_b}, says "{second}"',
+                                           unit_a=item.get("unit_id") or "?", first=first,
+                                           unit_b=item["compared_unit_id"], second=second))
+        else:
+            parts.append(localization.text('one passage says "{first}", another says "{second}"',
+                                           first=first, second=second))
+    refs = item.get("source_refs") or item.get("ref_ids")
+    if isinstance(refs, list) and refs:
+        parts.append(localization.text("cites ") + ", ".join(str(r) for r in refs[:4]))
+    return "; ".join(parts)
 
 
 def strip_reasoning(items):
@@ -363,6 +701,21 @@ PRIOR_RELATIONS = ("changed_from_prior", "unchanged_from_prior", "moved_toward",
                    "moved_away", "absent_since_prior")
 OUTSIDE_BAND_RELATIONS = ("above_band", "below_band")
 
+
+def figure_relations() -> tuple:
+    """The relations that compare two figures of this document, derived from the
+    declared schema rather than typed out (R1, D-S22 item 1 (d)). The schema's own
+    sentence for `relation` (config/agent_contracts.json, finding_record.says) splits
+    the declared relations in two: "a disagreement between two figures of this
+    document" or one of the five earlier-version relations (PRIOR_RELATIONS). The
+    absence relations (ABSENCE_RELATIONS) are taken out as well: their figures are
+    Python's count of the field (0 of 1 required), never a figure the document
+    writes, and so are the relations in words (TEXT_RELATIONS, INFRA-046), which carry
+    no figure at all. Whatever the schema declares next lands here without a code change."""
+    return tuple(r for r in relations()
+                 if r not in ABSENCE_RELATIONS and r not in PRIOR_RELATIONS
+                 and r not in TEXT_RELATIONS)
+
 _PRIOR_SECTIONS = (
     ("moved_toward", "Moved toward the mandate"),
     ("moved_away", "Moved away from the mandate"),
@@ -417,8 +770,12 @@ def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
     declared renders byte-identically to before. No heading here may contain the
     token "Amendment ", which amendment_render's drift guard counts.
     """
+    # Adversarial round 2 (a): only a record stamped as Python's own enters; an
+    # UNSTAMPED record (provenance that cannot be shown) is never called computed,
+    # whatever `provenance` it carries (is_model_written, the one test).
     prior = [f for f in findings or []
-             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"]
+             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"
+             and not is_model_written(f)]
     refusals, orphans, outside = list(refusals or []), list(orphans or []), list(outside or [])
     if not prior and not refusals and not orphans and not outside:
         return []

@@ -1,0 +1,18 @@
+# The attributes these files carried in tools/ (tools/.gitattributes and the root
+# .gitattributes globs tools/auditor_v2*.py and tools/auditor_classifier_lora*.py),
+# kept so a checkout cannot change the bytes their recorded hashes were taken over.
+auditor_classifier_lora_cloud.py -text
+auditor_classifier_lora_current_cloud.py -text
+auditor_classifier_lora_stabilized_cloud.py -text
+auditor_classifier_lora_current_prepare.py -text
+auditor_classifier_lora_prepare.py -text
+auditor_classifier_lora_stabilized_prepare.py -text
+auditor_v2_cloud.py -text
+auditor_v2_prepare.py -text
+auditor_final_cloud.py -text
+prepare_auditor_final.py -text
+auditor_final_retry_cloud.py -text
+prepare_auditor_final_retry.py -text
+test_auditor_final_retry.py -text
+test_auditor_feature_admission.py -text whitespace=cr-at-eol
+validate_auditor_feature_admission.py -text whitespace=cr-at-eol

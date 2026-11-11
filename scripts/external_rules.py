@@ -110,6 +110,10 @@ def _subject_of(rule):
     return out
 
 
+def _compare_of(rule):
+    return str(rule.get("compare") or "").strip().lower()
+
+
 def detect_external_conflicts(conventions, external_rules):
     """Where an operator convention and an external rule disagree.
 
@@ -117,7 +121,11 @@ def detect_external_conflicts(conventions, external_rules):
       1. the two rules are ABOUT the same thing: their declared subjects
          (scope plus requires) overlap
       2. they say DIFFERENT things about it: their declared severity or action
-         differ, or one declares a conditional suspension the other does not
+         differ, one declares a conditional suspension the other does not, or
+         they declare a different `compare`. A convention declaring `compare`
+         carries no scope or requires (the parser refuses them), so it has no
+         subject and this only fires for an external rule, read unparsed, that
+         declares both.
 
     Rules that overlap and agree are not a conflict, and both apply. Rules that
     do not overlap are not a conflict either, and both apply. Only genuine
@@ -150,6 +158,10 @@ def detect_external_conflicts(conventions, external_rules):
                 differences.append({"field": "unless",
                                     "convention": "declared" if conv_unless else "none",
                                     "external": "declared" if ext_unless else "none"})
+            conv_compare, ext_compare = _compare_of(conv), _compare_of(ext)
+            if conv_compare != ext_compare:
+                differences.append({"field": "compare", "convention": conv_compare or "none",
+                                    "external": ext_compare or "none"})
             if not differences:
                 continue
             subject = " ".join(sorted(" ".join(t) for t in shared))

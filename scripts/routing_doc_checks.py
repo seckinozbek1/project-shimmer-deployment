@@ -22,19 +22,20 @@ def check():
         table = text.split('| Agent |', 1)[1].split('Gate/trigger keys', 1)[0]
         return set(re.findall(r'^\| `([A-Z][A-Z_]+)` \|', table, re.M))
 
-    assert len(names) == 18 and roster(readme) == names
+    assert len(names) == 19 and roster(readme) == names
     altered = readme.replace('| `PROCESSOR` |', '| `OMITTED_AGENT` |')
     assert roster(altered) != roster(readme), 'NO_OBSERVED_EFFECT'
     assert roster(altered) != names
     assert roster(readme) == names
     tree = ast.parse((root / 'scripts/pipeline.py').read_text(encoding='utf-8'))
-    profile = next(ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
-                   and isinstance(n.value, ast.Dict)
-                   and any(isinstance(t, ast.Name) and t.id == '_LOCAL_PROFILE' for t in n.targets))
-    resolver = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_resolve_local_models')
+    # D-S57 item 2: the local map is the registry's `local` blocks, read by the pipeline's own
+    # reader and resolver (both executed from the pipeline's source).
+    readers = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+               and n.name in ('_registry_local_profile', '_resolve_local_models')]
+    assert len(readers) == 2
     namespace = {'Path': Path, 'json': json}
-    exec(compile(ast.Module(body=[resolver], type_ignores=[]), '<actual local resolver>', 'exec'), namespace)
-    profile = namespace['_resolve_local_models'](profile, root)
+    exec(compile(ast.Module(body=readers, type_ignores=[]), '<actual local resolver>', 'exec'), namespace)
+    profile = namespace['_resolve_local_models'](namespace['_registry_local_profile'](root), root)
     for line in readme.splitlines():
         if not line.startswith('| `'):
             continue
@@ -65,4 +66,4 @@ def check():
         assert generated == checked_in, 'generated harness drift'
         changed = dict(checked_in, schema_version='fixture mismatch')
         assert changed != generated
-    return 'PASS', 'all 18 runtime-reference roster entries and resolved Cloud/Local models, CLI dense default, canonical deliverable names and isolated regenerated harness match; omitted roster and changed harness rejected'
+    return 'PASS', 'all 19 runtime-reference roster entries and resolved Cloud/Local models, CLI dense default, canonical deliverable names and isolated regenerated harness match; omitted roster and changed harness rejected'

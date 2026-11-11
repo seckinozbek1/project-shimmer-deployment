@@ -1,0 +1,25 @@
+{
+  "run_id": "0c0501e00c0501e00c0501e00c0501e0",
+  "status": "completed",
+  "task": "review",
+  "submitted_at": "2026-10-29T09:00:00+00:00",
+  "started_at": "2026-10-29T09:00:05+00:00",
+  "completed_at": "2026-10-29T09:41:10+00:00",
+  "exit_code": 0,
+  "error": null,
+  "progress": null,
+  "files": [
+    "sample_ledger.md"
+  ],
+  "sensitive": false,
+  "review_mode": "paired",
+  "question": null,
+  "intake_mode": null,
+  "review_targets": null,
+  "prior_files": null,
+  "native_intake": null,
+  "input_language": "auto",
+  "output_language": "en",
+  "agent_briefs": null,
+  "multi_round": true
+}

@@ -77,6 +77,9 @@
     "bow": 0.0238,
     "word_overlap": 0.2
   },
+  "choice_decision": {
+    "_what_this_is": "Thresholds of the choice decision (scripts/choice_decision.py, D-S41): the confidence below which a decision is cannot be settled. One entry per family, each measured on development material and recorded with the error rate it produces, as above. No family has one yet: a family with no entry decides nothing, and the step that needs it asks no question and says so."
+  },
   "shape_name": {
     "_measured_on": "14 positive, 13 negative. Same construction and same union.",
     "_why_no_safety_veto": "Measured: the veto threshold that would exclude every false case sits ABOVE the weakest true case, so a veto would rescue nothing it should and would rescue things it should not. Omitted rather than set to a number that does no work.",

@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 
-from cloud_run_common import InvalidPreparation, require, safe_metadata
+from cloud_run_common import InvalidPreparation, no_window, require, safe_metadata
 from cloud_run_watchdog import LambdaTermination, load_credential
 
 
@@ -37,6 +37,19 @@ def project_response(endpoint, raw):
                      architecture=label(v['architecture']), region=label(v['region']['name'])) for v in raw]
     if endpoint == 'ssh-keys':
         return [dict(id=identifier(v['id']), name=label(v['name'])) for v in (raw if isinstance(raw,list) else [raw])]
+    if endpoint == 'file-systems':
+        # D-S50: the one read of the provider's filesystems. Names, region and the bytes it
+        # says are used, and any field it names a capacity; never who made one, nor its path.
+        result = []
+        for v in raw:
+            row = dict(id=identifier(v['id']), name=label(v['name']), region=label(v['region']['name']),
+                       bytes_used=v.get('bytes_used') if type(v.get('bytes_used')) is int else None,
+                       is_in_use=v.get('is_in_use') if type(v.get('is_in_use')) is bool else None)
+            for key, value in v.items():
+                if 'capacity' in key and type(value) in (int, float):
+                    row[label(key)] = value
+            result.append(row)
+        return result
     if endpoint == 'instance-operations/launch':
         require(len(raw['instance_ids'])==1, 'launch did not return exactly one instance')
         return dict(instance_ids=[identifier(raw['instance_ids'][0])])
@@ -44,15 +57,24 @@ def project_response(endpoint, raw):
     return {}
 
 
+def allowed(endpoint, body, method):
+    """Whether the adapter may send this request at all. GET on the inventories (instance
+    types, images, ssh keys and, since D-S50, file systems), one bounded launch, and DELETE of
+    one ssh key by its id. Nothing creates, changes or deletes a filesystem."""
+    deleting = endpoint.startswith('ssh-keys/') and method == 'DELETE' and body is None
+    if deleting:
+        identifier(endpoint.split('/')[1])
+    reading = endpoint in ('instance-types', 'images', 'ssh-keys', 'file-systems') and method is None and (
+        body is None or endpoint != 'file-systems')
+    return deleting or reading or (endpoint == 'instance-operations/launch' and method is None)
+
+
 class LambdaExperiment(LambdaTermination):
     def request(self, endpoint, body=None, method=None):
         if endpoint in ('instances','instance-operations/terminate'):
             require(method is None, 'invalid method')
             return super().request(endpoint, body)
-        deleting=endpoint.startswith('ssh-keys/') and method=='DELETE' and body is None
-        if deleting:identifier(endpoint.split('/')[1])
-        require(deleting or (endpoint in ('instance-types','images','ssh-keys') and method is None)
-                or (endpoint=='instance-operations/launch' and method is None), 'provider operation not allowed')
+        require(allowed(endpoint, body, method), 'provider operation not allowed')
         if endpoint=='instance-operations/launch':
             # The one optional field beyond the bounded launch: exactly one provider
             # filesystem to attach, for the operator-declared asset copy. Its name
@@ -74,7 +96,8 @@ class LambdaExperiment(LambdaTermination):
             args=[executable,'--disable','--silent','--proto','=https','--connect-timeout','10','--max-time','20','--config','-','--write-out','\n%{http_code}']
             if method:args+=['--request',method]
             if body is not None:args+=['--header','Content-Type: application/json','--data-binary',json.dumps(body)]
-            response=subprocess.run(args+['https://cloud.lambda.ai/api/v1/'+endpoint],input=config,capture_output=True,text=True,timeout=25)
+            response=subprocess.run(args+['https://cloud.lambda.ai/api/v1/'+endpoint],input=config,capture_output=True,text=True,timeout=25,
+                                    creationflags=no_window())
             payload,sep,status=response.stdout.rpartition('\n')
             require(response.returncode==0 and sep and status in ('200','201','204'), 'provider request failed')
             if status=='204':return {'data': {}}

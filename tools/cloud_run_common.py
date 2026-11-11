@@ -5,13 +5,40 @@ import hashlib
 import ipaddress
 import json
 import math
+import os
 import re
+import subprocess
 import tarfile
 from pathlib import Path, PurePosixPath
 
 
 class InvalidPreparation(ValueError):
     pass
+
+
+# D-079: a console program started from a process with no console (the detached
+# controller, its watchdog) opens a visible window on Windows. Every child process the
+# operator-side tools start passes its creation flags through no_window, so ssh, scp,
+# ssh-keygen, curl, git and python children run without one. Elsewhere nothing changes.
+CREATE_NO_WINDOW = 0x08000000
+
+
+def windows():
+    return os.name == 'nt'
+
+
+def no_window(flags=0, keep_console=False):
+    """The creation flags for one child process: `flags` with the Windows no-window flag
+    added, or `flags` unchanged off Windows or where the child must keep the operator's
+    console (an interactive ssh passphrase prompt, a foreground re-exec)."""
+    if keep_console or not windows():
+        return flags
+    return flags | CREATE_NO_WINDOW
+
+
+def hidden_run(*args, **kwargs):
+    """subprocess.run with no window, for a `runner` argument that defaults to subprocess.run."""
+    return subprocess.run(*args, creationflags=no_window(kwargs.pop('creationflags', 0)), **kwargs)
 
 
 def require(condition, reason):
@@ -158,11 +185,15 @@ def extract_source(archive, destination, expected):
             path.write_bytes(tar.extractfile(m).read())
 
 
-def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120):
+# The caps are required parameters with no default: every caller passes its own sealed soft
+# and hard caps (R3), so no cap is ever a code default.
+def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120, *, soft_usd, hard_usd):
     require(type(hourly_rate) in (int, float) and math.isfinite(hourly_rate) and hourly_rate > 0,
             'positive operator hourly rate required')
     require(math.isfinite(running_epoch) and running_epoch > 0, 'billing start required')
-    require(0 < reserve_seconds < 5 / hourly_rate * 3600, 'invalid termination reserve')
-    return {'soft_epoch': running_epoch + 5 / hourly_rate * 3600,
-            'terminate_epoch': running_epoch + 10 / hourly_rate * 3600 - reserve_seconds,
-            'ceiling_epoch': running_epoch + 10 / hourly_rate * 3600}
+    require(all(type(v) in (int, float) and not isinstance(v, bool) and math.isfinite(v) for v in (soft_usd, hard_usd))
+            and 0 < soft_usd < hard_usd, 'positive soft cap below the hard cap required')
+    require(0 < reserve_seconds < soft_usd / hourly_rate * 3600, 'invalid termination reserve')
+    return {'soft_epoch': running_epoch + soft_usd / hourly_rate * 3600,
+            'terminate_epoch': running_epoch + hard_usd / hourly_rate * 3600 - reserve_seconds,
+            'ceiling_epoch': running_epoch + hard_usd / hourly_rate * 3600}

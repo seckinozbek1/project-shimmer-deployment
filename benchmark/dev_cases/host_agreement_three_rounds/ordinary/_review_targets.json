@@ -1,0 +1,20 @@
+{
+  "targets": [
+    "seat_agreement_round_3.docx"
+  ],
+  "grounding": [
+    "note_host_state_round_1.md",
+    "note_host_state_round_2.md",
+    "note_host_state_round_3.md",
+    "note_organisation_round_1.md",
+    "note_organisation_round_2.md",
+    "note_organisation_round_3.md",
+    "seat_agreement_round_1.docx",
+    "seat_agreement_round_2.docx"
+  ],
+  "prior": [
+    "seat_agreement_round_2.docx"
+  ],
+  "source": "operator",
+  "resolved_at": ""
+}

@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "asked": {
+    "movements": true,
+    "suggestions": true
+  },
+  "failed": 0,
+  "movements": [
+    {
+      "written_by": "model",
+      "provenance": "model_decided",
+      "movement_id": "movement.r1.r2.party_north.annual_share",
+      "issue_id": "annual_share",
+      "actor_id": "party_north",
+      "round_before": "r1",
+      "round_after": "r2",
+      "position_ids": [
+        "position.r1.party_north.annual_share",
+        "position.r2.party_north.annual_share",
+        "position.r1.party_south.annual_share"
+      ],
+      "other_actor_id": "party_south",
+      "answer": "toward",
+      "confidence": 0.9,
+      "model": "stub-not-a-model",
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python.",
+      "outcome": "decided"
+    },
+    {
+      "written_by": "model",
+      "provenance": "model_decided",
+      "movement_id": "movement.r2.r3.party_north.annual_share",
+      "issue_id": "annual_share",
+      "actor_id": "party_north",
+      "round_before": "r2",
+      "round_after": "r3",
+      "position_ids": [
+        "position.r2.party_north.annual_share",
+        "position.r3.party_north.annual_share",
+        "position.r2.party_south.annual_share"
+      ],
+      "other_actor_id": "party_south",
+      "answer": "away",
+      "confidence": 0.9,
+      "model": "stub-not-a-model",
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python.",
+      "outcome": "decided"
+    },
+    {
+      "written_by": "model",
+      "provenance": "model_decided",
+      "movement_id": "movement.r1.r2.party_south.annual_share",
+      "issue_id": "annual_share",
+      "actor_id": "party_south",
+      "round_before": "r1",
+      "round_after": "r2",
+      "position_ids": [
+        "position.r1.party_south.annual_share",
+        "position.r2.party_south.annual_share",
+        "position.r1.party_north.annual_share"
+      ],
+      "other_actor_id": "party_north",
+      "answer": "toward",
+      "confidence": 0.9,
+      "model": "stub-not-a-model",
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python.",
+      "outcome": "decided"
+    },
+    {
+      "written_by": "model",
+      "provenance": "model_decided",
+      "movement_id": "movement.r2.r3.party_south.annual_share",
+      "issue_id": "annual_share",
+      "actor_id": "party_south",
+      "round_before": "r2",
+      "round_after": "r3",
+      "position_ids": [
+        "position.r2.party_south.annual_share",
+        "position.r3.party_south.annual_share",
+        "position.r2.party_north.annual_share"
+      ],
+      "other_actor_id": "party_north",
+      "answer": "toward",
+      "confidence": 0.9,
+      "model": "stub-not-a-model",
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python.",
+      "outcome": "decided"
+    }
+  ],
+  "support": [
+    {
+      "written_by": "python",
+      "provenance": "computed",
+      "item": "selection",
+      "issue_id": "annual_share",
+      "party": "party_north",
+      "passages": [
+        {
+          "document_id": "note_north_round_1",
+          "unit_id": "u01-share",
+          "round_id": "r1",
+          "actor_id": "party_north",
+          "text": "Party North asks for a share of 61 units.",
+          "ref_id": "REF-0001",
+          "kind": "position",
+          "passage_id": "P1"
+        },
+        {
+          "document_id": "note_south_round_1",
+          "unit_id": "u01-share",
+          "round_id": "r1",
+          "actor_id": "party_south",
+          "text": "Party South asks for a share of 40 units.",
+          "ref_id": "REF-0002",
+          "kind": "position",
+          "passage_id": "P2"
+        },
+        {
+          "document_id": "note_north_round_2",
+          "unit_id": "u01-share",
+          "round_id": "r2",
+          "actor_id": "party_north",
+          "text": "Party North asks for a share of 58 units.",
+          "ref_id": "REF-0003",
+          "kind": "position",
+          "passage_id": "P3"
+        },
+        {
+          "document_id": "note_south_round_2",
+          "unit_id": "u01-share",
+          "round_id": "r2",
+          "actor_id": "party_south",
+          "text": "Party South asks for a share of 45 units.",
+          "ref_id": "REF-0004",
+          "kind": "position",
+          "passage_id": "P4"
+        },
+        {
+          "document_id": "note_north_round_3",
+          "unit_id": "u01-share",
+          "round_id": "r3",
+          "actor_id": "party_north",
+          "text": "Party North asks for a share of 62 units.",
+          "ref_id": "REF-0005",
+          "kind": "position",
+          "passage_id": "P5"
+        },
+        {
+          "document_id": "note_south_round_3",
+          "unit_id": "u01-share",
+          "round_id": "r3",
+          "actor_id": "party_south",
+          "text": "Party South asks for a share of 50 units.",
+          "ref_id": "REF-0006",
+          "kind": "position",
+          "passage_id": "P6"
+        }
+      ]
+    },
+    {
+      "written_by": "python",
+      "provenance": "computed",
+      "item": "outcome",
+      "issue_id": "annual_share",
+      "outcome": "suggested"
+    },
+    {
+      "item": "suggestion",
+      "issue_id": "annual_share",
+      "party": "party_north",
+      "suggested_wording": "Share: 58 units, reviewed every three years.",
+      "why": "It keeps the figure Party North stated in round 2 and the review period both texts hold.",
+      "written_by": "model",
+      "provenance": "model_written",
+      "checked_by_python": false,
+      "promoted": false,
+      "mark": "Written by a model. Not promoted to an amendment. Not checked by Python.",
+      "model": "stub-not-a-model",
+      "citations": [
+        {
+          "document_id": "note_north_round_2",
+          "unit_id": "u01-share",
+          "round_id": "r2",
+          "actor_id": "party_north",
+          "text": "Party North asks for a share of 58 units.",
+          "ref_id": "REF-0003",
+          "kind": "position",
+          "passage_id": "P3"
+        },
+        {
+          "document_id": "note_south_round_2",
+          "unit_id": "u01-share",
+          "round_id": "r2",
+          "actor_id": "party_south",
+          "text": "Party South asks for a share of 45 units.",
+          "ref_id": "REF-0004",
+          "kind": "position",
+          "passage_id": "P4"
+        }
+      ]
+    }
+  ]
+}

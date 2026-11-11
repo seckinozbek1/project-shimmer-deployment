@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "case_id": "demo_water_accord",
+  "rule": "a later round re-runs only what changed; an unchanged unit's computed findings are reused from the round that computed them",
+  "rounds": [
+    {
+      "round_id": "r1",
+      "sequence": 1,
+      "documents": [
+        {
+          "document_id": "accord_round_1",
+          "units": [
+            {
+              "unit_id": "u01-article-1-purpose",
+              "signature": "8a5db5216874d89585c40ed18f85d984445b65b610215a397ad349ddf368eb92",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-article-2-annual-share",
+              "signature": "d7902589c1385c2f4eec7183e0533ff8ac9f717a296b4695dd1b7238c6b77fa3",
+              "status": "computed",
+              "pairs": 1,
+              "pairs_computed": 1,
+              "findings": 1,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u03-article-3-review",
+              "signature": "c4ddac5761705b9fa7dd66f85ea8c24d40c59f6c9f0ea4263f8d42dc2494acac",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 1,
+          "units_reused": 0,
+          "units_computed": 3,
+          "findings": [
+            {
+              "ref": "document-level",
+              "kind": "finding",
+              "confidence": "CONFIDENT",
+              "rule_id": "CONV-001",
+              "unit_id": "u02-article-2-annual-share",
+              "relation": "above_band",
+              "record_verdict": "irregular",
+              "value_a": 61.0,
+              "unit_a": "units",
+              "source_refs": [],
+              "explanation": "Unit u02-article-2-annual-share under rule CONV-001: the share is 61.0 units, above the upper bound of 60.0 units.",
+              "value_b": 60.0,
+              "unit_b": "units",
+              "field_label": "share",
+              "provenance": "computed"
+            }
+          ],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_north_round_1",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "fc4d9b7055e1c4e34c5e7c02e080372d10715628282ff02788be47669423e136",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_south_round_1",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "1760a970a786ed162deae89f33a033459df7921ca2ebf7cb0fd652f3619137f5",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        }
+      ],
+      "seconds": 0.051962
+    },
+    {
+      "round_id": "r2",
+      "sequence": 2,
+      "documents": [
+        {
+          "document_id": "accord_round_2",
+          "units": [
+            {
+              "unit_id": "u01-article-1-purpose",
+              "signature": "8a5db5216874d89585c40ed18f85d984445b65b610215a397ad349ddf368eb92",
+              "status": "reused",
+              "reused_from": {
+                "round_id": "r1",
+                "document_id": "accord_round_1",
+                "unit_id": "u01-article-1-purpose"
+              },
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-article-2-annual-share",
+              "signature": "370d7d4bd6f702384b368a56ffa895bf182598c64e959ff0c36ac0f4a0217504",
+              "status": "computed",
+              "pairs": 1,
+              "pairs_computed": 1,
+              "findings": 0,
+              "needs_model": [
+                {
+                  "unit_id": "u02-article-2-annual-share",
+                  "rule_id": "CONV-001",
+                  "kind": "uncomputable"
+                }
+              ]
+            },
+            {
+              "unit_id": "u03-article-3-review",
+              "signature": "83f6bc98d117d99bcb988aaf10d8ca954554778951c2b436805e2118b8765172",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 1,
+          "units_reused": 1,
+          "units_computed": 2,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_north_round_2",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "3fda1279b896b62ccfbd21e7d067b7ce4217f2d47814c94c7906a266c7dbd413",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_south_round_2",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "b601b2d316e5a23f86cedc104e315cb33f10dff0cb293254ef2b9dbc1d654454",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        }
+      ],
+      "seconds": 0.002067
+    },
+    {
+      "round_id": "r3",
+      "sequence": 3,
+      "documents": [
+        {
+          "document_id": "accord_round_3",
+          "units": [
+            {
+              "unit_id": "u01-article-1-purpose",
+              "signature": "8a5db5216874d89585c40ed18f85d984445b65b610215a397ad349ddf368eb92",
+              "status": "reused",
+              "reused_from": {
+                "round_id": "r1",
+                "document_id": "accord_round_1",
+                "unit_id": "u01-article-1-purpose"
+              },
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u02-article-2-annual-share",
+              "signature": "127c22578257c621aef2afe2f1cb8ab64255d9e5b118e924350fe3833282cb78",
+              "status": "computed",
+              "pairs": 1,
+              "pairs_computed": 1,
+              "findings": 1,
+              "needs_model": []
+            },
+            {
+              "unit_id": "u03-article-3-review",
+              "signature": "83f6bc98d117d99bcb988aaf10d8ca954554778951c2b436805e2118b8765172",
+              "status": "reused",
+              "reused_from": {
+                "round_id": "r2",
+                "document_id": "accord_round_2",
+                "unit_id": "u03-article-3-review"
+              },
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 1,
+          "units_reused": 2,
+          "units_computed": 1,
+          "findings": [
+            {
+              "ref": "document-level",
+              "kind": "finding",
+              "confidence": "CONFIDENT",
+              "rule_id": "CONV-001",
+              "unit_id": "u02-article-2-annual-share",
+              "relation": "above_band",
+              "record_verdict": "irregular",
+              "value_a": 62.0,
+              "unit_a": "units",
+              "source_refs": [],
+              "explanation": "Unit u02-article-2-annual-share under rule CONV-001: the share is 62.0 units, above the upper bound of 60.0 units.",
+              "value_b": 60.0,
+              "unit_b": "units",
+              "field_label": "share",
+              "provenance": "computed"
+            }
+          ],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_north_round_3",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "e4dff8898032943a10e24ee2273cc9bcd2e5de294da87eb2f45e8e0b5eb71e9d",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        },
+        {
+          "document_id": "note_south_round_3",
+          "units": [
+            {
+              "unit_id": "u01-share",
+              "signature": "299cd7b6eb63d73c8f834d105670df3b24f3548f4bbf0c126d82431b449cde51",
+              "status": "computed",
+              "pairs": 0,
+              "pairs_computed": 0,
+              "findings": 0,
+              "needs_model": []
+            }
+          ],
+          "pairs_computed": 0,
+          "units_reused": 0,
+          "units_computed": 1,
+          "findings": [],
+          "relation_refusals": []
+        }
+      ],
+      "seconds": 0.006373
+    }
+  ],
+  "availability": "recorded"
+}

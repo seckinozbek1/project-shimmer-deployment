@@ -1,0 +1,15 @@
+{
+ "note": "The sets a subscription steering check may run (D-S104 item 1, D-401 item 6), by the digest of the prompts file and of the quick subset. An entry is added only by a recorded edit naming its source; a set not listed is refused. The refused list holds the fresh set and any sealed material by digest; benchmark/baselines/system_test.py's FRESH_PROMPTS_SHA256 is refused as well wherever that file is in the tree.",
+ "allowed": [],
+ "to_be_listed": [
+  "the gate set's quick subset (role B, GATE_SET.md)",
+  "PUBHEALTH development (role B's build record)",
+  "the development benchmarks (J1 half A)"
+ ],
+ "refused": [
+  {
+   "name": "the fresh set's prompts (system_test.FRESH_PROMPTS_SHA256, lane/choice-2)",
+   "sha256": "b3059fef83f0138e25818120246aa21e1273c78d3ee448c249b28105685734b8"
+  }
+ ]
+}

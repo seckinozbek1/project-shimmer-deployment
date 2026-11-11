@@ -1,4 +1,4 @@
-> Historical design/audit record. Current implementation and endpoint names are in the [README](../../README.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
+> Historical design/audit record. Current implementation and endpoint names are in the [runtime reference](../RUNTIME_REFERENCE.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
 
 # Console design plan (proposed, not built)
 
@@ -345,7 +345,8 @@ governance stop is a square, a crash is a triangle, success is a circle; this is
 single most load-bearing visual decision in the whole design and it is deliberately
 redundant across two channels, not one; (3) copy, a governance stop's detail line names
 the actual rule (`stop_reason.code`, one of `stopped_model_approval` /
-`stopped_redaction_gate` / `blocked` / `refused_sensitivity_layer_inactive`, rendered as
+`stopped_redaction_gate` / `blocked` / `refused_sensitivity_layer_inactive` /
+`refused_multi_round` (exit 8) / `refused_inst_finder_unratified` (exit 9), rendered as
 a full sentence, never the bare code) and explains what happens next (see copy below); a
 crash's detail line shows `stop_reason.detail`, which per the server's own comment
 (`server.py:1252-1253`) can be a short phrase or up to a 2000-character subprocess log

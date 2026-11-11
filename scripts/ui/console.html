@@ -166,6 +166,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   opacity: 1;
   cursor: default;
 }
+.demo-line { max-width: 72rem; margin: 24px auto; padding: 0 16px; font-size: 0.9rem; opacity: 0.85; }
 .masthead-nav {
   margin-top: 0.6rem;
   display: flex;
@@ -578,6 +579,27 @@ a.rule-link:hover { text-decoration-style: solid; }
   table.findings { display: block; overflow-x: auto; }
 }
 
+/* Loop S7: run detail sections for saved replies, model findings, switches,
+   the run report and the rounds table; the test-change-requests page. */
+table.s7-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.5rem; }
+table.s7-table th, table.s7-table td { padding: 0.25rem 0.5rem 0.25rem 0; border-bottom: 1px solid var(--hairline); text-align: left; vertical-align: top; }
+table.s7-table th { color: var(--quiet-text); font-weight: 500; }
+.s7-scroll { overflow-x: auto; }
+.model-finding { list-style: none; margin: 0 0 0.9rem; padding: 0; }
+.model-finding .finding-line { overflow-wrap: anywhere; }
+.tcr-entry { border-top: 1px solid var(--hairline); padding-top: 0.5rem; margin-top: 0.75rem; }
+.tcr-entry h3 { font-size: 0.95rem; overflow-wrap: anywhere; }
+.tcr-entry td { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .kv-table td:first-child { width: 7rem; }
+  .masthead-nav { flex-wrap: wrap; }
+  table.s7-stack, table.s7-stack tbody, table.s7-stack tr, table.s7-stack td { display: block; width: 100%; }
+  table.s7-stack tr:first-child { display: none; }
+  table.s7-stack tr { border-bottom: 1px solid var(--hairline); padding: 0.35rem 0; }
+  table.s7-stack td { border-bottom: none; padding: 0.1rem 0; overflow-wrap: anywhere; }
+  table.s7-stack td::before { content: attr(data-label) ": "; color: var(--quiet-text); font-family: inherit; }
+}
+
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -602,14 +624,24 @@ a.rule-link:hover { text-decoration-style: solid; }
       <a href="#/runs" id="nav-runs">Runs</a>
       <a href="#/submit" id="nav-submit">Submit</a>
       <a href="#/agents" id="nav-agents">Agents</a>
+      <a href="#/test-changes" id="nav-tcr">Test changes</a>
+      <a href="#/cloud" id="nav-cloud">On a rented cloud machine</a>
     </nav>
   </div>
 </header>
 
 <main id="app"></main>
+<!-- D-S48: the first way in. The demo is a static folder that needs no server and no token; it is
+     not served here (CONSOLE-A: only /health and /console answer without a token). The link works
+     when this file is opened from disk beside the demo/ folder that tools/build_demo.py writes. -->
+<footer class="demo-line" id="demo-line">
+  <p lang="en">Demo: no installation, saved examples. Open open_demo.bat in the demo folder (<a href="../../demo/index.html">demo/index.html</a>).</p>
+  <p lang="tr">Demo: kurulum yok, kayıtlı örnekler. Demo klasöründeki open_demo.bat dosyasını açın (<a href="../../demo/index.html">demo/index.html</a>).</p>
+</footer>
 
 <script src="localization_catalog.js"></script>
 <script src="localization.js"></script>
+<script src="cloud_mode.js"></script>
 <script>
 (function () {
 "use strict";
@@ -780,6 +812,8 @@ var GOVERNANCE_SENTENCES = {
   stopped_redaction_gate: "The redaction gate stopped the run before completion.",
   blocked: "The pipeline blocked itself: a redaction block at run-end, or (in draft mode) a memo-generation failure the run could not recover from. Check the log for which.",
   refused_sensitivity_layer_inactive: "This run was declared sensitive, but the privacy masking layer is not active on this server, so the run refused to start rather than risk an unprotected sensitive submission.",
+  refused_multi_round: "The multi-round review refused this run: it was not declared non-sensitive, redaction was enabled, or the saved case state was invalid. The reason is recorded in audit/multi_round.json.",
+  refused_inst_finder_unratified: "SHIMMER_INST_FINDER=off was set, but no operator-ratified constitution amendment allows switching INST_FINDER off, so the run refused to start.",
   cancelled: "Cancelled by request."
 };
 
@@ -791,12 +825,16 @@ var GOVERNANCE_SENTENCES = {
    blocked, or refused_sensitivity_layer_inactive is not "waiting on an
    operator decision" at all), silently filtering the human view down to
    one code's meaning. See docs/api/CONSOLE_LANGUAGE.md's approved sentence
-   for stopped_model_approval; the other three follow the same register. */
+   for stopped_model_approval; the others follow the same register
+   (refused_multi_round and refused_inst_finder_unratified, exits 8 and 9,
+   were added for open item 11). */
 var GOVERNANCE_SENTENCES_HUMAN = {
   stopped_model_approval: "The system refused to keep going without a decision from the operator running it, and none came in time.",
   stopped_redaction_gate: "The system's privacy check stopped the review before it finished.",
   blocked: "The system blocked itself: either a privacy check at the very end, or (for a generated memo) a drafting step that could not recover. The full log says which.",
-  refused_sensitivity_layer_inactive: "This review was marked as sensitive, but the server's privacy protection was not switched on, so it refused to start rather than risk exposing something it should not have."
+  refused_sensitivity_layer_inactive: "This review was marked as sensitive, but the server's privacy protection was not switched on, so it refused to start rather than risk exposing something it should not have.",
+  refused_multi_round: "This review covers several rounds of a case, and the system refused it on purpose: the case could not be reviewed under the settings it was given.",
+  refused_inst_finder_unratified: "This review asked for one of the system's checking agents to be switched off, which the operator has not yet approved, so it refused to start."
 };
 
 function nextActionSentence(run) {
@@ -822,7 +860,7 @@ function nextActionSentence(run) {
          route requires at least one file under deliverables/). The cause
          is not asserted here, only that the log explains it, since this
          function cannot rule out a cause other than missing conventions. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui("Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.");
       }
       return ui("Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.");
@@ -898,7 +936,7 @@ function nextActionSentenceHuman(run) {
          not a filtering, in the other direction too: this empty case must
          be as visible here as it now is in the developer view, not
          smoothed over by the reviewer view's plainer language. */
-      if (!run.documents || run.documents.length === 0) {
+      if ((!run.documents || run.documents.length === 0) && !(run.document_count > 0)) {
         return ui('<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ') + mutedParen(ui("state: completed, no documents"));
       }
       return ui('<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ') + mutedParen(ui("state: completed"));
@@ -1136,6 +1174,8 @@ function currentRoute() {
   if (parts[0] === "runs" && parts[1]) return { view: "detail", runId: decodeURIComponent(parts[1]) };
   if (parts[0] === "submit") return { view: "submit" };
   if (parts[0] === "agents") return { view: "agents" };
+  if (parts[0] === "test-changes") return { view: "tcr" };
+  if (parts[0] === "cloud") return { view: "cloud", planId: parts[1] ? decodeURIComponent(parts[1]) : null };
   return { view: "list" };
 }
 
@@ -1146,11 +1186,16 @@ function setNavActive(view) {
   document.getElementById("nav-runs").classList.toggle("active", view === "list" || view === "detail");
   document.getElementById("nav-submit").classList.toggle("active", view === "submit");
   document.getElementById("nav-agents").classList.toggle("active", view === "agents");
+  var tcrLink = document.getElementById("nav-tcr");
+  if (tcrLink) { tcrLink.classList.toggle("active", view === "tcr"); tcrLink.textContent = ui("Test changes"); }
+  var cloudLink = document.getElementById("nav-cloud");
+  if (cloudLink) { cloudLink.classList.toggle("active", view === "cloud"); cloudLink.textContent = ShimmerCloud.text("On a rented cloud machine"); }
 }
 
 function render() {
   ShimmerLocale.refresh();
   clearPoll();
+  ShimmerCloud.stop();
   mastheadState.hidden = true;
   refreshViewSwitchUi();
   refreshTokenUi();
@@ -1160,6 +1205,8 @@ function render() {
   if (route.view === "submit") { renderSubmit(); return; }
   if (route.view === "detail") { renderDetail(route.runId); return; }
   if (route.view === "agents") { renderAgents(); return; }
+  if (route.view === "tcr") { renderTestChanges(); return; }
+  if (route.view === "cloud") { renderCloud(route.planId); return; }
   renderList();
 }
 
@@ -1828,7 +1875,7 @@ function renderSubmit() {
       '<div id="s-file-roles"></div>' +
       ui('<label for="s-question">Question</label>') +
       ui('<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>') +
-      ui('<p class="field-hint">Required for a draft. Optional framing for a review. Draft memo generation currently requires Cloud; Local Draft is unsupported.</p>') +
+      ui('<p class="field-hint">Required for a draft. Optional framing for a review. The memo of a draft comes from the drafter model of the chosen backend (Claude under Cloud, a local model under Local); Local Draft is not yet proven.</p>') +
       ui('<label for="s-sensitive">Privacy</label>') +
       '<select id="s-sensitive" class="form-control">' +
         ui('<option value="">Choose Normal or Sensitive</option>') +
@@ -1884,6 +1931,7 @@ function renderSubmit() {
     }
     document.getElementById('startup-backend').textContent =
       ui('Backend: ') + (serverHealth.backend_profile === 'local' ? ui('Local, models on this machine.') : ui('Cloud, provider processing can incur charges.')) +
+      (serverHealth.backend_profile === 'local' ? ui(' Web access: closed, no agent reaches the web under the local profile.') : ui(' Web access: open to agents whose registry allows it.')) +
       ui(' To change backend, stop Shimmer in the startup window and start it again.');
   }
   function fileRoles() {
@@ -2020,15 +2068,18 @@ function activationSummaryHtml(data, human) {
     return out + ui('<p class="notice">Activation evidence is unavailable (') + escapeHtml((data && data.availability) || 'request_failed') + ui('). No call count or skipped-agent conclusion can be drawn.</p>');
   }
   var rows = data.decisions, states = data.agent_states;
-  var calls = rows.filter(function (r) { return r.actual_call === true; }).length;
-  var failures = rows.filter(function (r) { return r.state === 'execution_failure' || r.state === 'pre_dispatch_failure'; }).length;
-  var recovery = rows.filter(function (r) { return r.recovered === true; }).length;
-  var capped = rows.filter(function (r) { return r.truncated === true; }).length;
-  var noncalls = rows.filter(function (r) { return r.activated === false; }).length;
+  /* A sealed run's route sends the decisions as counts only (Annex B.8). */
+  var counts = data.exposure === 'sealed' ? (data.decision_counts || {}) : null;
+  var calls = counts ? counts.dispatch_attempts : rows.filter(function (r) { return r.actual_call === true; }).length;
+  var failures = counts ? counts.failures : rows.filter(function (r) { return r.state === 'execution_failure' || r.state === 'pre_dispatch_failure'; }).length;
+  var recovery = counts ? counts.recovered : rows.filter(function (r) { return r.recovered === true; }).length;
+  var capped = counts ? counts.capped : rows.filter(function (r) { return r.truncated === true; }).length;
+  var noncalls = counts ? counts.non_calls : rows.filter(function (r) { return r.activated === false; }).length;
   var unreached = states.filter(function (s) { return s.state === 'phase_not_reached'; }).length;
   out += ui('<p>Routing profile: <strong>') + escapeHtml(data.activation_mode) + '</strong>. ' + calls +
     ui(' dispatch attempts; ') + noncalls + ui(' explicit non-call decisions; ') + unreached + ui(' agents have no reached-phase decision.</p>') +
     '<p>' + failures + ui(' recorded execution or preparation failures; ') + recovery + ui(' recovered replies; ') + capped + ui(' capped replies. Attempts are not successful generations, and a non-call is not a clean finding. Counts are the recorded snapshot.</p>');
+  if (counts) return out + sealedNoteHtml(data);
   if (human) return out;
   out += ui('<details><summary>Per-agent states and activation decisions</summary><ul>');
   states.forEach(function (s) {
@@ -2061,6 +2112,15 @@ function loadActivation(runId) {
 }
 
 function multiRoundHtml(data) {
+  /* A sealed run's route keeps whether a case was recorded and its outcome only
+     (console_views.sealed_multi_round). Its note sits directly under the heading,
+     before anything the section says (open item 55); the rounds below carry none. */
+  if (data && data.exposure === 'sealed') {
+    var head = '<h2>' + ui('Multi-round positioning') + '</h2>' + sealedNoteHtml(data);
+    if (!data.recorded) return head + '<p>' + ui('No valid recorded case output.') + '</p>';
+    return head + '<p>' + ui('A case output was recorded. Outcome: ') +
+      escapeHtml(displayValue(data.outcome || ui('not recorded'))) + '.</p>';
+  }
   if (!data || !data.recorded) return ui('<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>');
   var out = ui('<h2>Multi-round positioning</h2><p>') + (data.fixture ? ui('SYNTHETIC FIXTURE. ') : '') +
     escapeHtml(displayValue(data.activation.state)) + '. ' + escapeHtml(displayValue(data.outcome || '')) + ' ' +
@@ -2089,12 +2149,253 @@ function loadMultiRound(runId) {
   app.appendChild(holder);
   return apiJson('/runs/' + encodeURIComponent(runId) + '/multi-round').then(function (res) {
     if (currentRoute().runId === runId && document.getElementById(holder.id) === holder) {
-      holder.innerHTML = multiRoundHtml(res.ok ? res.body : null);
+      holder.innerHTML = multiRoundHtml(res.ok ? res.body : null) + roundReuseHtml(res.ok ? res.body : null);
       wireCitationLinks(holder);
     }
   }).catch(function () {
     if (currentRoute().runId === runId && document.getElementById(holder.id) === holder)
       holder.innerHTML = multiRoundHtml(null);
+  });
+}
+
+/* =======================================================================
+   LOOP S7: what S1 to S6 save in a run folder, one section per route.
+   Every section reads one read-only route and shows what the run recorded,
+   nothing more. A sealed run's routes carry counts and timings only
+   (Annex B.8), and every section says so. Saved model replies are shown as
+   metadata and outcomes, never their text. Every model-written finding
+   carries the mark before anything else is said about it.
+======================================================================= */
+var REPLY_OUTCOME_LABELS = {
+  accepted_to_bus: "accepted onto the bus",
+  advisory_not_record: "advisory, not kept as a record",
+  not_promoted: "not promoted",
+  contract_violation: "failed its output contract",
+  refused: "refused by the model",
+  backend_failure: "backend failure",
+  classified: "classified",
+  classifier_failed: "classifier failed",
+  free_text: "free text (draft memo)",
+  decided: "decided from probabilities, no text",
+  not_decided: "no outcome recorded"
+};
+var TCR_FIELD_LABELS = ["Date", "Test and version", "What was noticed", "Evidence", "Who noticed it",
+  "From a run's output?", "Proposal", "Decision"];
+var SEALED_NOTE_TEXT = "Sealed test: counts and timings only. Withheld: document, file and target names, finding text, unit ids, rule ids, the reasons given for findings, and per-flaw results (Annex B.8). The Annex B.4 reasons for withholding FACT_CHECKER are standing agent policy, not results; they are shown under Agent switches.";
+
+function sealedNoteHtml(data) {
+  if (!data || data.exposure !== "sealed") return "";
+  return '<p class="notice warn sealed-note">' + escapeHtml(ui(data.sealed_note || SEALED_NOTE_TEXT)) + '</p>';
+}
+
+function dollarsText(v) {
+  return (typeof v === "number") ? v.toFixed(4) + ui(" dollars") : ui("not known");
+}
+
+function repliesHtml(data) {
+  var out = '<h2>' + ui("Model replies") + '</h2>';
+  if (!data) return out + '<p class="notice">' + ui("The saved model replies could not be read.") + '</p>';
+  out += sealedNoteHtml(data);
+  if (!data.recorded) return out + '<p>' + ui("No model reply was saved for this run.") + '</p>';
+  out += '<p>' + escapeHtml(String(data.count)) + ui(" model calls were saved. Shown here: who was called and what happened to each reply; never the reply or payload text.") + '</p>';
+  var outcomes = Object.keys(data.by_outcome || {}).sort();
+  if (outcomes.length) {
+    out += '<ul class="reply-outcomes">' + outcomes.map(function (k) {
+      return '<li>' + escapeHtml(ui(REPLY_OUTCOME_LABELS[k] || k)) + ': ' + escapeHtml(String(data.by_outcome[k])) + '</li>';
+    }).join("") + '</ul>';
+  }
+  if (data.unreadable_records) out += '<p class="notice warn">' + escapeHtml(String(data.unreadable_records)) + ui(" saved reply records could not be read.") + '</p>';
+  if (data.first_call_at) out += '<p class="muted">' + ui("First call: ") + escapeHtml(data.first_call_at) + ui("; last call: ") + escapeHtml(data.last_call_at) + '</p>';
+  if (Array.isArray(data.calls) && data.calls.length) {
+    // At phone width each call row stacks into labelled lines (table.s7-stack), so
+    // every column stays readable without sideways scrolling.
+    var cell = function (label, html, cls) {
+      return '<td' + (cls ? ' class="' + cls + '"' : '') + ' data-label="' + escapeHtml(label) + '">' + html + '</td>';
+    };
+    out += '<details><summary>' + ui("Every saved call") + '</summary><div class="s7-scroll"><table class="s7-table s7-stack"><tr><th>#</th><th>' +
+      ui("Agent") + '</th><th>' + ui("Model") + '</th><th>' + ui("Phase") + '</th><th>' + ui("Outcome") + '</th><th>' +
+      ui("Payload bytes") + '</th><th>' + ui("Reply bytes") + '</th></tr>' + data.calls.map(function (c) {
+        return '<tr>' + cell("#", escapeHtml(c.sequence)) + cell(ui("Agent"), escapeHtml(c.agent)) +
+          cell(ui("Model"), escapeHtml(c.model_id) + (c.model_mode ? ' (' + escapeHtml(c.model_mode) + ')' : ''), "mono") +
+          cell(ui("Phase"), escapeHtml(c.phase)) +
+          cell(ui("Outcome"), escapeHtml(ui(REPLY_OUTCOME_LABELS[c.outcome] || c.outcome)) + (c.backend_ok === false ? ' (' + ui("backend error") + ')' : '')) +
+          cell(ui("Payload bytes"), escapeHtml(c.payload_bytes == null ? "-" : c.payload_bytes)) +
+          cell(ui("Reply bytes"), escapeHtml(c.reply_bytes == null ? "-" : c.reply_bytes)) + '</tr>';
+      }).join("") + '</table></div></details>';
+  }
+  return out;
+}
+
+function provenanceSentenceHtml(p) {
+  if (!p) return "";
+  var agents = (p.model_agents || []).join(", ");
+  return '<p>' + ui("Findings computed by Python from the document's figures: ") + escapeHtml(String(p.from_figures)) +
+    ui(". Required fields Python checked in code and found absent: ") + escapeHtml(String(p.checked_absent)) +
+    ui(". Items written by a model, not checked by Python and not promoted: ") + escapeHtml(String(p.model)) +
+    (agents ? ' (' + escapeHtml(agents) + ')' : '') + '.</p>';
+}
+
+function modelFindingsHtml(data) {
+  var out = '<h2>' + ui("Written by a model") + '</h2>';
+  if (!data) return out + '<p class="notice">' + ui("The model findings could not be read.") + '</p>';
+  out += sealedNoteHtml(data);
+  out += provenanceSentenceHtml(data.provenance);
+  if (!data.count) return out + '<p>' + ui("No model-written finding was kept for this run.") + '</p>';
+  if (!Array.isArray(data.documents)) {
+    /* One finding reads in the singular (open item 55), in both languages. */
+    return out + '<p>' + escapeHtml(String(data.count)) + ui(data.count === 1 ? " model-written finding was kept, not promoted and not checked by Python." : " model-written findings were kept, none promoted and none checked by Python.") + '</p>';
+  }
+  data.documents.forEach(function (doc) {
+    if (!doc.items || !doc.items.length) return;
+    out += '<h3 class="mono">' + escapeHtml(doc.doc_id) + '</h3><ul>';
+    doc.items.forEach(function (f) {
+      out += '<li class="model-finding"><p class="notice warn written-by-model">' + escapeHtml(ui(f.mark || data.mark)) + '</p>' +
+        '<p class="finding-line">' + escapeHtml(f.agent ? '[' + f.agent + '] ' : '') + escapeHtml(f.line) + '</p>';
+      if (f.model_wrote) out += '<p class="muted">' + ui("The model wrote: ") + '"' + escapeHtml(f.model_wrote) + '"</p>';
+      (f.reader_notes || []).forEach(function (n) { out += '<p class="muted">' + escapeHtml(n) + '</p>'; });
+      out += '</li>';
+    });
+    out += '</ul>';
+  });
+  return out;
+}
+
+function switchesHtml(data) {
+  var out = '<h2>' + ui("Agent switches") + '</h2>';
+  if (!data) return out + '<p class="notice">' + ui("The agent switches could not be read.") + '</p>';
+  out += sealedNoteHtml(data);
+  var inst = data.inst_finder || {};
+  var line;
+  if (inst.availability === "not_recorded") line = ui("INST_FINDER: no setting was recorded for this run (it predates the switch record).");
+  else if (inst.availability !== "recorded") line = ui("INST_FINDER: the saved setting could not be read.");
+  else if (inst.state === "off_ratified") line = ui("INST_FINDER: switched off for this run, ratified by amendment ") + escapeHtml(inst.ratified_by) + '.';
+  else if (inst.state === "off_refused") line = ui("INST_FINDER: switching it off was asked for and refused, so the run did not start.");
+  else line = ui("INST_FINDER: switched on for this run.");
+  out += '<p>' + line + '</p>';
+  if (inst.state === "off_refused" && inst.refusal) out += '<p class="muted">' + escapeHtml(inst.refusal) + '</p>';
+  var fc = data.fact_checker || {};
+  var fcLine = {
+    withheld: "FACT_CHECKER: withheld for this run.",
+    called: "FACT_CHECKER: called in this run.",
+    not_reached: "FACT_CHECKER: no call is recorded for this run.",
+    not_withheld: "FACT_CHECKER: not withheld in this installation's current review scope."
+  }[fc.state] || "FACT_CHECKER: not determined.";
+  out += '<p>' + ui(fcLine) + '</p>';
+  if (fc.source === "current_review_scope") out += '<p class="muted">' + ui("Read from this installation's current review scope: this run's own activation record is unavailable.") + '</p>';
+  if (fc.reasons && fc.reasons.length) {
+    out += '<p>' + ui("Why it is withheld:") + '</p><ol>' + fc.reasons.map(function (r) { return '<li>' + escapeHtml(ui(r)) + '</li>'; }).join("") + '</ol>';
+  }
+  return out;
+}
+
+function reportHtml(data) {
+  var out = '<h2>' + ui("Run report") + '</h2>';
+  if (!data) return out + '<p class="notice">' + ui("The run report could not be read.") + '</p>';
+  out += sealedNoteHtml(data);
+  out += '<p>' + ui("Purpose: ") + escapeHtml(data.purpose === "not known" ? ui("not known") : data.purpose) + '</p>';
+  if (data.source === "final_status" && data.rows && data.rows.length) {
+    out += '<table class="kv-table report-rows">' + data.rows.map(function (r) {
+      return '<tr><td>' + escapeHtml(ui(r.label)) + '</td><td>' + escapeHtml(r.value) + '</td></tr>';
+    }).join("") + '</table>';
+  } else {
+    out += '<p>' + ui("No cloud report for this run. Cost below is read from the run folder's own cost lines.") + '</p>';
+  }
+  var c = data.cost || {}, b = data.budget || {};
+  out += '<table class="kv-table">' +
+    (c.model_calls_with_a_cost_line != null ? '<tr><td>' + ui("Model calls with a cost line") + '</td><td>' + escapeHtml(String(c.model_calls_with_a_cost_line)) + '</td></tr>' : '') +
+    '<tr><td>' + ui("Model API cost") + '</td><td>' + escapeHtml(dollarsText(c.model_api_usd)) + '</td></tr>' +
+    '<tr><td>' + ui("Infrastructure cost") + '</td><td>' + escapeHtml(dollarsText(c.infrastructure_usd)) + '</td></tr>' +
+    '<tr><td>' + ui("Combined cost") + '</td><td>' + escapeHtml(dollarsText(c.combined_usd)) + '</td></tr>' +
+    '<tr><td>' + ui("Budget (soft, hard)") + '</td><td>' + escapeHtml(dollarsText(b.soft_usd)) + ', ' + escapeHtml(dollarsText(b.hard_usd)) + '</td></tr>' +
+    '<tr><td>' + ui("Within the hard ceiling") + '</td><td>' + escapeHtml(b.within_hard_ceiling === true ? ui("yes") : b.within_hard_ceiling === false ? ui("no") : ui("not known")) + '</td></tr>' +
+    '</table><p class="muted">' + ui("Cost figures are estimates, not an invoice. A cost that was not recorded is not known, not zero.") + '</p>';
+  return out;
+}
+
+function roundReuseHtml(data) {
+  var rr = data && data.round_reuse;
+  /* A sealed run's note is shown once, under the section heading (multiRoundHtml). */
+  var out = "";
+  if (!rr || rr.availability === "not_recorded") return out;
+  out += '<h3>' + ui("Rounds") + '</h3>';
+  if (rr.availability === "invalid") return out + '<p class="notice">' + ui("The round reuse record could not be read.") + '</p>';
+  out += '<p>' + ui("A later round computes again only the units that changed. Units reused from an earlier round: ") + escapeHtml(String(rr.units_reused)) +
+    ui("; units computed, all rounds together: ") + escapeHtml(String(rr.units_computed)) + '.</p>';
+  out += '<div class="s7-scroll"><table class="s7-table rounds-table"><tr><th>' + ui("Round") + '</th><th>' + ui("Document") + '</th><th>' +
+    ui("Reused") + '</th><th>' + ui("Computed") + '</th><th>' + ui("Pairs computed") + '</th></tr>';
+  (rr.rounds || []).forEach(function (r) {
+    (r.documents || []).forEach(function (d) {
+      out += '<tr><td>' + escapeHtml(r.round_id || r.sequence) + '</td><td class="mono">' + escapeHtml(d.document_id || "-") + '</td><td>' +
+        escapeHtml(String(d.units_reused)) + '</td><td>' + escapeHtml(String(d.units_computed)) + '</td><td>' + escapeHtml(String(d.pairs_computed)) + '</td></tr>';
+    });
+  });
+  out += '</table></div>';
+  (rr.rounds || []).forEach(function (r) {
+    (r.documents || []).forEach(function (d) {
+      if (!Array.isArray(d.units) || !d.units.length) return;
+      out += '<details><summary>' + escapeHtml(r.round_id || r.sequence) + ' · ' + escapeHtml(d.document_id || "") + '</summary><ul>' +
+        d.units.map(function (u) {
+          var from = u.reused_from ? ui(", reused from ") + escapeHtml(u.reused_from.round_id + " " + u.reused_from.unit_id) : "";
+          return '<li class="mono">' + escapeHtml(u.unit_id) + ': ' + escapeHtml(u.status === "reused" ? ui("reused") : ui("computed")) + from +
+            (u.needs_model ? ui(", plans needing a model (not asked here): ") + escapeHtml(String(u.needs_model)) : "") + '</li>';
+        }).join("") + '</ul></details>';
+    });
+  });
+  return out;
+}
+
+function loadRunSection(runId, id, path, render) {
+  var holder = document.createElement('section');
+  holder.id = id;
+  app.appendChild(holder);
+  return apiJson('/runs/' + encodeURIComponent(runId) + path).then(function (res) {
+    if (currentRoute().runId === runId && document.getElementById(id) === holder) holder.innerHTML = render(res.ok ? res.body : null);
+  }).catch(function () {
+    if (currentRoute().runId === runId && document.getElementById(id) === holder) holder.innerHTML = render(null);
+  });
+}
+
+function loadRunSections(runId) {
+  loadRunSection(runId, 'model-findings-section', '/model-findings', modelFindingsHtml);
+  loadRunSection(runId, 'replies-section', '/replies', repliesHtml);
+  loadRunSection(runId, 'switches-section', '/switches', switchesHtml);
+  loadRunSection(runId, 'report-section', '/report', reportHtml);
+}
+
+function testChangesHtml(data) {
+  var out = '<h1>' + ui("Test change requests") + '</h1>';
+  if (!data) return out + '<p class="notice error">' + ui("The test change requests could not be read.") + '</p>';
+  if (!data.present) return out + '<p>' + ui("Test change requests: not present in this installation.") + '</p>';
+  out += '<p>' + ui("Requests about exposed tests, read-only. Nothing here changes a test; each request is decided later by the operator.") + '</p>' +
+    '<p class="muted">' + escapeHtml(String(data.count)) + ui(" requests; decided: ") + escapeHtml(String(data.decided)) + '.</p>';
+  (data.entries || []).forEach(function (e) {
+    out += '<section class="tcr-entry"><h3>' + escapeHtml(e.id) + '. ' + escapeHtml(e.title) + '</h3><table class="kv-table">';
+    var fields = e.fields || {};
+    var keys = TCR_FIELD_LABELS.filter(function (k) { return k in fields; }).concat(
+      Object.keys(fields).filter(function (k) { return TCR_FIELD_LABELS.indexOf(k) < 0; }));
+    keys.forEach(function (k) {
+      var v = fields[k];
+      out += '<tr><td>' + escapeHtml(ui(k)) + '</td><td>' + escapeHtml(v ? v : ui("not decided yet")) + '</td></tr>';
+    });
+    out += '</table></section>';
+  });
+  return out;
+}
+
+/* D-S49 item 3: the cloud mode's two screens live in cloud_mode.js. */
+function renderCloud(planId) {
+  var deps = { apiJson: apiJson, detailText: detailText, rerender: render, download: downloadWithToken,
+               currentPlan: function () { return currentRoute().planId; } };
+  if (planId) ShimmerCloud.renderPlan(app, deps, planId); else ShimmerCloud.renderSetup(app, deps);
+}
+
+function renderTestChanges() {
+  app.innerHTML = ui('<p class="muted">Loading…</p>');
+  apiJson('/test-change-requests').then(function (res) {
+    if (currentRoute().view !== 'tcr') return;
+    app.innerHTML = testChangesHtml(res.ok ? res.body : null);
+  }).catch(function () {
+    if (currentRoute().view === 'tcr') app.innerHTML = testChangesHtml(null);
   });
 }
 
@@ -2266,6 +2567,11 @@ function renderDetailBody(run, allRuns) {
   if (run.documents && run.documents.length) {
     html += ui('<h2>Documents</h2>');
     html += renderDocuments(run);
+  } else if (run.exposure === "sealed" && run.document_count > 0) {
+    /* A sealed run's record carries its document counts only (Annex B.8). */
+    html += ui('<h2>Documents</h2>') + '<p>' + escapeHtml(String(run.document_count)) +
+      ui(" documents, done: ") + escapeHtml(String(run.documents_done)) +
+      ui(". Sealed test: the document names are withheld.") + '</p>';
   }
 
   var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });
@@ -2276,6 +2582,7 @@ function renderDetailBody(run, allRuns) {
   app.innerHTML = html;
   loadActivation(run.run_id);
   if (run.multi_round === true) loadMultiRound(run.run_id);
+  if (run.state !== "queued") loadRunSections(run.run_id);
 
   /* Findings and the pairing map are fetched whenever they COULD exist, not
      only on a clean succeeded completion. The server writes both the moment
@@ -2640,6 +2947,22 @@ function findingRuleParen(f, extra) {
   return mutedParenHtml(text);
 }
 
+/* S2a: who wrote a finding, from the server's written_by (read off the bus post).
+   A model's finding is marked BEFORE its sentence, so a reader meets the mark
+   first: written by a model, not promoted, not checked by Python. Python's own
+   finding gets a quiet note AFTER its sentence. A record from an older server
+   that carries no written_by shows neither, rather than a guess. */
+function writtenByHtml(f, before) {
+  if (before && f.written_by === "model") {
+    return '<p class="notice warn written-by-model">' +
+      ui("Written by a model. Not promoted to an amendment. Not checked by Python.") + '</p>';
+  }
+  if (!before && f.written_by === "python") {
+    return ' ' + mutedParen(ui("Computed by Python from the document's own figures."));
+  }
+  return "";
+}
+
 function findingPriorParen(f) {
   var id = f.unit_id || "";
   return mutedParen((id ? id + ", " : "") + ui("compared to the earlier version"));
@@ -2647,7 +2970,7 @@ function findingPriorParen(f) {
 
 /* One relation -> one human sentence, exactly per CONSOLE_LANGUAGE.md's
    templates. A relation this table does not recognise (should not happen;
-   the schema names exactly 13) falls through to a plain, honest restatement
+   the schema names exactly 19) falls through to a plain, honest restatement
    of the developer row rather than silently showing nothing. */
 function findingSentenceHtml(f) {
   var a = figText(f.value_a, f.unit_a);
@@ -2762,6 +3085,45 @@ function findingSentenceHtml(f) {
     var label5 = f.field_label || ui("this field");
     return ui('<strong>This is no longer in the document.</strong> The earlier version stated a ') + escapeHtml(label5) + ui(' of ') + escapeHtml(b) +
       ui('. The current version does not state one at all. ') + findingPriorParen(f);
+  }
+  /* RELATIONS-A (INFRA-045): four relations Python computes, value_a the figure
+     Python computed, value_b the figure the document states. */
+  if (rel === "rate_mismatch") {
+    if (irregular) {
+      return ui('<strong>This figure does not match the rate the unit states.</strong> The document states ') + escapeHtml(b) +
+        ui('. The unit\'s own rate and figures give ') + escapeHtml(a) + '. ' + findingRuleParen(f, "irregular");
+    }
+    return ui('<strong>This figure matches the rate the unit states.</strong> The document states ') + escapeHtml(b) +
+      ui('. The unit\'s own rate and figures give ') + escapeHtml(a) + ui(', within the tolerance the rule allows. ') +
+      findingRuleParen(f);
+  }
+  /* INFRA-046: only a model writes this. The /findings route reads the unscrubbed bus, so
+     it carries no passage; /model-findings shows both, from the scrubbed master. */
+  /* INFRA-048: a model's decision, on the cells Python selected. As with a contradiction, this
+     route carries neither the claim nor the cells. */
+  /* INFRA-051: a model's decision on the part's own text. This route carries no quote. */
+  if (rel === "rule_not_met") {
+    return ui('<strong>This part does not meet the rule.</strong> A model decided this. The part is shown with the model findings. ') + findingRuleParen(f, "irregular");
+  }
+  if (rel === "claim_not_met") {
+    return ui('<strong>The selected cells do not meet the claim.</strong> A model decided this. The claim and the cells are shown with the model findings. ') + findingRuleParen(f, "irregular");
+  }
+  if (rel === "contradiction") {
+    return ui('<strong>Two passages of this unit contradict each other.</strong> A model wrote this. Both passages are shown with the model findings. ') + findingRuleParen(f, "irregular");
+  }
+  if (rel === "unit_mismatch") {
+    return ui('<strong>This figure is written in another measure.</strong> The document states ') + escapeHtml(b) +
+      ui('. In the measure its comparison uses, that is ') + escapeHtml(a) + '. ' + findingRuleParen(f, "irregular");
+  }
+  if (rel === "copy_mismatch") {
+    return ui(irregular ? '<strong>This copied figure does not match its source.</strong> The document states '
+                        : '<strong>This copied figure matches its source.</strong> The document states ') + escapeHtml(b) +
+      ui('. The unit it names states ') + escapeHtml(a) + '. ' + (irregular ? findingRuleParen(f, "irregular") : findingRuleParen(f));
+  }
+  if (rel === "carry_mismatch") {
+    return ui(irregular ? '<strong>This carried figure does not match the unit before.</strong> The document states '
+                        : '<strong>This carried figure matches the unit before.</strong> The document states ') + escapeHtml(b) +
+      ui('. The unit before adds up to ') + escapeHtml(a) + '. ' + (irregular ? findingRuleParen(f, "irregular") : findingRuleParen(f));
   }
   /* Unrecognised relation: an honest restatement of the developer row,
      never a blank space, since the human view must never drop a fact the
@@ -2887,7 +3249,14 @@ function relationWord(relation, human) {
     "unchanged_from_prior": ui("a figure unchanged since the earlier version"),
     "moved_toward": ui("a figure that moved toward the range"),
     "moved_away": ui("a figure that moved away from the range"),
-    "absent_since_prior": ui("a term the earlier version stated and this one does not")
+    "absent_since_prior": ui("a term the earlier version stated and this one does not"),
+    "rate_mismatch": ui("a figure that does not match its stated rate"),
+    "copy_mismatch": ui("a copied figure that does not match its source"),
+    "carry_mismatch": ui("a carried figure that does not match the unit before"),
+    "unit_mismatch": ui("a figure written in another measure"),
+    "contradiction": ui("two passages that contradict each other"),
+    "claim_not_met": ui("a claim the selected cells do not meet"),
+    "rule_not_met": ui("a part that does not meet a rule")
   };
   return words[relation] || relation || "";
 }
@@ -3170,8 +3539,8 @@ function loadFindings(runId, isPartial) {
         '<ul class="findings-human">' + findings.map(function (f) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
           var amend = byKey[amendmentKey(f.unit_id, f.rule_id)];
-          return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) +
-            citationsHtml(f.source_refs, runId, true) +
+          return '<li class="finding-human ' + cls + '">' + writtenByHtml(f, true) + findingSentenceHtml(f) +
+            writtenByHtml(f, false) + citationsHtml(f.source_refs, runId, true) +
             (amend ? amendmentHumanHtml(amend) : "") + '</li>';
         }).join("") + '</ul>';
       wireRuleLinks(holder);
@@ -3191,8 +3560,9 @@ function loadFindings(runId, isPartial) {
         '<td>' + escapeHtml(displayValue(f.relation || "")) + '</td>' +
         '<td>' + escapeHtml(displayValue(f.record_verdict || "")) + '</td>' +
         '<td class="fig">' + escapeHtml(f.value_a) + " " + escapeHtml(f.unit_a || "") + " / " + escapeHtml(f.value_b) + " " + escapeHtml(f.unit_b || "") + '</td>' +
-        '<td class="explanation">' +
+        '<td class="explanation">' + writtenByHtml(f, true) +
           '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
+          writtenByHtml(f, false) +
           (long ? '<br><button class="expand-toggle" data-target="' + explId + ui('">Show more</button>') : '') +
           citationsHtml(f.source_refs, runId, false) +
           (amend ? amendmentDeveloperHtml(amend) : "") +

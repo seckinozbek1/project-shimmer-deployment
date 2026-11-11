@@ -11,6 +11,20 @@ repair works, but producer loading reached the RAM guard and the standalone
 auditor returned incomplete output at its time limit. Status remains
 `LOCAL_TARGET_INDETERMINATE`.
 
+> Note (2026-11-01, loop S11): this is the record of 15 September 2026. Four of its statements
+> about how the path works have since changed in the code. (1) A bounded PROCESSOR request now
+> owns at most `owned_spans_per_request` spans, today two, still of up to 1200 characters each
+> (`compact_contracts.request_size`, `config/compact_extraction_prompt.json`; CLAUDE.md
+> EXTRACTION-C), not four, so the 1536-token ceiling covers at most two compact items. (2) A
+> failed partition is not retried when the call decoded deterministically, as it does under the frozen
+> greedy policy; the skip is recorded as `retry_skipped_deterministic`
+> (`scripts/semantic_waves.py`, D-061). (3) The compact PROCESSOR call now decodes under a
+> per-request contract constraint (`scripts/contract_decoding.py`, CLAUDE.md DECODING-B, D-116),
+> with the frozen greedy policy unchanged, so "grammar-constrained sampling is not claimed" in
+> section 5 no longer holds. (4) The call is sent in the validated two-turn shape with
+> Python-placed reference markers (EXTRACTION-A, EXTRACTION-B). The sections below are kept as
+> written.
+
 ## 1. Starting evidence
 
 The recovered 14 September run used `15d0721fbc24cd38fdaa6bc4969d7b18ad66387e`,

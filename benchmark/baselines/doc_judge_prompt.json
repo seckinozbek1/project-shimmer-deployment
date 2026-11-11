@@ -1,0 +1,22 @@
+{
+  "schema": "doc-judge-prompt-v1",
+  "status": "development, exposed (G1, operator approval 2026-11-01)",
+  "note": "Document-level judging (G1): one call per (document, rule) over the whole document, the rule's own text as the question, one user turn through the model's own chat template and no filled example. No system turn is sent; a model's own chat template may add its default one (Qwen2.5's stock template does), and the rendered prompt saved in every reply record shows what was sent. Slots are written {name} and each is filled once, so braces inside the document stay text. The reply is one JSON object {outcome, quote, reason}. benchmark/baselines/doc_judge.py renders this template, parses the reply, keeps an answer only under the quote rule below and maps an outcome to a class. A class is the adapters' own (benchmark/adapters/common/mapping.py): FLAG, CLEAR or UNDECIDED, turned into each benchmark's label by that benchmark's Spec.",
+  "user_template": "Read the document below and answer one question about it.\n\nDOCUMENT\n{document}\n\nIn the document, heading lines (starting with #) and lines reading Passage: part only divide it into passages; they are not part of its content.\n\nQUESTION\n{rule_text}\n\nOUTCOMES\n{outcome_lines}\n\nANSWER\nReply with one JSON object and nothing else. It has exactly three keys:\noutcome: one outcome name from the list above, written exactly as it is written there.\nquote: the words of the document your outcome rests on, copied exactly from it. Required when the outcome is holds or not met. When the outcome is cannot be settled, write an empty string.\nreason: one short sentence.",
+  "outcomes": [
+    {"value": "holds", "class": "CLEAR", "line": "holds: the document meets what the question asks.", "accepted": ["holds"]},
+    {"value": "not met", "class": "FLAG", "line": "not met: the document does not meet what the question asks.", "accepted": ["not met"]},
+    {"value": "cannot be settled", "class": "UNDECIDED", "line": "cannot be settled: the document does not let you decide.", "accepted": ["cannot be settled", "cannot be settled from this document", "uncertain"]}
+  ],
+  "accepted_note": "An outcome is read by its normalised spelling (lower case, trimmed, underscores as spaces) against `accepted`, exact match only. `uncertain` is accepted for the third outcome because a rule that says to emit UNCERTAIN means the undecided answer (the same reading bare_model.py's section 5.4 parser applies). Anything else is refused as not declared.",
+  "quote_required_for": ["holds", "not met"],
+  "marker_patterns": ["^#+ [DP]-\\S+[ \\t]*$", "^Passage: \\w+[ \\t]*$"],
+  "marker_note": "Open item 84, decided before any G1 result (D-239): a quote is read against the document with its heading and passage label lines taken out. One not found there, one with no letter or digit, and one cut from inside a word or a number (a decimal or grouped figure included, whatever punctuation it starts or ends on) is refused as quote_not_content. A word cut at its own punctuation (a hyphen, an apostrophe, an underscore) passes, and a whole table cell passes however short, so every kept claim on a scored item is listed beside the verdict (D-243).",
+  "quote_rule": "A kept holds or not met carries a quote that occurs in the document under review once both are whitespace-normalised (every run of whitespace one space, trimmed); case and punctuation are kept. A missing or empty quote, one not found, or one that is not the document's content (marker_note) refuses the answer. cannot be settled is kept with or without a quote.",
+  "max_new_tokens": 256,
+  "models": [
+    {"group": "phi", "backend": "local_auditor", "agent": "PRACTICE_AUDITOR", "checkpoint": "base"},
+    {"group": "qwen_tuned", "backend": "local_producer", "agent": "PROCESSOR", "checkpoint": "tuned"}
+  ],
+  "models_note": "Each group is loaded through bare_model.py's LocalBackend with bare_model.resolve_reader(agent, checkpoint): the local auditor (Phi-3.5-mini 4-bit) through agent_wrapper._load_qwen as B3's PRACTICE_AUDITOR loads it, and the tuned producer (Qwen2.5-7B 4-bit with the checkpoint 168 adapter) through final_models.resident as B3's PROCESSOR loads it; each under its backend's frozen decoding policy (scripts/decoding_policy.py), sdpa pinned to the memory-efficient backend, one-shot prefill (D-063). The groups run in this order."
+}

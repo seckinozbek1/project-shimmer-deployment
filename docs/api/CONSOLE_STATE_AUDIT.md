@@ -1,4 +1,4 @@
-> Historical design/audit record. Current implementation and endpoint names are in the [README](../../README.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
+> Historical design/audit record. Current implementation and endpoint names are in the [runtime reference](../RUNTIME_REFERENCE.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
 
 # Console state audit: every state/outcome against what may or may not exist
 
@@ -61,7 +61,11 @@ that one condition).
   `blocked`) which can all fire after phase 5.5; not reachable for
   `refused_sensitivity_layer_inactive`, which refuses to start the pipeline subprocess at
   all (`server.py`'s own comment on that override), so phase 5.5 never runs and no findings
-  can exist for that one code specifically.
+  can exist for that one code specifically. (Since loop S7, open item 11, two further
+  governance codes exist, `refused_multi_round` for exit 8 and
+  `refused_inst_finder_unratified` for exit 9. Exit 9 and the first exit-8 refusal fire
+  before any review phase, so they carry no findings either; the other exit-8 refusals
+  replace the ordinary review phases, which never run on a multi-round case.)
 - **`cancelled` with prior findings**: reachable. `POST /runs/{run_id}/cancel` terminates
   the subprocess at whatever point it has reached; if that point is after phase 5.5, the
   findings and pairing map already written survive the termination (cancelling "deletes

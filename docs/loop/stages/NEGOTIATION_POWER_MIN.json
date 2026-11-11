@@ -1,0 +1,60 @@
+{
+ "alpha": 0.005,
+ "assumed": {
+  "agreement": {
+   "system": 0.7,
+   "B1": 0.55,
+   "cloud": 0.75
+  },
+  "no_answer": {
+   "system": 0.0,
+   "B1": 0.05,
+   "cloud": 0.02
+  },
+  "good_rate": {
+   "system": 0.5,
+   "B1": 0.3
+  },
+  "rho": 0.5
+ },
+ "shares": {
+  "moved_toward": 0.3,
+  "moved_away": 0.2,
+  "unchanged_from_prior": 0.1,
+  "not_computable": 0.4
+ },
+ "iccs": [
+  0.2,
+  0.5
+ ],
+ "sims": 100,
+ "cases": 8,
+ "rows_per_case": [
+  12
+ ],
+ "open_issues_per_case": 2,
+ "exact_bootstrap": true,
+ "power": {
+  "0.2": {
+   "C1": 0.05,
+   "C2": 0.03,
+   "C3": 0.0,
+   "C4": 0.0,
+   "C5": 0.0
+  },
+  "0.5": {
+   "C1": 0.0,
+   "C2": 0.0,
+   "C3": 0.0,
+   "C4": 0.0,
+   "C5": 0.0
+  }
+ },
+ "below_0_8_at_every_icc": [
+  "C1",
+  "C2",
+  "C3",
+  "C4",
+  "C5"
+ ]
+}

@@ -182,3 +182,48 @@ benchmark/keys/
 # Frozen V2 local tuning design reports are part of the reviewable release.
 !docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md
 !docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md
+
+# Autonomous loop private records (never committed)
+docs/loop/private/
+
+# Seal manifests of sealed tests (Annex B.3). Never committed, even force-added:
+# `scripts/guard_secrets.py --staged` refuses a staged seals/ path at any depth,
+# also inside a staged archive.
+seals/
+
+# Saved model replies of a run (one record per model call, loop S1 Part 4). Never
+# committed, even force-added: `guard_secrets.py --staged` refuses the segment,
+# also inside a staged archive.
+**/audit/model_replies/
+
+# Third-party benchmark data, raw or converted, and its manifests (loop S4b).
+# Never committed; only adapters, the selection, the preregistration and
+# synthetic gate fixtures are tracked.
+/external/
+# Generated development suite and long-range corpus: exposed by construction, regenerated from committed seeds.
+/benchmark/dev_suite/generated/
+/benchmark/long_range/generated/
+
+# D-S48: the demo folder tools/build_demo.py writes by default (a build output).
+/demo/
+
+# Public export (D-488): every class tools/loop/export_public_tree.py leaves out is ignored here too.
+/prompts/
+**/docs/loop/private/
+**/seals/
+**/audit/model_replies/
+/external/
+benchmark/keys/
+*.safetensors
+*.gguf
+*.onnx
+*.ckpt
+*.pt
+*.pth
+# Two gaps the first pre-push scan found (D-501): binary weight files and gold-label files.
+*.bin
+**/*gold_label*
+**/*gold_labels*
+**/*gold*.jsonl
+**/*_gold.json
+**/gold/

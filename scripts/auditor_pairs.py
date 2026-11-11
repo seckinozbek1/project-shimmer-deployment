@@ -1,16 +1,44 @@
 """Ordinary fidelity advisory pairs. Ownership is structural, never inferred."""
 import copy
 import json
+import re
 import time
 import uuid
 
 import bounded_extraction as extraction
 import final_models
 import model_telemetry as telemetry
+import reply_records
 
 VERSION = 1
 RELATIONS = ('MATCH', 'DIVERGENCE', 'OMISSION', 'ADDITION')
 TASK = 'verify_draft_against_source'
+# The claim ids a span writes, read as compact_contracts.producer reads them (its validator holds
+# a producer item's claims to the ids written in the span's text).
+CLAIM_ID = re.compile(r'\bCLM-[A-Za-z0-9-]+')
+NO_CLAIMS = 'no_claims'
+
+
+def claim_coverage(source_text, producer_item):
+    """Python's fidelity check of one pair, a RECORD beside VERIFIER and Auditor896 (D-313): the
+    claim ids the span writes against the ones the producer item references. no_claims when neither
+    holds one (nothing to verify), MATCH when they are the same set, OMISSION when the item leaves
+    some out, ADDITION when it names one the span does not write (the decoding constraint and the
+    validator refuse that, so it marks a path that bypassed them), DIVERGENCE for both at once.
+    It decides nothing and changes no call: VERIFIER and Auditor896 run as shipped."""
+    written = sorted(set(CLAIM_ID.findall(str(source_text or ''))))
+    named = sorted({str(c) for c in (producer_item or {}).get('claims_referenced') or []})
+    missing, added = sorted(set(written) - set(named)), sorted(set(named) - set(written))
+    if not written and not named:
+        status = NO_CLAIMS
+    elif not missing and not added:
+        status = 'MATCH'
+    elif missing and added:
+        status = 'DIVERGENCE'
+    else:
+        status = 'OMISSION' if missing else 'ADDITION'
+    return dict(status=status, span_claims=len(written), referenced_claims=len(named),
+                missing_claims=missing, added_claims=added)
 
 
 def semantic_item(item):
@@ -140,12 +168,14 @@ def build(run_id, document, producer, references):
             if identifier in seen:
                 continue
             seen.add(identifier)
+            coverage = claim_coverage(source['text'], item)
             record = dict(identity, schema_version=VERSION, pair_id=identifier,
                 producer_call_id=source['producer_call_id'], ownership=source['ownership'],
                 producer_checkpoint=168, producer_adapter_sha256=final_models.PINS['producer']['adapter'],
                 auditor_checkpoint=896, auditor_adapter_sha256=final_models.PINS['auditor']['adapter'],
                 auditor_relation=None, classifier_status='pending',
-                delivery='partial' if partial else 'complete')
+                delivery='partial' if partial else 'complete',
+                claim_coverage=coverage['status'], claim_coverage_detail=coverage)
             pairs.append(dict(record=record, source_text=source['text'], producer_item=semantic_item(item)))
     if not items:
         unavailable.append(dict(status='AUDITOR_PAIR_UNAVAILABLE', producer_item_id=None,
@@ -165,23 +195,44 @@ def validate(record):
         raise ValueError('Auditor pair identity mismatch')
 
 
-def predict(pair, context):
+def predict(pair, context, call_id=None, sensitive=None):
+    """One Auditor896 classification. Its label is saved through the same
+    function as every generated reply (reply_records.write), once per call,
+    under the caller's call id; nothing is written with no run context."""
     pair['_forward_attempted'] = False
     record = pair['record']
-    validate(record)
-    value = dict(role='auditor', production_contract='semantic-task-v1',
-        source_spans=[dict(alias='s0', text=pair['source_text'])], context_only_spans=[],
-        extraction=json.dumps(pair['producer_item'], sort_keys=True, ensure_ascii=False),
-        supplied_refs=record['source_ref_ids'], required_refs=record['source_ref_ids'],
-        delivery_complete=True, routed_rules=[])
-    messages, _ = final_models.classifier_messages(value)
-    tokenizer, classifier = final_models.resident('auditor', context)
-    ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
-    if len(ids) > classifier.model.config.max_position_embeddings:
-        raise ValueError('Auditor pair exceeds context; no truncation')
-    directory = context.audit_dir()/'feature_admission'/record['pair_id'] if context else None
-    pair['_forward_attempted'] = True
-    return classifier.predict(ids, directory), len(ids)
+    sent, label, failure, classifier = {}, None, '', None
+    try:
+        validate(record)
+        value = dict(role='auditor', production_contract='semantic-task-v1',
+            source_spans=[dict(alias='s0', text=pair['source_text'])], context_only_spans=[],
+            extraction=json.dumps(pair['producer_item'], sort_keys=True, ensure_ascii=False),
+            supplied_refs=record['source_ref_ids'], required_refs=record['source_ref_ids'],
+            delivery_complete=True, routed_rules=[])
+        messages, _ = final_models.classifier_messages(value)
+        sent = dict(payload=json.dumps(messages, sort_keys=True, ensure_ascii=False, separators=(',', ':')),
+                    form='classifier_messages_json')
+        tokenizer, classifier = final_models.resident('auditor', context)
+        ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
+        if len(ids) > classifier.model.config.max_position_embeddings:
+            raise ValueError('Auditor pair exceeds context; no truncation')
+        directory = context.audit_dir()/'feature_admission'/record['pair_id'] if context else None
+        pair['_forward_attempted'] = True
+        label = classifier.predict(ids, directory)
+        return label, len(ids)
+    except Exception as exc:
+        failure = type(exc).__name__
+        raise
+    finally:
+        identity = getattr(classifier, '_shimmer_identity', None) or {}
+        reply_records.write(context, agent='AUDITOR896', call_id=call_id,
+            backend='local_auditor_classifier', model_id=identity.get('model_id'),
+            model_mode=identity.get('model_mode'), payload=sent.get('payload'),
+            payload_form=sent.get('form'), reply=label if isinstance(label, str) else None,
+            ok=not failure, error=failure,
+            decoding=dict(invocation='classification_head', generation=None,
+                          forward_attempted=pair['_forward_attempted']),
+            sensitive=bool(sensitive), phase='5', doc_id=record.get('document_id') or '')
 
 
 def eligible(wrapper, payload):
@@ -209,7 +260,8 @@ def prepare_context(wrapper, payload):
                 context._active_model_calls = getattr(context,'_active_model_calls',0)+1
         try:
             validate(record)
-            relation, tokens = predict(pair, context)
+            relation, tokens = predict(pair, context, call_id=call_id,
+                                       sensitive=getattr(wrapper, 'sensitive', None))
             if relation not in RELATIONS:
                 raise ValueError('Invalid classifier relation')
             record.update(auditor_relation=relation, classifier_status='classified')
@@ -220,6 +272,9 @@ def prepare_context(wrapper, payload):
             with telemetry.LOCK:
                 if context is not None:
                     context._active_model_calls -= 1
+        if '_forward_attempted' in pair:  # predict was reached, so its record exists
+            reply_records.write_outcome(context, call_id, 'classifier_failed' if failure else 'classified',
+                                        source='auditor_pairs', pair_id=record['pair_id'])
         end = time.perf_counter()
         record['classifier_call_id'] = call_id
         record['forward_attempted'] = pair.get('_forward_attempted')
@@ -253,13 +308,36 @@ def prepare_context(wrapper, payload):
         classifier_call_ids=calls, start_monotonic_s=begin, end_monotonic_s=time.perf_counter(),
         consumer='VERIFIER', reason='advisory_pair_context_ready')
     result = dict(payload)
-    context_pairs = [dict(record, producer_item=pair['producer_item'],
-        source_evidence=dict(text=pair['source_text'], source_hash=record['source_hash'],
-                             source_span_id=record['source_span_id'], source_ref_ids=record['source_ref_ids']))
-        for pair,record in zip(pairs,records)]
+    context_pairs = [pair_view(record, pair) for pair,record in zip(pairs,records)]
     result['auditor_pair_context'] = dict(schema_version=VERSION, pairs=context_pairs, unavailable=unavailable,
         interpretation='Advisory pair classifications, not findings. Retain independent reasoning, evidence and refusal. Agreement is not required.')
+    if 'processor_draft' in result:
+        result['processor_draft'] = draft_view(result['processor_draft'])
     return result
+
+
+# What VERIFIER is SHOWN, in its rendered payload only (D-S14, K2). Each pair and
+# each draft item used to carry the runtime identity VERIFIER cannot use (run,
+# item, span and call ids, source hashes, adapter digests, timestamps): about half
+# of every prompt, and the ten VERIFIER calls of L8 above about 44,300 prompt tokens
+# ran out of GPU memory on the A10 before their first token. The records kept in
+# _auditor_pair_state, the telemetry, the reply records and the bus keep every
+# identifier; pair_id stays because a finding joins its pair by it (finding_pair).
+DRAFT_ITEM_RUNTIME_KEYS = ('item_id', 'source_hash', 'ts', 'provenance', 'section_id', 'source_span_id', 'unit_id')
+
+
+def pair_view(record, pair):
+    return dict(pair_id=record['pair_id'], auditor_relation=record['auditor_relation'],
+        classifier_status=record['classifier_status'], delivery=record['delivery'],
+        source_ref_ids=record['source_ref_ids'], producer_item=pair['producer_item'],
+        source_evidence=dict(text=pair['source_text']))
+
+
+def draft_view(draft):
+    if not (isinstance(draft, dict) and isinstance(draft.get('items'), list)):
+        return draft
+    return dict(draft, items=[{k:v for k,v in item.items() if k not in DRAFT_ITEM_RUNTIME_KEYS}
+                              if isinstance(item, dict) else item for item in draft['items']])
 
 
 def finding_pair(item, records):
@@ -283,13 +361,22 @@ def compare(wrapper, result):
     records = getattr(wrapper, '_auditor_pair_state', None)
     if records is None:
         return
-    parsed = (result or {}).get('parsed') or {}
+    parsed = (result or {}).get('parsed')
+    parsed = {} if parsed is None else parsed
     try:
         wire=json.loads((result or {}).get('raw_text',''))
     except (ValueError,TypeError):
         wire={}
+    # D-061 (a): a VERIFIER reply that is not a JSON object, or whose items are not a list of
+    # objects, is a recorded contract failure (the call's contract_valid false on its
+    # model_call telemetry, and the reason on the join event), never a crash. L2 entry 06 crashed
+    # here calling .get on such a reply.
+    contract_failure = verifier_contract_failure(parsed)
+    if contract_failure is not None:
+        wrapper._observed_contract_valid = False
+        parsed = parsed if isinstance(parsed, dict) else {}
     refused=parsed.get('status')=='refused' or isinstance(wire,dict) and wire.get('status')=='refused'
-    findings = parsed.get('items', [])
+    findings = [f for f in parsed.get('items', []) if isinstance(f, dict)] if isinstance(parsed.get('items', []), list) else []
     joins = []
     for item in findings:
         pair = finding_pair(item, records) if result.get('ok') else None
@@ -299,8 +386,23 @@ def compare(wrapper, result):
             agreement=('agree' if pair['auditor_relation']==item['finding'] else 'disagree') if comparable else 'not_comparable'))
     telemetry.emit(wrapper.run_context, 'auditor_verifier_join', verifier_call_id=(result or {}).get('call_id'),
         pair_ids=[r['pair_id'] for r in records], findings=joins, finding_count=len(findings),
-        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')))
+        empty=not findings, refused=bool(refused), verifier_ok=bool((result or {}).get('ok')),
+        contract_failure=contract_failure)
     # Do not modify parsed findings, acceptance, refusal or the bus contract.
+
+
+def verifier_contract_failure(parsed):
+    """None for a VERIFIER reply compare() can read (a JSON object whose `items`, when present,
+    is a list of objects), else the reason: 'reply_not_object', 'items_not_list' or
+    'item_not_object' (D-061 (a))."""
+    if not isinstance(parsed, dict):
+        return 'reply_not_object'
+    items = parsed.get('items', [])
+    if not isinstance(items, list):
+        return 'items_not_list'
+    if any(not isinstance(item, dict) for item in items):
+        return 'item_not_object'
+    return None
 
 
 def contract_self_check():

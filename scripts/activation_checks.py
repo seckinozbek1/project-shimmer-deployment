@@ -185,7 +185,7 @@ def check():
                 assert sparse["calls"] == list(pipeline._EDITORIAL_RANKS)
                 assert all(r["evidence"].get("trigger") == "out_of_mandate" for r in sparse["rows"][1:])
             if scenario == "roster":
-                assert len(set(sparse["calls"])) == 18
+                assert len(set(sparse["calls"])) == 19
             if scenario == "deepen":
                 assert len(sparse["calls"]) == pipeline.DEEPEN_MAX_FINDINGS
                 assert len([r for r in sparse["rows"] if not r["activated"]]) == 2
@@ -227,7 +227,7 @@ def check():
             return ("PASS" if result["calls"] == ["PRACTICE_AUDITOR"] and result["joined"] else "FAIL", "")
 
         def validate():
-            return len(json.loads((ROOT / "config/agent_registry.json").read_text(encoding="utf-8"))["agents"]) == 18
+            return len(json.loads((ROOT / "config/agent_registry.json").read_text(encoding="utf-8"))["agents"]) == 19
 
         prove_effect(name="actual_wide_gate_and_activation_record", validate=validate,
             observe=observe, check=verdict,

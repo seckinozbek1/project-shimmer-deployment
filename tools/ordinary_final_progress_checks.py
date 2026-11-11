@@ -15,6 +15,8 @@ what catch that class of fault before it reaches a status block.
 """
 import ast
 import json
+import time
+import subprocess
 import re
 import sys
 import tempfile
@@ -107,6 +109,105 @@ class ProgressReadings(unittest.TestCase):
         self.assertIn('29 of an unknown number of model calls', line)
         self.assertIn('the run decides its own call count', line)
         self.assertIn('0 auditor pairs', line)
+
+    def test_a_b1_workload_reading_counts_reply_records_against_the_expected_total(self):
+        """S5 R19: a B1 entry writes no pipeline telemetry; its reading is the reply records
+        bare_model.py has written against the total the runner wrote first (items x checkpoints)."""
+        for phase in ('ordinary_workload', 'batch_workload'):
+            line = self.read(phase, 3.0 * 60, {'evidence/b1': 'B1\n6\n16'})
+            self.assertTrue(line.startswith(phase + ' progress: 6 of 16 reply records measured'), line)
+            self.assertIn('3.0 min elapsed', line)
+            self.assertIn('2.0 reply record/min', line)
+            self.assertIn('~5.0 min remaining', line)
+            self.assertNotIn('model call', line)
+        # Before the first record: nothing to measure yet, never a percentage.
+        line = self.read('batch_workload', 30.0, {'evidence/b1': 'B1\n0\n16'})
+        self.assertIn('no reply records recorded yet', line)
+        # A B3 workload answers PIPELINE, and the pipeline's own reading applies unchanged.
+        line = self.read('batch_workload', 4.0 * 60, {'evidence/b1': 'PIPELINE', 'model_call': '40\n7\ncompleted=10/12'})
+        self.assertIn('10 of 12 agents', line)
+
+    def test_a_judge_training_reading_states_updates_rate_and_time_left(self):
+        """T of D-S42: a training pass writes no reply record for hours; its reading is its own
+        progress file, four values, then the questions' reply records against their stated total."""
+        state = json.dumps({'phase': 'training', 'update': 100, 'of': 400, 'elapsed_seconds': 1200.0, 'seconds_per_update': 12.0})
+        for phase in ('ordinary_workload', 'batch_workload'):
+            line = self.read(phase, 90.0 * 60, {'training/progress.json': 'TRAINING\n%s\n0\n1000' % state})
+            self.assertTrue(line.startswith(phase + ' progress: 100 of 400 training updates (25.0%) measured'), line)
+            self.assertIn('20.0 min elapsed', line)
+            self.assertIn('12.0 s/update', line)
+            self.assertIn('~60.0 min remaining', line)
+            self.assertNotIn('no reply records', line)
+        state = json.dumps({'phase': 'questions', 'questions_total': 30, 'started_epoch': 1000, 'mix': 'dev_mix'})
+        line = self.read('ordinary_workload', 300.0 * 60, {'training/progress.json': 'TRAINING\n%s\n10\n1600' % state})
+        self.assertIn('10 of 30 reply records measured', line)
+        self.assertIn('(dev_mix)', line)
+        self.assertIn('10.0 min elapsed', line)
+        self.assertIn('~20.0 min remaining', line)
+        line = self.read('ordinary_workload', 60.0, {'training/progress.json': 'TRAINING\n{"phase": "tra\n0\n1000'})
+        self.assertIn('not measurable', line)
+        # No training file: the reply-record reading applies, unchanged.
+        line = self.read('ordinary_workload', 3.0 * 60, {'training/progress.json': 'NONE', 'evidence/b1': 'B1\n6\n16'})
+        self.assertIn('6 of 16 reply records measured', line)
+
+    def test_a_training_count_reads_each_mix_alone_on_the_live_nesting(self):
+        """Live run T, 8 Nov 09:58: permissive_mix's folder is the parent of dev_mix's, and a recursive
+        count gave 16,346 of 14,680 and 'every pass written' ten minutes in. The command itself runs
+        here through a real shell over that nesting, and must count permissive_mix's own records only."""
+        import shutil
+        shell = shutil.which('bash')
+        if shell is None:
+            self.skipTest('no bash on this machine to run the observation')
+        root = Path(self.directory.name) / 'remote'
+        train = root / progress.B1_ROOT / 'train'
+
+        def records(folder, n):
+            folder.mkdir(parents=True, exist_ok=True)
+            for k in range(n):
+                (folder / ('r%d.json' % k)).write_text('{}', encoding='utf8')
+        records(train / 'dev_mix' / 'audit' / 'model_replies', 7)
+        records(train / 'dev_mix' / 'passes' / 'trained_half' / 'audit' / 'model_replies', 7)
+        records(train / 'audit' / 'model_replies', 2)
+        records(train / 'passes' / 'trained_half' / 'audit' / 'model_replies', 3)
+        for folder, state in ((train / 'dev_mix' / 'training', {'phase': 'questions', 'questions_total': 14, 'started_epoch': 1, 'mix': 'dev_mix',
+                                                                 'records_under': progress.B1_ROOT + '/train/dev_mix'}),
+                              (train / 'training', {'phase': 'questions', 'questions_total': 14, 'started_epoch': 1, 'mix': 'permissive_mix',
+                                                    'records_under': progress.B1_ROOT + '/train'})):
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / 'progress.json').write_bytes(json.dumps(state, indent=1).encode('utf8'))
+            time.sleep(1.1)
+        command = progress.training_command(root.as_posix())
+        output = subprocess.run([shell, '-c', command], capture_output=True, timeout=60).stdout.decode('utf8')
+
+        def look(_command):
+            return output.strip()
+        bundle = self.bundle
+        line = progress.training_reading(dict(look=look, elapsed=60.0), 'ordinary_workload')
+        self.assertIn('(permissive_mix)', line)
+        self.assertIn('5 of 14 reply records measured', line, line)
+        self.assertNotIn('every pass', line)
+        # More records than the file states is never 'all written'.
+        state = json.dumps({'phase': 'questions', 'questions_total': 4, 'started_epoch': 1000})
+        line = self.read('ordinary_workload', 60.0, {'training/progress.json': 'TRAINING\n%s\n9\n1600' % state})
+        self.assertIn('not measurable', line)
+        self.assertNotIn('every pass', line)
+
+    def test_an_arm_l_workload_reading_counts_the_sealed_answers_given(self):
+        """D-S13 item 6d: an arm L entry writes no telemetry of its own until a menu run starts;
+        its reading is the last answer line the runner printed (sealed answers to the required
+        prompts given, of how many), with no rate or remaining time, since the answers come in
+        bursts between the menu's two runs. A workload that is not arm L reads as before."""
+        answered = 'L\n11 of 23 sealed answers to the required prompts given'
+        for phase in ('ordinary_workload', 'batch_workload'):
+            line = self.read(phase, 9.0 * 60, {'evidence/launcher': answered})
+            self.assertTrue(line.startswith(phase + ' progress: 11 of 23 sealed answers to the required prompts given'), line)
+            self.assertIn('9.0 min elapsed', line)
+            self.assertIn('no rate or remaining time', line)
+            self.assertNotIn('model call', line)
+        line = self.read('ordinary_workload', 20.0, {'evidence/launcher': 'L\n'})
+        self.assertIn('no sealed answer given yet', line)
+        line = self.read('ordinary_workload', 4.0 * 60, {'evidence/launcher': 'OTHER', 'model_call': '40\n7\ncompleted=10/12'})
+        self.assertIn('10 of 12 agents', line)
 
     # --- the explicit refusals ----------------------------------------------------------
 
@@ -205,11 +306,32 @@ def unreadable_that_reports_zero_instead_of_refusing(phase, why):
     return '%s progress: 0.00 of 13.15 GB (0.0%%) measured, 0.0 min elapsed, 0.0 MB/s' % phase
 
 
+def recursive_training_command(root):
+    """The command as it ran on 8 Nov: every reply record below the mix's folder."""
+    return ("cd %s && f=$(ls -t %s/*/training/progress.json %s/*/*/training/progress.json 2>/dev/null | head -1); "
+            "if [ -n \"$f\" ]; then echo TRAINING; tr -d '\\n' < \"$f\"; echo; "
+            "u=$(tr -d '\\n' < \"$f\" | grep -o '\"records_under\": *\"[^\"]*\"' | cut -d'\"' -f4); "
+            "(find \"${u:-%s}\" -path '*/audit/model_replies/*.json' 2>/dev/null | wc -l); date +%%s; else echo NONE; fi"
+            % (root, progress.B1_ROOT, progress.B1_ROOT, progress.B1_ROOT))
+
+
 NEUTRALIZATIONS = (
     ('test_upload_reading_reproduces_the_partial_file_on_the_instance',
      progress, 'size_reading', size_reading_that_invents_a_rate),
     ('test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero',
      progress, 'unreadable', unreadable_that_reports_zero_instead_of_refusing),
+    # S5: a B1 entry read as a pipeline run, so its reply records are never counted.
+    ('test_a_b1_workload_reading_counts_reply_records_against_the_expected_total',
+     progress, 'b1_workload', lambda context, phase: None),
+    # T of D-S42: a training pass read by its reply records, so hours of training read as nothing.
+    ('test_a_judge_training_reading_states_updates_rate_and_time_left',
+     progress, 'training_reading', lambda context, phase: None),
+    # T, 8 Nov: the count that read dev_mix's records as permissive_mix's.
+    ('test_a_training_count_reads_each_mix_alone_on_the_live_nesting',
+     progress, 'training_command', recursive_training_command),
+    # D-S13 item 6d: an arm L entry read as a pipeline run, so its answers are never counted.
+    ('test_an_arm_l_workload_reading_counts_the_sealed_answers_given',
+     progress, 'launcher_workload', lambda context, phase: None),
 )
 
 

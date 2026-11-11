@@ -22,6 +22,11 @@ sys.path[:0] = [str(ROOT / 'tools')]
 from ordinary_final_run import read, write, require
 
 
+# D-S107 item 1: the loop's one filesystem (docs/DEPLOYMENT_RESOURCES.md), where Lambda mounts it.
+LOOP_FILESYSTEM_NAME = 'shimmer-filesystem'
+LOOP_MOUNT = '/home/ubuntu/shimmer-filesystem'
+
+
 def declare(bundle, filesystem_name, mount, *, operator_authorized=True):
     """Write asset_copy_declaration.json into `bundle` and return it."""
     bundle = Path(bundle)

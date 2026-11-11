@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Settings of scripts/version_changes.py, which reports what changed between two versions of a document, in Python, with no model.",
+  "min_sentence_similarity": 0.6,
+  "min_sentence_similarity_note": "Share of the two sentences' words in common order (difflib ratio) above which a removed and an added sentence are reported as one changed sentence. Conventional default, no evidence: no corpus has been scored against it. Below it they are reported as removed and added, which loses nothing.",
+  "min_shared_headings": 0.5,
+  "min_shared_headings_note": "Share of heading slugs two documents of consecutive rounds must have in common to be taken for versions of each other, since a case manifest does not say which are. Conventional default, no evidence. A document paired with nothing is listed under not_compared."
+}

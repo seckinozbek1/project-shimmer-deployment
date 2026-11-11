@@ -1,0 +1,61 @@
+{
+  "schema": "passage-pairs-v1",
+  "note": "Find then judge (P2 (a), D-S38): the one question a model is asked of two passages of a document. Held equal to the measured prompt (benchmark/baselines/pair_judge_prompt.json) by check 324.",
+  "form": "reply",
+  "form_note": "reply: the model answers in JSON, read by read_reply. decision: the block below, read from the model's own probabilities with no text (D-S41, local backends only). Adopting decision is a recorded decision; nothing is asked under it until semantic_thresholds.json holds this family's measured threshold.",
+  "decision": {
+    "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide.",
+    "threshold_family": "passage_pair",
+    "answers": [
+      {
+        "label": "contradicts",
+        "surface": "Yes",
+        "class": "FLAG"
+      },
+      {
+        "label": "does not",
+        "surface": "No",
+        "class": "CLEAR"
+      },
+      {
+        "label": "cannot tell",
+        "surface": "Unclear",
+        "class": "UNDECIDED"
+      }
+    ]
+  },
+  "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nCan both passages be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other. Judge only from the two passages.\n\nAnswer with one JSON object and nothing else, in the form {\"outcome\": \"...\", \"reason\": \"...\"}. The reason is one short sentence. The outcome is one of:\n{outcome_lines}",
+  "limit": 40,
+  "max_new_tokens": 96,
+  "stop_after_failed_calls": 5,
+  "max_passages": 400,
+  "outcomes": [
+    {
+      "value": "compatible",
+      "class": "CLEAR",
+      "line": "compatible: both can be true, or they are about different things.",
+      "accepted": [
+        "compatible"
+      ]
+    },
+    {
+      "value": "contradict",
+      "class": "FLAG",
+      "line": "contradict: both cannot be true of the same thing at the same time.",
+      "accepted": [
+        "contradict",
+        "contradiction",
+        "contradictory"
+      ]
+    },
+    {
+      "value": "cannot tell",
+      "class": "UNDECIDED",
+      "line": "cannot tell: the two passages do not let you decide.",
+      "accepted": [
+        "cannot tell",
+        "uncertain"
+      ]
+    }
+  ]
+}

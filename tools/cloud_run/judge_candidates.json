@@ -1,0 +1,18 @@
+{
+  "unsloth/phi-4-bnb-4bit": {
+    "decision": "D-261",
+    "revision": "098ea917f967c8811e6f579cc38872b2bf3d4bf4",
+    "files": [
+      "config.json",
+      "generation_config.json",
+      "merges.txt",
+      "model-00001-of-00002.safetensors",
+      "model-00002-of-00002.safetensors",
+      "model.safetensors.index.json",
+      "special_tokens_map.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "vocab.json"
+    ]
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "run_id": "9fa13c45c75c493cb3ecebd63d0078c3",
+  "baseline_commit": "47c63aca09603ab5c7ad662753d647397a623ce8",
+  "activation": {
+    "requested": true,
+    "eligible": true,
+    "activated": true,
+    "state": "activated",
+    "reason": null
+  },
+  "manifest": {
+    "schema_version": 1,
+    "case_id": "demo_clean_rivers_resolution",
+    "fixture": false,
+    "rounds": [
+      {
+        "round_id": "r1",
+        "sequence": 1,
+        "document_ids": [
+          "resolution_v1",
+          "sponsor_v1"
+        ]
+      },
+      {
+        "round_id": "r2",
+        "sequence": 2,
+        "document_ids": [
+          "resolution_v2",
+          "sponsor_v2"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "actor_id": "main_sponsor"
+      }
+    ],
+    "issues": [
+      {
+        "issue_id": "observance"
+      }
+    ],
+    "sources": [
+      {
+        "source_id": "s_main_sponsor_r1",
+        "round_id": "r1",
+        "actor_id": "main_sponsor",
+        "issue_id": "observance",
+        "document_id": "sponsor_v1",
+        "unit_id": "u01-observance",
+        "char_start": 59,
+        "char_end": 127,
+        "quote": "The main sponsor wants Member States to be urged to observe the day.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s_main_sponsor_r2",
+        "round_id": "r2",
+        "actor_id": "main_sponsor",
+        "issue_id": "observance",
+        "document_id": "sponsor_v2",
+        "unit_id": "u01-observance",
+        "char_start": 59,
+        "char_end": 138,
+        "quote": "The main sponsor now accepts that Member States are invited to observe the day.",
+        "state": "accepted"
+      }
+    ]
+  },
+  "fixture": false,
+  "records": [
+    {
+      "record_id": "position.r1.main_sponsor.observance",
+      "case_id": "demo_clean_rivers_resolution",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "main_sponsor",
+      "issue_id": "observance",
+      "round_id": "r1",
+      "source_ids": [
+        "s_main_sponsor_r1"
+      ],
+      "ref_ids": [
+        "REF-0001"
+      ],
+      "position": "The main sponsor wants Member States to be urged to observe the day.",
+      "text": "The main sponsor wants Member States to be urged to observe the day.",
+      "written_by": "python",
+      "provenance": "computed",
+      "item_id": "position.r1.main_sponsor.observance",
+      "revision": 1,
+      "ref": "position.r1.main_sponsor.observance"
+    },
+    {
+      "record_id": "position.r2.main_sponsor.observance",
+      "case_id": "demo_clean_rivers_resolution",
+      "kind": "position",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "CONFIDENT",
+      "actor_id": "main_sponsor",
+      "issue_id": "observance",
+      "round_id": "r2",
+      "source_ids": [
+        "s_main_sponsor_r2"
+      ],
+      "ref_ids": [
+        "REF-0002"
+      ],
+      "position": "The main sponsor now accepts that Member States are invited to observe the day.",
+      "text": "The main sponsor now accepts that Member States are invited to observe the day.",
+      "written_by": "python",
+      "provenance": "computed",
+      "item_id": "position.r2.main_sponsor.observance",
+      "revision": 1,
+      "ref": "position.r2.main_sponsor.observance"
+    },
+    {
+      "record_id": "movement.r1.r2.main_sponsor.observance",
+      "case_id": "demo_clean_rivers_resolution",
+      "kind": "movement",
+      "state": "accepted",
+      "category": "observed_evidence",
+      "confidence": "UNCERTAIN",
+      "movement": "unknown",
+      "actor_id": "main_sponsor",
+      "issue_id": "observance",
+      "round_id": "r2",
+      "previous_round_id": "r1",
+      "previous_position_id": "position.r1.main_sponsor.observance",
+      "current_position_id": "position.r2.main_sponsor.observance",
+      "source_ids": [
+        "s_main_sponsor_r1",
+        "s_main_sponsor_r2"
+      ],
+      "ref_ids": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "text": "The main sponsor wants Member States to be urged to observe the day.\nThe main sponsor now accepts that Member States are invited to observe the day.",
+      "written_by": "python",
+      "provenance": "computed",
+      "item_id": "movement.r1.r2.main_sponsor.observance",
+      "revision": 1,
+      "ref": "movement.r1.r2.main_sponsor.observance"
+    }
+  ],
+  "evidence": [
+    {
+      "source_id": "s_main_sponsor_r1",
+      "round_id": "r1",
+      "actor_id": "main_sponsor",
+      "issue_id": "observance",
+      "document_id": "sponsor_v1",
+      "unit_id": "u01-observance",
+      "char_start": 59,
+      "char_end": 127,
+      "quote": "The main sponsor wants Member States to be urged to observe the day.",
+      "state": "accepted",
+      "ref_id": "REF-0001"
+    },
+    {
+      "source_id": "s_main_sponsor_r2",
+      "round_id": "r2",
+      "actor_id": "main_sponsor",
+      "issue_id": "observance",
+      "document_id": "sponsor_v2",
+      "unit_id": "u01-observance",
+      "char_start": 59,
+      "char_end": 138,
+      "quote": "The main sponsor now accepts that Member States are invited to observe the day.",
+      "state": "accepted",
+      "ref_id": "REF-0002"
+    }
+  ],
+  "round_review": {
+    "record": "audit/round_reuse.json",
+    "availability": "recorded",
+    "bus_envelopes": 0
+  },
+  "version_changes": {
+    "availability": "recorded",
+    "record": "audit/version_changes.json",
+    "deliverables": [
+      "deliverables/resolution_v2/version_changes.md",
+      "deliverables/sponsor_v2/version_changes.md"
+    ]
+  },
+  "strategic_layer": {
+    "schema_version": 1,
+    "mode": "trajectory_only",
+    "state": "trajectory_only",
+    "items": [],
+    "reviewed": false
+  },
+  "case_questions": {
+    "availability": "recorded",
+    "record": "audit/case_questions.json",
+    "deliverable": "deliverables/resolution_v2/case_positions.md",
+    "asked": {
+      "movements": true,
+      "suggestions": true
+    },
+    "failed": 0,
+    "not_asked": {},
+    "judging_calls": {}
+  },
+  "outcome": "reviewed",
+  "timings": {
+    "unit": "seconds",
+    "clock": "time.perf_counter",
+    "rounds": [
+      {
+        "round_id": "r1",
+        "seconds": 0.001024
+      },
+      {
+        "round_id": "r2",
+        "seconds": 0.002331
+      }
+    ],
+    "round_review": 0.011895,
+    "records": 0.000971,
+    "phase": 0.128157
+  }
+}

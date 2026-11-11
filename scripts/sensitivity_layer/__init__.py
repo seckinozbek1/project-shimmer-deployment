@@ -302,23 +302,52 @@ def rejoin_after_external(items, held, *, dedupe=True):
 NETWORK_BACKENDS = frozenset({"claude_api", "openai_api"})
 
 
-def mask_text(text, *, operator_rules, project_root):
+def _name_parts(span):
+    """The name inside a name span, word by word. The detector takes up to three words after a
+    title whatever they are ("Lund says the"), so the span as written never meets the same name
+    standing alone in another sentence. A part is a whitespace word that opens with a capital,
+    the run ending at the first word that does not or the first word closed by punctuation.
+    A script with no capitals has no parts, and only the span as written is found."""
+    parts = []
+    for word in span.split():
+        core = re.sub(r"^\W+|\W+$", "", word)
+        if not core[:1].isupper():
+            break
+        parts.append(core)
+        if core != word:
+            break
+    return parts
+
+
+def mask_text(text, *, operator_rules, project_root, context=""):
     """Replace each operator-marked SPAN in `text` with a typed placeholder (the span's
     detector/category as TYPE), leaving non-sensitive text intact. Returns (masked_text,
     n_spans). Operator-convention-driven (redaction_detect over operator rules), never
-    model-judged. Empty inputs -> unchanged."""
+    model-judged. Empty inputs -> unchanged.
+
+    `context` is the document `text` was cut from: spans are detected on context and text and
+    replaced in text alone, since a name is detected only beside a title or an identifier and
+    `text` may hold the name without either (a passage pair's two sentences). Only then is a
+    name also replaced word by word (`_name_parts`). With no context this is unchanged."""
     if not text or not operator_rules or project_root is None:
         return text, 0
-    spans = redaction_detect.detect(project_root, text, operator_rules)
+    spans = redaction_detect.detect(project_root, context + "\n\n" + text if context else text, operator_rules)
     if not spans:
         return text, 0
     masked, n = text, 0
     for it in spans:
         s = it.get("span")
-        if not s or s not in masked:
+        if not s:
             continue
-        masked = masked.replace(s, _placeholder_for(it.get("detector") or it.get("category") or "SPAN"))
-        n += 1
+        kind = it.get("detector") or it.get("category") or "SPAN"
+        if s in masked:
+            masked = masked.replace(s, _placeholder_for(kind))
+            n += 1
+        if context and str(it.get("detector") or "").startswith("name"):
+            for part in _name_parts(s):
+                masked, hits = re.subn(r"(?<!\w)" + re.escape(part) + r"(?!\w)",
+                                       lambda m, kind=kind: _placeholder_for(kind), masked)
+                n += hits
     return masked, n
 
 
@@ -351,11 +380,11 @@ def make_outbound_prompt_masker(*, sensitive, operator_rules, project_root, regi
     callable masks the (stable_prefix, dynamic_suffix) text for NETWORK backends under sensitive
     mode and writes a per-call exposure record (no raw content); returns the text unchanged for
     the local/exempt/non-sensitive cases."""
-    def masker(stable_prefix, dynamic_suffix, *, backend, agent):
+    def masker(stable_prefix, dynamic_suffix, *, backend, agent, context=""):
         if not should_mask_outbound(sensitive=sensitive, backend=backend, registry=registry, agent=agent):
             return stable_prefix, dynamic_suffix
-        sp, n1 = mask_text(stable_prefix, operator_rules=operator_rules, project_root=project_root)
-        ds, n2 = mask_text(dynamic_suffix, operator_rules=operator_rules, project_root=project_root)
+        sp, n1 = mask_text(stable_prefix, operator_rules=operator_rules, project_root=project_root, context=context)
+        ds, n2 = mask_text(dynamic_suffix, operator_rules=operator_rules, project_root=project_root, context=context)
         rec = {"item_id": f"{agent}:prompt", "revision": 1,
                "exposure": "masked" if (n1 + n2) else "passed", "type": "prompt",
                "masked_fields": [k for k, n in (("stable_prefix", n1), ("dynamic_suffix", n2)) if n],
@@ -413,7 +442,7 @@ def record_sensitivity_override(project_root, run_id, *, reason, now_iso=None):
 def record_redaction_waiver(project_root, run_id, *, reason, now_iso=None):
     """Append a per-run redaction-waiver record to the governance ledger
     (durable/governance/redaction_waivers.jsonl - survives reset, never deleted).
-    Records that the operator consciously waived the always-on LAW-IV scrub
+    Records that the operator consciously waived the LAW-IV scrub
     (Mechanism 1) for THIS run only. Relocated into the privacy home in Phase 1b
     (was scripts/redaction_gate.py); the gate's default-BLOCK and logged-waiver
     behaviors both live with the scrubber now."""

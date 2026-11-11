@@ -341,6 +341,13 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
     node_list = list(nodes.values())
     graph = {
         "schema": "oge_graph/v1",
+        # D-432: which sources were the repository's own stores (what runs wrote), so the GNN's
+        # training command can refuse a graph built from them by content, not by its path.
+        "built_from": {"default_sources": sorted(k for k in DEFAULT_SOURCES if k not in (sources or {})),
+                       "overridden_sources": sorted((sources or {}).keys()),
+                       # D-446: every source's resolved path, so a graph built from the stores'
+                       # own files passed explicitly is refused as well.
+                       "source_paths": {k: str(Path(v).resolve()) for k, v in sorted(src.items())}},
         "tier": 1,
         "scope": scope,                # night W7 c: the one scope this graph was built from
         "sensitive": bool(sensitive),  # P4: rule + citation examples masked when true

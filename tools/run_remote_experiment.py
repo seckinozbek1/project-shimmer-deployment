@@ -16,11 +16,12 @@ import tarfile
 import time
 from datetime import datetime, timezone
 
-from cloud_run_common import require, safe_metadata, write_json, digest, credential_locations
+from cloud_run_common import require, safe_metadata, write_json, digest, credential_locations, hidden_run, no_window
 from lambda_experiment_provider import LambdaExperiment
 from prepare_cloud_run import git
 from prepare_source_layer import manifest as source_manifest
 import runtime_contract as runtime
+from loop_budget_guard import refuse_general_path, refuse_while_loop_open
 
 ROOT=Path(__file__).resolve().parents[1]
 CONFIGS=('local_models.json','constitution.json','agent_contracts.json')
@@ -55,12 +56,19 @@ def bundle(root, directory):
 
 
 def prepare(args):
+    # Not a loop launch path (R4): the instance name is derived from the folder name.
+    refuse_general_path(names=['shimmer-'+Path(args.directory).name])
+    # It spends outside the loop's ledger, so it does not prepare a launch while the loop is
+    # open (A11); its caps are the operator's, given on the command line, never typed here.
+    refuse_while_loop_open()
+    require(all(isinstance(v,(int,float)) and v>0 for v in (args.soft_usd,args.hard_usd)) and args.soft_usd<args.hard_usd,
+            'prepare needs --soft-usd below --hard-usd')
     base=args.directory; base.mkdir(parents=True,exist_ok=False)
     suites=('contract_ab_checks.py','lambda_metadata_checks.py','runtime_contract_checks.py','cloud_run_checks.py',
             'cloud_run_transport_checks.py','cloud_run_transfer_checks.py')
     checks=[]
     for suite in suites:
-        result=subprocess.run([sys.executable,str(ROOT/'tools'/suite)],capture_output=True,timeout=120)
+        result=subprocess.run([sys.executable,str(ROOT/'tools'/suite)],capture_output=True,timeout=120,creationflags=no_window())
         require(not credential_locations(result.stdout+result.stderr,suite),'sensitive test diagnostic')
         (base/(suite+'.log')).write_bytes(result.stdout+result.stderr)
         require(result.returncode==0,'local gate failed: '+suite)
@@ -71,14 +79,14 @@ def prepare(args):
     shutil.copytree(ROOT/'docs/fix/compact_contract_ab',base/'compact_local')
     for module,folder in [('compact_contract_no_generation_gate','scripts'),('compact_contract_budget','tools')]:
         command='import sys;from pathlib import Path;sys.path.insert(0,'+repr(str(ROOT/folder))+');import '+module+' as g;g.OUT=Path('+repr(str(base/'compact_local'))+');raise SystemExit(g.main())'
-        result=subprocess.run([sys.executable,'-c',command],capture_output=True,timeout=120)
+        result=subprocess.run([sys.executable,'-c',command],capture_output=True,timeout=120,creationflags=no_window())
         require(not credential_locations(result.stdout+result.stderr,module),'sensitive gate diagnostic')
         (base/(module+'.log')).write_bytes(result.stdout+result.stderr)
         require(result.returncode==0,'compact readiness gate failed: '+module)
         checks.append(dict(suite=module,passed=True))
     require(json.loads((base/'compact_local/readiness.json').read_text())['verdict']=='REMOTE_CONTRACT_AB_READY','readiness absent')
-    selected=runtime.resolve(root=ROOT)
-    preflight=runtime.subprocess_check(selected,ROOT)
+    selected=runtime.resolve(root=ROOT,runner=hidden_run)
+    preflight=runtime.subprocess_check(selected,ROOT,runner=hidden_run)
     write_json(base/'local_source_preflight.json',preflight)
     status=git(ROOT,'status','--short').decode()
     require(all(line.startswith('?? ') for line in status.splitlines()),'commit tracked source before preparation')
@@ -97,7 +105,7 @@ def prepare(args):
     initial=provider.request('instances')['data'];write_json(base/'instances_before.json',initial)
     cfg=json.loads((ROOT/'config/local_models.json').read_text());pins=json.loads((ROOT/'tools/cloud_run/models.json').read_text())
     write_json(base/'manifest.json',dict(source_commit=head,git_status=status,bundle=reviewed,instance=choice['metadata'],region=region,image=image,
-        hourly_rate=choice['metadata']['hourly_rate'],soft_usd=0.5,hard_usd=1,reserve_seconds=180,
+        hourly_rate=choice['metadata']['hourly_rate'],soft_usd=args.soft_usd,hard_usd=args.hard_usd,reserve_seconds=180,
         name='shimmer-'+base.name,multi_round=False,full_pipeline=False,paid_inference_api=False,
         runtime_contract=runtime.load_contract(),runtime_profile='experiment',environment_policy='Explicit fresh isolated venv from verified image Python; all experiment Python uses final absolute venv executable',
         models={role:dict(id=cfg[role],revision=pins[cfg[role]]) for role in ('active_producer','active_auditor')},
@@ -137,14 +145,17 @@ def watch(args):
 def execute(args):
     base=args.directory;m=json.loads((base/'manifest.json').read_text());gate=json.loads((base/'LOCAL_GATES.json').read_text())
     require(gate['REMOTE_RETRY_LOCAL_GATES_PASS'] is True,'local gates not passed')
+    refuse_general_path(names=[m['name']])
+    refuse_while_loop_open()
     require(git(ROOT,'rev-parse','HEAD').decode().strip()==m['source_commit'],'source HEAD changed')
     require(digest(base/'source.tar.gz')==m['bundle']['sha256'],'reviewed archive changed')
     require(not (base/'launch_intent.json').exists(),'one launch only')
     provider=LambdaExperiment(args.credential_file);identity=base/'ssh_identity'
-    generated=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',m['name']],capture_output=True)
+    generated=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',m['name']],capture_output=True,
+                             creationflags=no_window())
     require(generated.returncode==0,'SSH identity generation failed')
     # Check the private identity is readable by OpenSSH without displaying it.
-    check=subprocess.run(['ssh-keygen','-y','-f',str(identity)],capture_output=True)
+    check=subprocess.run(['ssh-keygen','-y','-f',str(identity)],capture_output=True,creationflags=no_window())
     require(check.returncode==0,'OpenSSH cannot read temporary identity')
     registration=provider.request('ssh-keys',dict(name=m['name'],public_key=Path(str(identity)+'.pub').read_text().strip()))['data'][0]
     write_json(base/'ssh_registration.json',registration)
@@ -152,7 +163,7 @@ def execute(args):
     iid=None;ssh=None;options=None;host=None;remote='/home/ubuntu/'+m['name']
     def transport(label, command, timeout=30, required=True):
         begin=time.time()
-        try:p=subprocess.run(command,capture_output=True,timeout=timeout)
+        try:p=subprocess.run(command,capture_output=True,timeout=timeout,creationflags=no_window())
         except subprocess.TimeoutExpired:
             write_json(base/(label+'_timing.json'),dict(seconds=time.time()-begin,status='timeout'))
             raise RuntimeError('transport timeout: '+label) from None
@@ -168,7 +179,7 @@ def execute(args):
         iid=launched['instance_ids'][0];write_json(base/'launch.json',dict(instance_id=iid,epoch=start,utc=utc()))
         flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
         subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'watch','--directory',str(base),'--credential-file',str(args.credential_file)],
-            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=flags)
+            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=no_window(flags))
         for _ in range(20):
             if (base/'WATCHDOG_ARMED.json').exists():break
             time.sleep(.5)
@@ -241,8 +252,10 @@ def execute(args):
 
 
 def main():
+    refuse_general_path(argv=sys.argv[1:])
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=('prepare','execute','watch'))
     p.add_argument('--directory',type=Path,required=True);p.add_argument('--credential-file',type=Path,required=True)
+    p.add_argument('--soft-usd',type=float,default=None,help='prepare: the experiment soft cap');p.add_argument('--hard-usd',type=float,default=None,help='prepare: the experiment hard cap')
     args=p.parse_args();args.directory=args.directory.absolute()
     globals()[args.action](args)
 if __name__=='__main__':

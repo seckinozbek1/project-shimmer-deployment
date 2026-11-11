@@ -38,7 +38,9 @@ from collections import defaultdict
 from pathlib import Path
 
 import finding_record
+import localization
 import pairing_map
+import relation_checks
 
 _ROOT = Path(__file__).resolve().parent.parent
 _RENAME_TOLERANCE_CACHE: float | None = None
@@ -260,7 +262,7 @@ def _label_lines_with_dates(unit_text):
     non-date text this function cannot separate cleanly, is not returned:
     ambiguous material yields no candidate rather than a guessed one.
 
-    The two word-sets are the two INDEPENDENT routes by which a rule can name
+    Each line gives (label words, described words, the label as written). The two word-sets are the two INDEPENDENT routes by which a rule can name
     this pair, kept apart rather than unioned (see the end of this docstring),
     and the way described_words is drawn is the whole point of this function.
 
@@ -327,9 +329,19 @@ def _label_lines_with_dates(unit_text):
         # corpus's own D05 never does: its label is "Service record" and the
         # rule says "service interval", so "record" alone blocked a pair
         # whose description ("calibration visit") the rule states outright.
-        out.append(((set(label), described),
+        # The third entry is the label as this line writes it, for its word order.
+        out.append(((set(label), described, m.group(1)),
                     [p[0] for p in parsed], all(p[1] for p in parsed)))
     return out
+
+
+def _in_document_order(words, text):
+    """`words` in the order they first stand in `text`, read by the one tokeniser."""
+    import pairing_map as _pm
+
+    tokens = _pm._norm_label(text or "")
+    first = {word: len(tokens) - i for i, word in enumerate(reversed(tokens))}
+    return sorted(words, key=lambda word: (first.get(word, len(tokens) + 1), word))
 
 
 def date_pair_for_rule(unit_text, rule_text):
@@ -379,15 +391,20 @@ def date_pair_for_rule(unit_text, rule_text):
         label, or the words the value uses to describe its dates. Either on
         its own is a complete naming; requiring both meant a rule had to
         restate the document's wrapper label as well as its subject."""
-        label_words, described = routes
+        label_words, described = routes[:2]
         return ((bool(label_words) and label_words <= rule_words)
                 or (bool(described) and described <= rule_words))
 
     def _display(routes):
         """The human-readable field name for a matched line: its own label
-        where it has one, else the words describing its dates."""
-        label_words, described = routes
-        return " ".join(label_words or described)
+        where it has one, else the words describing its dates, in the order the
+        document writes them. The first two routes are sets, built for matching; joining
+        a set changes its word order between processes, and the scorer compares labels as
+        exact text, so the order is read from the third entry, the label as its line
+        writes it. A caller's two-entry routes fall back to the unit's text."""
+        label_words, described = routes[:2]
+        written = routes[2] if len(routes) > 2 else unit_text
+        return " ".join(_in_document_order(label_words or described, written))
 
     two_date_lines = [(routes, dts, has_time) for routes, dts, has_time in candidates
                       if len(dts) == 2 and _named(routes)]
@@ -596,19 +613,26 @@ def bounds_from_rule(rule_text):
 # the arithmetic, in Python
 
 
+def band_direct(scalars, columns):
+    """Every figure of a unit a reference band can apply to, as [(label tuple, (value,
+    unit))]: the scalars, then each column's cells under a row label."""
+    direct = list(scalars.items())
+    for label, values in sorted(columns.items()):
+        for i, value_unit in enumerate(values):
+            direct.append((label + ("row%d" % (i + 1),), value_unit))
+    return direct
+
+
 def _band_comparisons(scalars, columns, low, high, bound_unit):
-    """Every comparison a band supports, as (relation, computed, label, basis).
+    """Every comparison a band supports, as (relation, computed, agrees, stated_field,
+    basis, labels).
 
     Shared by the rule-stated band and the reference-table band so the two can
     never drift into comparing different things. A value inside the band yields
     nothing for a direct comparison and an agreeing check for a ratio, exactly as
     the rule-stated path always did."""
     out = []
-    direct = list(scalars.items())
-    for label, values in sorted(columns.items()):
-        for i, value_unit in enumerate(values):
-            direct.append((label + ("row%d" % (i + 1),), value_unit))
-    for label, (value, unit) in direct:
+    for label, (value, unit) in band_direct(scalars, columns):
         if _unit_str(unit_exponents(unit)) != bound_unit:
             continue
         if value > high:
@@ -648,7 +672,7 @@ def _band_comparisons(scalars, columns, low, high, bound_unit):
 def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                    needed=None, present_labels=None, reference_bands=(),
                    vocabulary=None, unit_labels=None, unit_text="",
-                   duration_bound=None):
+                   duration_bound=None, refusals=None, unit_id="", rule_id=""):
     """Every comparison the figures themselves support. The model computes nothing.
 
     Four families, each proposed mechanically:
@@ -658,6 +682,11 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                         multiply to the scalar's unit
       ratio_out_of_range / above_band / below_band
                         a ratio of two fields against bounds the RULE ITSELF states
+      unit_mismatch     (RELATIONS-A) a stated total, or a figure a band applies
+                        to, written in another measure than its column's or its
+                        band's, by a decimal prefix on the same base; the figure is
+                        converted and its sum or band is read in that measure. One
+                        that does not convert is refused into `refusals`
       date_window       (Job C) the gap between two timestamps this unit states,
                         against a bound read from the reference corpus's own
                         prose, when the rule names a date pair AND a bound is
@@ -717,6 +746,7 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
             if not set(col_label) < set(label):
                 continue
             if not _same_unit(unit, col_unit):
+                # RELATIONS-A: written in another measure; read below.
                 continue
             checks.append({
                 "relation": "sum_mismatch",
@@ -725,7 +755,14 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                 "agrees": _close(total, value),
                 "basis": "sum of %d values under %s" % (len(values), " ".join(col_label)),
                 "stated_field": " ".join(label),
+                # Reader check RC1: the reader is told WHICH values were added.
+                "addend_field": " ".join(col_label),
+                "addends": [v for v, _ in values],
             })
+
+    # RELATIONS-A: a stated total written in another measure than its column.
+    checks.extend(relation_checks.column_unit_checks(scalars, columns, unit_id=unit_id,
+                                                     refusals=refusals))
 
     items = sorted(scalars.items())
     for i, (la, (va, ua)) in enumerate(items):
@@ -746,6 +783,9 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                     "agrees": _close(computed, vc),
                     "basis": "%s times %s" % (" ".join(la), " ".join(lb)),
                     "stated_field": " ".join(lc),
+                    # Reader check RC1: the two factors, named and with their values.
+                    "factor_fields": [" ".join(la), " ".join(lb)],
+                    "factors": [va, vb],
                 })
 
     bounds = bounds_from_rule(rule_text)
@@ -774,6 +814,12 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
         if named_here:
             direct = [(lbl, v) for lbl, v in direct
                       if lbl in named_here or lbl[:-1] in named_here]
+        # RELATIONS-A: a named figure written in another measure than the band.
+        for check in relation_checks.band_unit_checks(
+                direct, low, high, bound_unit, unit_id=unit_id, rule_id=rule_id, refusals=refusals,
+                refuse_labels=named_here):
+            check.pop("_labels", None)
+            checks.append(check)
         for label, (value, unit) in direct:
             if _unit_str(unit_exponents(unit)) != bound_unit:
                 continue
@@ -824,6 +870,25 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
     # whatever excerpt happened to be in the prompt.
     for band in reference_bands or ():
         low, high, bound_unit = band["low"], band["high"], band["unit"]
+        # RELATIONS-A: a figure written in another measure than the table's band,
+        # citing the passage the band came from, as every table band does.
+        for check in relation_checks.band_unit_checks(
+                band_direct(scalars, columns), low, high, bound_unit, unit_id=unit_id, rule_id=rule_id,
+                refusals=refusals,
+                refuse_labels={lbl for lbl in (needed or ()) if lbl in scalars or lbl in columns}):
+            check["ref_id"] = band.get("ref_id") or ""
+            check["band_row"] = band.get("row_label") or ""
+            labels = check.pop("_labels", ())
+            if check["relation"] == "below_band":
+                # The same low-side condition every table band's low side gets.
+                import reference_tables
+
+                used = set(band.get("key_labels") or ()) | set(labels)
+                condition, verdict = reference_tables.low_side_condition(
+                    rule_text, vocabulary, used, unit_labels)
+                if verdict == "model":
+                    check["conditional_on"] = [" ".join(c) for c in condition]
+            checks.append(check)
         for relation, computed, agrees, stated_field, basis, labels in _band_comparisons(
                 scalars, columns, low, high, bound_unit):
             check = {
@@ -1111,13 +1176,56 @@ def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
     return payload
 
 
+# Reader check RC1: the fields a check carries that say WHICH figures were added
+# (a sum) or multiplied (a product), copied onto the Finding record.
+# RELATIONS-A adds the three figures of a rate (named, with their values) and, for a
+# copy or a carry, the other unit the compared figure was read from and its label.
+RELATION_DETAIL_FIELDS = ("addend_field", "addends", "factor_fields", "factors",
+                          "rate_fields", "rate_figures", "compared_unit_id", "compared_field")
+
+
+_NO_UNIT_REF = object()
+
+
+def unit_ref_for(doc, unit_id):
+    """The unit's own passage (or None, unplaced) when phase 5.5 placed this
+    document's units (doc["_unit_refs"]); otherwise the marker that keeps the
+    old citation, for a caller that never placed units."""
+    if not isinstance(doc, dict) or "_unit_refs" not in doc:
+        return _NO_UNIT_REF
+    return (doc.get("_unit_refs") or {}).get(unit_id)
+
+
+def attach_compared_unit_refs(checks, doc):
+    """RELATIONS-A: a copy or carry compares a figure read from ANOTHER unit; that
+    unit's own passage, when phase 5.5 placed it (doc["_unit_refs"]), is cited as
+    where the compared figure came from (`ref_ids`, so `compared_with_refs`), never
+    as the finding's location. A check that already carries a compared passage, or
+    names no other unit, or whose other unit Python could not place, is unchanged."""
+    for check in checks or ():
+        other = check.get("compared_unit_id") if isinstance(check, dict) else None
+        if not other or check.get("ref_ids") or check.get("ref_id"):
+            continue
+        ref = unit_ref_for(doc, other)
+        if ref and ref is not _NO_UNIT_REF:
+            check["ref_ids"] = [str(ref)]
+    return checks
+
+
 def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
-                       explanation=""):
+                       explanation="", unit_ref=_NO_UNIT_REF):
     """A typed Finding record built from a COMPUTED comparison.
 
     The values in the record are the ones Python computed. Whatever the model says
     about materiality lands in `explanation` and nowhere else, so a wrong sentence
     can never change a figure.
+
+    unit_ref (S2 checker A8): passed by the paired review, the REF-* of the unit's
+    own passage as Python placed it, or None when Python could not place it. Then
+    the record cites that passage alone (`ref`, `source_refs`), or nothing at the
+    document level, and a passage a compared figure came from (a reference table,
+    a duration bound) is carried apart in `compared_with_refs`. Not passed, the
+    citation is exactly what it was (the excerpt refs, or the compared passage).
     """
     # R1: a band read off a reference table cites THAT passage. Anything else
     # cites whatever excerpt happened to be in the prompt, which is not what the
@@ -1126,8 +1234,11 @@ def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
     # R6: a prior-version check carries every citation of the earlier statement
     # (a line and a summary table may both state it). Existing checks carry no
     # ref_ids, so their citation is byte-identical to before.
-    cited = ([str(r) for r in (check.get("ref_ids") or []) if r]
-             or ([band_ref] if band_ref else list(refs or [])))
+    compared = [str(r) for r in (check.get("ref_ids") or []) if r] or ([band_ref] if band_ref else [])
+    if unit_ref is _NO_UNIT_REF:
+        cited = compared or list(refs or [])
+    else:
+        cited = [str(unit_ref)] if unit_ref else []
     item = {
         "ref": (cited or ["document-level"])[0],
         "kind": "finding",
@@ -1177,6 +1288,23 @@ def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
         item["delta"] = check["delta"]
     if check.get("band_distance_change") is not None:
         item["band_distance_change"] = check["band_distance_change"]
+    # Reader check RC1: what was added or multiplied, named, as flat scalars.
+    for key in RELATION_DETAIL_FIELDS:
+        if check.get(key) not in (None, "", []):
+            item[key] = check[key]
+    # Reader check RC2: a citation that names where the COMPARED figure came from
+    # (a reference table, a prior statement, a duration bound) is kept apart from
+    # the unit's own passage, so the amendment can say which is which.
+    if compared:
+        item["compared_with_refs"] = list(compared)
+    # S2a: the explanation says who wrote it. A sentence a judging model supplied
+    # is marked as the model's; with none, Python writes the plain sentence from
+    # the figures it computed (the same sentence an amendment leads with), so the
+    # reader never meets the internal comparison basis as prose.
+    if explanation:
+        item["explanation_by"] = finding_record.WRITTEN_BY_MODEL
+    elif str(check.get("relation") or "") not in finding_record.PRIOR_RELATIONS:
+        item["explanation"] = computed_sentence(item)
     return item
 
 
@@ -1200,13 +1328,18 @@ def _default_explanation(check):
                 direction, check.get("band_low"), check.get("band_high"),
                 check["band_distance_change"], check["computed_unit"])
         return sentence
-    if check.get("stated") is not None:
-        return ("%s gives %s %s, while the document states %s %s."
-                % (check["basis"], check["computed"], check["computed_unit"],
-                   check["stated"], check["stated_unit"]))
-    return ("%s gives %s %s against a stated range of %s to %s."
-            % (check["basis"], check["computed"], check["computed_unit"],
-               check.get("band_low"), check.get("band_high")))
+    # S2a: every other relation is explained by computed_sentence, written from
+    # the typed record once it exists (finding_from_check). The comparison
+    # `basis` is an internal label for the arithmetic, never reader prose: read
+    # as prose it produced "measured value against the range against Sodium in
+    # the reference corpus gives ..." and "0 values against a stated 1 required".
+    return ""
+
+
+def _key_part(value):
+    """A value as part of a set key. A model's reply can hold a list or an object in any
+    field, and a key must not stop the run."""
+    return value if value is None or isinstance(value, (str, int, float)) else json.dumps(value, sort_keys=True, default=str)
 
 
 def dedupe(items):
@@ -1219,6 +1352,13 @@ def dedupe(items):
             # R6: two fields of one unit may hold the same figure under the same
             # rule (two terms both unchanged at 45 kes). They are two records.
             key += (item.get("field_label"),)
+        if item.get("relation") in finding_record.TEXT_RELATIONS:
+            # INFRA-046: no figures to tell two contradictions of one unit apart;
+            # their passages do, in either order and whatever their spacing or case.
+            key += tuple(sorted((_squash(item.get("quote")), _squash(item.get("quote_b")))))
+            # INFRA-047: one sentence repeated in two other units is two records.
+            key += (item.get("compared_unit_id"),)
+        key = tuple(_key_part(part) for part in key)
         if key in seen:
             continue
         seen.add(key)
@@ -1393,11 +1533,15 @@ def absence_plans(unit, rule_ids, rules_by_id, present, *, required_fields_for=N
 
 
 DURATION_RELATIONS = ("date_window",)
+# The plans that put a question to a model on a unit's text alone (no computed figure).
+MODEL_QUESTION_PLANS = ("absence_judged", "uncomputable")
+HEADING_ONLY_UNIT = "the unit carries only its heading: no text to judge"
 
 
 def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for=None,
                reference_bands_for=None, known_units=None, required_fields_for=None,
-               duration_bound_for=None, suspension_sink=None):
+               duration_bound_for=None, suspension_sink=None, relation_refusal_sink=None,
+               unasked_sink=None):
     """One judging call per DISTINCT computed disagreement, not per pair.
 
     Found by measuring the plan at H7 rather than by reading the code. A sum or a
@@ -1413,11 +1557,23 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
     rule that names the fields involved. Only band checks, which read their bounds
     from a rule's own text, are computed per rule.
 
+    RELATIONS-A: the rate, copy and carry checks read a rule's own words (which
+    figures it names, which column and key), so they are computed per rule, each
+    distinct check once, attributed to a rule that produced it; a plan whose rule
+    produced any of them (agreeing or not) is settled. The unit mismatch of a
+    stated total is rule-independent, computed with the sums. A comparison any of
+    them could not decide is written to `relation_refusal_sink` (additive, like
+    suspension_sink; None keeps no record).
+
     Returns a list of call specs: {unit, rule, checks, kind}.
     """
     needed_fields_for = needed_fields_for or (lambda text: set())
     by_unit = {}
     for unit_id, rule_id in pairs:
+        # P2 (a): a rule declaring `[compare: passages]` is asked of pairs of passages, never of
+        # a unit (passage_pairs); a unit plan would ask it twice.
+        if (rules_by_id.get(rule_id) or {}).get("compare"):
+            continue
         by_unit.setdefault(unit_id, []).append(rule_id)
 
     plans = []
@@ -1467,7 +1623,8 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
         # the exclusion is made explicit rather than relying on that silently.
         shared = [c for c in compute_checks(scalars, columns, rule_text="",
                                             row_counts=row_counts, needed=needed_union,
-                                            present_labels=present)
+                                            present_labels=present, unit_id=unit_id,
+                                            refusals=relation_refusal_sink)
                   if c["relation"] not in BAND_RELATIONS
                   and c["relation"] not in DURATION_RELATIONS]
         seen = set()
@@ -1477,9 +1634,19 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
             if key in seen:
                 continue
             seen.add(key)
-            plans.append({"unit": unit, "rule": rules_by_id.get(
-                _rule_for_check(check, rule_ids, rules_by_id, needed_fields_for)),
-                "checks": [check], "kind": "computed"})
+            if check["relation"] == relation_checks.UNIT:
+                # D-198 (open item 76): a unit mismatch belongs to the rule whose
+                # declaration reads its label or measure, never to the sum rule.
+                chosen, why = relation_checks.measure_rule(check, rule_ids, rules_by_id)
+                if chosen is None:
+                    relation_checks._refuse(relation_refusal_sink, unit_id, "", relation_checks.UNIT,
+                                            why, fields=[str(check.get("stated_field") or "")],
+                                            units=[check.get("stated_unit"), check.get("computed_unit")])
+                    continue
+            else:
+                chosen = _rule_for_check(check, rule_ids, rules_by_id, needed_fields_for)
+            plans.append({"unit": unit, "rule": rules_by_id.get(chosen),
+                          "checks": [check], "kind": "computed"})
 
         # Rule-dependent: a band lives in a rule's own text, or (R1) in a table in
         # the reference corpus that the rule points at, or (Job C) a duration
@@ -1497,6 +1664,36 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
         # second time), a pre-existing defect in the R1 mechanism this
         # tracking now also closes, not only Job C's own new duration path.
         settled_rule_ids = set()
+        # RELATIONS-A: each distinct rate, copy or carry check once, with the
+        # rules that produced it, in rule order.
+        related = {}
+        for rule_id in rule_ids:
+            rule = rules_by_id.get(rule_id)
+            if not rule:
+                continue
+            text_of_rule = rule.get("rule", "")
+            produced = (relation_checks.rate_checks(
+                            scalars, text_of_rule, unit_text=unit.get("text", ""), unit_id=unit_id,
+                            rule_id=rule_id, refusals=relation_refusal_sink)
+                        + relation_checks.copy_checks(
+                            unit, text_of_rule, units_by_id, rule_id=rule_id,
+                            refusals=relation_refusal_sink, known_units=known_units)
+                        + relation_checks.carry_checks(
+                            unit, text_of_rule, units_by_id, rule_id=rule_id,
+                            refusals=relation_refusal_sink, known_units=known_units))
+            if produced and rule_settled_by(produced, text_of_rule, present, needed_fields_for):
+                settled_rule_ids.add(rule_id)
+            for check in produced:
+                key = (check["relation"], check.get("stated_field"), check.get("computed"),
+                       check.get("stated"), check.get("compared_unit_id"))
+                related.setdefault(key, (check, []))[1].append(rule_id)
+        for check, producers in related.values():
+            if check.get("agrees"):
+                continue
+            chosen = _rule_for_check(check, producers, rules_by_id, needed_fields_for)
+            plans.append({"unit": unit, "rule": rules_by_id.get(chosen), "checks": [check],
+                          "kind": "computed"})
+        band_unit_seen = set()
         for rule_id in rule_ids:
             rule = rules_by_id.get(rule_id)
             if not rule:
@@ -1521,12 +1718,35 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                                          vocabulary=vocabulary,
                                          unit_labels=present,
                                          unit_text=unit.get("text", ""),
-                                         duration_bound=duration_bound)
+                                         duration_bound=duration_bound,
+                                         unit_id=unit_id, rule_id=rule_id,
+                                         refusals=relation_refusal_sink)
             band = [c for c in rule_checks if c["relation"] in BAND_RELATIONS]
             if band:
                 settled_rule_ids.add(rule_id)
             for check in disagreements(band):
                 plans.append({"unit": unit, "rule": rule, "checks": [check],
+                              "kind": "band"})
+            # RELATIONS-A: a figure in another measure than this rule's band, once
+            # per unit and figure however many rules carry a band for it.
+            for check in rule_checks:
+                if not check.get("band_unit_mismatch"):
+                    continue
+                settled_rule_ids.add(rule_id)
+                key = (check.get("stated_field"), check.get("stated"), check.get("stated_unit"))
+                if key in band_unit_seen:
+                    continue
+                band_unit_seen.add(key)
+                # D-198 (open item 76): attributed to the rule whose declaration
+                # reads the figure's label or measure, or refused; the band rule
+                # keeps its own band record (above_band, below_band) either way.
+                chosen, why = relation_checks.measure_rule(check, rule_ids, rules_by_id)
+                if chosen is None:
+                    relation_checks._refuse(relation_refusal_sink, unit_id, rule_id, relation_checks.UNIT,
+                                            why, fields=[str(check.get("stated_field") or "")],
+                                            units=[check.get("stated_unit"), check.get("computed_unit")])
+                    continue
+                plans.append({"unit": unit, "rule": rules_by_id.get(chosen), "checks": [check],
                               "kind": "band"})
             duration = [c for c in rule_checks if c["relation"] in DURATION_RELATIONS]
             if duration:
@@ -1569,6 +1789,18 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                                       present_labels=present):
                     plans.append({"unit": unit, "rule": rule, "checks": [],
                                   "kind": "uncomputable"})
+        # D-S57 item 1 (lane/auditor): a unit that carries nothing but its heading has no text for a
+        # model to judge, so neither model question is asked of it; each one not asked is recorded.
+        if not pairing_map.carries_content(unit.get("text", "")):
+            kept = []
+            for plan in plans:
+                if plan["unit"] is unit and plan["kind"] in MODEL_QUESTION_PLANS and plan["rule"] is not None:
+                    if unasked_sink is not None:
+                        unasked_sink.append({"unit_id": unit_id, "rule_id": plan["rule"].get("id"),
+                                             "kind": plan["kind"], "reason": HEADING_ONLY_UNIT})
+                    continue
+                kept.append(plan)
+            plans = kept
     # SEVEN-A: the suspension evidence leaves this function.
     #
     # It was accumulated here and discarded, which is the same reading-not-effect
@@ -1588,6 +1820,18 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
     if suspension_sink is not None:
         suspension_sink.extend(suspensions)
     return [pl for pl in plans if pl["rule"] is not None]
+
+
+def rule_settled_by(produced, rule_text, present, needed_fields_for):
+    """D-198: whether the rate, copy or carry checks a rule produced answer everything the
+    rule names on this unit. A rule that also names a label of the unit no such check
+    read still asks something Python did not compute, so its other plans stay (the
+    uncomputable model call included); only the comparison itself is settled."""
+    named = {tuple(lb) for lb in needed_fields_for(rule_text) or () if tuple(lb) in present}
+    read = set()
+    for check in produced:
+        read |= relation_checks.labels_read(check)
+    return named <= read
 
 
 def _rule_for_check(check, rule_ids, rules_by_id, needed_fields_for):
@@ -1677,6 +1921,27 @@ def prior_index(prior_text, ref_for_paragraph, known_units=()):
             "uncited_paragraphs": uncited}
 
 
+# Every refusal of a change record carries `reason_kind`, one of these, beside the human
+# `reason` sentence (D-042): a scorer reads the kind, never the sentence. Written where
+# the refusal is made (here, reference_tables.prior_values_for_scalars and
+# pipeline._prior_comparison) and copied into review_data.json by
+# pipeline._prior_refusals_for; prior_refusal_checks.py holds the list and the copy.
+PRIOR_REFUSAL_KINDS = (
+    "possible_rename",             # a newcomer in the section within rename_tolerance(), same unit
+    "possible_successor",          # an unclaimed newcomer in the section in the same unit
+    "possible_successor_no_unit",  # the same, where neither figure carries a unit
+    "tie",                         # differing earlier statements, or a tie between table rows
+    "reverse_tie",                 # several document labels match one table row
+    "no_citation",                 # the earlier statement has no REF id on file
+    "unit_mismatch",               # the two figures' units differ, or one is empty
+    "disagreeing_bands",           # two or more distinct bands orient the change
+    "no_key_column",               # an earlier table with no key column identifying its rows
+    "value_column_count",          # an earlier table without exactly one value column
+    "no_rule",                     # no paired rule to cite for the comparison
+    "orphan",                      # (prior_orphans) the earlier heading has no counterpart
+)
+
+
 def prior_lookup(index, scalars, unit_slug):
     """The earlier figure for each of this unit's labelled fields, or a refusal.
 
@@ -1702,6 +1967,7 @@ def prior_lookup(index, scalars, unit_slug):
             # A whole-table refusal carries an empty label; it is kept so the operator
             # can see why a table of the earlier version supplied no figure at all.
             refused.append({"label": r.get("label", ""), "reason": r["reason"],
+                            "reason_kind": r.get("reason_kind", ""),
                             "ref_ids": [r["ref_id"]] if r.get("ref_id") else []})
 
     def _distinct(cands):
@@ -1714,12 +1980,14 @@ def prior_lookup(index, scalars, unit_slug):
         if len(_distinct(chosen)) != 1:
             refused.append({"label": " ".join(label),
                             "reason": "tie: %d differing earlier statements" % len(_distinct(cands)),
+                            "reason_kind": "tie",
                             "ref_ids": sorted({c["ref_id"] for c in cands if c.get("ref_id")})})
             continue
         refs = sorted({c["ref_id"] for c in chosen if c.get("ref_id")})
         if not refs:
             refused.append({"label": " ".join(label),
                             "reason": "no citation on file for the earlier statement",
+                            "reason_kind": "no_citation",
                             "ref_ids": []})
             continue
         first = chosen[0]
@@ -1754,6 +2022,7 @@ def prior_checks(scalars, hits, bands_by_label):
         ue = _unit_str(unit_exponents(unit))
         if not ue or ue != hit["unit"]:
             refused.append({"label": " ".join(label), "reason": "units differ or are empty",
+                            "reason_kind": "unit_mismatch",
                             "ref_ids": list(hit["ref_ids"])})
             continue
         same = _close(value, hit["value"])
@@ -1783,9 +2052,87 @@ def prior_checks(scalars, hits, bands_by_label):
         elif len(spans) > 1:
             refused.append({"label": " ".join(label),
                             "reason": "bands disagree: %d spans" % len(spans),
+                            "reason_kind": "disagreeing_bands",
                             "ref_ids": list(hit["ref_ids"])})
         checks.append(check)
     return checks, refused
+
+
+MOVED_SUCCESSOR_REASON = (
+    "possible rename with a moved value, not a confirmed withdrawal: "
+    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same "
+    "section in the same unit of measure; whether it is the same term "
+    "is not decided here")
+UNITLESS_SUCCESSOR_REASON = (
+    "possible rename of a figure with no unit, not a confirmed withdrawal: "
+    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same section; neither figure carries a "
+    "unit of measure, so the unit cannot tell them apart, and whether it is the "
+    "same term is not decided here")
+
+
+def possible_successor(unit, candidates, claimed):
+    """S2b item 5: the first label newly stated in this section, in the same unit
+    of measure as a vanished label, that no value-corroborated rename has claimed;
+    (label, value) or None. Structural only (no word meaning is read): it says a
+    successor is POSSIBLE, which is enough to refuse calling the vanished label
+    withdrawn. `candidates` are (label, value, unit) as absent_checks builds them.
+
+    S2 checker A9: two figures with NO unit of measure count as the same measure
+    here. That is deliberate and differs from the value-corroborated rename test,
+    which needs a unit: there a unit is what makes two close values comparable,
+    while here a missing unit only means the unit cannot tell the figures apart,
+    and a withdrawal the structure cannot rule out is refused, never minted. The
+    caller gives that case its own refusal reason (UNITLESS_SUCCESSOR_REASON)."""
+    def measure(u):
+        return _unit_str(unit_exponents(u)) if u else ""
+    for cand_label, cand_val, cand_unit in candidates:
+        if cand_label in claimed or measure(cand_unit) != measure(unit):
+            continue
+        return cand_label, cand_val
+    return None
+
+
+def _table_row_figures(table):
+    """[(label, value, unit)] of a table with key columns and exactly one value column: each
+    row's key cell, normalised, as the label of the figure in that row. The one reader of a table
+    row as a stated term, for the earlier version's tables and the current document's alike."""
+    import reference_tables
+
+    keys = [i for i in reference_tables.key_column_indexes(table)
+            if i != table.get("unit_column")]
+    values = [i for i, k in enumerate(table["kinds"]) if k == "value"]
+    if not keys or len(values) != 1:
+        return []
+    out = []
+    for row in table["rows"]:
+        q = first_quantity(row[values[0]])
+        if q is None:
+            continue
+        for k in keys:
+            label = pairing_map._norm_label(row[k])
+            if label:
+                unit = reference_tables._accept_cell_unit(
+                    q[1], table["header_units"][values[0]]
+                    or (row[table["unit_column"]].strip()
+                        if table.get("unit_column") is not None else ""))
+                out.append((label, q[0], _unit_str(unit_exponents(unit)) if unit else ""))
+    return out
+
+
+def table_row_labels(text, known_units=()):
+    """The row labels the tables of `text` state, read as an earlier version's tables are read
+    (`prior_index`, `_table_row_figures`). `absent_checks` tests an earlier table's rows against
+    the labels of the document under review, so a row still standing must be among them: label
+    lines and table headers alone made every unchanged row read as withdrawn."""
+    import reference_builder
+    import reference_tables
+
+    labels = set()
+    for para in reference_builder._PARA_RE.split(text or ""):
+        for table in reference_tables.parse_tables(para.strip(), ref_id="", document_id="",
+                                                   known_units=known_units):
+            labels |= {label for label, _value, _unit in _table_row_figures(table)}
+    return labels
 
 
 def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
@@ -1829,29 +2176,36 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                 return cand_label, cand_val
         return None
 
+    # S2b, item 5 (the rename refusal, general form). A label renamed between
+    # rounds whose VALUE ALSO MOVED was still minted as withdrawn: the value test
+    # above finds no newcomer within rename_tolerance(), and nothing else stood
+    # between the vanished label and an absent_since_prior record. Whether a
+    # newcomer is the same term under a new name is a question about what words
+    # mean, and no measured decision for it exists yet (WORDS-A: never a keyword
+    # table, never one method alone; the measurement is S5's, on S3's rename
+    # probes). What the structure CAN say is whether a successor is possible: a
+    # label newly stated in the same section, in the same unit of measure, that
+    # no value-corroborated rename has already claimed. While one exists the
+    # withdrawal is not confirmed and is refused, naming both labels and both
+    # values; refusing is always allowed, fabricating a withdrawal never is. A
+    # label with no possible successor (no unclaimed newcomer in that unit of
+    # measure in its section) is still minted as withdrawn. (possible_successor)
+
     seen, checks, refused = set(), [], []
     entries = list(index.get("lines", []))
     for t in index.get("tables", []):
-        table = t["table"]
-        keys = [i for i in reference_tables.key_column_indexes(table)
-                if i != table.get("unit_column")]
-        values = [i for i, k in enumerate(table["kinds"]) if k == "value"]
-        if not keys or len(values) != 1:
+        for label, value, unit in _table_row_figures(t["table"]):
+            entries.append({"label": label, "value": value, "unit": unit,
+                            "ref_id": t["ref_id"], "unit_slug": t["unit_slug"]})
+    # The newcomers a value-corroborated rename already accounts for: each is one
+    # vanished label's successor and cannot also stand in for another.
+    claimed = set()
+    for entry in entries:
+        if entry["label"] in present_labels or entry.get("unit_slug") != unit_slug:
             continue
-        for row in table["rows"]:
-            q = first_quantity(row[values[0]])
-            if q is None:
-                continue
-            for k in keys:
-                label = pairing_map._norm_label(row[k])
-                if label:
-                    unit = reference_tables._accept_cell_unit(
-                        q[1], table["header_units"][values[0]]
-                        or (row[table["unit_column"]].strip()
-                            if table.get("unit_column") is not None else ""))
-                    entries.append({"label": label, "value": q[0],
-                                    "unit": _unit_str(unit_exponents(unit)) if unit else "",
-                                    "ref_id": t["ref_id"], "unit_slug": t["unit_slug"]})
+        rename = _rename_candidate(entry["label"], entry["value"], entry["unit"])
+        if rename is not None:
+            claimed.add(rename[0])
     for entry in entries:
         label = entry["label"]
         if label in present_labels or label in seen:
@@ -1870,6 +2224,7 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
             # written, and the refusal says why.
             refused.append({"label": " ".join(label),
                             "reason": "no citation on file for the earlier statement",
+                            "reason_kind": "no_citation",
                             "ref_ids": []})
             continue
         rename = _rename_candidate(label, entry["value"], entry["unit"])
@@ -1889,6 +2244,20 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                         " ".join(label), entry["value"],
                         " ".join(cand_label), cand_val,
                         rename_tolerance() * 100)),
+                "reason_kind": "possible_rename",
+                "ref_ids": refs,
+            })
+            continue
+        moved = possible_successor(entry["unit"], candidates, claimed)
+        if moved is not None:
+            cand_label, cand_val = moved
+            template = MOVED_SUCCESSOR_REASON if entry["unit"] else UNITLESS_SUCCESSOR_REASON
+            refused.append({
+                "label": " ".join(label),
+                "reason": template % (" ".join(label), entry["value"],
+                                      " ".join(cand_label), cand_val),
+                "reason_kind": ("possible_successor" if entry["unit"]
+                                else "possible_successor_no_unit"),
                 "ref_ids": refs,
             })
             continue
@@ -1951,8 +2320,9 @@ def prior_findings(unit, rule_ids, rules_by_id, checks, *, needed_fields_for,
     return out
 
 
-def pairs_from_map(pairing, *, cap_per_unit=None):
-    """The (unit_id, rule_id) pairs the map decided, optionally capped per unit.
+def pairs_from_map(pairing, *, cap_per_unit=None, not_unit_rules=()):
+    """The (unit_id, rule_id) pairs the map decided, optionally capped per unit. `not_unit_rules`
+    are rules asked of no unit (a declared `compare`): they take no place under the cap.
 
     H4 measured 80 pairs on the operator's document and H3 measured 78 to 85
     seconds for a local call, which is about 106 minutes for one document. The cap
@@ -1961,7 +2331,7 @@ def pairs_from_map(pairing, *, cap_per_unit=None):
     """
     pairs, dropped = [], []
     for entry in pairing.get("units", []):
-        paired = [p["rule_id"] for p in entry.get("paired", [])]
+        paired = [p["rule_id"] for p in entry.get("paired", []) if p["rule_id"] not in not_unit_rules]
         keep = paired if cap_per_unit is None else paired[:cap_per_unit]
         for rid in keep:
             pairs.append((entry["unit_id"], rid))
@@ -2053,9 +2423,28 @@ def computed_finding_items(results, agent=None, *, doc_id=None):
     return out
 
 
+def cited_refs(passage, refs, compared):
+    """An amendment's `ref_ids` at a placed unit: its passage first, then what else it cites,
+    a passage a compared figure came from included, each once."""
+    out = [passage]
+    for ref in list(refs or []) + [str(r) for r in (compared or []) if r]:
+        if ref not in out:
+            out.append(ref)
+    return out
+
+
 def amendment_from_finding(item, *, document_level="document-level", unit_texts=None,
-                           computed_provenance=True):
+                           computed_provenance=True, unit_refs=None, rule_texts=None, rule_severity=""):
     """Build an amendment from a typed Finding record, with no model involved.
+
+    rule_severity (open item 25, D-215): the severity the rule declares, which the
+    amendment states, since a reader sees it. A rule that declares none keeps `required`,
+    the value every amendment carried before.
+
+    unit_refs (S2a, item 5): {unit_id: REF-*} for the units whose own passage
+    Python placed in the reference index (unit_passage_refs). Given, an absence
+    finding is located at its unit's passage, or at the document level with a
+    sentence saying the unit's passage is not known. None keeps the old location.
 
     unit_texts: the {unit_id: {"text": ..., ...}} map unit_texts_for(doc["text"],
     doc["id"]) already builds in pipeline.py, from the SAME document split that
@@ -2137,9 +2526,33 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # comparing the review against their own rulebook needs CONV-A02, not the
     # registry's renumbered CONV-007, and a field nobody renders is a field
     # nobody reads. Measured: attribution scored 0 of 5 with the id in a field.
-    own = item.get("source_rule_id")
-    rule_text = ("%s (%s)" % (rule_id, own)) if own and own != rule_id else rule_id
-    citation = "%s at %s" % (rule_text, refs[0] if refs else document_level)
+    rule_text = _rule_text(item)
+    unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
+    repaired_unit_id = None
+    if unit_record is None and unit_id:
+        repaired_unit_id, unit_record = _repair_unit_id(unit_id, unit_texts)
+    # S2a item 5, widened by reader check RC2: an amendment points to the passage
+    # of the unit it is about, wherever Python placed that unit in the reference
+    # index (unit_passage_refs); a figure it is compared with that comes from
+    # elsewhere (a reference table, a duration bound) is cited as such, never
+    # as the location. A unit Python could not place sits at the document level
+    # and the amendment says so. unit_refs=None keeps the old location.
+    placed = unit_refs is not None
+    passage = (unit_refs.get(unit_id) if unit_id else None) if placed else None
+    if passage:
+        refs = cited_refs(passage, refs, item.get("compared_with_refs"))
+        location = passage
+    elif placed:
+        # S2 checker A8: an unplaced unit cites no other unit's (or the corpus's)
+        # passage; only a passage a compared figure came from stays, said as such.
+        location = document_level
+        refs = [str(r) for r in (item.get("compared_with_refs") or []) if r]
+    if placed and passage:
+        citation = GROUND_AT_PASSAGE % (rule_text, location)
+    elif placed:
+        citation = GROUND_UNPLACED % rule_text
+    else:
+        citation = GROUND_CITED % (rule_text, refs[0] if refs else document_level)
     # refine R2: the COMPUTED FIGURES lead, always. They used to be a fallback,
     # used only when no model sentence existed, and the model's sentence usually
     # existed and usually named no figure. Measured on one run's own output: with
@@ -2150,24 +2563,61 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # CONV-A10-style rules ask for the specific figures in so many words. So the
     # computed sentence is always present and the model's sentence, when there is
     # one and it says something different, follows it rather than replacing it.
-    computed = _computed_sentence(item)
+    computed = computed_sentence(dict(
+        item, unit_title=_unit_title(unit_record),
+        _written_tokens=_number_tokens(
+            (unit_record.get("text") if isinstance(unit_record, dict) else "") + " "
+            + _compared_unit_text(item, unit_texts) + " "
+            + str((rule_texts or {}).get(rule_id) or ""))))
     parts = [computed]
-    if explanation and explanation.strip() and explanation.strip() != computed:
-        parts.append(explanation.strip())
+    # Reader check round 3 (item 3): a comment that ends with a model's note does
+    # not also say "not judged by a model"; it says the figures were computed in
+    # code and only the quoted note is a model's.
+    model_note_follows = bool(
+        computed_provenance and explanation and explanation != computed
+        and item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL)
     # v7: this sentence used to be unconditional, so the two amendments built
     # from VERIFIER's fabricated records told the operator they were computed in
     # code and not judged by a model, which was false of both. The provenance a
     # comment states is now the provenance the caller passes; an amendment built
-    # from a model's own record says so instead.
-    parts.append("Computed in code from the figures in this unit, not judged by a model."
-                 if computed_provenance else
-                 "Reported by the agent named above, not computed in code from this unit's figures.")
-    parts.append("Grounded in %s." % citation)
+    # from a model's own record says so instead. Reader check RC12: an absence
+    # involves no figures, so its sentence says what was checked instead.
+    absence = str(item.get("relation") or "") in finding_record.ABSENCE_RELATIONS
+    if not computed_provenance:
+        parts.append("Reported by the agent named above, not computed in code from this unit's figures.")
+    elif model_note_follows:
+        parts.append(ABSENCE_PROVENANCE_WITH_NOTE if absence else COMPUTED_PROVENANCE_WITH_NOTE)
+    elif absence:
+        parts.append(ABSENCE_PROVENANCE)
+    else:
+        parts.append("Computed in code from the figures in this unit, not judged by a model.")
+    parts.append(citation)
+    compared = [str(r) for r in (item.get("compared_with_refs") or []) if r and str(r) != location]
+    if placed and compared:
+        parts.append("The figure it is compared with is taken from %s." % ", ".join(compared))
+    if placed and not passage:
+        parts.append("The pipeline could not find the passage of unit %s in the "
+                     "reference index, so this amendment is placed at the document "
+                     "level." % (unit_id or document_level))
+    # Reader check RC16: the rule in its own words, quoted, so a reader need not
+    # look up what CONV-001 is.
+    words = str((rule_texts or {}).get(rule_id) or "").strip()
+    if words:
+        words = " ".join(words.split())
+        parts.append('Rule %s reads: "%s"' % (rule_id, words if len(words) <= 200 else words[:197] + "..."))
+    # A sentence a model supplied (the judging call's materiality note, or an
+    # optional polish pass) follows last and says it is the model's. Python's own
+    # sentence is the computed one above and is not repeated.
+    own_sentence = explanation.startswith("Unit %s under rule " % (unit_id or document_level)) \
+        or explanation.startswith("Unit %s (" % (unit_id or document_level))
+    if explanation and explanation != computed:
+        if item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL or not computed_provenance:
+            parts.append(model_note(explanation, item.get("explanation_model")))
+        elif not own_sentence:
+            # Python's own extra sentence (the pairing map's nearest-miss note);
+            # its computed sentence, minted before a later stamp, is not repeated.
+            parts.insert(1, explanation)
     comment = " ".join(parts)
-    unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
-    repaired_unit_id = None
-    if unit_record is None and unit_id:
-        repaired_unit_id, unit_record = _repair_unit_id(unit_id, unit_texts)
     unit_text = str(unit_record.get("text") or "").strip() if isinstance(unit_record, dict) else ""
     original_text = unit_text if unit_text else ("unit id %s (text not available)" % (unit_id or document_level))
     amendment = {
@@ -2180,7 +2630,7 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "proposed_text": None,
         "action": "flag",
         "comment": comment,
-        "severity": "required",
+        "severity": rule_severity or "required",
         "finding_type": "factual",
         "ref_ids": refs or [],
         # The stamp states WHERE THIS CAME FROM, and suppress_contradicted_
@@ -2206,6 +2656,8 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "finding_unit_b": item.get("unit_b"),
         # night W7 b: the agent whose Finding this amendment rests on, so the ontology's
         # provenance struct can name it. Absent when the item carries none; never invented.
+        # Empty on every amendment from a computed finding: Python wrote it, no agent did
+        # (open item 31).
         "agent": item.get("agent"),
     }
     # The boundary repair, recorded rather than silently folded into a normal
@@ -2257,31 +2709,693 @@ def apply_polish(item, polished):
         value = polished.get(field)
         if isinstance(value, str) and value.strip():
             out[field] = value.strip()
+            if field == "explanation":
+                # S2a: a polished sentence is the model's, and is marked so.
+                out["explanation_by"] = finding_record.WRITTEN_BY_MODEL
     return out
 
 
-def _computed_sentence(item):
-    """The one sentence that must carry the figures, whatever any model wrote.
+# S2a, item 4: the sentences a reader meets, one template per relation, each
+# naming the unit, the rule, both figures with their units and the relation in
+# plain words. Every template here has a rendering in the second output language
+# (tr) in scripts/ui/localization_catalog.js (`_messages`), which the localization
+# side gate and honest_output_checks hold. The provenance sentence and the citation
+# follow in amendment_from_finding; nothing here says who computed what.
+# Reader check RD1/RD6: a model's sentence is quoted and names the model that wrote
+# it, as the call that returned it recorded; with no record, it says so
+# (finding_record.NOTE_MODEL_NOT_RECORDED, the one copy of that phrase).
+# Reader check RD7: the rule and the passage are named apart, so the passage is
+# never read as where the rule is written.
+GROUND_AT_PASSAGE = "Rule %s; passage %s."
+GROUND_CITED = "Rule %s; cited passage %s."
+GROUND_UNPLACED = "Rule %s; no passage of this unit could be cited."
 
-    refine R2: relation-aware, because "against a stated 3.4" is the wrong phrase
-    for a band bound and the right phrase for a stated total, and the reader
-    checking the review against their own rulebook needs the figures either way."""
+
+def model_note(text, model=None):
+    """The labelled, quoted form of a model's sentence inside a comment."""
+    return 'A model\'s note (model: %s), not checked by Python: "%s"' % (
+        model or finding_record.NOTE_MODEL_NOT_RECORDED, " ".join(str(text).split()).replace('"', "'"))
+
+
+def stamp_note_writer(item, reply):
+    """Record on a computed Finding which model call wrote its note (RD1). Only
+    when the record carries a model's sentence; nothing is invented when the
+    reply does not say which model it came from."""
+    if not isinstance(item, dict) or item.get("explanation_by") != finding_record.WRITTEN_BY_MODEL:
+        return item
+    if isinstance(reply, dict):
+        for field, key in (("explanation_model", "model"), ("explanation_backend", "backend"),
+                           ("explanation_call_id", "call_id")):
+            if reply.get(key):
+                item[field] = str(reply[key])
+    return item
+
+
+# Reader check round 3 (item 2): what became of each judging call's reply, in the
+# flat record the computed bus post and the pairing map carry. Every call is
+# recorded, including one whose reply was not kept, so a counted call is never
+# missing from the bus.
+JUDGING_OUTCOMES = {
+    "note_kept": "its note is attached to Python's finding",
+    "no_note_returned": "it returned no note",
+    "no_finding_to_attach": "Python found no disagreement on this unit and rule, so its note was not kept",
+    "advisory_not_kept": ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
+                          "and was kept neither as a finding nor as a note"),
+    "reply_failed": "the call failed, so nothing from its reply was kept",
+    "judged_absence": ("judged absence: {listed} listed as a model's items, {refused} refused by Python"),
+    # D-068: a returned reply on a plan Python could compute nothing for. Before
+    # D-068 such a reply was recorded `advisory_not_kept` (the entry above, kept
+    # because runs before D-068 carry it and the run analyser counts it).
+    "judged_uncomputable": ("judged with no comparison Python could compute: {listed} kept as a "
+                            "model's records, {refused} refused by Python"),
+    "judged_passage_pair": "it answered a question on two passages",
+    "judged_cell_claim": "it answered a question on a claim and a table's cells",
+    "judged_case_question": "it answered a narrow question on a multi-round case",
+}
+# S2 checker round 3 (item 1): a judging call's plan kind that asks for a judged
+# absence, never for a note on Python's findings.
+JUDGED_ABSENCE_PLAN = "absence_judged"
+# D-068: the plan kind where Python could compute nothing for a unit and a rule, so
+# the model's answer on the text is the only answer there is.
+UNCOMPUTABLE_PLAN = "uncomputable"
+# D-068: the field and value a kept answer on such a plan carries, on each record and
+# on the body of the bus post that carries the records.
+JUDGED_PATH_FIELD = "judged_path"
+JUDGED_PATH_UNCOMPUTABLE = "uncomputable"
+# P2 (a): a record of a pair of passages, and the plan kind of each call that asked one.
+JUDGED_PATH_PASSAGE_PAIR = "passage_pair"
+JUDGED_PATH_CELL_CLAIM = "cell_claim"
+PASSAGE_PAIR_PLAN = JUDGED_PATH_PASSAGE_PAIR
+# P2 (b): the plan kind of each call that asked a claim of a table's cells.
+CELL_CLAIM_PLAN = JUDGED_PATH_CELL_CLAIM
+# D-S39 item 2: the plan kind of each narrow call on a multi-round case (case_questions).
+CASE_QUESTION_PLAN = "case_question"
+
+
+def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note,
+                        absence_listed=0, absence_refused=0, judged_listed=0, judged_refused=0):
+    """One judging call as a flat record (scalars only): who was asked, about
+    what, and what became of the reply. Nothing from the reply's text.
+
+    S2 checker round 3 (item 1): the outcome is decided in this order. A failed
+    call is a failed call whatever it was asked; a judged-absence call that
+    returned is recorded with the count of its claims Python listed as a model's
+    items and the count it refused, which the caller passes once its items are
+    known; D-068: a call on a plan Python could compute nothing for that returned
+    is recorded the same way, with the records kept and the records refused; only
+    then the note outcomes of a call asked for a note."""
+    ok = isinstance(reply, dict) and reply.get("ok") is not False
+    if not ok:
+        outcome = "reply_failed"
+    elif plan_kind == JUDGED_ABSENCE_PLAN:
+        outcome = "judged_absence"
+    elif plan_kind == PASSAGE_PAIR_PLAN:
+        outcome = "judged_passage_pair"
+    elif plan_kind == CELL_CLAIM_PLAN:
+        outcome = "judged_cell_claim"
+    elif plan_kind == CASE_QUESTION_PLAN:
+        outcome = "judged_case_question"
+    elif notes_kept:
+        outcome = "note_kept"
+    elif plan_kind == UNCOMPUTABLE_PLAN:
+        outcome = "judged_uncomputable"
+    elif not has_note:
+        outcome = "no_note_returned"
+    else:
+        outcome = "no_finding_to_attach"
+    reply = reply if isinstance(reply, dict) else {}
+    return {"call_id": str(reply.get("call_id") or ""), "agent": str(agent or ""),
+            "unit_id": str(unit_id or ""), "rule_id": str(rule_id or ""),
+            "plan_kind": str(plan_kind or ""), "backend": str(reply.get("backend") or ""),
+            "model": str(reply.get("model") or ""), "notes_kept": int(notes_kept or 0),
+            "absence_listed": int(absence_listed or 0), "absence_refused": int(absence_refused or 0),
+            "judged_listed": int(judged_listed or 0), "judged_refused": int(judged_refused or 0),
+            "outcome": outcome}
+
+
+# R1 (D-S22 item 1 (d)): the three refusals of a claim Python cannot check at all,
+# each with its own reason so the pairing map's refusal lists say which one fired.
+NO_QUOTE_ABSENCE_RELATION = "absence relation supplies no quote"
+NO_FIGURES_FIGURE_RELATION = "figure relation supplies no figures"
+PRIOR_RELATION_NO_EARLIER_VERSION = "earlier-version relation with no earlier version declared"
+# INFRA-046: what Python can check of a contradiction is its two passages, each with its
+# own reason. A quote the unit does not hold keeps the reason every answer gets.
+QUOTE_NOT_IN_UNIT = "quotes text that does not appear in this unit"
+CONTRADICTION_NOT_IRREGULAR = "contradiction not marked irregular"
+CONTRADICTION_NEEDS_TWO_QUOTES = "contradiction supplies fewer than two quotes"
+CONTRADICTION_NO_UNIT_TEXT = "contradiction with no unit text to check against"
+CONTRADICTION_QUOTE_TOO_SHORT = "contradiction quote is too short to be a passage"
+CONTRADICTION_SECOND_QUOTE_NOT_IN_UNIT = "contradiction second quote does not appear in this unit"
+CONTRADICTION_SAME_PASSAGE = "contradiction quotes one passage twice"
+CONTRADICTION_SECOND_UNIT_NOT_CHECKED = "contradiction names a second unit no check read"
+# INFRA-048: what Python can check of a claim not met, each with its own reason.
+CLAIM_NOT_FROM_CELLS = "claim_not_met comes from no selection of cells"
+CLAIM_RULE_NOT_CELLS = "claim_not_met under a rule that does not declare compare cells"
+CLAIM_NOT_IRREGULAR = "claim_not_met not marked irregular"
+CLAIM_NOT_THE_RULE = "claim_not_met does not state the rule's own claim"
+CLAIM_CELLS_NOT_IN_UNIT = "claim_not_met shows cells this unit does not write"
+# INFRA-051: the refusals of rule_not_met, each under its own reason.
+RULE_NOT_MET_NOT_FROM_RULE_CHECK = "rule_not_met comes from no rule-check decision"
+RULE_NOT_MET_PLAN_NOT_UNCOMPUTABLE = "rule_not_met on a plan that was not uncomputable"
+RULE_NOT_MET_NOT_IRREGULAR = "rule_not_met not marked irregular"
+RULE_NOT_MET_QUOTE_NOT_UNIT = "rule_not_met quotes text that is not this unit's"
+# The whitespace-separated words a quote needs to be a passage: the bar and the count G1's
+# reader set for evidence (benchmark/baselines/doc_judge.py BAR_EVIDENCE_WORDS, quote.split()),
+# before any contradiction was read, with a token holding no letter or digit (a table bar) not
+# counted. Text with no spaces between words is refused by it.
+PASSAGE_MIN_WORDS = 3
+
+
+def _carries_value(value) -> bool:
+    """True when a field carries a value (a zero counts; None and blank do not)."""
+    return value is not None and str(value).strip() != ""
+
+
+def _is_figure(value) -> bool:
+    """True when a value reads as a figure by the readers the paired review already
+    uses for figures: a number (norm_number) or an ISO date (_parse_iso_datetime).
+    A placeholder string ("N/A", "none") is not a figure; neither is a boolean."""
+    if value is None or isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return value == value and value not in (float("inf"), float("-inf"))
+    text = str(value).strip()
+    number = norm_number(text) if text else None
+    if number is not None and number == number and number not in (float("inf"), float("-inf")):
+        return True
+    return bool(text) and _parse_iso_datetime(text) is not None
+
+
+def _cells_stand_in(cells, unit_text):
+    """True when every line of `cells` stands in the unit: a caption as a line of it, a table row's
+    cells together in one row of its tables, whichever columns were left out."""
+    rows = [{c.strip() for c in line.strip().strip("|").split("|")} for line in str(unit_text or "").splitlines()
+            if pairing_map._TABLE_ROW.match(line)]
+    folded = _squash(unit_text)
+    lines = [line for line in str(cells or "").splitlines() if line.strip()]
+    for line in lines:
+        if pairing_map._TABLE_SEP.match(line):
+            continue
+        if pairing_map._TABLE_ROW.match(line):
+            wanted = {c.strip() for c in line.strip().strip("|").split("|")}
+            if not any(wanted <= row for row in rows):
+                return False
+        elif _squash(line) not in folded:
+            return False
+    return bool(lines)
+
+
+def _cell_claim_refusal(item, rule, unit_text, selected_cells):
+    """INFRA-048: the reason a claim_not_met is refused, or None. Only the cell step passes
+    `selected_cells`, so a reply on either judged path that writes the relation is refused, as a
+    reply naming a second unit is. Python checks the cells and the claim are what it says they are,
+    never that the claim fails."""
+    if selected_cells is None or item.get("quote") != selected_cells:
+        return CLAIM_NOT_FROM_CELLS
+    if (rule or {}).get("compare") != "cells":
+        return CLAIM_RULE_NOT_CELLS
+    if str(item.get("record_verdict") or "").strip().lower() != "irregular":
+        return CLAIM_NOT_IRREGULAR
+    if not str(item.get("quote_b") or "").strip() or item.get("quote_b") != (rule or {}).get("rule"):
+        return CLAIM_NOT_THE_RULE
+    if not _cells_stand_in(item.get("quote"), unit_text):
+        return CLAIM_CELLS_NOT_IN_UNIT
+    return None
+
+
+def _rule_check_refusal(item, unit_text, rule_check_plan):
+    """INFRA-051: the reason a rule_not_met is refused, or None. Only the rule-check step passes
+    `rule_check_plan` (the plan kind its decision was asked on), so a reply on a judged path that
+    writes the relation is refused, as a claim_not_met from no cells is. Python checks the plan was
+    uncomputable and the quote is the unit's own text, never that the rule is not met."""
+    if rule_check_plan is None:
+        return RULE_NOT_MET_NOT_FROM_RULE_CHECK
+    if rule_check_plan != UNCOMPUTABLE_PLAN:
+        return RULE_NOT_MET_PLAN_NOT_UNCOMPUTABLE
+    if str(item.get("record_verdict") or "").strip().lower() != "irregular":
+        return RULE_NOT_MET_NOT_IRREGULAR
+    quote = str(item.get("quote") or "")
+    if not quote.strip() or not _squash(unit_text) or _squash(quote) != _squash(unit_text):
+        return RULE_NOT_MET_QUOTE_NOT_UNIT
+    return None
+
+
+def judged_item_refusal(item, rule, fields_present, unit_text, *, prior_declared=False,
+                        second_unit_text=None, selected_cells=None, rule_check_plan=None):
+    """The reason Python refuses one answer a model gave on one unit and one rule,
+    or None when it keeps it. The one test for both judged paths (a judged absence,
+    and D-068's plan Python could compute nothing for): an absence claim with no
+    quote, an absence claim naming no field, an absence claim naming a field the
+    unit carries (refuses_judged_absence), and any answer quoting text the unit does
+    not contain (quote_not_in_unit, against the same unit text the model was shown).
+
+    R1 (D-S22 item 1 (d)) adds three, tested after those so that every answer
+    refused before keeps its reason. Each refuses a claim of a kind Python has
+    nothing to check against:
+    - an answer with any ABSENCE relation (finding_record.ABSENCE_RELATIONS) and no
+      quote: the schema's own `quote` sentence requires one for every absence
+      claim, and refuses_judged_absence holds only missing_field to it;
+    - an answer with a FIGURE relation (finding_record.figure_relations(), read off
+      the declared schema) whose value_a and value_b are neither of them a figure (a
+      number or a date, _is_figure);
+    - an answer with an EARLIER-VERSION relation (finding_record.PRIOR_RELATIONS)
+      when no earlier version is declared for the run (`prior_declared`, which the
+      pipeline sets from the same loaded prior documents _prior_comparison runs on;
+      a caller that says nothing declares none).
+
+    INFRA-046 adds the checks on a relation in words (finding_record.TEXT_RELATIONS):
+    it must be irregular (a passage pair that "does not contradict" says nothing
+    Python can check), carry `quote` and `quote_b` as text, have a unit to check them
+    against (a blank one fails closed here, unlike quote_not_in_unit), each of at least
+    PASSAGE_MIN_WORDS words, both in the unit, at places that do not overlap
+    (_two_passages). Python checks the words, never that they contradict: the record
+    stays a model's. The second quote is held to the unit alone although the call also
+    shows its neighbours; it has its own reason, so the refusals it costs are counted.
+
+    INFRA-047: only the passage pair step, where Python chose both passages, passes
+    `second_unit_text`, and then the record must name that other unit in `compared_unit_id`
+    and the second quote is held to that unit's text instead. A record naming a second unit
+    with no such text, or its own unit, or passing that text with no name, is refused: on
+    the two judged paths a model's reply cannot reach across units by writing the field.
+
+    INFRA-048: a claim_not_met is held to `_cell_claim_refusal` alone, and only the cell step
+    passes `selected_cells`.
+
+    INFRA-051: a rule_not_met is held to `_rule_check_refusal` alone, and only the rule-check step
+    passes `rule_check_plan`."""
+    if isinstance(item, dict) and item.get("relation") in finding_record.CELL_RELATIONS:
+        return _cell_claim_refusal(item, rule, unit_text, selected_cells)
+    if isinstance(item, dict) and item.get("relation") in finding_record.RULE_CHECK_RELATIONS:
+        return _rule_check_refusal(item, unit_text, rule_check_plan)
+    if refuses_judged_absence(item, rule, fields_present):
+        if not str(item.get("quote") or "").strip():
+            return "absence claim supplies no quote"
+        if not pairing_map._norm_label(item.get("stated_field") or item.get("field_label") or ""):
+            return "absence claim names no field"
+        return "claims a field absent that this unit carries"
+    if quote_not_in_unit(item, unit_text):
+        return QUOTE_NOT_IN_UNIT
+    relation = str((item or {}).get("relation") or "") if isinstance(item, dict) else ""
+    if relation in finding_record.ABSENCE_RELATIONS and not _carries_value(item.get("quote")):
+        return NO_QUOTE_ABSENCE_RELATION
+    if (relation in finding_record.figure_relations()
+            and not _is_figure(item.get("value_a")) and not _is_figure(item.get("value_b"))):
+        return NO_FIGURES_FIGURE_RELATION
+    if relation in finding_record.PRIOR_RELATIONS and not prior_declared:
+        return PRIOR_RELATION_NO_EARLIER_VERSION
+    if relation in finding_record.TEXT_RELATIONS:
+        if str(item.get("record_verdict") or "").strip().lower() != "irregular":
+            return CONTRADICTION_NOT_IRREGULAR
+        quotes = (item.get("quote"), item.get("quote_b"))
+        if not all(isinstance(q, str) and q.strip() for q in quotes):
+            return CONTRADICTION_NEEDS_TWO_QUOTES
+        # Any field written counts, spaces included: only a real id can name the unit it is read in.
+        named = str(item.get("compared_unit_id") or "")
+        other = named.strip()
+        if bool(named) != (second_unit_text is not None) or (named and other in ("", str(item.get("unit_id") or ""))):
+            return CONTRADICTION_SECOND_UNIT_NOT_CHECKED
+        if not _squash(unit_text) or (other and not _squash(second_unit_text)):
+            return CONTRADICTION_NO_UNIT_TEXT
+        if any(sum(1 for w in q.split() if re.search(r"\w", w)) < PASSAGE_MIN_WORDS for q in quotes):
+            return CONTRADICTION_QUOTE_TOO_SHORT
+        if quote_not_in_unit({"quote": quotes[1]}, second_unit_text if other else unit_text):
+            return CONTRADICTION_SECOND_QUOTE_NOT_IN_UNIT
+        # Two units cannot overlap; the same words twice still say nothing against each other.
+        if (_one_wording(_squash(quotes[0]), _squash(quotes[1])) if other else
+                not _two_passages(_squash(quotes[0]), _squash(quotes[1]), _squash(unit_text))):
+            return CONTRADICTION_SAME_PASSAGE
+    return None
+
+
+def _one_wording(first, second):
+    """True when two folded quotes are the same words, whatever their punctuation."""
+    return re.findall(r"\w+", first) == re.findall(r"\w+", second)
+
+
+def _two_passages(first, second, text):
+    """True when two different quotes stand at places of `text` that do not overlap. The
+    same words are one passage, whatever their punctuation; a shared span is one passage;
+    so is a quote inside the other, unless the shorter also stands elsewhere. All three
+    are folded (_squash)."""
+    if _one_wording(first, second):
+        return False
+
+    def places(quote):
+        found, at = [], text.find(quote)
+        while at != -1:
+            found.append(at)
+            at = text.find(quote, at + 1)
+        return found
+    return any(a + len(first) <= b or b + len(second) <= a
+               for a in places(first) for b in places(second))
+
+
+def mark_screened(item):
+    """The item a judged path keeps, with Python's mark when it is a relation in words,
+    which judged_item_refusal has just held to its quotes (finding_record.is_finding)."""
+    if item.get("relation") in finding_record.TEXT_RELATIONS:
+        return dict(item, **{finding_record.SCREENED_FIELD: True})
+    return item
+
+
+def reply_kept_reason(reply):
+    """D-068: None when a judging reply may give records, else why it gives none. Only
+    a reply the call marks ok and that did not refuse the task is read; a failed call's
+    best-effort object is never a record. The refusal is the wrapper's own test, which also
+    reads the reply as written, since a valid envelope is rebuilt without its status."""
+    import reply_records
+    if not isinstance(reply, dict) or reply.get("ok") is not True:
+        return "reply_failed"
+    if reply_records.is_refusal(reply.get("parsed"), reply.get("raw_text")):
+        return "reply_refused"
+    return None
+
+
+def reply_items(reply):
+    """The items a reply carries, as the judged-absence stamping reads them (an
+    envelope's `items`, or a bare list), objects only."""
+    parsed = reply.get("parsed") if isinstance(reply, dict) else None
+    raw = parsed.get("items") if isinstance(parsed, dict) else parsed
+    return [i for i in raw if isinstance(i, dict)] if isinstance(raw, list) else []
+
+
+def plan_rule(item, *, rule_id, source_rule_id):
+    """`item` attributed to the rule of the PLAN: every rule-id spelling the reply wrote is
+    replaced by the plan's registry id, and the operator's own id is the plan's (left out when
+    the rule has none). The plan was one unit against one rule, so a rule the reply names is
+    not what was asked (open item 29 (2))."""
+    item = {k: v for k, v in item.items()
+            if k not in finding_record.RULE_ID_FIELD_ALIASES and k != "source_rule_id"}
+    item["rule_id"] = rule_id
+    if source_rule_id:
+        item["source_rule_id"] = source_rule_id
+    return item
+
+
+def stamp_from_plan(items, *, rule_id, source_rule_id):
+    """D-068: answers on a plan Python could compute nothing for, attributed to the
+    rule of the PLAN, never to a rule the reply names. The items come from the same
+    stamping as a judged absence's (unit, item id and revision set by Python); here
+    every rule-id spelling the reply wrote is replaced by the plan's registry id, the
+    operator's own id is the plan's (left out when the rule has none), the absence
+    path that stamping sets is removed (these are not absences unless the relation
+    says so, and then they are model-written, never `computed`), and each record says
+    which path kept it."""
+    out = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        item = plan_rule({k: v for k, v in item.items() if k != "absence_path"},
+                         rule_id=rule_id, source_rule_id=source_rule_id)
+        item[JUDGED_PATH_FIELD] = JUDGED_PATH_UNCOMPUTABLE
+        out.append(item)
+    return out
+
+
+def judging_call_counts(calls) -> dict:
+    """S2 checker round 3 (item 2): the judging calls split by what they were
+    asked. A judged-absence call is never asked for a note on Python's findings,
+    and nor is a call on a plan Python computed nothing for (open item 29 (1)), so each
+    is counted apart from the calls that could carry one."""
+    calls = [c for c in calls or [] if isinstance(c, dict)]
+    absence = sum(1 for c in calls if c.get("plan_kind") == JUDGED_ABSENCE_PLAN)
+    uncomputable = sum(1 for c in calls if c.get("plan_kind") == UNCOMPUTABLE_PLAN)
+    pairs = sum(1 for c in calls if c.get("plan_kind") == PASSAGE_PAIR_PLAN)
+    cells = sum(1 for c in calls if c.get("plan_kind") == CELL_CLAIM_PLAN)
+    return {"calls": len(calls), "note_calls": len(calls) - absence - uncomputable - pairs - cells,
+            "absence_calls": absence, "uncomputable_calls": uncomputable, "pair_calls": pairs, "cell_calls": cells}
+
+
+def notes_on_python_findings(records) -> int:
+    """S2 checker round 3 (item 2): THE count of model notes kept on Python's
+    findings, one per record that carries one. Every file counts with this, so a
+    call whose sentence sits on two findings counts two notes everywhere."""
+    return sum(1 for r in records or [] if isinstance(r, dict)
+               and not finding_record.is_model_written(r)
+               and r.get("explanation_by") == finding_record.WRITTEN_BY_MODEL)
+
+
+@localization.presentation
+def judging_call_line(record) -> str:
+    """One judging call in a reader's words, in the run's output language."""
+    outcome = record.get("outcome")
+    if outcome == "judged_absence":
+        said = localization.text(JUDGING_OUTCOMES["judged_absence"],
+                                 listed=int(record.get("absence_listed") or 0),
+                                 refused=int(record.get("absence_refused") or 0))
+    elif outcome == "judged_uncomputable":
+        said = localization.text(JUDGING_OUTCOMES["judged_uncomputable"],
+                                 listed=int(record.get("judged_listed") or 0),
+                                 refused=int(record.get("judged_refused") or 0))
+    else:
+        said = localization.text(JUDGING_OUTCOMES.get(outcome, str(outcome)))
+    return localization.text(
+        "Judging call {call} on unit {unit} under rule {rule} (model: {model}): {outcome}.",
+        call=record.get("call_id") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
+        unit=record.get("unit_id") or "?", rule=record.get("rule_id") or "?",
+        model=record.get("model") or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED),
+        outcome=said)
+
+
+def note_models(items):
+    """The models whose sentences sit in these records as notes (flat, sorted)."""
+    return sorted({str(i.get("explanation_model")) for i in items or []
+                   if isinstance(i, dict) and i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
+                   and i.get("explanation_model")})
+
+
+# Reader check RC12: the provenance of a computed ABSENCE, which involves no figure.
+ABSENCE_PROVENANCE = ("Checked in code: the field is absent from this unit's text; "
+                      "not judged by a model.")
+# Reader check round 3 (item 3): the provenance sentence when the comment ends with
+# a model's note. Check 269's two sentences stay word for word for every comment
+# that carries no model note.
+COMPUTED_PROVENANCE_WITH_NOTE = ("The figures were computed in code from this unit; "
+                                 "only the note quoted at the end was written by a model.")
+ABSENCE_PROVENANCE_WITH_NOTE = ("Checked in code: the field is absent from this unit's text; "
+                                "only the note quoted at the end was written by a model.")
+
+
+def _number_tokens(text):
+    return re.findall(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])", str(text or ""))
+
+
+def _compared_unit_text(item, unit_texts):
+    """RELATIONS-A: the text of the other unit a copy or carry compared a figure from,
+    so that figure is written as that unit writes it; "" for every other record."""
+    other = item.get("compared_unit_id") if isinstance(item, dict) else None
+    record = (unit_texts or {}).get(other) if other else None
+    return str(record.get("text") or "") if isinstance(record, dict) else ""
+
+
+def written_tokens(item, unit_texts, rule_texts=None):
+    """The numbers a finding's unit (and its rule) write, as written, for the one
+    figure formatter (finding_record.figure_text; reader check round 3, item 7). For a
+    copy or a carry, the other unit's numbers too (RELATIONS-A)."""
+    unit = (unit_texts or {}).get(item.get("unit_id")) if isinstance(item, dict) else None
+    rule = str((rule_texts or {}).get(finding_record.resolved_rule_id(item)) or "") if isinstance(item, dict) else ""
+    return _number_tokens((unit.get("text") if isinstance(unit, dict) else "") + " "
+                          + _compared_unit_text(item, unit_texts) + " " + rule)
+
+
+def _written(value, tokens):
+    """Reader check RD18: a figure as the unit's own text (or its rule) writes it
+    ("61", not "61.0") when that number is written there; otherwise None."""
+    return finding_record.written_form(value, tokens)
+
+
+def _figure(value, unit, tokens=None):
+    """A figure, its unit after it (a bare ratio's unit "1" is not written). With
+    the unit's own number tokens, a figure the text writes is shown as written;
+    without them (or for a figure the text does not write) exactly as the typed
+    record holds it. The one formatter is finding_record.figure_text."""
+    return finding_record.figure_text(value, unit, tokens)
+
+
+def _rule_text(item):
+    """The registry id, and the operator's own id beside it, named as such (RD18)."""
+    rule_id = finding_record.resolved_rule_id(item) or "?"
+    own = item.get("source_rule_id")
+    return ("%s (operator's id %s)" % (rule_id, own)) if own and own != rule_id else str(rule_id)
+
+
+def relation_clause(item):
+    """The relation in plain words, from the typed fields alone (no unit, no rule)."""
     a, b = item.get("value_a"), item.get("value_b")
-    unit_a = item.get("unit_a") or ""
-    unit_b = item.get("unit_b") or ""
+    tokens = item.get("_written_tokens")
+    fa, fb = _figure(a, item.get("unit_a"), tokens), _figure(b, item.get("unit_b"), tokens)
     relation = str(item.get("relation") or "")
+    field = str(item.get("field_label") or "").strip()
+    irregular = str(item.get("record_verdict") or "").lower() == "irregular"
+    if relation == "licence_missing":
+        return "a reference the rule requires is not present"
+    if relation == "missing_field":
+        if str(item.get("unit_b") or "") == "table_row":
+            return TABLE_ROW_NOT_READ % field
+        if str(item.get("unit_b") or "") == "rows" and a is not None and b is not None:
+            return "the field '%s' is filled in %s of %s rows" % (
+                field or "named by the rule", a, b)
+        if field:
+            return "the required field '%s' is not stated in this unit" % field
+        return "a required value is absent"
     if a is None:
-        return "A required value is absent."
+        return "a required value is absent"
     if b is None:
-        return "The computed value is %s %s." % (a, unit_a)
+        return "the computed figure is %s" % fa
+    name = field or "value"
     if relation == "above_band":
-        return ("The computed value is %s %s, above the reference bound of %s %s."
-                % (a, unit_a, b, unit_b))
-    if relation == "below_band":
-        return ("The computed value is %s %s, below the reference bound of %s %s."
-                % (a, unit_a, b, unit_b))
-    return ("The computed value is %s %s against a stated %s %s."
-            % (a, unit_a, b, unit_b))
+        clause = "the %s is %s, above the upper bound of %s" % (name, fa, fb)
+    elif relation == "below_band":
+        clause = "the %s is %s, below the lower bound of %s" % (name, fa, fb)
+    elif relation == "ratio_out_of_range":
+        clause = "the ratio %s is %s, %s the permitted bound of %s" % (
+            name, fa, "outside" if irregular else "within", fb)
+    elif relation == "sum_mismatch":
+        # Reader check RC1: the addends are named, with their values, so the
+        # reader can find them in the unit's passage.
+        addends = item.get("addends")
+        # The sum of figures written as whole numbers, written the same way (the
+        # one formatter, finding_record.value_a_text).
+        fa = finding_record.value_a_text(item, tokens)
+        what = ("the values under '%s' (%s)" % (
+            item.get("addend_field") or "?", finding_record.addends_text(item, tokens))
+            if isinstance(addends, list) and addends else "the values listed")
+        clause = ("%s add up to %s, but the stated %s is %s" % (what, fa, name, fb)
+                  if irregular else
+                  "%s add up to %s, matching the stated %s of %s" % (what, fa, name, fb))
+    elif relation == "product_mismatch":
+        names, values = item.get("factor_fields"), item.get("factors")
+        if isinstance(names, list) and isinstance(values, list) and len(names) == len(values) == 2:
+            what = "'%s' (%s) times '%s' (%s)" % (names[0], values[0], names[1], values[1])
+        else:
+            what = "the product of the factors"
+        clause = ("%s comes to %s, but the stated %s is %s" % (what, fa, name, fb)
+                  if irregular else
+                  "%s comes to %s, matching the stated %s of %s" % (what, fa, name, fb))
+    elif relation == "date_window":
+        clause = "the gap between the two dates is %s, %s the allowed %s" % (
+            fa, "longer than" if irregular else "within", fb)
+    elif relation == "rate_mismatch":
+        # RELATIONS-A: the three figures, named, so the reader can find them.
+        # The two figures that give the stated one: a share is the part as a
+        # share of the whole; a part is the rate of the whole; a whole is the
+        # part at the rate.
+        names, values = item.get("rate_fields"), item.get("rate_figures")
+        if isinstance(names, list) and isinstance(values, list) and len(names) == len(values) == 3:
+            (rn, pn, wn), (rv, pv, wv) = names, [_figure(v, "", tokens) for v in values]
+            if field == rn:
+                what = "'%s' (%s) as a share of '%s' (%s)" % (pn, pv, wn, wv)
+            elif field == pn:
+                what = "'%s' (%s) of '%s' (%s)" % (rn, rv, wn, wv)
+            else:
+                what = "'%s' (%s) at '%s' (%s)" % (pn, pv, rn, rv)
+        else:
+            what = "the rate the unit states"
+        clause = ("%s gives %s, but the stated %s is %s" % (what, fa, name, fb)
+                  if irregular else
+                  "%s gives %s, matching the stated %s of %s" % (what, fa, name, fb))
+    elif relation == "unit_mismatch":
+        clause = ("the %s is written as %s, in another measure than the %s its comparison uses; "
+                  "read in that measure it is %s" % (name, fb, item.get("unit_a") or "?", fa))
+    elif relation == "copy_mismatch":
+        source = item.get("compared_unit_id") or "?"
+        clause = ("the %s carries %s, but unit %s states its %s as %s" % (
+                      name, fb, source, item.get("compared_field") or name, fa)
+                  if irregular else
+                  "the %s carries %s, matching unit %s" % (name, fb, source))
+    elif relation == "carry_mismatch":
+        source = item.get("compared_unit_id") or "?"
+        clause = ("the %s carries %s, but the values under '%s' in unit %s add up to %s" % (
+                      name, fb, item.get("compared_field") or name, source, fa)
+                  if irregular else
+                  "the %s carries %s, matching what unit %s adds up to" % (name, fb, source))
+    else:
+        clause = "the computed figure is %s, compared with %s (relation %s)" % (
+            fa, fb, relation or "unnamed")
+    return clause
+
+
+def computed_sentence(item):
+    """One sentence: the unit, the rule, both figures with units, the relation.
+
+    refine R2's rule stands: the figures lead every comment, whatever a model
+    wrote, and the lead names only the bound that was crossed. S2a: the sentence
+    is built from the typed fields and nothing else. Reader check RC16: when the
+    caller knows the unit's own heading it is named beside the id."""
+    unit = item.get("unit_id") or "document-level"
+    title = str(item.get("unit_title") or "").strip()
+    if title:
+        unit = "%s (%s)" % (unit, title)
+    return "Unit %s under rule %s: %s." % (unit, _rule_text(item), relation_clause(item))
+
+
+def _unit_title(unit_record):
+    """The unit's own heading, as written (without the markdown hashes). Only a
+    heading names a unit: a unit whose text opens with ordinary content has no
+    title, and its first line is never presented as one."""
+    if not isinstance(unit_record, dict):
+        return ""
+    title = str(unit_record.get("title") or "").strip()
+    if not title:
+        lines = [ln for ln in str(unit_record.get("text") or "").splitlines() if ln.strip()]
+        title = lines[0] if lines and lines[0].lstrip().startswith("#") else ""
+    return title.lstrip("#").strip()
+
+
+def in_own_unit(ref, unit_id, unit_texts, unit_refs):
+    """True when passage `ref`, in either of the document's copies, is a whole paragraph of
+    this unit. A stored excerpt may be clipped, so one of PASSAGE_PREFIX_CHARS or more is read
+    through that length."""
+    raw = str(getattr(unit_refs, "passages", {}).get(ref, ""))
+    text = _folded(raw)
+    paragraphs = [_folded(p) for p in re.split(r"\n\s*\n", str(((unit_texts or {}).get(unit_id) or {}).get("text") or ""))]
+    if len(raw) >= PASSAGE_PREFIX_CHARS:
+        return any(p.startswith(text[:PASSAGE_PREFIX_CHARS // 2]) for p in paragraphs)
+    return bool(text) and text in paragraphs
+
+
+def model_item_notes(item, unit_texts, unit_refs, pairing=None):
+    """Reader check RD2: plain-words notes on a MODEL-written item, decided by
+    Python from what it already knows: whether the passage it cites is its unit's
+    own, whether the pairing map found its rule applies to its unit, whether a
+    sum it claims names any addends, and whether its unit states its figures."""
+    notes = []
+    unit_id = item.get("unit_id")
+    own = (unit_refs or {}).get(unit_id)
+    owner = {ref: uid for uid, ref in (unit_refs or {}).items()}
+    for ref in [str(r) for r in (item.get("source_refs") or []) if r][:3]:
+        if own and ref == own:
+            continue
+        other = owner.get(ref)
+        if not (other and other != unit_id) and in_own_unit(ref, unit_id, unit_texts, unit_refs):
+            continue
+        if other and other != unit_id:
+            title = _unit_title((unit_texts or {}).get(other)) or other
+            notes.append("It cites %s, which is the passage of %s, not this unit's own passage%s." % (
+                ref, title, (" (%s)" % own) if own else ""))
+        else:
+            notes.append("It cites %s, which is not this unit's own passage%s." % (
+                ref, (" (%s)" % own) if own else ""))
+    rule_id = finding_record.resolved_rule_id(item)
+    for entry in (pairing or {}).get("units") or []:
+        if entry.get("unit_id") != unit_id:
+            continue
+        for rejected in entry.get("rejected") or []:
+            rid = rejected.get("rule_id") if isinstance(rejected, dict) else None
+            if rid and rid == rule_id:
+                notes.append("Python's pairing map found that rule %s does not apply to this unit: %s." % (
+                    rule_id, str(rejected.get("reason") or "no reason recorded").rstrip(".")))
+    if item.get("relation") == "sum_mismatch" and not item.get("addends"):
+        notes.append("The model names no addends for this sum.")
+    if figures_in_unit(item, unit_texts) is False:
+        notes.append("The unit it names does not state these figures.")
+    # D-S41: a pair decided from the model's probabilities has no sentence of the model's; the
+    # decision and its confidence are Python's to state, from the row that carries them.
+    for row in ((pairing or {}).get("passage_pairs") or []) + ((pairing or {}).get("cell_claims") or []):
+        note = (row.get("decision_notes") or {}).get(item.get("item_id"))
+        if note:
+            notes.append(note)
+    return notes
 
 
 # TWO-F. The operator's ruling on what a declared severity DOES.
@@ -2337,7 +3451,8 @@ def severity_of_rule(rule_id, rules_by_id):
 
 def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
                                    unit_texts=None, refusal_sink=None,
-                                   rules_by_id=None, computed_provenance=True):
+                                   rules_by_id=None, computed_provenance=True,
+                                   unit_refs=None):
     """Add an amendment for every irregular Finding not already represented.
 
     unit_texts: passed straight through to amendment_from_finding (see its own
@@ -2404,7 +3519,11 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
                                          "finding_stands": True})
                 continue
         built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts,
-                                       computed_provenance=computed_provenance)
+                                       computed_provenance=computed_provenance,
+                                       unit_refs=unit_refs, rule_severity=severity_of_rule(
+                                           finding_record.resolved_rule_id(item), rules_by_id),
+                                       rule_texts=({rid: (r or {}).get("rule") for rid, r in rules_by_id.items()}
+                                                   if rules_by_id is not None and unit_refs is not None else None))
         if built is None:
             if refusal_sink is not None:
                 reason = ("no rule id under any known field name "
@@ -2482,3 +3601,97 @@ def unit_texts_for(document_text, document_id=""):
     """The unit map suppress_contradicted_amendments needs, keyed by unit id."""
     return {u["unit_id"]: u for u in pairing_map.split_units(document_text,
                                                              document_id=document_id)}
+
+
+def figures_in_unit(item, unit_texts):
+    """Reader check RC6: does the unit a record names actually state the record's
+    figures? True when every figure it carries is a number written in that unit's
+    text, False when one is not, None when there is no unit text or no figure to
+    look for. Structural: numbers are read off the text, nothing is interpreted."""
+    unit = (unit_texts or {}).get(item.get("unit_id")) if isinstance(item, dict) else None
+    figures = [item.get(k) for k in ("value_a", "value_b")
+               if isinstance(item.get(k), (int, float)) and not isinstance(item.get(k), bool)]
+    if not isinstance(unit, dict) or not figures:
+        return None
+    written = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", str(unit.get("text") or "").replace(",", ""))]
+    return all(any(_close(float(f), w) for w in written) for f in figures)
+
+
+def _folded(text):
+    return " ".join(str(text or "").split())
+
+
+# Open item 49: the sentence for a field a table has as a row label.
+TABLE_ROW_NOT_READ = ("'%s' was not read in this unit: its table has a row with that label, "
+                      "and Python reads a table's header, not its rows")
+
+# From this length a stored excerpt may be clipped, and it is compared through it.
+PASSAGE_PREFIX_CHARS = 200
+
+
+class PlacedUnits(dict):
+    """{unit_id: REF-*}, with `passages`: {REF-*: excerpt} over all of the document's rows, so
+    a reader can tell a citation of the unit's own text in the document's other copy."""
+
+    def __init__(self, placed, passages):
+        super().__init__(placed)
+        self.passages = passages
+
+
+def one_claim(placed, unit_texts):
+    """`placed` without any passage more than one unit claims: one of them would be wrong,
+    and Python cannot say which. Row units share their table's passage, rightly."""
+    claims = {}
+    for ref in placed.values():
+        claims[ref] = claims.get(ref, 0) + 1
+    return {unit: ref for unit, ref in placed.items()
+            if claims[ref] == 1 or (unit_texts.get(unit) or {}).get("kind") == "row"}
+
+
+def review_copy(rows):
+    """The operational rows of one document's index entries, or all of them when it has
+    none. Measured (open item 31, D-265): every saved amendment with no REF id sat on a unit
+    opening two passages, this document's two copies, exactly one of them operational."""
+    return [r for r in rows if r.get("input_type") == "operational"] or rows
+
+
+def unit_passage_refs(unit_texts, entries, document_id):
+    """{unit_id: REF-*} for every unit whose own passage Python can place (S2a 5).
+
+    Structural only: the unit's first non-empty line (its heading, or the first
+    line of a preamble) is compared, whitespace-folded, with the FIRST LINE of
+    each of this document's own indexed passages. Exactly one passage opening
+    with it places the unit there; none or several leave the unit unplaced, and an
+    amendment on it then says so rather than borrowing a passage that is not the
+    unit's. A document under review is indexed twice, as grounding and as the target,
+    and only the copy under review counts (`review_copy`): the two are one passage."""
+    rows = []
+    for e in entries or []:
+        row = e.as_dict() if hasattr(e, "as_dict") else e
+        if isinstance(row, dict) and row.get("document_id") == document_id and row.get("ref_id"):
+            rows.append(row)
+    passages = [(str(row["ref_id"]), str(row.get("text_excerpt") or "")) for row in review_copy(rows)]
+    out = {}
+    for unit_id, unit in (unit_texts or {}).items():
+        lines = [ln for ln in str((unit or {}).get("text") or "").splitlines() if ln.strip()]
+        if not lines:
+            continue
+        head = _folded(lines[0])
+        # S2 checker A8 and adversarial round 2 (b): the heading must be the
+        # passage's FIRST LINE exactly, never sit inside another passage and never
+        # be the start of a longer heading ("## Lot 1" in "## Lot 12" or in
+        # "## Lot 1 - annex").
+        hits = sorted({ref for ref, text in passages if head and opens_with(text, head)})
+        if len(hits) == 1:
+            out[unit_id] = hits[0]
+    return PlacedUnits(one_claim(out, unit_texts or {}),
+                       {str(r["ref_id"]): str(r.get("text_excerpt") or "") for r in rows})
+
+
+def opens_with(passage, head):
+    """True when the passage's first non-empty line, whitespace-folded within the
+    line, is exactly the heading (adversarial round 2 (b): folding the whole
+    passage removed its line breaks, so "## Lot 1" opened a passage headed
+    "## Lot 1 - annex")."""
+    first = next((ln for ln in str(passage or "").splitlines() if ln.strip()), "")
+    return bool(head) and _folded(first) == head

@@ -1,0 +1,46 @@
+{
+  "document_id": "accord_round_3",
+  "amendments": [
+    {
+      "convention_ref": "CONV-001",
+      "source_convention_ref": "conv-a01",
+      "location": "u02-article-2-annual-share",
+      "action": "flag",
+      "original_text": "Share: 62 units",
+      "comment": "In Article 2 Annual share, the share is 62 units, above the allowed range of 10 units to 60 units (rule CONV-001).",
+      "ref_ids": [
+        "REF-0001"
+      ],
+      "derived_from": "computed_finding",
+      "finding_unit_id": "u02-article-2-annual-share",
+      "finding_rule_id": "CONV-001",
+      "finding_relation": "above_band",
+      "finding_field_label": "share",
+      "finding_value_a": 62.0,
+      "finding_unit_a": "units",
+      "finding_value_b": 60.0,
+      "finding_unit_b": "units",
+      "severity": "required"
+    }
+  ],
+  "_validator_errors": [],
+  "model_findings_not_promoted": [
+    {
+      "agent": "PRACTICE_AUDITOR",
+      "rule_id": "CONV-001",
+      "source_rule_id": "conv-a01",
+      "unit_id": "u03-article-3-review",
+      "relation": "missing_field",
+      "field_label": "review",
+      "source_refs": [
+        "REF-0002"
+      ],
+      "explanation": "The review article does not say who calls the review.",
+      "model_claimed_verdict": "irregular",
+      "written_by": "model",
+      "promoted": false,
+      "checked_by_python": false,
+      "reader_notes": []
+    }
+  ]
+}

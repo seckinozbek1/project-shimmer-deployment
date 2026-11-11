@@ -1,0 +1,490 @@
+{
+  "schema_version": 1,
+  "case_id": "negotiation-offers-three-rounds",
+  "fixture": false,
+  "rounds": [
+    {
+      "round_id": "r2",
+      "sequence": 2,
+      "document_ids": [
+        "company_a_union_b_offer_2024_09_23"
+      ]
+    },
+    {
+      "round_id": "r3",
+      "sequence": 3,
+      "document_ids": [
+        "company_a_union_b_offer_2024_10_19"
+      ]
+    },
+    {
+      "round_id": "r4",
+      "sequence": 4,
+      "document_ids": [
+        "company_a_union_b_offer_2024_10_31"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "company"
+    },
+    {
+      "actor_id": "union"
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "wage-increase-total"
+    },
+    {
+      "issue_id": "year-one-increase"
+    },
+    {
+      "issue_id": "year-two-increase"
+    },
+    {
+      "issue_id": "year-three-increase"
+    },
+    {
+      "issue_id": "year-four-increase"
+    },
+    {
+      "issue_id": "ratification-bonus"
+    },
+    {
+      "issue_id": "match-rate"
+    },
+    {
+      "issue_id": "match-ceiling"
+    },
+    {
+      "issue_id": "special-retirement-contribution"
+    },
+    {
+      "issue_id": "one-time-contribution"
+    },
+    {
+      "issue_id": "pension-multiplier"
+    },
+    {
+      "issue_id": "incentive-minimum"
+    },
+    {
+      "issue_id": "contract-length"
+    },
+    {
+      "issue_id": "offer-vote"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "r2-wage-increase-total",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "wage-increase-total",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u01-wages",
+      "char_start": 1172,
+      "char_end": 1204,
+      "quote": "General wage increase total: 30%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-ratification-bonus",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "ratification-bonus",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u02-bonuses",
+      "char_start": 1218,
+      "char_end": 1244,
+      "quote": "Ratification bonus: $6,000",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-match-rate",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "match-rate",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u03-retirement",
+      "char_start": 1261,
+      "char_end": 1285,
+      "quote": "Company match rate: 100%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-match-ceiling",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "match-ceiling",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u03-retirement",
+      "char_start": 1286,
+      "char_end": 1311,
+      "quote": "Company match ceiling: 8%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-special-retirement-contribution",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "special-retirement-contribution",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u03-retirement",
+      "char_start": 1312,
+      "char_end": 1355,
+      "quote": "Special company retirement contribution: 4%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-contract-length",
+      "round_id": "r2",
+      "actor_id": "company",
+      "issue_id": "contract-length",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u05-term",
+      "char_start": 1578,
+      "char_end": 1602,
+      "quote": "Contract length: 4 years",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r2-offer-vote",
+      "round_id": "r2",
+      "actor_id": "union",
+      "issue_id": "offer-vote",
+      "document_id": "company_a_union_b_offer_2024_09_23",
+      "unit_id": "u00-company-a-offer-to-union-b-and-union-b-2",
+      "char_start": 1096,
+      "char_end": 1159,
+      "quote": "offer was not put to a vote; the union declined to schedule one",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-wage-increase-total",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "wage-increase-total",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u01-wages",
+      "char_start": 588,
+      "char_end": 620,
+      "quote": "General wage increase total: 35%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-year-one-increase",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "year-one-increase",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u01-wages",
+      "char_start": 621,
+      "char_end": 643,
+      "quote": "Year one increase: 12%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-year-two-increase",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "year-two-increase",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u01-wages",
+      "char_start": 644,
+      "char_end": 665,
+      "quote": "Year two increase: 8%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-year-three-increase",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "year-three-increase",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u01-wages",
+      "char_start": 666,
+      "char_end": 689,
+      "quote": "Year three increase: 8%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-year-four-increase",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "year-four-increase",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u01-wages",
+      "char_start": 690,
+      "char_end": 712,
+      "quote": "Year four increase: 7%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-ratification-bonus",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "ratification-bonus",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u02-bonuses",
+      "char_start": 726,
+      "char_end": 752,
+      "quote": "Ratification bonus: $7,000",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-match-rate",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "match-rate",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u03-retirement",
+      "char_start": 769,
+      "char_end": 793,
+      "quote": "Company match rate: 100%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-match-ceiling",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "match-ceiling",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u03-retirement",
+      "char_start": 794,
+      "char_end": 819,
+      "quote": "Company match ceiling: 8%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-special-retirement-contribution",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "special-retirement-contribution",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u03-retirement",
+      "char_start": 820,
+      "char_end": 863,
+      "quote": "Special company retirement contribution: 4%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-one-time-contribution",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "one-time-contribution",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u03-retirement",
+      "char_start": 864,
+      "char_end": 900,
+      "quote": "One-time 401(k) contribution: $5,000",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-pension-multiplier",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "pension-multiplier",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u03-retirement",
+      "char_start": 901,
+      "char_end": 964,
+      "quote": "Pension multiplier: $105 per month per year of credited service",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-incentive-minimum",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "incentive-minimum",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u04-incentive-pay",
+      "char_start": 984,
+      "char_end": 1013,
+      "quote": "GPP minimum annual payout: 4%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-contract-length",
+      "round_id": "r3",
+      "actor_id": "company",
+      "issue_id": "contract-length",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u05-term",
+      "char_start": 1024,
+      "char_end": 1048,
+      "quote": "Contract length: 4 years",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r3-offer-vote",
+      "round_id": "r3",
+      "actor_id": "union",
+      "issue_id": "offer-vote",
+      "document_id": "company_a_union_b_offer_2024_10_19",
+      "unit_id": "u00-company-a-offer-to-union-b-and-union-b-2",
+      "char_start": 227,
+      "char_end": 271,
+      "quote": "64 percent of\nthe members voted to reject it",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-wage-increase-total",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "wage-increase-total",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u01-wages",
+      "char_start": 1875,
+      "char_end": 1907,
+      "quote": "General wage increase total: 38%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-year-one-increase",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "year-one-increase",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u01-wages",
+      "char_start": 1908,
+      "char_end": 1930,
+      "quote": "Year one increase: 13%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-year-two-increase",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "year-two-increase",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u01-wages",
+      "char_start": 1931,
+      "char_end": 1952,
+      "quote": "Year two increase: 9%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-year-three-increase",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "year-three-increase",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u01-wages",
+      "char_start": 1953,
+      "char_end": 1976,
+      "quote": "Year three increase: 9%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-year-four-increase",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "year-four-increase",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u01-wages",
+      "char_start": 1977,
+      "char_end": 1999,
+      "quote": "Year four increase: 7%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-ratification-bonus",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "ratification-bonus",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u02-bonuses",
+      "char_start": 2013,
+      "char_end": 2040,
+      "quote": "Ratification bonus: $12,000",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-match-rate",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "match-rate",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u03-retirement",
+      "char_start": 2057,
+      "char_end": 2081,
+      "quote": "Company match rate: 100%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-match-ceiling",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "match-ceiling",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u03-retirement",
+      "char_start": 2082,
+      "char_end": 2107,
+      "quote": "Company match ceiling: 8%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-special-retirement-contribution",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "special-retirement-contribution",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u03-retirement",
+      "char_start": 2108,
+      "char_end": 2151,
+      "quote": "Special company retirement contribution: 4%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-pension-multiplier",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "pension-multiplier",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u03-retirement",
+      "char_start": 2152,
+      "char_end": 2215,
+      "quote": "Pension multiplier: $105 per month per year of credited service",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-incentive-minimum",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "incentive-minimum",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u04-incentive-pay",
+      "char_start": 2235,
+      "char_end": 2264,
+      "quote": "GPP minimum annual payout: 4%",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-contract-length",
+      "round_id": "r4",
+      "actor_id": "company",
+      "issue_id": "contract-length",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u05-term",
+      "char_start": 2275,
+      "char_end": 2299,
+      "quote": "Contract length: 4 years",
+      "state": "accepted"
+    },
+    {
+      "source_id": "r4-offer-vote",
+      "round_id": "r4",
+      "actor_id": "union",
+      "issue_id": "offer-vote",
+      "document_id": "company_a_union_b_offer_2024_10_31",
+      "unit_id": "u00-company-a-offer-to-union-b-and-union-b-2",
+      "char_start": 161,
+      "char_end": 229,
+      "quote": "ratified by the members on 4 November 2024 with 59 percent in favour",
+      "state": "accepted"
+    }
+  ]
+}

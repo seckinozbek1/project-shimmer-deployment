@@ -42,14 +42,27 @@ import compact_contracts as cc
 from agent_wrapper import AgentWrapper, CallResult
 from reference_builder import ReferenceIndex, paragraph_ranges, _PARA_RE
 
-FIXTURE = json.loads((ROOT / "docs/fix/compact_contract_ab/fixture.json").read_text(encoding="utf-8"))
-REAL = FIXTURE["real_document"]
+# S10 item 2.1 a: the container image ships no docs/fix/, so this fixture is read only
+# where it exists; a test that needs it skips with FIXTURE_ABSENT, and every other test
+# of the module still runs (the read used to be unconditional at import, so all eleven
+# checks built on this module errored in the image before any test ran).
+FIXTURE_PATH = ROOT / "docs/fix/compact_contract_ab/fixture.json"
+FIXTURE_ABSENT = ("docs/fix/compact_contract_ab/fixture.json is not present here "
+                  "(the container image ships no docs/fix/)")
+FIXTURE = json.loads(FIXTURE_PATH.read_text(encoding="utf-8")) if FIXTURE_PATH.is_file() else None
+REAL = FIXTURE["real_document"] if FIXTURE is not None else None
 V5 = ROOT / "docs/fix/ordinary_final_cloud_run_v5/downloaded/evidence/run"
 V5_SHEET = ROOT / "benchmark/corpora/clinical_reference/context/result_sheet.md"
 V5_SHEET_SHA256 = "d0f332c85d4a1ef419adfa7b18355f28ff129fffeefaeecc8bf2a4c9a4b368a2"
 VALIDATED_KEYS = ["context_only_spans", "production_contract", "required_refs", "role",
                   "routed_rules", "source_spans", "supplied_refs"]
 CHAT_TEMPLATE = "<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
+
+
+def need_fixture(test):
+    """Skip `test`, naming the absent file, when the compact-contract fixture is not here."""
+    if FIXTURE is None:
+        test.skipTest(FIXTURE_ABSENT)
 
 
 def contracts():
@@ -151,6 +164,19 @@ def concatenating_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
 
 # Captured before any patch so a neutralised stand-in cannot call itself.
 _ORIGINAL_AMENDMENT_FROM_FINDING = paired_review.amendment_from_finding
+_ORIGINAL_CONTRACT_MISSING = AgentWrapper._contract_missing
+_ORIGINAL_NORMALIZE_CORE_ALIASES = agent_wrapper.normalize_core_aliases
+
+
+def kind_stamping_aliases(obj, aliases=None):
+    """The alias pass with the removed K8 stamp put back: `kind` supplied on every item that
+    has none, recorded as K8 recorded it."""
+    applied = _ORIGINAL_NORMALIZE_CORE_ALIASES(obj, aliases)
+    for i, item in enumerate(obj.get("items") or [] if isinstance(obj, dict) else []):
+        if isinstance(item, dict) and "kind" not in item:
+            item["kind"] = "editorial_observation"
+            applied.append("items[%d].kind<-editorial_observation" % i)
+    return applied
 
 
 def no_grounding(text, spans, entries):
@@ -162,6 +188,7 @@ class CorrectionChecks(unittest.TestCase):
     # ---- A1: grounding by Python's passage placement ------------------------------
 
     def test_grounding_places_each_indexed_passage_in_its_span(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         self.assertNotRegex(text, r"REF-\d{4}|CLM-")
         entries = index_twice(text, doc)
@@ -187,6 +214,7 @@ class CorrectionChecks(unittest.TestCase):
         self.assertNotIn("REF-7777", [r for g in extraction.grounding(text, spans, entries + [foreign])[0].values() for r in g])
 
     def test_grounding_correct_citation_passes_fabricated_and_mismatched_fail(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         entries = index_twice(text, doc)
         spans = extraction.ledger(text, doc)
@@ -244,6 +272,7 @@ class CorrectionChecks(unittest.TestCase):
     # ---- A2: the validated prompt shape --------------------------------------------
 
     def test_prompt_validated_messages_shape(self):
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         entries = index_twice(text, doc)
         spans = extraction.ledger(text, doc)
@@ -312,6 +341,7 @@ class CorrectionChecks(unittest.TestCase):
         w._stable_agent_block = lambda: "STABLE"
         w._execution_instructions = lambda: "EXEC"
         pkg = SimpleNamespace(stable_text=lambda: "CTX", dynamic_sections=lambda: [("X", "y")], rendered=None)
+        need_fixture(self)
         text, doc = REAL["source"], REAL["doc"]
         spans = extraction.ledger(text, doc)
         system, user, citable, supplied = cc.validated_messages(text, spans, spans, index_twice(text, doc))
@@ -413,6 +443,73 @@ class CorrectionChecks(unittest.TestCase):
             rows = [json.loads(l) for l in (ctx.logs_dir() / "generation_observation.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
             self.assertEqual(rows[-1]["contract_normalized"], ["items[0].confident->confidence"])
             self.assertIs(rows[-1]["contract_valid"], True)
+
+    # ---- S5 close: the K8 kind stamp removed (H9); a missing kind is refused -----------
+
+    def test_alias_missing_kind_is_refused_and_nothing_stamps(self):
+        """The K8 stamp (ENVELOPE-B, a448af1) supplied `kind` where the model wrote none; it was
+        removed at the S5 close (H9: a contract edit no stage called for). No contract declares a
+        stamp, the wrapper carries no stamping code, and a missing kind is refused for every agent
+        exactly as before K8, the declared alias still read and recorded. The cause is fixed in
+        decoding instead (EDITOR_CLERK's envelope constraint, check 297)."""
+        self.assertEqual([name for name, c in contracts().items() if "single_kind_stamp" in c], [])
+        self.assertNotIn("single_kind_stamp", (ROOT / "config/agent_contracts.json").read_text(encoding="utf-8"))
+        for name in ("single_kind_stamp", "stamp_single_kind"):
+            self.assertFalse(hasattr(agent_wrapper, name), name)
+        # The L11 and L8 shape: every field but kind, confidence under its declared alias.
+        shape = {"confident": "CONFIDENT", "ref": "REF-0010", "ref_ids": ["REF-0010"], "rationale": "Fixture.",
+                 "verdict": "concern"}
+        for agent, backend in (("EDITOR_CLERK", "local_producer"), ("EDITOR_HEAD_OF_UNIT", "local_producer"),
+                               ("VERIFIER", "local_auditor")):
+            w = bare_wrapper(agent, backend=backend)
+            parsed, missing = w.parse_contract_output(json.dumps({"agent": agent, "doc_id": "d", "items": [shape]}))
+            self.assertIn("items[0].kind", missing, agent)
+            self.assertNotIn("kind", parsed["items"][0], agent)
+            self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], agent)
+        # The validator as before K8: a written kind is required to be present and non-empty.
+        for kind, expected in (("editorial_observation", []), ("", ["items[0].kind"]), (None, ["items[0].kind"])):
+            w = bare_wrapper("EDITOR_CLERK")
+            parsed, missing = w.parse_contract_output(json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d",
+                                                                  "items": [dict(shape, kind=kind)]}))
+            self.assertEqual(missing, expected, kind)
+            self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], kind)
+        # No field is defaulted: every missing required key is named.
+        w = bare_wrapper("EDITOR_CLERK")
+        _, missing = w.parse_contract_output(json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d", "items": [
+            {k: v for k, v in shape.items() if k not in ("verdict", "confident")}]}))
+        self.assertEqual(missing, ["items[0].kind", "items[0].confidence", "items[0].verdict"])
+
+    def test_alias_missing_kind_is_a_contract_failure_on_result_bus_observation_and_telemetry(self):
+        """run_task on the saved shape without `kind`: the call fails its contract, the reason is
+        the missing kind, and the result, the bus post, the observation row and the telemetry call
+        record carry no stamp and contract_valid false."""
+        from constitution import Constitution
+        from message_bus import MessageBus
+        from run_context import for_run_dir
+        with tempfile.TemporaryDirectory() as folder:
+            ctx = for_run_dir(ROOT, Path(folder))
+            bus = MessageBus.open(Path(folder) / "bus.jsonl")
+            w = AgentWrapper("EDITOR_CLERK", Constitution.load(ROOT / "config/constitution.json"), bus,
+                             {"EDITOR_CLERK": dict(backend="local_producer", model="fixture")}, contracts(),
+                             keys={"fixture": True}, run_context=ctx)
+            raw = json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d", "items": [
+                {"confidence": "UNCERTAIN", "rationale": "Fixture.", "ref": "REF-0001", "ref_ids": ["REF-0001"],
+                 "verdict": "serious_concern"}]})
+            w.dispatch = lambda *a, **k: CallResult("local_producer", "fixture", raw, usage={"truncated": False})
+            result = w.run_task(work_payload={"task": "fixture", "document_id": "d"})
+            self.assertFalse(result["ok"])
+            self.assertEqual((result["error"], result["contract_missing"], result["contract_normalized"]),
+                             ("contract_violation", ["items[0].kind"], []))
+            self.assertNotIn("kind", result["parsed"]["items"][0])
+            posted = [m for m in bus.read_all() if m["body"].get("event") == "CONTRACT_VIOLATION"][-1]
+            self.assertEqual((posted["body"]["missing_fields"], posted["body"]["contract_normalized"]),
+                             (["items[0].kind"], []))
+            self.assertEqual([m for m in bus.read_all() if m["body"].get("event") == "AGENT_OUTPUT"], [])
+            rows = [json.loads(l) for l in (ctx.logs_dir() / "generation_observation.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            self.assertEqual((rows[-1]["contract_normalized"], rows[-1]["contract_valid"]), ([], False))
+            telemetry = [json.loads(l) for l in (ctx.logs_dir() / "model_telemetry.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            calls = [r for r in telemetry if r.get("event") == "model_call" and r.get("agent") == "EDITOR_CLERK"]
+            self.assertEqual((calls[-1]["contract_normalized"], calls[-1]["contract_valid"]), ([], False))
 
     # ---- A4: the typed-record example and the no-draft VERIFIER call ------------------
 
@@ -536,9 +633,13 @@ class CorrectionChecks(unittest.TestCase):
         PROCESSOR is sent are unchanged. Measured against the identities pinned
         BEFORE the change, on all twelve documents."""
         import bounded_extraction
+        # The corpus is looked for first (S10 item 2.1 a): with no corpus document the test
+        # skips naming that, before the pinned file is read; with a corpus, a missing pinned
+        # file still fails as before.
+        documents = self._corpus_documents()
         pinned = json.loads((ROOT / "benchmark/fixtures/unit_identity_before_preamble.json").read_text(encoding="utf-8"))["documents"]
         seen = 0
-        for path in self._corpus_documents():
+        for path in documents:
             path = Path(path)
             name = f"{path.parent.parent.name}/{path.name}"
             if name not in pinned:
@@ -1096,6 +1197,60 @@ class CorrectionChecks(unittest.TestCase):
             self.assertEqual(summary["auditor_pairing"]["pairs_from_partial_delivery"], 0)
             self.assertEqual(summary["auditor_pairing"]["partial_deliveries"], 0)
 
+    # ---- D-S14 K2: what VERIFIER is shown carries no runtime identity -------------------
+
+    def _verifier_view(self):
+        import model_telemetry
+        doc, producer, refs = self._merged_delivery(partial=False)
+        draft = dict(producer["parsed"], items=[dict(producer["parsed"]["items"][0], ts="2026-10-30T00:00:00Z",
+                                                     source_hash="fixture-hash", section_id="s", unit_id="u01")])
+        sent = dict(task=auditor_pairs.TASK, document_name="probe.md", processor_draft=draft)
+        before = json.loads(json.dumps(sent))
+        w = SimpleNamespace(name="VERIFIER", backend="local_auditor", run_context=None, _parent_call_ids=[],
+                            _auditor_pair_request=dict(document=doc, producer=producer, references=refs))
+        events = []
+        with patch.dict(os.environ, SHIMMER_MODEL_MODE="final"), \
+                patch.object(auditor_pairs, "predict", return_value=("MATCH", 10)), \
+                patch.object(model_telemetry, "emit", side_effect=lambda c, event, **k: events.append(dict(event=event, **k))):
+            payload = auditor_pairs.prepare_context(w, sent)
+        self.assertEqual(sent, before)  # the caller's payload is not touched
+        return w, payload, events, draft
+
+    def test_pairing_verifier_shown_pairs_without_runtime_identity(self):
+        w, payload, events, _ = self._verifier_view()
+        record = w._auditor_pair_state[0]
+        pair = payload["auditor_pair_context"]["pairs"][0]
+        self.assertEqual(sorted(pair), sorted(["pair_id", "producer_item", "source_evidence", "source_ref_ids",
+                                               "auditor_relation", "classifier_status", "delivery"]))
+        span = extraction.ledger(w._auditor_pair_request["document"]["text"], "probe")[0]
+        self.assertEqual((record["source_span_id"], pair["source_evidence"]), (span.id, {"text": span.text}))
+        self.assertEqual((pair["pair_id"], pair["auditor_relation"], pair["classifier_status"], pair["delivery"],
+                          pair["source_ref_ids"]),
+                         (record["pair_id"], "MATCH", "classified", "complete", record["source_ref_ids"]))
+        rendered = json.dumps(payload["auditor_pair_context"], ensure_ascii=False, indent=2)
+        for key in ("run_id", "producer_item_id", "source_span_id", "source_hash", "producer_call_id",
+                    "producer_adapter_sha256", "auditor_adapter_sha256", "classifier_call_id"):
+            self.assertIn(key, record, key)  # the record keeps every identifier
+            self.assertNotIn('"%s"' % key, rendered, key)
+            self.assertNotIn(str(record[key]), rendered, key)
+        telemetry_pair = [e for e in events if e["event"] == "auditor_pair"][0]
+        for key in ("producer_item_id", "source_span_id", "source_hash", "producer_call_id", "classifier_call_id"):
+            self.assertEqual(telemetry_pair[key], record[key], key)
+        # The join a finding makes is by pair_id, which VERIFIER is still shown.
+        self.assertIs(auditor_pairs.finding_pair(dict(auditor_pair_id=pair["pair_id"], finding="MATCH"),
+                                                 w._auditor_pair_state), record)
+
+    def test_pairing_verifier_shown_draft_without_runtime_identity(self):
+        _, payload, _, draft = self._verifier_view()
+        shown = payload["processor_draft"]["items"][0]
+        for key in auditor_pairs.DRAFT_ITEM_RUNTIME_KEYS:
+            self.assertIn(key, draft["items"][0], key)
+            self.assertNotIn(key, shown, key)
+        kept = {k: v for k, v in draft["items"][0].items() if k not in auditor_pairs.DRAFT_ITEM_RUNTIME_KEYS}
+        self.assertEqual(shown, kept)  # nothing else is dropped or changed
+        self.assertEqual({k: v for k, v in payload["processor_draft"].items() if k != "items"},
+                         {k: v for k, v in draft.items() if k != "items"})
+
     # ---- A6: bounded requests carry the validated layout -------------------------------
 
     def test_layout_declared_request_size_within_validated_layout_and_used_live(self):
@@ -1179,15 +1334,22 @@ def _grouped(prefix):
 
 
 def _verdict(prefixes, summary):
-    ran, skipped, log = 0, 0, ""
+    ran, skipped, log, reasons = 0, 0, "", set()
     for prefix in prefixes:
         result, text = _grouped(prefix)
         ran += result.testsRun
         skipped += len(result.skipped)
+        reasons |= {reason for _, reason in result.skipped}
         log += text
         if not result.wasSuccessful():
             return ("FAIL", text[-3000:])
-    return ("PASS", "%d checks (%d skipped for absent v5 evidence): %s" % (ran, skipped, summary))
+    if skipped:
+        # S10 item 2.1 a: a test whose evidence or fixture is not in this tree (the container
+        # image ships no docs/fix/ and no benchmark corpus) is reported as a SKIP with its
+        # reasons; it used to be folded into a PASS line.
+        return ("SKIP", "%d of %d checks passed, %d skipped (%s); with every input present it proves: %s" % (
+            ran - skipped, ran, skipped, "; ".join(sorted(reasons)), summary))
+    return ("PASS", "%d checks (0 skipped for absent v5 evidence or fixtures): %s" % (ran, summary))
 
 
 def check_grounding():
@@ -1197,7 +1359,9 @@ def check_grounding():
 
 
 def check_alias():
-    return _verdict(("test_alias_",), "declared alias read as the canonical key, recorded on result, bus and observation")
+    return _verdict(("test_alias_",), "declared alias read as the canonical key, recorded on result, bus and observation; "
+                                      "a missing kind refused for every agent, no stamp declared or applied, recorded "
+                                      "on result, bus, observation and telemetry (the K8 stamp removed at the S5 close, H9)")
 
 
 def check_verifier():
@@ -1207,7 +1371,9 @@ def check_verifier():
 
 def check_pairing():
     return _verdict(("test_pairing_",), "a partition-merged delivery pairs its receipt-bound items, a single failed delivery "
-                                        "is refused as before, partial pairs marked in the record, the coverage event and the summary")
+                                        "is refused as before, partial pairs marked in the record, the coverage event and the summary; "
+                                        "VERIFIER is shown each pair and draft item without runtime identity, which the "
+                                        "records and telemetry keep (D-S14 K2)")
 
 
 def check_layout():
@@ -1261,6 +1427,12 @@ NEUTRALIZATIONS = [
     ("test_prompt_dispatch_sends_system_and_user_turns", AgentWrapper, "dispatch", concatenating_dispatch),
     ("test_alias_v5_outputs_parse_and_the_mapping_is_recorded", agent_wrapper, "core_field_aliases", lambda: {}),
     ("test_alias_application_travels_with_result_bus_and_observation", agent_wrapper, "core_field_aliases", lambda: {}),
+    # S5 close (the K8 stamp removed, H9): each mutant brings back what K8 did, a validator
+    # that lets a missing kind through and an alias pass that stamps one.
+    ("test_alias_missing_kind_is_refused_and_nothing_stamps", AgentWrapper, "_contract_missing",
+     lambda self, obj: [m for m in _ORIGINAL_CONTRACT_MISSING(self, obj) if not m.endswith("].kind")]),
+    ("test_alias_missing_kind_is_a_contract_failure_on_result_bus_observation_and_telemetry", agent_wrapper,
+     "normalize_core_aliases", lambda obj, aliases=None: kind_stamping_aliases(obj, aliases)),
     ("test_verifier_record_example_carries_required_fields", AgentWrapper, "_record_example_required", lambda self, required: {}),
     ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
     # Neutralise the selector by restoring the pre-correction behaviour: every
@@ -1286,6 +1458,12 @@ NEUTRALIZATIONS = [
      lambda producer: ("single", False)),
     ("test_pairing_coverage_reports_pairs_from_a_partial_delivery", auditor_pairs, "delivery_scope",
      lambda producer: ("single", False)),
+    # D-S14 K2: the pair and the draft item as VERIFIER was shown them before, every identifier included.
+    ("test_pairing_verifier_shown_pairs_without_runtime_identity", auditor_pairs, "pair_view",
+     lambda record, pair: dict(record, producer_item=pair["producer_item"], source_evidence=dict(
+         text=pair["source_text"], source_hash=record["source_hash"], source_span_id=record["source_span_id"],
+         source_ref_ids=record["source_ref_ids"]))),
+    ("test_pairing_verifier_shown_draft_without_runtime_identity", auditor_pairs, "draft_view", lambda draft: draft),
     ("test_layout_declared_request_size_within_validated_layout_and_used_live", cc, "request_size", lambda: 4),
     ("test_record_example_uses_declared_values_and_the_agents_own_verdict_field", AgentWrapper, "_declared_values",
      lambda self, field: []),

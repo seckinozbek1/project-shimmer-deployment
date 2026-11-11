@@ -1,0 +1,54 @@
+{
+ "attempt": 2,
+ "calibration": "prior_offset",
+ "decisions_sha256": {
+  "base": "f27997c99c3042e5c6d698e87a127349e6234cb9a224d3afce081eddf907d8af",
+  "dev_mix@trained_full": "7c540e6dcf60cd56690457eafad012a300210e6a12a8eba8d481cae61381f453",
+  "dev_mix@trained_half": "1e3cce88de2db5c231afd5460472d17a6111a5f70222bc84478ce26df3a588af",
+  "permissive_mix@trained_full": "626a65c99066a89703cc91a46e961d4ec76a794e44d002456672f29a9121e241",
+  "permissive_mix@trained_half": "3349ebb02d078fedb4d290192f79a02c13839411c37b61476c3e930cfb22c32a"
+ },
+ "half_a_macro_f1": {
+  "base": 0.5898217067953004,
+  "dev_mix@trained_full": 0.6829253487907105,
+  "dev_mix@trained_half": 0.6976177411481405,
+  "permissive_mix@trained_full": 0.7147796893674948,
+  "permissive_mix@trained_half": 0.7088179022328452
+ },
+ "margin": 0.12495798257219437,
+ "margin_required": 0.05,
+ "offsets": {
+  "base": {
+   "cannot be settled": -2.5,
+   "not_met": -0.75
+  },
+  "dev_mix@trained_full": {
+   "cannot be settled": -1.75,
+   "not_met": -1.5
+  },
+  "dev_mix@trained_half": {
+   "cannot be settled": -1.75,
+   "not_met": -1.5
+  },
+  "permissive_mix@trained_full": {
+   "cannot be settled": -2.25,
+   "not_met": -1.75
+  },
+  "permissive_mix@trained_half": {
+   "cannot be settled": -2.5,
+   "not_met": -2.25
+  }
+ },
+ "part": "auditor_rule_check",
+ "passed_half_a": true,
+ "questions_sha256": "9dbd82f2eba994f3e6ba122ceb4df45ca97346f4f25c3538e73200304c3ae97e",
+ "schema": "auditor-rule-check-half-a-v1",
+ "selected": "permissive_mix@trained_full",
+ "thresholds": {
+  "base": null,
+  "dev_mix@trained_full": 0.65,
+  "dev_mix@trained_half": 0.75,
+  "permissive_mix@trained_full": 0.55,
+  "permissive_mix@trained_half": 0.65
+ }
+}

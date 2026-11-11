@@ -64,6 +64,10 @@ class ConventionRule:
     # unit in scope is a finding Python decides. Both empty when not declared.
     scope: list = field(default_factory=list)
     requires: list = field(default_factory=list)
+    # P2 (a), D-S38: `[compare: passages]` on the heading asks that pairs of the document's
+    # passages be judged under this rule (scripts/passage_pairs.py). Empty when not declared,
+    # and then absent from the registry, so no earlier rule changes.
+    compare: str = ""
     # A CONDITIONAL SUSPENSION: when the condition holds, this rule does not
     # fire. [{"kind": "rule"|"field", "target": str}]. A field condition
     # resolves against the unit the way scope does; a rule condition resolves
@@ -94,6 +98,8 @@ class ConventionRule:
                "unless": self.unless}
         if self.severity_note:
             out["severity_note"] = self.severity_note
+        if self.compare:
+            out["compare"] = self.compare
         return out
 
 
@@ -261,7 +267,7 @@ def _classify_action(text):
 
 def _parse_json(path, seq):
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding=text_extract.TEXT_ENCODING))
     except json.JSONDecodeError:
         return []
     if isinstance(data, dict) and "conventions" in data:
@@ -279,6 +285,13 @@ def _parse_json(path, seq):
             continue
         subjects = item.get("subjects")
         _sev, _sev_note = resolve_severity(item.get("severity"), rule)
+        scope = _scope_entries(item.get("scope"))
+        requires = [str(s).strip().lower() for s in (item.get("requires") or [])
+                    if str(s).strip()] if isinstance(item.get("requires"), list) else []
+        unless = _unless_entries(item.get("unless"))
+        where = f"{path.name} item {i+1}"
+        compare = _compare_value(item.get("compare"), where)
+        _refuse_compare_beside(compare, scope, requires, unless, where)
         out.append(ConventionRule(
             id=item.get("id") or _next_id(seq),
             category=str(item.get("category") or _DEFAULT_CATEGORY).strip().lower(),
@@ -292,10 +305,7 @@ def _parse_json(path, seq):
             # value must never decide a LAW-IV matter.
             action_declared=bool(str(item.get("action") or "").strip()),
             subjects=[str(s).strip().lower() for s in subjects] if isinstance(subjects, list) else [],
-            scope=_scope_entries(item.get("scope")),
-            requires=[str(s).strip().lower() for s in (item.get("requires") or [])
-                      if str(s).strip()] if isinstance(item.get("requires"), list) else [],
-            unless=_unless_entries(item.get("unless")),
+            scope=scope, requires=requires, unless=unless, compare=compare,
         ))
     return out
 
@@ -337,7 +347,7 @@ def _scope_entries(raw):
 
 
 def _parse_text(path, seq):
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = path.read_text(encoding=text_extract.TEXT_ENCODING, errors="replace")
     return _parse_text_lines(text, path.name, seq)
 
 
@@ -361,6 +371,7 @@ def _parse_text_lines(text, source_name, seq):
 
     current_scope: list = []
     current_requires: list = []
+    current_compare = ""
 
     def flush(buffer, suppress_paragraph, severity, subjects, location):
         if not buffer or suppress_paragraph:
@@ -375,7 +386,7 @@ def _parse_text_lines(text, source_name, seq):
             severity=_sev, severity_note=_sev_note,
             action=_classify_action(joined), subjects=list(subjects),
             scope=[dict(s) for s in current_scope], requires=list(current_requires),
-            unless=[dict(u) for u in current_unless],
+            unless=[dict(u) for u in current_unless], compare=current_compare,
         )]
 
     for raw_line in text.splitlines():
@@ -390,6 +401,8 @@ def _parse_text_lines(text, source_name, seq):
             current_section = line.lstrip("# ").strip().lower()
             current_severity, current_subjects = _heading_bracket_tags(line)
             current_scope, current_requires, current_unless = _heading_bracket_declarations(line)
+            current_compare = _heading_compare(line)
+            _refuse_compare_beside(current_compare, current_scope, current_requires, current_unless, line)
             if before_first_operator_heading and heading_carries_rule_id(line):
                 before_first_operator_heading = False
             continue
@@ -407,7 +420,7 @@ def _parse_text_lines(text, source_name, seq):
                     severity=_sev, severity_note=_sev_note,
                     action=_classify_action(stripped), subjects=list(current_subjects),
                     scope=[dict(s) for s in current_scope], requires=list(current_requires),
-                    unless=[dict(u) for u in current_unless],
+                    unless=[dict(u) for u in current_unless], compare=current_compare,
                 ))
             continue
         if not line.strip():
@@ -550,7 +563,7 @@ def _heading_bracket_tags(heading):
 # CONV-D01 is the working field case: its own words say a reading must fall in
 # the band "UNLESS a locally adjusted range ... has been stated in the entry",
 # which survived only as an opaque substring that nothing parsed.
-_DECLARATION_PREFIX = re.compile(r"^(scope|requires|unless)\s*:\s*(.*)$")
+_DECLARATION_PREFIX = re.compile(r"^(scope|requires|unless|compare)\s*:\s*(.*)$")
 
 # A bracket that looks like a declaration (it carries a colon) but whose leading
 # word this parser does not know. Absorbing it as a subject tag is what happened
@@ -600,6 +613,8 @@ def _heading_bracket_declarations(heading):
         if not d:
             continue
         kind, body = d.group(1), d.group(2)
+        if kind == "compare":
+            continue   # read by _heading_compare
         parts = [p.strip() for p in body.split(",") if p.strip()]
         if kind == "scope":
             for entry in _scope_entries(parts):
@@ -616,6 +631,36 @@ def _heading_bracket_declarations(heading):
                 if entry not in unless:
                     unless.append(entry)
     return scope, requires, unless
+
+
+def _compare_value(raw, where):
+    """The one reading of a `compare` declaration, from a heading or a JSON convention: not
+    declared is "". Only `passages` and `cells` are declared: any other value stops the run, as an
+    unknown declaration does, rather than being read as something else."""
+    if raw is None:
+        return ""
+    value = str(raw).strip().lower()
+    if value not in ("passages", "cells"):
+        raise ConventionDeclarationError("compare takes `passages` or `cells`: " + where)
+    return value
+
+
+def _refuse_compare_beside(compare, scope, requires, unless, where):
+    """A compare rule is asked of passages or of a table's cells, never of a unit as a rule is, so
+    a scope, a requirement or a suspension on it would be an instruction nothing honours: refused,
+    not absorbed."""
+    if compare and (scope or requires or unless):
+        raise ConventionDeclarationError(
+            "compare takes no scope, requires or unless, since none applies to it: " + where)
+
+
+def _heading_compare(heading):
+    """The heading's `[compare: ...]` value, or ""."""
+    for m in _HEADING_BRACKET.finditer(heading):
+        d = _DECLARATION_PREFIX.match(m.group(1).strip().lower())
+        if d and d.group(1) == "compare":
+            return _compare_value(d.group(2), m.group(0))
+    return ""
 
 
 def _normalize_category(heading):

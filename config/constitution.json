@@ -536,6 +536,255 @@
       },
       "reason": "The pipeline was built in part to review a document against its own earlier version: the next round of a negotiation, the next reading of a text. Today the Finding record can state only disagreements inside one document (a sum, a band, a missing field). Comparing round N with round N-1 needs relations that say what moved, which way relative to the operator's stated mandate, what held, and what was dropped, and fields that carry the earlier figure, the delta and the direction. The Finding record is governed inter-agent structure, so the addition is recorded as a DELTA rather than as a config change (the H3 record itself landed without one; this closes that precedent). The relations are appended, the verdict stays ok so the comparison never manufactures an amendment, and every record is minted by Python from cited figures, so the operator's question about the round is answered from typed fields, not from a model's sentence.",
       "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Five relations and four optional fields appended to the Finding record contract; verdicts unchanged. Prior-version records are ok-verdict, computed, cited and never amendments. The earlier version is an operator-declared role, never inferred. Ratified in session on 2026-09-07 before the build; built with executed-coverage gate checks."
+    },
+    {
+      "id": "INFRA-045",
+      "created": "2026-10-31",
+      "kind": "finding_record_cross_figure_relations",
+      "title": "Rate, carry, copy and unit relations on the typed Finding record, computed by Python (RELATIONS-A)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-10-31",
+        "by": "operator",
+        "words": "Ben simdiden onayliyorum yapalim.",
+        "asked": "whether to add the rate, carry, copy and unit relation types to the Finding record",
+        "channel": "chat, before the build",
+        "authorization": {
+          "date": "2026-11-01",
+          "by": "operator",
+          "words": "1 dongu uygulasin",
+          "recorded_in": "prompts/SHIMMER_AUTONOMOUS_LOOP_2026-10-27.md Annex D D-S19 item 1",
+          "what": "the operator's authorization for the loop to append this one amendment, its content unchanged, through the verified no-gap path; applied as decision D-197 (docs/loop/DECISIONS.md)"
+        }
+      },
+      "change": {
+        "relations_appended": "Four relations are APPENDED, in this order, at the END of finding_record.relations in config/agent_contracts.json (and the module's fallback copy in scripts/finding_record.py): rate_mismatch, carry_mismatch, copy_mismatch, unit_mismatch. Nothing is inserted, renamed or removed: every existing relation keeps its position, and no field, required key or verdict changes.",
+        "relation_meaning": "rate_mismatch: three label-line figures of one unit, a part and a whole in the same measure and a proportion in a dimensionless scale (the percent sign), where the part is not the whole times the proportion; the figure compared is the one the rule names first, against the value the other two give. unit_mismatch: a figure written in another measure than the one its column (as that column's stated total) or its band (the rule's stated band or the reference table's) uses, by a decimal prefix on the same base; the record carries the figure converted to that measure as value_a and the figure as written as value_b. copy_mismatch: a table row whose key cell is exactly the heading of another unit, in a column whose label is a label line of that unit, that does not carry that unit's figure. carry_mismatch: the first row of a table column that the unit just before also carries, under the same first-row key, that does not carry the sum of that column in the unit before.",
+        "verdict": "record_verdict follows the arithmetic, as for sum_mismatch and product_mismatch: irregular when the figures disagree. Only a disagreement is minted as a record, and an irregular record becomes an amendment through the existing deterministic path (paired_review.ensure_amendments_for_findings); nothing about amendments changes.",
+        "who_mints": "Python only, in phase 5.5's paired review (scripts/relation_checks.py, called from paired_review.compute_checks and paired_review.plan_calls), posted on the bus with backend paired and model python like every other computed finding, written_by python. A model's record carrying one of the four relations stays a model's record (written_by model, never promoted).",
+        "rule_gate": "A rate, copy or carry is computed only for a rule whose own words name the figures by the document's own labels (the proportion and one of the other two figures; the key column and the value column; the column and the first row's key). The unit mismatch of a stated total is rule-independent, like a sum, and the unit mismatch of a band belongs to the rule carrying the band. Domain vocabulary appears in no code; the decimal prefixes and the dimensionless scales are declared in config/unit_conversions.json.",
+        "refusals": "Anything the arithmetic cannot settle is refused on the record, never guessed: a third figure that is tied or unnamed, a part and a whole of equal size, a measure that does not convert, a copied row naming more than one unit, a source unit lacking the field or in another measure, a unit before that does not add up on its own or has a hole. Each refusal is written to the pairing map under relation_refusals (and to the round record in a multi-round run).",
+        "citation": "A record cites its own unit's passage; a copy or carry also carries the passage of the other unit it was compared with as compared_with_refs, and names that unit in compared_unit_id. A unit whose copy or carry reads another unit has that unit's text in its multi-round signature (SIGNATURE_INPUTS gains neighbours), so a changed neighbour is recomputed, never reused.",
+        "name_note": "unit_mismatch is also a prior-comparison refusal kind (reason_kind in prior_refusals, docs/OUTPUT_FORMAT.md section 7.1). The two live in different fields and are never compared; this amendment changes neither.",
+        "scope": "Extends governed inter-agent structure (the Finding record contract) by append only. No seed law, existing relation, field or verdict is modified."
+      },
+      "reason": "Measured, not preferred: on the 27 L12 development entries (families f1 to f6) the miss diagnosis (tools/miss_diagnosis.py, check 318) found 258 expected entries and 32 losses, 20 of them in four relation kinds the Finding record did not declare (rate and ratio errors 8, copies 4, carries 4, unit mismatches 4), so Python could not write them however plainly the document's own figures showed them. The Finding record is governed inter-agent structure, so the addition is recorded as a DELTA, as INFRA-044 was.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Four relations appended to the Finding record contract. Approved by the operator in chat on 2026-10-31 before the build; built with executed-coverage gate checks."
+    },
+    {
+      "id": "INFRA-046",
+      "created": "2026-11-05",
+      "kind": "finding_record_contradiction_relation",
+      "title": "A contradiction in words on the typed Finding record, written by a model with both passages quoted (RELATIONS-B)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-05",
+        "by": "operator",
+        "words": "Ekle (add the contradiction relation as proposed in D-263).",
+        "asked": "whether to add a contradiction relation to the Finding record, with a verbatim quote required from both passages and Python checking both",
+        "channel": "chat, answering the question in docs/loop/private/FOR_SECKIN.md",
+        "authorization": {
+          "date": "2026-11-05",
+          "by": "operator",
+          "words": "Ekle (add the contradiction relation as proposed in D-263).",
+          "recorded_in": "prompts/SHIMMER_AUTONOMOUS_LOOP_2026-10-27.md Annex D D-S22 item 2 (the loop drafts the amendment and asks; nothing is applied before his answer)",
+          "what": "the operator's answer, which is also his instruction to add it: the loop appends this one amendment through the verified no-gap path; applied as decision D-264 (docs/loop/DECISIONS.md)"
+        }
+      },
+      "change": {
+        "relations_appended": "One relation is APPENDED at the END of finding_record.relations in config/agent_contracts.json (and the module's fallback copy in scripts/finding_record.py): contradiction. Nothing is inserted, renamed or removed: every existing relation keeps its position.",
+        "fields_appended": "One optional field is appended to finding_record.fields after quote: quote_b, the second passage of a contradiction. No required key or verdict changes. Every agent whose contract lists finding_record (VERIFIER, FACT_CHECKER, PRACTICE_AUDITOR, LEGAL_ANALYST, STYLE_GUARDIAN) reads the new relation in its relation list, the sentences for relation, quote and quote_b, and one new sentence of the typed-record section (agent_wrapper). The judged-absence question itself is unchanged.",
+        "relation_meaning": "contradiction: two passages of the unit under review, in words, that cannot both be true, with no figures to compare. The first passage is in `quote`, the second in `quote_b`.",
+        "verdict": "Always irregular. A record naming a contradiction that is not irregular is refused: a pair that does not contradict says nothing Python can check.",
+        "who_mints": "A model only, and only on the two judged paths (a judged absence, and a plan Python could compute nothing for). Python writes no contradiction and never decides one. The record stays a model's (written_by model), carries the model-finding mark wherever it is shown, and is never promoted to an amendment; nothing about amendments changes. An item naming the relation from any other agent or call, or refused, is not a finding: finding_record.is_finding and the benchmark record reader count it only with text_screened, a mark Python sets after the refusals pass and removes from every model reply it reads. Such an item stays an ordinary item.",
+        "refusals": "paired_review.judged_item_refusal, the one test for both judged paths, refuses a contradiction that is not irregular, that lacks either quote, that has no unit text to check against, with a quote under three whitespace-separated words (the bar and count G1's reader set for evidence, so text with no spaces between words is refused), whose quote or quote_b the unit does not hold, or whose two quotes are one passage (the same words, or places that overlap). Each is listed in the pairing map with a reason.",
+        "what_python_checks": "That the words are in the unit, compared lower-cased with spacing folded, and are two passages. Not that they contradict: that remains the model's claim and is marked so. Some re-cased or differently composed text is refused rather than matched.",
+        "reach": "Both quotes are checked against the unit the finding is about. A judging call also shows its neighbours' text; a quote_b taken from a neighbour is refused under its own reason, so that refusal is counted, and a quote taken from one under the shared reason. A contradiction across two units is not expressible until the planned pairs harness (docs/loop/stages/AFTER_V1_PLAN.md, P2) brings that with its own checks.",
+        "scoring": "No scoring rule changes: benchmark/adapters/common/mapping.py and common/detection.py are unmodified. A kept irregular contradiction decides its item as any model record does (FLAG, or under detection_dev a violation), so an item a refusal or silence used to decide can now be FLAG. On a benchmark with an absence flag (CUAD, no longer in use) it is CLEAR with basis irregular_other_relation, as every relation but missing_field is. The record reader (common/records.py) drops an unscreened contradiction; no saved run holds one.",
+        "redaction": "quote and quote_b are scrubbed like every free-text field: every whole approved span. A model chooses where a quote starts and ends, so a quote can hold part of a span, which no span form and no survivor grep sees; reader_line prints it. The same is true of every model sentence. This adds a place, not a kind: it joins the list of conditions on activating the sensitivity layer (open item 86, issue #190, deferred by the operator), which ships off. The console's findings route carries no quote field; a model's explanation there comes from the unscrubbed bus, as it always did.",
+        "scope": "Extends governed inter-agent structure (the Finding record contract) by append only. No seed law, existing relation, field or verdict is modified."
+      },
+      "reason": "Measured, not preferred (D-263): of the 17 declared relations none says two passages contradict each other, so a judge that found a real contradiction in words had nothing honest to write unless it was numeric or the relation was misused. C1 kept 1 of 94 answers; of the 93 refused, 53 were missing_field with no quote and 40 sum_mismatch with no figures, and R1 was right to refuse each. The record's shape is one cause of ContraDoc's zero; the model is another (D-263: Phi-3.5 flagged all 50 items).",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). One relation and one optional field appended to the Finding record contract. Approved by the operator in chat on 2026-11-05."
+    },
+    {
+      "id": "INFRA-047",
+      "created": "2026-11-06",
+      "kind": "finding_record_contradiction_across_units",
+      "title": "A contradiction whose two passages stand in two units of one document, from the passage pair step only (RELATIONS-C)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-06",
+        "by": "operator",
+        "words": "Ekle (allow a contradiction record across two units, with the checks proposed on 2026-11-06 17:54).",
+        "asked": "whether a contradiction may point at two passages in two different units, under the checks listed in the question: Python chooses both passages, both are taken from the document as they stand, no record unless the model says contradiction in both orders, the record names both units, it stays a model finding and never becomes an amendment",
+        "channel": "chat, answering the question in docs/loop/private/FOR_SECKIN.md (2026-11-06 17:54 +0300, decision D-276)",
+        "authorization": {
+          "date": "2026-11-06",
+          "by": "operator",
+          "words": "Ekle (allow a contradiction record across two units, with the checks proposed on 2026-11-06 17:54).",
+          "recorded_in": "docs/loop/DECISIONS.md D-276 (the proposal) and D-278 (applied)",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path"
+        }
+      },
+      "change": {
+        "reach_extended": "INFRA-046's reach sentence said a contradiction across two units was not expressible until the pairs harness brought that with its own checks. This is that step. INFRA-046 itself is not edited: on the two judged paths everything it says stands, both quotes held to the unit under review.",
+        "who_may": "Only the passage pair step (scripts/passage_pairs.py, a rule declaring [compare: passages]). Python chose both passages from the document's own text and the two quotes are those passages as they stand; the record exists only when the model said contradict in both orders.",
+        "fields": "No relation, field, verdict, contract or prompt changes. The second unit is named in compared_unit_id, the field copy_mismatch and carry_mismatch already use for the other unit; unit_id stays the unit holding quote.",
+        "refusals": "paired_review.judged_item_refusal takes second_unit_text, which only the pair step passes. It holds quote to unit_id's text and quote_b to compared_unit_id's text. It refuses a record naming a second unit with no such text, so a model's reply on a judged path cannot reach across units by writing the field; a record passing that text with no name; a record naming its own unit; a blank second unit; and the same words in both units. Each is listed with a reason; the rest of INFRA-046's refusals apply unchanged.",
+        "marks": "Stays a model's record (written_by model), carries the model-finding mark wherever it is shown, gets text_screened only after the refusals pass, and is never promoted to an amendment. finding_record.reader_line names both units only on Python's mark. Python checks where the words stand, never that they contradict.",
+        "scoring": "No scoring rule changes. A record sits at unit_id, as any finding does. No benchmark rule declares [compare: passages], and the replay measures pairs, not records.",
+        "redaction": "compared_unit_id is a unit id, handled as it already is for copy and carry records; quote_b is scrubbed as free text. INFRA-046's redaction sentence applies unchanged. The pair call is masked as run_task masks a prompt (LAW-IV).",
+        "scope": "Extends governed inter-agent structure by append only. No seed law, existing amendment, relation, field or verdict is modified."
+      },
+      "reason": "A contradiction between two articles is a pair across two units, and the first worked case of D-S39 asks for contradictions between articles; 23 of ContraDoc's 60 sampled documents have more than one unit. Until this, a flagged pair across two units could only be counted (D-276).",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-06."
+    },
+    {
+      "id": "INFRA-048",
+      "created": "2026-11-07",
+      "kind": "finding_record_claim_not_met_relation",
+      "title": "A claim the table cells Python selected do not meet, decided by a model (RELATIONS-D)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-06",
+        "by": "operator",
+        "words": "Ekle (claim_not_met, INFRA-048, with the checks you proposed).",
+        "asked": "whether to add a finding type saying a claim does not match the table cells Python selected, under the checks listed in the question: only from a rule declaring [compare: cells]; Python selects the cells; the record shows the claim and the cells as the document writes them; holds and cannot be settled make no record; the decision is the model's and marked so; it never becomes an amendment",
+        "channel": "chat, answering the question in docs/loop/private/FOR_SECKIN.md (2026-11-06 22:11 +0300)",
+        "authorization": {
+          "date": "2026-11-06",
+          "by": "operator",
+          "words": "Ekle (claim_not_met, INFRA-048, with the checks you proposed).",
+          "recorded_in": "docs/loop/DECISIONS.md D-281 (the word) and D-282 (applied)",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path"
+        }
+      },
+      "change": {
+        "relations_appended": "One relation is APPENDED at the END of finding_record.relations in config/agent_contracts.json (and the module's fallback copy in scripts/finding_record.py): claim_not_met. Nothing is inserted, renamed or removed: every existing relation keeps its position.",
+        "fields": "No field is added. quote holds the cells Python selected (caption and table, as the model was shown them), quote_b the claim, the rule's own text, and text_screened is set by Python as on a contradiction. The contract's prompt wording is unchanged, except wherever the relation list itself is rendered.",
+        "relation_meaning": "claim_not_met: a model's settled answer that a claim is not met by the table cells Python selected for it.",
+        "who_mints": "cell_selection.finding alone, only for a settled not met under a rule declaring [compare: cells], always record_verdict irregular, judged_path cell_claim. holds and cannot be settled make no record. Nothing is asked until a threshold is measured for that question, so no record exists until then.",
+        "refusals": "paired_review._cell_claim_refusal refuses, each under its own reason: no selection passed, so a model's reply on a judged path that writes the relation is refused; a rule without [compare: cells]; a record that is not irregular; a quote_b that is not the rule's own text; a caption line not in the unit; a row whose cells do not stand together in one row of a table of the unit.",
+        "what_python_checks": "That the cells stand in the unit, cell by cell, each row's cells held to one row of the unit's table, since a row with columns cut is no longer a substring of the unit. It does not hold a cell to its column. It never checks that the claim fails: that is the model's decision and is marked so.",
+        "marks": "Stays a model's record (written_by model), carries the model-finding mark wherever it is shown, and is never promoted to an amendment.",
+        "scoring": "No scoring rule changes. The record reader counts the relation only with Python's mark, as it does a contradiction. No benchmark rule declares [compare: cells]; the replay measures decisions, not records.",
+        "redaction": "quote and quote_b are free text, scrubbed as INFRA-046's redaction sentence says, under the same condition on activating the layer (open item 86). The question is masked with the whole document as context.",
+        "scope": "Extends governed inter-agent structure by append only. No seed law, existing amendment, relation, field or verdict is modified."
+      },
+      "reason": "A table claim that fails had no honest record: contradiction needs two passages, and every other declared relation is figures or absence. Without this a settled not met could reach no reader. The question was put by the loop on 6 November and answered the same day.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-06."
+    },
+    {
+      "id": "INFRA-049",
+      "created": "2026-11-08",
+      "kind": "judge_agent_role",
+      "title": "JUDGE: a registered agent that answers one narrow question from its own answer probabilities (JUDGE-AGENT-A)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-08",
+        "by": "operator",
+        "words": "Tamam, birincisi ekle. Konuştuğumuz, evet, yeni bir yargıç ajanı eklensin.",
+        "asked": "The lead's English translation of the Turkish question in FOR_SECKIN 2026-11-08 13:59: Shall I add a new agent, JUDGE, to the system? It answers only two narrow questions: do two passages contradict; do the table cells Python selected meet a claim. Python chooses its evidence and runs its tools; the model only gives the probabilities of fixed answers and writes no text. The answer Ekle is enough; I record it as INFRA-049.",
+        "channel": "chat, answering FOR_SECKIN 2026-11-08 13:59 +0300",
+        "authorization": {
+          "date": "2026-11-08",
+          "by": "operator",
+          "words": "Tamam, birincisi ekle. Konuştuğumuz, evet, yeni bir yargıç ajanı eklensin.",
+          "recorded_in": "docs/loop/DECISIONS.md D-309",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path and adds the JUDGE entries to config/agent_registry.json and config/agent_contracts.json as lane/judge-agent prepared them"
+        }
+      },
+      "change": {
+        "roster": "Adds exactly ONE agent, JUDGE, to config/agent_registry.json: backend local_auditor, model from its spec.model (today the auditor's checkpoint, mapped under the local profile like every local_auditor agent; the registry alone decides and may map it to its own model), category verification, may_use_web false, may_handle_sensitive false, subjects empty by decision (it takes a rule by the task its heading declares, never by subject). EXPECTED_AGENTS goes 18 -> 19.",
+        "contract": "Adds the JUDGE contract to config/agent_contracts.json: item_kind decision; fields decided, settled, confidence, answers (each declared answer's probability), declared_mass and quote; checks []; and a judge block declaring its tasks, cell_claim (declared by [compare: cells], the question of config/cell_selection.json decision, evidence cells and claim, tools find_cells, locate_figures, check_quote) and passage_pair (declared by [compare: passages], the question of config/passage_pairs.json decision, evidence passage_a and passage_b, tool check_quote). No other contract changes.",
+        "answers": "No free text. One forward pass decides among the task's fixed answers (Yes, No, Unclear) from the probabilities of their first tokens (choice_decision, D-S41); a top answer below the measured threshold is unsettled, and nothing is asked until a threshold is measured for the task. The quote is Python echoing the cells or the two passages it selected, never written by the model.",
+        "prompt": "The question is the task's template, read from its config and filled only by Python: the selected evidence, the rule's own words where the task carries them, and the declared tools' results in a fixed form (the claim question's FIGURES block in its {tools} slot, empty when no shown tool is declared, so the measured question is then unchanged byte for byte). No contract text, no system turn and no instruction beyond the narrow question and its fixed choices is sent. The replay renders the same question with the same function (judge_agent.claim_tools from doc_judge.render_choice).",
+        "tools": "A tool is a Python step in the task's declared plan, run by Python and never chosen in free text: find_cells (the cell selection, shown as the CELLS block), locate_figures (where each figure the claim writes stands among the cells shown, read off the CELLS block) and check_quote (the judged paths' refusal, after the decision, never shown). Where a choice of tool is ever needed, the model chooses from a fixed declared list by its choice probabilities; today each task's tools are fixed by its contract and no such choice is asked. Each tool call is one record in <run>/audit/judge_tools.jsonl, with indexes, counts, the question's digest and the call id, never text.",
+        "who_calls": "Only the two narrow steps of phase 5.5, cell_selection.review and passage_pairs.review, through pipeline._judging_role: the registered agent whose contract declares the task takes it (judge_agent.role_for; no agent name in code), the pair task only when it is asked in the decision form; with no agent declaring a task the rule's subject chooses as before. Phase 6 reads the judge's records with the convention review's (judge_agent.judges).",
+        "refusals": "Boot refuses (judge_agent.refusals, from TopOrchestrator.boot): a task two agents declare, a tool Python does not run for its task, and a role whose contract declares checks: [ROLE] while it runs on ROLE's backend or model, or on a role the registry does not hold (D-S55 item 5: a checking role never runs on the model it checks).",
+        "marks": "Every record it supports stays a model's record (written_by model), carries the model-finding mark wherever it is shown, and is never promoted to an amendment (claim_not_met under INFRA-048, contradiction under INFRA-046 and INFRA-047). Every call writes its one reply record (REPLIES-A), which holds the decision and no reply text.",
+        "scope": "Extends governed inter-agent structure by append only: one agent and one contract are added. No seed law, existing amendment, agent, contract, relation, field or verdict is modified. Domain and case agnostic: no domain vocabulary in its question or code (check 174), its role in a run set by the operator's rule declarations alone. Gate check 331."
+      },
+      "reason": "D-S55 and D-S56 item 1: the judge must work as an agent, specific to its purpose and agnostic of domain and case, with its role, contract and model in config. Measured (J1, C1, D-294): a long agent prompt broke a capable model where a short narrow question on Python-selected evidence worked, so its agency is a declared role with a contract, fixed answers and Python's tools, not a long prompt or free tool use. Until now the two narrow questions rode PRACTICE_AUDITOR's label, so the trained judge had no role of its own to be trained, calibrated and tested as.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-08. Built on lane/judge-agent: the routing, tools, records and boot refusals at 13efac68 and b879e648, which change nothing while no contract declares a task; the registry and contract entries are applied with this amendment."
+    },
+    {
+      "id": "INFRA-050",
+      "created": "2026-11-08",
+      "kind": "producer_backend_roles_narrowed",
+      "title": "The extraction model's wide roles narrowed to one question per Python-selected unit or passage, with neutral fields and other-family editorial review (D-S57)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-08",
+        "by": "operator",
+        "words": "Evet, çıkarma yapan modeldeki geniş roller daraltılsın mı? Bütün belgeyi, bellek taşımaları, hatalar. Evet. Önerine uyuyorum. 3 için ekle.",
+        "asked": "The lead's English translation of the Turkish question 2 in FOR_SECKIN 2026-11-08 14:02: Shall the producer model's agents be narrowed (INFRA-050)? The wide roles on the producer model (legal analyst, citation resolver, institution finder, archivist, speech-act tagger) see the whole document at once; memory overflows and contract violations are on record. Each should answer one narrow question on a unit Python selects, the legal analyst's domain-specific fields should be replaced by neutral fields, and editorial observations should go to a rank from the other model family. The answer Ekle is enough. If you do not say so, these roles stay as they are; training is done for PROCESSOR only.",
+        "channel": "chat, answering FOR_SECKIN 2026-11-08 14:02 +0300",
+        "authorization": {
+          "date": "2026-11-08",
+          "by": "operator",
+          "words": "Evet, çıkarma yapan modeldeki geniş roller daraltılsın mı? Bütün belgeyi, bellek taşımaları, hatalar. Evet. Önerine uyuyorum. 3 için ekle.",
+          "recorded_in": "docs/loop/DECISIONS.md D-309",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path, after INFRA-049, and builds the narrowed roles; the contracts are frozen and recorded before any training data for them is built (D-S62 item 4)"
+        }
+      },
+      "change": {
+        "roles": "LEGAL_ANALYST, SPEECH_ACT_TAGGER, CITATION_RESOLVER, INST_FINDER and ARCHIVIST on local_producer each answer ONE narrow question per unit or passage that Python selects. The whole document and the convention registry no longer reach their prompts. A document's calls are as many as its selected units, each bounded by the unit's size. A unit Python selects nothing in makes no call, and the run records it as not called with its reason. The role-to-model map is unchanged by this amendment.",
+        "choice_form": "Where an answer is a judgement (D-S62 item 3), the model chooses from fixed answers by next-token probabilities, in one forward pass, with no free text (scripts/choice_decision.py). Its probabilities are saved on the reply record. The quote is Python echoing the passage it selected, never text the model wrote. These are LEGAL_ANALYST's verdict on whether a Python-selected passage supports a Python-selected claim, SPEECH_ACT_TAGGER's act, CITATION_RESOLVER's choice among the targets Python proposes (or none of them), and the editorial ranks' verdict.",
+        "extraction_form": "Where an answer is a span of the unit (INST_FINDER's name and role, ARCHIVIST's inventory element), the model returns the span. Python keeps it only when it is found verbatim in the unit (whitespace-normalised), and refuses it, recorded with its reason, otherwise. Dates and chronology stay Python's: they are read by the existing dating rule, which refuses rather than guesses.",
+        "python_decides_first": "CITATION_RESOLVER: a citation whose target is named structurally (a document id, a title or a file name of the corpus, matched as declared syntax) is resolved by Python with no call. Only a form with two or more candidates, or none, is asked. SPEECH_ACT_TAGGER: the utterances are split by Python on the document's own structure. The act set is OPERATOR-DECLARED in config, never in code, so a run with no declared set makes no call.",
+        "fields": "LEGAL_ANALYST's domain-named optional fields legal_basis, precedent_cited and regulatory_framework are removed from its contract in config/agent_contracts.json, and three neutral optional fields are added: passage_ref (the REF-* of the passage Python selected), support_probabilities (the choice's probabilities over the verdict values) and quote (Python's echo of the passage). The required fields stay claim_id, verdict and reasoning. On the choice form, verdict is the chosen value of GROUNDED, THIN, UNSUPPORTED or OUT_OF_SCOPE (its existing values) and reasoning is Python's sentence naming the decision and its probability. The agent's name is unchanged: it is a registry key. No field or relation of the Finding record is added, removed or changed.",
+        "editorial_routing": "An editorial observation is reviewed by a rank whose backend is in the OTHER model family from the finding it comments on, read from the finding's provenance (finding_record.written_by and the backend of the bus post that carried it). A Python finding may go to either family. When no rank of the other family exists in the run, the observation is not reviewed by a model and the record says so. The verdict is the choice of sound, concern or serious_concern, by probability. The ranks, their order and the escalation rule (INFRA-040, config/editorial_board.json) are otherwise unchanged.",
+        "marks": "Every answer stays a model's record (written_by model), carries the model-finding mark wherever it is shown, and is never promoted to an amendment.",
+        "freeze": "Each narrowed contract is frozen by digest and recorded in docs/loop/DECISIONS.md before any training data for it is built. A change after that starts a new training attempt (D-S62 item 4). Checkpoint 168's PROCESSOR prompt is unchanged byte for byte (EXTRACTION-A, check 263).",
+        "scope": "Extends governed inter-agent structure: the five roles' contracts, LEGAL_ANALYST's fields and the editorial routing. No seed law and no existing amendment is modified. PROCESSOR, the auditor backend's roles, AMENDMENT_DRAFTER (off by default; its polish pass is already narrow) and STYLE_GUARDIAN's paired judging calls (already narrow and Python-stamped) are outside it.",
+        "adoption": "The narrowed questions are declared in config/producer_questions.json. A role uses its narrowed form in a run only when that form is set to decision there and, for a choice, config/semantic_thresholds.json holds its family's measured threshold. Until then the role runs as shipped and the run records why. Adopting a form is a recorded decision after its measurement, as for the auditor backend's questions (config/auditor_questions.json)."
+      },
+      "reason": "The wide roles each read the whole document and the registry in one prompt. That ran out of GPU memory (INC-015, 8,323 tokens on one benchmark document), went over the model's context on FinDVer (declared exclusions), and gave contract violations (INC-015). Their outputs are summary-only model findings that no measurement rests on. Narrow questions with Python-selected evidence worked where the long prompt failed (J1, C1, D-294). LEGAL_ANALYST's field names named one domain, against D-S55 item 3. The editorial ranks on the extraction model reviewed findings written by the same model, against D-S55 item 5.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-08."
+    },
+    {
+      "id": "INFRA-051",
+      "created": "2026-11-08",
+      "kind": "finding_record_rule_not_met_relation",
+      "title": "A unit a model judges not to meet a rule where Python compared no figures, decided from the model's choice probabilities (RELATIONS-E)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-08",
+        "by": "operator",
+        "words": "Ekle tamam.",
+        "asked": "The lead's English translation of the Turkish question in FOR_SECKIN 2026-11-08 19:21: On units where Python finds no figures to compute, the auditor model will choose one fixed answer (Yes, No, Unclear) to the question whether this unit meets this rule, writing no text. No record type exists to write the answer No. Shall I add a relation named rule_not_met to the Finding record? Only a model writes it, it stays marked, it never becomes an amendment; its quote is what Python copies verbatim from the unit. The answer Ekle is enough; I record it as INFRA-051.",
+        "channel": "chat, answering FOR_SECKIN 2026-11-08 19:21 +0300",
+        "authorization": {
+          "date": "2026-11-08",
+          "by": "operator",
+          "words": "Ekle tamam.",
+          "recorded_in": "docs/loop/DECISIONS.md D-318 (Annex D D-S68)",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path"
+        }
+      },
+      "change": {
+        "relations_appended": "One relation is APPENDED at the END of finding_record.relations in config/agent_contracts.json (and the module's fallback copy in scripts/finding_record.py): rule_not_met. Nothing is inserted, renamed or removed: every existing relation keeps its position.",
+        "fields": "No field is added. quote holds Python's verbatim excerpt of the unit the question was asked on; the record carries the rule's id and the unit's id as every record does. text_screened is set by Python as on a contradiction.",
+        "relation_meaning": "rule_not_met: a model's settled answer No to the rule check (config/auditor_questions.json rule_check) on a unit where Python computed no figure comparison.",
+        "who_mints": "The rule-check step of the paired review alone, only for a settled No on a plan of kind uncomputable, decided from the model's choice probabilities over the fixed answers with no text written (choice_decision, D-S41), always record_verdict irregular. Yes and Unclear make no record. Nothing is asked until the rule check's form is adopted as decision and a threshold is measured for its family, so no record exists until then. On an absence_judged plan a settled No keeps writing missing_field as built, not this relation.",
+        "refusals": "Refused, each under its own reason: a record from any path but the rule-check step, so a model's reply on a judged path that writes the relation is refused; a plan that was not uncomputable; a record that is not irregular; a quote that is not text of the unit.",
+        "what_python_checks": "That the quote is the unit's own text and the plan was uncomputable. It never checks that the rule is not met: that is the model's decision and is marked so.",
+        "marks": "Stays a model's record (written_by model), carries the model-finding mark wherever it is shown, and is never promoted to an amendment.",
+        "scoring": "No scoring rule changes. The record reader counts the relation only with Python's mark, as it does a contradiction or a claim not met.",
+        "redaction": "quote is free text, scrubbed as INFRA-046's redaction sentence says, under the same condition on activating the layer (open item 86). The question is masked with the whole document as context.",
+        "scope": "Extends governed inter-agent structure by append only. No seed law, existing amendment, relation, field or verdict is modified."
+      },
+      "reason": "On plans where Python found no figures, the auditor model's generated answers mostly claimed arithmetic Python did not find (217 of 336 kept answers on the saved runs claim a sum mismatch). A narrow question answered from probabilities replaces that, and its settled No had no honest record: claim_not_met is bound to [compare: cells] and every other declared relation is figures, absence or two passages.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-08. The relation and its refusals are built on lane/auditor and land with that lane's merge."
     }
   ]
 }

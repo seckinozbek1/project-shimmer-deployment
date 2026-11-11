@@ -122,14 +122,25 @@ def resolve_rule(expected_rule, artifacts):
     return artifacts.get("bus_rule_pairs", {}).get(wanted)
 
 
+def _pair_rule_id(p):
+    """The rule id of one pairing-map list entry. `paired` and `rejected` hold
+    {rule_id, reason} objects; `undecided` holds bare rule ids
+    (pairing_map.pair_units), which a reader of objects alone never saw."""
+    if isinstance(p, dict):
+        rid = p.get("rule_id")
+        return rid if isinstance(rid, str) and rid else None
+    return p if isinstance(p, str) and p else None
+
+
 def _loaded_rule_ids(artifacts):
     ids = set((artifacts.get("assignment") or {}).get("by_rule") or {})
     for _doc, entry in (artifacts.get("pairing") or {}).items():
         for u in (entry.get("units") if isinstance(entry, dict) else None) or []:
             for k in ("paired", "rejected", "undecided"):
                 for p in u.get(k) or []:
-                    if isinstance(p, dict) and p.get("rule_id"):
-                        ids.add(p["rule_id"])
+                    rid = _pair_rule_id(p)
+                    if rid:
+                        ids.add(rid)
     return ids
 
 
@@ -142,7 +153,9 @@ def _pair_status(artifacts, unit_id, rule_id):
                 continue
             for k in ("paired", "rejected", "undecided"):
                 for p in u.get(k) or []:
-                    if isinstance(p, dict) and p.get("rule_id") == rule_id:
+                    if _pair_rule_id(p) == rule_id:
+                        if k == "undecided" and not isinstance(p, dict):
+                            return k, "the rule names no field label of the document"
                         return k, str(p.get("reason") or "")
     return "absent", ""
 

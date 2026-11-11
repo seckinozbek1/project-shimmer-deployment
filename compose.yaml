@@ -7,8 +7,8 @@
 #   docker compose --profile serve up      the HTTP server (tools/entrypoint.sh serve)
 #   docker compose --profile run run review   one review (tools/entrypoint.sh run)
 #
-# Build the image first (see the Dockerfile for BAKE_WEIGHTS):
-#   docker compose build
+# Build the image first (no service has a build section; see the Dockerfile for BAKE_WEIGHTS):
+#   docker build -t shimmer:local .
 #
 # `verify`, the entrypoint's default command, has no service here: it needs
 # no port, no mounts beyond what the image already carries, and no compose
@@ -22,7 +22,7 @@ x-shimmer-common: &shimmer-common
     # Set it in the shell before `docker compose up`, never in this file:
     #   export SHIMMER_TOKEN_HASH=<hash>          (macOS/Linux)
     #   $env:SHIMMER_TOKEN_HASH = "<hash>"         (Windows PowerShell)
-    - SHIMMER_TOKEN_HASH=${SHIMMER_TOKEN_HASH:?SHIMMER_TOKEN_HASH must be set (see README section I)}
+    - SHIMMER_TOKEN_HASH=${SHIMMER_TOKEN_HASH:?SHIMMER_TOKEN_HASH must be set (see docs/RUNTIME_REFERENCE.md, Server environment)}
   deploy:
     resources:
       reservations:

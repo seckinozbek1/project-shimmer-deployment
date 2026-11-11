@@ -1,0 +1,92 @@
+Proof output of lane/gate-attempts at 306f79cb (working tree clean).
+Each entry of scripts/system_test_checks.py below was run stage by stage (its own observe and check under its own
+neutralise), then through effect_proof.prove_effect itself. Synthetic fixtures only; no model, no key of a benchmark.
+Entries not found: none
+
+=== the declaration on the heading
+shipped     check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+neutralised check FAIL  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": [""], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": [""], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+restored    check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== only an admitted declaration
+shipped     check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+neutralised check FAIL  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "built", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+restored    check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== the gate's SciTab arm in SciTab's mode
+shipped     check PASS  observed {"contradoc": [["i-CONV-CDOC-01", "d-contradoc", "not contradictory", "not contradictory"]], "contradoc scored": 1, "outside the set": "ValueError: item i-CONV-CDOC-01 is not in the set file", "scitab": [["i-CONV-holds", "d-scitab", "supports", "supports"], ["i-CONV-silent", "d-scitab", "ABSTAIN", "refutes"], ["i-CONV-unsettled", "d-scitab", "not enough info", "not enough info"]], "scitab scored": 3}
+neutralised check FAIL  observed {"contradoc": [["i-CONV-CDOC-01", "d-contradoc", "not contradictory", "not contradictory"]], "contradoc scored": 1, "outside the set": "ValueError: item i-CONV-CDOC-01 is not in the set file", "scitab": [["i-CONV-holds", "d-scitab", "supports", "supports"], ["i-CONV-silent", "d-scitab", "supports", "refutes"], ["i-CONV-unsettled", "d-scitab", "supports", "not enough info"]], "scitab scored": 3}
+restored    check PASS  observed {"contradoc": [["i-CONV-CDOC-01", "d-contradoc", "not contradictory", "not contradictory"]], "contradoc scored": 1, "outside the set": "ValueError: item i-CONV-CDOC-01 is not in the set file", "scitab": [["i-CONV-holds", "d-scitab", "supports", "supports"], ["i-CONV-silent", "d-scitab", "ABSTAIN", "refutes"], ["i-CONV-unsettled", "d-scitab", "not enough info", "not enough info"]], "scitab scored": 3}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== the gate's arm inside its set
+shipped     check PASS  observed {"contradoc": [["i-CONV-CDOC-01", "d-contradoc", "not contradictory", "not contradictory"]], "contradoc scored": 1, "outside the set": "ValueError: item i-CONV-CDOC-01 is not in the set file", "scitab": [["i-CONV-holds", "d-scitab", "supports", "supports"], ["i-CONV-silent", "d-scitab", "ABSTAIN", "refutes"], ["i-CONV-unsettled", "d-scitab", "not enough info", "not enough info"]], "scitab scored": 3}
+neutralised check FAIL  observed "raised KeyError: 'i-CONV-CDOC-01'"
+restored    check PASS  observed {"contradoc": [["i-CONV-CDOC-01", "d-contradoc", "not contradictory", "not contradictory"]], "contradoc scored": 1, "outside the set": "ValueError: item i-CONV-CDOC-01 is not in the set file", "scitab": [["i-CONV-holds", "d-scitab", "supports", "supports"], ["i-CONV-silent", "d-scitab", "ABSTAIN", "refutes"], ["i-CONV-unsettled", "d-scitab", "not enough info", "not enough info"]], "scitab scored": 3}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== SciTab's rows under detection_dev
+shipped     check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+neutralised check FAIL  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "CLEAR", "i-CONV-unsettled": "CLEAR"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+restored    check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== ContraDoc's rows under v2_primary
+shipped     check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+neutralised check FAIL  observed {"contradoc": {"i-CONV-CDOC-01": "ABSTAIN"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+restored    check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== no mode guessed
+shipped     check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+neutralised check FAIL  observed "raised KeyError: 'cuad'"
+restored    check PASS  observed {"contradoc": {"i-CONV-CDOC-01": "CLEAR"}, "default": ["contradoc"], "scitab": {"i-CONV-holds": "CLEAR", "i-CONV-silent": "ABSTAIN", "i-CONV-unsettled": "UNDECIDED"}, "undeclared": "ValueError: no scoring mode is declared for the system's labels on 'cuad'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== the cut from the as-shipped rules
+shipped     check PASS  observed {"contradoc": {"documents cut": true, "only the rules files differ": true, "parts.json identical": true, "same files": true, "the cut applied to every document": true}, "scitab": {"documents cut": true, "only the rules files differ": true, "parts.json identical": true, "same files": true, "the cut applied to every document": true}}
+neutralised check FAIL  observed {"contradoc": {"documents cut": true, "only the rules files differ": false, "parts.json identical": false, "same files": true, "the cut applied to every document": true}, "scitab": {"documents cut": false, "only the rules files differ": false, "parts.json identical": false, "same files": true, "the cut applied to every document": true}}
+restored    check PASS  observed {"contradoc": {"documents cut": true, "only the rules files differ": true, "parts.json identical": true, "same files": true, "the cut applied to every document": true}, "scitab": {"documents cut": true, "only the rules files differ": true, "parts.json identical": true, "same files": true, "the cut applied to every document": true}}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== each benchmark its own declaration
+shipped     check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+neutralised check FAIL  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "built", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "built"}
+restored    check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== the claim alone under the cells declaration
+shipped     check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+neutralised check FAIL  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": false, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+restored    check PASS  observed {"admitted": ["compare: passages", "compare: cells"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)", "as shipped": [""], "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'", "declared": ["passages"], "scitab as shipped": [""], "scitab claim alone": true, "scitab declared": ["cells"], "scitab items, keys and parts unchanged": true, "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== the declaration on the heading
+shipped     check PASS  observed {"a B1 entry": "ValueError: a batch entry that is not a ContraDoc B3 entry: 99_contradoc_000000000000_B3", "another build's workload": "a batch entry's workload is not the declared build's bundle", "good": true, "no declaration": "the declared build's rule does not carry [compare", "one too many": "ValueError: the batch's entries are not the fresh documents", "the declaration in the text alone": "the declared build's rule does not carry [compare"}
+neutralised check FAIL  observed {"a B1 entry": "ValueError: a batch entry that is not a ContraDoc B3 entry: 99_contradoc_000000000000_B3", "another build's workload": "a batch entry's workload is not the declared build's bundle", "good": true, "no declaration": "the declared build's rule does not carry [compare", "one too many": "ValueError: the batch's entries are not the fresh documents", "the declaration in the text alone": "a batch entry's workload is not the declared build's bundle"}
+restored    check PASS  observed {"a B1 entry": "ValueError: a batch entry that is not a ContraDoc B3 entry: 99_contradoc_000000000000_B3", "another build's workload": "a batch entry's workload is not the declared build's bundle", "good": true, "no declaration": "the declared build's rule does not carry [compare", "one too many": "ValueError: the batch's entries are not the fresh documents", "the declaration in the text alone": "the declared build's rule does not carry [compare"}
+observation changed under the neutralisation: True; restored equals shipped: True
+prove_effect: PROVEN
+
+=== adapter checks, DetectionDevChecks.test_a_cell_decision_is_read_from_the_pairing_map
+(its _proof helper asserts: shipped body() == [], neutralised body() != [], restored body() == [], for
+ cell_claims read as none, cell_state read as always holding, and cell_not_met read as none)
+test_a_cell_decision_is_read_from_the_pairing_map (adapter_checks.DetectionDevChecks.test_a_cell_decision_is_read_from_the_pairing_map) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.412s
+
+OK
+adapter checks, detection group: ('PASS', "11 cases: the development scoring detection_dev (D

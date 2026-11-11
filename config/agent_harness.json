@@ -5,7 +5,7 @@
     "constitution_by_default": {
       "decided": true,
       "summary": "Every structured agent task checks the constitution before dispatch. Draft memo generation has a separate free-text path after startup governance.",
-      "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls call_claude directly, bypassing run_task."
+      "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls dispatch directly on the drafter's own backend, bypassing run_task."
     },
     "receive_format": {
       "decided": true,
@@ -62,7 +62,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -125,7 +125,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -149,6 +149,71 @@
         "finding",
         "severity",
         "reasoning"
+      ]
+    },
+    "JUDGE": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Answer one narrow question with fixed choices from its own answer probabilities: whether the cells Python selected meet a claim, whether two passages contradict each other",
+          "Take only the tasks its contract declares, wherever an operator's rule declares one"
+        ],
+        "does_not": [
+          "Write text",
+          "Choose its evidence or its tools (Python selects the evidence and runs every declared tool)",
+          "Do arithmetic",
+          "Search the web"
+        ],
+        "category": "verification",
+        "backend": "local_auditor",
+        "model": "unsloth/phi-4-bnb-4bit",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.JUDGE"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.JUDGE.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[JUDGE] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "Takes a rule by the task its heading declares ([compare: cells], [compare: passages]), never by subject (INFRA-049, D-S55). An empty list rather than a subject that would route rules it does not read."
+      },
+      "testing_against_cluster": {
+        "decided": true,
+        "summary": "Checks verify how rules are assigned and which reviewer is called. A separate tool can try this agent on a passage and a rule you choose. No test of this agent's entire assigned rule group is recorded. This agent has no rule group by design.",
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
+        "summary": "Answers one narrow question, from its own answer probabilities, wherever a rule declares a task its contract takes (a claim against a table's cells, two passages that may contradict). Python chooses what it is shown and runs its declared tools. A rule that declares no such task never reaches it.",
+        "condition": "Phase 5.5, paired mode: once per selected table for a rule declaring [compare: cells], and once per pair order for a rule declaring [compare: passages] when the pair step asks in the decision form; nothing is asked until a threshold is measured for the task. The agent whose contract declares the task takes it; with none declaring it the rule's subject chooses, as before.",
+        "where": "scripts/judge_agent.py: role_for, declared_tools, claim_tools; scripts/pipeline.py: _judging_role, _cell_claim_review and _passage_pair_review; tool records in <run>/audit/judge_tools.jsonl. Gate check 331 (scripts/judge_agent_checks.py)."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "decision",
+      "contract_required_fields": [
+        "decided",
+        "settled",
+        "confidence",
+        "answers",
+        "declared_mass"
       ]
     },
     "FACT_CHECKER": {
@@ -190,7 +255,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -254,7 +319,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -320,7 +385,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -383,7 +448,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -448,7 +513,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -505,7 +570,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -516,9 +581,9 @@
       "fires_at_all": {
         "decided": true,
         "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
-        "summary": "Runs whenever its scheduled stage has work to process.",
-        "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
+        "summary": "Runs once per review in its scheduled stage, unless you switch it off for the run with the SHIMMER_INST_FINDER setting, which is honoured only after you ratify the amendment that allows it. A switched-off run records it as not called, with the reason.",
+        "condition": "Once in phase 3-4 as a corpus-level production agent, unless SHIMMER_INST_FINDER=off and config/constitution.json holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER; then it is not dispatched and is recorded as not called (state switched_off, reason 'switched off by operator setting'). Without that amendment a run with the setting off refuses to start. Any other value, or none, keeps it on.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_CORPUS_LEVEL (it stays in the list), _inst_finder_switch, _inst_finder_startup_guard (main) and the corpus loop of phase_3_4_content_production; the setting is saved in <run>/audit/agent_switches.json. Gate check 277 (scripts/inst_finder_switch_checks.py)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -565,7 +630,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -624,7 +689,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -683,7 +748,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -746,7 +811,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -758,7 +823,7 @@
         "decided": true,
         "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Amendments are normally built directly from computed findings. This agent is asked to polish the wording only when you enable that option and no fresh amendment reply is already available for the document.",
-        "condition": "A fresh bus amendment payload bypasses polishing. Otherwise --amendment-polish enables one narrow call per typed irregular finding, not one call per document. Empty, untyped and non-irregular findings make no call. Failure retains the original finding. The deterministic template builds amendments either way. Separately, Draft task mode uses this identity for one free-text memo through the direct Claude call path before review.",
+        "condition": "A fresh bus amendment payload bypasses polishing. Otherwise --amendment-polish enables one narrow call per typed irregular finding, not one call per document. Empty, untyped and non-irregular findings make no call. Failure retains the original finding. The deterministic template builds amendments either way. Separately, Draft task mode uses this identity for one free-text memo through a direct call on its own backend before review.",
         "where": "scripts/pipeline.py: phase_6_synthesis, _polish_findings, main's Draft branch and _draft_generate_with_evidence."
       },
       "refire_condition_and_limit": {
@@ -812,7 +877,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -875,7 +940,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -938,7 +1003,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -1001,7 +1066,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -1064,7 +1129,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"
@@ -1127,7 +1192,7 @@
       },
       "ontology": {
         "decided": false,
-        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
+        "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, the graph rebuild and console/API readers exist; the GNN is trained only by its own command on declared training sets, never by a run. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented."
       },
       "receive_format": {
         "see": "shared_parts.receive_format"

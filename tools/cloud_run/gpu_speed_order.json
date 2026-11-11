@@ -1,0 +1,12 @@
+{
+  "schema": "gpu-speed-order-v2",
+  "note": "D-S79, D-S95, D-382: the GPU models a sealed step may take, fastest first, as the token the provider's GPU description opens with (loop_budget_guard.gpu_token): the A10 and one and two tiers above it, in the provider's published generations, not a measurement on Shimmer's own work. A type whose GPU is not listed is never chosen by default; one can still be named with --instance-types. GH200 is offered on arm64, which the sealed x86_64 wheels exclude. `measured` is keyed by MACHINE TYPE (gpu_1x_h100_pcie, not H100); each entry is factor_record.measured_entry of a machine_effect result on the D-S82 reference set run on that type and on the A10 at one commit (its time factor, the reference set, the result and its digest), checked at sealing by factor_record.check_measured; a result that moved a score is refused. A run leaves the A10 only for a type with an entry (loop_budget_guard.measured_tiers), ranked by its factor with the A10 at 1.0. Read at sealing and sealed into the manifest's candidates; not pinned; every change to this file is recorded in DECISIONS.",
+  "order": [
+    "B200",
+    "H100",
+    "GH200",
+    "A100",
+    "A10"
+  ],
+  "measured": {}
+}

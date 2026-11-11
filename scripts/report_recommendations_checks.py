@@ -169,6 +169,20 @@ class RecommendationChecks(unittest.TestCase):
         for changes in [dict(conditional_on=["declared condition"]),dict(ref_id=""),dict(computed=float("nan")),dict(relation="missing_field")]:
             self.assertFalse(waves.exact_comparison_plan(dict(plan,checks=[dict(check,**changes)])))
 
+    def test_exact_comparison_admits_the_four_relations(self):
+        # Open item 78 (D-S57 item 1): a disagreeing rate, copy, carry or unit check, computed by
+        # Python to a figure on both sides and cited, makes no judging call.
+        import relation_checks
+        for relation in (relation_checks.RATE,relation_checks.COPY,relation_checks.CARRY,relation_checks.UNIT):
+            check=dict(relation=relation,agrees=False,computed=12.5,computed_unit="%",stated=14,
+                       stated_unit="%",basis="declared comparison",ref_ids=["REF-0002"])
+            self.assertTrue(waves.exact_comparison_plan(dict(kind="computed",checks=[check])),relation)
+            for changes in [dict(conditional_on=["declared condition"]),dict(ref_ids=[]),dict(stated="fourteen"),dict(basis="")]:
+                self.assertFalse(waves.exact_comparison_plan(dict(kind="computed",checks=[dict(check,**changes)])),(relation,changes))
+        # A relation Python does not compute to a figure still asks.
+        check=dict(relation="contradiction",agrees=False,computed=1,stated=2,basis="b",ref_ids=["REF-0002"])
+        self.assertFalse(waves.exact_comparison_plan(dict(kind="computed",checks=[check])))
+
     def test_exact_comparison_live_branch_emits_record_without_dispatch(self):
         import paired_review
         tree=ast.parse((ROOT/"scripts/pipeline.py").read_text(encoding="utf-8"))
@@ -182,7 +196,7 @@ class RecommendationChecks(unittest.TestCase):
         records={}; events=[]
         scope=dict(semantic_waves=waves,paired_review_mod=paired_review,plan=dict(kind="band",checks=[check]),
                    checks=[check],unit={"unit_id":"u01-fixture"},rule={"id":"CONV-1234"},agent="PRACTICE_AUDITOR",
-                   computed_items_by_agent=records,source_rule_id="fixture-rule",refs=["REF-1234"],
+                   computed_items_by_agent=records,source_rule_id="fixture-rule",refs=["REF-1234"],finding_refs=["REF-1234"],
                    agent_activation=SimpleNamespace(not_called=lambda *a,**k:events.append(k)),
                    orch=SimpleNamespace(run_context=self.ctx),doc={"id":"fixture"},plan_index=0)
         with patch.object(waves,"enabled",return_value=True):exec(compile(ast.fix_missing_locations(tree),"live_exact_branch","exec"),scope)

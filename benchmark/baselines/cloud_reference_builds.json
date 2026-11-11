@@ -1,0 +1,4 @@
+{
+ "note": "The builds a paid B1-layout cloud reference run may read (D-388, D-401 items 8 and 9): role B's build record named, items.json and parts.json digests, the side role B recorded, and the sha256 of every bundle file the run reads (benchmark/baselines/cloud_reference_b1.py record-build prints an entry). An entry is added only by a recorded edit; a build not listed is refused. Never the fresh set or sealed test material.",
+ "builds": []
+}

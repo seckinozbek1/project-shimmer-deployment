@@ -22,7 +22,7 @@ from email.parser import BytesParser
 from pathlib import Path
 
 from cloud_run_common import (InvalidPreparation, credential_locations, digest,
-    extract_source, json_bytes, require, safe_name, write_json)
+    extract_source, json_bytes, no_window, require, safe_name, write_json)
 from cloud_run_watchdog import operator_preflight
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -42,16 +42,17 @@ ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense', '--review
 def git(root, *args):
     # The staged scan is mandatory BEFORE every git operation, including reads.
     scan = subprocess.run(['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMRT', '-z'],
-                          cwd=root, capture_output=True, check=True)
+                          cwd=root, capture_output=True, check=True, creationflags=no_window())
     for name in scan.stdout.decode('utf-8').split('\0'):
         if not name:
             continue
         staged = subprocess.run(['git', 'show', ':' + name], cwd=root,
-                                capture_output=True, check=True)
+                                capture_output=True, check=True, creationflags=no_window())
         hits = credential_locations(staged.stdout, name)
         require(not hits, 'possible staged credential: ' + name +
                 (':' + str(hits[0]['line']) if hits else '') + '; stop without printing values')
-    result = subprocess.run(['git', *args], cwd=root, capture_output=True, check=True, timeout=30)
+    result = subprocess.run(['git', *args], cwd=root, capture_output=True, check=True, timeout=30,
+                            creationflags=no_window())
     return result.stdout
 
 
@@ -78,7 +79,7 @@ def source_files(root, expected):
         include = (name.startswith(('scripts/', 'config/', 'corpus_ingest/')) or
                    name.startswith('benchmark/corpora/clinical_reference/') or
                    name in ('requirements.txt', 'genesis.md', 'tools/run_local_demo.py', 'tools/score_corpus.py'))
-        if name.endswith('_checks.py') or name.startswith('scripts/verify_') or '/fixtures/' in name:
+        if gate_check_file(name):
             include = False
         if include:
             hits = credential_locations(original, name)
@@ -101,8 +102,16 @@ def source_files(root, expected):
     return files, status
 
 
-def behavioral_proof(files, directory):
-    """Exercise the real parser/decorator with an inert body; never pipeline.main."""
+def behavioral_proof(files, directory, multi_round_declared=False):
+    """Exercise the real parser/decorator with an inert body; never pipeline.main.
+
+    Multi-round is no longer refused as such: every multi-round state below must EQUAL the
+    sealed declaration. This path seals `dependency_dag`, and the topology rule keeps
+    multi-round to `reference_serial` (D-011 choice 3), so a declaration here can never be
+    valid and is refused as such; the ordinary final path is where one is sealed."""
+    require(multi_round_declared in (False, True), 'multi-round declaration must be explicit')
+    require(not multi_round_declared, 'multi-round is sealed only on the ordinary final path with reference_serial '
+            '(D-011 choice 3); this path seals dependency_dag')
     scripts = directory / 'scripts'
     scripts.mkdir(parents=True)
     for name in ('agent_activation', 'execution_topology', 'execution_scheduler'):
@@ -126,16 +135,24 @@ def behavioral_proof(files, directory):
         args = scope['_build_arg_parser']().parse_args(argv)
         require(args.task == 'review' and args.mode == 'standalone', 'wrong workload entry')
         require(args.execution_topology == 'dependency_dag', 'serial selected')
-        require(not args.multi_round and args.multi_round_manifest is None, 'multi-round active')
+        require(bool(args.multi_round) == multi_round_declared
+                and (args.multi_round_manifest is not None) == multi_round_declared,
+                'multi-round flags differ from the sealed declaration')
         require((args.agent_briefs, args.input_language, args.output_language) == ('enabled', 'auto', 'en'), 'run options changed')
         guards = []
+        flags_guard = 'args.multi_round or args.multi_round_manifest'
         for node in main.body:
             if isinstance(node, ast.If) and ast.unparse(node.test) in (
-                    'args.multi_round or args.multi_round_manifest', 'multi_manifest is not None', 'multi_record is not None'):
+                    flags_guard, 'multi_manifest is not None', 'multi_record is not None'):
                 taken = bool(eval(compile(ast.Expression(node.test), 'guard', 'eval'),
                                   {'args': args, 'multi_manifest': None, 'multi_record': None}))
-                require(not taken, 'multi-round guard active')
+                # The flags branch is taken exactly when multi-round is declared; the other
+                # two read run-time values that do not exist at sealing.
+                require(taken == (multi_round_declared and ast.unparse(node.test) == flags_guard),
+                        'multi-round guard state differs from the sealed declaration')
                 guards.append({'line': node.lineno, 'expression': ast.unparse(node.test), 'taken': taken})
+        # Still exactly three top-level branches: the count is the pipeline's structure,
+        # unchanged by S2 (the final-mode admission sits inside an existing block).
         require(len(guards) == 3, 'multi-round guard contract drift')
         # Only the cache-presence dependency is stubbed, not the actual decorator.
         sys.modules['agent_wrapper'] = types.SimpleNamespace(_QWEN_MODELS={})
@@ -149,6 +166,8 @@ def behavioral_proof(files, directory):
             return 0
         probe.__globals__['_build_arg_parser'] = scope['_build_arg_parser']
         require(topology.entrypoint(probe)(argv) == 0 and topology.ACTIVE.get() is None, 'DAG cleanup failed')
+        # Under this sealed topology the DAG entry itself refuses Draft and multi-round; that
+        # is the topology rule D-011 keeps, not a controller refusal.
         for forbidden in (['--task', 'draft'], ['--multi-round']):
             bad = argv + forbidden
             with __import__('contextlib').redirect_stderr(io.StringIO()):
@@ -162,7 +181,8 @@ def behavioral_proof(files, directory):
         for marker in ('rolling_bus_visibility_and_governance_order', 'prior_phase_results_bus_and_governance_must_be_complete',
                        'execution_topology.jsonl', 'generation_start', 'model_resident'):
             require(marker in topology_source, 'missing telemetry/dependency: ' + marker)
-        return {**observed, 'guards': guards, 'multi_round_inactive': True, 'draft_rejected': True,
+        return {**observed, 'guards': guards, 'multi_round_inactive': not multi_round_declared,
+                'multi_round_declared': multi_round_declared, 'draft_rejected': True,
                 'semantic_edges_preserved': True, 'scheduler_telemetry': True,
                 'actual_parallelism_measured': False, 'options': vars(args)}
     finally:
@@ -283,6 +303,21 @@ def model_manifest(cache, revisions):
     return result
 
 
+# Runtime modules whose file names end in `_checks.py` although the pipeline imports them at
+# run time: they compute, they are not gate checks (RELATIONS-A, INFRA-045 names
+# scripts/relation_checks.py, so the name stays). Each travels in every source archive;
+# tools/cloud_run_checks.py fails if a runtime module imports a file this rule would drop.
+RUNTIME_MODULES_NAMED_LIKE_CHECKS = ('scripts/relation_checks.py',)
+
+
+def gate_check_file(name):
+    """Whether a tracked file is gate or fixture material that never travels in a source
+    archive: a `*_checks.py` file (apart from the declared runtime modules), the verify
+    gate, or anything under a fixtures folder."""
+    return ((name.endswith('_checks.py') and name not in RUNTIME_MODULES_NAMED_LIKE_CHECKS)
+            or name.startswith('scripts/verify_') or '/fixtures/' in name)
+
+
 def make_source(files, path):
     with Path(path).open('wb') as raw, gzip.GzipFile(filename='', fileobj=raw, mode='wb', mtime=0) as gz:
         with tarfile.open(fileobj=gz, mode='w', format=tarfile.USTAR_FORMAT) as tar:
@@ -303,7 +338,7 @@ def prepare(args):
     assert_current()
     require(re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', args.experiment_id), 'invalid experiment ID')
     from cloud_run_common import budget_deadlines
-    budget_deadlines(args.hourly_rate, 1)
+    budget_deadlines(args.hourly_rate, 1, soft_usd=args.soft_usd, hard_usd=args.hard_usd)
     destination = Path(args.output).resolve() / args.experiment_id
     require(not destination.exists(), 'experiment destination exists; never overwrite evidence')
     destination.mkdir(parents=True)
@@ -354,7 +389,7 @@ def prepare(args):
     write_json(destination / 'runtime.json', RUNTIME)
     write_json(destination / 'experiment.json', {'experiment_id': args.experiment_id, 'source_commit': args.expected_commit,
         'workload': 'clinical_reference', 'classification': 'PREPARED / NOT RUN', 'max_runs': 1,
-        'hourly_rate_usd': args.hourly_rate, 'soft_budget_usd': 5, 'absolute_budget_usd': 10,
+        'hourly_rate_usd': args.hourly_rate, 'soft_budget_usd': args.soft_usd, 'absolute_budget_usd': args.hard_usd,
         'termination_reserve_seconds': 120, 'billing_includes_setup_and_collection': True,
         'model_delivery': 'concurrent fixed hub downloads; locally converted BGE safetensors bundled',
         'target_instance_class': RUNTIME['instance_class']})
@@ -422,7 +457,8 @@ def prepare(args):
         'teardown_required': ['instance_id', 'termination_requested_utc', 'termination_verified_utc', 'status', 'hourly_rate'],
         'completion_requires': 'exit zero, one finished run, scoring, collected hashes, provider termination verified'})
     def tests():
-        result = subprocess.run([sys.executable, str(ROOT / 'tools/cloud_run_checks.py'), '--json'], cwd=ROOT, capture_output=True)
+        result = subprocess.run([sys.executable, str(ROOT / 'tools/cloud_run_checks.py'), '--json'], cwd=ROOT, capture_output=True,
+                                creationflags=no_window())
         require(result.returncode == 0, 'offline preparation/deployment tests failed (run tools/cloud_run_checks.py for counts)')
         value = json.loads(result.stdout)
         require(value['passed'] and value['tests_run'] > 0, 'invalid test report')
@@ -460,12 +496,16 @@ def main(argv=None):
     selected = resolve(root=ROOT)
     if os.path.normcase(os.path.abspath(sys.executable)) != os.path.normcase(selected['executable']):
         # Sealing parses repository ASTs in-process, so bootstrap must hand off too.
+        # A foreground re-exec writes to the operator's console, so it keeps it (D-079).
         return subprocess.run([selected['executable'], '-B', str(Path(__file__).absolute()),
-                               *(sys.argv[1:] if argv is None else argv)], check=False).returncode
+                               *(sys.argv[1:] if argv is None else argv)], check=False,
+                              creationflags=no_window(keep_console=True)).returncode
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--experiment-id', required=True)
     parser.add_argument('--expected-commit', required=True)
     parser.add_argument('--hourly-rate', type=float, required=True)
+    parser.add_argument('--soft-usd', type=float, required=True, help='the experiment soft cap, sealed into experiment.json')
+    parser.add_argument('--hard-usd', type=float, required=True, help='the experiment hard cap, sealed into experiment.json')
     parser.add_argument('--credential-file', type=Path, help='Optional local private Python config; only loaded status is retained')
     parser.add_argument('--identity-file', type=Path, required=True, help='Local prepared SSH identity; never included in the bundle')
     parser.add_argument('--model-cache', default=str(Path.home() / '.cache/huggingface/hub'))

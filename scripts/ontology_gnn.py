@@ -2,14 +2,15 @@
 
 SCOPE HONESTY (read this before reasoning about what the gate proves):
   v1 proves the GNN runs ONE forward pass + ONE backprop over the new-delta nodes WITHOUT ERROR on
-  the seeded Tier-1 graph, that the weights move, and that state persists incrementally. It does NOT
-  prove LEARNING. The learning signal is Tier 2 (DeltaProposal recurrence, Finding recurrence,
-  VerificationVerdict, Precedent-Principle), which is EMPTY until task flow populates it. So this
-  engine demonstrates that the machinery executes a clean fwd/backward cycle and persists -- not that
-  anything was learned. The gate-check names say "MACHINERY not learning" for the same reason.
+  a declared training set's graph, that the weights move, and that state persists incrementally. It
+  does NOT prove LEARNING. It has no Tier-2 signal: the self-supervised reconstruction below is all
+  it fits, and run outputs are never its signal (D-S112 item 1). So this engine demonstrates that the
+  machinery executes a clean fwd/backward cycle and persists -- not that anything was learned. The
+  gate-check names say "MACHINERY not learning" for the same reason.
 
 WHAT IT DOES
-  - Loads ontology/stores/graph.json (Tier-1, build B2) into a node feature matrix X built ONLY from
+  - Loads a DECLARED training set's graph (never ontology/stores/, see below) into a node feature
+    matrix X built ONLY from
     the approved SAFE allowlist (node-type one-hot incl a stub-Document bucket, degree, stub/incomplete
     flags, and the per-type SAFE categoricals/counts). Categoricals are turned into features by
     DETERMINISTIC feature hashing (hashlib.sha256, NOT Python's salted hash()) into K fixed buckets, so
@@ -17,15 +18,16 @@ WHAT IT DOES
     the persisted weight matrix stay valid for incremental updates.
   - Builds a symmetric (undirected) normalized adjacency A_hat = D^-1/2 (A + I) D^-1/2 from the
     edge-list. The self-loop (A + I) means a zero-edge graph degrades to A_hat = I, so the forward pass
-    is well-defined even on the near-empty current graph (the stores are 0 bytes today).
+    is well-defined even on a near-empty graph.
   - Model: a minimal message-passing graph AUTOENCODER (one graph-conv layer + a linear decoder):
         Z = A_hat . X ; H = relu(Z We) ; X_hat = H Wd ; loss = MSE(X_hat, X)
     Self-supervised: the reconstruction target is the input itself, so there are NO labels and NO
     Tier-2 signal -- honest for an empty-Tier-2 graph.
   - DELTA-ONLY BACKPROP: the forward pass runs over the FULL graph (neighborhood context), but the
     loss/gradient is summed ONLY over the rows of nodes NEW since the last high-water mark; non-delta
-    rows contribute zero gradient. First run (no prior state): delta = the whole seeded graph. State
-    (weights + the trained-node-id high-water mark + metadata) persists to ontology/stores/gnn_state.json.
+    rows contribute zero gradient. First call (no prior state): delta = the whole declared graph. State
+    (weights, the trained-node-id high-water mark, the chain of training sets, metadata) persists to the
+    state file the caller names.
 
 PAYLOAD-FREE (BUILD INVARIANT)
   Features derive ONLY from SAFE fields. The builder reads a HARDCODED SAFE allowlist and never
@@ -33,6 +35,16 @@ PAYLOAD-FREE (BUILD INVARIANT)
   holds weights + structural metadata (node ids, dims, counts) only -- zero raw content. If a provision
   arrives with masked text ([REDACTED:...]) it simply never enters X or the state, because the builder
   does not read those fields at all.
+
+TRAINED BY ITS OWN TRAINING ONLY (D-S112 item 1, D-417)
+  The GNN never learns from runs. No run calls `gnn_update` (gate check 64 holds that). It is
+  trained only by its own command, `python scripts/ontology_gnn.py train --training-set <file>
+  --state <file>`, on a DECLARED training set: a JSON declaration (`declare_training_set`) naming
+  one graph file by path and SHA-256 and stating that the material is domain- and case-agnostic,
+  made for training. A declaration whose graph is the run-captured store (ontology/stores/), whose
+  digest does not match, or which does not state both properties is refused before any weight moves.
+  Training further on one user's own material is a later, opt-in path (D-S112 item 1; a loose end
+  until the deployment form is decided), never this command run by itself.
 
 DEPENDENCY / DEVICE
   torch (declared + pinned in requirements.txt). GPU is OPTIONAL and warn-not-fail: device = cuda if
@@ -43,8 +55,10 @@ DEPENDENCY / DEVICE
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +67,9 @@ import torch.nn as nn
 
 ROOT = Path(__file__).resolve().parent.parent
 OGE_STORES_DIR = ROOT / "ontology" / "stores"
+# What runs write besides the store: durable/ (learnings, governance, cache). A graph built from a
+# source under either is the run store's (D-446).
+DURABLE_DIR = ROOT / "durable"
 DEFAULT_GRAPH_PATH = OGE_STORES_DIR / "graph.json"
 DEFAULT_STATE_PATH = OGE_STORES_DIR / "gnn_state.json"
 
@@ -74,6 +91,105 @@ RAW_FIELDS = frozenset({
 HASH_BUCKETS = 16            # fixed categorical-hash width -> F constant across runs
 NUMERIC_FIELDS = ("degree", "stub", "incomplete", "context_refs_count", "sample_count", "evidence_count")
 FEATURE_DIM = len(NODE_TYPE_VOCAB) + HASH_BUCKETS + len(NUMERIC_FIELDS)  # F (constant)
+
+TRAINING_SET_KIND = "gnn-training-set-v1"
+
+
+class TrainingSetRefused(ValueError):
+    """A training set that is not declared, not agnostic, not the declared bytes, or the run store."""
+
+
+def _sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+# What the tool can and cannot check (D-432 item 2): it checks the declaration's form, the graph's
+# bytes against its digest, and that the graph is not the run store's (by digest, against every
+# file of ontology/stores/, and by the build provenance ontology_graph writes). Whether the material
+# is domain- and case-agnostic is the declaring person's statement, made by their own arguments and
+# recorded with their name; the tool never writes it and cannot verify it.
+AGNOSTIC_LIMIT = ("domain- and case-agnostic as stated by the person who declared it; the tool checks "
+                  "the form, the digest and that the graph is not the run store's, not the material")
+
+
+def declare_training_set(path, graph_path, name, material, *, domain_agnostic, case_agnostic, declared_by):
+    """Write the declaration of a training set: one graph file, by path relative to the
+    declaration and SHA-256, what it is, and the declaring person's own statement that it is
+    domain- and case-agnostic (each passed by them, never defaulted). Returns the declaration."""
+    if domain_agnostic is not True or case_agnostic is not True:
+        raise TrainingSetRefused("the declaring person states both domain- and case-agnostic, or nothing is declared")
+    if not (isinstance(declared_by, str) and declared_by.strip()):
+        raise TrainingSetRefused("a declaration names who declares it")
+    path, graph_path = Path(path), Path(graph_path)
+    declaration = {"kind": TRAINING_SET_KIND, "name": name, "material": material,
+                   "domain_agnostic": domain_agnostic, "case_agnostic": case_agnostic,
+                   "declared_by": declared_by.strip(), "limit": AGNOSTIC_LIMIT,
+                   "graph": Path(graph_path.resolve().relative_to(path.resolve().parent)).as_posix()
+                   if graph_path.resolve().is_relative_to(path.resolve().parent) else str(graph_path.resolve()),
+                   "graph_sha256": _sha(graph_path)}
+    path.write_text(json.dumps(declaration, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return declaration
+
+
+def load_training_set(path):
+    """(declaration, graph path) of a declared training set, or TrainingSetRefused."""
+    path = Path(path)
+    try:
+        declaration = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise TrainingSetRefused("the training set declaration cannot be read")
+    if not isinstance(declaration, dict) or declaration.get("kind") != TRAINING_SET_KIND:
+        raise TrainingSetRefused("not a %s declaration" % TRAINING_SET_KIND)
+    if declaration.get("domain_agnostic") is not True or declaration.get("case_agnostic") is not True:
+        raise TrainingSetRefused("the declaration does not state domain- and case-agnostic material")
+    if not declaration.get("name"):
+        raise TrainingSetRefused("the declaration names no training set")
+    if not declaration.get("material"):
+        raise TrainingSetRefused("the declaration names no material")
+    if not (isinstance(declaration.get("declared_by"), str) and declaration["declared_by"].strip()):
+        raise TrainingSetRefused("the declaration names no one who declared it")
+    graph = Path(declaration.get("graph") or "")
+    graph = (graph if graph.is_absolute() else path.parent / graph).resolve()
+    if graph.is_relative_to(OGE_STORES_DIR.resolve()):
+        raise TrainingSetRefused("the run-captured store is never a training set (D-S112 item 1)")
+    if not graph.is_file() or _sha(graph) != declaration.get("graph_sha256"):
+        raise TrainingSetRefused("the declared graph is missing or is not the declared bytes")
+    refused = run_store_content(graph)
+    if refused:
+        raise TrainingSetRefused(refused)
+    return declaration, graph
+
+
+def run_store_content(graph_path):
+    """The reason a graph is the run store's by content, or None: its bytes equal a file of
+    ontology/stores/, or ontology_graph's build provenance says a source was the repository's own
+    store. A graph copied from the store and then edited, or built by other code from it, is not
+    caught: that limit is stated in AGNOSTIC_LIMIT's neighbour, here."""
+    digest = _sha(graph_path)
+    stores = OGE_STORES_DIR.resolve()
+    if stores.is_dir():
+        for stored in sorted(stores.rglob("*")):
+            if stored.is_file() and _sha(stored) == digest:
+                return "the declared graph is byte for byte a file of the run store (%s)" % stored.name
+    try:
+        graph = json.loads(Path(graph_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "the declared graph cannot be read"
+    built = graph.get("built_from") if isinstance(graph, dict) else None
+    if isinstance(built, dict) and built.get("default_sources"):
+        return ("the declared graph was built from the repository's own stores (%s), which runs write"
+                % ", ".join(built["default_sources"]))
+    run_written = (OGE_STORES_DIR.resolve(), DURABLE_DIR.resolve())
+    for name, source in sorted(((built or {}).get("source_paths") or {}).items()) if isinstance(built, dict) else ():
+        try:
+            resolved = Path(source).resolve()
+        except (OSError, ValueError, TypeError):
+            return "a source path of the declared graph cannot be read (%s)" % name
+        if any(resolved == root or resolved.is_relative_to(root) for root in run_written):
+            return ("the declared graph was built from %s under ontology/stores/ or durable/, which runs write"
+                    % name)
+    return None
+
 
 DEFAULT_SEED = 1337
 DEFAULT_HIDDEN = 16
@@ -213,11 +329,13 @@ def _load_state(state_path):
         return None
 
 
-def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SEED,
+def gnn_update(training_set, state_path, *, device=None, seed=DEFAULT_SEED,
                hidden=DEFAULT_HIDDEN, lr=DEFAULT_LR, log=True):
-    """Run ONE forward pass + ONE delta-only backprop over the seeded Tier-1 graph and persist state.
+    """Run ONE forward pass + ONE delta-only backprop over a DECLARED training set's graph and
+    persist state. The GNN's own training only (module header): `training_set` is a declaration
+    `load_training_set` accepts, never the run store; `state_path` is where the state is written.
 
-    MACHINERY, NOT LEARNING (see module header). Loads graph.json, builds the SAFE feature matrix,
+    MACHINERY, NOT LEARNING (see module header). Loads the declared graph, builds the SAFE feature matrix,
     loads any prior state, computes the delta (nodes new since the last high-water mark), runs one
     fwd + one backward whose gradient is summed ONLY over delta rows, takes one SGD step, and persists
     weights + the updated high-water mark. First run: delta = the whole graph.
@@ -225,8 +343,10 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
     Returns a summary dict (counts, delta size, loss, weight-delta norm, device) -- never raw content.
     Empty/thin-graph safe: a 0-node or 0-edge graph still does a clean (possibly zero-gradient) cycle.
     """
-    gpath = Path(graph_path) if graph_path else DEFAULT_GRAPH_PATH
-    spath = Path(state_path) if state_path else DEFAULT_STATE_PATH
+    declaration, gpath = load_training_set(training_set)
+    if not state_path:
+        raise TrainingSetRefused("the state file to write is named by the caller")
+    spath = Path(state_path)
     dev = _resolve_device(device)
 
     # determinism (numpy seed governs the no-prior-state weight init we hand to torch)
@@ -240,6 +360,12 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
 
     model = GraphAutoencoder(FEATURE_DIM, hidden).to(dev)
     prior = _load_state(spath)
+    if prior is not None:
+        import ontology_gnn_state
+        refused = ontology_gnn_state.provenance_refusal(prior)
+        if refused:
+            raise TrainingSetRefused(refused)
+    chain = list((prior or {}).get("training_sets") or [])
     trained_ids = set()
     n_updates_prev = 0
     if prior and prior.get("feature_dim") == FEATURE_DIM and prior.get("hidden") == hidden:
@@ -293,7 +419,12 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
     state = {
         "schema": STATE_SCHEMA,
         "tier": 1,
-        "claim": "machinery-not-learning (Tier-2 signal empty until task flow)",
+        "claim": "machinery-not-learning (no Tier-2 signal; trained only on declared training sets, never by a run)",
+        # The whole chain of declared training sets, in order (D-432 item 1).
+        "training_sets": chain + [{"name": declaration["name"], "graph_sha256": declaration["graph_sha256"],
+                                   "declared_by": declaration["declared_by"], "limit": declaration["limit"],
+                                   "domain_agnostic": declaration["domain_agnostic"],
+                                   "case_agnostic": declaration["case_agnostic"]}],
         # night W7 c: the storage scope the graph (and so this state) was built from.
         "scope": graph.get("scope"),
         "feature_dim": FEATURE_DIM,
@@ -344,7 +475,44 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
     return summary
 
 
-if __name__ == "__main__":
-    s = gnn_update()
+def main(argv=None):
+    """The GNN's own training command; the only route to `gnn_update` (D-S112 item 1)."""
+    parser = argparse.ArgumentParser(prog="ontology_gnn.py", allow_abbrev=False,
+                                     description="The GNN's own training, on a declared training set only.")
+    sub = parser.add_subparsers(dest="command", required=True)
+    t = sub.add_parser("train", allow_abbrev=False)
+    t.add_argument("--training-set", required=True, help="a gnn-training-set-v1 declaration")
+    t.add_argument("--state", required=True, help="the state file to write")
+    t.add_argument("--device", default=None)
+    t.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    dcl = sub.add_parser("declare", allow_abbrev=False,
+                         help="write a training-set declaration; the agnostic statement is yours, by these flags")
+    dcl.add_argument("--out", required=True)
+    dcl.add_argument("--graph", required=True)
+    dcl.add_argument("--name", required=True)
+    dcl.add_argument("--material", required=True)
+    dcl.add_argument("--declared-by", required=True)
+    dcl.add_argument("--domain-agnostic", action="store_true")
+    dcl.add_argument("--case-agnostic", action="store_true")
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.command == "declare":
+        try:
+            declare_training_set(args.out, args.graph, args.name, args.material,
+                                 domain_agnostic=args.domain_agnostic or None,
+                                 case_agnostic=args.case_agnostic or None, declared_by=args.declared_by)
+        except TrainingSetRefused as exc:
+            print("ontology_gnn: refused: %s" % exc, file=sys.stderr)
+            return 3
+        return 0
+    try:
+        s = gnn_update(args.training_set, args.state, device=args.device, seed=args.seed)
+    except TrainingSetRefused as exc:
+        print("ontology_gnn: refused: %s" % exc, file=sys.stderr)
+        return 3
     print(f"OGE GNN: {s['nodes']} nodes, delta={s['delta_size']}, "
           f"loss={s['loss']:.6f}, weight_delta={s['weight_delta_norm']:.6f}, device={s['device']}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

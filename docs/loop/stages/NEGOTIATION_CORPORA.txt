@@ -1,0 +1,35 @@
+# The corpus list of the negotiation held-out set's leakage pass (NEGOTIATION_MEASUREMENT_PLAN.md
+# section 2.6), one path a line, relative to the repository; read by tools/freeze_negotiation_set.py.
+# Committed with the freeze. Lines starting with # are notes. A file of a kind the tool does not read
+# refuses the freeze unless its kind is accepted here, each with its reason (D-430 item 5).
+#
+# Passage counts measured on 9 November 2026 at the lane's tip: tuning 19,080, benchmark/dev_cases 464,
+# benchmark/fixtures 92, benchmark/corpora 162, scripts 7,383, tools 2,171; 29,354 in all and 4,936,533
+# bge-m3 tokens, before the external development sets role B adds (plan section 12).
+tuning
+benchmark/dev_cases
+benchmark/fixtures
+benchmark/corpora
+scripts
+tools
+# docs/ is not listed (D-437 item 4): no model under test was trained, tuned or prompted on it and no
+# run reads it, so a case cannot leak from it into a model's answer; it holds this measurement's own
+# plan, brief and rubric, which name the fixtures by design, and docs/loop/private/, which no lane reads.
+# Role B adds here, before the freeze, the development sets under external/ that the loop has read
+# (ContraDoc and SciTab development, the J1 and judge-training rows), one path a line.
+#
+# Kinds accepted though not read, each holding no prose a case could copy:
+# model weights, arrays and archives
+accept-skipped: .safetensors
+accept-skipped: .npy
+accept-skipped: .zip
+# files with no suffix (licences and lock markers in tuning/ and tools/)
+accept-skipped: (none)
+# web fonts, and the console's scripts (interface strings only)
+accept-skipped: .woff2
+accept-skipped: .js
+# shell, batch and PowerShell launchers, and a lock file
+accept-skipped: .sh
+accept-skipped: .bat
+accept-skipped: .ps1
+accept-skipped: .lock

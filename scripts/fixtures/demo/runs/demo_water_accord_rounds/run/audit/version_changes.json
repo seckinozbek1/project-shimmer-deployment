@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "case_id": "demo_water_accord",
+  "written_by": "python",
+  "provenance": "computed",
+  "comparisons": [
+    {
+      "before": "accord_round_1",
+      "after": "accord_round_2",
+      "sentences": [
+        {
+          "change": "changed",
+          "unit_id": "u03-article-3-review",
+          "before": {
+            "document_id": "accord_round_1",
+            "unit_id": "u03-article-3-review",
+            "text": "The parties review this accord every five years."
+          },
+          "after": {
+            "document_id": "accord_round_2",
+            "unit_id": "u03-article-3-review",
+            "text": "The parties review this accord every three years."
+          }
+        }
+      ],
+      "fields": [],
+      "cells": [],
+      "cells_not_compared": [],
+      "figures": [
+        {
+          "relation": "changed_from_prior",
+          "unit_id": "u02-article-2-annual-share",
+          "label": "share",
+          "now": 55.0,
+          "earlier": 61.0,
+          "measure": "units",
+          "earlier_cited": "accord_round_1#5"
+        }
+      ],
+      "figure_refusals": [],
+      "units_added": [],
+      "units_removed": [],
+      "round_before": "r1",
+      "round_after": "r2"
+    },
+    {
+      "before": "accord_round_2",
+      "after": "accord_round_3",
+      "sentences": [],
+      "fields": [],
+      "cells": [],
+      "cells_not_compared": [],
+      "figures": [
+        {
+          "relation": "changed_from_prior",
+          "unit_id": "u02-article-2-annual-share",
+          "label": "share",
+          "now": 62.0,
+          "earlier": 55.0,
+          "measure": "units",
+          "earlier_cited": "accord_round_2#5"
+        }
+      ],
+      "figure_refusals": [],
+      "units_added": [],
+      "units_removed": [],
+      "round_before": "r2",
+      "round_after": "r3"
+    }
+  ],
+  "references": [],
+  "not_compared": [
+    {
+      "round_id": "r2",
+      "document_id": "note_north_round_2"
+    },
+    {
+      "round_id": "r2",
+      "document_id": "note_south_round_2"
+    },
+    {
+      "round_id": "r3",
+      "document_id": "note_north_round_3"
+    },
+    {
+      "round_id": "r3",
+      "document_id": "note_south_round_3"
+    }
+  ]
+}

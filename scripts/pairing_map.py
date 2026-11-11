@@ -61,6 +61,13 @@ def _slug(text, limit=40):
 _RULE_LINE = re.compile(r"^[\s\-*_=]+$")
 
 
+def carries_content(text):
+    """True when `text` has a line that is neither a heading line, a horizontal rule nor blank:
+    the structural test of a preamble, and of a unit with something in it to judge."""
+    return any(line.strip() and not _HEADING.match(line) and not _RULE_LINE.match(line)
+               for line in (text or "").splitlines())
+
+
 def _preamble_unit(lead):
     """The unit for a document's preamble, or None when there is nothing in it.
 
@@ -72,11 +79,7 @@ def _preamble_unit(lead):
     kind is "preamble", a kind of its own, so a consumer that reasons about
     sections, rows or tables is not handed one by surprise."""
     stripped = (lead or "").strip()
-    if not stripped:
-        return None
-    content = [line for line in stripped.splitlines()
-               if line.strip() and not _HEADING.match(line) and not _RULE_LINE.match(line)]
-    if not content:
+    if not stripped or not carries_content(stripped):
         return None
     h1 = next((m.group(2).strip() for m in _HEADING.finditer(stripped) if len(m.group(1)) == 1), None)
     title = h1 or "preamble"
@@ -318,6 +321,21 @@ def unit_fields(unit_text):
     return fields
 
 
+def unit_row_labels(unit_text):
+    """The first cell of each body row of a unit's tables, as normalised word tuples. Never
+    a field, and no value is read: whether a cell states the field is a question of what its
+    words mean. `unmatched_findings` uses it only to say what Python did not read."""
+    rows = set()
+    for block in _table_blocks(unit_text or ""):
+        if len(block) < 2 or not _TABLE_SEP.match(block[1]):
+            continue
+        for row in block[2:]:
+            norm = header_label(row.strip().strip("|").split("|")[0])
+            if norm:
+                rows.add(norm)
+    return rows
+
+
 def unit_field_values(unit_text):
     """{normalised label: normalised value} for every `label: value` line of a unit.
     A table cell is a row's value, not the unit's, and is not read here. Values are
@@ -450,6 +468,7 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
                         "rule_id": rid, "scope_declared": True,
                         "reason": "unit lacks the declared scope field "
                                   + ", ".join(" ".join(lab) for lab in missing),
+                        "missing": sorted(" ".join(lab) for lab in missing),
                         "missing_count": len(missing),
                     })
                 else:
@@ -475,6 +494,7 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
                 rejected.append({
                     "rule_id": rid,
                     "reason": "unit lacks " + ", ".join(" ".join(f) for f in sorted(missing)),
+                    "missing": sorted(" ".join(f) for f in missing),
                     "missing_count": len(missing),
                 })
         entries.append({
@@ -490,7 +510,7 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
     return entries
 
 
-def unmatched_findings(entries, rules, *, convention_registry=None):
+def unmatched_findings(entries, rules, *, convention_registry=None, units=None):
     """A unit that no rule matched becomes a missing_field Finding.
 
     A unit nothing applies to usually means a missing field, not an irrelevant
@@ -499,8 +519,13 @@ def unmatched_findings(entries, rules, *, convention_registry=None):
     because a Finding record's rule_id has to be a real registry id and the
     nearest miss is the one that says something true: this unit lacks exactly
     what that rule needed. A unit with no rejected rules at all yields nothing,
-    since there is no rule to name.
+    since there is no rule to name. Given `units`, a field the unit's table has as a row
+    label is named as not read (`unit_b` `table_row`), because Python reads a table's header
+    only and "absent" would claim what it never looked at. The finding stays: telling a stated
+    value from a blank, a placeholder or a note is not structural, and an absence must not go
+    silent on a guess (open item 49).
     """
+    text_of = {u.get("unit_id"): u.get("text", "") for u in units or []}
     out = []
     for entry in entries:
         # An unresolved rule may apply. Refusing its semantic pairing cannot be
@@ -535,6 +560,13 @@ def unmatched_findings(entries, rules, *, convention_registry=None):
                             f"{nearest['rule_id']}, needs fields this unit does not carry: "
                             f"{nearest['reason'].replace('unit lacks ', '')}."),
         }
+        rows = {" ".join(r) for r in unit_row_labels(text_of.get(entry["unit_id"], ""))}
+        unread = sorted(rows.intersection(nearest.get("missing") or []))
+        if unread:
+            item["unit_b"] = "table_row"
+            item["field_label"] = ", ".join(unread)
+            item["explanation"] = item["explanation"].replace("needs fields this unit does not carry",
+                                                              "needs fields Python did not read in this unit")
         if source:
             item["source_rule_id"] = source
         out.append(item)
@@ -558,7 +590,7 @@ def build_pairing_map(text, rules, *, document_id="", rank=None,
     units = split_units(text, document_id=document_id)
     vocabulary = field_vocabulary(units)
     entries = pair_units(units, rules, vocabulary=vocabulary, rank=rank)
-    findings = unmatched_findings(entries, rules, convention_registry=convention_registry)
+    findings = unmatched_findings(entries, rules, convention_registry=convention_registry, units=units)
     return {
         "document_id": document_id,
         "unit_count": len(units),

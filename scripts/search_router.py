@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 from dataclasses import dataclass, field
@@ -11,8 +12,26 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from shimmer_logging import get_logger, log_event
+
 
 SEARCH_FAIL_THRESHOLD = 2
+_LOG = get_logger("shimmer")
+
+
+def backend_profile() -> str:
+    """The backend profile in force for this process, read where
+    pipeline.apply_backend_profile puts it (SHIMMER_BACKEND_PROFILE); with nothing set
+    it is cloud, as the pipeline's own default."""
+    return os.environ.get("SHIMMER_BACKEND_PROFILE", "cloud")
+
+
+def web_access_open(profile=None) -> bool:
+    """D-S23 item 1 (open item 68): web access opens ONLY under the cloud profile. Under
+    the local profile no agent and no system caller reaches the web, whatever an agent's
+    registry flag (may_use_web) says. Any value other than exactly cloud keeps it closed,
+    so an unknown or empty profile never opens it."""
+    return (backend_profile() if profile is None else profile) == "cloud"
 
 
 @dataclass
@@ -135,6 +154,16 @@ class SearchRouter:
         return top if stats.get("success", 0) > stats.get("fail", 0) else None
 
     def search(self, query, *, agent=None, claim_type="unknown", institution=None, query_plan=None):
+        # D-S23 item 1: the one place web access is opened. Under any profile but cloud
+        # it is refused here, before the masker and before every engine (api, direct,
+        # ddgs, the DDG scrape, Brave), for roster agents and system callers alike.
+        profile = backend_profile()
+        if not web_access_open(profile):
+            log_event(_LOG, f"web_access_refused backend_profile={profile or 'empty'} "
+                            f"agent={agent or 'system'}", level="warning", agent=agent or "")
+            raise PermissionError(
+                f"web access is closed under the {profile!r} backend profile: no agent "
+                f"reaches the web; it opens only under the cloud profile (D-S23 item 1)")
         # may_use_web enforcement (INFRA-038): a roster agent reaches the web ONLY
         # if its registry flag may_use_web is true. agent=None is a system/intake
         # caller (e.g. the date cascade) — not a roster-agent action — and is

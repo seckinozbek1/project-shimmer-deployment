@@ -1,4 +1,4 @@
-> Historical design/audit record. Current implementation and endpoint names are in the [README](../../README.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
+> Historical design/audit record. Current implementation and endpoint names are in the [runtime reference](../RUNTIME_REFERENCE.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
 
 # Server surface inventory
 
@@ -343,6 +343,11 @@ The states in-progress, finished, governance-blocked, and crashed are read from 
   returned `status` string against this fixed set, which is not returned by any route
   (it exists only in `scripts/server.py:301-302`; the comment at `scripts/server.py:299-301`
   states the console "must render these distinctly from a crash").
+  Update (loop S7, open item 11): the set now holds six values; exit code 8 maps to
+  `"refused_multi_round"` (a multi-round refusal) and exit code 9 to
+  `"refused_inst_finder_unratified"` (`SHIMMER_INST_FINDER=off` with no ratified
+  amendment), both governance outcomes. Before this they fell through to `"failed"`.
+  The line numbers in this inventory are from when it was written.
   Exit code 5 (`"blocked"`) is documented as ambiguous: it also fires on a draft-mode
   phase-0 generation failure (`scripts/server.py:281-283`, `286-287`), and the code
   comment states "this map cannot distinguish the two by exit code alone, so the console

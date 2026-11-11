@@ -1,0 +1,108 @@
+{
+  "schema": "factor-record-v1",
+  "note": "D-S82: the factors a result's record names, and the files of the sealed project each factor reads. A project file is assigned to the first factor whose declared path or prefix (ending in /) matches it; every project file no factor claims is the factor code. Read by tools/factor_record.py; no project path is named in code (the manifest fields each factor reads are its schema).",
+  "factors": [
+    "arm",
+    "machine_type",
+    "model",
+    "checkpoint",
+    "training_recipe",
+    "calibration",
+    "prompt_or_context",
+    "decoding",
+    "item_set",
+    "scorer",
+    "seed",
+    "code"
+  ],
+  "files": {
+    "checkpoint": [
+      "config/final_models.json",
+      "tuning/auditor_final/"
+    ],
+    "training_recipe": [],
+    "calibration": [
+      "config/semantic_thresholds.json",
+      "config/semantic_references.json"
+    ],
+    "prompt_or_context": [
+      "config/compact_extraction_prompt.json",
+      "benchmark/baselines/doc_judge_prompt.json",
+      "config/case_questions.json",
+      "config/passage_pairs.json",
+      "config/cell_selection.json"
+    ],
+    "decoding": [
+      "config/decoding_policy.json",
+      "config/contract_decoding.json",
+      "config/envelope_decoding.json",
+      "tuning/producer_v3/evaluation_protocol.json",
+      "tuning/auditor_canonical_execution/evaluation_protocol.json"
+    ],
+    "scorer": [
+      "tools/score_corpus.py",
+      "benchmark/adapters/common/detection.py"
+    ]
+  },
+  "decoding_environment": [
+    "SHIMMER_PRODUCER_ATTENTION",
+    "SHIMMER_PRODUCER_ATTENTION_DECISION",
+    "SHIMMER_PRODUCER_PREFILL_CHUNK",
+    "SHIMMER_PRODUCER_PREFILL_DECISION"
+  ],
+  "reference_set": {
+    "name": "machine-reference-v1",
+    "note": "D-S82 item 3, the lead's ruling (D-S82 reference set): three exposed development B3 entries already run on the A10 with execution integrity passed. A new machine type runs the same sealed workloads (the same item_set) beside these; machine_effect refuses any other item. a10_seconds is the entry's workload wall time (its batch_workload timing file, models loaded cold), so the new type's figure must be the same measure.",
+    "machine": "gpu_1x_a10",
+    "items": [
+      {
+        "item": "contradoc_0436316e6bb3",
+        "benchmark": "ContraDoc",
+        "item_set": "86463460a1314703",
+        "a10_seconds": 332.4,
+        "source_run": "C1",
+        "source_folder": "external/s05/C1/bundles/contradoc_0436316e6bb3_B3/batch/00_contradoc_0436316e6bb3_B3",
+        "seconds_file": "batch_workload_0_timing.json",
+        "source_commit": "d38ce3cd",
+        "execution_integrity_passed": true,
+        "workload_files": {
+          "context/0436316e6bb3.md": "0b325b1267a4c98b67015769d9464c7e55bb26c7ade316de8272523d9f26fd7a",
+          "conventions/rules.md": "96e9f7b5bf4e63fcbd6f49d52e57921148bce394ce70443fb9297f1924086185"
+        },
+        "test_manifest_sha256": "exposed, no manifest"
+      },
+      {
+        "item": "scitab_09b24267b75a",
+        "benchmark": "SciTab",
+        "item_set": "4fafd5e4e01ad2d7",
+        "a10_seconds": 247.1,
+        "source_run": "C1",
+        "source_folder": "external/s05/C1/bundles/contradoc_0436316e6bb3_B3/batch/15_scitab_09b24267b75a_B3",
+        "seconds_file": "batch_workload_15_timing.json",
+        "source_commit": "d38ce3cd",
+        "execution_integrity_passed": true,
+        "workload_files": {
+          "context/09b24267b75a.md": "910f330db8a885cee6ec865783cdf9d0c4db2103912049e7c35f9e97b12ac964",
+          "conventions/rules.md": "5ebf2fb3f3775e528194ca9de9938eb70d87ed8e74cada598b8df1e0e33b183c"
+        },
+        "test_manifest_sha256": "exposed, no manifest"
+      },
+      {
+        "item": "contradoc_01015e47de8a",
+        "benchmark": "ContraDoc (news_train_96, the timing entry's document)",
+        "item_set": "bfd2943619d926ee",
+        "a10_seconds": 472.6,
+        "source_run": "L12",
+        "source_folder": "external/s05/L12/bundles/contradoc_01015e47de8a_B3/batch/00_contradoc_01015e47de8a_B3",
+        "seconds_file": "batch_workload_0_timing.json",
+        "source_commit": "2b585af1",
+        "execution_integrity_passed": true,
+        "workload_files": {
+          "context/01015e47de8a.md": "7999993629a0ab1d2b07926d4cd5d9b1983e222deebe6567c969cbc0f3cb29db",
+          "conventions/rules.md": "96e9f7b5bf4e63fcbd6f49d52e57921148bce394ce70443fb9297f1924086185"
+        },
+        "test_manifest_sha256": "exposed, no manifest"
+      }
+    ]
+  }
+}

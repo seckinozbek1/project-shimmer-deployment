@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "description": "The two narrow model questions of a multi-round case (scripts/case_questions.py). Each is fixed here, never written in code, and neither is a free-form call over the whole case. No result of either has been measured on a model.",
+  "agent": "PRACTICE_AUDITOR",
+  "agent_note": "The registered agent that answers both questions; its model is the backend profile's (under the local profile local_auditor, the shipped auditor model), the registry being the one owner of model choice. PRACTICE_AUDITOR, decision D-295: a shipped local agent that already runs in a B3 review. Its writing of wording is not measured. Null means nothing is asked.",
+  "max_failures_in_a_row": 5,
+  "movement": {
+    "form": "decision",
+    "form_note": "decision: read from the model's own probabilities with no text (D-S41, local backends only). reply: read from generated text. Which form is a recorded decision, as for passage pairs.",
+    "template": "One party made an earlier statement and a later statement on one issue. Another party had stated its own position.\n\nThe party's earlier statement: {earlier}\n\nThe party's later statement: {later}\n\nThe other party's position: {other}\n\nDid the party's later statement move toward the other party's position?\n\nAnswer with one word.\nToward: it moved toward the other party's position.\nAway: it moved away from it.\nNeither: it moved in neither direction.\nUnclear: these three statements do not let you decide.",
+    "options": [
+      "toward",
+      "away",
+      "neither",
+      "cannot be settled"
+    ],
+    "unsettled_answer": "cannot be settled",
+    "generated_suffix": "Reply with one JSON object and nothing else: {\"answer\": \"toward\"}, with answer one of toward, away, neither, cannot be settled.",
+    "record_value": {
+      "toward": "concession",
+      "away": "hardening",
+      "neither": "stable"
+    },
+    "record_value_note": "multi_round.MOVEMENTS is held exact by multi_round_checks, so an answer takes the nearest value of that vocabulary and the literal answer stays beside it in movement_answer. `cannot be settled` has no value here on purpose: the record stays unknown.",
+    "max_new_tokens": 32,
+    "decision": {
+      "threshold_family": "case_movement",
+      "answers": [
+        {
+          "label": "toward",
+          "surface": "Toward"
+        },
+        {
+          "label": "away",
+          "surface": "Away"
+        },
+        {
+          "label": "neither",
+          "surface": "Neither"
+        },
+        {
+          "label": "cannot be settled",
+          "surface": "Unclear"
+        }
+      ]
+    }
+  },
+  "suggestion": {
+    "template": "You are helping {party} on the issue {issue}. {party}'s own position is: {position} Its fallback is: {fallback}\n\nBelow are numbered passages: the parties' stated positions, and the current text of round {round}. Using only these passages, suggest wording for the text that would strengthen {party}'s position on this issue. Stay between its position and its fallback, and do not change text both sides have already agreed.\n\n{passages}\n\nReply with one JSON object and nothing else, with four fields: suggested_wording (the wording itself), quote (copied word for word from the one passage of round {round} it rests on), why (one sentence), and cites (the list of passage numbers it rests on, such as [\"P1\", \"P3\"]).",
+    "max_prompt_chars": 6000,
+    "max_prompt_chars_note": "A question over this size is not asked: the free-form case call ran to its output cap on a 15,795-token prompt (INC-023). Conventional limit, no evidence for this exact figure.",
+    "max_wording_chars": 900,
+    "max_why_chars": 400,
+    "max_new_tokens": 384,
+    "max_new_tokens_note": "The output cap of one suggestion: 900 characters of wording, 400 of reason, and the citations. Conventional limit, no evidence for this exact figure."
+  }
+}

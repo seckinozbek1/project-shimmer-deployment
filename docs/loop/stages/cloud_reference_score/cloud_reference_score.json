@@ -1,0 +1,1655 @@
+{
+ "bar_sha256": "c16014535f5444b9fc8c48f7ccb777a6472e4eb05e08366db639538ec83f0054",
+ "code": {
+  "benchmark/baselines/choice_read.py": "4ea1190a72e10533e938f724e2c3024a275d89e7",
+  "benchmark/baselines/cloud_reference.py": "4f43cacb8363a3326676724c7d9d279b68dfc7c5",
+  "benchmark/baselines/doc_judge.py": "5fa6f026389a8710005de7d70643e2bf5b825e05",
+  "benchmark/baselines/judge_read.py": "5b326931c84088c2791d3211df5dd2717ccfbfb5",
+  "tools/score_corpus.py": "4ac1c92b179530943d7b6999f88ebff14086a9e0"
+ },
+ "half": "A",
+ "half_a_documents": {
+  "contradoc": [
+   "0436316e6bb3",
+   "077164cc8a97",
+   "0916cf55bab5",
+   "20a884524090",
+   "26bedafd7887",
+   "2bf01c2df63b",
+   "2e0ad339c2a4",
+   "3275697ac4a7",
+   "36ac2b04be25",
+   "43010298acfa",
+   "483cfbd14c86",
+   "57f31a21db87",
+   "5d1ed75371da",
+   "6aa62c42188c",
+   "79c1836ac038",
+   "8a30d121735e",
+   "9463e68c68ba",
+   "a038237e10c8",
+   "a07d53162114",
+   "a26506a24429",
+   "a59bb9afa98c",
+   "a6cbcb4847b1",
+   "a8639a8e5028",
+   "aac584920aa8",
+   "ac73e39d6cc2",
+   "b2de7272dbc0",
+   "c24fcd8c0a37",
+   "ce31df0ef0b1",
+   "f3ed6ce23486",
+   "ff0adea2bb63"
+  ],
+  "scitab": [
+   "09b24267b75a",
+   "0e7ff50baa5f",
+   "26937b278860",
+   "2e6c4cc838c5",
+   "5becf7b2031e",
+   "793318bc152d",
+   "80526d752106",
+   "8c501796ccb2",
+   "9cb55ecb25c2",
+   "a53c9b239f61",
+   "b9d662cf9134",
+   "d5b73e1da2b5",
+   "e1d09372c0bb",
+   "e6164ae4169b",
+   "f0ed2e1a4be4"
+  ]
+ },
+ "items_sha256": "e460abea5820405b1c0046c5a453364e96ef5ad8ffff6d813873a7f4e59a67c9",
+ "keys": 89,
+ "label": "Reference: a paid cloud model on development items already read. Not Shimmer's performance.",
+ "labels": [
+  "a paid cloud model on development items already read",
+  "exposed",
+  "in-sample: half A chose C's thresholds (REPORT_COMPARABILITY 3a)",
+  "not Shimmer's performance"
+ ],
+ "notes": [
+  "Reference: a paid cloud model (claude-opus-4-8, resolved exact) on development items already read; exposed; half A, which chose C's thresholds, so in-sample (REPORT_COMPARABILITY 3a); never Shimmer's performance.",
+  "J1's bar is applied on half A counts; its c1_net and item counts were set on J1's whole sample, so the verdict is the bar's functions on half A, not J1's own verdict.",
+  "21 of 70 agent-form replies (15 judge_direct at 768 tokens, 6 judge_reason at 1536) reached J1's allowance, set for Phi-4, and read as unreadable (ABSTAIN): the judging-step rows of the reference are limited by that allowance, not only by the model.",
+  "Within one run each: the reference's B1 and judging rows share one run, one item set and one scorer (3b); the J1 local rows are another run on the same half A items, same scorer blob (judge_read 5b326931c840)."
+ ],
+ "paths_are": "relative to the repository root of the checkout holding each file; the driver derives the main checkout from git's common directory",
+ "prompts_sha256": "5e59766d8a054b1a66db112bf9d7bb110c7a4f31e7693e487731c9327ef857f2",
+ "runs": {
+  "j1_local": {
+   "bar_on_half_a": {
+    "call_counts": {
+     "judge_direct/contradoc": {
+      "calls": 19,
+      "judge_kept": 15,
+      "readable": 19,
+      "silent": 0,
+      "strict_kept": 10
+     },
+     "judge_direct/scitab": {
+      "calls": 16,
+      "judge_kept": 13,
+      "readable": 14,
+      "silent": 0,
+      "strict_kept": 5
+     },
+     "judge_reason/contradoc": {
+      "calls": 19,
+      "judge_kept": 9,
+      "readable": 19,
+      "silent": 10,
+      "strict_kept": 0
+     },
+     "judge_reason/scitab": {
+      "calls": 16,
+      "judge_kept": 16,
+      "readable": 16,
+      "silent": 0,
+      "strict_kept": 1
+     }
+    },
+    "rows": {
+     "contradoc": {
+      "judge_direct": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 1,
+       "chance": 1.0,
+       "false": 5,
+       "flagged_share": 0.875,
+       "net": -3,
+       "net_above_c1": false,
+       "not_flagging_everything": false,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": true,
+       "right": 2,
+       "two_right_from_two_documents": true
+      },
+      "judge_reason": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 1,
+       "chance": 0.642857,
+       "false": 1,
+       "flagged_share": 0.25,
+       "net": 0,
+       "net_above_c1": true,
+       "not_flagging_everything": true,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": true,
+       "right": 1,
+       "two_right_from_two_documents": false
+      }
+     },
+     "scitab": {
+      "judge_direct": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 5,
+       "chance": 1.0,
+       "false": 7,
+       "flagged_share": 0.8571,
+       "net": -2,
+       "net_above_c1": false,
+       "not_flagging_everything": false,
+       "passes": false,
+       "precision_at_least_b1": false,
+       "readable": false,
+       "right": 5,
+       "two_right_from_two_documents": true
+      },
+      "judge_reason": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 5,
+       "chance": 0.75,
+       "false": 6,
+       "flagged_share": 0.8571,
+       "net": 0,
+       "net_above_c1": true,
+       "not_flagging_everything": false,
+       "passes": false,
+       "precision_at_least_b1": false,
+       "readable": true,
+       "right": 6,
+       "two_right_from_two_documents": true
+      }
+     }
+    },
+    "variant_for_j2": null,
+    "verdict": "drop"
+   },
+   "measurement_sha256": "460a33bfb0dfa41e922e2fe54d82ee6093736a553e90d5ff736bc3d2de99fe31",
+   "models": {
+    "judge_direct": {
+     "adapter_applied": false,
+     "agent": "PRACTICE_AUDITOR",
+     "backend": "local_auditor",
+     "checkpoint": "base",
+     "digest": "snapshot:098ea917f967c8811e6f579cc38872b2bf3d4bf4",
+     "model_id": "unsloth/phi-4-bnb-4bit"
+    },
+    "judge_reason": {
+     "adapter_applied": false,
+     "agent": "PRACTICE_AUDITOR",
+     "backend": "local_auditor",
+     "checkpoint": "base",
+     "digest": "snapshot:098ea917f967c8811e6f579cc38872b2bf3d4bf4",
+     "model_id": "unsloth/phi-4-bnb-4bit"
+    }
+   },
+   "run_dir": "external/s05/J1/ev/evidence/b1/j1",
+   "views": {
+    "judge_direct": {
+     "b1": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.6,
+       "correct_by_source": {
+        "b1_label": 18
+       },
+       "correct_refusals": 0,
+       "f1": 0.5,
+       "flag_fn": 11,
+       "flag_fp": 1,
+       "flag_tp": 6,
+       "flag_tp_documents": 6,
+       "items": 30,
+       "labels_by_source": {
+        "b1_label": 30
+       },
+       "macro_f1": 0.602941,
+       "precision": 0.8571428571428571,
+       "recall": 0.35294117647058826,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         30,
+         17,
+         7
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 4,
+       "accuracy": 0.6666666666666666,
+       "correct_by_source": {
+        "b1_label": 30
+       },
+       "correct_refusals": 0,
+       "f1": 0.6857142857142857,
+       "flag_fn": 10,
+       "flag_fp": 1,
+       "flag_tp": 12,
+       "flag_tp_documents": 12,
+       "items": 45,
+       "labels_by_source": {
+        "b1_label": 45
+       },
+       "macro_f1": 0.734161,
+       "precision": 0.9230769230769231,
+       "recall": 0.5454545454545454,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         6,
+         3,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         4,
+         2,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         8,
+         4,
+         1
+        ],
+        [
+         1,
+         0,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "judge": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.25,
+       "correct_by_source": {
+        "kept_claim": 2
+       },
+       "correct_refusals": 0,
+       "f1": 0.4,
+       "flag_fn": 1,
+       "flag_fp": 5,
+       "flag_tp": 2,
+       "flag_tp_documents": 2,
+       "items": 8,
+       "labels_by_source": {
+        "kept_claim": 7,
+        "refused": 1
+       },
+       "macro_f1": 0.2,
+       "precision": 0.2857142857142857,
+       "recall": 0.6666666666666666,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         7
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 1,
+       "accuracy": 0.35714285714285715,
+       "correct_by_source": {
+        "kept_claim": 5
+       },
+       "correct_refusals": 0,
+       "f1": 0.5263157894736842,
+       "flag_fn": 2,
+       "flag_fp": 7,
+       "flag_tp": 5,
+       "flag_tp_documents": 4,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 13,
+        "unreadable": 1
+       },
+       "macro_f1": 0.263158,
+       "precision": 0.4166666666666667,
+       "recall": 0.7142857142857143,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         3
+        ],
+        [
+         2,
+         1,
+         2
+        ],
+        [
+         6,
+         3,
+         5
+        ],
+        [
+         2,
+         1,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "strict": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.25,
+       "correct_by_source": {
+        "kept_claim": 2
+       },
+       "correct_refusals": 0,
+       "f1": 0.5,
+       "flag_fn": 1,
+       "flag_fp": 3,
+       "flag_tp": 2,
+       "flag_tp_documents": 2,
+       "items": 8,
+       "labels_by_source": {
+        "kept_claim": 5,
+        "refused": 3
+       },
+       "macro_f1": 0.25,
+       "precision": 0.4,
+       "recall": 0.6666666666666666,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         5
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 1,
+       "accuracy": 0.07142857142857142,
+       "correct_by_source": {
+        "kept_claim": 1
+       },
+       "correct_refusals": 0,
+       "f1": 0.16666666666666666,
+       "flag_fn": 6,
+       "flag_fp": 4,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 5,
+        "refused": 8,
+        "unreadable": 1
+       },
+       "macro_f1": 0.083333,
+       "precision": 0.2,
+       "recall": 0.14285714285714285,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         3
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     }
+    },
+    "judge_reason": {
+     "b1": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.5666666666666667,
+       "correct_by_source": {
+        "b1_label": 17
+       },
+       "correct_refusals": 0,
+       "f1": 0.38095238095238093,
+       "flag_fn": 13,
+       "flag_fp": 0,
+       "flag_tp": 4,
+       "flag_tp_documents": 4,
+       "items": 30,
+       "labels_by_source": {
+        "b1_label": 30
+       },
+       "macro_f1": 0.52381,
+       "precision": 1.0,
+       "recall": 0.23529411764705882,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         30,
+         17,
+         4
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 0,
+       "accuracy": 0.8888888888888888,
+       "correct_by_source": {
+        "b1_label": 40
+       },
+       "correct_refusals": 0,
+       "f1": 0.9,
+       "flag_fn": 4,
+       "flag_fp": 0,
+       "flag_tp": 18,
+       "flag_tp_documents": 13,
+       "items": 45,
+       "labels_by_source": {
+        "b1_label": 45
+       },
+       "macro_f1": 0.918085,
+       "precision": 1.0,
+       "recall": 0.8181818181818182,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         6,
+         3,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         8,
+         4,
+         3
+        ],
+        [
+         1,
+         0,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "judge": {
+      "contradoc": {
+       "abstain": 6,
+       "accuracy": 0.125,
+       "correct_by_source": {
+        "kept_claim": 1
+       },
+       "correct_refusals": 0,
+       "f1": 0.4,
+       "flag_fn": 2,
+       "flag_fp": 1,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 8,
+       "labels_by_source": {
+        "kept_claim": 2,
+        "silence": 6
+       },
+       "macro_f1": 0.2,
+       "precision": 0.5,
+       "recall": 0.3333333333333333,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 6,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 0,
+       "accuracy": 0.5,
+       "correct_by_source": {
+        "kept_claim": 7
+       },
+       "correct_refusals": 0,
+       "f1": 0.631578947368421,
+       "flag_fn": 1,
+       "flag_fp": 6,
+       "flag_tp": 6,
+       "flag_tp_documents": 3,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 14
+       },
+       "macro_f1": 0.426901,
+       "precision": 0.5,
+       "recall": 0.8571428571428571,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         4
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         6,
+         3,
+         5
+        ],
+        [
+         2,
+         1,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "strict": {
+      "contradoc": {
+       "abstain": 6,
+       "accuracy": 0.0,
+       "correct_by_source": {},
+       "correct_refusals": 0,
+       "f1": 0.0,
+       "flag_fn": 3,
+       "flag_fp": 0,
+       "flag_tp": 0,
+       "flag_tp_documents": 0,
+       "items": 8,
+       "labels_by_source": {
+        "refused": 2,
+        "silence": 6
+       },
+       "macro_f1": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 6,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 1
+      },
+      "scitab": {
+       "abstain": 0,
+       "accuracy": 0.0,
+       "correct_by_source": {},
+       "correct_refusals": 0,
+       "f1": 0.0,
+       "flag_fn": 7,
+       "flag_fp": 1,
+       "flag_tp": 0,
+       "flag_tp_documents": 0,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 1,
+        "refused": 13
+       },
+       "macro_f1": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         1
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     }
+    }
+   }
+  },
+  "reference": {
+   "bar_on_half_a": {
+    "call_counts": {
+     "judge_direct/contradoc": {
+      "calls": 19,
+      "judge_kept": 10,
+      "readable": 13,
+      "silent": 3,
+      "strict_kept": 0
+     },
+     "judge_direct/scitab": {
+      "calls": 16,
+      "judge_kept": 5,
+      "readable": 5,
+      "silent": 0,
+      "strict_kept": 3
+     },
+     "judge_reason/contradoc": {
+      "calls": 19,
+      "judge_kept": 18,
+      "readable": 18,
+      "silent": 0,
+      "strict_kept": 0
+     },
+     "judge_reason/scitab": {
+      "calls": 16,
+      "judge_kept": 6,
+      "readable": 9,
+      "silent": 2,
+      "strict_kept": 3
+     }
+    },
+    "rows": {
+     "contradoc": {
+      "judge_direct": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 3,
+       "chance": 0.107143,
+       "false": 0,
+       "flagged_share": 0.25,
+       "net": 2,
+       "net_above_c1": true,
+       "not_flagging_everything": true,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": false,
+       "right": 2,
+       "two_right_from_two_documents": true
+      },
+      "judge_reason": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 3,
+       "chance": 0.017857,
+       "false": 0,
+       "flagged_share": 0.375,
+       "net": 3,
+       "net_above_c1": true,
+       "not_flagging_everything": true,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": false,
+       "right": 3,
+       "two_right_from_two_documents": true
+      }
+     },
+     "scitab": {
+      "judge_direct": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 4,
+       "chance": 1.0,
+       "false": 2,
+       "flagged_share": 0.2143,
+       "net": -1,
+       "net_above_c1": false,
+       "not_flagging_everything": true,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": false,
+       "right": 1,
+       "two_right_from_two_documents": false
+      },
+      "judge_reason": {
+       "above_chance": false,
+       "b1_false": 0,
+       "b1_right": 4,
+       "chance": 0.75,
+       "false": 1,
+       "flagged_share": 0.1429,
+       "net": 0,
+       "net_above_c1": true,
+       "not_flagging_everything": true,
+       "passes": false,
+       "precision_at_least_b1": true,
+       "readable": false,
+       "right": 1,
+       "two_right_from_two_documents": false
+      }
+     }
+    },
+    "variant_for_j2": null,
+    "verdict": "drop"
+   },
+   "complete": true,
+   "input_tokens": 853927,
+   "measurement_sha256": "b0348ff0744ae18dd4bb269d0c03fd22fbac99891611215ce128271b0d7576bd",
+   "models": {
+    "configured": "claude-opus-4-8",
+    "deprecation_checked": "https://platform.claude.com/docs/en/about-claude/model-deprecations, 2026-11-09, not deprecated",
+    "deprecation_note": "the live list catches a gone or ambiguous model only; a listed model announced as deprecated is caught only by the record's own field or the operator's reading of the deprecations page",
+    "provider_record": {
+     "created_at": "2026-05-28T00:00:00Z",
+     "display_name": "Claude Opus 4.8",
+     "id": "claude-opus-4-8",
+     "max_input_tokens": 1000000,
+     "max_tokens": 128000
+    },
+    "registry_unedited": true,
+    "resolved": "claude-opus-4-8",
+    "seat_agent": "LEGAL_ANALYST",
+    "status": "exact"
+   },
+   "output_tokens": 112048,
+   "reached_allowance": 21,
+   "run_dir": "output/cloud_reference/opus48-half-a-1 (in the loop-lead checkout that ran it)",
+   "seconds": 1499.868,
+   "sent": 216,
+   "spent_usd": 7.070835,
+   "views": {
+    "judge_direct": {
+     "b1": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.9,
+       "correct_by_source": {
+        "b1_label": 27
+       },
+       "correct_refusals": 0,
+       "f1": 0.9090909090909091,
+       "flag_fn": 2,
+       "flag_fp": 1,
+       "flag_tp": 15,
+       "flag_tp_documents": 15,
+       "items": 30,
+       "labels_by_source": {
+        "b1_label": 30
+       },
+       "macro_f1": 0.89899,
+       "precision": 0.9375,
+       "recall": 0.8823529411764706,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         30,
+         17,
+         16
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 6,
+       "accuracy": 0.8222222222222222,
+       "correct_by_source": {
+        "b1_label": 37
+       },
+       "correct_refusals": 0,
+       "f1": 0.9047619047619048,
+       "flag_fn": 3,
+       "flag_fp": 1,
+       "flag_tp": 19,
+       "flag_tp_documents": 13,
+       "items": 45,
+       "labels_by_source": {
+        "b1_label": 45
+       },
+       "macro_f1": 0.891405,
+       "precision": 0.95,
+       "recall": 0.8636363636363636,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         6,
+         3,
+         0
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         8,
+         4,
+         5
+        ],
+        [
+         1,
+         0,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "judge": {
+      "contradoc": {
+       "abstain": 4,
+       "accuracy": 0.5,
+       "correct_by_source": {
+        "kept_claim": 4
+       },
+       "correct_refusals": 0,
+       "f1": 0.8,
+       "flag_fn": 1,
+       "flag_fp": 0,
+       "flag_tp": 2,
+       "flag_tp_documents": 2,
+       "items": 8,
+       "labels_by_source": {
+        "kept_claim": 4,
+        "silence": 1,
+        "unreadable": 3
+       },
+       "macro_f1": 0.685714,
+       "precision": 1.0,
+       "recall": 0.6666666666666666,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 1,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 9,
+       "accuracy": 0.07142857142857142,
+       "correct_by_source": {
+        "kept_claim": 1
+       },
+       "correct_refusals": 0,
+       "f1": 0.2,
+       "flag_fn": 6,
+       "flag_fp": 2,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 5,
+        "unreadable": 9
+       },
+       "macro_f1": 0.1,
+       "precision": 0.3333333333333333,
+       "recall": 0.14285714285714285,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         1
+        ],
+        [
+         2,
+         1,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "strict": {
+      "contradoc": {
+       "abstain": 4,
+       "accuracy": 0.0,
+       "correct_by_source": {},
+       "correct_refusals": 0,
+       "f1": 0.0,
+       "flag_fn": 3,
+       "flag_fp": 0,
+       "flag_tp": 0,
+       "flag_tp_documents": 0,
+       "items": 8,
+       "labels_by_source": {
+        "refused": 4,
+        "silence": 1,
+        "unreadable": 3
+       },
+       "macro_f1": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 1,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 1
+      },
+      "scitab": {
+       "abstain": 9,
+       "accuracy": 0.07142857142857142,
+       "correct_by_source": {
+        "kept_claim": 1
+       },
+       "correct_refusals": 0,
+       "f1": 0.2222222222222222,
+       "flag_fn": 6,
+       "flag_fp": 1,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 3,
+        "refused": 2,
+        "unreadable": 9
+       },
+       "macro_f1": 0.111111,
+       "precision": 0.5,
+       "recall": 0.14285714285714285,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         0
+        ],
+        [
+         2,
+         1,
+         2
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     }
+    },
+    "judge_reason": {
+     "b1": {
+      "contradoc": {
+       "abstain": 0,
+       "accuracy": 0.8666666666666667,
+       "correct_by_source": {
+        "b1_label": 26
+       },
+       "correct_refusals": 0,
+       "f1": 0.8823529411764706,
+       "flag_fn": 2,
+       "flag_fp": 2,
+       "flag_tp": 15,
+       "flag_tp_documents": 15,
+       "items": 30,
+       "labels_by_source": {
+        "b1_label": 30
+       },
+       "macro_f1": 0.864253,
+       "precision": 0.8823529411764706,
+       "recall": 0.8823529411764706,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         30,
+         17,
+         17
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 6,
+       "accuracy": 0.8,
+       "correct_by_source": {
+        "b1_label": 36
+       },
+       "correct_refusals": 0,
+       "f1": 0.926829268292683,
+       "flag_fn": 3,
+       "flag_fp": 0,
+       "flag_tp": 19,
+       "flag_tp_documents": 13,
+       "items": 45,
+       "labels_by_source": {
+        "b1_label": 45
+       },
+       "macro_f1": 0.888415,
+       "precision": 1.0,
+       "recall": 0.8636363636363636,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         6,
+         3,
+         0
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         4,
+         2,
+         2
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ],
+        [
+         8,
+         4,
+         4
+        ],
+        [
+         1,
+         0,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "judge": {
+      "contradoc": {
+       "abstain": 1,
+       "accuracy": 0.875,
+       "correct_by_source": {
+        "kept_claim": 7
+       },
+       "correct_refusals": 0,
+       "f1": 1.0,
+       "flag_fn": 0,
+       "flag_fp": 0,
+       "flag_tp": 3,
+       "flag_tp_documents": 3,
+       "items": 8,
+       "labels_by_source": {
+        "kept_claim": 7,
+        "unreadable": 1
+       },
+       "macro_f1": 0.944444,
+       "precision": 1.0,
+       "recall": 1.0,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         3
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      },
+      "scitab": {
+       "abstain": 7,
+       "accuracy": 0.2857142857142857,
+       "correct_by_source": {
+        "kept_claim": 4
+       },
+       "correct_refusals": 0,
+       "f1": 0.2222222222222222,
+       "flag_fn": 6,
+       "flag_fp": 1,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 6,
+        "refused": 1,
+        "silence": 2,
+        "unreadable": 5
+       },
+       "macro_f1": 0.383838,
+       "precision": 0.5,
+       "recall": 0.14285714285714285,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 2,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     },
+     "strict": {
+      "contradoc": {
+       "abstain": 1,
+       "accuracy": 0.0,
+       "correct_by_source": {},
+       "correct_refusals": 0,
+       "f1": 0.0,
+       "flag_fn": 3,
+       "flag_fp": 0,
+       "flag_tp": 0,
+       "flag_tp_documents": 0,
+       "items": 8,
+       "labels_by_source": {
+        "refused": 7,
+        "unreadable": 1
+       },
+       "macro_f1": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 0,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         8,
+         3,
+         0
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 1
+      },
+      "scitab": {
+       "abstain": 7,
+       "accuracy": 0.14285714285714285,
+       "correct_by_source": {
+        "kept_claim": 2
+       },
+       "correct_refusals": 0,
+       "f1": 0.2222222222222222,
+       "flag_fn": 6,
+       "flag_fp": 1,
+       "flag_tp": 1,
+       "flag_tp_documents": 1,
+       "items": 14,
+       "labels_by_source": {
+        "kept_claim": 3,
+        "refused": 4,
+        "silence": 2,
+        "unreadable": 5
+       },
+       "macro_f1": 0.236111,
+       "precision": 0.5,
+       "recall": 0.14285714285714285,
+       "refusals": 0,
+       "refusals_that_removed_a_right_answer": 0,
+       "refusals_unreadable": 0,
+       "silence_flags": 0,
+       "silence_labels": 2,
+       "silence_note": "silence is counted apart and is never a detection",
+       "strata": [
+        [
+         4,
+         2,
+         0
+        ],
+        [
+         2,
+         1,
+         0
+        ],
+        [
+         6,
+         3,
+         1
+        ],
+        [
+         2,
+         1,
+         1
+        ]
+       ],
+       "tp_quoting_evidence": 0,
+       "truncated": 0,
+       "zero_denominators": 0
+      }
+     }
+    }
+   }
+  }
+ },
+ "scored_at": "2026-11-09, code at loop-lead ab6889f9 (blobs above, equal to lane/cloud ce7f5d4a)",
+ "script_sha256": "3bd4383d90823c78c0d1c400832fc5d4eccd22dd76305f4262975359ad623e7e"
+}

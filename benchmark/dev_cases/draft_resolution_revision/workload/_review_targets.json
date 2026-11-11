@@ -1,0 +1,13 @@
+{
+  "targets": [
+    "draft_resolution_l34_rev1.md"
+  ],
+  "grounding": [
+    "draft_resolution_l34.md"
+  ],
+  "prior": [
+    "draft_resolution_l34.md"
+  ],
+  "source": "operator",
+  "resolved_at": ""
+}

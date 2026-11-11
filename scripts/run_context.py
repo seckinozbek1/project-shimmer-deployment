@@ -48,7 +48,18 @@ DELIVERABLE_FILENAMES = {
     "amendments_json": "review_data.json",
     "amendments_md": "review_findings.md",
     "amendments_docx": "tracked_changes.docx",
-    "per_agent_deliverable": "reviewed_document.md",
+    # Open item 19 (2): the document under review with each finding at its unit,
+    # for a person to read (scripts/reviewed_document.py).
+    "reviewed_document": "reviewed_document.md",
+    # Each agent's raw reply, its judging calls and every registered agent's state,
+    # a technical record (pipeline._render_per_agent_md). It was named
+    # reviewed_document.md until the reader-facing document above took that name.
+    "per_agent_deliverable": "agent_record.md",
+    # What changed between two versions, written by a multi-round run for each later version
+    # (scripts/version_changes.py).
+    "version_changes": "version_changes.md",
+    # A multi-round run's positions and suggested wording (scripts/case_questions.py).
+    "case_positions": "case_positions.md",
 }
 # Top-level index written at deliverables/_run_summary.md (BP-16).
 RUN_SUMMARY_NAME = "_run_summary.md"

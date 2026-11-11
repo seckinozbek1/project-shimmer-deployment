@@ -9,6 +9,12 @@ stops the tool with nothing removed.
 
 Usage:
     py -3.12 -X utf8 tools/archive_ontology_stores.py [--stores DIR] [--out-dir DIR] [--dry-run]
+        [--only NAME ...] [--reason "..."]
+
+`--only` archives and removes the named files alone and leaves every other store as it is (D-432
+item 1: the run-trained gnn_state.json, which names no declared training set, is archived out of
+ontology/stores/). The manifest, with `--reason`, is also written beside the archive as
+`<archive>.record.json`, so the record survives with what it describes.
 
 Defaults: stores = <repo>/ontology/stores, out-dir = <repo's parent>/shimmer-archives
 (outside the repository by construction). JSONL stores are truncated to zero bytes;
@@ -36,16 +42,23 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def archive_and_empty(stores_dir: Path, out_dir: Path, *, dry_run: bool = False) -> dict:
+def archive_and_empty(stores_dir: Path, out_dir: Path, *, dry_run: bool = False, only=None,
+                      reason=None) -> dict:
     stores_dir = Path(stores_dir)
     out_dir = Path(out_dir)
     if out_dir.resolve() == ROOT.resolve() or ROOT.resolve() in out_dir.resolve().parents:
         raise SystemExit("refused: the archive directory must lie outside the repository")
     files = sorted(p for p in stores_dir.iterdir() if p.is_file() and p.name != ".gitkeep") \
         if stores_dir.exists() else []
+    if only:
+        missing = sorted(set(only) - {p.name for p in files})
+        if missing:
+            raise SystemExit("refused: not in the stores: %s" % ", ".join(missing))
+        files = [p for p in files if p.name in set(only)]
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     manifest = {"archived_at_utc": stamp, "stores_dir": str(stores_dir), "files": [],
-                "archive": None, "emptied": [], "removed": [], "dry_run": dry_run}
+                "archive": None, "emptied": [], "removed": [], "dry_run": dry_run,
+                "only": sorted(only) if only else None, "reason": reason}
     digests = {}
     for p in files:
         data = p.read_bytes()
@@ -56,7 +69,7 @@ def archive_and_empty(stores_dir: Path, out_dir: Path, *, dry_run: bool = False)
         manifest["note"] = "no store files present; nothing archived, nothing emptied"
         return manifest
     out_dir.mkdir(parents=True, exist_ok=True)
-    archive = out_dir / f"ontology_stores_{stamp}.zip"
+    archive = out_dir / (f"ontology_stores_{stamp}.zip" if not only else f"ontology_{'_'.join(sorted(only)).replace('.', '_')}_{stamp}.zip")
     if dry_run:
         manifest["archive"] = str(archive) + " (not written, dry run)"
         return manifest
@@ -72,12 +85,13 @@ def archive_and_empty(stores_dir: Path, out_dir: Path, *, dry_run: bool = False)
     manifest["archive"] = str(archive)
     manifest["archive_bytes"] = archive.stat().st_size
     for p in files:
-        if p.suffix == ".jsonl":
+        if p.suffix == ".jsonl" and not only:
             p.write_bytes(b"")
             manifest["emptied"].append(p.name)
         else:
             p.unlink()
             manifest["removed"].append(p.name)
+    Path(str(archive) + ".record.json").write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
     return manifest
 
 
@@ -86,8 +100,11 @@ def main(argv=None) -> int:
     ap.add_argument("--stores", default=str(DEFAULT_STORES))
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--only", nargs="+", default=None, help="archive and remove these files alone")
+    ap.add_argument("--reason", default=None)
     a = ap.parse_args(argv)
-    manifest = archive_and_empty(Path(a.stores), Path(a.out_dir), dry_run=a.dry_run)
+    manifest = archive_and_empty(Path(a.stores), Path(a.out_dir), dry_run=a.dry_run, only=a.only,
+                                 reason=a.reason)
     print(json.dumps(manifest, indent=1))
     return 0
 

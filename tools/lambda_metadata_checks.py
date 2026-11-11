@@ -90,6 +90,28 @@ class SecurityChecks(unittest.TestCase):
         self.assert_clean(provider.project_response('instance-types',inventory))
         self.assert_clean(provider.project_response('ssh-keys',dict(id='b'*32,name='fixture',private=self.mark)))
 
+    def filesystems(self):
+        raw=[dict(id='c'*32,name='shimmer-filesystem',region=dict(name='us-east-1',description=self.mark),
+                  bytes_used=21474836480,is_in_use=False,mount_point='/lambda/nfs/'+self.mark,
+                  created_by=dict(email=self.mark+'@example.invalid',id=self.mark),created=self.mark,
+                  capacity_bytes=9223372036854775807,api_key=self.raw['api_key'],arbitrary_future_field=self.mark)]
+        return provider.project_response('file-systems',raw)
+
+    def test_filesystem_inventory_keeps_name_region_bytes_and_capacity_only(self):
+        """D-S50: the read of the provider's filesystems returns name, region, bytes used and a
+        capacity field the provider names, and drops who made it, its path and every other field."""
+        rows=self.filesystems()
+        self.assert_clean(rows)
+        self.assertEqual(rows,[dict(id='c'*32,name='shimmer-filesystem',region='us-east-1',bytes_used=21474836480,
+                                    is_in_use=False,capacity_bytes=9223372036854775807)])
+
+    def test_filesystem_projection_neutralise_fail_restore_pass(self):
+        original=provider.project_response
+        with patch.object(provider,'project_response',side_effect=lambda endpoint,raw:raw):
+            with self.assertRaises(AssertionError):self.test_filesystem_inventory_keeps_name_region_bytes_and_capacity_only()
+        self.assertIs(provider.project_response,original)
+        self.test_filesystem_inventory_keeps_name_region_bytes_and_capacity_only()
+
     def test_metadata_neutralise_fail_restore_pass(self):
         original=watchdog.provider_instance
         with patch.object(watchdog,'provider_instance',side_effect=lambda value:value):

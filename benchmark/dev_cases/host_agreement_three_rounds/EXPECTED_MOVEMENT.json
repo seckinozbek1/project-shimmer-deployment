@@ -1,0 +1,48 @@
+{
+  "schema": "expected-movement-v1",
+  "not_shown_to_any_model": "This key is outside workload/ and ordinary/, so neither the sealer nor a run receives it.",
+  "written": "2026-11-08, from the case's design, before any code computing a gap between the parties existed (D-S46 item 2).",
+  "rule": "For each declared issue and each pair of consecutive rounds: moved_toward when the gap between the two parties' positions narrows, moved_away when it widens, unchanged_from_prior when it stays the same, each only when both parties state the issue as a figure in the same measure in both rounds. not_computed otherwise: a position in words, or a party that states nothing on the issue in one of the rounds. Python is scored against these labels; a model's judgement on a position in words is scored apart.",
+  "issues": {
+    "entry-period": [
+      {"rounds": ["r1", "r2"], "expected": "moved_toward", "gaps": [16, 0], "measure": "days",
+       "why": "Sarvenna 30 against the Organisation 14 in round 1; both at 21 in round 2."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed",
+       "why": "In round 3 Sarvenna's note states no figure on it and the Organisation's says nothing on it."}
+    ],
+    "termination-notice": [
+      {"rounds": ["r1", "r2"], "expected": "moved_toward", "gaps": [12, 6], "measure": "months",
+       "why": "Sarvenna 12 against 24; Sarvenna keeps 12 while the Organisation comes down to 18."},
+      {"rounds": ["r2", "r3"], "expected": "moved_toward", "gaps": [6, 0], "measure": "months",
+       "why": "Sarvenna's round 3 text states 18 and the Organisation accepts 18."}
+    ],
+    "annual-contribution": [
+      {"rounds": ["r1", "r2"], "expected": "moved_toward", "gaps": [600000, 0], "measure": "EUR",
+       "why": "Sarvenna 2,000,000 against 2,600,000; both at 2,200,000 in round 2."},
+      {"rounds": ["r2", "r3"], "expected": "moved_away", "gaps": [0, 200000], "measure": "EUR",
+       "why": "Sarvenna keeps 2,200,000 and the Organisation asks for 2,400,000 after the cut in Annex II."}
+    ],
+    "tax-relief": [
+      {"rounds": ["r1", "r2"], "expected": "not_computed",
+       "why": "Sarvenna states nothing on it in round 2. A trap besides: the Organisation's round 1 note quotes Sarvenna's 5,000 EUR to reject it, so its figure is not the Organisation's position; a reader of figures would see a gap of 0 in round 1."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed", "why": "Round 3's positions are in words."}
+    ],
+    "premises-access": [
+      {"rounds": ["r1", "r2"], "expected": "not_computed", "why": "Positions in words; Sarvenna states nothing in round 2."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed", "why": "Positions in words; the Organisation states nothing in round 3."}
+    ],
+    "dependants": [
+      {"rounds": ["r1", "r2"], "expected": "not_computed", "why": "Positions in words."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed", "why": "Positions in words; Sarvenna states nothing in round 3."}
+    ],
+    "dispute-settlement": [
+      {"rounds": ["r1", "r2"], "expected": "not_computed", "why": "Positions in words."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed", "why": "Positions in words."}
+    ],
+    "security-provision": [
+      {"rounds": ["r1", "r2"], "expected": "not_computed", "why": "Positions in words; only one party states it in each round."},
+      {"rounds": ["r2", "r3"], "expected": "not_computed", "why": "Positions in words."}
+    ]
+  },
+  "reading_in_words": "For the issues in words a reader would say: premises access and dispute settlement converge in round 3 (Sarvenna accepts express consent and arbitration), and security provision diverges (Sarvenna adds entry without consent). Python computes none of these; a model's answer on them, where one is given, is shown apart and marked."
+}

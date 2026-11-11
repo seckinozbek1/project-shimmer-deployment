@@ -1,0 +1,23 @@
+{
+  "schema": "doc-judge-prompt-v1",
+  "status": "development, exposed (P2 (a) of D-S38, D-S39)",
+  "note": "One question on two passages of one document. It rides doc_judge.py's replay pass as form `pair`: the file's document template is never sent. The named model is set when the prompts are built.",
+  "user_template": "{document}{rule_text}{outcome_lines}",
+  "pair": {
+    "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nCan both passages be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other. Judge only from the two passages.\n\nAnswer with one JSON object and nothing else, in the form {\"outcome\": \"...\", \"reason\": \"...\"}. The reason is one short sentence. The outcome is one of:\n{outcome_lines}",
+    "limit": 40
+  },
+  "outcomes": [
+    {"value": "compatible", "class": "CLEAR", "line": "compatible: both can be true, or they are about different things.", "accepted": ["compatible"]},
+    {"value": "contradict", "class": "FLAG", "line": "contradict: both cannot be true of the same thing at the same time.", "accepted": ["contradict", "contradiction", "contradictory"]},
+    {"value": "cannot tell", "class": "UNDECIDED", "line": "cannot tell: the two passages do not let you decide.", "accepted": ["cannot tell", "uncertain"]}
+  ],
+  "accepted_note": "An outcome is read by its normalised spelling against `accepted`, exact match only.",
+  "quote_required_for": [],
+  "marker_patterns": ["^#+ [DP]-\\S+[ \\t]*$", "^Passage: \\w+[ \\t]*$"],
+  "max_new_tokens": 96,
+  "models": [
+    {"group": "pair_direct", "backend": "local_auditor", "agent": "PRACTICE_AUDITOR", "checkpoint": "base", "model_id": "unsloth/phi-4-bnb-4bit", "reasoning": false}
+  ],
+  "models_note": "The candidate J1 loaded, on the auditor's route. A pair is a narrower question than J1's, so J1's verdict does not settle it either way."
+}

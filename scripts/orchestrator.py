@@ -104,6 +104,12 @@ class TopOrchestrator:
                 registry = json.load(fh).get("agents", {})
         with (root / "config" / "agent_contracts.json").open("r", encoding="utf-8") as fh:
             contracts = json.load(fh).get("contracts", {})
+        # D-S55 items 4 and 5: a task two agents declare, a tool Python does not run for it, or a
+        # checking role on the model it checks stops the run here, before any agent is built.
+        import judge_agent
+        refused = judge_agent.refusals(registry, contracts)
+        if refused:
+            raise ValueError("the agent roster cannot run as declared: " + "; ".join(refused))
         orch = cls(root=root, constitution=constitution, bus=bus, registry=registry,
                    contracts=contracts, interactive=interactive, operator_handler=operator_handler,
                    cost_tracker=cost_tracker, run_context=run_context)

@@ -436,6 +436,30 @@ define each agent's flat item fields (carried inside `items[]`).
 }
 ```
 
+**The typed Finding record (INFRA-044, INFRA-045).** A finding is itself one such flat
+item: `rule_id`, `unit_id`, `value_a`/`unit_a`, `value_b`/`unit_b`, `relation`,
+`record_verdict` and `source_refs` (schema in `config/agent_contracts.json` under
+`finding_record`). Its relations are, in order: `sum_mismatch`, `above_band`,
+`below_band`, `missing_field`, `product_mismatch`, `ratio_out_of_range`, `date_window`,
+`licence_missing`; the five INFRA-044 appended for an operator-declared earlier version
+(`changed_from_prior`, `unchanged_from_prior`, `moved_toward`, `moved_away`,
+`absent_since_prior`); and the four INFRA-045 appended (2026-10-31), which Python computes
+from the document's own figures where a rule names them: `rate_mismatch` (a figure that is
+not a stated percentage of another, or a percentage that is not one figure's share of
+another), `carry_mismatch` (a first row that does not carry the column sum of the unit
+before), `copy_mismatch` (a table row that does not carry the figure of the unit it names)
+and `unit_mismatch` (a figure written in another measure than its column or band, by a
+decimal prefix); and the one INFRA-046 appended (2026-11-05), `contradiction`: two passages
+of one unit, in words, that cannot both be true. Only a model writes it, on a judged path,
+with both passages quoted in `quote` and `quote_b`; Python checks the words are in the unit and
+are two passages, never that they contradict, and it is never an amendment. INFRA-047
+(2026-11-06) lets the two passages stand in two units of one document, only where Python chose
+both and the model said so in both orders, the record naming both units. INFRA-048 (2026-11-07)
+appended `claim_not_met`: a model's settled decision that a claim does not hold on the cells of a
+table, under a rule declaring `[compare: cells]`. Python selects the cells and shows them with the
+claim, checks they stand in the unit, never that the claim fails, and it is never an amendment. The
+relations are appended, never inserted or renamed.
+
 Final prose synthesis is always done by a single model (Claude)
 to ensure consistent voice in deliverables.
 
@@ -697,7 +721,7 @@ PHASE 7 — LEARN
   DELTAs proposed from audit patterns.
   Constitution updated with new legislation.
 
-REDACTION — FINAL PASS, ALWAYS RUNS (pipeline phase 9; after synthesis, before persist; LAW-IV)
+REDACTION: FINAL PASS, RUNS WHEN THE SENSITIVITY LAYER IS ACTIVE (pipeline phase 9; after synthesis, before persist; LAW-IV)
   The local Qwen redactor (REDACTOR) APPLIES the operator redaction rules (LAW-IV's phrase "content marked
   for redaction") to document/deliverable spans at the output boundary — it does
   NOT judge sensitivity itself (INFRA-038). The redactor uses a resident local
@@ -727,8 +751,8 @@ REDACTION — FINAL PASS, ALWAYS RUNS (pipeline phase 9; after synthesis, before
   routing) is built but UNWIRED and deferred, hard-gated by
   --sensitivity-layer-inactive-override. An approved + passed redaction is scrubbed
   from EVERY operator-facing artifact — the amendments master, the re-rendered
-  md/docx (the docx body canvas included), the per-agent deliverable, and the
-  summaries — not just three master fields; matching is deterministic and tolerant
+  md/docx (the docx body canvas included), the per-agent deliverable (the agent
+  record), the reviewed document (rendered again from scrubbed inputs), and the summaries, not just three master fields, whenever this pass runs (it runs under an active sensitivity layer, which is off as shipped); matching is deterministic and tolerant
   (article/diacritic/connective variation). A proposed span located NOWHERE BLOCKS
   (span_dropped) rather than silently zero-matching. THE REAL GATE: after apply,
   every artifact is re-grepped for each approved span and the run BLOCKS

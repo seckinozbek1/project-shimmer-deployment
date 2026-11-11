@@ -407,6 +407,39 @@ class SchedulerChecks(unittest.TestCase):
         self.assertEqual(assigned["worker"], "b")
 
 
+_FINAL_MODE_TEST = None   # a neutralisation may replace the refusal's test expression
+
+
+def _final_mode_admits(task, multi_round, manifest):
+    """Execute main's own `if final_models.mode() == 'final':` block with stub
+    collaborators; True when it admits the arguments, False when parser.error
+    refuses. No model, no environment, no parser construction."""
+    tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+    main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    block = copy.deepcopy(next(s for s in main.body if isinstance(s, ast.If)
+                               and ast.unparse(s.test) == "final_models.mode() == 'final'"))
+    refusal = next(s for s in block.body if isinstance(s, ast.If) and "parser.error" in ast.unparse(s.body[0]))
+    if _FINAL_MODE_TEST is not None:
+        refusal.test = copy.deepcopy(_FINAL_MODE_TEST)
+
+    class Refused(Exception):
+        pass
+
+    def error(message):
+        raise Refused(message)
+    scope = {"final_models": SimpleNamespace(mode=lambda: "final", verify=lambda role: None,
+                                             admit_ordinary=lambda: None),
+             "parser": SimpleNamespace(error=error),
+             "args": SimpleNamespace(task=task, multi_round=multi_round, multi_round_manifest=manifest,
+                                     backend_profile="local")}
+    try:
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[block], type_ignores=[])), "final_mode", "exec"),
+             scope)
+    except Refused:
+        return False
+    return True
+
+
 class AdapterChecks(unittest.TestCase):
     def test_shutdown_failure_cannot_leave_completed_evidence(self):
         from run_context import for_run_dir
@@ -479,6 +512,25 @@ class AdapterChecks(unittest.TestCase):
         dag = parser.parse_args(["--execution-topology", "dependency_dag", "--activation-profile", "sparse"])
         self.assertFalse(dag.multi_round)
         self.assertEqual(dag.execution_topology, "dependency_dag")
+
+    def test_final_mode_admits_a_declared_multi_round_review_only(self):
+        """R2 / D-011 choice 1: final mode admits ordinary Review and a DECLARED
+        multi-round Review (flag and manifest together); Draft, a flag without a
+        manifest and a manifest without the flag stay refused. Executes main's own
+        final-mode block; the topology rule (reference_serial for multi-round) is
+        untouched. Proven by neutralise (the old condition), fail, restore, pass."""
+        from effect_proof import prove_effect
+        import sys as _sys
+        module = _sys.modules[__name__]
+        cases = [("review", False, None), ("review", True, "case.json"), ("draft", False, None),
+                 ("review", True, None), ("review", False, "case.json"), ("draft", True, "case.json")]
+        expected = [True, True, False, False, False, False]
+        observe = lambda: [module._final_mode_admits(*c) for c in cases]
+        check = lambda: ("PASS" if observe() == expected else "FAIL", "final-mode admission")
+        old = ast.parse("args.multi_round or args.multi_round_manifest or args.task != 'review'", mode="eval").body
+        prove_effect(name="final_mode_multi_round_admission", validate=lambda: len(cases) == len(expected),
+                     observe=observe, check=check,
+                     neutralise=lambda: patch.object(module, "_FINAL_MODE_TEST", old))
 
     def test_reference_factory_is_identity_and_noop_mutation(self):
         wrapper = SimpleNamespace()
@@ -610,6 +662,215 @@ class AdapterChecks(unittest.TestCase):
         finally:
             topology.ACTIVE.reset(token)
             runtime.close()
+
+
+# D-076 (INC-019): a gather over the scheduler's bound runs as consecutive waves that
+# share one snapshot and one parent set. Authored replies, no model, no event loop.
+WAVE_REASON = "explicit_parent_results_and_wave_snapshot"
+
+
+def _wave_message(sender, n):
+    return {"sender": sender, "recipient": "ORCHESTRATOR", "channel": "main", "sender_role": "agent",
+            "type": "INFORM", "body": {"n": n},
+            "constitution_check": {"laws_consulted": ["LAW-V"], "result": "RESOLVED", "resolution": "fixture"}}
+
+
+class _WaveWrapper:
+    """The attributes run_wave reads; each call records the bus it was shown, then posts."""
+    def __init__(self, n, bus, seen):
+        self.n, self.bus, self.seen = n, bus, seen
+        self.name, self.backend, self.model, self.spec = "W%02d" % n, "local_producer", "fixture", {}
+
+    def _reference_run_task(self, **kwargs):
+        self.seen.append(dict(n=self.n, wave=self._observation_wave,
+                              shown=[m["body"]["n"] for m in self.bus.read_all()]))
+        self.bus.post(_wave_message(self.name, self.n))
+        return {"ok": True, "n": self.n}
+
+
+async def _wave_judgment(wrapper, work_payload, run_objectives=None, channel="main", max_tokens=64,
+                         convention_registry=None, reference_index_excerpt=None, items_are_advisory=False,
+                         activation=None, _progress=None):
+    raise AssertionError("an optimized gather never awaits the reference call")
+
+
+def _drive(coroutine):
+    """Run execute_plans to its end with its waves called inline (the side gate denies the
+    loopback socket an event loop needs on Windows)."""
+    try:
+        coroutine.send(None)
+    except StopIteration as done:
+        return done.value
+    raise AssertionError("the gather awaited something other than its waves")
+
+
+def _observe_gather(count, bound, direct=False):
+    """One gather of `count` calls under `bound`, after a seed task and a seed post. With
+    `direct`, the calls go to one run_wave exactly as execute_plans sent them before D-076."""
+    import semantic_waves as waves
+    from message_bus import MessageBus
+    with tempfile.TemporaryDirectory() as directory:
+        bus = MessageBus.open(Path(directory) / "bus.jsonl")
+        bus.post(_wave_message("SEED", -1))
+        runtime = topology.Runtime([Lane("a"), Lane("b")])
+        runtime.scheduler.max_pending = bound
+        token = topology.ACTIVE.set(runtime)
+        try:
+            runtime.scheduler.run([Task("seed", lambda c: None, 0)])
+            runtime.previous, runtime.frontier = "seed", ("seed",)
+            seen = []
+            wrappers = [_WaveWrapper(n, bus, seen) for n in range(count)]
+            calls = [(w, dict(work_payload={"document_id": "d"}, doc_id="d")) for w in wrappers]
+            try:
+                if direct:
+                    results = waves.run_wave(runtime, calls, WAVE_REASON)
+                else:
+                    async def inline(function, *args):
+                        return function(*args)
+                    plans = [waves.PlannedCall(_wave_judgment, (), dict(wrapper=w, work_payload={"document_id": "d"}))
+                             for w in wrappers]
+                    with patch.object(waves, "asyncio", SimpleNamespace(to_thread=inline)):
+                        results = _drive(waves.execute_plans(plans))
+            except ValueError as exc:
+                return {"refused": str(exc)}
+            tasks = [dict(id=t.id, sequence=t.sequence, agent=t.agent,
+                          edges=[[e.parent, e.reason, e.require_success] for e in t.edges])
+                     for key, t in runtime.scheduler.tasks.items() if key != "seed"]
+            return dict(results=[r["n"] for r in results], tasks=tasks, frontier=list(runtime.frontier),
+                        previous=runtime.previous, ran=sorted(s["n"] for s in seen),
+                        shown={str(s["n"]): s["shown"] for s in seen},
+                        waves=sorted({s["wave"] for s in seen}),
+                        wave_of={str(s["n"]): s["wave"] for s in seen},
+                        bus=[[m["sender"], m["body"]["n"]] for m in bus.read_all()])
+        finally:
+            topology.ACTIVE.reset(token)
+            runtime.close()
+
+
+def _over_bound_verdict(observed, count=7, bound=3):
+    """Every call ran once, results in source order, posts in source order, ceil(count/bound) waves."""
+    if "refused" in observed:
+        return "FAIL", "refused: " + observed["refused"]
+    ok = (observed["results"] == list(range(count)) and observed["ran"] == list(range(count))
+          and len(observed["tasks"]) == count and len(observed["waves"]) == -(-count // bound)
+          and observed["bus"] == [["SEED", -1]] + [["W%02d" % n, n] for n in range(count)]
+          and observed["frontier"] == [t["id"] for t in observed["tasks"]])
+    return ("PASS" if ok else "FAIL"), "over-bound gather"
+
+
+def _shared_snapshot_verdict(observed):
+    """Every sibling in every chunk was shown the bus as it was before the gather."""
+    if "refused" in observed:
+        return "FAIL", "refused"
+    ok = len(observed["waves"]) > 1 and all(shown == [-1] for shown in observed["shown"].values())
+    return ("PASS" if ok else "FAIL"), "shared snapshot"
+
+
+def _shared_parents_verdict(observed):
+    """Every task in every chunk depends on the parents read before the gather, and only them."""
+    if "refused" in observed:
+        return "FAIL", "refused"
+    ok = len(observed["waves"]) > 1 and all(t["edges"] == [["seed", WAVE_REASON, False]] for t in observed["tasks"])
+    return ("PASS" if ok else "FAIL"), "shared parents"
+
+
+def _within_bound_expected(count):
+    ids = ["task-%06d" % (1 + n) for n in range(count)]
+    return dict(results=list(range(count)), ran=list(range(count)),
+                tasks=[dict(id=ids[n], sequence=1 + n, agent="W%02d" % n, edges=[["seed", WAVE_REASON, False]])
+                       for n in range(count)],
+                frontier=ids, previous=ids[-1], shown={str(n): [-1] for n in range(count)},
+                waves=["wave-000001"], wave_of={str(n): "wave-000001" for n in range(count)},
+                bus=[["SEED", -1]] + [["W%02d" % n, n] for n in range(count)])
+
+
+def _within_bound_verdict(observed):
+    """At and below the bound: one wave, equal to one direct run_wave and to the pinned shape."""
+    ok = all(observed[str(n)] == observed["direct_" + str(n)] == _within_bound_expected(n) for n in (2, 3))
+    return ("PASS" if ok else "FAIL"), "within-bound gather"
+
+
+def _observe_within_bound():
+    return {key: _observe_gather(n, 3, direct=key.startswith("direct")) for n in (2, 3)
+            for key in (str(n), "direct_" + str(n))}
+
+
+class WaveAdmissionChecks(unittest.TestCase):
+    """D-076: neutralise, fail, restore, pass for each property, through execute_plans."""
+
+    def test_over_bound_gather_runs_every_call_once_in_source_order(self):
+        from effect_proof import prove_effect
+        import semantic_waves as waves
+        run_wave = waves.run_wave
+        def refusal(runtime, calls, reason):
+            # The pre-D-076 refusal: an over-bound gather refused the whole run.
+            if len(calls) > runtime.scheduler.max_pending:
+                raise ValueError("Extraction exceeds bounded wave admission; no source silently omitted")
+            return run_wave(runtime, calls, reason)
+        prove_effect(name="over_bound_gather_admitted", validate=lambda: True,
+                     observe=lambda: _observe_gather(7, 3), check=lambda: _over_bound_verdict(_observe_gather(7, 3)),
+                     neutralise=lambda: patch.object(waves, "run_waves", refusal))
+
+    def test_later_chunks_see_only_the_pre_gather_bus(self):
+        from effect_proof import prove_effect
+        import semantic_waves as waves
+        run_wave = waves.run_wave
+        def own_snapshot(runtime, calls, reason, snapshot=None, parents=None):
+            return run_wave(runtime, calls, reason, None, parents)
+        prove_effect(name="chunks_share_one_snapshot", validate=lambda: True,
+                     observe=lambda: _observe_gather(7, 3)["shown"],
+                     check=lambda: _shared_snapshot_verdict(_observe_gather(7, 3)),
+                     neutralise=lambda: patch.object(waves, "run_wave", own_snapshot))
+
+    def test_later_chunks_depend_on_the_pre_gather_parents(self):
+        from effect_proof import prove_effect
+        import semantic_waves as waves
+        run_wave = waves.run_wave
+        def own_parents(runtime, calls, reason, snapshot=None, parents=None):
+            return run_wave(runtime, calls, reason, snapshot, None)
+        prove_effect(name="chunks_share_one_parent_set", validate=lambda: True,
+                     observe=lambda: _observe_gather(7, 3)["tasks"],
+                     check=lambda: _shared_parents_verdict(_observe_gather(7, 3)),
+                     neutralise=lambda: patch.object(waves, "run_wave", own_parents))
+
+    def test_within_bound_gather_is_one_unchanged_wave(self):
+        from effect_proof import prove_effect
+        import semantic_waves as waves
+        run_wave = waves.run_wave
+        def always_split(runtime, calls, reason):
+            # A wrong implementation: splits a gather that fits, one call per wave.
+            snapshot, parents = calls[0][0].bus.read_all(), waves._parents(runtime)
+            results, frontier = [], ()
+            for call in calls:
+                results += run_wave(runtime, [call], reason, snapshot, parents)
+                frontier += runtime.frontier
+            runtime.frontier = frontier
+            return results
+        def forgets_frontier(runtime, calls, reason, snapshot=None, parents=None):
+            # A wrong default: a wave with no parents passed depends on nothing.
+            return run_wave(runtime, calls, reason, snapshot, () if parents is None else parents)
+        for name, target, replacement in (("within_bound_not_split", "run_waves", always_split),
+                                          ("within_bound_default_parents", "run_wave", forgets_frontier)):
+            prove_effect(name=name, validate=lambda: True, observe=_observe_within_bound,
+                         check=lambda: _within_bound_verdict(_observe_within_bound()),
+                         neutralise=lambda t=target, r=replacement: patch.object(waves, t, r))
+
+
+WAVE_ADMISSION_TESTS = [name for name in dir(WaveAdmissionChecks) if name.startswith("test_")]
+
+
+def wave_admission_check():
+    """The verify gate's entry (check 291): every WaveAdmissionChecks proof, in one result."""
+    result = unittest.TestResult()
+    unittest.TestSuite(WaveAdmissionChecks(name) for name in WAVE_ADMISSION_TESTS).run(result)
+    problems = result.failures + result.errors
+    if problems or result.testsRun != len(WAVE_ADMISSION_TESTS):
+        first = problems[0][1].strip().splitlines()[-1] if problems else "tests did not run"
+        return "FAIL", "%d failures/errors; first: %s" % (len(problems), first)
+    return "PASS", ("%d cases, 5 neutralise/fail/restore/pass proofs (D-076): a gather over the scheduler's "
+                    "bound runs as consecutive waves, every call once, results and posts in source order; every "
+                    "chunk is shown the pre-gather bus and depends on the pre-gather parents; a gather at or "
+                    "below the bound is one wave equal to the direct run_wave" % result.testsRun)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,96 @@
+{
+  "schema": "producer-questions-v1",
+  "description": "The narrowed roles of the producer backend (INFRA-050; D-S57 item 1, D-S56 item 1, D-S62 item 3), read by scripts/producer_questions.py. Each role answers one narrow question per unit or passage Python selects. A judgement is a choice decided from the model's own probabilities in one forward pass (choice_decision.py): the model writes no text, and the quote is Python's echo of the evidence it selected. A span is kept only when Python finds it verbatim in the unit. Nothing here is used until its form is decision and, for a choice, config/semantic_thresholds.json holds its family's measured threshold; until then each role runs as shipped (form reply) and the run records why. Adopting a form is a recorded decision after its measurement. No question here has been measured on a model.",
+  "unit_evidence": "A unit is one of pairing_map.split_units' units of the document under review (its heading and its own text). The preamble unit counts as one. Nothing else reaches a question: no neighbour, no registry, no bus, no other document's text unless the question names it.",
+  "claim_support": {
+    "agent": "LEGAL_ANALYST",
+    "form": "reply",
+    "evidence": "one unit's own text and the one context passage pipeline._provision_aware_context_refs ranks first for it (its REF-* and text); a unit with no ranked passage is not asked",
+    "per_unit": 1,
+    "max_prompt_chars": 12000,
+    "decision": {
+      "template": "A part of a document and a passage from the reference material follow.\n\nPART\n{unit}\n\nPASSAGE\n{passage}\n\nJudge only from these two texts. Does the passage support what the part states?\n\nAnswer with one word.\nYes: the passage supports what the part states.\nPartly: the passage supports only some of it, or only weakly.\nNo: the passage bears on the part and does not support it.\nUnrelated: the passage does not bear on what the part states.",
+      "threshold_family": "producer_claim_support",
+      "answers": [
+        {"label": "GROUNDED", "surface": "Yes"},
+        {"label": "THIN", "surface": "Partly"},
+        {"label": "UNSUPPORTED", "surface": "No"},
+        {"label": "OUT_OF_SCOPE", "surface": "Unrelated"}
+      ],
+      "record_note": "A settled answer writes one LEGAL_ANALYST item: claim_id the unit's id, verdict the answer's label, passage_ref the passage's REF-*, support_probabilities the decision's probabilities, quote the passage's text (Python's echo), reasoning Python's sentence naming the decision and its probability, ref_ids [passage_ref]. An unsettled answer writes none and is counted. Every item is a model's (written_by model), summary-only and never promoted."
+    }
+  },
+  "speech_act": {
+    "agent": "SPEECH_ACT_TAGGER",
+    "form": "reply",
+    "evidence": "one line of one unit (a line carrying a letter or a digit, the unit's heading line excepted), at most max_lines_per_unit lines a unit, in order",
+    "max_lines_per_unit": 40,
+    "max_prompt_chars": 4000,
+    "decision": {
+      "template": "A line from a document follows.\n\nLINE\n{line}\n\nWhat does the line do?\n\nAnswer with one word.\n{answer_lines}",
+      "threshold_family": "producer_speech_act",
+      "answers": [],
+      "answers_note": "OPERATOR-DECLARED: the acts are the operator's own words, given here as {label, surface, meaning}; none is in code. With no act declared the question is never asked, whatever the form, and the run records why. Unclear (cannot be settled) is always added by Python."
+    }
+  },
+  "citation_target": {
+    "agent": "CITATION_RESOLVER",
+    "form": "reply",
+    "evidence": "one line of one unit that names, by the shared tokeniser (pairing_map._norm_label), every word of the name of at least one OTHER document of the corpus, and the names of those documents",
+    "python_first": "A line naming exactly one other document resolves to it by Python with no call (resolved true, decided_by python). A line naming two to max_candidates documents is asked. More than max_candidates is refused and counted. A line naming none is not a citation by this test.",
+    "max_candidates": 4,
+    "max_prompt_chars": 6000,
+    "decision": {
+      "template": "A line from a document and the names of other documents follow.\n\nLINE\n{line}\n\nDOCUMENTS\n{candidates}\n\nWhich document does the line refer to?\n\nAnswer with one letter, or None.\n{answer_lines}",
+      "threshold_family": "producer_citation_target",
+      "answers": [
+        {"label": "candidate_1", "surface": "A"},
+        {"label": "candidate_2", "surface": "B"},
+        {"label": "candidate_3", "surface": "C"},
+        {"label": "candidate_4", "surface": "D"},
+        {"label": "none", "surface": "None"}
+      ],
+      "answers_note": "A question offers only the letters of its own candidates and None; Unclear is added by Python.",
+      "record_note": "A settled letter writes one CITATION_RESOLVER item: source_document the document under review, target_document the candidate's name, citation_form the line (Python's echo), resolved true. None writes resolved false. Unsettled writes none and is counted."
+    }
+  },
+  "name_role": {
+    "agent": "INST_FINDER",
+    "form": "reply",
+    "evidence": "one unit's own text",
+    "kind": "extraction",
+    "max_prompt_chars": 12000,
+    "extraction": {
+      "keep": "an item is kept only when its name and its evidence_in_text are each found verbatim in the unit (whitespace-normalised); otherwise it is refused with its reason and counted",
+      "fields": ["name", "role", "evidence_in_text"]
+    }
+  },
+  "inventory_element": {
+    "agent": "ARCHIVIST",
+    "form": "reply",
+    "evidence": "one unit's own text",
+    "kind": "extraction",
+    "max_prompt_chars": 12000,
+    "extraction": {
+      "keep": "an element is kept only when its name is found verbatim in the unit (whitespace-normalised); document_count and document_names are computed by Python over the corpus (the documents whose text holds the name verbatim), never the model's; title, date and chronology are left to Python's dating rule, which refuses rather than guesses",
+      "fields": ["element", "description"]
+    }
+  },
+  "editorial_verdict": {
+    "agents": ["EDITOR_CLERK", "EDITOR_HEAD_OF_UNIT", "EDITOR_HEAD_OF_SECTION"],
+    "form": "reply",
+    "evidence": "one observation: the finding's own sentence and the text of the unit it concerns",
+    "routing": "An observation on a model's finding goes to a rank whose backend is in the other model family from the backend of the bus post that carried the finding (finding_record.written_by). A Python finding may go to either family. With no rank of the other family in the run, no model reviews it and the record says so.",
+    "max_prompt_chars": 12000,
+    "decision": {
+      "template": "A finding about a part of a document and the part follow.\n\nFINDING\n{finding}\n\nPART\n{unit}\n\nJudge only from these two texts. Is the finding sound?\n\nAnswer with one word.\nSound: the part bears the finding out.\nConcern: the finding may be wrong or overstated.\nSerious: the part contradicts the finding.",
+      "threshold_family": "producer_editorial_verdict",
+      "answers": [
+        {"label": "sound", "surface": "Sound"},
+        {"label": "concern", "surface": "Concern"},
+        {"label": "serious_concern", "surface": "Serious"}
+      ],
+      "record_note": "A settled answer writes one item for the rank: ref the finding's REF-*, verdict the label, rationale Python's sentence naming the decision and its probability, quote the finding's sentence (Python's echo). Unsettled writes none and is counted."
+    }
+  }
+}

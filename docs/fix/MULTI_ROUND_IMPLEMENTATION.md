@@ -31,7 +31,7 @@ branch runs after existing startup model/privacy gates, before date population,
 adaptive spawning, ordinary Review/Draft phases and ontology capture. It creates
 the existing orchestrator with `run_adaptive_spawn=False` and uses fresh PROCESSOR
 and VERIFIER wrappers. Their call-specific contracts come from
-`config/multi_round_contracts.json`; the fixed roster and ordinary contracts are
+`config/multi_round_contracts.json` (deleted at loop S5, D-103: the case records are computed in Python); the fixed roster and ordinary contracts are
 unchanged. This is a source-grounded case extraction/compilation task followed by
 independent fidelity review, within the existing agents' capabilities. No new
 agent, charter or constitutional change is introduced.
@@ -184,3 +184,25 @@ flags. Staged-file verification is repeated before the local commit. Location-on
 proof is saved in `output/multi_round_implementation/credential_flag_review.json`.
 No real credential required rotation. HTTP fixture integration remains skipped
 for the previously recorded missing dependency; that check is not claimed passed.
+
+## Operator decision: a later round reruns what changed (2026-09-19)
+
+**The decision.** Multi-round must NOT recompute a round from scratch. A later round reruns
+what CHANGED. A finding Python already computed in an earlier round is not recomputed just
+because a new round began.
+
+This is an operator decision recorded in advance, not a finding and not a defect report. It
+is recorded here, with the rest of the multi-round contract, rather than in
+`docs/fix/OPEN_ITEMS.md`, which holds only things that were found and consciously left.
+
+**Nothing here is measured.** The multi-round path has never executed on a real workload: no
+model execution, no benchmark, no GPU or provider workload, as the status line at the top of
+this document has said since 2026-09-14. So whether the path recomputes today is UNKNOWN. It
+is not claimed to recompute, and it is not claimed to reuse.
+
+**What the first execution has to establish, before anything is optimized.** Whether a second
+round recomputes findings the first round already computed, measured from that run's own
+artifacts (the typed Finding records on the bus, the per-call evidence and the pairing map,
+which together say what was computed in which round). Optimizing a path whose behaviour has
+not been observed would be building against a guess, and the figures would be unfalsifiable
+in the same way every pre-execution claim about this path has been.

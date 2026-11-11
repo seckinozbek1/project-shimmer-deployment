@@ -1,5 +1,12 @@
 # Historical README at 13144755a7493713060c76256352657c3f5cc1d1
 
+> Note (2026-10-31): this snapshot is history. Several of its statements are contradicted by
+> later evidence and must not be quoted: its recall percentages (one is said in its own text to
+> be not reproducible), the corpora it calls held-out (every test the project had built or read
+> by then is exposed, so none of them is held-out), and its "domain-agnostic by construction"
+> (it holds only in the narrow sense the current README states). Current development figures,
+> all on exposed material, are in [docs/RESULTS.md](../RESULTS.md).
+
 Preserved verbatim below, including superseded claims, measurements and instructions. Statements using "current", "today" or "HEAD" describe their original checkpoint, not the current build. Relative paths in the snapshot are relative to the repository root. Use the [current README](../../README.md), [runbook](../RUNBOOK.md) and [routing audit](../fix/ROUTING_UI_AUDIT.md) for current behavior and corrections.
 
 ---
@@ -74,6 +81,11 @@ on 11 September and stopped by the operator both times before any deliverable ex
 clean twin was never run. The last scored run predates all of that work, and the measurement
 is owed. Until it is made, every mechanism dated 10 or 11 September below should be read as
 built, not as working, and the worst-case reading is the honest one.
+
+> **Correction note, 2026-10-27.** "Its clean twin was never run" was true when written, but
+> later passages of this same document report clean-twin runs: the 2026-09-12 overnight runs
+> (around lines 612 to 635) and the 2026-09-11 deepening-pass measurements (around lines 3080
+> to 3092). The text above is kept as history.
 
 **This repository is a public source snapshot, MIT licensed** (see `LICENSE` and
 `CITATION.cff`). It carries the source code, the configuration, and the test corpora the
@@ -2885,6 +2897,11 @@ pairs and showed that the four rules checking the planted flaw kinds paired with
 which is what the declared-scope fix addresses. The clean twin was never run. **That
 measurement is owed**, and until it is made the figures below describe the code as it was,
 not the code at HEAD.
+
+> **Correction note, 2026-10-27.** "The clean twin was never run" is contradicted by other
+> passages of this same document, which report clean-twin runs: the 2026-09-12 overnight runs
+> (around lines 612 to 635) and the 2026-09-11 deepening-pass measurements (around lines 3080
+> to 3092, just below). The text above is kept as history.
 
 From operator testing before productization (cloud profile, wide review, the redaction phase
 active), on a five-document synthetic competition-law corpus (five regulations plus five

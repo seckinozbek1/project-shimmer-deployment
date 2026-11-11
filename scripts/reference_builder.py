@@ -84,6 +84,16 @@ def excerpt(text, *, max_chars=None) -> str:
     return table_aware_excerpt(text, max_chars)
 
 
+def excerpt_is_whole(text) -> bool:
+    """True when a stored excerpt cannot have been clipped: prose shorter than
+    PROSE_EXCERPT_CHARS. A table is sized in rows, so a table excerpt of any length may
+    have lost rows (one kept to its header and separator is no longer a table to
+    `is_table_passage`, so any table line counts), and prose of exactly that length may
+    have been cut there."""
+    text = str(text or "")
+    return not any(_TABLE_LINE.match(ln) for ln in text.splitlines()) and len(text) < PROSE_EXCERPT_CHARS
+
+
 
 
 @dataclass
@@ -310,4 +320,36 @@ def paragraph_ranges(text):
     if stripped:
         start = cursor + piece.index(stripped)
         out.append((start, start + len(stripped), stripped))
+    return out
+
+
+def whole_passage(ref, source_texts):
+    """The passage an indexed reference names, whole, read again from its document's own
+    text: the paragraph its `location.paragraph` numbers (index_document numbers them
+    from 1, in paragraph_ranges order, the one splitter both use). None when the
+    document's text is not given, the number names no paragraph, or that paragraph's
+    excerpt is not the stored one (then it is not the passage the index holds). Reads
+    the index's entries only; what the index stores is unchanged."""
+    if not isinstance(ref, dict):
+        return None
+    text = (source_texts or {}).get(ref.get("document_id"))
+    number = (ref.get("location") or {}).get("paragraph")
+    if not isinstance(text, str) or isinstance(number, bool) or not isinstance(number, int) or number < 1:
+        return None
+    ranges = paragraph_ranges(text)
+    if number > len(ranges):
+        return None
+    passage = ranges[number - 1][2]
+    return passage if excerpt(passage) == ref.get("text_excerpt") else None
+
+
+def with_whole_passages(refs, source_texts):
+    """Copies of `refs` for a reader-facing summary, each carrying its passage whole as
+    `passage` where `whole_passage` recovers it (under an active sensitivity layer the
+    summary is scrubbed on disk, and a clipped excerpt could leave part of a span the
+    scrub cannot match)."""
+    out = []
+    for ref in refs or []:
+        passage = whole_passage(ref, source_texts)
+        out.append(dict(ref, passage=passage) if passage is not None else ref)
     return out
