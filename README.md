@@ -54,17 +54,20 @@ Shimmer puts together mechanisms that already exist. It does not introduce new
 ones. The parts are:
 
 - **Several agents that check each other across model families.** One model
-  writes a draft; a model from another family checks it. This follows the
-  multi-agent debate line of work, for example "Improving Factuality and
-  Reasoning in Language Models through Multiagent Debate" (arXiv:2305.14325) and
-  "Encouraging Divergent Thinking in Large Language Models through Multi-Agent
-  Debate" (arXiv:2305.19118).
+  writes a draft; a model from another family checks it. Models used as judges
+  tend to favour their own outputs (Panickssery et al., 2024, arXiv:2404.13076),
+  and more capable models make more similar mistakes (Goel et al., 2025,
+  arXiv:2502.04313). A panel of judges from different model families is less
+  biased than a single judge (Verga et al., 2024, arXiv:2404.18796). Shimmer does
+  not use multi-agent debate (arXiv:2305.14325, arXiv:2305.19118), where copies
+  of one model argue until they agree.
 - **A constitution read at run time.** Seven seed laws and an append-only list of
   amendments, in [config/constitution.json](config/constitution.json). An agent
   may propose a change; only the operator can approve one, through a formal
   amendment process. Related work on runtime controls for language-model agents
-  includes "RTBAS: Defending LLM Agents Against Prompt Injection and Privacy
-  Leakage" (arXiv:2502.08966).
+  includes RTBAS (arXiv:2502.08966), which checks each tool call against
+  information-flow rules while the agent runs; Shimmer's laws concern document
+  review rather than security.
 - **Arithmetic in code, not in a model.** Where a rule can be checked by
   arithmetic or by the presence of a field, Python checks it. A model is asked
   only where Python cannot decide.
