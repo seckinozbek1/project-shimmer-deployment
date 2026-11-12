@@ -207,6 +207,13 @@ widely between the fields it has run on.
   D-529 (the usage stop threshold 98 until the reset on 18 November 2026, then 95: `USAGE_STOP_EXCEPTION`, `usage_stop_percent(now)`) changed `tools/loop/instance_reaper.py`, so every bundle sealed before it refuses with `Controller source changed` and must be re-sealed. D-533 changed `tools/ordinary_final_cloud.py`: the ssh-ready probe goes through the module-level `ssh_probe_ready`, which calls transport with `tolerate_timeout`, so a hanging probe is one unreachable attempt within the 30 tries (bounded, then `SSH not ready`); proof `test_a_hanging_ssh_ready_probe_is_an_unreachable_attempt_not_a_failure` with its neutralisation; bundles sealed before it refuse with `Controller source changed` (the same re-seal as D-529).
   IMAGE-A (D-S108, D-S109, D-417) changed `tools/ordinary_final_cloud.py` again (the image
   phases), in the same re-seal.
+  The arm G gate tree made a git checkout of the bound commit's tree, checked by its sealed id
+  (lane/gate-env, after D-548: `ordinary_final_run.git_checkout`, `checkout_holds`, the gate block's
+  `source_tree`), changed `tools/ordinary_final_run.py`, so every bundle sealed before it refuses with
+  `Controller source changed` and must be re-sealed; it also changed `tools/prepare_ordinary_final_run.py`
+  (`bound_tree_archive`, `model_cache`), pinned in every seal's `preparation_source_hashes`, so such a
+  bundle's local reverify (`ordinary_final_bound_reverify.py`) also refuses with `Preparation source
+  changed`. A refused extraction or checkout writes its one-line reason to `evidence/gate/refusal.json`.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
   identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
@@ -422,11 +429,30 @@ widely between the fields it has run on.
   required in the sealed runtime lock (a pin holds against the lock's version with its local label
   dropped when the pin names none, `2.5.1+cu121` holding `2.5.1` and nothing else loosened; one rule at
   sealing and admission, `ordinary_final_run.pin_held`, lane/gate-pins; check numbers start at 0, the
-  gate's own first check, lane/gate-zero), and the digest of `gate_source.tar`, `git archive` of the
-  bound commit, a support file). Exposed only, no workload, never in a batch. On the instance the
-  runner keeps every guard, extracts the tree (a member outside it refused) and runs, in a child
+  gate's own first check, lane/gate-zero), the digest of `gate_source.tar` (the bound commit's tracked
+  tree, a support file) and that commit's tree id (`source_tree`). Since lane/gate-env the archive is
+  read from git's objects (`prepare_ordinary_final_run.bound_tree_archive`: `ls-tree`, `cat-file`, each
+  member its blob byte for byte), no longer by `git archive`, which wrote the laptop's autocrlf into it,
+  so the gate tree is LF where the blobs are: a different tree from the CRLF trees G_FULL2 and G_FULL4
+  ran on. Exposed only, no workload, never in a batch. On the instance the
+  runner keeps every guard, extracts the tree (a member outside it refused), makes it a git checkout
+  of the bound commit's tree (`git_checkout`: `git init` on a branch `gate`, an identity and
+  `core.autocrlf false` in the tree's own config, no global or system config, `* -text -filter -ident
+  -working-tree-encoding` in `.git/info/attributes`, one commit of exactly the extracted files, no loop
+  branch, no origin, nothing fetched; refused, "The gate tree commit is not the bound commit's tree",
+  unless the commit holds every extracted file, the status is clean and its tree id is the sealed
+  `source_tree`; every git call through `gate_git`, its time at most `GATE_GIT_SECONDS` and never past
+  the gate's deadline: a missing git, a call past its time or an attributes file that cannot be
+  written refused in one line with the exception's type, a failed call with git's own error; git's
+  version, the commit and its tree id in `evidence/gate/git_checkout.json`; the sealer's archive
+  reader is killed past `ARCHIVE_SECONDS` and a refused archive removed), so
+  the checks that read git (check 325's common folder, the controller gate's `ls-tree`, `diff` and
+  main-checkout lookups) find a repository, and runs, in a child
   process with its own environment (the sealed model cache, the hub offline, no SHIMMER_ setting
-  or credential; the runner's in-process network denial does not reach it), the laptop's command
+  or credential; the runner's in-process network denial does not reach it; the sealer reads the
+  models in huggingface_hub's own order, `HF_HUB_CACHE`, `HUGGINGFACE_HUB_CACHE`, `HF_HOME`'s hub,
+  `XDG_CACHE_HOME`'s, the home default, `prepare_ordinary_final_run.model_cache`, so its own tests
+  read the sealed cache there), the laptop's command
   `python -u -X utf8 scripts/verify_session1.py --results <file> [--checks n,n]`, or each side gate
   of `ordinary_final_run.SIDE_GATES`. The gate's two flags are off by default: `--results` writes
   one line per check (number, title, status, seconds) as it goes, `--checks` runs only those.

@@ -87,7 +87,7 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "2524297d5ca98feaaa6651229c9b8dd2c33106a5caddbb5672599a1295bb48e1",
-    "main": "6f43112fcbb9c00166e5f63a429520b19805d2f23f8e8c89cf98edc5b357463f",
+    "main": "c055bcc800fad00edde923d05626bfcce6254f6226bc36adfa08947b06665c1b",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
@@ -100,7 +100,8 @@
     "_registry_local_profile": "2ee991bc67eff0a228dc8c06fa05aeb20b1de918a611bd1b0805a833690eb5fc",
     "_verifier_pair_decisions": "92a13ef1dd4d0453dc53aa8240e06e45f1b4d929697de07e5dffb5476f874f23",
     "_judging_role": "9bf6f31f5d7c408925dbf765fd1b6654c5a77b22ef654282f8002ac5b483a72c",
-    "_write_tool_rows": "6ecd20d7ede79750b8a7c0ce326891500d6a5a239f766729b7700a9c3b3be990"
+    "_write_tool_rows": "6ecd20d7ede79750b8a7c0ce326891500d6a5a239f766729b7700a9c3b3be990",
+    "_ontology_run_end": "791bb0dffecce8ae4de099c06380ed1f57db31d3df1ca92669b6dafb6c9d72b7"
   },
   "reference_amendments": [
     {
@@ -821,6 +822,21 @@
         "_is_local_profile": {
           "from": "d3b21e408bee61aed5479b034bf45820c29ed10d535621ca2ed4571e276a85f8",
           "to": "b4aca7250f95c1a4eb7438cfe624e134b05ff2b66947a0f2e36c6e8211d9ffd4"
+        }
+      }
+    },
+    {
+      "date": "2026-11-09",
+      "reason": "Operator-directed, 2026-11-09, D-432 item 5: main's run-end ontology block (capture and the graph rebuild, unchanged, no GNN training) moves into _ontology_run_end, so gate check 64 runs the pipeline's own block with gnn_update recorded; the same name and signature lane/ontology uses",
+      "document": "docs/loop/DECISIONS.md D-432; docs/loop/stages/ontology/GNN_RULE.md",
+      "functions": {
+        "main": {
+          "from": "6f43112fcbb9c00166e5f63a429520b19805d2f23f8e8c89cf98edc5b357463f",
+          "to": "c055bcc800fad00edde923d05626bfcce6254f6226bc36adfa08947b06665c1b"
+        },
+        "_ontology_run_end": {
+          "from": null,
+          "to": "791bb0dffecce8ae4de099c06380ed1f57db31d3df1ca92669b6dafb6c9d72b7"
         }
       }
     }

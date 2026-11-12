@@ -5836,3 +5836,78 @@ Checks 96, 135 and 340 were fixed in D-535, so they are not declared red, and a 
 **Steps a to g.** push-plan (Opus medium) does: export, a detached worktree, a fresh inventory, sealing, binding, preflight, the launches, and the check-by-check read against G_FULL2 and G_FULL4. An independent delta scan of the export runs beside the gate.
 **The push** (step h) is made by the lead, only with a clean gate and a clean scan, with an annotated tag.
 - **Rules.** D-488, D-489, D-497, D-499, D-501, D-535, D-540, D-542, D-545.
+
+## D-547. Correction: four times written ahead of the clock (D-543 to D-546, FOR_SECKIN)
+
+12 November 2026, 19:34 +0300, lead session b547ef8e, the time read with `date`. The headers of D-543 to D-546 and the FOR_SECKIN entry titled "19:00" carry times the lead wrote without reading the clock, the error of D-486 again:
+| Record | Header says | Real time (its commit) |
+|---|---|---|
+| D-543 | 18:55 | 18:50 |
+| D-544 | 19:35 | 18:53 |
+| D-545 | 19:55 | 18:54 |
+| D-546 | 20:05 | 18:55 |
+| FOR_SECKIN entry "19:00" | 19:00 | about 18:51 |
+DECISIONS is append-only, so the headers stay and this table is the record. LOOP_STATE's waiting line is corrected. From now on every time in a decision, FOR_SECKIN entry or LOOP_STATE line comes from `date` in the same step (D-486 restated).
+- **Rules.** D-486, D-540.
+
+## D-548. The split Lambda gate read; the code pushed with tag code-2026-11-12-b
+
+12 November 2026, 20:48 +0300 (from date), lead session b547ef8e.
+1. **Gate.** The split gate of D-546 on export bc36ecb2 (loop 69f06e91) ran on three A10 machines.
+   - **Machines.** The side bundle terminated at 19:57, B2 at 20:01 and B1 at 20:10. Ledger costs: 0.56, 0.67 and 0.92 USD, 2.15 USD in all for 1.67 machine-hours. None was stuck or near its 3.77 USD cap.
+   - **Report.** push-plan's report came late because its wait did not wake it. Seckin's chat asked at 20:36, and the lead read the archives itself first.
+   - **Full bundles.** All 346 checks ran once, with integrity passed in both: 322 PASS, 6 SKIP, and the declared 18 red. Every status equals G_FULL2's. Checks 96, 135 and 340 pass, so G_FULL4's three reds are gone. Check 320 alone took 1,198 s and set the wall time.
+   - **Side bundle.** One real red: `benchmark/fixtures/multi_round_baseline_contract.json` lacks `_ontology_run_end`. d8d06eca (D-432, 9 November) added that function and amended only the topology contract, so the topology and multi-round side gates fail one test each. The red was already in the public code. The other side reds are classed environment or pre-existing:
+     - localization: no `node` on the instance;
+     - final_integration and cloud_run_checks: as on the laptop on 8 November;
+     - the controller gate's six: the tree is not a git checkout, the Hugging Face cache path, and a Windows-only no-window test.
+   - **Checks 325 and 348 are not proven on any Lambda run.** 325 refuses before its proofs because the instance tree has no git common folder. 348's hook needs git, pythonw and schtasks. Their status here equals G_FULL2 and G_FULL4, so this push makes nothing worse, but the gate-set pins (D-543) and D-545's code have no executed gate proof yet.
+2. **Push.** From the clean clone, main went 564a89cc to bc36ecb2 by a fast-forward with lease, and the annotated tag `code-2026-11-12-b` (object 01c8cb38) was pushed by name. ls-remote verified both. The independent delta scan was CLEAN. PUSH_RECORD has row 3, and #239 is updated. The README on GitHub is unchanged in this push; its status section is refreshed in the next one.
+3. **Next.**
+   - (a) One small fix: a `reference_amendments` entry in `multi_round_baseline_contract.json` for `_ontology_run_end`, as d8d06eca did, with one review round.
+   - (b) 348 is Windows-only (schtasks, pythonw), so under order 70 it is run on the laptop by itself (light) and named.
+   - (c) For 325 and the controller gate's git errors, arm G runs the extracted tree as a git checkout on the instance (`git init` and one commit of the sealed tree), so git-reading checks run as on the laptop. That changes `tools/ordinary_final_run.py`, a bound file, so it is a risky change with three review rounds.
+   - (d) Until (c) lands, 325 is run on the laptop, light, if one run of it fits in memory, measured first.
+- **Rules.** D-488, D-489, D-497, D-501, D-540, D-542, D-546, order 70.
+
+## D-549. Check 348 passes on the laptop on D-545's code; the quick-subset read is being prepared
+
+12 November 2026, 20:49 +0300 (from date), lead session b547ef8e.
+- **Check 348 PASS.** It is Windows-only (schtasks, pythonw; order 70), so it was run alone on the laptop at loop 933a9428, which has D-545's reaper code. It passed every neutralisation in 11.7 s (scratchpad g348). It is light, which D-542 allows.
+- **Check 325** still has no executed proof on the pinned code. It waits for lane/gate-env part (b), arm G as a git checkout (D-548).
+- **The quick-subset steering read** is being prepared by lane quick-read (Opus medium): arms, forecast and seal, with no launch. It runs B3 and B1, not arm G, so it does not wait for part (b).
+- **Rules.** D-542, D-548, order 70, D-422.
+
+## D-550. The gate's bars stay as written; settled by Seckin (GATE_ATTEMPTS section 3)
+
+12 November 2026, 21:30 +0300 (from date), lead session b547ef8e. Seckin, 21:29, settling the one point GATE_ATTEMPTS section 3 left to him. Standing order 78:
+1. **The bars stay as they are.**
+   - (a) At least 10 points above B1, with the interval above zero.
+   - (b) At most 5 points below the cloud reference.
+   - Each is read in each paper's metric: ContraDoc accuracy, with ABSTAIN counted wrong; SciTab macro-F1 in the class setting the freeze declared, 3-class (D-543).
+2. **They are not changed** before or after any read: the quick-subset steering read, any claim read, or any later reading.
+3. **If B1 sits near the cloud reference on SciTab**, bar (a) asks the system to beat the cloud. That is reported plainly as it falls, never softened, and never used as a reason to move a bar.
+- **Rules.** GATE-SCORE-A, D-S99, D-376, D-422, D-543, Seckin 21:29.
+
+## D-551. lane/gate-env merged: arm G runs the bound commit's exact tree as a git checkout; the multi-round fixture amended
+
+12 November 2026, 21:45 +0300 (from date), lead session b547ef8e. lane/gate-env is merged: push-plan, Opus medium; commits 7543d15a, eaebc264, a3397222, 00a26a37 and ee631e3b on 933a9428.
+1. **Fixture.** `benchmark/fixtures/multi_round_baseline_contract.json` gains one amendment for `_ontology_run_end` and main's moved digest, the form d8d06eca used. This was the side gates' one real red since D-432.
+2. **The archive.** Arm G's `gate_source.tar` is built from git's objects (`bound_tree_archive`), each member its blob byte for byte, regular files only, with timeouts and cleanup.
+   - It is no longer `git archive`. On the laptop, `git archive` applied core.autocrlf=true, so every earlier arm G gate (G_FULL2, G_FULL4, G_SPLIT) ran on a CRLF tree.
+   - The gate block seals `source_tree`.
+3. **The checkout on the instance.** `tools/ordinary_final_run.py` (bound) makes the extracted tree one commit through `gate_git`, bounded by GATE_GIT_SECONDS and the gate's deadline, with local config only and `* -text -filter -ident -working-tree-encoding` attributes.
+   - It refuses in one line unless the commit holds every file, the status is clean and HEAD^{tree} equals `source_tree`.
+   - It records `git_checkout.json` with git's version, and `refusal.json` on a refusal.
+   - `model_cache` follows huggingface_hub's environment order. Laptop sealing is unchanged, since none of those variables is set.
+4. **Review: three rounds,** each a fresh loop-checker (Opus medium), as a bound-file change needs (D-540 item 3).
+   - Round 1: two SERIOUS points, the CRLF archive and git's version unrecorded, and minor ones. All fixed.
+   - Round 2: five MINOR points. Fixed.
+   - Round 3: ready to merge; three MINOR points, fixed.
+   - Not proven: a 755 member on Linux (none exists in the tree), and the instance's git version until the first run records it.
+5. **Checks.** Light only (D-542): the 22 gate-arm proofs, 9 neutralisations and check 292 on the laptop. The full gate and the controller gate run in the next split Lambda gate, prepared by push-plan as D-546.
+   - Expected to move: 325, 311, 339, part of 121, the topology and multi-round side gates, and four controller tests.
+   - Every status is compared row by row with G_FULL2, since the tree is now LF.
+6. **Re-seal.** `tools/ordinary_final_run.py` and `tools/prepare_ordinary_final_run.py` changed, so every bundle sealed before this merge refuses: "Controller source changed", and at reverify "Preparation source changed".
+   - quick-read's bundles were sealed at 933a9428 and 933a9428 plus K1's config. They launch from their own worktrees (D-364), so this merge does not touch them.
+- **Rules.** GATE-ARM-A, CONTROLLER-BINDING, D-540, D-542, D-546, D-548, D-364.

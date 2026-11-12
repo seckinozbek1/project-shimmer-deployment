@@ -289,15 +289,98 @@ def gate_fields(gate, source, locked):
     # rule with the runner's admission (ordinary_final_run.pin_held).
     missing = sorted('%s==%s' % (n, v) for n, v in needed.items() if not runner.pin_held(locked.get(n), v))
     require(not missing, "The gate's pins are not in the sealed runtime lock: " + ', '.join(missing))
-    import subprocess
     archive = OUT/runner.GATE_SOURCE
-    done = subprocess.run(['git', '-C', str(ROOT), 'archive', '--format=tar', '-o', str(archive), source],
-                          capture_output=True, **({'creationflags': 0x08000000} if os.name == 'nt' else {}))
-    require(done.returncode == 0 and archive.is_file(), 'The bound commit could not be archived for the gate')
+    tree = bound_tree_archive(ROOT, source, archive)
     block = dict(form=gate['form'], checks=sorted(checks) if checks != 'all' else 'all',
                  known_red=sorted(gate.get('known_red', [])), check_numbers=numbers, source_sha256=sha(archive),
-                 requirements=needed)
+                 source_tree=tree, requirements=needed)
     return block
+
+
+ARCHIVE_SECONDS = 900
+
+
+def gate_carries(mode, kind):
+    """Whether a tree entry can travel in the gate archive: a regular file (644 or 755); the
+    runner's extraction admits nothing else, so a symlink (120000) or a submodule (160000) is
+    refused at sealing."""
+    return kind == 'blob' and mode in ('100644', '100755')
+
+
+def bound_tree_archive(root, source, archive):
+    """The bound commit's tracked tree as a tar whose every member is its blob byte for byte, read
+    from git's objects (`ls-tree`, `cat-file`), never through a checkout or `git archive`, so no
+    autocrlf, eol, ident, filter, encoding or export attribute changes a byte: the gate tree the
+    instance extracts is the commit's own tree, and its id (returned, sealed as `source_tree`) is
+    what the instance's commit of that tree must reproduce. Members carry the blob's mode (644 or
+    755) and the commit's time; a symlink or a submodule in the tree is refused. Every git call has
+    ARCHIVE_SECONDS: the blob reader is killed when it passes them, and on any refusal the partial
+    archive is removed."""
+    import subprocess
+    import tarfile
+    import threading
+    flags = {'creationflags': 0x08000000} if os.name == 'nt' else {}
+
+    def run(*args):
+        try:
+            done = subprocess.run(['git', '-C', str(root), *args], capture_output=True, timeout=ARCHIVE_SECONDS, **flags)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            require(False, 'The bound commit could not be archived for the gate (git '+args[0]+': '+type(exc).__name__+')')
+        require(done.returncode == 0, 'The bound commit could not be archived for the gate (git '+args[0]+')')
+        return done.stdout
+    tree = run('rev-parse', source+'^{tree}').decode().strip()
+    mtime = int(run('log', '-1', '--format=%ct', source).decode().strip())
+    entries = []
+    for row in run('ls-tree', '-r', '-z', '--full-tree', source).split(b'\0'):
+        if not row:
+            continue
+        meta, path = row.split(b'\t', 1)
+        mode, kind, blob = meta.decode().split()
+        require(gate_carries(mode, kind),
+                'The bound tree holds an entry the gate cannot carry: '+path.decode('utf-8', 'replace'))
+        entries.append((path.decode('utf-8'), int(mode[-3:], 8), blob))
+    try:
+        batch = subprocess.Popen(['git', '-C', str(root), 'cat-file', '--batch'], stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, **flags)
+    except OSError as exc:
+        require(False, 'The bound commit could not be archived for the gate (cat-file: '+type(exc).__name__+')')
+    timer = threading.Timer(ARCHIVE_SECONDS, batch.kill)
+    timer.start()
+    done = False
+    try:
+        with tarfile.open(archive, 'w', format=tarfile.PAX_FORMAT) as out:
+            for path, mode, blob in entries:
+                batch.stdin.write(blob.encode()+b'\n')
+                batch.stdin.flush()
+                header = batch.stdout.readline().split()
+                require(len(header) == 3 and header[1] == b'blob',
+                        'The bound commit could not be archived for the gate (cat-file)')
+                data = batch.stdout.read(int(header[2]))
+                batch.stdout.read(1)
+                require(len(data) == int(header[2]), 'The bound commit could not be archived for the gate (cat-file)')
+                info = tarfile.TarInfo(path)
+                info.size, info.mode, info.mtime = len(data), mode, mtime
+                info.uid = info.gid = 0
+                info.uname = info.gname = ''
+                out.addfile(info, io.BytesIO(data))
+        batch.stdin.close()
+        require(batch.wait(timeout=ARCHIVE_SECONDS) == 0, 'The bound commit could not be archived for the gate (cat-file)')
+        done = True
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        require(False, 'The bound commit could not be archived for the gate (cat-file: '+type(exc).__name__+')')
+    finally:
+        timer.cancel()
+        if batch.poll() is None:
+            batch.kill()
+            batch.wait()
+        for stream in (batch.stdin, batch.stdout):
+            try:
+                stream.close()
+            except OSError:
+                pass
+        if not done:
+            Path(archive).unlink(missing_ok=True)
+    return tree
 
 
 IMAGE_SPEC = 'image_spec.json'
@@ -640,6 +723,22 @@ def asset_copy_for_bundle(out, sealed, reason=None):
     return dict(declared=True, reason=None)
 
 
+def model_cache(environ=None):
+    """The Hugging Face hub cache the models are read from, in huggingface_hub's own order:
+    HF_HUB_CACHE, else the older HUGGINGFACE_HUB_CACHE, else HF_HOME's hub, else XDG_CACHE_HOME's
+    huggingface/hub, else the default under the home folder (the laptop sets none of them). Arm G's
+    gate sets HF_HUB_CACHE to the sealed cache, so the sealer's own tests read the sealed models."""
+    environ = os.environ if environ is None else environ
+    for name in ('HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE'):
+        if environ.get(name):
+            return Path(environ[name])
+    if environ.get('HF_HOME'):
+        return Path(environ['HF_HOME'])/'hub'
+    if environ.get('XDG_CACHE_HOME'):
+        return Path(environ['XDG_CACHE_HOME'])/'huggingface'/'hub'
+    return Path.home()/'.cache/huggingface/hub'
+
+
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
             test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
             b1_checkpoints=None, replay_prompts=None, launcher_question=None, gate=None, asset_copy_reason=None, layers=None):
@@ -763,7 +862,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                     +'; stop without printing content')
     OUT.mkdir(exist_ok=True)
     make_source(files, OUT/'project.tar.gz')
-    cache = Path.home()/'.cache/huggingface/hub'
+    cache = model_cache()
     models = []
     # A judging candidate (D-261, D-262): declared beside the list, which stays as it is; its digests
     # are pinned by this seal's manifest alone, since no frozen specification names it. Only the

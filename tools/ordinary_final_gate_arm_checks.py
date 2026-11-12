@@ -57,12 +57,55 @@ sys.exit(1)
 '''
 
 
+GIT_GATE = '''import json, subprocess, sys
+args = sys.argv[1:]
+path = args[args.index('--results') + 1]
+run = lambda *a: subprocess.run(['git', *a], capture_output=True, text=True)
+seen = dict(head=run('rev-parse', 'HEAD').stdout.strip(), status=run('status', '--porcelain', '--untracked-files=all').stdout,
+            crlf=subprocess.run(['git', 'cat-file', 'blob', 'HEAD:docs/crlf.txt'], capture_output=True).stdout
+            == open('docs/crlf.txt', 'rb').read())
+with open(path, 'w') as out:
+    out.write(json.dumps({'number': 1, 'title': json.dumps(seen), 'status': 'PASS', 'seconds': 0.1}) + '\\n')
+'''
+
+
 def gate_manifest(**fields):
-    block = dict(form='full', checks='all', known_red=[], check_numbers=[1, 2, 3], source_sha256=DIGEST,
+    block = dict(form='full', checks='all', known_red=[], check_numbers=[1, 2, 3], source_sha256=DIGEST, source_tree='c' * 40,
                  requirements={'fastapi': '0.1'})
     block.update(fields)
     return dict(arm='G', gate=block, support_files={runner.GATE_SOURCE: DIGEST}, packages={'fastapi': '0.1'},
                 multi_round=False, protected_test=False)
+
+
+def raw_tree_id(members, root):
+    """The git tree id of `members` taken as raw bytes (hash-object --no-filters into a scratch
+    repository's index), or None for a member git cannot name (a path leaving the tree)."""
+    import subprocess
+    repo = Path(tempfile.mkdtemp(dir=root))
+    run = lambda *a, data=None: subprocess.run(['git', '-C', str(repo), *a], input=data, capture_output=True, check=True).stdout
+    try:
+        run('init', '-q')
+        for name, data in members.items():
+            blob = run('hash-object', '-w', '--no-filters', '--stdin', data=data).decode().strip()
+            run('update-index', '--add', '--cacheinfo', '100644,%s,%s' % (blob, name))
+        return run('write-tree').decode().strip()
+    except subprocess.CalledProcessError:
+        return None
+
+
+def unguarded_git(tree, env, deadline, *args):
+    """gate_git with no refusal of its own: git's failures raised as they come."""
+    import subprocess
+    return subprocess.run(['git', '-C', str(tree), *args], env=env, capture_output=True, text=True, check=True).stdout
+
+
+def archive_through_git(root, source, archive):
+    """The sealer's archive as it was: `git archive`, which applies the repository's eol and
+    autocrlf settings to every member."""
+    import subprocess
+    run = lambda *a: subprocess.run(['git', '-C', str(root), *a], capture_output=True, check=True).stdout
+    run('archive', '--format=tar', '-o', str(archive), source)
+    return run('rev-parse', source + '^{tree}').decode().strip()
 
 
 def refused(call):
@@ -360,13 +403,13 @@ class GateArmChecks:
 
         def seal(requirements):
             with tempfile.TemporaryDirectory() as tmp:
-                def archive(argv, **kwargs):
-                    Path(argv[argv.index('-o') + 1]).write_bytes(b'tree')
-                    return SimpleNamespace(returncode=0)
+                def archive(root, source, path):
+                    Path(path).write_bytes(b'tree')
+                    return 'd' * 40
                 with patch.object(sealer, 'OUT', Path(tmp)), \
                         patch.object(sealer, 'gate_check_numbers', lambda source: [1, 2, 3]), \
                         patch.object(sealer, 'git', lambda *args: requirements.encode()), \
-                        patch('subprocess.run', archive):
+                        patch.object(sealer, 'bound_tree_archive', archive):
                     return sealer.gate_fields(dict(form='full', checks='all', known_red=[]), 'c' * 40, locked)
         block = seal('torch==2.5.1\ntransformers==4.51.3\n')
         self.assertEqual(block['requirements'], {'torch': '2.5.1', 'transformers': '4.51.3'})
@@ -420,6 +463,9 @@ class GateArmChecks:
                 info = tarfile.TarInfo(name)
                 info.size = len(data)
                 archive.addfile(info, io.BytesIO(data))
+        if not hasattr(self, 'trees'):
+            self.trees = {}
+        self.trees[base] = raw_tree_id(members, self.root)
         return base
 
     def test_the_runner_runs_the_sealed_gate_on_the_sealed_tree_in_a_clean_environment(self):
@@ -427,7 +473,7 @@ class GateArmChecks:
         evidence = base / 'evidence'
         evidence.mkdir()
         with patch.dict(os.environ, {'SHIMMER_MODEL_MODE': 'final'}):
-            code = runner.execute_gate(base, gate_manifest(known_red=[2]), evidence, time.time() + 120)
+            code = runner.execute_gate(base, gate_manifest(known_red=[2], source_tree=self.trees[base]), evidence, time.time() + 120)
         result = read_json(evidence / 'result.json')
         rows = runner.gate_rows(evidence / 'gate' / 'results.jsonl')
         self.assertEqual((code, result['execution_integrity_passed'], result['counts']['FAIL']), (0, True, 1))
@@ -436,17 +482,148 @@ class GateArmChecks:
         # Checks chosen at sealing are the only ones run.
         base = self.gate_bundle({'scripts/verify_session1.py': FAKE_GATE.encode()})
         (base / 'evidence').mkdir()
-        runner.execute_gate(base, gate_manifest(checks=[1, 3]), base / 'evidence', time.time() + 120)
+        runner.execute_gate(base, gate_manifest(checks=[1, 3], source_tree=self.trees[base]), base / 'evidence', time.time() + 120)
         self.assertEqual([r['number'] for r in runner.gate_rows(base / 'evidence' / 'gate' / 'results.jsonl')], [1, 3])
         # The side form runs each declared side gate once.
         stub = b'import sys; sys.exit(0)\n'
         base = self.gate_bundle({argv[0]: stub for _, argv in runner.SIDE_GATES})
         (base / 'evidence').mkdir()
-        self.assertEqual(runner.execute_gate(base, gate_manifest(form='side'), base / 'evidence', time.time() + 120), 0)
+        self.assertEqual(runner.execute_gate(base, gate_manifest(form='side', source_tree=self.trees[base]), base / 'evidence', time.time() + 120), 0)
         # A member leaving the tree is refused before anything runs.
         base = self.gate_bundle({'../outside.py': stub})
         self.assertIn('Gate source member refused', refused(lambda: runner.extract_gate_source(base / runner.GATE_SOURCE,
                                                                                                  base / 'gate_tree')) or '')
+
+    def test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files(self):
+        """The extracted tree is a git checkout with one commit of exactly its files, every byte kept
+        whatever its own .gitattributes asks (a CRLF file under eol=lf, an expanded $Id$ under ident,
+        a UTF-16 file under working-tree-encoding, a file its .gitignore ignores), its tree id the
+        sealed one, its status clean, git's version and the commit in the gate evidence; the gate runs
+        inside it. A commit whose tree is not the sealed tree is refused. -filter cannot be made
+        load-bearing here: no filter driver can be configured with no global or system config."""
+        import shutil
+        if shutil.which('git') is None:
+            self.skipTest('git is not installed here')
+        members = {'scripts/verify_session1.py': GIT_GATE.encode(),
+                   'docs/crlf.txt': b'one' + bytes([13, 10]) + b'two' + bytes([13, 10]),
+                   'docs/ident.txt': b'$Id: ' + b'0123456789abcdef' * 2 + b'01234567 $' + bytes([10]),
+                   'docs/utf16.txt': 'hi'.encode('utf-16'),
+                   '.gitattributes': bytes([10]).join([b'* text=auto eol=lf', b'docs/ident.txt ident',
+                                                       b'docs/utf16.txt working-tree-encoding=UTF-16', b'']),
+                   '.gitignore': b'docs/' + bytes([10])}
+        base = self.gate_bundle(members)
+        evidence = base / 'evidence'
+        evidence.mkdir()
+        manifest = gate_manifest(checks=[1], check_numbers=[1], source_tree=self.trees[base])
+        self.assertEqual(runner.execute_gate(base, manifest, evidence, time.time() + 120), 0)
+        record = read_json(evidence / 'gate' / 'git_checkout.json')
+        seen = json.loads(runner.gate_rows(evidence / 'gate' / 'results.jsonl')[0]['title'])
+        self.assertEqual((record['files'], record['status_clean'], record['tree']), (6, True, self.trees[base]))
+        self.assertTrue(record['git_version'].startswith('git version'))
+        self.assertEqual((seen['head'], seen['status'], seen['crlf']), (record['commit'], '', True))
+        for name, data in members.items():
+            self.assertEqual((base / 'gate_tree' / name).read_bytes(), data, name)
+        # A tree other than the sealed one is refused before the gate runs.
+        base = self.gate_bundle(members)
+        (base / 'evidence').mkdir()
+        wrong = gate_manifest(checks=[1], check_numbers=[1], source_tree='0' * 40)
+        message = refused(lambda: runner.execute_gate(base, wrong, base / 'evidence', time.time() + 120)) or ''
+        self.assertIn("is not the bound commit's tree", message)
+        self.assertFalse((base / 'evidence' / 'gate' / 'results.jsonl').exists())
+        # The refusal's reason is in the gate evidence the controller collects.
+        refusal = read_json(base / 'evidence' / 'gate' / 'refusal.json')
+        self.assertEqual((refusal['refused'], refusal['message']), (True, message))
+        # So is an extraction refusal (a member leaving the tree).
+        base = self.gate_bundle({'../outside.py': b'x'})
+        (base / 'evidence').mkdir()
+        message = refused(lambda: runner.execute_gate(base, wrong, base / 'evidence', time.time() + 120)) or ''
+        self.assertIn('Gate source member refused', message)
+        self.assertEqual(read_json(base / 'evidence' / 'gate' / 'refusal.json')['message'], message)
+
+    def test_the_sealer_archives_the_bound_tree_byte_for_byte(self):
+        """The sealer's gate archive is the bound commit's blobs byte for byte, whatever the
+        repository's autocrlf or the tree's eol attribute would write on a checkout, and the tree id
+        it seals is the commit's own."""
+        import shutil
+        import subprocess
+        if shutil.which('git') is None:
+            self.skipTest('git is not installed here')
+        repo = Path(tempfile.mkdtemp(dir=self.root))
+        run = lambda *a: subprocess.run(['git', '-C', str(repo), *a], capture_output=True, check=True).stdout
+        run('init', '-q')
+        for key, value in (('user.name', 'fixture'), ('user.email', 'fixture@localhost'), ('core.autocrlf', 'true')):
+            run('config', key, value)
+        (repo / '.gitattributes').write_bytes(b'*.txt text eol=crlf' + bytes([10]))
+        (repo / 'a.txt').write_bytes(b'one' + bytes([10]) + b'two' + bytes([10]))
+        run('add', '-A')
+        run('commit', '-q', '-m', 'fixture')
+        archive = repo.parent / (repo.name + '.tar')
+        tree = sealer.bound_tree_archive(repo, 'HEAD', archive)
+        self.assertEqual(tree, run('rev-parse', 'HEAD^{tree}').decode().strip())
+        with tarfile.open(archive) as stream:
+            members = {m.name: stream.extractfile(m).read() for m in stream.getmembers() if m.isfile()}
+        self.assertEqual(members, {'.gitattributes': run('cat-file', 'blob', 'HEAD:.gitattributes'),
+                                   'a.txt': run('cat-file', 'blob', 'HEAD:a.txt')})
+        self.assertNotIn(bytes([13]), members['a.txt'])
+
+    def test_the_sealer_refuses_a_symlink_or_a_submodule_in_the_bound_tree(self):
+        """A bound tree holding a symlink (120000) or a submodule (160000) is refused at sealing by
+        name, before any archive is written; a tree of regular files is archived."""
+        import shutil
+        import subprocess
+        if shutil.which('git') is None:
+            self.skipTest('git is not installed here')
+        for mode, label in (('120000', 'link'), ('160000', 'module')):
+            repo = Path(tempfile.mkdtemp(dir=self.root))
+            run = lambda *a, data=None: subprocess.run(['git', '-C', str(repo), *a], input=data, capture_output=True,
+                                                       check=True).stdout
+            run('init', '-q')
+            for key, value in (('user.name', 'fixture'), ('user.email', 'fixture@localhost')):
+                run('config', key, value)
+            plain = run('hash-object', '-w', '--stdin', data=b'plain').decode().strip()
+            run('update-index', '--add', '--cacheinfo', '100644,%s,plain.txt' % plain)
+            target = plain if mode == '120000' else 'e' * 40
+            run('update-index', '--add', '--cacheinfo', '%s,%s,%s' % (mode, target, label))
+            tree = run('write-tree').decode().strip()
+            commit = run('commit-tree', tree, '-m', 'fixture').decode().strip()
+            archive = repo.parent / (repo.name + '.tar')
+            message = refused(lambda: sealer.bound_tree_archive(repo, commit, archive)) or ''
+            self.assertIn('The bound tree holds an entry the gate cannot carry: ' + label, message)
+            self.assertFalse(archive.exists())
+        self.assertTrue(sealer.gate_carries('100644', 'blob') and sealer.gate_carries('100755', 'blob'))
+
+    def test_a_git_failure_in_the_gate_tree_is_a_one_line_refusal(self):
+        """git missing (an OSError), a call past its time, a non-zero exit and a passed deadline each
+        end the checkout in one refusal naming the call and the cause: the exception's type, or
+        git's own error."""
+        import subprocess
+        tree = Path(tempfile.mkdtemp(dir=self.root))
+        cases = [(lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError('git')), 'FileNotFoundError'),
+                 (lambda *a, **k: (_ for _ in ()).throw(subprocess.TimeoutExpired(['git'], 1)), 'TimeoutExpired'),
+                 (lambda *a, **k: subprocess.CompletedProcess(a[0], 128, '', 'fatal: not here' + chr(10) + 'more'),
+                  'fatal: not here more')]
+        for fake, cause in cases:
+            with patch('subprocess.run', fake):
+                message = refused(lambda: runner.gate_git(tree, {}, None, 'init')) or ''
+            self.assertEqual(message, 'The gate tree could not be made a git checkout (git init: ' + cause + ')')
+        message = refused(lambda: runner.gate_git(tree, {}, time.time() - 1, 'init')) or ''
+        self.assertEqual(message, 'The gate tree could not be made a git checkout (git init: deadline passed)')
+        with patch('subprocess.run', cases[0][0]):
+            message = refused(lambda: runner.git_checkout(tree, {}, 'c' * 40)) or ''
+        self.assertIn('could not be made a git checkout (git --version: FileNotFoundError)', message)
+
+    def test_the_sealer_reads_the_hub_cache_huggingface_reads(self):
+        """The sealer reads the models from HF_HUB_CACHE, else HF_HOME's hub, else the home default,
+        so the gate's children (HF_HUB_CACHE the sealed cache) seal from the sealed models."""
+        home = Path.home() / '.cache/huggingface/hub'
+        self.assertEqual(sealer.model_cache({}), home)
+        self.assertEqual(sealer.model_cache({'HF_HOME': '/h'}), Path('/h') / 'hub')
+        self.assertEqual(sealer.model_cache({'HF_HOME': '/h', 'HF_HUB_CACHE': '/c'}), Path('/c'))
+        self.assertEqual(sealer.model_cache({'HF_HOME': '/h', 'HUGGINGFACE_HUB_CACHE': '/o'}), Path('/o'))
+        self.assertEqual(sealer.model_cache({'XDG_CACHE_HOME': '/x'}), Path('/x') / 'huggingface' / 'hub')
+        self.assertEqual(sealer.model_cache({'XDG_CACHE_HOME': '/x', 'HF_HOME': '/h'}), Path('/h') / 'hub')
+        with patch.dict(os.environ, runner.gate_environment(self.root)):
+            self.assertEqual(sealer.model_cache(), self.root / 'hf_cache' / 'hub')
 
     def test_the_gate_writes_a_row_per_check_and_runs_only_the_chosen_checks(self):
         checks = [('1 one', lambda: ('PASS', 'a')), ('2 two', lambda: ('FAIL', 'b')), ('3 three', lambda: ('SKIP', 'c'))]
@@ -527,6 +704,30 @@ def read_json(path):
 
 
 GATE_NEUTRALIZATIONS = [
+    # The extracted tree left as a plain folder: no git checkout, no commit recorded.
+    ('test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files', runner, 'git_checkout',
+     lambda tree, env, source_tree, deadline=None: dict(git_version='', commit='', tree='', files=0, status_clean=False)),
+    # The tree's own .gitattributes obeyed on the commit: line ends converted.
+    ('test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files', runner, 'GATE_GIT_ATTRIBUTES', ''),
+    # Its ident attribute obeyed: the expanded $Id$ collapsed in the blob.
+    ('test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files', runner, 'GATE_GIT_ATTRIBUTES',
+     '* -text -filter -working-tree-encoding\n'),
+    # Its working-tree-encoding obeyed: the UTF-16 file stored as UTF-8.
+    ('test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files', runner, 'GATE_GIT_ATTRIBUTES',
+     '* -text -filter -ident\n'),
+    # The refusal dropped: any commit admitted as the bound commit's tree.
+    ('test_the_gate_tree_is_a_git_checkout_of_exactly_the_extracted_files', runner, 'checkout_holds',
+     lambda committed, files, status, head_tree, source_tree: True),
+    # A symlink or a submodule admitted into the gate archive.
+    ('test_the_sealer_refuses_a_symlink_or_a_submodule_in_the_bound_tree', sealer, 'gate_carries',
+     lambda mode, kind: True),
+    # git's failures raised as they come, not refused in one line.
+    ('test_a_git_failure_in_the_gate_tree_is_a_one_line_refusal', runner, 'gate_git', unguarded_git),
+    # The sealer archiving through git archive again: the repository's eol written into the tree.
+    ('test_the_sealer_archives_the_bound_tree_byte_for_byte', sealer, 'bound_tree_archive', archive_through_git),
+    # The sealer reading the home folder's cache again, whatever the environment names.
+    ('test_the_sealer_reads_the_hub_cache_huggingface_reads', sealer, 'model_cache',
+     lambda environ=None: Path.home() / '.cache/huggingface/hub'),
     # The bound preflight drops the sealed type rule and applies the A10-first rule.
     ('test_the_bound_preflight_applies_the_sealed_declared_type_rule', __import__('ordinary_final_bound_preflight'),
      'sealed_type_rule', lambda manifest: 'a10_first'),

@@ -1486,7 +1486,7 @@ GATE_SOURCE = 'gate_source.tar'
 GATE_FORMS = ('full', 'side')
 GATE_FAILING = ('FAIL', 'ERROR', 'BADFIXTURE')
 GATE_STATUSES = ('PASS', 'WARN', 'SKIP') + GATE_FAILING
-GATE_FIELDS = {'form', 'checks', 'known_red', 'check_numbers', 'source_sha256', 'requirements'}
+GATE_FIELDS = {'form', 'checks', 'known_red', 'check_numbers', 'source_sha256', 'source_tree', 'requirements'}
 # The side gates of the lead's side_gates_at.sh, declared here once: (name, argv after python).
 SIDE_GATES = (
     ('execution_topology_no_generation_gate', ['scripts/execution_topology_no_generation_gate.py']),
@@ -1539,6 +1539,8 @@ def gate_declaration(manifest):
     require(isinstance(gate['source_sha256'], str) and re.fullmatch(HEX64, gate['source_sha256'])
             and manifest.get('support_files', {}).get(GATE_SOURCE) == gate['source_sha256'],
             'The gate source archive is not sealed')
+    require(isinstance(gate['source_tree'], str) and re.fullmatch('[0-9a-f]{40}', gate['source_tree']),
+            "The bound commit's tree id is not sealed")
     packages = manifest.get('packages') or {}
     require(isinstance(gate['requirements'], dict) and all(pin_held(packages.get(n), v) for n, v in gate['requirements'].items()),
             "The gate's pins are not all in the sealed runtime")
@@ -1616,6 +1618,73 @@ def extract_gate_source(archive, tree):
     return tree
 
 
+# The identity and attributes of the gate tree's one commit: local to the tree, no global or system
+# config read, and every path -text, -filter, -ident and -working-tree-encoding, so `git add`
+# stores each file's bytes as they are whatever the tree's own .gitattributes says. Any conversion
+# that slipped through would still be refused, by the tree id check in git_checkout.
+GATE_GIT_IDENTITY = (('user.name', 'Shimmer gate'), ('user.email', 'gate@localhost'), ('core.autocrlf', 'false'),
+                     ('core.safecrlf', 'false'), ('commit.gpgsign', 'false'))
+GATE_GIT_ATTRIBUTES = '* -text -filter -ident -working-tree-encoding\n'
+GATE_GIT_SECONDS = 600
+
+
+def checkout_holds(committed, files, status, head_tree, source_tree):
+    """Whether the gate tree's commit is the bound commit's tree: every extracted file and no
+    other committed, a clean status, and the commit's tree id the one sealed (`source_tree`)."""
+    return committed == files and status == '' and head_tree == source_tree
+
+
+def gate_git(tree, env, deadline, *args):
+    """One git call in the gate tree, its output; every failure a one-line refusal: git missing or
+    the call past its time (at most GATE_GIT_SECONDS, never past `deadline`) by the exception's
+    type, a non-zero exit by git's own error (one line, at most 300 characters)."""
+    import subprocess
+    extra = dict(creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)) if os.name == 'nt' else {}
+    left = GATE_GIT_SECONDS if deadline is None else min(GATE_GIT_SECONDS, deadline - time.time())
+    require(left > 0, 'The gate tree could not be made a git checkout (git '+args[0]+': deadline passed)')
+    try:
+        done = subprocess.run(['git', '-C', str(tree), *args], env=env, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL, timeout=left, **extra)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        require(False, 'The gate tree could not be made a git checkout (git '+args[0]+': '+type(exc).__name__+')')
+    error = ' '.join((done.stderr or '').split())[:300]
+    require(done.returncode == 0, 'The gate tree could not be made a git checkout (git '+args[0]+': '+error+')')
+    return done.stdout
+
+
+def git_checkout(tree, env, source_tree, deadline=None):
+    """The extracted gate tree made a git checkout: `git init` on a branch `gate`, the identity
+    above in the tree's own config, one commit of exactly the extracted files (ignored ones too,
+    since every file came from the bound commit's tracked tree), no remote, nothing fetched.
+    Refused in one line when git is missing or a call passes its deadline (the exception's type),
+    when a call fails (git's own error), when the attributes cannot be written (the exception's
+    type), or when the commit is not the bound commit's tree (its id against the sealed
+    `source_tree`). Each call has at most GATE_GIT_SECONDS and never runs past `deadline`. Returns the record kept in the evidence: git's version, the commit and its
+    tree id, the file count and the tree's status."""
+    tree = Path(tree)
+    genv = dict(env, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_TERMINAL_PROMPT='0')
+    git = lambda *args: gate_git(tree, genv, deadline, *args)
+    files = sorted(p.relative_to(tree).as_posix() for p in tree.rglob('*') if p.is_file() or p.is_symlink())
+    version = git('--version').strip()
+    git('init', '-q', '-b', 'gate')
+    for key, value in GATE_GIT_IDENTITY:
+        git('config', key, value)
+    try:
+        (tree/'.git'/'info').mkdir(parents=True, exist_ok=True)
+        (tree/'.git'/'info'/'attributes').write_text(GATE_GIT_ATTRIBUTES, encoding='utf8', newline='\n')
+    except OSError as exc:
+        require(False, 'The gate tree could not be made a git checkout (attributes: '+type(exc).__name__+')')
+    git('add', '-A', '-f', '--', '.')
+    git('commit', '-q', '--no-verify', '-m', 'arm G gate tree')
+    commit = git('rev-parse', 'HEAD').strip()
+    head_tree = git('rev-parse', 'HEAD^{tree}').strip()
+    committed = sorted(p for p in git('ls-files', '-z').split('\0') if p)
+    status = git('status', '--porcelain', '--untracked-files=all', '--ignored')
+    require(checkout_holds(committed, files, status, head_tree, source_tree),
+            'The gate tree commit is not the bound commit\'s tree (tree '+head_tree+', sealed '+str(source_tree)+')')
+    return dict(git_version=version, commit=commit, tree=head_tree, files=len(files), status_clean=True)
+
+
 def run_gate_process(argv, cwd, env, log, deadline):
     """One gate process, its output to `log`; (exit code, ended by itself, seconds)."""
     import subprocess
@@ -1641,10 +1710,17 @@ def execute_gate(base, manifest, evidence, deadline):
     """The arm G entry after every guard execute() applies: the sealed gate (or each side gate)
     once, on the sealed tree, with the sealed command; then the assessment and the counts."""
     gate = gate_declaration(manifest)
-    tree = extract_gate_source(Path(base)/GATE_SOURCE, Path(base)/'gate_tree')
     out = Path(evidence)/'gate'
     out.mkdir(parents=True)
     env = gate_environment(base)
+    try:
+        tree = extract_gate_source(Path(base)/GATE_SOURCE, Path(base)/'gate_tree')
+        write(out/'git_checkout.json', git_checkout(tree, env, gate['source_tree'], deadline))
+    except Exception as exc:
+        # The reason travels in the collected evidence before the run fails on it.
+        write(out/'refusal.json', dict(refused=True, message=' '.join(str(exc).split())[:500],
+                                       kind=type(exc).__name__))
+        raise
     results = out/'results.jsonl'
     started = time.time()
     if gate['form'] == 'side':

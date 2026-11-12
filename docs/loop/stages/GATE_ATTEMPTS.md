@@ -231,6 +231,11 @@ bars on the quick subset, and the work goes on (D-S92 item 3).
 .89 (measured figures, tuned items). If the gate set comes out 2-class, or B1 stays near the cloud in
 3-class, bar (a) on SciTab asks the system to beat the cloud reference. The numbers 10 and 5 are his.
 
+**Settled (D-550, Seckin 21:29, 12 November).** The bars stay as they are, in each paper's metric and the
+class setting the freeze declared (3-class, D-543), and are not changed before or after any read. If B1
+sits near the cloud on SciTab, so that bar (a) asks the system to beat the cloud, that is reported plainly
+as it falls.
+
 ## 4. What must be built or sealed today, and by whom
 
 Times are the plan's; the clock read 11:51 when this was written.
