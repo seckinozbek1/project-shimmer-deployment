@@ -23,9 +23,9 @@ In development, on the four public benchmarks measured by 31 October 2026 (Contr
 
 ## Where Shimmer is now, and where it is going
 
-This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 11 November 2026, 19:00 +03:00.
+This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 12 November 2026, 05:20 +03:00.
 
-**Which code these documents describe.** The README, CHANGELOG, docs/RUNTIME_REFERENCE.md, docs/RESULTS.md and the guides describe the loop branch's current code: 19 agents, JUDGE among them. The code files on GitHub's main branch are still September 2026's, with 18 agents. They reach main only with the 14 November package (S14 item 8). Until then, main's code and these documents differ, by design.
+**Which code these documents describe.** Since 12 November 2026 the code on GitHub's main branch is the loop's current code, pushed as one snapshot commit (tag `code-2026-11-12-a`) after a pre-push scan and a full gate run on a rented machine (#239). On that run 322 of 346 checks passed; each red is explained in #235. Later code changes are pushed the same way, with their documents, in the same step (D-488, D-497).
 
 **Now.** Every figure below is development, exposed and in-sample. None is a gate result.
 
@@ -33,11 +33,13 @@ This section is updated in the same step as every measurement and every stage ch
 - ContraDoc: no configuration has yet come within 5 points of the cloud model on development items. The best is 0.733 accuracy, against the cloud model's 0.867 to 0.900 (D-297, in-sample). Bar (b) does not look reachable on ContraDoc today.
 - SciTab: the leading candidate configuration (K1, a judge model deciding table claims) has a 2-class macro-F1 of 0.703 on development half A, against B1's 2-class 0.838 (D-477, in-sample). Bar (a) does not look reachable on SciTab today.
 - The document-level judging experiment G1 gave no usable signal (D-248).
-- Spend so far: rented GPU time 154.17 USD (hard stop 299), API 7.07 USD (ceiling 60).
+- The ready machine image is built and tested. M1 built it (36 minutes, 0.77 USD). M2 then started from the image alone: the job began 12 minutes after launch, against about 64 minutes on the upload path, at 0.43 USD, with a reply byte-identical to M1's (D-508, D-509).
+- The full gate on a rented A10 ran all 346 checks in 11 minutes (33 minutes and 0.71 USD with its start and teardown). The laptop takes more than 2.5 hours for the same checks. 322 passed; each red is classed in #235.
+- Spend so far: rented GPU time 156.96 USD (hard stop 350, raised from 299 on 11 November), API 7.07 USD (ceiling 60).
 
 **Going.** The target stage is a gate read on items no attempt was tuned on, by 14 November 2026, 14:30 +03:00 (moved from 11:00 by Seckin on 11 November, D-492). The steps planned until then:
 
-1. A ready machine image on the provider's filesystem, built and measured (M1), then tested before use (M2), so no launch downloads its assets from scratch.
+1. Done: a ready machine image on the provider's filesystem, built and measured (M1), then tested before use (M2), so no launch downloads its assets from scratch.
 2. The gate set: a separate session draws a quick subset and a claim set from sealed pools under the leakage protocol, after the leakage fingerprints are computed.
 3. K1 read on the quick subset, for steering only. The configuration is chosen there and nowhere else.
 4. The cloud reference run (one group), after Seckin approves its spend.
