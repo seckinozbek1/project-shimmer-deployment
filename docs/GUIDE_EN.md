@@ -35,7 +35,7 @@ The starter window's **Cloud** choice is something else again: provider models i
 
 On Windows, run `start_shimmer.bat`. A small window opens. Choose Local (your own computer with a strong graphics card) or Cloud (provider models), click **Check and start**, and read anything it reports as missing. It opens the console in your browser. Click **Copy access token** and paste the token into the console. Keep the small window open, and use **Stop Shimmer** to stop: closing the browser leaves the server running.
 
-On Linux or macOS, run `./shimmer.sh` and choose option 3. It shows the token once, and then starts the server.
+On Linux or macOS, run `./shimmer.sh` and choose option 3. It first asks which backend to use: press Enter for Local, or C for Cloud. It shows the token once, and then starts the server. Wherever no backend is chosen (a command-line run, or the server with `SHIMMER_BACKEND_PROFILE` unset), Shimmer uses Local.
 
 The console has four pages: **Runs**, **Submit**, **Agents** and **Test changes**. Its language is set by **Output language** at the top of the page.
 

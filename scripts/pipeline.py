@@ -1123,9 +1123,12 @@ def apply_backend_profile(named_profile):
 
     CLAUDE.md already documents the intended behaviour: "Also settable via
     SHIMMER_BACKEND_PROFILE env var; the CLI flag takes precedence." Now it does.
-    With no flag the environment still decides, and with neither it is cloud,
-    exactly as before."""
-    profile = named_profile or os.environ.get("SHIMMER_BACKEND_PROFILE", "cloud")
+    With no flag the environment still decides, and with neither it is local
+    (D-487 item 1): run_choices.environment_profile, the one rule every reader of
+    the variable uses, reads only the exact value cloud as cloud, so an empty or
+    unknown value is local too, and the environment is set to what was resolved."""
+    from run_choices import environment_profile
+    profile = named_profile or environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"))
     os.environ["SHIMMER_BACKEND_PROFILE"] = profile
     return profile
 
@@ -1143,7 +1146,8 @@ def resolve_review_mode(review_mode, backend_profile):
 
 
 def _is_local_profile():
-    return os.environ.get("SHIMMER_BACKEND_PROFILE") == "local"
+    from run_choices import environment_profile  # unset is local (D-487 item 1)
+    return environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE")) == "local"
 
 
 # local D3. _truncate discards the MIDDLE of the text, so a binding clip removes operative
@@ -4952,12 +4956,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
                              "single-key Claude rate limit; raise it if your limits allow, lower to "
                              "1 for fully serial behavior. Redaction and the editorial board stay serial.")
     parser.add_argument("--backend-profile", choices=["cloud", "local"], default=None,
-                        help="backend profile. cloud (default): agents use their configured "
-                             "cloud backends (claude_api, openai_api). local: all inference "
-                             "runs on local models (local_producer for claude_api agents, "
-                             "local_auditor for openai_api agents). REDACTOR stays qwen_local "
-                             "in both profiles. Also settable via SHIMMER_BACKEND_PROFILE env var; "
-                             "the CLI flag takes precedence.")
+                        help="backend profile. local (default): all inference runs on local "
+                             "models (local_producer for claude_api agents, local_auditor for "
+                             "openai_api agents). cloud: agents use their configured cloud "
+                             "backends (claude_api, openai_api). REDACTOR stays qwen_local "
+                             "in both profiles. Also settable via SHIMMER_BACKEND_PROFILE env var "
+                             "(unset is local); the CLI flag takes precedence.")
     parser.add_argument("--review-mode", choices=["wide", "paired"], default=None,
                         help="structure H5. wide: convention review sends the whole "
                              "document and the whole registry in one call per agent, "

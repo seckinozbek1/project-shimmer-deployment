@@ -5518,3 +5518,321 @@ What the laptop embeds grows to roughly 200,000 rows. It has already embedded ab
 - lane/export-hidden 1955899a: the export tool's two child starts pass no_window, so check 292 passes.
 ordinary_final_run.py is bound, so earlier bundles refuse. push-plan now re-exports from this tip. The scan covers what changed since a92e5856. gate-lambda then seals arm G full at the new export.
 - **Rules.** GATE-ARM-A, HIDDEN-A, D-501.
+
+## D-516. lane/embed-route merged
+
+12 November 2026, 02:55 +0300, lead session b547ef8e. The recheck of b687b2a9 PASSED. All 7 findings are closed, 42 proofs pass, and no local_control_hashes file changed. Two minors are left. First, a failed open_memmap or state write can leave its own file behind; to close it, register the files before creating them, with a proof. Second, no proof runs the sealer itself on a part; the real seal of part 1 closes that, and the route docs must say the image layers need the asset copy declaration. embed-route closes the first minor before any part is sealed. Merged at loop 6c07bf29+. The pushed export 2aee0d45 does not carry it, so the next push will.
+- **Rules.** D-511, D-513, D-479 item 5.
+
+## D-517. The second off-machine audit: audit/ files and prompt text stay local too; the asset archive is on the filesystem
+
+12 November 2026, 03:12 +0300, lead session b547ef8e.
+1. The second audit of records_v2: the hashes match, and local_rows matches exactly (199,541). Among the 286,711 records that may leave, every collaborator, e-mail, home-path, key and path class counts 0. The 10 phone-like matches are digit groups, a false positive. BLOCKED on two counts. First, 60,748 records come from files under an audit/ folder (execution_topology, reference_index, pairing_map and others; none under model_replies). Second, 527 records hold the project's prompt or conventions text (LAW markers, REF context markers, rule_id keys, the LAW-IV phrase), taken from run bundles. Decision under D-502 item 4: both stay local, in records_v3. The checker could not trace 863 tar-member files and was refused permission to re-scan them. The lead does not rerun a scan a checker was refused. gate-prep's own scan, which read every part, confirms its coverage of those members, or every record from those members stays local. The laptop's share grows to about 261,000 rows, so the laptop now sets the end, about 13:00. Lambda's share, about 226,000 rows, still saves some 5 hours against the laptop alone.
+2. The full gate's asset copy probe at 02:59 to 03:03 read MATCH on assets-750cf50d. The 34.7 GB the provider reported at 21:53 UTC was behind the filesystem's real content, which matches D-509's open point. The gate's checks started on Lambda at 03:09.
+- **Rules.** D-502 item 4, D-510, D-514, D-509.
+
+## D-518. embed-route's last fixes merged; a synthetic key-shaped literal in history
+
+12 November 2026, 03:20 +0300, lead session b547ef8e. Merged lane/embed-route at ff7044f0. It registers each file before creating it, with two failure-injection proofs, and the docs say the image layers need the asset copy declaration. The crafted Google-key-shaped fixture is now built at run time, and no key-shaped literal remains in the tree. The synthetic literal does remain in the loop branch's history, in lane commit 9ed7c301, which is an ancestor of the merge. It was never a real key. The public route pushes snapshot commits of the tree only (D-488), never the loop branch's history, so it never reaches GitHub. The local repository pushes nothing (D-192).
+- **Rules.** D-488, D-192, the API key rule.
+
+## D-519. The embedding finishes on the laptop; Lambda stays the fallback
+
+12 November 2026, 03:30 +0300, lead session b547ef8e. New measurement from gate-prep. At 03:01 pid 14104 was stopped at done 61,440: the permission system allowed it this time, and Seckin's 23:50 word covered the switch. The old run had been slow because, alone on the card, it held 7.1 GB dedicated plus 1.3 GB spilled into shared memory. The new listed-rows run (pid 22312) sorts rows by length, batches by size and caps its memory. It embedded 160,352 rows in 25 minutes: 170 rows a second on short records, 10 a second on the long tail. Only 6,237 of the 486,252 records exceed 6,000 characters. The laptop can therefore embed every row, the 286,711 once meant for Lambda included, and end about 07:00 to 07:30 with nothing uploaded and nothing spent.
+Decision: the laptop embeds everything. Lambda (the merged embed route, D-516, D-518) stays as the fallback, and P01 stays unlaunched. This serves D-501 item 2's aims (speed, privacy, resume from written vectors) better than the upload would have. Its end is about the same as the Lambda route's, with no records leaving the machine. records_v3 and the third audit are no longer needed.
+- **Rules.** D-501, D-502, D-507, D-517.
+
+## D-520. The first code push: main carries the loop's code (tag code-2026-11-12-a)
+
+12 November 2026, 05:20 +0300, lead session b547ef8e.
+1. The Lambda full gate G_FULL2 (arm G, export 2aee0d45, A10, us-east-1) ran 02:49 to 03:23: 33 minutes, 0.71 USD. All 346 checks ran in 674 s of gate time, against more than 2.5 hours on the laptop. The asset copy read MATCH. Result: 322 PASS, 6 SKIP, 18 FAIL or ERROR. gate-lambda classed every red against the laptop's results (export_results, export_rest and a laptop CPU rerun on 2aee0d45 with and without .git):
+- ENV-LAMBDA, things the instance lacks (no input/ tree, no tkinter, no .git, no node): 28, 31, 118, 121, 140, 311, 325, 338, 339. Of these, 118 and 311 are also pre-existing on the laptop. 338 and 339 count a node or .git skip as a failure, which is a check defect.
+- PRE-EXISTING, red on the laptop too: 146, 193, 257, 261, 321.
+- WINDOWS-ONLY: 292 (the check's fake subprocess hard-codes DETACHED_PROCESS off Windows; reproduced under WSL; the product code is correct) and 348 (Task Scheduler registration).
+- Unread Linux differences that pass on the laptop: 280 and 333. Neither is the missing .git.
+No red is established as a new code defect against the laptop, which is the reference (D-501 item 1). The decision is to push; 280 and 333 go on record as open items to be read on Linux.
+2. Pushed from the clean clone: main 3af2a7ee to 2aee0d45 (one snapshot commit of loop 6c07bf29), with an annotated tag `code-2026-11-12-a`. Its pre-push scans were CLEAN: the full one at a92e5856 and the delta at 2aee0d45. Verified on GitHub: ls-remote shows main 2aee0d45 and the tag, config/agent_registry.json carries JUDGE (19 agents), and Pages answers 200. GitHub's code now matches the documents.
+3. In the same step (D-497), the README's "Which code these documents describe" note and its "Now" and "Going" sections say so, with M1, M2 and the Lambda gate. That README goes out as the next push, a docs-only snapshot after a delta scan. #235 and #239 record the results and the tag.
+- **Rules.** D-488, D-489, D-495 item 6, D-496, D-497, D-501, D-502.
+
+## D-521. The embedding stays on the laptop: Lambda would not end it sooner (Seckin, 09:00)
+
+12 November 2026, 09:05 +0300, lead session b547ef8e. Seckin, 09:00: send the rows cleared to leave to Lambda now, in parallel with the laptop, but only if that actually ends sooner, counting launch and upload, within 50 USD, and with no change of method and no truncation.
+
+Measured at 09:01: 198,239 of the 199,541 local rows are done. The 1,302 left are full-length texts at about 10 a minute, ending about 11:10. The complement, 286,711 short rows, runs at 100 to 170 a second, about 30 to 50 minutes, and is queued as pid 19552. The final file is due about 12:00 to 12:15.
+
+A Lambda route for the cleared rows needs records_v3 (D-517), a third audit, three part seals and warm launches. At best it ends about 11:30 to 11:45, which saves 30 minutes or less at real risk and usage cost. So it does not end sooner in any way worth the risk, and it is not done. The estimate slipped from 07:00-07:30 because the 03:30 figure used the average rate before the long tail was measured. Nearly all long records turned out to be local-only, about 5 to 6 seconds each.
+- **Rules.** D-519, D-502, D-503, Seckin 09:00.
+
+## D-522. The embedding keeps the laptop until its final file; the held lanes resume lightly (Seckin, 10:24)
+
+12 November 2026, 10:26 +0300, lead session b547ef8e. Seckin, 10:24. Until the fingerprint file is written and summarised:
+- the embedding has the laptop GPU to itself, and no resumed lane uses it (CUDA_VISIBLE_DEVICES=-1; GPU work waits or goes to Lambda under the rules);
+- resumed lanes keep memory and CPU light and start one at a time, not all at 11:00;
+- enough free RAM stays for the embedding not to spill;
+- at 11:15 the embedding rate is measured against the 09:01 rate, and the lane that caused any drop is paused.
+Measured at 10:24: 199,107 of 199,541 local rows are done, 10.4 rows a minute since 09:01, and 3.5 GB of 15.7 GB RAM is free. The local rows end about 11:06. The complement (286,711 short rows at 100 to 170 a second) then ends about 11:35 to 11:55, and the final file about 11:50 to 12:10.
+Resume plan: at 11:00, local-default alone, reading and editing only. Its gate checks wait until the final file is written, or run on Lambda. At 11:20, after the rate check, gate-read-fix, with the same limits. The training audit (D-505) is reading only and starts after the final file. No laptop gate run starts before then.
+- **Rules.** D-495 item 1, D-503, D-504, Seckin 10:24.
+
+## D-523. Local is the default backend, merged
+
+12 November 2026, 11:10 +0300, lead session b547ef8e. lane/local-default was merged at 44385df5 (loop 15421fc5) after a read-only independent recheck (Sonnet) passed: all six findings closed, no reader treats an unset profile as cloud, and NO-WEB-LOCAL-A holds. One CHANGELOG conflict was resolved by keeping both lines. With SHIMMER_BACKEND_PROFILE unset, every entry point now resolves to Local through run_choices.environment_profile, and only the exact value `cloud` selects Cloud. Standing order 54 and the code now agree. The README, RUNTIME_REFERENCE, SURFACE_INVENTORY and the guides say the same.
+Bundles sealed before bae69b55 refuse at reverify (archived runtime and preparation source). Every bundle still to launch is resealed anyway.
+The next push carries this change. Its pre-push gate runs on Lambda (D-496, D-501) once the fingerprint file is written (D-522), after an export and a delta scan. The recheck's one non-blocking note was that CLAUDE.md's review-mode paragraph lists fewer environment_profile readers than run_choices' docstring. It is fixed with the push.
+- **Rules.** D-487, D-497, D-522, order 54.
+
+## D-524. The README's literature matches the corrected Medium article (Seckin, 11:23)
+
+12 November 2026, 11:30 +0300, lead session b547ef8e. Seckin, 11:23. "What Shimmer is" said, wrongly, that the cross-family checker follows the multi-agent debate work. Debate uses copies of one model that argue until they agree, which is the opposite. The first bullet now cites self-preference in model judges (Panickssery et al., 2024, arXiv:2404.13076), more similar mistakes in more capable models (Goel et al., 2025, arXiv:2502.04313), and a panel of judges from different families (Verga et al., 2024, arXiv:2404.18796). It also states that Shimmer does not use debate (arXiv:2305.14325, arXiv:2305.19118). The second bullet now describes RTBAS (arXiv:2502.08966) as information-flow checks on tool calls at run time, and says Shimmer's laws concern document review, not security. The text is his, word for word. A grep of the other public docs, genesis.md, CITATION.cff and the progress page (on main and in the tracked charts code) found no other such claim. docs/history/README_PRE_ROUTING_AUDIT.md is a dated copy and stays as it is. Pushed as a docs-only snapshot after a delta scan.
+- **Rules.** D-481, D-497, Seckin 11:23.
+
+## D-525. The leakage fingerprints are done; role B's gate-set session is being prepared
+
+12 November 2026, 13:45 +0300, lead session b547ef8e. gate-prep finished at 13:38. In external/gate_prep_D-S100/, built from tool commit 0fa199fc:
+- fingerprints.json.gz: 2,084,166,609 bytes, sha256 ad64bab959d73e17ab1b4c108431e6382b8f87d6800ff788dac927f4dc6202fa;
+- cosine_step.json: sha256 73f9b6a1..., threshold .86 by rule, separates;
+- exclude_ids.json: sha256 a0bfa6d8..., the pin.
+Checks run on them: the tool's own `read` accepts the file; 10 parts, all required, each under its section 9 paths; 486,252 unit vectors of dimension 1,024; 6,037,750 runs and 505,874 exact hashes; rows below 61,440 equal the first run's. Nothing left the laptop, and nothing was spent.
+Deviations, recorded for the vekil audit and role B:
+1. The vectors come from gate-prep's driver, not the tool's fixed batch of 16. The model, text form and normalisation are the same, and the output was proved byte-identical on a small test.
+2. The hashes, runs and file digests come from the read pass that ended at 02:55:45 on 12 November. The vectors come from texts read at 01:24, with the same 486,252 keys.
+3. The development part skipped 42,611 files, against 42,823 at step 1, because files under external/s05 changed between the two reads (8f0cbd81's links were deleted and M1's misplaced folder was removed).
+A Sonnet lane is preparing role B's session the D-312 way: the request with the digests filled in, instructions assembled from fixed sections, settings in the BDEV form, inputs, and the start command. The lead starts it. gate-prep's _export (0.7 GB of development text) and _work (6 GB) stay until the vekil audit no longer needs them.
+- **Rules.** GATE-LEAKAGE-A, LEAKAGE_PROTOCOL, D-S100, IV.10a, D-312.
+
+## D-526. Usage at 68 percent: the 65 percent question was late; the e-mail failed
+
+12 November 2026, 13:50 +0300, lead session b547ef8e. Seven-day usage read 68 percent at 13:43 UTC+3, against 52 at 08:04. The lead did not read it between those times, although D-S91 item 1 asks for a reading at least every 30 minutes, so the 65 percent question (D-S116) came late. That is a departure, recorded. The e-mail of D-S91 item 2 failed: Outlook COM refused CreateItem with E_ABORT. No other route was tried. The question stands at the top of FOR_SECKIN instead. Under D-S91 item 4, nothing stops while no answer has come and no new Claude-heavy lane starts: the training audit (D-505) and the 280/333 Linux rerun stay held. The roleb-prep lane and gate-read-fix's last test are already in flight and finish. The question repeats every 60 minutes, and the next step is 75 percent. From now on usage is read at every wake and at least every 30 minutes, through the watchdog monitor.
+- **Rules.** D-S91, D-S116, D-S84, D-503.
+
+## D-527. "Devam": usage does not stop or hold work this week; one question at 90 percent (Seckin)
+
+12 November 2026, 14:00 +0300, lead session b547ef8e. Seckin answered FOR_SECKIN 13:50 with "Devam". At 09:24 he had already said that everything may run, because he has a weekly usage reset available ("Her şeyi çalıştırabiliriz... haftalık limit resetim var"). For this week this supersedes the 65 and 75 percent questions of D-S91 and D-S116 and D-526's hourly repeat. Usage does not stop or hold any work. One question is asked, once, if seven-day usage reaches 90 percent, so that he can use his reset. D-S84's salvage at 95 percent is unchanged. The work held by D-526 resumes now: the role B session, the training audit (D-505, on Sonnet), the 280/333 Linux rerun, and the push of the local-default change through a Lambda gate.
+- **Rules.** D-S91, D-S116, D-S84, D-526, Seckin 09:24 and the 13:50 answer.
+
+## D-528. Role B started for the gate set; the usage question moves to 97 percent; Lambda judged over coming runs (Seckin, 13:48 and 13:50)
+
+12 November 2026, 13:52 +0300, lead session b547ef8e.
+1. **Role B started** at 13:51:11, pid 18592, through start_b_gate.cmd, in the D-312 way. It has `--restricted --model opus --effort medium` (D-S11), `--add-dir` for `_handoff`, `_xfer\B_to_lead_dev` and `_xfer\lead_to_B`, and the BDEV settings form.
+   - ROLE_B_GATE.md `b610855d...`: assembled by script from IV.10b, S4c, Annex A 11.4, Annex B, Part II, and Annex D's heading and opening with D-S3, D-S92, D-S100 and D-S120 word for word. The assembler is `d6949c59...`.
+   - role_settings_B_GATE.json `783219aa...`.
+   - inputs_B_GATE holds REQUEST_ROLE_B_GATE.md `b10ffb4b...` (the request with its digests filled), PREREGISTRATION.md `0c1884fb...` and INPUT_FORMAT.md `1f20a291...`.
+   - The code is a single-commit checkout of 43cfe625 at B\code_gate, with core.autocrlf=true and Edit denied. That commit holds 0fa199fc's gate tools and the D-478 cut. The token counter (95e8c968) and b1_prompt (25a7d40e) were confirmed on its working copy.
+   - The fingerprint inputs are hard-linked into `_xfer\lead_to_B\gate_D-S100\`: fingerprints.json.gz ad64bab9, exclude_ids.json a0bfa6d8, cosine_step.json 73f9b6a1.
+   - The lead reads only `_handoff\B_D-S100_DONE.json` (the request's name), `_xfer\B_to_lead_dev\gate_D-S100\report\` and the exit code in the scratchpad.
+2. **Usage (Seckin, 13:48), correcting D-527:** for this week, the one question comes at 97 percent, not 90. Otherwise the lead goes on without asking. *Conflict, stated:* D-S84's salvage trigger stops every loop instance at 95 percent, in tools/loop/instance_reaper.py (USAGE_STOP_PERCENT 95), before a 97 percent question could be asked. The trigger is a code constant that this message does not change. So a question at 97 would come after the salvage has already run. The lead keeps the salvage at 95, because Seckin has not changed it in words (order 60), and states the conflict at the top of FOR_SECKIN for him to settle.
+3. **Lambda judged over the coming runs (Seckin, 13:50), refining D-496, D-499 and D-521's "only if it ends sooner":**
+   - (a) By default, heavy work whose data may leave the laptop runs on Lambda, and private data stays local.
+   - (b) The judgement covers the coming runs, not this run alone. If the first set-up on Lambda is slow but later runs would be much faster, because the models and data already sit on shimmer-filesystem, moving is still worth it. In that case it goes to Seckin in FOR_SECKIN as an option with the numbers: time and cost of the first run, and of later runs. It is offered only when the work starts fresh, never in the middle of a test or operation it would disrupt, and never when he has said otherwise.
+   - (c) For the next embedding or fingerprint run of this kind, the option is prepared now. The Lambda route is built (D-516, D-518). Its numbers go into FOR_SECKIN with this entry.
+   Standing order 72.
+- **Rules.** IV.10a, D-312, D-S84, D-S91, D-527, D-496, D-499, D-521, Seckin 13:48 and 13:50.
+
+## D-529. The rescue threshold is 98 percent until the reset, then 95 again (Seckin, 14:16)
+
+12 November 2026, 14:20 +0300, lead session b547ef8e. Seckin, 14:16, on the conflict D-528 item 2 raised. 95 percent stays the standing rule; he agrees it is safer. This week only, because his usage reset is near, the Lambda rescue-and-shutdown threshold (D-S84, `instance_reaper.USAGE_STOP_PERCENT`) moves from 95 to 98 until the reset on 18 November 2026 at 11:00 +03:00. After the reset it returns to 95 automatically, and that is built into the same change. He is asked once at 97 percent, as agreed in D-528. He raises his limit, and the loop then resumes; he accepts the small loss between 98 and 100 percent.
+The rescue at 98 must finish well before 100 percent. The estimate, from the measured rate (16 points from 00:03 to 13:43, at most about 3 points an hour): 98 to 100 takes about 40 minutes or more. A salvage ends within SALVAGE_ITEM_SECONDS plus SALVAGE_ANSWER_SECONDS plus one reaper period, about 15 to 20 minutes. Lane salvage98 (Sonnet) builds the dated exception as one function every reader uses, with proofs, and confirms that margin. An agent that did not write it checks it. instance_reaper.py is bound, so bundles sealed before the merge refuse: G_FULL3's seal waits for it.
+- **Narrows.** order 36 (the salvage at 95 percent), until 18 November 2026 11:00 +03:00, as Seckin's 14:16 word quoted here ("until the reset on 18 Nov 11:00, move the Lambda rescue-and-shutdown threshold from 95% to 98%"), read at 14:16 on 12 November.
+- **Rules.** D-S84, D-527, D-528, CONTROLLER-BINDING, Seckin 14:16.
+
+## D-530. G_FULL3 failed at the first ssh probe; reseal as G_FULL4
+
+12 November 2026, 14:35 +0300, lead session b547ef8e. G_FULL3 (arm G full, export 9cefc60b) launched at 14:20 on an A10 in us-east-1. It stopped at ssh_ready_0 with "Transport deadline exceeded": the first ssh readiness probe hung for 20 s and was not retried. G_FULL2's first probe took 2 s. The instance was terminated, verified, after 8 minutes, at 0.17 USD. The cause looks transient, on the instance or the network, but the controller raising on attempt 0 is a fragility. Whether that is intended is being read and stays an open point; the bound controller is not changed for it now. The same commit is resealed as G_FULL4 and relaunched. The delta scan of 9cefc60b passed: its only flag was the commit's author e-mail, which is main's alt identity, the same on every commit since 2 November and already public.
+- **Rules.** LOOP-LAUNCH-A, the launch-once rule, D-488, D-501.
+
+## D-531. A blank cheque for speed-ups that cost no accuracy (Seckin, 14:36)
+
+12 November 2026, 14:40 +0300, lead session b547ef8e. Seckin, 14:36, a standing order (order 73): any method that shortens time without costing accuracy may be used, for example batching PRACTICE_AUDITOR's independent (unit, rule) calls on the GPU, splitting work across several Lambda machines, or running independent parts side by side. The lead does not wait for him to raise each one. Every stage looks for such speed-ups, and the development plan is adapted to them. The method:
+1. A small test, not a large one, shows that outputs or accuracy are unchanged.
+2. If so, the method is adopted where it is most effective. If not, the slower way stays and the reason is recorded.
+3. Extra cost is fine unless it is a cliff, within the existing caps.
+4. Nothing under the sealed 14 November measurement changes in the middle of it. A speed-up proven output-identical may go in before the seal; anything else comes after the read.
+TIME_BUDGET.md's causes are the first candidates: the auditor's sequential calls and the long single generations. AFTER_V1_PLAN gains a section listing them, with the small test each needs. The first test (a: batched judging replies against one-by-one, byte for byte, through the replay pass on Lambda) is scheduled once the gate set is drawn, because it must not disturb role B or the gate run.
+- **Rules.** D-S80, D-S81 (superseded for this purpose), D-422, D-499, Seckin 14:36.
+
+## D-532. Speed-ups also look back (Seckin, 14:39)
+
+12 November 2026, 14:45 +0300, lead session b547ef8e. Seckin, 14:39, added to D-531: the speed-up order also looks back. The finished stages (gates, trainings, measurements, the embedding, builds) are listed from their measured times, each with where it could have been faster without losing accuracy. When such a stage or similar work runs again, the same method applies first: a small test, accuracy unchanged, then adopt. A finished stage is never rerun only to make it faster. The list becomes a section of AFTER_V1_PLAN. Lane speed-lookback (Sonnet) writes it from the records, reading counts and timings only. Standing order 73 is widened.
+- **Rules.** D-531, Seckin 14:39.
+
+## D-533. G_FULL4 launched; the ssh-ready probe does not retry a hang
+
+12 November 2026, 14:46 +0300, lead session b547ef8e. G_FULL4 (arm G full, export 9cefc60b, the same commit as G_FULL3) was sealed and preflighted by push-plan and launched at 14:45 from the gate-full3-export worktree: A10, us-east-1, forecast 200 min, cap 8.39 USD. push-plan read the code. tools/ordinary_final_cloud.py:1052-1055 retries only an ssh-ready probe that returns non-zero. A probe that hangs past its 20 s bound raises "Transport deadline exceeded" at once, because that call does not pass tolerate_timeout=True. That reads as unintended, since the 30-attempt loop and the existing flag both point to a retry. Fix: pass tolerate_timeout=True there, with a proof that a hanging first probe is retried. The fix changes a bound controller file. It goes in with the next controller change, together with lane/salvage98, and does not touch the sealed 14 November run mid-way (D-531 item 4).
+- **Rules.** LOOP-LAUNCH-A, CONTROLLER-BINDING, D-530, D-531.
+
+## D-534. The 98 percent rescue reads the overall weekly figure only; a Fable limit only switches Fable work to Opus (Seckin, 14:51)
+
+12 November 2026, 14:58 +0300, lead session b547ef8e. Seckin, 14:51, clarifying D-529 and D-530. The 98 percent rescue and stop, and the 97 percent question, apply to the overall weekly limit only. If the Fable-specific limit reaches 98 percent, nothing stops: Fable's work moves to Opus at high effort, where the other lanes run at medium, so that Opus takes Fable's place, and the switch gets one line in FOR_SECKIN.
+Read today: .claude/loop_status.json carries only the overall figures (`seven_day_used_percentage` and `five_hour_used_percentage`); it has no Fable figure. The reaper's stop reads `seven_day_used_percentage`, which is the overall figure, and lane/salvage98 is told to keep it so and to name it in the code. There is no per-model figure to read, so the switch is applied by procedure. No lane runs on Fable now (D-479, D-503: all lanes run on Opus or Sonnet). If a lane ever runs on Fable and the session reports a Fable-specific limit, the lead moves that work to Opus at high effort and records it. Added to AFTER_V1_PLAN's rules.
+- **Rules.** D-479, D-503, D-529, Seckin 14:51.
+
+## D-535. G_FULL4: three new reds against G_FULL2; 9cefc60b is not pushed until they are fixed
+
+12 November 2026, 16:00 +0300, lead session b547ef8e. G_FULL4 (arm G full, export 9cefc60b) ran 14:45 to about 15:34: 49 minutes and 1.05 USD in all, with 1,864 s of gate time against G_FULL2's 674, because the export adds checks. Result: 319 PASS, 6 SKIP, 21 FAIL or ERROR. The reds are G_FULL2's 18 (D-520's classes) plus three new ones:
+- 96 ERROR: the run-timeout test's fake Popen has no poll(). This is likely the local-default change, since the timeout path now applies when the profile is unset.
+- 135 FAIL: the role anchor is appended with no profile set. Under D-487 that is now correct, so the check still asserts the old rule.
+- 340 FAIL: its baseline fails before the neutralisation in test_every_child_process_runs_without_a_window. Cause unknown.
+96 and 135 follow from the merged change (D-523): its lane ran only the affected checks on the laptop, where fastapi is missing, and the recheck read code only. 9cefc60b is therefore not pushed. Lane gate-reds (Sonnet) fixes the three. Then come a re-export, a delta scan and a Lambda gate run, and only then the push. Lesson: a change to a default must run the whole gate on Lambda before its merge, not only the checks it names.
+- **Rules.** D-488, D-495 item 6, D-501, D-523.
+
+## D-536. gate-reds merged; Fable is out; this week's tokens by model (Seckin, 16:38)
+
+12 November 2026, 16:45 +0300, lead session b547ef8e.
+1. **lane/gate-reds merged at 2a3baad4 (loop 44be969f).**
+   - Check 96 is pinned to the cloud profile, and its fake gains poll(). Under D-487 the product is right: an unset profile now takes the local run timeout.
+   - Check 135 follows D-487: unset and local get the anchor, exactly cloud does not.
+   - Check 340's recorder records every call from its own thread and lets only other threads' calls through. The independent check's first FAIL was on a skip for any program other than ssh; that skip was removed.
+   The fix for 96 was proven with a scratch fastapi install; only Lambda confirms it as a gate result.
+2. **Fable is out (Seckin, 16:38).** No lane, agent or step uses Fable, and D-479's exception (Fable for a hard coding task Opus cannot do) is removed. Lanes that ran on Opus at medium now run on Opus 5.5 at high effort. Sonnet lanes stay as they are unless a lane needs more. This supersedes D-534's Fable-switch item. The usage rule of D-534 still reads the overall weekly figure only.
+3. **This week's tokens by model,** from this laptop's Claude Code session logs (47 files under ~/.claude/projects, every assistant record since 11 November 08:00 UTC, deduplicated by message and request id):
+
+   | Model | All tokens | Share | Without cache reads | Share |
+   |---|---|---|---|---|
+   | Opus 5.5 | 723.5 M | 75.8 % | 16.5 M | 25.3 % |
+   | Fable 5.2 | 127.7 M | 13.4 % | 43.3 M | 66.4 % |
+   | Sonnet 5.5 | 103.9 M | 10.9 % | 4.8 M | 7.3 % |
+
+   Fable's share is small in all tokens but large in tokens other than cache reads, because of its cache writes (43.0 M). It ran the attempts and gate-prep lanes on 11 November until D-479. Chats outside Claude Code (claude.ai, the desktop app, other machines) are not in these logs. Settings > Usage reads All models 74 percent and Fable 81 percent; how Anthropic weighs tokens into those percentages is not in the logs.
+- **Rules.** D-479, D-503, D-534, D-535, Seckin 16:38.
+
+## D-537. Correction to D-536 item 2 (Seckin, 16:40)
+
+12 November 2026, 16:48 +0300, lead session b547ef8e. The 16:38 message was misread. Opus lanes that run at medium effort stay at medium. Only the work where Fable would have been used (D-479's former exception: a hard coding task that Opus at medium effort cannot do) now runs on Opus 5.5 at high effort, instead of on Fable. Fable stays out completely. No lane had been switched from medium to high under the 16:38 reading, because no Opus lane was started or changed between 16:38 and 16:48, so nothing has to be switched back. D-536 items 1 and 3 (the merge and the usage-share measurement) stand.
+- **Rules.** D-479, D-536, Seckin 16:40.
+
+## D-538. Each model's weight on the weekly limit, from our own data; the gate-prep lane ran on Fable until 13:41 today
+
+12 November 2026, 17:30 +0300, lead session b547ef8e. Seckin, 17:18: estimate each model's weight on the weekly limit from our own data only.
+- **Readings used.** 12 seven-day readings from 11 November 11:22 (1 percent) to 12 November 16:36 (74 percent), taken from the records: 11:22 1, 12:12 4, 12:51 7, 13:18 9, 14:34 12, 19:33 24, 00:03 34, 02:04 38, 05:01 46, 08:04 52, 13:43 68, 16:36 74. That gives 11 windows.
+- **Tokens.** Per window, the tokens of every assistant record in the Claude Code session logs, by model and type, deduplicated.
+- **Fit.** Non-negative least squares, with a bootstrap over windows for 90 percent intervals.
+  - Fit A uses per model the tokens other than cache reads, plus one pooled cache-read term: Opus 1.08 percent per million (0 to 2.78), Fable 0.89 (0 to 1.07), Sonnet 0.00 (0 to 2.15), cache reads 0.012 (0 to 0.038). Residual sd 2.0 points.
+  - Fit B, per model output and cache write, is too thin to read. Fable output comes out at 21.5 percent per million (0.5 to 33), and the other terms have intervals from 0 to more than 17.
+- **Limits.** 11 windows; the models overlap in most windows; Sonnet appears in only 5 windows; claude.ai and other non-Claude-Code use is not in the logs, but it is in the readings. The figures are a rough weight, not a price.
+- **Found, a departure by the lead.** The gate-prep lane was started on Fable on 11 November. D-479 (13:17) said running Fable lanes finish their current step and stop, with later work on Opus. The lead kept giving gate-prep new tasks instead (the fingerprint restarts, the audit scan, the listed-rows mode), so it ran on Fable until 12 November 13:41: 56.8 M tokens other than cache reads after 13:17 on 11 November. That is most of the Fable share and of the Fable 81 percent reading. The lane was stopped at 13:45 today; no transcript shows Fable after 13:41. From now on a lane's model is checked before the lead gives it a new task.
+- **Rules.** D-479, D-536, D-537, Seckin 17:18.
+
+## D-539. A lane's model is checked before new work; no Fable lane gets work; an automatic check (Seckin, 17:37)
+
+12 November 2026, 17:45 +0300, lead session b547ef8e. Seckin, 17:37, making the 17:32 promise a standing rule (order 74), recorded here and in LOOP_STATE so that it survives handoffs:
+1. Before giving any lane or agent new work, the lead checks which model and effort it runs on. A lane on a removed model (Fable) gets no new work; its work restarts in a new lane on an allowed model.
+2. At every FOR_SECKIN report and stage close, one line lists the running lanes with their model and confirms none is on Fable.
+3. A cheap automatic check: tools/loop/model_use_check.py sums tokens by model from the session logs since a given moment and exits 1 on any Fable token. Its default start is 12 November 13:46 +03:00, just after gate-prep's last Fable record (13:41:45) and its stop (13:45). It runs at every report. Any Fable token is reported at once. First run at 17:44: Opus 112.5 M and Sonnet 22.6 M tokens since 13:46, removed model use none. A positive control from 10:00 found gate-prep's Fable records, so the check can fail. It reads files only.
+Running lanes at 17:45: push-plan (Opus, medium), salvage98 (Sonnet), and the role B session B_GATE (Opus, medium, a separate process). None is on Fable.
+- **Rules.** D-479, D-536, D-537, D-538, Seckin 17:37.
+
+## D-540. Binding usage rules for every lead session (Seckin, 17:40)
+
+12 November 2026, 17:55 +0300, lead session b547ef8e. Seckin, 17:40: standing usage rules that are never deviated from (order 75). They are written into LOOP_STATE so that every handoff carries them.
+1. **Lead context stays small.** When the lead passes 30 to 40 percent context, it writes the handoff and a fresh session takes over. While waiting on a job, it wakes at the job's estimated end, not by frequent polling, so that an expired cache does not rewrite the whole context each time. Departure, stated: this session is at about 90 percent now. It writes the handoff at this point and asks Seckin to start a fresh lead.
+2. **Model and effort by task.**
+   - The lead runs on Opus, medium effort.
+   - Code-writing and checking lanes run on Opus, medium.
+   - Only hard work that Opus at medium cannot do runs on Opus, high (the old Fable work).
+   - Records, the README, file reading and summaries run on Sonnet.
+   - Counting, summing, searching and other mechanical work is done by script, with no model.
+   - Fable is never used.
+3. **Review rounds are sized to the change:** one independent round for a small fix; three rounds and a tie-break only for large or risky changes.
+4. **Usage by model** is counted from the session logs at every FOR_SECKIN report (tools/loop/model_use_check.py), together with the D-539 lane-model line. The per-model weight fit of D-538 is redone on 19 November, after a week of data.
+Any deviation from these rules is reported in FOR_SECKIN at once, with its reason.
+- **Rules.** D-479, D-503, D-537, D-538, D-539, Seckin 17:40.
+
+## D-541. Compaction by Seckin's supervising chat; the lead states its context (Seckin, 17:44)
+
+12 November 2026, 17:45 +0300, lead session b547ef8e. Seckin, 17:44, added to D-540 item 1 as standing order 76:
+1. The lead cannot compact itself. Seckin's supervising chat sends /compact when the lead's context passes about 35 percent and the lead is idle. A handoff to a fresh session (D-540 item 1) stays available; compaction is now the usual route.
+2. The lead writes its context percentage in every FOR_SECKIN entry, and says plainly when it passes 30 percent. In `.claude/loop_status.json` the figure is `context_used_percentage`, written by the status line on every refresh (window 1,000,000 tokens), so no lead write is needed there; the lead does not overwrite that file.
+3. LOOP_STATE keeps a short, current KEEP-LIST (binding rules, open work, deadlines) at its top, rewritten whenever one of them changes, so that a compaction loses nothing.
+State at 17:45: this session was compacted at Seckin's /compact and reads 13 percent context (loop_status.json, 14:45 UTC). The 18:00 handoff (HANDOFF_20261112-1800.md) stays valid; this session continues as lead, so no fresh session is needed now.
+- **Rules.** D-540, Seckin 17:44.
+
+## D-542. Heavy checks and gates run on Lambda only, split across machines (Seckin, 18:48)
+
+12 November 2026, 18:50 +0300, lead session b547ef8e. Seckin, 18:48, standing order 77:
+1. Heavy checks and gate runs (checks 325 and 348, the controller gate, and anything heavy in memory or time) no longer run one by one on the laptop. They run on Lambda only, as arm G from the export copy, on as many machines in parallel as helps: the checks are split across machines where that is faster and the accuracy is unchanged (every check runs somewhere; a Windows-only check stays on the laptop and is named, order 70). The existing caps hold (Lambda hard stop 350, 50 USD for gate plus embedding).
+2. The laptop keeps only light work (a py_compile, a single proof under a minute and with little memory, record checks, scripts that count) and what must stay local for privacy (the leakage fingerprints' texts, D-525).
+3. The lead decides case by case and acts, without asking.
+Applied now:
+- Check 325 on the gate-set freeze is not rerun on the laptop. Its first laptop run died at 17:53 with no result row, the host at 2 GB free.
+- salvage98's laptop controller gate and check 348 are stopped. Both go into the next export and Lambda gate.
+- That run covers the loop tip with the freeze pins (D-543) and salvage98 merged. It is split across machines by check time, from G_FULL2's per-check seconds, and compared against G_FULL2's 18 classed reds (#239).
+- The sample re-embedding check of the fingerprints stays on the laptop's CPU, because its texts stay local.
+- **Rules.** D-499, D-528, D-531, D-540, order 70, Seckin 18:48.
+
+## D-543. The gate set is frozen; its two digests are pinned
+
+12 November 2026, 18:55 +0300, lead session b547ef8e. Role B's session B_D-S100 ended at 16:42 with exit 0.
+- **Handoff.** `_handoff/B_D-S100_DONE.json` names `REPORT.json` `e7150f0d...`. The lead re-hashed it and its ten report files; all are equal.
+- **The freeze.** `gate_set.py freeze` wrote two files from the draw's ids files into `external/s05/GATE/freeze/`:
+  - `claim_set_ids.json`, `b0a942ad5dd3ba9a544beb4296056d030b73a8e8a18dd0e98e39ecee66d2357e`: 230 ContraDoc documents in 230 groups; 363 SciTab claims in 61 tables from 24 papers.
+  - `quick_set_ids.json`, `0127b0809d762fcd4d33602e54cb4ef39a9e727442fcccbdf541104e3283a1f1`: 40 documents; 78 claims in 13 tables from 6 papers.
+  - SciTab is 3-class (not enough info 131 of 363), so no claim is left out.
+  - The files have Windows line ends, and the digests are of those bytes.
+- **Pins.** Both digests are pinned in `gate_score.py`. GATE_SET.md sections 9 and 10 are filled.
+- **Leakage, counted by the lead on ids only.** None of the sets' 270 ContraDoc groups and 30 SciTab papers is excluded, all are kept, and no drawn id is an excluded id.
+- **Vekil leakage audit (loop-checker, Opus medium, read-only):**
+  - No gap in six points: the digests, the protocol's thresholds, the overlap rules, the freeze equal to the draw (the salted order re-run), the class-setting arithmetic, and the pins and section figures.
+  - Gap 2: the short-text count was missing. It is closed here: ContraDoc 0, SciTab 16, and the groups checked (517 and 65) are in section 9.
+  - The step 2 separation is closed from `cosine_step.json`: across-group 99.9th percentile 0.651 against 0.86, `separates` true.
+- **Stated limits:**
+  - Gap 1: the one-document-per-group pick (lowest salted SHA-256) is enforced by `gate_set.py` in B's one run. Its member lists are on B's side, so it is not independently checked.
+  - Gap 3: the fingerprint vectors came from gate-prep's driver, and its byte-identity test has no record on disk (D-525 items 1 to 3).
+    - The 212-file difference between the two read passes is explained in D-525 item 3: files under `external/s05` were deleted between the reads.
+    - A seeded sample re-embedding through the tool's own embedder is running on the laptop's CPU (the texts stay local). `held/` is not released and no read is made until it reports equivalent.
+- **Check 325.** It ran on the pinned code on the laptop and died at 17:53 with no result row, the host low on memory. Under D-542 it runs in the next Lambda gate on the export. The pins are each patched by check 325's own proofs (`scripts/gate_set_checks.py`), and nothing else reads them.
+- **Rules.** GATE-SET-A, GATE-LEAKAGE-A, GATE_SET.md, LEAKAGE_PROTOCOL.md, D-S100, D-422, D-525, D-542.
+
+## D-544. The fingerprint vectors are equivalent on a sample; the held bundles are released
+
+12 November 2026, 19:35 +0300, lead session b547ef8e.
+1. **Gap 3 of D-543 is closed.** A Sonnet agent ran a read-only check on the laptop's CPU; the texts stayed local. It drew a seeded sample of 300 keys (seed 20261112), 30 of them from the longest 5 percent of texts, and re-embedded each through `gate_leakage.shipped_embedder` and the tool's `_unit_rows`.
+   - The sample was compared against the stored vectors in `fingerprints.json.gz` `ad64bab9...`: largest absolute difference 1.77e-06, smallest cosine 0.99999988, no key below 0.9999. Every key's text was found, and its normalised hash equals the key.
+   - Row order and identity match row by row: 486,252 vectors, 486,252 sorted keys, each vector's part list equal to the exact dict's.
+   - One change of method: the longest texts were embedded one per batch, because batch 16 ran out of memory on the CPU. Only padding changes.
+   - Not covered: rare text forms outside the sample, and the GPU path.
+   - The agent's intermediates (4.8 GB, development text) are in `%TEMP%\fp_sample_check`. The lead's delete was refused by permissions, so they stay local and are named for Seckin.
+2. **Held bundles released.** `_xfer/B_to_lead_dev/gate_D-S100/held/` was moved, unopened, to `external/s05/GATE/held_D-S100/`, the development side: 2,080 files, 4.2 MB. Checked against `bundles.json` (`9529b93a...`):
+   - all eight builds have their document counts (230, 230, 40, 40, 61, 61, 13, 13);
+   - their `items.json` and `parts.json` digests are equal;
+   - no document is missing;
+   - no `answer_key.json` is present. The keys stay in `keys/`, read only by `tools/score_corpus.py`.
+3. **Next.**
+   - The quick-subset steering read (B3 and B1 on the quick subset, logged in `HELDOUT_OPENINGS.md`) is sealed after lane/salvage98 merges, since salvage98 changes bound controller files.
+   - Under D-542 it runs on Lambda, beside the split gate when push-plan's plan allows.
+- **Rules.** D-543, D-542, GATE_SET.md section 10, the request's section 8.
+
+## D-545. lane/salvage98 merged: rescue at 98 until the reset, then 95; the ssh-ready hang retried
+
+12 November 2026, 19:55 +0300, lead session b547ef8e. lane/salvage98 is merged (Sonnet; commits 4eddbb16 and 744379ac on 25f9a9ed).
+- **D-529.** `instance_reaper.usage_stop_percent` gives 98 strictly before epoch 1794988800 (18 November 11:00 +03:00) and 95 from then on. The trigger, the reaper's status and the salvage report name the threshold and its basis.
+- **D-534.** Only `seven_day_used_percentage` is read. A new proof puts per-model figures of 99 and 100 beside an overall 10 and expects no trigger.
+- **D-533.** The ssh-ready probe goes through `ssh_probe_ready` with `tolerate_timeout`, so a hang is one unreachable attempt within the 30 tries.
+- **CLAUDE.md** states both changes and the re-seal.
+- **Independent check, one round** (loop-checker, Opus medium; a small change, D-540 item 3). The code is correct, and the launcher-menu failure was confirmed as pre-existing on 25f9a9ed: the local `.venv` Python is invalid against runtime.json. Four points were found:
+  - CLAUDE.md lacked D-533: fixed.
+  - The per-model proof was missing: added.
+  - The old usage mutant failed by TypeError: its signature is fixed. It still ends in an exception on a None trigger, as before the lane, and that is accepted as a stated limit.
+  - Hung probes are not counted in the evidence: left out, since it is not small on a bound file.
+- **Gates.** Light checks only on the laptop (py_compile and the four changed proofs, D-542). The full controller gate and check 348 on this code run in the next split Lambda gate on the export.
+- **Bound files.** Bound controller files changed, so every bundle sealed before this merge refuses with `Controller source changed`.
+- **Main checkout.** The scheduled reaper runs from the main checkout, so that checkout is moved to this tip for the 98 rule to take effect.
+- **Rules.** D-529, D-533, D-534, D-540, D-542.
+
+## D-546. The split Lambda gate: two full bundles and the side bundle, from the export of bfb9813a
+
+12 November 2026, 20:05 +0300, lead session b547ef8e. push-plan's plan (D-542): the gate's 346 checks are balanced by the slower of each check's G_FULL2 and G_FULL4 seconds (lists in the lead's scratchpad `split/splits.json`). The side gates and the controller gate are always one bundle of their own.
+**Options measured** (A10, 1.29 USD an hour, 14.5 minutes from launch to the gate's start):
+- one full bundle: 47 minutes, 1.75 USD;
+- two: 34 minutes, 2.10 USD;
+- three: 30 to 34 minutes, 2.45 USD;
+- four: 30 to 34 minutes, 2.80 USD.
+**Chosen:** two full bundles plus the side bundle, three machines. Check 320 alone (up to 13.6 minutes) plus the set-up sets the floor, so more machines save at most 2 to 4 minutes.
+**Known reds per bundle** are G_FULL2's 18 as classed:
+- bundle 1: 140, 146, 257, 261, 280, 325, 339, 348;
+- bundle 2: 28, 31, 118, 121, 193, 292, 311, 321, 333, 338.
+Checks 96, 135 and 340 were fixed in D-535, so they are not declared red, and a red there is a real finding. Checks 325 and 348 are declared red only because G_FULL2 had them red; their status on this code is read check by check.
+**Launches.** The ledger lock refuses rather than waits, so the three launch one after another, each after the previous launch_intent line.
+**Steps a to g.** push-plan (Opus medium) does: export, a detached worktree, a fresh inventory, sealing, binding, preflight, the launches, and the check-by-check read against G_FULL2 and G_FULL4. An independent delta scan of the export runs beside the gate.
+**The push** (step h) is made by the lead, only with a clean gate and a clean scan, with an annotated tag.
+- **Rules.** D-488, D-489, D-497, D-499, D-501, D-535, D-540, D-542, D-545.

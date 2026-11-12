@@ -713,6 +713,27 @@ class ControllerChecks(ImageChecks, AssetCopyChecks, SalvageChecks, GateArmCheck
         self.assertEqual(FakeProvider.state['launches'], 1)
         self.assertEqual(json.loads((self.base / 'CURRENT_PHASE.json').read_text())['phase'], 'terminated_and_cleaned')
 
+    def test_a_hanging_ssh_ready_probe_is_an_unreachable_attempt_not_a_failure(self):
+        """D-533: the first ssh-ready probe hangs past its deadline (the G_FULL3 end), the second answers.
+        The controller reaches ready and finishes; without tolerate_timeout the first hang raised
+        'Transport deadline exceeded' at attempt 0."""
+        once = []
+
+        class HangOnce(FakeTransport):
+            def run(self, argv, capture_output=True, timeout=None, creationflags=None):
+                if argv[0] == 'ssh' and argv[-1] == 'true' and not once:
+                    once.append(1)
+                    raise subprocess.TimeoutExpired(argv, timeout)
+                return super().run(argv, capture_output, timeout, creationflags)
+        outputs = {'evidence_hash': (hashlib.sha256(EVIDENCE).hexdigest() + '  collected_evidence.tar.gz\n').encode()}
+        transport, console, ran = run_controller(self.root, self.base, fixture_plan(self.ledger),
+                                                 HangOnce(self.base, None, outputs), FakeProvider, self.clock, self.credential)
+        failure = ran / 'controller_failure.json'
+        self.assertEqual(once, [1])
+        self.assertFalse(failure.exists(), failure.read_text() if failure.exists() else '')
+        self.assertIn('python_gate', [label for label in re.findall(r'python_gate', ' '.join(a[-1] for a, _ in transport.calls))])
+        self.assert_torn_down()
+
     def test_poll_outcome_classifies_connection_failure_as_unreachable_not_a_result(self):
         self.assertEqual(controller.poll_outcome(255, b''), ('unreachable', None, []))
         self.assertEqual(controller.poll_outcome(1, b'RC=0\n'), ('unreachable', None, []))
@@ -5154,6 +5175,11 @@ NEUTRALIZATIONS = [
 ]
 NEUTRALIZATIONS += LAUNCHER_NEUTRALIZATIONS
 NEUTRALIZATIONS += GATE_NEUTRALIZATIONS
+NEUTRALIZATIONS += [
+    # The ssh-ready probe is given no tolerance for a hang (D-533): the first hang ends the run.
+    ('test_a_hanging_ssh_ready_probe_is_an_unreachable_attempt_not_a_failure', controller, 'ssh_probe_ready',
+     lambda transport, n, ssh: transport('ssh_ready_' + str(n), ssh + ['true'], 20, False).returncode == 0),
+]
 NEUTRALIZATIONS += SALVAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += IMAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += ASSET_COPY_NEUTRALIZATIONS

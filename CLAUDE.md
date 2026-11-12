@@ -204,6 +204,7 @@ widely between the fields it has run on.
   records or is refused (`analyze`), and the adapters refuse a paired figure of two rented arms that
   do not both record it. An AST check holds that the guard, the reaper, the controller, the spend
   reader and the bound preflight load no name nothing in them assigns (the 4cdceafe NameError).
+  D-529 (the usage stop threshold 98 until the reset on 18 November 2026, then 95: `USAGE_STOP_EXCEPTION`, `usage_stop_percent(now)`) changed `tools/loop/instance_reaper.py`, so every bundle sealed before it refuses with `Controller source changed` and must be re-sealed. D-533 changed `tools/ordinary_final_cloud.py`: the ssh-ready probe goes through the module-level `ssh_probe_ready`, which calls transport with `tolerate_timeout`, so a hanging probe is one unreachable attempt within the 30 tries (bounded, then `SSH not ready`); proof `test_a_hanging_ssh_ready_probe_is_an_unreachable_attempt_not_a_failure` with its neutralisation; bundles sealed before it refuse with `Controller source changed` (the same re-seal as D-529).
   IMAGE-A (D-S108, D-S109, D-417) changed `tools/ordinary_final_cloud.py` again (the image
   phases), in the same re-seal.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
@@ -375,6 +376,7 @@ widely between the fields it has run on.
   refused for another file, other inputs or other items on the two benchmarks. `judge` runs at
   the bound commit. A pass is a pilot go only, never above B1. Development, exposed; not an
   arm of the preregistration. Check 321 (with a proof on the real `LocalBackend._render`).
+- EMBED-ROUTE-A (D-507, D-510): the leakage fingerprint's embedding (bge-m3, float32 unit rows, the fingerprint's own text form `embed_form`, one vector per distinct record in sorted-hash order) can run on a rented machine through the replay pass, with NO bound controller file changed. `benchmark/baselines/embed_records.py build` turns the driver's `{row, key, stay_local, text}` records file into SEVERAL `embed-records-v1` prompts files, ONE SESSION PER PART (`<dir>/partNN/replay_prompts.json`; each part its own B1 bundle and its own launch, sealed with `--image-layers --image-env-manifest external/image/M1_env_manifest.json` so it starts warm (the image layers need the asset copy declaration, which the sealer writes into every exposed bundle itself), since a batch of B1 entries alone cannot be built; at most 85,000 rows, 348 MB of vectors, and 60 MB of prompts a part, so each launch packs and downloads inside the controller's fixed timeouts), from `--from-row` (the laptop's done less 2,048, so the parts overlap its rows). A stay_local row's text never travels. A chunk is one prompt (one reply record), its records gzip-compressed and written as lowercase hex in 50-character lines, never base64 (random base64 spells `AIza...` and the sealer's credential scan refuses the bundle; a long unbroken word run also makes that scan quadratic), each chunk held to its SHA-256. `replay_prompts.py` hands a part to `embed_records.run` (sdpa path alone, no decision, no allowance; the sealed bge-m3 loaded offline, no fallback; batch 16 up to 6,000 characters and 2 above, float32), which writes `vectors/<chunk>.npy`, one reply record per chunk, and `replay_measurement.json` only when every chunk has exactly one finite unit vector per record. `embed_records.py merge` reads every part's vectors from collected evidence one chunk at a time (each part its own evidence folder, each chunk held to its digest), and fills a new (n, dim) `.npy` from three sources only: the laptop's rows below its `done`, its listed local rows, and the instance's rows; a row from two sources is refused (the one exception: a listed local row inside the laptop's written prefix is compared with the laptop's row by cosine and the laptop's kept), the overlap with the laptop is compared by cosine (floor 0.999) with the laptop's rows kept, `done` in its state is the count of rows that have a vector, and `--require-complete` refuses any missing row; a refusal removes only the files that call created. The LAYOUT is the fingerprint's `vectors.data` byte for byte; the instance's vectors equal the laptop's only within the tolerance. Check 325 (`scripts/embed_records_checks.py`, a stub embedder and the real fingerprint, each proof neutralise, fail, restore, pass).
 - ARM-L-A (D-S13 item 6d): a third sealed arm, `L`, runs the launcher menu as shipped on the
   loop's own instance with the same controller, guard, ledger, reaper and binding; never on the
   laptop. The sealer (`--arm L --launcher-question "..."`, exposed only, refused for a sealed run
@@ -436,7 +438,7 @@ widely between the fields it has run on.
   check (D-S75 item 3). Proofs in `tools/ordinary_final_gate_arm_checks.py`, in the controller gate.
 - SALVAGE-A (D-S84): if Claude stops, the loop's instances are saved and stopped with no Claude
   involved. `tools/loop/instance_reaper.py` reads two triggers on every run: seven-day usage at or
-  above `USAGE_STOP_PERCENT` (95) in `.claude/loop_status.json`, and no lead heartbeat
+  above `usage_stop_percent(now)` in `.claude/loop_status.json`, read from `seven_day_used_percentage`, the OVERALL weekly figure and the only one the stop reads (D-534: no per-model limit ever triggers it) (D-529: `USAGE_STOP_PERCENT` stays 95, the standing value; the declared, dated exception `USAGE_STOP_EXCEPTION` makes it 98 strictly before epoch 1794988800, the usage reset of 18 November 2026, 11:00 +03:00, and 95 again at or after that instant with no further change; `usage_stop_percent(now)` is the one reader, used by `usage_stop`, the trigger, the report and the status, which name the threshold in force and why: `stop_basis` in the trigger and episode, `usage_stop_percent` and `usage_stop_basis` in the reaper status; proofs in `tools/ordinary_final_salvage_checks.py` with neutralisations: 97 does not trigger and 98 does before the reset, 95 triggers at the boundary instant and after it. Trigger to every instance terminated: at most one reaper period (300 s, 420 with the margin) to see it, `SALVAGE_ANSWER_SECONDS` 600 for an unanswered instance, then up to one more period before a pass ends it, about 1,200 s (1,320 with the margin), 20 to 22 minutes, against 43 minutes for the two points from 98 to 100 at the measured 2.8 points an hour (08:04 to 13:43, 12 November), 103 minutes at 1.17 an hour (00:03 to 13:43); margin about 21 minutes, break-even 5.5 points an hour, the status file's own staleness not counted),, and no lead heartbeat
   (`docs/loop/private/continue_hook_state.json`, LOOP_STATE or FOR_SECKIN written) for
   `SILENCE_MINUTES` (90) while a loop instance runs. Either opens an episode
   (`docs/loop/private/salvage/episode.json`; D-412 item 2: ONE salvage folder for the reaper, every
@@ -1000,8 +1002,8 @@ widely between the fields it has run on.
   `search_router.SearchRouter.search`. Before the query masker and before every engine (api
   plan, direct fetch, ddgs, the DDG scrape, Brave), it refuses for roster agents and system
   callers alike when `search_router.web_access_open()` is false. That function is true only for
-  exactly `cloud` in `SHIMMER_BACKEND_PROFILE` (unset means cloud; empty or unknown stays
-  closed). The refusal is logged `web_access_refused backend_profile=<p> agent=<a>` and raised
+  exactly `cloud` in `SHIMMER_BACKEND_PROFILE` (unset means local, D-487 item 1; empty or
+  unknown stays closed). The refusal is logged `web_access_refused backend_profile=<p> agent=<a>` and raised
   as a PermissionError. `_run_summary.md` states the backend profile and whether web access was
   open from the same function (`write_deliverables_run_summary`, amended in both pinned
   baselines), and the console's startup backend line says whether it is closed or open (read
@@ -1238,7 +1240,11 @@ widely between the fields it has run on.
   `paired` (a pairing map decides which rules could apply to which units, Python computes the
   arithmetic, and a model is called only where the figures disagree or nothing is computable).
   `pipeline.resolve_review_mode` owns the rule: `--review-mode` always wins, otherwise
-  `paired` under the local backend profile and `wide` under cloud. `server._default_review_mode`
+  `paired` under the local backend profile and `wide` under cloud. With neither a flag nor
+  `SHIMMER_BACKEND_PROFILE` set the profile is local (D-487 item 1): one rule,
+  `run_choices.environment_profile` (only the exact value `cloud` is cloud), read by
+  `pipeline.apply_backend_profile`, the server and the preflight; the menu launchers take
+  Local on Enter. `server._default_review_mode`
   MIRRORS that function rather than importing it (a liveness probe must not import the
   pipeline); gate check 165 pins the mirror to the original.
 - Where arithmetic can decide, arithmetic outranks the model: the finding carries Python's

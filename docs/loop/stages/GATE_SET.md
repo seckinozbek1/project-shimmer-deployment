@@ -217,21 +217,28 @@ Each part is fingerprinted on the lead's side (`gate_leakage.py fingerprint --pa
 its files read by LEAKAGE_PROTOCOL.md's reading rules: JSON, text and the members of .tar.gz, .tar
 and .zip archives; other archives refused; other files, key files and model assets skipped and listed;
 nothing under `external/s05/D-S56/`, the fresh ids file included. The fingerprint file holds every file's SHA-256 and the skipped
-list, so the digests below are checked there. The last two columns are filled from role B's result.
+list, so the digests below are checked there. The last two columns are filled from role B's result (D-543): candidates hit
+are ContraDoc / SciTab, from `REPORT.json` `step2_leakage` `candidates_by_part` (one candidate can hit several parts; ContraDoc
+144 candidates in 111 groups and SciTab 28 in 5 papers were excluded, by rule: ContraDoc exact 47, runs 144, cosine 57, source 47;
+SciTab exact 0, runs 1, cosine 1, source 27; cosine threshold 0.86 from step 2's record `cosine_step.json` `73f9b6a1...`, under
+the 0.92 ceiling, where the across-group 99.9th percentile is 0.651 and `separates` is true; groups checked 517 ContraDoc and 65
+SciTab; short candidate texts, LEAKAGE_PROTOCOL's figure, ContraDoc 0 and SciTab 16). Gate items hit
+were counted by the lead with a script on ids only: of the frozen sets' 270 ContraDoc groups and 30 SciTab papers, none is among
+the excluded groups, every one is among the kept groups, and no drawn document, table or claim is an excluded id.
 
 | Part (its name in the fingerprints) | Its data | Digests on record | Candidates hit | Gate items hit |
 |---|---|---|---|---|
-| `judge_mix_2e` (open item 92) | `external/s05/T2E/replay_prompts.json#rows,held_out` | `08b20660...` (11,367 rows, 592 held out) | | 0 required |
-| `judge_mix_1` | `external/s05/T/T_TRAIN/replay_prompts.json#rows,held_out` | `eec83759...` | | 0 required |
-| `judge` | `external/s05/T/`; `external/s05/T2E/` (calibration_2e to 2e3 included); `external/s05/P2A/` (r1, the 2f calibration rows) | r1 `9d5b3e1f...`; half_b_documents `79330fe5...` | | 0 required |
-| `auditor` | `external/s05/AUD/` (the 789 questions, the 12,000-row session, each archive) | questions `9dbd82f2...`; half A `06154dae...`; half B `b5a47e96...` | | 0 required |
-| `auditor_tuning` (the shipped Auditor896 and its predecessors) | every `tuning/auditor_*` folder (auditor_external_relation_v1 and v2 among them), `tuning/first_domain_agnostic_v1` (its training_bundle.zip read), `tuning/second_domain_agnostic_v2`, `tuning/second_tuning_eval_runtime_v2`, `tuning/second_tuning_eval_runtime_v2_1` | each file in the fingerprints | | 0 required |
-| `producer` | `tuning/producer_v3/`, `tuning/producer_v4/`, `external/s05/P1/` (partitions_tune, partitions_heldout and the superseded copies) | partitions_heldout `ab005115...` | | 0 required |
-| `verifier` | `external/s05/VER/` | each bundle's manifest | | 0 required |
-| `ontology` | `shimmer-scratch/ontology_pairs/`, the scratch folder beside the checkout (attempts 1 and 2, measure, train; untracked) | each file in the fingerprints | | 0 required |
-| `dev_cases` | `benchmark/dev_cases/` | each file in the fingerprints | | 0 required |
-| `development` | `external/contradoc/dev/`, `external/contradoc/dev_moved/`, `external/scitab/dev/`, and each folder under `external/s05/` named in `gate_set.PART_PATHS` (matched as path prefixes, never substrings), that is every folder except `D-S56`, `T`, `T2E`, `P2A`, `AUD`, `P1`, `VER` (G1, J1, D-S45, the L, C, R and CASES runs) (SAVINGS_PROOF among them, D-404's run) | each file in the fingerprints | | 0 required |
-| (rule 4) | `external/s05/GATE/exclude_ids.json`, from `gate_set.py exclude-ids`: the fresh set by id only, from `external/s05/D-S56/contradoc_fresh100_ids.json` (`ec2498fd...`), the one file under D-S56 any gate tool reads (D-442), its path and digest in the list's `fresh_ids_provenance` | `a0bfa6d8...` | | 0 required |
+| `judge_mix_2e` (open item 92) | `external/s05/T2E/replay_prompts.json#rows,held_out` | `08b20660...` (11,367 rows, 592 held out) | 2 / 0 | 0 |
+| `judge_mix_1` | `external/s05/T/T_TRAIN/replay_prompts.json#rows,held_out` | `eec83759...` | 32 / 0 | 0 |
+| `judge` | `external/s05/T/`; `external/s05/T2E/` (calibration_2e to 2e3 included); `external/s05/P2A/` (r1, the 2f calibration rows) | r1 `9d5b3e1f...`; half_b_documents `79330fe5...` | 63 / 1 | 0 |
+| `auditor` | `external/s05/AUD/` (the 789 questions, the 12,000-row session, each archive) | questions `9dbd82f2...`; half A `06154dae...`; half B `b5a47e96...` | 6 / 0 | 0 |
+| `auditor_tuning` (the shipped Auditor896 and its predecessors) | every `tuning/auditor_*` folder (auditor_external_relation_v1 and v2 among them), `tuning/first_domain_agnostic_v1` (its training_bundle.zip read), `tuning/second_domain_agnostic_v2`, `tuning/second_tuning_eval_runtime_v2`, `tuning/second_tuning_eval_runtime_v2_1` | each file in the fingerprints | 0 / 0 | 0 |
+| `producer` | `tuning/producer_v3/`, `tuning/producer_v4/`, `external/s05/P1/` (partitions_tune, partitions_heldout and the superseded copies) | partitions_heldout `ab005115...` | 8 / 0 | 0 |
+| `verifier` | `external/s05/VER/` | each bundle's manifest | 11 / 0 | 0 |
+| `ontology` | `shimmer-scratch/ontology_pairs/`, the scratch folder beside the checkout (attempts 1 and 2, measure, train; untracked) | each file in the fingerprints | 0 / 0 | 0 |
+| `dev_cases` | `benchmark/dev_cases/` | each file in the fingerprints | 0 / 0 | 0 |
+| `development` | `external/contradoc/dev/`, `external/contradoc/dev_moved/`, `external/scitab/dev/`, and each folder under `external/s05/` named in `gate_set.PART_PATHS` (matched as path prefixes, never substrings), that is every folder except `D-S56`, `T`, `T2E`, `P2A`, `AUD`, `P1`, `VER` (G1, J1, D-S45, the L, C, R and CASES runs) (SAVINGS_PROOF among them, D-404's run) | each file in the fingerprints | 107 / 1 | 0 |
+| (rule 4) | `external/s05/GATE/exclude_ids.json`, from `gate_set.py exclude-ids`: the fresh set by id only, from `external/s05/D-S56/contradoc_fresh100_ids.json` (`ec2498fd...`), the one file under D-S56 any gate tool reads (D-442), its path and digest in the list's `fresh_ids_provenance` | `a0bfa6d8...` | 47 / 27 (rule `source`) | 0 |
 
 The fingerprint refuses to run while any entry of `external/s05/` other than `D-S56` and `GATE`
 belongs to no part (`gate_leakage.uncovered`), so a new run folder is never left out.
@@ -243,9 +250,33 @@ written here, and judge 2f's pin reads the claim set's (D-375). The claim set's 
 
 ## 10. Frozen
 
-(Empty until role B returns: the counts per set and class, the class setting, the leakage counts and
-the files skipped, and the two set files' digests. Nothing is read before this section is filled and
-committed; the bundles stay in their held folder until then, section 8 of the request.)
+Filled 12 November 2026 from role B's session B_D-S100 (D-543): `_handoff/B_D-S100_DONE.json` names
+`REPORT.json` `e7150f0d...`, and the lead re-hashed it and each of its ten report files (all equal). Bound commit
+`43cfe625`; preregistration `0c1884fb...`; inputs as the request named (fingerprints `ad64bab9...`, cosine step
+`73f9b6a1...`, exclude ids `a0bfa6d8...`; SciTab's exclusion list adds the four tables the paper's prompts print,
+`2cf68302...`). Each draw ran once, nothing refused, no threshold, floor, rule or size changed.
+
+| Set | ContraDoc | SciTab |
+|---|---|---|
+| Claim set | 230 documents in 230 groups | 363 claims, 61 tables, 24 papers (needed 352) |
+| Quick subset | 40 documents in 40 groups | 78 claims, 13 tables, 6 papers |
+
+- **SciTab's class setting:** 3-class, from the drawn claim set's gold counts (supports 122, refutes 110,
+  not enough info 131; 131 is at least 30 and at least 15 percent), so no claim is left out
+  (`scitab_class_setting.json` `951d516a...`).
+- **Leakage:** section 9. ContraDoc 707 candidates (the 47 moved documents among them, excluded by rule 4),
+  406 groups kept; SciTab 1,129 candidates, 60 papers kept; v3's sealed paper `1812.11321v1` was flagged and is out.
+- **Files skipped** by the fingerprint, per part: auditor 795, auditor_tuning 93, dev_cases 10, development
+  42,611, judge 1,278, judge_mix_1 0, judge_mix_2e 0, ontology 734, producer 441, verifier 1,647 (key files
+  and model assets, unread by design).
+- **Builds:** each set as shipped and with its declaration (`compare: passages`, `compare: cells`), no document
+  cut; `bundles.json` `9529b93a...`. The sealed manifests lose each drawn ContraDoc group whole (270 drawn, 98
+  siblings with them): ContraDoc 660 to 292 documents, SciTab 1,129 to 688 claims.
+- **The two set files**, written by `gate_set.py freeze` into `external/s05/GATE/freeze/` with Windows line
+  ends, digests of those bytes: `claim_set_ids.json` **`b0a942ad5dd3ba9a544beb4296056d030b73a8e8a18dd0e98e39ecee66d2357e`**,
+  `quick_set_ids.json` **`0127b0809d762fcd4d33602e54cb4ef39a9e727442fcccbdf541104e3283a1f1`**. They are pinned as
+  `gate_score.CLAIM_SET_SHA256` and `QUICK_SET_SHA256` in this commit. A copy elsewhere travels byte for
+  byte; a freeze run again on Linux would write other bytes and is not the set.
 
 At the freeze, `gate_set.py freeze --contradoc-ids ... --scitab-ids ... --class-setting ... --out-dir ...`
 writes the claim set and the quick subset as **two separate files**, `claim_set_ids.json` and

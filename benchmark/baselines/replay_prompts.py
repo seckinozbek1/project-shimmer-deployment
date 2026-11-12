@@ -329,6 +329,21 @@ def _doc_judge():
     return doc_judge
 
 
+def _embed_records():
+    import embed_records
+    return embed_records
+
+
+def is_embed_records(path):
+    """True when the file is an `embed-records-v1` file (embed_records.py build, D-507): the same sealed pass,
+    which embeds the records with bge-m3 and writes vectors. Sniffed from the file's head, since the file
+    may be a hundred megabytes and every other reader here parses the whole of it."""
+    try:
+        return _embed_records().is_prompts_path(path)
+    except ImportError:
+        return False
+
+
 def _negotiation_b1():
     import negotiation_b1
     return negotiation_b1
@@ -419,6 +434,8 @@ def is_auditor_training(path):
 def load_prompts(path):
     """The prompts of a replay_prompts.json, each checked against its own SHA-256 (a G1 file
     by doc_judge.load_prompts, which re-renders every prompt from the file's own template)."""
+    if is_embed_records(path):
+        return _embed_records().load_prompts(path)
     if is_producer_training(path):
         return (_producer_train().load_heldout_prompts(path) if _producer_heldout(path)
                 else _producer_train().load_prompts(path))
@@ -894,6 +911,13 @@ def main(argv=None):
             return 0
         if Path(args.out).exists() and any(Path(args.out).iterdir()):
             raise ValueError("the output folder is not empty")
+        if is_embed_records(args.prompts):
+            # D-507: the same sealed pass, the records embedded with bge-m3 (embed_records.py).
+            if [p for p in args.paths.split(",") if p] != ["sdpa"] or args.decision or args.max_new_tokens:
+                raise ValueError("an embedding pass runs the sdpa path alone, no decision, no token allowance")
+            result = _embed_records().run(args.prompts, args.out)
+            print(json.dumps({"prompts": result["prompts"], "failures": result["failures"], "seconds": result["seconds"]}, indent=2))
+            return 0
         if is_producer_training(args.prompts):
             # D-S57 item 3: the producer's candidate trained, then its test (producer_train.py).
             runner = _producer_train().heldout_run if _producer_heldout(args.prompts) else _producer_train().run

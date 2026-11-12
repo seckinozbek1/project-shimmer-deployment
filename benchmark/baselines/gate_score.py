@@ -92,8 +92,8 @@ OPENINGS = "docs/loop/HELDOUT_OPENINGS.md"
 # `claim_set_ids.json` and of `quick_set_ids.json`, two separate files `gate_set.py freeze` writes (never
 # the ids files of the draw, which hold both sets). Until then no gate read is possible: `figures`
 # refuses any other set. Only `figures`' output may be recorded as a gate figure.
-CLAIM_SET_SHA256 = None
-QUICK_SET_SHA256 = None
+CLAIM_SET_SHA256 = "b0a942ad5dd3ba9a544beb4296056d030b73a8e8a18dd0e98e39ecee66d2357e"   # D-543
+QUICK_SET_SHA256 = "0127b0809d762fcd4d33602e54cb4ef39a9e727442fcccbdf541104e3283a1f1"   # D-543
 
 
 def _loop_text(path) -> str:

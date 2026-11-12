@@ -115,11 +115,12 @@ def _backend_profile() -> str:
     Read live from the environment (not frozen at import) because
     _effective_run_timeout and check_local_model_availability already read
     SHIMMER_BACKEND_PROFILE live, and a second, import-time copy of the same
-    knob would be a way for the two to disagree. Anything that is not exactly
-    "local" is the cloud profile, matching those two readers.
+    knob would be a way for the two to disagree. Unset is the local profile and
+    only the exact value "cloud" is the cloud profile (D-487 item 1), the one rule
+    run_choices.environment_profile gives every reader of the variable.
     """
     from run_choices import resolve_backend_profile
-    return resolve_backend_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"), legacy_default=True)
+    return resolve_backend_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"), from_environment=True)
 
 
 def _default_review_mode() -> str:
@@ -136,14 +137,15 @@ def _default_review_mode() -> str:
 
 def _effective_run_timeout() -> int:
     """Return the active run timeout: LOCAL_RUN_TIMEOUT_S when the backend profile
-    is 'local', otherwise RUN_TIMEOUT_S. Both support 0 = unbounded."""
-    if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":
+    is 'local' (unset included, D-487 item 1), otherwise RUN_TIMEOUT_S. Both
+    support 0 = unbounded."""
+    if _backend_profile() == "local":
         return LOCAL_RUN_TIMEOUT_S
     return RUN_TIMEOUT_S
 
 
 def check_local_model_availability():
-    """When SHIMMER_BACKEND_PROFILE=local, verify that the required packages
+    """Under the local profile (SHIMMER_BACKEND_PROFILE unset or local), verify that the required packages
     (torch, transformers) are importable and that both model IDs resolve to
     a local cache entry. Returns (ok: bool, detail: str)."""
     from preflight import check_local_model_availability as check
@@ -777,9 +779,10 @@ def _run_job(run_id):
             # into every agent's run objectives and echoed in the deliverables);
             # draft still requires one (validated in submit).
             argv += ["--question", question]
-        _bp = os.environ.get("SHIMMER_BACKEND_PROFILE")
-        if _bp:
-            argv += ["--backend-profile", _bp]
+        # The profile as the server resolved it (and /health reports it), never the raw
+        # variable: an unknown value would otherwise reach the child's argparse and fail
+        # the run while /health says local (D-487 item 1).
+        argv += ["--backend-profile", _backend_profile()]
         from run_choices import privacy_flags
         argv += privacy_flags(bool(job_sensitive))
         # Stream the merged output so the latest [progress] line can be stored on the job

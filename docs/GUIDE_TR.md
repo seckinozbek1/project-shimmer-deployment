@@ -35,7 +35,7 @@ Başlatma penceresindeki **Cloud** seçeneği bunlardan ayrı bir şeydir: bilgi
 
 Windows'ta `start_shimmer.bat` dosyasını çalıştırın. Küçük bir pencere açılır. Bu pencere yalnızca İngilizcedir. Local (güçlü ekran kartlı kendi bilgisayarınız) veya Cloud (sağlayıcı modelleri) seçeneğini seçin, **Check and start** düğmesine basın ve eksik olarak bildirilen bir şey varsa okuyun. Konsol tarayıcınızda açılır. **Copy access token** düğmesine basıp erişim belirtecini konsola yapıştırın. Küçük pencereyi açık tutun, Shimmer'ı durdurmak için **Stop Shimmer** düğmesini kullanın. Tarayıcıyı kapatmak sunucuyu durdurmaz.
 
-Linux veya macOS'ta `./shimmer.sh` komutunu çalıştırıp 3 numaralı seçeneği seçin. Erişim belirteci bir kez gösterilir, ardından sunucu başlar.
+Linux veya macOS'ta `./shimmer.sh` komutunu çalıştırıp 3 numaralı seçeneği seçin. Önce hangi ortamın kullanılacağı sorulur: Local için Enter'a, Cloud için C'ye basın. Erişim belirteci bir kez gösterilir, ardından sunucu başlar. Ortam seçilmeyen her durumda (komut satırından bir çalışma ya da `SHIMMER_BACKEND_PROFILE` ayarlanmamış bir sunucu) Shimmer Local kullanır.
 
 Konsolun dört sayfası vardır: **Çalışmalar**, **Gönder**, **Ajanlar** ve **Test değişiklikleri**. Konsolun dilini sayfanın üstündeki **Çıktı dili** alanından değiştirirsiniz. Konsol İngilizce açılır, Türkçe seçince bu kılavuzdaki adlar görünür.
 

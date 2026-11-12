@@ -34,9 +34,9 @@
     "run_draft_phase0": "fa681481cb271e37c5544122d3af1f28fb14cd8ff4d9c56e190dcb4af5b77279",
     "_populate_operational": "2896bcc5583615ed8cde9a0f19a2f62e6ddb89c39e87f5b9cd593c85af7d147f",
     "_build_wrapper": "9240fee73df6b7be3c08aa0ff2eac2b49ea640e1fecc239c81bba2ddf858241e",
-    "apply_backend_profile": "cb1c9194b374e62ba365b711621d732d6ae7cb01720820c546f87ad72a0fcf50",
+    "apply_backend_profile": "f5f4c3a64a184a0876d828411c23ab2716e3f40f05ecab579eb9d22b73c457b3",
     "resolve_review_mode": "041495d5fe6afc2287d210eb602ee75cea00d259b33ea48ac8bbde63c819de82",
-    "_is_local_profile": "d3b21e408bee61aed5479b034bf45820c29ed10d535621ca2ed4571e276a85f8",
+    "_is_local_profile": "b4aca7250f95c1a4eb7438cfe624e134b05ff2b66947a0f2e36c6e8211d9ffd4",
     "_truncate_doc": "75b4e14c3b9dd28cb5ab11f5f888bcfc2e4565d161cc30522d4bb7cce73dea47",
     "_gather_or_serial": "39efb0fd2d8072104506a195d3f8ad6c326f7851d03b411dac7ef6b5e6e521fb",
     "_run_one": "2090d175f6a463271cb991aa2be51b1186e249b32d1ab557fc36c5f3d8e17338",
@@ -86,7 +86,7 @@
     "_make_file_operator_handler": "631d0b86500dd41183daf116e52ed0fa3b953dcaf99ed35f47a63ea5fc8e9bb3",
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
-    "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
+    "_build_arg_parser": "2524297d5ca98feaaa6651229c9b8dd2c33106a5caddbb5672599a1295bb48e1",
     "main": "6f43112fcbb9c00166e5f63a429520b19805d2f23f8e8c89cf98edc5b357463f",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
@@ -795,6 +795,32 @@
         "phase_6_synthesis": {
           "from": "9d9cdc3fce5a881b1088f6d70b682a4841698b29c9d865bc3679a9d4e178cbe5",
           "to": "aebac7e1f30508cfe31f2a668b764b9579929ae2d9aa204d727a797c0c4fa331"
+        }
+      }
+    },
+    {
+      "date": "2026-11-11",
+      "reason": "Operator-directed, 2026-11-11, D-487 item 1: with SHIMMER_BACKEND_PROFILE unset the backend is Local, not Cloud. apply_backend_profile resolves an absent flag through run_choices.environment_profile (only the exact value cloud is cloud; unset, empty or unknown is local) and sets the environment to it; the --backend-profile help in _build_arg_parser names local as the default. Explicit local and cloud behave as before.",
+      "document": "docs/loop/DECISIONS.md D-487",
+      "functions": {
+        "_build_arg_parser": {
+          "from": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
+          "to": "2524297d5ca98feaaa6651229c9b8dd2c33106a5caddbb5672599a1295bb48e1"
+        },
+        "apply_backend_profile": {
+          "from": "cb1c9194b374e62ba365b711621d732d6ae7cb01720820c546f87ad72a0fcf50",
+          "to": "f5f4c3a64a184a0876d828411c23ab2716e3f40f05ecab579eb9d22b73c457b3"
+        }
+      }
+    },
+    {
+      "date": "2026-11-11",
+      "reason": "Operator-directed, 2026-11-11, D-487 item 1 (checker round 1): _is_local_profile reads SHIMMER_BACKEND_PROFILE through run_choices.environment_profile, the one rule every reader uses, so an unset, empty or unknown value is local here as in apply_backend_profile.",
+      "document": "docs/loop/DECISIONS.md D-487",
+      "functions": {
+        "_is_local_profile": {
+          "from": "d3b21e408bee61aed5479b034bf45820c29ed10d535621ca2ed4571e276a85f8",
+          "to": "b4aca7250f95c1a4eb7438cfe624e134b05ff2b66947a0f2e36c6e8211d9ffd4"
         }
       }
     }

@@ -127,16 +127,17 @@ fi
 # unconditionally and exit on its keyless code 2, so a local-only operator
 # could not reach the menu at all and never learned whether their local stack
 # was ready. The profile is passed to the preflight and to every run started
-# from this menu.
+# from this menu. Enter (or any answer but C) is Local, as an unset
+# SHIMMER_BACKEND_PROFILE is (D-487 item 1); only C chooses Cloud.
 echo
 echo "Which backend will you run on?"
-echo "  [C] Cloud  (Claude / GPT via your API keys; costs money per run)"
 echo "  [L] Local  (models on this machine; no provider is called, no API cost)"
-printf "Choose [C/L, Enter for Cloud]: "
+echo "  [C] Cloud  (Claude / GPT via your API keys; costs money per run)"
+printf "Choose [L/C, Enter for Local]: "
 read -r profile_choice
 case "$profile_choice" in
-    l|L) BACKEND_PROFILE="local" ;;
-    *)   BACKEND_PROFILE="cloud" ;;
+    c|C) BACKEND_PROFILE="cloud" ;;
+    *)   BACKEND_PROFILE="local" ;;
 esac
 # Exported so the intake wizard emits --backend-profile for it instead of asking
 # the same question a second time. The wizard owns the flag (chat drives the same

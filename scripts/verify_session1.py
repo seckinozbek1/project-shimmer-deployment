@@ -4222,6 +4222,9 @@ class _HangingFakePopen:
         return
         yield  # pragma: no cover (makes this a generator function)
 
+    def poll(self):
+        return self.returncode
+
     def terminate(self):
         self.returncode = -15
         self._terminated.set()
@@ -4257,6 +4260,10 @@ def check_96_run_timeout_terminates_and_marks_failed():
         server = _step2_server_module(runs_dir)
         server.RUNS_DIR = runs_dir
 
+        # D-487 item 1: an unset profile is Local, which reads LOCAL_RUN_TIMEOUT_S. This
+        # check proves the RUN_TIMEOUT_S (cloud) path, so it names the cloud profile.
+        saved_profile = _os.environ.get("SHIMMER_BACKEND_PROFILE")
+        _os.environ["SHIMMER_BACKEND_PROFILE"] = "cloud"
         saved_popen = _subprocess.Popen
         saved_run_timeout = server.RUN_TIMEOUT_S
         try:
@@ -4291,6 +4298,10 @@ def check_96_run_timeout_terminates_and_marks_failed():
         finally:
             _subprocess.Popen = saved_popen
             server.RUN_TIMEOUT_S = saved_run_timeout
+            if saved_profile is None:
+                _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            else:
+                _os.environ["SHIMMER_BACKEND_PROFILE"] = saved_profile
 
     return _ok("a hung child under SHIMMER_RUN_TIMEOUT_S=1 is terminated by the watchdog "
                "Timer and status.json reads failed / 'run timeout after 1s' / exit_code null")
@@ -6728,13 +6739,13 @@ def check_126_model_swap_evicts_previous():
         _QWEN_MODELS.update(saved)
 
     # Verify _effective_run_timeout in server.py: cloud profile -> RUN_TIMEOUT_S,
-    # local profile -> LOCAL_RUN_TIMEOUT_S.
+    # local profile -> LOCAL_RUN_TIMEOUT_S, and an unset profile is local (D-487 item 1).
     with _tempfile.TemporaryDirectory(prefix="shimmer_gate_L2_") as tmp:
         runs_dir = Path(tmp) / "runs"
         server = _step2_server_module(runs_dir)
         saved_env = _os.environ.get("SHIMMER_BACKEND_PROFILE")
         try:
-            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = "cloud"
             cloud_val = server._effective_run_timeout()
             if cloud_val != server.RUN_TIMEOUT_S:
                 return _fail(f"cloud profile: expected RUN_TIMEOUT_S={server.RUN_TIMEOUT_S}, "
@@ -6744,6 +6755,11 @@ def check_126_model_swap_evicts_previous():
             if local_val != server.LOCAL_RUN_TIMEOUT_S:
                 return _fail(f"local profile: expected LOCAL_RUN_TIMEOUT_S={server.LOCAL_RUN_TIMEOUT_S}, "
                              f"got {local_val}")
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            unset_val = server._effective_run_timeout()
+            if unset_val != server.LOCAL_RUN_TIMEOUT_S:
+                return _fail(f"unset profile: expected the local LOCAL_RUN_TIMEOUT_S="
+                             f"{server.LOCAL_RUN_TIMEOUT_S}, got {unset_val}")
         finally:
             _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
             if saved_env is not None:
@@ -6751,7 +6767,7 @@ def check_126_model_swap_evicts_previous():
 
     return _ok("model swap evicts previous: A evicted when loading with keep=B, "
                "B kept, cache size=1 after swap; _effective_run_timeout routes "
-               "to LOCAL_RUN_TIMEOUT_S=7200 under SHIMMER_BACKEND_PROFILE=local")
+               "to LOCAL_RUN_TIMEOUT_S=7200 under SHIMMER_BACKEND_PROFILE=local or unset")
 
 
 def check_127_law_iii_under_local_profile():
@@ -7301,9 +7317,10 @@ def check_135_role_anchor_derived_from_contract_local_only():
             if probe_required == baseline or probe_kind == baseline or probe_job == baseline:
                 return _fail("a probe anchor was identical to baseline; a mutation had no effect")
 
-            # Live-path proof: run_task, dispatch stubbed. Cloud profile first (default
-            # env, unset): the anchor must NOT appear at all (W5, cloud byte-identical).
-            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            # Live-path proof: run_task, dispatch stubbed. D-487 item 1: unset means the
+            # local profile, so only exactly "cloud" leaves the anchor out (W5, cloud
+            # byte-identical); unset and "local" both get it.
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = "cloud"
             w = _aw.AgentWrapper(name=agent, constitution=c, bus=bus, registry=reg,
                                  contracts=contracts, keys={"_stub": ""})
             captured = {}
@@ -7315,7 +7332,15 @@ def check_135_role_anchor_derived_from_contract_local_only():
             w.dispatch = _stub
             w.run_task(work_payload={"document_text": "x"}, run_objectives="check")
             if "## Final reminder" in captured.get("prompt", ""):
-                return _fail("anchor was appended with no local profile set: not gated to local only")
+                return _fail("anchor was appended under the cloud profile: not gated off for cloud")
+
+            # Unset is the local profile (D-487 item 1): the anchor must appear, last.
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            captured.clear()
+            w.run_task(work_payload={"document_text": "x"}, run_objectives="check")
+            unset_prompt = captured.get("prompt", "")
+            if not unset_prompt.endswith(w._role_anchor_text()):
+                return _fail("anchor was not appended last with no profile set: unset must read as local")
 
             # Now the local profile: the anchor must appear, and must be the LAST thing
             # in the assembled prompt (small models weight the end of the prompt most).
@@ -7332,7 +7357,8 @@ def check_135_role_anchor_derived_from_contract_local_only():
             if not prompt.endswith(expected_anchor):
                 return _fail("anchor is present under the local profile but is NOT the last "
                              "text in the assembled prompt")
-            return _ok(f"anchor absent with no local profile set; present and LAST under the "
+            return _ok(f"anchor absent under the cloud profile; present and LAST with no profile set "
+                       f"(unset is local, D-487) and under the "
                        f"local profile; changing agent_contracts.json's required and item_kind "
                        f"and agent_registry.json's does[0] each independently changed the "
                        f"generated text for {agent}")
@@ -9582,7 +9608,10 @@ def check_160_backend_profile_flag_reaches_the_environment():
             ("flag local, environment unset", "local", None, "local", True),
             ("flag cloud, environment says local", "cloud", "local", "cloud", False),
             ("no flag, environment says local", None, "local", "local", True),
-            ("no flag, environment unset", None, None, "cloud", False),
+            ("no flag, environment unset", None, None, "local", True),
+            ("no flag, environment empty", None, "", "local", True),
+            ("no flag, environment unknown", None, "elsewhere", "local", True),
+            ("no flag, environment says cloud", None, "cloud", "cloud", False),
         ]
         for label, named, env, expect_profile, expect_local in cases:
             _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
@@ -9632,7 +9661,8 @@ def check_160_backend_profile_flag_reaches_the_environment():
 
     return _ok("--backend-profile sets SHIMMER_BACKEND_PROFILE in all four "
                "combinations, the flag beats a contrary environment, an absent flag "
-               "still lets the environment decide, neither gives cloud; "
+               "still lets the environment decide, neither (or an empty or unknown "
+               "value) gives local (D-487 item 1); "
                "_is_local_profile agrees in every case; the three modules that read "
                "the variable still read it; and main resolves through "
                "apply_backend_profile rather than reading it itself")
@@ -10198,8 +10228,9 @@ def check_165_review_mode_is_accepted_and_reaches_the_child():
       - the resolved mode REACHES THE CHILD as `--review-mode <mode>`, proven by
         capturing the argv a stubbed Popen was handed;
       - NEUTRALISE AND RESTORE on the default: with SHIMMER_BACKEND_PROFILE unset
-        the default is wide, with it set to local the default is paired, and
-        unsetting it returns wide, in the server AND in pipeline.resolve_review_mode.
+        the profile is local (D-487 item 1) and the default is paired, with it set
+        to cloud the default is wide, and unsetting it returns paired, in the server
+        AND in pipeline.resolve_review_mode.
         server._default_review_mode mirrors that function rather than importing a
         large module into a liveness probe, so this comparison is what keeps the
         mirror from drifting away from the original."""
@@ -10249,7 +10280,7 @@ def check_165_review_mode_is_accepted_and_reaches_the_child():
                              f"expected 400: {bad.text[:200]}")
 
             for asked, expect in (("paired", "paired"), ("wide", "wide"),
-                                  (None, "wide")):
+                                  (None, "paired")):
                 _ArgvCapturingFakePopen.calls = []
                 resp = _submit(asked)
                 if resp.status_code != 202:
@@ -10277,8 +10308,34 @@ def check_165_review_mode_is_accepted_and_reaches_the_child():
                                  f"{argv[argv.index('--review-mode') + 1]!r}, "
                                  f"expected {expect!r}")
 
+            # The child is given the profile the server resolved, never the raw
+            # variable (D-487 item 1): unset, empty and unknown values reach it as
+            # local, cloud as cloud, so argparse never sees a value it refuses.
+            for raw, expect in ((None, "local"), ("", "local"), ("elsewhere", "local"),
+                                ("Cloud", "local"), ("cloud", "cloud")):
+                if raw is None:
+                    _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+                else:
+                    _os.environ["SHIMMER_BACKEND_PROFILE"] = raw
+                _ArgvCapturingFakePopen.calls = []
+                resp = _submit(None)
+                if resp.status_code != 202:
+                    return _fail(f"/submit with SHIMMER_BACKEND_PROFILE={raw!r} returned "
+                                 f"{resp.status_code}: {resp.text[:200]}")
+                server._run_job(resp.json()["run_id"])
+                if not _ArgvCapturingFakePopen.calls:
+                    return _fail("the worker never reached Popen, so no argv was captured")
+                argv = _ArgvCapturingFakePopen.calls[-1]
+                given = (argv[argv.index("--backend-profile") + 1]
+                         if "--backend-profile" in argv else None)
+                if given != expect:
+                    return _fail(f"with SHIMMER_BACKEND_PROFILE={raw!r} the child was given "
+                                 f"--backend-profile {given!r}, expected {expect!r} "
+                                 f"(/health says {server._backend_profile()!r})")
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+
             # NEUTRALISE AND RESTORE the default, against the pipeline's own rule.
-            for profile, expect in ((None, "wide"), ("local", "paired"), (None, "wide")):
+            for profile, expect in ((None, "paired"), ("cloud", "wide"), (None, "paired")):
                 if profile is None:
                     _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
                 else:
@@ -10309,7 +10366,7 @@ def check_165_review_mode_is_accepted_and_reaches_the_child():
                "resolved mode and records it in status.json, refuses an unrecognised "
                "value with 400 rather than falling back, and passes --review-mode <mode> "
                "to the child command line in all three cases; the default follows the "
-               "backend profile (unset -> wide, local -> paired, unset -> wide) and "
+               "backend profile (unset -> paired, cloud -> wide, unset -> paired) and "
                "agrees with pipeline.resolve_review_mode at every step")
 
 
@@ -23281,8 +23338,8 @@ def check_220_local_profile_reaches_the_menu_and_is_passed_on():
        both launchers exit on 2. A local run calls no provider and needs no
        cloud key, so a local-only operator could not reach the menu at all and
        never learned whether the stack their run actually uses was ready.
-       Under --backend-profile local, absent keys are reported and are not a
-       stop; under cloud (the default) the stop is unchanged.
+       Under --backend-profile local (the default since D-487 item 1), absent
+       keys are reported and are not a stop; under cloud the stop is unchanged.
 
     2. The intake wizard collected every run flag except --backend-profile, so
        a review started from the launcher or from chat always took the
@@ -23349,10 +23406,23 @@ def check_220_local_profile_reaches_the_menu_and_is_passed_on():
                          "reach the menu for a run that needs no keys")
 
         _pf._RESULTS.clear()
-        rc_cloud = _pf.main([])
+        rc_cloud = _pf.main(["--backend-profile", "cloud"])
         if rc_cloud != 2:
             return _fail("keyless CLOUD run returned %r, expected 2; the cloud "
                          "stop must not be weakened" % (rc_cloud,))
+
+        # No flag and SHIMMER_BACKEND_PROFILE unset is the local profile (D-487
+        # item 1), so a keyless start with no choice made is not stopped.
+        saved_profile = _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        try:
+            _pf._RESULTS.clear()
+            rc_default = _pf.main([])
+        finally:
+            if saved_profile is not None:
+                _os.environ["SHIMMER_BACKEND_PROFILE"] = saved_profile
+        if rc_default == 2:
+            return _fail("keyless run with no flag and no SHIMMER_BACKEND_PROFILE returned 2: "
+                         "the default is the cloud profile, not local (D-487 item 1)")
 
         # NEUTRALISE: force the local profile back to cloud, reproducing the
         # original defect on the very path the fix is for.
@@ -26386,10 +26456,13 @@ def check_325_a_narrow_question_is_decided_from_the_models_own_probabilities():
     from fresh_test_checks import run_checks as fresh_checks
     from system_test_checks import run_checks as system_checks
     from gate_set_checks import run_checks as gate_set_checks
-    results = (run_checks(), reader_checks(), either_checks(), fresh_checks(), system_checks(), gate_set_checks())
+    from embed_records_checks import run_checks as embed_records_checks
+    results = (run_checks(), reader_checks(), either_checks(), fresh_checks(), system_checks(), gate_set_checks(),
+               embed_records_checks())
     return (("PASS" if all(r[0] == "PASS" for r in results) else "FAIL"),
             results[0][1] + "; the reader: " + results[1][1] + "; D-S45's test: " + results[2][1] + "; D-S56's test: " + results[3][1]
-            + "; D-S70's system test: " + results[4][1] + "; the gate set (D-380, D-S100): " + results[5][1])
+            + "; D-S70's system test: " + results[4][1] + "; the gate set (D-380, D-S100): " + results[5][1]
+            + "; the embedding route (D-507): " + results[6][1])
 
 
 def check_337_the_gap_between_the_parties_is_computed():

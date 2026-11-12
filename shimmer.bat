@@ -44,7 +44,7 @@ REM The menu's own entry modules, not the experiment probe (see shimmer.sh).
 if errorlevel 1 goto :end_fail
 REM The activate script runs chcp.com inside a for /f, and that child reads the
 REM rest of a redirected input: every answer after this point was lost, so a
-REM scripted start always fell back to Cloud. Its input comes from nul instead.
+REM scripted start always fell back to the default backend. Its input comes from nul instead.
 call ".venv\Scripts\activate.bat" < nul
 
 REM --- 3. Dependencies -------------------------------------------------------
@@ -92,15 +92,16 @@ REM keys are irrelevant to it. The launcher used to run the cloud preflight
 REM unconditionally and exit on its keyless code 2, so a local-only operator
 REM could not reach the menu at all and never learned whether their local stack
 REM was ready. The profile is passed to the preflight and to every run started
-REM from this menu.
+REM from this menu. Enter (or any answer but C) is Local, as an unset
+REM SHIMMER_BACKEND_PROFILE is (D-487 item 1); only C chooses Cloud.
 :profile
 echo.
 echo Which backend will you run on?
-echo   [C] Cloud  (Claude / GPT via your API keys; costs money per run)
 echo   [L] Local  (models on this machine; no provider is called, no API cost)
+echo   [C] Cloud  (Claude / GPT via your API keys; costs money per run)
 set "profile_choice="
-set /p profile_choice="Choose [C/L, Enter for Cloud]: "
-if /i "!profile_choice!"=="l" (set "BACKEND_PROFILE=local") else (set "BACKEND_PROFILE=cloud")
+set /p profile_choice="Choose [L/C, Enter for Local]: "
+if /i "!profile_choice!"=="c" (set "BACKEND_PROFILE=cloud") else (set "BACKEND_PROFILE=local")
 REM Exported so the intake wizard emits --backend-profile for it instead of
 REM asking the same question twice. The wizard owns the flag (chat drives the
 REM same wizard, so both entry paths get it from one place).

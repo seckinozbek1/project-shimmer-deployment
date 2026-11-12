@@ -22,15 +22,18 @@ _LOG = get_logger("shimmer")
 def backend_profile() -> str:
     """The backend profile in force for this process, read where
     pipeline.apply_backend_profile puts it (SHIMMER_BACKEND_PROFILE); with nothing set
-    it is cloud, as the pipeline's own default."""
-    return os.environ.get("SHIMMER_BACKEND_PROFILE", "cloud")
+    it is local, as the pipeline's own default (D-487 item 1). Read by the one rule every
+    reader of the variable uses (run_choices.environment_profile): only the exact value
+    cloud is cloud, unset, empty or unknown is local."""
+    from run_choices import environment_profile
+    return environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"))
 
 
 def web_access_open(profile=None) -> bool:
     """D-S23 item 1 (open item 68): web access opens ONLY under the cloud profile. Under
     the local profile no agent and no system caller reaches the web, whatever an agent's
     registry flag (may_use_web) says. Any value other than exactly cloud keeps it closed,
-    so an unknown or empty profile never opens it."""
+    so an unset (local, D-487 item 1), unknown or empty profile never opens it."""
     return (backend_profile() if profile is None else profile) == "cloud"
 
 

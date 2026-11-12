@@ -91,3 +91,14 @@ One entry per attempt of any optimisation: what was tried, the measured result o
 - **What happened.** Two full gate runs (the export and its baseline) and the leakage fingerprint's embedding ran together on the 8 GB card (7,987 of 8,192 MiB used). The gates crawled from check 241 on. The export run then crashed at check 310 (Tcl_AsyncDelete), as two runs had done that afternoon. The 22:10 and 22:30 estimates passed unmeasured, and Seckin had to ask at 22:35.
 - **Why.** No queue for the GPU. A known crash was treated by rerunning. A crashed gate restarted from check 0. Nothing watched for a stalled job. Estimates were guesses, not rates. Two gate runs per push where one would do.
 - **Next changed.** D-495's six rules, standing orders 62 to 67.
+
+## L-14. Estimate from the work left, not from a rate (addition to D-495 rule 5; Seckin's assistant, 12:30, 12 November)
+
+- **What happened.** The fingerprint embedding's end time slipped four times: 07:00, 11:30, 12:00, then 12:40 to 12:55. Each estimate divided the rows left by an average rate measured while the long records were still ahead, and the items were processed in length order.
+- **Rule from now on.** For any job whose items vary in size, the estimate is the work actually left divided by a rate measured on items of similar size. For the embedding, that means the characters still to embed (each capped at the model's 8,192-token window), split into length classes, each class over its own measured characters per second. The estimate is a range, and it states what it rests on: which counts, which rates, measured when.
+- **Applied at 12:31.**
+  - Left: 5,531 rows, 22.9 M effective characters.
+  - Up to 6,000 characters: 4,936 rows, 14.1 M characters, at 8 to 14 thousand characters a second (measured on the current 1,500 to 2,000-character rows, about 8 rows a second): 17 to 29 minutes.
+  - Over 6,000: 595 rows, 8.8 M characters, at 5.5 to 6.5 thousand characters a second (measured on the local tail of full-length records, 5 to 6 s each): 23 to 27 minutes.
+  - Then the final write, about 15 minutes.
+  - End: about 13:20 to 13:45.

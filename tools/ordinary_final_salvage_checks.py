@@ -1,7 +1,7 @@
 """Salvage, then stop (D-S84): the reaper's two triggers and the controller's answer.
 
 When Claude stops while loop instances run, the reaper (a scheduled task that needs no Claude)
-reads two triggers on every run: seven-day usage at or above 95 percent in the status line's
+reads two triggers on every run: seven-day usage at or above 95 percent (98 until the reset of 18 November 2026, D-529) in the status line's
 file, and no lead heartbeat for 90 minutes while a loop instance runs. Either opens a salvage
 episode: a request for every running loop instance, which its controller answers by giving the
 phase in hand five minutes, stopping the workload, packing and copying the evidence, terminating
@@ -14,7 +14,7 @@ file and fixture heartbeat files, and the real controller against the controller
 They live in SalvageChecks, mixed into ControllerChecks, and each rule is proven by neutralise,
 fail, restore, pass through SALVAGE_NEUTRALIZATIONS.
 """
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -50,14 +50,14 @@ class SalvageChecks:
         write(instance_reaper.LOOP_STATUS, dict(time_utc=START, seven_day_used_percentage=percent))
 
     def test_salvage_usage_trigger_requests_every_instance_then_reports(self):
-        """Trigger (a): usage at 96 percent. The first pass terminates nothing and writes a request
+        """Trigger (a): usage at 98 percent (the D-529 threshold before the reset). The first pass terminates nothing and writes a request
         for each of two loop instances; one controller answers (done file, instance gone), the
         other never does and is terminated ten minutes after its request. Then both are verified
         gone, the report names the trigger, each instance, what was finished and lost, the cost,
         the packs and how each resumes, FOR_SECKIN gets a top entry, and the episode is closed."""
         start = instance_reaper.parse_time(START)
         ledger, state, provider = self.salvage_fixture('usage', ['shimmer-loop-one', 'shimmer-loop-two'], start)
-        self.usage(96)
+        self.usage(98)
         instance_reaper.FOR_SECKIN.write_text('# For Seckin\n\nolder entry\n', encoding='utf8')
         status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=10))
         self.assertEqual(status['terminated'], [])
@@ -83,7 +83,7 @@ class SalvageChecks:
         report = Path(status['salvage']['report'])
         self.assertEqual(report.name, 'SALVAGE_REPORT_20261027T101000Z.md')
         text = report.read_text(encoding='utf8')
-        for expected in ('seven-day usage at 96.0 percent', '## shimmer-loop-one', '## shimmer-loop-two',
+        for expected in ('seven-day usage at 98.0 percent', 'stop at 98 (declared exception until epoch 1794988800', '## shimmer-loop-one', '## shimmer-loop-two',
                          '`/runs/one/collected_evidence.tar.gz`', 'Finished: workload.', 'no answer within 600 s',
                          'Cost: 0.34 USD (16 minutes)', 'Cost: 0.45 USD (21 minutes)', 'Verified gone: yes',
                          'Resume: re-seal'):
@@ -99,6 +99,49 @@ class SalvageChecks:
         self.assertTrue((instance_reaper.SALVAGE_DIR / '20261027T101000Z' / 'episode.json').exists())
         self.assertIsNone(instance_reaper.salvage_request('shimmer-loop-two'))
         self.assertIsNone(instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=26))['salvage'])
+
+    def test_salvage_usage_threshold_is_98_until_the_reset_then_95(self):
+        """D-529: one function, usage_stop_percent(now), is every reader's threshold. Before the
+        reset instant (18 November 2026, 11:00 +03:00, epoch 1794988800) 97 does not trigger and 98
+        does; at the boundary instant and after it 95 triggers and 94 does not; one second before it
+        the exception still holds. The status and the trigger name the threshold in force and why."""
+        until = instance_reaper.USAGE_STOP_EXCEPTION['until_epoch']
+        self.assertEqual(until, 1794988800)
+        utc = lambda epoch: datetime.fromtimestamp(epoch, timezone.utc)
+        fires = lambda percent, epoch: (instance_reaper.salvage_trigger(utc(epoch), ['x']) or {}).get('trigger') == 'usage'
+        before = until - 3600
+        self.usage(97)
+        self.assertFalse(fires(97, before))
+        self.usage(98)
+        self.assertTrue(fires(98, before))
+        self.usage(97.9)
+        self.assertFalse(fires(97.9, until - 1))
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(until - 1)), 98)
+        # The boundary instant is already the standing value.
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(until)), 95)
+        self.usage(95)
+        self.assertTrue(fires(95, until))
+        self.assertTrue(fires(95, until + 86400))
+        self.usage(94.9)
+        self.assertFalse(fires(94.9, until + 1))
+        self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 95)
+        self.assertEqual(instance_reaper.usage_stop_percent(until), 95)   # an epoch is read too
+        self.usage(96)
+        trigger = instance_reaper.salvage_trigger(utc(until + 5), ['x'])
+        self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (95, '95 (the standing value)'))
+        self.assertIn('stop at 95 (the standing value)', instance_reaper.trigger_words(trigger))
+        self.usage(10)
+        words = instance_reaper.usage_stop_basis(utc(before))
+        self.assertIn('98 (declared exception until epoch 1794988800, Seckin 14:16, 12 November 2026; 95 is the standing value)', words)
+
+    def test_salvage_usage_stop_reads_only_the_overall_weekly_figure(self):
+        """D-534: a high per-model figure in the status file beside a low seven_day_used_percentage
+        triggers nothing; only the overall weekly figure is read."""
+        write(instance_reaper.LOOP_STATUS, dict(time_utc=START, seven_day_used_percentage=10,
+                                                seven_day_model_used_percentage=99, seven_day_opus_used_percentage=100))
+        self.assertEqual(instance_reaper.usage_percent(), 10.0)
+        self.assertIsNone(instance_reaper.salvage_trigger(instance_reaper.parse_time(START), ['x'],
+                                                          heartbeats=[instance_reaper.LOOP_STATUS]))
 
     def test_salvage_ends_an_instance_with_no_answer_after_ten_minutes(self):
         """D-S84 item 2: a run that does not answer within ten minutes of its request is
@@ -184,9 +227,25 @@ class SalvageChecks:
 
 
 SALVAGE_NEUTRALIZATIONS = [
+    # A per-model figure is read as the weekly one (D-534).
+    ('test_salvage_usage_stop_reads_only_the_overall_weekly_figure', instance_reaper, 'usage_percent',
+     lambda path=None: max(float(v) for k, v in json.loads(Path(instance_reaper.LOOP_STATUS).read_text(encoding='utf8')).items()
+                           if k.endswith('used_percentage'))),
+    # The exception never ends: 98 stays in force after the reset.
+    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
+     lambda now=None: 98),
+    # The exception never applies: 95 before the reset, so 97 would trigger.
+    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
+     lambda now=None: 95),
+    # The boundary instant is read as still before the reset.
+    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
+     lambda now=None: 98 if instance_reaper._epoch(now) <= instance_reaper.USAGE_STOP_EXCEPTION['until_epoch'] else 95),
+    # The trigger reads the standing constant directly, not the one function.
+    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop',
+     lambda usage, now=None: usage is not None and usage >= instance_reaper.USAGE_STOP_PERCENT),
     # Trigger (a) never fires.
     ('test_salvage_usage_trigger_requests_every_instance_then_reports', instance_reaper, 'usage_stop',
-     lambda usage: False),
+     lambda usage, now=None: False),
     # Trigger (b) never fires.
     ('test_salvage_silence_trigger_fires_only_after_ninety_minutes_with_an_instance_running', instance_reaper,
      'lead_silent', lambda now, beat: False),

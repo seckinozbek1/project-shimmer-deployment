@@ -91,7 +91,8 @@ def _embed_device() -> str:
     sentence-transformers dependency, so the import is safe on the path that loads a
     model; any failure degrades to CPU."""
     import os
-    if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":
+    from run_choices import environment_profile  # unset is local (D-487 item 1)
+    if environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE")) == "local":
         return "cpu"
     try:
         import torch

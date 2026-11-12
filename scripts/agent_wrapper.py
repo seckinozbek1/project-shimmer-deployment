@@ -2017,7 +2017,8 @@ class AgentWrapper:
         # it is the LAST text added to dynamic_suffix before dispatch: small local models
         # weight the end of the prompt most, so the anchor belongs at the true end, not
         # merely near it. Off by default (cloud path byte-for-byte unchanged, W5).
-        if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":
+        from run_choices import environment_profile  # unset is local (D-487 item 1)
+        if environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE")) == "local":
             dynamic_suffix = dynamic_suffix + self._role_anchor_text()
         # Per-agent token ceiling override from contract (e.g., ARCHIVIST=4096
         # to fit the corpus-level structural inventory). The contract's

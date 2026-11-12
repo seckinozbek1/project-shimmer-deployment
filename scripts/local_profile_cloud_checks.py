@@ -59,7 +59,7 @@ _PLACEHOLDER = "TEST_CREDENTIAL_PLACEHOLDER"
 KEYS = {"ANTHROPIC_API_KEY": _PLACEHOLDER, "OPENAI_API_KEY": _PLACEHOLDER}
 POLISHED = "POLISHED SENTENCE FROM THE LOCAL STAND-IN"
 CLAIM_TEXT = "In 2024 the agency reported that 12% of the 340 sites had closed."
-EXTRACT_GUARD = 'if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":'
+EXTRACT_GUARD = 'if environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE")) == "local":'
 POLISH_FUNCTION = "_polish_findings"
 POLISH_WRAPPER = 'wrapper = _build_wrapper("AMENDMENT_DRAFTER", orch, keys)\n'
 POLISH_DIRECT = POLISH_WRAPPER + "    wrapper.dispatch = lambda stable, dynamic='', **kw: wrapper.call_claude(stable, dynamic)\n"

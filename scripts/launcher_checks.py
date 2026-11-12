@@ -355,14 +355,18 @@ def _bat_bootstrap():
            broken["rc"] == 1 and MENU_PROMPT not in broken["out"],
            _ended(again) and MENU_PROMPT in again["out"])
 
-    # The activate call keeps the answers that follow it.
+    # The activate call keeps the answers that follow it. A lost answer is the Enter
+    # default, Local since D-487 item 1, so the proof answers C: kept, it is Cloud.
     local = "Backend profile: local" in ok["out"] and "STUB_PREFLIGHT --backend-profile local" in ok["out"]
+    chosen = _drive_bat(text, "C\r\nQ\r\n")
+    cloud = ("Backend profile: cloud" in chosen["out"]
+             and "STUB_PREFLIGHT --backend-profile cloud" in chosen["out"])
     broken = _drive_bat(_neutralise(text, 'call ".venv\\Scripts\\activate.bat" < nul',
                                     'call ".venv\\Scripts\\activate.bat"', "the activate input"),
-                        "L\r\nQ\r\n")
-    again = _drive_bat(text, "L\r\nQ\r\n")
-    _prove("bat answers survive the activate script", local,
-           "Backend profile: cloud" in broken["out"], "Backend profile: local" in again["out"])
+                        "C\r\nQ\r\n")
+    again = _drive_bat(text, "C\r\nQ\r\n")
+    _prove("bat answers survive the activate script", local and cloud,
+           "Backend profile: local" in broken["out"], "Backend profile: cloud" in again["out"])
 
     # SHIMMER_SKIP_INSTALL skips the install.
     skipped = "the dependency install and the CUDA torch swap are skipped" in ok["out"] \

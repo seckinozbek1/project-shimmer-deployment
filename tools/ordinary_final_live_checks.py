@@ -18,6 +18,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -316,8 +317,16 @@ class LiveViewProofs(unittest.TestCase):
         bundle = make_bundle(self.directory.name, 'P3_TRAIN_B', files,
                              {'activation.json': dict(metadata=dict(public_ip='198.51.100.10'))})
         starts = []
+        real_run = subprocess.run
+        this_thread = threading.get_ident()
 
         def recorder(argv, **kwargs):
+            # subprocess.run is patched for the whole process: a call from another thread (a
+            # background thread an earlier gate check left running) is
+            # not this reader's start and goes to the real function; every call from this
+            # thread is recorded, whatever program it starts (a flake seen once on the Lambda gate).
+            if threading.get_ident() != this_thread:
+                return real_run(argv, **kwargs)
             starts.append(dict(kwargs, argv=argv))
             out = kwargs.get('stdout')
             if hasattr(out, 'write'):

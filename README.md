@@ -431,10 +431,12 @@ allows it.
   cloud backend. Model names are read from the provider, never typed into code.
   The local backend's models come from its local profile, which
   `config/local_models.json` can override.
-- The backend. With no backend named, a command-line run and the server use Cloud (provider
-  models; `SHIMMER_BACKEND_PROFILE` unset means `cloud`). The desktop starter and the import
-  wizard make you choose, the menu launchers take Cloud when you press Enter, and
-  `tools/run_local_demo.py` adds Local. Every figure on the results page used Local.
+- The backend. With no backend named, a command-line run, the server and the preflight use
+  Local (models on this machine; `SHIMMER_BACKEND_PROFILE` unset means `local`, and only the
+  exact value `cloud` chooses Cloud, so an empty or unknown value is Local and keeps the web
+  closed). The desktop starter and the import wizard make you choose, the menu launchers take
+  Local when you press Enter (C chooses Cloud), and `tools/run_local_demo.py` adds Local.
+  Every figure on the results page used Local.
 - `config/decoding_policy.json`: the frozen decoding settings for local models.
 - `config/domain_vocabulary.json`: domain words that must never appear in code.
 - Server settings are `SHIMMER_*` environment variables, listed in the

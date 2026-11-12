@@ -685,6 +685,12 @@ def asset_copy_state(returncode,stdout):
     return words[0] if words and words[0] in ASSET_COPY_STATES else 'UNREACHABLE'
 
 
+def ssh_probe_ready(transport,n,ssh):
+    """One ssh-ready attempt (D-533): a probe that hangs past its deadline is an unreachable attempt, like a
+    non-zero answer, so the 30-attempt loop goes on; it is never a transport failure at attempt 0."""
+    return transport('ssh_ready_'+str(n),ssh+['true'],20,False,tolerate_timeout=True).returncode==0
+
+
 def poll_outcome(returncode,stdout):
     """Classify one completion poll: (kind, exit_code, progress_lines).
 
@@ -1050,7 +1056,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
             '-o','UserKnownHostsFile='+str(BASE/'known_hosts'),'-o','ConnectTimeout=10','-o','ServerAliveInterval=15','-o','ServerAliveCountMax=2']
         ssh=['ssh',*options,host]
         for n in range(30):
-            if transport('ssh_ready_'+str(n),ssh+['true'],20,False).returncode==0:break
+            if ssh_probe_ready(transport,n,ssh):break
             time.sleep(5)
         else:raise RuntimeError('SSH not ready')
         remote('python_gate',"/usr/bin/python3.12 -I -S -c 'import sys;assert sys.version_info[:3]==(3,12,3);print(sys.version)'",30)

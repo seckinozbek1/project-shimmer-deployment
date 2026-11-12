@@ -142,7 +142,8 @@ def run_one(agent, *, unit_id, unit_text, rule_id, rule_text, profile=LOCAL,
     if profile == LOCAL:
         os.environ["SHIMMER_BACKEND_PROFILE"] = "local"
     else:
-        os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        # Named, not removed: unset is the local profile (D-487 item 1).
+        os.environ["SHIMMER_BACKEND_PROFILE"] = "cloud"
     wrapper = pipeline._build_wrapper(agent, orch, keys)
     t0 = time.monotonic()
     try:

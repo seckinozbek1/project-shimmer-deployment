@@ -482,7 +482,7 @@ def launcher_prompts(question, targets_answer, prior_answer):
     first meets each. `prior_answer` is None when no document is grounding (the wizard then
     never asks for an earlier version)."""
     rows = [
-        ('backend', 'Choose [C/L, Enter for Cloud]: ', ['L'], False, False),
+        ('backend', 'Choose [L/C, Enter for Local]: ', ['L'], False, False),
         ('preflight_continue', LAUNCHER_PREFLIGHT, ['y'], True, False),
         ('menu', 'Choose an option [1-5, Q]: ', ['1', '1', 'Q'], False, False),
         ('task', 'What would you like to do? [R] Review existing documents  [D] Draft a memo from a question  [R/D]: ',

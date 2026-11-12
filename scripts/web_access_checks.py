@@ -95,16 +95,19 @@ def _router(cls, root, attempts):
 
 
 def _leg(cls, profile):
-    """Run search() for a web-enabled roster agent and for a system caller under `profile`.
-    Returns (attempts, refusals, log messages)."""
+    """Run search() for a web-enabled roster agent and for a system caller under `profile`
+    (None: SHIMMER_BACKEND_PROFILE unset). Returns (attempts, refusals, log messages)."""
     attempts, refusals = [], []
     records = _Records()
     logger = logging.getLogger("shimmer")
     logger.addHandler(records)
     try:
-        with tempfile.TemporaryDirectory() as tmp, \
-                patch.dict(os.environ, {"SHIMMER_BACKEND_PROFILE": profile}), \
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ), \
                 _recorded_network(attempts):
+            if profile is None:
+                os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+            else:
+                os.environ["SHIMMER_BACKEND_PROFILE"] = profile
             for agent in (WEB_AGENT, None):
                 router = _router(cls, Path(tmp), attempts)
                 try:
@@ -149,6 +152,14 @@ def _problems(cls):
     attempts, refusals, _ = _leg(cls, "")
     if _non_local(attempts) or len(refusals) != 2:
         problems.append("an empty backend profile opened web access")
+    # Unset, and an unknown value (a word, or cloud written another way), is the local
+    # profile (D-487 item 1, run_choices.environment_profile): the web stays closed.
+    for raw, label in ((None, "an unset"), ("elsewhere", "an unknown"), ("Cloud", "a capitalised")):
+        attempts, refusals, messages = _leg(cls, raw)
+        if _non_local(attempts) or len(refusals) != 2:
+            problems.append(f"{label} backend profile ({raw!r}) opened web access")
+        if len([m for m in messages if m.startswith("web_access_refused backend_profile=local")]) != 2:
+            problems.append(f"{label} backend profile ({raw!r}) was not refused as the local profile")
     attempts, refusals, _ = _leg(cls, "cloud")
     hosts = {host for _, host in attempts}
     if refusals:

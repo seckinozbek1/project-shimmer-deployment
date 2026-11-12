@@ -125,8 +125,12 @@ def check():
             _require(mode_outcome([choice, "yes"])["exit_code"] == 1, "invalid privacy silently selected Normal")
             _require(mode_outcome([choice, "1", "yes"], profile=None)["exit_code"] == 1,
                      "invalid backend silently selected Cloud")
-        _require(mode_outcome(["1", "yes"], profile="invalid")["exit_code"] == 1,
-                 "invalid inherited backend silently selected Cloud")
+        # An inherited value is read by run_choices.environment_profile (D-487 item 1):
+        # only the exact value cloud is cloud, anything else local, never Cloud.
+        for inherited in ("invalid", "", "Cloud", " cloud"):
+            _require(mode_outcome(["1", "yes"], profile=inherited)["flags"] ==
+                     ["--backend-profile", "local"] + normal,
+                     "inherited backend %r was not read as local" % inherited)
         _require(mode_outcome(["2", "1", "yes"], profile=None)["flags"] ==
                  ["--backend-profile", "local"] + normal, "explicit backend prompt did not reach arguments")
         for confirm in ("n", "", "yodel"):

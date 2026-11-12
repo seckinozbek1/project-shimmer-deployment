@@ -172,14 +172,15 @@ def _choose_backend_profile() -> "tuple[str, Optional[list[str]]]":
     When a caller has already chosen (the launcher asks before its preflight,
     since the profile decides what readiness means) SHIMMER_BACKEND_PROFILE
     carries that answer and the operator is not asked the same question twice.
+    A preset is read by the one rule every reader of the variable uses
+    (run_choices.environment_profile, D-487 item 1): only the exact value cloud
+    is cloud, any other value is local, so the wizard emits what the pipeline,
+    the server and the search router would read from the same environment.
+    Unset is no preset: the wizard asks.
     """
     preset = os.environ.get("SHIMMER_BACKEND_PROFILE")
     if preset is not None:
-        try:
-            profile = resolve_backend_profile(preset.strip().lower())
-        except ValueError:
-            print("The startup backend choice is invalid. Cancelled; choose Local or Cloud at startup.")
-            return ("(cancelled)", None)
+        profile = resolve_backend_profile(preset, from_environment=True)
         return (profile + " (chosen at startup)", ["--backend-profile", profile])
     print()
     print("Which backend will this run use?")

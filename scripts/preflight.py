@@ -92,8 +92,11 @@ def _local_model_ids():
 
 
 def check_local_model_availability():
-    """Keep the direct server's original package/tokenizer availability contract."""
-    if os.environ.get("SHIMMER_BACKEND_PROFILE") != "local":
+    """Keep the direct server's original package/tokenizer availability contract.
+
+    The profile is read as the server reads it: unset is local (D-487 item 1), only
+    the exact value cloud is not."""
+    if resolve_backend_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"), from_environment=True) != "local":
         return True, "not in local mode"
     missing = _package_problems(("torch", "transformers"))
     if missing:
@@ -592,11 +595,13 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Project Shimmer operator preflight (no paid run, no key value printed)")
     parser.add_argument("--backend-profile", choices=["cloud", "local"], default=None,
-                        help="which backend the operator intends to run under. cloud "
-                             "(default) requires the API keys and checks live model ids. "
-                             "local runs on the machine's own models and never calls a "
-                             "provider, so missing cloud keys are reported and are not a "
-                             "stop: the local readiness checks below are what matter.")
+                        help="which backend the operator intends to run under. local "
+                             "(default, and with no flag SHIMMER_BACKEND_PROFILE decides as "
+                             "the pipeline reads it: unset is local) runs on the machine's "
+                             "own models and never calls a provider, so missing cloud keys "
+                             "are reported and are not a stop: the local readiness checks "
+                             "below are what matter. cloud requires the API keys and checks "
+                             "live model ids.")
     parser.add_argument("--check-startup", action="store_true",
                         help="read-only desktop readiness; no installation, downloads, provider calls or state writes")
     parser.add_argument("--json", action="store_true", help="return the startup report as JSON")
@@ -613,7 +618,8 @@ def main(argv=None) -> int:
                 if row["detail"]:
                     print("  " + row["detail"])
         return 0 if report["ready"] else 1
-    args.backend_profile = args.backend_profile or "cloud"
+    args.backend_profile = args.backend_profile or resolve_backend_profile(
+        os.environ.get("SHIMMER_BACKEND_PROFILE"), from_environment=True)
     local = args.backend_profile == "local"
 
     print("Project Shimmer -- operator preflight")

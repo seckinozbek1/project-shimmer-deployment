@@ -663,15 +663,16 @@ def bge_m3_encoder(device="cpu"):
         if not gpu_idle(reading):
             raise RuntimeError("the GPU is not idle (D-399: at most %d MiB and %d percent): %s"
                                % (GPU_IDLE_MIB, GPU_IDLE_PERCENT, reading))
-        os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
-    elif device == "cpu":
-        # embedding_store puts bge-m3 on the CPU under the local profile (its own rule).
-        os.environ["SHIMMER_BACKEND_PROFILE"] = "local"
-    else:
+    elif device != "cpu":
         raise ValueError("the device is cpu or cuda")
+    import embedding_store
     import semantic_ensemble
+    from unittest.mock import patch
     semantic_ensemble._MODEL_CACHE.pop("m", None)
-    model = semantic_ensemble._sbert_model()
+    # The device is chosen here, explicitly, never read off the backend profile: an unset
+    # profile is local since D-487 item 1, which embedding_store reads as the CPU.
+    with patch.object(embedding_store, "_embed_device", lambda: device):
+        model = semantic_ensemble._sbert_model()
     if model is None:
         raise RuntimeError("bge-m3 could not be loaded from the local cache")
     on = str(getattr(model, "device", "cpu"))

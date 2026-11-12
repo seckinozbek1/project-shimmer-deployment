@@ -26,7 +26,7 @@ What it does on every run:
    measurement (the instance may have cost less, or nothing), counted as actual spend and
    never refunded; its reason says it was charged that way.
 5. Salvage, then stop (D-S84), with no Claude involved. Two triggers are read on every run:
-   seven-day usage at or above ``USAGE_STOP_PERCENT`` in ``.claude/loop_status.json``, and no
+   seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 95, or the dated ``USAGE_STOP_EXCEPTION``) in ``.claude/loop_status.json``, and no
    lead heartbeat (the continue hook's state, LOOP_STATE or FOR_SECKIN written) for
    ``SILENCE_MINUTES`` while a loop instance runs. Either opens a salvage episode
    (``salvage/episode.json``): every running loop instance gets a request file its controller
@@ -113,7 +113,11 @@ def salvage_dir():
 
 
 
-USAGE_STOP_PERCENT = 95
+USAGE_STOP_PERCENT = 95   # the standing value; read through usage_stop_percent(now), never directly
+# A declared, dated exception to the standing value (D-529): until the epoch below, strictly before it,
+# the stop is 98; at or after it the standing 95 is back with no further change. The epoch is the
+# `seven_day_resets_at` of `.claude/loop_status.json` on 12 November 2026 (18 November 2026, 11:00 +03:00).
+USAGE_STOP_EXCEPTION = {'percent': 98, 'until_epoch': 1794988800, 'source': 'Seckin 14:16, 12 November 2026'}
 SILENCE_MINUTES = 90
 SALVAGE_ITEM_SECONDS = 300
 SALVAGE_ANSWER_SECONDS = 600
@@ -348,7 +352,8 @@ def _write_json(path, value):
 
 
 def usage_percent(path=None):
-    """Seven-day usage from the status line's file, or None when it cannot be read."""
+    """The OVERALL weekly figure: `seven_day_used_percentage` of the status line's file, or None when it cannot be read.
+    It is the only figure the stop reads (D-534): no per-model limit, however named, ever triggers it."""
     try:
         value = json.loads(Path(path or LOOP_STATUS).read_text(encoding='utf-8')).get('seven_day_used_percentage')
     except (OSError, ValueError, AttributeError):
@@ -369,9 +374,35 @@ def last_heartbeat(paths=None):
     return max(times) if times else None
 
 
-def usage_stop(usage):
-    """Trigger (a): seven-day usage at or above the stop percentage."""
-    return usage is not None and usage >= USAGE_STOP_PERCENT
+def _epoch(now):
+    now = utc_now() if now is None else now
+    if isinstance(now, (int, float)):
+        return float(now)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    return now.timestamp()
+
+
+def usage_stop_percent(now=None):
+    """The one reader of the stop threshold: the exception's percent strictly before its until_epoch,
+    the standing USAGE_STOP_PERCENT at or after it. `now` is a datetime or an epoch."""
+    if _epoch(now) < USAGE_STOP_EXCEPTION['until_epoch']:
+        return USAGE_STOP_EXCEPTION['percent']
+    return USAGE_STOP_PERCENT
+
+
+def usage_stop_basis(now=None):
+    """The threshold in force and why, in words, for the status and the report."""
+    percent = usage_stop_percent(now)
+    if percent == USAGE_STOP_PERCENT:
+        return '%d (the standing value)' % percent
+    return '%d (declared exception until epoch %d, %s; %d is the standing value)' % (
+        percent, USAGE_STOP_EXCEPTION['until_epoch'], USAGE_STOP_EXCEPTION['source'], USAGE_STOP_PERCENT)
+
+
+def usage_stop(usage, now=None):
+    """Trigger (a): seven-day usage at or above the stop percentage in force at `now`."""
+    return usage is not None and usage >= usage_stop_percent(now)
 
 
 def lead_silent(now, beat):
@@ -384,8 +415,9 @@ def salvage_trigger(now, running, status_path=None, heartbeats=None):
     if not running:
         return None
     usage = usage_percent(status_path)
-    if usage_stop(usage):
-        return {'trigger': 'usage', 'seven_day_used_percentage': usage}
+    if usage_stop(usage, now):
+        return {'trigger': 'usage', 'seven_day_used_percentage': usage,
+                'stop_percent': usage_stop_percent(now), 'stop_basis': usage_stop_basis(now)}
     beat = last_heartbeat(heartbeats)
     if lead_silent(now, beat):
         return {'trigger': 'lead_silent', 'last_heartbeat_utc': beat.isoformat() if beat else None,
@@ -499,7 +531,8 @@ def salvage_report(episode, now):
 def trigger_words(trigger):
     """One trigger in words, for the report and the FOR_SECKIN entry."""
     if trigger.get('trigger') == 'usage':
-        said = 'seven-day usage at %s percent (stop at %d)' % (trigger.get('seven_day_used_percentage'), USAGE_STOP_PERCENT)
+        said = 'seven-day usage at %s percent (stop at %s)' % (
+            trigger.get('seven_day_used_percentage'), trigger.get('stop_basis') or USAGE_STOP_PERCENT)
     elif trigger.get('trigger') == 'lead_silent':
         said = 'no lead heartbeat since %s (%s minutes; stop at %d)' % (
             trigger.get('last_heartbeat_utc') or 'never', trigger.get('silent_minutes'), SILENCE_MINUTES)
@@ -740,6 +773,7 @@ def reap(provider, ledger_paths, append_path, now=None, salvage=True):
             # a budget line field not declared in BUDGET_LINE_FIELDS is named, never dropped silently
             'budget_line_fields_unknown': sorted({k for r in rows if r.get('event') in BUDGET_EVENTS for k in r}
                                                  - set(BUDGET_LINE_FIELDS)),
+            'usage_stop_percent': usage_stop_percent(now), 'usage_stop_basis': usage_stop_basis(now),
             'salvage': salvage, 'salvage_error': salvage_error, 'error': None}
 
 

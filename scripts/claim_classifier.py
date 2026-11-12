@@ -40,6 +40,8 @@ import json
 import os
 import re
 import uuid
+
+from run_choices import environment_profile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -110,7 +112,7 @@ class ClaimExtractor:
     model: str = "gpt-4o"
 
     def extract(self, text, *, use_gpt=True):
-        if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local":
+        if environment_profile(os.environ.get("SHIMMER_BACKEND_PROFILE")) == "local":
             use_gpt = False  # LAW-IV: no provider client under the local profile (D-183, check 313)
         if use_gpt and self.openai_key:
             try:
