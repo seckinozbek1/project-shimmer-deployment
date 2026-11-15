@@ -102,3 +102,12 @@ One entry per attempt of any optimisation: what was tried, the measured result o
   - Over 6,000: 595 rows, 8.8 M characters, at 5.5 to 6.5 thousand characters a second (measured on the local tail of full-length records, 5 to 6 s each): 23 to 27 minutes.
   - Then the final write, about 15 minutes.
   - End: about 13:20 to 13:45.
+
+## L-15. A re-sealed configuration repeats its figure: the quick read is not where a fix shows (D-634, 15 November)
+
+- K0 re-sealed after the merge gave ContraDoc 55.0 and the same 6 failed documents as on 13 November. Decoding is deterministic, so a re-read of an unchanged configuration buys a reproduction, not information. A quick read is worth its cost only when the configuration differs in a part the loss table names.
+- A fix that cannot be shown on development material (D-577: refusal A never occurs there) needs a record-level check that it fired on the read, planned before the read, or the read cannot say whether the fix failed or never ran.
+
+## L-16. A step that spends nothing must not hold the ledger lock while it waits (A5, 15 November)
+
+The route S `admit` (tools/seal_route_driver.py) takes the budget ledger lock from its stale check through the last bundle's preflight, and inside that lock each bundle's reverify and preflight first wait on the laptop memory floor (`wait_for_room`). On 15 November from 16:22 an admission of 10 bundles on a laptop near the floor held the lock for over 20 minutes, and the guard refused the vLLM A5 launch (ready, nothing consumed) for that whole time, on the critical path. The lock guards a consistency check (the read copies of the ledger not changing between the stale check and the admission), not a spend. The fix: take the lock only around the stale check and again around a second stale check just before the one rename (compare, then commit), never across a memory wait or a hash run; its proof is an admission that waits on memory while another process takes the lock and launches, and a stale change between the two checks that refuses the admission. Until then a lane yields the lock between bundles when a launch is waiting.

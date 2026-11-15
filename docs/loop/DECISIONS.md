@@ -6961,3 +6961,320 @@ Written by the lead, Sat 14 Nov 2026 22:25 (from date).
 - **The factor.** Workload seconds A10 against A100: contradoc_0436316e6bb3 589 and 369 (1.60), scitab_09b24267b75a 247 and 272 (0.91), contradoc_01015e47de8a 335 and 381 (0.88); `factor_record.measured_entry` median 0.908. No score moved: every item's review_data.json is byte-identical on both machines, so D-401 item 3 does not keep it out; its cost does (1.99 against 1.29 USD an hour, about 1.70 times the A10's cost per item).
 - **Stated limit.** The A10's first item took 589 s here against 332 s recorded: run-to-run variation is large, and three items give a direction, not a precise factor.
 - **Recorded.** The entry (`external/s05/REFPAIR/measured_entry_gpu_1x_a100_sxm4.json`) goes into `tools/cloud_run/gpu_speed_order.json` `measured` on lane/cost-cuts, merged with that lane; with a factor below 1 it ranks below the A10 (`measured_tiers`), so no launch changes. The A6000 stays open for when it has capacity.
+
+## D-634: the old-path quick read on the 53 re-sealed bundles: K0 void on integrity, flat against D-564; line 5 not met; no full-set read; the alarm for two flat measurements
+
+15 November 2026, 14:36 +0300 (from date), lead session b547ef8e. quick-read's read of the 7 sessions (K0 as shipped at 7b005574, re-sealed after the 14 November merge, old path per the D-625 addendum), through `gate_score.figures` on the pinned quick set 0127b080... (40 ContraDoc documents; 78 SciTab claims in 13 tables, 3-class), 95 percent paired intervals, steering only (D-422), k unchanged. Outputs copied to `external/s05/GATE/quick_read/READ_20261115/` (TABLE.md sha256 ee611f8e9d39c850...).
+1. **The figures, side by side** (system, B1, cloud; percent):
+   - ContraDoc, binary judgment accuracy, ABSTAIN wrong, n 40: K0 55.0 [40.0, 70.0]; B1 52.5 [37.5, 67.5]; cloud 90.0 [80.0, 97.5]. K0 minus B1 2.5 [-15.0, 22.5]; K0 minus cloud -35.0 [-52.5, -17.5].
+   - SciTab, macro-F1 3-class, n 78: K0 0.0 [0.0, 0.0] (all 78 labels ABSTAIN); B1 55.8 [40.7, 62.7]; cloud 81.7 [55.0, 92.9].
+2. **Line 2: not met.** Entries passing execution integrity: ContraDoc 34 of 40 (85 percent), SciTab 12 of 13 (92 percent). All 7 failures are PROCESSOR `contract_invalid` (refusal "Complete compact items envelope required"; once with an incomplete partition coverage, once with a cap hit). No other agent failed. The 6 failed ContraDoc documents are the same 6 that failed in D-564's K0 and K1. D-575 item 5 predicted this ceiling (34 of 40) without a fix; the changed-input retry of D-577 (b906ae90) is in 7b005574, so either it did not fire or it did not rescue these 6. That is the first thing to find.
+3. **Lines 4 and 5: not met.** No configuration is valid. As points alone: ContraDoc is 7.5 short of (a) and 30.0 short of (b); SciTab 65.8 short of (a) and 76.7 short of (b).
+4. **So: no full-set read** (D-596's hard spending rule): nothing sealed, launched or spent for it. The lead stops and asks Seckin for the next attempt.
+5. **The loss table** (`tools/miss_diagnosis.py`, counts only):
+   - ContraDoc: 18 expected, 7 located with reason, 11 lost, 7 false positives. All 11 losses are "evidence present upstream but not in the payload" / "paired, computed, no irregularity": Python computed the pair, found nothing and planned no model call (as D-577 item 4 for K0: 11 of 18).
+   - SciTab: 30 expected, 0 caught, 30 lost. All 30 are "evidence present in the model payload" / "uncomputable answer refused": the model answered and Python refused the answer. K0 has no cell step; K1's cell step (part C) is what reached 49.3 on 13 November.
+6. **Flat, so D-S94 item 5's alarm is due.** This is the second gate measurement; ContraDoc K0 is the same figure as D-564's (55.0), and no configuration rose. The alarm goes to Seckin with the change of course: K0 cannot pass line 5 on either benchmark from the table, so the next attempt must carry (i) the cause of the 6 PROCESSOR refusals under the retry, found from records, and (ii) K1's two steps (the judge on pairs, the cell step) or the rule's K3, written first and shown on development material (line 6).
+- **Cost.** Lambda 11.57 USD (ContraDoc 9.42 over 438 minutes, SciTab 2.15 over 100 minutes); forecast 21.44, cap 32.15. Loop Lambda terminations 235.88 USD.
+- **Rules.** GATE_ATTEMPTS section 3, D-422, D-564, D-575, D-577, D-596, D-625, D-S70, D-S92, D-S94.
+
+**D-634 addendum (14:39, from date).** Item 2's first question is answered from records (quick-read, records only): the changed-input retry fired on all 7 failures. In the 6 last-span refusals (5 ContraDoc, 1 SciTab) it re-asked on 2 spans, but `post_only_kept` (scripts/semantic_waves.py:288) narrows `_owned_source_spans` to the kept span, which the decoding constraint reads (contract_decoding.py:871), while the validator and hydrate still require both spans (compact_contracts.py:119, :78): every honest re-ask fails "Incomplete partition coverage" (5 of 5 ContraDoc; the SciTab re-ask was refused). A defect, confirmed by the lead in code. The seventh is a 2-span cap hit whose single-span split refused its last span, with no second retry by design (:332). All 7 refusals fall on a document's last span. The fix (keep 2-span ownership for decoding and validation, cut to the kept span after hydrate) goes to lane/retry-span-fix with a fixture proof; it merges into no read without Seckin's yes.
+
+## D-635: Seckin's 14:46 rulings on D-634: the next quick read carries the retry fix and K1's two steps; vLLM A5 goes; a written forecast against line 5 before any spend
+
+15 November 2026, 14:47 +0300 (from date), lead session b547ef8e. Seckin's answers to the FOR_SECKIN entries of 14:37 and 14:40, relayed by his chat, in substance:
+1. **The change of course: yes.** The next quick read is not K0. It carries the PROCESSOR retry fix (lane/retry-span-fix, once proven) and K1's two steps (the judge on pairs, the cell step), developed and shown on development data first; nothing is tuned on the quick subset (GATE_ATTEMPTS section 3 line 6). That quick read (about 12 USD) is approved once both are ready and proven.
+2. **The vLLM A5 comparison: yes,** about 5 USD, started when the laptop allows (D-629: one heavy laptop job at a time).
+3. **A forecast first.** Before the new quick read, FOR_SECKIN states the lead's forecast of its figure per benchmark, with a range and its basis (the 13 November K1 figures, the loss tables), set against both bars of line 5. If the forecast says line 5 cannot be met even then, it says so plainly and proposes what would be needed (for example K3), so Seckin decides before money is spent. The approval in item 1 holds only after that entry.
+- Pace: near 1 point an hour.
+- **Rules.** GATE_ATTEMPTS section 3, D-596, D-629, D-630, D-634.
+
+## D-636: Seckin's 14:58 answers to the 14:54 forecast: the K3 what-if now; the small development slice; the quick read waits; two items for after v1.1
+
+15 November 2026, 14:58 +0300 (from date), lead session b547ef8e. The lead's forecast (FOR_SECKIN 14:54): the retry fix plus K1 would give ContraDoc about 62.5 (60.0 to 67.5) against bars 62.5 and 85.0, SciTab about 50 (49.3 to 53; a loose bound 82) against 65.8 and 76.7, so line 5 is not met even then. Seckin's answers, relayed by his chat, in substance:
+1. **The K3 what-if: yes, now,** at 0 USD from existing records (K1's 13 November decisions and B1's saved reasoning replies through `gate_score.compute` on the quick subset), labelled direction only, not a system run (GATE_ATTEMPTS section 3 lines 1 and 4: a what-if can be chosen only as "build it and run it").
+2. **The development run: the small slice is approved,** 10 ContraDoc and 5 SciTab entries of G1 half A at the new commit (the lead tip, the retry fix, K1's two config commits), about 3.5 to 4 USD on gpu_1x_a10.
+3. **The 12 USD quick read waits** (D-635 item 1's approval stands but is not used yet).
+4. **Recorded for the plan after v1.1, no work now:**
+   - (a) the causal benchmarks CLadder and Corr2Cause come back (D-S77, D-S78's parked role B session);
+   - (b) a purpose-fit benchmark of our own for multi-round negotiation drafts: answers taken from the real next round where possible; agent annotators from model families not used in the system, with inter-annotator agreement reported; a small human-checked sample; rules frozen before any run; data and scorer published.
+- **Rules.** GATE_ATTEMPTS section 3, D-629, D-634, D-635.
+
+## D-637: Seckin's 14:59 correction to D-636 item 4(b): the negotiation-draft benchmark is built now, before v1.0
+
+15 November 2026, 15:01 +0300 (from date), lead session b547ef8e. Seckin's correction, relayed by his chat, in substance: the purpose-fit benchmark for multi-round negotiation drafts is NOT after v1.1; it is built now, before v1.0, because without it the system's claims cannot be defended. D-636 item 4(a) (CLadder, Corr2Cause after v1.1) stands. The design, in this order:
+1. **A short scout** for an existing benchmark that fits; if one fits, it is used beside ours.
+2. **Our own benchmark:** answers from the real next round of public multi-round negotiations wherever possible, built on the negotiation material already frozen (NEG_ADVISOR_PLAN, role N's set) where it fits.
+3. **Labels, where needed:** agent annotators from model families used neither in the system nor as the cloud reference, with inter-annotator agreement reported.
+4. **No human check** (this replaces D-636's "small human-checked sample"): a published rubric suited to the task (or one written if none fits); one agent checks a sample of the labels against it; a separate agent of another family reviews the rubric itself; both reported.
+5. **Frozen first:** rules, items and scoring frozen before any system run; data and scorer published.
+- **Before building:** a FOR_SECKIN plan with time, Lambda and API cost, usage, and how it moves the v1.0 date. The free parts (scout, rubric, design) start now; any spend above 3 USD is asked first (D-629).
+- **Order effect:** this enters the D-628 B order before v1.0; the lead states in the plan where it sits against the gate attempts (D-634 to D-636).
+- **Rules.** D-605, D-628, D-629, D-636, NEG-ADVISOR-A, NEGOTIATION-MEASURE-A.
+
+## D-638: the K3 what-if's SciTab rule, written before any SciTab figure is computed
+
+15 November 2026, 15:02 +0300 (from date), lead session b547ef8e. quick-read stopped before computing SciTab (D-636 item 1): GATE_ATTEMPTS section 3 and the K3 section write a combination rule only for ContraDoc (either_test.either, D-297). The lead's ruling, from the section's own words, before any SciTab K3 figure exists:
+1. **SciTab:** row 2 of the attempts table says "on SciTab the reading answers where the judge cannot settle". So each claim keeps K1's class; only where K1 gives ABSTAIN does the reasoning reading's class replace it. No class (not refutes, not supports) acts as a flag that overrides a K1 class.
+2. **The reasoning reading is B1's judge_reason group** on both benchmarks ("a whole-document reading with reasoning"), although B1's SciTab comparator is judge_direct. The comparator in the side-by-side figures is unchanged (B1 judge_direct on SciTab). If judge_reason holds no saved SciTab replies for the quick subset, SciTab gets no K3 figure, and the reason is stated.
+3. **ContraDoc** follows either_test.either as written.
+- The K3 section itself states the expected position: "about 13 to 17 points under the cloud (estimate)", which is below bar (b) of line 5 (at most 5 under). The what-if checks that estimate; it decides nothing alone (line 4).
+- **Rules.** GATE_ATTEMPTS section 3 lines 1, 4 and 6, D-297, D-636.
+
+## D-639: Seckin's 15:03 refinement of D-637: in parallel, not a gate; annotators of any family, double-blind and leak-free; human annotation later; the construct-validity evidence
+
+15 November 2026, 15:03 +0300 (from date), lead session b547ef8e. Seckin's refinement of D-637, relayed by his chat, in substance:
+1. **In parallel.** The negotiation-draft benchmark is built beside the current fixes (D-634 to D-638: the retry fix, K1's development slice, the K3 what-if, vLLM A5), not as a gate in front of them.
+2. **Annotation (replaces D-637 item 3's family rule).** Annotator agents may be of any family, Claude included, since the annotation workflow sits outside Shimmer. What holds: annotators work double-blind from each other; no label reaches anything that builds, tunes or selects Shimmer (no ML label leakage: labels are read only by the frozen scorer, as benchmark/keys are); the model-family separation inside Shimmer stays as it is. Inter-annotator agreement is reported.
+3. **Human annotation is not done now.** It is recorded as a later step, after the agent annotation has been measured (D-637 item 4's rubric check stands).
+4. **The evidence for adding our own benchmark.** The plan collects literature evidence that judging a purpose-built agent on general benchmarks alone is incomplete (construct validity, task fit), with its sources kept.
+- **Rules.** D-637, NEG-ADVISOR-A, NEGOTIATION-MEASURE-A, the label separation of benchmark/keys.
+
+## D-640: Seckin's 15:07 rubric draft becomes track B of the negotiation-draft benchmark
+
+15 November 2026, 15:08 +0300 (from date), lead session b547ef8e. Seckin's input, relayed by his chat, in substance: his draft rubric `docs/loop/private/benchmark_inputs/Checking_AI_Proposed_Findings_Rubric_Draft.pdf` (skeleton, criteria, failure labels, reference-judgement method, history tests, roles) is adapted to Shimmer, domain- and case-agnostic. The benchmark is built in parallel (D-639) and joins later measurements once frozen.
+1. **Two tracks.** Track A scores what the system decides (accept, reject, middle wording, article status) against the real next round. Track B scores each finding by the rubric's criteria, each reported separately (support, abstaining, confidence, cause against link, attribution, accuracy, consistency, time, scope of change), with its fixed failure labels.
+2. **Mapped onto Shimmer's records:** typed findings with source_refs and source version, the append-only record, the multi-round comparison. The rubric's history tests (a revised source moves findings to under review; nothing is overwritten; reopening adds an entry) become checks of Shimmer's record layer, including the known hard case of a label reworded between versions.
+3. **Annotators:** the rubric's "two people" become two double-blind agent annotators of different families, with agreement reported, and a third agent breaks ties. Seckin as owner sets the standards only and does no labelling. Reference judgements are written and frozen before any system run, on public material.
+4. **Validity:** the design is checked against Bean et al. 2025's eight recommendations (define the phenomenon, measure only it, representative data, careful reuse, contamination, statistics, error analysis, justify validity), each recorded with how it is met.
+5. **Same items** for the bare model (B1), the cloud reference and Shimmer.
+- Free parts first; the adapted rubric and the plan go to FOR_SECKIN with cost and time before any spend above 3 USD (D-629, D-637).
+- **Rules.** D-637, D-639, LAW-IV for the private folder, NEG-ADVISOR-A, MULTI-ROUND-A, VERSION-CHANGES-A.
+
+## D-641: the K3 what-if (D-636 item 1, D-638): ContraDoc does not lead, SciTab rises but meets neither bar; K3 alone does not clear line 5
+
+15 November 2026, 15:09 +0300 (from date), lead session b547ef8e. quick-read's what-if from saved records (K1's 13 November decisions and B1's judge_reason replies), laptop, 0 USD, labelled "what-if, not a system run, direction only"; pinned quick set, 95 percent paired intervals; integrity is K1's (ContraDoc 33 of 40, SciTab 9 of 13), so both are VOID by line 2 as K1 was.
+1. **ContraDoc** (either_test.either, D-297; TABLE.md d3bd79e4...): K3 57.5 [42.5, 72.5] against K1 60.0, B1 52.5, cloud 90.0. Only 1 of 40 labels changed from K1, and that one became wrong. K3 minus B1 5.0 [-5.0, 15.0], minus cloud -32.5. It does not lead.
+2. **SciTab** (D-638's rule; TABLE.md 878ba857...): judge_reason filled all 27 of K1's ABSTAIN claims. K3 59.8 [44.9, 66.1] against K1 49.3, B1 (judge_direct) 55.8, cloud 81.7. K3 minus B1 3.9 [-2.7, 13.4], bar (a) 6.1 short; minus cloud -21.9 [-33.5, -7.0], bar (b) 16.9 short.
+3. **So:** neither K1 with the retry fix (D-635's forecast) nor K3 meets line 5 on either benchmark. Bar (b) is far on both (ContraDoc 25 to 32 points short, SciTab about 17 to 27 short). The rule's next attempt is K4 (a stronger reader, GATE_ATTEMPTS row 5), whose plan (candidate, licence, archive size, machine type, forecast) goes to Seckin before any build. SciTab's gain from the reasoning reading on K1's abstentions is the one movement seen; it is kept as an input to K4's design, not adopted from the quick subset (line 6).
+- **Rules.** GATE_ATTEMPTS section 3, D-297, D-564, D-634 to D-638.
+
+## D-642: Seckin's 15:27 answers to the 15:20 entry: K4 waits; the reach study at 0 USD; line 5 unchanged; SciTab improved inside the current configuration
+
+15 November 2026, 15:27 +0300 (from date), lead session b547ef8e. Seckin's answers, relayed by his chat, in substance:
+1. **K4 waits:** no money on changing the judging model now (K4_PLAN.md on lane/k4-plan d3e01118 stays a plan).
+2. **The reach study, 0 USD, yes:** a what-if from records, its rule written before any figure is seen, on two questions: contradictions inside a single passage (7 of 30 gold, D-274; RELATIONS-B's step) and a pair ranker that tells real contradictions from clean pairs (AUC .491 today, D-276).
+3. **Line 5 stays as written;** the bars are not rethought.
+4. **SciTab: improve inside the current configuration first;** a table-agent tool comes later.
+   - (a) **Routing:** table items must not pass through the field checks built for legal text, which today reject every table answer (K0's 0.0, D-634: "uncomputable answer refused").
+   - (b) **Decision authority on tables:** the model reasons from the cells it names and gives the verdict; Python verifies only the sub-steps it can compute; where it cannot decide, it lowers the confidence instead of forcing an abstention (the 27 abstentions behind 49.3; the K3 what-if's reasoning reading lifted them to 59.8, D-641). This touches UNCOMPUTABLE-A, CELLS-A and HONEST-OUTPUT-A; the change is written as its own decision with the exact rule before any build.
+   - (c) **NOT ENOUGH INFO:** the class is missing from the development data; public development material that has it is brought in after licence and leakage checks (LEAKAGE_PROTOCOL), and the calibration is done there.
+   - (d) **Cell-grounded reasoning:** consider giving the model the relevant cells first, then the verdict (SciTabAlign, arXiv 2506.10486, reports gains for 7B to 8B models; to be read at source).
+   - Each is developed and shown on development data, never on the quick subset (line 6); the expected effect and cost are reported before any spend above 3 USD.
+- **Rules.** GATE_ATTEMPTS section 3, D-629, D-634, D-641, UNCOMPUTABLE-A, CELLS-A, CHOICE-A, HONEST-OUTPUT-A, LEAKAGE_PROTOCOL.
+
+## D-643: Seckin's 15:28 task: an independent audit of authority collisions across Shimmer, read-only, 0 USD
+
+15 November 2026, 15:29 +0300 (from date), lead session b547ef8e. Seckin's order, relayed by his chat, in substance: a separate agent that has not built the system audits the whole of Shimmer, read-only, on the laptop, at 0 USD, for authority collisions like the table one (D-642 item 4): (1) a component that vetoes or overrides another outside its competence (Python blocking a model verdict it cannot itself decide); (2) checks, gates or agents applied to inputs they were not built for (legal-text field checks on tables); (3) gates that force an abstention or rejection when they cannot decide, instead of lowering confidence; (4) two parts that can block the same item for conflicting reasons; (5) places where the constitution's precedence (LAW-0 to LAW-VI, LAW-IV above LAW-0) and the code's actual order disagree; (6) the agent-assignment floor (ASSIGN-A) clashing with routing. Each finding: file and function, evidence from records or runs, likely effect on scores, a narrow fix. A second agent that did not write the list checks it. Reported in FOR_SECKIN; nothing is changed until Seckin decides.
+- **Rules.** LAW-0 to LAW-VI, ASSIGN-A, UNCOMPUTABLE-A, D-642.
+
+## D-644: Seckin's 15:36 ruling on the negotiation-draft benchmark plan: track A only, no external API annotators, Claude agents on light models, about 40 items
+
+15 November 2026, 15:37 +0300 (from date), lead session b547ef8e. Seckin's ruling on the FOR_SECKIN entry of 15:16 (D-637, D-639, D-640), relayed by his chat, in substance:
+1. **No Gemini, OpenAI or Mistral annotators;** external API keys are not used for this benchmark.
+2. **Track A only now:** answers from the real next round; no rubric labels needed.
+3. **Where track A needs an agent** for extraction or a label: Claude agents on light models, within the usage pace of about 1 point an hour, under the double-blind rule and the self-family rule (the cloud reference's own family, Claude, does not score the cloud reference's drafts; where only Claude agents could score them, that part is computed only or reported as not scored for that arm).
+4. **Track A's cost and time are restated without external APIs;** free parts continue now; any spend above 3 USD is asked first.
+5. **Track B waits** for the rubric review and a separate decision.
+6. **About 40 items rather than 18,** if the material allows, to raise the power (about 0.88 at 40 against about 0.56 at 18, NEG_DRAFT_BENCH_PLAN's planning figures).
+- **Rules.** D-629, D-637, D-639, D-640, NEG-ADVISOR-A.
+
+## D-645: Seckin's 15:37 clarification: one custom negotiation benchmark; the advisor test now being scored is its pilot
+
+15 November 2026, 15:38 +0300 (from date), lead session b547ef8e. Seckin's clarification, relayed by his chat, in substance: there is one custom benchmark, not two. The negotiation test now being scored (NEG_ADVISOR_PLAN.md: the frozen items, the arms pass, the cloud reference, the judge pass; first findings about 16:00) is its pilot. The negotiation-draft benchmark (track A, then track B; D-637 to D-644) grows from it: its frozen items and scorer are reused where they fit, the pilot's results stay the pilot's, and both are described in one plan under one name.
+- **State found:** NEG_DRAFT_BENCH_PLAN.md (lane/neg-draft-bench) already builds on the advisor's frozen set and reuses its items, excerpts and digests, but it is written as a separate build under its own name. It is merged into one plan under one name, with the advisor test as the pilot; NEG_ADVISOR_PLAN.md stays unchanged as the pilot's pre-written record (its rules were fixed before its runs and are not edited).
+- **Rules.** D-605, D-637 to D-644, NEG-ADVISOR-A, NEGOTIATION-MEASURE-A.
+
+## D-646: Seckin's 15:40 yes to TABLE-AUTHORITY-A's scoring; the half B conflict with D-296 held for his ruling
+
+15 November 2026, 15:41 +0300 (from date), lead session b547ef8e. Seckin's answer to D-642 (b), relayed by his chat, in substance: yes to the lead's proposal. Under TABLE-AUTHORITY-A (lane/scitab-route, SCITAB_INSIDE.md) the low-confidence leanings count in the score, labelled low-confidence, and every report also gives the figure without them, side by side. The 0 USD what-if goes first; then the 2.5 USD run "on G1's half B" is approved once the what-if is written, in the order set (the authority audit, the reach study, then these).
+1. **Adopted for scoring:** leanings scored, labelled low-confidence; the without-leanings figure beside every report. TABLE-AUTHORITY-A itself is still built only after its what-if, with its proofs, and its governed parts (UNCOMPUTABLE-A, CELLS-A, HONEST-OUTPUT-A, the verifiability gate) intact as the design states.
+2. **Conflict found, not acted on:** D-296 rules "half B is spent: never read again as a test, nothing tuned on it; no worker is given its files." The 2.5 USD run named half B (from the design's proposal, which the lead relayed without catching this). The reach study's rules (lane/reach-study b885be33) also report figures per half, half B included. Neither runs on half B until Seckin rules: (a) keep D-296 and use half A for both (the lead's recommendation), or (b) lift D-296 for development measurement with no claim resting on half B.
+- **Rules.** D-294, D-296, D-642, CHOICE-A, UNCOMPUTABLE-A.
+
+## D-647: the pilot's judge grades all read as null (a parser defect, fixed); the power record is made again for this scorer; the authority audit checked
+
+15 November 2026, 15:53 +0300 (from date), lead session b547ef8e.
+1. **The judge's grades.** Role N session 19 (15:03 to 15:10) read the judge pass (integrity passed, 12 reply records): all 12 Phi-4 replies opened with the grade digit and went on with text (max_new_tokens 4); `parse_judge` took only a bare digit, so every grade was null and the checker's agreement read 0.0, measuring the parser, not agreement. The plan's section 6.3 asks the judge to "give 2, 1 or 0": the leading digit is that grade. Fixed as 4e0fcc91 on role N's code line (parent 98cb597e) and 30a3f232 on the lead branch: the leading digit 0, 1 or 2 is the grade; any other opening, or a longer number, is still no grade; proof test_18b with the old rule as its neutralisation; 36 of 36 advisor checks pass. Role N saw only the replies' shapes, no grade, so the fix depends on no result.
+2. **The power record.** `score` refuses a power record not made by the scorer file as it is now (`code_sha256`); the committed one (34aa9200) predates the 11:41 scorer fix (98cb597e), and role N's code line holds no committed power record or opening line, which `score` reads from HEAD. Session 20 (started 15:52) re-reads the judge's answers, re-runs the grade read with session 19's checker sheet, makes the power record again with this scorer on the same frozen set, and rewrites the configuration. The lead then commits the power record and the opening line on top of 4e0fcc91, and session 21 runs `score`. Nothing is read before the opening line is committed.
+3. **The authority audit (D-643)** is done and checked by a second agent: scratchpad authority_audit\AUDIT.md (13 findings). The checker confirmed A1 (SciTab: legal-text checks on tables; norm_number cannot read "71.2%") and A13 (VERIFIER outside the assignment floor), and A5, A7, A9, A10; A2, A3, A4, A8, A11 and A12 partly (code real, but cause misattributed or a recorded rule: A2's K1 evidence cannot come from that path; A3, A4, A8 and A12 are recorded, intended rules, A12 under INFRA-035); it added four collisions the audit missed (the rule-check step cannot express "met"; a "does not contradict" answer is always refused; an advisory classifier failure voids an entry; TABLE-AUTHORITY-A overlaps A1, A4 and A8). Reported to Seckin; nothing changed.
+- **Rules.** NEG_ADVISOR_PLAN sections 6.3 and 7.4, D-632, D-642, D-643, D-646.
+
+## D-648: the laptop memory budget (Seckin 15:51, standing rule); the A5 seals move to Lambda
+
+15 November 2026, 15:58 +0300 (from date), lead session b547ef8e. Seckin's standing rule, in substance, applied from 15:57:
+1. At most 3 helper sessions or lanes open on the laptop at once, the lead not counted; a finished one is closed before another opens.
+2. No sealing, packaging, embedding, model loading or other memory-heavy preparation runs on the laptop at all; it goes to Lambda through the existing seal route (ROUTE-S-A). Nothing waits on the laptop's memory floor any more.
+3. The laptop keeps only light work and what must stay local for privacy.
+4. Every report states the number of open helpers and free RAM.
+- **Applied.** At 15:57 the idle lanes c4-fix and fix-side were closed (their later tasks are given again when a slot frees). Open then: quick-read (the dev slice, on Lambda), cloud-gate (the reach study), throughput (A5) and role N session 20: 4, one over the cap until session 20 ends; no helper opens until the count is below 3. Free RAM 1.83 GiB. Throughput was told at 15:57 to move the remaining 8 vLLM A5 seals to route S now (Seckin 15:50, the supervisor 15:47), with its forecast and cap inside the 5 USD approval; ALERT.md's 15:20 line is cleared when they move.
+- **Rules.** D-629, RESOURCE-ALERT-A, ROUTE-S-A, the supervisor's 15:30 order.
+
+## D-649: Seckin's ruling on D-646: option (a), D-296 stays
+
+15 November 2026, 15:58 +0300 (from date). Seckin 15:50: option (a). G1 half B stays closed (D-296); the table what-if, the 2.5 USD run and the reach study use half A only. D-646 item 2 is closed by this ruling; the 2.5 USD run's approval stands on half A.
+- **Rules.** D-294, D-296, D-646.
+
+## D-650: issues and public code brought up to date (Seckin 15:52)
+
+15 November 2026, 15:58 +0300 (from date). Seckin: issues and pushes are behind (the last issue update #259 on 14 November 18:00; the last code on GitHub the 12 November snapshot, D-488, D-520). On a light model, one helper at a time within D-648's cap: (1) every open issue brought to its real state and new issues opened for each new piece of work (D-628 to D-650: the second quick read, the K3 what-if, the K4 hold, the one custom negotiation benchmark, SciTab D-642, the authority audit, the reach study, the laptop memory budget), public hygiene kept (no private names or personal paths, no test-item identity or per-item failure, aggregate figures only); #259's timeline updated; (2) the verified merged state (7b005574 or later) pushed through the clean export route (tools/loop/export_public_tree.py into the clean clone, D-488, D-520) with the pre-push scans, and tagged; then a push after every verified step and issues kept current the same day. This is Seckin's word to push (PUSH-TARGET GUARD). Any Lambda gate step for the export follows D-596 (asked above 3 USD).
+- **Rules.** PUSH-TARGET GUARD, BACKUP-A, D-488, D-520, D-596, D-648.
+
+## D-651: the reach study's result on half A; route S's job seal read as allowed under D-648
+
+15 November 2026, 16:03 +0300 (from date), lead session b547ef8e.
+1. **The reach study** (Seckin 15:27 item 2, D-645, D-649) ran on G1 half A only, 16:01:21 to 16:02:12, exit 0, pure Python on saved records (lane/reach-study: rules 475de244, b885be33, 93dfa865 written before any figure; result e9d50f60, REACH_STUDY.md section 8 and REACH_STUDY_RESULT.json, aggregates only). Half B entries dropped and counted.
+   - **Q1, single-passage contradictions: not passed.** The widened single-passage step reaches 5 of the 5 half A one-passage documents at k=10 and RELATIONS-B admits all 5, but no saved reader flagged any of them on the marked sentence (0 of 5, all four readers; 0 on all 17 gold too, so the quote test may be strict). Reach is not the limit there; the reader is.
+   - **Q2, a pair ranker separating real from clean pairs: passed** on the combined score (9 positive pairs): document AUC .751 [.561, .910], pair AUC .903 [.772, .982]; the judge's own probability alone does better (Jmin .796 documents, .986 pairs), embedding alone at chance (.502). A reranker works inside the proposed 40, so reach stays 9 of 17; the intervals are wide.
+   - Line 5 is unchanged by this study; no figure here is a gate figure.
+2. **Route S's job seal (D-648).** Route S seals its own job bundle on the laptop (about 10 minutes, one asset check) before the eight bundle seals run on Lambda. The lead reads that entry step as part of "the existing seal route" Seckin named, and allowed it at 16:02: one laptop job at a time across lanes, in the foreground. Reported to Seckin for him to overrule. The A5 run is split into two sequential 5-entry launches (cap about 3.2 USD each; the second only after the first's spend is read and only within the 5 USD approval by forecast).
+3. **Helpers.** cloud-gate closed at 16:03 (its job ended). Open: quick-read, throughput, role N session 20.
+- **Rules.** D-296, D-642, D-645, D-648, D-649, RELATIONS-B, ROUTE-S-A.
+
+## D-652: Seckin's 16:03 answers: which audit fixes; track A at about 40 items
+
+15 November 2026, 16:04 +0300 (from date), lead session b547ef8e. Seckin's answers to the 15:54 entry, in substance:
+1. **Authority audit (D-643, D-647).**
+   - **A1, inside TABLE-AUTHORITY-A:** no legal-text checks on tables; table cells such as "71,2%" are read as numbers.
+   - **Needless agent runs:** SPEECH_ACT_TAGGER, or any agent with nothing to work on, does not run on table items; this is routing by the assignment layer (ASSIGN-A), within the rule floor.
+   - **The collision the auditor missed:** a "does not contradict" answer is always refused. It is fixed, and its likely effect on ContraDoc is reported.
+   - **Line 2 stays.** Its integrity definition (one bad reply voids an entry) was fixed before the reads and is not changed; A3 is answered by removing the needless runs, not by narrowing integrity.
+   - Each fix carries its proof (a test that fails under the old behaviour) and is shown on development data, G1 half A only (D-296, D-649). No spend above 3 USD without asking (D-596).
+2. **The negotiation benchmark, track A: about 40 items approved** (Lambda 2.1 to 6.1 USD, cloud API 0.9 to 2.8 USD; one role N session for the about 22 new items). For sources whose terms forbid redistribution (un.org), the published set carries the source links and the scorer, not the texts, so anyone can fetch them and rerun. Openly licensed sources are preferred where they fit.
+- **Helpers (D-648).** These go in order as slots free: role N session 21 (the pilot's score), the issues and push helper (D-650), the fix lane (item 1), then role N's track A session (item 2). A lane whose only work is waiting on a Lambda job is closed while it waits, with a detached watcher, and resumed from its transcript when the job ends.
+- **Rules.** ASSIGN-A, D-296, D-596, D-640, D-642, D-643, D-645, D-647, D-648, D-649, GATE_ATTEMPTS line 2.
+
+## D-653: the pilot's judge grades read; the judge's wording grade is not validated; the opening committed and session 21 started
+
+15 November 2026, 16:12 +0300 (from date), lead session b547ef8e.
+1. **Role N session 20** (15:52:15 to 16:09:05, exit 0, no model loaded). On 4e0fcc91 the judge's answers read 12 of 12 graded (no null); every one is grade 2. The grade read with session 19's checker sheet (10 entries): the checker gave 0 seven times and 1 three times, never 2; same grade 0 of 10; kappa 0.0, and with the judge's column constant this is a measured disagreement, not a parse artefact. M9 (the judge's wording grade) is therefore not validated at score time (plan section 6.3): any figure resting on the judge's grade is reported as unvalidated.
+2. **Power record for this scorer:** 8c11495a (counts, shares and assumptions only), code_sha256 9dd60d5d equal to tools/score_neg_advisor.py at 4e0fcc91; power 0.176 and 0.143, the same figures as session 16; claim A1 stays indicator only. Configuration a1716ab8 (commit and power record digest changed from session 19).
+3. **Committed before any score:** 9af437a7 on lane/neg-score-fix (parent 4e0fcc91; the power record byte for byte, its blob 8c11495a, and the opening line `neg-advisor opening k=1 set=6a8af3c7... config=a1716ab8...`); on the lead branch as 5fd17c78 (the older 34aa9200 record replaced). Fetched into role N's clone.
+4. **Session 21** (started 16:11:39, Sonnet, no model loaded) checks out 9af437a7 and runs `score`; it hands back aggregates only.
+5. **Noted, not changed:** grade_agreement.json records the judge prompts' digest, not the judge answers', so it cannot tell session 19's all-null answers from session 20's; a later scorer change, after this score.
+- **Rules.** NEG_ADVISOR_PLAN sections 6.3, 7.3, 7.4; D-627, D-647.
+
+## D-654: the negotiation pilot's first score (indicator only; the bar not assessable)
+
+15 November 2026, 16:16 +0300 (from date), lead session b547ef8e. Role N session 21 (16:11:39 to 16:14:48, exit 0, Sonnet, no model loaded) checked out 9af437a7 and ran `score` with k=1: no refusal. Inputs: arms' answers a44f8b68 (the B1 and system rows of the arms' pass), cloud 1d4bff0f, judge 26ca5bc3, configuration a1716ab8, all matching sessions 18 and 20. Per-item file 7c1e3611, kept in the set folder. Aggregates only, every figure an indicator (power 0.18):
+1. **M1, conflict Macro-F1 (primary), 18 headline items:** system 0.149 [0.075, 0.253], B1 0.217 [0.140, 0.331]; cloud 0.648 [0.604, 0.971] on its 14-item subset. **Claim A1 (system above B1): difference -0.068, BCa lower -0.186, permutation p 0.877: not shown;** the system does not beat the bare model. A2 (system against cloud, 14 items): -0.492, not shown.
+2. **M2, alignment Macro-F1:** system 0.389, B1 0.381, cloud 0.369 (A3_M2 +0.008, not shown). **M3, article state:** system 0.0 and B1 0.0; cloud 0.615.
+3. **Counters and trades:** system 8 trades given, 2 valid; cloud 21 of 21; B1 none. M9 (the judge's wording grade) has counters only from the cloud (12, all graded 2) and is not validated (D-653).
+4. **The bar:** not assessable. `validation`: mapping true, checker false, grade false; line 4 needs the checker's sample at or above kappa 0.60 recorded, and it is not. Which of "below" or "not recorded" holds is asked of role N next, counts only.
+5. **Reading.** On the pilot's 18 items the system's advice is no better than B1 on the primary measure and well below the cloud; M3 at 0.0 for both local arms points at an output-form failure rather than judgement, to be checked from the per-item file by role N (counts only) before any fix. Nothing is tuned on these items: they are the pilot's frozen set; any change is shown on track A's development part or new items.
+- **Rules.** NEG_ADVISOR_PLAN sections 6, 7.1, 7.3, 7.4; NEGOTIATION-MEASURE-A; D-640, D-645, D-653.
+
+## D-655: route S's job bundle takes its asset receipt by route S's own reuse rule (Seckin 16:23: fix the route, A5 not parked)
+
+15 November 2026, 16:29 +0300 (from date), lead session b547ef8e. The A5 route S job (8 bundle seals; bound commit be9cfd30) was sealed, bound and reverified (rc 0) but its 13 GB laptop asset check was held by the 2 GiB memory floor (free 1.09 to 1.55 GiB; an orphaned grep of about 650 MB the lead was refused permission to stop; Seckin asked to end it, ALERT.md 16:28). Seckin 16:23: A5 is not parked; if the route cannot take the seals as is, fix it. The route took all eight requests unchanged; only the asset check blocked.
+- **Decision.** The job bundle reuses VER_T_ALLOWANCE_3's archive, whose verification passed with the same archive digest. Its receipt is written by the shipped `seal_route.per_bundle_receipt` (same archive digest, size, members and models; the bundle's own manifest digest), the rule route S already applies to every bundle it seals on the instance. No bound file changes, no re-seal; the 13 GB read is skipped only because the archive is byte-identical by digest. Any differing field stops the job. Option (b), verifying the archive on the instance, is held as the route's later fix if a job ever carries a new archive (four bound files, every bundle re-sealed).
+- **Rules.** ROUTE-S-A, CONTROLLER-BINDING, D-648, D-651.
+
+## D-656: Seckin 16:40: the negotiation system is improved before the real test; measurement faults first; one pilot re-run as the check
+
+15 November 2026, 16:42 +0300 (from date), lead session b547ef8e. Seckin: the pilot's figures are not acceptable; improve the system as far as possible before the real test, within D-654 (the pilot's 18 frozen items are never used for tuning). Plan:
+1. **Measurement faults, 0 USD, first.**
+   - **M3 at 0.0 for the system and B1:** an output-form or parser fault is suspected. Role N session 22 (16:41) counts what the answers give. If the parser is at fault, it is fixed (with its proof) and the EXISTING pilot outputs are re-scored: that repairs the measure, not the system. If the prompt's output form is at fault, that is a system change and goes under item 2.
+   - **The judge** (Phi-4 graded all 12 counters 2, checker kappa 0.0): replaced or calibrated on non-pilot items until the checker's agreement is recorded at or above the plan's floor, then the pilot is re-scored with it. Neither the pilot's 24 items nor their replies are used to calibrate it.
+2. **System improvements, on development and new track A items only,** each with its own figure there: conflict detection first (system 0.149 against B1 0.217: find where the system loses what the bare model finds), then alignment, then article state. A first lead reading from the score's own aggregates: the system trail kept 32 of 32 trades it was given (no audit veto), and the system's prompts digest equals B1's, so the gap is more likely the system's adapter checkpoint than a filter. This is to be checked on development items, not assumed.
+3. **Then ONE pilot re-run** of the improved system as the check, with track A, reported beside the first pilot run (D-654), never replacing it.
+- **Money.** Paid moves above 3 USD wait for Seckin's word (D-596).
+- **Rules.** D-596, D-640, D-645, D-652, D-653, D-654, NEGOTIATION-MEASURE-A, NEG_ADVISOR_PLAN.
+
+## D-657: Seckin 17:16: an INFRA-046 amendment for the "does not contradict" answer; a single re-ask for prose answers A1 refuses
+
+15 November 2026, 17:17 +0300 (from date), lead session b547ef8e. Seckin 17:16, both yes:
+1. **INFRA-046.** A "does not contradict" answer is no longer always refused. The audit-fix lane drafts the new appended amendment text (never an edit of INFRA-046: INFRA-029, append-only), together with the agent-instruction change it needs (the contract's quote_b sentence, the wrapper text, a finding_record phrase for the ok answer distinct from the irregular one, and check group D inverted). The text is shown to Seckin in FOR_SECKIN, applied only after his yes on that text, and its effect is shown first on development items, G1 half A only (D-296, D-649). The code stays held until then (D-652 item 1 as amended).
+2. **Prose ContraDoc answers A1 refuses** (on half A: 17 absence claims with no quote, 4 figure relations with no figures): A1 is NOT loosened. The model is re-asked once for the missing quote or figure, and the answer counts only if it then passes the same checks unchanged; one re-ask, no second; the first refusal and the re-ask are both recorded (REPLIES-A, HONEST-OUTPUT-A).
+- **Issues.** Both recorded on the D-652 fixes issue (#274).
+- **Rules.** INFRA-029, INFRA-046, D-264, D-296, D-643, D-652, D-649, REPLIES-A, HONEST-OUTPUT-A, the verifiability gate.
+
+## D-658: nothing open drops off the radar: every open item has an issue with done, waits-on and time (Seckin 17:18, standing rule)
+
+15 November 2026, 17:28 +0300 (from date), lead session b547ef8e. Seckin's standing rule, in substance: every open piece of loop work, every promise with a time and every item waiting for his decision has a GitHub issue stating what done means, who it waits on and the expected time; the issue is updated the moment any of those changes and closed only with its evidence. At every FOR_SECKIN report the lead compares its open work with the open issues and fixes any gap in the same step. Public hygiene for issues holds (no private names, personal paths, test-item identities or per-item failures; aggregate figures only). Standing order 81.
+- **Applied.** A light-model helper (issues-sync) adds a "Done when / Waits on / Expected" block to every open issue that is live loop work, and opens issues for open work that has none, from the lead's open list; issues no longer live are marked as such, not closed without evidence.
+- **Also at 17:26 (the supervisor):** the laptop was at 96 to 97 percent memory and 80 to 90 percent disk activity. The lead stopped its own disk sweep dry run (a whole-tree walk), ended two whole-tree searches left by closed lanes (pids 30128, 20612) and audit-fix's full gate run on the laptop (pids 26128, 9900; 1.2 GB; full gates go to Lambda, orders 77 and 79), and closed quick-read while it waits for disk (its state note holds the resume steps). Free RAM went from 0.46 to 1.91 GiB.
+- **Rules.** D-648, D-650, STANDING-ORDERS-A.
+
+## D-659: a lasting fix for laptop RAM and disk (supervisor 17:30 for Seckin): the worktree list, no whole-tree search, a 30-minute trend
+
+15 November 2026, 17:32 +0300 (from date), lead session b547ef8e.
+1. **Worktrees.** Every folder under .claude/worktrees is measured (links and junctions never followed), with its branch and whether its work is merged into the main checkout's 7b005574 or the lead branch, and the list goes to Seckin in FOR_SECKIN with the total that removing the finished ones would free. Nothing is deleted until his yes; a worktree holding a junction into the main checkout has the junction removed with rmdir first, never a recursive delete.
+2. **No search over the whole tree.** The built-in Grep on named folders with simple patterns, each search ended when done; no recursive grep, du or sweep walk of the checkout, the scratchpad or the session transcripts; a stopped background search is checked for a leftover child process. Every lane brief carries this and the rule that scripts/verify_session1.py never runs on the laptop in any form (named check files only; the gate on Lambda as arm G). At 17:29 audit-fix ran the gate again (1.4 GB, free RAM 0.26 GiB); the lead ended it.
+3. **Trend.** A detached recorder (scratchpad resource_trend.py, from 17:30) writes free RAM, the page file's size and use, and free disk to FOR_SECKIN every 30 minutes, and to resource_trend.jsonl. First reading 17:30: RAM 0.26 GiB (during the gate run), page file 16,117 MB allocated, disk 22.56 GiB.
+- **Rules.** D-542, D-611, D-648, D-658, standing orders 77 and 79.
+
+## D-660: Seckin 18:02: the 35 finished worktrees removed under safeguards; A5's second run approved up to 5.49 USD
+
+15 November 2026, 18:03 +0300 (from date), lead session b547ef8e. Seckin, both yes:
+1. **Worktrees.** Remove the 35 folders of groups A (merged, clean; 10, 7.81 GiB) and B (finished, work on its branch, nothing modified, no live lane; 25, 14.02 GiB) as listed in FOR_SECKIN 17:36, and nothing else: only folders under this repository's .claude/worktrees that the loop created; nothing outside it, nothing of group C or D. Required safeguards: before each removal its branch and HEAD commit are recorded with a restore line (`git worktree add <path> <branch>`, or `--detach <path> <commit>`); its untracked and ignored files that are not regenerable (model caches and build outputs skipped) are archived into one compressed local backup outside the worktrees folder, kept until Seckin says otherwise; junctions are removed with rmdir first, never a recursive delete; after each removal the main checkout, the remaining worktrees and `git worktree list` are checked intact; anything removed by mistake is restored at once from its restore line and the backup. Every deletion is logged (path, size, branch, commit). Branches and commits are not touched.
+2. **A5.** The second run (5 SciTab entries) is approved, A5's total up to 5.49 USD by forecast.
+- **Issues.** #264 (A5) and #276 (laptop memory budget) updated.
+- **Rules.** D-596, D-611, D-648, D-655, D-659.
+
+## D-661: what the pilot's zero article-state score and undefined red-line kappa are made of (role N session 23)
+
+15 November 2026, 18:16 +0300 (from date), lead session b547ef8e. Session 23 (18:13:40 to 18:15:39, exit 0, no model, nothing changed), counts only:
+1. **One parser fault, small.** The system wrote 7 article ids as JSON numbers equal to a known id; the parser compares them with the string ids and drops them (10 dropped for an unknown id in all; B1 0; the cloud 14, none numeric). No state value was dropped as a spelling variant or another word. Fix (measurement repair, D-656): an integer id whose text equals a known id is read as that id, with its proof; then the pilot's existing outputs are re-scored.
+2. **Coverage is not the cause.** All 149 scored articles are shown to every arm (108 in the excerpt; the key's 41 `dropped` articles only in the previous-round index), and the local and cloud prompts are the same text (14 of 14). So M3 at 0.0 for B1 and the system is the models' own answers (most articles given no state; `bracketed`, the key's main class, never said; `dropped` never placed on the right article): a system matter for development and track A items (D-656 item 2), not a measure fault.
+3. **Red line.** Key and checker both hold one class only (36 of 36 `not_red_line`), agreeing on 36 of 36; kappa is undefined (zero denominator), and the scorer reads undefined as below the floor, so the bar is "not assessable". Proposed to Seckin, not applied: on a field where both sides hold one identical class, report the raw agreement and count the field as at the floor when agreement is 100 percent, labelled "single class, kappa undefined"; that is a plan rule (line 4), so it is his decision.
+- **Rules.** NEG_ADVISOR_PLAN 6, 7.1; D-654, D-656.
+
+## D-662: the red-line single-class rule, a plan amendment before any re-score (Seckin 18:27 item 1)
+
+15 November 2026, 18:35 +0300 (from date), lead session b547ef8e. Yes to D-661 item 3: on a checker field where the key and the checker both give the same single class, the raw agreement is reported; at 100 percent the field counts as at the bar, labelled "single class, kappa undefined". It is written into NEG_ADVISOR_PLAN as an amendment and into the scorer's validation rule, with its proof, before any re-score; the scorer file's change means the power record is made again for it (code_sha256). Seckin's note stands with it: 36 of 36 "not a red line" says the pilot's items held almost no red lines, so that field tested little.
+
+## D-663: no answer is dropped for its form alone; the parser sweep comes first (Seckin 18:27 item 2 and 18:29 item 1, standing rule)
+
+15 November 2026, 18:35 +0300 (from date).
+1. **Standing rule.** No answer is dropped for form alone: leading or trailing spaces, case, quotes, a number written for a string, a list for a single value or the reverse, stray punctuation, code fences. (a) Every parser and scorer in Shimmer and in the benchmarks normalises these forms, the same way for every arm (system, B1, cloud), never by guessing content. (b) The output side is tightened so models emit the expected form (a schema or constrained decoding where the engine supports it; DECODING-B). Every answer a parser still drops is counted and logged with its reason, and the drop count goes into every score report. The existing outputs of all three arms are re-scored the same way. Standing order 82.
+2. **Order.** The sweep comes FIRST: no scored measurement (the pilot re-score, a pilot re-run, track A, any benchmark read) runs until every parser and scorer is tolerant, proven on saved outputs, with its drop counts logged. The A5 speed run may continue; its answer-agreement figures are re-scored after the sweep. The numeric-id fix (cdd28544, D-661) is the sweep's first instance.
+- **Run by** a new lane, parse-sweep (Opus), from 18:35; expected: the inventory of every parser by about 20:00, the tolerant parsers with proofs on saved outputs by 16 November midday, the output-side tightening after.
+
+## D-664: red lines in this version: from the document only, stored with a source; operator-given red lines are a v1.1 task (Seckin 18:29 item 2, 18:32, 18:33 final)
+
+15 November 2026, 18:35 +0300 (from date).
+1. **This version** keeps red lines found in the text, what is negotiable, and the trades on record (give and get).
+2. **Now, at small cost:** every red line is stored with a source field (for now only "from the document"), so v1.1 adds a second source without rework. The frozen pilot set stays as it is; the field applies to the advisor's code and to track A's items.
+3. **Operator-given red lines** (the party's mandate given at the start; both sources used together, each marked) with items that test them: a v1.1 task and one of its first, with a GitHub issue labelled for v1.1 and operator-deferred, and an entry in the v1.1 plan.
+4. **The code check (18:32 ask), no build.** Shimmer's document pipeline (scripts/, config/) has no red-line input at all: the only "red line" matches there are unrelated (rendered line ids; INFRA-040's out_of_mandate escalation). Only the negotiation advisor and its scorer hold red lines (tools/score_neg_advisor.py: the persona's `red_lines` list, read from each item's build file, which the builder takes from the record; the key's `red_line` per proposal and the checker's field). No operator-given source exists anywhere.
+- **Rules.** D-640, D-645, D-652, D-656, NEG_ADVISOR_PLAN.
+
+## D-665: red lines measured two ways, declared and held (Seckin 18:37)
+
+15 November 2026, 18:39 +0300 (from date), lead session b547ef8e. (a) Declared red line: the party says so in the record; the system's extraction is scored against the labels, as now. (b) Held red line: did it hold in the next round, computed by code from the fate already computed; a proposal resting on a declared red line that the party later accepts or lets through counts as not held. Both reported; the held share as a finding (which declared red lines were real, which bargaining positions). For the system and both comparison arms, on development and track A items; the frozen pilot only re-scored with it, never tuned on. Written into the plans before any scoring as AM-2 in docs/loop/stages/NEG_PLAN_AMENDMENTS.md (with AM-1, D-662's single-class rule). Noted in the private public-update list as a candidate paragraph for the Medium article, written only once there is a measured result. Issue: #271 (the negotiation benchmark).
+- **Rules.** D-654, D-656, D-662, D-663, D-664, NEG_ADVISOR_PLAN, NEG_DRAFT_BENCH_PLAN.
+
+## D-666: a requirement's implied capability is checked at once; input handling adapts to every format and layer (Seckin 18:40, standing rule)
+
+15 November 2026, 18:41 +0300 (from date), lead session b547ef8e.
+1. **Rule.** When a requirement implies a capability (here: red lines live mostly in annotations, so the reader must take them in), the lead checks that capability at once without being asked and reports what it found. Input handling is never hard-coded to one format: the reader detects what it is given and takes in every layer that carries meaning (main text, comments and margin notes, tracked insertions and deletions, footnotes, brackets with their attribution, reservations, and who wrote each), whatever the format, and says plainly which layers it could not read. Standing order 83.
+2. **Task 1, the reader's layers (scripts/text_extract.py), found:**
+   - **.docx:** read as it would stand with every tracked change accepted: insertions and moves in, deletions out, and no author, date or change marker kept; comments (comments.xml), footnotes and endnotes are not read at all; tables and headings are kept. Nothing says which layers were dropped.
+   - **.pdf (pypdf):** page text only; annotations (comments, highlights, sticky notes) and their authors are not read; no warning.
+   - **.html:** all visible text flattened; `<ins>` and `<del>` text both kept and not told apart; no author; HTML comments not taken as notes.
+   - **.txt, .md, .rst, .log, .json:** taken as is; brackets stay in the text but nothing reads their attribution.
+   - **Formats not accepted:** .doc, .odt, .rtf, spreadsheets and scanned images are refused with a warning (named, not silent).
+   - **Effect:** for negotiation records, red lines, reservations and bracket attribution held in comments, tracked changes or footnotes are lost or flattened before any agent sees them, and the run does not say so.
+   - **Proposed fix (this version):** a layered reader that returns each layer apart (main text; insertions and deletions with author and date; comments and margin notes with author and anchor; footnotes and endnotes; PDF annotations with author), a per-document "layers read / not read" record printed in every run, and the advisor and the negotiation benchmark taking the layers in; formats beyond these (.odt, .rtf) to v1.1 unless Seckin says otherwise.
+3. **Task 2:** one independent light agent (laptop-safe, Grep on named folders only) audits everything built so far for capabilities a stated requirement implies but nothing checks, and for anything hard-coded to one format, case or domain where it should adapt; one batched report in FOR_SECKIN, each gap with its effect and a proposed fix, marked this version or v1.1.
+- **Rules.** D-648, D-659, D-664, WORDS-A, docs/INPUT_FORMAT.md.
+
+## D-667: findings are for action: fix what needs no decision, bring only what does; today's requests reconciled (Seckin 18:42, standing rule)
+
+15 November 2026, 18:45 +0300 (from date), lead session b547ef8e.
+1. **Rule.** Every gap a finding shows that needs no decision of Seckin's is fixed by the loop on its own: a missing sub-requirement, a missing check, a hard-coded form that should adapt, a parser that drops answers. Only what truly needs his word goes to him: spend above 3 USD, deleting anything, changing a frozen plan, a bar or the constitution, publishing, or a choice between real options, each with a recommendation. Every such report lists both: what was fixed (with its evidence) and what waits for him. Applies to the capability audit (D-666) and every finding like it. Standing order 84.
+2. **Reconciliation of today's requests** (since 08:08) against SECKIN_REQUESTS.md, the D-6xx decisions and the GitHub issues:
+   - Requests from Seckin today: 27 (08:08 to 18:42).
+   - Before: ledger lines 0 of 27 (the ledger's last rows were from 6 November); decision records 25 of 27 (08:08's merge yes was recorded only in the merge commit 7b005574; 18:42 is this decision); issues 26 of 27 (18:40's reader finding had none).
+   - Added: 27 ledger lines (SECKIN_REQUESTS.md, section "15 November 2026"), 1 decision record (this one), 1 issue (#280, the reader's layers). After: 27 of 27 on each.
+3. **The worktree removal (D-660) is done:** 35 of 35 folders removed, each check after removal passed, about 21.85 GiB freed (free disk 43 GiB at 18:44); 35 log lines and 35 restore lines, and the archive of 50 untracked files (0.5 MB) in <USER_HOME>\local\shimmer-worktree-backup\; every branch kept; the main checkout's private folder and the link targets unchanged.
+- **Rules.** D-658, D-660, D-663, D-666.
+
+## D-668: A5's job seal once at a 1.5 GiB floor; every seal moves to Lambda; all 16 audit gaps done in this version (Seckin 19:04)
+
+15 November 2026, 19:11 +0300 (from date), lead session b547ef8e.
+1. **A5 (option a).** For this one job seal only (about 6 minutes, on the laptop, now), the memory floor is 1.5 GiB instead of 2; nothing else changes and no other step uses the lower floor.
+2. **Every seal on Lambda (option c), standing.** From now on every sealing step, job seals included, runs on the rented machines, never on the laptop. The route change is built with its proofs before the next job (lane route-s-instance-assets widened: the job seal and the asset verification both on the instance, the laptop writing only the request). Standing order 85.
+3. **The audit (D-666, #281): nothing is deferred.** The 8 items proposed for v1.1 are done in this version with the other 8: three-or-more-party movement, coalition personas, proposal splitting in other languages, Unicode heading ids done safely with an id migration and its proofs, PDF layout recovery, other date and number formats with the locale stated, full .docx reading (text boxes, nested tables, content controls), date-order rules. Order: the parser sweep first, then these, each proven on development items before any scored measurement.
+- **Rules.** D-648, D-655, D-659, D-663, D-666, D-667, ROUTE-S-A, CONTROLLER-BINDING, UNITS-A (no id moves without a migration).
