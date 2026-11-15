@@ -254,10 +254,24 @@ class ProgressReadings(unittest.TestCase):
             self.assertNotIn('%d', line)
             self.assertNotIn('%.1f', line)
 
+    def test_the_auxiliary_phases_are_measured_against_the_locks_own_pins(self):
+        """#217: the fetch counts the wheels fetched against the auxiliary lock's pins (its comment
+        lines not counted), the install the venv's site-packages entries."""
+        pins = ['pkg%d==1.0 \\\n    --hash=sha256:%s' % (n, 'a' * 64) for n in range(201)]
+        (self.bundle / 'aux_env.lock').write_text('# made with vllm==0.33.0\n' + '\n'.join(pins) + '\n', encoding='utf8')
+        line = self.read('aux_env_fetch', 120.0, {'wheels_aux': '67'})
+        self.assertIn('67 of 201 wheels measured', line)
+        self.assertIn('min remaining', line)
+        line = self.read('aux_env_install', 60.0, {'venv_aux/lib/python3.12/site-packages': '40'})
+        self.assertIn('40 site-packages entries measured against 201 pinned requirements', line)
+
     def test_every_long_phase_of_the_controller_has_a_reader_or_is_named_completion_only(self):
         """A new long phase must not silently fall through to 'nothing to measure'."""
         controller = (ROOT / 'tools/ordinary_final_cloud.py').read_text(encoding='utf8')
         named = set(re.findall(r"(?:remote|transport|phase)\('([a-z_0-9]+)'", controller))
+        # #217: the auxiliary environment's phases are named by aux_env_commands, not a literal call.
+        import ordinary_final_cloud
+        named |= {label for label, _, _ in ordinary_final_cloud.aux_env_commands({'lock': 'aux_env.lock'}, 'python', '/r')}
         unclassified = named - set(progress.READERS) - set(progress.COMPLETION_ONLY)
         unclassified = {p for p in unclassified if not p.startswith(('ssh_ready', 'launch_', 'temporary_',
                                                                      'activation', 'terminated_'))}

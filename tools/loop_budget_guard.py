@@ -250,10 +250,64 @@ def standing_orders_root():
     return spend_store_path().parents[3]
 
 
+SEAL_ATTESTATION_ENV = 'SHIMMER_SEAL_ATTESTATION'
+
+
+def _file_sha(path):
+    import hashlib
+    h = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(8 * 1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+
+def attested_failures(environ=None, platform=None, now=None):
+    """Route S (#252): on a seal job's instance the records the standing orders read (the main
+    checkout's launch records, FOR_SECKIN, the spend store's approvals) are not there, and checked
+    there orders 1 to 3 would pass on nothing. The guard reads in their place the attestation the
+    laptop made from those records when it sealed the job (its refusals: none, or the job was never
+    sealed). Read only on Linux when the seal job's runner names it, and only when it is bound to
+    THIS job: the run root it names holds an arm S manifest whose seal binds it and whose sealed
+    seal_job.json is the file there, the attestation names that manifest's and that job file's
+    digests, carries the sealed attestation's own refusals, the runner has claimed the run, and its
+    expiry (the job's deadline) has not passed. Any other named attestation refuses: it never falls
+    back to the absent records. None with no variable, or off Linux: the laptop checks its own."""
+    environ = os.environ if environ is None else environ
+    platform = sys.platform if platform is None else platform
+    path = environ.get(SEAL_ATTESTATION_ENV)
+    if not path or platform != 'linux':
+        return None
+    try:
+        value = json.loads(Path(path).read_text(encoding='utf-8'))
+        base = Path(value['bundle'])
+        manifest = json.loads((base / 'execution_manifest.json').read_text(encoding='utf-8'))
+        seal = json.loads((base / 'seal.json').read_text(encoding='utf-8'))
+        manifest_sha, job_sha = _file_sha(base / 'execution_manifest.json'), _file_sha(base / 'seal_job.json')
+    except (OSError, ValueError, KeyError, TypeError):
+        refuse(False, 'The seal job attestation of the standing orders cannot be read with its job')
+    refuse(isinstance(value, dict) and value.get('orders') == list(LAUNCH_ORDER_NUMBERS)
+           and isinstance(value.get('refusals'), list), 'The seal job attestation does not name standing orders 1 to 3')
+    sealed = (manifest.get('seal_job') or {}).get('attestation') or {}
+    refuse(manifest.get('arm') == 'S' and seal.get('execution_manifest_sha256') == manifest_sha
+           and value.get('job_manifest_sha256') == manifest_sha
+           and (manifest.get('support_files') or {}).get('seal_job.json') == job_sha == value.get('seal_job_sha256')
+           and sealed.get('refusals') == value['refusals'] and (base / 'RUN_CLAIMED').is_file(),
+           'The seal job attestation is not bound to this job')
+    expires = value.get('expires_epoch')
+    refuse(isinstance(expires, (int, float)) and (time.time() if now is None else now) < expires,
+           'The seal job attestation has expired')
+    return [tuple(r) for r in value['refusals']]
+
+
 def standing_orders_failures(root):
     """[(order, state, evidence)] for each of standing orders 1 to 3 that stops a launch on `root`
     (broken, or unable to check), by the standing-orders check's one call for it (`launch_refusals`;
-    a checker's state is a word such as 'broken', never read for truthiness)."""
+    a checker's state is a word such as 'broken', never read for truthiness). On a seal job's
+    instance, the laptop's attestation of them (attested_failures)."""
+    attested = attested_failures()
+    if attested is not None:
+        return attested
     import standing_orders_check as orders
     return list(orders.launch_refusals(orders.Context(root), LAUNCH_ORDER_NUMBERS))
 

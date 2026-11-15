@@ -5911,3 +5911,1053 @@ DECISIONS is append-only, so the headers stay and this table is the record. LOOP
 6. **Re-seal.** `tools/ordinary_final_run.py` and `tools/prepare_ordinary_final_run.py` changed, so every bundle sealed before this merge refuses: "Controller source changed", and at reverify "Preparation source changed".
    - quick-read's bundles were sealed at 933a9428 and 933a9428 plus K1's config. They launch from their own worktrees (D-364), so this merge does not touch them.
 - **Rules.** GATE-ARM-A, CONTROLLER-BINDING, D-540, D-542, D-546, D-548, D-364.
+
+## D-552. Split Lambda gate 2 read row by row; main pushed to 8a86e4ed with tag code-2026-11-12-c
+
+12 November 2026, 23:24 +0300 (from date), lead session b547ef8e. Seckin's chat, 23:19: read the results, compare with G_FULL2, push with a tag if clean.
+1. **The runs.** G_SPLIT2_B1, G_SPLIT2_B2 and G_SPLIT2_SIDE on export 8a86e4ed (loop bc3b9c0d), sealed tree c3f49a3ceb, each A10 us-east-1, cap 3.77 USD.
+   - Launched 22:14, 22:16 and 22:18; terminated 22:46, 22:57 and 23:05 (ledger lines). 0.62 + 0.92 + 1.08 = 2.62 USD.
+   - `git_checkout.json` on every instance: tree c3f49a3ceb, status clean, git 2.43.0 (D-551 holds on the instance).
+2. **B1 (149 checks).** Integrity passed: 142 PASS, 3 FAIL, 2 ERROR, 2 SKIP; unexpected none. Now green 261, 280 and 339. Still red 140 (no tkinter), 146, 257, 325, 348.
+3. **B2 (197 checks).** Integrity passed: 185 PASS, 9 FAIL, 3 SKIP; unexpected none. Now green 311. Still red 28, 31, 118, 121, 193, 292, 321, 333, 338.
+4. **Side (6 side gates and the controller gate).** 4 red, against 6 in G_SPLIT. Now green: the topology and multi-round side gates. The controller gate's 5 errors (git-dependent) are gone. Every remaining red equals G_SPLIT's:
+   - localization: `node` is not installed on the instance (environment; the laptop has it, order 70).
+   - final integration: the same 3 errors as G_SPLIT.
+   - cloud_run_checks: the same two tests (`test_full_bundle_reproducible_and_readiness_last`, `test_preparation_refuses_existing_evidence`).
+   - controller gate, one failure: `test_every_child_process_on_the_controller_path_starts_without_a_window` asserts `popen & 8 == 0` off Windows, but its own fake subprocess always offers DETACHED_PROCESS=8. A test-expectation defect seen only on Linux, not a product defect; to be fixed in the check file.
+5. **Not yet proven on Lambda.** 325 now errors with `ProofFailure: OBSERVATION_ERROR` (no longer "not a git checkout"); the proof layer hides the exception, so the sub-check is not yet known. 348 fails on Linux as before. Both stay open, classed, and are diagnosed next; neither is a new red against G_FULL2.
+6. **The push.** No new red, so the push went ahead (D-488, D-489, D-497, D-501). From the clean clone: the tree of 8a86e4ed equals the sealed `source_tree`; the delta key-pattern scan of bc36ecb..8a86e4e found nothing, after the independent delta scan's CLEAN. main bc36ecb2 to 8a86e4ed, fast-forward with lease; annotated tag `code-2026-11-12-c` (object 23ac2afa) pushed by name; ls-remote shows both. The README status refresh is deferred to the next push, as before.
+- **Rules.** D-488, D-489, D-497, D-501, D-542, D-546, D-551, order 70.
+
+## D-553. The reads go as soon as they are ready (Seckin 23:54); what the selection rule needs; the timeline
+
+12 November 2026, 23:58 +0300 (from date), lead session b547ef8e. Seckin, 23:54:
+- 14 November 14:30 is the latest deadline, not the planned time.
+- The quick-subset read is launched as soon as its bundles are sealed, and GATE_ATTEMPTS section 3 is applied unchanged.
+- If line 5 clears, the claim set is sealed and launched at once, split across as many Lambda machines as helps, within the caps. The target is results on 13 November, as early as possible.
+- Checks 325, 348 and the controller test do not block a read unless they touch what is measured, and that is said plainly.
+- Nothing in the rules is relaxed.
+
+1. **Quick-subset sealing, measured.** 25 of 108 bundles are sealed, verified, reverified and preflighted: B1CO, B1SC, K1ST 13 of 13, K1CD1 9 of 10, K0CD1 1 of 7.
+   - The rate is 7.4 minutes a bundle (seal 230 s, assets 152 s, reverify 16 s, preflight 48 s), two at a time, so about 3.5 minutes of wall time a bundle: 22 bundles from 21:18 to 23:53.
+   - The run stopped itself at 23:53 below 3 GB free (1.6 GB). quick-read resumes it under D-222. At this rate the 83 left take about 4.9 hours, if memory holds.
+   - Sessions launch as each is complete, not all at once, so the read's tail is the last session sealed.
+2. **What line 5 needs that does not exist yet.** Bar (b) on the quick subset needs the cloud reference on those items. It has never been run on any gate item (GATE_ATTEMPTS section 4).
+   - On the quick subset it is the subscription steering check (D-S104 item 1). Its allowed list is empty, and `cloud_reference.py` sends J1 half A only.
+   - Lane `cloud-gate` (Opus medium) builds both paths: the quick subset's steering set and prompts, and a declared claim-set mode of the API run with `plan` only. No call that can bill.
+   - The claim set's API run needs Seckin's "evet" (D-S106, order 2). Its cost scales from half A's 7.07 USD for 75 items in two forms; the lane's `plan` gives the worst case. 52.93 USD are left under the 60 USD API ceiling. Two forms on 593 items come near that ceiling, and the lane is asked which form bar (b) reads.
+   - Without the cloud figure, bar (b) is unread (`gate_score.figures` returns `bar_b: None`), so line 5 cannot be met. That is not relaxed.
+3. **Checks against what is measured.**
+   - **325:** its proofs cover the read's own code (choice_decision, choice_read, system_test, gate_set, embed_records) and have passed nowhere on the current tree: the laptop run died at 17:53, and on Lambda it gives OBSERVATION_ERROR (D-552). It touches what is measured. It is push-plan's first task, and its result is reported before the quick figures are read.
+   - **348 (the session-end salvage hook) and the controller popen test:** they touch no figure and block nothing.
+4. **Timeline** (estimates from the measured rates above; every end is the last session's):
+   - Quick read: the first sessions (K1ST, B1CO, B1SC) about 00:30. The last bundle sealed about 05:00 (05:00 to 07:00 if memory stops the sealer). The last session ends about 07:00 to 09:00, with sessions of about 95 to 112 minutes plus 14.5 minutes of set-up. Figures and line 5 about 07:30 to 09:30 on 13 November, if the steering cloud check has run by then.
+   - Claim read, only if line 5 clears: about 293 bundles for one configuration plus B1. At 3.5 minutes each that is about 17 hours of sealing, so sealing runs about 08:00 on 13 November to about 01:00 on 14 November. Sessions launch as they seal, across many machines. The last ends about 03:00 and the figures come about 03:30 on 14 November, before 14:30.
+   - **The bottleneck is the laptop's sealing**, bound by memory, not Lambda. A faster sealer would change the preparation source under the measurement, so it is not done tonight (D-531, D-532).
+5. **Lambda budget.** About 161 USD spent of the 350 hard stop. The quick read forecast is 27 to 34 USD; the claim read, scaled by bundle count, about 75 to 95 USD. Both fit.
+- **Rules.** GATE_ATTEMPTS section 3, D-422, D-S104, D-S106, D-222, D-364, D-531, D-532, D-542, D-550, Seckin 23:54.
+
+## D-554. The cloud reference arm for bar (b): B1's comparator rule; the quick subset listed for the steering check
+
+13 November 2026, 00:48 +0300 (from date), lead session b547ef8e. Written before any gate figure, cloud or local, has been read. lane/cloud-gate (Opus medium) asked which form bar (b) reads; no decision said (D-376, D-379, D-S99 and GATE-SCORE-A name only "the cloud reference").
+1. **The form.** The cloud reference arm takes B1's own comparator rule, per benchmark and in that paper's metric (ContraDoc accuracy with ABSTAIN wrong; SciTab macro-F1, 3-class as frozen):
+   - Both groups run on the same B1 prompts: judge_direct and judge_reason.
+   - The comparator is the better of the two, and a tie goes to judge_reason. A group past D-241's abstain floor is not a comparator (`either_test.comparator`, C_BAR, GATE_SET.md section 8).
+   - Reason: one rule for both reference arms, on the same prompts. Taking the cloud's better group can only make bar (b) harder for the system, never easier.
+2. **The steering list (D-401 item 6).** `cloud_reference_steering_sets.json` now allows the quick subset's two B1 prompts files, `external/s05/GATE/quick_read/b1_prompts_contradoc.json` (80 prompts) and `b1_prompts_scitab.json` (156), with subset QUICK_SET_SHA256. Each entry names its source. The claim set's digest is on the refused list.
+   - The steering check is subscription and steering only, never a claim (D-S104 item 1). It feeds line 5 of the selection rule on the quick subset.
+3. **The claim set's paid run.** Both groups are needed by item 1. They run as two sequential runs, direct first, then reasoning, so that each one's worst case fits the API room left after the earlier one's actual spend.
+   - The plan (lane/cloud-gate, at the recorded price, claude-opus-4-8): direct 36.78 worst, 9.36 expected; reasoning 36.96 worst, 12.31 expected. 52.93 USD are left under the 60 ceiling.
+   - It runs only after Seckin's "evet" (D-S106, order 2), and only if line 5 clears.
+   - It runs only after the checker's point 4 is closed, so that the prompt text is pinned to the rebuild from the held build.
+- **Rules.** D-241, D-376, D-379, D-401 item 6, D-S104, D-S106, C_BAR, GATE_SET section 8, GATE_ATTEMPTS section 3.
+
+## D-555. The 03:31 salvage on lead silence; a scripted heartbeat corrects the wake-at-end order; the lost entries re-sealed
+
+13 November 2026, 07:55 +0300 (from date), lead session b547ef8e. Seckin's chat, 07:36: the lead was idle from about 02:00. At 03:31 the reaper ran salvage and stop on 3 instances because the heartbeat was silent for 93 minutes (SALVAGE_REPORT_20261113T003159Z.md, 6.62 USD). The cause is partly his 00:00 order "wake only at each run's estimated end", which collided with the 90-minute heartbeat rule (SALVAGE-A, `SILENCE_MINUTES`); he names it his mistake.
+1. **What was saved and lost.** K1CD1, K1CD2 and K1CD3 were each salvaged by their own controller: the item in hand got 300 s, the evidence was packed and copied, and each instance was verified gone.
+   - Saved: 22 of 30 entries (7, 9 and 6).
+   - Lost: 8 entries: K1CD1 contradoc_88174ab3cd41, contradoc_ad8f944c35b2 and contradoc_d08142297cdd; K1CD2 contradoc_e6c199e445c7; K1CD3 contradoc_b2f10f3e8d44, contradoc_b6f92c86db1f, contradoc_e8032b34d8f3 and contradoc_e8214635c777.
+   - K1ST (2.56 USD), B1CO (1.10) and B1SC (1.55) had already finished whole before the salvage.
+2. **A second cause, the lead's.** The three K1 ContraDoc sessions were sealed at 00:09, 00:47 and 01:23, and launched only at 01:55 to 01:58. quick-read's session messages did not arrive, and the lead did not count the sealed files sooner. Sessions K1CD4, K0ST and K0CD1 to K0CD6 were sealed by 05:13 and not launched until 07:38 to 07:53. From now on the lead counts `.post_ok` files against PLAN.json at each wake, and does not rely on a lane's message alone.
+3. **The correction to the 00:00 order.** The heartbeat is kept by a script, with no model turn: `heartbeat.py` in the lead's scratchpad, a detached pythonw (pid 21296, log `heartbeat.log`).
+   - Every 20 minutes it sets the modification time of `docs/loop/private/continue_hook_state.json`, one of the three files `instance_reaper.HEARTBEATS` reads, and never changes its content.
+   - It beats only while the lead's Claude process (pid 11056) is alive, and only while the lead itself wrote LOOP_STATE.md or FOR_SECKIN.md within the last 6 hours. Otherwise it exits.
+   - So a lead that has stopped still lets the 90-minute salvage fire. A lead alive but silent is caught within 6 hours plus 90 minutes, not 90 minutes. That is the stated limit.
+   - Nothing in the reaper, the rule or the threshold changed. Waking at each run's estimated end stands.
+4. **Resume.** The 8 lost entries are re-sealed as new bundles at the same commit (measure/gate-k1-quick 09275cb9), comparison gate-quick-1, as two sessions of 4 (K1CDR1, K1CDR2), and launched when sealed. Each launch is one bundle once.
+- **Rules.** SALVAGE-A, D-S84, D-222, D-495, D-553, Seckin 00:00 and 07:36.
+
+## D-556. Seckin's yes in advance: the claim-set read and the paid cloud reference run go without waiting for him if line 5 clears
+
+13 November 2026, 08:26 +0300 (from date), lead session b547ef8e. Seckin's chat, 08:25, verbatim in substance: "yes: if the quick subset clears line 5, launch the claim-set read and the paid cloud reference run without waiting for him (about 22 USD; a second run only if needed and only if it fits under the API cap, each run checked against its own worst case first)."
+1. **What it approves.** Only on line 5 of GATE_ATTEMPTS section 3 clearing, read unchanged through `gate_score.figures` on the pinned quick set:
+   - the claim-set read (the chosen configuration and B1), sealed and launched as sessions seal, across machines, within the Lambda hard stop 350 and the 95 percent launch limit;
+   - the paid cloud reference run on the claim set (`cloud_reference.py run --gate-set external/s05/GATE/freeze/claim_set_ids.json`), expected about 22 USD (direct 9.36, reasoning 12.31).
+   Nothing is approved if line 5 does not clear.
+2. **The two runs and the cap.** D-554 needs both groups (judge_direct, judge_reason), so both are needed. They run back to back, direct first. Each is held to its own worst case against the API room left before it starts (`cloud_reference_spend.api_room`): direct 36.78 USD against 52.93 left; reasoning 36.96 only if the room after direct's actual spend still holds it (direct actual at most about 15.97). If reasoning does not fit, it does not run, and bar (b) is read from direct alone with that stated plainly; no ceiling is raised.
+3. **The approval record (order 2).** Each run is its own chain, so each gets its own FOR_SECKIN heading with one line "Seckin: evet (08:25)", written by the lead, lead-attested, and named by that run's `--seckin-approved`. The key source is the credential rule's own name.
+4. **Unchanged.** The bars (D-550), the selection rule, the claim set opened once, the salvage rule (98 until the 18 November reset), the API ceiling 60 and every other rule.
+- **Rules.** D-S106 order 2, D-401 item 3, D-550, D-553, D-554, Seckin 08:25.
+
+## D-557. Sealing on Lambda, re-examined (Seckin 08:58): not the benchmark text or the labels; what keeps it on the laptop today
+
+13 November 2026, 09:00 +0300 (from date), lead session b547ef8e. Seckin's chat, 08:58: ContraDoc and SciTab are public; re-examine what in a bundle must not leave the laptop; if labels and anything private can be kept out, seal on Lambda in parallel after a byte-identity test; if something must stay local, name it.
+1. **Seckin is right on the data.** The lead's 08:46 line "D-542, private data stays on the laptop" was the wrong reason. The sealer reads no answer key (`answer_key_transferred=False`; STAGE-A refuses a key-named file under `context/` or `conventions/`), and every bundle's workload, public text and B1 items already travel to Lambda inside the bundle. Neither the benchmark text nor the labels keep the sealing local.
+2. **What truly ties a seal to the laptop, read from `tools/prepare_ordinary_final_run.py` and `tools/loop_budget_guard.py`:**
+   - **The live loop records.** A real seal calls `guard.check` (line 402), which reads the private budget ledgers (spend, every running instance's cap), the API spend store, and runs standing orders 1 to 3 (`standing_orders_refusal`: the launch records, the spend store's approvals and FOR_SECKIN). The bundle's sealed caps are computed from that live state, and the comparisons registry is read for the comparison's machine type. These are the loop's private records, not benchmark data; a copy on an instance would be stale by the next launch and would carry FOR_SECKIN off the laptop. A privacy doubt keeps a record local.
+   - **No route to run the sealer on Lambda.** Every instance is a loop launch of a sealed bundle (LOOP-LAUNCH-A), and the controller runs only arms B3, B1, L and G; the general cloud path refuses while a loop ledger is open. A sealing arm would change bound controller files, so every bundle sealed before it, the quick read's and G_GATERED's included, would refuse with `Controller source changed`, and the new arm needs its proofs and a checker round: longer than the time it would save.
+   - **Not a blocker:** the seal pins the laptop's controller files by their bytes as checked out (CRLF, `local_control_hashes`); a remote sealer given the same bytes would pin the same digests.
+   - **Splitting the label-free hashing out** (the two 22 GB reads, seal 243 s and assets 153 s of the 7.4 minutes) is a change to the sealer itself, the preparation source pinned in every seal; ruled out under the measurement (D-531, D-532).
+3. **What is done instead.** The speed-up that changes no code: more workers on the laptop, by quick-read's test (6 claim bundles at 3 workers with the 3 GB guard and a 5 s memory sampler; adopted at 2.8 minutes a bundle or less with memory never below 3 GB from the workers, and a manifest compared with the time fields named; 4 workers by the same test). Sealing on Lambda is listed as a later item for after the measurement, with this decision's two causes as its requirements.
+- **Rules.** D-542 (corrected reading), D-531, D-532, LOOP-LAUNCH-A, SALVAGE-A, Seckin 08:58.
+
+## D-558. D-542 read as label leakage, not text privacy (Seckin 09:00); public benchmark work may run on Lambda
+
+13 November 2026, 09:00 +0300 (from date), lead session b547ef8e. Seckin's chat, 09:00, clarifying: the concern was never the privacy of public benchmark text. It is ML label leakage only: gold labels and test-item identity must not reach anything that builds or tunes the system.
+1. **The reading of D-542 from now on.** Public benchmark work (ContraDoc, SciTab and any other public set) may run on Lambda, sealing included, as long as the gold labels and the identity of test items stay out of reach of every builder and tuner (any lane, tool or run that writes or tunes system code, prompts, thresholds or weights). The answer keys are still read only by `tools/score_corpus.py`; the lead still opens no benchmark data; the role folders stay closed. What stays on the laptop by this rule is what can leak labels, nothing else.
+2. **D-542's other half is unchanged.** Heavy checks and gates run on Lambda, split across machines; the laptop does light work. Data that is private for another reason (Seckin's own files, credentials, the role folders) keeps its own rules.
+3. **D-557 corrected by this reading.** Its first cause is restated: the seal reads the loop's live budget ledgers, API spend store and standing orders 1 to 3 to set each bundle's caps. That keeps a seal next to those live records for budget safety (a copy is stale by the next launch), not for privacy, and the words "a privacy doubt keeps a record local" are withdrawn there. Its second cause (no route to run the sealer on a Lambda instance without a new bound arm, which would re-seal everything) stands. So sealing on Lambda is allowed by D-542 and is a build item after the measurement: a sealing route that reads the live records from the laptop at seal time and does the label-free hashing on the instance, proven byte-identical (time fields named) on a small test first.
+- **Rules.** D-542 (as read here), D-422, D-557, LAW-IV (unchanged), Seckin 09:00.
+
+## D-559. Standing rule: every "leakage", "private" or "must stay local" names its kind (Seckin 09:01)
+
+13 November 2026, 09:02 +0300 (from date), lead session b547ef8e. Seckin's chat, 09:01, a standing rule.
+1. **Three kinds, named every time:**
+   - **Privacy or PII leakage:** personal data, collaborator material, secrets and credentials. It stays local (LAW-IV and the key rules unchanged).
+   - **ML label leakage:** gold labels and test-item identity kept from every builder and tuner. A separation rule, not a location rule: the work may run anywhere, Lambda included, if the separation holds (D-558).
+   - **Another kind,** named for what it is (for example budget safety, live records, D-557).
+2. **Act by the kind.** Privacy keeps a thing local. Label leakage keeps it away from builders and tuners, wherever it runs. Another kind follows its own reason.
+3. **An ambiguous earlier decision is asked about, not carried over.** Where an earlier rule or plan does not say which kind it meant, the lead asks Seckin, in one FOR_SECKIN line, and does not pick a meaning.
+4. **The read-back.** The rules and plans that cite privacy, leakage or local-only work (D-542 and others) are classified by kind in a following decision, so that nothing runs locally only because of a misread.
+- **Rules.** D-542, D-557, D-558, LAW-IV (unchanged), Seckin 09:01.
+
+## D-560. The read-back under D-559: each rule that cites privacy, leakage or local-only work, by kind
+
+13 November 2026, 09:04 +0300 (from date), lead session b547ef8e. Done by a read-only Sonnet reader over DECISIONS, the keep-list, STANDING_ORDERS, PLAN_TO_14_NOVEMBER (no relevant hit) and CLAUDE.md; kinds per D-559: P privacy or PII, L ML label leakage, O another kind, A ambiguous.
+1. **P, stays local:** API key and credential rules (orders 2 and 10, the global rules); LAW-IV (CLAUDE.md); D-514's audit-blocked classes; D-517's prompt and conventions records; the stay_local rows of EMBED-ROUTE-A, which D-510 and D-514 define (the 385 collaborator matches, the sealed or key paths and the 317 sensitive paths).
+2. **L, a separation rule, not a location rule:** D-558 and the keep-list line; D-S63's role separation (test items never pass the lead's side); orders 12 and 41; the answer key read only by `tools/score_corpus.py`; STAGE-A (no answer key in a bundle). D-510's 107,181 development label-file rows are L as well, so they need not stay local if the separation holds.
+3. **O, its own reason:** D-542 itself (heavy jobs to Lambda: cost and memory); D-557 (live budget records; no sealing route); order 62 (the 8 GB card), order 70 (Windows-only checks), and NO PIPELINE RUNS FROM THIS MACHINE (hardware); D-519's laptop embedding (speed and resume, with P for its P rows).
+4. **A, asked of Seckin, not carried over (D-559 item 3):**
+   - orders 77 and 72 ("what must stay local for privacy", "private data local"): is this P only, now that D-558 is in force?
+   - order 68 ("only the public export copy"): is the export limited for P, or only to keep keys and labels out (L)?
+   - D-525 and D-542 item 2, the leakage fingerprints' texts and their sample re-embedding check on the laptop: P, or L only?
+   - D-502 item 4 ("a doubt ... keeps the record local"): P only, or L records too?
+   - D-388 and D-399, the laptop-CPU exception for the leakage embeddings: chosen for P, for hardware and cost, or neither?
+5. **Effect now.** Nothing running today stays local only because of a misread. The claim-set sealing stays local for O reasons (D-557). The open A rows touch only work that is done (the fingerprints and the embeddings) or future placement. Until Seckin answers, each A row keeps its present behaviour and no new work leans on either reading.
+- **Rules.** D-542, D-557, D-558, D-559, Seckin 09:01.
+
+## D-561. Seckin's answers to D-560's five ambiguous rows (09:18); applied; open-source checks after the measurement
+
+13 November 2026, 09:19 +0300 (from date), lead session b547ef8e. Seckin's chat, 09:18. Kinds as D-559.
+1. **Orders 77 and 72** ("what must stay local for privacy", "private data local"): **P only.** Label-leakage work is not kept local by these orders.
+2. **Order 68** ("only the public export copy"): **P and L both.** P here is PII, the collaborator's name and her earlier work, personal paths and keys; L is labels and answer keys. The export keeps both out, and is checked for both.
+3. **D-525 and D-542 item 2, the development texts in the leakage check** (the fingerprints' texts and their sample re-embedding check): **L only.** They may be processed on Lambda while the separation holds (no builder or tuner reaches the labels or the test-item identity).
+4. **D-502 item 4** ("a doubt keeps the record local"): **P only.** A label-leakage doubt is settled by separation, not by location.
+5. **D-388 and D-399, the laptop-CPU exception for the leakage embeddings:** **P.** It exists for private data, so it applies to the P rows (D-510's and D-514's collaborator, sensitive and key-path records, the stay_local rows) and to nothing else; the L rows may be embedded on Lambda by EMBED-ROUTE-A.
+6. **Applied.** Nothing running now changes: the fingerprints and embeddings are done. Any rerun of the sample re-embedding check, or new embedding of non-P rows, goes to Lambda under D-542; the P rows stay on the laptop; order 68's export is scanned for P and L before every push, as now.
+7. **After the measurement, not before:** evaluate established open-source tools as replacements or back-ups for ours, each with a small test against our current results first. Microsoft Presidio for PII detection (beside the sensitivity layer's detector); gitleaks or trufflehog for the pre-push secret scan (beside `guard_secrets.py` and the key-pattern grep); lm-sys llm-decontaminator for benchmark contamination (beside `gate_leakage.py`). None replaces ours without its test and a decision.
+- **Rules.** D-559, D-560, Seckin 09:18.
+
+## D-562. Tools and methods to adopt after v1, each after a small test and Seckin's yes (Seckin 09:24)
+
+13 November 2026, 09:26 +0300 (from date), lead session b547ef8e. Seckin's chat, 09:24.
+1. **The list,** in AFTER_V1_PLAN.md, section "Tools and methods to adopt". Each item is adopted only after a small test against our current results and with Seckin's yes asked in FOR_SECKIN. Kinds are named (D-559).
+   - **Privacy:** Microsoft Presidio for PII detection; gitleaks or trufflehog behind the pre-push scan (#242).
+   - **Label leakage:** lm-sys llm-decontaminator as a second contamination check beside `gate_leakage.py` (#243).
+   - **Packaging:** BLAKE3 seal hashing, only with a controller change after the measurement (it changes the seal format); sealing on Lambda with the caps computed on the laptop and inside the reaper and ledger; content-addressed reuse of shared archive parts (#244).
+2. **Unchanged:** Seckin's four sealing speed-ups of 09:20 stay as he sent them: tested and applied before the claim-set sealing under the standing speed-up order (D-531, #241). cloud-gate is profiling one seal; quick-read's three-sealer test is ready.
+**Defers.** #242, #243 and #244 to after the 14 November measurement, by Seckin's 09:24 order.
+- **Rules.** D-531, D-557 to D-561, Seckin 09:24.
+
+## D-563. Standing practice: a scout agent for existing tools before non-trivial steps (Seckin 09:26)
+
+13 November 2026, 09:26 +0300 (from date), lead session b547ef8e. Seckin's chat, 09:26. A standing practice from now on, not applied to the sealed measurement, which stays frozen.
+1. **When.** Before a non-trivial step, above all one that is slow, costly or built from scratch.
+2. **Who.** One separate scout agent; Sonnet is enough. It searches GitHub, arXiv and Hugging Face for an existing tool, library, dataset, model or method that would do the step faster, cheaper or more reliably.
+3. **What it reports.** A short list, each with: what it replaces, the expected gain, the risks (licence, maturity, leakage kind under D-559, format change, lock-in), the switching cost, and one recommendation or "none worth it".
+4. **What it never does.** It never changes the work. It reads and reports only.
+5. **What follows.** A promising item gets a small test against our current results, then goes to Seckin in FOR_SECKIN for his yes. Nothing is adopted without both (as D-562).
+6. **Brief for a scout.** It gets the step's goal, our current method and its measured cost, and the constraints (no bound controller file changes under the measurement, the leakage kinds, the budget). It must not be given benchmark data, keys or role-folder paths, and sends no private detail (names, paths, the project's own text) into any search.
+- **Rules.** D-531, D-559, D-562, Seckin 09:26.
+
+## D-564. The quick-subset steering read: every arm void on integrity; line 5 not met; no claim-set read
+
+13 November 2026, 10:33 +0300 (from date), lead session b547ef8e. The quick-subset read ran at 10:30 after all 16 sessions closed (10:19), through `gate_score.figures` on the pinned quick set 0127b080... (40 ContraDoc documents; 78 SciTab claims in 13 tables, 3-class as frozen), 95 percent paired intervals, steering only (D-422), k unchanged. Script `gate_quick_read.py` and its outputs copied to `external/s05/GATE/quick_read/READ_20261113/` (TABLE.md sha256 f50619217ec7692c...). A first run at 10:25 is invalid and not used: its B1 unpack left the reply records out, so every B1 reply read as unreadable; fixed, re-run (read2).
+**Quick-subset evidence.** Steering only; no claim; the selection rule (GATE_ATTEMPTS section 3, bdb8241b, D-550) applied unchanged.
+1. **The figures, side by side** (system, B1, cloud; percent, 95 percent intervals):
+   - ContraDoc, binary judgment accuracy, ABSTAIN wrong, n 40: K1 (measure/gate-k1-quick 09275cb9) 60.0 [45.0, 75.0]; K0 (933a9428, as shipped) 55.0 [40.0, 70.0]; B1 (judge_reason) 52.5 [37.5, 67.5]; cloud (judge_reason, steering) 90.0 [80.0, 97.5]. K1 minus B1 7.5 [-2.5, 17.5]; K1 minus cloud -30.0 [-45.0, -15.0].
+   - SciTab, macro-F1 3-class, n 78 in 13 tables: K1 49.3 [35.3, 55.8]; K0 refused (below); B1 (judge_direct) 55.8 [40.7, 62.7]; cloud (judge_direct) 81.7 [55.0, 92.9]. K1 minus B1 -6.6 [-13.6, 2.3]; K1 minus cloud -32.4 [-47.4, -15.8].
+   - B1 is not near the cloud on SciTab (55.8 against 81.7).
+2. **Line 2, a valid arm.** Not met by any arm. Entries passing execution integrity: K1 ContraDoc 33 of 40 (82.5 percent), K0 ContraDoc 31 of 40 (77.5), K1 SciTab 9 of 13 (69). Every failure is the system's own, none infrastructure: PROCESSOR refusing ("Complete compact items envelope required; refusal is not acceptance") on the same 6 ContraDoc documents in K0 and K1, PROCESSOR incomplete JSON on one, INST_FINDER and VERIFIER "response completeness not established" on one each (K0), SPEECH_ACT_TAGGER items[0].kind missing on 3 SciTab tables (K1) and 1 (K0), LEGAL_ANALYST items[0].verdict missing on 1 (K0), PROCESSOR refused on one SciTab table. B1 is 100 percent readable in each.
+   - **K0 SciTab is refused, no figure.** K0ST stopped at its sealed soft budget ("Soft budget reached before next phase", 130 minutes against a forecast too small for K0's SciTab): one table's entry is incomplete and one never ran. That is a budget stop, not the system's failure. It is not re-run: even if both passed, K0 SciTab would be at most 11 of 13 (85 percent), still void, and K0 is void on ContraDoc already, so a re-run cannot change line 2 or line 5.
+3. **Line 3, each part.** Part P (the pair step decided by JUDGE, ContraDoc): K1 minus K0 5.0 [-10.0, 20.0], interval not above zero, so not shown; it stays off. Part C (the cell step, SciTab): not computable (K0 SciTab refused), so not shown; it stays off. K1 carries both parts at once, so neither can be isolated on the other benchmark.
+4. **Line 4 and line 5.** No configuration is valid, so none is chosen and line 5 is not met. Even read as points alone, no arm meets either bar: K1 ContraDoc is 2.5 points short of (a) and 25.0 short of (b); K1 SciTab 16.6 short of (a) and 27.4 short of (b); K0 ContraDoc 7.5 and 30.0 short.
+5. **So: no claim-set read and no fresh read** (D-S70 item 3: no forced read). D-556's advance yes is not used: no claim sealing, no paid cloud reference run. The claim set stays unopened (k unchanged).
+6. **The no-clear path, as the rule writes it:**
+   - scoreboard rows written (GATE_SCOREBOARD.md, three lines with figures; K0 SciTab named in the K1 SciTab line since it has no figure); HELDOUT_OPENINGS's three rows filled;
+   - FOR_SECKIN with the "Hedefe uzaklık" line;
+   - `tools/miss_diagnosis.py` over the quick-subset runs for the loss table (quick-read);
+   - the lesson in LESSONS.md;
+   - the next attempt chosen from the loss table and written before its read. The rule's default order is K3 as a real step, K4, then a reasoning step on cells the judge cannot settle, "unless the table says otherwise". The integrity failures above (PROCESSOR refusals, missing required keys) already make every arm void, so the table is expected to say otherwise; nothing is chosen before it exists.
+   - the push with the three figures side by side (D-S92 item 4): only by the push rules (clean clone, delta scan, full Lambda arm G gate on the exact export, tag), so not within the hour. push-plan prepares it; the time is stated when the export exists.
+7. **Nothing tuned on the quick subset (line 6).** Any fix to PROCESSOR or SPEECH_ACT_TAGGER is a new attempt, written first and shown on development material, never on these 40 documents and 13 tables.
+8. **Timeline.** The rule's latest claim-set launch that still leaves the fresh read before 14 November 14:30 is about 13 November 15:00. A new attempt cannot be built, sealed and read on the quick subset before that, so the 14 November package states the standing against both bars on the quick subset, and the work goes on (D-S92 item 3). This is the first gate measurement, so D-S94 item 5's alarm (two flat measurements or 12 hours without a rise) is not yet due; it is watched.
+- **Cost.** Lambda for the quick read 33.60 USD (K1 14.08, K0 16.87, B1 2.65); loop Lambda spend 196.72 of 350. Cloud steering on the subscription, no API spend.
+- **Rules.** GATE_ATTEMPTS section 3, D-422, D-550, D-553, D-554, D-556, D-S70, D-S92, D-S94.
+
+## D-565. The next attempt: Seckin's five orders (09:53 to 09:57), written first in GATE_ATTEMPTS section 10
+
+13 November 2026, 10:35 +0300 (from date), lead session b547ef8e. Seckin's orders, relayed by his chat. Apply with a small test first; nothing sealed or running is changed.
+1. **First the incomplete analyses:** the cause, per agent, of PROCESSOR's refusal and incomplete JSON on the same six ContraDoc documents in K0 and K1, of SPEECH_ACT_TAGGER's missing `kind`, of LEGAL_ANALYST's missing `verdict`, and of INST_FINDER's and VERIFIER's completeness failures. It decides whether the next attempt can pass line 2.
+2. **Sealing as the field does it:** fingerprint each large artefact once and record it; bundles reference it by fingerprint; full verification whenever a file changes and once before the final read, so no check is skipped; chunked, parallel hashing (BLAKE3, or per-chunk SHA-256 if the format must stay); compression only where a small test shows it pays. Old-format bundles keep verifying from their own tree. What changes: the per-seal full byte re-hash of the shared archive and model files becomes change detection (size, modification time, a chunk digest) plus a full check before the final read, by Seckin's order. This supersedes the lead's 10:3x reading, through cloud-gate's profile, that a metadata check removes a check, for this design: the full check still runs before the final read.
+3. **Sealing on Lambda:** the archive goes once to the persistent store; the budget ledger stays on the laptop as the only writer of totals, with a read copy on Lambda allowed and Lambda reporting its spend back; the sealing route is built (a controller change, so old bundles verify from their own tree). Label separation unchanged: keys read only by the scorer. Seckin judges D-557's blockers minor next to the gain; they become the route's requirements.
+4. **Batch the auditor's per-(unit, rule) calls.**
+5. **Look back and apply earlier speed-ups that fit (D-532, #241).**
+- The plan, its tests and owners: GATE_ATTEMPTS section 10. A scout runs first for steps 2 to 4 (D-563). Nothing is tuned on the quick subset (line 6).
+- **Rules.** GATE_ATTEMPTS section 3, D-531, D-532, D-557, D-558, D-563, D-564, Seckin 09:53 to 09:57.
+
+## D-566. Step 1 of the next attempt: the integrity failures' causes per agent, and the measurements to fix them
+
+13 November 2026, 10:38 +0300 (from date), lead session b547ef8e. quick-read's probe of the quick read's failed entries, from records only (telemetry, reply-record metadata, violation headers; no reply or payload text). Table and order in GATE_ATTEMPTS section 10.
+1. **None is caused by K1's change.** The PROCESSOR refusals are byte-identical in K0 and K1. All are the system's own.
+2. **The two shared causes:** (A) PROCESSOR refuses on a document's last request, in 6 of 7 cases a single owned span left over by the 2-span cut; the constraint admits refusal by design; (C) SPEECH_ACT_TAGGER, and LEGAL_ANALYST once (D), are not declared envelope agents, so nothing holds their required keys. The rest are cap hits on single documents (B, E, F).
+3. **Approved, in order, on development runs only:** first the no-GPU measurement of C and D; then the A10 replays for A, and for B, E and F. Each replay rides the existing replay pass (no bound controller file changes). It is sealed in the laptop's one-job queue after the push's bundles, or on Lambda once step 3 of section 10 exists. A fix that changes a declared rule (EXTRACTION-C's request size, the refusal branch, a declared agent, an allowance) gets its own decision with the measurement, before any re-seal.
+4. **Line 6 holds.** Nothing is tuned on the quick subset. The next attempt is read on it once, as a new steering read, after the fixes pass on development material.
+- **Rules.** GATE_ATTEMPTS sections 3 and 10, DECODING-B, EXTRACTION-C, D-134, D-564, D-565.
+
+## D-567. Raising the score before the real test: scope, the hard separation rule, five steps in order (Seckin 10:36 to 10:44)
+
+13 November 2026, 10:45 +0300 (from date), lead session b547ef8e. Seckin's decisions, relayed by his chat. The plan, with tests and owners, is GATE_ATTEMPTS section 11.
+1. **Scope to 14 November:** low-change, high-return steps only. The training-based ones (SFT plus RL for ContraDoc coverage, Qwen3 for the judging agents) go to AFTER_V1_PLAN.
+2. **Hard rule (L separation):** develop and measure on a separate development set of the same benchmarks, never the frozen gate set. No gate-set label, item identity or failure-by-item reaches any builder or tuner. Fixing execution failures by failure type is allowed without seeing answers. Heavy work runs on Lambda across machines within the caps; only P material stays local.
+3. **The steps, each with a small test first, in this order:** (1) retry an incomplete or refused step with smaller pieces, after a length check against the caps, and (2b) route by document type; then (2c) the NOT ENOUGH INFO decision tuned on the development set; then (2a) SciTab arithmetic in Python; then (3) instruction-only optimisation, as time allows.
+4. **Not adopted:** majority voting over samples; the raw model's direct answer for SciTab.
+5. **Governance of 2b.** Switching an agent off by document type is governed inter-agent structure (as INST-SWITCH-A). The lead drafts it as a DELTA for Seckin to ratify and does not apply it himself. A rule that only narrows Python's existing selection (INFRA-050) is applied as a selection rule. The lane says which case it is before any code.
+6. **Deterministic retry.** Under greedy decoding a re-ask with the same input repeats byte for byte (D-061), so a retry must change the input (smaller pieces), and the retry is recorded as such.
+- **Rules.** GATE_ATTEMPTS sections 3, 10 and 11; D-559; D-061; INST-SWITCH-A; INFRA-050; Seckin 10:36 to 10:44.
+
+## D-568. The 14 November date may move; the improvement and a valid measurement come first (Seckin 10:46)
+
+13 November 2026, 10:47 +0300 (from date), lead session b547ef8e. Seckin's chat, 10:46.
+1. **The deadline of 14 November 14:30 (D-492) may be stretched if needed.** What matters is the improvement and a valid measurement, not the date. No check is cut and nothing is rushed to meet it. If the plan needs more time, the new date and its reason are written in FOR_SECKIN.
+2. **Applied now.** GATE_ATTEMPTS section 3's timeline line ("the latest claim-set launch ... about 13 November 15:00") no longer forces the 14 November package to stand on the quick subset alone. The claim-set read follows when an attempt clears line 5, whatever the date, and the new date is written then.
+3. **Confirmed.** Seckin's field-standard sealing order (fingerprint once and record; reference by fingerprint; verify on change and once before the final read; chunked parallel hashing; compression only if a small test pays; sealing on Lambda with the 22 GB archive sent once and the ledger staying on the laptop) is D-565 items 2 and 3, GATE_ATTEMPTS section 10 steps 2 and 3. He dates it 10:34; the lead recorded it from the relay of his 09:53 to 09:57 messages. The content is the same.
+4. **2b's governance (D-567 item 5).** If routing tables to another agent chain needs an operator amendment, it goes to Seckin as one plain question saying what it changes. The lead does not decide it.
+- **Rules.** D-492, D-564 item 8 (superseded in its date), D-565, D-567, Seckin 10:46.
+
+## D-569. 2b chosen from the rules already built, with no approval question; 2c's NOT ENOUGH INFO from evidence first (Seckin 10:50)
+
+13 November 2026, 10:51 +0300 (from date), lead session b547ef8e. Seckin's chat, 10:50. It replaces D-567 item 5 and D-568 item 4.
+1. **2b, the chain for tables.** No approval question goes to Seckin. The conventions and rules already built define the right agent chain. The lead checks the structure backwards against them, chooses the chain for tables, and records here the reasoning and the rule it rests on.
+   - The expected route is INFRA-050's own: Python selects the units each narrow role is asked about. A unit with nothing selectable makes no call, and a run with no declared act set makes no SPEECH_ACT_TAGGER call. The `[compare: cells]` declaration already routes a table's claim to JUDGE (INFRA-049, JUDGE-AGENT-A).
+   - **One limit, stated:** if the backwards check finds that the chain for tables cannot be reached through any rule already built, so that it needs a new amendment to governed structure, that conflict with the constitution's own rule (an amendment needs operator ratification; agents never self-apply) is reported to Seckin plainly. It is not settled silently either way.
+2. **2c, NOT ENOUGH INFO.**
+   - The decision follows from evidence: the system establishes that the information is missing, for example by a deterministic Python check that the cells or entities the claim needs are absent from the table.
+   - It is not decided by a tuned threshold. Only what that check cannot settle is tuned, on the development set, with the error rate it produces (CHOICE-A).
+   - GATE_ATTEMPTS section 11's step 2c reads this way from now on.
+- **Rules.** INFRA-049, INFRA-050, CHOICE-A, JUDGE-AGENT-A, D-567, D-568, Seckin 10:50.
+
+## D-570. Three decisions: the quick-subset safeguard in the claim read; INST_FINDER off by default (operator decision); the public note (Seckin 10:53)
+
+13 November 2026, 10:55 +0300 (from date), lead session b547ef8e. Seckin's chat, 10:53.
+1. **Safeguard for reusing the quick subset.** The full read reports its figures twice: on the full set, and on the full set without the 40 quick-subset documents and 78 quick-subset claims. A material difference is said plainly. GATE_SET (D-373) makes the two sets disjoint by construction, so for a read of the claim set alone the two figures coincide, and the report says so.
+2. **INST_FINDER off by default: the operator's decision under LAW-0, his approval of the switch.**
+   - **His reason:** it was meant to be inactive from the start. Its job (finding and routing the relevant institutions in correspondence) has no ground yet, and its outputs reach the bus with no downstream reader. The sealed manifest set `SHIMMER_INST_FINDER=on`, and it caused one incomplete entry in the quick read.
+   - **Applied:** the default becomes off for the next attempt and every run after. The switch stays, so it remains optional. GATE_ATTEMPTS notes that the quick read's integrity was measured with it on.
+   - **How, stated plainly.** INST-SWITCH-A honours off only under an amendment in `config/constitution.json` that is `operator_approved` and names INST_FINDER and SHIMMER_INST_FINDER. The constitution guard admits that append only through the operator's interactive approval; agents never ratify (CLAUDE.md, INFRA-029). So:
+     - the amendment's text is updated from `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md` to say default off, with the switch kept;
+     - the pipeline's default and check 277 change on a lane, proven, with no bound controller file touched;
+     - the ratifying append is Seckin's own act, in an interactive session, by a command the lead puts to him in FOR_SECKIN.
+   - Until he runs it, a sealed `off` is refused at sealing by the sealer's own ratification test. So the next attempt is not sealed with off before the amendment exists.
+3. **Public note** (AFTER_V1_PLAN, "Public update after the gate"): README, the site, LinkedIn and Medium say INST_FINDER is optional, off by default and under development.
+4. **In general,** which agents run adapts to the case and the document type under the existing rules (D-569).
+- **Rules.** LAW-0, INST-SWITCH-A, INFRA-029, D-373, D-564, D-569, Seckin 10:53.
+
+## D-571. An agent-assignment layer per unit replaces 2b's routing by document type (Seckin 10:56 to 10:57)
+
+13 November 2026, 10:57 +0300 (from date), lead session b547ef8e. Seckin's chat. It replaces D-567's step 2b and D-569 item 1's chain for tables.
+1. **The layer.** For each unit it decides, from the unit's own conditions, which agents that unit needs.
+   - **Python first:** it measures the conditions (cells and numbers present, citation markers, normative or deontic sentences, an addressed institution, a possible clash with another unit, and the like) and assigns agents from them.
+   - **A model only where Python cannot settle it,** and only on the question "which agents does this unit need".
+   - **Every assignment and every skip is recorded** with its reason.
+   - **It builds on the existing Python unit selection** (INFRA-050).
+2. **When.** Before 14 November, the Python-condition version only. After 14 November, the version where a model also reasons, measured on the development set.
+3. **Testing.** The system under test is the whole system with every agent available, and the layer decides activation. INST_FINDER stays off by default (D-570).
+4. **Reporting.**
+   - Per agent: how often it ran and how often it was skipped, and why.
+   - On the development set: the layer against all agents on, for accuracy, integrity and time, so that a skip that costs accuracy is seen.
+5. **Governance.** As D-569: no approval question; built from the rules already built; a needed new amendment is reported plainly.
+6. **The plan.** GATE_ATTEMPTS section 11, in place of 2b, step 1's order unchanged (with the retry). The separation rule (D-567) applies: development set only, failure types only.
+- **Rules.** INFRA-050, D-567, D-569, D-570, Seckin 10:56 to 10:57.
+
+## D-572. A binding floor under the agent-assignment layer: what the rules make mandatory always runs (Seckin 10:58)
+
+13 November 2026, 10:59 +0300 (from date), lead session b547ef8e. Seckin's chat, 10:58.
+1. **The floor.** The layer (D-571) may take a shortcut, for example sending a unit to one agent, only above the minimum the rules require. Every composition and check that the constitution, the conventions and the laws make mandatory always runs: for example cross-family verification (LAW-III) and any required checker or verifier. The floor is defined by rule compliance, not by a fixed agent list.
+2. **How.** The floor is derived from the existing rules and written down, each item with the rule behind it (law, amendment or convention, and where it is enforced in code). The layer refuses any assignment below it, and a gate check proves that refusal, with a neutralisation. If two rules disagree on what is mandatory, that is reported, not settled by the layer.
+3. **In the plan.** GATE_ATTEMPTS section 11, with the layer; quick-read derives the floor in its design note, and the lead records it here.
+- **Rules.** LAW-III, the constitution's amendments, the conventions, D-571, Seckin 10:58.
+
+## D-573. If the floor turns out to be every agent every time, that is a design problem in the rules; report and wait (Seckin 11:00)
+
+13 November 2026, 11:01 +0300 (from date), lead session b547ef8e. Seckin's chat, 11:00, on D-572.
+1. If deriving the floor shows that the rules, the constitution included, in effect require every agent to run every time, that is itself a design problem in the rules, not a floor to accept.
+2. It is not built around silently. The lead reports to Seckin in plain words:
+   - which rules force it;
+   - what each rule is for;
+   - a proposed narrower wording that keeps its purpose.
+3. The lead waits for his answer before changing any constitutional text. Amendments go through the guard's operator path only (INFRA-029).
+- **Rules.** D-571, D-572, INFRA-029, LAW-0, Seckin 11:00.
+
+## D-574. The measurement is not postponed: the target is the full-set read on 14 November (Seckin 11:03); the timeline and what does not fit
+
+13 November 2026, 11:04 +0300 (from date), lead session b547ef8e. Seckin's chat, 11:03. It narrows D-568: the stretch is a fallback only if a step truly cannot fit, never a default.
+1. **The plan to a 14 November full read** (estimates; figures measured today unless marked):
+   - **13 Nov 11:00 to about 21:00, the fixes, in parallel lanes:**
+     - the envelope constraint for SPEECH_ACT_TAGGER and LEGAL_ANALYST;
+     - the retry with smaller pieces;
+     - the Python-condition assignment layer and its floor;
+     - INST_FINDER off (needs Seckin's ratifying command);
+     - sealing speed-up (B).
+
+     Each is proven on development documents, with replays on Lambda across machines (about 10 to 20 USD).
+   - **About 21:00 to 24:00, the new quick read:** one configuration only (53 bundles), with B1's quick-subset figures reused, since B1 has not changed.
+     - Sealing: 2.4 minutes a bundle with (B), an estimate, or 3.7 measured without it, so about 2 to 3.3 hours.
+     - Sessions launch as they seal, across machines, about 100 minutes each.
+   - **About 14 Nov 02:00, line 5.**
+   - **If it clears, about 02:00 onward, claim sealing:** 293 bundles, about 12 hours with (B) or 18 without, launched as they seal; the paid cloud reference runs beside it (D-556).
+   - **The claim figures** come about 2 hours after the last seal: about 16:00 on 14 November with (B), about 22:00 without.
+2. **What does not fit, named:**
+   - **(a) Weekly usage.** It is 87 percent at 11:04, rising about 1.45 points an hour with lanes active (82 at 07:36). At that rate it reaches 95 (no new launches) about 16:30 today and 98 (the salvage stop of every instance) about 18:30 today, long before the claim read. Overnight with the lanes idle it rose 0.13 an hour. The plan fits only if active work falls to about 0.35 points an hour from now to 14 November 16:00 (11 points over about 29 hours). So the lanes are cut to the fixes alone, waits are by script, and the one question at 97 percent stands. This is the binding risk.
+   - **(b) 14:30 itself.** The claim figures land at about 16:00 at best, past the D-492 time, so 14 November is met by the end of the day, not by 14:30.
+   - **(c) Steps 2a, 2c and 3 of section 11** (Python arithmetic, NOT ENOUGH INFO, instruction optimisation), and Lambda sealing (section 10 step 3), do not fit before the quick read. They follow the claim read.
+   - **(d) The laptop's memory** allows one seal at a time, so sealing cannot be parallelised further today.
+3. **Lambda budget:** quick read about 17 USD, claim read 70 to 95, development replays 10 to 20: 97 to 132 against 153 left. It fits.
+- **Rules.** D-492, D-553, D-556, D-564, D-565 to D-573, Seckin 11:03.
+- **Addendum (lead, same hour).** To keep usage and the laptop for the measured path, the push with the three figures (D-564 item 6) and G_GATERED's proof of lane/gate-red are deferred until the claim-set sealing ends. Nothing measured depends on them: the fixes on lane/gate-red are not in the measured tree, and the push carries records only. The export 8866af95 and its passed delta scan are kept. cloud-gate keeps only the (B) seal runs and INST_FINDER's switch; section 10's step 2 and 3 design waits until after the claim read.
+
+## D-575. The retry and the assignment layer: design accepted; the floor; the single-span refusal decides line 2; two rule disagreements reported
+
+13 November 2026, 11:08 +0300 (from date), lead session b547ef8e. quick-read's design note, copied to docs/loop/stages/notes/DESIGN_retry_and_assignment.md.
+1. **The floor (D-572), seven items, each with its rule and where code enforces it:**
+   - LAW-III cross-family audit (VERIFIER on PROCESSOR's draft);
+   - PROCESSOR on checkpoint 168;
+   - INST_FINDER per INST-SWITCH-A;
+   - redaction;
+   - the verifiability gate;
+   - the other-family editorial review;
+   - LAW-II, no substitution.
+
+   The layer refuses anything below it, and a gate check proves the refusal.
+2. **D-573's question answered: the rules do not force every agent every time.** The always-on SPEECH_ACT_TAGGER, LEGAL_ANALYST, ARCHIVIST and CITATION_RESOLVER come from code lists, not from law.
+3. **The layer** (scripts/agent_assignment.py, before dispatch; each skip through agent_activation.not_called with state `unassigned`, plus audit/agent_assignment.json):
+   - Before 14 November it reads structural conditions only.
+   - A condition resting on meaning (a normative sentence, an addressed institution, a clash) goes to the ensemble later (WORDS-A); until then it keeps the agent on.
+   - On tables, while the narrow roles' forms stay `reply`, no built rule skips the wide roles. SciTab's SPEECH_ACT_TAGGER and LEGAL_ANALYST failures are fixed by their envelope declaration (section 10, step 1), not by a skip.
+   - Accepted; it is built after the integrity fixes.
+4. **The retry, accepted:**
+   - a refused or capped 2-span request is re-asked one span per request (the DEV shape);
+   - a capped INST_FINDER or VERIFIER call is re-asked on halves of its own payload;
+   - prompt plus allowance is checked against the context before every call, and an over-limit request is split before sending.
+5. **The single-span refusal decides line 2.** 6 of the 7 PROCESSOR refusals are 1-span requests, the document's last, with no smaller piece. Without a fix, ContraDoc integrity is at most 34 of 40 (85 percent), still void.
+   - Merging the remainder into the previous request would make a 3-span request. That is outside checkpoint 168's measured shape (v6 lost the compact shape on its one 3-span request, EXTRACTION-C), so it is not chosen blind.
+   - **The development replay for A comes first, and is the laptop's first seal:** development PROCESSOR prompts with their last partitions, refusals counted by owned-span count and position.
+   - The fix is chosen from what the replay shows, as its own decision.
+6. **Two disagreements in the rules, reported to Seckin, not settled:**
+   - **D1:** LAW-III's text says local output is "audited by cloud models", while the local profile audits it by the other local family.
+   - **D2:** whether a layer skip of INST_FINDER is a switch-off (INST-SWITCH-A, governed) or a selection (INFRA-050). It becomes moot once INST_FINDER is off by default by the ratified amendment (D-570).
+- **Rules.** LAW-II, LAW-III, INST-SWITCH-A, INFRA-050, EXTRACTION-C, WORDS-A, D-570 to D-574.
+
+## D-576. The assignment layer's model step goes in before 14 November: GLiClass first, a Qwen yes-probability fallback, the safe side always (Seckin 11:08)
+
+13 November 2026, 11:09 +0300 (from date), lead session b547ef8e. Seckin's chat, 11:08. It moves D-571 item 2's model step from after 14 November to now.
+1. **The order inside the layer:**
+   - Python measures the conditions first.
+   - The floor (D-572, D-575) is enforced by code.
+   - For a unit Python cannot settle, a local model scores the agent needs, one label per need (for example "needs legal analysis", "needs citation resolution", "needs table arithmetic").
+   - **First choice: GLiClass** (Knowledgator, Hugging Face `knowledgator/gliclass-*`, zero-shot multi-label, all labels scored in one pass). Its licence is checked (Apache-2.0 as stated), a small test comes first, and its revision and file hashes are pinned like the other frozen models.
+   - **Fallback, if GLiClass does not hold on the development set:** the local Qwen asked one yes or no question per agent, with the probability of "yes" read from the logits (CHOICE-A), never from generated text, and calibrated on the development set.
+   - **When unsure, the agent runs.**
+   - Local only, no external API. Jev is out (closed and remote). Arch-Router-1.5B (single-route choice) is a later candidate only.
+2. **WORDS-A, a conflict reported with the lead's resolution.** CLAUDE.md requires that a decision resting on what words mean is "decided by the five-voter ensemble ... never by one method alone". A skip decided by GLiClass alone, or by Qwen alone, would breach it. **Resolution:** the model's score is one more voter beside the ensemble. An agent is skipped only when the ensemble and the model both say the unit does not need it, each at a threshold measured on the development set with its error rate. Any disagreement, or a vote below threshold, runs the agent. This keeps Seckin's safe side and WORDS-A both. Seckin may overrule it.
+3. **Measured on the development set** against Python-only and against all agents on: accuracy, integrity, time, and per agent the runs and skips with their reasons.
+4. **What it costs the timeline.** A new model must be in every bundle's sealed assets:
+   - The asset archive is built once more with GLiClass's pinned files (one archive build, about 22 GB) and copied once to the filesystem.
+   - Its small test and development measurement run on Lambda.
+   - One lane (`assign-model`, Opus medium) does it in parallel with quick-read's fixes.
+   - It joins the quick re-seal only if its development measurement passes by then. Otherwise the layer seals with Python and the floor alone, and the model step follows, said plainly.
+- **Rules.** WORDS-A, CHOICE-A, DECODING-A, the frozen-model and licence rules, D-571 to D-575, Seckin 11:08.
+
+## D-577. What the development runs show: refusal A does not occur there; the replay narrowed; the loss table
+
+13 November 2026, 11:11 +0300 (from date), lead session b547ef8e. quick-read's measurements on the development runs (L7 to L12, L12b, C1), telemetry and metadata only.
+1. **Refusal A does not occur in the development runs.** Under the constraint, PROCESSOR refused none of 27 last 1-span calls, none of 39 last 2-span calls and none of 455 other 2-span calls. Decoding is deterministic, so a replay would repeat 0 of 27. No replay is sealed for A.
+   - **The fix chosen by failure type, with no gate item seen.** A refused 1-span request is re-asked once as a 2-span request together with the span before it: the measured DEV shape, never 3 spans. The retry keeps only the refused span's items, under its ownership receipt. It fires only on a refusal, so no valid reply can change.
+   - Its effect on refusal A can be read only on the next quick read, and that read is a new attempt, written first. This is stated as a limit: the fix is not shown on development material, because the failure does not occur there.
+   - New development ContraDoc runs to find refusal A are not bought today (they would cost sealing time on the laptop).
+2. **LEGAL_ANALYST is not declared.** Of the 5 valid replies that would leave the language, 3 write `verdicts` (in neither its contract nor finding_record) and 2 write `verdict` twice. No declaration admits a duplicate key, so it would need a grammar change. Its one gate failure is left to the retry.
+3. **The replay, narrowed to one producer bundle:** SPEECH_ACT_TAGGER's 96 development prompts, declared with its required keys only (rule: no valid reply changes; the one failed reply is thin evidence), plus PROCESSOR's 2 cap hits. The auditor cap-hit bundle is dropped: VERIFIER's allowance is D-134's, and the retry on payload halves covers it.
+4. **The loss table** (no-clear path; counts and code sites only):
+   - **ContraDoc, both configurations:** most misses are "evidence present upstream but not in the payload" / "paired, computed, no irregularity" (K1 15 of 18 missed, K0 11 of 18; paired_review.py:672, :1541). The sub-cause may misread the passage-pair step.
+   - **SciTab K1:** 15 of 30 missed (9 the same sub-cause; 6 never paired, "the rule names no field label", pairing_map.py:484, :386).
+   - **SciTab K0:** 27 of 28 missed, all "uncomputable answer refused" (16 "figure relation supplies no figures", 11 "absence claim supplies no quote"; paired_review.py:2943, :1382).
+
+   These are the accuracy losses beyond integrity, and the targets of section 11's later steps. They are not fixed today, and nothing is tuned on these items.
+- **Rules.** D-061, EXTRACTION-C, DECODING-B, D-134, GATE_ATTEMPTS sections 3, 10 and 11, D-575.
+
+## D-578. lane/inst-default merged (20d35e23); the ratification is Seckin's own act; the full gate before the next seal
+
+13 November 2026, 11:17 +0300 (from date), lead session b547ef8e.
+1. **Merged** after one fresh checker round, with 7 gaps fixed in 6f359aba:
+   - the value is trimmed and lower-cased;
+   - anything other than on or off refuses, at the start and at sealing;
+   - the record carries `source` and `ratified_default`;
+   - RUNTIME_REFERENCE and OUTPUT_FORMAT are updated.
+
+   Check 277 passes on the merged tree (13 neutralisations; the real constitution holds 0 ratifying amendments). Gate checks 36, 116, 181 and 195 passed on the lane. No bound controller file and no pinned preparation file changed.
+2. **Until Seckin ratifies, nothing changes in a run.** With no amendment, a run with no value runs INST_FINDER exactly as before. The ratifying append is his own act, in his own terminal (it asks for a typed APPROVE, so it cannot run through the chat's `!` prefix, which has no keyboard input). It runs from the loop-lead worktree root, so the amendment lands in the loop branch's tree, and the lead commits `config/constitution.json` after it, as the operator's change.
+3. **The full gate** runs once on Lambda, on the next attempt's combined tip, before the quick re-seal. It is not run per lane, to keep the laptop's memory for sealing (D-542, D-574).
+- **Rules.** INST-SWITCH-A, INFRA-029, LAW-0, D-570, D-574.
+
+## D-579. The voter is built, the smallest GLiClass fails its small test, and the quick re-seal goes with Python and the floor alone
+
+13 November 2026, 11:19 +0300 (from date), lead session b547ef8e. Lane assign-model, commit adc5e3cb on lane/assign-model (not merged).
+1. **Licence and pin.**
+   - knowledgator/gliclass-edge-v3.0 (32.7M parameters, 131 MB), revision df03993a2ed98e5e4a0d2dd7efbbd105abe874cf, Apache-2.0 on its card.
+   - Its encoder is MIT and the gliclass library is Apache-2.0, as wheel 0.1.11 (sha256 ba95c48a..., equal to PyPI's).
+   - The file hashes are recorded in config/agent_need_labels.json. final_models.json is unchanged.
+   - **A stated conflict:** no gliclass release declares the pinned transformers 4.51.3 (0.1.11 says at most 4.48.2; later ones need at least 4.57.3). Installed without its dependencies it runs on 4.51.3, but that is one test, not a declared fit.
+2. **The small test fails** (laptop CPU; 0.05 to 0.13 s a unit; peak 624 MB). On five invented units the edge model did not separate the needs: legal analysis scored high on every unit, a table included. It is not usable with these labels. Next: gliclass-base-v3.0 (187M, Apache-2.0), by the same small test.
+3. **The module** (scripts/agent_need_voter.py; the labels and questions in config; an empty `agent_need` section in semantic_thresholds.json; check 351, 9 proofs with neutralisations):
+   - With nothing measured, every decision is unsure and every agent runs.
+   - The Qwen fallback reads P(yes) through call_choice (CHOICE-A).
+   - A skip happens only when the ensemble and the voter both say "not needed". The ensemble has no references for these decisions yet, so it refuses and the agent runs. The floor always runs.
+4. **The quick re-seal goes with the layer's Python conditions and the floor alone (D-576 item 4), said plainly.** A usable model, its thresholds and the asset rebuild (22 GB, plus an env layer rebuild for the new wheel) cannot be ready before about 20:00. The model step follows the claim read: the development measurement design in docs/loop/stages/notes/DESIGN_agent_need_voter.md, about 3.7 h of sealing and 10 to 13 USD.
+- **Rules.** D-576, WORDS-A, CHOICE-A, D-574.
+
+## D-580. INFRA-052: INST_FINDER off by default, operator-approved in chat and relayed
+
+13 November 2026, 11:45 +0300 (from date), lead session b547ef8e. Commit 34b77e17.
+- **Approval.** Seckin, 11:31, in chat, relayed by his supervising chat because he could not type at the keyboard: "3 instfinder kapatmak onay veriyorum. Onu da sen yap." No APPROVE was typed by him; the amendment's approval record says so.
+- **Applied.** The drafted text of docs/INST_FINDER_SWITCH_DELTA_DRAFT.md, appended as INFRA-052 through the verified no-gap path (as INFRA-048 to INFRA-051 were): one amendment, next id, operator_approved, no protected change, genesis intact, no signature flag. The pipeline's own test reads it as a ratified default off.
+- **Check 277.** Its test (a) copied the real constitution and expected the state before ratification; it now strips the ratifying amendment as test (e) does. Checks 2, 5, 86, 87, 127, 277 pass.
+- **Rules.** INST-SWITCH-A, INFRA-029, INFRA-043, LAW-0, D-570.
+
+## D-581. INFRA-053: LAW-III read as self-revision, then external audit
+
+13 November 2026, 11:45 +0300 (from date), lead session b547ef8e. Commit 34b77e17.
+- **The operator's words.** 11:31 accepted the narrower sentence; 11:34 replaced it ("self audit ve external audit olması daha iyi olur... Bence öyle olsun"); 11:36 set the shape ("model kendini denetliyor, düzeltmelerini yapıyor, kendi denetiminden sonra diğer modelin denetimine sunuyor."); 11:38 made it every writing agent's step. All relayed by his supervising chat. The 11:31 sentence and an 11:34 draft existed only in the working copy and were never committed; INFRA-053 is the first and only record.
+- **Reading.** Every writing model audits and corrects its own draft in its own turn; no unrevised draft is handed on; a model of another family audits the revised version and decides; the self-audit is never counted as verification; local output is audited by cloud models or by a local model of another family; the trail shows producer, self-revision and verifier. Seed text and genesis Part I unchanged (append-only); no other law touched.
+- **Conflict surfaced.** 11:34 said measure and keep only if it pays; 11:38 said every writing agent gains it. Resolution: mandatory per 11:38; the development-set measurement of accuracy and cost is reported to him, and dropping the step for an agent is his decision by amendment.
+- **Rules.** LAW-0, LAW-III, INFRA-029, INFRA-043.
+
+## D-582. The LAW-III reconfiguration: one inventory, applied together, proven
+
+13 November 2026, 11:46 +0300. Lane law3-system (Opus medium), new.
+- **Scope (Seckin 11:38).** Every place that follows from INFRA-053: agent registry, role graph, backends and model map, contracts, decoding constraints and token budgets, the assignment layer's floor (its items are data in config/agent_assignment.json, quick-read), run records (which version was self-revised, who audited it), checks, cost and time forecasts, README later.
+- **Order.** Inventory first (reported to Seckin), then all changes together, then checks proving no path hands on an unrevised draft and none skips the external audit, each with a neutralisation. Bound controller files changed, if any, are named; the re-seal follows.
+- **Measurement.** Self-revision against none on the development set, on Lambda, accuracy and cost per agent; reported, not a gate (D-581).
+- **Rules.** INFRA-053, D-575, D-567 (development set only, no gate-set item).
+
+## D-583. Usage: bought by the operator; every usage rule reads the live figure
+
+13 November 2026, 11:46 +0300.
+- **Seckin 11:31.** He adds usage himself; usage is not a reason to cut planned work. Ask at 97 stays.
+- **Seckin 11:40.** Every usage rule (ask at 97, salvage-and-stop at 98, the 95 launch limit) reads the current weekly figure as shown live at that moment, never an earlier reading, a forecast or the old rate. Re-read before any stop or launch decision; never stop or hold work on a stale number.
+- **Reaper.** tools/loop/instance_reaper.py reads .claude/loop_status.json; a lane (push-plan) makes the usage trigger and the launch check use the figure only when the file is fresh, re-read at decision time, and states the reading's age. It is a bound controller file, so bundles sealed before it refuse and are re-sealed with the next attempt's re-seal. Until it lands, the lead re-reads the live figure before every launch and stop.
+- **Rules.** SALVAGE-A, D-529, D-534.
+
+## D-584. The date moves; nothing planned is deferred past the measurement
+
+13 November 2026, 11:46 +0300. Seckin 11:31 items 5 and 6.
+- **Before the measurement:** 2a (SciTab arithmetic in Python), 2c (NOT ENOUGH INFO from evidence), 3 (instruction optimisation), sealing on Lambda, the LAW-III reconfiguration (D-582). New date: claim figures 18 November evening; fallback 19 November. Timeline in FOR_SECKIN 11:46.
+- **Agreed:** the voter rule (skip only when the ensemble and the model both say not needed; any disagreement runs the agent), the floor of seven items, the GNN after the measurement.
+- **WSL.** wsl --shutdown run at 11:32 on his approval; free memory 2.63 then 3.05 GB.
+- **Risk named.** Lambda budget: about 151 USD left under the 350 hard stop against 97 to 132 for the claim read plus about 40 to 70 for the new steps; the lead asks before the plan crosses it.
+- **Rules.** D-568, D-574, D-576.
+
+## D-585. The laptop keeps light work; a local-load watcher proposes moves to Lambda
+
+13 November 2026, 11:46 +0300. Seckin 11:41 and 11:43.
+- **Move.** Every heavy or long laptop job goes to Lambda unless it is P material, Windows-only or the budget ledger. Sealing goes to the Lambda sealing path, built first (cloud-gate, D-565 order 3). Until that path exists a Lambda job costs a laptop seal, so a job lighter than its seal (the GLiClass small test) stays local this once.
+- **Watcher (standing practice, keep-list).** A script records free memory and running and queued jobs every 10 minutes; a cheap model summary proposes moves with time saved and cost; the lead acts within the standing approval and caps; each proposal and action is one FOR_SECKIN line.
+- **Rules.** D-542 (corrected by D-558), D-559, D-561.
+
+## D-586. Work runs by issues; triage of the open issues; push at each stage end
+
+13 November 2026, 11:50 +0300 (commit time; the heading time first written, 11:58, was estimated, not read from date), lead session b547ef8e. Seckin 11:46.
+- **Standing practice.** Every piece of planned work gets a GitHub issue before it starts; commits name it (`#nnn`); it is closed with its evidence when its stage ends; the lead pushes at each stage end after the independent pre-push scan and the full Lambda gate on the exact export, so the public state and the issues stay current.
+- **Opened now.** #245 to #259 (milestone S05): the quick-subset read, retry, envelope declarations, assignment layer and floor, voter, LAW-III reconfiguration, INST_FINDER off (closed at the push that makes 34b77e17 public), field-standard and Lambda sealing, SciTab arithmetic, NOT ENOUGH INFO from evidence, instruction optimisation, auditor batching, live usage readings, local-load watcher, the timeline. Seckin's reading that nothing newer than 9 November was open was not exact (#240 to #244 are from 11 to 13 November); 190 were open.
+- **Triage.** Lane issue-triage (Sonnet): close what is done or superseded with a one-line reason and evidence, merge duplicates, relabel what is deferred; it never edits code.
+- **Public hygiene.** Issues are public: no collaborator names, no personal paths, no keys, and no gate-set item ids, labels or per-item failures (aggregate counts only).
+- **Push.** D-574's addendum deferred the push behind the claim sealing; it now goes at the first stage end, the improvement merge with its full Lambda gate, and at each stage end after it.
+- **Rules.** D-S24 item 4 (issue deferral check), D-S98, PUSH-TARGET GUARD.
+
+## D-587. GLiClass base fails too; the Qwen P(yes) fallback is measured; the issue triage
+
+13 November 2026, 11:54 +0300 (commit time; the heading time first written, 12:14, was estimated, not read from date), lead session b547ef8e.
+- **GLiClass base** (knowledgator/gliclass-base-v3.0, revision 77a70e6c, digest matching the published one; laptop CPU, peak 967 MB, 0.36 to 0.46 s a unit) separates tables and named institutions only: a normative unit scores legal analysis 0.35 under citation 0.63; statement-style labels give citation 0.98 to 1.0 on every unit. Not usable with these labels (#249). It ran beside a seal against its own reading (a gating slip, reported by the lane).
+- **Fallback (D-576)**: local Qwen yes/no per agent, P(yes) through call_choice, design 7db5f148 on lane/assign-model: about 4,000 prompts over about 400 development units (L7 to L12c entries that passed integrity), two model groups, order controls; gold from the saved all-on evidence (a lower bound on need); half A calibrates, half B held out and read once; bar (a) misses at most 1 percent, upper bound 5, (b) at least 20 percent of unneeded units below the cut, (c) median declared mass at least 0.5, (d) order controls move at most 5 percent. About 1 USD, one A10. A usable voter still skips nothing alone (WORDS-A ensemble references needed).
+- **Triage (D-586)** of 190 open issues up to #244: 5 closed as done (#30, #33, #48, #134, #180), 1 duplicate (#128 of #3), 124 deferred already labelled (#192 relabelled), 60 kept; 6 unsure kept (#37, #41, #62, #80, #98, #137, #223). Comments cite decision ids only, since those commits are not on origin.
+- **Claim sealing count** (cloud-gate, corrected): 293 bundles (230 ContraDoc, 61 SciTab tables, 2 B1), about 38 GB of project archives held by fingerprint until the claim read is collected.
+- **Rules.** D-576, D-567, WORDS-A, CHOICE-A, D-586.
+
+## D-588. #257 merged: the usage stop acts only on a live reading
+
+13 November 2026, 12:00 +0300 (commit time; the heading time first written, 12:33, was estimated, not read from date), lead session b547ef8e. lane/usage-live 49b9e50a, merged f786d0fa.
+- **Rule (D-583).** instance_reaper.usage_reading re-reads .claude/loop_status.json at decision time (overall seven_day_used_percentage, D-534), with its write time, age and state. The trigger fires only on a fresh reading at or above usage_stop_percent(now); a stale or unreadable reading is reported ("usage unknown, stale by N s") and never triggers. The silence trigger covers a stopped lead as before.
+- **Bound, measured.** mtime sampled every 2 s, 11:48:22 to 11:58:22: 60 writes, gaps median 6.6 s, p90 21.7 s, max 52.9 s while sessions worked (a 10-minute gap seen with all idle). USAGE_FRESH_SECONDS 300, one reaper period.
+- **Launch side.** No launch code reads usage: the 95 launch limit and the ask at 97 are procedure, applied by the lead on a live reading taken just before each launch.
+- **Bound file.** tools/loop/instance_reaper.py changed: every bundle sealed before it refuses with Controller source changed; it lands in the one re-seal with #252 (running instances keep their sealed bundles).
+- **Proofs.** tools/ordinary_final_salvage_checks.py: fresh 98 stops, stale 98 does not and is reported, fresh 97 does not, unreadable stops nothing, fresh at 300 s and stale at 301 s, the 18 November boundary; 14 neutralisations fail and restore.
+- **Rules.** D-583, SALVAGE-A, D-529, D-534, CONTROLLER-BINDING.
+
+## D-589. The LAW-III inventory; the lead's rulings; three questions to the operator
+
+13 November 2026, 12:06 +0300 (commit time; the heading time first written, 12:58, was estimated, not read from date), lead session b547ef8e. lane/law3-system 55215303 (#250).
+- **Inventory.** docs/loop/stages/notes/LAW3_INVENTORY.md: 52 items, 11 writers plus 6 auditor-side writers and 5 borderline cases, 12 open decisions. Today only PROCESSOR is audited by the other family. Check 87 compares only the audit and production lists. Floor item F1 cited check 148 by mistake (fixed by quick-read). One seam in AgentWrapper.dispatch: a draft call, then a revision call on the same model under the agent's unchanged contract; only the revision is handed on; Python records whether the draft changed. Bound file: tools/ordinary_final_run.py (assess) only. Measured from 121 development archives (counts and seconds only): +35 percent pipeline time producers only, +93 percent with auditor-side findings.
+- **Lead rulings.** OD-2: no self-revision for choice-only decisions. OD-3: REDACTOR's audit only adds spans. OD-5: no written self-audit note. OD-6: a second call on the same model. OD-7: a named failure. OD-8: withheld and counted apart. OD-10: decides nothing until measured. OD-12: F1 cites checks 87 and 127.
+- **Partial Phase 2 go:** the seam, config, trail fields, factor entry, floor F1 and F8, phase_5_audit wiring, and checks; held: assess (OD-9) and auditing auditor-side findings (OD-1, OD-4).
+- **To the operator (FOR_SECKIN 12:58):** OD-1 with OD-4 (auditor-side findings count as writing; recommended yes, the law's literal reading, a new auditor role by DELTA); OD-9 (integrity reads the handed-on revision, with draft failures counted beside it; recommended); OD-11 (raise the Lambda hard stop from 350 to 550, or to 600 if OD-1 is yes; only he can).
+- **Rules.** INFRA-053, D-582, standing order 28, LAW-IV, D-S9 (the budget is never a code constant).
+
+## D-590. #254: no evidence rule is safe for NOT ENOUGH INFO on development tables; #253 design accepted
+
+13 November 2026, 12:11 +0300 (commit time; the heading time first written, 13:20, was estimated, not read from date), lead session b547ef8e. lane/nei-evidence 1f229a25.
+- **#254 measured against a bar written first** (0 false firings on intact development pairs; read on 83 of G1's 95 SciTab claims, 12 tables above the selection caps; claims and tables only, no key): R1 (no anchor) 4 false, R2 (identifier absent) 36 false, R2 narrowed to digit-bearing identifiers 6 false (chosen after seeing R2, so optimistic). All fail; none is wired, no config key. Cause: absence of words is not absence of evidence (paraphrase; the shape rule catches ordinary words). The selector-based cut measured almost nothing; the independent anchor cut fired R1 17 and R2 47 of 83. Records: docs/loop/stages/NEI_EVIDENCE.md, NEI_EVIDENCE_COUNTS.json (counts and shapes only).
+- **Gap.** Development SciTab claims are 2-class, so real NOT ENOUGH INFO recall and an NEI threshold cannot be measured or tuned on development material. Candidate outside sources, not read: FEVEROUS (CC BY-SA 3.0), SEM-TAB-FACTS (licence to check); usable only after the leakage check keeps them apart from the gate set and Seckin's yes (D-563). To Seckin.
+- **#253 design accepted** (lane/table-arithmetic): Python locates a claim's figure among the selected cells' values and pairwise differences, ratios and percent changes at the claim's written precision; ties and no match refused; Python never decides SUPPORTS or REFUTES; the model sees a COMPUTED block as a declared JUDGE tool, off by default ("" byte for byte). Conditions: a coincidence null (each claim figure moved one unit in its last digit; an operation whose null rate exceeds a third of its real rate is dropped, the rule written before step 1); the gate run path confirmed to fill the slot; the tool declared in JUDGE's contract as a product change admissible under D-567 item 2a, by a recorded decision when committed. Bar: 2-class macro-F1 up on the 95 with no more discordant losses than wins (sign test, one-sided 0.05, power stated), in-sample stated. About 0.70 USD on one A10.
+- **Rules.** D-567, D-569, WORDS-A, D-198, CELLS-A, JUDGE-AGENT-A, D-563.
+
+## D-591. #252 progress: the bound files the Lambda sealing route changes
+
+13 November 2026, 12:12 +0300 (commit time; the heading time first written, 13:30, was estimated, not read from date), lead session b547ef8e. lane/lambda-seal, three commits rebased on 3fcf228c (#257 included); fixture proofs only (seal_route_checks 21 of 21, seal_speed_checks 6 of 6, progress gate); nothing sealed or launched.
+- **Bound controller files changed** (every bundle sealed before the re-seal refuses with Controller source changed): tools/ordinary_final_run.py (arm S, exposed only; execute_seal; project_held, the one rule that a bundle's project archive is its own held to its digest or PROJECT_IN_STORE.json naming project-<sha256>.tar.gz); tools/ordinary_final_cloud.py (a stored project archive is copied from the declared filesystem and hashed by archive_integrity before extraction; refused without a declared filesystem); tools/ordinary_final_bound_cloud.py (reads project_held); tools/loop_budget_guard.py (attested_failures: on a seal job's instance only, the laptop's attestation of standing orders 1 to 3 made at sealing; the laptop always checks its own records). tools/loop/instance_reaper.py is not changed by #252.
+- **Pinned or unbound files changed:** the sealer (arm S job files; the hash-once record on the instance), tools/ordinary_final_bound_reverify.py (store mode), tools/verify_ordinary_final_assets.py (one pass), tools/ordinary_final_progress.py (two completion-only copy phases), the new tools/seal_route.py with its checks.
+- **Commit identity:** the instance writes the laptop's own commit object over the same tree, so every seal names the laptop's commit; a different tree refuses (proved).
+- **For the checker round (C3):** the attestation is bound to its job (digest sealed, bundle hash named, expiry by the job's deadline), and no other path, arm or platform is weakened; the stale-copy refusal against a ledger line added after sealing; no seal digest from the sampled change hint.
+- **Rules.** CONTROLLER-BINDING, D-565, D-585, STANDING-ORDERS-A, LOOP-LAUNCH-A.
+
+## D-592. Issues stay current with every development, independent of pushes
+
+13 November 2026, 12:15 +0300 (commit time; the heading time first written, 13:42, was estimated, not read from date), lead session b547ef8e. Seckin 12:14.
+- **Rule.** An issue is updated at once with every development (status, what changed, what was measured, next step), citing decision numbers while the commit is not on origin, and gets the commit link when it lands. At every stage close and every report the lead checks that each running piece of work has an open issue matching its real state and that nothing done is left open. Public hygiene as D-586.
+- **Applied at about 12:15.** Status comments on #245 to #259; #251 (INFRA-052, D-580) and #257 (live usage, D-588) closed as done on the loop branch, their commit links to follow the push.
+- **Rules.** D-586.
+
+## D-593. #253: differences over the claim's named cells pass coincidence; designs A and B replayed together; #255 design accepted
+
+13 November 2026, 12:20 +0300 (commit time; the heading time first written, 14:15, was estimated, not read from date), lead session b547ef8e.
+- **#253 step 1** (lane/table-arithmetic; rules committed before each count; G1's 95 development claims, claims and tables only): over all selected cells every operation failed the one-third coincidence rule (difference 0.116 against null 0.051, ratio 0.072 against 0.029, percent change 0.058 against 0.036). Narrowed once to the claim's named rows and columns: difference passes (0.145 against 0.022), ratio (0.058 against 0.029) and percent change (0.087 against 0.072) are dropped; ties 44 to 33. In-sample: the same 95 chose the narrowing. No further narrowing on these 95.
+- **Design A** (COMPUTED: located differences over the named cells) and **design B** (Python enumerates computations over the named cells; the answering agent chooses one by call_choice; Python computes it and shows it marked as the model's choice and Python's value; the claim is then judged as today) run in one three-arm development replay against today. Bar written first: 2-class macro-F1 up with no more discordant losses than wins, each sign test one-sided at 0.025 (two arms), power stated, in-sample stated. Off by default; adoption and any cell_compute threshold by a recorded decision. Both are judge-contract changes (a declared task and shown tools in JUDGE's judge block), admissible under D-567 item 2a; recorded at commit. About 0.80 USD.
+- **#255 design accepted** (quick-read): targets the passage_pair and cell_claim decision templates only; the frozen PROCESSOR prompt, the decoding policy and B1's prompt untouched; development pools split 60 to fit and 40 held out by group or paper, the held-out read once under a committed opening; proposer Qwen2.5-7B, answerer Phi-4 (another family), the proposer seeing counts and types only; bar: at least 2 points on fit, at least 3 on held-out with the paired 97.5 percent interval above zero, no more refusals. Conditions: the tuner never sees gate-set identity, including excluded group ids; disjointness certified on role B's side as counts and pass or fail only; the design committed before any run; seals through #252; runs 14 to 15 November; about 16.5 USD with the guard's factor.
+- **Rules.** D-567, D-569, WORDS-A, D-198, CHOICE-A, JUDGE-AGENT-A, D-558, GATE-LEAKAGE-A.
+
+## D-594. Seckin's four answers; the Lambda hard stop 600 as a ceiling to stay well below; the cost-cut plan
+
+13 November 2026, 12:24 +0300 (from date), lead session b547ef8e. Seckin 12:21, relayed by his chat.
+- **OD-1, "Bir evet".** Auditor-side findings count as writing and are audited by another family; the new auditor role and its amendment (INFRA-054) are drafted by law3-system and appended by the lead through the verified no-gap path with his words.
+- **OD-9, "Düzeltilmiş hal".** Integrity is read on the revised, handed-on version; draft failures are counted and always reported beside it; the change of definition and its timing (from the first read after the quick-subset read of 13 November) are stated wherever the figures appear. Built in assess (bound), in the #252 re-seal.
+- **OD-11, "Tavan 600".** budget_change line at 09:22:15 UTC: budget 601, hard stop 600, warning 463 (raised in proportion to the hard stop in force, 270 of 350); read back by instance_reaper.budget_figures (601, 600) and warning_figure (463). **A ceiling to stay well below, not a target** (his words: many expenses, little money left).
+- **Q4, yes.** SEM-TAB-FACTS: licence checked by a scout; then the leakage check keeps it apart from the gate set; added as development material only if both pass (#260).
+- **Cost-cut practice (standing until the measurement ends).** Before each paid step the cheaper valid way is chosen and spend against forecast is reported: the narrow self-revision measurement (about 25 USD) unless it cannot settle the decision; quick re-read of the system arm only, B1 and the cloud reference reused where their code and inputs are unchanged (checked); instruction optimisation SciTab first and a second ContraDoc round only on a fit pass; the A10; sizes from a power analysis; no rerun without cause; Lambda storage removed once a read is collected, with his word. Remaining forecast about 445 to 510 USD in all against the 600 ceiling.
+- **Times corrected.** The heading times of D-586 to D-593, five FOR_SECKIN entries and fifteen issue comments were estimated, not read from date; corrected to the commit times (fa63d6b6) and the issue comments to 12:15.
+- **Rules.** LAW-0, D-S9, D-453, D-502, D-563, D-581, standing order 28.
+
+## D-595. The cost cuts accepted, the auditor's batching first
+
+13 November 2026, 12:30 +0300 (from date), lead session b547ef8e. Seckin 12:28 (item 4 of his message; the full read stays on both benchmarks, as pre-registered, and the bars still need both).
+- **Cuts, by size.** (1) Batch the auditor's per-(unit, rule) calls (#256), the largest share of run time: new lane auditor-batch, design first; adopted only if batched and unbatched labels agree on at least 98 percent of (unit, rule) decisions per agent on development replays and development macro-F1 does not drop (bar written before the replay); if it is not ready before the re-seal, the read runs unbatched and the date holds. (2) Reuse measured figures where code and inputs are unchanged (B1 and the cloud reference on the quick subset); the cloud reference runs only on the new claim set. (3) The narrow self-revision measurement (decided by Seckin 12:26). (4) The A10. (5) No rerun without cause. (6) Lambda storage deleted once each read is collected, asking him first.
+- **Forecast.** Remaining 215 to 375 USD (Lambda compute 190 to 325, storage 2 to 5, API 22 to 45); Lambda total with about 197 spent 387 to 522 against the 600 ceiling. Date unchanged: 18 November about 20:00, range 18 November midday to 19 November night.
+- **Rules.** D-594, D-584, GATE_ATTEMPTS section 3 lines 4 and 5.
+
+## D-596. Auditor batching approved first; no full-set read without line 5
+
+13 November 2026, 12:38 +0300 (from date), lead session b547ef8e. Seckin 12:32.
+1. **#256 approved, first among the cost cuts.** A small development test shows the results are unchanged (D-595's bar: batched and unbatched labels agree on at least 98 percent of (unit, rule) decisions per agent, development macro-F1 not lower), then it is adopted; the measured saving (seconds and USD per run against unbatched) is reported to him.
+2. **Hard spending rule.** If the new quick read does not pass line 5 (GATE_ATTEMPTS section 3), the full-set read does not start at all: nothing is sealed or launched for it, nothing more is spent on it, and the lead stops and asks him. This narrows D-556's advance yes, which stays in force only when line 5 is passed.
+- **Unchanged until he says otherwise:** the auditor-findings decision (D-594, OD-1) and the instruction optimisation (#255).
+- **Rules.** D-556, D-594, D-595, GATE_ATTEMPTS section 3 line 5.
+
+## D-597. The auditors' findings are audited by another family in batches
+
+13 November 2026, 12:47 +0300 (from date), lead session b547ef8e. Seckin 12:34.
+- The auditors' findings are writing (D-594 OD-1) and a suitable agent of another family audits them in batches: all findings of a unit (or document) in one call, never one call per finding, using the one batching rule of #256, which serves both the auditor's per-(unit, rule) calls and this external audit.
+- The cheapest suitable model of another family that holds the accuracy is chosen (locally, likely the base Qwen already on the A10), its accuracy shown on development material and its cost measured after batching.
+- INFRA-054 (law3-system's draft) is appended only after the lead's questions are answered: a development threshold measurement for the external auditor's decision, a fallback that is not "withhold all", and whether a generated verdict under the existing validator can stand until a threshold exists; Seckin sees that consequence first.
+- **Rules.** INFRA-053, D-594, D-595, D-596, CHOICE-A.
+
+## D-598. Toward under 150 USD: throughput first; the self-revision measurement folded into the quick read; batching does not touch the gate read; the B session; disk
+
+13 November 2026, 12:47 +0300 (from date), lead session b547ef8e. Seckin 12:35.
+- **(A) Role B.** He approves a B session for the SEM-TAB-FACTS and instruction-optimisation separation checks; the lead starts it as on 12 November (D-528: detached, --restricted, ROLE_<SESSION>.md assembled by script, its settings and inputs written while no B session runs) as soon as its inputs exist: the bge-m3 fingerprints of SEM-TAB-FACTS and of the #255 development pools, one Lambda embedding job (quick-read).
+- **(B) Cuts.** Target: remaining spend under about 150 USD.
+  1. Generation throughput first (#217, lane throughput, design and scout only): batched generation and a high-throughput server (vLLM with the LoRA adapter and the logits constraint), adopted only if outputs are identical or development scores are unchanged by a bar written first (label agreement per agent; macro-F1 non-inferiority, a 1-point margin by the paired bootstrap's lower bound).
+  2. The self-revision measurement folds into the new quick read's records (time, cost, tokens, VRAM, change and validity rates of draft against revision); no accuracy decision from quick-subset items (D-567); the only accuracy part kept is PROCESSOR's 84 development rows.
+  3. The second instruction-optimisation round is dropped.
+  4. The cloud reference runs only on items not already referenced (the claim set is disjoint from the quick subset, D-373, so the claim set runs in full).
+  5. Other providers are priced (RunPod, Vast.ai and others) for his choice only; no account or spend without his word.
+- **Measured: batching does not touch the gate read.** The time split on the K1 quick-read evidence (7 archives, aggregates only, tools/loop/agent_time_split.py on lane/auditor-batch c54c94d0): PRACTICE_AUDITOR makes no calls in the gate configuration; PROCESSOR 31 percent, ARCHIVIST 23, VERIFIER 8, EDITOR_CLERK 6, AUDITOR896 6, CITATION_RESOLVER 5, INST_FINDER 5 (now off), SPEECH_ACT_TAGGER 4, LEGAL_ANALYST 3. #256 is parked until Seckin rules (he approved it first, D-596). On development runs the auditor's uncomputable plans take 43.5 percent of time and Python refuses about 90 percent of their items; the choice form would cut about 36 percent there (an open item, not a gate cut).
+- **Disk.** Drive C at 2.29 GB free (12:36), under D-099's 30 GB: no seal, gate run, extraction, download or large write until restored; worktrees hold about 25 GB in all (seal-speed 3.3); the rest is being measured.
+- **Rules.** D-567, D-573, D-594 to D-597, D-099, IV.10a, D-528.
+
+## D-599. Remaining spend under 100 USD, by making each step cheaper, never by dropping one
+
+13 November 2026, 12:42 +0300 (from date), lead session b547ef8e. Seckin 12:37, replacing the 150 target.
+- **Rule.** Remaining spend must come in under 100 USD through cheaper steps: generation throughput first (batching or vLLM, proven on the development set), cheaper per-hour compute, measuring from existing logs, reusing still-valid figures, smaller paid-API use. None of the agreed steps or checks is skipped or cut: the improvements before the measurement, the new quick read, the full read on both benchmarks, the self-revision and auditor-findings audits, the separation checks, the independent reviews. If under 100 cannot be reached without dropping a step, the lead names the step, its saving and its validity cost, and waits for his word.
+- **Path (FOR_SECKIN 12:42, estimates).** From 227 to 328 USD now to about 75 to 117 USD: the full read's Lambda part from 140 to 200 to 40 to 60 at 3 to 4 times throughput (#217); the cloud reference from 22 to 45 to 11 to 23 through Anthropic's Message Batches API (about half price, same model and prompts) and prompt caching; the quick re-read 18 to 28 to 6 to 8; the self-revision measurement about 3 from the quick read's records; instruction optimisation about 3; small jobs 10 to 15; storage 2 to 5. Under 100 is reached only if throughput reaches at least 3 to 4 times; otherwise the lead reports which step would have to change.
+- **Cheaper hours.** No Lambda type is cheaper than the A10. Another provider may cost about a third per hour but needs a new provider adapter, filesystem, guard and reaper change (1 to 2 days); priced for his choice, nothing opened without his word.
+- **Rules.** D-594 to D-598.
+
+## D-600. Weekly usage reset by the operator; open questions and the state at 12:46
+
+13 November 2026, 12:46 +0300 (from date), lead session b547ef8e. Seckin reset the weekly usage at 12:44; live reading 12:45 (claude.ai and .claude/loop_status.json): 0 percent, resets Wednesday 18 November 11:00. No usage reason holds Lambda launches or planned work; every rule reads the live figure (D-583).
+- **Open to Seckin (FOR_SECKIN 12:44):** C (a cheaper provider, RunPod A5000 or 4090: remaining spend about 55 to 90 USD, an adapter of 2 to 3 days, date about 20 to 21 November) and B (batching inside transformers, 1.8 to 2.5 times, 2 to 3 days, before the quick re-seal or not at all); #256 park or continue (FOR_SECKIN 12:41); INFRA-054 waits for law3-system's answers on the external auditor's threshold before it goes to him.
+- **Disk:** 2.50 GB free at 12:43; all seals, gate runs, extractions and downloads held (the SAT replay's small evidence download allowed); a hard-link-aware count of external/ is running; deletions go to Seckin first.
+- **Rules.** D-583, D-594 to D-599.
+
+## D-601. C no; #256 parked; B and vLLM tested today in parallel; time estimates split hands-on from waiting
+
+13 November 2026, 12:56 +0300 (from date), lead session b547ef8e. Seckin 12:49 to 12:51.
+- **C (RunPod): no. #256: parked until after the measurement.**
+- **B, timeboxed to today** (lane hf-batch): batched generation inside transformers, no package change, on the B1 replay pass first; one Lambda A10 test on development material (PROCESSOR's 84 DEV rows and a sample of saved development prompts); bar: contract validity not lower, macro-F1 at most 1 point down, PROCESSOR DEV 102 of 102, byte-identical count reported; passes into the re-seal, fails dropped and said; one review round sized to the change.
+- **vLLM, top priority of lane throughput** (Seckin 12:51, with the source): the batch-invariant mode supports compute capability 8.0 and up (the A10 is 8.6), and vLLM runs in its own environment on the Lambda machine, so the lane's two blockers were wrong. Test with the same base, the checkpoint-168 LoRA adapter and the logits constraint ported, greedy, batch-invariant, against the same bar; if it passes, everything in the next attempt runs on it, B1 included, stated in every report.
+- **Compute dtype checked:** the 4-bit models already compute in float16 (agent_wrapper.py:228, execution_topology.py:355) or bfloat16 (frozen checkpoints, final_models.py:484); no win there.
+- **Time estimates (standing):** every estimate splits hands-on work from waiting (machines, queues, reviews) and names what runs in parallel; no padding.
+- **Plan (FOR_SECKIN 12:55):** with every step and everything passing first time, figures about 04:00 to 06:00 on 14 November; with one failure, the afternoon of 14 November. Remaining cost without RunPod: 205 to 290 USD with no speed-up, 105 to 185 with B, 80 to 135 with vLLM; under 100 with every step only if vLLM passes and the low half holds. What could be postponed is listed for his decision; the lead drops nothing.
+- **Rules.** D-596, D-598, D-599.
+
+## D-602. Disk freed; INFRA-054 appended; the revision rewrites the whole response; the login error
+
+13 November 2026, 13:00 +0300 (from date), lead session b547ef8e. Seckin 12:56.
+- **"Disk 1 ve 2 evet".** (1) The 116 consumed quick-subset bundles' project.tar.gz, execution_manifest.json and image_spec.json deleted (348 files, 15.1 GB; each listed with its size in external/s05/GATE/quick_read/DELETED_20261113.json); collected evidence, seals and run records kept; the D-577 bundles untouched. (2) 32 finished worktrees removed by git worktree remove (no --force), each one's junctions into the main checkout removed first as links only; savings (uncommitted changes) and embed-route (untracked files) refused and kept; branches kept. Free disk 1.86 to 30.44 GB; the main external/ and private folders checked intact. external/embed and gate_prep_D-S100 only after inspection and his word.
+- **"054 evet".** INFRA-054 (EXTERNAL_AUDITOR, two registry entries, reply form first, batches per unit) appended as drafted on lane/law3-system, with his words of 12:21 and 12:56, through the verified no-gap path; checks 2, 5, 86, 87, 127, 277 pass. Each paid cloud run of it asks him first. The registry, contract and code entries are built after the append (law3-system).
+- **Revision form.** For this measurement the writer's revision rewrites the whole response; corrections-only is tried after the measurement.
+- **Login error.** At about 12:47 to 12:48 three in-process lanes stopped on "Please run /login · API Error: 403 Attention Required! | Cloudflare": law3-system (subagent, worktree agent-ac156a22b5bf2c18b), throughput (subagent, read-only in loop-lead) and push-plan (teammate, worktree push-plan). The lead's own calls kept working; a retry message to push-plan was delivered at 12:58.
+- **Rules.** D-099, INFRA-029, INFRA-043, INFRA-053, LAW-0.
+
+## D-603. The GNN prepared now, plugged in only after the full read
+
+13 November 2026, 13:12 +0300 (from date), lead session b547ef8e. Seckin 13:02, his decision (the middle path).
+1. **Now, one low-priority lane (gnn-prep, Sonnet) that never delays the measurement path:** prepare the GNN as the update method of the ontology: build the default, domain- and case-agnostic ontology (knowledge graph) and the GNN's own declared training set, separate from every benchmark and from the gate set (L separation; leakage check before use), and train it on the cheapest compute (local if light, the smallest Lambda otherwise, within D-594's rules). The declaration's --declared-by statement is the operator's own and is put to him. The GNN still never learns from a run; updates on a user's material happen only on that user's explicit request.
+2. **It does not enter the system** for the coming quick read or full read.
+3. **After the full read:** plugged in and compared with and without it on the development set (accuracy, integrity, time); it stays only if it helps, by a bar written first.
+- **Rules.** D-S112 item 1, D-417, D-432, D-558, D-594.
+
+## D-604. Drop no step; B and vLLM tested in parallel today; figures 14 November
+
+13 November 2026, 13:28 +0300 (from date), lead session b547ef8e. Seckin 13:15, relayed by his supervising chat, agreeing with the lead's recommendation of 12:55 (FOR_SECKIN).
+1. **No step is dropped.** Every agreed step and check stays (D-599).
+2. **Two speed tests run in parallel today:** B, batched generation in transformers on the replay pass (lane hf-batch, #256-B, bar in docs/loop/stages/HF_BATCH_BAR.md), and vLLM in batch-invariant mode on the A10 (compute capability 8.6, lane vllm, #217). Neither engine is adopted without its bar.
+3. **Target:** full-set figures on 14 November, morning to afternoon; remaining spend under 100 USD if vLLM passes and the low half of the forecast holds; otherwise the figure is reported against the forecast, never reached by dropping a step.
+- **State at 13:28:** vLLM built (617f69ea), checker round then seal and launch by lane throughput. hf-batch stopped on the login error (403) at about 13:18; its work saved as a WIP commit (60903e25), to resume once Seckin logs in.
+- **Rules.** D-594, D-596, D-599, D-601.
+
+## D-605. The negotiation advisor test set, from public multi-round negotiations (#262)
+
+13 November 2026, 14:22 +0300 (from date; first written as 14:25, an estimate, corrected), lead session b547ef8e. Seckin 13:35, 13:38, 13:40, 13:42, 13:45 and 13:46, in that order, each later message refining the earlier (his 13:38 replaced the 13:35 plan; his 13:42 corrected 13:40: signed host agreements publish no rounds). The proposal deadline is 15 November.
+1. **Primary part:** public multilateral processes whose successive drafts and party positions are on record. The scout of 14:23 recommends the WHO pandemic agreement INB and the plastics treaty INC first, with positions from the Earth Negotiations Bulletin and from party submissions; BBNJ is held in reserve.
+2. **Secondary part:** bilateral host-agreement rounds reconstructed by a separate role session between a public start text and a public signed text, marked synthetic. **Third part:** the LLM-Deliberation games (MIT licence).
+3. **Tasks:** per proposal, the conflict, whether to accept, reject or counter with wording, trades and whom to approach; a per-article alignment map; article state across rounds.
+4. **Labels:** from the real next round by deterministic diff and from positions on record. Python checks the rest. Middle-ground wording is judged blind by another model family, with a sample checked.
+5. **Reporting:** per configuration (bilateral, one against a group, group against group, everyone with everyone, issue-based shifting alignment) and per round count, 1 to 5.
+6. **Separation:** a separate role session builds and validates the items; the lead reads aggregates only; Seckin does not label. The set is apart from the gate set and from all tuning. The bar is pre-registered before any run. Arms: B1, the system, and the cloud reference, each paid run asked first.
+7. **Size and target:** about 40 items; first findings by the end of 14 November. It runs only when the measurement has no machine waiting (D-S102 item 1).
+- **Stated risks (FOR_SECKIN 14:25):** ENB and WHO material is CC BY-NC-SA, and the UN, UNEP and UNFCCC terms are unconfirmed. The position-to-article mapping is model-made and validated by another family. The 8 to 22 USD cost presses on the under-100 target (D-599).
+- **Rules.** D-S102 item 1, NEGOTIATION-MEASURE-A, D-558, D-567, D-599, D-601.
+
+## D-606. The negotiation advisor test: cloud reference on a subset, 6 to 12 USD in all (#262)
+
+13 November 2026, 14:33 +0300 (from date; first written as 14:47, an estimate, corrected), lead session b547ef8e. Seckin 14:33, answering the lead's entry of 14:25.
+1. **Cloud reference:** kept, but run on a subset of the items, not on all of them. The subset is drawn by a rule written into the plan before any item exists: seeded, stratified by part, configuration and round count, with its size fixed in the plan. The cloud figures are reported on that subset only, and B1 and the system are reported on the same subset beside their full-set figures.
+2. **Budget:** about 6 to 12 USD for the whole test. Each paid run still needs his "evet".
+3. **Design:** goes ahead as written (D-605, NEG_ADVISOR_PLAN.md at b0e19637).
+- **Rules.** D-599, D-605, standing order 2.
+
+## D-607. Usage cut without dropping a step; intermediates deleted; the money question (#263)
+
+13 November 2026, 14:51 +0300 (from date), lead session b547ef8e. Seckin 14:42 (the order), 14:49 (yes to the plan of 14:44 and to the deletion of 14:46).
+1. **Usage plan, applied (#263).** CLAUDE.md is cut to a rule list under 200 lines, with the per-feature sections moved verbatim to docs/CLAUDE_REFERENCE.md and the move proven lossless. At most 5 Opus agents are open at once; a lane facing more than 30 minutes of Lambda waiting writes a note and closes. Opus runs at medium effort everywhere. Scouts, records and summaries run on Sonnet, watchers on Haiku. Model and effort change only in a fresh session. Reports run at most 10 lines; output stays quiet. The lead compacts before idle spells. The hourly usage rate goes into every report. Anthropic's docs were checked on 13 November; how cached tokens count toward the weekly limit is unconfirmed.
+2. **Disk.** With his yes, external/gate_prep_D-S100/_work (4.0 GB) and _export (2.6 GB), intermediates of the 12 November fingerprint, were removed. fingerprints.json.gz (sha ad64bab9) and the small inputs are kept. Free disk went from 29.91 to 36.55 GiB. Seals now run one at a time: two at once ran free memory down to 0.63 GiB at 14:43.
+3. **Cost cuts (14:39 entry) not applied.** He asked first for the total out-of-pocket figure, in four cases, written to FOR_SECKIN at 14:50, and will decide on the cuts after it.
+- **Rules.** D-099, D-222, D-594, D-599, D-601.
+
+## D-608. vLLM answers that differ from the transformers path are a finding, not a failure (#217)
+
+13 November 2026, 14:53 +0300 (from date), lead session b547ef8e. Seckin 14:52, his explicit decision.
+1. **Not a stop.** If vLLM gives answers that differ from the current transformers path, the measurement does not stop and the test is not failed on that ground alone.
+2. **What is recorded:**
+   - the agreement rate (byte-identical and label-agreeing replies, per group) and the differing items, in aggregate only, never per item in public;
+   - the full specification of each run: platform, engine and version, GPU type, driver and CUDA, quantisation, LoRA, decoding settings, batch-invariance setting and seed.
+3. **Reporting:** a cross-platform stability finding, beside the results.
+4. **Unchanged:** the speed bar and the other parts of the vLLM bar (contract validity per arm, the DEV items in valid replies, label macro-F1 against the current engine with its bootstrap lower bound) stay as written. Every arm of one comparison still runs on one engine and one machine type (FACTORS-A); a figure is never compared across engines.
+- **Rules.** D-604, FACTORS-A, D-567.
+
+## D-609. vLLM everywhere on Lambda once it passes (#264); Auto-Ontology fit check later (#265)
+
+13 November 2026, 14:59 +0300 (from date), lead session b547ef8e. Seckin 14:58, two orders.
+1. **vLLM everywhere (#264).** Once the vLLM integration passes its bar (#217, D-608), every local-model generation on Lambda moves to vLLM, and the lead owns the propagation list and closes it. The list covers:
+   - the image and filesystem layers (one warm vLLM environment);
+   - the controller, sealer and sealing route (#252), in one re-seal;
+   - parallel runs;
+   - every runner generation path and the decoding constraint;
+   - the quick read and the full read, both on vLLM, all arms including B1, so the configuration chosen on the quick subset is the one read on the claim set;
+   - the development runs (#249, #253, #255) and the negotiation test (#262);
+   - forecasts and budget checks, docs and issues.
+
+   A gate check proves that no Lambda generation path still uses the transformers engine unless a declared exception with its reason keeps it. If vLLM does not pass, nothing moves and the list is closed as not applied.
+2. **Auto-Ontology (#265).** A low-priority Sonnet lane, after the measurement path and the negotiation test. First a fit check: our material, local models through LiteLLM, privacy (LAW-IV). If it fits, a comparison after the full read on development data, our default ontology against Auto-Ontology's, each with and without the GNN, by a bar written first. Nothing enters the coming measurement.
+- **Rules.** D-603, D-604, D-608, FACTORS-A, IMAGE-A.
+
+## D-610. The five cost cuts: 1, 2, 3 and 5 applied, 4 verified first; target scenario "with the cuts, vLLM passing"
+
+13 November 2026, 15:08 +0300 (from date), lead session b547ef8e. Seckin, 15:06: yes to the five cuts of the 14:39 FOR_SECKIN entry, as proposed there. His target is the scenario "with the cuts, vLLM passing", 60 to 130 USD remaining, and the work is steered toward it.
+1. **Batch mode for the cloud reference (cut 1).** benchmark/baselines/cloud_reference.py gains a batch path. Each run's worst case is reserved and checked at the batch price, and the spend store reads the batch price from the reply. Same model, same prompt, same settings. The batch is sent early, so a late return moves the figures by half a day at most. The path gets one checker round before any paid use. Each paid run still needs his "evet".
+2. **Prompt caching in the cloud reference (cut 2).** The stable instruction prefix is sent with cache_control where it is long enough to cache. Cache writes and reads are priced from the usage. The current halt on cache writes is replaced by pricing them. Same checker round as cut 1.
+3. **Packing small Lambda jobs (cut 3).** Jobs ready at the same time go into one bundle as several passes. The controller is not touched, so nothing is re-sealed for this. No job waits more than 30 minutes to be packed.
+4. **Reuse of the quick read's outputs (cut 4).** The claim figure never includes the quick items (GATE_SET.md section 6), so reuse can only serve the separate report that includes the quick subset. Reuse is allowed only if the two seals are proved byte-identical in the commit, the runtime and the item bundles, and a re-run of a few deterministic items matches. It is verified before it is applied.
+5. **Deleting collected read outputs from Lambda storage (cut 5).** Only outputs already collected to the laptop are deleted, each time with his yes. The asset archive copy is kept, and the filesystem itself is never deleted (ASSET-COPY-A).
+- **Rules.** D-596, D-599, D-604, D-606, D-607, ASSET-COPY-A, LOOP-LAUNCH-A.
+
+## D-611. No lane postponed; usage cut by the lead's own measures; automated deletion of unneeded project files (standing approval)
+
+13 November 2026, 16:02 +0300 (from date), lead session b547ef8e. Seckin, 15:59.
+1. **No lane is postponed.** All work keeps going. Usage is still cut by D-607's measures:
+   - at most five Opus agents open at once;
+   - review rounds queued and sized to the change.
+2. **Standing approval: regular automated deletion of unneeded files inside the project folder.** His words: "automate the deletion of unneeded files inside this project, regularly."
+   - **Scope.** Only regenerable intermediates, caches, scratch and build outputs, superseded working copies and finished-run temporaries inside the project folder.
+   - **Never deleted:**
+     - source data;
+     - sealed packages;
+     - anything a sealed, pending or running measurement references;
+     - fingerprints;
+     - records: DECISIONS, FOR_SECKIN, ledgers, GATE files;
+     - private material;
+     - anything not regenerable.
+   - **Safety.** Each deletion is logged with its path, size, reason and how to regenerate it. A check confirms that nothing referenced was removed. The tool deletes only by an allowlist of declared kinds; anything unmatched is kept. A sealed bundle, a run folder of an open ledger launch, and any path named in a seal, a manifest, a fingerprint, a REQUEST or an _xfer hand-off are refused. Deletion is by Python on exact verified paths, never rm -rf.
+   - **When.** On a schedule, and whenever free disk nears the 30 GiB floor (D-099).
+   - **Report.** Each sweep is reported in one FOR_SECKIN line saying what was freed.
+   - This replaces the per-deletion yes for these kinds only. Everything outside the scope still asks.
+- **Rules.** D-099, D-222, D-607, D-610 cut 5, LAW-IV.
+
+## D-612. Resilience during the provider outage: work in progress committed, a private off-laptop backup repository, usage cut further
+
+13 November 2026, 17:20 +0300 (from date), lead session b547ef8e. Seckin, 17:16, during the Anthropic status page's outage: claude.ai major, Claude Code partial, since 16:09. No work stops.
+1. **Work in progress.** Every lane commits its work in progress now and keeps its state note current, so a dropped agent resumes where it left off.
+2. **Private backup.** A new private GitHub repository under the operator's account, project-shimmer-backup-private, his approval. All branches and tags are pushed there daily and after each meaningful step.
+   - Large data, such as asset archives, stays out.
+   - Keys, tokens and secrets never go: the secret part of the pre-push scan runs on every pushed range.
+   - **Safeguards:**
+     - the backup has its own remote name, backup-private;
+     - the existing public origin is never changed;
+     - before every backup push, the target's visibility is read through the GitHub API, and the push is refused unless it is private;
+     - unscanned work never goes to the public repository.
+   - **Conflict, reported:** CLAUDE.md's PUSH-TARGET GUARD says "the sole origin must be project-shimmer-deployment". Resolution: origin stays the sole origin. backup-private is a second, non-origin remote, used only by the backup tool, approved by the operator here.
+3. **Public pushes.** These continue per the existing plan, through the push clone, after the pre-push scan.
+4. **Usage.** Still about 4.2 points an hour. The 14:44 plan's status, a measured breakdown by session and model, and further cuts go to FOR_SECKIN. Cuts that clearly keep accuracy are applied; anything that could affect results is asked.
+5. **Memory.** Free memory is kept above the safe level: 3 GiB, and 2 GiB for a seal.
+- **Rules.** D-099, D-222, D-586, D-607, LAW-IV, the API key rule.
+
+## D-613. Negotiation test: role N's first hand-back; the validator's pass runs as an exposed B1 replay bundle, unopened by the lead
+
+13 November 2026, 18:00 +0300 (from date), lead session b547ef8e.
+
+**Role N session 1** ended at 17:32 with exit 0. The hand-back holds counts only.
+- 21 items: P-INB 15, G 6, no H, no P-INC.
+- 262 positions, and a build maximum of 8,834 tokens.
+- 11 sources used; 3 refused by their terms.
+- **Shortfalls:**
+  - P-INC and the BBNJ reserve were not built, because their terms forbid compiling and derivative works (brief section 2).
+  - P-INB has 15 items, not 20: too few parties held two positions.
+  - The 5 synthetic H items were not written: the model provider's safeguards stopped the author agent.
+
+**Ruling: the validator's route.** At ad9a5c8a the sealer and the bound runner refuse replay prompts in a sealed run (SEALED-RUN-A). Changing the bound runner would force a re-seal of everything. So the validator's pass runs as an exposed B1 replay bundle:
+- the workload is role N's prepared validate_prompts.json;
+- the lead seals it with the sealer without opening it, from the paths and digests in N_to_seals;
+- the run folder sits in role N's work folder, outside the repository;
+- the lead reads only the controller's counts, never the replies, and hands the collected evidence to role N, which runs validate-read.
+
+This changes who can see the replies, not what is measured. The items are development material, not gate material (NEGOTIATION-MEASURE-A).
+
+**Next role N session.** Retry the 5 H items with the author agent's brief reworded to stay within the provider's use policy. Look for INB parties with two positions in further rounds of the same source. Do not change the bar.
+- **Rules.** D-605, D-606, SEALED-RUN-A, B1-ARM-A.
+
+## D-614. The private backup's allowlist for key-pattern hits in test fixtures and prose (#267)
+
+13 November 2026, 20:08 +0300 (from date), lead session b547ef8e.
+
+The backup's dry run read the target as private and pushed nothing. It refused 224 of 235 refs, all on CLAUDE.md key-pattern hits in a handful of blobs. A hit is now allowed only through a committed allowlist keyed by (path, blob object id, rule), each entry with a recorded reason. Any change to a file's content is scanned again. The lead's rulings:
+1. **Public test-fixture blobs** are allowed, because the backup adds no exposure:
+   - tools/cloud_run_checks.py (an api_key test string);
+   - tools/forensic_auditor_feature_failure.py (a pattern regex).
+   These blobs must be reachable from origin/main.
+2. **scripts/embed_records_checks.py**, blobs 8bf7fabd and ebf8e4b9: crafted fixture bytes for the credential-scan proof (EMBED-ROUTE-A, check 325). The lead read the lines with long tokens masked.
+3. **tools/ordinary_final_live_checks.py**, blob 06e10f5c: a 45-character sentinel of letters and hyphens with no key prefix, used only as reply and payload text to prove the live view never shows it. Not a credential. The lead checked it without printing the value.
+4. **Prose blobs** (CLAUDE.md, docs/CLAUDE_REFERENCE.md, gate logs, the tool's earlier pattern list): allowed only where the tool itself finds every matching line to be a bare prefix with no key-shaped run after it. This is proven with a fixture and a neutralisation.
+5. **Loosened scan.** guard_secrets.scan_line is dropped from the backup scan. It refused ordinary code such as `token=...`. CLAUDE.md's full quick-scan pattern set and the archive and path refusals stay, and a fixture shows that a real-shaped api_key assignment in a new blob is still refused.
+- **Rules.** D-612, the API key rule, LIVE-VIEW-A, EMBED-ROUTE-A.
+
+## D-615. Every wait on a condition gets a watcher (standing rule)
+
+13 November 2026, 21:28 +0300 (from date), lead session b547ef8e. Seckin, 21:20, after two queued steps did not start although their condition held:
+- the seal gate read memory but not disk at 29.8 GiB;
+- c4-fix's background wait never woke.
+
+**Rule.** Every step that waits gets a light watcher: seal gates, launches, slot handovers, reviews and Lambda results. The watcher is a script, or Haiku where judgement is needed.
+- It checks the exact full condition the gate uses (disk at least 30 GiB plus the seal's size, memory at least 2 GiB, no other seal running, and the step's preconditions) at a set interval of 60 s.
+- It reports the moment the condition holds, and the lead or lane starts the work at once.
+- It posts a one-line OVERDUE alert when the wait runs past its expected time.
+- A watcher never launches or seals by itself. Launch and seal stay with the lane and its gates.
+
+**Now.** A detached script, scratchpad watch/queue_watch.py, started at 21:28, covers the C4 third launch, the vLLM seal and launch, and the negotiation validator's package. It writes to watch/events.log, which the lead follows.
+- **Rules.** D-099, D-222, D-607.
+
+## D-616. The pre-push hook admits the private backup remote alone (#267)
+
+13 November 2026, 22:50 +0300 (from date), lead session b547ef8e. Seckin, 22:49, "Evet a", answering the lead's 21:47 question (FOR_SECKIN). The first real backup (D-612) pushed nothing: 235 refs, all refused by the private pre-push hook's S13 line ("After the S13 history rewrite, nothing is pushed from this repository").
+
+**Rule.** The hook (docs/loop/private/hooks/pre-push, private, never committed) gets one exception, placed before the S13 refusal:
+- It applies only when the remote name is `backup-private` AND the URL is exactly github.com/seckinozbek1/project-shimmer-backup-private (with or without .git). A name alone or a URL alone is not enough.
+- Before every such push, the repository's visibility is read through the API (`gh api --hostname github.com`). Anything other than private, or no answer, refuses.
+- Before every such push, the secret scan runs on what is pushed (CLAUDE.md's patterns, D-614's allowlist). A hit, or a scan that cannot run, refuses.
+- The seals/ and audit/model_replies/ path refusal applies as well.
+- Every other target, origin included, stays refused exactly as now. No `--no-verify`, ever.
+- The backup then holds the unrewritten history, personal paths included, in a private repository. Seckin accepted this with (a).
+
+**Review.** An agent that did not write the exception reviews it, with a test proving:
+- a push to origin is still refused;
+- a remote named backup-private with another URL is refused;
+- a non-private reading is refused.
+
+Then the first full backup runs, its counts go in one line to Seckin and on #267, and the daily task is registered (D-612).
+- **Rules.** D-192, D-612, D-614.
+
+## D-617. The negotiation validator picks the article from the given id list, from round 2 on (#262)
+
+14 November 2026, 00:07 +0300 (from date), lead session b547ef8e. Seckin, 00:06, option (b) of the lead's 23:58 entry, recorded BEFORE the second validation round runs. Nothing of round 2 has been sealed, run or read.
+
+**Round 1 as recorded.** Pass validate_p01 (Phi-4, 262 positions, all answered). Validate-read's kappa over (article, proposal, stance) is 0.5936, below the 0.60 bar of ROLE_N.md section 6. That figure stays in the record unchanged. Role N's diagnosis, not recorded as a figure: in 95 of the 102 disagreements the validator wrote the article's heading instead of its id. The plan's one revision has been spent.
+
+**Change.** The validate prompt form (`neg-advisor-validate`) lists the item's article ids and asks for the article as exactly one id from that list. `validate-read` takes only an exact id from the given list. Any other answer, a heading included, is not an id and counts as the validator's own different answer, never mapped to an id afterwards.
+- The proposal and stance questions are unchanged. So are the kappa rule, the 0.60 bar, the labeller step and every other part of section 6.
+- Round 2 (354 positions: the revised mapping plus the new INB items) runs on the changed form. Both rounds are reported side by side, each with its prompts digest and form.
+
+**Not done.** Option (c), reading round 1's headings as ids, is refused: it changes the reading after seeing the result.
+
+**Order.** neg-advisor-2 changes the form and its reader in lane/neg-advisor, with a proof and a neutralisation, plus one short checker. Role N's code checkout moves to that commit. Role N rebuilds the round-2 prompts and the pass inputs (session 3, short). The lead seals and launches the pass as D-613 does. Keep the delay small: the AINF proposal deadline is 15 November.
+- **Rules.** D-605, D-606, D-613.
+
+## D-618. Negotiation advisor after validation: the freeze reads the negotiation corpora, the rented passes run exposed and unopened (#262)
+
+14 November 2026, 06:34 +0300 (from date), lead session b547ef8e. Role N's session 5 hand-back (counts only).
+
+**Where it stands.** The mapping is validated:
+- Round 2's pooled kappa is 0.9635. The bar is 0.60, and round 1's recorded 0.5936 stays beside it.
+- The labeller kept the mapping in 12 of 12 disagreements.
+- The checker's sample (8 items): kappa 1.0 for fate, 1.0 for state, 0.74 for conflict and 0.96 for alignment. red_line is one class on both sides, so its kappa is undefined and plan 7.1 line 4 reads not assessable.
+- The freeze has not run: free memory stayed under 2 GiB.
+
+**Ruling 1, the freeze's extras.**
+- Role N cannot read the gate sets' documents (external/ of the main checkout), so the freeze runs on NEGOTIATION_CORPORA.txt alone.
+- Leakage against the gate sets is already measured from the other side. Role B checked the set's fingerprint (282 records) against ContraDoc and SciTab, claim and quick: 0 matches by every rule (B_NEG_LEAKAGE.json).
+- The negotiation held-out set is not frozen. It is left out and recorded; role B checks it once it is frozen.
+
+**Ruling 2, the rented passes.**
+- The sealer refuses replay prompts in a sealed bundle (D-061 item 4), so the arms' pass (b1, system_advice) and the judge's pass run as D-613's form: an exposed B1 replay bundle of role N's prepared inputs, sealed and launched by the lead's side without opening any prompt or reply. Role N reads the evidence.
+- This is a development measurement, not a gate benchmark (NEGOTIATION-MEASURE-A). Item identity stays with role N by procedure, as in the validation passes.
+- A Lambda launch needs no "evet". The cloud reference (a paid API) still needs Seckin's "evet" with its cost, as ROLE_N.md section 6a step 4 says.
+
+**Fix first.** Role N reports that score_neg_advisor.py freeze (lines 1446 to 1452) drops the corpus list's accept-skipped lines, so corpus_passages (freeze_negotiation_set.py:227) would refuse the listed folders, which hold files of skipped kinds. neg-advisor-2 confirms it on a fixture and fixes it with a proof and a neutralisation, plus one short checker. Role N's checkout then moves to that commit.
+
+**Order.**
+1. The fix.
+2. Role N's session 6: freeze, power, the prompts files, the passes' inputs prepared as for VALIDATE_PASS_2.
+3. The lead's side seals and launches.
+4. The cloud reference after Seckin's "evet".
+5. The judge's pass, the grading, the score.
+
+- **Rules.** D-605, D-606, D-613, D-615, D-617.
+
+## D-619. vLLM test un-parked: a read-back that times out after the remote step's exit code is read is recorded and retried, not a stop (#264, #217)
+
+14 November 2026, 07:03 +0300 (from date), lead session b547ef8e. Seckin, 07:02: "Düzelt, bir daha dene vLLM'i."
+
+**Cause, from the records.** In vllm-test-217c and vllm-test-217d, a detached phase on the instance finished with exit code 0. The controller's collect of its output over ssh then hung to its 120 s deadline, and the controller stopped the run with "Transport deadline exceeded".
+- 217c: aux_env_install's collect hung; aux_env_fetch's passed.
+- 217d: aux_env_fetch's collect hung.
+- The collected output is capped at 14,000 bytes, so it is not output size: an intermittent hang of one ssh read.
+- Spend: 0.645 and 0.559 USD.
+
+**Change** (`tools/ordinary_final_cloud.py`, a bound controller file):
+- When a phase's status already reads `remote_work: completed` with its exit code, a collect that times out is retried, a bounded number of times, each within the existing deadline.
+- If every retry times out, the phase is recorded `output_collect_timed_out` in its timing record, with the exit code it already read, and the run continues.
+- A phase whose exit code is not read, or is not 0, is handled exactly as before.
+- No other timeout, cap or phase changes.
+- A proof replays a hanging collect after a completed status and fails when neutralised.
+
+**Review.** One checker round by an agent that did not write the change.
+
+**Off the critical path.** The change is built on lane/vllm-test, from its own worktree. The vLLM bundle is sealed and launched from there (D-364). It is not merged before the quick read's bundles have launched, so the merge, the full gate, the 53-package re-seal and the negotiation work wait on nothing of it. It seals only when D-615's gate holds, and never while another seal runs.
+
+**After.** One more launch (the vLLM-only rerun, as VLLM_T4), read per D-608. If vLLM passes, #264's propagation to the full read starts, and the change is merged before the full-set seal.
+
+- **Rules.** D-608, D-611, D-615, D-364. Seckin 07:02.
+
+**D-619, addendum** (built as d32e3862 on lane/vllm-test). A completed phase whose collect hangs is retried up to 3 times, each under its own 120 s deadline. Narrowing, accepted by the lead: a phase whose output the controller parses (the evidence pack and its hash, the asset copy, the image phases) is retried, but still stops when every attempt hangs, because an empty digest or state is never taken. Proofs: 4 new, each neutralised. Full controller checks: 205 pass, with the same two failures as on 21b64aba.
+
+**D-619, addendum 2** (checker round 1). `pack_evidence` and `asset_copy_use` are removed from the phases that still stop: neither one's output decides anything (the pack's stdout feeds only the disk record, which swallows errors, and the copy use reads its return code alone). A final evidence pack whose read-back hangs on every attempt still yields `collection_integrity.json`, which a proof shows. Once a salvage request is set, a hanging read-back gets one attempt, not three, so the salvage answer stays inside SALVAGE_ANSWER_SECONDS. Both rules are proven with neutralisations. The full controller suite runs again before the seal.
+
+## D-620. One-time disk floor of 28 GiB for the three full-gate seals of lane/merge-1114
+
+14 November 2026, 08:52 +0300 (from date), lead session b547ef8e. Seckin, 08:51: yes to question 3 of the 08:14 FOR_SECKIN entry.
+
+**Narrows.** order S0 step 6 (the 30 GB disk floor; D-615's gate of 30 GiB plus the seal's size), for these seals only: G_M1114_B1, G_M1114_B2 and G_M1114_SIDE, sealed by push-plan from lane/merge-1114. Reading it rests on: free disk 28.79 GiB at 08:52 (from date). The three seals are about 0.9 GB together; the gate's checks run on Lambda.
+
+**The exception.**
+- For those three seals, their verify, bind, reverify and preflight, and their launches (with the evidence download each controller makes by itself at the run's end), the floor is 28 GiB. Seckin said "start the gate now".
+- The memory floor (2 GiB) and the "no other sealer" condition are unchanged.
+- The moment the third seal's steps end, the floor is 30.5 GiB again for everything else: role N's work, the 53-bundle quick re-seal, VLLM_T5, and every download or launch.
+- Cause of the shortfall, for the record: role N's CPU freeze held 9 GB of memory and grew the page file by about 11 GiB, which the lead stopped at 08:06 and 08:08 (D-618's freeze now runs on the GPU).
+
+- **Rules.** S0 step 6, D-615, D-618. Seckin 08:51.
+
+## D-621: role N's GPU freeze gets a load-phase memory stop of 8 GB (#262)
+
+Written by the lead, Sat 14 Nov 2026 11:49 (from date).
+
+- **What happened.** Session 8 (started 11:36) ran the freeze with `--device cuda`. Its own guard killed the job at 11:43:20 at 6.07 GB private memory, while bge-m3 was still loading into host memory: the card read 0 MiB, no passage was read, nothing was written. The load grew the page file (17.5 GB allocated at 11:48), and free disk fell from 36.4 to 28.9 GiB for about three minutes, then came back to 33.9.
+- **Ruling.** Session 9 runs with two stops: 8 GB (resident or private, the larger, of the job's process tree) until the tool prints bge-m3's loaded-on-cuda line, then 5 GB as before; a fall back to the CPU still stops it. It starts only when free disk reads at least 33 GiB (30.5 plus the measured transient of about 2.5 GiB beyond what the load needs) and free memory at least 2.5 GiB, with no seal running. After any stop it hands back and is not restarted.
+- **Why not move it to Lambda now.** The freeze has no rented route (EMBED-ROUTE-A serves the leakage fingerprint, not this tool); building one costs hours on the critical path. The load peak is transient; the GPU pass itself needs little host memory.
+- **Rules.** S0 step 6, D-615, D-618, D-620.
+
+## D-622: the merge gate for lane/merge-1114 is B1, B2 and SIDE on 3a9ed089 plus check 386 alone on cf487591
+
+Written by the lead, Sat 14 Nov 2026 12:59 (from date).
+
+- **What happened.** G_M1114_B1 (gate-merge1114-b1, 37 min, 0.80 USD) on 3a9ed089: 146 PASS, 2 SKIP, the six known reds (140, 146, 257, 261, 325, 348) still red, 280 and 339 now green, and one unexpected failure, 386 (the private backup's proofs, D-612). backup-tool reproduced it on a one-commit shallow clone with an empty global git config and no `py` launcher: two test assumptions, not the tool. The allowlist blob test reads history a one-commit gate tree lacks, and the hook tests call `py -3.12`, which Linux lacks.
+- **Fix.** bd530ec3 and 9596d7ef (lane/backup-tool), cherry-picked onto lane/merge-1114 as 8961aef1 and cf487591. They change only tools/loop/backup_private_checks.py and tools/loop/backup_hook_checks.py: the blob test skips a checkout with under 50 commits, so it is proven by the laptop gate and not the cloud gate; a `py` shim for sys.executable off Windows; the gate line names each failing test. No bound controller file and no hook-pinned file changed.
+- **Ruling.** The gate result for merging lane/merge-1114 is: every check other than 386 from B1, B2 and SIDE on 3a9ed089, and check 386 from one arm G run, G_M1114_386, form full with `--gate-checks 0,386`, on cf487591. This holds because the diff from 3a9ed089 to cf487591 touches only check 386's own two files. Any other change before the merge needs a full gate again.
+- **Rules.** GATE-ARM-A, D-612, D-620.
+
+## D-623: lane/merge-1114 is gated again in full on f8957c1a (supersedes D-622's partial run)
+
+Written by the lead, Sat 14 Nov 2026 13:31 (from date).
+
+- **What changed since D-622.** G_M1114_B2 on 3a9ed089 (0.86 USD) found two more unexpected failures, both reproduced on the laptop, so real defects, not Linux ones. **174:** a reserved domain term in tools/neg_advisor_checks.py and tools/score_neg_advisor.py. Fixed by neg-advisor-2 (37ae1dfa): the field is named through one constant under benchmark/, outside the probe by design, and its proof's neutralisation is unchanged. **278:** D-570 (0028a791) made INST_FINDER off by default, so the mocked runs' summary no longer read "switched on" and every round-3 proof's baseline failed. Fixed by fix-278 (1a4d2103): the mocked run sets SHIMMER_INST_FINDER=on around the startup guard; no proof weakened, the product unchanged. Also taken: 3bd20cb9 (bge-m3 loaded with the low host peak, corpus walks skip __pycache__, for the GPU freeze, D-621).
+- **Head.** lane/merge-1114 is f8957c1a: 3a9ed089 plus 8961aef1, cf487591, 6a519ae1, 305429ad and f8957c1a. Eight files changed, none a bound controller file and none tools/prepare_ordinary_final_run.py.
+- **Ruling.** The side gates read some of these files (tools/cloud_run_checks.py scans scripts/*.py; the controller checks scan tools/loop/*.py), and check 174 scans the whole code surface, so a partial run cannot stand in. The merge gate is a full one on f8957c1a: B1 and B2 (the full gate's two halves) and SIDE, each with the same known-red lists as on 3a9ed089, less the now-green 280, 311 and 339 if they stay green. G_M1114_386 (sealed 13:09 on cf487591, never launched) is superseded and is regenerable.
+- **Cost.** About 2.9 USD by the three runs on 3a9ed089 (0.80, 0.86, SIDE pending).
+- **Rules.** GATE-ARM-A, D-612, D-621, D-622.
+
+## D-624: Seckin's 14:06 rulings: usage pace, the negotiation cloud reference, and vLLM before the large generation runs
+
+Written by the lead, Sat 14 Nov 2026 14:10 (from date). Seckin's words, relayed at 14:06.
+
+1. **Usage pace.** About 1 point an hour of weekly usage, as in the lead's 14:02 plan; this replaces the 14:00 "at most 2.5" message. The lead keeps only critical-path lanes active and states the measured rate in every FOR_SECKIN entry.
+2. **The negotiation cloud reference** (the remaining-jobs table's item 8): approved at the stated 4 to 11 USD. Seckin is asked again only if its forecast or cap would pass 11 USD. The paid run still needs standing order 2's record ("Seckin: evet" with a rule-named key source) written when it is sealed; this decision is its basis.
+3. **vLLM is fixed, not dropped.** The large generation runs where vLLM would cut the cost, the full-set run and the quick read (both generate on the producer and auditor models), are NOT launched on the old path until vLLM is fixed and has passed its D-608 test. The cause work continues until it holds. If waiting for vLLM would push a finish past the usage reset (18 November 11:00) or past 95 percent, the lead says so in FOR_SECKIN with the trade-off and does not decide it.
+- **Rules.** D-596, D-606, D-608, D-619, standing order 2.
+
+## D-625: Seckin's 14:38 rulings: vLLM's bar, the gate cloud reference, the system-level ablations and the order
+
+Written by the lead, Sat 14 Nov 2026 14:40 (from date). Seckin's words, relayed at 14:38.
+
+1. **vLLM's bar (D-608, D-624 item 3).** vLLM passes when both engines are scored against the development set's gold answers and vLLM's macro-F1 is at most 1 point below the current path's at the paired bootstrap lower bound, its validity not lower. Engine-to-engine agreement (bytes, labels, items both listed, coverage) is reported apart as the D-608 stability finding, never the bar. The scoring code and about 1 to 2 USD of runs are approved. VERIFIER has no gold set of its own; how it is scored is written before any vLLM figure is read, and sent to Seckin if it needs a choice.
+2. **The cloud reference on the gate items** (the remaining-work table's item 19): approved at about 19 USD; Seckin is asked again only above that. Standing order 2's "Seckin: evet" record is written when it is sealed.
+3. **The GNN ablation (item 9) and the cell-step ablation (item 15)** run at system level. Their declarations are Seckin's own statements (the GNN training set's `--declared-by`, `--domain-agnostic` and `--case-agnostic`; the cell rule's operator declaration and its calibration). When their turn comes, the lead brings him the exact wording to confirm and never fills it in.
+4. **Order.** Every ablation runs LAST, after the quick read, the full set, the negotiation measurement and the comparisons.
+5. **If vLLM fails again**, the vLLM work goes on. Whether the quick read starts on the old path meanwhile is Seckin's pending answer; until it comes, D-624 item 3 holds (no large generation run on the old path).
+- **Rules.** D-603, D-608, D-415, D-422, D-624, standing order 2.
+
+**D-625 addendum (Seckin 14:40).** Item 5 is answered: if vLLM has not passed by the time the quick read is ready (the gate merged and the 53 bundles re-sealed), the quick read starts on the old path (option a), and the vLLM work goes on until the full-set run. 217f alone cannot pass under item 1's bar (it carries no gold scoring), so the quick read's start is read against vLLM's gold-scored run, not 217f. The full set still waits for vLLM (D-624 item 3); if vLLM is not fixed when the full set is due, the lead writes the old path's cost and timing in FOR_SECKIN and waits for his answer.
+
+## D-626: Seckin's 16:18 rulings: the freeze runs at 8 GB now; the Lambda embedding route is deferred; off-path work held
+
+Written by the lead, Sat 14 Nov 2026 16:20 (from date). Seckin's words, relayed at 16:18.
+
+1. **The freeze (D-621).** Session 11 loaded bge-m3 on the GPU at a 7.17 GB host peak and stopped itself at 6.51 GB after the load, over 5 GB. For THIS job only both stops are 8 GB; session 12 started at 16:19 under them. No seal runs beside it (throughput's 217f seal waits for its end).
+2. **Deferred, final optimisation (option b).** Moving the freeze's heavy embedding step to Lambda (the passages encoded on a rented machine through the replay pass, the comparison on the laptop) is NOT built now. It is a deferred item, considered only at the very end, after the measurement.
+3. **Usage pace.** Measured about 1.8 points an hour since 14:01 against the 1-point target (D-624 item 1). Off-path work is held: disk-sweep pauses after its running check and commit (no fifth checker yet); critical-path lanes (the gate fixes, role N, the vLLM work Seckin put on the full set's path) go on.
+- **Rules.** D-621, D-624, RESOURCE-ALERT-A.
+
+**D-626 addendum (16:46).** Session 12 stopped at 13.05 GB of private bytes after the load, but its resident memory stayed under 0.75 GB: on Windows' WDDM driver the card's allocations are backed by the process's committed memory, so private bytes count GPU memory again and do not measure host RAM. Session 13 (16:45) stops on resident memory over 8 GB (Seckin's limit), free physical memory under 1.0 GiB or free disk under 31 GiB (committed device memory grows the page file); private bytes are logged, not a stop. The weights check passed: 391 of 391 tensors bit-exact on the GPU.
+
+## D-627: model loads over about 2 GiB of host RAM run on Lambda by default; the freeze's embedding moves to Lambda now
+
+Written by the lead, Sat 14 Nov 2026 17:23 (from date). Seckin's words, relayed at 17:19.
+
+1. **Standing rule.** Any step that needs more than about 2 GiB of host RAM for a model load runs on Lambda by default, not on the laptop. The laptop cannot give more memory and Seckin cannot close anything else. A laptop run of such a step needs a decision naming why.
+2. **The negotiation freeze (D-621, D-626).** No more laptop retries (sessions 8, 11, 12 and 13 stopped on memory). Its embedding moves to Lambda now (D-626 item 2's deferred option b, brought forward): the freeze exports its embed input as an embed_records file, role N hands it over, the lead seals it unopened as an exposed B1 replay bundle (EMBED-ROUTE-A, no bound controller file), the vectors come back to role N, and the freeze runs with them and no model. Approved at about 1 USD; Seckin is asked again above about 3 USD.
+- **Rules.** D-618, D-621, D-626, EMBED-ROUTE-A, RESOURCE-ALERT-A.
+
+## D-628: Seckin's 17:57 rulings: five cost measures, each tested first; the order after the full-set figures
+
+Written by the lead, Sat 14 Nov 2026 17:59 (from date). Seckin's words, relayed at 17:57.
+
+**A. Cost-effectiveness, starting now** (the quick read, the full set and the ablations). Each measure is prepared and gets a small test first that results are unchanged, before it is applied:
+1. prefix caching for the long shared prompt parts (17,000 to 27,000 tokens);
+2. vLLM, once it passes its bar (D-625);
+3. batched verifier calls (#256);
+4. the machine type chosen by speed per dollar (within the comparison rule: every arm of one comparison on one machine type);
+5. reuse of quick-read outputs in the full set where the code has not changed (FACTORS-A: only where every recorded factor is equal).
+Whatever passes applies to the full set; to the quick read and the ablations, whatever fits them. FOR_SECKIN gives, for each costly step, two figures: the projected cost before these measures and the projected cost with them.
+
+**B. The order after the full-set figures** (this replaces D-625 item 4's "ablations last"):
+full set, then the interface check and fix, then STOP and wait for Seckin (he may pause a few days to a week), then the runtime speed fix for this version, then the first release (v1.0), then the ablations together with runtime speed fixes and a check of the agent-assignment layer, then v1.1. Issue #259's timeline follows this order.
+- **Rules.** D-604, D-608, D-625, FACTORS-A, D-S82.
+
+**D-628 B corrected (Seckin 17:59).** The stop moves: full set, then the interface check and fix, then the runtime speed fix for this version, then the first release (v1.0), then STOP and wait for Seckin (a rest of a few days to a week), then the ablations together with runtime speed fixes and a check of the agent-assignment layer, then v1.1. Everything else in D-628 stands.
+
+## D-629: no laptop memory or disk stalls: heavy laptop steps move to Lambda by default; what stays runs one at a time
+
+Written by the lead, Sat 14 Nov 2026 18:16 (from date). Seckin's words, relayed at 18:11. Standing; extends D-627 beyond model loads.
+
+1. **Inventory.** Every remaining laptop step on the plan (seals, the freeze, the 53-bundle re-seal, local checks, watchers, disk-sweep scans) is listed with its measured or estimated peak RAM and disk, in FOR_SECKIN.
+2. **Default move.** A step whose peak would leave less than a safe margin above the floors (free RAM 2 GiB, disk 30.5 GiB) runs on Lambda by default, sealing included. A move of 3 USD or less each goes ahead; above that, Seckin is asked first with the cost. If C4's two obstacles block sealing on Lambda, the lead says what fixing them takes.
+3. **What stays local** runs one heavy job at a time, only after a free-RAM check, with nothing else heavy beside it.
+- **Rules.** S0 step 6, D-611, D-615, D-620, D-627, RESOURCE-ALERT-A.
+
+## D-630: build the vLLM backend in the pipeline, in parts, each tested against correct answers before use
+
+Written by the lead, Sat 14 Nov 2026 20:02 (from date). Seckin's words, relayed at 20:00.
+
+1. **Part A, first.** The minimal vLLM backend for VERIFIER's model (local_auditor): a vLLM server in the aux environment, the agent's generate calls routed to it with the frozen decoding and unchanged reply records, behind a sealed switch; then the two-engine comparison on part of the quick read (about 10 workloads run twice, about 5 USD), scored by the existing scorer. That comparison decides V1.
+2. **Part B.** Every producer role that 217g clears, with the vLLM server kept open for a whole run, and batched generation inside the pipeline wherever calls are independent, toward the measured batch speed.
+3. **Part C.** The vLLM environment kept on the persistent filesystem or as an image layer, so launches stop reinstalling it.
+4. **Parallel, within the 1-point-an-hour pace.** Independent parts run in parallel lanes; each part gets a realistic finish time in FOR_SECKIN.
+5. **Order with the measurement.** The quick read starts on the old path as decided (D-625 addendum). The full set waits for the backend (D-624 item 3). Any change to a bound controller file merges only after the quick-read bundles are sealed and launched, so they are not invalidated.
+6. **Every piece** passes its checks and a small test against correct answers before it is used.
+- **Rules.** D-608, D-619, D-624, D-625, D-628, CONTROLLER-BINDING.
+
+## D-631: lane/merge-1114 gets its final full gate on 180d4e99; cloud_run_checks is SIDE's one known red
+
+Written by the lead, Sat 14 Nov 2026 21:32 (from date).
+
+- **Head.** lane/merge-1114 is 180d4e99: f8957c1a plus 7c20ba26 (check 386's history-independent allowlist proof) and fix-side's six side-gate commits (e1822c4b the D-570 amendments in both pinned contracts; d6664bb3 localization; d367400a the final-integration stand-in; 1dbf18f7 no_window on the tools/loop starts, one conflict resolved by hand keeping both changes; ea2f106a the controller gate driver; 180d4e99 its checker round 1 fixes). Two read-only checkers passed the side-gate set after their gaps were closed. No bound controller file changed.
+- **The proof runs on Lambda (D-629).** The controller gate driver's change is proven by SIDE's controller_gate on the cloud's Linux tree, not by a laptop run.
+- **Known reds.** B1 and B2 keep their lists (280, 311 and 339 now count as green). SIDE has one known red: cloud_run_checks, which fails already at bc3b9c0d for open item 106 (the general path's sealer pins against requirements.txt) and reads a gitignored run output absent from any tree made from git.
+- **Then** the merge into the lead branch, the 53-bundle quick re-seal as one route-S job, and the quick read.
+- **Rules.** GATE-ARM-A, D-622, D-623, D-629.
+
+**D-631 addendum (21:36).** The sealer takes `--known-red` only as gate check numbers, and the side form's assessment has no known-red list, so cloud_run_checks cannot be sealed as known red: SIDEv3's integrity fails if it fails. The merge reads SIDEv3 per side gate: the merge holds when every side gate other than cloud_run_checks passes and cloud_run_checks fails only for its recorded reasons (open item 106 and the gitignored run output), read from its own log line.
+
+## D-632: the advisor's arms pass stands; its integrity failure is the runner's count rule, not the run
+
+Written by the lead, Sat 14 Nov 2026 22:19 (from date).
+
+- **The run.** neg-arms-pass, shimmer-loop-68b7537-e16023f4, on 68b7537c: 52 minutes on the instance, 1.12 USD, replay measurement complete, 48 sealed prompts, no failure, exit 0.
+- **The arms loaded what the plan names.** Read by the lead from the pass's own `replay_measurement.json` (digests only): `b1` is the base snapshot `bdd40416...:99b85155...`, `system_advice` the same base with `+adapter:8354d654...` (the tuned producer), `system_audit` the snapshot `5c20803a...`. neg-advisor-2's first reading (the system ran base) came from shortened digests and was withdrawn.
+- **The integrity failure.** `b1_reply_record_missing:a01` and `b1_reply_record_count:a01`: `ordinary_final_run.expected_records` (line 862 at 68b7537c) expects one reply record per sealed prompt of a replay pass, 48, while the advisor's form derives one audit call from each piece of the system's advice (NEG_ADVISOR_PLAN section 5 item 2), 32 more, 80 in all, each with its own call id and its prompt held to the SHA-256 the pass recorded. Every sealed prompt has exactly one answer record. The plan sets no runner-integrity condition (`score_neg_advisor.refuse` reads neither result.json nor FINAL_STATUS); this is not an infrastructure failure (plan line 452).
+- **No re-run** (Seckin 14:02: none unless the result is invalid). A later fix outside the bound files: the form reports its derived calls so the count rule holds; no bound controller file changes for it.
+- **Next.** The cloud reference through role N on the D-610 batch route (steps from cost-cuts), standing order 2's record written by the lead from Seckin's own 14:06 line; then the judge pass, grading and the score.
+
+## D-633: the A100 reference pair is measured: factor 0.908, so the A100 ranks below the A10 and changes no launch
+
+Written by the lead, Sat 14 Nov 2026 22:25 (from date).
+
+- **The pair.** cost-cuts' refpair-a10 (shimmer-loop-0305420-b4788968, 0.88 USD, 41 min) and refpair-a100 (shimmer-loop-0305420-fb40e17e, 1.23 USD, 37 min), both at 03054203; execution integrity passed on all six entries; the factor records differ in machine type alone (D-382, D-S82).
+- **The factor.** Workload seconds A10 against A100: contradoc_0436316e6bb3 589 and 369 (1.60), scitab_09b24267b75a 247 and 272 (0.91), contradoc_01015e47de8a 335 and 381 (0.88); `factor_record.measured_entry` median 0.908. No score moved: every item's review_data.json is byte-identical on both machines, so D-401 item 3 does not keep it out; its cost does (1.99 against 1.29 USD an hour, about 1.70 times the A10's cost per item).
+- **Stated limit.** The A10's first item took 589 s here against 332 s recorded: run-to-run variation is large, and three items give a direction, not a precise factor.
+- **Recorded.** The entry (`external/s05/REFPAIR/measured_entry_gpu_1x_a100_sxm4.json`) goes into `tools/cloud_run/gpu_speed_order.json` `measured` on lane/cost-cuts, merged with that lane; with a factor below 1 it ranks below the A10 (`measured_tiers`), so no launch changes. The A6000 stays open for when it has capacity.

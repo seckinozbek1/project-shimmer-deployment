@@ -126,7 +126,8 @@ def execute(bundle, plan, output_dir=None):
     seal = read(b / 'seal.json')
     require(m['source_commit'] == binding['source_commit'], 'Sealed source commit differs from the binding')
     require(m['source_archive_sha256'] == binding['project_sha256'], 'Project identity changed')
-    require(sha(b / 'project.tar.gz') == binding['project_sha256'], 'Project archive bytes changed')
+    # #252 item 3: the bytes here, or held in the store by this fingerprint (hashed on the instance).
+    run.project_held(b, binding['project_sha256'])
     assets = m['assets_archive']
     require(assets['filename'] == 'assets.tar' and assets['sha256'] == binding['assets_sha256'], 'Asset identity changed')
     # The budget is the sealed IV.3 budget, read from the manifest the binding names: an

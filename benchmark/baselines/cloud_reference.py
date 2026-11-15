@@ -17,6 +17,18 @@ It writes a pass folder in the shape J1's pass has (`replay_measurement.json` an
 through `reply_records.write`), so J1's reader functions read it. No pipeline runs, no instance is
 used, and the key never leaves this machine but in the request to the provider.
 
+The gate's claim set (lane/cloud-gate; D-S92, D-379: bar (b) needs the cloud reference on the gate
+items): `plan` and `run` with `--gate-set <claim_set_ids.json>` in place of `--bar`, `--items` and
+`--key` send B1's own prompts (`gate-prompts --held <role B's held build>`, built as the B1 arm's own
+file is) for one benchmark, held to gate_score.CLAIM_SET_SHA256: every claim-set item in every group
+named, one prompt each, under the document the set lists; and `--gate-held <that held build>` is
+required, the prompts file refused unless it is, byte for byte, the one gate-prompts rebuilds from
+it (ids alone do not pin the text sent). Every guard below holds; the kind is
+`cloud-reference-gate-v1` (its intent and close lines, reserves and resumes are read by it). The plan
+states the worst case per group and for the direct form alone and direct plus reasoning, at the
+recorded prices of the registry's configured model, with the store's room for each, read only.
+gate_score.cloud_arm reads the run as the `cloud` arm of gate_score.figures.
+
     plan  counts, characters and the worst case at the recorded prices; no provider call
     run   the paid run (below)
     read  half A rows of a pass folder (this one or J1's local one) through J1's reader functions
@@ -43,7 +55,31 @@ The run, in order, before any request that can be billed:
     allowance, at the price) fits under the cap; each call is checked again on its own;
   - the client is built with `max_retries=0`, so a billed request is never sent twice; each call's
     worst case is counted before the request and replaced by the reported cost only on a completed
-    reply whose usage was read; a usage reporting cache writes stops the run.
+    reply whose usage was read and priced field by field (`usage_cost`): uncached input, output,
+    cache reads and cache writes by duration, at the route's recorded rates; a usage field it cannot
+    price stops the run, the call kept at its worst case.
+
+D-610 cuts 1 and 2 (Seckin's yes of 13 November 2026, 15:06):
+  - `--route batch --batch-deadline-minutes M` sends each group as one Message Batch. Each request
+    body is `request_for`, the dict the single route passes to `messages.create`, so the bytes are the
+    same; every call's worst case is checked and counted at the recorded BATCH rates before the batch
+    is sent; the batch id goes to `batches.json` in the run folder at once and to the spend line; the
+    batch is read every minute until it ends, cancelled past its deadline (which must be below the
+    provider's 24-hour expiry) and read 15 minutes more; results are joined by custom id, and an
+    errored, canceled, expired or missing result is a recorded no_answer, never sent again by the run;
+  - (checker round 1) the batch record (its run-scoped custom-id prefix `id_prefix`, request count
+    and send time) is written to batches.json BEFORE the request, so a crash during it loses no
+    batch: its calls stay no_answer rows at their worst case, and `reconcile --run <folder>`
+    (read-only on the provider) lists the batches made since, takes the one whose every result
+    carries the prefix, reads a given-up batch again, and appends what it found to reconcile.json,
+    never changing the spend line; a resume carries the earlier run's no_answer rows forward and
+    sends none of them again unless `--resend-no-answer`; every close line field is declared in
+    CLOSE_LINE_FIELDS;
+  - a B1 system turn that the provider counts at or above the model's minimum cacheable length
+    (the recorded `cache.min_tokens`) and that two or more prompts of a group send is sent as one
+    text block of the same text with cache_control (1 hour on both routes, from the table, so the
+    two routes send the same bytes); the user turn is never split. Every rate, the cache rule and the
+    batch limits are in cloud_reference_prices.json, none in code.
 The spend line and the measurement are written on any exit (try/finally), so the spend is never lost.
 
 D-401 (the cloud-check's twelve gaps on fad0f075):
@@ -215,6 +251,149 @@ def assert_half_a(prompts, split):
     refuse(not stray, "A document outside half A reached the reference: %s" % ", ".join(stray[:5]))
 
 
+# ---------------------------------------------------------------------------
+# the gate's claim set (D-S92, D-S99, D-379: bar (b) needs the cloud reference on the gate items)
+
+GATE_SCHEMA = "cloud-reference-gate-v1"
+GATE_LABEL = ("Reference: a paid cloud model on the gate's claim set, on B1's own prompts. Not Shimmer's "
+              "performance.")
+GATE_PROMPTS_SCHEMA = "doc-judge-prompts-v1"
+B1_FORM = "b1"
+
+
+def load_gate_prompts(prompts_path):
+    """A gate prompts file: B1's own prompts (`doc_judge.py build --b1`), form `b1` only."""
+    value = json.loads(Path(prompts_path).read_text(encoding="utf-8"))
+    refuse(isinstance(value, dict) and value.get("schema") == GATE_PROMPTS_SCHEMA
+           and isinstance(value.get("prompts"), list) and value["prompts"],
+           "The gate prompts file is not a %s file with prompts" % GATE_PROMPTS_SCHEMA)
+    refuse(all(p.get("form") == B1_FORM for p in value["prompts"]),
+           "The gate prompts file holds a prompt that is not B1's own (form b1)")
+    return value
+
+
+J1_CONFIG = Path(__file__).resolve().with_name("doc_judge_prompt_j1.json")
+
+
+def build_gate_prompts(held, out, config_path=J1_CONFIG):
+    """B1's own prompts for one held gate build (role B's folder: one bundle per document and its
+    items.json), as the B1 arm's own files are built: `doc_judge.build` over every document with the
+    build's items.json, `--b1`, under J1's config (groups judge_direct and judge_reason), then the
+    prompts of form b1 kept, their ids unchanged, and `prompt_count` set to their count. Reproduced
+    byte for byte the quick-read lane's b1_prompts_contradoc.json and b1_prompts_scitab.json from
+    held_D-S100's quick builds. Returns the file's digest and count."""
+    import doc_judge
+    held, out = Path(held), Path(out)
+    docs = sorted(p for p in held.iterdir() if p.is_dir())
+    refuse(docs and (held / "items.json").is_file(), "The held build has no documents or no items.json")
+    full = out.with_name(out.name + ".full.tmp")
+    try:
+        value = doc_judge.build(docs, full, items=[held / "items.json"] * len(docs), config_path=config_path, b1=True)
+    finally:
+        if full.exists():
+            full.unlink()
+    value["prompts"] = [p for p in value["prompts"] if p.get("form") == B1_FORM]
+    value["prompt_count"] = len(value["prompts"])
+    doc_judge._write_json(out, value)
+    return {"prompts_sha256": sha(out), "prompt_count": value["prompt_count"], "documents": len(value["documents"])}
+
+
+def gate_selection(value, set_file, groups=GROUP_ORDER, pin=None):
+    """The prompts a gate claim-set run sends: one benchmark, held to the frozen claim set file
+    (`gate_score.CLAIM_SET_SHA256`, never the quick subset or any other set), every group given
+    holding exactly one prompt per item of the set file under the document the set file lists it
+    under. Returns (prompts in group order, benchmark, set digest)."""
+    import gate_score
+    pin = gate_score.CLAIM_SET_SHA256 if pin is None else pin
+    refuse(groups and set(groups) <= set(GROUP_ORDER), "Groups are judge_direct and judge_reason")
+    refuse(sha(set_file) == pin, "The set file is not the frozen gate claim set (gate_score.CLAIM_SET_SHA256): "
+                                 "nothing is sent")
+    benchmarks = {p.get("benchmark") for p in value["prompts"]}
+    refuse(len(benchmarks) == 1, "A gate prompts file holds one benchmark")
+    benchmark = benchmarks.pop()
+    refuse(benchmark in ("contradoc", "scitab"), "The gate reads contradoc and scitab only")
+    _digest, listed = gate_score.set_items(set_file, benchmark)
+    refuse(listed, "The claim set lists no %s item" % benchmark)
+    chosen = []
+    for group in groups:
+        mine = [p for p in value["prompts"] if p.get("group") == group]
+        ids = [p["item_id"] for p in mine]
+        refuse(len(ids) == len(set(ids)) and set(ids) == set(listed),
+               "The prompts of group %s are not the claim set's %s items, one each" % (group, benchmark))
+        stray = sorted(p["prompt_id"] for p in mine if listed[p["item_id"]] != p["document_id"])
+        refuse(not stray, "Prompt %s names another document than the claim set lists" % (stray[:1] or [""])[0])
+        chosen += mine
+    return chosen, benchmark, pin
+
+
+def check_gate_prompts(prompts_path, held, rebuild=None):
+    """The gate prompts file must be the one `build_gate_prompts` rebuilds from the named held build,
+    byte for byte: ids alone do not pin the text a paid run sends. Rebuilt into a temporary folder;
+    returns what is recorded."""
+    import tempfile
+    rebuild = build_gate_prompts if rebuild is None else rebuild
+    refuse(held is not None and Path(held).is_dir(), "A gate run names the held build its prompts are rebuilt from (--gate-held)")
+    with tempfile.TemporaryDirectory(prefix="shimmer_gate_rebuild_") as tmp:
+        rebuilt = Path(tmp) / "rebuilt.json"
+        rebuild(held, rebuilt)
+        digest = sha(rebuilt)
+    refuse(digest == sha(prompts_path), "The gate prompts file is not the one gate-prompts rebuilds from %s: nothing is sent"
+           % Path(held).name)
+    return {"held": Path(held).name, "rebuilt_sha256": digest}
+
+
+def gate_plan(prompts_path, set_file, groups=GROUP_ORDER, root=ROOT, prices_path=PRICES_PATH, store=None,
+              measured=None, held=None, rebuild=None):
+    """The claim-set run's plan, with no provider call: counts, characters, the token estimate and
+    the worst case at the RECORDED prices of the registry's configured model (not resolved live:
+    the run resolves it and refuses prices that differ), per group and for the direct form alone and
+    direct plus reasoning; the spend store's room for each (read only); and, when `measured` gives
+    the output tokens per call a measured run wrote per group, an expected figure labelled so."""
+    value = load_gate_prompts(prompts_path)
+    chosen, benchmark, digest = gate_selection(value, set_file, tuple(groups))
+    rebuilt = check_gate_prompts(prompts_path, held, rebuild)
+    configured = seat_model(root)
+    row = recorded_prices(configured, prices_path)
+    prices = {"input_per_mtok": float(row["input_per_mtok"]), "output_per_mtok": float(row["output_per_mtok"])}
+    out = plan(chosen, prices)
+    out.update(label=GATE_LABEL, benchmark=benchmark, gate_set_sha256=digest, prompts_sha256=sha(prompts_path), rebuilt=rebuilt,
+               model={"configured": configured, "resolved": "not read: the run resolves it live"},
+               prices=dict(row, table_sha256=sha(prices_path)), count_margin=COUNT_MARGIN,
+               worst_case_is="the token estimate x %.2f and the full output allowance on every call, at the recorded "
+                             "prices" % COUNT_MARGIN)
+    forms = {"direct": ("judge_direct",), "direct_and_reasoning": ("judge_direct", "judge_reason")}
+    out["forms"] = {}
+    for name, wanted in forms.items():
+        if not set(wanted) <= set(out["groups"]):
+            continue
+        worst = round(sum(out["groups"][g]["worst_case_usd"] for g in wanted), 2)
+        entry = {"groups": list(wanted), "prompts": sum(out["groups"][g]["prompts"] for g in wanted),
+                 "worst_case_usd": worst}
+        if isinstance(row.get("batch"), dict):
+            batch = {"input_per_mtok": float(row["batch"]["input_per_mtok"]),
+                     "output_per_mtok": float(row["batch"]["output_per_mtok"])}
+            entry["batch_worst_case_usd"] = round(sum(
+                worst_case(out["groups"][g]["input_tokens_estimate"], out["groups"][g]["output_allowance"], batch)
+                for g in wanted), 2)
+        if measured:
+            expected = sum(cost(out["groups"][g]["input_tokens_estimate"], measured[g] * out["groups"][g]["prompts"], prices)
+                           for g in wanted)
+            entry["expected_usd"] = round(expected, 2)
+            if isinstance(row.get("batch"), dict):
+                entry["batch_expected_usd"] = round(sum(
+                    cost(out["groups"][g]["input_tokens_estimate"], measured[g] * out["groups"][g]["prompts"], batch)
+                    for g in wanted), 2)
+                entry["batch_expected_is"] = "the same estimate at the recorded batch rates, no prompt marked for cache"
+            entry["expected_is"] = ("estimate: the input token estimate and the output tokens per call measured in %s"
+                                    % measured.get("source"))
+        try:
+            entry["store"] = spend.api_room(spend_store(root) if store is None else store, GATE_SCHEMA, worst)
+        except (Stop, spend.SpendStoreError) as exc:
+            entry["store"] = {"ok": None, "reason": "the spend store cannot be read: %s" % exc}
+        out["forms"][name] = entry
+    return out
+
+
 def turns(prompt):
     """(system, user): B1's two turns as written, or the agent's one user turn."""
     system = prompt.get("system")
@@ -317,6 +496,14 @@ def check_prices(prices, model, path=PRICES_PATH):
     return dict(prices, recorded=row, table_sha256=sha(path))
 
 
+def batch_limits(prices):
+    """The provider's batch limits as the recorded table gives them (requests, bytes, expiry hours)."""
+    limits = ((prices or {}).get("recorded") or {}).get("batch_limits") or {}
+    refuse(all(isinstance(limits.get(f), int) and limits[f] > 0 for f in ("max_requests", "max_bytes", "expiry_hours")),
+           "The recorded price row has no batch limits (max_requests, max_bytes, expiry_hours)")
+    return {f: limits[f] for f in ("max_requests", "max_bytes", "expiry_hours")}
+
+
 def spend_store(root=ROOT):
     """The one spend store every checkout shares, by the one path rule the guard reads too
     (`cloud_reference_spend.store_path`: docs/loop/private/ of the MAIN checkout, from git's common
@@ -388,7 +575,19 @@ def open_run(store, run_id, limit_usd, run_folder, kind, check, approval=None, c
     return budget
 
 
+# Every field a close line of the paid runners may carry (this module's and cloud_reference_b1.py's),
+# declared here, beside the writer: the spend reader (tools/loop/cloud_reference_spend.py) is a bound
+# controller file and reads only `event`, `run_id` and `spent_usd`; the standing-orders check reads
+# `seckin_approved`, `key_source`, `chain_run_ids_before` and `time_utc`. D-610 adds `route`, `rates`,
+# `batch_ids` and `batch_custom_id_prefixes`, which no reader of the store needs to count a spend.
+CLOSE_LINE_FIELDS = ("event", "run_id", "spent_usd", "time_utc", "run_folder", "model", "complete", "stopped",
+                     "seckin_approved", "key_source", "kind", "route", "rates", "batch_ids",
+                     "batch_custom_id_prefixes")
+
+
 def close_line(run_id, spent_usd, **fields):
+    undeclared = sorted(set(fields) - set(CLOSE_LINE_FIELDS))
+    refuse(not undeclared, "A close line field is not declared in CLOSE_LINE_FIELDS: %s" % ", ".join(undeclared))
     return dict(fields, event="close", run_id=run_id, spent_usd=round(spent_usd, 6),
                 time_utc=datetime.now(timezone.utc).isoformat())
 
@@ -483,11 +682,136 @@ def call_fits(spent, worst, cap_usd):
     return spent + worst <= cap_usd
 
 
+# D-610 cuts 1 and 2: the price set a route bills at, the cache rule, and every usage field priced.
+RATE_FIELDS = ("input_per_mtok", "output_per_mtok", "cache_write_5m_per_mtok", "cache_write_1h_per_mtok",
+               "cache_read_per_mtok")
+ROUTES = ("single", "batch")
+# The usage fields priced here, and the one field read but not priced (the service tier, which must be
+# the route's own). Any other field carrying a value is a usage this code cannot price: the run stops.
+PRICED_USAGE = ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens",
+                "cache_creation")
+TIER_OF_ROUTE = {"single": ("standard",), "batch": ("batch",)}
+CUSTOM_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")   # the provider's custom_id form (batch-processing page)
+BATCH_POLL_SECONDS = 60        # how often a batch is read while it runs (not a budget figure)
+BATCH_CANCEL_GRACE_SECONDS = 900   # after a cancel, how long the batch is read until it ends
+
+
+class Unpriceable(Exception):
+    """A usage this code cannot price; the call stays at its worst case and the run stops."""
+
+
+def route_rates(prices, route):
+    """The five rates a route bills at, from the RECORDED row the run checked (`check_prices`): the
+    row itself for `single`, its `batch` block for `batch`. Every rate must be recorded; none is
+    computed here (the table records the batch rates as the pricing page gives them)."""
+    refuse(route in ROUTES, "The route is single or batch")
+    row = (prices or {}).get("recorded") or {}
+    rates = row if route == "single" else row.get("batch")
+    refuse(isinstance(rates, dict) and all(isinstance(rates.get(f), (int, float)) and rates[f] > 0 for f in RATE_FIELDS),
+           "The recorded price row has no %s rates for %s (%s)" % (route, ", ".join(RATE_FIELDS),
+                                                                   "cloud_reference_prices.json"))
+    return {f: float(rates[f]) for f in RATE_FIELDS}
+
+
+def cache_rule(prices):
+    """{min_tokens, ttl: {route: ttl}} from the recorded row: the model's minimum cacheable length and
+    the cache duration each route marks (the batch page advises the 1-hour cache, a batch running
+    longer than 5 minutes)."""
+    row = (prices or {}).get("recorded") or {}
+    rule = row.get("cache") or {}
+    refuse(isinstance(rule.get("min_tokens"), int) and rule["min_tokens"] > 0
+           and all((rule.get("ttl") or {}).get(r) in ("5m", "1h") for r in ROUTES),
+           "The recorded price row has no cache rule (min_tokens and a ttl per route)")
+    return {"min_tokens": rule["min_tokens"], "ttl": dict(rule["ttl"])}
+
+
+def reserve_rates(rates, ttl):
+    """The rates a call's worst case is reserved at: with a cache mark, every input token at the
+    higher of the input rate and that duration's write rate (the safe side)."""
+    if not ttl:
+        return rates
+    return dict(rates, input_per_mtok=max(rates["input_per_mtok"], rates["cache_write_%s_per_mtok" % ttl]))
+
+
+def _fields(obj):
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return dict(obj)
+    for name in ("to_dict", "model_dump"):
+        method = getattr(obj, name, None)
+        if callable(method):
+            try:
+                return dict(method())
+            except Exception:
+                pass
+    try:
+        return dict(vars(obj))
+    except TypeError:
+        return None
+
+
+def _carries(value):
+    """True when a usage field holds anything but nothing: a non-zero number, a non-empty text or a
+    container holding one."""
+    if value in (None, False, 0, "", [], {}):
+        return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    nested = _fields(value) if not isinstance(value, (str, list, tuple)) else None
+    if nested is not None:
+        return any(_carries(v) for v in nested.values())
+    if isinstance(value, (list, tuple)):
+        return any(_carries(v) for v in value)
+    return True
+
+
+def usage_cost(reply, rates, *, ttl=None, route="single"):
+    """The reported cost of a reply from every field of its usage, or None when the usage cannot be
+    read. Raises Unpriceable for a field it cannot price: an unknown field carrying a value, a service
+    tier other than the route's, or a cache write whose duration is neither broken down nor marked."""
+    usage = _fields(getattr(reply, "usage", None))
+    if usage is None:
+        return None
+    try:
+        fresh = int(usage.get("input_tokens"))
+        output = int(usage.get("output_tokens"))
+        read = int(usage.get("cache_read_input_tokens") or 0)
+        written = int(usage.get("cache_creation_input_tokens") or 0)
+    except (TypeError, ValueError):
+        return None
+    tier = usage.get("service_tier")
+    if tier is not None and tier not in TIER_OF_ROUTE[route]:
+        raise Unpriceable("service tier %s on the %s route" % (tier, route))
+    unknown = sorted(k for k, v in usage.items() if k not in PRICED_USAGE + ("service_tier",) and _carries(v))
+    if unknown:
+        raise Unpriceable("usage field %s" % ", ".join(unknown))
+    split = _fields(usage.get("cache_creation"))
+    if split is not None and _carries(split):
+        extra = sorted(k for k, v in split.items()
+                       if k not in ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens") and _carries(v))
+        if extra:
+            raise Unpriceable("cache_creation field %s" % ", ".join(extra))
+        five, hour = int(split.get("ephemeral_5m_input_tokens") or 0), int(split.get("ephemeral_1h_input_tokens") or 0)
+        if five + hour != written:
+            raise Unpriceable("cache writes %d not the sum of their durations %d + %d" % (written, five, hour))
+    elif written:
+        if not ttl:
+            raise Unpriceable("%d cache-write tokens with no duration reported and no cache mark sent" % written)
+        five, hour = (written, 0) if ttl == "5m" else (0, written)
+    else:
+        five = hour = 0
+    usd = (fresh * rates["input_per_mtok"] + output * rates["output_per_mtok"] + read * rates["cache_read_per_mtok"]
+           + five * rates["cache_write_5m_per_mtok"] + hour * rates["cache_write_1h_per_mtok"]) / 1e6
+    return {"cost_usd": usd, "input_tokens": fresh + read + written, "uncached_input_tokens": fresh,
+            "output_tokens": output, "cache_read_tokens": read, "cache_write_5m_tokens": five,
+            "cache_write_1h_tokens": hour}
+
+
 def usage_tokens(reply):
-    """{input, output, cache_write} from a reply's usage, or None when it cannot be read. Cache
-    reads are counted at the input price (they cost less: the safe side). Cache writes are not
-    priced here: the run sends no cache_control, so a usage reporting them is refused (the call
-    kept at its worst case and the run stopped)."""
+    """{input, output, cache_write} from a reply's usage, or None when it cannot be read: the reader
+    cloud_reference_b1.py prices with (it sends no cache_control and refuses cache writes). This
+    module's own runs price every usage field with `usage_cost` (D-610 cut 2)."""
     usage = getattr(reply, "usage", None)
     try:
         used_in = int(usage.input_tokens) + int(getattr(usage, "cache_read_input_tokens", 0) or 0)
@@ -632,6 +956,17 @@ def check_approval(seckin_approved, for_seckin):
             "for_seckin_sha256": sha(for_seckin), "attested": LEAD_ATTESTED}
 
 
+def no_answer_before(earlier):
+    """{prompt id: its row} of the no_answer rows the run resumed recorded (its own and those it
+    carried): calls a resume must not send again, since a batch given up may still answer and bill them."""
+    if earlier is None:
+        return {}
+    keep = ("prompt_id", "document_id", "form", "group", "rule_id", "call_id", "failure", "no_answer", "route",
+            "batch_id", "max_new_tokens")
+    return {r["prompt_id"]: {k: r.get(k) for k in keep}
+            for r in earlier.get("rows") or [] if r.get("no_answer") and r.get("prompt_id")}
+
+
 def chain_spent(earlier):
     """What the chain of runs this one resumes has spent, from the earlier run's own measurement:
     its spend plus what its own chain had spent before it (D-401 item 12)."""
@@ -703,81 +1038,421 @@ def payload_text(prompt):
     return (system + "\n\n" if system else "") + user
 
 
-def params_for(prompt, model):
-    """The request a prompt becomes: its user turn, and its system turn when it has one."""
+def params_for(prompt, model, cache_ttl=None):
+    """The request a prompt becomes: its user turn, and its system turn when it has one. With
+    `cache_ttl` (D-610 cut 2) the system turn is sent as one text block of the same text carrying
+    cache_control; the user turn is never split, so no byte of what the model reads moves."""
     system, user = turns(prompt)
     params = {"model": model, "messages": [{"role": "user", "content": user}]}
     if system is not None:
-        params["system"] = system
+        params["system"] = (system if not cache_ttl else
+                            [{"type": "text", "text": system, "cache_control": {"type": "ephemeral", "ttl": cache_ttl}}])
     return params
 
 
-def call_one(client, p, model, counted, state, cap_usd, prices, key, context, clock):
-    """One call, after the stop: (row, None), or (None, why) when its worst case would pass the cap.
+def request_for(prompt, model, cache_ttl=None):
+    """The one request body both routes send: the single call's keyword arguments, and a batch
+    request's `params`, the same dict (D-610 cut 1: the batch bytes are the single call's)."""
+    return dict(params_for(prompt, model, cache_ttl), max_tokens=int(prompt["max_new_tokens"]))
+
+
+def cache_marks(client, prompts, model, rule, route):
+    """{system text: ttl or None} for the prompts of one group: a system turn is marked only when the
+    provider counts it at or above the model's minimum cacheable length AND two or more prompts send
+    it (a write read by no later call costs more than no cache). The count is the provider's
+    count_tokens of the system turn with a one-character user turn, which it slightly overstates; a
+    prefix the provider finds too short is simply not cached, with no error and no write."""
+    repeats = {}
+    for p in prompts:
+        system, _ = turns(p)
+        if system is not None:
+            repeats[system] = repeats.get(system, 0) + 1
+    marks, counted = {}, {}
+    for system, n in repeats.items():
+        if n < 2:
+            marks[system], counted[text_digest(system)] = None, None
+            continue
+        tokens = int(client.messages.count_tokens(model=model, system=system,
+                                                  messages=[{"role": "user", "content": "."}]).input_tokens)
+        counted[text_digest(system)] = tokens
+        marks[system] = rule["ttl"][route] if tokens >= rule["min_tokens"] else None
+    return marks, counted
+
+
+def mark_of(prompt, marks):
+    system, _ = turns(prompt)
+    return marks.get(system) if system is not None else None
+
+
+def call_row(p, counted, worst):
+    row = {k: p[k] for k in ("prompt_id", "document_id", "form", "group", "rule_id")}
+    row.update(max_new_tokens=int(p["max_new_tokens"]), prompt_tokens=counted, worst_case_usd=round(worst, 6))
+    return row
+
+
+def settle(reply, p, row, worst, state, rates, ttl, route, model, key, context):
+    """A reply that came back, on either route: its cost read from every usage field and put in
+    place of the worst case already counted, or the worst case kept (usage unreadable, or a field
+    this code cannot price, which also stops the run); its text saved through reply_records.write."""
+    import reply_records
+    allowance = int(p["max_new_tokens"])
+    try:
+        used = usage_cost(reply, rates, ttl=ttl, route=route)
+    except Unpriceable as exc:
+        used = None
+        row.update(cost_usd=round(worst, 6), cost_is="worst case, the usage carries what is not priced here: %s" % exc)
+        state["halt"] = ("%s on %s cannot be priced here, so the run stops (the call kept at its worst case)"
+                         % (exc, p["prompt_id"]))
+    else:
+        if used is None:
+            row.update(cost_usd=round(worst, 6), cost_is="worst case, the reply's usage could not be read")
+        else:
+            state["spent"] += used["cost_usd"] - worst
+            row.update({k: v for k, v in used.items() if k != "cost_usd"}, cost_usd=round(used["cost_usd"], 6))
+    text, stop_reason = read_reply(reply)
+    call_id = reply_records.write(context, agent="CLOUD_REFERENCE_" + p["group"].upper(), backend="claude_api",
+                                  model_id=model, payload=payload_text(p), payload_form="anthropic_messages_text",
+                                  reply=text, ok=text is not None,
+                                  error=None if text is not None else "reply not readable: " + str(stop_reason),
+                                  decoding={"max_tokens": allowance, "other_settings": "provider_default"},
+                                  phase="cloud_reference", doc_id=p["document_id"])
+    row.update(call_id=call_id, failure=None if text is not None else "reply not readable", stop_reason=stop_reason,
+               length_reached_allowance=stop_reason == "max_tokens", route=route, cache_ttl=ttl,
+               reply=None if text is None else {"sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                                                "length_bytes": len(text.encode("utf-8"))})
+    return row
+
+
+def no_answer(p, row, why, cost_usd, cost_is, route, model, context):
+    """A call with no answer, recorded as such and never sent again by this run (D-610 cut 1)."""
+    import reply_records
+    call_id = reply_records.write(context, agent="CLOUD_REFERENCE_" + p["group"].upper(), backend="claude_api",
+                                  model_id=model, payload=payload_text(p), payload_form="anthropic_messages_text",
+                                  reply=None, ok=False, error="no_answer: " + why, phase="cloud_reference",
+                                  doc_id=p["document_id"])
+    row.update(call_id=call_id, failure="no_answer: " + why, no_answer=True, length_reached_allowance=None,
+               cost_usd=round(cost_usd, 6), cost_is=cost_is, route=route, seconds=None)
+    return row
+
+
+def call_one(client, p, model, counted, state, cap_usd, rates, key, context, clock, ttl=None):
+    """One call on the single route, after the stop: (row, None), or (None, why) when its worst case
+    would pass the cap.
 
     The call's worst case is added to `state["spent"]` BEFORE the request, so an interruption
     during it (a KeyboardInterrupt in messages.create) leaves it counted; it is taken back, and the
-    reported cost put in its place, only on a completed reply whose usage was read and carries no
-    cache writes. Its reply is saved through reply_records.write; its error is scrubbed of the key."""
+    reported cost put in its place, only on a completed reply whose usage was read and priced
+    (`settle`). Its reply is saved through reply_records.write; its error is scrubbed of the key."""
     import reply_records
-    allowance = int(p["max_new_tokens"])
-    worst = worst_case(counted, allowance, prices)
+    worst = worst_case(counted, int(p["max_new_tokens"]), reserve_rates(rates, ttl))
     if not call_fits(state["spent"], worst, cap_usd):
         return None, ("cap: %.4f USD spent and %s's worst case %.4f USD would pass the %.2f USD cap"
                       % (state["spent"], p["prompt_id"], worst, cap_usd))
-    params = params_for(p, model)
-    payload = payload_text(p)
-    agent = "CLOUD_REFERENCE_" + p["group"].upper()
-    row = {k: p[k] for k in ("prompt_id", "document_id", "form", "group", "rule_id")}
-    row.update(max_new_tokens=allowance, prompt_tokens=counted, worst_case_usd=round(worst, 6))
+    row = call_row(p, counted, worst)
     started = clock()
     state["spent"] += worst
     try:
-        reply = client.messages.create(max_tokens=allowance, **params)
+        reply = client.messages.create(**request_for(p, model, ttl))
     except Exception as exc:
         # A failed call reports no usage: its worst case stays counted, the safe side.
         error = scrub("%s: %s" % (type(exc).__name__, exc), key)
-        call_id = reply_records.write(context, agent=agent, backend="claude_api", model_id=model, payload=payload,
-                                      payload_form="anthropic_messages_text", reply=None, ok=False, error=error,
-                                      phase="cloud_reference", doc_id=p["document_id"])
+        call_id = reply_records.write(context, agent="CLOUD_REFERENCE_" + p["group"].upper(), backend="claude_api",
+                                      model_id=model, payload=payload_text(p), payload_form="anthropic_messages_text",
+                                      reply=None, ok=False, error=error, phase="cloud_reference", doc_id=p["document_id"])
         row.update(call_id=call_id, failure=error[:200], length_reached_allowance=None, cost_usd=round(worst, 6),
-                   cost_is="worst case, the call failed")
+                   cost_is="worst case, the call failed", route="single", cache_ttl=ttl)
         row["seconds"] = round(clock() - started, 3)
         if type(exc).__name__ in STOP_ERRORS:
             state["halt"] = ("the provider refused the call (%s); the run stops cleanly, every reply so far recorded "
                              "(D-S106 item 3)" % type(exc).__name__)
         return row, None
-    used = usage_tokens(reply)
-    if used is None:
-        row.update(cost_usd=round(worst, 6), cost_is="worst case, the reply's usage could not be read")
-    elif used["cache_write"]:
-        row.update(cost_usd=round(worst, 6), cost_is="worst case, the usage reports cache writes",
-                   cache_write_tokens=used["cache_write"])
-        state["halt"] = ("usage reports %d cache-write tokens on %s; they are not priced here, so the run stops"
-                         % (used["cache_write"], p["prompt_id"]))
-    else:
-        actual = cost(used["input"], used["output"], prices)
-        state["spent"] += actual - worst
-        row.update(input_tokens=used["input"], output_tokens=used["output"], cost_usd=round(actual, 6))
-    text, stop_reason = read_reply(reply)
-    call_id = reply_records.write(context, agent=agent, backend="claude_api", model_id=model, payload=payload,
-                                  payload_form="anthropic_messages_text", reply=text, ok=text is not None,
-                                  error=None if text is not None else "reply not readable: " + str(stop_reason),
-                                  decoding={"max_tokens": allowance, "other_settings": "provider_default"},
-                                  phase="cloud_reference", doc_id=p["document_id"])
-    row.update(call_id=call_id, failure=None if text is not None else "reply not readable", stop_reason=stop_reason,
-               length_reached_allowance=stop_reason == "max_tokens",
-               reply=None if text is None else {"sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
-                                                "length_bytes": len(text.encode("utf-8"))})
+    settle(reply, p, row, worst, state, rates, ttl, "single", model, key, context)
     row["seconds"] = round(clock() - started, 3)
     return row, None
+
+
+def id_prefix(run_id):
+    """The run-scoped custom-id prefix: `r`, the run id's last 12 characters, `_`. Every request of a
+    run's batches starts with it, so a batch whose id was lost can be recognised from its results
+    (`reconcile`)."""
+    tail = str(run_id)[-12:]
+    refuse(CUSTOM_ID.fullmatch(tail), "The run id cannot give a custom-id prefix")
+    return "r%s_" % tail
+
+
+def custom_ids(prompts, run_id):
+    """{custom_id: prompt}: one id per prompt, the provider's form: the run's prefix and the prompt
+    id's digest."""
+    out = {}
+    for p in prompts:
+        cid = id_prefix(run_id) + hashlib.sha256(str(p["prompt_id"]).encode("utf-8")).hexdigest()[:40]
+        refuse(CUSTOM_ID.fullmatch(cid) and cid not in out, "Two prompts share a custom id (%s)" % p["prompt_id"])
+        out[cid] = p
+    return out
+
+
+def _attr(obj, name):
+    return obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
+
+
+def batch_group(client, group, mine, model, counted, state, cap_usd, rates, marks, key, context, clock, sleep,
+                deadline_seconds, limits, out, max_calls=None):
+    """One group on the batch route (D-610 cut 1). Every call's worst case at the batch rates is
+    checked against the cap one by one and counted BEFORE the batch is sent; the batch id is written
+    to the run folder as soon as the provider gives it. The batch is read every BATCH_POLL_SECONDS
+    until it ends or `deadline_seconds` pass; past the deadline it is cancelled and read for up to
+    BATCH_CANCEL_GRACE_SECONDS more. Results are joined by custom id: a succeeded result is settled
+    as a single reply is; an errored, canceled or expired one (not billed, by the batch page) and a
+    custom id with no result (its worst case kept) are each a recorded no_answer, never sent again.
+    Returns (rows, why stopped or None)."""
+    ids = custom_ids(mine, context.run_id)
+    plan_rows, chosen, reserved, why = {}, [], 0.0, None
+    for cid, p in ids.items():
+        if max_calls is not None and state["calls"] >= max_calls:
+            why = "chunk done: %d calls; resume with --resume-from this folder" % max_calls
+            break
+        ttl = mark_of(p, marks)
+        worst = worst_case(counted[p["prompt_id"]], int(p["max_new_tokens"]), reserve_rates(rates, ttl))
+        if not call_fits(state["spent"] + reserved, worst, cap_usd):
+            why = ("cap: %.4f USD spent and reserved, and %s's worst case %.4f USD would pass the %.2f USD cap"
+                   % (state["spent"] + reserved, p["prompt_id"], worst, cap_usd))
+            break
+        reserved += worst
+        state["calls"] += 1
+        plan_rows[cid] = (p, worst, ttl)
+        chosen.append({"custom_id": cid, "params": request_for(p, model, ttl)})
+    if not chosen:
+        return [], why
+    size = len(json.dumps(chosen).encode("utf-8"))
+    refuse(len(chosen) <= limits["max_requests"] and size <= limits["max_bytes"],
+           "The batch holds %d requests in %d bytes, over the provider's limit (%d, %d bytes)"
+           % (len(chosen), size, limits["max_requests"], limits["max_bytes"]))
+    record = {"group": group, "id": None, "requests": len(chosen), "bytes": size, "reserved_usd": round(reserved, 6),
+              "deadline_seconds": deadline_seconds, "price_set": "batch", "status": "sending",
+              "custom_id_prefix": id_prefix(context.run_id),
+              "sent_after_utc": datetime.now(timezone.utc).isoformat()}
+    state["batches"].append(record)
+    started = clock()
+    state["spent"] += reserved
+    # Written BEFORE the request: an interruption during it leaves the record (prefix, count, time) on
+    # disk, so `reconcile` can find a batch the provider holds whose id never came back.
+    write_json(Path(out) / "batches.json", state["batches"])
+    try:
+        batch = client.messages.batches.create(requests=chosen)
+    except BaseException as exc:
+        # Nothing came back to say the batch exists, yet the provider may hold it: every call stays a
+        # no_answer at its worst case, which a resume does not send again, and `reconcile` looks for it.
+        error = scrub("%s: %s" % (type(exc).__name__, exc), key)
+        lost = [no_answer(p, call_row(p, counted[p["prompt_id"]], w), "the batch request did not return (%s); "
+                          "the provider may hold it" % type(exc).__name__, w, "worst case, the batch request did not "
+                          "return", "batch", model, context) for p, w, _ in plan_rows.values()]
+        if not isinstance(exc, Exception):
+            record.update(status="create interrupted: the provider may hold this batch; run reconcile",
+                          error=type(exc).__name__)
+            write_json(Path(out) / "batches.json", state["batches"])
+            state["interrupted_rows"] = lost
+            raise
+        record.update(status="create failed: the provider may hold this batch; run reconcile", error=error[:200])
+        write_json(Path(out) / "batches.json", state["batches"])
+        rows = lost
+        if type(exc).__name__ in STOP_ERRORS:
+            state["halt"] = "the provider refused the batch (%s); the run stops cleanly" % type(exc).__name__
+        return rows, why or "the batch for %s was not accepted: %s" % (group, error[:200])
+    record.update(id=str(_attr(batch, "id")), status=_attr(batch, "processing_status"))
+    write_json(Path(out) / "batches.json", state["batches"])
+    status, rows = record["status"], []
+    try:
+        status, cancelled, give_up, polls = record["status"], False, None, 0
+        deadline = started + deadline_seconds
+        while status != "ended":
+            now = clock()
+            if not cancelled and now >= deadline:
+                cancelled = True
+                record["cancelled_at_seconds"] = round(now - started, 3)
+                try:
+                    client.messages.batches.cancel(record["id"])
+                except Exception as exc:
+                    record["cancel_error"] = scrub(type(exc).__name__, key)
+                give_up = now + BATCH_CANCEL_GRACE_SECONDS
+                write_json(Path(out) / "batches.json", state["batches"])
+            elif cancelled and now >= give_up:
+                break
+            sleep(BATCH_POLL_SECONDS)
+            polls += 1
+            try:
+                status = _attr(client.messages.batches.retrieve(record["id"]), "processing_status")
+            except Exception as exc:
+                record["poll_errors"] = record.get("poll_errors", 0) + 1
+                record["last_poll_error"] = scrub(type(exc).__name__, key)
+        record.update(status=status, polls=polls, cancelled=cancelled, seconds=round(clock() - started, 3))
+        results, read_error = {}, None
+        if status == "ended":
+            try:
+                for item in client.messages.batches.results(record["id"]):
+                    cid = _attr(item, "custom_id")
+                    if cid in plan_rows and cid not in results:
+                        results[cid] = _attr(item, "result")
+            except Exception as exc:
+                read_error = scrub(type(exc).__name__, key)
+                record["results_error"] = read_error
+        kinds = {}
+        for cid, (p, worst, ttl) in plan_rows.items():
+            row = call_row(p, counted[p["prompt_id"]], worst)
+            result = results.get(cid)
+            kind = _attr(result, "type") if result is not None else None
+            kinds[kind or "missing"] = kinds.get(kind or "missing", 0) + 1
+            if kind == "succeeded":
+                settle(_attr(result, "message"), p, row, worst, state, rates, ttl, "batch", model, key, context)
+                row["seconds"] = None
+                rows.append(row)
+            elif kind in ("errored", "canceled", "expired"):
+                state["spent"] -= worst
+                rows.append(no_answer(p, row, kind, 0.0, "not billed: a %s batch result is not billed (the provider's "
+                                                         "batch-processing page)" % kind, "batch", model, context))
+            else:
+                rows.append(no_answer(p, row, "no result for its custom id" + ("" if status == "ended" else
+                                      " (the batch had not ended)"), worst, "worst case, no result came back",
+                                      "batch", model, context))
+            rows[-1]["batch_id"] = record["id"]
+        record["results"] = kinds
+        write_json(Path(out) / "batches.json", state["batches"])
+        if cancelled:
+            why = why or ("batch %s passed its %d s deadline and was cancelled; %s" % (
+                record["id"], deadline_seconds, "it ended" if status == "ended" else "it had not ended when it was given up"))
+        elif read_error:
+            why = why or "batch %s results could not be read (%s)" % (record["id"], read_error)
+        return rows, why
+    except BaseException as exc:
+        # Interrupted after the provider took the batch (while it was read, or its results): the batch
+        # is cancelled once, the cancel itself bounded by its own catch, and every planned call with no
+        # row yet becomes a no_answer at its worst case, so neither the run nor a resume sends it again.
+        if status != "ended":
+            try:
+                client.messages.batches.cancel(record["id"])
+                record["cancelled_on_interrupt"] = True
+            except BaseException as cancel_exc:
+                record["cancel_error"] = scrub(type(cancel_exc).__name__, key)
+        settled = {r["prompt_id"] for r in rows}
+        lost = []
+        for cid, (p, worst, ttl) in plan_rows.items():
+            if p["prompt_id"] in settled:
+                continue
+            lost.append(no_answer(p, call_row(p, counted[p["prompt_id"]], worst), "the run was interrupted while the "
+                                  "batch was followed (%s)" % type(exc).__name__, worst, "worst case, interrupted after "
+                                  "the batch was sent", "batch", model, context))
+            lost[-1]["batch_id"] = record["id"]
+        record.update(status="interrupted while followed: %s" % type(exc).__name__)
+        write_json(Path(out) / "batches.json", state["batches"])
+        state["interrupted_rows"] = rows + lost
+        raise
+
+
+RECONCILE_FILE = "reconcile.json"
+RECONCILE_SKEW_SECONDS = 300   # a batch created this long before the recorded send time still counts as a candidate
+
+
+def _when(value):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    try:
+        when = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
+
+def _read_results(client, batch_id, prefix, rates):
+    """(custom ids, {type: count}, billed USD at the rates) of an ended batch's results; reads only."""
+    ids, kinds, billed = [], {}, 0.0
+    for item in client.messages.batches.results(batch_id):
+        ids.append(str(_attr(item, "custom_id")))
+        result = _attr(item, "result")
+        kind = _attr(result, "type") or "unknown"
+        kinds[kind] = kinds.get(kind, 0) + 1
+        if kind == "succeeded":
+            try:
+                used = usage_cost(_attr(result, "message"), rates, ttl="1h", route="batch")
+            except Unpriceable:
+                used = None
+            billed += used["cost_usd"] if used else float("nan")
+    return ids, kinds, billed
+
+
+def reconcile(run_dir, client, *, limit=100):
+    """The recovery path for a run's batches (D-610 cut 1): read-only on the provider (it lists,
+    retrieves and reads results; it never sends, cancels or deletes). For a batch whose id never came
+    back (its record in batches.json has none), the batches created since its recorded send time are
+    listed, and one that has ended whose every result carries the run's custom-id prefix, in the
+    recorded number, is that batch; one still running is named a candidate to read again later. For a
+    batch given up before it ended, it is read again, and its results counted when it has ended.
+    Appends what it found to reconcile.json in the run folder. The spend line is not changed: every
+    call stays counted at its worst case there, the safe side; what the provider billed is recorded
+    beside it for the lead."""
+    run_dir = Path(run_dir)
+    try:
+        batches = json.loads((run_dir / "batches.json").read_text(encoding="utf-8"))
+        rates = json.loads((run_dir / MEASUREMENT_FILE).read_text(encoding="utf-8"))["rates"]
+    except (OSError, ValueError, KeyError, TypeError):
+        raise Stop("The run folder has no readable batches.json and measurement with its rates")
+    listed, out = None, []
+    for rec in batches:
+        prefix, entry = rec.get("custom_id_prefix"), {"group": rec.get("group"), "recorded_id": rec.get("id"),
+                                                      "requests": rec.get("requests")}
+        refuse(isinstance(prefix, str) and prefix, "A batch record has no custom-id prefix")
+        if rec.get("id") is None:
+            if listed is None:
+                listed = list(client.messages.batches.list(limit=limit))
+            since = _when(rec.get("sent_after_utc"))
+            refuse(since is not None, "A batch record has no send time")
+            matches, running = [], []
+            for b in listed:
+                created = _when(_attr(b, "created_at"))
+                if created is None or (since - created).total_seconds() > RECONCILE_SKEW_SECONDS:
+                    continue
+                if _attr(b, "processing_status") != "ended":
+                    running.append(str(_attr(b, "id")))
+                    continue
+                ids, kinds, billed = _read_results(client, _attr(b, "id"), prefix, rates)
+                if ids and all(i.startswith(prefix) for i in ids) and len(ids) == rec.get("requests"):
+                    matches.append({"id": str(_attr(b, "id")), "results": kinds, "billed_usd": round(billed, 6)})
+            entry.update(found=matches, candidates_running=running,
+                         outcome="found" if len(matches) == 1 else ("ambiguous" if matches else
+                                                                    ("read again later" if running else "not found")))
+        elif rec.get("status") != "ended":
+            status = _attr(client.messages.batches.retrieve(rec["id"]), "processing_status")
+            entry["status_now"] = status
+            if status == "ended":
+                ids, kinds, billed = _read_results(client, rec["id"], prefix, rates)
+                entry.update(outcome="ended after it was given up", results=kinds, billed_usd=round(billed, 6),
+                             all_ours=all(i.startswith(prefix) for i in ids))
+            else:
+                entry["outcome"] = "still running: read again later"
+        else:
+            entry["outcome"] = "ended within the run"
+        out.append(entry)
+    record = {"time_utc": datetime.now(timezone.utc).isoformat(), "batches": out,
+              "spend": "unchanged: every call of these batches stays at its worst case in the spend line"}
+    path = run_dir / RECONCILE_FILE
+    try:
+        earlier = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    except ValueError:
+        raise Stop("reconcile.json cannot be read; nothing is overwritten")
+    write_json(path, earlier + [record])
+    return record
 
 
 def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit_usd, prices, deprecation_checked,
         seckin_approved, groups=GROUP_ORDER, resume_from=None, max_calls=None, keys=None, client=None,
         list_models=None, clock=time.perf_counter, root=ROOT, runs_root=RUNS_ROOT, prices_path=PRICES_PATH,
-        store=None, ledgers=None, for_seckin=None):
-    """The paid run. `client`, `keys` and `list_models` are the SDK client (make_client), the
+        store=None, ledgers=None, for_seckin=None, gate_set=None, gate_held=None, gate_rebuild=None,
+        route="single", batch_deadline_seconds=None, sleep=time.sleep, resend_no_answer=False):
+    """The paid run. `route` is `single` (one request a call) or `batch` (D-610 cut 1: one Message
+    Batch a group, the same request bodies, every worst case at the recorded batch rates, cancelled
+    and recorded past `batch_deadline_seconds`, which the batch route requires and which must be
+    below the provider's own expiry). A resume carries the earlier run's no_answer rows forward and
+    sends none of those prompts again (a given-up batch may still bill them) unless `resend_no_answer`. With `gate_set` (the frozen claim set file) it is the gate's claim-set mode: B1's own
+    prompts of one benchmark, every item of the claim set, no J1 bar, items or keys (those are None),
+    every other guard the same; its kind is GATE_SCHEMA. `client`, `keys` and `list_models` are the SDK client (make_client), the
     credential file's keys and model_registry.list_available_models unless a proof hands stand-ins.
     Returns the measurement, which is written to `out` on any exit once the folder exists."""
     refuse(isinstance(prices, dict) and prices.get("input_per_mtok", 0) > 0 and prices.get("output_per_mtok", 0) > 0
@@ -788,11 +1463,29 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
     check_role(lead_side=True)
     refuse(isinstance(credit_usd, (int, float)) and credit_usd > 0, "The API credit left is required (--credit-usd)")
     refuse(max_calls is None or (isinstance(max_calls, int) and max_calls > 0), "--max-calls is a positive count")
+    refuse(route in ROUTES, "The route is single or batch")
+    refuse(route == "single" or (isinstance(batch_deadline_seconds, (int, float)) and batch_deadline_seconds > 0),
+           "The batch route needs its deadline (--batch-deadline-minutes)")
+    refuse(route == "batch" or batch_deadline_seconds is None, "A batch deadline belongs to the batch route")
     out = run_folder(out, runs_root)
     store = spend_store(root) if store is None else Path(store)
     approval = check_approval(seckin_approved, Path(store).parent / FOR_SECKIN_NAME if for_seckin is None else for_seckin)
-    value, bar = load(prompts_path, bar_path)
-    chosen = selection(value, bar, items_path, answer_keys, "A", tuple(groups))
+    if gate_set is None:
+        value, bar = load(prompts_path, bar_path)
+        chosen = selection(value, bar, items_path, answer_keys, "A", tuple(groups))
+        kind, label, scope = SCHEMA, LABEL, {"half": "A", "reads": "J1's prompts file, half A; ids, counts, tokens "
+                                                                     "and dollars here, the replies in the reply records"}
+    else:
+        refuse(bar_path is None and items_path is None and not answer_keys,
+               "A gate claim-set run takes no J1 bar, items or keys")
+        value = load_gate_prompts(prompts_path)
+        chosen, benchmark, gate_digest = gate_selection(value, gate_set, tuple(groups))
+        rebuilt = check_gate_prompts(prompts_path, gate_held, gate_rebuild)
+        kind, label, scope = GATE_SCHEMA, GATE_LABEL, {
+            "half": None, "set": "gate claim set", "gate_set_sha256": gate_digest, "benchmark": benchmark,
+            "rebuilt": rebuilt,
+            "reads": "B1's own prompts on the gate's claim set; ids, counts, tokens and dollars here, the replies in "
+                     "the reply records"}
     if keys is None:
         key, key_source = resolve_key()
         keys = {"ANTHROPIC_API_KEY": key}
@@ -805,11 +1498,19 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
     configured = seat_model(root)
     status, model = resolve(configured, list_models("claude_api", keys))
     prices = check_prices(prices, model, prices_path)
-    earlier = earlier_run(resume_from, measurement_file=MEASUREMENT_FILE, kind=SCHEMA, model=model,
-                          digests={"prompts_sha256": sha(prompts_path), "config_sha256": value.get("config_sha256")})
+    rates, caching = route_rates(prices, route), cache_rule(prices)
+    limits = batch_limits(prices) if route == "batch" else None
+    if route == "batch":
+        refuse(batch_deadline_seconds < limits["expiry_hours"] * 3600,
+               "The batch deadline must be below the provider's %d-hour expiry" % limits["expiry_hours"])
+    resume_digests = {"prompts_sha256": sha(prompts_path), "config_sha256": value.get("config_sha256")}
+    if gate_set is not None:
+        resume_digests["gate_set_sha256"] = scope["gate_set_sha256"]
+    earlier = earlier_run(resume_from, measurement_file=MEASUREMENT_FILE, kind=kind, model=model, digests=resume_digests)
     allowances = {text_digest(payload_text(p)): int(p["max_new_tokens"]) for p in chosen}
     done_before = answered(resume_from, model=model, decoding=lambda r: r.get("decoding") == {
         "max_tokens": allowances.get((r.get("payload") or {}).get("sha256")), "other_settings": "provider_default"})
+    carried_ids = {} if resend_no_answer else no_answer_before(earlier)
     spent_before = chain_spent(earlier)
     limit = spend_limit(cap_usd, credit_usd - spent_before)
     refuse(limit > 0, "The credit left after this chain's earlier runs (%.4f USD spent) is %.4f USD"
@@ -819,14 +1520,23 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
     provider_record = model_record(client, model)
     context = RunContext(out, "cloud-reference-" + hashlib.sha256(str(time.time()).encode()).hexdigest()[:12])
     chain = chain_runs(earlier)
-    budget = open_run(store, context.run_id, limit, out.name, SCHEMA, lambda: check_cap(cap_usd, store, ledgers, kind=SCHEMA),
+    budget = open_run(store, context.run_id, limit, out.name, kind, lambda: check_cap(cap_usd, store, ledgers, kind=kind),
                       approval=approval, chain=chain)
-    rows, skipped, counted, reused = [], [], {}, []
-    state = {"spent": 0.0, "stopped": None, "halt": None, "calls": 0}
+    rows, skipped, counted, reused, carried = [], [], {}, [], []
+    state = {"spent": 0.0, "stopped": None, "halt": None, "calls": 0, "batches": []}
+    cache_counts = {}
     try:
         for group in groups:
             mine = []
             for p in [q for q in chosen if q["group"] == group]:
+                if p["prompt_id"] in carried_ids and text_digest(payload_text(p)) not in done_before:
+                    # A no_answer of the run resumed: not sent again, carried forward as it was recorded.
+                    rows.append(dict(carried_ids[p["prompt_id"]], resumed_from=Path(resume_from).name, cost_usd=0.0,
+                                     cost_is="a no_answer of the earlier run, carried forward and not sent again "
+                                             "(its spend in the earlier run's line; --resend-no-answer sends it)",
+                                     seconds=0.0))
+                    carried.append(p["prompt_id"])
+                    continue
                 found = done_before.get(text_digest(payload_text(p)))
                 if found is None:
                     mine.append(p)
@@ -845,12 +1555,15 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
             # A group starts only when its whole worst case fits under what is left of the cap (D-326:
             # judge_reason runs only if it still fits after judge_direct); each call is checked again.
             try:
+                marks, cache_counts[group] = cache_marks(client, mine, model, caching, route)
                 for p in mine:
-                    counted[p["prompt_id"]] = int(client.messages.count_tokens(**params_for(p, model)).input_tokens)
+                    counted[p["prompt_id"]] = int(client.messages.count_tokens(
+                        **params_for(p, model, mark_of(p, marks))).input_tokens)
             except Exception as exc:
                 state["stopped"] = "count_tokens failed in %s: %s" % (group, scrub("%s: %s" % (type(exc).__name__, exc), key))
                 break
-            group_worst = sum(worst_case(counted[p["prompt_id"]], int(p["max_new_tokens"]), prices) for p in mine)
+            group_worst = sum(worst_case(counted[p["prompt_id"]], int(p["max_new_tokens"]),
+                                         reserve_rates(rates, mark_of(p, marks))) for p in mine)
             if not group_fits(state["spent"], group_worst, limit):
                 skipped.append({"group": group, "worst_case_usd": round(group_worst, 4),
                                 "spent_before_usd": round(state["spent"], 4)})
@@ -858,13 +1571,21 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
                                     "%.2f USD limit (the cap or the credit left, whichever is lower)"
                                     % (group, group_worst, state["spent"], limit))
                 break
+            if route == "batch":
+                done, over = batch_group(client, group, mine, model, counted, state, limit, rates, marks, key, context,
+                                         clock, sleep, batch_deadline_seconds, limits, out, max_calls)
+                rows.extend(done)
+                state["stopped"] = state["halt"] or over
+                if state["stopped"]:
+                    break
+                continue
             for p in mine:
                 if max_calls is not None and state["calls"] >= max_calls:
                     state["stopped"] = ("chunk done: %d calls; resume with --resume-from this folder" % max_calls)
                     break
                 state["calls"] += 1
-                row, over = call_one(client, p, model, counted[p["prompt_id"]], state, limit, prices, key, context,
-                                     clock)
+                row, over = call_one(client, p, model, counted[p["prompt_id"]], state, limit, rates, key, context,
+                                     clock, mark_of(p, marks))
                 if over:
                     state["stopped"] = over
                     break
@@ -876,12 +1597,14 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
                 break
     except BaseException as exc:
         state["stopped"] = "interrupted: %s" % scrub(type(exc).__name__, key)
+        rows.extend(state.pop("interrupted_rows", []))
         raise
     finally:
-        measurement = {
-            "schema": MEASUREMENT_SCHEMA, "kind": SCHEMA, "label": LABEL, "prompts_sha256": sha(prompts_path),
-            "config_sha256": value.get("config_sha256"), "half": "A", "groups": list(groups), "rows": rows,
-            "prompts": len(chosen), "sent": len(rows) - len(reused), "answered": len(rows), "complete": state["stopped"] is None and len(rows) == len(chosen),
+        measurement = dict(scope, **{
+            "schema": MEASUREMENT_SCHEMA, "kind": kind, "label": label, "prompts_sha256": sha(prompts_path),
+            "config_sha256": value.get("config_sha256"), "groups": list(groups), "rows": rows,
+            "prompts": len(chosen), "sent": len(rows) - len(reused) - len(carried), "answered": len(rows),
+            "carried_no_answer": len(carried), "resend_no_answer": bool(resend_no_answer), "complete": state["stopped"] is None and len(rows) == len(chosen),
             "stopped": state["stopped"], "groups_not_started": skipped,
             "model": {"configured": configured, "resolved": model, "status": status, "seat_agent": SEAT_AGENT,
                       "registry_unedited": True, "provider_record": provider_record,
@@ -894,15 +1617,20 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
             "reused_answers": len(reused), "max_calls": max_calls, "calls_made": state["calls"],
             "chain_spent_before_usd": spent_before, "chain_run_ids_before": chain,
             "budget": budget, "spent_usd": round(state["spent"], 6), "prices": prices,
-            "max_retries": 0, "count_margin": COUNT_MARGIN, "seconds": round(sum(r.get("seconds") or 0 for r in rows), 3), "run_id": context.run_id,
-            "reads": "J1's prompts file, half A; ids, counts, tokens and dollars here, the replies in the reply records"}
+            "route": route, "rates": rates, "batches": state["batches"], "batch_deadline_seconds": batch_deadline_seconds,
+            "cache": {"rule": caching, "system_prefix_tokens": cache_counts},
+            "max_retries": 0, "count_margin": COUNT_MARGIN, "seconds": round(sum(r.get("seconds") or 0 for r in rows), 3), "run_id": context.run_id})
         # The spend line first (small, the one the next run's cap reads), then the measurement; each in
         # its own try, so one failing never loses the other, and the first failure is raised after both.
         failures = []
         try:
             append_store(store, close_line(context.run_id, state["spent"], run_folder=out.name, model=model,
                                            complete=measurement["complete"], stopped=state["stopped"],
-                                           seckin_approved=approval, key_source=key_source, kind=SCHEMA))
+                                           seckin_approved=approval, key_source=key_source, kind=kind,
+                                           route=route, rates=rates,
+                                           batch_ids=[b["id"] for b in state["batches"]],
+                                           batch_custom_id_prefixes=sorted({b["custom_id_prefix"]
+                                                                            for b in state["batches"]})))
         except Exception as exc:
             failures.append(exc)
         try:
@@ -917,7 +1645,7 @@ def run(prompts_path, bar_path, items_path, answer_keys, out, *, cap_usd, credit
 def summary_line(measurement):
     """What the run prints: counts and dollars only."""
     return ("%s | model %s (%s) | sent %d of %d | spent %.4f of %.2f USD | %s"
-            % (LABEL, measurement["model"]["resolved"], measurement["model"]["status"], measurement["sent"],
+            % (measurement.get("label") or LABEL, measurement["model"]["resolved"], measurement["model"]["status"], measurement["sent"],
                measurement["prompts"], measurement["spent_usd"], measurement["cap_usd"],
                "complete" if measurement["complete"] else "stopped: " + str(measurement["stopped"])))
 
@@ -981,6 +1709,21 @@ def read(prompts_path, bar_path, items_path, run_dir, keys, out, tag, steering=F
 # ---------------------------------------------------------------------------
 
 
+def measured_output(path):
+    """{group: output tokens per call of form b1} from a paid run's measurement, and its source; None
+    when no path is given. Only completed calls with a reported output count."""
+    if path is None:
+        return None
+    m = json.loads(Path(path).read_text(encoding="utf-8"))
+    out = {"source": "%s (%s, run %s)" % (Path(path).parent.name, m.get("kind"), m.get("run_id"))}
+    for g in GROUP_ORDER:
+        tokens = [r["output_tokens"] for r in m.get("rows") or []
+                  if r.get("group") == g and r.get("form") == B1_FORM and isinstance(r.get("output_tokens"), int)]
+        refuse(tokens, "The measurement holds no completed b1 call of group %s" % g)
+        out[g] = sum(tokens) / len(tokens)
+    return out
+
+
 def prices_from(args):
     return {"input_per_mtok": args.price_input_per_mtok, "output_per_mtok": args.price_output_per_mtok,
             "source": args.price_source}
@@ -992,11 +1735,19 @@ def main(argv=None):
     for name in ("plan", "run", "read"):
         p = sub.add_parser(name, allow_abbrev=False)
         p.add_argument("--prompts", required=True)
-        p.add_argument("--bar", required=True, help="J1's j1_bar.json")
-        p.add_argument("--items", required=True, help="the pinned g1_bar_items.json (C's universe)")
-        p.add_argument("--key", action="append", required=True,
+        p.add_argument("--bar", required=name == "read", help="J1's j1_bar.json")
+        p.add_argument("--items", required=name == "read", help="the pinned g1_bar_items.json (C's universe)")
+        p.add_argument("--key", action="append", required=name == "read",
                        help="an adapter answer key, read by the scorer only, for C's universe (repeat)")
         if name in ("plan", "run"):
+            p.add_argument("--gate-set", default=None,
+                           help="the gate's claim-set mode: the frozen claim_set_ids.json (gate_score.CLAIM_SET_SHA256), "
+                                "with B1's own prompts of one benchmark, in place of --bar, --items and --key")
+            p.add_argument("--gate-held", default=None,
+                           help="the gate mode: role B's held build the prompts file is rebuilt from, byte for byte")
+            p.add_argument("--measured-output", default=None,
+                           help="plan in the gate mode: a measurement whose output tokens per call per group give an "
+                                "expected figure beside the worst case (labelled an estimate)")
             p.add_argument("--group", action="append", choices=list(GROUP_ORDER))
             p.add_argument("--price-input-per-mtok", type=float, required=name == "run")
             p.add_argument("--price-output-per-mtok", type=float, required=name == "run")
@@ -1011,15 +1762,63 @@ def main(argv=None):
             p.add_argument("--deprecation-checked", required=True,
                            help='the deprecations page reading: "<url>, <YYYY-MM-DD>, not deprecated"')
             p.add_argument("--out", required=True, help="a new folder output/cloud_reference/<name>")
+            p.add_argument("--route", choices=list(ROUTES), default="single",
+                           help="single (one request a call) or batch (one Message Batch a group, D-610 cut 1)")
+            p.add_argument("--resend-no-answer", action="store_true",
+                           help="with --resume-from: send again the prompts the earlier run recorded as no_answer "
+                                "(by default they are carried forward, never resent)")
+            p.add_argument("--batch-deadline-minutes", type=float, default=None,
+                           help="the batch route: a batch still running this long after it was sent is cancelled")
         if name == "read":
             p.add_argument("--run", required=True)
             p.add_argument("--out", required=True)
             p.add_argument("--tag", required=True)
             p.add_argument("--steering", action="store_true",
                            help="read a subscription steering check, its figures labelled steering only (D-S104)")
+    r = sub.add_parser("reconcile", allow_abbrev=False,
+                       help="read a run's batches again (lost ids, given-up batches); read-only on the provider")
+    r.add_argument("--run", required=True, help="the run folder holding batches.json")
+    g = sub.add_parser("gate-prompts", allow_abbrev=False,
+                       help="build B1's own prompts for one held gate build (no provider call)")
+    g.add_argument("--held", required=True, help="role B's held build folder (bundles and items.json)")
+    g.add_argument("--out", required=True)
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.command == "gate-prompts":
+        try:
+            print(json.dumps(build_gate_prompts(args.held, args.out), indent=1))
+        except Stop as exc:
+            print("cloud_reference stopped: %s" % exc, file=sys.stderr)
+            return 3
+        return 0
+    if args.command == "reconcile":
+        try:
+            clear_environment()
+            key, _source = resolve_key()
+            refuse(bool(key), "No ANTHROPIC_API_KEY in the credential file found; set SHIMMER_CONFIG_PATH")
+            found = reconcile(args.run, make_client(key))
+        except Stop as exc:
+            print("cloud_reference stopped: %s" % exc, file=sys.stderr)
+            return 3
+        print(json.dumps([{k: b.get(k) for k in ("group", "recorded_id", "outcome")} for b in found["batches"]], indent=1))
+        return 0
+    gate = getattr(args, "gate_set", None)
+    if args.command in ("plan", "run") and (gate is None) != bool(args.bar and args.items and args.key):
+        parser.error("give --gate-set alone, or --bar, --items and --key without it")
+    if gate is not None and (args.bar or args.items or args.key):
+        parser.error("--gate-set takes no --bar, --items or --key")
+    if args.command in ("plan", "run") and gate is None and (args.measured_output or args.gate_held):
+        parser.error("--measured-output and --gate-held belong to the gate mode (--gate-set)")
+    if args.command == "plan" and gate is not None and (args.price_input_per_mtok or args.price_output_per_mtok
+                                                        or args.price_source):
+        parser.error("the gate plan reads the recorded prices; it takes no --price-*")
+    if args.command == "run" and args.measured_output:
+        parser.error("--measured-output belongs to plan")
     try:
-        if args.command == "plan":
+        if args.command == "plan" and gate is not None:
+            print(json.dumps(gate_plan(args.prompts, gate, tuple(args.group or GROUP_ORDER),
+                                       measured=measured_output(args.measured_output), held=args.gate_held),
+                             indent=1, default=json_default))
+        elif args.command == "plan":
             value, bar = load(args.prompts, args.bar)
             prices = prices_from(args) if args.price_input_per_mtok and args.price_output_per_mtok else None
             print(json.dumps(plan(selection(value, bar, args.items, args.key, "A", tuple(args.group or GROUP_ORDER)),
@@ -1028,8 +1827,10 @@ def main(argv=None):
             print(summary_line(run(args.prompts, args.bar, args.items, args.key, args.out, cap_usd=args.cap_usd,
                                    credit_usd=args.credit_usd, seckin_approved=args.seckin_approved,
                                    resume_from=args.resume_from, max_calls=args.max_calls, prices=prices_from(args),
-                                   deprecation_checked=args.deprecation_checked,
-                                   groups=tuple(args.group or GROUP_ORDER))))
+                                   deprecation_checked=args.deprecation_checked, gate_set=gate, gate_held=args.gate_held,
+                                   groups=tuple(args.group or GROUP_ORDER), route=args.route,
+                                   batch_deadline_seconds=None if args.batch_deadline_minutes is None
+                                   else args.batch_deadline_minutes * 60, resend_no_answer=args.resend_no_answer)))
         else:
             result = read(args.prompts, args.bar, args.items, args.run, args.key, args.out, args.tag, steering=args.steering)
             print(json.dumps({"label": result["label"], "half": "A"}, indent=1))

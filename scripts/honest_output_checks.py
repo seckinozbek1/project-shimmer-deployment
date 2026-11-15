@@ -33,6 +33,7 @@ import asyncio
 import contextlib
 import io
 import json
+import os
 import logging
 import re
 import shutil
@@ -181,7 +182,17 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     import agent_activation
     agent_activation.initialize(orch.run_context, json.loads(
         (ROOT / "config" / "agent_registry.json").read_text(encoding="utf-8")).get("agents", {}), "dense")
-    pl._inst_finder_startup_guard(orch.run_context, ROOT)
+    # D-570: with no value INST_FINDER is off by default; these deliverable proofs are of a run
+    # with it switched on ("- INST_FINDER: switched on for this run"), so the setting is stated.
+    _saved_switch = os.environ.get("SHIMMER_INST_FINDER")
+    os.environ["SHIMMER_INST_FINDER"] = "on"
+    try:
+        pl._inst_finder_startup_guard(orch.run_context, ROOT)
+    finally:
+        if _saved_switch is None:
+            os.environ.pop("SHIMMER_INST_FINDER", None)
+        else:
+            os.environ["SHIMMER_INST_FINDER"] = _saved_switch
     index = rb.ReferenceIndex.open(ROOT, index_path=out_root / "refs.json")
     index.add(input_type="context", document_id="reference", document_name="reference.md",
               location={"page": 1, "paragraph": 1}, text_excerpt="Readings for batch B-7 lie between 10 and 60 units.")

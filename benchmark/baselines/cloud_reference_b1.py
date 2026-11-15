@@ -39,6 +39,25 @@ the FOR_SECKIN entry with its evet line the lead hands it; it runs only under th
 `tools/loop/cloud_reference_spend.py append-handed-back`; until then the lead's next paid run and
 instance launch refuse (D-401 item 11). Nothing but counts and timings leaves role C.
 
+The negotiation advisor's form (#262, D-605, D-606), role C's form only, in the advisor's role session:
+
+    SHIMMER_ROLE=C py -3.12 -X utf8 benchmark/baselines/cloud_reference_b1.py run-negotiation
+        --prompts <the role session's prompts_cloud.json> --out <a new folder outside the repository>
+        --cap-usd <USD> --credit-usd <USD left> --price-input-per-mtok <row> --price-output-per-mtok <row>
+        --price-source "<page, date>" --deprecation-checked "<url>, <YYYY-MM-DD>, not deprecated"
+        --seckin-approved "<heading time>" --for-seckin <copy> --role-c-run-id <id from open-role-c>
+        --budget-left-usd <the intent's cap> --spend-file <new file to hand back> [--max-calls <N>]
+
+It reads the cloud reference's prompts file of `benchmark/baselines/neg_advisor.py build --groups b1
+--subset` (every prompt held to its rendering by neg_advisor.load_prompts, B1's own prompts byte for
+byte, B1's 2,048-token allowance), sends each prompt as one user message, and writes the replies to
+`<out>/texts.json` ({prompt id: text}, the file `neg_advisor.py texts` reads) in the role session's own
+folder. Every role C rule above holds (the marker, the lead's intent and its cap as the budget figure,
+the evet copy, never in the lead's checkout), and the cap, the credit, the key scan, the live model and
+the recorded prices as for B1. Its measurement and the spend line it hands back hold counts, tokens and
+cost only: no prompt id, no item id, no text. The lead's open-role-c opens its intent with the same kind
+(`cloud-reference-b1-role-c`); only its close line names `cloud-reference-neg-advisor-v1`.
+
 Every rule of `cloud_reference.py run` holds: the build pinned by the digests role B recorded; every
 rendered prompt scanned for key-shaped strings and the key itself; the registry's model resolved
 live (gone, ambiguous or an unreadable list stops it); its record read for a deprecation field; the
@@ -76,6 +95,9 @@ ROLE_C_RUN_ID = re.compile(r"role-c-[0-9a-f]{12}")
 MEASUREMENT_FILE = "cloud_reference_b1.json"
 LABEL = "Reference: a paid cloud model on the same items. Not Shimmer's performance."
 SIDES = ("development", "holdout")
+NEG_SCHEMA = "cloud-reference-neg-advisor-v1"
+NEG_MEASUREMENT_FILE = "cloud_reference_neg_advisor.json"
+NEG_TEXTS_FILE = "texts.json"
 OPENINGS_PATH = "docs/loop/HELDOUT_OPENINGS.md"   # read at HEAD (git show), never the working copy
 BUILDS_PATH = Path(__file__).resolve().with_name("cloud_reference_builds.json")
 DIGEST = re.compile(r"\b[0-9a-f]{64}\b")
@@ -238,6 +260,29 @@ def check_side(side, opening, items_sha256, openings):
     return rows[0]
 
 
+def role_c_side(cap_usd, budget_left_usd, spend_file, for_seckin, role_c_run_id, seckin_approved, root):
+    """Role C's form, for the B1 run and the negotiation form alike: the lead's figure stands in for the
+    ledgers its side does not hold. Returns (the spend file to hand back, Seckin's approval)."""
+    cr.refuse(spend_file is not None, "--budget-left-usd goes with --spend-file, the file handed back")
+    cr.refuse(isinstance(budget_left_usd, (int, float)) and cap_usd <= budget_left_usd + 1e-9,
+              "The cap %.2f USD passes the budget left the lead gave (%s USD)" % (cap_usd, budget_left_usd))
+    store_path = Path(spend_file)
+    cr.refuse(not store_path.exists(), "The spend file to hand back must be new")
+    # Role C's form never runs where the lead's store is reachable: that is the lead's checkout
+    # (D-401 item 11).
+    try:
+        lead_store = cr.spend.store_path(root)
+    except cr.spend.SpendStoreError:
+        lead_store = None
+    cr.refuse(lead_store is None or not lead_store.exists(),
+              "Role C's form refuses in the lead's checkout (the lead's spend store is reachable from here)")
+    cr.refuse(isinstance(role_c_run_id, str) and ROLE_C_RUN_ID.fullmatch(role_c_run_id),
+              "Role C's form needs --role-c-run-id, the id the lead's open-role-c intent gave")
+    # Role C holds no FOR_SECKIN.md: the lead hands it a copy of the entry with the evet line.
+    cr.refuse(for_seckin is not None, "Role C's form needs --for-seckin, the copy of the entry the lead hands it")
+    return store_path, dict(cr.check_approval(seckin_approved, for_seckin), copy="a copy handed to role C by the lead")
+
+
 class ChunkDone(bare_model.SetupError):
     """The chunk's call count is reached: the run stops cleanly, to be resumed."""
 
@@ -352,25 +397,8 @@ def run(build, items_sha256, parts_sha256, out, *, cap_usd, credit_usd, prices, 
     items_path, bundles, side, allowed = build_files(build, items_sha256, parts_sha256, builds_path)
     opening_row = check_side(side, opening, items_sha256, openings or (lambda: committed_openings(root)))
     if role_c:
-        # Role C's form: the lead's figure stands in for the ledgers its side does not hold.
-        cr.refuse(spend_file is not None, "--budget-left-usd goes with --spend-file, the file handed back")
-        cr.refuse(isinstance(budget_left_usd, (int, float)) and cap_usd <= budget_left_usd + 1e-9,
-                  "The cap %.2f USD passes the budget left the lead gave (%s USD)" % (cap_usd, budget_left_usd))
-        store_path = Path(spend_file)
-        cr.refuse(not store_path.exists(), "The spend file to hand back must be new")
-        # Role C's form never runs where the lead's store is reachable: that is the lead's checkout
-        # (D-401 item 11).
-        try:
-            lead_store = cr.spend.store_path(root)
-        except cr.spend.SpendStoreError:
-            lead_store = None
-        cr.refuse(lead_store is None or not lead_store.exists(),
-                  "Role C's form refuses in the lead's checkout (the lead's spend store is reachable from here)")
-        cr.refuse(isinstance(role_c_run_id, str) and ROLE_C_RUN_ID.fullmatch(role_c_run_id),
-                  "Role C's form needs --role-c-run-id, the id the lead's open-role-c intent gave")
-        # Role C holds no FOR_SECKIN.md: the lead hands it a copy of the entry with the evet line.
-        cr.refuse(for_seckin is not None, "Role C's form needs --for-seckin, the copy of the entry the lead hands it")
-        approval = dict(cr.check_approval(seckin_approved, for_seckin), copy="a copy handed to role C by the lead")
+        store_path, approval = role_c_side(cap_usd, budget_left_usd, spend_file, for_seckin, role_c_run_id,
+                                           seckin_approved, root)
     else:
         cr.refuse(spend_file is None and for_seckin is None,
                   "--spend-file and --for-seckin are role C's form only")
@@ -485,6 +513,126 @@ def run(build, items_sha256, parts_sha256, out, *, cap_usd, credit_usd, prices, 
     return measurement
 
 
+def negotiation_prompts(path):
+    """The negotiation advisor's cloud prompts file: every prompt held to its rendering
+    (neg_advisor.load_prompts), all of them B1's advice prompts, and the file drawn from the cloud subset
+    (it records the subset's SHA-256)."""
+    import neg_advisor
+    try:
+        prompts = neg_advisor.load_prompts(path)
+    except (OSError, ValueError) as exc:
+        raise cr.Stop("Not a negotiation advisor prompts file held to its rendering (%s)" % str(exc).split(":")[0])
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    cr.refuse(all(p["group"] == "b1" and p["form"] == "advice" for p in prompts),
+              "The cloud reference sends B1's advice prompts only")
+    cr.refuse(isinstance(value.get("subset_sha256"), str) and DIGEST.fullmatch(value["subset_sha256"]),
+              "The prompts file is not built from the cloud subset (--subset); it records no subset digest")
+    allowance = {int(p["max_new_tokens"]) for p in prompts}
+    cr.refuse(len(allowance) == 1, "The prompts file carries more than one output allowance")
+    return prompts, value, allowance.pop()
+
+
+def negotiation_folder(out):
+    """A new, empty folder outside the repository: the replies are the role session's."""
+    out = Path(out).resolve()
+    cr.refuse(not out.is_relative_to(Path(cr.ROOT).resolve()), "The negotiation form writes outside the repository only")
+    cr.refuse(not out.exists() or not any(out.iterdir()), "This folder is not empty; a new run takes a new folder")
+    return out
+
+
+def run_negotiation(prompts_path, out, *, cap_usd, credit_usd, prices, deprecation_checked, seckin_approved,
+                    budget_left_usd, spend_file, for_seckin, role_c_run_id, max_calls=None, keys=None, client=None,
+                    list_models=None, root=cr.ROOT, prices_path=cr.PRICES_PATH, clock=time.perf_counter):
+    """The negotiation advisor's cloud reference, role C's form only (module docstring)."""
+    cr.clear_environment()
+    cr.check_role(lead_side=False)
+    cr.refuse(isinstance(credit_usd, (int, float)) and credit_usd > 0, "The API credit left is required (--credit-usd)")
+    cr.refuse(max_calls is None or (isinstance(max_calls, int) and max_calls > 0), "--max-calls is a positive count")
+    cr.refuse(isinstance(prices, dict) and prices.get("input_per_mtok", 0) > 0 and prices.get("output_per_mtok", 0) > 0
+              and prices.get("source"), "Prices per million tokens and their source (page and date) are required")
+    cr.refuse(isinstance(deprecation_checked, str) and cr.DEPRECATION_FORM.fullmatch(deprecation_checked.strip()),
+              'The deprecations page reading is required in the form "<url>, <YYYY-MM-DD>, not deprecated"')
+    out = negotiation_folder(out)
+    prompts, value, allowance = negotiation_prompts(prompts_path)
+    store_path, approval = role_c_side(cap_usd, budget_left_usd, spend_file, for_seckin, role_c_run_id,
+                                       seckin_approved, root)
+    if keys is None:
+        key, key_source = cr.resolve_key()   # Seckin's own key, the one resolver (D-S106 item 1)
+        keys = {"ANTHROPIC_API_KEY": key}
+    else:
+        key, key_source = keys.get("ANTHROPIC_API_KEY"), "given by a proof"
+    cr.refuse(bool(key), "No ANTHROPIC_API_KEY in the credential file found; set SHIMMER_CONFIG_PATH")
+    cr.scan([{"prompt_id": p["prompt_id"], "system": None, "user": p["user"]} for p in prompts], key)
+    if list_models is None:
+        list_models = cr.provider_models
+    configured = cr.seat_model(root)
+    status, model = cr.resolve(configured, list_models("claude_api", keys))
+    prices = cr.check_prices(prices, model, prices_path)
+    limit = cr.spend_limit(cap_usd, credit_usd)
+    cr.refuse(limit > 0, "The credit left is %.4f USD" % credit_usd)
+    if client is None:
+        client = cr.make_client(key)
+    provider_record = cr.model_record(client, model)
+    state = {"spent": 0.0, "calls": 0, "input_tokens": 0, "output_tokens": 0, "errors": [], "halt": None, "reused": 0}
+    backend = AnthropicBackend(client, model, prices, state, limit, key, provider_record, max_calls)
+    texts, failed, stopped, started = {}, 0, None, clock()
+    out.mkdir(parents=True, exist_ok=True)
+    try:
+        for p in prompts:
+            worst = cr.worst_case(backend.count_prompt(None, p["user"]), allowance, prices)
+            if not cr.group_fits(state["spent"], worst, limit):
+                stopped = ("cap: a prompt not started, its worst case %.4f USD after %.4f USD spent would pass the "
+                           "%.2f USD limit (the cap or the credit left, whichever is lower)" % (worst, state["spent"], limit))
+                break
+            try:
+                texts[p["prompt_id"]] = backend.generate(None, p["user"], allowance).get("text")
+            except (CapReached, ProviderStop, ChunkDone) as exc:
+                stopped = str(exc)
+                break
+            except RuntimeError:
+                failed += 1
+                texts[p["prompt_id"]] = None
+            if state["halt"]:
+                stopped = state["halt"]
+                break
+    except BaseException as exc:
+        stopped = stopped or "interrupted: %s" % type(exc).__name__
+        raise
+    finally:
+        answered = sum(1 for t in texts.values() if isinstance(t, str))
+        measurement = {"schema": NEG_SCHEMA, "kind": NEG_SCHEMA, "label": LABEL, "run_id": role_c_run_id,
+                       "reads": "counts, tokens and cost only: no prompt id, no item id, no text",
+                       "prompts_sha256": cr.sha(prompts_path), "subset_sha256": value.get("subset_sha256"),
+                       "seckin_approved": approval, "key_source": key_source, "credit_usd": credit_usd,
+                       "limit_usd": limit, "cap_usd": cap_usd, "max_calls": max_calls,
+                       "budget": {"rule": "the lead's figure, the intent's cap (role C's form)", "left_usd": budget_left_usd},
+                       "prompts": len(prompts), "calls": state["calls"], "answered": answered, "failed": failed,
+                       "complete": stopped is None and answered == len(prompts), "stopped": stopped,
+                       "model": {"configured": configured, "resolved": model, "status": status, "registry_unedited": True,
+                                 "deprecation_checked": deprecation_checked},
+                       "allowance": allowance, "prices": prices, "max_retries": 0, "count_margin": cr.COUNT_MARGIN,
+                       "spent_usd": round(state["spent"], 6), "input_tokens": state["input_tokens"],
+                       "output_tokens": state["output_tokens"], "errors": len(state["errors"]),
+                       "seconds": round(clock() - started, 3)}
+        failures = []
+        try:
+            line = cr.close_line(role_c_run_id, state["spent"], run_folder=out.name, model=model,
+                                 complete=measurement["complete"], stopped=stopped, kind=NEG_SCHEMA,
+                                 seckin_approved=approval, key_source=key_source)
+            line.pop("event")   # the handed-back file holds spend lines only; the lead appends them
+            cr.append_store(store_path, line)
+        except Exception as exc:
+            failures.append(exc)
+        try:
+            cr.write_json(out / NEG_TEXTS_FILE, texts)
+            cr.write_json(out / NEG_MEASUREMENT_FILE, measurement)
+        except Exception as exc:
+            failures.append(exc)
+        if failures:
+            raise failures[0]
+    return measurement
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="cloud_reference_b1.py", allow_abbrev=False, description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -501,6 +649,14 @@ def main(argv=None):
     p.add_argument("--budget-left-usd", type=float, default=None, help="role C's form: the lead's figure")
     p.add_argument("--spend-file", default=None, help="role C's form: the new file handed back to the lead")
     p.add_argument("--resume-from", default=None, help="an earlier run of this build: its finished documents are skipped")
+    n = sub.add_parser("run-negotiation", allow_abbrev=False,
+                       help="role C's form: the negotiation advisor's cloud reference on the role session's prompts")
+    for name in ("--prompts", "--out", "--price-source", "--deprecation-checked", "--seckin-approved", "--for-seckin",
+                 "--role-c-run-id", "--spend-file"):
+        n.add_argument(name, required=True)
+    for name in ("--cap-usd", "--credit-usd", "--price-input-per-mtok", "--price-output-per-mtok", "--budget-left-usd"):
+        n.add_argument(name, type=float, required=True)
+    n.add_argument("--max-calls", type=int, default=None)
     o = sub.add_parser("open-role-c", allow_abbrev=False,
                        help="the lead: hold role C's cap in the store and print what to hand role C")
     o.add_argument("--cap-usd", type=float, required=True)
@@ -518,6 +674,21 @@ def main(argv=None):
         except cr.Stop as exc:
             print("cloud_reference_b1 stopped: %s" % exc, file=sys.stderr)
             return 3
+        return 0
+    if args.command == "run-negotiation":
+        try:
+            m = run_negotiation(args.prompts, args.out, cap_usd=args.cap_usd, credit_usd=args.credit_usd,
+                                prices={"input_per_mtok": args.price_input_per_mtok,
+                                        "output_per_mtok": args.price_output_per_mtok, "source": args.price_source},
+                                deprecation_checked=args.deprecation_checked, seckin_approved=args.seckin_approved,
+                                budget_left_usd=args.budget_left_usd, spend_file=args.spend_file,
+                                for_seckin=args.for_seckin, role_c_run_id=args.role_c_run_id, max_calls=args.max_calls)
+        except cr.Stop as exc:
+            print("cloud_reference_b1 stopped: %s" % exc, file=sys.stderr)
+            return 3
+        print("%s | model %s | prompts %d | answered %d | calls %d | spent %.4f of %.2f USD | %s"
+              % (LABEL, m["model"]["resolved"], m["prompts"], m["answered"], m["calls"], m["spent_usd"], m["cap_usd"],
+                 "complete" if m["complete"] else "stopped: " + str(m["stopped"])))
         return 0
     if args.command == "record-build":
         try:

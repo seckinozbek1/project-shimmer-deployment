@@ -1,0 +1,40 @@
+[
+ {
+  "path": "tools/cloud_run_checks.py",
+  "blob": "45b11d282dafa8e14d70e294f534523bd3b6e5d5",
+  "rule": "api_key assignment",
+  "public": true,
+  "reason": "Test fixture strings in a checks file; this exact blob is already in refs/remotes/origin/main (D-612 ruling, lead 2026-11-13), so the backup adds no exposure."
+ },
+ {
+  "path": "tools/forensic_auditor_feature_failure.py",
+  "blob": "7d7afbf5e3275781fcd9409fb96871beb6e423a4",
+  "rule": "Anthropic key prefix",
+  "public": true,
+  "reason": "A key-pattern regex in a tool, not a key; this exact blob is already in refs/remotes/origin/main, so the backup adds no exposure (D-612)."
+ },
+ {
+  "path": "scripts/embed_records_checks.py",
+  "blob": "8bf7fabda1e34b37341a50213783e55d7a0b5783",
+  "rule": "AIza key",
+  "reason": "crafted fixture bytes for the credential-scan proof (EMBED-ROUTE-A, check 325); confirmed by the lead, D-614"
+ },
+ {
+  "path": "scripts/embed_records_checks.py",
+  "blob": "ebf8e4b9227f946224f9bfe7f772bb4e7cacd870",
+  "rule": "AIza key",
+  "reason": "crafted fixture bytes for the credential-scan proof (EMBED-ROUTE-A, check 325); confirmed by the lead, D-614"
+ },
+ {
+  "path": "tools/ordinary_final_live_checks.py",
+  "blob": "06e10f5c61af7576723a3610136cfdd3b95da04e",
+  "rule": "secret assignment",
+  "reason": "sentinel text for LIVE-VIEW-A's no-leak proof, not a credential; confirmed by the lead, D-614"
+ },
+ {
+  "path": "tools/loop/backup_private.py",
+  "blob": "34b8dfd83fbeaed6d5c9ea467c39d60092eee82e",
+  "rule": "OpenAI project key prefix",
+  "reason": "the tool's own pattern list, prefixes only"
+ }
+]

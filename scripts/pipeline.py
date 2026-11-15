@@ -48,6 +48,7 @@ import execution_topology
 import run_options
 import semantic_waves
 import agent_activation
+import agent_assignment
 import reply_records
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
@@ -1355,22 +1356,35 @@ def _inst_finder_switch(root):
     """The operator's INST_FINDER setting for this run, read from the environment
     variable SHIMMER_INST_FINDER, as a flat record.
 
-    The value `off` asks for INST_FINDER to be switched off; any other value, or
-    no value, means on, and on is the default. Switching a production agent off
-    changes governed inter-agent structure, so `off` is honoured ONLY when
-    <root>/config/constitution.json holds an amendment with operator_approved
-    true whose `change` names both INST_FINDER and SHIMMER_INST_FINDER (no
-    amendment id is written here; docs/INST_FINDER_SWITCH_DELTA_DRAFT.md is the
-    draft). Otherwise the record carries a one-line refusal and the run must not
-    start: the setting is never ignored silently.
+    The value `off` asks for INST_FINDER to be switched off, `on` (or any other
+    value) for it to run. No value means the ratified default (D-570, the
+    operator's decision): off when an amendment ratifies the switch AND declares
+    `"default": "off"` in its `change`, else on, as before the amendment. Switching
+    a production agent off changes governed inter-agent structure, so off, asked
+    or by default, is honoured ONLY when <root>/config/constitution.json holds an
+    amendment with operator_approved true whose `change` names both INST_FINDER
+    and SHIMMER_INST_FINDER (no amendment id is written here;
+    docs/INST_FINDER_SWITCH_DELTA_DRAFT.md is the draft). An asked `off` with no
+    such amendment carries a one-line refusal and the run must not start: the
+    setting is never ignored silently. `source` says whether the setting was the
+    variable's or the default's.
 
     The agent is never removed from PRODUCTION_AGENTS_CORPUS_LEVEL or from the
-    registry: `switched_off` names the agents phase 3-4 does not dispatch."""
-    value = os.environ.get("SHIMMER_INST_FINDER")
-    record = {"variable": "SHIMMER_INST_FINDER", "value": value, "agent": "INST_FINDER",
+    registry: `switched_off` names the agents phase 3-4 does not dispatch. This
+    function stays self-contained (os, json, re, Path): the sealer evaluates it
+    from the bound source."""
+    raw = os.environ.get("SHIMMER_INST_FINDER")
+    # The value read trimmed and lower-cased; empty is no value. Anything but on or off refuses.
+    value = (raw.strip().lower() or None) if isinstance(raw, str) else None
+    record = {"variable": "SHIMMER_INST_FINDER", "value": raw, "agent": "INST_FINDER",
               "setting": "off" if value == "off" else "on",
-              "switched_off": [], "ratified_by": None, "refusal": None}
-    if record["setting"] == "on":
+              "source": "default" if value is None else "variable",
+              "switched_off": [], "ratified_by": None, "ratified_default": None, "refusal": None}
+    if value not in (None, "on", "off"):
+        record["refusal"] = ("[inst-finder-switch] STOP: SHIMMER_INST_FINDER is %r; it takes on or off, or no "
+                             "value for the ratified default." % raw)
+        return record
+    if value == "on":
         return record
     try:
         amendments = json.loads((Path(root) / "config" / "constitution.json").read_text(
@@ -1382,11 +1396,21 @@ def _inst_finder_switch(root):
             continue
         change = amendment.get("change")
         text = change if isinstance(change, str) else json.dumps(change, ensure_ascii=False)
-        if (re.search(r"(?<![A-Za-z0-9_])INST_FINDER(?![A-Za-z0-9_])", text)
+        if not (re.search(r"(?<![A-Za-z0-9_])INST_FINDER(?![A-Za-z0-9_])", text)
                 and re.search(r"(?<![A-Za-z0-9_])SHIMMER_INST_FINDER(?![A-Za-z0-9_])", text)):
-            record["switched_off"] = ["INST_FINDER"]
-            record["ratified_by"] = str(amendment.get("id") or "")
-            return record
+            continue
+        declares_default_off = isinstance(change, dict) and change.get("default") == "off"
+        if value is None and not declares_default_off:
+            continue   # ratifies the switch, not a default off: no value stays on
+        # Off is the ratified default here, whether it came as no value or as the value a seal
+        # wrote for it (a sealed bundle carries the setting explicitly).
+        record["ratified_default"] = "off" if declares_default_off else None
+        record["setting"] = "off"
+        record["switched_off"] = ["INST_FINDER"]
+        record["ratified_by"] = str(amendment.get("id") or "")
+        return record
+    if value is None:
+        return record   # no ratified default off: on, as before the amendment
     record["refusal"] = (
         "[inst-finder-switch] STOP: SHIMMER_INST_FINDER=off switches INST_FINDER off, a change "
         "to governed inter-agent structure, and config/constitution.json holds no "
@@ -1456,15 +1480,22 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     if switch["refusal"]:
         raise RuntimeError(switch["refusal"])
     switched_off = set(switch["switched_off"])
-    dispatched = [name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off]
+    # The assignment layer (D-571, D-575): the agents this corpus needs, by the declared skip
+    # rules and the floor (config/agent_assignment.json); with no rule declared, every agent.
+    dispatched = agent_assignment.dispatch(
+        getattr(orch, "run_context", None), "corpus",
+        [name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off], digest,
+        scope="corpus", switched_off=switched_off)
     corpus_calls = []
     for agent_name in PRODUCTION_AGENTS_CORPUS_LEVEL:
+        if agent_name not in switched_off and agent_name not in dispatched:
+            continue
         if agent_name in switched_off:
             agent_activation.not_called(getattr(orch, "run_context", None), agent_name,
                 reason="switched off by operator setting", source_phase="3-4", eligible=False,
                 state="switched_off", trigger_source="operator_setting",
                 evidence={"variable": switch["variable"], "value": switch["value"],
-                          "ratified_by": switch["ratified_by"]})
+                          "source": switch.get("source"), "ratified_by": switch["ratified_by"]})
             log_event(_LOG, f"production_agent_switched_off agent={agent_name} source=SHIMMER_INST_FINDER",
                       run_id=_run_id_of(orch), phase="3-4", agent=agent_name)
             continue
@@ -1513,7 +1544,11 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
             all_context_refs, doc["text"], provisions, embed_store, cap=30,
         )
         tasks = []
+        per_doc = agent_assignment.dispatch(getattr(orch, "run_context", None), doc["id"],
+                                            PRODUCTION_AGENTS_PER_DOC, doc["text"])
         for agent_name in PRODUCTION_AGENTS_PER_DOC:
+            if agent_name not in per_doc:
+                continue
             wrapper = _build_wrapper(agent_name, orch, keys)
             if agent_name == "LEGAL_ANALYST" and provision_refs:
                 refs_excerpt = provision_refs
@@ -1535,7 +1570,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
                                   _progress=(3, doc_pos[doc["id"]], n_docs, agent_name)))
         doc_results = await _gather_or_serial(tasks)
         results_this_doc = [{"scope": "doc", "doc_id": doc["id"], "agent": name, **r}
-                            for name, r in zip(PRODUCTION_AGENTS_PER_DOC, doc_results)]
+                            for name, r in zip(per_doc, doc_results)]
         # D6, local profile only: pass two deepens each LEGAL_ANALYST finding from pass
         # one. LEGAL_ANALYST alone, not all three per-doc agents: its contract
         # (claim_id/verdict/reasoning) is the one that matches D6's own diagnosis --
@@ -3576,10 +3611,14 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         lines.append(localization.text('- INST_FINDER: setting not recorded for this summary'))
     # Reader check round 3 (item 9): the setting in plain words; the setting's
     # internal name stays in audit/agent_switches.json.
+    elif switch.get("switched_off") and (switch.get("source") == "default" or switch.get("ratified_default") == "off"):
+        lines.append(f'{localization.text('- INST_FINDER: off by default for this run, as ratified in amendment ')}{switch.get('ratified_by')}')
     elif switch.get("switched_off"):
         lines.append(f'{localization.text('- INST_FINDER: switched off for this run by the operator, as ratified in amendment ')}{switch.get('ratified_by')}')
     elif switch.get("setting") == "off":
         lines.append(localization.text('- INST_FINDER: switched off without a ratified amendment, so the run refused to start'))
+    elif switch.get("refusal"):
+        lines.append(localization.text('- INST_FINDER: the setting was neither on nor off, so the run refused to start'))
     else:
         lines.append(localization.text('- INST_FINDER: switched on for this run'))
         try:

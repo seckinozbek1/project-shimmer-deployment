@@ -1,4 +1,5 @@
 """Frozen model/telemetry checks. No model weights loaded and no network."""
+import contextlib
 import copy
 import json
 import os
@@ -10,6 +11,61 @@ from unittest.mock import patch
 
 import final_models as frozen
 import model_telemetry as telemetry
+
+
+def arm_g_gate_tree(root=frozen.ROOT):
+    """True only in arm G's gate tree on a rented machine: a git checkout the runner made itself
+    (tools/ordinary_final_run.git_checkout), its own `.git` folder on branch `gate`, holding the
+    runner's attributes file byte for byte (GATE_GIT_ATTRIBUTES, read from the runner's source,
+    never retyped here). The laptop's main checkout and its worktrees are never this tree."""
+    import ast
+    git = Path(root) / '.git'
+    runner = Path(root) / 'tools/ordinary_final_run.py'
+    if not (git.is_dir() and runner.is_file()):
+        return False
+    try:
+        head = (git / 'HEAD').read_text(encoding='utf8').strip()
+        written = (git / 'info' / 'attributes').read_text(encoding='utf8')
+    except OSError:
+        return False
+    declared = next((ast.literal_eval(node.value) for node in ast.parse(runner.read_text(encoding='utf8')).body
+                     if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'GATE_GIT_ATTRIBUTES'
+                                                             for t in node.targets)), None)
+    return head == 'ref: refs/heads/gate' and declared is not None and written == declared
+
+
+def frozen_weights_withheld():
+    """True only in arm G's gate tree with NONE of the frozen weight files present. The weights
+    (adapters, head, normalisation arrays) are gitignored evidence under docs/fix/, so a tree made
+    from git's blobs holds none of them; only their JSON configs are tracked. Anywhere else, or
+    with any weight present, every check runs on the real files and refuses as the runtime would."""
+    weights = [frozen.ROOT / entry['path'] for role in ('producer', 'auditor')
+               for entry in frozen.specification(role)['files'].values() if not entry['path'].endswith('.json')]
+    return arm_g_gate_tree() and bool(weights) and not any(path.is_file() for path in weights)
+
+
+def verify_tracked(role, root=frozen.ROOT):
+    """final_models.verify on what a git-blob tree holds: the pins read from config/final_models.json
+    (specification), each tracked JSON file present and at its pinned hash, and the adapter and its
+    config in one folder (verify's own rule). Only the weight files' presence and hashes are not read."""
+    spec = frozen.specification(role, root)
+    paths = {}
+    for key, entry in spec['files'].items():
+        path = Path(root) / entry['path']
+        if entry['path'].endswith('.json'):
+            frozen.require(path.is_file(), 'Missing frozen ' + role + ' ' + key)
+            frozen.require(frozen.sha(path) == entry['sha256'], 'Frozen hash mismatch: ' + role + ' ' + key)
+        paths[key] = path
+    frozen.require(paths['adapter'].parent == paths['adapter_config'].parent, 'Adapter/config directory mismatch')
+    return spec, paths
+
+
+def without_frozen_files():
+    """In arm G's gate tree with the weights withheld, admission runs with verify_tracked in place
+    of verify; everywhere else the real verify reads the real files."""
+    if not frozen_weights_withheld():
+        return contextlib.nullcontext()
+    return patch.object(frozen, 'verify', verify_tracked)
 
 
 def call(identifier, start, end, role='producer', parents=(), **kwargs):
@@ -24,8 +80,12 @@ def call(identifier, start, end, role='producer', parents=(), **kwargs):
 
 class IntegrationChecks(unittest.TestCase):
     def test_preserved_artifacts_match(self):
+        # In arm G's gate tree the weights are withheld (gitignored); there the tracked configs,
+        # the pins and the folder rule are still checked, and the weights' hashes are proven on
+        # the laptop's main checkout, which holds them.
+        check = verify_tracked if frozen_weights_withheld() else frozen.verify
         for role in ('producer','auditor'):
-            spec, paths = frozen.verify(role)
+            spec, paths = check(role)
             self.assertEqual(set(paths), set(frozen.PINS[role]))
             self.assertEqual(spec['checkpoint'], 168 if role == 'producer' else 896)
 
@@ -131,7 +191,7 @@ class IntegrationChecks(unittest.TestCase):
 
     def test_ordinary_final_admission_requires_valid_pair_contract(self):
         import auditor_pairs
-        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'),patch.object(frozen,'verify_runtime'):
+        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'),patch.object(frozen,'verify_runtime'),without_frozen_files():
             frozen.admit_ordinary()
             with patch.object(auditor_pairs,'contract_self_check',return_value=False):
                 with self.assertRaisesRegex(RuntimeError,'pairing contract'):

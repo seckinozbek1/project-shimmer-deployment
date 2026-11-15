@@ -399,12 +399,15 @@ exits with code 4 when the local Qwen redaction model is not reachable, or when 
 operator redaction rule compiles (the case for every corpus shipped in this
 repository). Each override is written to the governance ledger.
 
-`SHIMMER_INST_FINDER=off` switches the corpus-level agent INST_FINDER off for a
-run, but only once the operator has ratified the amendment drafted in
-`docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`; until then a run with that setting
-refuses to start (exit code 9, shown by the server and the console as the
-governance status `refused_inst_finder_unratified`, not as a failure). Each run
-records the setting in `audit/agent_switches.json` and its run summary.
+The corpus-level agent INST_FINDER is optional and under development. By the
+operator's decision (D-570) it is off by default once the operator has ratified
+the amendment drafted in `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`;
+`SHIMMER_INST_FINDER=on` then runs it for a run. Until that amendment is
+ratified, a run with no value runs INST_FINDER as before, and a run with
+`SHIMMER_INST_FINDER=off` refuses to start (exit code 9, shown by the server and
+the console as the governance status `refused_inst_finder_unratified`, not as a
+failure). Each run records the setting, and whether it was the default, in
+`audit/agent_switches.json` and its run summary.
 
 Under the local backend profile nothing in Shimmer reaches the web: the search
 router refuses every web lookup, and the run summary and the console say so. Web
@@ -545,7 +548,7 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
 
 ## Development and validation
 
-Read [CLAUDE.md](CLAUDE.md) for the contribution rules and [genesis.md](genesis.md)
+Read [CLAUDE.md](CLAUDE.md) for the contribution rules (its full text is in [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md)) and [genesis.md](genesis.md)
 for the founding design. The design includes aims that are not built; the
 [runtime reference](docs/RUNTIME_REFERENCE.md) describes what runs today, with
 agent, route and environment tables that the gate checks against the code.

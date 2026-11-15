@@ -1,11 +1,40 @@
 {
-  "note": "The provider's prices per million tokens for the cloud reference (D-S70 item 5, D-326), recorded by the lead from the provider's own pricing page before a run, with the page and the date. benchmark/baselines/cloud_reference.py refuses a run whose prices differ from the row for the model id it resolved live, and a run whose model has no row. Row for claude-opus-4-8 read from the page on 2026-11-09 and checked by the lead (D-359).",
+  "note": "The provider's prices per million tokens for the cloud reference (D-S70 item 5, D-326), recorded by the lead from the provider's own pricing page before a run, with the page and the date. benchmark/baselines/cloud_reference.py refuses a run whose prices differ from the row for the model id it resolved live, and a run whose model has no row. Row for claude-opus-4-8 read from the page on 2026-11-09 and checked by the lead (D-359). D-610 (2026-11-13): the cache and batch rates, the cache rule and the batch limits for claude-opus-4-8, read by the lane from the pricing, prompt-caching and batch-processing pages on 2026-11-13. The batch cache rates are the page's cache multipliers (5-minute write 1.25x, 1-hour write 2x, read 0.1x of input) applied to the batch input rate, as the pricing page says they stack with the Batch API discount; the table records them, the code computes none.",
   "models": {
     "claude-opus-4-8": {
       "input_per_mtok": 5.0,
       "output_per_mtok": 25.0,
       "source": "https://platform.claude.com/docs/en/about-claude/pricing",
-      "read_on": "2026-11-09"
+      "read_on": "2026-11-09",
+      "cache_write_5m_per_mtok": 6.25,
+      "cache_write_1h_per_mtok": 10.0,
+      "cache_read_per_mtok": 0.5,
+      "rates_read_on": "2026-11-13",
+      "batch": {
+        "input_per_mtok": 2.5,
+        "output_per_mtok": 12.5,
+        "cache_write_5m_per_mtok": 3.125,
+        "cache_write_1h_per_mtok": 5.0,
+        "cache_read_per_mtok": 0.25,
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Batch processing; prompt caching multipliers stack with the Batch API discount)",
+        "read_on": "2026-11-13"
+      },
+      "cache": {
+        "min_tokens": 1024,
+        "ttl": {
+          "single": "1h",
+          "batch": "1h"
+        },
+        "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching (minimum cacheable length: 1,024 tokens for Opus 4.8); the batch-processing page advises the 1-hour cache for batches, and the single route marks the same 1 hour so that both routes send the same bytes",
+        "read_on": "2026-11-13"
+      },
+      "batch_limits": {
+        "max_requests": 100000,
+        "max_bytes": 268435456,
+        "expiry_hours": 24,
+        "source": "https://platform.claude.com/docs/en/build-with-claude/batch-processing (100,000 requests or 256 MB, expiry after 24 hours, results 29 days)",
+        "read_on": "2026-11-13"
+      }
     }
   }
 }

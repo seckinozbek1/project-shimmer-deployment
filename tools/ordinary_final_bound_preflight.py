@@ -31,6 +31,10 @@ def main(bundle):
     binding = read(base / 'authorization_binding.json')
     require(sha(base / 'execution_manifest.json') == binding['manifest_sha256'], 'Manifest differs from the binding')
     m = read(base / 'execution_manifest.json')
+    # The controller's own workload admission, before any provider call: run flags, arm, exposure and
+    # multi-round declarations drifting from what the runner admits refuse here, not at launch (#252 C4).
+    import ordinary_final_run as run
+    run.admit_workload(m, read(base / 'seal.json'), base)
     provider = LambdaExperiment(credential_path())
     instances = provider.request('instances')['data']
     guard.refuse_foreign_inventory(instances)  # loop instances only, any number of them (D-S95)

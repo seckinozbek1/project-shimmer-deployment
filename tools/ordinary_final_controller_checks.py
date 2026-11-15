@@ -53,6 +53,7 @@ from ordinary_final_gate_arm_checks import GATE_NEUTRALIZATIONS, GateArmChecks
 from ordinary_final_salvage_checks import SALVAGE_NEUTRALIZATIONS, SalvageChecks
 from ordinary_final_image_checks import IMAGE_NEUTRALIZATIONS, ImageChecks
 from ordinary_final_asset_copy_checks import ASSET_COPY_NEUTRALIZATIONS, AssetCopyChecks
+from ordinary_final_aux_env_checks import AUX_NEUTRALIZATIONS, AuxEnvChecks
 
 INSTANCE = 'a' * 32
 KEY_ID = 'b' * 32
@@ -592,9 +593,15 @@ class FakeTransport:
 def run_controller(root, base, plan, transport, provider, clock, credential, call=None, keep=None, require_copy=False):
     """The real controller (or `call`) against the fakes, every outside effect replaced;
     returns (transport, console lines, the run folder the controller used)."""
+    # The detach flags are the host's own, as the controller reads them from the real module:
+    # Windows defines them (8, 512), POSIX defines neither, so the controller passes 0 there (a
+    # real POSIX Popen refuses any non-zero creationflags). CREATE_NO_WINDOW stays 0 so that the
+    # no-window flag a start carries can only come from cloud_run_common.no_window.
     fake_subprocess = SimpleNamespace(run=transport.run, Popen=transport.popen, TimeoutExpired=subprocess.TimeoutExpired,
                                       CompletedProcess=subprocess.CompletedProcess, DEVNULL=subprocess.DEVNULL,
-                                      DETACHED_PROCESS=8, CREATE_NEW_PROCESS_GROUP=512, CREATE_NO_WINDOW=0)
+                                      DETACHED_PROCESS=getattr(subprocess, 'DETACHED_PROCESS', 0),
+                                      CREATE_NEW_PROCESS_GROUP=getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0),
+                                      CREATE_NO_WINDOW=0)
     console = io.StringIO()
     with patch.object(controller, 'ROOT', root), patch.object(controller, 'BASE', base), \
             patch.object(controller, 'MANIFEST', sha(base / 'execution_manifest.json')), \
@@ -618,7 +625,7 @@ def run_controller(root, base, plan, transport, provider, clock, credential, cal
     return transport, console.getvalue().splitlines(), ran
 
 
-class ControllerChecks(ImageChecks, AssetCopyChecks, SalvageChecks, GateArmChecks, LauncherArmChecks, unittest.TestCase):
+class ControllerChecks(AuxEnvChecks, ImageChecks, AssetCopyChecks, SalvageChecks, GateArmChecks, LauncherArmChecks, unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -844,6 +851,9 @@ class ControllerChecks(ImageChecks, AssetCopyChecks, SalvageChecks, GateArmCheck
         # The detached watchdog keeps its own flags beside the new one.
         popen = [f for kind, _, f in transport.flags if kind == 'Popen'][0]
         self.assertEqual(popen & 8, 8 if os.name == 'nt' else 0)
+        self.assertEqual(popen & 512, 512 if os.name == 'nt' else 0)
+        if os.name != 'nt':   # a real POSIX Popen raises ValueError for any non-zero creationflags
+            self.assertEqual(popen, 0)
 
     def test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root(self):
         """Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent."""
@@ -3232,8 +3242,13 @@ class ControllerChecks(ImageChecks, AssetCopyChecks, SalvageChecks, GateArmCheck
     # ---- R11, open item 12: an unratified SHIMMER_INST_FINDER=off is never sealed ----------
 
     def test_unratified_inst_finder_off_refuses_to_seal(self):
+        # The real constitution less any amendment naming the switch (INFRA-052 ratified it, D-570,
+        # D-580): this proof is of the constitution with none; the ratified cases follow below.
+        real = json.loads((ROOT / 'config/constitution.json').read_bytes())
+        real['amendments'] = [a for a in real.get('amendments') or []
+                              if 'SHIMMER_INST_FINDER' not in json.dumps(a.get('change'), ensure_ascii=False)]
         files = {'scripts/pipeline.py': (ROOT / 'scripts/pipeline.py').read_bytes(),
-                 'config/constitution.json': (ROOT / 'config/constitution.json').read_bytes(),
+                 'config/constitution.json': json.dumps(real).encode(),
                  'scripts/final_models.py': (ROOT / 'scripts/final_models.py').read_bytes()}
         self.assertEqual(sealer.seal_environment(files, None)['SHIMMER_INST_FINDER'], 'on')
         self.assertEqual(sealer.seal_environment(files, 'on')['SHIMMER_INST_FINDER'], 'on')
@@ -3244,6 +3259,12 @@ class ControllerChecks(ImageChecks, AssetCopyChecks, SalvageChecks, GateArmCheck
             id='FIXTURE', operator_approved=True, change='INST_FINDER switched off through SHIMMER_INST_FINDER')]
         ratified = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
         self.assertEqual(sealer.seal_environment(ratified, 'off')['SHIMMER_INST_FINDER'], 'off')
+        self.assertEqual(sealer.seal_environment(ratified, None)['SHIMMER_INST_FINDER'], 'on')
+        # D-570: an amendment declaring default off seals off with no value, and on still runs it.
+        constitution['amendments'][-1]['change'] = dict(default='off', setting='INST_FINDER off by default; SHIMMER_INST_FINDER=on runs it')
+        default_off = dict(files, **{'config/constitution.json': json.dumps(constitution).encode()})
+        self.assertEqual(sealer.seal_environment(default_off, None)['SHIMMER_INST_FINDER'], 'off')
+        self.assertEqual(sealer.seal_environment(default_off, 'on')['SHIMMER_INST_FINDER'], 'on')
 
     # ---- D-058, D-061, D-063: the producer's attention and prefill are sealed ---------------
 
@@ -5183,6 +5204,7 @@ NEUTRALIZATIONS += [
 NEUTRALIZATIONS += SALVAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += IMAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += ASSET_COPY_NEUTRALIZATIONS
+NEUTRALIZATIONS += AUX_NEUTRALIZATIONS
 
 import lambda_experiment_provider as _experiment_adapter  # noqa: E402
 _REAL_LIVE_CASE_FIELDS_ERROR = runner.live_case_fields_error

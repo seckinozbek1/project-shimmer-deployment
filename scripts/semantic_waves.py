@@ -240,6 +240,166 @@ def skip_deterministic_retry(runtime, wrapper, result, reason):
     return True
 
 
+REFUSAL_MARK = "refusal is not acceptance"   # compact_contracts.envelope's refusal of a refusal object
+CHANGED_INPUT_RETRY = "changed_input_retry"
+
+
+def partition_refused(result):
+    """The validator refused the reply as a refusal object (compact_contracts.envelope)."""
+    return any(REFUSAL_MARK in str(m) for m in (result.get("contract_missing") or []))
+
+
+def retry_plan(spans, owned, result):
+    """D-575, D-577: the changed-input retry of one failed PROCESSOR partition, decided from
+    its owned spans and how it failed, before any call. Returns (kind, [(request, keep)]) where
+    each request is the owned spans of one new call and `keep` the spans whose items stand,
+    or (reason, []) when no retry with other input exists. Never three spans: every request
+    is one or two spans, the shape checkpoint 168's DEV rows carry (EXTRACTION-C).
+      - a refused or truncated two-span request: one call per span;
+      - a refused one-span request: that span with the span before it, keeping only its own
+        items (post_only_kept; the span before keeps its first answer);
+      - a truncated one-span request, or a refused first span: no smaller or other input."""
+    truncated, refused = result.get("truncated") is True, partition_refused(result)
+    if result.get("ok") or not (truncated or refused):
+        return "not_failed", []
+    if len(owned) >= 2:
+        return "split_to_single_spans", [((s,), (s,)) for s in owned]
+    if refused and not truncated:
+        ids = [s.id for s in spans]
+        at = ids.index(owned[0].id)
+        if at == 0:
+            return "retry_not_possible_first_span", []
+        return "with_previous_span", [((spans[at - 1], owned[0]), tuple(owned))]
+    return "retry_not_possible_single_span_cap", []
+
+
+def post_only_kept(clone, keep):
+    """Before the re-ask is dispatched: its validated items are cut to the `keep` spans inside
+    the source adapter, so the reply's envelope, its bus post and its ownership receipts carry
+    the refused span's items alone. The span before keeps its first answer, which is already on
+    the bus; posting it again at the same revision would put one item id there twice."""
+    ids = {s.id for s in keep}
+    adapter = clone._source_adapter
+
+    def kept(obj):
+        out = adapter(obj)
+        return dict(out, items=[i for i in out.get("items", []) if i.get("source_span_id") in ids])
+    clone._source_adapter = kept
+    clone._owned_source_spans = tuple(keep)
+
+
+VERIFIER_HALVES = "verifier_halves"
+
+
+def verifier_halves(wrapper, kwargs):
+    """D-575, D-577 (#246): the two halves of a VERIFIER call's own input, or None when it has
+    fewer than two draft items. The producer delivery's items are split in two in their order;
+    each half carries its own items, the ownership receipts of those items alone and the draft
+    view of the same items, so every pair is built and seen in exactly one half."""
+    request = getattr(wrapper, "_auditor_pair_request", None)
+    payload = kwargs.get("work_payload") or {}
+    producer = (request or {}).get("producer") or {}
+    items = list(((producer.get("parsed") or {}).get("items")) or [])
+    if request is None or len(items) < 2:
+        return None
+    middle = len(items) // 2
+    halves = []
+    for part in (items[:middle], items[middle:]):
+        ids = {i.get("item_id") for i in part}
+        half_producer = dict(producer, parsed=dict(producer["parsed"], items=part),
+                             source_ownership=[e for e in producer.get("source_ownership", []) if e.get("producer_item_id") in ids])
+        half_payload = dict(payload)
+        draft = payload.get("processor_draft")
+        if isinstance(draft, dict) and isinstance(draft.get("items"), list):
+            half_payload["processor_draft"] = dict(draft, items=[i for i in draft["items"]
+                                                                 if not isinstance(i, dict) or i.get("item_id") in ids])
+        halves.append((dict(request, producer=half_producer), half_payload))
+    return halves
+
+
+def merged_halves(wrapper, first, second):
+    """One result from the two halves: their items together, held to the agent's unchanged
+    validator; incomplete when either half failed, was truncated or the whole is invalid."""
+    ok = all(r.get("ok") and r.get("truncated") is False for r in (first, second))
+    items = [i for r in (first, second) for i in ((r.get("parsed") or {}).get("items") or [])]
+    parsed = dict(first.get("parsed") or {}, items=items)
+    missing = wrapper._contract_missing(parsed) if ok else ["verifier_half_incomplete"]
+    return dict(first, ok=ok and not missing, parsed=parsed, truncated=any(r.get("truncated") is True for r in (first, second)),
+                contract_missing=missing, error=None if ok and not missing else "contract_violation",
+                half_calls=[first.get("call_id"), second.get("call_id")])
+
+
+async def changed_input_retry(runtime, calls, results, groups):
+    """Each failed PROCESSOR partition gets at most one retry whose input differs from the
+    first ask (retry_plan); deterministic decoding would repeat a same-input re-ask byte for
+    byte (D-061). A valid partition is never asked again. Every decision is one generation
+    observation (`changed_input_retry`) with the original call, the kind, the request sizes
+    and each new call's outcome. Returns the calls, results and groups with each retried
+    partition replaced by its new requests, and the number of new calls."""
+    import compact_contracts
+    out_calls, out_results, out_groups, made = [], [], [], 0
+    for begin, end, name, doc_id in groups:
+        start = len(out_calls)
+        for i in range(begin, end):
+            w, k = calls[i]
+            r = results[i]
+            meta = getattr(w, "_retry_meta", None)
+            if meta is None and w.name == "VERIFIER" and r.get("truncated") is True and not r.get("ok"):
+                halves = verifier_halves(w, k)
+                generation_observation.append(runtime.run_context, dict(
+                    event=CHANGED_INPUT_RETRY, kind=VERIFIER_HALVES if halves else "retry_not_possible_one_item",
+                    call_id=r.get("call_id"), doc_id=doc_id))
+                if halves:
+                    done = []
+                    for request, payload in halves:
+                        clone = runtime.attach(replace(w))
+                        clone._auditor_pair_request = request
+                        clone._partition_retry_reason = VERIFIER_HALVES
+                        done.append((await asyncio.to_thread(run_wave, runtime, [(clone, dict(k, work_payload=payload))],
+                                                             CHANGED_INPUT_RETRY))[0])
+                        made += 1
+                    r = merged_halves(w, *done)
+                    generation_observation.append(runtime.run_context, dict(
+                        event=CHANGED_INPUT_RETRY + "_call", kind=VERIFIER_HALVES, retry_of=results[i].get("call_id"),
+                        call_ids=r["half_calls"], doc_id=doc_id, ok=bool(r["ok"]), truncated=r["truncated"],
+                        contract_missing=r["contract_missing"]))
+                out_calls.append((w, k))
+                out_results.append(r)
+                continue
+            kind, pieces = retry_plan(meta["spans"], meta["owned"], r) if meta else ("not_partition", [])
+            if kind != "not_failed" and meta:
+                generation_observation.append(runtime.run_context, dict(
+                    event=CHANGED_INPUT_RETRY, kind=kind, call_id=r.get("call_id"), doc_id=doc_id,
+                    owned_spans=[s.id for s in meta["owned"]], requests=[[s.id for s in q] for q, _ in pieces]))
+            if not pieces:
+                out_calls.append((w, k))
+                out_results.append(r)
+                continue
+            base, spans = meta["base"], meta["spans"]
+            for request, keep in pieces:
+                clone = runtime.attach(replace(meta["wrapper"]))
+                clone._bounded_output_budget = 1536
+                system, user, citable, supplied = compact_contracts.validated_messages(
+                    base["document_text"], request, spans, meta["kwargs"].get("reference_index_excerpt") or [])
+                compact_contracts.bind_producer(clone, request, base.get("document_id", ""),
+                                                citable=citable, messages=(system, user, supplied))
+                clone._partition_retry_reason = kind
+                if tuple(keep) != tuple(request):
+                    post_only_kept(clone, keep)
+                kwargs = dict(meta["kwargs"], work_payload=json.loads(user))
+                new = (await asyncio.to_thread(run_wave, runtime, [(clone, kwargs)], CHANGED_INPUT_RETRY))[0]
+                made += 1
+                kept = new
+                generation_observation.append(runtime.run_context, dict(
+                    event=CHANGED_INPUT_RETRY + "_call", kind=kind, retry_of=r.get("call_id"), call_id=new.get("call_id"),
+                    doc_id=doc_id, request=[s.id for s in request], kept=[s.id for s in keep],
+                    ok=bool(kept.get("ok")), truncated=kept.get("truncated")))
+                out_calls.append((clone, kwargs))
+                out_results.append(kept)
+        out_groups.append((start, len(out_calls), name, doc_id))
+    return out_calls, out_results, out_groups, made
+
+
 async def execute_plans(plans):
     runtime = topology.ACTIVE.get()
     calls, groups = [], []
@@ -281,6 +441,7 @@ async def execute_plans(plans):
                     base["document_text"], owned, spans, k.get("reference_index_excerpt") or [])
                 compact_contracts.bind_producer(clone, owned, base.get("document_id", ""),
                                                 citable=citable, messages=(system, user, supplied))
+                clone._retry_meta = dict(wrapper=w, kwargs=k, base=base, spans=spans, owned=tuple(owned))
                 calls.append((clone, dict(k, work_payload=json.loads(user))))
         else:
             calls.append((w,k))
@@ -303,6 +464,8 @@ async def execute_plans(plans):
             w._partition_retry_reason = reason
             results[i] = (await asyncio.to_thread(run_wave,runtime,[(w,k)],"failed_partition_only"))[0]
             retries+=1
+    calls, results, groups, changed = await changed_input_retry(runtime, calls, results, groups)
+    retries += changed
     out = []
     for plan,(begin,end,name,doc_id) in zip(plans,groups):
         if name == "PROCESSOR" and (begin == end or hasattr(calls[begin][0],"_source_adapter")):

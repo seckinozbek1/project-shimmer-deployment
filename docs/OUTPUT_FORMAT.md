@@ -534,7 +534,7 @@ One line per model call, written just before the call. It records identifiers on
 
 ### 8.5 `audit/agent_switches.json`
 
-Written at the start of every run. `{"schema_version": 1, "variable": "SHIMMER_INST_FINDER", "value": <the environment value or null>, "agent": "INST_FINDER", "setting": "on" | "off", "switched_off": [...], "ratified_by": <amendment id or null>, "refusal": <sentence or null>}`. `switched_off` is `["INST_FINDER"]` only when `off` was set and approved. A non-null `refusal` means the run stopped with exit code 9.
+Written at the start of every run. `{"schema_version": 1, "variable": "SHIMMER_INST_FINDER", "value": <the environment value or null>, "agent": "INST_FINDER", "setting": "on" | "off", "source": "variable" | "default", "switched_off": [...], "ratified_by": <amendment id or null>, "ratified_default": "off" | null, "refusal": <sentence or null>}`. `source` is `default` when no value was set (empty counts as none). `switched_off` is `["INST_FINDER"]` only when the run is off under a ratified amendment: `off` was set, or no value was set under an amendment declaring default off (D-570). `ratified_default` is `off` when that amendment declares default off, so a sealed bundle that wrote off for the default is still named off by default. A non-null `refusal` means the run stopped with exit code 9: `off` with no ratified amendment, or a value neither on nor off. Records written before D-570 have no `source` or `ratified_default`.
 
 ### 8.6 `audit/agent_activation.json`
 

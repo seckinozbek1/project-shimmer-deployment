@@ -118,6 +118,11 @@ USAGE_STOP_PERCENT = 95   # the standing value; read through usage_stop_percent(
 # the stop is 98; at or after it the standing 95 is back with no further change. The epoch is the
 # `seven_day_resets_at` of `.claude/loop_status.json` on 12 November 2026 (18 November 2026, 11:00 +03:00).
 USAGE_STOP_EXCEPTION = {'percent': 98, 'until_epoch': 1794988800, 'source': 'Seckin 14:16, 12 November 2026'}
+# D-583: the usage stop acts only on a LIVE reading. The status line rewrites .claude/loop_status.json
+# each time a Claude session's status line refreshes; a reading older than USAGE_FRESH_SECONDS at the
+# moment of decision is "usage unknown, stale by N s": reported, never a trigger. The bound is the
+# measured write gap of the status line while a session works (see the decision recording it).
+USAGE_FRESH_SECONDS = 300
 SILENCE_MINUTES = 90
 SALVAGE_ITEM_SECONDS = 300
 SALVAGE_ANSWER_SECONDS = 600
@@ -363,6 +368,39 @@ def usage_percent(path=None):
     return float(value)
 
 
+def usage_reading(path=None, now=None):
+    """The weekly figure as it stands at the moment of decision (D-583), read again at `now`: its value
+    (usage_percent, the overall figure only, D-534), the time the status line wrote it (the file's own
+    `time_utc`, else its modification time), its age in seconds at `now`, and its state: `fresh` when
+    readable and at most USAGE_FRESH_SECONDS old, `stale` when older (or written in the future), and
+    `unreadable` when no figure can be read. A stale or unreadable reading never triggers the stop."""
+    path = Path(path or LOOP_STATUS)
+    value = usage_percent(path)
+    written = None
+    try:
+        stamp = json.loads(path.read_text(encoding='utf-8')).get('time_utc')
+        written = parse_time(stamp) if isinstance(stamp, str) else None
+    except (OSError, ValueError, AttributeError, TypeError):
+        written = None
+    if written is None:
+        try:
+            written = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
+        except OSError:
+            written = None
+    age = None if written is None else round(_epoch(now) - written.timestamp(), 1)
+    if value is None or age is None:
+        state = 'unreadable'
+    elif 0 <= age <= USAGE_FRESH_SECONDS:
+        state = 'fresh'
+    else:
+        state = 'stale'
+    reading = {'value': value, 'written_utc': written.isoformat() if written else None, 'age_seconds': age,
+               'state': state, 'fresh_seconds': USAGE_FRESH_SECONDS}
+    if state != 'fresh':
+        reading['note'] = ('usage unknown, stale by %d s' % age) if state == 'stale' else 'usage unknown, unreadable'
+    return reading
+
+
 def last_heartbeat(paths=None):
     """The latest time any lead heartbeat file was written, or None when none exists."""
     times = []
@@ -414,10 +452,12 @@ def salvage_trigger(now, running, status_path=None, heartbeats=None):
     """Which D-S84 trigger fires, or None. Neither acts while no loop instance runs."""
     if not running:
         return None
-    usage = usage_percent(status_path)
-    if usage_stop(usage, now):
-        return {'trigger': 'usage', 'seven_day_used_percentage': usage,
-                'stop_percent': usage_stop_percent(now), 'stop_basis': usage_stop_basis(now)}
+    # D-583: read again now; only a fresh reading can trigger. A stale one is reported in the status.
+    reading = usage_reading(status_path, now)
+    if reading['state'] == 'fresh' and usage_stop(reading['value'], now):
+        return {'trigger': 'usage', 'seven_day_used_percentage': reading['value'],
+                'stop_percent': usage_stop_percent(now), 'stop_basis': usage_stop_basis(now),
+                'reading_age_seconds': reading['age_seconds'], 'reading_written_utc': reading['written_utc']}
     beat = last_heartbeat(heartbeats)
     if lead_silent(now, beat):
         return {'trigger': 'lead_silent', 'last_heartbeat_utc': beat.isoformat() if beat else None,
@@ -774,6 +814,8 @@ def reap(provider, ledger_paths, append_path, now=None, salvage=True):
             'budget_line_fields_unknown': sorted({k for r in rows if r.get('event') in BUDGET_EVENTS for k in r}
                                                  - set(BUDGET_LINE_FIELDS)),
             'usage_stop_percent': usage_stop_percent(now), 'usage_stop_basis': usage_stop_basis(now),
+            # D-583: the reading this pass decided on, its age and state; a stale one says so.
+            'usage_reading': usage_reading(None, now),
             'salvage': salvage, 'salvage_error': salvage_error, 'error': None}
 
 

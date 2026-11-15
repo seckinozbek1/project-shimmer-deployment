@@ -1045,9 +1045,9 @@ def run_checks():
         ("the threshold", observe_threshold, expected_threshold, lambda: with_source(cr, "choose_threshold", "if best is None or rank > best[0]:", "if best is None or rank >= best[0]:")),
         ("a qualifying threshold", observe_threshold, expected_threshold, lambda: with_source(
             cr, "choose_threshold", 'if not (row["flagged"] >= 1 and flag_share_holds(row) and precision_holds(benchmark, row, b1)):', "if False:")),
-        ("the comparator", observe_comparator, expected_comparator, lambda: with_source(cr, "comparator", 'g == REASONING', 'g != REASONING')),
+        ("the comparator", observe_comparator, expected_comparator, lambda: with_source(cr, "choose_group", 'g == REASONING', 'g != REASONING')),
         ("the abstain floor", observe_comparator, expected_comparator, lambda: with_source(
-            cr, "comparator", 'if rows[g]["abstain"] <= doc_judge.BAR_MAX_B1_ABSTAIN * rows[g]["items"]', "")),
+            cr, "choose_group", 'if rows[g]["abstain"] <= doc_judge.BAR_MAX_B1_ABSTAIN * rows[g]["items"]', "")),
         ("the sign test", observe_sign, expected_sign, lambda: with_source(cr, "sign_test", "range(wins, n + 1)", "range(wins + 1, n + 1)")),
         ("binding", observe_binding, expected_binding, lambda: patched(cr, "bound", lambda base, rows: None)),
         ("read-a through the scorer", observe_read_a, expected_read_a, lambda: patched(sc, "item_is_flag", lambda key, item: False)),

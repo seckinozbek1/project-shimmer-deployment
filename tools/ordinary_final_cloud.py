@@ -180,7 +180,7 @@ def batch_entries(plan,m,assets,sealed=False):
         require(es['execution_manifest_sha256']==sha(b/'execution_manifest.json'),'Batch manifest seal mismatch')
         require(read(b/'AUTHORIZED_LOCAL_REVERIFICATION.json')['passed'],'Batch local reverification missing')
         for name,digest in em['support_files'].items():require(sha(b/name)==digest,'Batch support source changed')
-        require(sha(b/'project.tar.gz')==em['source_archive_sha256'],'Batch project archive changed')
+        stored=runner.project_held(b,em['source_archive_sha256'])
         require(em['assets_archive']['sha256']==assets['sha256'] and em['image']==m['image']
                 and em['support_files'].get('install.lock')==m['support_files'].get('install.lock')
                 and em['local_control_hashes']==m['local_control_hashes'],'Batch bundles share one environment')
@@ -191,7 +191,7 @@ def batch_entries(plan,m,assets,sealed=False):
         # Every entry, the session bundle among them: launched once in place (LAUNCH_INTENT.json)
         # or in a run folder with --output-dir (RUN_FOLDER.json) is consumed either way.
         require(not consumed(b),'Batch bundle already consumed')
-        e.update(base=b,manifest=em,seal=es,manifest_sha256=sha(b/'execution_manifest.json'),seal_sha256=sha(b/'seal.json'),
+        e.update(base=b,manifest=em,seal=es,manifest_sha256=sha(b/'execution_manifest.json'),seal_sha256=sha(b/'seal.json'),stored=stored,
                  runner=em.get('runner','ordinary_final_run.py'),
                  folder=Path(BASE)/'batch'/('%02d_%s_%s'%(e['index'],e['item'],e['arm'])))
         require(e['runner'] in em['support_files'],'Batch runner is not a sealed support file')
@@ -401,6 +401,38 @@ IMAGE_STATES=('MATCH','MISSING','MISMATCH','UNREACHABLE','UNSEALED')
 IMAGE_READ_BYTES_PER_SECOND=13.15e9/259
 IMAGE_BUILD_SECONDS=5400
 IMAGE_MEASURE_SECONDS=5400
+# #217: the auxiliary environment's phases (a vLLM measurement): the fetch of every locked wheel onto
+# the instance, held to the lock's hashes, and its install into venv_aux, offline from that folder.
+AUX_FETCH_SECONDS=1800
+AUX_INSTALL_SECONDS=1800
+AUX_REFUSAL='An auxiliary environment is an exposed measurement from its sealed lock'
+
+
+def aux_env_block(manifest):
+    """#217: the sealed auxiliary environment block, or None: no block, no auxiliary phase."""
+    return manifest.get('aux_env') or None
+
+
+def aux_env_admitted(manifest,sealed):
+    """#217: an auxiliary environment only for an exposed run, from a lock the seal carries as a
+    support file with the digest the manifest's block names."""
+    aux=aux_env_block(manifest) or {}
+    lock=aux.get('lock')
+    return (not sealed and isinstance(lock,str) and lock in manifest.get('support_files',{})
+            and manifest['support_files'][lock]==aux.get('lock_sha256'))
+
+
+def aux_env_commands(aux,exe,remote_root):
+    """#217: the auxiliary environment's three phases, each a (label, command, deadline): every
+    locked wheel fetched by pip onto the instance and held to the lock's sha256 (--require-hashes,
+    wheels only, no dependency pip chooses), a venv beside the run's own, and the install offline
+    from that folder alone, again held to the hashes."""
+    lock=shlex.quote(aux['lock'])
+    return [('aux_env_fetch',exe+' -m pip --disable-pip-version-check download --no-deps --only-binary=:all: '
+             '--require-hashes -d wheels_aux -r '+lock,AUX_FETCH_SECONDS),
+            ('aux_env_create','/usr/bin/python3.12 -m venv venv_aux',180),
+            ('aux_env_install',remote_root+'/venv_aux/bin/python -m pip --disable-pip-version-check install --no-index '
+             '--no-deps --find-links wheels_aux --require-hashes -r '+lock,AUX_INSTALL_SECONDS)]
 
 
 def image_check_seconds(m):
@@ -711,6 +743,14 @@ def poll_outcome(returncode,stdout):
     return 'unreachable',None,progress
 
 
+def project_from_store_command(mount,store_name,remote):
+    """#252 item 3: the project archive copied from the store into the run root by its file name
+    (project-<sha256>.tar.gz); the instance hashes it next, before anything is extracted."""
+    require(re.fullmatch(r'project-[0-9a-f]{64}\.tar\.gz',store_name or '') is not None,'Not a stored project archive name')
+    return ('cp -- '+shlex.quote(mount+'/'+runner.PROJECT_STORE_FOLDER+'/'+store_name)+' '
+            +shlex.quote(remote+'/project.tar.gz'))
+
+
 def execute():
     require(sha(BASE/'execution_manifest.json')==MANIFEST and sha(BASE/'seal.json')==SEAL,'Authorized seal changed')
     m=read(BASE/'execution_manifest.json')
@@ -718,7 +758,8 @@ def execute():
     require(read(BASE/'AUTHORIZED_LOCAL_REVERIFICATION.json')['passed'],'Local reverification missing')
     for name,digest in m['local_control_hashes'].items():require(sha(ROOT/name)==digest,'Controller source changed')
     for name,digest in m['support_files'].items():require(sha(BASE/name)==digest,'Support source changed')
-    require(sha(BASE/'project.tar.gz')==m['source_archive_sha256'],'Project archive changed')
+    # #252 item 3: the project archive's bytes here, or held in the store by its fingerprint.
+    stored=runner.project_held(BASE,m['source_archive_sha256'])
     assets=read(BASE/'assets_transfer_archive.json')
     require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
     require(not (BASE/'LAUNCH_INTENT.json').exists(),'Authorization consumed; no launch retry')
@@ -726,6 +767,9 @@ def execute():
     workload=admit(m,seal,plan,BASE)
     sealed=workload['exposure']=='sealed'
     require(single_bundle_arm(m,plan),'Arm L runs as a single bundle, never in a batch')
+    # #217: an auxiliary environment is refused here, before any provider call, unless it is an
+    # exposed run's and its lock is the sealed support file the block names.
+    require(not aux_env_block(m) or aux_env_admitted(m,sealed),AUX_REFUSAL)
     batch=batch_entries(plan,m,assets,sealed)
     # The arm the session bundle runs as: the first batch entry's, else its own sealed arm.
     session_arm=batch[0]['arm'] if batch else runner.arm_of(m)
@@ -759,6 +803,7 @@ def execute():
                                                      time,plan['poll_seconds'],type_rule=m.get('type_rule','a10_first'))
     current=types[candidate['type']]
     if region!=guard.PREFERRED_REGION:copy=None  # the declared filesystem lives in us-east-1
+    require(stored is None or copy is not None,'A project archive held in the store needs the declared filesystem')
     copy_receipt=dict(declared=copy is not None,used=False,seeded=False,suspect=False,state=None,
                       filesystem_name=copy['filesystem_name'] if copy else None,
                       path=asset_copy_path(copy['mount'],assets['sha256']) if copy else None)
@@ -971,7 +1016,12 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
             remote('batch_park',park_command(REMOTE,k-1),120,tag=tag,into=folder)
             files=[str(b/'project.tar.gz'),str(b/'execution_manifest.json'),str(b/'seal.json'),
                    str(folder/'operator_authorization.json'),*[str(b/n) for n in entry['manifest']['support_files']]]
+            if entry['stored']:files=files[1:]
             transport('batch_transfer',['scp',*options,*files,host+':'+REMOTE+'/'],300,tag=tag,into=folder)
+            if entry['stored']:
+                require(copy is not None,'A project archive held in the store needs the declared filesystem')
+                remote('batch_project_from_store',project_from_store_command(copy['mount'],entry['stored'],REMOTE),900,
+                       tag=tag,into=folder)
             remote('batch_integrity',prefix+"printf '%s\\n' "+shlex.quote(entry['manifest']['source_archive_sha256']+'  project.tar.gz')
                    +' | sha256sum -c -',300,tag=tag,into=folder)
             remote('batch_extract',prefix+'tar -xzf project.tar.gz -C project',900,tag=tag,into=folder)
@@ -1062,8 +1112,13 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         remote('python_gate',"/usr/bin/python3.12 -I -S -c 'import sys;assert sys.version_info[:3]==(3,12,3);print(sys.version)'",30)
         remote('fresh_directory','test ! -e '+REMOTE+' && mkdir -p '+REMOTE+'/project',30)
         support=['project.tar.gz','execution_manifest.json','seal.json','operator_authorization.json',*m['support_files']]
+        if stored:support.remove('project.tar.gz')
         transport('support_transfer',['scp',*options,*[str(BASE/n) for n in support],host+':'+REMOTE+'/'],300)
         prefix='cd '+REMOTE+' && '
+        if stored:
+            # #252 item 3: the archive placed from the store by its fingerprint; archive_integrity
+            # below hashes it on the instance before anything is extracted.
+            remote('project_from_store',project_from_store_command(copy['mount'],stored,REMOTE),900)
         # D-S108, D-S109 (form B): with a declared copy and a sealed layer spec, the instance checks the
         # filesystem's layers against the sealed digests before anything else. Every model and the wheels
         # MATCH: no asset archive is fetched, and they are bound read-only into the run root. Anything
@@ -1220,6 +1275,14 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         if image_receipt['env']!='image':
             remote('create_environment',prefix+'/usr/bin/python3.12 -m venv venv',180)
             remote('install_pinned_wheels',prefix+exe+' -m pip --disable-pip-version-check install --no-index --find-links wheels --require-hashes -r install.lock',1800)
+        aux=aux_env_block(m)
+        if aux:
+            # #217 (D-601): a second, separate environment for an exposed measurement (a vLLM replay
+            # pass), from the sealed lock alone; the runner's own environment and its network
+            # denial are untouched, and nothing in it imports this one.
+            require(aux_env_admitted(m,sealed),AUX_REFUSAL)
+            for label,command,timeout in aux_env_commands(aux,exe,REMOTE):
+                remote(label,prefix+command,timeout)
         if layers and layers.get('measure'):
             r=remote('image_measure',image_command('measure',REMOTE,copy['mount']),IMAGE_MEASURE_SECONDS,False)
             save('image_measure.json',dict(returncode=r.returncode,result=image_result(r.stdout)))

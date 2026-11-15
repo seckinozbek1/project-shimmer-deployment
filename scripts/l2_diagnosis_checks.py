@@ -159,8 +159,14 @@ class L2DiagnosisChecks(RecommendationChecks):
 
     def test_c_a_deterministic_partition_failure_is_not_retried_and_says_so(self):
         result, counts = self._partitions(GREEDY)
-        self.assertEqual(counts.count(counts[0]), 1, "a greedy partition was retried")
-        self.assertFalse(result["ok"], "the failed partition stands")
+        self.assertEqual(counts.count(counts[0]), 1, "a greedy partition was retried with the same input")
+        # D-575, D-577: the same input is never asked again; the changed-input retry asks each
+        # owned span of the failed two-span request alone, so the partition is answered.
+        self.assertEqual(len(counts[0]), 2)
+        self.assertEqual(counts[-2:], [[counts[0][0]], [counts[0][1]]], "the changed-input retry asks one span each")
+        self.assertTrue(result["ok"], "the partition is answered by its changed-input retry")
+        self.assertEqual([r["kind"] for r in self._observations() if r.get("event") == "changed_input_retry"],
+                         ["split_to_single_spans"])
         skipped = [r for r in self._observations() if r.get("event") == "partition_retry_skipped"]
         self.assertEqual([(r["outcome"], r["retry_skipped_deterministic"], r["retry_reason"]) for r in skipped],
                          [("retry_skipped_deterministic", True, "truncation")])
@@ -175,6 +181,150 @@ class L2DiagnosisChecks(RecommendationChecks):
         self.assertEqual([r for r in self._observations() if r.get("event") == "partition_retry_skipped"], [])
 
 
+    def _refused_last(self):
+        """A source whose last bounded request owns one span; that request's first reply is the
+        refusal object ({"items": [], "status": "refused"}), every other reply answers. Returns
+        (result, the alias lists of every dispatch, the source's span count)."""
+        import bounded_extraction as extraction
+        import compact_contracts
+        size = compact_contracts.request_size()
+        text = next(SOURCE * n for n in range(30, 60) if len(extraction.ledger(SOURCE * n, "fixture")) % size == 1)
+        spans = extraction.ledger(text, "fixture")
+        tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+        fn = next(x for x in tree.body if isinstance(x, ast.AsyncFunctionDef) and x.name == "_run_one")
+        namespace = dict(semantic_waves=waves, asyncio=asyncio, time=time,
+                         _is_local_profile=lambda: False, _emit_progress=lambda **k: None)
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), "live_run_one", "exec"), namespace)
+        runtime = self.runtime(1)
+        counts = []
+        last = extraction.wire_id(spans[-1])
+
+        def dispatch(instance, stable, dynamic="", **kwargs):
+            ids = [s["alias"] for s in json.loads(dynamic)["source_spans"]]
+            counts.append(ids)
+            if ids == [last] and counts.count(ids) == 1:
+                body = dict(items=[], status="refused")
+            else:
+                body = dict(items=[dict(span=x, claims=[], questions=[], uncertainty=[], status="empty", refs=[]) for x in ids])
+            r = CallResult(instance.backend, instance.model, json.dumps(body), usage=dict(
+                truncated=False, output_tokens=40, requested_max_output_tokens=80, decoding_kwargs=dict(GREEDY)))
+            instance._record_cost(r)
+            return r
+        async def one(wrapper):
+            return await namespace["_run_one"](wrapper, dict(document_id="fixture", document_text=text), "fixture")
+        state = topology.ACTIVE.set(runtime)
+        try:
+            with patch.object(AgentWrapper, "dispatch", dispatch):
+                result = asyncio.run(one(runtime.attach(self.wrapper())))
+        finally:
+            topology.ACTIVE.reset(state)
+        return result, counts, spans
+
+    def test_c_b_a_refused_single_span_is_asked_once_with_the_span_before_it(self):
+        """D-577: a refused one-span request (the document's last) is asked once more as a two-span
+        request with the span before it, never three; only the refused span's items are kept from
+        it, so every span is owned once and the document's extraction is complete."""
+        import bounded_extraction as extraction
+        result, counts, spans = self._refused_last()
+        before, last = extraction.wire_id(spans[-2]), extraction.wire_id(spans[-1])
+        self.assertEqual(counts[-1], [before, last], "the retry asks the refused span with the span before it")
+        self.assertTrue(all(len(c) <= 2 for c in counts), "no request owns three spans")
+        self.assertTrue(result["ok"], "the document is complete after the retry")
+        owned = [i["source_span_id"] for i in result["parsed"]["items"]]
+        self.assertEqual(len(owned), len(set(owned)), "the span before is not owned twice")
+        self.assertEqual(sorted(owned), sorted(s.id for s in spans))
+        kinds = [r["kind"] for r in self._observations() if r.get("event") == "changed_input_retry"]
+        self.assertEqual(kinds, ["with_previous_span"])
+        # a valid partition is never asked again: each other request appears once
+        self.assertTrue(all(counts.count(c) == 1 for c in counts[:-1]))
+        # the re-ask posts the refused span's items alone: every item id is on the bus once per revision
+        posted = [(i.get("item_id"), i.get("revision")) for m in self.bus.read_all()
+                  for i in ((((m.get("body") or {}).get("payload")) or {}).get("items") or []) if str(i.get("item_id", "")).startswith("PROCESSOR:")]
+        self.assertTrue(posted, "the partitions posted their items")
+        self.assertEqual(len(posted), len(set(posted)), "an item id is on the bus twice at one revision")
+
+
+    def test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs(self):
+        """#246: a VERIFIER call that ran to its cap is asked again on the two halves of its own
+        input (the producer delivery's items, their receipts and their draft view), each item seen in
+        exactly one half; the merged items pass the unchanged validator, and a call that did not reach
+        its cap is never asked again."""
+        tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+        fn = next(x for x in tree.body if isinstance(x, ast.AsyncFunctionDef) and x.name == "_run_one")
+        namespace = dict(semantic_waves=waves, asyncio=asyncio, time=time,
+                         _is_local_profile=lambda: False, _emit_progress=lambda **k: None)
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), "live_run_one", "exec"), namespace)
+        ids = ["PROCESSOR:fixture:s%d" % n for n in range(1, 5)]
+        draft = {"agent": "PROCESSOR", "doc_id": "fixture", "items": [{"item_id": i, "draft_text": "text " + i} for i in ids]}
+        producer = {"ok": True, "parsed": draft, "source_ownership": [{"producer_item_id": i} for i in ids]}
+        seen = []
+
+        def dispatch(instance, stable, dynamic="", **kwargs):
+            asked = [i for i in ids if i in dynamic]
+            seen.append(asked)
+            items = [dict(ref="REF-0001", kind="comparison", confidence="CONFIDENT", paragraph=i, finding="MATCH",
+                          severity="low", reasoning="fixture") for i in asked]
+            capped = len(asked) == len(ids)
+            text = json.dumps(dict(agent="VERIFIER", doc_id="fixture", items=items))
+            r = CallResult(instance.backend, instance.model, text[: len(text) // 2] if capped else text, usage=dict(
+                truncated=capped, output_tokens=80 if capped else 40, requested_max_output_tokens=80, decoding_kwargs=dict(GREEDY)))
+            instance._record_cost(r)
+            return r
+        runtime = self.runtime(1)
+
+        state = topology.ACTIVE.set(runtime)
+        try:
+            with patch.object(AgentWrapper, "dispatch", dispatch):
+                w = runtime.attach(self.wrapper("VERIFIER"))
+                w._auditor_pair_request = dict(document=dict(id="fixture"), producer=producer, references=[])
+                # phase 5 gathers its audit calls (_gather_or_serial), which is the path that plans them
+                plan = namespace["_run_one"](w, dict(document_id="fixture", processor_draft=draft), "fixture")
+                result = asyncio.run(waves.execute_plans([plan]))[0]
+        finally:
+            topology.ACTIVE.reset(state)
+        self.assertEqual(seen[0], ids, "the first call carries every item")
+        self.assertEqual(seen[1:], [ids[:2], ids[2:]], "each half carries its own items once")
+        self.assertTrue(result["ok"], result.get("contract_missing"))
+        self.assertEqual([i["paragraph"] for i in result["parsed"]["items"]], ids)
+        self.assertEqual([r["kind"] for r in self._observations() if r.get("event") == "changed_input_retry"], ["verifier_halves"])
+
+    def test_d_a_mixed_replay_file_is_refused_where_it_is_built(self):
+        """D-577: a replay file that holds envelope agents' prompts beside producer prompts is refused
+        by load_prompts (which the sealer's checks and the runner both read) with the runner's own
+        sentence, so it is caught on the laptop, not on a rented machine; one kind alone loads."""
+        import hashlib
+        import tempfile
+        baselines = str(ROOT / "benchmark" / "baselines")
+        if baselines not in sys.path:
+            sys.path.insert(0, baselines)
+        import replay_prompts
+
+        def row(i, envelope):
+            text = "prompt %d" % i
+            return dict({"prompt_id": "p%04d" % i, "set": "records", "agent": "SPEECH_ACT_TAGGER" if envelope else "PROCESSOR",
+                         "backend": "local_producer", "model_id": None, "prompt": text,
+                         "prompt_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}, **({"envelope": True} if envelope else {}))
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, rows, refused in (("mixed", [row(1, True), row(2, False)], True), ("envelope", [row(1, True), row(2, True)], False),
+                                        ("producer", [row(1, False), row(2, False)], False)):
+                path = Path(tmp) / (name + ".json")
+                path.write_text(json.dumps(dict(schema=replay_prompts.SCHEMA, prompt_count=len(rows), prompts=rows)), encoding="utf-8")
+                if refused:
+                    with self.assertRaisesRegex(ValueError, "not both"):
+                        replay_prompts.load_prompts(path)
+                else:
+                    self.assertEqual(len(replay_prompts.load_prompts(path)), 2)
+        self.assertEqual(replay_prompts.MIXED_REFUSAL, "a replay file holds envelope agents' prompts or producer prompts, not both")
+
+
+def _replay_prompts():
+    baselines = str(ROOT / "benchmark" / "baselines")
+    if baselines not in sys.path:
+        sys.path.insert(0, baselines)
+    import replay_prompts
+    return replay_prompts
+
+
 NEUTRALIZATIONS = [
     ("test_a_verifier_reply_that_is_no_object_is_a_recorded_contract_failure", auditor_pairs,
      "verifier_contract_failure", lambda parsed: None),
@@ -182,8 +332,18 @@ NEUTRALIZATIONS = [
      lambda completion: False),
     ("test_c_a_deterministic_partition_failure_is_not_retried_and_says_so", waves, "skip_deterministic_retry",
      lambda runtime, wrapper, result, reason: False),
+    ("test_c_b_a_refused_single_span_is_asked_once_with_the_span_before_it", waves, "retry_plan",
+     lambda spans, owned, result: ("not_failed", [])),
+    ("test_c_b_a_refused_single_span_is_asked_once_with_the_span_before_it", waves, "post_only_kept",
+     lambda clone, keep: None),
+    ("test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs", waves, "verifier_halves",
+     lambda wrapper, kwargs: None),
+    ("test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs", waves, "merged_halves",
+     lambda wrapper, first, second: first),
+    ("test_d_a_mixed_replay_file_is_refused_where_it_is_built", "replay_prompts", "refuse_mixed",
+     lambda prompts: None),
 ]
-TESTS = [entry[0] for entry in NEUTRALIZATIONS]
+TESTS = list(dict.fromkeys(entry[0] for entry in NEUTRALIZATIONS))
 
 
 def _single(name):
@@ -197,7 +357,7 @@ def prove_neutralizations():
     (which was called), and passes again restored."""
     proofs = []
     for name, owner, attribute, mutant in NEUTRALIZATIONS:
-        owner = _runner() if owner == "runner" else owner
+        owner = _runner() if owner == "runner" else (_replay_prompts() if owner == "replay_prompts" else owner)
         invocations = []
 
         def counted(*args, _mutant=mutant, **kwargs):
@@ -231,7 +391,7 @@ def check():
             "no JSON object is a recorded contract failure, never a crash; a run that reached its end with exit "
             "0 but semantically incomplete is assessed semantic_incomplete, not pipeline_not_completed; a failed "
             "partition under deterministic decoding is not retried and is recorded retry_skipped_deterministic "
-            "on the observation and the reply outcome, while a sampled one is retried once as before"
+            "on the observation and the reply outcome, then asked once with changed input (a two-span request one span each, a refused one-span request with the span before it, D-577), while a sampled one is retried once as before"
             % (result.testsRun, len(proofs["proofs"])))
 
 

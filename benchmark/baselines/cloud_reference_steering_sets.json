@@ -1,8 +1,22 @@
 {
  "note": "The sets a subscription steering check may run (D-S104 item 1, D-401 item 6), by the digest of the prompts file and of the quick subset. An entry is added only by a recorded edit naming its source; a set not listed is refused. The refused list holds the fresh set and any sealed material by digest; benchmark/baselines/system_test.py's FRESH_PROMPTS_SHA256 is refused as well wherever that file is in the tree.",
- "allowed": [],
+ "allowed": [
+  {
+   "name": "the gate quick subset, ContraDoc, B1's own prompts (both groups)",
+   "prompts_sha256": "4b549070a6e8219fa821d43bb0425b97e66c93e422f22c67c93fc052ece190ec",
+   "subset_sha256": "0127b0809d762fcd4d33602e54cb4ef39a9e727442fcccbdf541104e3283a1f1",
+   "prompts": 80,
+   "source": "lane/cloud-gate, 13 November 2026: the B1 arm's own prompts file of the gate's quick subset, external/s05/GATE/quick_read/b1_prompts_contradoc.json (lane quick-read), reproduced byte for byte by `cloud_reference.py gate-prompts --held external/s05/GATE/held_D-S100/contradoc_quick` (doc_judge build --b1 under doc_judge_prompt_j1.json, form b1 kept); the subset is the frozen quick_set_ids.json (gate_score.QUICK_SET_SHA256, D-543); D-S104 item 1, D-401 item 6"
+  },
+  {
+   "name": "the gate quick subset, SciTab, B1's own prompts (both groups)",
+   "prompts_sha256": "079a235999a024ba89e2f9c9578d35436fce64968632fa3ad48658c27f81c95d",
+   "subset_sha256": "0127b0809d762fcd4d33602e54cb4ef39a9e727442fcccbdf541104e3283a1f1",
+   "prompts": 156,
+   "source": "lane/cloud-gate, 13 November 2026: the B1 arm's own prompts file of the gate's quick subset, external/s05/GATE/quick_read/b1_prompts_scitab.json (lane quick-read), reproduced byte for byte by `cloud_reference.py gate-prompts --held external/s05/GATE/held_D-S100/scitab_quick` (doc_judge build --b1 under doc_judge_prompt_j1.json, form b1 kept); the subset is the frozen quick_set_ids.json (gate_score.QUICK_SET_SHA256, D-543); D-S104 item 1, D-401 item 6"
+  }
+ ],
  "to_be_listed": [
-  "the gate set's quick subset (role B, GATE_SET.md)",
   "PUBHEALTH development (role B's build record)",
   "the development benchmarks (J1 half A)"
  ],
@@ -10,6 +24,10 @@
   {
    "name": "the fresh set's prompts (system_test.FRESH_PROMPTS_SHA256, lane/choice-2)",
    "sha256": "b3059fef83f0138e25818120246aa21e1273c78d3ee448c249b28105685734b8"
+  },
+  {
+   "name": "the gate's frozen claim set (gate_score.CLAIM_SET_SHA256, D-543): read only by the paid run, never a steering check",
+   "sha256": "b0a942ad5dd3ba9a544beb4296056d030b73a8e8a18dd0e98e39ecee66d2357e"
   }
  ]
 }

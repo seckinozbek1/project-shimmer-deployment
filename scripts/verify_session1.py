@@ -25596,6 +25596,47 @@ def check_296_request_ledger_check_catches_dropped_requests():
     return check()
 
 
+def check_355_a_fingerprint_embedded_through_the_replay_pass():
+    """#260: benchmark/baselines/fingerprint_route.py splits gate_leakage.fingerprint around the replay
+    pass's embed form (EMBED-ROUTE-A): prepare writes the fingerprint's skeleton, its row keys and the
+    records, checked to be exactly the texts the fingerprint embeds in its order; finish fills the
+    vectors from embed_records.merge. Runs benchmark/baselines/fingerprint_route_checks.py on a fixture
+    part with a stand-in embedder (no model): prepare then finish equals the fingerprint for the same
+    vectors, a merge for other keys is refused, and neutralising the row texts fails the proof."""
+    baselines = str(Path(__file__).resolve().parents[1] / 'benchmark' / 'baselines')
+    if baselines not in sys.path:
+        sys.path.insert(0, baselines)
+    from fingerprint_route_checks import check
+    return check()
+
+
+def check_353_instruction_optimisation_tooling():
+    """#255: benchmark/baselines/instruction_opt.py, the instruction optimisation's tooling. A candidate
+    may change only the instruction before the shipped answer block of the passage-pair or cell-claim
+    decision question (each placeholder once, under 1.5 times the shipped length); the proposer's request
+    carries counts only; the replay pass's proposer form loads the base producer with no adapter, on the
+    sdpa path alone, and refuses an unknown or mixed form. Runs benchmark/baselines/instruction_opt_checks.py
+    on the shipped config with stand-in backends (no model, key or item), then neutralises the screen and
+    the base checkpoint in turn, requires a failure, restores and requires a pass."""
+    baselines = str(Path(__file__).resolve().parents[1] / 'benchmark' / 'baselines')
+    if baselines not in sys.path:
+        sys.path.insert(0, baselines)
+    from instruction_opt_checks import check
+    return check()
+
+
+def check_352_the_agent_assignment_layer_holds_the_floor():
+    """D-571, D-572, D-575: scripts/agent_assignment.py reads a document's structural conditions
+    (no meaning: WORDS-A), applies the skip rules declared in config/agent_assignment.json (none
+    shipped, so every agent is assigned as before the layer), records every decision, and refuses
+    any assignment below the floor, which is read as data from the same file (PROCESSOR; VERIFIER
+    while PROCESSOR runs; INST_FINDER outside the operator's ratified switch; no replacement agent).
+    Runs scripts/agent_assignment_checks.py on fixtures, then neutralises refuse_below_floor,
+    requires a failure, restores and requires a pass."""
+    from agent_assignment_checks import check
+    return check()
+
+
 def check_350_no_upload_while_the_asset_copy_could_be_used():
     """Loop D-S107 item 1: tools/loop/asset_copy_launch_check.py reads every loop launch since 5
     November 2026 through tools/loop/upload_losses.py (the budget ledger, each launch's bundle by its
@@ -25609,6 +25650,23 @@ def check_350_no_upload_while_the_asset_copy_could_be_used():
     if loop not in sys.path:
         sys.path.insert(0, loop)
     from asset_copy_launch_check_checks import check
+    return check()
+
+
+def check_385_disk_sweep_deletes_only_regenerable_files_by_declared_kinds():
+    """D-611 (issue #266): tools/loop/disk_sweep.py deletes only a path a kind declared in
+    config/disk_sweep.json matches and keeps everything else: a path named in a seal, manifest, FINAL_STATUS,
+    fingerprint, REQUEST file or hand-off folder, a file whose digest one of them records, a tracked file, an
+    open launch's run folder (and every folder when the ledger is unreadable), an unmatched path, anything under
+    docs/loop, docs/fix, config, durable or ontology, a private folder, a sealed bundle and a fingerprint; each
+    deletion is one complete log line, and a post-check confirms every indexed path still exists. Runs
+    tools/loop/disk_sweep_checks.py on a fixture git repository in a temporary folder (the real tree is never
+    read), then neutralises each refusal, the post-check and the log line in turn, requires a failure, restores
+    and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from disk_sweep_checks import check
     return check()
 
 
@@ -25720,6 +25778,30 @@ def check_347_the_negotiation_measurement_tools():
     if tools not in sys.path:
         sys.path.insert(0, tools)
     from negotiation_measure_checks import check
+    return check()
+
+
+def check_356_the_negotiation_advisor_tools():
+    """D-605, #262 (docs/loop/stages/NEG_ADVISOR_PLAN.md): the scorer and runner forms of the
+    negotiation advisor, proven on invented fixtures with no model and no item. Runs
+    tools/neg_advisor_checks.py: a proposal's fate by the plan's 5-gram shares, proposal positions
+    before article positions, the binding and dropped states, alignment by proposal and the computed
+    configuration, no_answer always wrong, Macro-F1 over the key's classes, the system's withholding
+    with checks that never read the key, the red-line mandate check, a claim only when the BCa and
+    jackknife bounds and the permutation p agree and A1 only with its power record, no score without a
+    committed opening, prompts held to their rendering, derived audits held to the pass's SHA-256,
+    the replay hook (benchmark/baselines/neg_advisor.py), per-item rows outside the repository, the
+    games by construction, a blind judge and the power simulation; and (lane neg-advisor-2, D-606) the
+    judge and validator on Phi-4 by the real registry, the seeded stratified cloud subset and its
+    reading, bar lines 1 and 4 and M9's validation, the configuration's bindings, cells under 5 items
+    as counts, outputs kept out of the repository, M9's withheld counters, the 24,000-token budget,
+    licences and SOURCE.md, each opening's alpha, the judge's and validator's models at score time, the
+    validator's binding and the three cloud-subset refusals; each neutralised, failed, restored and
+    passed. Numbered 356: 351 to 355 are other lanes' checks."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_advisor_checks import check
     return check()
 
 
@@ -26406,7 +26488,10 @@ def check_339_the_cloud_reference_sends_half_a_under_the_cap_and_no_key():
     (cloud_reference_steering.py) carry "subscription, steering only" in every file and are refused
     as a claim by the scorer and by claim_guard. The B1-layout path (cloud_reference_b1.py) runs bare_model's own loop
     on a pinned build, holdout reads only under an opening, Seckin's evet required, role C's form
-    with its spend file, and a provider refusal stopping cleanly with a resume. Fakes only; neutralise, fail, restore, pass. Runs
+    with its spend file, and a provider refusal stopping cleanly with a resume. The gate's claim-set
+    mode (--gate-set) sends B1's own prompts of the frozen claim set alone with every guard kept; a
+    steering check takes the frozen quick subset file, and its cloud arm (gate_score.cloud_arm) is
+    refused by gate_score.figures on the claim set. Fakes only; neutralise, fail, restore, pass. Runs
     benchmark/baselines/cloud_reference_checks.py and cloud_reference_steering_checks.py, each in
     its own process."""
     import subprocess
@@ -26515,6 +26600,21 @@ def check_322_judged_paths_refuse_claims_python_cannot_check():
     different passages of its unit. Real phase 5.5 on a mocked run, no model; neutralise, fail,
     restore, pass for each refusal and for the pipeline's passing of the declared earlier version."""
     from judged_unchecked_claims_checks import check
+    return check()
+
+
+def check_386_the_private_backup_refuses_unsafe_pushes():
+    """D-612 (issue #267): tools/loop/backup_private.py pushes every local branch and tag to the private
+    backup-private remote only after reading the target's visibility (private, else refused, an API error
+    included), refuses origin by name and URL, a key pattern in the range (file and line, never the value),
+    a blob over 50 MB, run data paths and archives with refused members, never passes --force or --mirror
+    and appends one log line a run; tools/loop/register_backup_task.py prints a daily task. Runs
+    tools/loop/backup_private_checks.py on temporary git repositories with a faked visibility read, then
+    neutralises each rule in turn, requires a failure, restores and requires a pass."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from backup_private_checks import check
     return check()
 
 
@@ -27004,6 +27104,18 @@ CHECKS = [
      check_350_no_upload_while_the_asset_copy_could_be_used),
     ("349 Every standing order is checked: the script-proven by code, the rest named (D-S110)",
      check_349_standing_orders_are_checked),
+    ("352 The agent-assignment layer refuses any assignment below the floor (D-571, D-575)",
+     check_352_the_agent_assignment_layer_holds_the_floor),
+    ("353 Instruction optimisation changes only the instruction text; the proposer is the base model (#255)",
+     check_353_instruction_optimisation_tooling),
+    ("355 A leakage fingerprint embedded on a rented machine equals the fingerprint itself (#260)",
+     check_355_a_fingerprint_embedded_through_the_replay_pass),
+    ("356 The negotiation advisor tools: labels, checks, figures, claims, openings, forms and power (D-605)",
+     check_356_the_negotiation_advisor_tools),
+    ("385 The disk sweep deletes only regenerable files by declared kinds and keeps every referenced, tracked, open or unmatched path (D-611)",
+     check_385_disk_sweep_deletes_only_regenerable_files_by_declared_kinds),
+    ("386 The private backup refuses a public target, origin, a key, a large blob and run data, and never forces (D-612)",
+     check_386_the_private_backup_refuses_unsafe_pushes),
 ]
 
 

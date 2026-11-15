@@ -1,6 +1,6 @@
 """Measured progress for the long phase of an ordinary final run, read from the work itself.
 
-PROGRESS-A (CLAUDE.md): any phase that takes more than a couple of minutes reports four
+PROGRESS-A (CLAUDE.md and docs/CLAUDE_REFERENCE.md): any phase that takes more than a couple of minutes reports four
 values in every sitrep: how much of the work is done against the total, how long it has
 been running, the current rate, and the remaining time at that rate. The controller
 captures its transfers and the detached remote phases with no incremental output of their
@@ -47,12 +47,16 @@ COMPLETION_ONLY = ('archive_integrity', 'extract_payload', 'create_environment',
                    # After a failed bind, the unmount and one reading of the mount table; after an
                    # image phase's deadline, one kill of its process group. One answer each.
                    'image_release', 'stop_image_phase',
+                   # #217: making the auxiliary venv, one command with one answer.
+                   'aux_env_create',
                    # A batch session's per-bundle steps (S2c item 11): moving the finished
                    # bundle aside, sending the next bundle's sealed files, checking and
                    # unpacking them, and collecting each bundle's evidence. Each is one
                    # command with one answer; the long step is batch_workload, read below.
                    'batch_park', 'batch_transfer', 'batch_integrity', 'batch_extract',
-                   'batch_pack_evidence', 'batch_evidence_hash', 'batch_evidence_download')
+                   'batch_pack_evidence', 'batch_evidence_hash', 'batch_evidence_download',
+                   # #252 item 3: one local copy on the instance of a 131 MB archive from the store.
+                   'project_from_store', 'batch_project_from_store')
 SSH_OPTIONS = ['-o', 'IdentitiesOnly=yes', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new',
                '-o', 'ConnectTimeout=15']
 
@@ -137,6 +141,30 @@ def install_pinned_wheels(context):
     rate = done / elapsed if elapsed > 0 else 0
     return ('install_pinned_wheels progress: %d site-packages entries measured against %d pinned requirements '
             '(not one to one), %.1f min elapsed, %.1f entries/min' % (done, total, elapsed / 60, rate * 60))
+
+
+def aux_env_fetch(context):
+    """#217: the auxiliary lock's wheels being fetched: count the files in wheels_aux against the
+    lock's pinned requirements (one wheel each, --no-deps --only-binary)."""
+    raw = context['look']('ls %s/wheels_aux 2>/dev/null | wc -l' % REMOTE_ROOT)
+    if raw is None:
+        return unreadable('aux_env_fetch', 'the instance did not answer')
+    return count_reading('aux_env_fetch', digits(raw), context['aux_pinned'], context['elapsed'], 'wheels',
+                         'no remaining time can be read')
+
+
+def aux_env_install(context):
+    """#217: the auxiliary wheels being installed: site-packages entries in venv_aux, named against
+    the lock's pinned requirements (not one to one, as for the run's own wheels)."""
+    raw = context['look']('ls %s/venv_aux/lib/python3.12/site-packages 2>/dev/null | wc -l' % REMOTE_ROOT)
+    if raw is None:
+        return unreadable('aux_env_install', 'the instance did not answer')
+    done, elapsed = digits(raw), context['elapsed']
+    if done <= 0:
+        return 'aux_env_install progress: no installed package measured yet, %.1f min elapsed' % (elapsed / 60)
+    return ('aux_env_install progress: %d site-packages entries measured against %d pinned requirements '
+            '(not one to one), %.1f min elapsed, %.1f entries/min'
+            % (done, context['aux_pinned'], elapsed / 60, done / elapsed * 60 if elapsed > 0 else 0))
 
 
 B1_ROOT = 'evidence/b1'
@@ -298,6 +326,7 @@ def image_layers_reading(phase):
 
 READERS = dict(assets_transfer=assets_transfer, asset_copy_seed=asset_copy_seed,
                install_pinned_wheels=install_pinned_wheels, ordinary_workload=ordinary_workload,
+               aux_env_fetch=aux_env_fetch, aux_env_install=aux_env_install,
                batch_workload=batch_workload,
                **{p: image_layers_reading(p) for p in ('image_check', 'image_recheck', 'image_build', 'image_measure')})
 
@@ -339,7 +368,8 @@ def reading_for(bundle, phase=None, elapsed=None, observations=None, now=None):
             return None
 
     context = dict(look=look, elapsed=elapsed, assets_bytes=assets_bytes(bundle),
-                   copy_path=copy_path(bundle), pinned=pinned_requirements(bundle))
+                   copy_path=copy_path(bundle), pinned=pinned_requirements(bundle),
+                   aux_pinned=pinned_requirements(bundle, 'aux_env.lock', comments=False))
     reader = READERS.get(phase)
     if reader is not None:
         return reader(context)
@@ -380,11 +410,13 @@ def copy_path(bundle):
         return None
 
 
-def pinned_requirements(bundle):
-    lock = Path(bundle) / 'install.lock'
+def pinned_requirements(bundle, name='install.lock', comments=True):
+    """The lock's pinned requirements; the auxiliary lock's comment lines are not pins (#217)."""
+    lock = Path(bundle) / name
     if not lock.exists():
         return 0
-    return sum(1 for line in lock.read_text(encoding='utf8').splitlines() if '==' in line)
+    return sum(1 for line in lock.read_text(encoding='utf8').splitlines()
+               if '==' in line and (comments or not line.lstrip().startswith('#')))
 
 
 def main(argv=None):

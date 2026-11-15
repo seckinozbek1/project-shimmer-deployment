@@ -42,7 +42,7 @@
     "_run_one": "2090d175f6a463271cb991aa2be51b1186e249b32d1ab557fc36c5f3d8e17338",
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
-    "phase_3_4_content_production": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3",
+    "phase_3_4_content_production": "e38c50e375b3a7004fea64959890fa0840f22ded5eadfc5a74132cac78fef3b5",
     "phase_5_audit": "4f94e490d0978b1af3e8779781a552b0ef1edd8acd6ee260fb9acad0bf528895",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
@@ -63,7 +63,7 @@
     "_structural_inventory": "336876ba2164ad5f3a6d19e2d24016a25b66f4091e5cb66811325cb6f105cd1d",
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
-    "write_deliverables_run_summary": "7c2012c709ed94a6b7b1e8881dbb2e3ea4f325cd9ed405157b4f2420c9af0c84",
+    "write_deliverables_run_summary": "c1efe396db34a904a19cda360828da14873d5c409292ca25f5621803dc11048d",
     "phase_6_synthesis": "aebac7e1f30508cfe31f2a668b764b9579929ae2d9aa204d727a797c0c4fa331",
     "_prior_refusals_for": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
@@ -92,7 +92,7 @@
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
     "_inst_finder_startup_guard": "428211885568447fe8c66e4ada55e60e6b5760b5f5acb7683e23f47d4c18dfa0",
-    "_inst_finder_switch": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87",
+    "_inst_finder_switch": "997b82c3d86d020d20b76705ff24acfadbb1c2b1ad40e8a333cb85e60d8dd692",
     "_inst_finder_decision": "c849da06408de7a8e1489a13b81146c4a0e8edaaac624e1d7f684bbf46f44e39",
     "_passage_pair_review": "517574184b5187ce31857d229e1b32510476f78cc29ad974f6121fde7adf5be9",
     "_cell_claim_review": "504cd31a573caf2e6af1c0d1b7cdac1d7be876ce7c742245ada1f93e401cae6c",
@@ -837,6 +837,36 @@
         "_ontology_run_end": {
           "from": null,
           "to": "791bb0dffecce8ae4de099c06380ed1f57db31d3df1ca92669b6dafb6c9d72b7"
+        }
+      }
+    },
+    {
+      "date": "2026-11-13",
+      "reason": "D-571, D-572, D-575 (lane/integrity-fixes): the agent-assignment layer. The corpus-level and per-document production loops ask agent_assignment.dispatch for the agents this corpus or document needs (config/agent_assignment.json: skip rules, each naming its built rule, and the floor as data); an agent not assigned is skipped and recorded as not called. With the shipped declaration, which lists no skip rule, every agent is assigned and the calls made are the reference path's. Recorded here at the merge (lane/fix-side), as in the topology reference contract.",
+      "document": "docs/loop/DECISIONS.md D-575",
+      "functions": {
+        "phase_3_4_content_production": {
+          "from": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3",
+          "to": "fa33b0268c0f4997a1c8474c105e78394de56afe9445993f5600f8e105e41f8d"
+        }
+      }
+    },
+    {
+      "date": "2026-11-13",
+      "reason": "Operator-directed, D-570 item 2 (Seckin 10:53, 13 November 2026), lane/inst-default with its review fixes (0028a791, 6f359aba): INST_FINDER is off by default under a ratified amendment, the switch kept. _inst_finder_switch reads SHIMMER_INST_FINDER trimmed and lower-cased; no value means the ratified default (off only when an operator-approved amendment naming INST_FINDER and SHIMMER_INST_FINDER declares \"default\": \"off\" in its change, else on as before), a value other than on or off refuses, and the record carries `source` and `ratified_default`; phase_3_4_content_production adds `source` to the switched-off agent's not_called evidence; write_deliverables_run_summary states a default off and a refused value in words. Recorded at the merge (lane/fix-side): the lane changed these functions without appending the amendment, so the side gates failed on lane/merge-1114.",
+      "document": "docs/loop/DECISIONS.md D-570",
+      "functions": {
+        "_inst_finder_switch": {
+          "from": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87",
+          "to": "997b82c3d86d020d20b76705ff24acfadbb1c2b1ad40e8a333cb85e60d8dd692"
+        },
+        "phase_3_4_content_production": {
+          "from": "fa33b0268c0f4997a1c8474c105e78394de56afe9445993f5600f8e105e41f8d",
+          "to": "e38c50e375b3a7004fea64959890fa0840f22ded5eadfc5a74132cac78fef3b5"
+        },
+        "write_deliverables_run_summary": {
+          "from": "7c2012c709ed94a6b7b1e8881dbb2e3ea4f325cd9ed405157b4f2420c9af0c84",
+          "to": "c1efe396db34a904a19cda360828da14873d5c409292ca25f5621803dc11048d"
         }
       }
     }

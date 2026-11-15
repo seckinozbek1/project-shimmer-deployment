@@ -84,7 +84,45 @@ class BriefChecks(unittest.TestCase):
     def test_all_active_briefs_match_registry_contract_and_interfaces(self):
         registry = json.loads((ROOT / "config/agent_registry.json").read_text(encoding="utf-8"))["agents"]
         contracts = json.loads((ROOT / "config/agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
-        self.assertEqual(set(registry), set(agent_briefs.INTERFACES))
+        # A decision agent (JUDGE, INFRA-049) is asked through AgentWrapper.call_choice, which
+        # sends one user turn and never the execution brief, so it declares no interface; every
+        # other registered agent does, and a decision agent given one would be a brief never sent.
+        decision_agents = {n for n in registry if contracts[n].get("item_kind") == "decision"}
+        self.assertIn("JUDGE", decision_agents)
+        self.assertEqual(set(registry) - decision_agents, set(agent_briefs.INTERFACES))
+        self.assertFalse(decision_agents & set(agent_briefs.INTERFACES))
+        call_choice = next(n for n in ast.walk(ast.parse((ROOT / "scripts/agent_wrapper.py").read_text(encoding="utf-8")))
+                           if isinstance(n, ast.FunctionDef) and n.name == "call_choice")
+        self.assertNotIn("_execution_instructions", ast.unparse(call_choice))
+        self.assertNotIn("agent_briefs", ast.unparse(call_choice))
+        # And a decision agent is reached by no other route: no runtime script names it (it is
+        # found only through judge_agent.role_for, from its contract's judge block), and role_for
+        # gives it none of its tasks unless the task is decided from probabilities (call_choice).
+        import judge_agent
+        import convention_assignment
+        # The registry's subject routing (convention assignment, then run_task, which renders the
+        # brief) never reaches a decision agent: it declares no subject, and a rule tagged with
+        # every subject the registry declares is assigned to none of them.
+        every_subject = sorted({s for spec in registry.values() for s in (spec.get("subjects") or [])})
+        self.assertTrue(every_subject)
+        assigned = convention_assignment.assign_conventions([{"id": "CONV-ALL", "subjects": every_subject}], registry)
+        for name in decision_agents:
+            self.assertEqual(registry[name].get("subjects") or [], [], name)
+            self.assertNotIn(name, assigned["by_rule"]["CONV-ALL"]["agents"])
+            self.assertNotIn(name, convention_assignment.consumer_agent_names(registry))
+        exempt = {"verify_session1.py", "build_agent_harness.py"}
+        for path in sorted((ROOT / "scripts").rglob("*.py")):
+            if path.name in exempt or path.name.endswith("_checks.py"):
+                continue
+            named = {n.value for n in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+                     if isinstance(n, ast.Constant) and isinstance(n.value, str)} & decision_agents
+            self.assertFalse(named, path.name)
+        for name in decision_agents:
+            tasks = (contracts[name].get("judge") or {}).get("tasks") or {}
+            self.assertTrue(tasks, name)
+            for task in tasks:
+                self.assertIsNone(judge_agent.role_for(task, registry, contracts, deciding=False), task)
+                self.assertEqual(judge_agent.role_for(task, registry, contracts, deciding=True), name)
         import agent_activation
         for name, spec in registry.items():
             b = agent_briefs.brief(name, spec, contracts[name])

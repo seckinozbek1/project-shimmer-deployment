@@ -101,6 +101,128 @@ def expected_members(models, wheels, wheelhouse):
     return members
 
 
+WHEEL_MEMBER_CACHE = 'member_hashes'   # beside the wheelhouse: {wheel sha256}.json
+MEMBER_BLOCK = 4*1024*1024
+# The members runtime_file_hashes asserts, named: a cache entry written under another rule is never read.
+MEMBER_RULE = 'files outside .dist-info/ and .data/, v1'
+
+
+def runtime_members(archive):
+    """The wheel members runtime_file_hashes asserts: actual importable code, native libraries and
+    package data. pip's generated RECORD and entry-point scripts are deliberately not asserted."""
+    return [n for n in archive.namelist() if not n.endswith('/') and '.dist-info/' not in n and '.data/' not in n]
+
+
+def stream_member_hashes(path):
+    """{member: sha256} of a wheel, each member read in MEMBER_BLOCK blocks (never whole: the largest
+    torch member is 864 MB)."""
+    out = {}
+    with zipfile.ZipFile(path) as archive:
+        for name in runtime_members(archive):
+            h = hashlib.sha256()
+            with archive.open(name) as stream:
+                for block in iter(lambda: stream.read(MEMBER_BLOCK), b''):
+                    h.update(block)
+            out[name] = h.hexdigest()
+    return out
+
+
+def wheel_member_hashes(path, wheel_sha256, cache_dir=None):
+    """A wheel's member hashes, cached by the wheel's FULL SHA-256 (lane/seal-speed). The digest is the
+    one validate_wheels computed from the wheel's bytes in this seal, and the member hashes are a pure
+    function of those bytes, so a cache hit asserts exactly what a fresh read would: no check is
+    removed. An entry is used only when its own record names that digest and the wheel's file name; a
+    wheel whose bytes change has another digest and is read afresh. The entry is written whole beside
+    its final name and moved in, so a stopped seal leaves no partial entry."""
+    path = Path(path)
+    cache_dir = Path(path).parent.parent/WHEEL_MEMBER_CACHE if cache_dir is None else Path(cache_dir)
+    require(re.fullmatch(r'[0-9a-f]{64}', wheel_sha256 or '') is not None, 'A wheel digest is required')
+    entry = cache_dir/(wheel_sha256 + '.json')
+    if entry.is_file():
+        try:
+            value = json.loads(entry.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            value = None
+        if (isinstance(value, dict) and value.get('wheel_sha256') == wheel_sha256 and value.get('wheel') == path.name
+                and value.get('rule') == MEMBER_RULE and isinstance(value.get('members'), dict)):
+            return value['members']
+    members = stream_member_hashes(path)
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        part = entry.with_name(entry.name + '.%d.part' % os.getpid())
+        part.write_text(json.dumps({'wheel': path.name, 'wheel_sha256': wheel_sha256, 'rule': MEMBER_RULE, 'members': members},
+                                   sort_keys=True), encoding='utf-8')
+        os.replace(part, entry)
+    except OSError:
+        pass   # a cache that cannot be written only means the next seal reads the wheel again
+    return members
+
+
+def manifest_argv(gate_block, arm, launcher, multi_round):
+    """The run flags a manifest seals: the gate's, the seal job's (arm S), the launcher's, the
+    multi-round or the ordinary ones."""
+    if gate_block:
+        return runner.gate_argv(gate_block)
+    if arm == 'S':
+        return list(runner.SEAL_ARGV)
+    return runner.LAUNCHER_ARGV if launcher else MULTI_ROUND_ARGV if multi_round else ARGV
+
+
+def write_text_lf(path, text):
+    """A sealed text file written with LF on every platform (C4 launch 4: install.lock was CRLF on the
+    laptop and LF on the instance, so the env key over its digest differed)."""
+    Path(path).write_text(text, encoding='utf8', newline='\n')
+
+
+def top_level_support(names):
+    """Every support file sits beside the manifest: the bound wrapper's --output-dir copies only the
+    bundle's top-level files into the run folder, so one in a subfolder would be missing there (C4)."""
+    nested = [n for n in names if '/' in n or '\\' in n]
+    require(not nested, 'A support file sits in a subfolder, which a run folder does not receive: ' + ', '.join(nested))
+
+
+def seal_flags_hold(manifest):
+    """The runner's own flag rule (argv_for), so the seal refuses what the controller's admission would."""
+    require(manifest['argv'] == runner.argv_for(manifest), 'The sealed run flags are not the ones the runner admits for this arm')
+
+
+def seal_job_files(source, requests_path, reuse_bundle, inputs, parallel):
+    """Arm S (route S, #252): the seal job's files written into OUT, each a support file: the bound
+    commit's tracked tree and its commit object, the requests with every file they name, the read
+    copies with their digests and time, the standing-orders attestation and the reuse bundle's
+    manifest. Returns the job block (seal_route.job_block)."""
+    import seal_route
+    import instance_reaper
+    tree = bound_tree_archive(ROOT, source, OUT/seal_route.SEAL_SOURCE)
+    (OUT/seal_route.COMMIT_OBJECT).write_bytes(git(ROOT, 'cat-file', 'commit', source))
+    requests = read(requests_path)
+    require(isinstance(requests, dict) and isinstance(requests.get('requests'), list) and requests['requests'],
+            'The seal requests file lists its requests')
+    extra = {'inputs/' + n: Path(inputs)/n for n in ('runtime.candidate.lock', 'provider_inventory.json')}
+    listed, _archive = seal_route.job_requests(requests['requests'], OUT, extra)
+    copies, taken = seal_route.read_copies(instance_reaper.main_private(), instance_reaper.R_LEDGER)
+    for key, entry in copies.items():
+        (OUT/seal_route.read_copy_name(key)).write_bytes(entry['data'])
+    attested = seal_route.attestation([list(f) for f in guard.standing_orders_failures(guard.standing_orders_root())], taken)
+    (OUT/seal_route.REUSE_MANIFEST).write_bytes((Path(reuse_bundle)/'execution_manifest.json').read_bytes())
+    job = seal_route.job_block(source, tree, listed, copies, taken, attested, parallel)
+    write(OUT/seal_route.JOB_FILE, job)
+    return job
+
+
+def input_sha(path):
+    """A large input's SHA-256: from the seal job's verified-inputs record (route S, D-565 item 2:
+    hashed once in full on the instance this job, its size, modification time and inode unchanged),
+    else read now. The record is read only on the Linux instance and only when the runner named it."""
+    record = os.environ.get('SHIMMER_SEAL_VERIFIED_INPUTS')
+    if record and sys.platform == 'linux':
+        import seal_route
+        digest = seal_route.recorded_sha(path, read(record).get('files'))
+        if digest:
+            return digest
+    return sha(path)
+
+
 def bind_existing_assets(bundle, models, wheels, wheelhouse, target):
     """Bind a previously sealed asset archive instead of writing a second 13 GB copy.
 
@@ -114,7 +236,7 @@ def bind_existing_assets(bundle, models, wheels, wheelhouse, target):
     archive = bundle/previous['filename']
     require(previous['members'] == expected_members(models, wheels, wheelhouse),
             'Reused asset archive inventory differs from the current models or wheels')
-    require(archive.stat().st_size == previous['bytes'] and sha(archive) == previous['sha256'],
+    require(archive.stat().st_size == previous['bytes'] and input_sha(archive) == previous['sha256'],
             'Reused asset archive hash mismatch')
     require(not Path(target).exists(), 'Refuse to replace an existing asset archive')
     # Resolve the provenance label BEFORE creating the link: a bundle outside the
@@ -739,9 +861,59 @@ def model_cache(environ=None):
     return Path.home()/'.cache/huggingface/hub'
 
 
+AUX_LOCK = 'aux_env.lock'
+
+
+def aux_lock_error(data):
+    """None when an auxiliary lock pins every requirement exactly and with at least one sha256
+    (what pip --require-hashes needs), else a one-line reason; an option line or an index is refused."""
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return 'The auxiliary lock is not UTF-8 text'
+    entries = re.sub(r'\\\r?\n', ' ', text).splitlines()
+    pins = 0
+    for line in entries:
+        line = line.split('#', 1)[0].strip()
+        if not line:
+            continue
+        words = line.split()
+        if line.startswith('-') or '://' in line:
+            return 'The auxiliary lock carries an option or a location: ' + words[0][:40]
+        if AUX_PIN.fullmatch(words[0]) is None:
+            return 'An auxiliary lock entry is not one exact version: ' + words[0][:60]
+        hashes = words[1:]
+        if not hashes or any(AUX_HASH.fullmatch(h) is None for h in hashes):
+            return 'An auxiliary lock entry carries something other than sha256 hashes: ' + words[0][:60]
+        pins += 1
+    return None if pins else 'The auxiliary lock pins nothing'
+
+
+AUX_PIN = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]*==[0-9][A-Za-z0-9.+!_-]*')
+AUX_HASH = re.compile(r'--hash=sha256:[0-9a-f]{64}')
+AUX_FORM = 'vllm-replay-v1'
+
+
+def aux_lock_admitted(aux_lock, arm, sealed, replay_prompts):
+    """#217: an --aux-lock and a vllm-replay-v1 replay file go together, in an exposed B1 bundle only."""
+    form = replay_prompts is not None and aux_replay_form(replay_prompts)
+    if aux_lock is None:
+        return not form
+    return arm == 'B1' and not sealed and form
+
+
+def aux_replay_form(path):
+    """True when a replay prompts file is the vLLM comparison's form (vllm_replay.py build)."""
+    try:
+        return json.loads(Path(path).read_text(encoding='utf-8')).get('schema') == AUX_FORM
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
             test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
-            b1_checkpoints=None, replay_prompts=None, launcher_question=None, gate=None, asset_copy_reason=None, layers=None):
+            b1_checkpoints=None, replay_prompts=None, launcher_question=None, gate=None, asset_copy_reason=None, layers=None,
+            seal_requests=None, seal_parallel=16, aux_lock=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -752,7 +924,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         require(not OUT.is_relative_to(ROOT.resolve()), 'A sealed bundle must be prepared outside the repository')
         require(workload is not None and Path(workload).is_file(), 'A sealed bundle is built from the test archive')
     require(not protected_test or sealed, 'Only a sealed bundle may set protected_test')
-    require(arm in ('B3', 'B1', 'L', 'G'), 'Arm is B3, B1, L or G')
+    require(arm in ('B3', 'B1', 'L', 'G', 'S'), 'Arm is B3, B1, L, G or S')
+    require((seal_requests is not None) == (arm == 'S'), 'Arm S needs its seal requests; no other arm takes them')
+    require(arm != 'S' or (not sealed and workload is None and reuse_assets is not None and layers is None),
+            'Arm S runs exposed only, with no workload, reusing a sealed asset archive and no image layers')
     require((gate is not None) == (arm == 'G'), 'Arm G needs its gate form; no other arm takes one')
     require(arm != 'G' or (not sealed and workload is None), 'Arm G runs exposed only, on the bound commit, with no workload')
     require(arm != 'L' or not sealed, 'Arm L runs exposed only: a sealed run carries no launcher arm')
@@ -762,6 +937,11 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     # D-061 item 4: replayed B3 prompts are development material, sealed only into an exposed B1 bundle.
     require(replay_prompts is None or (arm == 'B1' and not sealed),
             'Replay prompts are sealed only into an exposed B1 bundle')
+    # #217 (D-601): a second environment from a sealed, hash-pinned lock, for an exposed measurement
+    # replay only (the vLLM comparison); the controller fetches and installs it, the runner never imports it.
+    require(aux_lock_admitted(aux_lock, arm, sealed, replay_prompts),
+            'An auxiliary environment is sealed only into an exposed B1 replay bundle of the vllm-replay-v1 form, '
+            'and that form only with its --aux-lock')
     require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
     OUT.mkdir(parents=True,exist_ok=True)
     source_inputs = Path(inputs_from).resolve() if inputs_from else original
@@ -804,6 +984,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     files = {n:d for n,d in files.items() if not n.startswith('benchmark/') or any(named(n, p) for p in ARCHIVE_EXTRAS)}
     if arm == 'G':
         workload_name, members = 'gate', {'_review_targets.json': b'{}'}
+    elif arm == 'S':
+        workload_name, members = 'seal-job', {'_review_targets.json': b'{}'}
     elif workload is None:
         workload_name, members = default_workload()
     else:
@@ -878,7 +1060,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                    ['config.json','config_sentence_transformers.json','modules.json','sentence_bert_config.json',
                     'special_tokens_map.json','tokenizer.json','tokenizer_config.json','sentencepiece.bpe.model',
                     '1_Pooling/config.json','model.safetensors'])
-        entries = {n:dict(sha256=sha(snapshot/n),bytes=(snapshot/n).stat().st_size) for n in allowed}
+        entries = {n:dict(sha256=input_sha(snapshot/n),bytes=(snapshot/n).stat().st_size) for n in allowed}
         if model != 'BAAI/bge-m3' and model not in candidates:
             role='producer' if model==spec['producer']['model_id'] else 'auditor'
             require({n:e['sha256'] for n,e in entries.items()} == spec[role]['base_hashes'], 'Base hashes changed')
@@ -889,28 +1071,27 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     locked = pins(OUT/'runtime.candidate.lock')
     gate_block = gate_fields(gate, source, locked) if arm == 'G' else None
     wheels = validate_wheels(WHEELS, locked)
-    runtime_files = {}
-    for package, entry in wheels.items():
-        with zipfile.ZipFile(WHEELS/entry['filename']) as archive:
-            # Hash actual importable code/native libraries and package data. pip's
-            # generated RECORD/entry-point scripts are deliberately not asserted.
-            runtime_files[package] = {n:hashlib.sha256(archive.read(n)).hexdigest()
-                for n in archive.namelist() if not n.endswith('/') and '.dist-info/' not in n
-                and '.data/' not in n}
+    runtime_files = {package: wheel_member_hashes(WHEELS/entry['filename'], entry['sha256'])
+                     for package, entry in wheels.items()}
     write(OUT/'topology.json', TOPOLOGY)
     for name in ('ordinary_final_run.py','ordinary_final_summary.py','cloud_run_observer.py'):
         (OUT/name).write_bytes((ROOT/'tools'/name).read_bytes().replace(b'\r\n',b'\n'))
     install = ''.join(f'{n}=={locked[n]} --hash=sha256:{wheels[n]["sha256"]}\n' for n in sorted(locked))
-    (OUT/'install.lock').write_text(install,encoding='utf8')
+    write_text_lf(OUT/'install.lock', install)
     support_names = ['topology.json','ordinary_final_run.py','ordinary_final_summary.py','cloud_run_observer.py','install.lock']
     if multi_round:
         support_names.append(CASE_MANIFEST)
     if gate_block:
         support_names.append(runner.GATE_SOURCE)
+    seal_job = seal_job_files(source, seal_requests, reuse_assets, source_inputs, seal_parallel) if arm == 'S' else None
+    if seal_job:
+        import seal_route
+        support_names += list(runner.SEAL_SUPPORT) + [seal_route.read_copy_name(k) for k in seal_job['read_copies']]
     if b1:
         support_names.append('items.json')
         if 'replay' in b1:
             support_names.append('replay_prompts.json')
+    top_level_support(support_names)
     support = {n:sha(OUT/n) for n in support_names}
     provider = read(OUT/'provider_inventory.json')
     # Only loop instances, any number of them (D-S95); budget_fields' guard counts the ledgers too.
@@ -921,7 +1102,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         assets = bind_existing_assets(reuse_assets,models,wheels,WHEELS,OUT/'assets.tar')
     else:
         assets = build_assets(OUT/'assets.tar',models,wheels,cache,WHEELS)
-    workload_record = dict(name=workload_name,review_targets=None if sealed or arm == 'G' else 1,
+    workload_record = dict(name=workload_name,review_targets=None if sealed or arm in ('G', 'S') else 1,
                            files=({} if sealed else workload_hashes),file_count=len(workload_hashes),
                            answer_key_transferred=False)
     restrictions = ['no second instance','no automatic full-run retry','no tuning',
@@ -962,8 +1143,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         preparation_source_hashes={n:sha(ROOT/n) for n in
             ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},
         packages=locked,wheels=wheels,runtime_file_hashes=runtime_files,
-        argv=(runner.gate_argv(gate_block) if gate_block else runner.LAUNCHER_ARGV if launcher
-              else MULTI_ROUND_ARGV if multi_round else ARGV),topology=TOPOLOGY,provider='Lambda',
+        argv=manifest_argv(gate_block, arm, launcher, multi_round),
+        topology=TOPOLOGY,provider='Lambda',
         instance=next(x for x in provider['instance_types']
                       if x['metadata']['type']==budget_values['instance_candidates'][0]['type']),
         provider_observed_at=provider['observed_at'],image=provider['images'][0],
@@ -984,6 +1165,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         manifest['gate'] = gate_block
         # The runner's own reading, so the seal refuses exactly what the instance would.
         runner.arm_declaration(manifest)
+    if seal_job:
+        manifest['seal_job'] = seal_job
+        manifest['preparation_source_hashes']['tools/seal_route.py'] = sha(ROOT/'tools/seal_route.py')
+        runner.arm_declaration(manifest)
     if sealed:
         manifest['test_archive_sha256'] = seal_fields['test_archive_sha256']
     if layers is not None:
@@ -994,6 +1179,14 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             (OUT/name).write_bytes(data)
             support[name] = sha(OUT/name)
         manifest['preparation_source_hashes']['tools/image_layers.py'] = sha(ROOT/'tools/image_layers.py')
+    if aux_lock is not None:
+        data = Path(aux_lock).read_bytes()
+        require(not credential_locations(data, AUX_LOCK), 'Possible credential in the auxiliary lock; stop without printing content')
+        require(aux_lock_error(data) is None, aux_lock_error(data) or '')
+        (OUT/AUX_LOCK).write_bytes(data)
+        support[AUX_LOCK] = sha(OUT/AUX_LOCK)
+        manifest['aux_env'] = dict(lock=AUX_LOCK, lock_sha256=support[AUX_LOCK], purpose='vllm_replay')
+    seal_flags_hold(manifest)
     write(OUT/'execution_manifest.json', manifest)
     write(OUT/'seal.json',dict(execution_manifest_sha256=sha(OUT/'execution_manifest.json'),
         source_commit=source,operator_authorized=False,classification='PREPARED_NOT_AUTHORIZED',**seal_fields))
@@ -1033,7 +1226,10 @@ if __name__ == '__main__':
     parser.add_argument('--ledger',type=Path,action='append',required=True,help='loop ledger(s) the IV.3 cap reads')
     parser.add_argument('--forecast-minutes',type=float,required=True,help='measured basis in minutes (docs/loop/BUDGET.md)')
     parser.add_argument('--storage-forecast-usd',type=float,required=True)
-    parser.add_argument('--arm',choices=('B3','B1','L','G'),default='B3',
+    parser.add_argument('--seal-requests',type=Path,default=None,
+                        help='arm S: {"requests": [{"name", "argv": [the sealer\'s own arguments]}]} (route S, #252)')
+    parser.add_argument('--seal-parallel',type=int,default=16,help='arm S: seals at a time on the instance')
+    parser.add_argument('--arm',choices=('B3','B1','L','G','S'),default='B3',
                         help='the arm this bundle runs (B1: bare_model.py; L: the launcher menu, exposed only; '
                              'G: the gate on the bound commit, exposed only)')
     parser.add_argument('--gate-form',choices=('full','side'),default=None,help='arm G: the gate, or the side gates')
@@ -1067,6 +1263,9 @@ if __name__ == '__main__':
                         help='D-S108: the build record of the env layer from an earlier launch, sealing that layer')
     parser.add_argument('--image-measure',action='store_true',
                         help='D-S108 M1: after the image phases, measure cold read rates and form A on the instance')
+    parser.add_argument('--aux-lock',type=Path,default=None,
+                        help='#217: B1 replay, exposed only: a hash-pinned lock (uv pip compile --generate-hashes) the '
+                             'controller fetches and installs as a second environment, venv_aux, for vllm_replay.py')
     parser.add_argument('--replay-prompts',type=Path,default=None,
                         help='B1, exposed only: replay_prompts.json (replay_prompts.py extract) for replay passes')
     args = parser.parse_args()
@@ -1080,9 +1279,10 @@ if __name__ == '__main__':
             protected_test=args.protected_test, inputs_from=args.inputs_from, arm=args.arm, b1_items=args.items,
             b1_checkpoints=read(args.b1_checkpoints) if args.b1_checkpoints else None,
             replay_prompts=args.replay_prompts, launcher_question=args.launcher_question,
-            asset_copy_reason=args.no_asset_copy,
+            asset_copy_reason=args.no_asset_copy, aux_lock=args.aux_lock,
             gate=dict(form=args.gate_form,
                       checks='all' if args.gate_checks == 'all' else [int(n) for n in args.gate_checks.split(',') if n],
                       known_red=[int(n) for n in args.known_red.split(',') if n]) if args.arm == 'G' else None,
             layers=dict(env_manifest=args.image_env_manifest, measure=args.image_measure)
-            if args.image_layers or args.image_env_manifest or args.image_measure else None)
+            if args.image_layers or args.image_env_manifest or args.image_measure else None,
+            seal_requests=args.seal_requests if args.arm == 'S' else None, seal_parallel=args.seal_parallel)

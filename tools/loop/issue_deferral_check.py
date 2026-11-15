@@ -16,7 +16,7 @@ fetches them, so it runs offline. It fails when:
 (d) a decision in `docs/loop/DECISIONS.md` that moves, drops or skips work names no issue.
 
 How (d) is decided, and why. Whether a sentence moves work is a question of what its words
-mean, and CLAUDE.md's WORDS-A rule keeps such questions away from literal keyword tables; it
+mean, and the WORDS-A rule of CLAUDE.md (full text in docs/CLAUDE_REFERENCE.md) keeps such questions away from literal keyword tables; it
 names no exception for loop tooling. So this script reads no prose for (d). It reads one
 DECLARED STRUCTURE instead: from D-179 on (`FIRST_MARKED_DECISION`, the decision that applied
 D-S24), a decision that moves, defers, drops or skips work carries a marker line, a bullet

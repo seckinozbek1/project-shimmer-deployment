@@ -474,6 +474,104 @@ def _unchecked_answers(folder, *, model, decoding):
     return out
 
 
+def _neg_set_tools():
+    """The negotiation advisor's own fixtures (tools/neg_advisor_checks.py: invented items, no real
+    negotiation) and its scorer, loaded by path."""
+    import importlib.util
+    tools = HERE.parents[1] / "tools"
+    out = []
+    for name in ("score_neg_advisor", "neg_advisor_checks"):
+        spec = importlib.util.spec_from_file_location(name, tools / (name + ".py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        out.append(module)
+    return out
+
+
+@contextlib.contextmanager
+def neg_prompts(subset=True):
+    """A negotiation advisor set of two invented items, its cloud subset and the cloud reference's
+    prompts file built from it (`neg_advisor.py build --groups b1 --subset`), or B1's file without it."""
+    import copy
+    import neg_advisor as na
+    sc, nc = _neg_set_tools()
+    second = copy.deepcopy(nc.BUILD)
+    second["item_id"] = "fx-k2-beta"
+    with nc.setdir((nc.BUILD, second)) as root, tempfile.TemporaryDirectory(prefix="shimmer_negadv_cloud_") as tmp:
+        sc.write_cloud_subset(root, sc.read_keys(root))
+        path = Path(tmp) / "prompts_cloud.json"
+        na.build(root, "advice", ["b1"], path, subset=(root / sc.SUBSET_FILE) if subset else None)
+        yield path, na.load_prompts(path), Path(tmp)
+
+
+def go_neg(box, prompts, out, client, opened, mod=cb, lead_store=False, **kw):
+    args = dict(cap_usd=opened["budget_left_usd"], credit_usd=CREDIT, prices=base.PRICES,
+                deprecation_checked=base.DEPRECATION, seckin_approved=APPROVAL, budget_left_usd=opened["budget_left_usd"],
+                spend_file=cr.spend.handback_dir(box.store) / "C_negadv_cloud_reference_spend.jsonl",
+                for_seckin=box.copy, role_c_run_id=opened["role_c_run_id"], keys={"ANTHROPIC_API_KEY": base.KEY},
+                client=client, list_models=base.live({cr.seat_model()}), prices_path=box.prices)
+    args.update(kw)
+    where = box.store if lead_store else box.tmp / "no_lead_checkout" / cr.SPEND_STORE_NAME
+    with patch.object(cr.spend, "store_path", lambda root: where):
+        return mod.run_negotiation(prompts, out, **args)
+
+
+def proof_negotiation_form(mod=None):
+    """#262, D-605, D-606: the role session's prompts_cloud.json under role C's flags, the lead's
+    open-role-c intent (kind cloud-reference-b1-role-c) closed by the append of the file it hands back;
+    each prompt sent as B1's one user turn with B1's allowance; the replies in texts.json beside it; the
+    measurement and the spend line counts, tokens and cost only."""
+    import os
+    mod = mod or cb
+    with fixture() as box, neg_prompts() as (path, prompts, tmp):
+        opened = cb.open_role_c(3.0, base.fresh_approval(box.store), store=box.store, ledgers=[box.ledger])
+        cr.spend.handback_dir(box.store).mkdir()
+        client = base.FakeClient()
+        with patch.dict(os.environ, {cr.ROLE_ENVIRONMENT: cr.ROLE_C}):
+            m = go_neg(box, path, tmp / "out", client, opened, mod=mod)
+        handed = cr.spend.handback_dir(box.store) / "C_negadv_cloud_reference_spend.jsonl"
+        lines = [json.loads(l) for l in handed.read_text(encoding="utf-8").splitlines()]
+        cr.spend.append_handed_back(box.store, handed)
+        after = cr.spend.state(box.store)
+        texts = json.loads((tmp / "out" / cb.NEG_TEXTS_FILE).read_text(encoding="utf-8"))
+        shown = (tmp / "out" / cb.NEG_MEASUREMENT_FILE).read_text(encoding="utf-8") + json.dumps(lines)
+        leaked = [p["prompt_id"] for p in prompts if p["prompt_id"] in shown or p["item_id"] in shown] + \
+                 [t for t in texts.values() if t and t in shown]
+        turns = [(c.get("system"), len(c["messages"]), c["max_tokens"]) for c in client.created]
+    ok = (m["complete"] and m["prompts"] == len(prompts) == 2 and sorted(texts) == sorted(p["prompt_id"] for p in prompts)
+          and turns == [(None, 1, 2048)] * 2 and len(lines) == 1 and lines[0]["run_id"] == opened["role_c_run_id"]
+          and lines[0]["kind"] == cb.NEG_SCHEMA and after["running_caps_usd"] == 0.0
+          and abs(after["spent_usd"] - m["spent_usd"]) < 1e-9 and not leaked)
+    return ok, ("%d prompts, complete %s, turns %s; one spend line under the intent, appended (running %.2f, spent %.4f);"
+                " ids or text in what leaves role C: %s" % (m["prompts"], m["complete"], turns, after["running_caps_usd"],
+                                                             after["spent_usd"], leaked))
+
+
+def proof_negotiation_refusals(mod=None):
+    """The negotiation form refuses outside a role C session, in the lead's checkout, with a cap above
+    the lead's figure, on a prompts file not built from the cloud subset, and sends nothing when the
+    credit left is under a prompt's worst case."""
+    import os
+    mod = mod or cb
+    out = {}
+    with fixture() as box, neg_prompts() as (path, _prompts, tmp), neg_prompts(subset=False) as (whole, _w, _t):
+        opened = cb.open_role_c(3.0, base.fresh_approval(box.store), store=box.store, ledgers=[box.ledger])
+        cr.spend.handback_dir(box.store).mkdir()
+        client = base.FakeClient()
+        out["no_marker"] = stopped(lambda: go_neg(box, path, tmp / "o1", client, opened, mod=mod))
+        with patch.dict(os.environ, {cr.ROLE_ENVIRONMENT: cr.ROLE_C}):
+            out["lead_checkout"] = stopped(lambda: go_neg(box, path, tmp / "o2", client, opened, mod=mod, lead_store=True))
+            out["over_figure"] = stopped(lambda: go_neg(box, path, tmp / "o3", client, opened, mod=mod, cap_usd=3.5))
+            out["no_subset"] = stopped(lambda: go_neg(box, whole, tmp / "o4", client, opened, mod=mod))
+            m = go_neg(box, path, tmp / "o5", client, opened, mod=mod, credit_usd=0.01)
+    ok = (bool(out["no_marker"]) and "role C session" in out["no_marker"] and bool(out["lead_checkout"])
+          and "lead's checkout" in out["lead_checkout"] and bool(out["over_figure"])
+          and "budget left the lead gave" in out["over_figure"] and bool(out["no_subset"])
+          and "cloud subset" in out["no_subset"] and not client.created and m["calls"] == 0
+          and str(m["stopped"]).startswith("cap: "))
+    return ok, "refusals %s; credit 0.01: %d sent, %r" % (out, len(client.created), m["stopped"])
+
+
 @contextlib.contextmanager
 def _swap_proof(name, mod):
     original = globals()[name]
@@ -547,6 +645,10 @@ PROOFS = [
     ("no credit mid-run stops cleanly; a resumed run sends only what was not answered, none twice",
      proof_stops_cleanly_and_resumes),
     ("a chunk stops cleanly and the next one sends the rest", proof_chunks_and_resume),
+    ("the negotiation form: role C's prompts under the lead's intent, counts and cost only handed back",
+     proof_negotiation_form),
+    ("the negotiation form's refusals: marker, lead's checkout, the figure, the subset, the credit",
+     proof_negotiation_refusals),
 ]
 
 NEUTRALISATIONS = [
@@ -584,13 +686,13 @@ NEUTRALISATIONS = [
     ("a handed-back line taken with no intent", "proof_role_c_runs_under_the_lead_s_intent",
      lambda: patch.object(cr.spend, "unplanned_runs", lambda rows, lines: [])),
     ("role C's form in the lead's checkout", "proof_role_c_runs_under_the_lead_s_intent", lambda: _against(_module_with(
-        "        cr.refuse(lead_store is None or not lead_store.exists(),", "        cr.refuse(True,"))),
+        "    cr.refuse(lead_store is None or not lead_store.exists(),", "    cr.refuse(True,"))),
     ("open-role-c not checking the evet's use", "proof_role_c_runs_under_the_lead_s_intent",
      lambda: patch.object(cr, "approval_unused", lambda store, approval, chain: None)),
     ("the whole budget left handed to role C", "proof_role_c_held_to_its_intent_cap", lambda: _swap_open_role_c()),
     ("role C's cap not held to the figure", "proof_role_c_held_to_its_intent_cap", lambda: _against(_module_with(
-        "        cr.refuse(isinstance(budget_left_usd, (int, float)) and cap_usd <= budget_left_usd + 1e-9,",
-        "        cr.refuse(True,"))),
+        "    cr.refuse(isinstance(budget_left_usd, (int, float)) and cap_usd <= budget_left_usd + 1e-9,",
+        "    cr.refuse(True,"))),
     ("a spend line above its intent's cap appended", "proof_role_c_held_to_its_intent_cap",
      lambda: patch.object(cr.spend, "over_cap", lambda rows, lines: [])),
     ("no flag written", "proof_role_c_held_to_its_intent_cap",
@@ -615,6 +717,18 @@ NEUTRALISATIONS = [
      lambda: patch.object(cb, "earlier_replies", lambda resume_from: {})),
     ("no chunk bound", "proof_chunks_and_resume",
      lambda: patch.object(cb.AnthropicBackend, "__init__", _no_chunk(cb.AnthropicBackend.__init__))),
+    ("the replies written into the measurement", "proof_negotiation_form", lambda: _swap_proof(
+        "proof_negotiation_form", _module_with('"prompts": len(prompts), "calls": state["calls"],',
+                                               '"prompts": len(prompts), "texts": texts, "calls": state["calls"],'))),
+    ("the B1 allowance not used", "proof_negotiation_form", lambda: _swap_proof(
+        "proof_negotiation_form", _module_with("    return prompts, value, allowance.pop()",
+                                               "    return prompts, value, allowance.pop() // 2"))),
+    ("no role marker read", "proof_negotiation_refusals", lambda: patch.object(cr, "check_role", lambda lead_side: None)),
+    ("no subset digest needed", "proof_negotiation_refusals", lambda: _swap_proof(
+        "proof_negotiation_refusals", _module_with('cr.refuse(isinstance(value.get("subset_sha256"), str)',
+                                                   'cr.refuse(True or isinstance(value.get("subset_sha256"), str)'))),
+    ("the credit not held", "proof_negotiation_refusals",
+     lambda: patch.object(cr, "spend_limit", lambda cap, credit: cap)),
 ]
 
 

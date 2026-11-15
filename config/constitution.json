@@ -785,6 +785,107 @@
       },
       "reason": "On plans where Python found no figures, the auditor model's generated answers mostly claimed arithmetic Python did not find (217 of 336 kept answers on the saved runs claim a sum mismatch). A narrow question answered from probabilities replaces that, and its settled No had no honest record: claim_not_met is bound to [compare: cells] and every other declared relation is figures, absence or two passages.",
       "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-08. The relation and its refusals are built on lane/auditor and land with that lane's merge."
+    },
+    {
+      "id": "INFRA-052",
+      "created": "2026-11-13",
+      "kind": "agent_switch",
+      "title": "INST_FINDER is off by default; the operator may switch it on per run with SHIMMER_INST_FINDER",
+      "genesis_part": "II",
+      "operator_approved": true,
+      "change": {
+        "default": "off",
+        "setting": "The environment variable SHIMMER_INST_FINDER, read by the pipeline. With no value INST_FINDER is off by default. The value on switches INST_FINDER on for that run; the value off keeps it off.",
+        "effect_when_off": "INST_FINDER is not called in phase 3-4. It stays in config/agent_registry.json and in PRODUCTION_AGENTS_CORPUS_LEVEL. The run records it in audit/agent_activation.json as not called, state switched_off, reason 'switched off by operator setting', and states the setting and whether it was the default in the run summary and in audit/agent_switches.json.",
+        "unchanged": "ARCHIVIST and CITATION_RESOLVER still run. No other agent, phase, contract or LAW changes. LAW-III family enforcement sees the same registry. The switch stays: SHIMMER_INST_FINDER=on runs INST_FINDER as before."
+      },
+      "reason": "It was meant to be inactive from the start. Its job (finding and routing the relevant institutions in correspondence) has no ground yet, and its outputs reach the bus with no downstream reader. The sealed manifest set SHIMMER_INST_FINDER=on, and it caused one incomplete entry in the quick read of 13 November 2026 (D-570).",
+      "approval": {
+        "date": "2026-11-13",
+        "by": "operator",
+        "words": "3 instfinder kapatmak onay veriyorum. Onu da sen yap.",
+        "asked": "Approve the amendment drafted in docs/INST_FINDER_SWITCH_DELTA_DRAFT.md: INST_FINDER off by default, switchable per run with SHIMMER_INST_FINDER (FOR_SECKIN 2026-11-13, D-570).",
+        "channel": "chat, 2026-11-13 11:31 +0300, relayed to the lead by the operator's supervising chat because he could not type at the keyboard",
+        "authorization": {
+          "date": "2026-11-13",
+          "by": "operator",
+          "words": "3 instfinder kapatmak onay veriyorum. Onu da sen yap.",
+          "recorded_in": "docs/loop/DECISIONS.md D-580",
+          "what": "the operator's approval, which is also the instruction: the loop appends this one amendment through the verified no-gap path on his behalf; no APPROVE was typed by him at the keyboard"
+        }
+      },
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-13 11:31, relayed by his supervising chat; text as drafted."
+    },
+    {
+      "id": "INFRA-053",
+      "created": "2026-11-13",
+      "kind": "seed_law_reading",
+      "title": "LAW-III read as self-revision, then external audit: the writer may audit and correct its own draft; a model of another family audits the revised version and decides",
+      "genesis_part": "I",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-13",
+        "by": "operator",
+        "words": "11:34: 'self audit ve external audit olması daha iyi olur... Bence öyle olsun'; 11:36 (the shape, superseding 11:34's comparison of verdicts): 'model kendini denetliyor, düzeltmelerini yapıyor, kendi denetiminden sonra diğer modelin denetimine sunuyor.'; 11:38 (in English, relayed): every writing agent gains the self-audit and correction step before hand-off and every hand-off goes to another family's auditor.",
+        "asked": "The LAW-III D1 floor report (FOR_SECKIN 2026-11-13, D-573, D-575) and the lead's proposed narrower sentence; the operator replaced it by this shape at 11:34 and 11:36 (his 11:31 acceptance of the narrower sentence was superseded before it was recorded).",
+        "channel": "chat, 2026-11-13 11:34 to 11:38 +0300, relayed to the lead by the operator's supervising chat because he could not type at the keyboard",
+        "authorization": {
+          "date": "2026-11-13",
+          "by": "operator",
+          "words": "11:34: 'self audit ve external audit olması daha iyi olur... Bence öyle olsun'; 11:36 (the shape, superseding 11:34's comparison of verdicts): 'model kendini denetliyor, düzeltmelerini yapıyor, kendi denetiminden sonra diğer modelin denetimine sunuyor.'; 11:38 (in English, relayed): every writing agent gains the self-audit and correction step before hand-off and every hand-off goes to another family's auditor.",
+          "recorded_in": "docs/loop/DECISIONS.md D-581",
+          "what": "the operator's approval, which is also the instruction: the loop appends this one amendment through the verified no-gap path on his behalf; no APPROVE was typed by him at the keyboard"
+        }
+      },
+      "change": {
+        "law": "LAW-III",
+        "reads_from_now": "No output passes on the judgement of the model family that wrote it. Every writing model audits its own draft and corrects it within its own turn; no unrevised draft is handed on; only the self-revised version is. A model of another family then audits the handed-on version, and that external audit decides; the writer's own audit is a revision step, never a verification, and is never counted as one. Claude-generated content is audited by GPT or local models. GPT-generated content is audited by Claude or local models. Local model output is audited by cloud models or by a local model of another family. The audit trail must show which model produced, whether it revised its own draft, and which model verified every output segment.",
+        "in_place_of": "No model may verify, fact-check, or audit output that was generated by the same model family. Claude-generated content is audited by GPT or local models. GPT-generated content is audited by Claude or local models. Local model output is audited by cloud models. The audit trail must show which model produced and which model verified every output segment.",
+        "purpose_kept": "No defect passes on the writer's own judgement alone: the external audit by another family stays mandatory and decisive.",
+        "sequence": "draft by the writing model; self-audit and correction by the same model in its own turn; only the self-revised version is handed on; audit by a model of another family, which decides. The raw draft, the self-audit and the external audit are never set side by side, compared or voted.",
+        "self_revision_status": "Required for every writing agent (the operator, 11:38: every writing agent gains the self-audit and correction step before hand-off, every hand-off goes to another family's auditor, and the registry, role graph, backends and model map, contracts, decoding and token budgets, the assignment layer's floor, the run records, the checks and the forecasts follow). It takes effect in a run once the reconfiguration is built and its checks prove no path hands on an unrevised draft or skips the external audit (D-582). The development-set measurement of its accuracy and cost (the operator, 11:34) is reported to the operator; dropping the step for an agent that does not pay is his decision, by amendment.",
+        "unchanged": "No other law, amendment, agent, contract or check changes by this amendment. The family split the gate enforces (checks 87, 127) holds as before.",
+        "form": "The seed law's text in seed_laws and genesis Part I stays as written (append-only; the genesis mirror holds). This amendment states how LAW-III is read from 2026-11-13 on, and readers apply it."
+      },
+      "reason": "The operator's decision (13 November 2026): a writer catching its own errors cheaply before the independent check is better, as long as the independent check by another family decides; under the local profile the cloud is not used, so the external auditor there is a local model of another family or a cloud model.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-13 11:34, 11:36 and 11:38, relayed by his supervising chat because he could not type."
+    },
+    {
+      "id": "INFRA-054",
+      "created": "2026-11-13",
+      "kind": "external_auditor_role",
+      "title": "EXTERNAL_AUDITOR: the other family audits, in batches per unit, every handed-on output of a writer no other family audits, the auditor family's own findings included (LAW-III as read by INFRA-053)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-13",
+        "by": "operator",
+        "words": "Bir evet (12:21); '054 evet' (12:56)",
+        "asked": "The lead's question of 13 November 2026 (D-582, open decisions OD-1 and OD-4 of docs/loop/stages/notes/LAW3_INVENTORY.md): do the auditor family's own findings count as writing, audited by another family, and who audits them and the producer-family writers no other family audits today. The batch form and the model choice follow the operator's instruction of 12:34 (D-597).",
+        "channel": "chat, 13 November 2026 12:21 and 12:56 +0300, relayed by his supervising chat because he could not type at the keyboard",
+        "authorization": {
+          "date": "2026-11-13",
+          "by": "operator",
+          "words": "'054 evet' (12:56): append INFRA-054 as drafted, reply form, by the operator-approval path with his words",
+          "recorded_in": "docs/loop/DECISIONS.md D-594 (OD-1), D-597 (batch form), D-602 (the append)",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path and adds the two EXTERNAL_AUDITOR entries to config/agent_registry.json and their contract to config/agent_contracts.json as lane/law3-system builds them; no APPROVE was typed by him at the keyboard"
+        }
+      },
+      "change": {
+        "roster": "Adds ONE role, EXTERNAL_AUDITOR, as TWO registry entries, since the model is the registry's: EXTERNAL_AUDITOR_P on the producer family (local_producer, Qwen2.5-7B-Instruct base, run as the resident checkpoint's base with its adapter disabled, never the PROCESSOR adapter; claude_api, claude-haiku-4-5, under the cloud profile) and EXTERNAL_AUDITOR_A on the auditor family (local_auditor, Phi-3.5-mini-instruct, VERIFIER's resident model; openai_api, the cheapest model the live listing offers that holds the measured accuracy, gpt-4o-mini first, under the cloud profile). Each is the cheapest suitable model of the other family (D-597); a model is kept only where its development measurement holds the declared error rate, else the next model up is tried. Category verification, may_use_web false, may_handle_sensitive false, subjects empty (it audits by the writer's family, never by subject). EXPECTED_AGENTS goes 19 -> 21.",
+        "scope_of_audit": "EXTERNAL_AUDITOR_P audits the handed-on outputs of the auditor family: PRACTICE_AUDITOR's kept model findings and its model notes on Python findings, VERIFIER's and FACT_CHECKER's own findings, and the observations of EDITOR_HEAD_OF_DEPARTMENT, EDITOR_DEPUTY_DG and EDITOR_DG. EXTERNAL_AUDITOR_A audits the handed-on outputs of the producer-family writers no other family audits: SPEECH_ACT_TAGGER, LEGAL_ANALYST, ARCHIVIST, INST_FINDER, CITATION_RESOLVER, STYLE_GUARDIAN, AMENDMENT_DRAFTER, EDITOR_CLERK, EDITOR_HEAD_OF_UNIT and EDITOR_HEAD_OF_SECTION, and REDACTOR's proposals in an add-only form (it may propose a further span, never drop one: LAW-IV outranks). PROCESSOR keeps VERIFIER (floor F1) and AUDITOR896; JUDGE and the choice-only decisions keep their audit as today (D-582 OD-2). Which entry audits an output is read from the family of the backend that wrote it (finding_record.written_by and the bus post's backend), never from an agent name in code; an entry on the writer's own family is refused at boot.",
+        "batch": "One call per unit (per document for a document-level output) carries the unit's K handed-on outputs, K at most 8 until a larger K is measured, under the one batching rule of the auditor batch (D-597, #256): the shared evidence first (the unit's text or the cited passage), then per item the item as handed on, the question and its fixed answers. In the decision form the K questions run as one batched forward, one sequence each, each answer read from its own sequence's probabilities; in the reply form one envelope holds exactly K items in order under the envelope grammar. Python joins answer i to item i by position and stamps audited_item_id and audits_call_id; the model writes neither. Each reply record carries batch_size and the item ids.",
+        "contract": "Adds the EXTERNAL_AUDITOR contract (shared by both entries) to config/agent_contracts.json: item_kind audit; fields verdict (supported, not supported, cannot be settled), audited_call_id, audited_item_id (both stamped by Python), and in the decision form decided, settled, confidence, answers (each declared answer's probability) and declared_mass; quote (Python's echo of the cited text); checks [the writing roles of its side]. Declared an envelope agent (config/envelope_decoding.json) for the reply form. No other contract changes.",
+        "forms": "Two forms, as config/auditor_questions.json's: reply, shipped first, a generated verdict per item under the contract's validator and grammar, which decides with no threshold; decision, adopted only by a recorded decision once the family's threshold is measured on development material with its error rate (CHOICE-A). In the reply form the auditor writes its verdicts and revises its own batch at the dispatch seam like any writer (INFRA-053).",
+        "decides": "The external audit decides (INFRA-053): an output passes only when its verdict is supported (in the decision form, settled as supported at the measured threshold). Every other output, and every output of a failed or refused batch, is withheld from the deliverables' findings and counted apart with its reason, as an editorial observation with no other-family review is (D-582 OD-8). The writer's own revision is never counted as this audit, and the draft, the revision and this audit are never compared or voted.",
+        "records": "Every call writes its one reply record (REPLIES-A), with batch_size and the item ids; the audit is posted on the bus with audits_call_id, auditor_backend, auditor_model and auditor_family, and the audit trail of every output segment names the producer, whether it revised its own draft, and this verifier (INFRA-053).",
+        "floor": "config/agent_assignment.json: floor F1 names each writer with its EXTERNAL_AUDITOR entry, and the assignment layer refuses a writer's output handed on without its other-family audit; the external_audit_pending list empties.",
+        "scope": "Extends governed inter-agent structure by append only: one role (two registry entries) and one contract are added. No seed law, existing amendment, agent, contract, relation, field or verdict is modified. Domain and case agnostic: no domain vocabulary in its question or code (check 174).",
+        "paid_cloud_runs": "Each paid cloud run of either entry (claude_api, openai_api) asks the operator first, one 'evet' per run (D-602).",
+        "revision_form": "For this measurement the writer's revision rewrites the whole response (the operator, 12:56); a corrections-only revision is tried after the measurement (D-602)."
+      },
+      "reason": "The operator's answer to D-582 OD-1 (13 November 2026 12:21, 'Bir evet') and his instruction of 12:34 (D-597): the auditor family's own findings are writing and are audited by another family, in batches, on the cheapest suitable model. No existing role can do it: VERIFIER and JUDGE are of the auditor family and cannot audit their own family's findings (LAW-III); VERIFIER's contract is one task, PROCESSOR's draft against the source; AUDITOR896 is a classifier trained on PROCESSOR's pairs alone; every producer-family agent is a writer with its own function, and giving it the audit would breach LAW-II and make a writer its own family's judge; the editorial routing of INFRA-050 reaches observations only, by escalation.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-13 12:21 and appended on his '054 evet' of 12:56, relayed by his supervising chat; the batch form and model choice by his instruction of 12:34. Drafted by lane law3-system in docs/loop/stages/notes/INFRA_AUDITOR_DRAFT.md; the registry, contract and code entries are built after the append."
     }
   ]
 }

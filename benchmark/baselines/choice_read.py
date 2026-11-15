@@ -437,11 +437,20 @@ def comparator(benchmark, documents, by_key, b1_root, left_out):
     group past D-241's abstain floor being no comparator. The first is None with none left."""
     setting = judge_read.class_setting(SETTINGS, benchmark)
     rows = {g: figures(b1_rows(g, documents, by_key, b1_root, left_out), setting) for g in COMPARATORS}
+    best = choose_group(benchmark, rows)
+    if best is None:
+        return None, rows
+    return dict(rows[best], group=best), rows
+
+
+def choose_group(benchmark, rows):
+    """C_BAR's rule over {group: figures} (D-241, D-554): among the groups within D-241's abstain floor,
+    the higher measure (ContraDoc accuracy, SciTab macro-F1), a tie taking the reasoning group. None
+    when no group is a comparator. The one rule B1's comparator and the cloud reference's arm read."""
     fit = [g for g in COMPARATORS if rows[g]["abstain"] <= doc_judge.BAR_MAX_B1_ABSTAIN * rows[g]["items"]]
     if not fit:
-        return None, rows
-    best = max(fit, key=lambda g: (measure(benchmark, rows[g]), g == REASONING))
-    return dict(rows[best], group=best), rows
+        return None
+    return max(fit, key=lambda g: (measure(benchmark, rows[g]), g == REASONING))
 
 
 def precision_gate(benchmark, b1):

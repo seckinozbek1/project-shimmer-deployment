@@ -40,6 +40,14 @@ CREDIT = 61.69
 ENV_NAMES = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL")
 PRICES = {"input_per_mtok": 5.0, "output_per_mtok": 25.0, "source": "fixture prices, not the provider's"}
 DEPRECATION = "https://example.invalid/deprecations, 2026-11-08, not deprecated"
+# The recorded row the fixture's table holds (D-610): fixture rates, not the provider's, in the
+# provider's proportions, so a batch figure is visibly half a single one.
+FIXTURE_ROW = {"input_per_mtok": 5.0, "output_per_mtok": 25.0, "source": "fixture", "read_on": "2026-11-08",
+               "cache_write_5m_per_mtok": 6.25, "cache_write_1h_per_mtok": 10.0, "cache_read_per_mtok": 0.5,
+               "batch": {"input_per_mtok": 2.5, "output_per_mtok": 12.5, "cache_write_5m_per_mtok": 3.125,
+                         "cache_write_1h_per_mtok": 5.0, "cache_read_per_mtok": 0.25},
+               "cache": {"min_tokens": 1024, "ttl": {"single": "1h", "batch": "1h"}},
+               "batch_limits": {"max_requests": 100000, "max_bytes": 268435456, "expiry_hours": 24}}
 
 
 def registry_model():
@@ -105,9 +113,7 @@ def build(folder, extra_user="", extra_item=False, wrong_document=False, left_ou
                                  "warning_usd": 50.0}) + chr(10), encoding="utf-8")   # created by the operator before the first run   # D-S121: the API ceiling line
     (store.parent / cr.FOR_SECKIN_NAME).write_text(FOR_SECKIN_TEXT, encoding="utf-8")
     prices = folder / "prices.json"
-    prices.write_text(json.dumps({"models": {registry_model(): {"input_per_mtok": 5.0, "output_per_mtok": 25.0,
-                                                                "source": "fixture", "read_on": "2026-11-08"}}}),
-                      encoding="utf-8")
+    prices.write_text(json.dumps({"models": {registry_model(): FIXTURE_ROW}}), encoding="utf-8")
     runs = folder / "output" / "cloud_reference"
     runs.mkdir(parents=True)
     return SimpleNamespace(tmp=folder, path=path, bar=bar, items=items, prices=prices, runs=runs, value=value,
@@ -656,7 +662,8 @@ def proof_cache_writes_stop_the_run():
         m = go(box, FakeClient(cache_write_at=2), cap=5.0, name="cache")
         each = cr.cost(1000, 200, PRICES)
         worst = cr.worst_case(1000, 1000, PRICES)
-        ok = (m["sent"] == 2 and m["stopped"].startswith("usage reports 500 cache-write tokens")
+        ok = (m["sent"] == 2 and m["stopped"].startswith("500 cache-write tokens with no duration reported and no cache "
+                                                         "mark sent on")
               and abs(m["spent_usd"] - (each + worst)) < 1e-9)
         return ok, "sent %d, %r, spent %.4f (one reply and the cache-writing call's worst case %.4f)" % (
             m["sent"], m["stopped"], m["spent_usd"], each + worst)
@@ -1073,7 +1080,899 @@ def proof_reading_keeps_half_a():
     return ok, "rows %d, kept %d, all half A %s" % (len(rows), len(kept), {r["document_id"] for r in kept} == a)
 
 
+# ---------------------------------------------------------------------------
+# the gate's claim-set mode (lane/cloud-gate)
+
+GATE_DOCS = {"cd00": "i00", "cd01": "i01", "cd02": "i02"}
+
+
+def gate_files(folder, set_name="claim", drop=None, other_form=None, benchmark="contradoc", pad=""):
+    """A frozen gate set file (its schema and the items of one benchmark) and a B1 prompts file of
+    form b1 in both groups for every item; `drop` leaves (group, item) out, `other_form` gives one
+    prompt another form."""
+    folder = Path(folder)
+    set_file = folder / ("%s_set_ids.json" % set_name)
+    set_file.write_text(json.dumps({"schema": "shimmer-gate-%s-set-v2" % set_name, "set": set_name,
+                                    benchmark: [{"document_id": d, "item_id": i, "group": d} for d, i in GATE_DOCS.items()]}),
+                        encoding="utf-8")
+    spec = json.loads((HERE / "b1_prompt.json").read_text(encoding="utf-8"))
+    prompts, n = [], 0
+    for group in cr.GROUP_ORDER:
+        for d, i in GATE_DOCS.items():
+            if drop == (group, i):
+                continue
+            n += 1
+            prompts.append({"prompt_id": "c%04d" % n, "benchmark": benchmark, "document_id": d, "item_id": i,
+                            "rule_id": "R1", "group": group, "form": other_form if (other_form and n == 1) else "b1",
+                            "max_new_tokens": 1000, "system": "system turn %s" % group, "user": "document %s, %s%s" % (d, group, pad)})
+    path = folder / ("gate_prompts_%s.json" % set_name)
+    path.write_text(json.dumps({"schema": "doc-judge-prompts-v1", "kind": "doc_judge", "config_sha256": "c" * 64,
+                                "b1_prompt": spec, "prompts": prompts}), encoding="utf-8")
+    sync_held(path)
+    return set_file, path
+
+
+def held_for(prompts):
+    """The fixture's held build of a prompts file: a folder whose rebuilt.json is what the fake
+    rebuild writes (the real one rebuilds through doc_judge.build)."""
+    return Path(prompts).with_name(Path(prompts).stem + "_held")
+
+
+def sync_held(prompts):
+    held = held_for(prompts)
+    held.mkdir(exist_ok=True)
+    (held / "rebuilt.json").write_bytes(Path(prompts).read_bytes())
+
+
+def rebuild_copy(held, out):
+    Path(out).write_bytes((Path(held) / "rebuilt.json").read_bytes())
+    return {}
+
+
+def go_gate(box, client, set_file, prompts, name="gate", mod=cr, cap=15.0, list_models=None, deprecation=DEPRECATION,
+            **more):
+    more.setdefault("gate_held", held_for(prompts))
+    more.setdefault("gate_rebuild", rebuild_copy)
+    return mod.run(prompts, None, None, None, box.runs / name, cap_usd=cap, credit_usd=CREDIT,
+                   seckin_approved=fresh_approval(box.store), prices=PRICES, deprecation_checked=deprecation,
+                   keys={"ANTHROPIC_API_KEY": KEY}, client=client, list_models=list_models or live({registry_model()}),
+                   runs_root=box.runs, prices_path=box.prices, store=box.store, ledgers=[box.ledger], gate_set=set_file, **more)
+
+
+def store_lines(box):
+    return [json.loads(l) for l in box.store.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+
+def proof_gate_claim_set_only(mod=cr):
+    """The gate mode sends B1's own prompts of the frozen claim set alone: every item in both groups,
+    its kind and the set's digest in the measurement and the store; another set file (the quick
+    subset's digest, or any file but the pinned claim set), a missing item, a prompt of another form
+    or a J1 bar given beside it refuse before any request or store line."""
+    import gate_score
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp)
+        _q, _qp = gate_files(box.tmp, set_name="quick")
+        before = len(store_lines(box))
+        unpinned = FakeClient()
+        not_pinned = stopped(lambda: go_gate(box, unpinned, set_file, prompts, name="unpinned", mod=mod))
+        lines_after_refusal = len(store_lines(box))
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)):
+            client = FakeClient()
+            m = go_gate(box, client, set_file, prompts, mod=mod)
+            quick = stopped(lambda: go_gate(box, FakeClient(), _q, _qp, name="quick", mod=mod))
+            (Path(box.tmp) / "drop").mkdir()
+            drop_set, drop_prompts = gate_files(Path(box.tmp) / "drop", drop=("judge_reason", "i01"))
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(drop_set)):
+            missing = stopped(lambda: go_gate(box, FakeClient(), drop_set, drop_prompts, name="missing", mod=mod))
+        (Path(box.tmp) / "form").mkdir()
+        form_set, form_prompts = gate_files(Path(box.tmp) / "form", other_form="agent")
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(form_set)):
+            other_form = stopped(lambda: go_gate(box, FakeClient(), form_set, form_prompts, name="form", mod=mod))
+            with_bar = stopped(lambda: mod.run(prompts, box.bar, None, None, box.runs / "bar", cap_usd=15.0, credit_usd=CREDIT,
+                                               seckin_approved=fresh_approval(box.store), prices=PRICES,
+                                               deprecation_checked=DEPRECATION, keys={"ANTHROPIC_API_KEY": KEY},
+                                               client=FakeClient(), list_models=live({registry_model()}), runs_root=box.runs,
+                                               prices_path=box.prices, store=box.store, ledgers=[box.ledger], gate_set=form_set,
+                                               gate_held=held_for(prompts), gate_rebuild=rebuild_copy))
+        lines = store_lines(box)
+        set_digest = cr.sha(set_file)
+    sent = sorted((p["system"].split()[-1], p["messages"][0]["content"].split(",")[0].split()[-1]) for p in client.created)
+    want = sorted((g, d) for g in cr.GROUP_ORDER for d in GATE_DOCS)
+    kinds = {l.get("kind") for l in lines if l.get("event") in ("intent", "close")}
+    ok = (not_pinned and "frozen gate claim set" in not_pinned and not unpinned.created and lines_after_refusal == before
+          and sent == want and m["kind"] == cr.GATE_SCHEMA and m["gate_set_sha256"] == set_digest
+          and m["benchmark"] == "contradoc" and m["half"] is None and m["label"] == cr.GATE_LABEL and m["complete"]
+          and kinds == {cr.GATE_SCHEMA}
+          and quick and "frozen gate claim set" in quick and missing and "not the claim set's" in missing
+          and other_form and "not B1's own" in other_form and with_bar and "takes no J1 bar" in with_bar)
+    return ok, ("unpinned set file: %r (no request %s, no store line %s); sent %d of %d (group, document) pairs; kind %s, "
+                "set digest recorded %s; store kinds %s; the quick subset: %r; a missing item: %r; another form: %r; a bar "
+                "beside it: %r" % (not_pinned, not unpinned.created, lines_after_refusal == before, len(sent), len(want),
+                                   m["kind"], m["gate_set_sha256"] == set_digest, sorted(map(str, kinds)), quick,
+                                   missing, other_form, with_bar))
+
+
+def proof_gate_run_keeps_the_guards():
+    """The gate mode goes through every guard of the paid run: Seckin's yes, the key scan, the live
+    model, the recorded prices and the API ceiling (D-441), each refusing before any request."""
+    import gate_score
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp)
+        (Path(box.tmp) / "keyed").mkdir()
+        k_set, k_prompts = gate_files(Path(box.tmp) / "keyed")
+        value = json.loads(k_prompts.read_text(encoding="utf-8"))
+        value["prompts"][0]["user"] += " " + OTHER
+        k_prompts.write_text(json.dumps(value), encoding="utf-8")
+        sync_held(k_prompts)
+        clients = [FakeClient() for _ in range(6)]
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)):
+            no_yes = stopped(lambda: cr.run(prompts, None, None, None, box.runs / "noyes", cap_usd=15.0, credit_usd=CREDIT,
+                                            seckin_approved="FOR_SECKIN 2099-01-01 00:00", prices=PRICES,
+                                            deprecation_checked=DEPRECATION, keys={"ANTHROPIC_API_KEY": KEY},
+                                            client=clients[0], list_models=live({registry_model()}), runs_root=box.runs,
+                                            prices_path=box.prices, store=box.store, ledgers=[box.ledger], gate_set=set_file,
+                                            gate_held=held_for(prompts), gate_rebuild=rebuild_copy))
+            gone = stopped(lambda: go_gate(box, clients[1], set_file, prompts, name="gone", list_models=live({"another-model"})))
+            prices = stopped(lambda: cr.run(prompts, None, None, None, box.runs / "prices", cap_usd=15.0, credit_usd=CREDIT,
+                                            seckin_approved=fresh_approval(box.store),
+                                            prices=dict(PRICES, input_per_mtok=1.0), deprecation_checked=DEPRECATION,
+                                            keys={"ANTHROPIC_API_KEY": KEY}, client=clients[2],
+                                            list_models=live({registry_model()}), runs_root=box.runs, prices_path=box.prices,
+                                            store=box.store, ledgers=[box.ledger], gate_set=set_file,
+                                            gate_held=held_for(prompts), gate_rebuild=rebuild_copy))
+            ceiling = stopped(lambda: go_gate(box, clients[3], set_file, prompts, name="ceiling", cap=70.0))
+            no_page = stopped(lambda: go_gate(box, clients[5], set_file, prompts, name="nopage", deprecation=""))
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(k_set)):
+            keyed = stopped(lambda: go_gate(box, clients[4], k_set, k_prompts, name="keyed"))
+    ok = bool(no_yes and "FOR_SECKIN" in no_yes and gone and "live list" in gone and keyed and "key-shaped" in keyed
+              and prices and "not the recorded" in prices and ceiling and "ceiling" in ceiling
+              and no_page and "deprecations page" in no_page and not any(c.created for c in clients))
+    return ok, ("no evet: %r; a model gone from the list: %r; a key-shaped string: %r; other prices: %r; a cap past the "
+                "API ceiling: %r; no deprecations-page reading: %r; requests sent %d"
+                % (no_yes, gone, keyed, prices, ceiling, no_page, sum(len(c.created) for c in clients)))
+
+
+def proof_gate_prompts_pinned_to_held(mod=cr):
+    """The paid gate mode and its plan send or count a prompts file only when it is, byte for byte,
+    the one gate-prompts rebuilds from the named held build: a file edited by hand with its ids
+    intact, or no held build named, refuses before any request or store line; the rebuilt digest is
+    recorded."""
+    import gate_score
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp)
+        value = json.loads(prompts.read_text(encoding="utf-8"))
+        value["prompts"][0]["user"] += " (edited by hand)"
+        prompts.write_text(json.dumps(value), encoding="utf-8")   # held/rebuilt.json keeps the built text
+        before = len(store_lines(box))
+        edited_client, none_client = FakeClient(), FakeClient()
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)):
+            edited = stopped(lambda: go_gate(box, edited_client, set_file, prompts, name="edited", mod=mod))
+            no_held = stopped(lambda: go_gate(box, none_client, set_file, prompts, name="noheld", mod=mod, gate_held=None))
+            edited_plan = stopped(lambda: mod.gate_plan(prompts, set_file, prices_path=box.prices, store=box.store,
+                                                        held=held_for(prompts), rebuild=rebuild_copy))
+            sync_held(prompts)
+            m = go_gate(box, FakeClient(), set_file, prompts, name="rebuilt", mod=mod)
+            digest = cr.sha(prompts)
+        after = len(store_lines(box))
+    ok = (edited and "not the one gate-prompts rebuilds" in edited and no_held and "--gate-held" in no_held
+          and edited_plan and "not the one gate-prompts rebuilds" in edited_plan
+          and not edited_client.created and not none_client.created and after == before + 2
+          and m["rebuilt"]["rebuilt_sha256"] == digest and m["complete"])
+    return ok, ("a hand-edited file: %r; no held build: %r; the plan of the edited file: %r; requests %d; the rebuilt file "
+                "runs, its digest recorded %s" % (edited, no_held, edited_plan, len(edited_client.created) + len(none_client.created),
+                                                   m["rebuilt"]["rebuilt_sha256"] == digest))
+
+
+def proof_gate_resume(mod=cr):
+    """A gate run resumes only a gate run on the same prompts, set and model: a J1 run refused, an
+    earlier gate run on another set digest refused, and a clean resume sends only what was not
+    answered, none twice."""
+    import gate_score
+    import shutil
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp)
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)):
+            first = FakeClient()
+            go_gate(box, first, set_file, prompts, name="chunk", mod=mod, max_calls=2)
+            second = FakeClient()
+            m = go_gate(box, second, set_file, prompts, name="resumed", mod=mod, resume_from=box.runs / "chunk")
+            go(box, FakeClient(), name="j1")
+            cross = stopped(lambda: go_gate(box, FakeClient(), set_file, prompts, name="cross", mod=mod,
+                                            resume_from=box.runs / "j1"))
+            shutil.copytree(box.runs / "chunk", box.tmp / "other_set")
+            other = json.loads((box.tmp / "other_set" / cr.MEASUREMENT_FILE).read_text(encoding="utf-8"))
+            other["gate_set_sha256"] = "e" * 64
+            (box.tmp / "other_set" / cr.MEASUREMENT_FILE).write_text(json.dumps(other), encoding="utf-8")
+            other_set = stopped(lambda: go_gate(box, FakeClient(), set_file, prompts, name="otherset", mod=mod,
+                                                resume_from=box.tmp / "other_set"))
+    sent_first = [c["messages"][0]["content"] for c in first.created]
+    sent_second = [c["messages"][0]["content"] for c in second.created]
+    ok = (len(sent_first) == 2 and len(sent_second) == 4 and not set(sent_first) & set(sent_second)
+          and m["complete"] and m["reused_answers"] == 2 and cross and "not a cloud-reference-gate-v1 run" in cross
+          and other_set and "gate_set_sha256 differs" in other_set)
+    return ok, ("first chunk %d, resumed %d, sent twice %d, reused %s; from a J1 run: %r; from another set: %r" % (
+        len(sent_first), len(sent_second), len(set(sent_first) & set(sent_second)), m["reused_answers"], cross, other_set))
+
+
+def proof_gate_cli_rules():
+    """The CLI: --measured-output and --gate-held only in the gate mode, --measured-output only in
+    plan, and the gate plan takes no --price-* (it reads the recorded prices)."""
+    import io
+    def exits(argv):
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                cr.main(argv)
+        except SystemExit as exc:
+            return exc.code
+        return None
+    j1 = ["plan", "--prompts", "p.json", "--bar", "b.json", "--items", "i.json", "--key", "k.json"]
+    measured_j1 = exits(j1 + ["--measured-output", "m.json"])
+    held_j1 = exits(j1 + ["--gate-held", "h"])
+    priced = exits(["plan", "--prompts", "p.json", "--gate-set", "s.json", "--price-input-per-mtok", "5"])
+    ok = measured_j1 == 2 and held_j1 == 2 and priced == 2
+    return ok, "--measured-output without --gate-set exits %r; --gate-held without it %r; a gate plan with a price %r" % (
+        measured_j1, held_j1, priced)
+
+
+def proof_gate_plan_at_recorded_prices():
+    """The gate plan gives each group's and each form's worst case at the recorded prices of the
+    registry's configured model (the token estimate x COUNT_MARGIN and the full allowance on every
+    call), the store's room read without a write, an expected figure from a measurement's output per
+    call, and builds no client."""
+    import gate_score
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp, pad=" padding" * 50000)
+        measured = {"source": "fixture", "judge_direct": 200.0, "judge_reason": 400.0}
+        before = box.store.read_bytes()
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)), \
+                patch.object(cr, "make_client", lambda key: (_ for _ in ()).throw(AssertionError("a client was built"))):
+            plan = cr.gate_plan(prompts, set_file, prices_path=box.prices, store=box.store, measured=measured,
+                                held=held_for(prompts), rebuild=rebuild_copy)
+        unchanged = box.store.read_bytes() == before
+        value = json.loads(prompts.read_text(encoding="utf-8"))
+        set_digest = cr.sha(set_file)
+    want, expected = {}, {}
+    for g in cr.GROUP_ORDER:
+        mine = [p for p in value["prompts"] if p["group"] == g]
+        tokens = round(sum(len(p["system"]) + len(p["user"]) for p in mine) / 4 * 1.35)
+        allowance = sum(p["max_new_tokens"] for p in mine)
+        want[g] = round((tokens * 1.10 * 5.0 + allowance * 25.0) / 1e6, 2)
+        expected[g] = (tokens * 5.0 + measured[g] * len(mine) * 25.0) / 1e6
+    forms = plan["forms"]
+    ok = (unchanged and {g: plan["groups"][g]["worst_case_usd"] for g in cr.GROUP_ORDER} == want
+          and forms["direct"]["worst_case_usd"] == want["judge_direct"]
+          and forms["direct_and_reasoning"]["worst_case_usd"] == round(want["judge_direct"] + want["judge_reason"], 2)
+          and forms["direct"]["expected_usd"] == round(expected["judge_direct"], 2)
+          and forms["direct"]["store"]["ok"] is True and forms["direct"]["store"]["ceiling_usd"] == 60.0
+          and plan["prices"]["input_per_mtok"] == 5.0 and plan["gate_set_sha256"] == set_digest)
+    return ok, ("worst case per group %s (wanted %s); forms %s; store unchanged %s" % (
+        {g: plan["groups"][g]["worst_case_usd"] for g in cr.GROUP_ORDER}, want,
+        {k: (v["worst_case_usd"], v.get("expected_usd"), v["store"].get("ok")) for k, v in forms.items()}, unchanged))
+
+
+def proof_gate_prompts_keep_b1_alone(mod=cr):
+    """`gate-prompts` keeps exactly the b1-form prompts doc_judge.build gives, their ids unchanged,
+    and sets prompt_count to their count."""
+    import doc_judge
+    built = {"schema": "doc-judge-prompts-v1", "documents": {"cd00": {}}, "prompt_count": 4, "prompts": [
+        {"prompt_id": "g0001", "form": "document", "group": "judge_direct"},
+        {"prompt_id": "g0002", "form": "document", "group": "judge_reason"},
+        {"prompt_id": "c0001", "form": "b1", "group": "judge_direct"},
+        {"prompt_id": "c0002", "form": "b1", "group": "judge_reason"}]}
+    with tempfile.TemporaryDirectory() as tmp:
+        held = Path(tmp) / "held"
+        (held / "cd00").mkdir(parents=True)
+        (held / "items.json").write_text("[]", encoding="utf-8")
+        seen = {}
+
+        def fake_build(workloads, out, **kw):
+            seen.update(workloads=[Path(w).name for w in workloads], **kw)
+            Path(out).write_text("{}", encoding="utf-8")
+            return json.loads(json.dumps(built))
+        with patch.object(doc_judge, "build", fake_build):
+            got = mod.build_gate_prompts(held, Path(tmp) / "out.json")
+        value = json.loads((Path(tmp) / "out.json").read_text(encoding="utf-8"))
+        leftover = sorted(p.name for p in Path(tmp).iterdir())
+    ok = ([p["prompt_id"] for p in value["prompts"]] == ["c0001", "c0002"] and value["prompt_count"] == 2
+          and got["prompt_count"] == 2 and seen.get("b1") is True and seen.get("workloads") == ["cd00"]
+          and Path(seen["config_path"]).name == "doc_judge_prompt_j1.json" and leftover == ["held", "out.json"])
+    return ok, "kept %s, count %s, built with b1 %s under %s; folder left %s" % (
+        [p["prompt_id"] for p in value["prompts"]], value["prompt_count"], seen.get("b1"),
+        Path(seen.get("config_path", "")).name, leftover)
+
+
+def _gate_module_with(old, new):
+    source = Path(cr.__file__).read_text(encoding="utf-8")
+    if source.count(old) != 1:
+        raise RuntimeError("the passage moved, so the neutralisation cannot be applied")
+    mod = types.ModuleType("cloud_reference_gate_neutralised")
+    mod.__file__ = cr.__file__
+    exec(compile(source.replace(old, new), cr.__file__, "exec"), mod.__dict__)
+    return mod
+
+
+# ---------------------------------------------------------------------------
+# D-610 cuts 1 and 2: the batch route and prompt caching, on fakes only
+
+
+class FakeClock:
+    """A clock the fake sleep moves; it raises once a batch loop has run far past any deadline, so a
+    neutralised deadline ends the proof instead of looping."""
+
+    def __init__(self):
+        self.t = 0.0
+
+    def __call__(self):
+        return self.t
+
+    def sleep(self, seconds):
+        self.t += seconds
+        if self.t > 400000:
+            raise RuntimeError("the batch loop ran unbounded")
+
+
+def reply_text(cid):
+    return '{"items": [], "for": "%s"}' % cid
+
+
+class FakeBatchClient(FakeClient):
+    """FakeClient with messages.batches. `ends_after` polls end a batch (None: never, unless
+    cancelled and `cancel_ends`); `missing` and `errored` are request positions with no result or an
+    errored one; `shuffle` reverses the results' order; `usage` per succeeded result as FakeClient's,
+    or `usage_fields` merged into it."""
+
+    def __init__(self, ends_after=2, cancel_ends=True, missing=(), errored=(), shuffle=False, usage_fields=None,
+                 system_tokens=1000, **kw):
+        super().__init__(**kw)
+        self.batch_requests, self.cancelled, self.polls = [], [], 0
+        self.ends_after, self.cancel_ends, self.missing, self.errored = ends_after, cancel_ends, set(missing), set(errored)
+        self.shuffle, self.usage_fields, self.system_tokens = shuffle, usage_fields or {}, system_tokens
+        self.batches = SimpleNamespace(create=self._create, retrieve=self._retrieve_batch, results=self._results,
+                                       cancel=self._cancel)
+
+    def count_tokens(self, **params):
+        if params.get("messages") == [{"role": "user", "content": "."}]:
+            self.counted.append(params)
+            return SimpleNamespace(input_tokens=self.system_tokens)
+        return super().count_tokens(**params)
+
+    def _create(self, requests):
+        self.batch_requests.append(json.loads(json.dumps(requests)))
+        return SimpleNamespace(id="msgbatch_fixture%d" % len(self.batch_requests), processing_status="in_progress")
+
+    def _ended(self, batch_id):
+        n = int(batch_id.rsplit("fixture", 1)[1])
+        return ((self.ends_after is not None and self.polls >= self.ends_after * n)
+                or (batch_id in self.cancelled and self.cancel_ends))
+
+    def _retrieve_batch(self, batch_id):
+        self.polls += 1
+        return SimpleNamespace(id=batch_id, processing_status="ended" if self._ended(batch_id) else "in_progress")
+
+    def _cancel(self, batch_id):
+        self.cancelled.append(batch_id)
+        return SimpleNamespace(id=batch_id, processing_status="canceling")
+
+    def _results(self, batch_id):
+        requests = self.batch_requests[int(batch_id.rsplit("fixture", 1)[1]) - 1]
+        out = []
+        for i, r in enumerate(requests):
+            if i in self.missing:
+                continue
+            if i in self.errored:
+                out.append(SimpleNamespace(custom_id=r["custom_id"], result=SimpleNamespace(type="errored")))
+                continue
+            if batch_id in self.cancelled and i >= len(requests) // 2:
+                out.append(SimpleNamespace(custom_id=r["custom_id"], result=SimpleNamespace(type="canceled")))
+                continue
+            usage = SimpleNamespace(**dict({"input_tokens": 1000, "output_tokens": self.output_tokens,
+                                            "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0,
+                                            "service_tier": "batch"}, **self.usage_fields))
+            message = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text(r["custom_id"]))],
+                                      stop_reason="end_turn", usage=usage)
+            out.append(SimpleNamespace(custom_id=r["custom_id"], result=SimpleNamespace(type="succeeded", message=message)))
+        return list(reversed(out)) if self.shuffle else out
+
+
+def go_batch(box, client, deadline=3600, name="batch", clock=None, **kw):
+    clock = clock or FakeClock()
+    return go(box, client, name=name, route="batch", batch_deadline_seconds=deadline, clock=clock, sleep=clock.sleep, **kw)
+
+
+def batch_rows(m):
+    return [r for r in m["rows"] if r.get("route") == "batch"]
+
+
+def proof_batch_bytes_equal_single(mod=cr):
+    """Every batch request's params are, byte for byte as JSON, the request the single route sent for
+    the same prompt, with and without a cache mark."""
+    with sandbox() as box:
+        out = []
+        for tokens in (1000, 2000):   # below and above the fixture's 1024-token minimum
+            single, batch = FakeBatchClient(system_tokens=tokens), FakeBatchClient(system_tokens=tokens)
+            a = go(box, single, cap=5.0, name="single%d" % tokens, mod=mod)
+            b = go_batch(box, batch, cap=5.0, name="batch%d" % tokens, mod=mod)
+            sent = [json.dumps(p, sort_keys=True) for p in single.created]
+            batched = [json.dumps(r["params"], sort_keys=True) for req in batch.batch_requests for r in req]
+            marked = sum(1 for p in single.created if isinstance(p.get("system"), list))
+            out.append((sent == batched and len(sent) == a["sent"] == b["sent"] > 0
+                        and (marked > 0) == (tokens >= 1024), len(sent), len(batched), marked))
+        ok = all(o[0] for o in out)
+        return ok, "; ".join("%d single and %d batched requests identical, %d marked" % o[1:] for o in out)
+
+
+def proof_batch_reserve_at_batch_price(mod=cr):
+    """Under a cap that holds a group's worst case at the batch rates but not at the single rates,
+    the batch route sends every call and the single route none; the spend line names the route, the
+    batch rates and the batch ids, and the spend is the batch-rate bill."""
+    with sandbox() as box:
+        single = go(box, FakeClient(), cap=0.2, name="single", mod=mod)
+        client = FakeBatchClient()
+        batch = go_batch(box, client, cap=0.2, mod=mod)
+        closes = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "batch"]
+        line = closes[-1] if closes else {}
+        bill = sum(cr.cost(1000, 200, {"input_per_mtok": 2.5, "output_per_mtok": 12.5}) for _ in batch_rows(batch))
+        ok = (single["sent"] == 0 and batch["sent"] == 16 and abs(batch["spent_usd"] - bill) < 1e-9
+              and line.get("route") == "batch" and line.get("rates", {}).get("input_per_mtok") == 2.5
+              and line.get("batch_ids") == ["msgbatch_fixture1", "msgbatch_fixture2"])
+        return ok, "single sent %d under 0.20 USD, batch sent %d, spent %.4f (bill %.4f), line route %s ids %s" % (
+            single["sent"], batch["sent"], batch["spent_usd"], bill, line.get("route"), line.get("batch_ids"))
+
+
+def proof_batch_deadline_cancels(mod=cr):
+    """A batch still running at its deadline is cancelled once and recorded: its id in batches.json
+    and the spend line, the answered half settled, the canceled half a no_answer at no cost; one that
+    does not end even after the cancel is given up within the grace, every call kept at its worst."""
+    with sandbox() as box:
+        client = FakeBatchClient(ends_after=None, cancel_ends=True)
+        m = go_batch(box, client, deadline=600, cap=5.0, name="late", mod=mod)
+        held = json.loads((box.runs / "late" / "batches.json").read_text(encoding="utf-8"))
+        rows = batch_rows(m)
+        answered = [r for r in rows if not r.get("no_answer")]
+        canceled = [r for r in rows if r.get("failure") == "no_answer: canceled"]
+        first = (client.cancelled == ["msgbatch_fixture1"] and "deadline" in (m["stopped"] or "")
+                 and held[0]["id"] == "msgbatch_fixture1" and held[0]["cancelled"] and len(answered) == 4
+                 and len(canceled) == 4 and all(r["cost_usd"] == 0.0 for r in canceled))
+        stuck = FakeBatchClient(ends_after=None, cancel_ends=False)
+        clock = FakeClock()
+        s = go_batch(box, stuck, deadline=600, cap=5.0, name="stuck", clock=clock, mod=mod)
+        worst = cr.worst_case(1000, 1000, {"input_per_mtok": 2.5, "output_per_mtok": 12.5})
+        second = (stuck.cancelled == ["msgbatch_fixture1"] and all(r.get("no_answer") for r in batch_rows(s))
+                  and abs(s["spent_usd"] - worst * len(batch_rows(s))) < 1e-9
+                  and clock.t <= 600 + cr.BATCH_CANCEL_GRACE_SECONDS + cr.BATCH_POLL_SECONDS
+                  and s["batches"][0]["id"] == "msgbatch_fixture1")
+        return first and second, ("cancelled %s, %d answered, %d canceled at no cost; stuck batch given up at %.0f s, "
+                                  "%d calls at their worst, spent %.4f" % (client.cancelled, len(answered), len(canceled),
+                                                                           clock.t, len(batch_rows(s)), s["spent_usd"]))
+
+
+def proof_batch_missing_result_is_no_answer(mod=cr):
+    """Results joined by custom id, in any order: each reply is its own prompt's; a missing result
+    is a no_answer at its worst case, an errored one a no_answer at no cost, and neither is sent
+    again (one batch a group, no single request)."""
+    with sandbox() as box:
+        client = FakeBatchClient(missing=(1, 2), errored=(3,), shuffle=True)
+        m = go_batch(box, client, cap=5.0, mod=mod)
+        rows = batch_rows(m)
+        ids = {cid: p for cid, p in cr.custom_ids([{"prompt_id": r["prompt_id"]} for r in rows], m["run_id"]).items()}
+        by_prompt = {p["prompt_id"]: cid for cid, p in ids.items()}
+        joined = all(r["reply"]["sha256"] == hashlib.sha256(reply_text(by_prompt[r["prompt_id"]]).encode()).hexdigest()
+                     for r in rows if not r.get("no_answer"))
+        missing = [r for r in rows if (r.get("failure") or "").startswith("no_answer: no result")]
+        errored = [r for r in rows if r.get("failure") == "no_answer: errored"]
+        worst = cr.worst_case(1000, 1000, {"input_per_mtok": 2.5, "output_per_mtok": 12.5})
+        each = cr.cost(1000, 200, {"input_per_mtok": 2.5, "output_per_mtok": 12.5})
+        spent = len(missing) * worst + (len(rows) - len(missing) - len(errored)) * each
+        records = [json.loads(p.read_text(encoding="utf-8")) for p in (box.runs / "batch").rglob("model_replies/*.json")]
+        ok = (joined and len(missing) == 4 and len(errored) == 2 and all(r["cost_usd"] == 0.0 for r in errored)
+              and all(r["cost_usd"] == round(worst, 6) for r in missing)
+              and abs(m["spent_usd"] - spent) < 1e-9 and not client.created and len(client.batch_requests) == 2
+              and sum(1 for r in records if not r.get("backend_ok")) == 6)
+        return ok, "joined %s, %d missing at worst, %d errored at no cost, spent %.4f of %.4f, %d batches, %d single" % (
+            joined, len(missing), len(errored), m["spent_usd"], spent, len(client.batch_requests), len(client.created))
+
+
+RATES = {"input_per_mtok": 5.0, "output_per_mtok": 25.0, "cache_write_5m_per_mtok": 6.25,
+         "cache_write_1h_per_mtok": 10.0, "cache_read_per_mtok": 0.5}
+
+
+def usage_reply(**fields):
+    return SimpleNamespace(usage=SimpleNamespace(**fields))
+
+
+def proof_cache_priced(mod=cr):
+    """Cache reads and writes are priced from the usage, by duration; a run whose system turn reaches
+    the minimum and repeats marks it (5 minutes single, 1 hour batch) and bills reads and writes; a
+    prefix under the minimum is never marked."""
+    got = mod.usage_cost(usage_reply(input_tokens=100, output_tokens=50, cache_read_input_tokens=2000,
+                                     cache_creation_input_tokens=1500,
+                                     cache_creation=SimpleNamespace(ephemeral_5m_input_tokens=500,
+                                                                    ephemeral_1h_input_tokens=1000)), RATES)
+    want = (100 * 5.0 + 50 * 25.0 + 2000 * 0.5 + 500 * 6.25 + 1000 * 10.0) / 1e6
+    unit = abs(got["cost_usd"] - want) < 1e-12 and got["input_tokens"] == 3600
+    with sandbox() as box:
+        client = FakeBatchClient(system_tokens=2000, usage_fields={"cache_read_input_tokens": 1500,
+                                                                    "cache_creation_input_tokens": 0})
+        b = go_batch(box, client, cap=5.0, mod=mod)
+        ttls = {r["params"]["system"][0]["cache_control"]["ttl"] for req in client.batch_requests for r in req
+                if isinstance(r["params"].get("system"), list)}
+        b_rates = {"input_per_mtok": 2.5, "output_per_mtok": 12.5, "cache_read_per_mtok": 0.25}
+        bill = sum((1000 * 2.5 + 200 * 12.5 + 1500 * 0.25) / 1e6 for _ in batch_rows(b))
+        run_ok = abs(b["spent_usd"] - bill) < 1e-9 and ttls == {"1h"} and b["stopped"] is None
+        short = FakeBatchClient(system_tokens=1000)
+        go(box, short, cap=5.0, name="short", mod=mod)
+        unmarked = all(not isinstance(p.get("system"), list) for p in short.created)
+        long = FakeBatchClient(system_tokens=2000)
+        go(box, long, cap=5.0, name="long", mod=mod)
+        single_ttls = {p["system"][0]["cache_control"]["ttl"] for p in long.created if isinstance(p.get("system"), list)}
+    ok = unit and run_ok and unmarked and single_ttls == {"1h"}
+    return ok, ("unit %.6f of %.6f; batch run spent %.4f of %.4f, marks %s, stopped %r; short prefix unmarked %s; "
+                "single marks %s" % (got["cost_usd"], want, b["spent_usd"], bill, sorted(ttls), b["stopped"], unmarked,
+                                     sorted(single_ttls)))
+
+
+def proof_unpriceable_usage_halts(mod=cr):
+    """A usage field this code cannot price stops the run with the call at its worst case: an unknown
+    field carrying a value, a service tier not the route's; an unknown field holding zeros does not."""
+    with sandbox() as box:
+        tool = go_batch(box, FakeBatchClient(usage_fields={"server_tool_use": SimpleNamespace(web_search_requests=2)}),
+                        cap=5.0, name="tool", mod=mod)
+        tier = go_batch(box, FakeBatchClient(usage_fields={"service_tier": "priority"}), cap=5.0, name="tier", mod=mod)
+        zero = go_batch(box, FakeBatchClient(usage_fields={"server_tool_use": SimpleNamespace(web_search_requests=0)}),
+                        cap=5.0, name="zero", mod=mod)
+        worst = cr.worst_case(1000, 1000, {"input_per_mtok": 2.5, "output_per_mtok": 12.5})
+        kept = all(r["cost_usd"] == round(worst, 6) for r in batch_rows(tool) if not r.get("no_answer"))
+        ok = ("server_tool_use" in (tool["stopped"] or "") and "service tier priority" in (tier["stopped"] or "")
+              and kept and zero["stopped"] is None and len(batch_rows(tool)) == 8)
+        return ok, "tool %r; tier %r; zeros stopped %r; tool calls at their worst %s" % (
+            (tool["stopped"] or "")[:80], (tier["stopped"] or "")[:60], zero["stopped"], kept)
+
+
+
+
+# ---------------------------------------------------------------------------
+# D-610, the checker's round 1 (items 2 to 8)
+
+
+class RoundTwoClient(FakeBatchClient):
+    """FakeBatchClient that can also: raise KeyboardInterrupt in batches.create after the provider has
+    taken the batch (`create_interrupt`); list batches (`decoy`: one more ended batch of another run);
+    answer every request even before the batch ends (`late_results`); and read the run folder's
+    batches.json at the first poll (`watch`)."""
+
+    def __init__(self, create_interrupt=False, decoy=False, late_results=False, watch=None, **kw):
+        super().__init__(**kw)
+        self.create_interrupt, self.decoy, self.late_results, self.watch = create_interrupt, decoy, late_results, watch
+        self.seen, self.results_read, self.created_at, self.at_create = None, 0, {}, None
+        self.batches.list = self._list
+
+    def _create(self, requests):
+        if self.watch is not None and self.at_create is None:
+            # what a crash at this moment would leave on disk (the process gone, no handler run)
+            path = Path(self.watch) / "batches.json"
+            self.at_create = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        batch = super()._create(requests)
+        self.created_at[batch.id] = datetime.now(timezone.utc)
+        if self.create_interrupt and len(self.batch_requests) == 1:
+            raise KeyboardInterrupt()
+        return batch
+
+    def _retrieve_batch(self, batch_id):
+        if self.watch is not None and self.seen is None:
+            self.seen = json.loads((Path(self.watch) / "batches.json").read_text(encoding="utf-8"))
+        return super()._retrieve_batch(batch_id)
+
+    def _ended(self, batch_id):
+        if batch_id == "msgbatch_decoy":
+            return True
+        return super()._ended(batch_id)
+
+    def _results(self, batch_id):
+        self.results_read += 1
+        if batch_id == "msgbatch_decoy":
+            requests = self.batch_requests[0]
+            return [SimpleNamespace(custom_id="rDECOYDECOY12_" + r["custom_id"][14:], result=SimpleNamespace(type="errored"))
+                    for r in requests]
+        if self.late_results:
+            saved, self.cancelled = self.cancelled, []
+            try:
+                return super()._results(batch_id)
+            finally:
+                self.cancelled = saved
+        return super()._results(batch_id)
+
+    def _list(self, limit=20):
+        out = [SimpleNamespace(id=b, created_at=self.created_at[b], processing_status="ended")
+               for b in self.created_at]
+        if self.decoy:
+            out.append(SimpleNamespace(id="msgbatch_decoy", created_at=datetime.now(timezone.utc), processing_status="ended"))
+        return out
+
+
+B_PRICES = {"input_per_mtok": 2.5, "output_per_mtok": 12.5}
+
+
+def interrupted(call):
+    try:
+        call()
+    except KeyboardInterrupt:
+        return True
+    return False
+
+
+def proof_batch_create_interrupt_keeps_worst(mod=cr):
+    """A KeyboardInterrupt in batches.create (the provider took the batch, no id came back): the close
+    line keeps every call of the batch at its worst case with the run's custom-id prefix; batches.json
+    holds the record; `reconcile` finds the batch by its prefix among another run's; a resume sends none
+    of those calls again."""
+    with sandbox() as box:
+        client = RoundTwoClient(create_interrupt=True, decoy=True, watch=box.runs / "lost")
+        raised = interrupted(lambda: go_batch(box, client, cap=5.0, name="lost", mod=mod))
+        close = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "lost"][-1]
+        worst = cr.worst_case(1000, 1000, B_PRICES)
+        held = json.loads((box.runs / "lost" / "batches.json").read_text(encoding="utf-8"))
+        m = measurement(box, "lost")
+        found = mod.reconcile(box.runs / "lost", client)
+        outcome = found["batches"][0]
+        again = RoundTwoClient()
+        r = go_batch(box, again, cap=5.0, name="after", resume_from=box.runs / "lost", mod=mod)
+        resent = {req["custom_id"][14:] for req in again.batch_requests[0]} & {req["custom_id"][14:] for req in client.batch_requests[0]} if again.batch_requests else set()
+        ok = (raised and abs(close["spent_usd"] - 8 * worst) < 1e-6 and close["batch_ids"] == [None]
+              and close["batch_custom_id_prefixes"] == [held[0]["custom_id_prefix"]]
+              and held[0]["status"].startswith("create interrupted") and client.at_create
+              and client.at_create[0].get("custom_id_prefix") == held[0]["custom_id_prefix"]
+              and client.at_create[0].get("status") == "sending" and sum(1 for x in m["rows"] if x.get("no_answer")) == 8
+              and outcome["outcome"] == "found" and outcome["found"][0]["id"] == "msgbatch_fixture1"
+              and not resent and r["carried_no_answer"] == 8)
+        return ok, ("interrupted %s, close %.4f (8 x %.4f), ids %s, record %r, reconcile %s %s, resumed %d carried, "
+                    "%d resent" % (raised, close["spent_usd"], worst, close["batch_ids"], held[0]["status"][:20],
+                                   outcome["outcome"], [f["id"] for f in outcome.get("found", [])],
+                                   r["carried_no_answer"], len(resent)))
+
+
+def proof_resume_keeps_no_answer(mod=cr):
+    """A resume does not send the earlier run's no_answer calls; --resend-no-answer sends them."""
+    with sandbox() as box:
+        go_batch(box, FakeBatchClient(missing=(1, 2)), cap=5.0, name="first", mod=mod)
+        held = FakeClient()
+        kept = go(box, held, cap=5.0, name="kept", resume_from=box.runs / "first", mod=mod)
+        sent = FakeClient()
+        again = go(box, sent, cap=5.0, name="again", resume_from=box.runs / "first", resend_no_answer=True, mod=mod)
+        carried = [x for x in kept["rows"] if x.get("no_answer")]
+        ok = (len(held.created) == 0 and kept["carried_no_answer"] == 4 and len(carried) == 4
+              and all(x["cost_usd"] == 0.0 for x in carried) and len(sent.created) == 4 and again["carried_no_answer"] == 0)
+        return ok, "resumed: %d sent, %d carried; with --resend-no-answer: %d sent" % (
+            len(held.created), kept["carried_no_answer"], len(sent.created))
+
+
+def proof_late_results_stay_worst(mod=cr):
+    """A batch given up before it ended keeps every call at its worst case, though the provider would
+    answer them later: its results are not read in the run, and reconcile records what it later billed
+    without changing the spend line."""
+    with sandbox() as box:
+        client = RoundTwoClient(ends_after=None, cancel_ends=False, late_results=True)
+        m = go_batch(box, client, deadline=600, cap=5.0, name="late", mod=mod)
+        worst = cr.worst_case(1000, 1000, B_PRICES)
+        rows = batch_rows(m)
+        close = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "late"][-1]
+        read_in_run = client.results_read
+        client.cancel_ends = True   # the provider ends it later
+        found = mod.reconcile(box.runs / "late", client)["batches"][0]
+        after = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "late"][-1]
+        ok = (read_in_run == 0 and all(x.get("no_answer") and x["cost_usd"] == round(worst, 6) for x in rows)
+              and abs(close["spent_usd"] - 8 * worst) < 1e-6 and found["outcome"] == "ended after it was given up"
+              and found["billed_usd"] > 0 and after == close)
+        return ok, "results read in the run %d; %d calls at %.4f; close %.4f; reconcile %r billed %s" % (
+            read_in_run, len(rows), worst, close["spent_usd"], found["outcome"], found.get("billed_usd"))
+
+
+def proof_batch_id_written_at_once(mod=cr):
+    """batches.json names the batch id while the batch is still running, before any result."""
+    with sandbox() as box:
+        client = RoundTwoClient(watch=box.runs / "watched")
+        go_batch(box, client, cap=5.0, name="watched", mod=mod)
+        seen = client.seen or [{}]
+        ok = seen[0].get("id") == "msgbatch_fixture1" and seen[0].get("status") == "in_progress"
+        return ok, "at the first poll batches.json read %r" % ({k: seen[0].get(k) for k in ("id", "status")},)
+
+
+def proof_reserve_rates_safe_side(mod=cr):
+    """A marked call's worst case counts every input token at the higher of the input and the 1-hour
+    write rate; an unmarked call at the input rate."""
+    with sandbox() as box:
+        client = FakeBatchClient(system_tokens=2000)
+        m = go(box, client, cap=5.0, name="reserve", mod=mod)
+        marked = cr.worst_case(1000, 1000, {"input_per_mtok": 10.0, "output_per_mtok": 25.0})
+        plain = cr.worst_case(1000, 1000, {"input_per_mtok": 5.0, "output_per_mtok": 25.0})
+        rows = m["rows"]
+        ok = (all(x["worst_case_usd"] == round(marked if x.get("cache_ttl") else plain, 6) for x in rows)
+              and any(x.get("cache_ttl") for x in rows) and any(not x.get("cache_ttl") for x in rows))
+        return ok, "marked calls reserved at %.4f, unmarked at %.4f: %s" % (marked, plain, sorted({x["worst_case_usd"] for x in rows}))
+
+
+def proof_batch_deadline_below_expiry(mod=cr):
+    """A batch deadline at the provider's 24-hour expiry is refused before any request; just below it runs."""
+    with sandbox() as box:
+        client = FakeBatchClient()
+        why = stopped(lambda: go_batch(box, client, deadline=24 * 3600, cap=5.0, name="day", mod=mod))
+        fine = go_batch(box, FakeBatchClient(), deadline=24 * 3600 - 60, cap=5.0, name="under", mod=mod)
+        ok = bool(why) and "expiry" in why and not client.batch_requests and not client.counted and fine["sent"] == 16
+        return ok, "24 h: %r; just under: sent %d" % (why, fine["sent"])
+
+
+def proof_batch_limits_refuse(mod=cr):
+    """A batch over the recorded request count or byte size is refused before it is sent."""
+    with sandbox() as box:
+        out = []
+        for name, change in (("count", {"max_requests": 3}), ("bytes", {"max_bytes": 100})):
+            row = json.loads(json.dumps(FIXTURE_ROW))
+            row["batch_limits"].update(change)
+            box.prices.write_text(json.dumps({"models": {registry_model(): row}}), encoding="utf-8")
+            client = FakeBatchClient()
+            why = stopped(lambda: go_batch(box, client, cap=5.0, name=name, mod=mod))
+            out.append((bool(why) and "over the provider's limit" in why and not client.batch_requests, why))
+        return all(o[0] for o in out), "; ".join(repr(o[1])[:90] for o in out)
+
+
+def proof_cache_write_split_must_add_up(mod=cr):
+    """Cache writes whose durations do not add up to the reported total cannot be priced: the run stops."""
+    bad = usage_reply(input_tokens=10, output_tokens=5, cache_creation_input_tokens=500,
+                      cache_creation=SimpleNamespace(ephemeral_5m_input_tokens=100, ephemeral_1h_input_tokens=100))
+    unit = stopped(lambda: mod.usage_cost(bad, RATES), mod.Unpriceable)
+    with sandbox() as box:
+        m = go_batch(box, FakeBatchClient(usage_fields={
+            "cache_creation_input_tokens": 500,
+            "cache_creation": SimpleNamespace(ephemeral_5m_input_tokens=100, ephemeral_1h_input_tokens=100)}),
+            cap=5.0, name="split", mod=mod)
+    ok = bool(unit) and "not the sum" in (m["stopped"] or "")
+    return ok, "unit %r; run %r" % (unit, (m["stopped"] or "")[:80])
+
+
+def _params_for_before_d610(prompt, model):
+    # The function as it stood at 53b3e25d (before D-610), copied verbatim: the golden body.
+    """The request a prompt becomes: its user turn, and its system turn when it has one."""
+    system, user = cr.turns(prompt)
+    params = {"model": model, "messages": [{"role": "user", "content": user}]}
+    if system is not None:
+        params["system"] = system
+    return params
+
+
+def proof_unmarked_bodies_as_before(mod=cr):
+    """With nothing marked, every single-route body is, byte for byte as JSON, what the module sent
+    before D-610: messages.create(max_tokens=allowance, **params_for(p, model))."""
+    with sandbox() as box:
+        client = FakeClient()
+        go(box, client, cap=5.0, name="golden", mod=mod)
+        prompts = {p["user"]: p for p in box.value["prompts"]}
+        golden = [json.dumps(dict(max_tokens=int(prompts[b["messages"][0]["content"]]["max_new_tokens"]),
+                                  **_params_for_before_d610(prompts[b["messages"][0]["content"]], registry_model())),
+                             sort_keys=True) for b in client.created]
+        sent = [json.dumps(b, sort_keys=True) for b in client.created]
+        ok = sent == golden and len(sent) == 16
+        return ok, "%d bodies, identical to the pre-D-610 body: %s" % (len(sent), sent == golden)
+
+
+def proof_batch_close_line_read_by_the_readers(mod=cr):
+    """A batch run's close line (route, rates, batch_ids, custom-id prefixes) is read as spend by the
+    spend reader (state, api_room), passes the standing-orders API check, and counts in the reaper's
+    API warning; its fields are all declared in CLOSE_LINE_FIELDS."""
+    import cloud_reference_spend as spend
+    import instance_reaper
+    import standing_orders_check
+    with sandbox() as box:
+        m = go_batch(box, FakeBatchClient(), cap=5.0, name="readers", mod=mod)
+        close = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "readers"][-1]
+        figures = spend.state(box.store)
+        room = spend.api_room(box.store, cr.SCHEMA, 1.0)
+        ctx = SimpleNamespace(private_text=lambda name: (box.store.parent / name).read_text(encoding="utf-8")
+                              if (box.store.parent / name).exists() else None)
+        api_ok, api_detail = standing_orders_check.check_api_key(ctx, names=["given by a proof"])
+        lines = box.store.read_text(encoding="utf-8")
+        box.store.write_text(lines + json.dumps({"event": "ceiling", "time_utc": "2026-11-13T12:00:00+00:00",
+                                                 "ceiling_usd": 60.0, "warning_usd": 0.01}) + "\n", encoding="utf-8")
+        due = instance_reaper.warnings_due({}, box.store)
+        undeclared = sorted(set(close) - set(cr.CLOSE_LINE_FIELDS))
+        ok = (close["route"] == "batch" and close["batch_ids"] == ["msgbatch_fixture1", "msgbatch_fixture2"]
+              and abs(figures["spent_usd"] - m["spent_usd"]) < 1e-9 and room["ok"]
+              and abs(room["spent_usd"] - m["spent_usd"]) < 1e-9 and api_ok and not undeclared
+              and any(k == "API" and abs(s - m["spent_usd"]) < 1e-9 for k, _, s, _ in due))
+        return ok, "state %.4f, api_room ok %s, api check %s (%s), reaper API warning %s, undeclared %s" % (
+            figures["spent_usd"], room["ok"], api_ok, api_detail[:60], [d[0] for d in due], undeclared)
+
+
+# ---------------------------------------------------------------------------
+# D-610, the checker's round 2
+
+
+class FollowInterruptClient(RoundTwoClient):
+    """The provider takes the batch; the run is interrupted at the first read of it."""
+
+    def _retrieve_batch(self, batch_id):
+        raise KeyboardInterrupt()
+
+
+def proof_interrupt_while_following(mod=cr):
+    """A KeyboardInterrupt while the batch is followed (after create): the batch is cancelled once, every
+    planned call is a no_answer at its worst case in the run and its close line, and a resume sends none
+    of them again."""
+    with sandbox() as box:
+        client = FollowInterruptClient()
+        raised = interrupted(lambda: go_batch(box, client, cap=5.0, name="followed", mod=mod))
+        worst = cr.worst_case(1000, 1000, B_PRICES)
+        m = measurement(box, "followed")
+        close = [l for l in store_lines(box) if l.get("event") == "close" and l.get("run_folder") == "followed"][-1]
+        held = json.loads((box.runs / "followed" / "batches.json").read_text(encoding="utf-8"))
+        again = RoundTwoClient()
+        r = go_batch(box, again, cap=5.0, name="after", resume_from=box.runs / "followed", mod=mod)
+        first = {q["custom_id"][14:] for q in client.batch_requests[0]}
+        resent = sum(1 for req in again.batch_requests for q in req if q["custom_id"][14:] in first)
+        lost = [x for x in m["rows"] if x.get("no_answer")]
+        ok = (raised and client.cancelled == ["msgbatch_fixture1"] and len(lost) == 8
+              and all(x["cost_usd"] == round(worst, 6) and x["batch_id"] == "msgbatch_fixture1" for x in lost)
+              and abs(close["spent_usd"] - 8 * worst) < 1e-6 and close["batch_ids"] == ["msgbatch_fixture1"]
+              and held[0]["status"].startswith("interrupted while followed") and resent == 0
+              and r["carried_no_answer"] == 8)
+        return ok, "interrupted %s, cancelled %s, %d no_answer at %.4f, close %.4f, resumed %d carried, %d resent" % (
+            raised, client.cancelled, len(lost), worst, close["spent_usd"], r["carried_no_answer"], resent)
+
+
+def proof_gate_plan_batch_figures(mod=cr):
+    """On invented groups, the gate plan's batch_worst_case_usd and batch_expected_usd are the sums of the
+    groups' token estimates (x COUNT_MARGIN for the worst case) and allowances, or measured output, at
+    the recorded batch rates."""
+    import gate_score
+    with sandbox() as box:
+        set_file, prompts = gate_files(box.tmp, pad=" padding" * 40000)
+        measured = {"source": "fixture", "judge_direct": 300.0, "judge_reason": 700.0}
+        with patch.object(gate_score, "CLAIM_SET_SHA256", cr.sha(set_file)):
+            plan = mod.gate_plan(prompts, set_file, prices_path=box.prices, store=box.store, measured=measured,
+                                 held=held_for(prompts), rebuild=rebuild_copy)
+        value = json.loads(prompts.read_text(encoding="utf-8"))
+    worst, expected = {}, {}
+    for g in cr.GROUP_ORDER:
+        mine = [p for p in value["prompts"] if p["group"] == g]
+        tokens = round(sum(len(p["system"]) + len(p["user"]) for p in mine) / 4 * 1.35)
+        allowance = sum(p["max_new_tokens"] for p in mine)
+        worst[g] = (tokens * 1.10 * 2.5 + allowance * 12.5) / 1e6
+        expected[g] = (tokens * 2.5 + measured[g] * len(mine) * 12.5) / 1e6
+    forms = plan["forms"]
+    both = ("judge_direct", "judge_reason")
+    ok = (forms["direct"]["batch_worst_case_usd"] == round(worst["judge_direct"], 2)
+          and forms["direct"]["batch_expected_usd"] == round(expected["judge_direct"], 2)
+          and forms["direct_and_reasoning"]["batch_worst_case_usd"] == round(sum(worst[g] for g in both), 2)
+          and forms["direct_and_reasoning"]["batch_expected_usd"] == round(sum(expected[g] for g in both), 2)
+          and forms["direct_and_reasoning"]["batch_worst_case_usd"] < forms["direct_and_reasoning"]["worst_case_usd"])
+    return ok, "batch worst %s, batch expected %s (wanted %s and %s)" % (
+        {k: v.get("batch_worst_case_usd") for k, v in forms.items()},
+        {k: v.get("batch_expected_usd") for k, v in forms.items()},
+        (round(worst["judge_direct"], 2), round(sum(worst[g] for g in both), 2)),
+        (round(expected["judge_direct"], 2), round(sum(expected[g] for g in both), 2)))
+
+
+def _gate_swap(proof, passage, replacement):
+    @contextlib.contextmanager
+    def swap():
+        mod = _gate_module_with(passage, replacement)
+        original = PROOFS_BY_NAME[proof]
+        globals()[proof] = lambda: original(mod)
+        try:
+            yield
+        finally:
+            globals()[proof] = original
+    return swap
+
+
 PROOFS = [
+    ("the gate mode sends B1's own prompts of the frozen claim set alone, every item in both groups",
+     proof_gate_claim_set_only),
+    ("the gate mode keeps every guard of the paid run", proof_gate_run_keeps_the_guards),
+    ("the gate plan gives the worst case per group and form at the recorded prices, no client, no write",
+     proof_gate_plan_at_recorded_prices),
+    ("gate-prompts keeps the b1 prompts doc_judge builds, ids unchanged", proof_gate_prompts_keep_b1_alone),
+    ("the gate prompts file must be the one rebuilt from the named held build", proof_gate_prompts_pinned_to_held),
+    ("a gate run resumes only a gate run on the same prompts, set and model, none sent twice", proof_gate_resume),
+    ("the gate mode's CLI rules", proof_gate_cli_rules),
     ("half B (C's own split) is never sent, and asking for it is refused", proof_half_b_refused),
     ("the prompts must be C's universe on the pinned items file", proof_universe_is_c_s),
     ("the cap stops a group before it starts, and nothing passes it", proof_cap_stops_before_spend),
@@ -1104,7 +2003,34 @@ PROOFS = [
     ("the spend store is found from git, never from the working folder", proof_store_found_from_git_not_cwd),
     ("the price table's digest is recorded", proof_prices_digest_recorded),
     ("the deprecations page reading must be \"<url>, <date>, not deprecated\"", proof_deprecation_reading_has_its_form),
-    ("a usage reporting cache writes stops the run, the call at its worst case", proof_cache_writes_stop_the_run),
+    ("a cache write with no duration reported and no cache mark sent stops the run, the call at its worst case",
+     proof_cache_writes_stop_the_run),
+    ("D-610: every batch request is, byte for byte, the single route's request for the same prompt",
+     proof_batch_bytes_equal_single),
+    ("D-610: the batch route reserves and checks each worst case at the recorded batch rates; the spend line names "
+     "the route, the rates and the batch ids", proof_batch_reserve_at_batch_price),
+    ("D-610: a batch past its deadline is cancelled and recorded, and one that never ends is given up within the "
+     "grace, every call at its worst", proof_batch_deadline_cancels),
+    ("D-610: results joined by custom id; a missing or errored result is a recorded no_answer, never sent again",
+     proof_batch_missing_result_is_no_answer),
+    ("D-610: cache reads and writes priced from the usage by duration; only a repeated prefix at the minimum is marked",
+     proof_cache_priced),
+    ("D-610: a usage field that cannot be priced stops the run, the call at its worst case", proof_unpriceable_usage_halts),
+    ("D-610: an interrupted batch request keeps its calls at their worst case, and reconcile finds the batch by its "
+     "prefix", proof_batch_create_interrupt_keeps_worst),
+    ("D-610: a resume never sends the earlier run's no_answer calls unless asked", proof_resume_keeps_no_answer),
+    ("D-610: a given-up batch's later results leave its calls at their worst case", proof_late_results_stay_worst),
+    ("D-610: batches.json names the batch id while it runs", proof_batch_id_written_at_once),
+    ("D-610: a marked call is reserved at the higher of the input and write rates", proof_reserve_rates_safe_side),
+    ("D-610: the batch deadline must be below the provider's expiry", proof_batch_deadline_below_expiry),
+    ("D-610: a batch over the recorded limits is refused before it is sent", proof_batch_limits_refuse),
+    ("D-610: cache writes whose durations do not add up stop the run", proof_cache_write_split_must_add_up),
+    ("D-610: unmarked single-route bodies are the bodies before D-610", proof_unmarked_bodies_as_before),
+    ("D-610: a batch close line is read by the spend reader, the API check and the reaper's warning",
+     proof_batch_close_line_read_by_the_readers),
+    ("D-610: an interrupt while the batch is followed cancels it and keeps every call a no_answer at its worst",
+     proof_interrupt_while_following),
+    ("D-610: the gate plan's batch figures are the sums at the recorded batch rates", proof_gate_plan_batch_figures),
     ("a provider refusal (no credit) stops the run cleanly at once", proof_no_credit_stops_cleanly),
     ("the reading keeps half A only", proof_reading_keeps_half_a),
     ("the key is the credential file's alone; the environment's key variables are removed, never sent",
@@ -1155,12 +2081,12 @@ def _sent_twice(original):
 def _no_finally():
     """The module with its try/finally made a plain block after the try: an exception skips the write."""
     source = Path(cr.__file__).read_text(encoding="utf-8")
-    needle = "    finally:\n        measurement = {"
+    needle = "    finally:\n        measurement = dict(scope, **{"
     if source.count(needle) != 1:
         raise RuntimeError("the finally moved, so the neutralisation cannot be applied")
     mod = types.ModuleType("cloud_reference_no_finally")
     mod.__file__ = cr.__file__
-    exec(compile(source.replace(needle, "    if True:\n        measurement = {"), cr.__file__, "exec"), mod.__dict__)
+    exec(compile(source.replace(needle, "    if True:\n        measurement = dict(scope, **{"), cr.__file__, "exec"), mod.__dict__)
     return mod
 
 
@@ -1223,6 +2149,40 @@ def _python_mode_record(client, model):
 PROOFS_BY_NAME = {f.__name__: f for _, f in PROOFS}
 
 NEUTRALISATIONS = [
+    ("the claim set's pin not compared", "proof_gate_claim_set_only",
+     _gate_swap("proof_gate_claim_set_only", "refuse(sha(set_file) == pin,", "refuse(True or sha(set_file) == pin,")),
+    ("a group's items not held to the claim set", "proof_gate_claim_set_only",
+     _gate_swap("proof_gate_claim_set_only", "and set(ids) == set(listed),", "or True,")),
+    ("a prompt of another form admitted", "proof_gate_claim_set_only",
+     _gate_swap("proof_gate_claim_set_only", 'refuse(all(p.get("form") == B1_FORM for p in value["prompts"]),', "refuse(True,")),
+    ("the prompt scan removed in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "scan", lambda prompts, key: None)),
+    ("Seckin's yes not checked in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "check_approval", lambda named, path: {"heading": str(named)})),
+    ("the API ceiling not read in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "check_cap", lambda cap, store, ledgers=None, now=None, *, kind: {"left_usd": 999.0})),
+    ("the gate plan with no margin on the token estimate", "proof_gate_plan_at_recorded_prices",
+     lambda: patch.object(cr, "COUNT_MARGIN", 1.0)),
+    ("the gate plan not reading the store", "proof_gate_plan_at_recorded_prices",
+     lambda: patch.object(cr.spend, "api_room", lambda store, kind, worst: (_ for _ in ()).throw(cr.spend.SpendStoreError("x")))),
+    ("the gate prompts' text not pinned to the held build", "proof_gate_prompts_pinned_to_held",
+     _gate_swap("proof_gate_prompts_pinned_to_held", "refuse(digest == sha(prompts_path),", "refuse(True,")),
+    ("the set digest not read on a gate resume", "proof_gate_resume",
+     _gate_swap("proof_gate_resume", 'resume_digests["gate_set_sha256"] = scope["gate_set_sha256"]', "pass")),
+    ("the gate resume read by the J1 kind", "proof_gate_resume",
+     _gate_swap("proof_gate_resume", "kind=kind, model=model, digests=resume_digests", "kind=SCHEMA, model=model, digests=resume_digests")),
+    ("--measured-output admitted outside the gate mode", "proof_gate_cli_rules",
+     lambda: patch.object(cr.argparse.ArgumentParser, "error", (lambda original: lambda self, message: None
+                          if "belong to the gate mode" in message else original(self, message))(cr.argparse.ArgumentParser.error))),
+    ("the recorded prices not compared in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "check_prices", lambda prices, model, path: prices)),
+    ("every live status accepted in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "resolve", lambda configured, available: ("exact", configured))),
+    ("any deprecations reading accepted in the gate mode", "proof_gate_run_keeps_the_guards",
+     lambda: patch.object(cr, "DEPRECATION_FORM", re.compile(r".*", re.S))),
+    ("gate-prompts keeping every form", "proof_gate_prompts_keep_b1_alone",
+     _gate_swap("proof_gate_prompts_keep_b1_alone",
+                'value["prompts"] if p.get("form") == B1_FORM]', 'value["prompts"]]')),
     ("the split puts every document in half A", "proof_half_b_refused", lambda: patch.object(cr, "halves", _all_in_half_a)),
     ("the universe not compared", "proof_universe_is_c_s", lambda: patch.object(cr, "universe", _unchecked_universe)),
     ("worst case counted as nothing", "proof_cap_stops_before_spend",
@@ -1230,7 +2190,8 @@ NEUTRALISATIONS = [
     ("the check before each call removed", "proof_per_call_check_holds_alone",
      lambda: patch.object(cr, "call_fits", lambda spent, worst, cap: True)),
     ("a reply with no usage counted as free", "proof_failed_and_unread_calls_count_worst",
-     lambda: patch.object(cr, "usage_tokens", lambda reply: (0, 0))),
+     lambda: patch.object(cr, "usage_cost", lambda reply, rates, **kw: {"cost_usd": 0.0, "input_tokens": 0,
+                                                                          "output_tokens": 0})),
     ("a failed count_tokens ignored", "proof_count_tokens_failing_stops",
      lambda: patch.object(FakeClient, "count_tokens", lambda self, **p: SimpleNamespace(input_tokens=1000))),
     ("a failed call sent again", "proof_no_retry", lambda: patch.object(cr, "call_one", _sent_twice(cr.call_one))),
@@ -1291,7 +2252,83 @@ NEUTRALISATIONS = [
     ("a document from the prompts, not the keys", "proof_universe_is_c_s",
      lambda: patch.object(cr, "universe", lambda value, items, keys: ({p["document_id"]: {"benchmark": p["benchmark"]} for p in value["prompts"]}, set()))),
     ("cache writes read as none", "proof_cache_writes_stop_the_run",
-     lambda: patch.object(cr, "usage_tokens", (lambda original: lambda reply: dict(original(reply), cache_write=0) if original(reply) else None)(cr.usage_tokens))),
+     lambda: _swap("proof_cache_writes_stop_the_run", _module_with(
+         "        if not ttl:\n            raise Unpriceable(", "        if False:\n            raise Unpriceable("))),
+    ("D-610: the batch request built without the single route's body", "proof_batch_bytes_equal_single",
+     lambda: _swap("proof_batch_bytes_equal_single", _module_with(
+         '"params": request_for(p, model, ttl)}', '"params": dict(params_for(p, model), max_tokens=int(p["max_new_tokens"]))}'))),
+    ("D-610: the batch route reserved at the single rates", "proof_batch_reserve_at_batch_price",
+     lambda: patch.object(cr, "route_rates", (lambda original: lambda prices, route: original(prices, "single"))(cr.route_rates))),
+    ("D-610: the batch deadline never acted on", "proof_batch_deadline_cancels",
+     lambda: _swap("proof_batch_deadline_cancels", _module_with(
+         "        if not cancelled and now >= deadline:", "        if False:"))),
+    ("D-610: the batch given up never after a cancel", "proof_batch_deadline_cancels",
+     lambda: _swap("proof_batch_deadline_cancels", _module_with(
+         "        elif cancelled and now >= give_up:", "        elif False:"))),
+    ("D-610: a missing result counted as free", "proof_batch_missing_result_is_no_answer",
+     lambda: _swap("proof_batch_missing_result_is_no_answer", _module_with(
+         '" (the batch had not ended)"), worst,', '" (the batch had not ended)"), 0.0,'))),
+    ("D-610: results joined by their order, not their custom id", "proof_batch_missing_result_is_no_answer",
+     lambda: _swap("proof_batch_missing_result_is_no_answer", _module_with(
+         '                cid = _attr(item, "custom_id")', '                cid = list(plan_rows)[len(results)]'))),
+    ("D-610: cache reads priced at the input rate", "proof_cache_priced",
+     lambda: _swap("proof_cache_priced", _module_with(
+         'read * rates["cache_read_per_mtok"]', 'read * rates["input_per_mtok"]'))),
+    ("D-610: a prefix under the minimum marked", "proof_cache_priced",
+     lambda: _swap("proof_cache_priced", _module_with(
+         'if tokens >= rule["min_tokens"] else None', 'if tokens >= 0 else None'))),
+    ("D-610: unknown usage fields not read", "proof_unpriceable_usage_halts",
+     lambda: _swap("proof_unpriceable_usage_halts", _module_with("    if unknown:\n", "    if False:\n"))),
+    ("D-610: the interrupted batch's calls not kept in the run", "proof_batch_create_interrupt_keeps_worst",
+     lambda: _swap("proof_batch_create_interrupt_keeps_worst", _module_with(
+         '        rows.extend(state.pop("interrupted_rows", []))', '        pass'))),
+    ("D-610: batches.json not written before the request", "proof_batch_create_interrupt_keeps_worst",
+     lambda: _swap("proof_batch_create_interrupt_keeps_worst", _module_with(
+         '    write_json(Path(out) / "batches.json", state["batches"])\n    try:\n        batch = client.messages.batches.create(',
+         '    try:\n        batch = client.messages.batches.create('))),
+    ("D-610: reconcile not holding the results to the run's prefix", "proof_batch_create_interrupt_keeps_worst",
+     lambda: _swap("proof_batch_create_interrupt_keeps_worst", _module_with(
+         "if ids and all(i.startswith(prefix) for i in ids) and len(ids) == rec.get(\"requests\"):", "if ids:"))),
+    ("D-610: no_answer calls resent on a resume", "proof_resume_keeps_no_answer",
+     lambda: patch.object(cr, "no_answer_before", lambda earlier: {})),
+    ("D-610: a given-up batch's results read", "proof_late_results_stay_worst",
+     lambda: _swap("proof_late_results_stay_worst", _module_with(
+         '        if status == "ended":\n            try:\n                for item in client.messages.batches.results(record["id"]):',
+         '        if True:\n            try:\n                for item in client.messages.batches.results(record["id"]):'))),
+    ("D-610: the batch id written only at the end", "proof_batch_id_written_at_once",
+     lambda: _swap("proof_batch_id_written_at_once", _module_with(
+         '    record.update(id=str(_attr(batch, "id")), status=_attr(batch, "processing_status"))\n    write_json(Path(out) / "batches.json", state["batches"])\n',
+         '    record.update(id=str(_attr(batch, "id")), status=_attr(batch, "processing_status"))\n'))),
+    ("D-610: a marked call reserved at the input rate", "proof_reserve_rates_safe_side",
+     lambda: patch.object(cr, "reserve_rates", lambda rates, ttl: rates)),
+    ("D-610: any batch deadline admitted", "proof_batch_deadline_below_expiry",
+     lambda: _swap("proof_batch_deadline_below_expiry", _module_with(
+         '        refuse(batch_deadline_seconds < limits["expiry_hours"] * 3600,', '        refuse(True,'))),
+    ("D-610: the batch limits not checked", "proof_batch_limits_refuse",
+     lambda: _swap("proof_batch_limits_refuse", _module_with(
+         '    refuse(len(chosen) <= limits["max_requests"] and size <= limits["max_bytes"],', '    refuse(True,'))),
+    ("D-610: the durations' sum not checked", "proof_cache_write_split_must_add_up",
+     lambda: _swap("proof_cache_write_split_must_add_up", _module_with(
+         "        if five + hour != written:", "        if False:"))),
+    ("D-610: a single-route body changed", "proof_unmarked_bodies_as_before",
+     lambda: _swap("proof_unmarked_bodies_as_before", _module_with(
+         'return dict(params_for(prompt, model, cache_ttl), max_tokens=int(prompt["max_new_tokens"]))',
+         'return dict(params_for(prompt, model, cache_ttl), max_tokens=int(prompt["max_new_tokens"]), metadata={})'))),
+    ("D-610: a close line field undeclared", "proof_batch_close_line_read_by_the_readers",
+     lambda: patch.object(cr, "CLOSE_LINE_FIELDS", tuple(f for f in cr.CLOSE_LINE_FIELDS if f != "batch_ids"))),
+    ("D-610: the followed batch's calls not kept on an interrupt", "proof_interrupt_while_following",
+     lambda: _swap("proof_interrupt_while_following", _module_with(
+         '        state["interrupted_rows"] = rows + lost', '        state["interrupted_rows"] = rows'))),
+    ("D-610: the followed batch not cancelled on an interrupt", "proof_interrupt_while_following",
+     lambda: _swap("proof_interrupt_while_following", _module_with(
+         '                client.messages.batches.cancel(record["id"])\n                record["cancelled_on_interrupt"] = True',
+         '                record["cancelled_on_interrupt"] = False'))),
+    ("D-610: the gate plan's batch figures at the single rates", "proof_gate_plan_batch_figures",
+     lambda: _swap("proof_gate_plan_batch_figures", _module_with(
+         '"output_per_mtok": float(row["batch"]["output_per_mtok"])}', '"output_per_mtok": float(row["output_per_mtok"])}'))),
+    ("D-610: the service tier not read", "proof_unpriceable_usage_halts",
+     lambda: _swap("proof_unpriceable_usage_halts", _module_with(
+         "    if tier is not None and tier not in TIER_OF_ROUTE[route]:", "    if False:"))),
     ("a refusal taken for a passing failure", "proof_no_credit_stops_cleanly", lambda: patch.object(cr, "STOP_ERRORS", ())),
     ("the environment's key variables left in place", "proof_key_only_from_the_resolver",
      lambda: patch.object(cr, "KEY_ENVIRONMENT", ())),

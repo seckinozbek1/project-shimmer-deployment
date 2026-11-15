@@ -182,6 +182,86 @@ def system_arm(benchmark, runs, by_key, set_file) -> list:
     return rows
 
 
+CLOUD_KINDS = {"steering": "cloud-reference-steering", "paid": "cloud-reference-gate-v1"}
+
+
+def cloud_arm(benchmark, prompts, run_dir, by_key, set_file, group, *, steering) -> list:
+    """The cloud reference's arm for `figures`: one row {item_id, cluster, label, gold} per item of the
+    set file, from a pass of B1's own prompts (a `doc-judge-prompts-v1` file of form `b1`) on the
+    registry's Anthropic model, one group (`judge_direct` or `judge_reason`) at a time. Read through
+    B1's own reply reader (`judge_read.b1_rows`, a reply that ran to its allowance unreadable) and
+    labelled through the scorer as a B1 folder, as `cloud_reference.read` labels the reference; the
+    key is read by the scorer alone and the rows are returned, never written.
+
+    `steering` True reads a subscription steering check (D-S104 item 1) on the quick subset only: each
+    row carries `claim: false`, so `figures` refuses it on the claim set. False reads the paid run
+    (`cloud_reference.py run --gate-set`) on the claim set only, and refuses any steering mark."""
+    import tempfile
+    import claim_guard
+    import doc_judge
+    import judge_read
+    import reply_records
+    value = doc_judge.read_file(prompts)
+    run_dir = Path(run_dir)
+    measurement = json.loads((run_dir / "replay_measurement.json").read_text(encoding="utf-8"))
+    records = {r.get("call_id"): r for r in reply_records.records(run_dir / "audit" / "model_replies")}
+    marked = claim_guard.is_steering(measurement) or claim_guard.is_steering(list(records.values()))
+    set_sha256, listed = set_items(set_file, benchmark)
+    if steering:
+        if not (marked and measurement.get("kind") == CLOUD_KINDS["steering"]):
+            raise ValueError("not a subscription steering check: read it as the paid run")
+        if set_sha256 != QUICK_SET_SHA256 or measurement.get("subset_sha256") != set_sha256:
+            raise ValueError("a steering check is read on the quick subset it ran on, never the claim set")
+    else:
+        claim_guard.refuse_claim(measurement if claim_guard.is_steering(measurement) else list(records.values()),
+                                 "read as the cloud reference's gate figure")
+        if measurement.get("kind") != CLOUD_KINDS["paid"]:
+            raise ValueError("not a paid gate run of the cloud reference (cloud_reference.py run --gate-set)")
+        if set_sha256 != CLAIM_SET_SHA256 or measurement.get("gate_set_sha256") != set_sha256:
+            raise ValueError("the paid gate run is read on the claim set it ran on")
+    if measurement.get("prompts_sha256") != hashlib.sha256(Path(prompts).read_bytes()).hexdigest():
+        raise ValueError("the pass folder is not a pass of these prompts")
+    if group not in ("judge_direct", "judge_reason"):
+        raise ValueError("a cloud arm is one group: judge_direct or judge_reason")
+    by_prompt = {r["prompt_id"]: r for r in measurement.get("rows") or []}
+    bare = [r for r in judge_read.b1_rows(value, by_prompt, records) if r["group"] == group and r["benchmark"] == benchmark]
+    if sorted(r["item_id"] for r in bare) != sorted(listed):
+        raise ValueError("the prompts' %s items in group %s are not the set file's items" % (benchmark, group))
+    keys = sorted({str(by_key[d]) for d in set(listed.values())})
+    with tempfile.TemporaryDirectory(prefix="shimmer_gate_cloud_") as tmp:
+        scored = judge_read.label_rows(bare, keys, tmp, set(), "cloud_%s" % group)
+    spec = _adapter(benchmark).SPEC
+    rows = [{"item_id": r["item_id"], "cluster": listed[r["item_id"]], "label": spec.label(r["cls"]),
+             "gold": spec.label(r["gold"])} for r in scored]
+    if sorted(r["item_id"] for r in rows) != sorted(listed):
+        raise ValueError("the scorer did not label every item of the set file")
+    if steering:
+        rows = [dict(r, claim=False) for r in rows]
+    return rows
+
+
+def cloud_reference_arm(benchmark, prompts, run_dir, by_key, set_file, *, steering, setting=None):
+    """The cloud reference's arm for `figures` by B1's comparator rule (D-554): both groups read
+    (`cloud_arm`), each measured in the paper's metric (`measure`, ABSTAIN wrong; SciTab in the
+    declared setting) with its abstentions counted, and the group `choice_read.choose_group` picks
+    (the higher measure within D-241's abstain floor, a tie to judge_reason). Returns (rows, record);
+    refused when no group is a comparator."""
+    import choice_read
+    groups, rows = {}, {}
+    for group in choice_read.COMPARATORS:
+        rows[group] = cloud_arm(benchmark, prompts, run_dir, by_key, set_file, group, steering=steering)
+        value = measure(benchmark, [(r["label"], r["gold"]) for r in rows[group]], setting)
+        groups[group] = {"items": len(rows[group]), "abstain": sum(1 for r in rows[group] if r["label"] == metrics.ABSTAIN),
+                         "accuracy": value, "macro_f1": value}
+    chosen = choice_read.choose_group(benchmark, groups)
+    if chosen is None:
+        raise ValueError("no cloud group is a comparator: each is past D-241's abstain floor")
+    record = {"group": chosen, "rule": "B1's comparator rule (D-554, choice_read.choose_group)",
+              "groups": {g: {"value": round(v["accuracy"], 6), "abstain": v["abstain"], "items": v["items"]}
+                         for g, v in groups.items()}}
+    return rows[chosen], record
+
+
 def figures(benchmark, arms, set_file, setting=None, decision=None, seed=SEED) -> dict:
     """The one way a gate figure is made (audit gap 2): bound to the frozen set FILE, whose digest must
     be one of the two pins, and whose items the arms must score exactly, each under its own document. The
@@ -195,6 +275,10 @@ def figures(benchmark, arms, set_file, setting=None, decision=None, seed=SEED) -
         scored = {r["item_id"]: r["cluster"] for r in rows}
         if scored != listed:
             raise ValueError("arm %s does not score exactly the items of the set file it names" % name)
+    import claim_guard
+    if set_sha256 != QUICK_SET_SHA256:
+        for name, rows in arms.items():
+            claim_guard.refuse_claim(rows, "an arm of a claim read (arm %s)" % name)
     if set_sha256 == QUICK_SET_SHA256:
         out = compute(benchmark, arms, setting, seed=seed)
         out.update(read="steering only", set_sha256=set_sha256)

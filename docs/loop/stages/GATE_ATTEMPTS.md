@@ -452,3 +452,96 @@ marked "confirm".
 - **Proof output:** `docs/loop/stages/gate_attempts_proofs.txt`, each stage of each entry.
 - **measure/gate-k1:** a second commit corrects the `choice_decision` note; see the branch's tip.
   Section 8's commit id is the first of its two.
+
+## 10. The next attempt after the quick read of 13 November (D-564, D-565)
+
+Written before any of it runs, by Seckin's orders of 09:53 to 09:57 relayed at 10:35. The quick read voided every arm on execution integrity (line 2), so the next attempt must first pass line 2. Nothing sealed or running is changed; each step has a small test first; nothing is tuned on the quick subset (line 6): every fix is shown on development material, and the quick subset is read again only as a new attempt's steering read.
+
+| Step | What | Test before use | Owner | Kind (D-559) |
+|---|---|---|---|---|
+| 1 | **The incomplete analyses, cause per agent.** PROCESSOR's "Complete compact items envelope required; refusal is not acceptance" on the same 6 ContraDoc documents in K0 and K1, its incomplete JSON on one; SPEECH_ACT_TAGGER's missing `kind`; LEGAL_ANALYST's missing `verdict`; INST_FINDER and VERIFIER "response completeness not established". The cause per agent, from the runs' own records and the code (prompt size, allowance, the constraint, the contract), decides whether line 2 can pass. | each fix reproduced first on development documents of the same shape (never the quick subset), then the fix, then the same documents pass, with a neutralisation | quick-read (diagnosis), then a code lane per cause | the system's own |
+| 2 | **Sealing as the field does it.** Each large artefact (the 22 GB asset archive, model files, the wheelhouse) is fingerprinted once and recorded; a bundle references it by fingerprint instead of carrying or re-hashing it. Full verification stays possible: it runs whenever a file changes (size, modification time or a chunk digest) and once before the final read, so no check is skipped. Hashing chunked and parallel (BLAKE3, or per-chunk SHA-256 if the format must stay). Compression only where a small test shows it pays (the archive's compression ratio and decompress cost measured). Bundles sealed under the old format keep verifying from their own tree. | an A/B seal, old and new format, same inputs: identical members and member digests; a changed file (one byte, same size and time) caught by the chunk check; the full check before the final read run; the bound preflight and the controller's on-instance integrity passing | cloud-gate (lane/seal-speed) | packaging |
+| 3 | **Sealing on Lambda.** The 22 GB archive goes once to the Lambda persistent store (`shimmer-filesystem`). The budget ledger stays on the laptop, the only place totals are written; a read copy on Lambda is fine; Lambda reports its spend back to the laptop's ledger. The Lambda sealing route is built (a controller change, so bundles sealed before it verify from their own tree). Label separation is unchanged: keys are read only by the scorer, never on a sealing instance. | one bundle sealed on Lambda and the same bundle sealed on the laptop: identical members and digests (time and source-hash fields named); its caps equal those the laptop computes from the live ledger at the same moment; a stale read copy refused | cloud-gate, then one checker round | packaging (D-557, D-558; Seckin judges the old blockers minor next to the gain) |
+| 4 | **Batch the auditor's per-(unit, rule) calls.** One call carries several (unit, rule) questions where the contract allows, each answer still its own record. | on development documents: the same decisions, item for item, batched and unbatched, and the call count and time measured; a change in any decision is a new attempt's change, written first | a code lane | the system's own (speed) |
+| 5 | **Earlier speed-ups applied here.** The look-back of D-532 (AFTER_V1_PLAN, "Look back") and #241 read for anything that applies to this attempt. | each by its own small test | a Sonnet reader, then the owner of each | speed |
+
+- **Scout first (D-563).** Steps 2, 3 and 4 are non-trivial, so one Sonnet scout searches for established tools first (content-addressed artefact stores, BLAKE3 and chunked hashing, compression of model archives, batched judging) and reports before the build starts.
+- **The attempt's read.** Once step 1's fixes pass on development documents, K0 and K1 are re-sealed with them (steps 2 and 3 when proven, the old path otherwise) and read on the quick subset as a new steering read, under this section 3's rule unchanged.
+
+**Scout report for steps 2 to 4 (D-563, 13 November; Sonnet, read-only, generic searches; vendor figures unverified).**
+- **Step 2:** a change-detection hash cache keyed on size, modification time and path, plus parallel chunked SHA-256, keeping SHA-256 and a full verify before the final read. BLAKE3 is deferred to #244, because it changes every pin. Xet and ZipNN are skipped. Compression helps transfer only, never hashing: about 1.27x with zstd and 1.51x with ZipNN on BF16 weights. A read-only throughput measurement (sequential read, then SHA-256 of the same file) comes first, to show whether hashing or the disk is the limit.
+- **Step 3:** no established cost-capped remote runner was found. in-toto, SLSA and sigstore attest builds, not spend. Our guard, reaper and ledger stay the design.
+- **Step 4:** batched greedy generation in transformers is not guaranteed byte-identical to unbatched; several reports show batch size and padding changing output. Batch-invariant kernels cost 34 to 60 percent of throughput and target vLLM. vLLM and SGLang prefix caching change the numerics. So step 4 starts with a byte-identity replay test. If any reply changes, the unbatched path stays, or the change is a new attempt's, measured as such.
+
+**Step 1, causes per agent (quick-read, 10:38; from telemetry, reply-record metadata and violation headers only, no reply or payload text read; probe in quick-read's scratchpad).** Recorded in D-566.
+| Failure | Where | Cause | Shared or specific | Site |
+|---|---|---|---|---|
+| A. PROCESSOR refusal, "Complete compact items envelope required" | 6 ContraDoc and 1 SciTab document; byte-identical in K0 and K1 | the model chooses the refusal object, which the constraint admits by design (0 interventions, eos, 598 to 813 prompt tokens against 1,536); always the document's LAST partition, in 6 of 7 a single owned span (the 2-span cut leaves a 1-span remainder) | shared pattern | compact_contracts.request_size (owned_spans_per_request 2), the refusal branch of contract_decoding, the validator's refusal check |
+| B. PROCESSOR incomplete JSON | 1 ContraDoc document, both configurations | runaway list to the 1,536 cap inside the constrained language (DECODING-B's stated limit) | specific | the allowance; no repetition stop |
+| C. SPEECH_ACT_TAGGER items[0].kind missing | 3 SciTab tables in K1, 1 in K0 | not a declared envelope agent, so unconstrained; eos at 84 to 92 tokens; the same class as EDITOR_CLERK's before DECODING-B | shared | config/envelope_decoding.json |
+| D. LEGAL_ANALYST items[0].verdict missing | 1 SciTab table, K0 | as C | specific | config/envelope_decoding.json |
+| E. INST_FINDER completeness | 1 ContraDoc document, K0 only | cap hit 2,048, truncated | specific | INST_FINDER's allowance |
+| F. VERIFIER completeness | 1 ContraDoc document, K0 | cap hit 4,096 on an 18,528-token prompt (D-134's open case) | specific | VERIFIER_MAX_TOKENS, the payload size |
+
+Measurements, each on development runs only (never the quick subset), in this order:
+1. **C and D, no GPU:** `tools/envelope_decoding_measure.py` over every saved SPEECH_ACT_TAGGER and LEGAL_ANALYST reply of the development runs, with the Qwen tokenizer. If every valid reply is inside the language and every failed one leaves it, the two agents are declared with their measured `leading_keys`, then replayed on the A10 (rule: no valid reply changes), as R2a and R2b did.
+2. **A:** the development PROCESSOR prompts are rebuilt, keeping each last partition, and replayed on the A10 (sdpa_constrained). Refusals are counted by owned-span count. If single-span tails refuse at a similar rate, two fixes are tested on the same prompts:
+   - (a) a cut that leaves no 1-span remainder. This needs a decision, since EXTRACTION-C set the request size from the DEV rows.
+   - (b) a constraint that removes refusal where every owned span can be cited. This needs the DEV re-measure: 102 of 102 items, 75 of 84 valid.
+3. **B, E, F:** cap hits counted per agent over the development telemetry, and the cap-hit prompts replayed at a larger allowance. A larger allowance is adopted only where replies end by themselves and pass the unchanged validator, with peak VRAM measured.
+
+## 11. Raising the score before the real test (D-567, Seckin 10:36 to 10:44, 13 November)
+
+Written before any of it runs. Scope until 14 November: only low-change, high-return steps. Longer ones go to AFTER_V1_PLAN.
+**The hard rule for all of it (L separation, D-559):**
+- Every improvement is developed and measured on a separate development set of the same benchmarks, never on the frozen gate set. That set is G1's rows and the development builds the leakage check kept apart from the gate set.
+- No gate-set label, item identity or failure-by-item reaches a builder or tuner. Section 10's per-agent causes are failure types, read from records with no answer seen. A fix made by failure type is allowed; a fix aimed at a gate item is not.
+- Heavy work (development runs, optimisation, measurements) runs on Lambda, split across machines within the caps. Only P material stays local.
+
+| Order | Step | Small test first | Owner |
+|---|---|---|---|
+| 1 | **Retry an incomplete or refused step.** A step that ends incomplete, or whose envelope is refused, is asked once more with the document in smaller pieces (for example one owned span per request). Before any call, the document's length is checked against the context and the output caps (one reply was cut off). Deterministic decoding repeats the same input byte for byte (D-061), so the retry must change the input, never just re-ask it. | development documents with the same failure types (section 10, step 1): refusals and cap hits fall, and no valid reply changes | a code lane |
+| 1 | **2b. Route by document type.** Tables do not run the legal-document agents that fail there (SPEECH_ACT_TAGGER's `kind`, LEGAL_ANALYST's `verdict`). The chain that fits a table is chosen, and the required fields of the agents that stay are fixed (the envelope constraint, section 10). **Governance:** where Python's existing selection already makes no call (INFRA-050: a unit Python selects nothing in makes no call; no declared act set, no call), it is a selection rule. Switching an agent off by document type is governed structure (as INST-SWITCH-A), so it is drafted as a DELTA for Seckin to ratify, never self-applied. | development tables: the chain's integrity passes on all, and the figures on development tables do not fall | a code lane; DELTA draft by the lead |
+| 2 | **2c. When to decide NOT ENOUGH INFO**, tuned on the development set for SciTab macro-F1 (3-class). The threshold is written with the error rate it produces, as CHOICE-A requires. | the development set's macro-F1 with and without, using a split of the development set itself (tune on one half, check on the other) | a code lane |
+| 3 | **2a. SciTab arithmetic in Python.** The model names the cells and the operation; Python computes. Compound claims are split into sub-claims if needed (Dater-style). This is what the Python layer is for: to cut the raw model's hallucination and randomness. | development tables: per-claim agreement with the old path on claims with no arithmetic, and gains only on arithmetic claims | a code lane |
+| 4 | **3. Automatic instruction optimisation** (DSPy MiPROv2-style, instructions only) on the development set, on Lambda, as time allows. | a held-back half of the development set | a code lane, on Lambda |
+
+- **Not adopted:** majority voting over several samples (evidence that it hurts small models on hard items); the raw model's direct answer for SciTab. The system itself is what is measured.
+- **After 14 November** (AFTER_V1_PLAN): training-based steps, such as SFT plus RL for ContraDoc coverage, and Qwen3 for the judging agents.
+- **Together with section 10.** Sealing and the Lambda route (section 10, steps 2 and 3) and the integrity fixes (section 10, step 1) are the first part of the same attempt. The attempt is read once on the quick subset, as a new steering read, under section 3's rule unchanged.
+
+**Amended by D-569 (Seckin 10:50).**
+- **2b:** the chain for tables is chosen from the rules already built (INFRA-049 and INFRA-050's selection), by a backwards check, and recorded in DECISIONS, with no approval question. Only a needed new amendment is reported to Seckin.
+- **2c:** NOT ENOUGH INFO follows from evidence first: a deterministic Python check that the cells or entities the claim needs are absent. Only what that check cannot settle is tuned, on the development set.
+
+**Added by D-570 (Seckin 10:53).**
+- **INST_FINDER off by default** from the next attempt on, by the operator's decision, through the ratified switch (INST-SWITCH-A). The switch stays, so it remains optional. **The quick read of 13 November measured integrity with INST_FINDER on** (the sealed `SHIMMER_INST_FINDER=on`); its one INST_FINDER failure (one ContraDoc document, K0) is from that setting. The next attempt's integrity is measured with it off, and the two are reported apart.
+- **Which agents run** adapts to the case and the document type under the existing rules (D-569).
+- **The claim read's safeguard:** the claim-set figures are reported twice, on the full set and on the full set without the 40 quick-subset documents and 78 quick-subset claims, and a material difference is said plainly. By GATE_SET (D-373) the two sets are disjoint by construction, so if the claim read covers the claim set alone, the two figures are the same and the report says so. If the read pools the quick subset in, the two differ by exactly those items.
+
+**2b replaced by the agent-assignment layer (D-571, Seckin 10:56 to 10:57).**
+- **What it does:** for each unit, it decides from the unit's own conditions which agents the unit needs, so not every agent runs every time. This replaces the coarse routing by document type.
+- **Python measures the conditions first:**
+  - cells and numbers present;
+  - citation markers;
+  - normative or deontic sentences;
+  - an addressed institution;
+  - a possible clash with another unit;
+  - and the like.
+
+  It then assigns agents from them.
+- **What it is built on:** the existing Python unit selection (INFRA-050: a unit Python selects nothing in makes no call). Every assignment and every skip is recorded with its reason, per unit and agent.
+- **Before 14 November:** the Python-condition version only. **After 14 November:** a model also reasons where Python cannot settle it, on the one question "which agents does this unit need", measured on the development set.
+- **What is tested:** the whole system with every agent available, with the layer deciding activation. INST_FINDER stays off by default (D-570).
+- **Activation report, per agent:**
+  - how often it ran and how often it was skipped, and why;
+  - on the development set, the layer against all agents on: accuracy, integrity and time, so a skip that costs accuracy is seen.
+- **Governance, as D-569:** it is built from the rules already built. Only if it cannot be reached without a new amendment to governed structure is that said to Seckin plainly.
+
+**The layer's floor (D-572, Seckin 10:58).** Every composition and check the constitution, conventions and laws make mandatory always runs, for example cross-family verification and any required checker or verifier. The floor is derived from the rules, each item written with its rule, and the layer refuses any assignment below it. A gate check proves the refusal, with a neutralisation.
+
+**The layer's model step, before 14 November (D-576, Seckin 11:08).**
+- **Order:** Python's conditions first, the floor by code, then GLiClass zero-shot multi-label scores for what Python cannot settle. The fallback is Qwen's logit probability of "yes", one question per agent, calibrated on the development set. When unsure, the agent runs.
+- **WORDS-A:** the model is one voter beside the ensemble. A skip needs both.
+- **Measured** on the development set against Python-only and all agents on.
+- **In the timeline:** it joins the quick re-seal only if its development measurement passes in time. Otherwise the re-seal goes with Python and the floor, and that is said plainly.

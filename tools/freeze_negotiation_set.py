@@ -201,6 +201,12 @@ def read_file(f):
     return passages(raw), raw
 
 
+# Folders a corpus walk never enters: Python's bytecode caches, which a run writes beside the sources it
+# imports (the freeze itself imports scripts/ and tools/ before it reads them), so a first run on a clean
+# checkout would otherwise refuse itself for its own .pyc files (D-618 follow-up). They hold no prose.
+SKIPPED_DIRS = ("__pycache__",)
+
+
 def corpus_passages(paths, *, accept_skipped=()):
     """{corpus: {passages, urls, stems, files, read, skipped}} for each file or folder named. A path that
     does not exist or holds nothing readable refuses (D-430 item 4); so does a skipped file of a kind the
@@ -210,7 +216,8 @@ def corpus_passages(paths, *, accept_skipped=()):
         base = Path(base)
         if not base.exists():
             raise ValueError("a corpus path does not exist: %s" % base)
-        files = [base] if base.is_file() else sorted(p for p in base.rglob("*") if p.is_file())
+        files = [base] if base.is_file() else sorted(
+            p for p in base.rglob("*") if p.is_file() and not set(p.relative_to(base).parts) & set(SKIPPED_DIRS))
         held, urls, stems, skipped = [], set(), set(), {}
         read = 0
         for f in files:
@@ -647,8 +654,33 @@ def gpu_free_of_others(reading):
             and reading["utilization_percent"] <= GPU_IDLE_PERCENT)
 
 
+# The low host-memory load (Seckin's order of 14 November 2026, after a GPU freeze was stopped at 6.07 GB
+# of private host memory while bge-m3 was still loading): safetensors only, low_cpu_mem_usage, float32
+# kept so the vectors do not change, and on the GPU the weights placed straight on the card
+# (device_map), so host memory never holds a whole float32 copy before the move.
+LOW_PEAK_KWARGS = {"use_safetensors": True, "low_cpu_mem_usage": True}
+
+
+def load_bge_m3(device, st=None):
+    """bge-m3 (embedding_store's DEFAULT_MODEL_NAME, the repository's own), from the local cache only,
+    loaded with the smallest host peak on `device`: LOW_PEAK_KWARGS, float32, and device_map on the GPU.
+    None when sentence-transformers is missing."""
+    import torch
+    import embedding_store
+    st = st or embedding_store._try_import_st()
+    if st is None:
+        return None
+    kwargs = dict(LOW_PEAK_KWARGS, torch_dtype=torch.float32)
+    if device == "cuda":
+        kwargs["device_map"] = "cuda"
+    model = st.SentenceTransformer(embedding_store.DEFAULT_MODEL_NAME, device=device, local_files_only=True,
+                                   model_kwargs=kwargs)
+    model._shimmer_model_id = embedding_store.DEFAULT_MODEL_NAME
+    return model
+
+
 def bge_m3_encoder(device="cpu"):
-    """(encode, release, device record): the repository's own bge-m3 (embedding_store's loader), float32,
+    """(encode, release, device record): the repository's own bge-m3 (load_bge_m3: the low host-peak load), float32,
     in batches of BATCH_SIZE, unit vectors. On the CPU by default. On the GPU only when a reading taken
     first shows it idle (D-399); the model is released at once after the pass (`release`). On the GPU,
     nvidia-smi is read again after every chunk (D-456, item 3): when another process holds more than
@@ -665,14 +697,9 @@ def bge_m3_encoder(device="cpu"):
                                % (GPU_IDLE_MIB, GPU_IDLE_PERCENT, reading))
     elif device != "cpu":
         raise ValueError("the device is cpu or cuda")
-    import embedding_store
-    import semantic_ensemble
-    from unittest.mock import patch
-    semantic_ensemble._MODEL_CACHE.pop("m", None)
     # The device is chosen here, explicitly, never read off the backend profile: an unset
     # profile is local since D-487 item 1, which embedding_store reads as the CPU.
-    with patch.object(embedding_store, "_embed_device", lambda: device):
-        model = semantic_ensemble._sbert_model()
+    model = load_bge_m3(device)
     if model is None:
         raise RuntimeError("bge-m3 could not be loaded from the local cache")
     on = str(getattr(model, "device", "cpu"))
@@ -741,7 +768,6 @@ def bge_m3_encoder(device="cpu"):
     encode.count_tokens = count_tokens
 
     def release():
-        semantic_ensemble._MODEL_CACHE.pop("m", None)
         if device == "cuda":
             import torch
             if state["device"] == "cuda":

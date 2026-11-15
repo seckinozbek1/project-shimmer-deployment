@@ -23,12 +23,28 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'scripts'), str(ROOT / 'tools')]
-from ordinary_final_run import read, sha, require, write, cache_ref_bytes
+from ordinary_final_run import read, sha, require, write, cache_ref_bytes, project_held
 import decoding_policy
 
 
 def git(*args):
     return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, check=True).stdout
+
+
+def members_from_git(expected, tree, show):
+    """#252 item 3, a project archive held in the store: ({name: bytes, or None for a member the
+    sealed commit does not carry}, the count compared). Every member the commit carries is read
+    from git (LF-normalised) and held to the manifest's digest of it."""
+    members, compared = {}, 0
+    for name, digest in expected.items():
+        if name in tree:
+            data = show(name).replace(b'\r\n', b'\n')
+            require(hashlib.sha256(data).hexdigest() == digest, 'Archived runtime differs from sealed commit: ' + name)
+            members[name] = data
+            compared += 1
+        else:
+            members[name] = None
+    return members, compared
 
 
 def main(bundle):
@@ -43,23 +59,31 @@ def main(bundle):
     seal = read(base / 'seal.json')
     require(seal['execution_manifest_sha256'] == manifest_sha and seal['source_commit'] == binding['source_commit'], 'Seal does not bind this manifest')
     require(m['source_commit'] == binding['source_commit'], 'Manifest source commit differs from the binding')
-    require(m['source_archive_sha256'] == binding['project_sha256'] and sha(base / 'project.tar.gz') == binding['project_sha256'], 'Project archive differs')
+    require(m['source_archive_sha256'] == binding['project_sha256'], 'Project archive differs')
+    stored = project_held(base, binding['project_sha256'])
     require(m['assets_archive']['sha256'] == binding['assets_sha256'], 'Asset archive identity differs')
     receipt.update(manifest_sha256=manifest_sha, seal_sha256=seal_sha, project_sha256=binding['project_sha256'],
                    assets_sha256=binding['assets_sha256'], source_commit=binding['source_commit'])
-    with tarfile.open(base / 'project.tar.gz') as archive:
-        members = {x.name: archive.extractfile(x).read() for x in archive.getmembers() if x.isfile()}
     expected = m['project_files']
-    require(set(members) == set(expected), 'Archive inventory differs from the manifest')
-    for name, data in members.items():
-        require(hashlib.sha256(data).hexdigest() == expected[name], 'Archive member digest mismatch: ' + name)
     tree = set(git('ls-tree', '-r', '--name-only', binding['source_commit']).decode().splitlines())
     compared = 0
-    for name, data in members.items():
-        if name in tree:
-            require(git('show', binding['source_commit'] + ':' + name).replace(b'\r\n', b'\n') == data,
-                    'Archived runtime differs from sealed commit: ' + name)
-            compared += 1
+    if stored is None:
+        with tarfile.open(base / 'project.tar.gz') as archive:
+            members = {x.name: archive.extractfile(x).read() for x in archive.getmembers() if x.isfile()}
+        require(set(members) == set(expected), 'Archive inventory differs from the manifest')
+        for name, data in members.items():
+            require(hashlib.sha256(data).hexdigest() == expected[name], 'Archive member digest mismatch: ' + name)
+        for name, data in members.items():
+            if name in tree:
+                require(git('show', binding['source_commit'] + ':' + name).replace(b'\r\n', b'\n') == data,
+                        'Archived runtime differs from sealed commit: ' + name)
+                compared += 1
+    else:
+        # #252 item 3: the archive is held in the store by its fingerprint. Every member the sealed
+        # commit carries is read from git and held to the manifest's digest of it; the others (the
+        # workload, the frozen model files) keep their names' rule below, and their bytes are checked
+        # on the instance against the archive's digest before anything is extracted.
+        members, compared = members_from_git(expected, tree, lambda name: git('show', binding['source_commit'] + ':' + name))
     sealed = seal.get('exposure') == 'sealed'
     generated = sorted(n for n in members if n not in tree)
     launcher = m.get('arm') == 'L'
@@ -77,7 +101,8 @@ def main(bundle):
     pinned = set(members) | set(m['local_control_hashes']) | set(m['preparation_source_hashes'])
     runtime_moved = [n for n in moved if n in pinned]
     require(not runtime_moved, 'HEAD changed runtime files after the sealed commit: ' + str(runtime_moved))
-    receipt.update(project_tree_verified=True, archive_members=len(members), members_compared_to_sealed_commit=compared,
+    receipt.update(project_in_store=stored, project_tree_verified=True, archive_members=len(members),
+                   members_compared_to_sealed_commit=compared,
                    generated_members=len(generated) if sealed else generated, head_commit=git('rev-parse', 'HEAD').decode().strip(),
                    head_moved_outside_the_runtime=len(moved) if sealed else moved, sealed_runtime_is_what_launches=True)
     with tempfile.TemporaryDirectory() as folder:

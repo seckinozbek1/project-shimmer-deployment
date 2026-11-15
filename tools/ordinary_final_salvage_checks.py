@@ -32,6 +32,8 @@ import ordinary_final_cloud as controller  # noqa: E402
 from ordinary_final_run import read, write  # noqa: E402
 
 START = '2026-10-27T10:00:00+00:00'
+# D-583: the freshness bound the decision recorded from the measured write gaps of the status line.
+DECLARED_FRESH_SECONDS = 300
 
 
 def termination_lines(ledger):
@@ -46,8 +48,44 @@ class SalvageChecks:
                                       deadline_utc=(start + timedelta(minutes=deadline_minutes)).isoformat())
         return self.two_loop_instances(folder, [launch(n, name) for n, name in enumerate(names)])
 
-    def usage(self, percent):
-        write(instance_reaper.LOOP_STATUS, dict(time_utc=START, seven_day_used_percentage=percent))
+    def usage(self, percent, at=None):
+        """The status line's reading, written at `at` (an epoch, a datetime or START)."""
+        if isinstance(at, (int, float)):
+            at = datetime.fromtimestamp(at, timezone.utc)
+        stamp = START if at is None else at.isoformat()
+        write(instance_reaper.LOOP_STATUS, dict(time_utc=stamp, seven_day_used_percentage=percent))
+
+    def test_salvage_usage_stop_acts_only_on_a_live_reading(self):
+        """D-583: the reading is taken again at the moment of decision. A fresh 98 stops (before the
+        reset), a stale 98 does not stop and is reported as usage unknown with its age, a fresh 97
+        does not stop, and an unreadable figure stops nothing. The silence trigger is untouched."""
+        until = instance_reaper.USAGE_STOP_EXCEPTION['until_epoch']
+        fresh = DECLARED_FRESH_SECONDS   # the decision's measured bound, held equal to the reaper's constant
+        self.assertEqual(instance_reaper.USAGE_FRESH_SECONDS, fresh)
+        now = datetime.fromtimestamp(until - 7200, timezone.utc)
+        beat_file = Path(instance_reaper.LOOP_STATUS).with_name('beat.txt')   # a heartbeat at `now`: silence stays quiet
+        beat_file.write_text('beat', encoding='utf8')
+        os.utime(beat_file, (now.timestamp(), now.timestamp()))
+        beat = [beat_file]
+        self.usage(98, at=now - timedelta(seconds=30))
+        trigger = instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat)
+        self.assertEqual((trigger['trigger'], trigger['seven_day_used_percentage'], trigger['reading_age_seconds']),
+                         ('usage', 98.0, 30.0))
+        self.usage(98, at=now - timedelta(seconds=fresh + 60))
+        reading = instance_reaper.usage_reading(None, now)
+        self.assertEqual((reading['state'], reading['value'], reading['age_seconds']), ('stale', 98.0, fresh + 60.0))
+        self.assertEqual(reading['note'], 'usage unknown, stale by %d s' % (fresh + 60))
+        self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
+        self.usage(97, at=now - timedelta(seconds=10))
+        self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
+        write(instance_reaper.LOOP_STATUS, dict(time_utc=(now - timedelta(seconds=10)).isoformat()))
+        self.assertEqual(instance_reaper.usage_reading(None, now)['note'], 'usage unknown, unreadable')
+        self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
+        # One second past the bound is stale; at the bound it is fresh.
+        self.usage(98, at=now - timedelta(seconds=fresh))
+        self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'fresh')
+        self.usage(98, at=now - timedelta(seconds=fresh + 1))
+        self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'stale')
 
     def test_salvage_usage_trigger_requests_every_instance_then_reports(self):
         """Trigger (a): usage at 98 percent (the D-529 threshold before the reset). The first pass terminates nothing and writes a request
@@ -57,7 +95,7 @@ class SalvageChecks:
         the packs and how each resumes, FOR_SECKIN gets a top entry, and the episode is closed."""
         start = instance_reaper.parse_time(START)
         ledger, state, provider = self.salvage_fixture('usage', ['shimmer-loop-one', 'shimmer-loop-two'], start)
-        self.usage(98)
+        self.usage(98, at=start + timedelta(minutes=10))   # a live reading at the pass's own moment (D-583)
         instance_reaper.FOR_SECKIN.write_text('# For Seckin\n\nolder entry\n', encoding='utf8')
         status = instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=10))
         self.assertEqual(status['terminated'], [])
@@ -108,7 +146,7 @@ class SalvageChecks:
         until = instance_reaper.USAGE_STOP_EXCEPTION['until_epoch']
         self.assertEqual(until, 1794988800)
         utc = lambda epoch: datetime.fromtimestamp(epoch, timezone.utc)
-        fires = lambda percent, epoch: (instance_reaper.salvage_trigger(utc(epoch), ['x']) or {}).get('trigger') == 'usage'
+        fires = lambda percent, epoch: (self.usage(percent, at=epoch), (instance_reaper.salvage_trigger(utc(epoch), ['x']) or {}).get('trigger') == 'usage')[1]
         before = until - 3600
         self.usage(97)
         self.assertFalse(fires(97, before))
@@ -126,7 +164,7 @@ class SalvageChecks:
         self.assertFalse(fires(94.9, until + 1))
         self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 95)
         self.assertEqual(instance_reaper.usage_stop_percent(until), 95)   # an epoch is read too
-        self.usage(96)
+        self.usage(96, at=until + 5)
         trigger = instance_reaper.salvage_trigger(utc(until + 5), ['x'])
         self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (95, '95 (the standing value)'))
         self.assertIn('stop at 95 (the standing value)', instance_reaper.trigger_words(trigger))
@@ -226,7 +264,13 @@ class SalvageChecks:
         self.assertTrue(done['terminated'])
 
 
+_REAL_USAGE_READING = instance_reaper.usage_reading
 SALVAGE_NEUTRALIZATIONS = [
+    # D-583: any reading counts as live, however old (no freshness bound).
+    ('test_salvage_usage_stop_acts_only_on_a_live_reading', instance_reaper, 'USAGE_FRESH_SECONDS', 10 ** 9),
+    # D-583: the trigger acts on the figure whatever its state (a stale 98 stops).
+    ('test_salvage_usage_stop_acts_only_on_a_live_reading', instance_reaper, 'usage_reading',
+     lambda path=None, now=None: dict(_REAL_USAGE_READING(path, now), state='fresh')),
     # A per-model figure is read as the weekly one (D-534).
     ('test_salvage_usage_stop_reads_only_the_overall_weekly_figure', instance_reaper, 'usage_percent',
      lambda path=None: max(float(v) for k, v in json.loads(Path(instance_reaper.LOOP_STATUS).read_text(encoding='utf8')).items()

@@ -1,0 +1,34 @@
+{
+ "schema": "neg-advisor-prompt-v1",
+ "written": "13 November 2026, before any item exists (docs/loop/stages/NEG_ADVISOR_PLAN.md section 5)",
+ "models_note": "judge and validate declare model: JUDGE's registry local.model is null, so resolve_reader alone gives the active auditor (Phi-3.5); the declared model is the registry's own model of JUDGE, Phi-4 (neg_advisor.reader_of)",
+ "advice": {
+  "max_new_tokens": 2048,
+  "template": "You advise one party in a multi-round negotiation: {persona}. This is round {round} of {process}.\n\nTHE MANDATE: the positions on record of the party you advise. Positions marked RED LINE are ones the record itself calls a red line.\n{mandate}\n\nTHE OTHER PARTIES' POSITIONS ON RECORD:\n{positions}\n\nTHE PARTIES: {parties}\n\nTHE ARTICLES OF THIS ROUND IN THIS EXCERPT. Each paragraph carries its id; each proposal on the table carries its id; an agreed article carries none.\n{articles}\n\nINDEX OF THE WHOLE TEXT OF THIS ROUND: {round_index}\nINDEX OF THE PREVIOUS ROUND: {previous_index}\n\nTRADES THE PARTY YOU ADVISE OFFERED ON RECORD: {trades}\n\n{instructions}",
+  "instructions": "Reply with one JSON object and nothing else, with these keys:\n- \"proposals\": a list, one entry per proposal id above, each {\"id\": the proposal id, \"conflict\": \"conflict\" or \"no_conflict\" or \"not_stated\" (whether it conflicts with the mandate; not_stated when the mandate says nothing on its article), \"stance\": \"accept\" or \"reject\" or \"counter\", \"wording\": the middle-ground text for a counter (empty otherwise), \"reasons\": a list of the PAR- and POS- ids your advice rests on}.\n- \"trades\": a list of {\"give\": a proposal id, \"get\": a proposal id}.\n- \"approach\": a list of the party ids to approach.\n- \"alignment\": a list, one entry per article id of the excerpt, each {\"article\": the id, \"aligned\": the party ids aligned with the party you advise on it, \"opposed\": the party ids opposed}.\n- \"state\": a list, one entry per article id of the excerpt and per article of the previous round no longer in this round, each {\"article\": the id, \"state\": \"closed\" or \"dropped\" or \"bracketed\" or \"new\" or \"binding\"}, binding meaning an earlier concession of the party you advise binds it.",
+  "game_template": "You advise one party in a multi-party, multi-issue negotiation game: {persona}. This is round {round}.\n\nYOUR SCORE TABLE (the score of each option of each issue for the party you advise; a deal scores the sum of its chosen options):\n{table}\nYOUR MINIMUM: a deal must score at least {threshold} for you.\n\nTHE PARTIES: {parties}\n\nTHE ISSUES AND THEIR OPTIONS:\n{issues}\n\n{instructions}",
+  "game_instructions": "Reply with one JSON object and nothing else, with these keys:\n- \"deal\": an object with one option id per issue id.\n- \"trades\": a list of {\"give\": an issue id, \"get\": an issue id}."
+ },
+ "audit": {
+  "max_new_tokens": 8,
+  "template": "A negotiation advisor gave this advice on one proposal.\n\nTHE PROPOSAL {proposal_id}:\n{proposal}\n\nTHE ADVICE: stance {stance}; conflict with the mandate: {conflict}; wording for a counter: {wording}\n\nWHAT THE ADVICE CITES:\n{cited}\n\nDo the cited passages and positions support this advice? Answer with exactly one of: supported, unsupported, cannot tell.",
+  "answers": {"supported": ["supported"], "unsupported": ["unsupported", "not supported"], "cannot_tell": ["cannot tell", "can not tell"]}
+ },
+ "judge": {
+  "max_new_tokens": 4,
+  "template": "Grade one suggested middle-ground wording from a negotiation.\n\nTHE PROPOSAL ON THE TABLE:\n{proposal}\n\nTHE MANDATE OF THE PARTY IT WAS WRITTEN FOR:\n{mandate}\n\nTHE SUGGESTED WORDING:\n{wording}\n\nWHAT THE NEXT ROUND ACTUALLY AGREED OR WROTE:\n{next}\n\nGive 2 when the wording keeps the mandate and lies between the proposal and what the next round wrote, or matches it; 1 when it keeps the mandate but does not move toward what the next round wrote; 0 when it breaks the mandate or is not usable wording. Reply with the digit alone."
+ },
+ "validate": {
+  "form_version": 2,
+  "form_note": "Version 2 (D-617, 14 November 2026): the article ids listed and the article asked as exactly one id from that list; the proposal and stance questions byte-identical to version 1, which round 1 (validate_p01) ran.",
+  "max_new_tokens": 48,
+  "template": "A position quote from a negotiation record has been mapped to an article of the negotiating text.\n\nTHE ARTICLES:\n{articles}\n\nTHE ARTICLE IDS: {article_ids}\n\nTHE QUOTE, by {party}, round {round}:\n{quote}\n\nTHE MAPPING TO CHECK: article {article}, proposal {proposal}, stance {stance}.\n\nReply with one JSON object and nothing else: {\"article\": exactly one id from THE ARTICLE IDS, written as listed (never a heading), \"proposal\": the proposal's number within that article or null for the whole article, \"stance\": \"support\" or \"oppose\" or \"accept\"}."
+ },
+ "models": [
+  {"group": "b1", "backend": "local_producer", "agent": "PROCESSOR", "checkpoint": "base"},
+  {"group": "system_advice", "backend": "local_producer", "agent": "PROCESSOR", "checkpoint": "tuned"},
+  {"group": "system_audit", "backend": "local_auditor", "agent": "VERIFIER", "checkpoint": "base"},
+  {"group": "judge", "backend": "local_auditor", "agent": "JUDGE", "checkpoint": "base", "model": "unsloth/phi-4-bnb-4bit"},
+  {"group": "validate", "backend": "local_auditor", "agent": "JUDGE", "checkpoint": "base", "model": "unsloth/phi-4-bnb-4bit"}
+ ]
+}

@@ -178,7 +178,10 @@ class PairChecks(unittest.TestCase):
         self.assertNotIn('relation',value)
 
     def test_startup_requires_runtime_artifacts_and_contract(self):
-        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'),patch.object(final_models,'verify_runtime') as runtime:
+        # Where the frozen adapters are absent (gitignored, so not in a tree made from git
+        # blobs), admission is proven on everything but the files (final_integration_checks).
+        from final_integration_checks import without_frozen_files
+        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'),patch.object(final_models,'verify_runtime') as runtime,without_frozen_files():
             final_models.admit_ordinary();runtime.assert_called_once()
             with patch.object(pairs,'contract_self_check',return_value=False):
                 with self.assertRaises(RuntimeError):final_models.admit_ordinary()

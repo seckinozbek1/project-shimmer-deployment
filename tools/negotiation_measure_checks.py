@@ -904,7 +904,7 @@ def observe_gpu_gate():
            "no_reading": freezer.gpu_idle(None)}
     import semantic_ensemble
     with patch.object(freezer, "gpu_reading", lambda: {"memory_used_mib": 4096, "utilization_percent": 80}), \
-            patch.object(semantic_ensemble, "_sbert_model", no_load):
+            patch.object(freezer, "load_bge_m3", lambda device: no_load()):
         try:
             freezer.bge_m3_encoder("cuda")
             out["busy_refused"] = False
@@ -912,6 +912,62 @@ def observe_gpu_gate():
             out["busy_refused"] = "not idle" in str(exc)
     out["loaded_when_busy"] = bool(loaded)
     return out
+
+
+class _RecordingST:
+    """sentence-transformers' surface load_bge_m3 uses: it records every SentenceTransformer call, loads
+    nothing."""
+
+    def __init__(self):
+        self.calls = []
+        outer = self
+
+        class SentenceTransformer:
+            def __init__(self, name, **kw):
+                outer.calls.append(dict(kw, name=name))
+        self.SentenceTransformer = SentenceTransformer
+
+
+def observe_low_peak_load():
+    """The low host-memory load: from the local cache, safetensors only, low_cpu_mem_usage, float32 kept,
+    and on the GPU the weights placed straight on the card (device_map)."""
+    import torch
+    out = {}
+    for device in ("cpu", "cuda"):
+        st = _RecordingST()
+        freezer.load_bge_m3(device, st=st)
+        call = st.calls[0]
+        kw = call["model_kwargs"]
+        out[device] = {"name": call["name"], "device": call["device"], "local_files_only": call["local_files_only"],
+                       "use_safetensors": kw.get("use_safetensors"), "low_cpu_mem_usage": kw.get("low_cpu_mem_usage"),
+                       "float32": kw.get("torch_dtype") is torch.float32, "device_map": kw.get("device_map")}
+    return out
+
+
+LOW_PEAK_LOAD = {d: {"name": "BAAI/bge-m3", "device": d, "local_files_only": True, "use_safetensors": True,
+                     "low_cpu_mem_usage": True, "float32": True, "device_map": "cuda" if d == "cuda" else None}
+                 for d in ("cpu", "cuda")}
+
+
+def observe_bytecode_skipped():
+    """A corpus folder holding Python's bytecode cache (written by the run itself) is read without it:
+    __pycache__ is never entered, so a clean checkout's first freeze does not refuse its own .pyc files."""
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="negmeasure_pyc_") as td:
+        base = Path(td) / "tools"
+        (base / "__pycache__").mkdir(parents=True)
+        (base / "tool.py").write_text('"""An invented module docstring of more than twenty words, written only for '
+                                      'this fixture of the corpus walk, about nothing in particular at all."""\n',
+                                      encoding="utf-8")
+        (base / "__pycache__" / "tool.cpython-312.pyc").write_bytes(b"\x00\x01fixture bytecode")
+        try:
+            got = freezer.corpus_passages([base])[str(base)]
+            return {"files": got["files"], "read": got["read"], "skipped": got["skipped"]}
+        except ValueError as exc:
+            return {"refused": str(exc).split(" (")[0]}
+
+
+BYTECODE_SKIPPED = {"files": 1, "read": 1, "skipped": {}}
 
 
 class _FakeModel:
@@ -1009,7 +1065,7 @@ def observe_gpu_switch():
                     "own_overhead_mib": 0.0}
         with patch.object(freezer, "gpu_reading", lambda: dict(idle)), \
                 patch.object(freezer, "other_gpu_reading", injected), patch.object(freezer, "UTIL_SETTLE_SECONDS", 0), \
-                patch.object(semantic_ensemble, "_sbert_model", lambda: model), patch.dict("os.environ"):
+                patch.object(freezer, "load_bge_m3", lambda device: model), patch.dict("os.environ"):
             encode, release, record = freezer.bge_m3_encoder("cuda")
             vectors = freezer.encode_chunked(encode, ["word %d of a passage" % i for i in range(7)], chunk=3)
             release()
@@ -1435,6 +1491,18 @@ class NegotiationMeasureChecks(unittest.TestCase):
         self.prove("utilisation_beyond_this_process_at_10_percent", observe_gpu_switch, GPU_SWITCH,
                    lambda: patch.object(freezer, "gpu_free_of_others", memory_only))
 
+    def test_19g_low_peak_load(self):
+        self.assertEqual(observe_low_peak_load(), LOW_PEAK_LOAD)
+        # Neutralised: the load as it was, with none of the low host-memory options.
+        self.prove("bge_m3_loaded_with_the_low_host_peak", observe_low_peak_load, LOW_PEAK_LOAD,
+                   lambda: patch.object(freezer, "LOW_PEAK_KWARGS", {}))
+
+    def test_19h_bytecode_skipped(self):
+        self.assertEqual(observe_bytecode_skipped(), BYTECODE_SKIPPED)
+        # Neutralised: the walk enters __pycache__ again, and the .pyc refuses the corpus.
+        self.prove("bytecode_caches_never_read_as_corpus", observe_bytecode_skipped, BYTECODE_SKIPPED,
+                   lambda: patch.object(freezer, "SKIPPED_DIRS", ()))
+
     def test_14_replay_hook(self):
         import replay_prompts
         self.prove("the_replay_pass_hands_the_file_on", observe_replay_hook, REPLAY_HOOK,
@@ -1458,7 +1526,8 @@ def check():
                     ".docx and .jsonl corpora, a near copy through one 5-gram index equal to every pair, and the same source, float32 vectors in chunks, pooled kappa with its revision round and labeller 3, the "
                     "minimums, the dry run), the scorer's command line (round 3 behind the same refusals, C1 decided by "
                     "its power record, a no_answer count for every arm, every arm's records checked, a failed entry only from its status record and only as a run folder, either kind scored no_answer on every row and counted apart, infrastructure only for the runner's or the machine's causes, one model group), "
-                    "the power simulation and its record read by the plan rule, and the replay hook" % len(NegotiationMeasureChecks.evidence))
+                    "the power simulation and its record read by the plan rule, the replay hook, bge-m3 loaded with the "
+                    "low host peak, and bytecode caches never read as corpus" % len(NegotiationMeasureChecks.evidence))
 
 
 def main():

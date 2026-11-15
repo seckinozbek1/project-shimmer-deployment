@@ -69,22 +69,26 @@ FIRES_UNCONDITIONALLY = {
              "convention review consumes, so gating it on rules would starve "
              "the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3).",
 }
-# INST_FINDER fires like any corpus-level production agent, unless the operator
-# switched it off for the run with SHIMMER_INST_FINDER=off, which the pipeline
-# honours only under a ratified constitution amendment naming both. Switched off is
-# a declared state recorded in audit/agent_activation.json, never a failure.
+# INST_FINDER fires like any corpus-level production agent, unless it is off for
+# the run: SHIMMER_INST_FINDER=off, or no value under a ratified amendment that
+# declares it off by default (D-570); the pipeline honours either only under a
+# ratified constitution amendment naming both. Switched off is a declared state
+# recorded in audit/agent_activation.json, never a failure.
 FIRES_INST_FINDER = {
-    "summary": "Runs once per review in its scheduled stage, unless you switch it "
-               "off for the run with the SHIMMER_INST_FINDER setting, which is "
-               "honoured only after you ratify the amendment that allows it. A "
+    "summary": "Runs once per review in its scheduled stage, unless it is off for "
+               "the run: by the SHIMMER_INST_FINDER setting, or by default once you "
+               "ratify the amendment that makes it off by default (SHIMMER_INST_FINDER=on "
+               "then runs it). Off is honoured only after you ratify the amendment. A "
                "switched-off run records it as not called, with the reason.",
     "condition": "Once in phase 3-4 as a corpus-level production agent, unless "
-                 "SHIMMER_INST_FINDER=off and config/constitution.json holds an "
+                 "it is off (SHIMMER_INST_FINDER=off, or no value under a default off) "
+                 "and config/constitution.json holds an "
                  "operator-approved amendment whose change names INST_FINDER and "
                  "SHIMMER_INST_FINDER; then it is not dispatched and is recorded "
                  "as not called (state switched_off, reason 'switched off by "
                  "operator setting'). Without that amendment a run with the "
-                 "setting off refuses to start. Any other value, or none, keeps it on.",
+                 "setting off refuses to start. With no value it is off when that "
+                 "amendment declares default off, else on; the value on keeps it on.",
     "where": "scripts/pipeline.py: PRODUCTION_AGENTS_CORPUS_LEVEL (it stays in the "
              "list), _inst_finder_switch, _inst_finder_startup_guard (main) and the "
              "corpus loop of phase_3_4_content_production; the setting is saved "

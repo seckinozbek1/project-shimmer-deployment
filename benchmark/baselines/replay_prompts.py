@@ -86,7 +86,9 @@ for checkpoint 168, then its test file runs here as a roles file with `tuned` an
 `producer-heldout-v1` file is its test-only held-out pass (no training; refused at assembly unless
 docs/loop/HELDOUT_OPENINGS.md holds a committed opening, benchmark/baselines/producer_score.py). An
 `auditor-training-session-v1` file (benchmark/baselines/auditor_train.py, D-S57 item 3) rides it
-too: it trains the auditor backend's rule check, then asks its development questions.
+too: it trains the auditor backend's rule check, then asks its development questions. A
+`vllm-replay-v1` file (benchmark/baselines/vllm_replay.py, #217) rides it on the sdpa path: its
+groups on this tool's own run, then on vLLM in the auxiliary environment the controller made.
 
 The thresholds the E evidence is read against (D-060, D-061: at least 90 percent byte-identical
 with one-shot eager and at least 95 percent label agreement on the tuned checkpoint) are applied
@@ -318,6 +320,7 @@ def extract(folders, out, *, min_chars=0, call_ids=None, dev=False, agents=None,
                          % ("producer" if chosen is None else "named agent's"))
     if len({model_key(p) for p in prompts}) > 1:
         raise ValueError("the records given hold prompts of more than one model; a replay file holds one model's prompts")
+    refuse_mixed(prompts)
     value = {"schema": SCHEMA, "written_at": _now(), "sources": sources, "min_chars": int(min_chars),
              "prompt_count": len(prompts), "prompts": prompts}
     _write_json(out, value)
@@ -344,6 +347,20 @@ def is_embed_records(path):
         return False
 
 
+def _vllm_replay():
+    import vllm_replay
+    return vllm_replay
+
+
+def is_vllm_replay(path):
+    """True when the file is a `vllm-replay-v1` file (vllm_replay.py build, #217): the same sealed
+    pass, which replays its groups on the current engine and on vLLM in the auxiliary environment."""
+    try:
+        return _vllm_replay().is_prompts_path(path)
+    except ImportError:
+        return False
+
+
 def _negotiation_b1():
     import negotiation_b1
     return negotiation_b1
@@ -358,6 +375,24 @@ def is_negotiation(path):
         return False
     try:
         return _negotiation_b1().is_prompts_file(value)
+    except ImportError:
+        return False
+
+
+def _neg_advisor():
+    import neg_advisor
+    return neg_advisor
+
+
+def is_neg_advisor(path):
+    """True when the file is a negotiation advisor prompts file (neg_advisor.py, D-605, #262), which this
+    tool's `run` hands to neg_advisor.run and load_prompts to its load_prompts."""
+    try:
+        value = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    try:
+        return _neg_advisor().is_prompts_file(value)
     except ImportError:
         return False
 
@@ -436,6 +471,8 @@ def load_prompts(path):
     by doc_judge.load_prompts, which re-renders every prompt from the file's own template)."""
     if is_embed_records(path):
         return _embed_records().load_prompts(path)
+    if is_vllm_replay(path):
+        return _vllm_replay().load_prompts(path)
     if is_producer_training(path):
         return (_producer_train().load_heldout_prompts(path) if _producer_heldout(path)
                 else _producer_train().load_prompts(path))
@@ -447,6 +484,8 @@ def load_prompts(path):
         return _doc_judge().load_prompts(path)
     if is_negotiation(path):
         return _negotiation_b1().load_prompts(path)
+    if is_neg_advisor(path):
+        return _neg_advisor().load_prompts(path)
     value = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(value, dict) or value.get("schema") != SCHEMA or not isinstance(value.get("prompts"), list):
         raise ValueError("not a replay_prompts.json (" + SCHEMA + ")")
@@ -459,7 +498,38 @@ def load_prompts(path):
         if prompt.get("prompt_id") in ids:
             raise ValueError("prompt ids repeat")
         ids.add(prompt.get("prompt_id"))
+    refuse_mixed(value["prompts"])
+    forms = {p.get("form") for p in value["prompts"]}
+    if forms - {None, PROPOSER_FORM}:
+        raise ValueError("a replay prompt names an unknown form: " + ", ".join(sorted(str(f) for f in forms - {None, PROPOSER_FORM})))
+    if PROPOSER_FORM in forms and forms != {PROPOSER_FORM}:
+        raise ValueError("a proposer file holds proposer prompts only")
     return value["prompts"]
+
+
+# #255: the proposer of the instruction optimisation is the plain base producer model, no adapter
+# (the tuned producer was trained on extraction only), loaded as B1's base checkpoint is, sdpa one
+# shot (PREFILL-E); its replies are texts, judged by no contract.
+PROPOSER_FORM = "proposer"
+
+
+def reader_checkpoint(proposer):
+    """The producer checkpoint a plain (non-envelope, non-roles) replay loads: the base for a
+    proposer file, the tuned producer otherwise (the run proper's)."""
+    import bare_model
+    return bare_model.BASE if proposer else bare_model.TUNED
+
+
+MIXED_REFUSAL = "a replay file holds envelope agents' prompts or producer prompts, not both"
+
+
+def refuse_mixed(prompts):
+    """The run's own rule, read wherever a replay file is written or loaded (D-577: a hand-merged
+    file of envelope and producer prompts was refused only on the rented machine): every prompt is
+    an envelope agent's (extract --agents) or none is."""
+    envelope = [p.get("envelope") is True for p in prompts]
+    if any(envelope) and not all(envelope):
+        raise ValueError(MIXED_REFUSAL)
 
 
 # ---------------------------------------------------------------------------
@@ -554,6 +624,22 @@ class EnvelopeReplayBackend(ReplayBackend):
         return self.local.prepare()
 
 
+def timing_origin(before_load, loop_start):
+    """Where a path's seconds= reading starts: its own loop, after every model is loaded."""
+    return loop_start
+
+
+def model_dtypes(backend):
+    """The dtype a prepared backend's model carries and the compute dtype of its 4-bit layers."""
+    local = getattr(backend, "local", None)
+    model = local._loaded()[1] if local is not None and hasattr(local, "_loaded") else getattr(backend, "model", None)
+    quant = getattr(getattr(model, "config", None), "quantization_config", None)
+    quant = quant.to_dict() if hasattr(quant, "to_dict") else (quant or {})
+    compute = quant.get("bnb_4bit_compute_dtype")
+    return {"dtype": str(getattr(model, "dtype", None)).replace("torch.", ""),
+            "compute_dtype": None if compute is None else str(compute).replace("torch.", "")}
+
+
 def _json_value(text):
     try:
         return True, json.loads(text)
@@ -583,8 +669,13 @@ def compare(rows, a, b, *, min_chunks=0):
 
 
 def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens=None, backend=None,
-        reader=None, run_id=None):
-    """Replay every prompt through each path (see the module text); returns the measurement."""
+        reader=None, run_id=None, texts=None, seconds=None, dtypes=None):
+    """Replay every prompt through each path (see the module text); returns the measurement.
+    `texts`, a dict, receives each reply's text by path and prompt id, in memory only (the
+    vLLM comparison reads the current engine's labels from it, vllm_replay.py); the records and
+    the measurement stay hashes only. `seconds`, a dict, receives each path's generation loop's
+    wall seconds (the prompts alone, after every model is loaded). `dtypes`, a dict, receives per
+    checkpoint the loaded model's dtype and its 4-bit compute dtype."""
     import bare_model
     out = Path(out)
     paths = list(paths)
@@ -600,8 +691,8 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
     (model_backend, _), = models
     # The envelope agents' prompts (extract --agents): each prompt names its agent and backend.
     envelope = any(p.get("envelope") is True for p in prompts)
-    if envelope and not all(p.get("envelope") is True for p in prompts):
-        raise ValueError("a replay file holds envelope agents' prompts or producer prompts, not both")
+    if envelope:
+        refuse_mixed(prompts)
     if envelope:
         # Replayed on their own model, loaded by the run's own loader (the tuned producer for a
         # local_producer agent, the agent's local model otherwise), under the run proper's
@@ -622,7 +713,10 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                                         reader if isinstance(reader, dict) and "decoding" not in reader else None)
     else:
         checkpoints = [None]
-    compact = {p["prompt_id"]: (not envelope) and is_compact(p["prompt"]) for p in prompts}
+    proposer = all(p.get("form") == PROPOSER_FORM for p in prompts)
+    if proposer and (envelope or roles or model_backend != PRODUCER_BACKEND or paths != ["sdpa"]):
+        raise ValueError("a proposer file replays producer prompts on the base, on the sdpa path alone")
+    compact = {p["prompt_id"]: (not envelope) and (not proposer) and is_compact(p["prompt"]) for p in prompts}
     if roles:
         # A compact producer prompt is judged by the compact validator, every other by its
         # agent's own contract, which it must have.
@@ -647,7 +741,7 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
     else:
         if reader is None:
             reader = (bare_model.resolve_reader(agent=sorted({p["agent"] for p in prompts})[0], checkpoint=bare_model.BASE)
-                      if auditor else bare_model.resolve_reader(checkpoint=bare_model.TUNED))
+                      if auditor else bare_model.resolve_reader(checkpoint=reader_checkpoint(proposer)))
         if auditor and built and reader["model_id"] != next(iter(prompts))["model_id"]:
             raise ValueError("the prompts were rendered for %s; the agent's local model is %s"
                              % (next(iter(prompts))["model_id"], reader["model_id"]))
@@ -655,16 +749,22 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
             backend = (EnvelopeReplayBackend if auditor else ReplayBackend)(reader, context)
         readers, backends = {None: reader}, {None: backend}
     prepared = []
+    import time
+    before_load = time.perf_counter()
     try:
         loads = {}
         for c in checkpoints:
             loads[c] = backends[c].prepare()
             prepared.append(c)
         loaded = loads[checkpoints[0]]
+        if dtypes is not None:
+            for c in checkpoints:
+                dtypes[str(c)] = model_dtypes(backends[c])
         limit = min(backends[c].max_context() for c in checkpoints)
         rows, memory = {p["prompt_id"]: {} for p in prompts}, {}
         for name in paths:
             cuda, at_start = bare_model.start_gpu_memory()
+            loop_started = timing_origin(before_load, time.perf_counter())
             for prompt in prompts:
                 backend, reader = backends[prompt.get("checkpoint")], readers[prompt.get("checkpoint")]
                 decoding = decoding_fields(reader)
@@ -694,6 +794,8 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                         if cuda is not None:
                             cuda.empty_cache()
                 text = result.get("text") if isinstance(result.get("text"), str) else None
+                if texts is not None and text is not None:
+                    texts.setdefault(name, {})[prompt["prompt_id"]] = text
                 if text is not None:
                     parsed, value = _json_value(text)
                     row["reply"] = {"sha256": _sha(text), "length_bytes": len(text.encode("utf-8"))}
@@ -726,6 +828,8 @@ def run(prompts_path, out, *, paths=DEFAULT_PATHS, decision=None, max_new_tokens
                 if roles:
                     row["checkpoint"] = prompt["checkpoint"]
                 rows[prompt["prompt_id"]][name] = row
+            if seconds is not None:
+                seconds[name] = round(time.perf_counter() - loop_started, 3)
             memory[name] = bare_model.read_gpu_memory(cuda, at_start)
     finally:
         if built:
@@ -918,6 +1022,13 @@ def main(argv=None):
             result = _embed_records().run(args.prompts, args.out)
             print(json.dumps({"prompts": result["prompts"], "failures": result["failures"], "seconds": result["seconds"]}, indent=2))
             return 0
+        if is_vllm_replay(args.prompts):
+            # #217: the same sealed pass, the current engine against vLLM (vllm_replay.py).
+            if [p for p in args.paths.split(",") if p] != ["sdpa"] or args.decision or args.max_new_tokens:
+                raise ValueError("a vLLM comparison runs the sdpa path alone, each prompt's own allowance, no decision")
+            result = _vllm_replay().run(args.prompts, args.out)
+            print(json.dumps({"prompts": result["prompts"], "failures": result["failures"]}, indent=2))
+            return 0
         if is_producer_training(args.prompts):
             # D-S57 item 3: the producer's candidate trained, then its test (producer_train.py).
             runner = _producer_train().heldout_run if _producer_heldout(args.prompts) else _producer_train().run
@@ -945,6 +1056,13 @@ def main(argv=None):
                 raise ValueError("a negotiation B1 pass runs the sdpa path alone, each prompt's own allowance, no decision")
             result = _negotiation_b1().run(args.prompts, args.out)
             print(json.dumps({"prompts": result["prompts"], "seconds": result["seconds"]}, indent=2))
+            return 0
+        if is_neg_advisor(args.prompts):
+            # D-605: the same sealed pass, the negotiation advisor's forms (neg_advisor.py).
+            if [p for p in args.paths.split(",") if p] != ["sdpa"] or args.decision or args.max_new_tokens:
+                raise ValueError("a negotiation advisor pass runs the sdpa path alone, each prompt's own allowance, no decision")
+            result = _neg_advisor().run(args.prompts, args.out)
+            print(json.dumps({"prompts": result["prompts"], "derived": result["derived"], "seconds": result["seconds"]}, indent=2))
             return 0
         if is_doc_judge(args.prompts):
             # G1: the same sealed pass, its own judging run (benchmark/baselines/doc_judge.py).

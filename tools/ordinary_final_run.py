@@ -49,7 +49,9 @@ def admit_cache_ref(directory, model):
 
 
 def write(path, value):
-    Path(path).write_text(json.dumps(value, indent=2, sort_keys=True)+'\n', encoding='utf8')
+    # LF on every platform (C4 launch 4): a sealed file's bytes, and every digest and key over them, are
+    # the same on the laptop and on the instance; Windows' newline translation made them CRLF.
+    Path(path).write_text(json.dumps(value, indent=2, sort_keys=True)+'\n', encoding='utf8', newline='\n')
 
 
 HEX64 = r'[0-9a-f]{64}'
@@ -158,6 +160,8 @@ def argv_for(manifest):
         return LAUNCHER_ARGV
     if manifest.get('arm') == 'G':
         return gate_argv(gate_declaration(manifest))
+    if manifest.get('arm') == 'S':
+        return list(SEAL_ARGV)
     return MULTI_ROUND_ARGV if manifest.get('multi_round') is True else ARGV
 
 
@@ -171,7 +175,12 @@ def argv_for(manifest):
 # every pass did before D-056 condition 6 (so `base` and `tuned` keep their meaning).
 # Arm L (D-S13 item 6d) is the launcher menu as shipped: shimmer.sh once, a review then a draft,
 # answered only from the sealed prompt map (launcher_declaration, execute_launcher).
-ARMS = ('B3', 'B1', 'L', 'G')
+# Arm S (route S, #252, D-585): a seal job, the bound sealer run on the instance once per sealed
+# request, at the laptop's own commit re-created over its own tree (SEAL_SOURCE, seal_route).
+ARMS = ('B3', 'B1', 'L', 'G', 'S')
+SEAL_ARGV = ('seal-job',)
+SEAL_SOURCE = 'seal_source.tar'
+SEAL_SUPPORT = ('seal_source.tar', 'commit_object.bin', 'seal_job.json', 'seal_workloads.tar', 'reuse_manifest.json')
 B1_ITEMS = 'items.json'
 B1_NAME = re.compile(r'[a-z0-9][a-z0-9_]{0,31}')
 # The checkpoints bare_model.py loads (its --checkpoint choices; a controller check holds them equal).
@@ -378,6 +387,19 @@ def arm_declaration(manifest):
                 'B1 fields sealed in an arm L bundle')
         return arm
     require('launcher' not in manifest, 'A launcher block sealed in a %s bundle' % arm)
+    if arm == 'S':
+        job = manifest.get('seal_job')
+        require(isinstance(job, dict) and isinstance(job.get('commit'), str) and isinstance(job.get('tree'), str)
+                and re.fullmatch('[0-9a-f]{40}', job['commit']) and re.fullmatch('[0-9a-f]{40}', job['tree']),
+                'An arm S bundle carries its seal job, its commit and its tree')
+        require(all(isinstance(support.get(n), str) and re.fullmatch(HEX64, support[n]) for n in SEAL_SUPPORT),
+                'The seal job files are not all sealed')
+        require(manifest.get('multi_round') is False and manifest.get('protected_test') is False,
+                'An arm S bundle is never multi-round and never a protected test')
+        require('b1' not in manifest and 'gate' not in manifest and B1_ITEMS not in support and REPLAY_PROMPTS not in support,
+                'B1 or gate fields sealed in an arm S bundle')
+        return arm
+    require('seal_job' not in manifest and SEAL_SOURCE not in support, 'A seal job sealed in a %s bundle' % arm)
     if arm == 'G':
         gate_declaration(manifest)
         require(manifest.get('multi_round') is False and manifest.get('protected_test') is False,
@@ -459,6 +481,7 @@ def admit_workload(manifest, seal, base=None):
     # D-S13 item 6d: the launcher menu runs base models on a development workload; never sealed.
     require(launcher_exposed(arm, exposure), 'Arm L runs exposed only: a sealed run carries no launcher arm')
     require(not (arm == 'G' and exposure == 'sealed'), 'Arm G runs exposed only: a sealed run carries no gate')
+    require(not (arm == 'S' and exposure == 'sealed'), 'Arm S runs exposed only: a seal job is never a sealed run')
     return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure, arm=arm)
 
 
@@ -1744,6 +1767,60 @@ def execute_gate(base, manifest, evidence, deadline):
 
 
 
+PROJECT_IN_STORE = 'PROJECT_IN_STORE.json'
+PROJECT_STORE_FOLDER = 'projects'
+
+
+def project_held(bundle, digest):
+    """#252 item 3: None when the bundle carries project.tar.gz holding `digest`; the store's file
+    name when the archive is held only in the persistent store by that fingerprint (the instance
+    hashes it before anything is extracted, archive_integrity); refused otherwise."""
+    local = Path(bundle)/'project.tar.gz'
+    if local.exists():
+        require(sha(local) == digest, 'Project archive changed')
+        return None
+    record = Path(bundle)/PROJECT_IN_STORE
+    require(record.is_file(), 'Project archive missing: neither in the bundle nor named in the store')
+    held = read(record)
+    require(held.get('sha256') == digest and held.get('store_name') == 'project-%s.tar.gz' % digest,
+            'Project archive changed')
+    return held['store_name']
+
+
+def execute_seal(base, manifest, evidence, deadline):
+    """The arm S entry after every guard execute() applies (#252): the sealed tree made a git
+    checkout, its commit the laptop's own (its commit object written; the tree id held to the
+    sealed one), then the job (seal_route.run_job, read from that checked tree) with the bound
+    sealer once per request."""
+    job = manifest['seal_job']
+    require(read(Path(base)/'seal_job.json') == job, 'The seal job file is not the sealed job')
+    out = Path(evidence)/'seal'
+    out.mkdir(parents=True)
+    env = gate_environment(base)
+    try:
+        tree = extract_gate_source(Path(base)/SEAL_SOURCE, Path(base)/'seal_tree')
+        write(out/'git_checkout.json', git_checkout(tree, env, job['tree'], deadline))
+        genv = dict(env, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_TERMINAL_PROMPT='0')
+        sys.path.insert(0, str(tree/'tools'))
+        import seal_route
+        write(out/'commit.json', seal_route.exact_commit(lambda *a: gate_git(tree, genv, deadline, *a),
+                                                         Path(base)/'commit_object.bin', job['commit'], job['tree']))
+    except Exception as exc:
+        write(out/'refusal.json', dict(refused=True, message=' '.join(str(exc).split())[:500], kind=type(exc).__name__))
+        raise
+    import declare_asset_copy
+    import verify_ordinary_final_assets as assets_check
+
+    def verify_assets(bundle):
+        assets_check.verify(bundle, Path(base)/'wheels')
+        return read(Path(bundle)/'asset_verification.json')
+    result = seal_route.run_job(base, job, tree, evidence, deadline, dict(genv, PYTHONDONTWRITEBYTECODE='1'),
+                                os.path.expanduser('~'), Path(declare_asset_copy.LOOP_MOUNT)/seal_route.STORE_FOLDER,
+                                verify_assets)
+    write(Path(evidence)/'result.json', result)
+    return 0 if result['execution_integrity_passed'] else 2
+
+
 def execute(base):
     base = Path(base).resolve()
     manifest = verify(base)
@@ -1819,6 +1896,12 @@ def execute(base):
         # on the laptop as well).
         try:
             return execute_gate(base, manifest, evidence, deadline)
+        finally:
+            disk.stop()
+    if arm_of(manifest) == 'S':
+        # Every guard above holds for arm S too; the seal job then runs the bound sealer per request.
+        try:
+            return execute_seal(base, manifest, evidence, deadline)
         finally:
             disk.stop()
     if arm_of(manifest) == 'L':

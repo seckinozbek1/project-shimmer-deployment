@@ -192,6 +192,13 @@ class LocalizationChecks(unittest.TestCase):
         self.assertNotIn('T?rk?e',result)
 
     def test_live_shipped_ui_offline(self):
+        # The proof runs the shipped UI's own script in Node. Off Windows a machine without Node
+        # (the rented gate instance) skips it and says so, as the other Node proofs do; on the
+        # Windows operator machine Node is required and its absence fails here.
+        import os
+        import shutil
+        if shutil.which('node') is None and os.name != 'nt':
+            self.skipTest('Node unavailable for offline UI execution')
         result=subprocess.run(['node',str(ROOT/'scripts/ui/localization_checks.js')],capture_output=True,text=True,timeout=20)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertIn('17 offline localization UI checks',result.stdout)

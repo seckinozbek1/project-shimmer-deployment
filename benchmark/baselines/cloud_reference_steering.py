@@ -33,6 +33,19 @@ carries `claim_guard.STEERING_LABEL` and `"claim": false` in the file itself, so
 
     py -3.12 -X utf8 benchmark/baselines/cloud_reference_steering.py run --prompts <J1-shaped prompts file>
         --subset <quick subset: a JSON list of item ids> --subset-sha256 <its digest> --out <name>
+
+The gate's quick subset (lane/cloud-gate): `--subset` may be the frozen quick_set_ids.json itself
+(digest gate_score.QUICK_SET_SHA256), its items read for the prompts' one benchmark by
+gate_score.set_items, with B1's own prompts file (`cloud_reference.py gate-prompts`, the B1 arm's own
+file byte for byte) holding every subset item in every group; the claim set's file is refused here,
+by digest and by kind. `read` gives the cloud arm gate_score.figures takes (`gate_score.cloud_arm`,
+steering only: every row `claim: false`, refused by figures on the claim set); it prints counts only:
+
+    py -3.12 -X utf8 benchmark/baselines/cloud_reference_steering.py read --prompts <the same file>
+        --run output/cloud_reference_steering/<name> --set <quick_set_ids.json>
+        [--class-setting 3-class (SciTab)] --key <adapter answer key> [--key ...]
+
+`read` applies B1's comparator rule to the cloud's two groups (D-554).
 """
 from __future__ import annotations
 
@@ -143,7 +156,7 @@ def allowed_set(prompts_sha256, subset_sha256, sets_path=SETS_PATH, fresh_source
         raise cr.Stop("The steering sets list cannot be read")
     refused = {r.get("sha256") for r in sets.get("refused") or []} | fresh_digests(fresh_source)
     cr.refuse(prompts_sha256 not in refused and subset_sha256 not in refused,
-              "This set is on the refused list (the fresh set or sealed material): never a steering check")
+              "This set is on the refused list (the fresh set, the gate's claim set or sealed material): never a steering check")
     found = [a for a in sets.get("allowed") or []
              if a.get("prompts_sha256") == prompts_sha256 and a.get("subset_sha256") == subset_sha256]
     cr.refuse(len(found) == 1, "This prompts file and subset are not an allowed steering set (%s)" % Path(sets_path).name)
@@ -175,10 +188,41 @@ def seven_day_usage(root=ROOT):
         status = json.loads((Path(root) / ".claude" / "loop_status.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    for key in ("seven_day_percent", "seven_day", "usage_seven_day"):
+    for key in ("seven_day_used_percentage", "seven_day_percent", "seven_day", "usage_seven_day"):
         if key in status:
             return status[key]
     return None
+
+
+GATE_QUICK_SCHEMA = "shimmer-gate-quick-set-v2"
+
+
+def subset_items(subset_path, prompts):
+    """The quick subset's item ids: a JSON list of ids, or the gate's frozen quick subset file
+    (`gate_set.py freeze`'s quick_set_ids.json), whose items are read by `gate_score.set_items` for the
+    prompts' one benchmark. A gate set file that is not the quick subset is refused; a gate prompts file
+    must then hold every item of the subset, in every group it holds, one prompt each."""
+    subset = json.loads(Path(subset_path).read_text(encoding="utf-8"))
+    if isinstance(subset, list):
+        cr.refuse(subset and all(isinstance(i, str) for i in subset), "The quick subset is a JSON list of item ids")
+        return subset, None
+    cr.refuse(isinstance(subset, dict) and subset.get("schema") == GATE_QUICK_SCHEMA and subset.get("set") == "quick",
+              "The quick subset is a JSON list of item ids or the gate's frozen quick subset file")
+    import gate_score
+    cr.refuse(cr.sha(subset_path) == gate_score.QUICK_SET_SHA256,
+              "The gate set file is not the frozen quick subset (gate_score.QUICK_SET_SHA256)")
+    benchmarks = {p.get("benchmark") for p in prompts}
+    cr.refuse(len(benchmarks) == 1, "A gate steering check reads one benchmark's prompts file")
+    benchmark = benchmarks.pop()
+    _digest, listed = gate_score.set_items(subset_path, benchmark)
+    cr.refuse(listed, "The quick subset lists no %s item" % benchmark)
+    for group in sorted({p.get("group") for p in prompts}):
+        ids = [p["item_id"] for p in prompts if p.get("group") == group]
+        cr.refuse(len(ids) == len(set(ids)) and set(ids) == set(listed),
+                  "The prompts of group %s are not the quick subset's %s items, one each" % (group, benchmark))
+    stray = sorted(p["prompt_id"] for p in prompts if listed[p["item_id"]] != p["document_id"])
+    cr.refuse(not stray, "Prompt %s names another document than the quick subset lists" % (stray[:1] or [""])[0])
+    return sorted(listed), benchmark
 
 
 def run(prompts_path, subset_path, subset_sha256, out, *, caller=call_claude_code, status=auth_status, root=ROOT,
@@ -188,10 +232,8 @@ def run(prompts_path, subset_path, subset_sha256, out, *, caller=call_claude_cod
     refuse = cr.refuse
     refuse(cr.sha(subset_path) == subset_sha256, "The quick subset is not the file whose digest was given")
     allowed = allowed_set(cr.sha(prompts_path), subset_sha256, sets_path, fresh_source)
-    subset = json.loads(Path(subset_path).read_text(encoding="utf-8"))
-    refuse(isinstance(subset, list) and subset and all(isinstance(i, str) for i in subset),
-           "The quick subset is a JSON list of item ids")
     value = json.loads(Path(prompts_path).read_text(encoding="utf-8"))
+    subset, gate_benchmark = subset_items(subset_path, value.get("prompts") or [])
     chosen = [p for p in value.get("prompts") or [] if p.get("item_id") in set(subset)]
     refuse(chosen, "No prompt of the prompts file is in the quick subset")
     cr.scan(chosen, None)
@@ -222,7 +264,7 @@ def run(prompts_path, subset_path, subset_sha256, out, *, caller=call_claude_cod
                                                                "length_bytes": len(reply.encode("utf-8"))}))
     measurement = dict(stamp, schema=cr.MEASUREMENT_SCHEMA, prompts_sha256=cr.sha(prompts_path),
                        config_sha256=value.get("config_sha256"), subset_sha256=subset_sha256, rows=rows,
-                       allowed_set=allowed.get("name"), sign_in=sign_in,
+                       allowed_set=allowed.get("name"), sign_in=sign_in, gate_benchmark=gate_benchmark,
                        prompts=len(chosen), sent=len(rows), model={"configured": model, "route": "subscription"},
                        system_prompt=STEERING_SYSTEM, usage_watch={"seven_day_before": usage_before,
                                                                    "seven_day_after": seven_day_usage(root),
@@ -235,6 +277,46 @@ def run(prompts_path, subset_path, subset_sha256, out, *, caller=call_claude_cod
     return measurement
 
 
+def keys_by_document(keys):
+    """{document id: key file} of adapter answer keys, each document read from its key's item table by
+    the scorer (the one reader of a key)."""
+    import doc_judge
+    sc = doc_judge._score_corpus()
+    out = {}
+    for key in keys:
+        document = sc.item_table(key)["document_id"]
+        cr.refuse(document not in out, "Two keys name document %s" % document)
+        out[document] = key
+    return out
+
+
+def read(prompts_path, run_dir, set_file, keys, setting=None, benchmark=None):
+    """A steering check's cloud arm for `gate_score.figures`, on the quick subset, by B1's comparator
+    rule (D-554, `gate_score.cloud_reference_arm`: both groups, the better in the paper's metric, a tie
+    to judge_reason, D-241's abstain floor): the rows (each carrying `claim: false`) and a summary of
+    counts only, stamped steering. The rows are returned, never written: they hold the gold the
+    scorer read. `setting` is SciTab's declared class setting."""
+    import gate_score
+    value = json.loads(Path(prompts_path).read_text(encoding="utf-8"))
+    if benchmark is None:
+        found = {p.get("benchmark") for p in value.get("prompts") or []}
+        cr.refuse(len(found) == 1, "Name the benchmark: the prompts file holds more than one")
+        benchmark = found.pop()
+    try:
+        rows, chosen = gate_score.cloud_reference_arm(benchmark, prompts_path, run_dir, keys_by_document(keys), set_file,
+                                                      steering=True, setting=setting)
+    except ValueError as exc:
+        if isinstance(exc, claim_guard.SteeringNotAClaim):
+            raise
+        raise cr.Stop(str(exc))
+    summary = claim_guard.steering_view({"arm": "cloud", "benchmark": benchmark, "group": chosen["group"],
+                                         "groups": chosen["groups"], "rule": chosen["rule"], "items": len(rows),
+                                         "abstained": sum(1 for r in rows if r["label"] == "ABSTAIN"),
+                                         "set_sha256": cr.sha(set_file), "prompts_sha256": cr.sha(prompts_path),
+                                         "read_by": "gate_score.cloud_reference_arm(steering=True)"})
+    return rows, summary
+
+
 def main(argv_=None):
     parser = argparse.ArgumentParser(prog="cloud_reference_steering.py", allow_abbrev=False,
                                      description=__doc__.split("\n\n")[0])
@@ -244,7 +326,23 @@ def main(argv_=None):
     p.add_argument("--subset", required=True, help="the quick subset: a JSON list of item ids")
     p.add_argument("--subset-sha256", required=True)
     p.add_argument("--out", required=True, help="a new folder output/cloud_reference_steering/<name>")
+    r = sub.add_parser("read", allow_abbrev=False,
+                       help="the steering check's cloud arm on the gate's quick subset: counts printed, steering only")
+    r.add_argument("--prompts", required=True)
+    r.add_argument("--run", required=True, help="the steering folder output/cloud_reference_steering/<name>")
+    r.add_argument("--set", required=True, help="the frozen quick subset file (gate_score.QUICK_SET_SHA256)")
+    r.add_argument("--class-setting", default=None, choices=["2-class", "3-class"],
+                   help="SciTab's declared class setting (the freeze's); ContraDoc takes none")
+    r.add_argument("--key", action="append", required=True, help="an adapter answer key, read by the scorer only (repeat)")
     args = parser.parse_args(sys.argv[1:] if argv_ is None else argv_)
+    if args.command == "read":
+        try:
+            _rows, summary = read(args.prompts, args.run, args.set, args.key, args.class_setting)
+        except (cr.Stop, claim_guard.SteeringNotAClaim) as exc:
+            print("cloud_reference_steering stopped: %s" % exc, file=sys.stderr)
+            return 3
+        print(json.dumps(summary, indent=1, sort_keys=True))
+        return 0
     try:
         m = run(args.prompts, args.subset, args.subset_sha256, args.out)
     except cr.Stop as exc:

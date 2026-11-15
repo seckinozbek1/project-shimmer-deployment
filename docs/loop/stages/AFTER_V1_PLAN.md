@@ -225,6 +225,29 @@ Written 12 November 2026 by lane `speed-lookback` from counts and timings only (
 - Machine types above the A10 are claimed nowhere, since none has a measured reference pair; the pair itself is a small test that could come first (D-S96 item 2, D-382 item 1).
 - The warm column of TIME_BUDGET.md is an estimate until a warm run exists.
 
+## Tools and methods to adopt (D-562, Seckin 09:24, 13 November)
+
+Each item is adopted only after a small test against our current results, and only with Seckin's yes asked in FOR_SECKIN. None replaces our own check without that test and a decision. The kind of each (D-559) is named.
+
+- **PII and privacy (privacy kind).** Microsoft Presidio for PII detection, beside the sensitivity layer's detector; gitleaks or trufflehog behind the pre-push scan, beside `scripts/guard_secrets.py` and the key-pattern grep. Issue #242.
+- **Label leakage (separation kind).** lm-sys llm-decontaminator as a second check on benchmark contamination, beside `gate_leakage.py`. Issue #243.
+- **Packaging (another kind: speed and format).** Issue #244.
+  - BLAKE3 hashing for seals. It changes the seal format, so only with a controller change after the measurement, which re-seals every bundle.
+  - Sealing on Lambda, with the budget caps computed on the laptop and held inside the reaper and the ledger (D-557, D-558).
+  - Hugging Face style content-addressed reuse of shared archive parts.
+- **Not on this list:** the four sealing speed-ups of 09:20 (shared asset archive, parallel compression, hash cache, three sealers). They are tested and applied before the claim-set sealing under the standing speed-up order (D-531), issue #241.
+
+## Score steps that need training (D-567, Seckin 10:36 to 10:44, 13 November)
+
+After 14 November only, each written first and measured on the development set, never the gate set:
+- SFT plus RL for ContraDoc coverage.
+- Qwen3 for the judging agents (the licence rule, the card size, a measured A10 peak).
+
+## Public update after the gate (D-570, Seckin 10:53, 13 November)
+
+What the next public update must say, on the README, the site, LinkedIn and Medium, once the gate is read:
+- INST_FINDER is optional, off by default, and under development. Its job is to find and route the relevant institutions in correspondence, and that has no consumer yet.
+
 ## Budget
 
 Budget 250 USD, hard stop 249, the 60 USD sealed floor (D-S63 item 4, D-309); 104.26 spent by the reaper at D-323. The programme's shares (D-324): judge 9.6, auditor 7.5, producer and its roles 21.2, cloud reference 15, cases 6.2, the fresh read 22 (range 15 to 30), install and package 5. Steps 13 and 14 get their forecasts when placed (L14d about 3.6; L9a and L9b about 12.3 and 12.8 by their 31 October forecasts, to be measured again; the third re-run about 7.3 with its replays). `BUDGET.md` is updated before each launch with the storage forecast to the full finish date.

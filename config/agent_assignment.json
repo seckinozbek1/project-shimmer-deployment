@@ -1,0 +1,30 @@
+{
+  "schema": "agent-assignment-v1",
+  "description": "The per-document agent-assignment layer (D-571, D-572, D-575; scripts/agent_assignment.py). Python reads each document's STRUCTURAL conditions (no meaning, no keyword table: WORDS-A) and assigns the production agents the document needs. Every assignment and every skip is recorded with its reason (audit/agent_assignment.json and agent_activation's not_called, state unassigned). A skip is made only by a rule listed in skip_rules, each naming the built rule it rests on; with none listed every agent is assigned, as before the layer. The floor is the set of compositions the rules make mandatory; an assignment below it is refused before any call. The floor is data, so a rule change (for example INFRA-053's reading of LAW-III) is written here, never in code.",
+  "skip_rules": [],
+  "skip_rule_form": "{\"agent\": NAME, \"when\": {CONDITION: VALUE, ...} (every listed condition equal), \"rule\": the built rule it rests on, \"note\": why}",
+  "conditions": ["has_table", "table_rows", "numeric_cells", "prose_lines", "citation_markers", "characters"],
+  "floor": [
+    {"id": "F1", "rule": "LAW-III", "agents": ["VERIFIER"], "when_assigned": "PROCESSOR",
+     "text": "A produced draft is audited by the other model family: VERIFIER (local_auditor) on PROCESSOR's (local_producer) draft wherever PROCESSOR runs.",
+     "enforced_by": "the backend column fixed in code (pipeline, the agent table), gate checks 87 and 127"},
+    {"id": "F2", "rule": "tools/ordinary_final_run.assess required_telemetry_missing", "agents": ["PROCESSOR"], "when_assigned": null,
+     "text": "PROCESSOR runs on checkpoint 168 for every document under review.",
+     "enforced_by": "tools/ordinary_final_run.assess"},
+    {"id": "F3", "rule": "INST-SWITCH-A", "agents": ["INST_FINDER"], "when_assigned": null, "unless_switched_off": true,
+     "text": "INST_FINDER runs unless an operator-ratified amendment switches it off; the switch, not this layer, decides that.",
+     "enforced_by": "pipeline._inst_finder_decision (exit 9 on an unratified switch)"},
+    {"id": "F4", "rule": "INFRA-034; LAW-IV", "agents": [], "when_assigned": null,
+     "text": "The redaction phase always runs, with its hard stop when no rule compiles. Not an agent assignment: listed so the floor is whole.",
+     "enforced_by": "the redaction gate"},
+    {"id": "F5", "rule": "CLAUDE.md, the verifiability gate", "agents": [], "when_assigned": null,
+     "text": "The verifiability gate always runs. Not an agent assignment.",
+     "enforced_by": "scripts/verifiability_gate.py"},
+    {"id": "F6", "rule": "INFRA-050 editorial_routing", "agents": [], "when_assigned": null,
+     "text": "An editorial observation is reviewed by the other family, or recorded as not reviewed. Not a production assignment.",
+     "enforced_by": "the editorial board"},
+    {"id": "F7", "rule": "LAW-II", "agents": [], "when_assigned": null, "no_substitution": true,
+     "text": "An agent's function is never done by another: a skip rule may skip an agent, never route its work to another.",
+     "enforced_by": "the registry; agent_assignment refuses a skip rule that names a replacement"}
+  ]
+}

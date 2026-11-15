@@ -14,7 +14,12 @@ config/, durable/ and ontology/ are never written):
   (d) the decision is made once, by main() at start-up, and saved: a constitution
       or variable changed between start-up and phase time does not change what
       phase 3-4 dispatches, what the cost projection counts or what the progress
-      baseline counts, in either direction; an unreadable saved record refuses.
+      baseline counts, in either direction; an unreadable saved record refuses;
+  (e) D-570, off by default: with no value INST_FINDER is off only under a ratified
+      amendment that declares `"default": "off"` (on with none, and on under one that
+      ratifies the switch alone), recorded with source `default` and stated in the
+      run summary; `on` runs it with or without the amendment; the sealer's test,
+      which evaluates the same bound function, seals the same setting.
 
 Every case drives the real code (pipeline._inst_finder_startup_guard and
 pipeline.phase_3_4_content_production, with the model boundary replaced: no
@@ -35,11 +40,15 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+import sys
+
 import pipeline
 import routing_view
 import run_context as run_context_mod
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT / "tools") not in sys.path:
+    sys.path.insert(0, str(ROOT / "tools"))
 VARIABLE = "SHIMMER_INST_FINDER"
 REASON = "switched off by operator setting"
 ALL = ["ARCHIVIST", "INST_FINDER", "CITATION_RESOLVER"]
@@ -87,6 +96,21 @@ def _ratifying(**overrides):
              "change": {"setting": "SHIMMER_INST_FINDER=off switches INST_FINDER off for the run."}}
     value.update(overrides)
     return value
+
+
+DEFAULT_OFF = {"default": "off",
+               "setting": "SHIMMER_INST_FINDER: with no value INST_FINDER is off by default; on runs it."}
+
+
+def _switch_with(old, new):
+    """pipeline._inst_finder_switch rebuilt from its own source with one passage replaced."""
+    tree = ast.parse(Path(pipeline.__file__).read_text(encoding="utf-8"))
+    node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_inst_finder_switch")
+    source = ast.get_source_segment(Path(pipeline.__file__).read_text(encoding="utf-8"), node)
+    assert source.count(old) == 1, "the passage moved, so the neutralisation cannot be applied"
+    namespace = {}
+    exec(compile(source.replace(old, new), pipeline.__file__, "exec"), pipeline.__dict__, namespace)
+    return namespace["_inst_finder_switch"]
 
 
 def _mutated_phase(transform):
@@ -204,7 +228,7 @@ class InstFinderSwitchChecks(unittest.TestCase):
 
     # (a) absent: dispatched exactly as before ------------------------------------
     def test_a_absent_dispatches_as_before(self):
-        root = _root(self.tmp.name)
+        root = _root(self.tmp.name, strip_ratifying=True)   # the state before a ratified default off (INFRA-052)
         baseline_calls, baseline_progress = None, None
 
         def observe():
@@ -235,6 +259,112 @@ class InstFinderSwitchChecks(unittest.TestCase):
             return record
         self.prove("a", "default_not_honoured", observe,
                    lambda: patch.object(pipeline, "_inst_finder_switch", default_not_honoured))
+
+    # (e) D-570: no value under a ratified default off; `on` always runs it ---------
+    def test_e_default_off_only_under_a_ratified_default(self):
+        tmp = Path(self.tmp.name)
+        roots = {"none": _root(tmp / "none", strip_ratifying=True),
+                 "switch only": _root(tmp / "switch", amendment=_ratifying(), strip_ratifying=True),
+                 "default off": _root(tmp / "default", amendment=_ratifying(change=DEFAULT_OFF), strip_ratifying=True)}
+
+        sealer_source = [None]   # None: the pipeline file as it stands; a neutralisation swaps it
+
+        def expected(value, kind):
+            """(setting, switched off, source, summary line, refused) for a value under an amendment kind."""
+            asked = value.strip().lower() if isinstance(value, str) else None
+            asked = asked or None
+            if asked not in (None, "on", "off"):
+                return "on", [], "variable", "- INST_FINDER: the setting was neither on nor off", True
+            source = "default" if asked is None else "variable"
+            off = (asked == "off" and kind != "none") or (asked is None and kind == "default off")
+            if asked == "off" and kind == "none":
+                return "off", [], source, "- INST_FINDER: switched off without a ratified amendment", True
+            if not off:
+                return "on", [], source, "- INST_FINDER: switched on for this run", False
+            line = ("- INST_FINDER: off by default for this run, as ratified in amendment " if kind == "default off"
+                    else "- INST_FINDER: switched off for this run by the operator, as ratified in amendment ") + FIXTURE_ID
+            return "off", ["INST_FINDER"], source, line, False
+
+        def observe():
+            for value in (None, "", "on", "On", "off", " off ", "OFF", "maybe"):
+                for kind, root in roots.items():
+                    setting, off, source, line, refused = expected(value, kind)
+                    with _setting(value):
+                        ctx = run_context_mod.create_run(root)
+                        refusal = pipeline._inst_finder_startup_guard(ctx, root)
+                        self.assertEqual(bool(refusal), refused, (value, kind, refusal))
+                        saved = json.loads((ctx.audit_dir() / "agent_switches.json").read_text(encoding="utf-8"))
+                        self.assertEqual((saved["setting"], saved["switched_off"], saved["source"]),
+                                         (setting, off, source), (value, kind))
+                        self.assertIn(line, _summary(ctx), (value, kind))
+                        if refused:
+                            continue
+                        if off:
+                            self.assertEqual(saved["ratified_by"], FIXTURE_ID)
+                        for waves in (False, True):
+                            out = _produce(root, waves, ctx=ctx)
+                            self.assertIsNone(out["error"])
+                            self.assertEqual(out["requested"], [a for a in ALL if a not in off], (value, kind, waves))
+                            if off:
+                                row = next(d for d in out["audit"]["decisions"] if d["agent"] == "INST_FINDER")
+                                self.assertEqual((row["state"], row["evidence"]["source"]), ("switched_off", source))
+            # The sealer evaluates the same bound function from the source file: the same setting, or a refusal.
+            import prepare_ordinary_final_run as prep
+            files = {"scripts/pipeline.py": sealer_source[0] or Path(pipeline.__file__).read_bytes()}
+            for kind, root in roots.items():
+                files["config/constitution.json"] = (root / "config" / "constitution.json").read_bytes()
+                for value in (None, "", "on", "On", "off", " off ", "OFF", "maybe"):
+                    setting, _off, _source, _line, refused = expected(value, kind)
+                    record = prep.inst_finder_setting(files, value)
+                    self.assertEqual((record["setting"], bool(record["refusal"])), (setting, refused), ("sealer", value, kind))
+
+        real = pipeline._inst_finder_switch
+
+        def no_value_forced_on(root_):
+            record = dict(real(root_))
+            if not (record["value"] or "").strip():
+                record.update(setting="on", switched_off=[], ratified_by=None)
+            return record
+
+        def no_value_forced_off(root_):
+            record = dict(real(root_))
+            if not (record["value"] or "").strip():
+                record.update(setting="off", switched_off=["INST_FINDER"], ratified_by="forced")
+            return record
+
+        def on_ignored(root_):
+            with _setting(None):
+                return real(root_)
+        self.prove("e", "default_off_ignored", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_switch", no_value_forced_on))
+        self.prove("e", "default_off_without_a_ratified_default", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_switch", no_value_forced_off))
+        self.prove("e", "on_not_honoured", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_switch", on_ignored))
+        self.prove("e", "any_ratifying_amendment_taken_as_default_off", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_switch", _switch_with(
+                       "if value is None and not declares_default_off:", "if False:")))
+
+        @contextmanager
+        def sealer_reads_a_neutralised_source():
+            text = Path(pipeline.__file__).read_text(encoding="utf-8")
+            old = "if value is None and not declares_default_off:"
+            assert text.count(old) == 1, "the passage moved, so the neutralisation cannot be applied"
+            sealer_source[0] = text.replace(old, "if False:").encode("utf-8")
+            try:
+                yield
+            finally:
+                sealer_source[0] = None
+        self.prove("e", "sealer_source_takes_any_ratifying_amendment_as_default_off", observe,
+                   sealer_reads_a_neutralised_source)
+
+        def odd_values_taken_as_on(root_):
+            record = dict(real(root_))
+            if record["refusal"] and record["setting"] == "on":
+                record["refusal"] = None
+            return record
+        self.prove("e", "a_value_neither_on_nor_off_accepted", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_switch", odd_values_taken_as_on))
 
     # (b) off with the real constitution: refuses -----------------------------------
     def test_b_off_without_ratification_refuses(self):
@@ -401,7 +531,9 @@ def check():
     if not result.wasSuccessful():
         problems = [str(t) + ": " + tb.strip().splitlines()[-1] for t, tb in result.failures + result.errors]
         return "FAIL", "%d failures, %d errors: %s" % (len(result.failures), len(result.errors), "; ".join(problems)[:900])
-    return "PASS", ("SHIMMER_INST_FINDER: absent dispatches all three corpus agents; off without a ratified "
+    return "PASS", ("SHIMMER_INST_FINDER: absent dispatches all three corpus agents with no ratified default, and is "
+                    "off by default only under a ratified amendment declaring default off (D-570), on running it either "
+                    "way, the sealer sealing the same; off without a ratified "
                     "amendment refuses in one line (guard, main before any model call, phase 3-4); off with a "
                     "ratified fixture amendment skips INST_FINDER, records it switched_off with the reason, and "
                     "labels every result with its own agent, waves on and off; the decision saved at start-up "

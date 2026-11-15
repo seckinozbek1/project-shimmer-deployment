@@ -1,5 +1,10 @@
 {
   "bytes": 13149972480,
+  "deleted": {
+    "approved_by": "Seckin (14 November 2026, 15:38)",
+    "date": "2026-11-14",
+    "note": "The file at path was deleted from the laptop's disk; this record's sha256 and bytes stay as the record of what it was."
+  },
   "manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
   "members": 122,
   "only_manifest_models_wheels_and_revision_refs": true,

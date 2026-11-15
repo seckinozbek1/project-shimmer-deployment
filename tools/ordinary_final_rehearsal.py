@@ -265,7 +265,9 @@ def run_controller(base, remote_root_present, layout):
     transport = LinuxTransport(base)
     fake_subprocess = SimpleNamespace(run=transport.run, Popen=transport.popen, TimeoutExpired=subprocess.TimeoutExpired,
                                       CompletedProcess=subprocess.CompletedProcess, DEVNULL=subprocess.DEVNULL,
-                                      DETACHED_PROCESS=8, CREATE_NEW_PROCESS_GROUP=512, CREATE_NO_WINDOW=0)
+                                      DETACHED_PROCESS=getattr(subprocess, 'DETACHED_PROCESS', 0),
+                                      CREATE_NEW_PROCESS_GROUP=getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0),
+                                      CREATE_NO_WINDOW=0)   # the host's own detach flags, as the controller reads them
     console = io.StringIO()
     with patch.object(controller, 'BASE', base), patch.object(controller, 'REMOTE', layout.remote), \
             patch.object(controller, 'MANIFEST', sha(base / 'execution_manifest.json')), \

@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "decision": "D-611",
+  "floor_gib": 30,
+  "trigger_gib": 32,
+  "loop_ref": "HEAD",
+  "protected_prefixes": ["docs/loop", "docs/fix", "config", "durable", "ontology", ".git", ".claude"],
+  "protected_names": ["private", "_private"],
+  "never_name_globs": ["fingerprint*", "*fingerprint*.json*"],
+  "sealed_markers": ["seal.json", "execution_manifest.json", "RUN_FOLDER.json", "LAUNCH_INTENT.json",
+                     "authorization_binding.json", "manifest.json", "case_manifest.json"],
+  "launched_markers": ["LAUNCH_INTENT.json", "RUN_FOLDER.json", "RUN_CLAIMED", "WORKLOAD_LAUNCH_INTENT.json"],
+  "reference_file_globs": ["seal*.json", "*manifest*.json", "FINAL_STATUS.json", "*fingerprint*", "REQUEST*", "*_REQUEST*",
+                           "RUN_FOLDER.json", "TERMINATION_VERIFIED.json"],
+  "reference_dir_globs": ["_xfer*", "_handoff*"],
+  "no_descend_names": [".git", ".venv", ".venv_*", "node_modules", "site-packages", "hf_cache", ".claude"],
+  "reference_max_bytes": 52428800,
+  "kinds": [
+    {
+      "name": "python_bytecode_cache",
+      "type": "dir",
+      "name_glob": "__pycache__",
+      "min_age_days": 0,
+      "reason": "Python bytecode cache; the interpreter rewrites it on the next import",
+      "regenerate": "run any Python import of the module; nothing to restore by hand"
+    },
+    {
+      "name": "pytest_cache",
+      "type": "dir",
+      "name_glob": ".pytest_cache",
+      "min_age_days": 0,
+      "reason": "pytest's own cache of last-failed and node ids",
+      "regenerate": "run pytest again"
+    },
+    {
+      "name": "finished_prep_intermediates",
+      "type": "dir",
+      "name_glob": "_work",
+      "also_name_globs": ["_export"],
+      "under": ["external", "output"],
+      "min_age_days": 2,
+      "requires": ["not_launched"],
+      "reason": "the _work and _export intermediates of a preparation that has finished (older than two days)",
+      "regenerate": "run the preparation again from its own tool; its inputs are kept"
+    },
+    {
+      "name": "unpacked_collected_evidence",
+      "type": "dir",
+      "name_glob": "downloaded",
+      "under": ["external", "output"],
+      "min_age_days": 3,
+      "allow_in_sealed": true,
+      "allow_self_markers": true,
+      "requires": ["collected_tar_digest_recorded"],
+      "reason": "the unpacked copy of a collected run's evidence; the collected_evidence.tar.gz beside it is kept and its digest is recorded in collection_integrity.json",
+      "regenerate": "tar -xzf collected_evidence.tar.gz into a new folder named downloaded in the run folder"
+    },
+    {
+      "name": "refused_seal_folder",
+      "type": "dir",
+      "name_glob": "*.refused*",
+      "under": ["external", "output"],
+      "min_age_days": 1,
+      "allow_in_sealed": true,
+      "allow_self_markers": true,
+      "requires": ["not_launched"],
+      "reason": "a bundle folder the sealer or the preflight refused, never launched, older than a day",
+      "regenerate": "seal the bundle again with the sealer under the same name"
+    },
+    {
+      "name": "partial_seal_killed_for_memory",
+      "type": "dir",
+      "name_glob": "*.killed_for_memory_*",
+      "under": ["external", "output"],
+      "min_age_days": 0,
+      "allow_in_sealed": true,
+      "allow_self_markers": true,
+      "requires": ["not_launched", "base_sibling_exists"],
+      "reason": "a partial seal left by a host memory stop; D-222 restarts that job after removing its partial output, and the sealed folder of the same name exists",
+      "regenerate": "seal the bundle again with the sealer (the unsuffixed folder already holds the restart)"
+    },
+    {
+      "name": "superseded_worktree",
+      "type": "worktree",
+      "report_only": true,
+      "reason": "a lane worktree whose branch is merged into the loop branch and whose tree is clean; REPORTED ONLY in this version, never deleted",
+      "regenerate": "git worktree add <path> <branch>"
+    }
+  ]
+}
