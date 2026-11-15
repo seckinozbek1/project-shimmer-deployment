@@ -7286,3 +7286,24 @@ Written by the lead, Sat 14 Nov 2026 22:25 (from date).
 2. **README "Where Shimmer is now".** The draft of 19:13 is approved, with the third bullet replaced by Seckin's wording ("Most remaining misses came from parts that Python compared and found consistent ..."). Pushed after the pre-push scan (D-650).
 3. **Fix 9fb6a9e8 (standing order 2).** Merged into main once the full gate passes on Lambda as arm G (GATE-ARM-A); the gate run is under the 3 USD line (D-667).
 - **Rules.** D-650, D-663, D-667, INFRA-029, INFRA-046, INFRA-047, GATE-ARM-A, HONEST-OUTPUT-A, standing order 2.
+
+## D-670: the low-confidence rule first on SciTab, then ContraDoc as its own step with Seckin's word; the 'no contradiction' guard kept on SciTab (Seckin 19:47)
+
+15 November 2026, 19:48 +0300 (from date), lead session b547ef8e. Seckin agreed with the lead's recommendation (FOR_SECKIN 19:36, ContraDoc question (c)).
+1. **SciTab first.** The rule of D-646 (low-confidence leanings counted, labelled low-confidence, the figure without them beside every report) is built for SciTab under TABLE-AUTHORITY-A and shown on development half A (#272), after the parser sweep (D-663).
+2. **ContraDoc second, separately (#289).** The same rule is then proposed for ContraDoc with its exact wording, its instruction change and re-pinned prompt digests, and its effect on saved half A outputs. It is built only after Seckin's word, because it changes the frozen ContraDoc reading (v2_primary, D-476).
+3. **The guard stays.** An ok record whose relation is a relation in words (a 'no contradiction' record kept under INFRA-055, D-669) gives HOLDS only under the each reading (ContraDoc); under three_way (SciTab) and exists it gives no state and is counted apart, so it is never scored as 'supports'. Built by the audit-fix lane in the INFRA-055 commit, with a proof that fails when the guard is removed. The frozen v2_primary reading's same mapping waits on Seckin's ruling (FOR_SECKIN 19:36).
+- **Rules.** D-476, D-642, D-646, D-663, D-667, D-669, INFRA-055, TABLE-AUTHORITY-A, HONEST-OUTPUT-A.
+
+## D-671: the measurement and cost frame: no pilot re-run, one locked final test, synthetic items in development only, no cloud or bare-model runs until after v1.1 (Seckin 20:04)
+
+15 November 2026, 20:04 +0300 (from date), lead session b547ef8e. Seckin's decisions, in substance:
+1. **The negotiation pilot is not run again.** Its saved outputs are only re-scored after the parser sweep (a repair of the measurement, D-663), and its 18 items then join the development data. This replaces the "one pilot re-run" of 16:40 (D-656).
+2. **Item sets.** Several development sets and several pilots; each pilot is looked at once and then joins development. One final test set only: locked, opened once, at the very end; no spare test sets. First count how many real items the public sources give, split them, and report the split and its cost to Seckin before anything is built.
+3. **Synthetic items** are allowed when real data runs short. They are made by an agent that never sees the final test set or any pilot (neither texts nor labels). They are used only in development and pilots, never in the final test, each marked synthetic and reported apart. Their answers come from their construction, stated as a limit.
+4. **No cloud-model (API) runs until after v1.1,** on any set, the final test included.
+5. **No bare-model (B1) runs either.** The figures already measured are used. The gate's two conditions are read against them, labelled as measured on other items (the quick subset).
+6. **The effort goes into improving Shimmer itself.**
+7. **Public limitations** (README now, the Medium article later): v1.0 is an early, pre-alpha-like release; the cloud and bare models were measured once on a limited set, later comparisons use those figures, and re-measuring both is planned after v1.1.
+8. **After v1.1:** the cloud and bare-model re-measurement on the same items, with an issue. Every item set also carries a counter: how many times it was looked at and which changes were tried on it.
+- **Standing orders 87 to 90.** **Rules.** D-296, D-605, D-656, D-663, B1-ARM-A, LEAKAGE_PROTOCOL, NEGOTIATION-MEASURE-A.

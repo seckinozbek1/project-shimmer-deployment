@@ -47,7 +47,7 @@ This section is updated in the same step as every measurement and every stage ch
 1. Finish the answer-form work, and prove it on saved outputs.
 2. Read the retry fix and the other development fixes on development items.
 3. Read the gate set once with the configuration chosen on development items, and report whatever it shows, pass or fail.
-4. Freeze the negotiation benchmark's first full track and run Shimmer, the bare model and a cloud model on it.
+4. Freeze the negotiation benchmark's first full track and run Shimmer on it, compared against the bare-model and cloud figures already measured.
 
 ## What Shimmer is
 
@@ -246,6 +246,8 @@ tests whose keys the project had read. They are history, with their dates and ca
 
 ## Limitations
 
+- Version 1.0 is an early release, close to a pre-alpha: expect gaps and changes.
+- The cloud model and the bare model were each measured once, on a limited set of items. Later comparisons use those figures, so Shimmer and the two references were not measured on the same items. Re-measuring both on the same items is planned after version 1.1.
 - It is a prototype. Coverage depends on the corpus: Python can check only rules
   whose fields and scope the document and the conventions make usable.
 - Model output can be incomplete, wrongly cited or self-contradictory. Read the
