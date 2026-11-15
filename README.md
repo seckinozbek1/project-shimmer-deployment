@@ -23,30 +23,31 @@ In development, on the four public benchmarks measured by 31 October 2026 (Contr
 
 ## Where Shimmer is now, and where it is going
 
-This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 12 November 2026, 05:20 +03:00.
+This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 15 November 2026.
 
-**Which code these documents describe.** Since 12 November 2026 the code on GitHub's main branch is the loop's current code, pushed as one snapshot commit (tag `code-2026-11-12-a`) after a pre-push scan and a full gate run on a rented machine (#239). On that run 322 of 346 checks passed; each red is explained in #235. Later code changes are pushed the same way, with their documents, in the same step (D-488, D-497).
+**Which code these documents describe.** The code on GitHub's main branch is the loop's merged and checked state, pushed as one snapshot commit (tag `code-2026-11-15-a`) after a pre-push scan. Later code changes are pushed the same way, with their documents (D-488, D-650).
 
-**Now.** Every figure below is development, exposed and in-sample. None is a gate result.
+**Now.** No gate result exists yet. Every figure Shimmer has is development, exposed and in-sample.
 
-- The gate (D-S92) has not been measured. To pass, on each of ContraDoc and SciTab, Shimmer must score at least 10 points above the bare model (B1), with the lower 95 percent bound of the difference above zero. It must also be no more than 5 points below a cloud model reference.
-- ContraDoc: no configuration has yet come within 5 points of the cloud model on development items. The best is 0.733 accuracy, against the cloud model's 0.867 to 0.900 (D-297, in-sample). Bar (b) does not look reachable on ContraDoc today.
-- SciTab: the leading candidate configuration (K1, a judge model deciding table claims) has a 2-class macro-F1 of 0.703 on development half A, against B1's 2-class 0.838 (D-477, in-sample). Bar (a) does not look reachable on SciTab today.
-- The document-level judging experiment G1 gave no usable signal (D-248).
-- The ready machine image is built and tested. M1 built it (36 minutes, 0.77 USD). M2 then started from the image alone: the job began 12 minutes after launch, against about 64 minutes on the upload path, at 0.43 USD, with a reply byte-identical to M1's (D-508, D-509).
-- The full gate on a rented A10 ran all 346 checks in 11 minutes (33 minutes and 0.71 USD with its start and teardown). The laptop takes more than 2.5 hours for the same checks. 322 passed; each red is classed in #235.
-- Spend so far: rented GPU time 156.96 USD (hard stop 350, raised from 299 on 11 November), API 7.07 USD (ceiling 60).
+- A second steering read on a quick subset of the gate set did not pass: too many entries were void on integrity. No figures from it are quoted, because a void read measures the run, not the system.
+- One cause of that is found: a retry step re-asked a refused extraction with a narrower context than the one its answer was checked against, so good answers were refused. The fix is written and is now being proven on development items before it is read again.
+- Most remaining misses came from parts that Python compared and found consistent, so no model was asked there. A model is now asked in those places too, and its answer stays marked as not checked by Python. Where arithmetic or a field check can decide, Python still decides.
+- A faster inference engine, vLLM, scored as well as the current engine on development items and is being built into the pipeline, one part at a time, each part checked against correct answers before use.
+- Every parser and scorer is being made tolerant of answer form (spaces, case, quotes, a number written for a string, code fences), the same way for every system compared, so that no answer is dropped for its form alone. No scored measurement runs until this is done.
 
-**Going.** The target stage is a gate read on items no attempt was tuned on, by 14 November 2026, 14:30 +03:00 (moved from 11:00 by Seckin on 11 November, D-492). The steps planned until then:
+**Our own negotiation benchmark.** Beside the public benchmarks, Shimmer is building its own benchmark for multi-round negotiation drafts:
 
-1. Done: a ready machine image on the provider's filesystem, built and measured (M1), then tested before use (M2), so no launch downloads its assets from scratch.
-2. The gate set: a separate session draws a quick subset and a claim set from sealed pools under the leakage protocol, after the leakage fingerprints are computed.
-3. K1 read on the quick subset, for steering only. The configuration is chosen there and nowhere else.
-4. The cloud reference run (one group), after Seckin approves its spend.
-5. One read of the claim set, with the configuration chosen on the quick subset (D-422).
-6. The 14 November package (#214), which reports whatever the gate shows, pass or fail.
+- each item's answer comes from what the parties actually did in the real next round, not from a judgement written afterwards;
+- agent labels are checked twice, by two agents of different model families, with a third for ties, and their agreement is reported;
+- the items, the labels and the scorer are frozen before any system is run on them, and the benchmark is published with its scorer (for sources whose terms do not allow the texts to be shared, the source links are published instead, so anyone can fetch them and rerun);
+- a small pilot has run. It is indicative only, below the size needed for a claim, so no pilot figures are quoted; it is used to find and fix faults in the measurement, never to tune the system.
 
-The risks in the "Now" list may mean the gate is not passed by 14 November. If so, that is the result, and it will be reported as such.
+**Going.** The next steps, in order:
+
+1. Finish the answer-form work, and prove it on saved outputs.
+2. Read the retry fix and the other development fixes on development items.
+3. Read the gate set once with the configuration chosen on development items, and report whatever it shows, pass or fail.
+4. Freeze the negotiation benchmark's first full track and run Shimmer, the bare model and a cloud model on it.
 
 ## What Shimmer is
 
