@@ -371,9 +371,11 @@ marked "confirm".
    measure/savings-proof-i`. Check that A and B differ only in `config/semantic_thresholds.json` (two
    lines) and that A differs from the tip only in that file and `config/passage_pairs.json`:
    `git diff --stat loop/2026-10-27 HEAD~1` and `git diff --stat HEAD~1 HEAD`. Note the two new ids.
-2. **One ledger.** The worktree's `docs/loop/private` must be a junction to the main checkout's
-   (D-364), and `external` reachable there the same way, since the sealer and the guard read paths
-   under the running checkout.
+2. **One ledger.** Retired recipe (DELETE-SAFE-A, 16 November 2026): this step made the worktree's
+   `docs/loop/private` a junction to the main checkout's (D-364), with `external` reached the same
+   way. No junction is made now: the guard, the bound wrapper and the sealer find the main checkout's
+   ledger, records and wheelhouse through `tools/loop/shared_paths.py` (`SHIMMER_MAIN_CHECKOUT`, else
+   git's common directory), and `external/` paths are named by their full path in the main checkout.
 3. **Two batch files** in `external/s05/SAVINGS_PROOF/`: `BATCH_A.json` and `BATCH_B.json`, each
    `{"form": "b3_only", "entries": [{"item": "contradoc_<id>", "arm": "B3", "bundle":
    "external/s05/SAVINGS_PROOF/bundles/contradoc_<id>_A"}, ...]}` (`_B` in the second), 8 entries

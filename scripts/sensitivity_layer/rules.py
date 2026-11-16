@@ -201,6 +201,44 @@ def _ensemble_redaction_intent(rule_text):
     }
 
 
+# #281 gap 9 (D-666, D-667): the exact strings an operator rule LISTS, each written
+# inside double quotation marks (straight, curly, guillemets, or the low-high pair).
+# Structure only (WORDS-A): the marks are read, never the words. After apply, the
+# post-apply grep checks that each listed string is absent from every shipped
+# artifact, whatever the redactor and the detectors found. Read here, never added to
+# the compiled rule, so the redactor's input is unchanged.
+_LISTED_STRING_RE = re.compile(
+    "\"([^\"\\n]+)\"|\u201c([^\u201d\\n]+)\u201d|\u00ab([^\u00bb\\n]+)\u00bb"
+    "|\u201e([^\u201c\u201d\\n]+)[\u201c\u201d]")
+
+
+def listed_strings(rule_text) -> list:
+    """The strings a rule text lists inside double quotation marks, stripped, in order,
+    each once. [] for a rule that lists none."""
+    out = []
+    for groups in _LISTED_STRING_RE.findall(str(rule_text or "")):
+        s = next((g for g in groups if g), "").strip()
+        if s and s not in out:
+            out.append(s)
+    return out
+
+
+def _intent_unknown(cid, cat, semantic_record):
+    """#281 gap 10: a convention no pattern took as redaction intent, while the
+    five-voter ensemble could not run. The phrasing patterns are written in English,
+    so a rule in another language may be a redaction rule that did not compile: its
+    intent is UNKNOWN, never a quiet no. None when the ensemble ran (its verdict is a
+    decision) or had nothing to read."""
+    if semantic_record is None or semantic_record.get("available"):
+        return None
+    return {"id": cid, "category": cat,
+            "reason": ("intent unknown: the five-voter ensemble could not run (%s) and the "
+                       "phrasing patterns, written in English, did not match; if this rule is "
+                       "written in another language it may be a redaction rule that did not "
+                       "compile. Declare a redaction category on it, or make the ensemble "
+                       "available, to decide." % str(semantic_record.get("reason") or "no reason given")[:200])}
+
+
 def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
     """Compile OPERATOR REDACTION RULES from the convention registry and REPORT
     whether the operator's rules are in force or only the defaults apply.
@@ -237,6 +275,7 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
     # five votes, so a caller can always read WHY a rule was or was not taken as
     # redaction intent, rather than only the outcome.
     semantic_votes = []
+    intent_unknown = []
     for c in convs:
         cid = str(c.get("id", ""))
         cat = str(c.get("category", "")).strip().lower()
@@ -291,6 +330,11 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         # action field decides a redaction question, which is what was asked.
         declared_redact = act == "redact" and bool(c.get("action_declared"))
         if not (is_cat or is_phrase or declared_redact):
+            # Not redaction intent by any pattern. When the ensemble could not run,
+            # that is not known to be a no (#281 gap 10): recorded, never silent.
+            unknown = _intent_unknown(cid, cat, semantic_record)
+            if unknown is not None:
+                intent_unknown.append(unknown)
             continue  # not redaction-intent — leave it as an ordinary convention
         if not rule_text:
             warnings.append({"id": cid, "category": cat,
@@ -323,4 +367,8 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         # entry with available=False carries the refusal reason, so "the model
         # was missing" and "the ensemble said no" are never confused.
         "semantic_votes": semantic_votes,
+        # #281 gap 10: conventions whose redaction intent is unknown because the
+        # ensemble could not run and no pattern matched: [{id, category, reason}].
+        # Shown in the run and in every document's redaction report.
+        "intent_unknown": intent_unknown,
     }

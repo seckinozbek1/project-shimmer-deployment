@@ -846,6 +846,134 @@ class Constraint:
         return dict(self.record)
 
 
+class RequestContract:
+    """One table tool request's declaration (scripts/table_tools.grammar_spec): the shown tools with
+    their typed slots, the ids each slot type admits, and the most lines."""
+
+    def __init__(self, spec, agent=None):
+        self.agent = agent
+        self.tools = [(name, [tuple(s) for s in slots]) for name, slots in spec['tools']]
+        self.ids = {kind: tuple(values) for kind, values in spec['ids'].items()}
+        self.max_calls = int(spec['max_calls'])
+        require(self.tools and self.max_calls >= 1, 'A tool request shows a tool and admits a line')
+        for _, slots in self.tools:
+            require(slots and all(s[0] in self.ids and 1 <= s[1] <= s[2] for s in slots)
+                    and all(s[2] == 1 for s in slots[:-1]), 'A tool request slot is typed; only the last repeats')
+
+    def digest(self):
+        return hashlib.sha256(canonical(dict(tools=[[n, [list(s) for s in slots]] for n, slots in self.tools],
+                                             ids={k: list(v) for k, v in self.ids.items()},
+                                             max_calls=self.max_calls)).encode('utf-8')).hexdigest()
+
+
+class RequestGrammar:
+    """The language of one table tool request (D-681): NONE, or one to `max_calls` lines, each a shown
+    tool's name, then its arguments in parentheses, each an id its slot admits, separated by a comma
+    and at most one space. No number can be typed: an argument is only ever an id. Same interface as
+    Grammar, so ContractProcessor runs it unchanged."""
+
+    NONE = 'NONE'
+
+    def __init__(self, contract):
+        self.contract = contract
+        self.slots = dict(contract.tools)
+        self.heads = [name + '(' for name, _ in contract.tools]
+
+    def start(self):
+        return ('name', 0, '')
+
+    def _choices(self, done):
+        return self.heads + ([self.NONE] if done == 0 else [])
+
+    def _candidates(self, name, si):
+        return self.contract.ids[self.slots[name][si][0]]
+
+    def step(self, state, ch):
+        kind = state[0]
+        if kind == 'name':
+            _, done, partial = state
+            grown = partial + ch
+            if done == 0 and grown == self.NONE:
+                return ('end',)
+            if grown in self.heads:
+                return ('arg', done, grown[:-1], 0, 0, '')
+            return ('name', done, grown) if any(c.startswith(grown) for c in self._choices(done)) else None
+        if kind == 'sep':
+            _, done, name, si, rep = state
+            if ch == ' ':
+                return ('arg', done, name, si, rep, '')
+            return self.step(('arg', done, name, si, rep, ''), ch)
+        if kind == 'arg':
+            _, done, name, si, rep, partial = state
+            slots, candidates = self.slots[name], self._candidates(name, si)
+            if partial in candidates:
+                least, most = slots[si][1], slots[si][2]
+                last = si == len(slots) - 1
+                if ch == ',':
+                    if rep + 1 < most:
+                        return ('sep', done, name, si, rep + 1)
+                    return ('sep', done, name, si + 1, 0) if not last else None
+                if ch == ')':
+                    return ('after', done + 1) if last and rep + 1 >= least else None
+            grown = partial + ch
+            return ('arg', done, name, si, rep, grown) if any(c.startswith(grown) for c in candidates) else None
+        if kind == 'after':
+            return ('name', state[1], '') if ch == '\n' and state[1] < self.contract.max_calls else None
+        return None
+
+    def next_chars(self, state):
+        kind = state[0]
+        if kind == 'name':
+            partial = state[2]
+            return {c[len(partial)] for c in self._choices(state[1]) if c.startswith(partial) and len(c) > len(partial)}
+        if kind == 'sep':
+            _, done, name, si, rep = state
+            return {' '} | {c[0] for c in self._candidates(name, si)}
+        if kind == 'arg':
+            _, done, name, si, rep, partial = state
+            out = {c[len(partial)] for c in self._candidates(name, si) if c.startswith(partial) and len(c) > len(partial)}
+            if partial in self._candidates(name, si):
+                out |= {',', ')'}
+            return out
+        if kind == 'after':
+            return {'\n'} if state[1] < self.contract.max_calls else set()
+        return set()
+
+    def walk(self, state, text):
+        for ch in text:
+            state = self.step(state, ch)
+            if state is None:
+                return None
+        return state
+
+    def free(self, state):
+        return False
+
+    def accepting(self, state):
+        return state is not None and state[0] in ('after', 'end')
+
+    def unrestricted(self, state):
+        return False
+
+
+def request_accepts(spec, text):
+    """True when `text` is a complete reply of the request's language."""
+    grammar = RequestGrammar(RequestContract(spec))
+    return grammar.accepting(grammar.walk(grammar.start(), text))
+
+
+def for_request(wrapper, tok, prompt_tokens, eos_ids):
+    """The constraint of a table tool request (the wrapper carries `_tool_request`, set by
+    table_tools.send for that one call only), or None."""
+    spec = getattr(wrapper, '_tool_request', None)
+    if not spec:
+        return None
+    contract = RequestContract(spec, agent=getattr(wrapper, 'name', None))
+    declared = dict(name='table_tool_request', version=1)
+    return Constraint(contract, declared, contract.digest(), tok, prompt_tokens, eos_ids, 'tool_request',
+                      RequestGrammar(contract))
+
+
 def active(root=None):
     """The declaration when the constraint is active, else None."""
     spec, digest = declaration(root)
@@ -862,7 +990,11 @@ def for_call(wrapper, tok, prompt_tokens, eos_ids, root=None):
     under and gets none. A declared envelope agent (config/envelope_decoding.json: VERIFIER and
     PRACTICE_AUDITOR on local_auditor, ARCHIVIST and EDITOR_CLERK on local_producer) gets the
     envelope constraint of its own contract
-    (for_envelope); every other call gets none."""
+    (for_envelope); a table tool request (D-681) gets its own request's grammar (for_request);
+    every other call gets none."""
+    request = for_request(wrapper, tok, prompt_tokens, eos_ids)
+    if request is not None:
+        return request
     envelope = for_envelope(wrapper, tok, prompt_tokens, eos_ids, root)
     if envelope is not None:
         return envelope

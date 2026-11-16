@@ -115,8 +115,15 @@ computing the fate and state labels by the plan's deterministic diff. Never writ
   into `item.json`;
 - `persona`: `{id, kind}` with `kind` `single` or `coalition`; `red_lines`: the ids of the persona's
   positions the record itself calls a red line ("cannot accept", "non-negotiable" and the like, read
-  by you, not by a word list);
-- `parties`: `[{id, kind}]`, every party and coalition named in the item's positions;
+  by you, not by a word list); a red line may also be written `{position, source}`, its source "from the
+  document" for now (D-664: the tool stores every red line with its source); the persona is one of `parties`,
+  with the same kind;
+- `parties`: `[{id, kind}]`, every party and coalition named in the item's positions; a coalition may add
+  `members` (the ids of at least two parties it speaks for, as the record names them, D-668 gap 6). The
+  item's party structure (two single parties, two coalitions, one party against a coalition, three or more
+  parties) is computed by the tool from this list; you may write it as `structure` (`two_singles`, `teams`,
+  `one_vs_coalition`, `three_or_more`), and `build` refuses one that differs (Seckin 20:32; every set holds
+  several structures, NEG_BAR.md);
 - `articles`: the excerpt, `[{id, title, text}]`, the round-k text with its brackets as published;
   the tool splits each `text` at blank lines into `PAR-<n>` paragraphs and each bracket group into
   proposals `P-<article>-<n>` (an article with no bracket that is not agreed is one proposal; mark an
@@ -127,7 +134,15 @@ computing the fate and state labels by the plan's deterministic diff. Never writ
   `renumbering`: `{round-k id: round-k+1 id}` where it renumbers;
 - `positions`: `[{id, party, round, article, stance, quote, source}]`, each `id` `POS-<n>`, `stance`
   one of `support`, `oppose`, `accept`, `quote` verbatim, `source` the URL and paragraph; and for a
-  position on one proposal rather than the whole article, `proposal` (its 1-based bracket number);
+  position on one proposal rather than the whole article, `proposal` (its 1-based bracket number); for a
+  position a member states for its coalition ("on behalf of the group"), `party` the member and
+  `on_behalf_of` the coalition (one that lists it in `members`): the tool credits it to the coalition and
+  keeps the member as its speaker;
+- `layers` (optional, D-666): the document's own layers, as the reader returns them apart
+  (`neg_advisor.layers_from_reader` over `docx_layers.read_layers`, a PDF or HTML reading), each
+  `{layer, text, author, anchor, article}` with `layer` one of insertion, deletion, comment, footnote,
+  endnote, annotation and `article` the excerpt article it sits on (or null); and `layers_not_read`, the
+  reading's lost layers. Each is shown to the arms as a passage `LAY-<n>` they may cite;
 - `trades_on_record`: `[{id, give, get, round}]`, each side an article id and bracket number, for the
   persona's own stated conditional offers whose two sides are still in the excerpt;
 - for a game item (`part` `G`) instead of articles: `game` with `issues` (`[{id, options}]`), every

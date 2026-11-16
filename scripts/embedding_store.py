@@ -163,24 +163,28 @@ def _load_model(st, name):
     if name in _MODEL_CACHE:
         return _MODEL_CACHE[name]
     device = _embed_device()
-    model = None
-    try:
-        model = st.SentenceTransformer(name, device=device, local_files_only=True)
-    except Exception:
+    # #297: on a GPU the load holds vllm_link.CARD_LOCK across the hand-back of a resident vLLM server and
+    # the load; on the CPU (the local profile's device, _embed_device) it takes nothing.
+    import vllm_link
+    with vllm_link.card_for(name, device):
+        model = None
         try:
-            model = st.SentenceTransformer(name, device=device)
-        except Exception as e:
-            local = _ensure_safetensors(name)
-            if local is not None:
-                try:
-                    model = st.SentenceTransformer(local, device=device,
-                                                   model_kwargs={"use_safetensors": True})
-                except Exception as e2:
-                    print(f"[embedding_store] WARN: model {name!r} unavailable after safetensors "
-                          f"fallback ({type(e2).__name__}: {e2})", file=sys.stderr, flush=True)
-            else:
-                print(f"[embedding_store] WARN: model {name!r} unavailable "
-                      f"({type(e).__name__}: {e})", file=sys.stderr, flush=True)
+            model = st.SentenceTransformer(name, device=device, local_files_only=True)
+        except Exception:
+            try:
+                model = st.SentenceTransformer(name, device=device)
+            except Exception as e:
+                local = _ensure_safetensors(name)
+                if local is not None:
+                    try:
+                        model = st.SentenceTransformer(local, device=device,
+                                                       model_kwargs={"use_safetensors": True})
+                    except Exception as e2:
+                        print(f"[embedding_store] WARN: model {name!r} unavailable after safetensors "
+                              f"fallback ({type(e2).__name__}: {e2})", file=sys.stderr, flush=True)
+                else:
+                    print(f"[embedding_store] WARN: model {name!r} unavailable "
+                          f"({type(e).__name__}: {e})", file=sys.stderr, flush=True)
     if model is not None:
         model._shimmer_model_id = name
         # Observability: log the model, its actual device, and embedding dimension,

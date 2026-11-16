@@ -172,6 +172,9 @@ python tools/cloud_run_transfer_checks.py
 ```
 
 `--model-cache`, `--wheelhouse` and `--output` override preparation locations.
+The wheelhouse defaults (`--wheelhouse` here, `--output` of `prepare_cloud_wheels.py`)
+are the main checkout's `output/cloud_wheels/linux_cp312`, found through
+`tools/loop/shared_paths.py` (see "Sealing and launching from a worktree or clone").
 Preparation verifies the source archive, dependency closure, fixed revisions,
 actual DAG parser/decorator behavior, credential exclusion and local fixture
 checks before writing `READY_TO_PROVISION.json`. A failed mandatory check leaves
@@ -267,6 +270,26 @@ rented single-GPU instance, from a bundle sealed by
 `tools/prepare_ordinary_final_run.py` and launched by
 `tools/ordinary_final_bound_cloud.py` through the controller
 `tools/ordinary_final_cloud.py`. Every launch on this path is a loop launch.
+
+### Sealing and launching from a worktree or clone
+
+No working copy links into the main checkout (DELETE-SAFE-A); the junctions to
+`docs/loop/private`, `output/` and `external/` that worktrees used until 16
+November 2026 are retired. The shared folders are found by one rule,
+`tools/loop/shared_paths.py`: `SHIMMER_MAIN_CHECKOUT`, when set, names the main
+checkout's root (an absolute folder whose `.git` is a folder; a worktree, a
+relative path or a link is refused); unset, it is the parent of git's common
+directory, which from a worktree is already the main checkout. A separate clone
+sets the variable. The reaper's ledger the guard and the bound wrapper admit, the
+spend store, the comparison registry, the salvage folder and the sealer's
+wheelhouse (`output/cloud_wheels/ordinary_final_cp312`) all follow it.
+
+```powershell
+$env:SHIMMER_MAIN_CHECKOUT = 'C:\path\to\main\checkout'   # optional from a worktree; needed from a clone
+py -3.12 -X utf8 tools/loop/shared_paths.py               # prints the root, how it was found, and each shared path
+$ledger = py -3.12 -X utf8 tools/loop/shared_paths.py ledger
+py -3.12 tools/ordinary_final_bound_cloud.py --request REQUEST_FOLDER --ledger $ledger ...
+```
 
 ### Seal a bundle
 
@@ -450,8 +473,8 @@ python tools/ordinary_final_bound_cloud.py --bundle BUNDLE_FOLDER --ledger LEDGE
 | `--detach` | Start the controller as a detached process and return; its output goes to `controller_detached.log` in the bundle and its pid to `controller_process.json`. |
 
 Before the launch request, `tools/loop_budget_guard.py` decides from the ledgers
-and the live price. The `--ledger` must be one the reaper reads (the private ledger
-or R's); the guard always reads both of those beside any `--read-ledger`, needs a
+and the live price. The `--ledger` must be one the reaper reads (the main checkout's
+private ledger, found through `tools/loop/shared_paths.py`, or R's); the guard always reads both of those beside any `--read-ledger`, needs a
 `budget_open` line among them, and holds an exclusive lock beside the ledger from
 its decision through the intent line, reading the provider inventory again just
 before it. There is no maximum number of loop instances (D-S95, which removed the

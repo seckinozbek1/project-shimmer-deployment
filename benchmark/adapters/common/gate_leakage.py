@@ -2,7 +2,7 @@
 
 Split so no one reads both sides, as `overlap.py` is (D-S77 item 1):
 
-  fingerprint --part <name>=<path>[;<path>...][#key,key] [--part ...] --out <file> [--embed | --count]
+  fingerprint --part <name>=<path>[;<path>...][#key,key] [--part ...] --out <file> [--embed | --count] [--part-set <name>]
       run on the lead's side over every training, tuning, calibration and development file of
       every part. A path is a file or a folder (every file under it). Read: JSON and JSON lines
       (every string value at any depth), plain text (.txt, .md: each paragraph; .csv, .tsv: each
@@ -29,10 +29,16 @@ Split so no one reads both sides, as `overlap.py` is (D-S77 item 1):
       as `--candidates`: a JSON list of {id, group, texts[, table]}, each text the item's own source
       text; `group` is the unit items share when they are not independent (the item itself when not).
   cosine-step --dev <ContraDoc development file> --assignment <its split file> --prompts <prompts
-        file> --items <its build's items.json> --out <file> [--embed]
+        file> --items <its build's items.json> --out <file> [--embed] [--part-set <name>]
       run on the lead's side on development material only, before role B starts (LEAKAGE_PROTOCOL.md
       step 2): the cosine of documents within one near-duplicate group, across groups, and of a
       document against a prompt that wraps it, and the threshold the rule written below gives.
+
+`--part-set` names a declared, dated part set (`gate_set.PART_SETS`, D-705, issue #301), never inferred:
+the fingerprint then refuses parts other than the set's own or a path outside its part's declared paths
+and carries the name; the cosine step reads only the set's declared prompts file and is refused where the
+set declares none (the 16 November set: G1's prompts were lost); the check refuses fingerprints and a step
+2 record from two sets. With no name a file is the 12 November set's, and the tool's output is unchanged.
 
 The four rules and their thresholds, written before any candidate is checked (D-S100); none is ever
 relaxed after a count of any check is seen:
@@ -336,15 +342,29 @@ def uncovered(paths) -> list:
     return missing
 
 
-def fingerprint(parts, embed=None) -> dict:
+def part_sets():
+    """benchmark/baselines/gate_set.py, where the dated part sets are declared (PART_SETS, D-705),
+    imported only when a part set is named."""
+    baselines = HERE.parents[1] / "baselines"
+    if str(baselines) not in sys.path:
+        sys.path.insert(0, str(baselines))
+    import gate_set
+    return gate_set
+
+
+def fingerprint(parts, embed=None, part_set=None) -> dict:
     """`parts` is a list of (name, path) or (name, path, keys). `embed(list of texts)` returns one
-    vector a text."""
+    vector a text. With `part_set` (a declared set's name, never inferred), the parts must be exactly
+    that set's, each path under its part's declared paths, and the output carries the name; without
+    it the output is the 12 November tool's, byte for byte."""
     if not parts:
         raise ValueError("no part named")
     parts = [tuple(p) + (None,) * (3 - len(p)) for p in parts]
     names = [n for n, _p, _k in parts]
     if len(set(names)) != len(names) or not all(names):
         raise ValueError("every part needs its own non-empty name")
+    if part_set is not None:
+        part_sets().check_given_parts(parts, part_set)
     left_out = uncovered([q for _n, path, _k in parts for q in str(path).split(";") if q])
     if left_out:
         raise ValueError("external/s05 entries no part covers: " + ", ".join(left_out))
@@ -382,6 +402,8 @@ def fingerprint(parts, embed=None) -> dict:
         matrix = _embed_all(embed, [texts[k] for k in keys])
         out["vectors"] = {"dim": int(matrix.shape[1]) if len(keys) else 0, "parts": [sorted(exact[k]) for k in keys],
                           "data": base64.b64encode(matrix.tobytes()).decode("ascii")}
+    if part_set is not None:
+        out["part_set"] = part_set
     return out
 
 
@@ -527,6 +549,7 @@ def check(data, candidates, embed=None, exclude_groups=(), provenance=None, cosi
             "short_texts": sum(1 for _c, t in flat if len(overlap.words(t)) < MIN_WORDS),
             "excluded_candidates": len(reasons), "excluded_groups": len(excluded_groups),
             "kept_groups": len(groups) - len(excluded_groups),
+            **({"fingerprint_part_set": data["part_set"]} if data.get("part_set") else {}),
             "candidates_by_rule": {r: sum(1 for w in reasons.values() if r in w) for r in RULES},
             "candidates_by_part": dict(sorted(parts_hit.items())),
             "best_cosine_tenths": bins if data.get("vectors") else None,
@@ -630,6 +653,7 @@ def main(argv=None) -> int:
     f.add_argument("--out", required=True)
     f.add_argument("--embed", action="store_true")
     f.add_argument("--count", action="store_true", help="count records only, store nothing (the forecast)")
+    f.add_argument("--part-set", help="a declared, dated part set (gate_set.PART_SETS): the parts must be exactly its own")
     c = sub.add_parser("check")
     c.add_argument("--fingerprints", required=True)
     c.add_argument("--benchmark", choices=("contradoc", "scitab"))
@@ -648,6 +672,7 @@ def main(argv=None) -> int:
     s.add_argument("--items", required=True)
     s.add_argument("--embed", action="store_true")
     s.add_argument("--out", required=True)
+    s.add_argument("--part-set", help="a declared, dated part set: its declared prompts file only, refused where it declares none")
     args = parser.parse_args(argv)
     try:
         guard_args(args)
@@ -660,17 +685,21 @@ def main(argv=None) -> int:
                 path, _hash, keys = path.partition("#")
                 parts.append((name, path, [k for k in keys.split(",") if k] or None))
             if args.count:
+                if args.part_set is not None:
+                    part_sets().check_given_parts(parts, args.part_set)
                 value = count(parts)
                 Path(args.out).write_text(json.dumps(value, indent=2, sort_keys=True), encoding="utf-8")
                 print(json.dumps(value, indent=2))
                 return 0
-            data = fingerprint(parts, shipped_embedder() if args.embed else None)
+            data = fingerprint(parts, shipped_embedder() if args.embed else None, args.part_set)
             write(data, args.out)
             print(json.dumps({"records": data["records"], "short_records": data["short_records"], "runs": len(data["runs"]),
                               "exact": len(data["exact"]), "skipped": {n: len(v) for n, v in data["skipped"].items()},
                               "vectors": bool(data["vectors"])}, indent=2))
             return 0
         if args.command == "cosine-step":
+            if args.part_set is not None:
+                part_sets().cosine_step_prompts(args.part_set, args.prompts)
             from contradoc import adapter as cd
             records_ = cd.read_source(args.dev)
             documents = {ids.key_string(r[cd.DOCUMENT_ID_FIELD]): r[cd.TEXT_FIELD] for r in records_}
@@ -683,6 +712,8 @@ def main(argv=None) -> int:
                        for p in json.loads(Path(args.prompts).read_text(encoding="utf-8"))["prompts"] if p.get("user")]
             result = cosine_step(documents, groups, prompts, shipped_embedder() if args.embed else None)
             result["inputs"] = {Path(p).name: _sha(p) for p in (args.dev, args.assignment, args.prompts, args.items)}
+            if args.part_set is not None:
+                result["part_set"] = args.part_set
             Path(args.out).write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
             print(json.dumps(result, indent=2))
             return 0
@@ -691,6 +722,9 @@ def main(argv=None) -> int:
         threshold = step.get("threshold_by_rule")
         if not isinstance(threshold, (int, float)):
             raise ValueError("step 2's record gives no threshold: %r" % (threshold,))
+        if data.get("part_set") != step.get("part_set"):
+            raise ValueError("the fingerprints were built under part set %s and step 2's record under %s: a check needs both from one set"
+                             % (data.get("part_set") or "parts_2026-11-12", step.get("part_set") or "parts_2026-11-12"))
         if bool(args.candidates) == bool(args.benchmark) or bool(args.benchmark) != bool(args.input):
             raise ValueError("give --benchmark with --input, or --candidates, not both")
         if args.candidates:

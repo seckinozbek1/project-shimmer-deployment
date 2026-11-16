@@ -1037,8 +1037,9 @@ def proof_ledgers_found_beside_the_store():
     store (the main checkout's private folder, by the store's path rule), never the worktree's."""
     import loop_budget_guard  # noqa: F401
     import instance_reaper
+    import shared_paths
     with sandbox() as box, patch.object(instance_reaper, "R_LEDGER", box.tmp / "no_R_ledger.jsonl"):
-        beside = box.store.parent / Path(instance_reaper.PRIVATE_LEDGER).name
+        beside = box.store.parent / shared_paths.LEDGER_NAME   # PRIVATE_LEDGER is None since DELETE-SAFE-A item 2
         beside.write_text(json.dumps({"event": "budget_open", "time_utc": "2026-11-01T00:00:00+00:00",
                                       "budget_usd": 40.0, "hard_stop_usd": 39.0}) + "\n", encoding="utf-8")
         figures = cr.check_cap(1.0, box.store, kind=cr.SCHEMA)

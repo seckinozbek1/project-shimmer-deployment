@@ -48,7 +48,9 @@ import loop_budget_guard as guard
 
 SOURCE_BUNDLE = ROOT / 'docs/fix/ordinary_final_cloud_run_v4'
 WORK = ROOT / '.tmp/rehearsal'
-WHEELS = ROOT / 'output/cloud_wheels/ordinary_final_cp312'
+import shared_paths  # noqa: E402  (tools/loop, on the path through the guard)
+# The main checkout's pinned wheelhouse, through configuration (DELETE-SAFE-A), never a link in a worktree.
+WHEELS = None   # None: shared_paths.wheelhouse at use (no process starts at import)
 REHEARSAL_FOLDER = 'shimmer-rehearsal'
 DISTRO = 'Ubuntu'
 # The rehearsal is a loop launch against a MOCKED provider: nothing is billed, but it goes
@@ -218,7 +220,8 @@ def rehearsal_assets(source_manifest):
         return read(receipt), models
     if archive.exists():
         archive.unlink()
-    assets = build_assets(archive, models, source_manifest['wheels'], Path.home() / '.cache/huggingface/hub', WHEELS)
+    assets = build_assets(archive, models, source_manifest['wheels'], Path.home() / '.cache/huggingface/hub',
+                          WHEELS or shared_paths.wheelhouse(start=ROOT, fallback=ROOT))
     write(receipt, assets)
     return assets, models
 

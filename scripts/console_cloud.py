@@ -55,10 +55,10 @@ import loop_budget_guard as guard  # noqa: E402
 NAME = {'en': 'On a rented cloud machine', 'tr': 'Kiralık bulut makinesinde'}
 DOCUMENTS = {'en': 'Your documents are copied to the rented machine for this review and deleted with it when '
                    'it is shut down.',
-             'tr': 'Belgeleriniz bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla '
+             'tr': 'Belgelerin bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla '
                    'birlikte silinir.'}
 GONE = {'en': 'The rented machine and its copy of your documents are gone.',
-        'tr': 'Kiralık makine ve belgelerinizin oradaki kopyası artık yok.'}
+        'tr': 'Kiralık makine ve belgelerinin oradaki kopyası artık yok.'}
 NONCE_SECONDS = 900
 # Where the controller unpacks the collected evidence of a B3 run: the pipeline's own run folder.
 DELIVERABLES = ('downloaded', 'evidence', 'run', 'deliverables')
@@ -179,7 +179,7 @@ def read_settings():
 def launch_ledger():
     """The ledger a console launch writes: the private one the reaper reads (the bound wrapper
     accepts no other). Resolved at call time."""
-    return Path(instance_reaper.PRIVATE_LEDGER)
+    return Path(instance_reaper.private_ledger())
 
 
 def ledger_rows():

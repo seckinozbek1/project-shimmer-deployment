@@ -28,7 +28,7 @@ import time
 
 from ordinary_final_run import read, write, sha, require
 import ordinary_final_run as runner
-from cloud_run_common import credential_locations, no_window
+from cloud_run_common import InvalidPreparation, credential_locations, no_window
 from lambda_experiment_provider import LambdaExperiment
 from run_remote_experiment import poll_state, termination
 import loop_budget_guard as guard
@@ -177,6 +177,8 @@ def batch_entries(plan,m,assets,sealed=False):
     for e in schedule:
         b=Path(e['bundle']).resolve()
         em=read(b/'execution_manifest.json');es=read(b/'seal.json')
+        # D-675 condition 2: a seal request's launch record is never a batch entry.
+        require(em.get('kind')!=LAUNCH_RECORD_KIND,'A seal request launch record is not a sealed bundle: refused as a batch entry')
         require(es['execution_manifest_sha256']==sha(b/'execution_manifest.json'),'Batch manifest seal mismatch')
         require(read(b/'AUTHORIZED_LOCAL_REVERIFICATION.json')['passed'],'Batch local reverification missing')
         for name,digest in em['support_files'].items():require(sha(b/name)==digest,'Batch support source changed')
@@ -198,11 +200,17 @@ def batch_entries(plan,m,assets,sealed=False):
     return schedule
 
 
+# The session's shared environment, kept in place between batch entries: the model cache, the pinned wheels and
+# venv, the asset archive and, for a sealed auxiliary environment (#217, D-630), venv_aux and its wheels, which
+# every entry of a vLLM-routed batch runs its server from.
+PARKED_KEEP=('hf_cache','wheels','venv','assets.tar','venv_aux','wheels_aux')
+
+
 def park_command(remote,index):
     """Move one finished batch entry aside on the instance, keeping only the shared environment."""
     target=remote.rstrip('/')+'-batch/'+str(index)
     return ('cd '+shlex.quote(remote)+' && mkdir -p '+shlex.quote(target)+' && for f in *; do case "$f" in '
-            'hf_cache|wheels|venv|assets.tar) ;; *) mv -- "$f" '+shlex.quote(target+'/')+' ;; esac; done && mkdir project')
+            +'|'.join(PARKED_KEEP)+') ;; *) mv -- "$f" '+shlex.quote(target+'/')+' ;; esac; done && mkdir project')
 
 
 # Past the soft budget the controller issues no new remote work except stopping the workload
@@ -226,6 +234,12 @@ def soft_budget_exempt(label):
 # the controller answers with a done file the reaper reads for its report.
 def salvage_requested(name):
     return guard.instance_reaper.salvage_request(name)
+
+
+def salvage_pending(seen,name):
+    """D-619: a salvage request already seen, or one on the folder now (read only, so an exempt final
+    collection phase, which salvage_stop never reads for, still sees it); no record is changed."""
+    return seen.get('epoch') is not None or salvage_requested(name) is not None
 
 
 def salvage_stop(label,name,seen,now,starting):
@@ -406,6 +420,42 @@ IMAGE_MEASURE_SECONDS=5400
 AUX_FETCH_SECONDS=1800
 AUX_INSTALL_SECONDS=1800
 AUX_REFUSAL='An auxiliary environment is an exposed measurement from its sealed lock'
+# D-619 (#264, #217): a phase whose status already reads completed with exit code 0 has its output
+# collect retried, up to COLLECT_ATTEMPTS times, each under the collect's own 120 s deadline; if every
+# attempt hangs, the phase is recorded output_collect_timed_out with its exit code and the run goes on,
+# except for a phase whose output the controller reads to decide what follows (OUTPUT_READ_PHASES),
+# which stops as before (pack_evidence's output only feeds save_disk_after_evidence, which swallows every
+# error, and asset_copy_use reads only its return code, so neither is listed). A phase whose exit code is
+# unread or nonzero is collected once, as before. Once a salvage request is seen, no collect is retried, so
+# the salvage answer stays inside SALVAGE_ANSWER_SECONDS.
+COLLECT_ATTEMPTS=3
+TRANSPORT_DEADLINE='Transport deadline exceeded'
+OUTPUT_READ_PHASES=('evidence_hash','asset_copy_probe','asset_copy_seed',
+                    'image_check','image_build','image_recheck','image_bind','image_release','image_measure',
+                    'stop_image_phase')
+
+
+def output_read(label):
+    """True for a phase whose collected output the controller parses (a batch entry's prefixed label included)."""
+    return any(label==name or label.endswith('_'+name) for name in OUTPUT_READ_PHASES)
+
+
+def collect_completed(collect,status,label,salvaging=False):
+    """D-619: (the collect's result, attempts made, timed out). Retries a hanging collect only after the
+    remote work completed with exit code 0; then, if every attempt hung, an empty result marked timed out,
+    unless the controller reads the phase's output. Anything else raises exactly as one collect did."""
+    completed=status.get('remote_work')=='completed' and status.get('exit_code')==0
+    attempts=COLLECT_ATTEMPTS if completed and not salvaging else 1
+    for n in range(attempts):
+        try:
+            return collect(),n+1,False
+        except RuntimeError as exc:
+            if str(exc)!=TRANSPORT_DEADLINE or n+1<attempts:
+                if str(exc)!=TRANSPORT_DEADLINE:raise
+                continue
+            if completed and not output_read(label):
+                return subprocess.CompletedProcess(args=[label],returncode=0,stdout=b'',stderr=b''),attempts,True
+            raise
 
 
 def aux_env_block(manifest):
@@ -501,6 +551,56 @@ def disk_after_evidence(stdout):
 def save_disk_after_evidence(folder,stdout):
     try:write(Path(folder)/DISK_AFTER_EVIDENCE,disk_after_evidence(stdout))
     except Exception:pass
+
+
+# D-675: a seal request's launch record (tools/seal_route.py) carries no asset archive.
+LAUNCH_RECORD_KIND='seal_request_launch_record'
+RECORD_COPY_REFUSAL='A seal request takes the asset archive from the provider-side copy only, and the copy was not used'
+RECORD_NO_COPY_REFUSAL='A seal request launch record needs the declared provider-side copy in its region: no laptop archive exists'
+
+
+def image_region_refusal(image,region):
+    """None when the sealed image is the selected launch region's, else the refusal. Image ids on Lambda are per
+    region (the sealer's region_image picks the launch region's); a sealed image of another region is refused here,
+    before any provider launch call, instead of reaching the provider as an opaque transport failure."""
+    sealed=image.get('region') if isinstance(image,dict) else None
+    if sealed==region:return None
+    return ('The sealed image is the %s region\'s, but the launch region selected is %s: image ids are per region, '
+            'so the provider would refuse it; reseal for %s'%(sealed,region,region))
+
+
+def bundle_seal_place(record,base):
+    """Where the launched bundle was sealed (order 85, the checker's item 12): 'instance' for a seal request's launch
+    record, or for a bundle a seal job sealed on the instance, which admission listed under its own name and manifest
+    digest in the admission.json beside it (seal_route_driver.admit); else 'laptop'."""
+    if record:
+        return seal_place(record)
+    base=Path(base)
+    try:
+        admission=json.loads((base.parent/'admission.json').read_text(encoding='utf-8'))
+    except (OSError,ValueError):
+        return 'laptop'
+    digest=sha(base/'execution_manifest.json')
+    listed=any(r.get('name')==base.name and r.get('binding')==digest and r.get('admitted') for r in admission.get('rows') or [])
+    return 'instance' if listed else 'laptop'
+
+
+# Item 16: the failure messages a failure record keeps: the controller's own, and the metadata boundary's, which
+# names a field only (cloud_run_common.field_message), never a value.
+KEPT_MESSAGES=(RuntimeError,InvalidPreparation)
+
+
+def seal_place(record):
+    """Where a seal job's own job was sealed: 'instance' for a seal request's launch record, else 'laptop'."""
+    return 'instance' if record else 'laptop'
+
+
+def record_upload_refusal(record,used,state):
+    """D-675: None when the assets may come as they do, else why not: a launch record takes the provider-side
+    copy or nothing (no laptop archive exists to upload)."""
+    if record and not used:
+        return RECORD_COPY_REFUSAL+': '+str(state)
+    return None
 
 
 def asset_copy_declaration(base, digest):
@@ -758,10 +858,17 @@ def execute():
     require(read(BASE/'AUTHORIZED_LOCAL_REVERIFICATION.json')['passed'],'Local reverification missing')
     for name,digest in m['local_control_hashes'].items():require(sha(ROOT/name)==digest,'Controller source changed')
     for name,digest in m['support_files'].items():require(sha(BASE/name)==digest,'Support source changed')
-    # #252 item 3: the project archive's bytes here, or held in the store by its fingerprint.
-    stored=runner.project_held(BASE,m['source_archive_sha256'])
+    # D-675: a seal request's launch record carries no project archive and no asset archive; the instance seals
+    # the job and takes the assets from the provider-side copy only.
+    launch_record=m.get('kind')==LAUNCH_RECORD_KIND
     assets=read(BASE/'assets_transfer_archive.json')
-    require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
+    if launch_record:
+        stored=None
+        require(assets['manifest_sha256']==MANIFEST and assets['path'] is None,'Transfer archive changed')
+    else:
+        # #252 item 3: the project archive's bytes here, or held in the store by its fingerprint.
+        stored=runner.project_held(BASE,m['source_archive_sha256'])
+        require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
     require(not (BASE/'LAUNCH_INTENT.json').exists(),'Authorization consumed; no launch retry')
     plan=launch_plan()
     workload=admit(m,seal,plan,BASE)
@@ -802,8 +909,13 @@ def execute():
     candidate,region,rate,polls=guard.select_instance(list_types,m['instance_candidates'],m['a10_reference_rate'],
                                                      time,plan['poll_seconds'],type_rule=m.get('type_rule','a10_first'))
     current=types[candidate['type']]
+    require(image_region_refusal(m['image'],region) is None,image_region_refusal(m['image'],region))
     if region!=guard.PREFERRED_REGION:copy=None  # the declared filesystem lives in us-east-1
     require(stored is None or copy is not None,'A project archive held in the store needs the declared filesystem')
+    # D-675: a launch record has no laptop archive, so a record whose copy cannot be used (no declaration, or a
+    # region where the declared filesystem is not) is refused here, before any instance exists; it carries no layers.
+    require(not launch_record or copy is not None,RECORD_NO_COPY_REFUSAL)
+    require(not (launch_record and m.get('layers')),'A seal request launch record carries no image layers')
     copy_receipt=dict(declared=copy is not None,used=False,seeded=False,suspect=False,state=None,
                       filesystem_name=copy['filesystem_name'] if copy else None,
                       path=asset_copy_path(copy['mount'],assets['sha256']) if copy else None)
@@ -825,7 +937,8 @@ def execute():
         decision=guard.check(ledgers=[plan['ledger'],*plan['read_ledgers']],forecast_minutes=plan['forecast_minutes'],
                              hourly_rate=rate,storage_forecast_usd=plan['storage_forecast_usd'],now_epoch=time.time(),
                              reserve_minutes=reserve_minutes,provider_names=guard.loop_inventory(inventory),
-                             instance_type=candidate['type'],r_inputs=plan['r_inputs'],reaped=plan['reaped'])
+                             instance_type=candidate['type'],r_inputs=plan['r_inputs'],reaped=plan['reaped'],
+                             step_approval=m.get('step_approval'))   # D-708: the sealed approval of a step above 5 USD
         require(decision['cap_usd']+1e-9>=hard,'Loop cap at launch %.2f dollars is below the sealed hard cap %.2f dollars; reseal'
                 %(decision['cap_usd'],hard))
         require(hard>=decision['forecast_usd'] and hard/rate*60>=plan['forecast_minutes']+reserve_minutes,
@@ -853,7 +966,12 @@ def execute():
     intent=False
     held=False
     counter=[0]
+    sealed_on=bundle_seal_place(launch_record,BASE)
     def ledger(event,**fields):
+        # D-675 condition 3, order 85: a seal job's lines say where its job was sealed, so the order's check reads it.
+        # (the checker's item 12) every launch names where its bundle was sealed, so a bundle sealed on the laptop after
+        # the first instance seal breaks the order whatever its arm.
+        fields=dict(fields,seal_on=sealed_on)
         guard.append(plan['ledger'],guard.ledger_line(event,instance_name=name,type=candidate['type'],region=region,
             price_usd_per_hour=rate,purpose=plan['purpose'],forecast_usd=decision['forecast_usd'],cap_usd=hard,**fields))
     def phase(label):
@@ -949,13 +1067,17 @@ def execute():
                 status.update(remote_work='stopped for salvage (D-S84)')
                 write(folder/(key+'_status.json'),status);save('phase_status.json',status)
                 raise RuntimeError('Salvage requested: the phase in hand was given %d s'%guard.instance_reaper.SALVAGE_ITEM_SECONDS)
-        r=transport(label+'_collect',ssh+[phase_collect_command(REMOTE,key)],120,False,
-                    announce=False,tag=tag,into=into)
+        r,attempts,collect_timed_out=collect_completed(
+            lambda:transport(label+'_collect',ssh+[phase_collect_command(REMOTE,key)],120,False,
+                             announce=False,tag=tag,into=into),status,label,salvage_pending(salvage,name))
         (folder/(key+'.log')).write_bytes(r.stdout+r.stderr)
         code=status['exit_code']
-        write(folder/(key+'_timing.json'),dict(start_epoch=begin,seconds=time.time()-begin,returncode=code,detached=True,
+        timing=dict(start_epoch=begin,seconds=time.time()-begin,returncode=code,detached=True,
             remote_pid=pid,polls=status['polls'],unreachable_polls=status['unreachable_polls'],remote_work=status['remote_work'],
-            output_capped=output_capped(r.stdout,phase_files(REMOTE,key))))
+            output_capped=output_capped(r.stdout,phase_files(REMOTE,key)),collect_attempts=attempts)
+        if collect_timed_out:
+            timing.update(output_collect_timed_out=True,exit_code=code)
+        write(folder/(key+'_timing.json'),timing)
         require(not required or code==0,'Execution phase failed: '+label)
         return subprocess.CompletedProcess(args=[label],returncode=-1 if code is None else code,stdout=r.stdout,stderr=b'')
     def remote(label,command,timeout=60,required=True,tag=None,into=None):
@@ -1112,7 +1234,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         remote('python_gate',"/usr/bin/python3.12 -I -S -c 'import sys;assert sys.version_info[:3]==(3,12,3);print(sys.version)'",30)
         remote('fresh_directory','test ! -e '+REMOTE+' && mkdir -p '+REMOTE+'/project',30)
         support=['project.tar.gz','execution_manifest.json','seal.json','operator_authorization.json',*m['support_files']]
-        if stored:support.remove('project.tar.gz')
+        if stored or launch_record:support.remove('project.tar.gz')
         transport('support_transfer',['scp',*options,*[str(BASE/n) for n in support],host+':'+REMOTE+'/'],300)
         prefix='cd '+REMOTE+' && '
         if stored:
@@ -1173,9 +1295,16 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
                     else:copy_state='USE_FAILED';copy_receipt['state']=copy_state
                     save('asset_copy_receipt.json',copy_receipt)
             if not copy_receipt['used']:
+                # D-675: a launch record has no laptop archive to upload: anything but a used copy stops it.
+                problem=record_upload_refusal(launch_record,copy_receipt['used'],copy_state)
+                require(problem is None,problem or '')
                 # The v9 path, byte for byte: the same scp invocation whether no copy was
                 # declared or the copy was missing, unreachable, corrupt or unusable.
                 transport('assets_transfer',['scp',*options,str(ROOT/assets['path']),host+':'+REMOTE+'/assets.tar'],10800)
+            if launch_record:
+                remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(assets['sha256']+'  assets.tar')+' | sha256sum -c -',300)
+                remote('extract_payload',prefix+'tar -xf assets.tar',900)
+                return copy_state
             remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(m['source_archive_sha256']+'  project.tar.gz')+' '+shlex.quote(assets['sha256']+'  assets.tar')+' | sha256sum -c -',300)
             if copy and copy_state=='MISSING':
                 # Only after the instance has verified the uploaded bytes, only for an
@@ -1205,7 +1334,8 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
             fetch_assets()
         else:
             # The assets are the filesystem's layers, checked file by file above; the project
-            # archive is still hashed on the instance and is all that is extracted.
+            # archive is still hashed on the instance and is all that is extracted. A launch record has neither.
+            require(not launch_record,'A seal request launch record takes the asset path only')
             remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(m['source_archive_sha256']+'  project.tar.gz')+' | sha256sum -c -',300)
             remote('extract_payload',prefix+'tar -xzf project.tar.gz -C project',900)
         room=None
@@ -1306,7 +1436,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
                 ' --execute > workload.stdout.log 2> workload.stderr.log',remaining,False)
             save('workload_return.json',dict(exit_code=r.returncode,epoch=time.time(),full_run_retried=False))
     except Exception as exc:
-        save('controller_failure.json',dict(error_type=type(exc).__name__,message=str(exc) if isinstance(exc,RuntimeError) else 'Controller failure; see phase evidence'))
+        save('controller_failure.json',dict(error_type=type(exc).__name__,message=str(exc) if isinstance(exc,KEPT_MESSAGES) else 'Controller failure; see phase evidence'))
         if sealed:print('Controller stopped at phase %d'%counter[0],flush=True)
         else:print('Controller stopped:',type(exc).__name__,flush=True)
     finally:

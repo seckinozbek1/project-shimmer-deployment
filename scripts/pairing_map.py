@@ -23,8 +23,10 @@ ranking cannot establish applicability or authorise a judging call.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 import finding_record
@@ -53,9 +55,43 @@ _TABLE_ROW = re.compile(r"^[ \t]*\|(.+)\|[ \t]*$")
 _TABLE_SEP = re.compile(r"^[ \t]*\|[\s:|-]+\|[ \t]*$")
 
 
-def _slug(text, limit=40):
+def legacy_slug(text, limit=40):
+    """The slug every unit id was named by before gap 11 (D-668): ASCII letters and digits only,
+    so a letter of any other script was a separator ("## Résumé" gave `r-sum`, and a
+    heading written wholly in another script gave `unit`). Kept for `unit_id_migration` only."""
     s = re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")
     return s[:limit] or "unit"
+
+
+def _ascii_word(word):
+    """One word of the one tokeniser spelled in ASCII: as it is when it is ASCII; else its
+    letters with their marks taken off (Unicode decomposition, no language's table) when that
+    leaves only ASCII letters, digits and hyphens; else that marks-off form in Punycode
+    (RFC 3492) behind `xn--`, which spells any script in ASCII and is undone exactly."""
+    if word.isascii():
+        return word
+    bare = "".join(c for c in unicodedata.normalize("NFKD", word) if not unicodedata.combining(c)).lower()
+    if bare and re.fullmatch(r"[a-z0-9-]+", bare):
+        return bare
+    bare = unicodedata.normalize("NFC", bare)
+    return "xn--" + bare.encode("punycode").decode("ascii").lower()
+
+
+def _slug(text, limit=40):
+    """A heading's slug in a unit id (gap 11, D-668): the one tokeniser's words (`words`), each
+    spelled in ASCII (`_ascii_word`), joined by hyphens. For an ASCII heading it is exactly
+    `legacy_slug`, byte for byte, so no ASCII id moves. A heading in any other script gets a slug
+    of its own words instead of `unit` or a fragment: the same heading gives the same id, written
+    composed or decomposed. A non-ASCII slug longer than `limit` keeps its head and ends in eight
+    hex digits of the heading's hash, so two long headings that differ late do not share it."""
+    raw = str(text)
+    if raw.isascii():
+        return legacy_slug(raw, limit)
+    slug = "-".join(_ascii_word(w) for w in words(raw))
+    if len(slug) > limit:
+        digest = hashlib.sha256(unicodedata.normalize("NFC", raw).lower().encode("utf-8")).hexdigest()[:8]
+        slug = slug[:limit - 9].rstrip("-") + "-" + digest
+    return slug or "unit"
 
 
 _RULE_LINE = re.compile(r"^[\s\-*_=]+$")
@@ -102,20 +138,39 @@ def header_label(raw_header):
     return _norm_label(re.sub(r"\s*\([^)]*\)\s*$", "", str(raw_header or "")))
 
 
-# A placeholder for a hyphen JOINING two word characters, substituted before
-# the [\W_]+ split so "Class-A" survives as one token rather than splitting
-# into "class" and a fragment the length floor then drops. Must itself be a
-# \w sequence (so the split does not cut through it) and must not collide
-# with real input; an ASCII sentinel is the plain, correct answer here, not a
-# Unicode look-alike hyphen, which is NOT a \w character under re's own
-# UNICODE-flag classification and silently fails the same way a raw split
-# character would (found by testing the placeholder's own re.match result
-# before trusting it, not by assuming a Unicode character "looks like a
-# letter"). Accepted, narrow edge case: literal input containing this exact
-# ASCII sequence around a hyphen would be misread; no real label or rule text
-# does, and a document that did would fail visibly (a stray extra token), not
-# silently.
-_HYPHEN_JOIN_PLACEHOLDER = "xhyphenx"
+def _word_part(ch):
+    r"""A character inside a word: a letter or digit of any script (what `\w` takes, the
+    underscore left out), or a combining mark. A mark joins the letter it sits on: `[\W_]+`
+    cut a word at every vowel sign of an Indic or Thai word and at every accent of a decomposed
+    Latin letter, so one word came out as several fragments."""
+    return ch.isalnum() or unicodedata.category(ch).startswith("M")
+
+
+def words(text, *, join_hyphens=True):
+    r"""THE ONE TOKENISER's split (gap 11, D-668): the words of `text`, lowercased, in order.
+
+    The text is put in Unicode normal form C first, so the same words typed composed or
+    decomposed are the same words. A word is a run of `_word_part` characters; everything else
+    separates words. With `join_hyphens` a single hyphen between two word characters joins them
+    ("Class-A" is one word); without it the hyphen separates, as passage_pairs counts words.
+    For ASCII text the result is exactly `re.split(r"[\W_]+", text.lower())` with the hyphen
+    rule `_norm_label` always had. `_norm_label` filters these words; `_slug` spells them; no
+    other split of words exists beside it."""
+    text = unicodedata.normalize("NFC", str(text or "")).lower()
+    out, current = [], []
+    last = len(text) - 1
+    for i, ch in enumerate(text):
+        if _word_part(ch):
+            current.append(ch)
+        elif (join_hyphens and ch == "-" and current and current[-1] != "-"
+              and i < last and _word_part(text[i + 1])):
+            current.append(ch)
+        elif current:
+            out.append("".join(current))
+            current = []
+    if current:
+        out.append("".join(current))
+    return out
 
 
 def _stem(word):
@@ -185,11 +240,7 @@ def _norm_label(label):
     nothing either, since neither rule can match a word that does not end in
     the sequences it tests for.
     """
-    text = str(label).lower()
-    text = re.sub(r"(?<=[^\W_])-(?=[^\W_])", _HYPHEN_JOIN_PLACEHOLDER, text)
-    words = [w.replace(_HYPHEN_JOIN_PLACEHOLDER, "-")
-            for w in re.split(r"[\W_]+", text, flags=re.UNICODE) if w]
-    return tuple(_stem(w) for w in words if w not in STOPWORDS and len(w) > 2)
+    return tuple(_stem(w) for w in words(label) if w not in STOPWORDS and len(w) > 2)
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +329,34 @@ def split_units(text, *, document_id=""):
                       "kind": "document", "text": text.strip(),
                       "index": 0})
     return units
+
+
+def unit_id_migration(text, *, document_id=""):
+    """Gap 11 (D-668, UNITS-A): every unit id of `text` that the Unicode slug moved, as
+    [{"index", "from", "to"}] in unit order: `from` the id `legacy_slug` named it by, `to` the id
+    `split_units` names it by now. Only a section or preamble unit whose heading holds a letter
+    outside ASCII can move; a row, table or document unit never does. Empty for every ASCII
+    document (check 495 measures it on every corpus document; none of the 1317 Markdown files
+    under benchmark/ moves an id). A saved artifact naming an earlier id is read through it."""
+    moved = []
+    for unit in split_units(text, document_id=document_id):
+        if unit["kind"] not in ("section", "preamble"):
+            continue
+        prefix = unit["unit_id"].split("-", 1)[0]
+        before = prefix + "-" + legacy_slug(unit["title"])
+        if before != unit["unit_id"]:
+            moved.append({"index": unit["index"], "from": before, "to": unit["unit_id"]})
+    return moved
+
+
+def migrate_unit_id(unit_id, migration):
+    """The current id of `unit_id` under `migration` (unit_id_migration's list), or `unit_id`
+    itself when it did not move. An earlier id the list names twice (migrations of two documents
+    joined) cannot be read one way: it is refused (None)."""
+    found = [m["to"] for m in migration if m["from"] == unit_id]
+    if not found:
+        return unit_id
+    return found[0] if len(found) == 1 else None
 
 
 def _table_blocks(text):

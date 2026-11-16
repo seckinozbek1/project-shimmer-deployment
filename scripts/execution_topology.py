@@ -323,8 +323,12 @@ def resident_model(model_id):
     import importlib
     import gc
     import agent_wrapper
+    import vllm_link
     context.checkpoint()
     context.event("model_load_start", model=model_id, reload=worker.loads.get(model_id, 0) > 0)
+    # #297: the load holds vllm_link.CARD_LOCK across the hand-back of a resident vLLM server and the load.
+    card = vllm_link.card_for(model_id, worker.lane.device)
+    card.__enter__()
     try:
         torch = importlib.import_module("torch")
         transformers = importlib.import_module("transformers")
@@ -377,3 +381,5 @@ def resident_model(model_id):
         worker.healthy = False
         context.event("worker_unhealthy", reason="model_initialization_failed", model=model_id)
         raise
+    finally:
+        card.__exit__(None, None, None)

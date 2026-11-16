@@ -27,6 +27,19 @@ from cloud_run_watchdog import operator_preflight
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = Path(__file__).resolve().parent / 'cloud_run'
+
+
+def main_output():
+    """The MAIN checkout's output/ (wheelhouses, completed baselines), reached through configuration
+    (DELETE-SAFE-A: tools/loop/shared_paths.py, SHIMMER_MAIN_CHECKOUT else git's common directory), this
+    checkout's when git cannot be read; never through a link in a worktree."""
+    loop = str(Path(__file__).resolve().parent / 'loop')
+    if loop not in sys.path:
+        sys.path.append(loop)
+    import shared_paths
+    return shared_paths.output_dir(start=ROOT, fallback=ROOT)
+
+
 BASELINE = '15d0721fbc24cd38fdaa6bc4969d7b18ad66387e'
 from runtime_contract import RuntimeContractError, assert_current, load_contract, resolve, subprocess_check
 RUNTIME = load_contract()
@@ -419,7 +432,7 @@ def prepare(args):
         from packaging.specifiers import SpecifierSet
         required = pins(ROOT / 'requirements.txt')
         require(all(k in locked and SpecifierSet('==' + v).contains(locked[k]) for k, v in required.items()), 'runtime pins differ from source requirements')
-        require(locked == pins(ROOT / 'output/a100_smoke_20260914/collected/runtime_frozen.txt'), 'runtime differs from completed baseline')
+        require(locked == pins(main_output() / 'a100_smoke_20260914/collected/runtime_frozen.txt'), 'runtime differs from completed baseline')
         return True
     check('dependency_pins_match_completed_baseline', dependency_pins)
     shutil.copyfile(ASSETS / 'runtime.lock', destination / 'runtime.lock')
@@ -433,7 +446,7 @@ def prepare(args):
     def check_models():
         config = json.loads(files['config/local_models.json'])
         require(set(revisions) == {config['active_producer'], config['active_auditor'], 'BAAI/bge-m3'}, 'model IDs changed')
-        old = json.loads((ROOT / 'output/a100_optimized_20260914/model_hydration.json').read_text())
+        old = json.loads((main_output() / 'a100_optimized_20260914/model_hydration.json').read_text())
         require(revisions == {m['model']: m['revision'] for m in old}, 'model revisions changed')
         return model_manifest(args.model_cache, revisions)
     models = check('fixed_models_and_local_cache', check_models)
@@ -509,7 +522,7 @@ def main(argv=None):
     parser.add_argument('--credential-file', type=Path, help='Optional local private Python config; only loaded status is retained')
     parser.add_argument('--identity-file', type=Path, required=True, help='Local prepared SSH identity; never included in the bundle')
     parser.add_argument('--model-cache', default=str(Path.home() / '.cache/huggingface/hub'))
-    parser.add_argument('--wheelhouse', default=str(ROOT / 'output/cloud_wheels/linux_cp312'))
+    parser.add_argument('--wheelhouse', default=str(main_output() / 'cloud_wheels/linux_cp312'))
     parser.add_argument('--output', default=str(ROOT / 'output/cloud_ready'))
     args = parser.parse_args(argv)
     try:

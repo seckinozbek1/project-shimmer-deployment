@@ -5,9 +5,12 @@ restored and must PASS.
     py -3.12 -X utf8 tools/seal_route_checks.py
 """
 import contextlib
+import functools
 import hashlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -418,7 +421,7 @@ def job_fixture(tmp, mod=sr):
     (base / sr.JOB_FILE).write_text(json.dumps(job), encoding="utf-8")
     support = {sr.JOB_FILE: sr.sha(base / sr.JOB_FILE), sr.REUSE_MANIFEST: sr.sha(base / sr.REUSE_MANIFEST),
                **{mod.read_copy_name(k): v["sha256"] for k, v in copies.items()}}
-    (base / "execution_manifest.json").write_text(json.dumps({"arm": "S", "seal_job": job, "assets_archive": {"filename": "assets.tar"},
+    (base / "execution_manifest.json").write_text(json.dumps({"arm": "S", "seal_job": job, "assets_archive": {"filename": "assets.tar", "sha256": assets["sha256"], "bytes": 7000},
                                                               "support_files": support}), encoding="utf-8")
     return base, tree, job, assets, models
 
@@ -693,18 +696,18 @@ def proof_driver_admits_returned_bundles(drv=None):
         tmp = Path(tmp)
         job_bundle, run_folder, reuse, live, result, base = returned_job(tmp)
         events = []
-        real_stale = sr.stale_reason
+        real_stale = drv.admission_stale_reason
 
-        def stale(job, live_, own):
+        def stale(job, live_, own, found=None):
             events.append("stale")
-            return real_stale(job, live_, own)
+            return real_stale(job, live_, own, found)
 
         def step_run(argv, capture_output, text):
             events.append("step")
             return types.SimpleNamespace(returncode=0)
         args = dict(steps=True, run=step_run, gate=lambda name: None, unlock=lambda held: events.append("unlock"),
                     lock=lambda ledger: events.append("lock") or "held")
-        with patch.object(sr, "stale_reason", stale):
+        with patch.object(drv, "admission_stale_reason", stale):
             rows = drv.admit(job_bundle, run_folder, reuse, tmp / "out", live, live["budget_ledger"], **args)
         out["all admitted at once"] = len(rows) == 3 and sorted(p.name for p in (tmp / "out").iterdir()) == ["admission.json", "s0", "s1", "s2"]
         out["assets linked"] = all((tmp / "out" / r["name"] / "assets.tar").is_file() for r in rows)
@@ -1283,6 +1286,28 @@ PROOFS = [
     ("the guard reads the laptop's attestation of the standing orders only on the instance",
      "proof_guard_reads_the_attestation_only_on_the_instance"),
     ("the seal job end to end on stand-ins: placed, hashed once, sealed, stored, stripped", "proof_job_end_to_end"),
+    ("D-648: a receipt deferring the asset check to the instance, for an arm S job only",
+     "proof_a_deferred_receipt_only_for_an_arm_s_job"),
+    ("D-648: the job refuses before any seal when its archive did not verify on the instance",
+     "proof_the_job_refuses_an_archive_that_did_not_verify_on_the_instance"),
+    ("D-648: the bound wrapper's launch check is the receipt rule", "proof_the_bound_wrapper_reads_the_receipt_rule"),
+    ("order 85: a seal request carries no archive and holds every file by digest",
+     "proof_a_request_carries_no_archive_and_holds_every_file"),
+    ("order 85: a changed, padded, other-controller or refusing request is refused", "proof_a_changed_or_padded_request_is_refused"),
+    ("D-675: a launch record is its request's, held to its files", "proof_a_launch_record_is_its_request_s"),
+    ("D-675: a launch record is refused wherever a sealed bundle is read", "proof_a_launch_record_is_no_sealed_bundle"),
+    ("D-675: a launch record takes the provider-side copy or nothing", "proof_a_launch_record_takes_the_copy_or_nothing"),
+    ("D-675: the instance checks the record before it seals", "proof_the_instance_checks_the_record_before_it_seals"),
+    ("L-18: the request names the frozen files and the wheelhouse by digest",
+     "proof_l18_the_request_names_the_frozen_files_and_the_wheelhouse"),
+    ("L-18: the instance refuses a missing or differing frozen file or wheel before any seal",
+     "proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel"),
+    ("L-18: a request launches only on the reaper's ledger", "proof_l18_the_launch_names_the_reaper_s_ledger"),
+    ("order 85 end to end: a request runs as a seal job on stand-ins", "proof_a_request_runs_as_a_seal_job_on_stand_ins"),
+    ("order 85: the check reads where each seal job was sealed", "proof_order_85_reads_where_each_seal_job_was_sealed"),
+    ("unit 3: every instance-side git call holds on a one-commit tree",
+     "proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree"),
+    ("unit 4: the admission holds a record job to its request", "proof_the_admission_holds_a_record_job_to_its_request"),
     ("the laptop driver admits returned bundles and refuses a stale read copy", "proof_driver_admits_returned_bundles"),
     ("the laptop driver gates a heavy step on one reading and logs that reading", "proof_driver_gates_and_logs_one_reading"),
     ("the gate holds the D-099 disk floor after the step's expected size", "proof_driver_gate_holds_the_disk_floor"),
@@ -1311,6 +1336,25 @@ PROOFS = [
     ("run_requests raising after the archives are linked strips every bundle; a tail error is recorded",
      "proof_run_requests_raising_strips_every_bundle"),
     ("C4 launch 4: every text file the sealer writes is LF on every platform", "proof_sealed_files_are_lf"),
+    ("item 3: seal_route.py is a controller file a request binds, named in the re-seal sentence",
+     "proof_the_seal_route_is_a_controller_file"),
+    ("item 4: admit() refuses a launch record among the returned bundles and admits nothing",
+     "proof_the_admission_refuses_a_returned_launch_record"),
+    ("item 12: every launch names where its bundle was sealed, read from its admission",
+     "proof_order_85_reads_where_each_bundle_was_sealed"),
+    ("item 10: a request refuses a launch record as its reuse bundle", "proof_a_request_refuses_a_launch_record_as_its_reuse_bundle"),
+    ("items 11 and 6: the instance holds the record to its request", "proof_the_instance_holds_the_record_to_its_request"),
+    ("item 6: a request naming no wheelhouse is refused on the instance",
+     "proof_l18_the_instance_refuses_a_request_naming_no_wheelhouse"),
+    ("item 6: a request of another schema or attesting a refusal is refused",
+     "proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused"),
+    ("item 6: a launch record is made only from an admitted request", "proof_a_launch_record_is_made_only_from_an_admitted_request"),
+    ("items 6 and 7: the bound wrapper launches a request only as its record, never on stale read copies",
+     "proof_the_bound_wrapper_launches_a_request_only_as_its_record"),
+    ("item 9: admit --request holds the instance job seal to the request",
+     "proof_the_admission_holds_the_instance_job_seal_to_the_request"),
+    ("the request command writes a request and checks it, under the disk floor refused",
+     "proof_the_request_command_writes_and_checks_a_request"),
 ]
 
 DRIVER = ROOT / "tools" / "seal_route_driver.py"
@@ -1402,8 +1446,8 @@ NEUTRALISATIONS = [
         "        rows = []\n        sealed, result = collected(run_folder, staging / 'collected')\n        try:\n")),
     ("the stale check moved before the lock", "proof_driver_admits_returned_bundles", _swap_module(
         "proof_driver_admits_returned_bundles", "drv", DRIVER,
-        "    held = lock(ledger)\n    try:\n        reason = sr.stale_reason(job, live, own)\n",
-        "    reason = sr.stale_reason(job, live, own)\n    held = lock(ledger)\n    try:\n")),
+        "    held = lock(ledger)\n    try:\n        foreign = []\n        reason = admission_stale_reason(job, live, own, foreign)\n",
+        "    foreign = []\n    reason = admission_stale_reason(job, live, own, foreign)\n    held = lock(ledger)\n    try:\n")),
     ("a later refusal renaming over an earlier one", "proof_driver_admits_returned_bundles", _swap_module(
         "proof_driver_admits_returned_bundles", "drv", DRIVER,
         "    while name.exists():", "    while False:")),
@@ -1424,7 +1468,7 @@ NEUTRALISATIONS = [
         "sr.require(sr.sha(Path(reuse) / 'execution_manifest.json') == job_manifest['support_files'][sr.REUSE_MANIFEST],", "sr.require(True,")),
     ("the stale check not made in the admission", "proof_driver_admits_returned_bundles", _swap_module(
         "proof_driver_admits_returned_bundles", "drv", DRIVER,
-        "reason = sr.stale_reason(job, live, own)", "reason = None")),
+        "reason = admission_stale_reason(job, live, own, foreign)", "reason = None")),
     ("the ledger lock not held", "proof_driver_admits_returned_bundles", _swap_module(
         "proof_driver_admits_returned_bundles", "drv", DRIVER, "held = lock(ledger)", "held = 'held'")),
     ("a refusal mid-way leaving what passed admitted", "proof_driver_admits_returned_bundles", _swap_module(
@@ -1494,9 +1538,1099 @@ NEUTRALISATIONS = [
         "foreign = [r for r in added if not ({r.get('instance_name'), r.get('instance_id')} & own)]", "foreign = []")),
     ("the job's own flags admitted in a request", "proof_requests_carry_their_files", _swap("proof_requests_carry_their_files",
         "require(not any(a in argv for a in ('--output-dir', '--reuse-assets', '--inputs-from', '--ledger')),", "require(True,")),
+    ("a parent walk on the instance's git path", "proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree",
+     lambda: _with_a_parent_walk()()),
+    ("seal_route.py dropped from CONTROL_FILES", "proof_the_seal_route_is_a_controller_file", _swap_module(
+        "proof_the_seal_route_is_a_controller_file", "prep", ROOT / "tools" / "prepare_ordinary_final_run.py",
+        "    'tools/seal_route.py')", "    )")),
+    ("a returned launch record admitted", "proof_the_admission_refuses_a_returned_launch_record", _swap_module(
+        "proof_the_admission_refuses_a_returned_launch_record", "drv", DRIVER,
+        "                sr.refuse_launch_record(json.loads((source / 'execution_manifest.json').read_text(encoding='utf-8')),\n"
+        "                                        'a returned bundle')", "                pass")),
+    ("an admitted bundle read as sealed on the instance wherever it sits", "proof_order_85_reads_where_each_bundle_was_sealed",
+     _swap_module("proof_order_85_reads_where_each_bundle_was_sealed", "cloud", ROOT / "tools" / "ordinary_final_cloud.py",
+                  "    return 'instance' if listed else 'laptop'", "    return 'instance'")),
+    ("a launch record taken as a request's reuse bundle", "proof_a_request_refuses_a_launch_record_as_its_reuse_bundle", _swap(
+        "proof_a_request_refuses_a_launch_record_as_its_reuse_bundle",
+        "    refuse_launch_record(reuse_manifest, 'the reuse bundle of a request')\n", "")),
+    ("the record not held to its request on the instance", "proof_the_instance_holds_the_record_to_its_request", _swap_module(
+        "proof_the_instance_holds_the_record_to_its_request", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+        "    problem = record_matches_request(manifest, request)\n    require(problem is None, problem or '')",
+        "    problem = None")),
+    ("the record's job not held to the request's (runner :1917)", "proof_the_instance_holds_the_record_to_its_request",
+     _swap_module("proof_the_instance_holds_the_record_to_its_request", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+                  "    require(request.get('job') == manifest['seal_job'] and read(base/'seal_job.json') == manifest['seal_job'],\n"
+                  "            'The seal job is not the one the request names')", "    require(True, '')")),
+    ("a request naming no wheelhouse taken (runner :1895)", "proof_l18_the_instance_refuses_a_request_naming_no_wheelhouse",
+     _swap_module("proof_l18_the_instance_refuses_a_request_naming_no_wheelhouse", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+                  "    require(request.get('wheelhouse'), 'The request names no wheelhouse')\n", "")),
+    ("a request of another schema read", "proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused", _swap(
+        "proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused",
+        "    if request.get('schema') != REQUEST_SCHEMA:\n        return 'Not a seal request'",
+        "    if False:\n        return 'Not a seal request'")),
+    ("a request attesting a refusal launched", "proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused", _swap(
+        "proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused",
+        "    if (request.get('job') or {}).get('attestation', {}).get('refusals'):", "    if False:")),
+    ("a launch record made from a refused request", "proof_a_launch_record_is_made_only_from_an_admitted_request", _swap(
+        "proof_a_launch_record_is_made_only_from_an_admitted_request",
+        "    problem = request_error(request_folder, controller_root)\n    require(problem is None, problem or '')",
+        "    problem = None")),
+    ("both or neither of --bundle and --request taken", "proof_the_bound_wrapper_launches_a_request_only_as_its_record",
+     _swap_module("proof_the_bound_wrapper_launches_a_request_only_as_its_record", "wrapper", ROOT / "tools" / "ordinary_final_bound_cloud.py",
+                  "    require((args.bundle is None) != (args.request is None), 'Name exactly one of --bundle and --request')",
+                  "    pass")),
+    ("a request's record launched without its request", "proof_the_bound_wrapper_launches_a_request_only_as_its_record",
+     _swap_module("proof_the_bound_wrapper_launches_a_request_only_as_its_record", "wrapper", ROOT / "tools" / "ordinary_final_bound_cloud.py",
+                  "'--from-request', str(request)] + rest)", "] + rest)")),
+    ("a request launched on stale read copies", "proof_the_bound_wrapper_launches_a_request_only_as_its_record",
+     _swap_module("proof_the_bound_wrapper_launches_a_request_only_as_its_record", "wrapper", ROOT / "tools" / "ordinary_final_bound_cloud.py",
+                  "        problem = request_stale_refusal(request)\n        require(problem is None, problem or '')\n", "")),
+    ("execute() --from-request not holding the record to its request (bound_cloud :116)",
+     "proof_the_bound_wrapper_launches_a_request_only_as_its_record",
+     _swap_module("proof_the_bound_wrapper_launches_a_request_only_as_its_record", "wrapper", ROOT / "tools" / "ordinary_final_bound_cloud.py",
+                  "        problem = seal_route.record_error(b, from_request) or seal_route.request_error(from_request, controller.ROOT)",
+                  "        problem = None")),
+    ("a record job admitted without its instance job seal", "proof_the_admission_holds_the_instance_job_seal_to_the_request",
+     _swap_module("proof_the_admission_holds_the_instance_job_seal_to_the_request", "drv", DRIVER,
+                  "                problem = sr.instance_seal_error(staging / 'collected' / 'evidence', request)\n"
+                  "                sr.require(problem is None, problem or '')", "                pass")),
+    ("a request written under the disk floor", "proof_the_request_command_writes_and_checks_a_request",
+     _swap_module("proof_the_request_command_writes_and_checks_a_request", "drv", DRIVER,
+                  "    sr.require(free >= REQUEST_DISK_FLOOR_GIB,", "    sr.require(True,")),
+    ("the request's budget block without the ledgers the sealer reads", "proof_the_request_command_writes_and_checks_a_request",
+     _swap_module("proof_the_request_command_writes_and_checks_a_request", "drv", DRIVER,
+                  "    return dict(ledgers=[Path(p) for p in ledgers], forecast_minutes=forecast_minutes,",
+                  "    return dict(forecast_minutes=forecast_minutes,")),
+    ("a written request not checked", "proof_the_request_command_writes_and_checks_a_request",
+     _swap_module("proof_the_request_command_writes_and_checks_a_request", "drv", DRIVER,
+                  "    problem = sr.request_error(out, ROOT)\n", "    problem = None\n")),
+    ("a record job admitted with no --request", "proof_the_admission_holds_the_instance_job_seal_to_the_request",
+     _swap_module("proof_the_admission_holds_the_instance_job_seal_to_the_request", "drv", DRIVER,
+                  "    sr.require(record_job == (request is not None),", "    sr.require(True,")),
+    ("a tuple argv naming a parent (HEAD~1) on the instance's git path",
+     "proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree",
+     lambda: _with_a_parent_walk("\n\ndef _walk(run):\n    return run(('git', 'rev-parse', 'HEAD~1'))\n")()),
+    ("a parent suffix through prepare_cloud_run's git", "proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree",
+     lambda: _with_a_parent_walk("\n\ndef _walk(root, commit):\n    return git(root, 'rev-parse', commit + '^')\n",
+                                 "tools/prepare_cloud_run.py")()),
+    ("a parent suffix in an f-string revision", "proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree",
+     lambda: _with_a_parent_walk("\n\ndef _walk(git, commit):\n    return git('rev-parse', f'{commit}~1')\n")()),
+    ("a laptop seal after the route not read", "proof_order_85_reads_where_each_seal_job_was_sealed", _swap_module(
+        "proof_order_85_reads_where_each_seal_job_was_sealed", "orders", ROOT / "tools" / "loop" / "standing_orders_check.py",
+        "    if late:", "    if False:")),
+    ("the admission taking a record not held to its files", "proof_the_admission_holds_a_record_job_to_its_request", _swap_module(
+        "proof_the_admission_holds_a_record_job_to_its_request", "drv", ROOT / "tools" / "seal_route_driver.py",
+        "        sr.require(problem is None, problem or '')\n    own = own_identifiers", "        pass\n    own = own_identifiers")),
+    ("the job run before its archive verified (end to end)", "proof_a_request_runs_as_a_seal_job_on_stand_ins", _swap(
+        "proof_a_request_runs_as_a_seal_job_on_stand_ins",
+        "    return receipt.get('passed') is True and receipt.get('archive_sha256') == job_assets['sha256']",
+        "    return False")),
+    ("a frozen file taken at any digest", "proof_l18_the_request_names_the_frozen_files_and_the_wheelhouse", _swap(
+        "proof_l18_the_request_names_the_frozen_files_and_the_wheelhouse",
+        "            require(sha(path) == entry['sha256'], 'A frozen model file differs from final_models.json: ' + entry['path'])",
+        "            pass")),
+    ("the instance not holding the frozen files", "proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel", _swap_module(
+        "proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+        "        require((base / name).is_file() and sha(base / name) == entry['sha256'],", "        require(True,")),
+    ("the instance not holding the wheels", "proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel", _swap_module(
+        "proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+        "        require(path.is_file() and sha(path) == wheel['sha256'], 'A wheel of the request is missing or differs: ' + name)",
+        "        pass")),
+    ("any ledger taken for a request", "proof_l18_the_launch_names_the_reaper_s_ledger", _swap_module(
+        "proof_l18_the_launch_names_the_reaper_s_ledger", "wrapper", ROOT / "tools" / "ordinary_final_bound_cloud.py",
+        "    if Path(ledger).resolve() not in allowed:", "    if False:")),
+    ("the instance not holding the record's files", "proof_the_instance_checks_the_record_before_it_seals", _swap_module(
+        "proof_the_instance_checks_the_record_before_it_seals", "run_module", ROOT / "tools" / "ordinary_final_run.py",
+        "    require(sha(base/'seal_request.json') == manifest['request_sha256'], 'The launch record does not name its request')",
+        "    pass",
+        ("        require(sha(base/name) == digest, 'Support hash mismatch: '+name)\n    pass", "        pass\n    pass"))),
+    ("a launch record admitted as a sealed bundle", "proof_a_launch_record_is_no_sealed_bundle", _swap(
+        "proof_a_launch_record_is_no_sealed_bundle",
+        "    require(manifest.get('kind') != LAUNCH_RECORD_KIND,", "    require(True,")),
+    ("a launch record not held to its request", "proof_a_launch_record_is_its_request_s", _swap(
+        "proof_a_launch_record_is_its_request_s",
+        "    if request_folder is not None and sha(Path(request_folder) / REQUEST_FILE) != manifest['request_sha256']:",
+        "    if False:")),
+    ("a launch record's files not held", "proof_a_launch_record_is_its_request_s", _swap(
+        "proof_a_launch_record_is_its_request_s",
+        "    return None if not changed else 'A file of the launch record changed: ' + ', '.join(changed[:3])",
+        "    return None")),
+    ("a launch record falling back to the upload", "proof_a_launch_record_takes_the_copy_or_nothing", _swap_module(
+        "proof_a_launch_record_takes_the_copy_or_nothing", "cloud", ROOT / "tools" / "ordinary_final_cloud.py",
+        "    if record and not used:", "    if False:")),
+    ("an archive carried in a request", "proof_a_changed_or_padded_request_is_refused", _swap(
+        "proof_a_changed_or_padded_request_is_refused",
+        "refused = sorted(n for n in present if Path(n).name in REQUEST_REFUSED_NAMES)", "refused = []")),
+    ("a request's files not held to their digests", "proof_a_changed_or_padded_request_is_refused", _swap(
+        "proof_a_changed_or_padded_request_is_refused",
+        "changed = sorted(n for n, digest in request['files'].items() if sha(folder / n) != digest)", "changed = []")),
+    ("a request's controller binding not read", "proof_a_changed_or_padded_request_is_refused", _swap(
+        "proof_a_changed_or_padded_request_is_refused",
+        "    if moved or not request.get('local_control_hashes'):", "    if False:")),
+    ("an unlisted file admitted in a request", "proof_a_changed_or_padded_request_is_refused", _swap(
+        "proof_a_changed_or_padded_request_is_refused",
+        "    if present != set(request.get('files') or {}):", "    if False:")),
+    ("the archive members written into a request", "proof_a_request_carries_no_archive_and_holds_every_file", _swap(
+        "proof_a_request_carries_no_archive_and_holds_every_file",
+        "    (out / REUSE_MANIFEST).write_bytes((Path(reuse_bundle) / 'execution_manifest.json').read_bytes())",
+        "    (out / REUSE_MANIFEST).write_bytes((Path(reuse_bundle) / 'execution_manifest.json').read_bytes()); "
+        "(out / 'assets.tar').write_bytes(b'x')")),
+    ("a deferred receipt admitted for any arm", "proof_a_deferred_receipt_only_for_an_arm_s_job", _swap(
+        "proof_a_deferred_receipt_only_for_an_arm_s_job", "if arm != 'S':", "if False:")),
+    ("a deferred receipt for any archive", "proof_a_deferred_receipt_only_for_an_arm_s_job", _swap(
+        "proof_a_deferred_receipt_only_for_an_arm_s_job",
+        "if verified.get('manifest_sha256') != manifest_sha256 or verified.get('archive_sha256') != assets_sha256:",
+        "if False:")),
+    ("the job's archive not held to its verification on the instance",
+     "proof_the_job_refuses_an_archive_that_did_not_verify_on_the_instance", _swap(
+         "proof_the_job_refuses_an_archive_that_did_not_verify_on_the_instance",
+         "    require(job_archive_verified(reuse_receipt, base),", "    require(True,")),
     ("a receipt for any archive", "proof_per_bundle_receipt", _swap("proof_per_bundle_receipt",
         "require({k: mine['assets_archive'][k] for k in keys} == {k: theirs['assets_archive'][k] for k in keys},", "require(True,")),
 ]
+
+
+def proof_a_deferred_receipt_only_for_an_arm_s_job(mod=sr):
+    """The laptop writes the deferred receipt for an arm S job only; the wrapper's rule admits it for arm S
+    and this manifest and archive alone, and an ordinary receipt keeps every check it had."""
+    with tempfile.TemporaryDirectory() as tmp:
+        b = Path(tmp)
+        manifest = {"arm": "S", "assets_archive": {"sha256": "a" * 64, "bytes": 5}}
+        (b / "execution_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        receipt = mod.deferred_job_receipt(b)
+        msha = mod.sha(b / "execution_manifest.json")
+        (b / "execution_manifest.json").write_text(json.dumps(dict(manifest, arm="B3")), encoding="utf-8")
+        try:
+            mod.deferred_job_receipt(b)
+            refused_b3 = False
+        except mod.RouteError:
+            refused_b3 = True
+    ordinary = {"passed": True, "manifest_sha256": msha, "archive_sha256": "a" * 64,
+                "default_revision_resolutions": [{"ref_bytes": 40}]}
+    cases = {
+        "deferred, S": mod.receipt_refusal(receipt, msha, "a" * 64, "S") is None,
+        "deferred, B3 refused": mod.receipt_refusal(receipt, msha, "a" * 64, "B3") is not None,
+        "deferred, other archive refused": mod.receipt_refusal(receipt, msha, "b" * 64, "S") is not None,
+        "deferred, other manifest refused": mod.receipt_refusal(receipt, "c" * 64, "a" * 64, "S") is not None,
+        "ordinary passes": mod.receipt_refusal(ordinary, msha, "a" * 64, "B3") is None,
+        "ordinary not passed refused": mod.receipt_refusal(dict(ordinary, passed=False), msha, "a" * 64, "S") is not None,
+        "ordinary short ref refused": mod.receipt_refusal(dict(ordinary, default_revision_resolutions=[{"ref_bytes": 7}]),
+                                                          msha, "a" * 64, "B3") is not None,
+        "non-S job writes none": refused_b3,
+    }
+    return all(cases.values()), "; ".join("%s %s" % (k, v) for k, v in cases.items())
+
+
+def proof_the_job_refuses_an_archive_that_did_not_verify_on_the_instance(mod=sr):
+    """run_job on stand-ins: when the instance's one verification of the job's archive did not pass, or passed
+    for another digest, the job raises before any request reaches the sealer."""
+    outcomes = []
+    for receipt_of in (lambda a: {"passed": False, "archive_sha256": a["sha256"]},
+                       lambda a: {"passed": True, "archive_sha256": "f" * 64}):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            base, tree, job, assets, models = job_fixture(tmp, mod)
+            run, calls = fake_sealer(assets, models)
+            try:
+                with patch.object(mod.os, "symlink", lambda s_, d, target_is_directory=False: Path(d).mkdir(parents=True)):
+                    mod.run_job(base, job, tree, tmp / "evidence", __import__("time").time() + 600, {"PATH": ""},
+                                tmp / "home", tmp / "store", lambda b, _a=assets: receipt_of(_a), seal_run=run)
+                outcomes.append(("not refused", len(calls)))
+            except mod.RouteError as exc:
+                outcomes.append(("refused" if "did not verify" in str(exc) else "other refusal", len(calls)))
+    return outcomes == [("refused", 0), ("refused", 0)], "outcomes %s" % outcomes
+
+
+def proof_the_bound_wrapper_reads_the_receipt_rule(rv=None):
+    """The bound wrapper's launch check goes through seal_route.receipt_refusal (read from its code; the
+    rule itself is executed in proof_a_deferred_receipt_only_for_an_arm_s_job)."""
+    import ast
+    source = rv or (ROOT / "tools" / "ordinary_final_bound_cloud.py").read_text(encoding="utf-8")
+    calls = {getattr(n.func, "attr", None) for n in ast.walk(ast.parse(source)) if isinstance(n, ast.Call)}
+    old = "verified['passed'] and verified['manifest_sha256'] == binding['manifest_sha256']" in source
+    return "receipt_refusal" in calls and not old, "receipt_refusal called %s; the old inline check gone %s" % (
+        "receipt_refusal" in calls, not old)
+
+
+def request_fixture(tmp, mod=sr, control_files=None, reuse_extra=None):
+    """A seal request written on stand-ins (request_inputs). Returns (request folder, request, stand-in root)."""
+    prep, reuse, inputs, requests_path, private, root = request_inputs(tmp, control_files, reuse_extra)
+    out = tmp / "request"
+    request = mod.write_request(out, "HEAD", requests_path, reuse, inputs,
+                                {"forecast_minutes": 25, "storage_forecast_usd": 0.5}, prep=prep, private=private,
+                                r_ledger=tmp / "no_r_ledger.jsonl", refusals=[])
+    return out, request, root
+
+
+def request_inputs(tmp, control_files=None, reuse_extra=None):
+    """The stand-ins a seal request is written from: a stand-in sealer module (its own root with the controller
+    files, a small bound tree, a git that answers the commit, the budget rule), a reuse bundle's manifest, the
+    inputs, the requests file, a private folder with the two read copies. Returns (prep, reuse bundle, inputs,
+    requests file, private folder, stand-in root)."""
+    root = tmp / "root"
+    control_files = tuple(control_files or ("tools/ordinary_final_cloud.py", "tools/ordinary_final_run.py"))
+    for name in control_files:
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text("# " + name + "\n", encoding="utf-8")
+
+    def bound_tree_archive(r, source, archive):
+        with tarfile.open(archive, "w") as t:
+            info = tarfile.TarInfo("tools/ordinary_final_run.py")
+            info.size = 1
+            t.addfile(info, __import__("io").BytesIO(b"x"))
+        return "b" * 40
+
+    frozen = {"producer": {"files": {"adapter": {"path": "docs/fix/p/adapter.bin"}}},
+              "auditor": {"files": {"mean": {"path": "docs/fix/a/mean.npy"}}}}
+    for role in frozen:
+        for entry in frozen[role]["files"].values():
+            (root / entry["path"]).parent.mkdir(parents=True, exist_ok=True)
+            (root / entry["path"]).write_bytes(("frozen " + entry["path"]).encode("utf-8"))
+            entry["sha256"] = sr.sha(root / entry["path"])
+
+    def git(r, *args):
+        if args[0] == "show" and args[1].endswith(":config/final_models.json"):
+            return json.dumps(frozen).encode("utf-8")
+        if args[0] == "show":
+            return b"# " + args[1].encode("ascii") + b"\n"
+        return ("a" * 40 + "\n").encode("ascii") if args[0] == "rev-parse" else b"tree " + b"b" * 40 + b"\n"
+    prep = types.SimpleNamespace(ROOT=root, bound_tree_archive=bound_tree_archive, git=git,
+                                 CONTROL_FILES=control_files,
+                                 budget_fields=lambda provider, budget, now, arm="B3": {
+                                     "arm": arm, "forecast_minutes": budget["forecast_minutes"], "per_run_cap_usd": 1.0})
+    reuse = tmp / "reuse"
+    reuse.mkdir()
+    (reuse / "execution_manifest.json").write_text(json.dumps({
+        "assets_archive": {"filename": "assets.tar", "sha256": "c" * 64, "bytes": 9, "members": {"m": "d" * 64}},
+        "models": [{"model_id": "m", "revision": "r" * 40, "cache_ref": {}}], "packages": {},
+        "wheels": {"pkg": {"filename": "pkg-1-py3-none-any.whl", "sha256": hashlib.sha256(b"wheel").hexdigest()}},
+        "environment": {"SHIMMER_MODEL_MODE": "final"}, "topology": {}, "schema_version": 1, **(reuse_extra or {})}),
+        encoding="utf-8")
+    (reuse / "install.lock").write_text("pkg==1\n", encoding="utf-8")
+    inputs = tmp / "inputs"
+    inputs.mkdir()
+    # The image carries its region: the request seals the launch region's image (region_image, check 505).
+    (inputs / "provider_inventory.json").write_text(json.dumps({"images": [{
+        "id": "img", "family": "lambda-stack-24-04", "version": "1", "architecture": "x86_64", "region": "us-east-1"}],
+        "instance_types": []}), encoding="utf-8")
+    (inputs / "runtime.candidate.lock").write_text("pkg==1\n", encoding="utf-8")
+    work = tmp / "work"
+    work.mkdir()
+    (work / "a.txt").write_text("a", encoding="utf-8")
+    (tmp / "requests.json").write_text(json.dumps({"requests": [{"name": "r0", "argv": ["--workload", str(work)]}]}),
+                                       encoding="utf-8")
+    private = tmp / "private"
+    private.mkdir()
+    (private / "budget_ledger.jsonl").write_text('{"event": "budget_open"}\n', encoding="utf-8")
+    (private / "cloud_reference_spend.jsonl").write_text('{"event": "ceiling"}\n', encoding="utf-8")
+    return prep, reuse, inputs, tmp / "requests.json", private, root
+
+
+def proof_a_request_carries_no_archive_and_holds_every_file(mod=sr):
+    """Order 85: the request the laptop writes holds the bound tree, the requests' files, the read copies and the
+    reuse manifest, each by digest, and no asset archive, project archive, manifest or seal; the asset identity is
+    the reuse manifest's; the budget is the sealer's rule for arm S; it is admitted as written."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp, mod)
+        names = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
+        refused_names = [n for n in names if Path(n).name in mod.REQUEST_REFUSED_NAMES]
+        admitted = mod.request_error(out, root)
+    ok = (not refused_names and admitted is None and request["assets"]["sha256"] == "c" * 64
+          and request["budget"]["arm"] == "S" and request["tree"] == "b" * 40 and mod.SEAL_SOURCE in names
+          and set(request["files"]) == set(names) - {mod.REQUEST_FILE})
+    return ok, "files %d, archives %s, admitted %s, asset identity from the reuse manifest %s" % (
+        len(names), refused_names, admitted, request["assets"]["sha256"][:6])
+
+
+def proof_a_changed_or_padded_request_is_refused(mod=sr):
+    """A request with a changed file, an added archive or file, another controller, or an attestation that names a
+    refusal is refused by request_error, before any provider call."""
+    outcomes = {}
+    for case in ("changed", "archive", "extra", "controller", "attested"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp, mod)
+            if case == "changed":
+                (out / mod.REUSE_MANIFEST).write_text("{}", encoding="utf-8")
+            elif case == "archive":
+                # Named in the request with its digest, so only the archive rule can refuse it.
+                (out / "assets.tar").write_bytes(b"x")
+                request["files"]["assets.tar"] = mod.sha(out / "assets.tar")
+                (out / mod.REQUEST_FILE).write_text(json.dumps(request), encoding="utf-8")
+            elif case == "extra":
+                (out / "note.txt").write_text("x", encoding="utf-8")
+            elif case == "controller":
+                (root / "tools/ordinary_final_cloud.py").write_text("# changed\n", encoding="utf-8")
+            else:
+                request["job"]["attestation"]["refusals"] = [["order 1", "broken"]]
+                (out / mod.REQUEST_FILE).write_text(json.dumps(request), encoding="utf-8")
+            outcomes[case] = mod.request_error(out, root)
+    ok = all(outcomes.values())
+    return ok, "; ".join("%s: %s" % (k, (v or "ADMITTED")[:50]) for k, v in outcomes.items())
+
+
+def proof_a_launch_record_is_its_request_s(mod=sr):
+    """D-675: the launch record derived from an admitted request names the request's digest, holds every request
+    file at its digest, carries the loop's asset copy declaration and the deferred receipt and no archive, and is
+    refused when a file changes or when it is offered as another request's."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp, mod)
+        run = tmp / "run"
+        manifest, seal = mod.launch_record(out, run, root)
+        clean = mod.record_error(run, out)
+        names = sorted(q.name for q in run.iterdir())
+        receipt = json.loads((run / "asset_verification.json").read_text(encoding="utf-8"))
+        sealed_digest = seal["execution_manifest_sha256"] == mod.sha(run / "execution_manifest.json")
+        other = tmp / "other"
+        other.mkdir()
+        (other / mod.REQUEST_FILE).write_text("{}", encoding="utf-8")
+        foreign = mod.record_error(run, other)
+        (run / mod.JOB_FILE).write_text("{}", encoding="utf-8")
+        changed = mod.record_error(run, out)
+    ok = bool(clean is None and manifest["kind"] == mod.LAUNCH_RECORD_KIND and foreign and changed
+          and sealed_digest and receipt["kind"] == mod.DEFERRED_RECEIPT
+          and "asset_copy_declaration.json" in names and "assets.tar" not in names and "project.tar.gz" not in names)
+    return ok, "clean %s; another request %s; a changed file %s; files %s" % (clean, foreign, changed, len(names))
+
+
+def proof_a_launch_record_is_no_sealed_bundle(mod=sr):
+    """D-675 condition 2: every reader that takes a sealed bundle refuses a launch record: the rule itself, the
+    sealer's reused asset bundle, and the bound wrapper's --bundle (executed); the batch entry and the returned
+    bundle of an admission call the same rule (executed in proof_the_admission_refuses_a_returned_launch_record and
+    in the controller checks' test_a_batch_refuses_a_launch_record_entry_before_any_instance; read from their code
+    here as well)."""
+    import ast
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp, mod)
+        run = tmp / "run"
+        mod.launch_record(out, run, root)
+        outcomes = {}
+        try:
+            mod.refuse_launch_record(json.loads((run / "execution_manifest.json").read_text(encoding="utf-8")), "a test")
+            outcomes["rule"] = None
+        except mod.RouteError as exc:
+            outcomes["rule"] = str(exc)
+        sys.path.insert(0, str(ROOT / "tools"))
+        import prepare_ordinary_final_run as prep
+        try:
+            with patch.object(sys.modules["seal_route"], "refuse_launch_record", mod.refuse_launch_record):
+                prep.bind_existing_assets(run, [], [], tmp, tmp / "assets.tar")
+            outcomes["sealer reuse"] = None
+        except Exception as exc:
+            outcomes["sealer reuse"] = str(exc)
+        import ordinary_final_bound_cloud as wrapper
+        try:
+            with patch.object(sys.modules["seal_route"], "refuse_launch_record", mod.refuse_launch_record):
+                wrapper.execute(run, {"purpose": "a-test"})
+            outcomes["wrapper --bundle"] = None
+        except Exception as exc:
+            outcomes["wrapper --bundle"] = str(exc)
+    read_sites = {}
+    for path, function in ((ROOT / "tools/ordinary_final_cloud.py", "batch_entries"),
+                           (ROOT / "tools/seal_route_driver.py", "admit")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        node = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == function)
+        text = ast.unparse(node)
+        read_sites[function] = "LAUNCH_RECORD_KIND" in text or "refuse_launch_record" in text
+    refused = {k: bool(v) and "not a sealed bundle" in v for k, v in outcomes.items()}
+    return all(refused.values()) and all(read_sites.values()), "refused %s; call sites %s" % (refused, read_sites)
+
+
+def proof_a_launch_record_takes_the_copy_or_nothing(cloud=None):
+    """D-675: a launch record's run takes the provider-side copy or stops (no laptop archive exists); a bundle
+    keeps its upload fallback."""
+    if cloud is None:
+        import ordinary_final_cloud as cloud
+    cases = {("record", "MISSING"): cloud.record_upload_refusal(True, False, "MISSING") is not None,
+             ("record", "used"): cloud.record_upload_refusal(True, True, "MATCH") is None,
+             ("bundle", "MISSING"): cloud.record_upload_refusal(False, False, "MISSING") is None}
+    return all(cases.values()), str(cases)
+
+
+def proof_the_instance_checks_the_record_before_it_seals(run_module=None):
+    """D-675: on the instance the runner takes a launch record only as its request's: an intact record passes every
+    record check (it then needs Linux and the permit, which this laptop proof does not reach); a request file
+    changed after the record was made is refused before anything runs."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = run_module or __import__("ordinary_final_run")
+    outcomes = {}
+    for case in ("intact", "changed"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp)
+            run = tmp / "run"
+            sr.launch_record(out, run, root)
+            if case == "changed":
+                (run / sr.REUSE_MANIFEST).unlink()
+                (run / sr.REUSE_MANIFEST).write_text("{}", encoding="utf-8")
+            try:
+                runner.execute_request(run)
+                outcomes[case] = "ran"
+            except Exception as exc:
+                outcomes[case] = str(exc)
+    after_record = ("Remote Linux execution only", "New explicit authorization required", "operator_authorization")
+    ok = (any(m in outcomes["intact"] for m in after_record)
+          and outcomes["changed"].startswith("Support hash mismatch"))
+    return ok, "; ".join("%s: %s" % (k, v[:60]) for k, v in outcomes.items())
+
+
+def proof_l18_the_request_names_the_frozen_files_and_the_wheelhouse(mod=sr):
+    """L-18: the request carries every frozen model file the commit's final_models.json names, each at its digest,
+    and names the wheelhouse by digest; a frozen file missing from the laptop, or differing from its digest, is
+    refused before any request is written."""
+    outcomes = {}
+    for case in ("intact", "missing", "differs"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            try:
+                if case == "intact":
+                    out, request, root = request_fixture(tmp, mod)
+                    outcomes[case] = (sorted(request["frozen_files"]), sorted(request["wheelhouse"]),
+                                      all(mod.sha(out / n) == e["sha256"] for n, e in request["frozen_files"].items()))
+                    continue
+                original = mod.frozen_files
+
+                def tampered(spec, root, _case=case):
+                    path = Path(root) / spec["producer"]["files"]["adapter"]["path"]
+                    if _case == "missing":
+                        path.unlink()
+                    else:
+                        path.write_bytes(b"other bytes")
+                    return original(spec, root)
+                with patch.object(mod, "frozen_files", tampered):
+                    request_fixture(tmp, mod)
+                outcomes[case] = "written"
+            except mod.RouteError as exc:
+                outcomes[case] = str(exc)
+    intact = outcomes["intact"]
+    ok = (isinstance(intact, tuple) and len(intact[0]) == 2 and intact[1] == ["pkg"] and intact[2]
+          and "missing" in str(outcomes["missing"]) and "differs" in str(outcomes["differs"]))
+    return ok, str(outcomes)[:300]
+
+
+def proof_l18_the_instance_refuses_a_missing_frozen_file_or_wheel(run_module=None):
+    """L-18, on the instance before any seal step: the frozen files placed where the sealer reads them and every
+    wheel present at its digest; a frozen file missing or differing, or a wheel missing or differing, refused."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = run_module or __import__("ordinary_final_run")
+    request = {"frozen_files": {"frozen_producer_adapter": {"path": "docs/fix/p/adapter.bin",
+                                                             "sha256": hashlib.sha256(b"adapter").hexdigest()}},
+               "wheelhouse": {"pkg": {"filename": "pkg.whl", "sha256": hashlib.sha256(b"wheel").hexdigest()}}}
+    outcomes = {}
+    for case in ("intact", "frozen missing", "frozen differs", "wheel missing", "wheel differs"):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "wheels").mkdir()
+            if case != "frozen missing":
+                (base / "frozen_producer_adapter").write_bytes(b"other" if case == "frozen differs" else b"adapter")
+            if case != "wheel missing":
+                (base / "wheels" / "pkg.whl").write_bytes(b"other" if case == "wheel differs" else b"wheel")
+            try:
+                runner.place_request_inputs(base, request)
+                outcomes[case] = "placed" if (base / "project/docs/fix/p/adapter.bin").is_file() else "not placed"
+            except Exception as exc:
+                outcomes[case] = str(exc)[:60]
+    ok = outcomes["intact"] == "placed" and all(v not in ("placed", "not placed") for k, v in outcomes.items() if k != "intact")
+    return ok, str(outcomes)
+
+
+def proof_l18_the_launch_names_the_reaper_s_ledger(wrapper=None):
+    """L-18: a request is launched only on the ledger the reaper reads (the main checkout's private ledger or R's,
+    through git's common directory), never one resolved from a worktree's tree."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    wrapper = wrapper or __import__("ordinary_final_bound_cloud")
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        private = tmp / "main" / "docs/loop/private"
+        private.mkdir(parents=True)
+        (private / "budget_ledger.jsonl").write_text("{}\n", encoding="utf-8")
+        worktree = tmp / "worktree" / "docs/loop/private"
+        worktree.mkdir(parents=True)
+        (worktree / "budget_ledger.jsonl").write_text("{}\n", encoding="utf-8")
+        main = wrapper.ledger_refusal(private / "budget_ledger.jsonl", main_private=private, r_ledger=tmp / "r.jsonl")
+        other = wrapper.ledger_refusal(worktree / "budget_ledger.jsonl", main_private=private, r_ledger=tmp / "r.jsonl")
+    return main is None and bool(other), "main %s; a worktree's own %s" % (main, other)
+
+
+def proof_a_request_runs_as_a_seal_job_on_stand_ins(mod=sr):
+    """Order 85 end to end on stand-ins: a request written on the laptop, its launch record, the instance's run
+    root as the controller leaves it (the record's files, the asset archive from the copy, the wheels and the
+    model cache), the request's inputs placed and checked (runner.place_request_inputs), then the job run exactly
+    as a sealed job runs (run_job: every request sealed by the stand-in sealer, each bundle given its receipt from
+    the instance's one verification, its project archive stored, its asset archive stripped)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = __import__("ordinary_final_run")
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp, mod)
+        base = tmp / "run_root"
+        mod.launch_record(out, base, root)
+        manifest = json.loads((base / "execution_manifest.json").read_text(encoding="utf-8"))
+        (base / "assets.tar").write_bytes(b"archive")
+        (base / "wheels").mkdir()
+        (base / "wheels" / "pkg-1-py3-none-any.whl").write_bytes(b"wheel")
+        runner.place_request_inputs(base, request)
+        tree = tmp / "tree"
+        (tree / "config").mkdir(parents=True)
+        spec = {"producer": {"files": {"adapter": {"path": "docs/fix/p/adapter.bin"}}},
+                "auditor": {"files": {"mean": {"path": "docs/fix/a/mean.npy"}}}}
+        (tree / "config" / "final_models.json").write_text(json.dumps(spec), encoding="utf-8")
+        assets = dict(manifest["assets_archive"])
+        run, calls = fake_sealer(assets, manifest["models"])
+        receipt = {"passed": True, "archive_sha256": assets["sha256"], "verified_members": 0, "default_revision_resolutions": []}
+        with patch.object(mod.os, "symlink", lambda s_, d, target_is_directory=False: Path(d).mkdir(parents=True)):
+            result = mod.run_job(base, manifest["seal_job"], tree, tmp / "evidence", __import__("time").time() + 600,
+                                 {"PATH": ""}, tmp / "home", tmp / "store", lambda b: receipt, seal_run=run)
+        sealed = tmp / "evidence" / "sealed"
+        returned = {q.name: sorted(x.name for x in q.iterdir()) for q in sealed.iterdir() if q.is_dir()}
+        placed = all((tree / e["path"]).is_file() for r in spec.values() for e in r["files"].values())
+    ok = (result["execution_integrity_passed"] and result["sealed"] == len(manifest["seal_job"]["requests"]) == len(calls)
+          and placed and all("assets.tar" not in v and "asset_verification.json" in v for v in returned.values()))
+    return ok, "sealed %s of %d; frozen files in the tree %s; returned %s" % (
+        result["sealed"], len(manifest["seal_job"]["requests"]), placed, returned)
+
+
+def proof_order_85_reads_where_each_seal_job_was_sealed(orders=None):
+    """Order 85: the controller names every seal job's seal place (seal_place); the order's checker keeps when every
+    seal job after the first instance seal was sealed on the instance, breaks on a later laptop seal, and has
+    nothing to check before the route is in use."""
+    sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "tools" / "loop")]
+    cloud = __import__("ordinary_final_cloud")
+    orders = orders or __import__("standing_orders_check")
+
+    def ctx(rows):
+        return types.SimpleNamespace(ledger_rows=lambda: rows)
+
+    def intent(place, purpose):
+        return {"event": "launch_intent", "seal_on": place, "purpose": purpose}
+    cases = {
+        "before the route": orders.check_instance_seal(ctx([intent("laptop", "old")]))[0] == "nothing_yet",
+        "kept": orders.check_instance_seal(ctx([intent("laptop", "old"), intent("instance", "new"),
+                                                 {"event": "launch", "seal_on": "instance"}]))[0] is True,
+        "broken": orders.check_instance_seal(ctx([intent("instance", "new"), intent("laptop", "late")]))[0] is False,
+        "places": (cloud.seal_place(True), cloud.seal_place(False)) == ("instance", "laptop"),
+        "registered": 85 in orders.CHECKERS,
+    }
+    return all(cases.values()), str(cases)
+
+
+def proof_the_admission_holds_a_record_job_to_its_request(drv=None):
+    """Unit 4: the admission of a request's returned bundles takes the job's launch record only as its request's:
+    a record whose file changed is refused before the ledger lock is taken."""
+    import seal_route_driver as driver
+    drv = drv or driver
+    outcomes = {}
+    for case in ("intact", "changed"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp)
+            run = tmp / "run"
+            sr.launch_record(out, run, root)
+            if case == "changed":
+                (run / sr.SEAL_SOURCE).unlink()
+                (run / sr.SEAL_SOURCE).write_bytes(b"other")
+            locked = []
+            try:
+                drv.admit(run, tmp / "runfolder", tmp / "reuse", tmp / "admitted", {}, tmp / "ledger.jsonl",
+                          steps=False, lock=lambda ledger: locked.append(1) or "held", unlock=lambda held: None,
+                          request=out)
+                outcomes[case] = ("admitted", locked)
+            except Exception as exc:
+                outcomes[case] = (str(exc)[:70], locked)
+    ok = (outcomes["changed"][0].startswith("A file of the launch record changed") and outcomes["changed"][1] == []
+          and not outcomes["intact"][0].startswith("A file of the launch record changed"))
+    return ok, str(outcomes)
+
+
+# ---------------------------------------------------------------------------
+# The checker's findings on 5e9791a2 (D-667): items 3 to 7, 9 to 12 and 15, each executed and neutralised.
+
+def proof_the_seal_route_is_a_controller_file(prep=None):
+    """Item 3: tools/seal_route.py is in the sealer's controller binding (CONTROL_FILES), which a seal request binds;
+    a request checked under a seal_route changed after it was written is refused (Controller source changed), and
+    the re-seal sentence of ROUTE-S-A names it."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    prep = prep or __import__("prepare_ordinary_final_run")
+    names = tuple(n for n in prep.CONTROL_FILES
+                  if n in ("tools/ordinary_final_cloud.py", "tools/ordinary_final_run.py", "tools/seal_route.py"))
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp, control_files=names)
+        bound = sorted(request["local_control_hashes"])
+        (root / "tools/seal_route.py").write_text("# changed after the request\n", encoding="utf-8")
+        refused = sr.request_error(out, root)
+    text = (ROOT / "docs" / "CLAUDE_REFERENCE.md").read_text(encoding="utf-8")
+    sentence = text[text.index("Order 85's route (D-668"):].split("must be re-sealed")[0]
+    named = "`tools/seal_route.py`" in sentence
+    ok = "tools/seal_route.py" in bound and bool(refused) and "tools/seal_route.py" in str(refused) and named
+    return ok, "bound %s; a changed seal_route: %s; the re-seal sentence names it %s" % (bound, refused, named)
+
+
+def proof_the_admission_refuses_a_returned_launch_record(drv=None):
+    """Item 4: admit() run on a job whose returned bundle s1 is a seal request's launch record (its result row naming
+    it, so only the record rule can refuse it) refuses it and admits nothing; the same job with s1 sealed admits
+    all three."""
+    import seal_route_driver as driver
+    drv = drv or driver
+    outcomes = {}
+    for case in ("sealed", "record"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            job_bundle, run_folder, reuse, live, result, base = returned_job(tmp)
+            if case == "record":
+                returned = base / "evidence" / "sealed" / "s1" / "execution_manifest.json"
+                manifest = json.loads(returned.read_text(encoding="utf-8"))
+                returned.write_text(json.dumps(dict(manifest, kind=sr.LAUNCH_RECORD_KIND)), encoding="utf-8")
+                digest = sr.sha(returned)
+                rewrite_result(run_folder, base, lambda r: [row.update(manifest_sha256=digest)
+                                                            for row in r["rows"] if row["name"] == "s1"])
+            try:
+                rows = drv.admit(job_bundle, run_folder, reuse, tmp / "out", live, live["budget_ledger"], steps=False,
+                                 lock=lambda ledger: "held", unlock=lambda held: None)
+                outcomes[case] = "admitted %d" % len(rows)
+            except Exception as exc:
+                outcomes[case] = str(exc)[:100]
+            outcomes[case + " out"] = (tmp / "out").exists()
+    ok = (outcomes["sealed"] == "admitted 3" and outcomes["sealed out"]
+          and "not a sealed bundle: refused as a returned bundle" in outcomes["record"] and not outcomes["record out"])
+    return ok, str(outcomes)
+
+
+def proof_order_85_reads_where_each_bundle_was_sealed(cloud=None):
+    """Item 12: the controller names where every launched bundle was sealed (bundle_seal_place): a bundle a seal job
+    sealed on the instance, as its admission lists it beside it, reads instance; the same bundle copied out of its
+    admission folder, or changed after admission, reads laptop; a launch record reads instance. The order's checker
+    breaks on a laptop-sealed launch of any arm after the first instance seal."""
+    sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "tools" / "loop")]
+    cloud = cloud or __import__("ordinary_final_cloud")
+    orders = __import__("standing_orders_check")
+    import seal_route_driver as drv
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        job_bundle, run_folder, reuse, live, result, base = returned_job(tmp)
+        drv.admit(job_bundle, run_folder, reuse, tmp / "out", live, live["budget_ledger"], steps=False,
+                  lock=lambda ledger: "held", unlock=lambda held: None)
+        places = {"admitted": cloud.bundle_seal_place(False, tmp / "out" / "s0")}
+        shutil.copytree(tmp / "out" / "s1", tmp / "elsewhere" / "s1")
+        places["copied out"] = cloud.bundle_seal_place(False, tmp / "elsewhere" / "s1")
+        changed = tmp / "out" / "s2" / "execution_manifest.json"
+        changed.write_text(changed.read_text(encoding="utf-8") + " ", encoding="utf-8")
+        places["changed after admission"] = cloud.bundle_seal_place(False, tmp / "out" / "s2")
+        places["record"] = cloud.bundle_seal_place(True, tmp / "elsewhere" / "s1")
+    rows = [{"event": "launch_intent", "seal_on": "instance", "purpose": "route-gate-b1"},
+            {"event": "launch_intent", "seal_on": "laptop", "purpose": "a-b3-sealed-on-the-laptop"}]
+    broken = orders.check_instance_seal(types.SimpleNamespace(ledger_rows=lambda: rows))
+    ok = places == {"admitted": "instance", "copied out": "laptop", "changed after admission": "laptop",
+                    "record": "instance"} and broken[0] is False
+    return ok, "places %s; a later laptop-sealed launch: %s" % (places, broken)
+
+
+def proof_a_request_refuses_a_launch_record_as_its_reuse_bundle(mod=sr):
+    """Item 10: write_request refuses a launch record offered as the request's reuse bundle; a sealed one is taken."""
+    outcomes = {}
+    for case in ("sealed", "record"):
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                request_fixture(Path(tmp), mod, reuse_extra={"kind": mod.LAUNCH_RECORD_KIND} if case == "record" else None)
+                outcomes[case] = "written"
+            except mod.RouteError as exc:
+                outcomes[case] = str(exc)
+    ok = outcomes["sealed"] == "written" and "not a sealed bundle: refused as the reuse bundle of a request" in outcomes["record"]
+    return ok, str(outcomes)
+
+
+def proof_the_instance_holds_the_record_to_its_request(run_module=None):
+    """Items 11 and 6: on the instance a launch record runs only as exactly its request: a record listing a file its
+    request does not name, or whose budget, image, controller binding or seal job is not its request's, is refused
+    (each re-sealed and every file at its digest, so only that rule can refuse it); an intact record passes every
+    record check (it then needs Linux and the permit, which this laptop proof does not reach)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = run_module or __import__("ordinary_final_run")
+
+    def extra(run, m):
+        (run / "note.txt").write_text("x", encoding="utf-8")
+        m["support_files"]["note.txt"] = sr.sha(run / "note.txt")
+    changes = {"intact": lambda run, m: None, "extra file": extra,
+               "budget": lambda run, m: m.update(forecast_minutes=m["forecast_minutes"] + 1),
+               "image": lambda run, m: m.update(image={"id": "another"}),
+               "controller": lambda run, m: m.update(local_control_hashes={"tools/x.py": "0" * 64}),
+               "job": lambda run, m: m.update(seal_job=dict(m["seal_job"], parallel=99))}
+    expected = {"extra file": "holds other files than its request", "budget": "budget is not its request",
+                "image": "image or controller binding", "controller": "image or controller binding",
+                "job": "The seal job is not the one the request names"}
+    outcomes = {}
+    for case, change in changes.items():
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp)
+            run = tmp / "run"
+            sr.launch_record(out, run, root)
+            manifest = json.loads((run / "execution_manifest.json").read_text(encoding="utf-8"))
+            change(run, manifest)
+            (run / "execution_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            seal = json.loads((run / "seal.json").read_text(encoding="utf-8"))
+            seal["execution_manifest_sha256"] = sr.sha(run / "execution_manifest.json")
+            (run / "seal.json").write_text(json.dumps(seal), encoding="utf-8")
+            try:
+                runner.execute_request(run)
+                outcomes[case] = "ran"
+            except Exception as exc:
+                outcomes[case] = str(exc)
+    after_record = ("Remote Linux execution only", "New explicit authorization required", "operator_authorization")
+    ok = (any(m in outcomes["intact"] for m in after_record)
+          and all(expected[k] in outcomes[k] for k in expected))
+    return ok, "; ".join("%s: %s" % (k, v[:60]) for k, v in outcomes.items())
+
+
+def proof_l18_the_instance_refuses_a_request_naming_no_wheelhouse(run_module=None):
+    """Item 6 (runner :1895): a request naming no wheelhouse, or an empty one, is refused on the instance."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = run_module or __import__("ordinary_final_run")
+    outcomes = {}
+    for case in ("absent", "empty"):
+        with tempfile.TemporaryDirectory() as tmp:
+            request = {"frozen_files": {}, **({"wheelhouse": {}} if case == "empty" else {})}
+            try:
+                runner.place_request_inputs(Path(tmp), request)
+                outcomes[case] = "placed"
+            except Exception as exc:
+                outcomes[case] = str(exc)
+    return all("names no wheelhouse" in v for v in outcomes.values()), str(outcomes)
+
+
+def proof_a_request_of_another_schema_or_attesting_a_refusal_is_refused(mod=sr):
+    """Item 6 (seal_route :785 and :800): request_error refuses a request of another schema ('Not a seal request')
+    and one whose attestation names a refusal, each with its own reason; the intact request passes."""
+    outcomes = {}
+    for case in ("intact", "schema", "attested"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp, mod)
+            if case == "schema":
+                request["schema"] = "seal-request-v0"
+            if case == "attested":
+                request["job"]["attestation"]["refusals"] = [["order 1", "broken"]]
+            (out / mod.REQUEST_FILE).write_text(json.dumps(request), encoding="utf-8")
+            outcomes[case] = mod.request_error(out, root)
+    ok = (outcomes["intact"] is None and outcomes["schema"] == "Not a seal request"
+          and outcomes["attested"] == "The seal request attests a standing order that does not hold")
+    return ok, str(outcomes)
+
+
+def proof_a_launch_record_is_made_only_from_an_admitted_request(mod=sr):
+    """Item 6 (seal_route :711): launch_record refuses a request request_error refuses (a file changed), before its
+    run folder is made; an intact request gives its record."""
+    outcomes = {}
+    for case in ("intact", "changed"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp, mod)
+            if case == "changed":
+                (out / mod.REUSE_MANIFEST).write_text("{}", encoding="utf-8")
+            try:
+                mod.launch_record(out, tmp / "run", root)
+                outcomes[case] = "made"
+            except mod.RouteError as exc:
+                outcomes[case] = str(exc)
+            outcomes[case + " folder"] = (tmp / "run").exists()
+    ok = (outcomes["intact"] == "made" and str(outcomes["changed"]).startswith("A file of the seal request changed")
+          and not outcomes["changed folder"])
+    return ok, str(outcomes)
+
+
+def proof_the_bound_wrapper_launches_a_request_only_as_its_record(wrapper=None):
+    """Items 6 and 7: the bound wrapper's main takes exactly one of --bundle and --request; a request is launched as
+    its launch record (made beside it, preflighted, then executed with --from-request naming the request); a request
+    whose read copies went stale (a foreign line in the live ledger) is refused before its record is made, so before
+    any provider call; and execute() with --from-request refuses a record of another request, or a request changed
+    since its record was made (refused as a changed record file, since the record links its request's files)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    wrapper = wrapper or __import__("ordinary_final_bound_cloud")
+    import ordinary_final_bound_preflight as preflight
+    outcomes = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp)
+        private = tmp / "private"
+        common = ["--ledger", str(private / "budget_ledger.jsonl"), "--purpose", "route-gate", "--forecast-minutes", "25",
+                  "--storage-forecast-usd", "0.5"]
+        calls = []
+
+        def made(request_folder, record, controller_root):
+            calls.append(("record", Path(request_folder).name, Path(record).name))
+            Path(record).mkdir()
+            (Path(record) / "seal.json").write_text("{}", encoding="utf-8")
+
+        def executed(bundle, plan, output_dir=None, from_request=None):
+            calls.append(("execute", Path(bundle).name, output_dir, from_request and Path(from_request).name))
+        stale = functools.partial(wrapper.request_stale_refusal, main_private=private, r_ledger=tmp / "no_r_ledger.jsonl")
+        with patch.object(wrapper, "ledger_refusal", lambda ledger: None), \
+                patch.object(wrapper, "request_stale_refusal", stale), \
+                patch.object(sys.modules["seal_route"], "launch_record", made), \
+                patch.object(preflight, "main", lambda record: calls.append(("preflight", Path(record).name))), \
+                patch.object(wrapper, "execute", executed):
+            for case, argv in (("neither", common), ("both", ["--bundle", str(tmp / "b"), "--request", str(out)] + common),
+                               ("request", ["--request", str(out)] + common)):
+                try:
+                    wrapper.main(argv)
+                    outcomes[case] = calls[:]
+                except Exception as exc:
+                    outcomes[case] = str(exc)[:80]
+            shutil.rmtree(out.with_name(out.name + ".run"))
+            calls.clear()
+            with (private / "budget_ledger.jsonl").open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps({"event": "launch", "instance_name": "shimmer-loop-other"}) + "\n")
+            try:
+                wrapper.main(["--request", str(out)] + common)
+                outcomes["stale"] = calls[:]
+            except Exception as exc:
+                outcomes["stale"] = (str(exc)[:80], calls[:])
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        out, request, root = request_fixture(tmp)
+        run = tmp / "run"
+        sr.launch_record(out, run, root)
+        other = tmp / "other"
+        other.mkdir()
+        (other / sr.REQUEST_FILE).write_text("{}", encoding="utf-8")
+        for case, folder in (("another request", other), ("changed request", out)):
+            if case == "changed request":
+                (out / sr.JOB_FILE).write_text("{}", encoding="utf-8")
+            try:
+                with patch.object(wrapper.controller, "ROOT", root):
+                    wrapper.execute(run, {"purpose": "a-test"}, from_request=folder)
+                outcomes[case] = "executed"
+            except Exception as exc:
+                outcomes[case] = str(exc)[:80]
+    ok = ("exactly one" in str(outcomes["neither"]) and "exactly one" in str(outcomes["both"])
+          and outcomes["request"] == [("record", "request", "request.run"), ("preflight", "request.run"),
+                                      ("execute", "request.run", None, "request")]
+          and isinstance(outcomes["stale"], tuple) and "read copy is stale" in outcomes["stale"][0] and outcomes["stale"][1] == []
+          and "of another request" in outcomes["another request"]
+          # the record's files are links to its request's, so a changed request file is a changed record file too
+          and "changed" in outcomes["changed request"] and outcomes["changed request"] != "executed")
+    return ok, str(outcomes)[:600]
+
+
+def proof_the_admission_holds_the_instance_job_seal_to_the_request(drv=None):
+    """Item 9 (admit --request): a launch record job is admitted only with its request named; its collected evidence
+    must hold the instance's job seal of that request (sealed on the instance, the request's digest, commit, tree and
+    files): missing, of another request, or naming another tree is refused; the seal of this request passes on to
+    the returned bundles (here none, so the first request's row refuses next)."""
+    import seal_route_driver as driver
+    drv = drv or driver
+    sys.path.insert(0, str(ROOT / "tools"))
+    runner = __import__("ordinary_final_run")
+    outcomes = {}
+    for case in ("intact", "missing", "another request", "another tree", "no --request"):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            out, request, root = request_fixture(tmp)
+            run = tmp / "record"
+            sr.launch_record(out, run, root)
+            job_sha = sr.sha(run / "execution_manifest.json")
+            evidence = tmp / "instance" / "evidence"
+            evidence.mkdir(parents=True)
+            (evidence / "seal_job_result.json").write_text(json.dumps({"job_manifest_sha256": job_sha, "rows": []}),
+                                                         encoding="utf-8")
+            seal = dict(request_sha256=sr.sha(out / sr.REQUEST_FILE), commit=request["commit"], tree=request["tree"],
+                        files=request["files"], sealed_on="instance")
+            if case == "another request":
+                seal["request_sha256"] = "0" * 64
+            if case == "another tree":
+                seal["tree"] = "c" * 40
+            if case != "missing":
+                (evidence / runner.INSTANCE_JOB_SEAL).write_text(json.dumps(seal), encoding="utf-8")
+            folder = tmp / "runfolder"
+            folder.mkdir()
+            with tarfile.open(folder / "collected_evidence.tar.gz", "w:gz") as archive:
+                for path in sorted(evidence.rglob("*")):
+                    archive.add(path, arcname=path.relative_to(tmp / "instance").as_posix(), recursive=False)
+            (folder / "collection_integrity.json").write_text(json.dumps({"sha256": sr.sha(folder / "collected_evidence.tar.gz")}),
+                                                             encoding="utf-8")
+            (folder / "LAUNCH_INTENT.json").write_text(json.dumps({"execution_manifest_sha256": job_sha}), encoding="utf-8")
+            live = {"budget_ledger": tmp / "private" / "budget_ledger.jsonl",
+                    "spend_store": tmp / "private" / "cloud_reference_spend.jsonl", "r_ledger": tmp / "no_r_ledger.jsonl"}
+            try:
+                drv.admit(run, folder, tmp / "reuse", tmp / "admitted", live, live["budget_ledger"], steps=False,
+                          lock=lambda ledger: "held", unlock=lambda held: None,
+                          request=None if case == "no --request" else out)
+                outcomes[case] = "admitted"
+            except Exception as exc:
+                outcomes[case] = str(exc)[:80]
+    expected = {"intact": "Not sealed by the job: r0", "missing": "holds no instance job seal",
+                "another request": "The instance job seal is of another request",
+                "another tree": "another commit, tree or file set", "no --request": "admitted with --request"}
+    ok = sr.INSTANCE_JOB_SEAL == runner.INSTANCE_JOB_SEAL and all(v in outcomes[k] for k, v in expected.items())
+    return ok, str(outcomes)
+
+
+def proof_the_request_command_writes_and_checks_a_request(drv=None):
+    """The request command (order 85, D-675): the driver's `request` writes a seal request and checks it as the bound
+    wrapper will (request_error against this checkout's controller), printing counts only, and hands write_request the
+    budget block the sealer's own command line builds (the ledgers, the declared types, uncompared), which the real
+    budget_fields reads; refused before anything is written when the output drive is under REQUEST_DISK_FLOOR_GIB
+    (order 91); and refused when the written request does not check (a file changed as it is written)."""
+    import io
+    import seal_route_driver as driver
+    drv = drv or driver
+    outcomes = {}
+    for case, free, spoil in (("written", 40, False), ("low disk", 31, False), ("does not check", 40, True)):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            prep, reuse, inputs, requests_path, private, root = request_inputs(tmp)
+            real = sr.write_request
+
+            def write(out, source, requests, reuse_, inputs_, budget, parallel=16, _spoil=spoil):
+                budgets.append(budget)
+                request = real(out, source, requests, reuse_, inputs_, budget, parallel=parallel, prep=prep,
+                               private=private, r_ledger=tmp / "no_r_ledger.jsonl", refusals=[])
+                if _spoil:
+                    (Path(out) / sr.REUSE_MANIFEST).write_text("{}", encoding="utf-8")
+                return request
+            out = tmp / "req"
+            budgets = []
+            argv = ["request", "--requests", str(requests_path), "--reuse", str(reuse), "--inputs", str(inputs),
+                    "--ledger", str(private / "budget_ledger.jsonl"), "--forecast-minutes", "25",
+                    "--storage-forecast-usd", "0.5", "--instance-types", "gpu_1x_a10", "--uncompared", "--out", str(out)]
+            printed = io.StringIO()
+            with patch.object(sr, "write_request", write), patch.object(drv, "ROOT", root), \
+                    patch.object(drv.shutil, "disk_usage", lambda p, _f=free: types.SimpleNamespace(free=_f * 2 ** 30)), \
+                    contextlib.redirect_stdout(printed):
+                try:
+                    outcomes[case] = ("rc %s" % drv.main(argv), out.exists(), sr.request_error(out, root) if out.exists()
+                                      else None, printed.getvalue().strip())
+                except Exception as exc:
+                    outcomes[case] = (str(exc)[:80], out.exists())
+            if case == "written":
+                sys.path.insert(0, str(ROOT / "tools"))
+                import prepare_ordinary_final_run as sealer
+                import inspect
+                # The real budget_fields reads these keys by subscript; the block carries each, as the sealer's own.
+                needed = {"ledgers", "forecast_minutes", "storage_forecast_usd"}
+                text = inspect.getsource(sealer.budget_fields)
+                outcomes["budget"] = (bool(budgets) and needed <= set(budgets[0])
+                                      and all("budget['%s']" % k in text for k in needed)
+                                      and budgets[0]["ledgers"] == [private / "budget_ledger.jsonl"]
+                                      and budgets[0]["instance_types"] == ["gpu_1x_a10"] and budgets[0]["uncompared"] is True)
+    written = outcomes["written"]
+    ok = (written[0] == "rc 0" and written[1] and written[2] is None and written[3].startswith("seal request written")
+          and str(tmp) not in written[3]
+          and "below the request floor" in outcomes["low disk"][0] and outcomes["low disk"][1] is False
+          and "does not check" in outcomes["does not check"][0] and outcomes["budget"] is True)
+    return ok, str(outcomes)[:500]
+
+
+INSTANCE_GIT_FILES = ("tools/prepare_ordinary_final_run.py", "tools/seal_route.py", "tools/ordinary_final_run.py",
+                      # the checker's item 15: the git helper the sealer calls on the instance
+                      "tools/prepare_cloud_run.py")
+PARENT_WALKS = ("log", "rev-list", "describe", "merge-base", "parent-ref")
+# A revision named by a parent suffix (X^, X^2, X~, X~1), as a literal or the end of an f-string; X^{tree} is no walk.
+PARENT_SUFFIX = re.compile(r"(^|\w)[\^~][0-9]*$")
+# prepare_cloud_run is read only for the functions the sealer imports from it (its own main's source_files walks the
+# history on the laptop, never on the instance).
+IMPORTED_FROM = {"tools/prepare_cloud_run.py": "tools/prepare_ordinary_final_run.py"}
+
+
+def instance_git_texts():
+    """The source the instance runs, per INSTANCE_GIT_FILES: whole files, and for a helper module only the functions
+    its importer takes from it (read from the importer's from-import)."""
+    import ast
+    texts = {}
+    for name in INSTANCE_GIT_FILES:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        if name in IMPORTED_FROM:
+            module = Path(name).stem
+            importer = ast.parse((ROOT / IMPORTED_FROM[name]).read_text(encoding="utf-8"))
+            taken = {a.name for n in ast.walk(importer) if isinstance(n, ast.ImportFrom) and n.module == module
+                     for a in n.names}
+            text = chr(10).join(ast.get_source_segment(text, n) for n in ast.parse(text).body
+                                if isinstance(n, ast.FunctionDef) and n.name in taken)
+        texts[name] = text
+    return texts
+
+
+def git_subcommands(text):
+    """The git subcommands a source's calls name as their first string argument after an optional root: every call
+    whose function is named git, run, gate_git or _git, and every list or tuple literal starting 'git' (a subprocess
+    argv); 'parent-ref' when one of their arguments names a revision by a parent suffix (X^, X~1), as a literal or
+    as the end of an f-string (the checker's item 15)."""
+    import ast
+
+    def parent_ref(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return bool(PARENT_SUFFIX.search(node.value))
+        if isinstance(node, ast.JoinedStr) and node.values:
+            return parent_ref(node.values[-1])
+        return isinstance(node, ast.BinOp) and parent_ref(node.right)
+    found = set()
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, ast.Call):
+            name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if name in ("git", "run", "gate_git", "_git"):
+                for arg in node.args:
+                    if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value in PARENT_WALKS + (
+                            "rev-parse", "ls-tree", "cat-file", "show", "diff", "init", "config", "add", "commit", "status"):
+                        found.add(arg.value)
+                        break
+                if name in ("git", "gate_git", "_git") and any(parent_ref(a) for a in node.args):
+                    found.add("parent-ref")
+        if isinstance(node, (ast.List, ast.Tuple)) and node.elts and isinstance(node.elts[0], ast.Constant) \
+                and node.elts[0].value == "git":
+            for elt in node.elts[1:]:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str) and not elt.value.startswith("-"):
+                    found.add(elt.value)
+                    break
+            if any(parent_ref(e) for e in node.elts[1:]):
+                found.add("parent-ref")
+    return found
+
+
+def proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree(sources=None):
+    """Unit 3 (22:44 audit): the instance-side sealer, the route and the runner name no git call that walks to a
+    parent (log, rev-list, describe, merge-base); and the reads they do make (rev-parse of a tree and of HEAD, ls-tree,
+    cat-file, show of a file, the staged scan's diff) answer in the instance's repository, which holds the laptop's
+    commit object with no parent, as exact_commit leaves it (a parent walk fails there, as the fixture shows)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import prepare_cloud_run as cloud_run
+    texts = sources or instance_git_texts()
+    walks = {name: sorted(git_subcommands(text) & set(PARENT_WALKS)) for name, text in texts.items()}
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        commit, tree, obj = laptop_commit(tmp / "laptop", FILES)
+        (tmp / "commit.bin").write_bytes(obj)
+        git = instance_checkout(tmp / "inst", FILES)
+        sr.exact_commit(git, tmp / "commit.bin", commit, tree)
+        reads = {}
+        for args in (("rev-parse", commit + "^{tree}"), ("rev-parse", "HEAD"), ("rev-parse", "HEAD^{tree}"),
+                     ("ls-tree", "-r", "-z", "--full-tree", commit), ("ls-tree", "-r", "--name-only", commit),
+                     ("cat-file", "commit", commit), ("show", commit + ":tools/a.py")):
+            try:
+                cloud_run.git(tmp / "inst", *args)
+                reads[" ".join(args[:2])] = True
+            except Exception:
+                reads[" ".join(args[:2])] = False
+        walk = subprocess.run(["git", "-C", str(tmp / "inst"), "log", "-2", "--format=%H", commit], capture_output=True)
+    ok = not any(walks.values()) and all(reads.values()) and walk.returncode != 0
+    return ok, "parent walks named %s; reads %s; a parent walk there exits %d" % (walks, reads, walk.returncode)
+
+
+def _with_a_parent_walk(added="\n\ndef _walk(git):\n    return git('log', '-1', '--format=%ct', 'HEAD')\n",
+                        where="tools/seal_route.py"):
+    @contextlib.contextmanager
+    def swap():
+        original = globals()["proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree"]
+        texts = instance_git_texts()
+        texts[where] += added
+        globals()["proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree"] = lambda: original(texts)
+        try:
+            yield
+        finally:
+            globals()["proof_unit3_every_instance_git_call_holds_on_a_one_commit_tree"] = original
+    return swap
 
 
 def run(name):

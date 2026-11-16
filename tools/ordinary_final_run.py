@@ -437,6 +437,58 @@ def admit_arm(manifest, permit):
     require(permit.get('arm', 'B3') == arm_of(manifest), 'Arm authorization mismatch')
 
 
+# D-630 part A: the vLLM route's sealed switch (tools/prepare_ordinary_final_run.py vllm_route_block).
+VLLM_AGENTS_ENV = 'SHIMMER_VLLM_AGENTS'
+VLLM_JOB_ENV = 'SHIMMER_VLLM_JOB'
+VLLM_PYTHON_ENV = 'SHIMMER_VLLM_PYTHON'
+VLLM_PYTHON = 'venv_aux/bin/python'
+
+
+def vllm_route_error(manifest, arm, exposure):
+    """None when the manifest's vLLM route is admitted, else a one-line reason. No block: neither
+    switch value may be in the environment. A block: an exposed B3 run, with its auxiliary
+    environment sealed, and the environment's two values exactly the block's."""
+    block = manifest.get('vllm_route')
+    environment = manifest.get('environment') or {}
+    if block is None:
+        if VLLM_AGENTS_ENV in environment or VLLM_JOB_ENV in environment:
+            return 'A vLLM switch in the environment with no vLLM route sealed'
+        return None
+    if arm != 'B3' or exposure != 'exposed':
+        return 'The vLLM route runs in an exposed B3 bundle only'
+    if not isinstance(block, dict) or set(block) != {'protocol', 'agents', 'job'} or block['protocol'] != 'vllm-link-v1':
+        return 'The vLLM route block is not the declared one'
+    if not (manifest.get('aux_env') or {}).get('lock'):
+        return 'The vLLM route needs its auxiliary environment sealed'
+    agents = block['agents']
+    if not (isinstance(agents, list) and agents and all(isinstance(a, str) and a for a in agents)):
+        return 'The vLLM route names no agent'
+    expected = {VLLM_AGENTS_ENV: ','.join(agents),
+                VLLM_JOB_ENV: json.dumps(block['job'], sort_keys=True, separators=(',', ':'))}
+    if any(environment.get(k) != v for k, v in expected.items()):
+        return "The vLLM switch in the environment is not the route's"
+    return None
+
+
+def vllm_python(manifest, base):
+    """The auxiliary environment's Python for a sealed vLLM route (installed by the controller before
+    the workload), or None without a route."""
+    if manifest.get('vllm_route') is None:
+        return None
+    found = Path(base)/VLLM_PYTHON
+    require(found.is_file(), 'The vLLM route is sealed but venv_aux has no Python')
+    return str(found)
+
+
+def route_environment(manifest, base, environ):
+    """After the sealed environment is applied: a sealed vLLM route gets venv_aux's Python, and nothing
+    else may carry the route's Python (it is never inherited: the runner removes every SHIMMER_ name first)."""
+    environ.pop(VLLM_PYTHON_ENV, None)
+    routed_python = vllm_python(manifest, base)
+    if routed_python is not None:
+        environ[VLLM_PYTHON_ENV] = routed_python
+
+
 def admit_workload(manifest, seal, base=None):
     """Replaces the old blanket refusal ('Excluded workload') of multi-round and protected
     tests: each is admitted exactly when it is DECLARED in the manifest, SEALED (bound by a
@@ -482,6 +534,8 @@ def admit_workload(manifest, seal, base=None):
     require(launcher_exposed(arm, exposure), 'Arm L runs exposed only: a sealed run carries no launcher arm')
     require(not (arm == 'G' and exposure == 'sealed'), 'Arm G runs exposed only: a sealed run carries no gate')
     require(not (arm == 'S' and exposure == 'sealed'), 'Arm S runs exposed only: a seal job is never a sealed run')
+    problem = vllm_route_error(manifest, arm, exposure)
+    require(problem is None, problem or '')
     return dict(multi_round=manifest['multi_round'], protected_test=manifest['protected_test'], exposure=exposure, arm=arm)
 
 
@@ -1821,8 +1875,118 @@ def execute_seal(base, manifest, evidence, deadline):
     return 0 if result['execution_integrity_passed'] else 2
 
 
+# D-675: a seal request's launch record (tools/seal_route.py): no project, no laptop seal; the job is sealed here.
+LAUNCH_RECORD_KIND = 'seal_request_launch_record'
+INSTANCE_JOB_SEAL = 'instance_job_seal.json'
+
+
+def place_request_inputs(base, request):
+    """L-18, on the instance before any seal step: every frozen model file of the request at its digest, placed
+    where the bound sealer reads it (base/project/<path>, as a job bundle's project archive placed it), and every
+    wheel of the request's wheelhouse present in the archive's wheels at its digest. Else refused."""
+    base = Path(base)
+    for name, entry in (request.get('frozen_files') or {}).items():
+        require((base / name).is_file() and sha(base / name) == entry['sha256'],
+                'A frozen model file of the request is missing or differs: ' + entry['path'])
+        target = base / 'project' / entry['path']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.exists():
+            os.link(base / name, target)
+    require(request.get('wheelhouse'), 'The request names no wheelhouse')
+    for name, wheel in request['wheelhouse'].items():
+        path = base / 'wheels' / wheel['filename']
+        require(path.is_file() and sha(path) == wheel['sha256'], 'A wheel of the request is missing or differs: ' + name)
+
+
+def record_matches_request(manifest, request):
+    """None when the launch record holds exactly what its request names (the checker's item 11): its support files are
+    the request's files and the request file, and its budget, image and controller binding are the request's."""
+    files = dict(request.get('files') or {})
+    if set(manifest.get('support_files') or {}) != set(files) | {'seal_request.json'} or any(
+            manifest['support_files'][n] != d for n, d in files.items()):
+        return 'The launch record holds other files than its request names'
+    if any(manifest.get(k) != v for k, v in (request.get('budget') or {}).items()):
+        return 'The launch record\'s budget is not its request\'s'
+    if manifest.get('image') != request.get('image') or manifest.get('local_control_hashes') != request.get('local_control_hashes'):
+        return 'The launch record\'s image or controller binding is not its request\'s'
+    return None
+
+
+def execute_request(base):
+    """The seal job of a request (order 85, D-675): every guard of execute() that a job running no model needs
+    (the record's seal, every request file at its digest, the authorization, the watchdog, RUN_CLAIMED, the
+    budget stop, the cleaned environment, the sealed model cache, the pinned runtime, the network denial), then
+    the job sealed HERE (instance_job_seal.json: the request's digest, commit, tree and files, verified on this
+    instance) and run as arm S runs (execute_seal: the bound tree checked out, the assets verified once and the
+    job refused before any bundle seal unless they verified, every request sealed)."""
+    base = Path(base).resolve()
+    manifest = read(base/'execution_manifest.json')
+    seal = read(base/'seal.json')
+    require(manifest.get('kind') == LAUNCH_RECORD_KIND and seal.get('execution_manifest_sha256') == sha(base/'execution_manifest.json'),
+            'Manifest seal mismatch')
+    for name, digest in manifest['support_files'].items():
+        require(sha(base/name) == digest, 'Support hash mismatch: '+name)
+    require(sha(base/'seal_request.json') == manifest['request_sha256'], 'The launch record does not name its request')
+    request = read(base/'seal_request.json')
+    require(request.get('job') == manifest['seal_job'] and read(base/'seal_job.json') == manifest['seal_job'],
+            'The seal job is not the one the request names')
+    problem = record_matches_request(manifest, request)
+    require(problem is None, problem or '')
+    admit_workload(manifest, seal, base)
+    require(sys.platform == 'linux', 'Remote Linux execution only')
+    permit = read(base/'operator_authorization.json')
+    authorization(base, manifest, permit)
+    require((base/'WATCHDOG_ARMED.json').is_file(), 'Independent operator watchdog required')
+    watch = read(base/'WATCHDOG_ARMED.json')
+    require(watch.get('execution_manifest_sha256') == sha(base/'execution_manifest.json') and
+            watch.get('instance_id') == permit.get('instance_id') and
+            0 <= time.time()-watch.get('heartbeat_epoch', 0) < 30, 'Watchdog not current')
+    with (base/'RUN_CLAIMED').open('x', encoding='utf8') as stream:
+        stream.write(str(time.time()))
+    deadline = (permit['active_start_epoch'] + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600
+                - manifest['workload_stop_reserve_seconds'])
+
+    def budget_stop():
+        time.sleep(max(0, deadline-time.time()))
+        write(base/'BUDGET_WORKLOAD_STOP.json', {'epoch': time.time(), 'completed': False})
+        os._exit(124)
+    threading.Thread(target=budget_stop, name='ordinary-budget-stop', daemon=True).start()
+    for key in list(os.environ):
+        if key.startswith(('SHIMMER_', 'HF_', 'TRANSFORMERS_')) or key.endswith(('API_KEY', 'TOKEN', 'SECRET', 'PASSWORD')):
+            os.environ.pop(key, None)
+    os.environ.update(manifest['environment'])
+    os.environ.update(HF_HOME=str(base/'hf_cache'), HF_HUB_CACHE=str(base/'hf_cache/hub'), PYTHONDONTWRITEBYTECODE='1')
+    cache = base/'hf_cache/hub'
+    for model in manifest['models']:
+        directory = cache/('models--'+model['model_id'].replace('/', '--'))
+        admit_cache_ref(directory, model)
+        snapshot = directory/'snapshots'/model['revision']
+        require({p.relative_to(snapshot).as_posix() for p in snapshot.rglob('*') if p.is_file()} == set(model['files']), 'Unsealed cache files')
+        for name, entry in model['files'].items():
+            require(sha(snapshot/name) == entry['sha256'], 'Model cache hash mismatch')
+    installed_runtime(manifest)
+    # L-18: the frozen model files and the wheelhouse at the request's digests, before any seal step.
+    place_request_inputs(base, request)
+    write(base/INSTANCE_JOB_SEAL, dict(request_sha256=manifest['request_sha256'], commit=request['commit'],
+                                       tree=request['tree'], files=request['files'], sealed_on='instance',
+                                       time_epoch=round(time.time(), 3)))
+    from cloud_run_observer import Recorder, deny_network
+    evidence = base/'evidence'
+    evidence.mkdir(exist_ok=False)
+    rec = Recorder(evidence/'network.jsonl')
+    deny_network(rec)
+    write(evidence/INSTANCE_JOB_SEAL, read(base/INSTANCE_JOB_SEAL))
+    disk = DiskSampler(base, evidence/DISK_USAGE).start()
+    try:
+        return execute_seal(base, manifest, evidence, deadline)
+    finally:
+        disk.stop()
+
+
 def execute(base):
     base = Path(base).resolve()
+    if read(base/'execution_manifest.json').get('kind') == LAUNCH_RECORD_KIND:
+        return execute_request(base)
     manifest = verify(base)
     require(sys.platform == 'linux', 'Remote Linux execution only')
     permit = read(base/'operator_authorization.json')
@@ -1856,6 +2020,7 @@ def execute(base):
         if key.startswith(('SHIMMER_', 'HF_', 'TRANSFORMERS_')) or key.endswith(('API_KEY','TOKEN','SECRET','PASSWORD')):
             os.environ.pop(key, None)
     os.environ.update(manifest['environment'])
+    route_environment(manifest, base, os.environ)
     os.environ.update(HF_HOME=str(base/'hf_cache'), HF_HUB_CACHE=str(base/'hf_cache/hub'),
                       PYTHONDONTWRITEBYTECODE='1')
     # Fresh cache refs are bound to the exact snapshots; no ambient cache used.

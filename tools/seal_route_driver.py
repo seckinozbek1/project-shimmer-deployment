@@ -7,23 +7,34 @@ laptop bundles. Never launches; the job bundle launches through the bound wrappe
               --output-dir). Seal the job with:
               tools/prepare_ordinary_final_run.py --arm S --seal-requests requests.json
               --reuse-assets <the reuse bundle> --inputs-from <inputs> --ledger <private ledger> ...
+    request   --requests requests.json --reuse <the reuse bundle> --inputs <inputs> --ledger <private ledger>
+              --forecast-minutes M --storage-forecast-usd U [--instance-types T] [--uncompared]
+              --out <new folder> [--source COMMIT]
+              Order 85 (D-675): a seal request written (seal_route.write_request) and checked as the bound
+              wrapper will check it (request_error); nothing is sealed on the laptop. Refused before anything
+              is written when the output drive has less free than REQUEST_DISK_FLOOR_GIB (order 91).
+              Launch it with tools/ordinary_final_bound_cloud.py --request <folder> ...
     admit     --job <job bundle> --run <the job's run folder> --sealed <folder of returned bundles>
               --reuse <the reuse bundle> --out <new folder>
-              Each returned bundle refused when the read copy is stale (seal_route.stale_reason
-              against the live private ledger, the job's own lines aside), else copied out, its
-              asset archive linked by digest, its binding written (the project digest from the
-              manifest when the archive is in the store); then the reverify and the preflight
-              through the bound tools, one bundle at a time.
+              Each returned bundle refused when the read copy is stale (admission_stale_reason
+              against the live private ledger: the job's own lines aside, and, under order 99,
+              the complete guarded loop records of other instances when the guard's decision on
+              the current ledgers still carries every bundle's sealed cap, budget_reason), else
+              copied out, its asset archive linked by digest, its binding written (the project
+              digest from the manifest when the archive is in the store); then the reverify and
+              the preflight through the bound tools, one bundle at a time.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -192,15 +203,205 @@ def binding(bundle, final=None):
     return doc
 
 
-def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subprocess.run, gate=None, lock=None, unlock=None):
+# Order 99 (operator 16 Nov 2026 20:11): several Lambda launches at once must not invalidate each other's seal
+# admissions. What the read-copy rule protects, and keeps protecting: each returned bundle's hard cap was decided by
+# the guard on the read copy, so (1) a ledger rewritten or cut since (not an append) refuses; (2) a line no guarded
+# launch writes (another kind, a field outside IV.3, a hand copy, a launch with no intent before it, a record out
+# of its order) refuses, since what it means for the budget is not known; (3) a launch of another instance, decided
+# on a ledger the copy does not show, is admitted only when the guard's decision on the CURRENT ledgers, with each
+# bundle's own sealed figures, still carries that bundle's sealed hard cap (budget_reason): no cap rests on room
+# another launch has since taken.
+
+
+def _moment(value):
+    """A recorded time as an aware datetime, or None when it does not read as one."""
+    import instance_reaper
+    try:
+        moment = instance_reaper.parse_time(value)
+    except (TypeError, ValueError):
+        return None
+    return moment if moment.tzinfo is not None else None
+
+
+def _amount(value, positive):
+    return type(value) in (int, float) and math.isfinite(value) and (value > 0 if positive else value >= 0)
+
+
+def loop_record_reason(row, history):
+    """None when `row`, a ledger line after the read copy that names another instance, is a line its guarded loop
+    launch writes (loop_budget_guard.ledger_line through the controller or tools/loop/fs_listing.py, or the reaper's
+    termination), in its record's order against `history` (every line before it, the read copy's included):
+    launch_intent first and once, with its request time, a later deadline, a price and a cap; launch only after
+    its intent, once, with an instance id and the intent's deadline, price and cap; termination only of a launch
+    whose intent is there, naming its launch's instance id if it names one, with a readable cost. Else why not."""
+    import loop_budget_guard as guard
+    if not isinstance(row, dict):
+        return 'a line that is not a JSON object'
+    event = row.get('event')
+    if event not in guard.EVENTS:
+        return 'a line of another kind than a loop launch writes (%s)' % str(event)[:40]
+    extra = guard.undeclared(row)
+    if extra:
+        return 'a %s line with a field outside IV.3 (%s)' % (event, ','.join(sorted(str(f) for f in extra))[:80])
+    name = row.get('instance_name')
+    if not (isinstance(name, str) and name.startswith(guard.PREFIX)):
+        return 'a %s line naming no loop instance' % event
+    if 'purpose' in row and not (isinstance(row['purpose'], str) and guard.PURPOSE.fullmatch(row['purpose'])):
+        return 'a %s line whose purpose is not a short identifier' % event
+    if _moment(row.get('time_utc')) is None:
+        return 'a %s line with no readable time' % event
+    requested = row.get('launch_requested_utc')
+    record = [r for r in history if r.get('instance_name') == name and r.get('launch_requested_utc') == requested]
+    if event in ('launch_intent', 'launch'):
+        start, deadline = _moment(requested), _moment(row.get('deadline_utc'))
+        if start is None or deadline is None or not deadline > start:
+            return 'a %s line without its request time and a later deadline' % event
+        for field in ('price_usd_per_hour', 'cap_usd'):
+            if not _amount(row.get(field), True):
+                return 'a %s line without its %s' % (event, field)
+        if 'forecast_usd' in row and not _amount(row['forecast_usd'], False):
+            return 'a %s line with an unreadable forecast_usd' % event
+    if event == 'launch_intent':
+        if record:
+            return 'a launch_intent that is not the first line of its launch'
+        return None
+    if event == 'launch':
+        intents = [r for r in record if r.get('event') == 'launch_intent']
+        if not intents:
+            return 'a launch line with no launch_intent before it (a launch the guard did not record)'
+        if any(r.get('event') in ('launch', 'termination') for r in record):
+            return 'a launch line after a launch or termination of its launch'
+        if not (isinstance(row.get('instance_id'), str) and row['instance_id']):
+            return 'a launch line with no instance id'
+        if any(row.get(f) != intents[0].get(f) for f in ('deadline_utc', 'price_usd_per_hour', 'cap_usd')):
+            return "a launch line whose deadline, price or cap is not its intent's"
+        return None
+    # termination: the controller's names its request time; the reaper's names the instance (and its id) only.
+    for field in ('actual_cost', 'actual_minutes'):
+        if row.get(field) is not None and not _amount(row[field], False):
+            return 'a termination line with an unreadable %s' % field
+    iid = row.get('instance_id')
+    if iid is not None and not (isinstance(iid, str) and iid):
+        return 'a termination line with an unreadable instance id'
+    if requested is None:
+        intents = [r for r in history if r.get('instance_name') == name and r.get('event') == 'launch_intent']
+        record = ([r for r in history if r.get('instance_name') == name
+                   and r.get('launch_requested_utc') == intents[-1].get('launch_requested_utc')] if intents else [])
+    if not any(r.get('event') == 'launch_intent' for r in record):
+        return 'a termination of a launch with no launch_intent before it'
+    launches = [r for r in record if r.get('event') == 'launch']
+    if iid is not None and launches and launches[-1].get('instance_id') != iid:
+        return 'a termination naming another instance id than its launch'
+    return None
+
+
+def _named(row):
+    """The instance name and id a line names, as strings only."""
+    return {v for v in (row.get('instance_name'), row.get('instance_id')) if isinstance(v, str) and v}
+
+
+def admission_stale_reason(job, live, own, found=None):
+    """None when every live record (`live`: {key: path}, the budget ledger, R's ledger and the spend store, by
+    seal_route.STALE_RULES) is its read copy with nothing appended but what the rule admits: for a ledger, the job's
+    own lines (naming one of `own`, the job instance's name and id) and, under order 99, lines of other instances'
+    guarded loop launches each in its record's order (loop_record_reason), each of these appended to `found`; for
+    the spend store, only that it begins with the copy. A record with no copy is held as an empty one. Each record
+    is read once, so what is checked is what is counted. Otherwise why the read copies are stale. A foreign line
+    admitted here is admitted only with budget_reason holding for every returned bundle (admit)."""
+    own = {o for o in own if o}
+    copies = job['read_copies']
+    for key, rule in sr.STALE_RULES.items():
+        path = live.get(key)
+        entry = copies.get(key) or dict(bytes=0, sha256=hashlib.sha256(b'').hexdigest())
+        data = Path(path).read_bytes() if path is not None and Path(path).is_file() else b''
+        if len(data) < entry['bytes'] or hashlib.sha256(data[:entry['bytes']]).hexdigest() != entry['sha256']:
+            return 'the live %s does not begin with its read copy (rewritten, not appended)' % key
+        if rule != 'own_lines':
+            continue
+        history = []
+        for line in data[:entry['bytes']].decode('utf-8', errors='replace').splitlines():
+            try:
+                row = json.loads(line) if line.strip() else None
+            except ValueError:
+                continue
+            if isinstance(row, dict):
+                history.append(row)
+        try:
+            added = [json.loads(l) for l in data[entry['bytes']:].decode('utf-8').splitlines() if l.strip()]
+        except ValueError:
+            return 'a line of the %s after its read copy is not readable JSON' % key
+        for n, row in enumerate(added, 1):
+            if isinstance(row, dict) and _named(row) & own:
+                history.append(row)
+                continue
+            problem = loop_record_reason(row, history)
+            if problem:
+                return ("line %d of %d of the %s after its read copy is neither the seal job's own nor a guarded loop "
+                        "line of another instance: %s" % (n, len(added), key, problem))
+            history.append(row)
+            if found is not None:
+                found.append(dict(ledger=key, event=row['event']))
+    return None
+
+
+def sealed_storage_forecast(argv):
+    """The storage forecast a request sealed its budget on: its one --storage-forecast-usd, written in full with its
+    value apart (the sealer's parser takes abbreviations, and the last value wins), or None."""
+    flag = '--storage-forecast-usd'
+    spelled = [i for i, a in enumerate(argv) if isinstance(a, str) and len(a.split('=', 1)[0]) > 2
+               and flag.startswith(a.split('=', 1)[0])]
+    if len(spelled) != 1 or argv[spelled[0]] != flag or spelled[0] + 1 >= len(argv):
+        return None
+    try:
+        value = float(argv[spelled[0] + 1])
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value >= 0 else None
+
+
+def budget_reason(manifest, request, live, now_epoch, guard=None):
+    """None when the guard's decision on the CURRENT ledgers (the budget ledger and R's, read as the reaper's), made
+    with the returned bundle's own sealed figures (its forecast minutes, the first candidate's price it was sealed
+    at, its stop reserve, its request's storage forecast), still gives at least the bundle's sealed hard cap, as the
+    controller requires at launch. Else why not. Two launch gates are not read here, as they hold no figure of the
+    cap: the standing orders (the attestation covers the seal) and the spend store's hand-back gate (D-S121: the
+    API spend never counts toward Lambda's); every launch reads both again."""
+    import loop_budget_guard as default_guard
+    guard = guard or default_guard
+    try:
+        rate = manifest['instance_candidates'][0]['max_hourly_rate']
+        minutes = manifest['forecast_minutes']
+        reserve = manifest['workload_stop_reserve_seconds'] / 60
+        hard = float(manifest['hard_ceiling_usd'])
+    except (KeyError, IndexError, TypeError, ValueError):
+        return 'the returned bundle does not carry the figures its budget was sealed on'
+    storage = sealed_storage_forecast(request.get('argv') or [])
+    if storage is None:
+        return 'its request does not name its storage forecast once, in full'
+    ledgers = [Path(live[k]) for k in ('budget_ledger', 'r_ledger') if live.get(k) is not None]
+    try:
+        decision = guard.check(ledgers=ledgers, forecast_minutes=minutes, hourly_rate=rate, storage_forecast_usd=storage,
+                               now_epoch=now_epoch, reserve_minutes=reserve, reaped=ledgers)
+    except guard.GuardRefusal as exc:
+        return 'the guard refuses it on the current ledgers (%s)' % exc
+    if not math.isfinite(hard) or decision['cap_usd'] + 1e-9 < hard:
+        return ('the cap on the current ledgers, %.4f dollars, is below its sealed hard cap, %.4f dollars'
+                % (decision['cap_usd'], hard))
+    return None
+
+
+def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subprocess.run, gate=None, lock=None, unlock=None,
+          request=None, clock=None):
     """The returned bundles of one seal job made laptop bundles, all or none. Bound to the job: the
     run folder's launch intent names the job bundle's manifest; the bundles come only from the
     collected evidence the controller verified; each bundle's manifest and seal digests are the job
     result's own row; the result names the job's manifest; the reuse bundle's manifest is the one the
     job sealed. Under the ledger lock, held from the stale check through the last preflight: the read
-    copies (`live`: {key: path}) checked once, then each bundle staged, linked, bound, reverified and
-    preflighted. Only when every bundle passes are they moved into `out` in one rename; otherwise
-    nothing is admitted and the staging folder is kept, renamed refused, for the operator."""
+    copies (`live`: {key: path}) checked once (admission_stale_reason), then each bundle staged, held to
+    the guard's decision on the current ledgers when other launches wrote lines since the read copy
+    (budget_reason, order 99), linked, bound, reverified and preflighted. Only when every bundle passes
+    are they moved into `out` in one rename; otherwise nothing is admitted and the staging folder is
+    kept, renamed refused, for the operator."""
     import loop_budget_guard as guard
     lock = guard.acquire_lock if lock is None else lock
     unlock = guard.release_lock if unlock is None else unlock
@@ -212,11 +413,20 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
                'The job file is not the job bundle\'s sealed job')
     sr.require(sr.sha(Path(reuse) / 'execution_manifest.json') == job_manifest['support_files'][sr.REUSE_MANIFEST],
                'The reuse bundle is not the one the seal job sealed')
+    record_job = job_manifest.get('kind') == sr.LAUNCH_RECORD_KIND
+    # The checker's item 9: a seal request's job is admitted with its request (--request), and only it is.
+    sr.require(record_job == (request is not None),
+               'A seal request launch record is admitted with --request naming its request, and only it is')
+    if record_job:
+        # D-675: the job of a seal request was sealed on the instance; its record must be its request's.
+        problem = sr.record_error(job_bundle, request)
+        sr.require(problem is None, problem or '')
     own = own_identifiers(run_folder, job_sha, job_bundle)
     sr.require(not out.exists(), 'The admission folder exists already')
     held = lock(ledger)
     try:
-        reason = sr.stale_reason(job, live, own)
+        foreign = []
+        reason = admission_stale_reason(job, live, own, foreign)
         sr.require(reason is None, 'Seal job read copy is stale: ' + str(reason))
         staging = out.with_name(out.name + '.staging')
         sr.require(not staging.exists(), 'A staging folder of an earlier admission is there; look at it first')
@@ -224,6 +434,10 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
         try:
             sealed, result = collected(run_folder, staging / 'collected')
             sr.require(result.get('job_manifest_sha256') == job_sha, 'The collected result is another job\'s')
+            if record_job:
+                # Item 9: the instance sealed this request's job (its instance_job_seal.json, collected).
+                problem = sr.instance_seal_error(staging / 'collected' / 'evidence', request)
+                sr.require(problem is None, problem or '')
             rows_by = {r['name']: r for r in result.get('rows') or []}
             bundles = staging / 'bundles'
             bundles.mkdir()
@@ -234,6 +448,16 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
                 sr.require(sr.sha(source / 'execution_manifest.json') == row.get('manifest_sha256')
                            and sr.sha(source / 'seal.json') == row.get('seal_sha256'),
                            'A returned bundle is not the one the job sealed: ' + request['name'])
+                # D-675 condition 2: a returned bundle is a sealed bundle, never a seal request's launch record.
+                sr.refuse_launch_record(json.loads((source / 'execution_manifest.json').read_text(encoding='utf-8')),
+                                        'a returned bundle')
+                if foreign:
+                    # Order 99: other launches wrote lines since the read copy; the bundle's sealed cap must
+                    # still be carried by the guard's decision on the current ledgers.
+                    problem = budget_reason(json.loads((source / 'execution_manifest.json').read_text(encoding='utf-8')),
+                                            request, live, (clock or time.time)())
+                    sr.require(problem is None, 'Seal job read copy is stale: %d line(s) of other launches since it, '
+                               'and for %s %s' % (len(foreign), request['name'], problem))
                 target = bundles / request['name']
                 shutil.move(str(source), str(target))
                 entry = dict(name=request['name'])
@@ -259,6 +483,40 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
         unlock(held)
 
 
+# Order 91 (D-678): the route gate's laptop worst case (2.5 GiB: the request, its evidence and the stored
+# projects) over the 30 GiB floor; the request is not written below it.
+REQUEST_DISK_FLOOR_GIB = 32.5
+
+
+def free_gib(folder):
+    """Free space on the drive `folder` is (or will be) on, in GiB."""
+    path = Path(folder).resolve()
+    while not path.exists():
+        path = path.parent
+    return shutil.disk_usage(path).free / 2 ** 30
+
+
+def request_budget(ledgers, forecast_minutes, storage_forecast_usd, instance_types=None, uncompared=False):
+    """The budget block exactly as the sealer's own command line builds it for budget_fields (prepare_ordinary_final_run
+    main): the ledgers the IV.3 cap reads, the forecast, the storage forecast, the declared types, uncompared."""
+    return dict(ledgers=[Path(p) for p in ledgers], forecast_minutes=forecast_minutes,
+                storage_forecast_usd=storage_forecast_usd,
+                instance_types=instance_types.split(',') if instance_types else None,
+                type_rule='fastest', gpus=1, comparison=None, uncompared=bool(uncompared))
+
+
+def write_checked_request(out, source, requests, reuse, inputs, budget, parallel=16):
+    """The request command: the disk floor read first, then the request written, then checked by request_error against
+    this checkout's controller (what the bound wrapper checks before any provider call). Returns the request."""
+    free = free_gib(out)
+    sr.require(free >= REQUEST_DISK_FLOOR_GIB, 'Free disk %.1f GiB is below the request floor of %.1f GiB (order 91)'
+               % (free, REQUEST_DISK_FLOOR_GIB))
+    request = sr.write_request(out, source, requests, reuse, inputs, budget, parallel=parallel)
+    problem = sr.request_error(out, ROOT)
+    sr.require(problem is None, 'The written request does not check: ' + str(problem))
+    return request
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0], allow_abbrev=False)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -272,15 +530,39 @@ def main(argv=None):
     g.add_argument('--log', type=Path, required=True)
     g.add_argument('sealer_args', nargs=argparse.REMAINDER, help="-- then the sealer's own arguments")
     g.add_argument('--output-dir', type=Path, required=True, help="the sealer's --output-dir: its drive is the disk the gate reads")
+    q = sub.add_parser('request', allow_abbrev=False,
+                       help='order 85: write and check a seal request; nothing is sealed on the laptop')
+    q.add_argument('--source', default='HEAD', help='the commit the instance seals (default HEAD)')
+    q.add_argument('--requests', type=Path, required=True, help='requests.json, from the requests command')
+    q.add_argument('--reuse', type=Path, required=True, help='the reuse bundle (its manifest names the assets)')
+    q.add_argument('--inputs', type=Path, required=True, help='runtime.candidate.lock and provider_inventory.json')
+    q.add_argument('--ledger', type=Path, action='append', required=True, help='loop ledger(s) the IV.3 cap reads')
+    q.add_argument('--forecast-minutes', type=float, required=True)
+    q.add_argument('--storage-forecast-usd', type=float, required=True)
+    q.add_argument('--instance-types', default=None, help='the declared instance types, comma separated')
+    q.add_argument('--uncompared', action='store_true', help='the job belongs to no comparison (as the sealer takes it)')
+    q.add_argument('--parallel', type=int, default=16)
+    q.add_argument('--out', type=Path, required=True, help='a new folder')
     a = sub.add_parser('admit', allow_abbrev=False)
     for name in ('--job', '--run', '--reuse', '--out'):
         a.add_argument(name, type=Path, required=True)
+    a.add_argument('--request', type=Path, default=None,
+                   help='order 85: the seal request a launch record job was launched from (required for one)')
     args = parser.parse_args(argv)
     if args.command == 'requests':
         plan = json.loads(args.plan.read_text(encoding='utf-8'))
         requests = plan_requests(plan, args.session, args.base)
         sr.write(args.out, dict(requests=requests))
         print('%d requests' % len(requests))
+        return 0
+    if args.command == 'request':
+        budget = request_budget(args.ledger, args.forecast_minutes, args.storage_forecast_usd, args.instance_types,
+                                args.uncompared)
+        request = write_checked_request(args.out, args.source, args.requests, args.reuse, args.inputs, budget,
+                                        args.parallel)
+        # Counts only (SEALED-RUN-A): no path, value or digest of the inputs is printed.
+        print('seal request written and checked: %d files, %d requests' % (len(request['files']),
+                                                                           len(request['job']['requests'])))
         return 0
     if args.command == 'seal':
         sealer_args = args.sealer_args[1:] if args.sealer_args[:1] == ['--'] else args.sealer_args
@@ -308,7 +590,7 @@ def main(argv=None):
     private = instance_reaper.main_private()
     live = dict(budget_ledger=private / 'budget_ledger.jsonl', spend_store=private / 'cloud_reference_spend.jsonl',
                 r_ledger=instance_reaper.R_LEDGER)
-    rows = admit(args.job, args.run, args.reuse, args.out, live, private / 'budget_ledger.jsonl')
+    rows = admit(args.job, args.run, args.reuse, args.out, live, private / 'budget_ledger.jsonl', request=args.request)
     print('%d of %d admitted' % (len(rows), len(rows)))
     return 0
 

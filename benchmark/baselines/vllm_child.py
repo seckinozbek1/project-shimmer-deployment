@@ -93,6 +93,82 @@ def run_arm(llm, job, prompts, together, lora):
     return {"seconds": round(seconds, 3), "output_tokens": sum(r["output_tokens"] for r in rows.values()), "rows": rows}
 
 
+def traceback_frames(exc):
+    """The failure's last frames for the evidence: the exception type, each frame's file, line and
+    function, and the failing source line of code (never a prompt's or a reply's text, which no
+    frame of vLLM or this tool holds as source)."""
+    import traceback
+    frames = traceback.extract_tb(exc.__traceback__)[-8:]
+    return {"type": type(exc).__name__,
+            "frames": [{"file": f.filename, "line": f.lineno, "function": f.name, "source": (f.line or "")[:200]}
+                       for f in frames]}
+
+
+def aux_env_size():
+    """For part C (an env layer on the filesystem): the auxiliary venv's size on disk, read from this
+    process's own prefix (bytes and file count, symlinks not followed)."""
+    total = files = 0
+    for root, _, names in os.walk(sys.prefix, followlinks=False):
+        for name in names:
+            path = os.path.join(root, name)
+            try:
+                if not os.path.islink(path):
+                    total += os.path.getsize(path)
+                    files += 1
+            except OSError:
+                continue
+    return {"prefix": sys.prefix, "bytes": total, "files": files}
+
+
+# For part C (a persistent compile cache): the engine start split as vLLM's own startup log states it.
+# Each pattern is the format of one vLLM 0.33 startup message (structural: its own wording and number).
+import re  # noqa: E402
+
+START_PHASES = (
+    ("model_load_seconds", re.compile(r"Model loading took .*?([0-9]+(?:\.[0-9]+)?) s(?:ec(?:ond)?s?)?")),
+    ("dynamo_transform_seconds", re.compile(r"Dynamo bytecode transform time: ([0-9]+(?:\.[0-9]+)?) s")),
+    ("compile_seconds", re.compile(r"torch\.compile takes ([0-9]+(?:\.[0-9]+)?) s in total")),
+    ("graph_capture_seconds", re.compile(r"Graph capturing finished in ([0-9]+(?:\.[0-9]+)?) secs?")),
+)
+
+
+class StartLog:
+    """Reads vLLM's own startup messages (logger `vllm` and its children) while the engine starts and
+    keeps, per phase, the seconds the message states and the message itself (startup lines only; no
+    prompt is in flight then). A phase whose message never came stays None: not measured."""
+
+    def __init__(self):
+        import logging
+        self.phases = {name: None for name, _ in START_PHASES}
+        self.lines = []
+        outer = self
+
+        class Handler(logging.Handler):
+            def emit(self, record):
+                try:
+                    text = record.getMessage()
+                except Exception:
+                    return
+                for name, pattern in START_PHASES:
+                    found = pattern.search(text)
+                    if found:
+                        outer.phases[name] = round((outer.phases[name] or 0.0) + float(found.group(1)), 3)
+                        outer.lines.append(text[:200])
+        self.handler = Handler(level=logging.INFO)
+        self.logger = logging.getLogger("vllm")
+
+    def __enter__(self):
+        self.logger.addHandler(self.handler)
+        return self
+
+    def __exit__(self, *exc):
+        self.logger.removeHandler(self.handler)
+        return False
+
+    def record(self):
+        return dict(self.phases, messages=self.lines)
+
+
 def deny_network(job, folder):
     """The runner's network denial, from the file the job names, applied in this process."""
     import importlib.util
@@ -112,20 +188,25 @@ def main(argv=None):
     job = json.loads(Path(args.job).read_text(encoding="utf-8"))
     deny_network(job, Path(args.out).parent)
     os.environ["SHIMMER_CONSTRAINT_TOKENIZER"] = job["tokenizer"]
-    result = {"versions": {}, "arms": {}, "error": None}
+    result = {"versions": {}, "arms": {}, "error": None, "aux_env": aux_env_size()}
     try:
+        imported = time.perf_counter()
         import torch
         import vllm
+        result["import_seconds"] = round(time.perf_counter() - imported, 3)
         result["versions"] = {"vllm": vllm.__version__, "torch": torch.__version__,
                               "batch_invariant": os.environ.get("VLLM_BATCH_INVARIANT")}
         started = time.perf_counter()
-        llm = engine(job)
+        with StartLog() as log:
+            llm = engine(job)
         result["engine_seconds"] = round(time.perf_counter() - started, 3)
+        result["engine_phases"] = log.record()
         result["loaded"] = loaded(llm)
         import vllm_replay
         result["spec"] = dict(vllm_replay.platform_spec(torch), engine="vllm", engine_version=vllm.__version__,
                               bnb_plugin=vllm_replay._version("vllm-bnb-plugin"),
                               bitsandbytes=vllm_replay._version("bitsandbytes"),
+                              triton=vllm_replay._version("triton"), accelerate=vllm_replay._version("accelerate"),
                               model=job["model"], quantisation=result["loaded"], dtype=job["dtype"],
                               compute_dtype=vllm_replay.VLLM_BNB_COMPUTE,
                               lora=None if not job.get("adapter") else {"adapter": job["adapter"], "max_lora_rank": job["lora_rank"]},
@@ -151,6 +232,7 @@ def main(argv=None):
         result["peak_gpu_bytes"] = int(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else None
     except Exception as exc:  # recorded for the runner, which decides what it means
         result["error"] = "%s: %s" % (type(exc).__name__, str(exc)[:400])
+        result["traceback"] = traceback_frames(exc)
     Path(args.out).write_text(json.dumps(result), encoding="utf-8")
     return 0 if result["error"] is None else 3
 

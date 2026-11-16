@@ -79,8 +79,14 @@ class Slot:
         self.prompt_tokens = int(args["prompt_tokens"])
         self.ids = []
         self.started = False
-        self.constraint = contract_decoding.for_prompt(args["prompt"], tok, 0, [int(e) for e in args["eos"]],
-                                                       agent=args.get("agent"))
+        eos = [int(e) for e in args["eos"]]
+        if args.get("agent") is not None and args.get("contract"):
+            # The runner's own contract for this agent (the wrapper's, carried in the request), so both
+            # engines build the very same envelope grammar (D-630 A4).
+            self.constraint = contract_decoding.envelope_constraint(args["agent"], tok, 0, eos, "rendered_prompt",
+                                                                    args["contract"])
+        else:
+            self.constraint = contract_decoding.for_prompt(args["prompt"], tok, 0, eos, agent=args.get("agent"))
         COUNTS[self.key] = self.constraint.record
 
     def follow(self, position, fed):

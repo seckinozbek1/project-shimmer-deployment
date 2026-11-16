@@ -129,6 +129,22 @@ def _cited(value, known):
     return None, af.AMBIGUOUS if hits else af.NOT_DECLARED
 
 
+def _basis(e, entry, field, drops):
+    """D-711 item 1: an entry's `basis` by its form (one of neg_advisor.BASES) and its `basis_quote` as written
+    (outer spaces off). A basis not read is counted and left out, so the entry is held as on record; the quote
+    is checked against the item's text by the scorer's Python step, never here."""
+    na, _ = _modules()
+    if e.get("basis") is not None:
+        got = _read(e["basis"], na.BASES, field + ".basis", drops)
+        if got is not None:
+            entry["basis"] = got
+    quote, bad = af.one_value(e.get("basis_quote")) if e.get("basis_quote") is not None else (None, None)
+    if bad:
+        drops.add(field + ".basis_quote", bad)
+    elif isinstance(quote, str) and quote.strip():
+        entry["basis_quote"] = quote.strip()
+
+
 def advice(text, item):
     """The advice reply read by the plan's section 5.1 schema, every field by its form (case, spaces, quotes,
     emphasis, punctuation, fences, a number for an id, a list of one and one value for a list, an integer
@@ -185,6 +201,9 @@ def advice(text, item):
                     entry[f] = got
         if isinstance(e.get("wording"), str) and e["wording"].strip():
             entry["wording"] = e["wording"].strip()
+        _basis(e, entry, "proposals", drops)
+        if isinstance(e.get("rationale"), str) and e["rationale"].strip():
+            entry["rationale"] = e["rationale"].strip()   # D-713 reason_first: kept apart, never scored
         proposals[pid] = entry
     trades = []
     for t in _entries(value.get("trades"), "trades", drops):
@@ -202,6 +221,7 @@ def advice(text, item):
             continue
         alignment[aid] = {"aligned": _read_all(e.get("aligned"), parties, "alignment.aligned", drops),
                           "opposed": _read_all(e.get("opposed"), parties, "alignment.opposed", drops)}
+        _basis(e, alignment[aid], "alignment", drops)
     state = {}
     for e in _entries(value.get("state"), "state", drops):
         aid = _read(e.get("article"), known_articles, "state.article", drops)

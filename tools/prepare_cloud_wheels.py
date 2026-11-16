@@ -16,12 +16,12 @@ import tempfile
 
 from cloud_run_common import write_json
 from runtime_contract import load_contract, resolve, command
-from prepare_cloud_run import ASSETS, pins, validate_wheels
+from prepare_cloud_run import ASSETS, main_output, pins, validate_wheels
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=Path('output/cloud_wheels/linux_cp312'))
+    parser.add_argument('--output', type=Path, default=main_output() / 'cloud_wheels/linux_cp312')
     parser.add_argument('--download', action='store_true')
     args = parser.parse_args(argv)
     runtime = load_contract()

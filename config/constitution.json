@@ -919,6 +919,39 @@
       },
       "reason": "The authority audit's checker (D-643, D-647): a 'does not contradict' answer was always refused, so a document could never be CLEAR from the model's own answer. D-652 (Seckin 16:03): fixed, its effect reported (half A records: 0 refusals of this kind, 0 label changes). D-670: on SciTab no clash can also mean not enough information, so it is never 'supports'.",
       "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-15 19:26 and 19:47."
+    },
+    {
+      "id": "INFRA-056",
+      "created": "2026-11-16",
+      "kind": "agent_contract",
+      "title": "JUDGE may write one grammar-bound table tool request per cell claim and table, when its contract declares request_tools; no tool reaches the internet",
+      "genesis_part": "II",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-16",
+        "by": "operator",
+        "words": "Seckin, 16 November 2026 15:10: the model asking for a tool was never the problem; the line he drew is that tools must not reach the web (D-694)",
+        "asked": "the lead's question of 16 November 2026 (D-681, D-689): the table tool design reverses two points of INFRA-049, so the request needs an amendment before it may be switched on",
+        "channel": "relayed to the lead session through docs/loop/private/SUPERVISOR_INBOX.md, 16 November 2026 15:12 and 15:13 +0300",
+        "authorization": {
+          "date": "2026-11-16",
+          "by": "operator",
+          "words": "approved in advance (D-694 item 2); tools must not reach the web (15:10)",
+          "recorded_in": "docs/loop/DECISIONS.md D-681, D-689, D-694; draft docs/TABLE_TOOL_REQUEST_DELTA_DRAFT.md; design docs/loop/stages/TABLE_TOOL_DESIGN.md",
+          "what": "the operator's answer, which is also the instruction: the lead appends this one amendment through scripts/constitution_guard.py on the verified no-gap path, as built on lane/table-tool"
+        }
+      },
+      "change": {
+        "product_rule": "When Shimmer runs as a product, neither the model nor any tool sends anything to the internet: no web search, no lookup, not even a masked or anonymised query. Tools compute only on what is already inside Shimmer's own run (D-694 item 3 a).",
+        "where_work_runs": "Running Shimmer, its tools, sealing or tests on rented machines stays allowed under the spending and data rules. 'Local' means inside Shimmer's own run with no internet access, never laptop only (D-694 item 3 b).",
+        "task": "cell_claim_request",
+        "setting": "request_tools on JUDGE's cell_claim task in config/agent_contracts.json: the names of registry tools (config/table_tools.json) JUDGE may ask for. With none declared nothing changes.",
+        "effect": "Before each cell claim's question, JUDGE is shown the cells, the claim, the table's index by id and the tools that apply (structural facts only, at most max_shown), and writes ONCE at most max_calls lines, each a shown tool with ids as arguments, or NONE, under a grammar that admits nothing else. Python parses every line, runs every call in one batch and adds a RESULTS block to the question's {tools} slot; the question is then decided from JUDGE's probabilities as before. There is never a second round.",
+        "audit": "The request is one narrow call with one reply record (task cell_claim_request, outcome free_text, never promoted). Each line is one row of audit/judge_tools.jsonl: tool, argument ids, ok or the refusal's reason, the result's SHA-256 and the call id; no value is kept.",
+        "reverses": "INFRA-049 on two points: JUDGE writes one request, and it chooses among the shown tools. Python still selects the cells, and the decision is still read from probabilities over the declared answers.",
+        "registry": "Only the operator adds a tool. Each is vetted by tools/vet_table_tool.py (license on the allowlist, no socket, no file written, deterministic across hash seeds, examples passing) and names its approving decision; boot refuses an entry whose vetting digest does not match its declaration and module source.",
+        "unchanged": "The cell selection, the decision rules, the threshold family, the settled and leaning records, the claim_not_met relation (INFRA-048) and its refusal. No other agent, phase, contract or LAW changes."
+      }
     }
   ]
 }

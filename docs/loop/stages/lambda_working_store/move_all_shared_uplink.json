@@ -1,0 +1,11 @@
+{
+  "step": "working store move, uplink shared with tonight's Drive backup",
+  "instance_type": "gpu_1x_a10",
+  "launches": 1,
+  "minutes": {"boot": 5, "upload": 335.77, "return": 0},
+  "storage": {"gib": 16.805, "hours": 730},
+  "measures": [
+    {"name": "asset_copy", "keeps_minutes": 150.37,
+     "source": "as move_all.json, at about 2 MB/s when the uplink is shared (TIME_BUDGET.md, D-354: three uploads at about 2 MB/s each)"}
+  ]
+}

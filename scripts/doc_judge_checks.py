@@ -1084,7 +1084,10 @@ def silence_as_detection():
 def scorer_as_b3():
     import score_corpus
     real = score_corpus.benchmark_items
-    return patch.object(score_corpus, "benchmark_items", lambda key, run_dir, arm="B3": real(key, run_dir))
+    # The arm is dropped and every other argument passed on: benchmark_items took `scoring`
+    # from D-472 on, and a lambda without it raised TypeError before any label was read (#290).
+    return patch.object(score_corpus, "benchmark_items",
+                        lambda key, run_dir, arm="B3", **rest: real(key, run_dir, **rest))
 
 
 def key_read_here():

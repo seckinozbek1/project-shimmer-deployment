@@ -77,10 +77,47 @@ BUDGET_LINE_FIELDS = ('event', 'time_utc', 'loop_start_utc', 'budget_usd', 'hard
                       'five_hour_usage_launch_limit_percent', 'seven_day_usage_launch_limit_percent',
                       'usage_five_hour', 'usage_seven_day', 'a10_price_source', 'orphans',
                       'running_instances_at_open', 'storage_forecast_days', 'storage_forecast_usd')
-PRIVATE_LEDGER = ROOT / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl'
+_MAIN = {}
+
+
+def default_main(root=None):
+    """DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): the main checkout whose budget ledger and status file
+    the reaper's defaults name, through `shared_paths` (SHIMMER_MAIN_CHECKOUT, else git's common directory),
+    never through a link in the checkout this file runs from. Resolved at use, never at import, once per
+    checkout and variable value; with git unreadable it is this file's own checkout, as before (the scheduled
+    task runs from the main checkout); a refused SHIMMER_MAIN_CHECKOUT raises shared_paths.MainCheckoutError."""
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.append(str(Path(__file__).resolve().parent))
+    import shared_paths
+    root = ROOT if root is None else Path(root)
+    key = (str(root), os.environ.get(shared_paths.ENV, ''))
+    if key not in _MAIN:
+        _MAIN[key] = shared_paths.main_checkout(root, fallback=root)
+    return _MAIN[key]
+
+
+# None: the main checkout's file, resolved at use (private_ledger(), status_file()); a proof sets a path.
+PRIVATE_LEDGER = None
 R_LEDGER = Path.home() / 'local' / 'shimmer-roles' / '_handoff' / 'R_ledger.jsonl'
-STATUS = ROOT / 'docs' / 'loop' / 'private' / 'reaper_status.json'
+STATUS = None
+
+
+def private_ledger():
+    """The private budget ledger the reaper reads: the main checkout's docs/loop/private/budget_ledger.jsonl."""
+    if PRIVATE_LEDGER is not None:
+        return Path(PRIVATE_LEDGER)
+    return default_main() / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl'
+
+
+def status_file():
+    if STATUS is not None:
+        return Path(STATUS)
+    return default_main() / 'docs' / 'loop' / 'private' / 'reaper_status.json'
+
+
 # D-S84: salvage, then stop. Every path is a module name so a proof can point it at fixtures.
+# These stay this checkout's: the scheduled reaper runs from the main checkout, and the salvage folder (the one
+# the controllers and the hook share) is the main checkout's through salvage_dir().
 PRIVATE = ROOT / 'docs' / 'loop' / 'private'
 LOOP_STATUS = ROOT / '.claude' / 'loop_status.json'
 HEARTBEATS = (PRIVATE / 'continue_hook_state.json', PRIVATE / 'LOOP_STATE.md', PRIVATE / 'FOR_SECKIN.md')
@@ -97,8 +134,9 @@ _RESOLVED = {}
 
 
 def main_private():
-    """docs/loop/private of the MAIN checkout, through git's common directory, resolved once per
-    process for each checkout (D-436 item 4); a git failure raises SpendStoreError."""
+    """docs/loop/private of the MAIN checkout, by the spend store's path rule (shared_paths:
+    SHIMMER_MAIN_CHECKOUT, else git's common directory), resolved once per process for each checkout
+    (D-436 item 4); a git failure or a refused variable raises SpendStoreError."""
     if ROOT not in _RESOLVED:
         import cloud_reference_spend
         _RESOLVED[ROOT] = cloud_reference_spend.store_path(ROOT).parent
@@ -1014,9 +1052,9 @@ def main(argv=None):
     if args.for_seckin:
         FOR_SECKIN = Path(args.for_seckin)
     salvage = bool(args.salvage_dir) or not args.mock_state
-    ledgers = [Path(p) for p in args.ledger] if args.ledger else [PRIVATE_LEDGER, R_LEDGER]
-    append_path = Path(args.append_to) if args.append_to else PRIVATE_LEDGER
-    status_path = Path(args.status) if args.status else STATUS
+    ledgers = [Path(p) for p in args.ledger] if args.ledger else [private_ledger(), R_LEDGER]
+    append_path = Path(args.append_to) if args.append_to else private_ledger()
+    status_path = Path(args.status) if args.status else status_file()
     now = parse_time(args.now) if args.now else utc_now()
     try:
         provider = MockProvider(args.mock_state) if args.mock_state else real_provider()

@@ -38,7 +38,7 @@ for bootstrap in python3 python; do
     PYTHON_CMD=$("$bootstrap" tools/runtime_contract.py --resolve --path-only) && break
 done
 if [ -z "$PYTHON_CMD" ]; then
-    echo "No compatible Python found. See tools/cloud_run/runtime.json." >&2
+    echo "No Python 3.12 was found. Install Python 3.12 (python.org), then run this script again." >&2
     exit 1
 fi
 echo "Using Python: $PYTHON_CMD"
@@ -69,7 +69,7 @@ VENV_BIN="$(venv_bin)"
 VENV_PYTHON="$VENV_BIN/python"
 [ -f "$VENV_PYTHON.exe" ] && VENV_PYTHON="$VENV_PYTHON.exe"
 if ! PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$VENV_PYTHON" --path-only); then
-    echo "The Python in .venv does not match tools/cloud_run/runtime.json. Remove .venv and run this script again."
+    echo "The Python in the .venv folder is not the version Shimmer needs, Python 3.12. Delete the .venv folder and run this script again."
     exit 1
 fi
 # The menu's own entry modules, not the experiment probe: an ordinary final archive does not
@@ -199,7 +199,7 @@ while true; do
     echo "  [1] Run a review (CLI)"
     echo "  [2] Open the chat interface"
     echo "  [3] Start the server"
-    echo "  [4] Run the verify gate"
+    echo "  [4] Run the full self-test (long; loads models; for a prepared machine)"
     echo "  [5] Import documents (set up files and cutoff, no run)"
     echo "  [Q] Quit"
     echo
@@ -241,7 +241,7 @@ while true; do
                             rm -f "$DRAFT_FLAGS_FILE"
                             echo
                             echo "Drafting a memo, then reviewing it ..."
-                            echo "(Add --help for all options.)"
+                            echo "(For every command-line option, run: $VENV_BIN/python scripts/pipeline.py --help)"
                             # DRAFT_FLAGS word-splits into separate simple tokens.
                             # shellcheck disable=SC2086
                             "$PYTHON_CMD" scripts/pipeline.py --task draft --question "$draftq" \
@@ -264,7 +264,7 @@ while true; do
                         rm -f "$WIZ_FLAGS_FILE"
                         echo
                         echo "Running the review ..."
-                        echo "(Add --help for all options.)"
+                        echo "(For every command-line option, run: $VENV_BIN/python scripts/pipeline.py --help)"
                         # WIZ_FLAGS is intentionally unquoted: it word-splits into separate
                         # simple flag tokens (no spaces within any token).
                         # The wizard already emitted --backend-profile into

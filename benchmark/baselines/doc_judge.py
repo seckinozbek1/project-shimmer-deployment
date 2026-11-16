@@ -92,6 +92,15 @@ changes.
 A choice row of the measurement also carries `tie`, `declared_mass` and `logits_dtype`, and the
 measurement counts `ties`, so the mass and the ties can be read without opening a reply record.
 
+Reasoning methods (D-713, reasoning_methods.py). A choice config may declare `choice.methods`
+(reason_first, stepwise) and a model group picks one by `method`; with none, or `direct`, a prompt
+is the one question above. A method's prompt runs a chain of calls on the same backend: each step's
+output checked by Python before the next, the label always decided over the form's own answers.
+Every call is one reply record, the chain's last in the pass folder (one per prompt, as the runner
+counts) and the earlier ones in <pass>/method_steps; the row carries `method`, `steps` (names,
+checks, counts and probabilities, no text) and, when a step's check refused, `method_refused`, the
+prompt then having no decision. An order control is asked on the direct form only.
+
 A group naming its model may also declare `adapter` {path, weights_sha256, config_sha256}: a LoRA
 adapter applied at load (bare_model.apply_adapter) on any form, so a trained judge is a change to the
 config alone (D-S42). The path is read on the machine that runs the pass, against the project when
@@ -254,6 +263,11 @@ def check_config(value):
     choice = value.get("choice")
     if choice is not None:
         _check_choice(choice, groups)
+    if choice is not None or any("method" in g for g in groups):
+        # D-713: a group's reasoning method and the methods block it names (reasoning_methods.py);
+        # a config with neither is read exactly as before.
+        import reasoning_methods
+        reasoning_methods.check(choice, groups)
     if pair is None and choice is None and any("model_id" in g for g in groups):
         j1 = value.get("j1")
         if not (isinstance(j1, dict) and isinstance((j1.get("b1_direct") or {}).get("from"), str)
@@ -593,6 +607,8 @@ def load_prompts(path):
         elif p.get("form") == CHOICE_FORM:
             if p.get("choice") not in ((config.get("choice") or {}).get("forms") or {}) or p.get("max_new_tokens") != 0:
                 raise ValueError("a choice prompt names a declared form and generates nothing: " + str(p.get("prompt_id")))
+            if p.get("order_control") is True and g.get("method", "direct") != "direct":
+                raise ValueError("an order control is asked on the direct form only (D-713): " + str(p.get("prompt_id")))
             user, system = choice_user(config, doc, p), None
         else:
             user = render_user(config, document=doc["text"], rule_text=str(p.get("rule_text")))
@@ -644,6 +660,7 @@ def run(prompts_path, out, *, paths=(PATH,), decision=None, max_new_tokens=None,
     import final_models
     import reply_records
     import decoding_policy
+    import reasoning_methods
     if list(paths) != [PATH]:
         raise ValueError("a G1 pass runs the %s path alone (sdpa pinned, one shot, D-063)" % PATH)
     if max_new_tokens is not None:
@@ -719,13 +736,30 @@ def run(prompts_path, out, *, paths=(PATH,), decision=None, max_new_tokens=None,
                        "failure": None, "reply": None, "output_tokens": None, "seconds": None,
                        "length_reached_allowance": None}
                 result, error = {}, ""
+                # D-713: a group's reasoning method runs its chain in place of the one question
+                # (reasoning_methods.py); `direct`, the default, is the line below it unchanged.
+                chain = (reasoning_methods.method_of(group) if p.get("form") == CHOICE_FORM else reasoning_methods.DIRECT)
+                steps = []
                 if window["over_context"]:
                     row["failure"] = error = "prompt_over_context"
                 else:
                     started = time.perf_counter()
                     try:
-                        result = (backend.choose(system, p["user"], choice_answers(config, p)) if p.get("form") == CHOICE_FORM
-                                  else backend.generate(system, p["user"], allowance)) or {}
+                        if chain != reasoning_methods.DIRECT:
+                            row["method"] = chain
+                            kind, values = reasoning_methods.slots(config, value["documents"][p["document_id"]], p)
+                            ran = reasoning_methods.run_method(
+                                chain, config, kind, values, steps=steps,
+                                generate=lambda u, n: backend.generate(system, u, n),
+                                choose=lambda u, a: backend.choose(system, u, a),
+                                fits=lambda u, n: int(backend.count_prompt(system, u)) + n <= int(limit))
+                            result = ran["final"] or {}
+                            if ran["refused"]:
+                                row["method_refused"] = ran["refused"]
+                                error = "method_refused: %s %s" % (ran["refused"]["step"], ran["refused"]["reason"])
+                        else:
+                            result = (backend.choose(system, p["user"], choice_answers(config, p)) if p.get("form") == CHOICE_FORM
+                                      else backend.generate(system, p["user"], allowance)) or {}
                     except Exception as exc:
                         kind = failure_kind(exc)
                         if kind is None:
@@ -735,6 +769,29 @@ def run(prompts_path, out, *, paths=(PATH,), decision=None, max_new_tokens=None,
                         if cuda is not None:
                             cuda.empty_cache()
                     row["seconds"] = round(time.perf_counter() - started, 3)
+                if steps:
+                    # Every call of the chain is one reply record: the earlier steps' in
+                    # <pass>/method_steps, the last one's in the pass folder as the prompt's own, so
+                    # the runner's one record per prompt holds. A refused step keeps no decision.
+                    side = bare_model.RunContext(out / reasoning_methods.STEPS_DIR, context.run_id)
+                    row["steps"] = []
+                    for entry in steps[:-1]:
+                        done = entry["result"] or {}
+                        step_call = reply_records.write(
+                            side, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
+                            model_mode=reader["model_mode"], payload=done.get("payload"), payload_form=done.get("form"),
+                            reply=done.get("text") if isinstance(done.get("text"), str) else None, ok=True, error="",
+                            decoding=dict(decoding, max_new_tokens=entry["allowance"]), sensitive=False, phase=PHASE,
+                            doc_id=p["document_id"], attention=done.get("attention") or declared, prefill=done.get("prefill"),
+                            decision=done.get("decision"))
+                        if not step_call:
+                            raise RuntimeError("the reply record of a method step of prompt %s could not be written" % p["prompt_id"])
+                        row["steps"].append(dict(reasoning_methods.step_row(entry), call_id=step_call))
+                    row["steps"].append(reasoning_methods.step_row(steps[-1]))
+                    allowance = steps[-1]["allowance"]      # the last call's own, read for its reply below
+                    decoding = dict(decoding, max_new_tokens=allowance)
+                    if row.get("method_refused"):
+                        result = dict(steps[-1]["result"] or {}, decision=None)
                 text = result.get("text") if isinstance(result.get("text"), str) else None
                 if text is not None:
                     row["reply"] = {"sha256": _sha(text), "length_bytes": len(text.encode("utf-8"))}

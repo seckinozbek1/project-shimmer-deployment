@@ -82,6 +82,11 @@ section M (a dated copy of an earlier README).
 
 It does:
 
+- Read PDF, HTML and text files and say what it read of each: a PDF's
+  annotations with their author, HTML insertions and deletions apart from the
+  main text, and what it could not read (a PDF's structure, a scan with no text
+  layer, a file that is not valid UTF-8). A file that gives no text is listed as
+  an empty input in the run summary, never reviewed as if it were empty.
 - Split each document into units (for example its sections) and decide which of
   the operator's rules could apply to which unit. This is the pairing map.
 - Compute in Python every comparison it can: sums, products, bands, missing
@@ -99,6 +104,12 @@ It does:
   redaction is on).
 - Produce a JSON review record (`review_data.json`), Markdown summaries and a Word
   file with tracked changes, in English or Turkish.
+- Say, for every document it reads, which layers it read and which it found and
+  could not read, with counts: for a Word file its tracked insertions and
+  deletions with their authors, comments, footnotes and endnotes are read apart,
+  and content controls, text boxes, nested tables and headers are counted. The
+  record is printed when the document is loaded and written into
+  `_run_summary.md`. A sum over a table column with merged cells is refused.
 
 It does not:
 
@@ -415,7 +426,9 @@ failure). Each run records the setting, and whether it was the default, in
 Under the local backend profile nothing in Shimmer reaches the web: the search
 router refuses every web lookup, and the run summary and the console say so. Web
 access opens only under the cloud profile, and only for agents whose registry entry
-allows it.
+allows it. This is a rule about what the product sends, not about where it runs: a
+local-profile run on a rented machine refuses the web exactly as one on the laptop
+(gate checks 502 and 503).
 
 4. Read the results in `output/runs/<UTC time>__<run id>/deliverables/`: one folder per
    document, plus `_run_summary.md`. `docs/OUTPUT_FORMAT.md` describes the run
@@ -438,7 +451,8 @@ allows it.
   The local backend's models come from its local profile, which
   `config/local_models.json` can override.
 - The backend. With no backend named, a command-line run, the server and the preflight use
-  Local (models on this machine; `SHIMMER_BACKEND_PROFILE` unset means `local`, and only the
+  Local (models inside Shimmer's own run and nothing sent to the internet, whether the run is on
+  this machine or on a rented one; `SHIMMER_BACKEND_PROFILE` unset means `local`, and only the
   exact value `cloud` chooses Cloud, so an empty or unknown value is Local and keeps the web
   closed). The desktop starter and the import wizard make you choose, the menu launchers take
   Local when you press Enter (C chooses Cloud), and `tools/run_local_demo.py` adds Local.
@@ -469,7 +483,12 @@ Shimmer registers 19 agents, each with one job (for example PROCESSOR extracts,
 VERIFIER checks the draft against the source, PRACTICE_AUDITOR checks the
 operator's rules, JUDGE answers narrow questions from the model's own
 probabilities, REDACTOR applies redaction rules, and six editorial ranks give
-advisory review). No shipped rule gives JUDGE a task yet. Not every agent is called in every run: an agent can be
+advisory review). No shipped rule gives JUDGE a task yet. A table tool request
+for JUDGE is built but off: once its amendment (approved in advance) is applied,
+JUDGE may ask Python once per claim and table for a few registered, vetted table
+tools (`config/table_tools.json`), none of which reaches the internet; until then
+a run that declares it refuses to start.
+Not every agent is called in every run: an agent can be
 withheld by configuration or skipped when its input is missing, and each call or
 skip is recorded. The
 [runtime reference](docs/RUNTIME_REFERENCE.md) has the full table, with each
@@ -477,7 +496,10 @@ agent's provider and local models.
 
 ## Privacy (LAW-IV)
 
-LAW-IV says that sensitive content must stay on local hardware. Today Shimmer
+LAW-IV says that sensitive content must stay on local hardware, the operator's own
+machine. That is the one place where the privacy rule also decides where work runs;
+it is apart from the local backend profile above, which decides what a run may send
+to the internet wherever it runs. Today Shimmer
 enforces that by refusing, not by masking. The masking layer
 (`scripts/sensitivity_layer/`) is built and wired but switched off
 (`LAYER_ACTIVE = False`). While it is off, the console refuses a Sensitive
@@ -545,9 +567,12 @@ py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder
   (`tools/ordinary_final_bound_cloud.py`), which refuses a launch the budget
   cannot carry. The [cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md)
   describes it.
-- The run folders behind the results page are kept outside version control and
-  are not published, so the published figures can be re-scored only where those
-  folders are.
+- The run folders behind the results page were kept outside version control and
+  were not published. Most of them were lost in a data loss on the build machine
+  on 16 November 2026 (D-704): the older development figures can no longer be
+  re-scored, and only their recorded results remain. The sealed sets, the gate
+  set and the 12 November leakage fingerprint were recovered and checked against
+  their recorded digests (D-705).
 
 ## Development and validation
 

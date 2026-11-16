@@ -45,6 +45,14 @@ carries a settled "not met" decision, whether Python kept its record or refused 
 one, a reading that would be CLEAR is a conflict, ABSTAIN. Python's-records-alone (S-8) reads no
 decision: a decision is the model's.
 
+Leanings (TABLE-AUTHORITY-A, D-646, D-670). A cell decision row may carry `leaning` ("holds" or "not
+met"): an unsettled verdict kept below its threshold, or a settled one Python's sub-steps lowered.
+With leanings, the reading this mode scores, a leaning gives its unit `holds` or `violates` and the
+row is marked `low_confidence` when a leaning stands among its deciding units or moved its class.
+Without leanings, the figure every report gives beside it (`class_without_leanings`), a leaning is
+`uncertain`, as an unsettled decision always was. A row with no `leaning` field reads exactly as
+before, so a run made before the rule scores the same under both.
+
 Anything else is ABSTAIN: `dev_not_established` (kept claims that settle no class),
 `dev_conflict`, or `dev_silence` when the item has no kept claim at all. A silence row is
 never a detection: it is ABSTAIN, and the label v2_primary would give it is kept on the row
@@ -71,6 +79,11 @@ HOLDS, VIOLATES, LACKS, UNCERTAIN = "holds", "violates", "lacks", "uncertain"
 # answer (config/cell_selection.json), held equal by the adapter checks' `detection` group; copied
 # because the adapters import nothing from the repository.
 CELL_CLAIMS_KEY, CELL_DECISIONS_KEY, CELL_HOLDS_LABEL = "cell_claims", "decisions", "holds"
+CELL_NOT_MET_LABEL = "not met"
+# TABLE-AUTHORITY-A's leaning on a cell decision row (scripts/cell_selection.py `_row`), held equal by
+# check 482; copied because the adapters import nothing from the repository.
+CELL_LEANING_KEY = "leaning"
+CELL_LEANABLE = (CELL_HOLDS_LABEL, CELL_NOT_MET_LABEL)
 STATES = (HOLDS, VIOLATES, LACKS, UNCERTAIN)
 EXISTS, EACH, THREE_WAY = "exists", "each", "three_way"
 SOME, EVERY = "some", "every"
@@ -163,27 +176,43 @@ def cell_decisions(run_dir, document_id) -> list:
             if (isinstance(decision, dict) and decision.get("unit_id")
                     and isinstance(decision.get("settled"), bool)):
                 out.append({"rule_id": row["rule_id"], "unit_id": str(decision["unit_id"]),
-                            "settled": decision["settled"], "decided": decision.get("decided")})
+                            "settled": decision["settled"], "decided": decision.get("decided"),
+                            CELL_LEANING_KEY: (decision.get(CELL_LEANING_KEY)
+                                               if decision.get(CELL_LEANING_KEY) in CELL_LEANABLE else None)})
     return out
 
 
-def cell_state(decision):
+def cell_state(decision, with_leanings=True):
     """The state one cell decision gives its unit (D-472): `uncertain` when it was not settled,
     `holds` when settled as the holding answer, None otherwise (a settled "not met" speaks
-    through its record alone)."""
+    through its record alone). A leaning (TABLE-AUTHORITY-A) gives `holds` or `violates` with
+    leanings and `uncertain` without them."""
+    leaning = decision.get(CELL_LEANING_KEY)
+    if leaning in CELL_LEANABLE:
+        if not with_leanings:
+            return UNCERTAIN
+        return HOLDS if leaning == CELL_HOLDS_LABEL else VIOLATES
     if not decision["settled"]:
         return UNCERTAIN
     return HOLDS if decision["decided"] == CELL_HOLDS_LABEL else None
 
 
-def cell_claims(rule_id, run) -> list:
+def cell_claims(rule_id, run, with_leanings=True) -> list:
     """[(unit id, state)] of the item's rule from the run's cell decisions."""
     rid = mapping._fold(rule_id)
     out = []
     for decision in run.get("cell_decisions") or []:
-        if mapping.names_rule(decision, rid, run) and cell_state(decision):
-            out.append((decision["unit_id"], cell_state(decision)))
+        state = cell_state(decision) if with_leanings else cell_state(decision, False)
+        if mapping.names_rule(decision, rid, run) and state:
+            out.append((decision["unit_id"], state))
     return out
+
+
+def cell_leaning_units(rule_id, run) -> set:
+    """The folded units whose cell decision of the item's rule carries a leaning."""
+    rid = mapping._fold(rule_id)
+    return {str(d["unit_id"]).casefold() for d in run.get("cell_decisions") or []
+            if mapping.names_rule(d, rid, run) and d.get(CELL_LEANING_KEY) in CELL_LEANABLE}
 
 
 def cell_not_met(rule_id, run) -> list:
@@ -291,7 +320,22 @@ def silence_result(v2_primary) -> tuple:
 
 def classify(spec, rule_id, run, units, rule_count=1, reading=None) -> dict:
     """One item under detection_dev: class, basis, decided_by, the deciding units and
-    records, the unit-state counts, and the v2_primary class beside it."""
+    records, the unit-state counts, and the v2_primary class beside it. With leanings, the
+    class scored; `class_without_leanings` and `basis_without_leanings` beside it, and
+    `low_confidence` when a leaning decided or moved it (TABLE-AUTHORITY-A, D-646)."""
+    out = _classify(spec, rule_id, run, units, rule_count, reading, True)
+    deciding = out.pop("_deciding_units", [])
+    leaning_units = cell_leaning_units(rule_id, run)
+    if not leaning_units:
+        return dict(out, class_without_leanings=out["class"], basis_without_leanings=out["basis"], low_confidence=False)
+    plain = _classify(spec, rule_id, run, units, rule_count, reading, False)
+    if out.get("detection") is not None:
+        out["detection"]["cell_leanings"] = len(leaning_units)
+    low = plain["class"] != out["class"] or bool(set(deciding) & leaning_units)
+    return dict(out, class_without_leanings=plain["class"], basis_without_leanings=plain["basis"], low_confidence=low)
+
+
+def _classify(spec, rule_id, run, units, rule_count, reading, with_leanings) -> dict:
     reading = reading or reading_of(spec)
     shipped = mapping.classify(spec, rule_id, run, rule_count)
     out = {"v2_primary_class": shipped["class"], "v2_primary_basis": shipped["basis"],
@@ -304,7 +348,7 @@ def classify(spec, rule_id, run, units, rule_count=1, reading=None) -> dict:
     no_state = [r for r in kept if no_state_ok(reading, r)]
     claims = [r for r in kept if record_state(r) is not None and not no_state_ok(reading, r)]
     states, unplaced = unit_states(claims, units)
-    cells = cell_claims(rule_id, run)
+    cells = cell_claims(rule_id, run) if with_leanings else cell_claims(rule_id, run, False)
     for unit, state in cells:
         if unit.casefold() in states:
             states[unit.casefold()].add(state)
@@ -334,7 +378,7 @@ def classify(spec, rule_id, run, units, rule_count=1, reading=None) -> dict:
     deciding = [r for r in claims if str(r.get("unit_id") or "").casefold() in wanted]
     out["cited_unit_ids"] = sorted(wanted) if cls == mapping.FLAG else []
     out["layer"] = mapping._layer(deciding)
-    return dict(out, **{"class": cls, "basis": basis, "decided_by": KEPT_CLAIM})
+    return dict(out, **{"class": cls, "basis": basis, "decided_by": KEPT_CLAIM, "_deciding_units": sorted(wanted)})
 
 
 # ---------------------------------------------------------------------------
@@ -348,7 +392,11 @@ def _dev_row(spec, row, result) -> dict:
                 "layer": result["layer"], "faults": result["faults"],
                 "decided_by": result["decided_by"], "v2_primary_class": result["v2_primary_class"],
                 "v2_primary_basis": result["v2_primary_basis"],
-                "silence_label": result["silence_label"], "detection": result["detection"]})
+                "silence_label": result["silence_label"], "detection": result["detection"],
+                "class_without_leanings": result["class_without_leanings"],
+                "label_without_leanings": spec.label(result["class_without_leanings"]),
+                "basis_without_leanings": result["basis_without_leanings"],
+                "low_confidence": result["low_confidence"]})
     return row
 
 
@@ -457,7 +505,11 @@ def dev_counts(rows) -> dict:
             "kept_claim_conflict": sum(1 for r in rows if r["basis"] == CONFLICT),
             "silence_rows": sum(1 for r in rows if r.get("decided_by") == SILENT),
             "ok_contradiction_no_state": sum(int(((r.get("detection") or {}).get("ok_contradiction_no_state")) or 0)
-                                             for r in rows)}
+                                             for r in rows),
+            # TABLE-AUTHORITY-A (D-646): rows a leaning decided or moved, and rows whose class
+            # without leanings differs, so the figure without them can be read beside.
+            "low_confidence_rows": sum(1 for r in rows if r.get("low_confidence")),
+            "moved_by_leanings": sum(1 for r in rows if r.get("class_without_leanings", r["class"]) != r["class"])}
 
 
 # The counts of mapping._labels that describe the v2_primary DECISION of an item (its basis
@@ -575,7 +627,7 @@ def report(labels: dict, bundles_dir) -> dict:
     gold label, with how many of their silence labels equal the gold. Never added to any
     measure."""
     answers, _documents = metrics.read_gold(bundles_dir)
-    kept, silent = {}, {}
+    kept, silent, plain, low = {}, {}, {}, {"items": 0, "equal_to_gold": 0}
     matched_silence = 0
     for row in labels["labels"]:
         gold = answers[row["item_id"]]["gold"]
@@ -583,6 +635,16 @@ def report(labels: dict, bundles_dir) -> dict:
             slot = kept.setdefault(row["label"], {"items": 0, "equal_to_gold": 0})
             slot["items"] += 1
             slot["equal_to_gold"] += int(row["label"] == gold)
+            if row.get("low_confidence"):
+                low["items"] += 1
+                low["equal_to_gold"] += int(row["label"] == gold)
+        # TABLE-AUTHORITY-A (D-646): the same labels without leanings, beside, never instead.
+        without = row.get("class_without_leanings", row["class"])
+        if row.get("decided_by") in (KEPT_CLAIM, ANSWER) and without != mapping.ABSTAIN:
+            label = row.get("label_without_leanings", row["label"])
+            slot = plain.setdefault(label, {"items": 0, "equal_to_gold": 0})
+            slot["items"] += 1
+            slot["equal_to_gold"] += int(label == gold)
         elif row.get("decided_by") == SILENT:
             silent[gold] = silent.get(gold, 0) + 1
             matched_silence += int(row.get("silence_label") == gold)
@@ -592,4 +654,8 @@ def report(labels: dict, bundles_dir) -> dict:
             "silence": {"rows": sum(silent.values()), "by_gold": dict(sorted(silent.items())),
                         "silence_label_equal_to_gold": matched_silence,
                         "note": "silence rows are ABSTAIN in every measure; never counted as a detection"},
-            "decided_by": dev_counts(labels["labels"])["decided_by"]}
+            "decided_by": dev_counts(labels["labels"])["decided_by"],
+            # TABLE-AUTHORITY-A (D-646): what a leaning decided, labelled low-confidence, and the
+            # labels without leanings beside every report.
+            "low_confidence": low,
+            "labels_from_claims_without_leanings": dict(sorted(plain.items()))}

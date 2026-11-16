@@ -36,6 +36,7 @@ from pathlib import Path
 import choice_decision
 import paired_review
 import pairing_map
+import sentence_split
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "passage_pairs.json"
 COMPARE_PASSAGES = "passages"
@@ -47,11 +48,10 @@ NO_THRESHOLD_WHY = "no_threshold"
 DECISION_NOTE = ("Decided from the model's own answer probabilities; it wrote no text. In both orders: %s, confidence %.3f and %.3f; "
                  "the fixed answers held at least %.3f of its probability.")
 
-# A sentence ends at . ! or ?, with any closing quote or bracket, before white space and a
-# capital, a digit or an opening quote or bracket. Scripts without capitals end at the line.
-_CLOSING = re.escape("\"')]" + chr(0x201D) + chr(0x2019))
-_OPENING = re.escape("\"'([" + chr(0x201C) + chr(0x2018))
-_END = re.compile(r"(?<=[.!?])[" + _CLOSING + r"]*\s+(?=[" + _OPENING + r"]?[^\W\d_a-z]|\d)")
+# Where a sentence ends is decided by its form in any script (scripts/sentence_split.py, D-668):
+# a full stop, question or exclamation mark or danda of any script, before white space and a
+# letter that is not lowercase or a digit, or a wide stop at once. For ASCII text these are the
+# ends the old `.`, `!`, `?` pattern found.
 _NOT_PROSE = re.compile(r"^\s*(#|\||[-=_*]{3,}\s*$)")
 MIN_WORDS = 4          # a shorter stretch joins the next: an abbreviation's stop, not a sentence
 _FIGURE = re.compile(r"\d[\d,.]*")
@@ -65,29 +65,41 @@ _ESCAPE = re.compile(r'\\(["\\/bfnrtu])|\\')
 
 
 def _words(text):
-    return [w for w in re.split(r"[\W_]+", str(text or "").lower()) if w]
+    return pairing_map.words(text, join_hyphens=False)
 
 
 def passages(text):
     """[{index, start, end, text}] in order: the sentences of every prose line of `text`."""
-    out = []
+    return passages_read(text)[0]
+
+
+def passages_read(text):
+    """(passages, not_split): `passages` as `passages` gives them; `not_split` the stretches of
+    more than sentence_split.LONGEST characters in which Python found no sentence end,
+    [{start, end, characters, reason}], offsets and counts only (READING-A: refused on the
+    record, never handed on as one sentence)."""
+    out, refused = [], []
     position = 0
     for line in str(text or "").splitlines(keepends=True):
         begin, position = position, position + len(line)
         if not line.strip() or _NOT_PROSE.match(line):
             continue
-        cuts = [0] + [m.end() for m in _END.finditer(line)] + [len(line)]
+        cuts = [0] + sentence_split.ends(line) + [len(line)]
         held, first = None, len(out)
         for a, b in zip(cuts, cuts[1:]):
             start = a if held is None else held
-            if len(_words(line[start:b])) < MIN_WORDS and b < len(line):
+            if sentence_split.size(line[start:b]) < MIN_WORDS and b < len(line):
                 held = start
                 continue
             held = None
             piece = line[start:b]
             lead = len(piece) - len(piece.lstrip())
             piece = piece.strip()
-            if len(_words(piece)) >= MIN_WORDS:
+            why = sentence_split.refusal(piece)
+            if why:
+                refused.append({"start": begin + start + lead, "end": begin + start + lead + len(piece),
+                                "characters": len(piece), "reason": why})
+            elif sentence_split.size(piece) >= MIN_WORDS:
                 out.append({"index": len(out), "start": begin + start + lead,
                             "end": begin + start + lead + len(piece), "text": piece})
             elif piece and len(out) > first:
@@ -95,7 +107,7 @@ def passages(text):
                 last = out[-1]
                 last["end"] = begin + start + lead + len(piece)
                 last["text"] = str(text)[last["start"]:last["end"]]
-    return out
+    return out, refused
 
 
 def _tokens(text):
@@ -363,12 +375,16 @@ def outbound(wrapper, text, context=""):
     return stable, dynamic
 
 
-def document_passages(units):
-    """Every unit's passages, in unit order, each carrying its unit id."""
+def document_passages(units, not_split=None):
+    """Every unit's passages, in unit order, each carrying its unit id. A list passed as
+    `not_split` receives every stretch Python could not split (passages_read), with its unit id."""
     out = []
     for unit in units:
-        for item in passages(unit.get("text")):
+        items, refused = passages_read(unit.get("text"))
+        for item in items:
             out.append(dict(item, index=len(out), unit_id=unit.get("unit_id")))
+        if not_split is not None:
+            not_split.extend(dict(row, unit_id=unit.get("unit_id")) for row in refused)
     return out
 
 
@@ -402,9 +418,9 @@ def prepare(units, config, embed_with=None):
     passages, their one encoding and their pairs. Above the declared `max_passages` nothing is
     encoded and no pair proposed, and every rule's row says so."""
     prepared = {"units": units, "items": [], "pairs": [], "ranked_by": None, "raised": None,
-                "context": "\n\n".join(str(u.get("text") or "") for u in units)}
+                "not_split": [], "context": "\n\n".join(str(u.get("text") or "") for u in units)}
     try:
-        prepared["items"] = items = document_passages(units)
+        prepared["items"] = items = document_passages(units, prepared["not_split"])
         if not too_many(items, config):
             vectors = (embed_with or embed)(items) if items else None
             prepared["ranked_by"] = "embedding" if vectors else "words"
@@ -500,6 +516,10 @@ def review(prepared, rule, source_rule_id, ask, config, memo=None, fields_presen
     calls = {"passages": len(items), "pairs": 0, "made": 0, "reused": 0, "failed": 0, "unreadable": 0,
              "one_order_only": 0, "failed_beside_flag": 0, "cross_unit_kept": 0, "refused": [],
              "ranked_by": prepared["ranked_by"], "stopped": None, "raised": prepared["raised"], "not_asked": None}
+    if prepared.get("not_split"):
+        # READING-A (D-668): the stretches no sentence end was found in, by unit and offset; the
+        # key stands only when there is one, so every other row is as it was
+        calls["not_split"] = list(prepared["not_split"])
     decided = deciding(config)
     if decided:
         calls.update(form=DECISION_FORM, unsettled=0, decisions=[], decision_notes={})

@@ -1,0 +1,115 @@
+{
+  "schema": "neg-synth-config-v1",
+  "purpose": "Declared distributions, constraints, screens and the split plan of the synthetic negotiation items (standing order 102, D-707; docs/loop/stages/NEG_SYNTH_PIPELINE.md). Synthetic items are for development sets, the validation set and the pilots only, never the final test. Every name, subject and wording pool below is invented and declared here, never in code (checks 22 and 174).",
+  "item": {
+    "part": "P",
+    "post_cutoff": false,
+    "post_cutoff_reason": "the synthetic flag carries an invented item; post_cutoff stays the contamination mark of real items",
+    "terms_text": "synthetic item: invented text written by a language model from a sampled structure (D-707); no third-party source, no terms of use apply",
+    "attribution_text": "synthetic, Project Shimmer (D-707); invented parties, agreement and wording",
+    "source_note": "Synthetic item (D-707): invented text written by a language model from a sampled structure; no third-party source. Development, validation and pilot sets only, never the final test.",
+    "process_prefix": "synthetic process"
+  },
+  "pools": {
+    "single_names": ["Arvenia", "Belmora", "Corvath", "Dalrene", "Estova", "Ferrland", "Galdovar", "Hesmark",
+                     "Ilvany", "Jortha", "Kelvaro", "Lumetia", "Morvane", "Norcasta", "Ostrelia", "Pellandor"],
+    "coalition_names": ["Coastal Partners", "Upland Circle", "Open Waters Group", "Eastern Shelf Alliance",
+                        "Small Islands Forum", "Northern Rim Group", "River Basin Union", "Southern Arc Group"],
+    "subjects": ["a shared early warning system for cross-border floods",
+                 "the exchange of observation data on retreating glaciers",
+                 "the reduction of orbital debris from national launches",
+                 "protected corridors for migratory birds",
+                 "joint monitoring of smoke from large wildfires",
+                 "the management of a shared underground water body",
+                 "common rules for drifting fishing gear recovery",
+                 "a joint reserve of emergency shelter materials",
+                 "the protection of deep sea coral areas",
+                 "shared standards for coastal erosion maps"]
+  },
+  "distributions": {
+    "round_k": {"1": 0.25, "2": 0.30, "3": 0.25, "4": 0.20},
+    "parties": {"2": 0.20, "3": 0.35, "4": 0.30, "5": 0.15},
+    "coalition_share": 0.30,
+    "bracketed_articles": {"2": 0.30, "3": 0.40, "4": 0.30},
+    "closed_articles": {"1": 1.0},
+    "new_article_share": 0.50,
+    "proposals_per_article": {"1": 0.30, "2": 0.50, "3": 0.20},
+    "other_round_articles": {"2": 0.25, "3": 0.35, "4": 0.25, "5": 0.15},
+    "dropped_article_share": 0.50,
+    "article_id_range": [1, 30],
+    "slot_share": 0.70,
+    "proposal_level_share": 0.60,
+    "closed_slot_share": 0.35,
+    "min_articles_per_party": 2,
+    "resolved_share": 0.33,
+    "resolved_split": {"kept": 0.55, "changed": 0.45},
+    "unresolved_split": {"open": 0.55, "removed": 0.45},
+    "whole_article_removed_share": 0.10,
+    "stances_bracketed": {"support": 0.50, "oppose": 0.50},
+    "stances_closed": {"accept": 0.60, "support": 0.40},
+    "red_line_share": 0.50,
+    "firm_variant_other_parties_share": 0.20,
+    "trade_share": 0.30
+  },
+  "record_kinds": {
+    "decision": "D-711 (Seckin 16 November 2026 20:40): every set holds complete-record items and missing-notes items; a missing-notes item has one party whose notes are not on record, its key answer not_stated, never the persona",
+    "kinds": ["complete", "missing_notes"],
+    "rule": "the kind alternates with the seed (seed modulo the number of kinds), so every set's draws hold both about half and half",
+    "missing_parties": 1
+  },
+  "constraints": {
+    "min_conflict": 1,
+    "min_no_conflict": 1,
+    "min_movable": 1,
+    "min_settled": 1,
+    "min_red_line": 1,
+    "max_hidden_attempts": 200,
+    "excerpt_articles": [3, 6],
+    "rounds": [1, 5],
+    "movable_fates": ["open", "changed"],
+    "settled_fates": ["kept", "removed"],
+    "batch_min_per_class": {"fate": 2, "red_line_outcome": 1, "conflict": 2, "m10": 2, "record_kind": 2}
+  },
+  "labeller": {
+    "decision": "D-706 item 1: role V's labeller is an open-weight model of a family Shimmer does not use, run on Lambda",
+    "family": "olmo",
+    "reason": "OLMo (AI2): Apache-2.0 weights, not gated, so no Hugging Face token reaches the rented machine (credentials never leave the laptop); its training data is public, so a contamination question can be checked rather than assumed; a family Shimmer runs nowhere (its local agents are Qwen and Phi, its api profile Claude and GPT) and not the generator's (Claude), so the labeller does not favour its own family's text; a 7B instruct model fits an A10. Llama and Gemma both need accepted terms and a token.",
+    "candidates": ["allenai/Olmo-3-7B-Instruct", "allenai/OLMo-2-1124-7B-Instruct"],
+    "candidates_rule": "read live on the instance: the first candidate whose repository exists, is not gated and states Apache-2.0 terms is used; its exact revision is recorded; none resolving refuses the run",
+    "terms_required": "apache-2.0",
+    "families_never_labeller": ["qwen", "phi", "claude", "gpt"],
+    "decoding": {"do_sample": false, "max_new_tokens": 96},
+    "template": "config/neg_synth_labeller.json"
+  },
+  "generation": {
+    "template": "config/neg_synth_generator.json",
+    "generator_family": "claude",
+    "families_never_generator": ["qwen", "phi"],
+    "decoding_note": "recorded as given by role S; the generator runs with no file, shell or web tool",
+    "word_bands": {"title": [1, 8], "agreed_text": [25, 90], "chapeau": [8, 30], "wording": [10, 40],
+                   "revision": [10, 45], "statement": [8, 45]},
+    "revision_share_band": [0.30, 0.70],
+    "variants": {"support": "in_favour", "oppose": "against", "firm": "firm_limit", "accept": "accepting"}
+  },
+  "screens": {
+    "dedup": {"run_words": 8, "jaccard": 0.5, "jaccard_min_words": 20, "cosine": 0.90, "short_min_words": 4,
+              "within_set_cosine": 0.90},
+    "cue": {"baseline": "permutation",
+            "baseline_decision": "D-714 (Seckin 16 November 2026 20:54): the label-permutation null rejects a batch; the majority-class figure and flag stay reported beside it as information only",
+            "permutations": 5, "folds": 5, "margin": 0.10, "bootstrap": 1000,
+            "seed": 20261116, "epochs": 30, "rate": 0.5,
+            "l2": 0.001, "targets": ["fate", "conflict", "m10"]}
+  },
+  "split": {
+    "rule": "Seeds are a base drawn once at run time by role S (seed-base) plus each set's offset range; the base stays in role S's folder and is never shown, so no one outside role S learns which seed went to which set. Each set draws `drawn` seeds and keeps the first `target` items, in seed order, that pass the validator, the deduplication and the labeller; the rest are counted, never used. Ranges never overlap. Each pilot is read once and then joins development (D-671). No synthetic item enters the final test (D-707).",
+    "sets": [
+      {"name": "dev_1", "purpose": "development", "target": 40, "drawn": 80, "offset": 0},
+      {"name": "dev_2", "purpose": "development", "target": 40, "drawn": 80, "offset": 1000},
+      {"name": "dev_3", "purpose": "development", "target": 40, "drawn": 80, "offset": 2000},
+      {"name": "validation", "purpose": "validation", "target": 40, "drawn": 80, "offset": 10000},
+      {"name": "pilot_1", "purpose": "pilot", "target": 24, "drawn": 48, "offset": 20000},
+      {"name": "pilot_2", "purpose": "pilot", "target": 24, "drawn": 48, "offset": 21000}
+    ],
+    "refused_purposes": ["final", "test", "final_test"]
+  }
+}

@@ -433,8 +433,8 @@ kind; the files under files/ are copies of what the saved runs wrote.
 Shimmer demosu: kurulum yok, kayıtlı örnekler
 =============================================
 
-index.html dosyasını bir web tarayıcısında açın (Windows'ta open_demo.bat
-dosyasına çift tıklayın). Sayfa iki gösterim örneğinin kayıtlı sonuçlarını
+index.html dosyasını bir web tarayıcısında aç (Windows'ta open_demo.bat
+dosyasına çift tıkla). Sayfa iki gösterim örneğinin kayıtlı sonuçlarını
 gösterir: biri kurgusal, biri kamuya açık bir BM metni. Bunlar kıyaslama kanıtı
 değildir. Hiçbir şey çalışmaz: model, internet bağlantısı, anahtar ya da parola
 kullanılmaz. Sayfa hiçbir istek yapmaz; files/ altındaki dosyalar kayıtlı

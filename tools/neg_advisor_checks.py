@@ -12,7 +12,8 @@ machine and no item: every proof runs on fixtures written here, invented, about 
 8. C-mandate refuses accepting a red-line conflict unless a trade gives it.
 9. A claim is shown only when the BCa and jackknife bounds and the permutation p agree.
 10. A1 is a claim only when its power record says so; otherwise never shown.
-11. The scorer refuses without a committed opening line naming the set and configuration.
+11. The scorer refuses without a committed opening line naming the set and configuration; a third opening only
+    for the one set D-710 names (the old pilot of the opening ledger), never a fourth.
 12. A prompts file holds every prompt to its rendering.
 13. The system's audit prompts are derived from its advice, and answers hold each to the pass's SHA-256.
 14. The run gives every piece of the system's advice its audit, with a stub backend.
@@ -32,7 +33,8 @@ machine and no item: every proof runs on fixtures written here, invented, about 
 26. Bar line 1: at least 10 points over B1 and the interval's lower bound above zero.
 27. An item over the 24,000-token budget refuses the build before anything is written.
 28. Every item carries its terms of use and attribution; SOURCE.md is in the frozen set's digest.
-29. Each opening's power record carries that opening's alpha (0.025, then 0.0125).
+29. Each opening's power record carries that opening's alpha (0.025, then 0.0125, then 0.00625 for D-710's third
+    opening of the old pilot alone, an indicator whatever its power).
 30. score refuses a judge or validator pass that did not load JUDGE's registry model (Phi-3.5 in either).
 31. validate-read binds its prompts and Phi-4, counts every position and refuses a missing answer row;
     score binds the validator's digest.
@@ -42,6 +44,17 @@ machine and no item: every proof runs on fixtures written here, invented, about 
 34. D-618: the freeze command passes the corpus list's accept-skipped kinds, as freeze_negotiation_set does.
 35. The freeze's embedding on a rented machine: export, embed_records, and --vectors equal to the in-process
     freeze byte for byte (FREEZE.json and the cloud subset).
+36. AM-1 (D-662): a single-class checker field at the bar only at 100 percent raw agreement, labelled; M9 alike.
+37. AM-2 (D-665): red lines declared and held (from the fate), each arm's agreement with held, the source field.
+38. The power record's code digest is of the scorer's LF bytes (#262 gap 2).
+39. main() driven through freeze --export-records and --vectors equals the in-process freeze (#262 gap 3).
+40. A frozen set is never built again; its keys are read as they are (D-693).
+41. An unagreed article numbering two or more options with no bracket is refused visibly, never split by guess
+    (#281 gap 8).
+42. AM-3: M10, open-point detection, indicator only: movable (open, changed) or settled (kept, removed) from
+    the key's fate, movable on a counter and settled on an accept or reject, no stance a miss counted by its
+    reason, Macro-F1 over the two classes with M1's interval per arm, the system-minus-B1 difference, never
+    in the claims or the bar.
 
 Each proof follows scripts/effect_proof.py: neutralise, fail, restore, pass. A neutralisation changes the
 property itself (a declared constant, the data the rule reads, or the form as first written), never the
@@ -429,11 +442,33 @@ class NegAdvisorChecks(unittest.TestCase):
         self.assertIsNone(sc.refuse(**kw))
         observe = lambda: sc.refuse(**dict(kw, openings_text="no line here"))
         self.assertEqual(observe(), "no committed opening line names k=1, this set and this configuration")
-        self.assertIsNotNone(sc.refuse(**dict(kw, k=3)))
         self.assertIsNotNone(sc.refuse(**dict(kw, arms=dict(kw["arms"], cloud=dict(kw["arms"]["cloud"], prompts_sha256="z")))))
         # Neutralised: the opening line's own form loosened so that any text names the opening.
         self.prove("no_score_without_an_opening", observe, observe(),
                    lambda: patch.object(sc, "_OPENING", _AnyLine()))
+        # D-710: the one set with a third opening is the old pilot, the set of the ledger's first neg-advisor line.
+        ledger = (ROOT / "docs" / "loop" / "HELDOUT_OPENINGS.md").read_text(encoding="utf-8")
+        pilot = next(m.group(2) for m in sc._OPENING.finditer(ledger) if m.group(1) == "1")
+        self.assertEqual(sc.EXTRA_OPENINGS, {pilot: 3})
+        p3, p4 = self.pilot_inputs(kw, 3), self.pilot_inputs(kw, 4)
+        openings = lambda: (sc.refuse(**dict(kw, k=3)), sc.refuse(**p3), sc.refuse(**p4))
+        want = ("opening 3: at most 2 openings for this set", None, "opening 4: at most 3 openings for this set")
+        self.assertEqual(openings(), want)
+        # Neutralised: the third opening granted to every set (any other set's k=3 then passes the cap).
+        self.prove("third_opening_for_the_pilot_alone", openings, want,
+                   lambda: patch.object(sc, "MAX_OPENINGS", 3))
+        # Neutralised: the pilot's grant withdrawn (its k=3 then refused).
+        self.prove("third_opening_granted_to_the_pilot", openings, want,
+                   lambda: patch.dict(sc.EXTRA_OPENINGS, clear=True))
+
+    def pilot_inputs(self, kw, k):
+        """refuse() inputs on D-710's pilot set at opening k: its freeze, its power record at opening k's alpha,
+        the configuration binding that record, and its committed opening line."""
+        pilot = next(iter(sc.EXTRA_OPENINGS))
+        text = json.dumps(dict(json.loads(kw["power_text"]), set_sha256=pilot, k=k, alpha=sc.opening_alpha(k)))
+        return dict(kw, k=k, freeze=dict(kw["freeze"], set_sha256=pilot), power=json.loads(text), power_text=text,
+                    configuration=dict(kw["configuration"], power_record_sha256=sc._sha(text)),
+                    openings_text="neg-advisor opening k=%d set=%s config=%s" % (k, pilot, "c" * 64))
 
     def test_12_prompts_held_to_rendering(self):
         with setdir() as root, tempfile.TemporaryDirectory() as td:
@@ -585,12 +620,17 @@ class NegAdvisorChecks(unittest.TestCase):
         # parser compared them with the string ids and dropped them. A number is read as its text, as `_ids` does.
         item, _key = built()
         item["articles"][0]["id"] = "7"
-        value = {"proposals": [], "trades": [], "approach": [],
+        # #262 gap 1: a numeric proposal id too, so the proposal path cannot be reverted alone unseen.
+        item["articles"][1]["proposals"][0]["id"] = "12"
+        value = {"proposals": [{"id": 12, "conflict": "conflict", "stance": "reject", "reasons": []},
+                               {"id": True, "conflict": "conflict", "stance": "reject", "reasons": []}],
+                 "trades": [], "approach": [],
                  "alignment": [{"article": 7, "aligned": [], "opposed": []}],
                  "state": [{"article": 7, "state": "bracketed"}, {"article": True, "state": "closed"},
                            {"article": 7.0, "state": "closed"}]}
-        read = lambda: (lambda r: (r["state"], sorted(r["alignment"])))(na.parse_advice(json.dumps(value), item))
-        want = ({"7": "bracketed"}, ["7"])
+        read = lambda: (lambda r: (r["state"], sorted(r["alignment"]), sorted(r["proposals"]),
+                                   r["proposals"].get("12", {}).get("stance")))(na.parse_advice(json.dumps(value), item))
+        want = ({"7": "bracketed"}, ["7"], ["12"], "reject")
         self.assertEqual(read(), want)
         # Neutralised: the old rule, an id compared as it came, drops the numeric article.
         self.prove("numeric_article_id_is_read_as_its_text", read, want,
@@ -892,7 +932,7 @@ class NegAdvisorChecks(unittest.TestCase):
                 state = sc.validation_state(root, {"prompts_sha256": "j"})
                 m9 = sc.report({"fx-k2-alpha": item}, {"fx-k2-alpha": key}, {"B1": (rows, "b1")}, judge=[],
                                resamples=20, validation=state)["M9_status"]
-                return state, sc.bar(rep, validation=state)["cleared"], m9
+                return {f: state[f] for f in ("mapping", "checker", "grade")}, sc.bar(rep, validation=state)["cleared"], m9
             self.assertEqual(observe(), ({"mapping": False, "checker": True, "grade": False}, None, "not validated"))
             # Neutralised: the floor lowered below the recorded kappas; the bar is then assessable and M9 validated.
             self.prove("kappa_floor_decides_line_4_and_m9", observe, observe(),
@@ -1025,7 +1065,23 @@ class NegAdvisorChecks(unittest.TestCase):
                            at(record2, 2, line2) is None)
         self.assertEqual(observe(), (True, False, True))
         self.prove("opening_2_needs_its_own_alpha", observe, observe(), lambda: patch.dict(record2, {"alpha": 0.025}))
-        self.assertEqual((sc.opening_alpha(1), sc.opening_alpha(2)), (0.025, 0.0125))
+        self.assertEqual((sc.opening_alpha(1), sc.opening_alpha(2), sc.opening_alpha(3)), (0.025, 0.0125, 0.00625))
+        # D-710: the pilot's third opening at 0.00625; its record at opening 2's alpha is refused.
+        p3 = self.pilot_inputs(kw, 3)
+        record3 = dict(p3["power"])
+
+        def third():
+            text = json.dumps(record3)
+            return sc.refuse(**dict(p3, power=record3, power_text=text,
+                                    configuration=dict(p3["configuration"], power_record_sha256=sc._sha(text))))
+        self.assertEqual((record3["alpha"], third()), (0.00625, None))
+        self.prove("opening_3_needs_its_own_alpha", third, None, lambda: patch.dict(record3, {"alpha": 0.0125}))
+        # The third opening is an indicator whatever its power record says (D-710); opening 1 follows its power.
+        strong = {"power_by_icc": {"0.2": 0.9, "0.5": 0.9}}
+        status = lambda: (sc.opening_claim_status(strong, 1), sc.opening_claim_status(strong, 3))
+        self.assertEqual(status(), ("claim", "indicator"))
+        self.prove("third_opening_indicator_only", status, ("claim", "indicator"),
+                   lambda: patch.object(sc, "MAX_OPENINGS", 3))
 
 
     def test_30_judge_model_at_score_time(self):
@@ -1282,6 +1338,390 @@ class NegAdvisorChecks(unittest.TestCase):
         self.prove("advisor_freeze_vectors_route_equals_in_process", observe, got,
                    lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
 
+    def _filled_sheet(self, root, red_wrong=False):
+        """The checker's sheet of the set filled with the key's own labels; the persona's red-line marks from
+        the item (`red_wrong`: one mark turned the other way)."""
+        sheet = sc.sample_sheet(root)
+        keys, items = sc.read_keys(root), na.read_items(root)
+        for entry in sheet["items"]:
+            key, item, fill = keys[entry["item_id"]], items[entry["item_id"]], entry["fill"]
+            for pid, row in key["proposals"].items():
+                fill["fate"][pid], fill["conflict"][pid] = row["fate"], row["conflict"]
+            for aid, row in key["articles"].items():
+                fill["state"][aid] = row["state"]
+            for aid, cells in key["alignment"].items():
+                fill["alignment"][aid] = dict(cells)
+            red = set(item["persona"].get("red_lines") or [])
+            for n, pos in enumerate(sorted(fill["red_line"])):
+                mark = "red_line" if pos in red else "not_red_line"
+                fill["red_line"][pos] = ("red_line" if mark == "not_red_line" else "not_red_line") if red_wrong and n == 0 else mark
+        return sheet
+
+    def test_36_single_class_field(self):
+        """AM-1 (D-662): a checker field where the key gives one class (the pilot's red_line, 36 of 36 not a
+        red line) has no defined kappa; at 100 percent raw agreement it is at the bar, labelled; below 100
+        percent it is below. M9's validation alike (the checker's grades the reference)."""
+        no_red = dict(copy.deepcopy(BUILD), red_lines=[])
+
+        def observe(red_wrong=False):
+            with setdir((no_red,)) as root:
+                (root / "checker_agreement.json").write_text(json.dumps(sc.sample_read(root, self._filled_sheet(root, red_wrong))),
+                                                             encoding="utf-8")
+                (root / "mapping_validation.json").write_text(json.dumps({"kappa": 0.9}), encoding="utf-8")
+                # M9 below 100 percent on a single class: the checker gives 2 on all 10, the judge 1 on one.
+                sheet = {"entries": [{"entry_id": "e%d" % n, "grade": 2} for n in range(10)]}
+                judge = {"prompts_sha256": "j", "rows": [{"form": "judge", "entry_id": "e%d" % n, "grade": 2 if n else 1}
+                                                         for n in range(10)]}
+                (root / "grade_agreement.json").write_text(json.dumps(sc.grade_read(sheet, judge)), encoding="utf-8")
+                state = sc.validation_state(root, judge)
+                field = state["fields"]["checker:red_line"]
+                rep = {"figures": {"system": {"M8g": {"estimate": 0.9}}, "B1": {"M8g": {"estimate": 0.9}}},
+                       "claims": {"A1": {"difference": 0.2, "bca_lower": 0.05}}, "withheld_rate": 0.1}
+                return (state["checker"], field.get("label"), field["raw_agreement"], state["grade"],
+                        sc.bar(rep, validation=state)["cleared"], sc.bar(rep, validation=state)["single_class_fields"])
+        full = observe()
+        self.assertEqual(full, (True, sc.SINGLE_CLASS_LABEL, 1.0, False, True, ["checker:red_line"]))
+        # Neutralised: the old rule, no single-class field ever at the bar (100 percent made unreachable).
+        self.prove("single_class_field_at_100_percent_at_the_bar", observe, full,
+                   lambda: patch.object(sc, "SINGLE_CLASS_FULL", 1.01))
+        below = lambda: (lambda r: r[:3] + r[4:5])(observe(red_wrong=True))
+        self.assertEqual(below(), (False, sc.SINGLE_CLASS_LABEL, 0.5, None))
+        # Neutralised: a single-class field at the bar below 100 percent.
+        self.prove("single_class_field_below_100_percent_below_the_bar", below, below(),
+                   lambda: patch.object(sc, "SINGLE_CLASS_FULL", 0.5))
+        # M9: the checker and the judge both give grade 2 on every sampled entry: at the bar, labelled.
+        grade = lambda: (lambda s: (s["grade"], s["fields"]["grade"].get("label")))(
+            self._grade_state(("2", "2")))
+        self.assertEqual(grade(), (True, sc.SINGLE_CLASS_LABEL))
+        self.prove("m9_single_class_grade_at_100_percent_validated", grade, grade(),
+                   lambda: patch.object(sc, "SINGLE_CLASS_FULL", 1.01))
+        # A record written before AM-1 (no single-class fields, kappa undefined) stays below the bar.
+        self.assertFalse(sc.at_bar({"rows": 36, "kappa": None}))
+
+    def _grade_state(self, grades):
+        with tempfile.TemporaryDirectory() as td:
+            sheet = {"entries": [{"entry_id": "e%d" % n, "grade": int(grades[0])} for n in range(10)]}
+            judge = {"prompts_sha256": "j", "rows": [{"form": "judge", "entry_id": "e%d" % n, "grade": int(grades[1])}
+                                                     for n in range(10)]}
+            (Path(td) / "grade_agreement.json").write_text(json.dumps(sc.grade_read(sheet, judge)), encoding="utf-8")
+            return sc.validation_state(td, judge)
+
+    def test_37_red_lines_declared_and_held(self):
+        """AM-2 (D-665, D-693): a declared red line held when its proposal was removed from the next text, not
+        held when it passed (kept or changed), open (its own count, never folded into held) when still
+        bracketed, from the key's fate; each arm's agreement with held on the red lines it extracted (reject or
+        counter holds the line); a piece with no stance counted no_stance and a disagreement (order 82); every
+        red line with its source, "from the document" (D-664); a cell under 5 items its count alone."""
+        def next_a2(text):
+            b = copy.deepcopy(BUILD)
+            b["next_articles"]["A2"] = text
+            return b
+        removed = next_a2("A fund is established.")
+        kept = next_a2("A fund is established. Contributions shall be mandatory for developed parties and assessed annually.")
+        still_open = next_a2("A fund is established. [Contributions shall be mandatory for developed parties and assessed annually]")
+        builds = {"changed": BUILD, "removed": removed, "kept": kept, "open": still_open}
+        fields = ("declared", "held", "not_held", "open", "extracted", "on_declared", "on_open", "agree", "no_stance")
+
+        def observe(value=GOOD_REPLY):
+            out = {}
+            for name, b in builds.items():
+                item, key = built(b)
+                row = key["proposals"]["P-A2-1"]
+                part = sc.red_line_part(item, key, reply_of(item, value))
+                out[name] = (row["fate"], sc.red_line_outcome(row), sc.held_red_line(row), sc.red_line_source(row),
+                             tuple(part[f] for f in fields))
+            return out
+        doc = "from the document"
+        want = {"changed": ("changed", "not_held", False, doc, (1, 0, 1, 0, 1, 1, 0, 0, 0)),
+                "removed": ("removed", "held", True, doc, (1, 1, 0, 0, 1, 1, 0, 1, 0)),
+                "kept": ("kept", "not_held", False, doc, (1, 0, 1, 0, 1, 1, 0, 0, 0)),
+                "open": ("open", "open", None, doc, (1, 0, 0, 1, 1, 0, 1, 0, 0))}
+        self.assertEqual(observe(), want)
+        # Neutralised: changed dropped from the let-through fates, so a changed proposal is undetermined.
+        self.prove("red_line_changed_is_not_held", observe, want,
+                   lambda: patch.object(sc, "LET_THROUGH_FATES", ("kept",)))
+        # Neutralised: changed moved into the held fates.
+        self.prove("red_line_changed_never_held", observe, want,
+                   lambda: patch.object(sc, "HELD_FATES", ("removed", "changed")))
+        # Neutralised: open folded into held.
+        self.prove("red_line_open_its_own_count", observe, want,
+                   lambda: patch.object(sc, "HELD_FATES", ("removed", "open")))
+        # Neutralised: the arm's advice read as holding the line when it accepts.
+        self.prove("arm_agreement_with_held_by_its_stance", observe, want,
+                   lambda: patch.object(sc, "HOLDING_STANCES", ("accept",)))
+        # Standing order 82: a piece with no stance is counted no_stance and is a disagreement, never dropped.
+        unstated = copy.deepcopy(GOOD_REPLY)
+        del unstated["proposals"][2]["stance"]
+        bare = lambda: {n: v[4] for n, v in observe(unstated).items() if n in ("changed", "removed")}
+        bare_want = {"changed": (1, 0, 1, 0, 1, 1, 0, 0, 1), "removed": (1, 1, 0, 0, 1, 1, 0, 0, 1)}
+        self.assertEqual(bare(), bare_want)
+        # Neutralised: a missing stance treated as a given one (it then agrees where the line was let through).
+        self.prove("no_stance_counted_as_a_disagreement", bare, bare_want,
+                   lambda: patch.object(sc, "ANSWERED_STANCES", sc.ANSWERED_STANCES + (None,)))
+        # A key built before the source field reads as from the document; an undeclared source is refused.
+        row = dict(built()[1]["proposals"]["P-A2-1"])
+        self.assertEqual(sc.red_line_source({k: v for k, v in row.items() if k != "red_line_source"}), "from the document")
+        with self.assertRaises(ValueError):
+            sc.red_line_source(dict(row, red_line_source="the operator"))
+        # The report: 5 items with a red line give the record's held share and each arm's agreement; 4 their count.
+        def report(n):
+            items, keys = {}, {}
+            order = (BUILD, removed, kept, still_open)
+            for k in range(n):
+                b = dict(copy.deepcopy(order[k % 4]), item_id="fx-rl-%d" % k)
+                items[b["item_id"]], keys[b["item_id"]] = sc.build_item(b)
+            rows = lambda group: {"rows": [{"form": "advice", "group": group, "item_id": i, "reply": reply_of(items[i]),
+                                            "audit": {}} for i in items]}
+            return sc.report(items, keys, {"B1": (rows("b1"), "b1"), "system": (rows("system_advice"), "system_advice")},
+                             resamples=20)["red_lines"]
+        five = lambda: (report(5)["record"], report(5)["by_arm"]["B1"])
+        got = five()
+        self.assertEqual(got[0], {"items": 5, "declared": 5, "held": 1, "not_held": 3, "open": 1, "undetermined": 0,
+                                  "held_share": 0.25, "by_source": {"from the document": 5}})
+        self.assertEqual((got[1]["on_declared"], got[1]["on_open"], got[1]["agree_with_held"], got[1]["agreement"]),
+                         (4, 1, 1, 0.25))
+        self.assertEqual(report(4)["record"], {"items": 4})
+        self.prove("red_line_cell_under_5_items_its_count_alone", lambda: report(4)["record"], {"items": 4},
+                   lambda: patch.object(sc, "MIN_CELL", 4))
+
+    def test_40_frozen_set_never_rebuilt(self):
+        """D-693: a set whose freeze is recorded (the pilot) is read as it is: build refuses it, since a rebuild
+        would write red_line_source into its keys and change its set_sha256; its keys, built before the field,
+        are read by the scorer unchanged."""
+        with setdir() as root:
+            # The key as the pilot's were built, before the source field.
+            path = root / "items" / BUILD["item_id"] / "key.json"
+            old = json.loads(path.read_text(encoding="utf-8"))
+            for row in old["proposals"].values():
+                row.pop("red_line_source")
+            path.write_text(json.dumps(old), encoding="utf-8")
+            self.assertEqual(sc.read_keys(root)[BUILD["item_id"]]["proposals"]["P-A2-1"].get("red_line_source"), None)
+            self.assertEqual(sc.red_line_source(sc.read_keys(root)[BUILD["item_id"]]["proposals"]["P-A2-1"]),
+                             "from the document")
+            (root / sc.FROZEN_RECORD).write_text(json.dumps({"set_sha256": sc.set_digest(root)[1]}), encoding="utf-8")
+            def observe():
+                before = sc.set_digest(root)[1]
+                try:
+                    sc.build_set(root, count=WORDS)
+                    return "built", sc.set_digest(root)[1] == before
+                except ValueError as exc:
+                    return str(exc)[:30], sc.set_digest(root)[1] == before
+            want = ("refused: the set is frozen (FR", True)
+            self.assertEqual(observe(), want)
+            # Neutralised: the guard looks for another record, so the frozen set is built again.
+            self.prove("frozen_set_never_rebuilt", observe, want,
+                       lambda: patch.object(sc, "FROZEN_RECORD", "FREEZE.not_this.json"))
+
+    def test_41_unbracketed_options_refused(self):
+        """#281 gap 8: an unagreed article that numbers two or more options and holds no bracket is refused
+        visibly, the item and article named, and the set is not written; it is never read as one proposal nor
+        split by guess. One option marker, bracketed options, an agreed article and a word "option" without a
+        number build as before."""
+        def with_a2(text, agreed=False):
+            b = copy.deepcopy(BUILD)
+            b["articles"][1] = dict(b["articles"][1], text=text, agreed=agreed)
+            return b
+        two = with_a2("A fund is established.\n\nOption 1: Contributions shall be mandatory for developed parties.\n"
+                      "Option 2: Contributions shall be voluntary and reviewed every five years.")
+        inline = with_a2("A fund is established. Alt 1) Contributions are mandatory. Alt 2) Contributions are voluntary.")
+        fine = {"one marker": with_a2("A fund is established.\n\nOption 1: Contributions shall be mandatory."),
+                "bracketed": with_a2("A fund is established.\n\n[Option 1: Contributions shall be mandatory] "
+                                     "[Option 2: Contributions shall be voluntary]"),
+                "agreed": with_a2("Option 1: a fund. Option 2: no fund.", agreed=True),
+                "prose": with_a2("A fund is established, with the option to contribute and an alternative route.")}
+
+        def observe():
+            out = {}
+            for name, b in (("two", two), ("inline", inline)):
+                with tempfile.TemporaryDirectory(prefix="negadv_opt_") as td:
+                    root = Path(td) / "set"
+                    (root / "build" / b["item_id"]).mkdir(parents=True)
+                    (root / "build" / b["item_id"] / "build.json").write_text(json.dumps(b), encoding="utf-8")
+                    (root / "build" / b["item_id"] / "SOURCE.md").write_text("fixture source, invented\n", encoding="utf-8")
+                    try:
+                        sc.build_set(root, count=WORDS)
+                        out[name] = ("built", sorted(p["id"] for a in json.loads(
+                            (root / "items" / b["item_id"] / "item.json").read_text(encoding="utf-8"))["articles"]
+                            if a["id"] == "A2" for p in a["proposals"]))
+                    except ValueError as exc:
+                        out[name] = (str(exc).split(" numbers ")[0], (root / "items").exists())
+            for name, b in fine.items():
+                out[name] = len([p for p in built(b)[0]["articles"][1]["proposals"]])
+            return out
+        want = {"two": ("refused: fx-k2-alpha: article A2", False), "inline": ("refused: fx-k2-alpha: article A2", False),
+                "one marker": 1, "bracketed": 2, "agreed": 0, "prose": 1}
+        self.assertEqual(observe(), want)
+        # Neutralised: the refusal's floor raised past any article, so both are read as one proposal again.
+        self.prove("unbracketed_options_refused_visibly", observe, want,
+                   lambda: patch.object(sc, "UNBRACKETED_OPTIONS_MIN", 99))
+        # Neutralised: the marker's number not read, so no option is counted.
+        self.prove("unbracketed_options_counted_by_number", observe, want,
+                   lambda: patch.object(sc, "_NUMBERED_OPTION", re.compile(r"(?!x)x(\d)?(\d)?")))
+
+    def test_38_code_digest_of_lf_bytes(self):
+        """#262 gap 2: the power record's code digest is of the scorer's LF bytes, the same on a CRLF checkout
+        and in the commit; a record of other code bytes is refused, so the record is made again for this code."""
+        lf = sc.Path(sc.__file__).read_bytes().replace(b"\r\n", b"\n")
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "lf.py").write_bytes(lf)
+            (Path(td) / "crlf.py").write_bytes(lf.replace(b"\n", b"\r\n"))
+            observe = lambda: (sc.code_sha256(Path(td) / "crlf.py") == sc.code_sha256(Path(td) / "lf.py")
+                               == sc.hashlib.sha256(lf).hexdigest() == sc.code_sha256())
+            self.assertTrue(observe())
+            self.prove("code_digest_of_lf_bytes", observe, True, lambda: patch.object(sc, "CODE_EOL", (b"\r\n", b"\r\n")))
+            kw = self.scoring_inputs({"fx-k2-alpha": built()[1]})
+            stale = dict(kw["power"], code_sha256=sc.hashlib.sha256(lf.replace(b"\n", b"\r\n")).hexdigest())
+            text = json.dumps(stale)
+            conf = dict(kw["configuration"], power_record_sha256=sc._sha(text))
+            self.assertTrue(sc.refuse(**dict(kw, power=stale, power_text=text, configuration=conf)).startswith(
+                "the power record is not of this set"))
+
+    def test_39_command_line_route(self):
+        """#262 gap 3: main() of score_neg_advisor.py driven with freeze --export-records, then --vectors and
+        --records on the merged vectors, gives the in-process freeze's FREEZE.json and cloud subset byte for
+        byte; --vectors without --records is refused. (freeze_negotiation_set.py's main: negotiation_measure_checks
+        test_19k.)"""
+        import hashlib
+        import shutil
+        import numpy as np
+        fz = sc.fz()
+        er = fz._embed_records()
+
+        def onehot(texts):
+            out = np.zeros((len(texts), 1024), dtype=np.float32)
+            for i, t in enumerate(texts):
+                out[i, int(hashlib.sha256(str(t).encode("utf-8")).hexdigest()[:8], 16) % 1024] = 1.0
+            return out
+        embedder = lambda texts, batch_size: onehot(texts)
+        embedder.dim, embedder.max_seq_length = 1024, 8192
+
+        def observe():
+            with setdir() as root, tempfile.TemporaryDirectory(prefix="negadv_main_") as td:
+                td = Path(td)
+                corpus = td / "corpus.md"
+                corpus.write_text("\n\n".join(" ".join("filler%d word%d" % (k, i) for i in range(12)) for k in range(4)),
+                                  encoding="utf-8")
+                listed = td / "corpora.txt"
+                listed.write_text("# fixture list\n%s\n" % corpus, encoding="utf-8")
+                other = td / "copy"
+                shutil.copytree(root, other)
+                with redirect_stdout(io.StringIO()) as printed:
+                    code = sc.main(["freeze", "--set", str(other), "--corpora", str(listed), "--export-records",
+                                    str(td / "export")])
+                exported = json.loads(printed.getvalue())
+                er.build(td / "export" / "records.jsonl", td / "parts")
+                pairs = []
+                for n, prompts in enumerate(sorted((td / "parts").glob("part*/replay_prompts.json"))):
+                    er.run(prompts, td / ("ev%d" % n), embedder=embedder, run_id="fixture")
+                    pairs.append((td / ("ev%d" % n), prompts))
+                er.merge(pairs, td / "export" / "laptop", td / "merged", require_complete=True)
+                with redirect_stdout(io.StringIO()):
+                    refused = sc.main(["freeze", "--set", str(other), "--corpora", str(listed), "--vectors", str(td / "merged")])
+                    code2 = sc.main(["freeze", "--set", str(other), "--corpora", str(listed), "--vectors", str(td / "merged"),
+                                     "--records", str(td / "export" / "records.jsonl")])
+                encode = fz.vectors_encoder(td / "merged", td / "export" / "records.jsonl")
+                sc.freeze(root, [corpus], encode=fz.formed(onehot), model=encode.route, progress=lambda line: None)
+                same = all((root / f).read_bytes() == (other / f).read_bytes() for f in ("FREEZE.json", sc.SUBSET_FILE))
+                texts = [json.loads(l)["text"] for l in (td / "export" / "records.jsonl").read_text(encoding="utf-8").splitlines()]
+                return {"codes": (code, refused, code2), "rows": exported["rows"] > 0,
+                        "forecast": "forecast_minutes" in exported, "identical": same,
+                        "vectors_identical": encode(texts).tobytes() == fz.formed(onehot)(texts).tobytes()}
+        got = observe()
+        self.assertEqual(got, {"codes": (0, 2, 0), "rows": True, "forecast": True, "identical": True,
+                               "vectors_identical": True})
+        real = er.embed_batched
+        # Neutralised: the instance's pass hands each chunk's vectors back in reverse order (a misplaced row).
+        self.prove("advisor_main_export_and_vectors_equal_in_process", observe, got,
+                   lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
+
+    def test_42_m10_open_point_detection(self):
+        """AM-3: M10's key class from the fate, the prediction from the stance, a miss by its reason, Macro-F1
+        over the two classes (hand-computed), beside M1 per arm with its interval, the system-minus-B1
+        difference, and never in the claims or the bar."""
+        still_open = copy.deepcopy(BUILD)
+        still_open["next_articles"]["A2"] = ("A fund is established. "
+                                             "[Contributions shall be mandatory for developed parties and assessed annually]")
+        # BUILD's fates: P-A1-1 kept, P-A1-2 removed, P-A2-1 changed; still_open's P-A2-1 open.
+        wrong = copy.deepcopy(GOOD_REPLY)
+        wrong["proposals"][0]["stance"] = "counter"   # P-A1-1, kept: settled, predicted movable
+        del wrong["proposals"][1]["stance"]           # P-A1-2, removed: settled, no stance, a miss
+
+        def observe():
+            out = {}
+            for name, b, value in (("good", BUILD, GOOD_REPLY), ("wrong", BUILD, wrong), ("open", still_open, GOOD_REPLY)):
+                item, key = built(b)
+                rows, misses = sc.open_point_part(key, reply_of(item, value))
+                out[name] = (sorted("%s>%s:%d" % (k[0], k[1], v) for k, v in rows.items()), dict(misses), sc.macro_f1_two(rows))
+            return out
+        S, M, N = sc.SETTLED, sc.MOVABLE, sc.NO_ANSWER
+        # Hand-computed. wrong: movable tp 1, fp 1, fn 0, F1 2/3; settled tp 0, fp 0, fn 2, F1 0; Macro-F1 1/3.
+        want = {"good": (["movable>movable:1", "settled>settled:2"], {}, 1.0),
+                "wrong": (["movable>movable:1", "settled>movable:1", "settled>no_answer:1"], {"no_stance": 1},
+                          (2 / 3 + 0) / 2),
+                "open": (["movable>movable:1", "settled>settled:2"], {}, 1.0)}
+        self.assertEqual(observe(), want)
+        # Neutralised: changed dropped from the movable fates (P-A2-1 changed is then never scored).
+        self.prove("m10_changed_is_movable", observe, want, lambda: patch.object(sc, "MOVABLE_FATES", ("open",)))
+        # Neutralised: open dropped from the movable fates.
+        self.prove("m10_open_is_movable", observe, want, lambda: patch.object(sc, "MOVABLE_FATES", ("changed",)))
+        # Neutralised: kept moved to the movable fates.
+        self.prove("m10_kept_is_settled", observe, want,
+                   lambda: patch.object(sc, "MOVABLE_FATES", ("open", "changed", "kept")))
+        # Neutralised: a counter no longer predicts movable (every counter then a miss by stance_not_declared).
+        self.prove("m10_counter_predicts_movable", observe, want, lambda: patch.object(sc, "MOVABLE_STANCES", ()))
+        # Neutralised: the figure over the movable class alone (the wrong reply then 2/3, not 1/3).
+        self.prove("m10_macro_f1_over_the_two_classes", observe, want, lambda: patch.object(sc, "M10_CLASSES", (M,)))
+        # A class neither in the key nor predicted leaves the figure undefined; no reply at all is a miss each.
+        self.assertIsNone(sc.macro_f1_two(Counter({(M, M): 2})))
+        self.assertEqual(sc.macro_f1_two(Counter({(S, M): 1, (M, M): 1})), (2 / 3 + 0) / 2)
+        item, key = built()
+        self.assertEqual(sc.open_point_part(key, None), (Counter({(S, N): 2, (M, N): 1}), Counter({"no_reply": 3})))
+        # The system's withheld piece is a miss by "withheld", told apart from a piece never given.
+        given = reply_of(item)
+        kept = dict(given, proposals={p: e for p, e in given["proposals"].items() if p != "P-A1-2"})
+        self.assertEqual(sc.open_point_part(key, kept, given)[1], Counter({"withheld": 1}))
+        self.assertEqual(sc.open_point_part(key, kept)[1], Counter({"no_piece": 1}))
+        # Hand-computed: movable tp 1, F1 1; settled tp 1, fn 1, F1 2/3; Macro-F1 5/6.
+        self.assertEqual(sc.macro_f1_two(sc.open_point_part(key, kept, given)[0]), (1.0 + 2 / 3) / 2)
+
+        # The report: 5 headline items, B1 the wrong reply (its stance drops counted beside), the system the good.
+        def report(n):
+            items, keys = {}, {}
+            for k in range(n):
+                b = dict(copy.deepcopy(BUILD), item_id="fx-m10-%d" % k)
+                items[b["item_id"]], keys[b["item_id"]] = sc.build_item(b)
+            rows = lambda group, value, drops: {"rows": [
+                {"form": "advice", "group": group, "item_id": i, "reply": reply_of(items[i], value), "audit": {},
+                 "drops": drops} for i in items]}
+            return sc.report(items, keys, {"B1": (rows("b1", wrong, {"proposals.stance": {"not_declared": 1}}), "b1"),
+                                           "system": (rows("system_advice", GOOD_REPLY, {}), "system_advice")},
+                             resamples=20)
+        rep = report(5)
+        block = rep["M10"]
+        b1, system = block["by_arm"]["B1"], block["by_arm"]["system"]
+        got = (rep["figures"]["B1"]["M10"]["estimate"], rep["figures"]["system"]["M10"]["estimate"],
+               b1["figure"] == rep["figures"]["B1"]["M10"], b1["rows"], b1["key"], b1["predicted"], b1["misses"],
+               b1["stance_drops"], system["misses"], round(block["system_minus_B1"]["difference"], 12),
+               "shown" in block["system_minus_B1"], block["status"], "M10" in rep["claims"])
+        want_rep = (1 / 3, 1.0, True, 15, {M: 5, S: 10}, {M: 10, S: 0, N: 5}, {"no_stance": 5},
+                    {"not_declared": 5}, {}, round(1.0 - 1 / 3, 12), False, sc.M10_STATUS, False)
+        self.assertEqual(got, want_rep)
+        self.assertEqual(rep["figures"]["B1"]["M10"]["items"], 5)
+        self.assertIn("lower", rep["figures"]["B1"]["M10"])
+        # The no-stance miss counted in the report; neutralised: no_stance left out of the declared reasons.
+        misses = lambda: report(5)["M10"]["by_arm"]["B1"]["misses"]
+        self.prove("m10_no_stance_miss_counted", misses, {"no_stance": 5},
+                   lambda: patch.object(sc, "M10_MISSES", tuple(r for r in sc.M10_MISSES if r != "no_stance")))
+        # A cell under 5 items is its count alone.
+        self.assertEqual(report(4)["M10"]["by_arm"]["B1"], {"items": 4})
+        self.prove("m10_cell_under_5_items_its_count_alone", lambda: report(4)["M10"]["by_arm"]["B1"], {"items": 4},
+                   lambda: patch.object(sc, "MIN_CELL", 4))
+        # Never in the claims or the bar: M10 neutralised leaves both as they were.
+        with patch.object(sc, "MOVABLE_STANCES", ()):
+            other = report(5)
+        self.assertNotEqual(other["figures"]["system"]["M10"]["estimate"], 1.0)
+        self.assertEqual((other["claims"], other["bar"]), (rep["claims"], rep["bar"]))
+
 
 def check():
     NegAdvisorChecks.evidence = []
@@ -1307,7 +1747,13 @@ def check():
                     "object, several counted), what is still dropped counted by field and reason in each row and the "
                     "score report, and answers not read by it refused; and (D-672) the judge and the system auditor decide by "
                     "fixed choices read as their settled label, the system's advice and the validator generate under "
-                    "the item's schema constraint, B1 freely"
+                    "the item's schema constraint, B1 freely; and AM-1 (a single-class field at the bar only at 100 "
+                    "percent, M9 alike), AM-2 (red lines declared and held from the fate, each arm's agreement with "
+                    "held, open its own count, no stance a disagreement, the source field), the code digest of LF bytes, "
+                    "main() through the vectors route and a frozen set never built again, and (#281 gap 8) an "
+                    "article numbering options with no bracket refused visibly, never split by guess, and (AM-3) M10 "
+                    "open-point detection, movable or settled from the fate and the stance, no stance a miss by its "
+                    "reason, Macro-F1 over the two classes beside M1, indicator only, never in the claims or the bar"
                     % len(NegAdvisorChecks.evidence))
 
 

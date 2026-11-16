@@ -106,8 +106,15 @@ def sealed_candidates_admitted(manifest):
     return candidates[0].get('type') == guard.PREFERRED_TYPE
 
 
-def execute(bundle, plan, output_dir=None):
+def execute(bundle, plan, output_dir=None, from_request=None):
     b = Path(bundle).resolve()
+    import seal_route
+    # D-675 condition 2: a launch record is a sealed bundle to nothing; it launches only from its request.
+    if from_request is None:
+        seal_route.refuse_launch_record(read(b / 'execution_manifest.json'), 'a --bundle')
+    else:
+        problem = seal_route.record_error(b, from_request) or seal_route.request_error(from_request, controller.ROOT)
+        require(problem is None, problem or '')
     # Before any write: a sealed bundle inside the repository, and a purpose that is not a
     # short identifier (a plan with no purpose at all is refused by the controller's own
     # launch_plan(), with the rest of the plan).
@@ -127,7 +134,8 @@ def execute(bundle, plan, output_dir=None):
     require(m['source_commit'] == binding['source_commit'], 'Sealed source commit differs from the binding')
     require(m['source_archive_sha256'] == binding['project_sha256'], 'Project identity changed')
     # #252 item 3: the bytes here, or held in the store by this fingerprint (hashed on the instance).
-    run.project_held(b, binding['project_sha256'])
+    if from_request is None:
+        run.project_held(b, binding['project_sha256'])
     assets = m['assets_archive']
     require(assets['filename'] == 'assets.tar' and assets['sha256'] == binding['assets_sha256'], 'Asset identity changed')
     # The budget is the sealed IV.3 budget, read from the manifest the binding names: an
@@ -142,10 +150,10 @@ def execute(bundle, plan, output_dir=None):
     # Consumed by a launch in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json),
     # with or without --output-dir this time (A6).
     require(not consumed(b), 'Authorization already consumed')
-    verified = read(b / 'asset_verification.json')
-    require(verified['passed'] and verified['manifest_sha256'] == binding['manifest_sha256']
-            and verified['archive_sha256'] == binding['assets_sha256'], 'Asset verification absent for this identity')
-    require(all(r['ref_bytes'] == 40 for r in verified['default_revision_resolutions']), 'Refs not verified at 40 bytes')
+    # D-648: an arm S job may carry a receipt deferring its asset check to the instance (seal_route).
+    problem = seal_route.receipt_refusal(read(b / 'asset_verification.json'), binding['manifest_sha256'],
+                                         binding['assets_sha256'], m.get('arm', 'B3'))
+    require(problem is None, problem or '')
     local = read(b / 'AUTHORIZED_LOCAL_REVERIFICATION.json')
     require(local['passed'] and local['manifest_sha256'] == binding['manifest_sha256'], 'Local reverification missing')
     live = read(b / 'authorized_live_preflight.json')
@@ -153,10 +161,13 @@ def execute(bundle, plan, output_dir=None):
     # The archive path is stored relative to the repository when the bundle is inside it and
     # absolute otherwise, so a bundle outside the repository launches as one inside does.
     archive = b / assets['filename']
-    try:
-        stored = archive.relative_to(controller.ROOT).as_posix()
-    except ValueError:
-        stored = archive.as_posix()
+    if from_request is not None:
+        stored = None        # no laptop archive: the instance takes the provider-side copy or nothing
+    else:
+        try:
+            stored = archive.relative_to(controller.ROOT).as_posix()
+        except ValueError:
+            stored = archive.as_posix()
     write(b / 'assets_transfer_archive.json', dict(path=stored, bytes=assets['bytes'], sha256=assets['sha256'],
           manifest_sha256=binding['manifest_sha256']))
     folder = run_folder(b, output_dir, seal.get('exposure') == 'sealed')
@@ -164,6 +175,33 @@ def execute(bundle, plan, output_dir=None):
     write(folder / 'bound_controller_identity.json', dict(wrapper_sha256=sha(__file__), controller_sha256=sha(controller.__file__),
           binding=binding, maximum_instances=1, maximum_runs=max(1, len(plan.get('batch') or [])), bundle_folder=b.as_posix()))
     controller.execute()
+
+
+def ledger_refusal(ledger, main_private=None, r_ledger=None):
+    """L-18: None when the ledger named is the main checkout's private ledger or R's (the ones the reaper reads),
+    resolved through git's common directory, never from the worktree's tree; else the one-line reason."""
+    import instance_reaper
+    private = Path(main_private or instance_reaper.main_private())
+    allowed = {(private / 'budget_ledger.jsonl').resolve(), Path(r_ledger or instance_reaper.R_LEDGER).resolve()}
+    if Path(ledger).resolve() not in allowed:
+        return 'The ledger is not one the reaper reads: name the main checkout\'s private ledger'
+    if not (private / 'budget_ledger.jsonl').is_file():
+        return 'The reaper\'s private ledger is not there'
+    return None
+
+
+def request_stale_refusal(request_folder, main_private=None, r_ledger=None):
+    """The checker's item 7: None when the request's read copies are still the live records the reaper reads (the
+    main checkout's private ledger and spend store, R's ledger) with nothing appended since; else the reason. A
+    request is launched only on what it attested, as its admission is checked (seal_route.stale_reason)."""
+    import instance_reaper
+    import seal_route
+    private = Path(main_private or instance_reaper.main_private())
+    job = read(Path(request_folder) / seal_route.REQUEST_FILE).get('job') or {}
+    live = dict(budget_ledger=private / 'budget_ledger.jsonl', spend_store=private / 'cloud_reference_spend.jsonl',
+                r_ledger=Path(r_ledger or instance_reaper.R_LEDGER))
+    reason = seal_route.stale_reason(job, live, ())
+    return None if reason is None else 'Seal request read copy is stale, write the request again: ' + reason
 
 
 def plan_from(args):
@@ -184,7 +222,11 @@ def plan_from(args):
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--bundle', type=Path, required=True)
+    p.add_argument('--bundle', type=Path, default=None)
+    p.add_argument('--request', type=Path, default=None,
+                   help='order 85, D-675: a seal request (seal_route.write_request); its launch record is made in '
+                        '--output-dir (or <request>.run) and launched; nothing is sealed on the laptop')
+    p.add_argument('--from-request', type=Path, default=None, help=argparse.SUPPRESS)
     p.add_argument('--output-dir', type=Path, default=None, help='run in a fresh folder here instead of in the bundle')
     p.add_argument('--ledger', type=Path, required=True, help='loop ledger: read, and receives the launch and termination lines')
     p.add_argument('--read-ledger', type=Path, action='append', help="another ledger the guard reads (R's)")
@@ -211,6 +253,31 @@ def parser():
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(argv)
+    require((args.bundle is None) != (args.request is None), 'Name exactly one of --bundle and --request')
+    if args.request is not None:
+        # D-675: the launch record of the request, then the bound preflight on it, then the ordinary launch of
+        # the record with --from-request naming its request (re-read and re-checked by execute()).
+        import seal_route
+        import ordinary_final_bound_preflight as preflight
+        request = Path(args.request).resolve()
+        # L-18: the ledger named is one the reaper reads, resolved before anything is written.
+        problem = ledger_refusal(args.ledger)
+        require(problem is None, problem or '')
+        problem = request_stale_refusal(request)
+        require(problem is None, problem or '')
+        record = Path(args.output_dir).resolve() if args.output_dir else request.with_name(request.name + '.run')
+        seal_route.launch_record(request, record, controller.ROOT)
+        preflight.main(record)
+        rest, skip = [], False
+        for a in argv:
+            if skip:
+                skip = False
+                continue
+            if a in ('--request', '--output-dir'):
+                skip = True
+                continue
+            rest.append(a)
+        return main(['--bundle', str(record), '--from-request', str(request)] + rest)
     # Refused here, before the detached log or the process record is written into the bundle.
     refuse_sealed_bundle_in_repository(Path(args.bundle).resolve())
     guard.require_purpose(args.purpose)
@@ -221,7 +288,7 @@ def main(argv=None):
         write(Path(args.bundle).resolve() / 'controller_process.json', dict(pid=pid, detached=True))
         print('Controller started detached; its output is in the bundle', flush=True)
         return 0
-    execute(args.bundle, plan_from(args), args.output_dir)
+    execute(args.bundle, plan_from(args), args.output_dir, args.from_request)
     return 0
 
 

@@ -59,6 +59,21 @@ record without being one of its strings is caught by cosine alone: a stated limi
 changed once any count of any check has been seen. Only Seckin may change one after that, in writing;
 the loop never does.
 
+**The parts after the 16 November 2026 data loss (D-704, D-705; Seckin's written word, 18:05).** The 12 November
+fingerprint (`fingerprints.json.gz` ad64bab9...), its `exclude_ids.json` (a0bfa6d8...) and `cosine_step.json`
+(73f9b6a1...) survived and are unchanged; the gate set cleared on them stands as recorded and can be re-checked.
+Lost for good: the auditor part (external/s05/AUD), the cosine-step prompts (G1) and the older development run
+folders (B2_suite, C, C1, CASES, J1, L2 to L13). A fingerprint built for any new set is built over the parts that
+remain (both judge mixes, judge, auditor_tuning, producer, verifier, ontology, dev_cases, and development reduced
+to external/contradoc/dev, external/contradoc/dev_moved, external/scitab/dev and the external/s05 folders that
+remain), with the same tool and thresholds, and a new cosine-step prompts file in place of G1; the 12 November
+fingerprint is checked beside it. A set cleared that way states that it was not checked against the text that
+existed only in the lost runs. The three folders added since 12 November (REFPAIR, ROUTE_GATE_174_340, T253) are
+placed in a part before that build (issue #301).
+Built 16 November 2026 (issue #301): the remaining parts are the declared part set `parts_2026-11-16`, the three
+folders in development (GATE_SET.md section 9, its dated addition), chosen by `--part-set` only; the 12 November
+set stays the default. Its cosine step is refused until the new prompts file is declared (open item 134).
+
 ## The steps
 
 1. **The record count, then the forecast, on the lead's side** (`gate_leakage.py fingerprint --part ...

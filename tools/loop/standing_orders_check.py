@@ -786,6 +786,23 @@ def check_disk(ctx):
     return free >= DISK_FLOOR, 'free disk %.1f GiB (floor 30)' % (free / 2 ** 30)
 
 
+def check_instance_seal(ctx):
+    """Order 85 (D-668, D-675; the checker's item 12): every seal on the instance. Every launch's ledger lines name
+    where its bundle was sealed (seal_on: a seal request's record, or a bundle admission listed from a seal job, on
+    the instance; anything else on the laptop); once the first instance seal is recorded, any later launch of a
+    bundle sealed on the laptop breaks the order, whatever its arm. Before it: nothing to check yet (the route is not
+    in use; D-674's and D-677's laptop seals come before it)."""
+    places = [(i, r.get('seal_on'), r.get('purpose')) for i, r in enumerate(ctx.ledger_rows())
+              if r.get('event') == 'launch_intent' and r.get('seal_on')]
+    first = next((i for i, place, _ in places if place == 'instance'), None)
+    if first is None:
+        return 'nothing_yet', 'no bundle sealed on the instance yet (%d sealed on the laptop before the route)' % len(places)
+    late = [purpose for i, place, purpose in places if i > first and place != 'instance']
+    if late:
+        return False, 'bundles sealed on the laptop launched after the route: %s' % ', '.join(late[:3])
+    return True, '%d launches of bundles sealed on the instance since the first' % sum(1 for i, p, _ in places if i >= first)
+
+
 def check_machine(ctx):
     spec = importlib.util.spec_from_file_location('factor_record_checks', ROOT / 'tools' / 'factor_record_checks.py')
     module = importlib.util.module_from_spec(spec)
@@ -912,6 +929,7 @@ CHECKERS = {
     31: ('request ledger', check_ledger),
     35: ('salvage', check_salvage_tasks),
     48: ('verbatim', check_ledger_rows),
+    85: ('instance seal', check_instance_seal),
 }
 
 

@@ -295,6 +295,27 @@ class SessionHookChecks(unittest.TestCase):
         (main / 'tools' / 'loop' / 'session_end_salvage.py').write_text('# hook\n', encoding='utf-8')
         self.assertEqual(hook.main_script(main), main / 'tools' / 'loop' / 'session_end_salvage.py')
 
+    # DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): the main checkout through configuration, never a link
+
+    def test_the_main_checkout_variable_names_the_root_from_any_folder(self):
+        import os
+        import shared_paths
+        main = self.base / 'main'
+        (main / '.git').mkdir(parents=True)
+        elsewhere = self.base / 'elsewhere'      # no git here: only the variable can name the main checkout
+        elsewhere.mkdir()
+        with patch.dict(os.environ, {shared_paths.ENV: str(main)}):
+            self.assertEqual(ses.main_root(elsewhere), main.resolve())
+            self.assertEqual(ses.main_paths(ses.main_root(elsewhere))['ledger'],
+                             main.resolve() / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl')
+            self.assertEqual(ses.resolve_root(), (main.resolve(), shared_paths.ENV))
+        lane = self.base / 'lane'
+        lane.mkdir()
+        (lane / '.git').write_text('gitdir: elsewhere\n', encoding='utf-8')   # a worktree's .git is a file
+        for bad in (str(lane), 'relative' + os.sep + 'main', str(self.base / 'absent')):
+            with patch.dict(os.environ, {shared_paths.ENV: bad}), self.assertRaises(ses.HookError):
+                ses.main_root(elsewhere)
+
     # D-435: git missing, a launch newer than an open session episode, one listing
 
     def test_a_missing_git_falls_back_to_the_scripts_checkout_and_says_so(self):
@@ -425,6 +446,9 @@ NEUTRALISED = (
     (ses, 'first_real', lambda log, event: True, ('test_the_first_real_pass_of_an_event_is_marked',)),
     (ses, 'event_name', lambda event_id: 'manual', ('test_events_are_named',)),
     (ses, 'main_root', lambda start=None, runner=None: Path(start), ('test_every_path_is_the_main_checkouts_from_either_checkout',)),
+    # DELETE-SAFE-A: the hook's root read from git alone, the variable ignored.
+    (ses, 'main_root', lambda start=None, runner=None: __import__('shared_paths').from_git(start),
+     ('test_the_main_checkout_variable_names_the_root_from_any_folder',)),
     (hook, 'main_script', lambda root: Path(root) / hook.SCRIPT,
      ('test_every_path_is_the_main_checkouts_from_either_checkout', 'test_registration_refuses_a_console_python_and_keeps_schtasks_output')),
     (ses, 'resolve_root', lambda given=None, finder=None: (_ for _ in ()).throw(ses.HookError('no git')),

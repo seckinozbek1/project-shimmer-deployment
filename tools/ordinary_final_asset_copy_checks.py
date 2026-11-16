@@ -16,6 +16,7 @@ for _path in (str(ROOT / 'tools'), str(ROOT / 'tools' / 'loop')):
         sys.path.insert(0, _path)
 
 import instance_reaper  # noqa: E402
+import shared_paths  # noqa: E402
 import ordinary_final_cloud as controller  # noqa: E402
 import ordinary_final_bound_preflight as bound_preflight  # noqa: E402
 import prepare_ordinary_final_run as sealer  # noqa: E402
@@ -167,7 +168,8 @@ class AssetCopyChecks:
         no code loads a name that no scope assigns. The 4cdceafe shape (a function using a constant
         that was removed) is caught."""
         for path in ('tools/loop_budget_guard.py', 'tools/loop/instance_reaper.py', 'tools/ordinary_final_cloud.py',
-                     'tools/loop/cloud_reference_spend.py', 'tools/ordinary_final_bound_preflight.py'):
+                     'tools/loop/cloud_reference_spend.py', 'tools/ordinary_final_bound_preflight.py',
+                     'tools/loop/shared_paths.py'):
             with self.subTest(path=path):
                 self.assertEqual(unassigned_names((ROOT / path).read_text(encoding='utf8')), [])
         self.assertEqual(unassigned_names("def spend_store_path():" + chr(10) + "    return SPEND_STORE_NAME" + chr(10)),
@@ -392,6 +394,55 @@ class AssetCopyChecks:
                 self.assertEqual(instance_reaper.request_path('shimmer-loop-x'),
                                  store.parent / 'salvage' / 'requests' / 'shimmer-loop-x.request.json')
 
+    def test_the_shared_folders_are_reached_by_one_variable_or_git_never_a_link(self):
+        """DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): with no link anywhere, a worktree finds the main
+        checkout's private folder, the reaper's ledger, the spend store and the sealer's wheelhouse through git's
+        common directory; with SHIMMER_MAIN_CHECKOUT set, from a folder git cannot read too. The bound wrapper's
+        ledger check admits the main ledger and refuses the worktree's either way. A worktree, a relative path or
+        an absent folder named in the variable is refused, never guessed around."""
+        import os
+        import cloud_reference_spend
+        import ordinary_final_bound_cloud as wrapper
+        r_ledger = None
+        with tempfile.TemporaryDirectory() as tmp:
+            main, other = git_checkouts(tmp)
+            private = main / 'docs' / 'loop' / 'private'
+            (private / 'budget_ledger.jsonl').write_text('', encoding='utf8')
+            own = other / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl'    # the worktree's own, no link
+            own.write_text('', encoding='utf8')
+            r_ledger = Path(tmp) / 'r_ledger.jsonl'
+            elsewhere = Path(tmp) / 'elsewhere'                                   # no git: only the variable names main
+            elsewhere.mkdir()
+            self.addCleanup(instance_reaper._RESOLVED.clear)
+            self.addCleanup(instance_reaper._MAIN.clear)
+            for env, start, how in (({}, other, 'git'), ({shared_paths.ENV: str(main)}, elsewhere, shared_paths.ENV)):
+                with self.subTest(how=how), patch.dict(os.environ, env):
+                    if not env:
+                        os.environ.pop(shared_paths.ENV, None)
+                    instance_reaper._RESOLVED.clear()
+                    self.assertEqual(shared_paths.found(start), (main, how))
+                    self.assertEqual(instance_reaper.default_main(start), main)
+                    self.assertEqual(cloud_reference_spend.store_path(start), private / 'cloud_reference_spend.jsonl')
+                    self.assertEqual(sealer.wheelhouse_default(start), main / 'output' / 'cloud_wheels' / 'ordinary_final_cp312')
+                    with patch.object(instance_reaper, 'ROOT', start):
+                        self.assertIsNone(wrapper.ledger_refusal(private / 'budget_ledger.jsonl', r_ledger=r_ledger))
+                        self.assertIn('not one the reaper reads', wrapper.ledger_refusal(own, r_ledger=r_ledger))
+                    # The guard's own reading of the reaper's ledgers (the default, no path patched in).
+                    instance_reaper._MAIN.clear()
+                    with patch.object(instance_reaper, 'ROOT', start), patch.object(instance_reaper, 'PRIVATE_LEDGER', None):
+                        self.assertEqual(guard.reaper_ledgers()[0], private / 'budget_ledger.jsonl')
+                        guard.require_reaped(private / 'budget_ledger.jsonl')
+                        with self.assertRaisesRegex(guard.GuardRefusal, 'not one the reaper reads'):
+                            guard.require_reaped(own)
+                    instance_reaper._MAIN.clear()
+            instance_reaper._RESOLVED.clear()
+            for bad in (str(other), 'relative' + os.sep + 'main', str(Path(tmp) / 'absent')):
+                with self.subTest(bad=bad), patch.dict(os.environ, {shared_paths.ENV: bad}):
+                    with self.assertRaises(shared_paths.MainCheckoutError):
+                        shared_paths.main_checkout(other, fallback=other)
+                    with self.assertRaises(cloud_reference_spend.SpendStoreError):
+                        cloud_reference_spend.store_path(other)
+
 
 ASSET_COPY_NEUTRALIZATIONS = [
     # D-S121, D-441: a run admitted whatever the API ceiling and the reserves say.
@@ -432,4 +483,16 @@ ASSET_COPY_NEUTRALIZATIONS = [
     # D-412 item 2: each checkout its own salvage folder.
     ('test_the_salvage_folder_is_the_main_checkouts_for_every_tool', instance_reaper, 'salvage_dir',
      lambda: instance_reaper.PRIVATE / 'salvage'),
+    # DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): SHIMMER_MAIN_CHECKOUT ignored.
+    ('test_the_shared_folders_are_reached_by_one_variable_or_git_never_a_link', shared_paths, 'configured',
+     lambda environ=None: None),
+    # A worktree's tools find their own checkout (the junction recipe's premise).
+    ('test_the_shared_folders_are_reached_by_one_variable_or_git_never_a_link', shared_paths, 'from_git',
+     lambda start=None, runner=None: Path(start).resolve()),
+    # The reaper's ledger and records from this checkout's tree.
+    ('test_the_shared_folders_are_reached_by_one_variable_or_git_never_a_link', instance_reaper, 'default_main',
+     lambda root=None: Path(root) if root is not None else instance_reaper.ROOT),
+    # The sealer's wheelhouse from this checkout's output/.
+    ('test_the_shared_folders_are_reached_by_one_variable_or_git_never_a_link', sealer, 'wheelhouse_default',
+     lambda root=None: Path(root) / 'output' / 'cloud_wheels' / 'ordinary_final_cp312'),
 ]

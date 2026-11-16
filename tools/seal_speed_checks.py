@@ -39,8 +39,9 @@ REVISION = "a" * 40
 
 def wheelhouse():
     """A wheelhouse holding the pinned huggingface_hub wheel the verifier imports."""
-    for root in (ROOT, ROOT.parents[2] if len(ROOT.parents) > 2 else ROOT):
-        folder = root / "output" / "cloud_wheels" / "ordinary_final_cp312"
+    # The sealer's own wheelhouse: the main checkout's, through configuration (DELETE-SAFE-A), then this checkout's.
+    # prep.WHEELS is None unless a proof sets it; wheelhouse_path() resolves it at use.
+    for folder in (prep.wheelhouse_path(), ROOT / "output" / "cloud_wheels" / "ordinary_final_cp312"):
         if list(folder.glob("huggingface_hub-0.30.2-*.whl")):
             return folder
     return None

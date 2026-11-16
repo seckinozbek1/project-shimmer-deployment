@@ -112,3 +112,66 @@ Nothing here touches a bound controller file. Every change is runtime source, so
 - Rules 1 to 3 (exact, 8-word runs, cosine) need no fingerprint here: a SciTabAlign claim is the same SciTab item by id and paper, so rule 4 alone decides its side.
 - What is not caught: a SciTabAlign claim the authors revised wording of ("Revised", 81) still carries its SciTab ids and is excluded by them. That is stated, not a gap.
 - **Needed before go:** a role B request (as GATE_SET_ROLE_B_REQUEST.md) naming the archive's URL, this tool's commit and the output's fields.
+
+## Addendum, 16 November 2026: TABLE-AUTHORITY-A built (lane/tables-d642); the D-646 what-if; the half A run's plan
+
+**Built (checks 480 to 484, docs/CLAUDE_REFERENCE.md#table-authority-a).** Rules 1 to 5 of (b) above, as written, with two clarifications:
+- Rule 3's "two located figures" is read as any two figures of one shown row or one shown column, since a claim's computed figure is usually not itself in a cell.
+- "The cells' own rounding" is read as interval overlap: each figure stands for its last written place, plus or minus half a unit.
+
+D-642 (d), cell-grounded verdicts, is built inside the same rule:
+- When the table tool request runs (TABLE-TOOL-A, still off), the judge's cited cells are the cell ids in its request.
+- A cited cell the table does not hold lowers the verdict, and so does a verdict that cites no cell.
+- With no request, as shipped, the verdict rests on Python's selected cells. That is the paper's best small-model condition, read at source ((d) above).
+
+**Task wording against the design.** The lane's task said "where Python can decide a cell claim by arithmetic, Python's decision outranks the model's".
+- Python never decides the claim. It decides only the sub-step it can compute: whether each written figure is in a shown cell, or one step away.
+- Where that sub-step fails, its result outranks a model's "holds" by lowering it.
+- This follows D-642 (b) ("Python verifies only the sub-steps it can compute; where it cannot decide, it lowers the confidence") and WORDS-A.
+- D-593's two arithmetic designs, which let Python choose the computation, failed their bar and stay off.
+
+**As shipped nothing moves.** `config/semantic_thresholds.json` holds no `cell_claim` threshold, so the cell step asks nothing and no leaning can exist (rule 2 never leans on "no threshold"). The rule acts only in a development bundle that declares K1's .6 (D-477), or after a threshold is adopted under CHOICE-A.
+
+**The D-646 what-if, from saved replies, 0 USD.**
+- Inputs:
+  - the cell question's own decisions in judge 2e's base pass (`external/s05/T2E/ev_F/evidence/b1/train/passes/base`, 4,894 replies, half A only);
+  - the shipped prompts file (`external/s05/T2E/choice_prompts_r1_shipped.json`), read for ids, benchmark and order-control flags only;
+  - K1's threshold of .6.
+- Tool: `tools/scitab_leaning_whatif.py --replies PROMPTS RUN`. It refuses any half B row (D-296, D-649) and prints counts only, with no gold.
+- What is left: the two macro-F1 figures, side by side, need G1's keys, which were lost on 16 November (D-704, D-705).
+  - The keys must be rebuilt (adapter build over `external/scitab/dev` and `external/contradoc/dev`).
+  - They must be proven equal by `g1_bar_items.json` `keys_sha256` before `--key` is given. The tool refuses any other key set.
+- Recorded figure without leanings (D-477, the same pass and threshold): 45 claims, macro-F1 .703, accuracy .578.
+- **Counts read on 16 November** (no gold; 15 half A tables, 45 claims, the 47 order controls set aside):
+
+  | Reading | supports (CLEAR) | refutes (FLAG) | not settled (UNDECIDED) |
+  |---|---|---|---|
+  | as read | 18 | 10 | 17 (10 below the threshold, 7 settled as "cannot be settled") |
+  | with leanings | 20 | 16 | 9 |
+
+  - 8 claims move: 2 to supports and 6 to refutes. Every leaning's probability lies between .4 and .6.
+  - The counts as read match D-477's record (10 flagged). Under 2-class an UNDECIDED claim is a miss, so the 8 moved claims bound the effect. Accuracy can only move between .578 (all 8 wrong) and .756 (all 8 right).
+  - Which one it is needs the gold, through the scorer.
+
+**The paid run on half A (D-646; approved at 2.5 USD on half A by D-649). Plan written, not launched.**
+- **Arm:** B3 at this lane's commit, plus a development bundle that declares:
+  - `cell_claim` .6 (K1, D-477), never merged into the product;
+  - `[compare: cells]` (R-a2).
+- **Items:** G1 SciTab half A, 15 tables and 45 scored claims, rebuilt and proven by digest first.
+- **Readouts:**
+  - macro-F1 2-class with leanings and without, side by side;
+  - the leaning count, and the leanings' accuracy apart;
+  - the ABSTAIN and UNDECIDED counts;
+  - the `figure_unverified` count.
+- **Cost without saving measures** (old path; D-634's 7.7 instance minutes a table at 0.0215 USD a minute on gpu_1x_a10):
+  - workload 15 x 7.7 = 116 minutes, plus the launch's fixed 18 minutes: about 134 minutes, about 2.9 USD;
+  - the route S seal: about 0.46 USD (half of A5's 0.92 for two seal jobs);
+  - **total about 3.3 USD.** This is above the 2.5 USD approval and the 3 USD line, so it is not launched in this form without Seckin's word.
+- **Cost with saving measures** (SPEED_PLAN_V1 rank 1, vLLM routing for the local generations if A5 passes; rank 4, image layers instead of the asset copy):
+  - workload about 116 x 0.6 = 70 minutes, plus a fixed part of about 14 minutes: about 84 minutes, about 1.8 USD;
+  - plus the seal: **total about 2.3 USD**, inside the approval.
+  - If A5's vLLM result is void, only the image layers apply: about 3.2 USD, again above the approval, so it goes to Seckin first.
+- **Order:**
+  1. G1 rebuilt and proven.
+  2. The what-if's two figures read.
+  3. This run, by the lead, after the full gate on Lambda passes at this commit. Runtime source changed, so the bundle is re-sealed.

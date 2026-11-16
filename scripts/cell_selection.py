@@ -41,6 +41,21 @@ is the claim, and each unit whose table bears on it is one question, decided fro
 probabilities (D-S41) with no text. Every decision goes to the pairing map row; a settled "not met"
 is also a model's record (`finding`, INFRA-048), marked and never an amendment. With no measured
 threshold nothing is asked.
+
+Decision authority on tables (TABLE-AUTHORITY-A, D-642 (b) and (d), D-646, D-670). The verdict is the
+model's, decided as CHOICE-A decides it. Python checks only what it can compute and only lowers: a
+lowered verdict is a LEANING on the pairing map row (`leaning`, `leaning_confidence`, `leaning_why`),
+never a settled decision, never a record, never turned around and never raised.
+  - `below_threshold`: an unsettled decision whose top answer is "holds" or "not met" and whose only
+    reason is the measured threshold (never a tie, never "no threshold") is kept as a leaning.
+  - `figure_unverified` (`figure_check`): a settled "holds" whose claim writes a figure that stands
+    in no shown cell and is not one difference or ratio of two figures of one shown row or column,
+    within the cells' own rounding, is lowered: where arithmetic can decide a sub-step, Python's
+    result outranks the model's, and where it cannot decide the claim it decides nothing.
+  - `cited_cell_missing` and `no_cell_cited` (`cited_cells`): when the table tool request ran
+    (TABLE-TOOL-A), the cells the judge cited are its request's cell ids; a cited id the table does
+    not hold, or a verdict citing no cell at all, is lowered, "holds" or "not met" alike, and a
+    lowered "not met" writes no record.
 """
 import json
 import math
@@ -59,6 +74,14 @@ DECISION_NOTE = "Decided from the model's own answer probabilities on the cells 
 # What a review survives: any failure of a call, so a document never loses its computed findings.
 CAUGHT = Exception
 _NUMBER = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)*")
+# TABLE-AUTHORITY-A: the answers that carry a verdict (config/cell_selection.json labels), and why a
+# verdict was lowered to a leaning, the program's own closed set.
+LEANABLE = ("holds", "not met")
+HOLDS_LABEL = "holds"
+LEAN_BELOW, LEAN_FIGURE = "below_threshold", "figure_unverified"
+LEAN_CITED_MISSING, LEAN_NONE_CITED = "cited_cell_missing", "no_cell_cited"
+_CITED_CELL = re.compile(r"r[1-9][0-9]*c[1-9][0-9]*")
+ID_NOT_VALID = "id_not_valid"     # table_tools.ID_NOT_VALID, held equal by check 483
 
 
 def load_config(path=CONFIG_PATH):
@@ -123,6 +146,136 @@ def figures(text):
         if value is not None:
             out.add(value)
     return out
+
+
+def _figure_spans(text):
+    """[(value, half unit)] of each figure `text` writes: the half unit is half of the last place the
+    figure is written to, so 71.2 stands for anything from 71.15 to 71.25 (the writer's own rounding)."""
+    out = []
+    for token in _NUMBER.findall(str(text or "")):
+        value = figure_value(token)
+        if value is None:
+            continue
+        places = 0
+        whole = token.replace(",", "") if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", token) else token
+        if re.search(r"[.,]\d+$", whole):
+            places = len(re.split(r"[.,]", whole)[-1])
+        out.append((value, 0.5 * 10 ** -places))
+    return out
+
+
+def _overlaps(low, high, value, half):
+    return low <= value + half and value - half <= high
+
+
+def _one_step(value, half, a, b):
+    """Whether `value` (written to within `half`) is the difference or the ratio of figures `a` and
+    `b`, each (value, half unit): computed over the intervals the cells' rounding leaves open."""
+    (x, hx), (y, hy) = a, b
+    if _overlaps(abs(x - y) - hx - hy, abs(x - y) + hx + hy, value, half):
+        return True
+    for (p, hp), (q, hq) in ((a, b), (b, a)):
+        if q - hq > 0 and _overlaps((p - hp) / (q + hq), (p + hp) / (q - hq), value, half):
+            return True
+    return False
+
+
+def figure_check(cells, claim):
+    """TABLE-AUTHORITY-A rule 3, on the CELLS block the model was shown: {written, in_cells, one_step,
+    unverified}, counts only. A claim figure is found when a shown cell writes it (as `figures`
+    reads both), else it is one arithmetic step when it is the difference or the ratio of two
+    figures of one shown row or one shown column, within the cells' own rounding; any other is
+    unverified. Which arithmetic the claim's words ask for is never read (WORDS-A): a found or
+    computed figure is no verdict, and an unverified one only lowers a "holds"."""
+    written = _figure_spans(claim)
+    seen, claim_figures = set(), []
+    for value, half in written:
+        if value not in seen:
+            seen.add(value)
+            claim_figures.append((value, half))
+    found = tables(cells)
+    out = {"written": len(claim_figures), "in_cells": 0, "one_step": 0, "unverified": 0}
+    if not claim_figures:
+        return out
+    if not found:
+        out["unverified"] = len(claim_figures)
+        return out
+    table = found[0]
+    grid = [[_figure_spans(cell) for cell in row] for row in table["rows"]]
+    shown = set()
+    for row in grid:
+        for spans in row:
+            shown.update(v for v, _h in spans)
+    lines = [[s for spans in row for s in spans] for row in grid]
+    width = max((len(row) for row in grid), default=0)
+    lines += [[s for row in grid if c < len(row) for s in row[c]] for c in range(width)]
+    for value, half in claim_figures:
+        if value in shown:
+            out["in_cells"] += 1
+        elif any(_one_step(value, half, line[i], line[j])
+                 for line in lines for i in range(len(line)) for j in range(i + 1, len(line))):
+            out["one_step"] += 1
+        else:
+            out["unverified"] += 1
+    return out
+
+
+def cited_cells(request_rows):
+    """{cells, missing}: the cell ids the judge's one table tool request cited in its calls Python
+    ran (`cells`, sorted), and how many of its lines named an id the table does not hold
+    (`missing`). None when no request reply was read: then nothing was cited and nothing is lowered."""
+    if request_rows is None:
+        return None
+    cells = sorted({a for row in request_rows if row.get("ok") for a in row.get("args") or [] if _CITED_CELL.fullmatch(str(a))})
+    return {"cells": cells, "missing": sum(1 for row in request_rows if row.get("refused") == ID_NOT_VALID)}
+
+
+# D-715 item 2 (Seckin 22:31): showing a cell stays optional, but whenever the judge names a cell its record says
+# which. The path a decision row's `cells_named` came from: the table tool request's lines (every id a line named,
+# run or refused), or none, when no request reply was read: the choice decision itself writes no text, so it
+# names no cell. An audit record only: no leaning, figure, score or prompt reads it.
+NAMED_BY_REQUEST, NAMED_BY_NONE = "request", "no_text"
+
+
+def named_cells(request_rows):
+    """{cells_named, cells_named_by} of one decision (D-715 item 2): the sorted cell ids every line of the
+    judge's request named, whether Python ran the line or refused it (a reply naming none gives none); with no
+    request reply read (`request_rows` None: no request, none made, or it failed), none, by `no_text`."""
+    if request_rows is None:
+        return {"cells_named": [], "cells_named_by": NAMED_BY_NONE}
+    return {"cells_named": sorted({str(a) for row in request_rows for a in row.get("args") or []
+                                   if _CITED_CELL.fullmatch(str(a))}),
+            "cells_named_by": NAMED_BY_REQUEST}
+
+
+def leaning_of(decision, check=None, cited=None):
+    """(leaning, its confidence, why) of one decision under TABLE-AUTHORITY-A, or (None, None, []):
+    the decision itself is never changed. An unsettled decision leans only below its threshold with a
+    verdict on top; a settled verdict is lowered by an unverified figure ("holds" only) or by its
+    citations (either verdict). The confidence is the model's own top probability."""
+    if not isinstance(decision, dict):
+        return None, None, []
+    why = []
+    if not decision.get("settled"):
+        top = decision.get("top")
+        if decision.get("why") != choice_decision.BELOW_THRESHOLD or top not in LEANABLE:
+            return None, None, []
+        why.append(LEAN_BELOW)
+        verdict = top
+    else:
+        verdict = decision.get("decided")
+        if verdict not in LEANABLE:
+            return None, None, []
+    if verdict == HOLDS_LABEL and check and check.get("unverified"):
+        why.append(LEAN_FIGURE)
+    if cited is not None:
+        if cited.get("missing"):
+            why.append(LEAN_CITED_MISSING)
+        elif not cited.get("cells"):
+            why.append(LEAN_NONE_CITED)
+    if not why:
+        return None, None, []
+    return verdict, decision.get("confidence"), why
 
 
 def key_columns(table):
@@ -279,12 +432,13 @@ def declared(rules):
     return [r for r in rules or [] if r.get("compare") == COMPARE_CELLS]
 
 
-def question(config, cells, claim, contracts=None):
+def question(config, cells, claim, contracts=None, results=""):
     """The narrow question on a claim and its cells; one pass, so a cell's braces stay text. The
     `{tools}` slot holds what the judge agent's declared tools found (`judge_agent.claim_tools`,
-    under `contracts`, the shipped ones by default), "" when no contract declares a shown tool."""
+    under `contracts`, the shipped ones by default), "" when no contract declares a shown tool,
+    followed by the table tool request's RESULTS block (`results`, D-681), "" when no request ran."""
     import judge_agent
-    slots = {"cells": cells, "claim": claim, "tools": judge_agent.claim_tools(cells, claim, contracts)}
+    slots = {"cells": cells, "claim": claim, "tools": judge_agent.claim_tools(cells, claim, contracts) + results}
     return re.sub(r"\{(cells|claim|tools)\}", lambda m: slots[m.group(1)], config["decision"]["template"])
 
 
@@ -329,14 +483,26 @@ def finding(rule, unit, selection, decision, source_rule_id=None):
     return item
 
 
-def _row(unit, selection, decision):
-    """One decided question in the pairing map: identifiers, indexes and numbers, no text."""
-    return {"unit_id": unit.get("unit_id"), "selected_by": selection["selected_by"], "rows": selection["rows"],
-            "columns": selection["columns"], "of_rows": selection["of_rows"], "of_columns": selection["of_columns"],
-            "ranked_by": selection["ranked_by"], "decided": decision["decided"], "settled": decision["settled"],
-            "why": decision["why"], "confidence": decision["confidence"], "threshold": decision["threshold"],
-            "declared_mass": decision["declared_mass"], "logits_dtype": decision.get("logits_dtype"),
-            "answers": {a["label"]: a["probability"] for a in decision["answers"]}}
+def _row(unit, selection, decision, authority=None):
+    """One decided question in the pairing map: identifiers, indexes and numbers, no text.
+    `authority` is TABLE-AUTHORITY-A's reading beside the decision ({check, cited}); with it the
+    row carries `leaning`, `leaning_confidence`, `leaning_why`, `figures` and, when a request
+    ran, `cited_cells` and `cited_missing`. The decision's own fields are never changed by it."""
+    row = {"unit_id": unit.get("unit_id"), "selected_by": selection["selected_by"], "rows": selection["rows"],
+           "columns": selection["columns"], "of_rows": selection["of_rows"], "of_columns": selection["of_columns"],
+           "ranked_by": selection["ranked_by"], "decided": decision["decided"], "settled": decision["settled"],
+           "why": decision["why"], "confidence": decision["confidence"], "threshold": decision["threshold"],
+           "declared_mass": decision["declared_mass"], "logits_dtype": decision.get("logits_dtype"),
+           "answers": {a["label"]: a["probability"] for a in decision["answers"]}}
+    if authority is not None:
+        check, cited = authority.get("check"), authority.get("cited")
+        leaning, confidence, why = leaning_of(decision, check, cited)
+        row.update(leaning=leaning, leaning_confidence=confidence, leaning_why=why, figures=check)
+        if cited is not None:
+            row.update(cited_cells=cited["cells"], cited_missing=cited["missing"])
+        if authority.get("named") is not None:
+            row.update(authority["named"])     # D-715 item 2: recorded beside the decision, read by nothing
+    return row
 
 
 def _selections(units, claim, config, embed_with, calls, on_selected=None):
@@ -365,7 +531,8 @@ def _selections(units, claim, config, embed_with, calls, on_selected=None):
     return chosen
 
 
-def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_present=None, on_kept=None, contracts=None):
+def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_present=None, on_kept=None, contracts=None,
+           ask_request=None):
     """(records, calls): the rule's claim on each unit's selected cells, put to `ask(user_text) ->
     decision or None`. `calls` holds each decision (`decisions`), what was refused
     (`selection_refused`, a kept record's `refused`) and why anything was not asked (`not_asked`,
@@ -375,12 +542,21 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
     `contracts` are the judge agent's (D-S55): its declared tools fill the question's `{tools}`
     slot and each tool call is one row of `calls["tool_rows"]` (`judge_agent.tool_rows`). With
     {} no tool is declared, the question is the measured one and no row is kept; None reads the
-    shipped contracts."""
+    shipped contracts.
+
+    `ask_request(spec) -> ask(user_text) -> reply text or None` is the table tool request's narrow
+    call (D-681). It is used only when the contracts declare `request_tools` for the task: then each
+    question is preceded by ONE request (`table_tools.request_round`), its lines are each a tool row,
+    and its RESULTS block joins the `{tools}` slot. With nothing declared no request is made, no key
+    is added to `calls` and the question is byte for byte the measured one."""
     import judge_agent
     contracts = judge_agent.shipped_contracts() if contracts is None else contracts
-    calls = {"tables": 0, "whole_table": 0, "whole_tables_left": 0, "made": 0, "failed": 0, "unreadable": 0, "unsettled": 0,
+    calls = {"tables": 0, "whole_table": 0, "whole_tables_left": 0, "made": 0, "failed": 0, "unreadable": 0, "unsettled": 0, "leanings": 0,
              "not_met": 0, "decisions": [], "decision_notes": {}, "selection_refused": [], "refused": [], "stopped": None, "raised": None,
              "not_asked": None, "tool_rows": []}
+    requested = judge_agent.request_tools(judge_agent.CELL_CLAIM, contracts) if ask_request is not None else []
+    if requested:
+        calls.update(requests=0, requests_skipped=0, request_failed=0, request_calls=0)
 
     def tools(unit, prompt, *rows):
         calls["tool_rows"].extend(judge_agent.tool_rows(judge_agent.CELL_CLAIM, contracts, rule["id"], unit.get("unit_id"),
@@ -399,7 +575,20 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
             return records, calls
         for unit, selection in chosen:
             claim = rule.get("rule") or ""
-            prompt = question(config, selection["cells"], claim, contracts)
+            results = ""
+            cited = None
+            request_rows = None
+            if requested:
+                import table_tools
+                failed_before = calls["request_failed"]
+                results, request_rows, request_prompt = table_tools.request_round(
+                    unit.get("text"), selection, claim, config, requested, ask_request, calls)
+                if request_prompt is not None and request_rows:
+                    tools(unit, request_prompt, *request_rows)
+                if request_prompt is not None and calls["request_failed"] == failed_before:
+                    cited = cited_cells(request_rows)
+            prompt = question(config, selection["cells"], claim, contracts, results) if results else \
+                question(config, selection["cells"], claim, contracts)
             tools(unit, prompt, judge_agent.find_cells_row(selection),
                   judge_agent.locate_figures_row(selection["cells"], claim))
             calls["made"] += 1
@@ -418,8 +607,13 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
                 calls["unreadable"] += 1
                 continue
             calls["unsettled"] += not decision["settled"]
-            calls["decisions"].append(_row(unit, selection, decision))
+            row = _row(unit, selection, decision, {"check": figure_check(selection["cells"], claim), "cited": cited,
+                                                   "named": named_cells(request_rows if cited is not None else None)})
+            calls["decisions"].append(row)
+            calls["leanings"] += bool(row["leaning"])
             if cls != "FLAG":
+                continue
+            if row["leaning"]:     # TABLE-AUTHORITY-A rule 4: a lowered "not met" writes no record
                 continue
             calls["not_met"] += 1
             item = finding(rule, unit, selection, decision, source_rule_id)

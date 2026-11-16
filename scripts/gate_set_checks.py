@@ -19,6 +19,11 @@ Each proof is neutralise, fail, restore, pass.
    JSON lines are read; a string under eight words is no record; a judge mix is read under
    `#rows,held_out` only (its questions left out), and any other set is checked through
    `--candidates`, a malformed file or two inputs refused.
+3c. the dated part sets (D-705, issue #301): the 12 November set stays the default, a fixture
+   fingerprint built as on 12 November verifies by its digest and its result is drawn from, neither
+   under the 16 November set; the 16 November set covers fixture folders with REFPAIR,
+   ROUTE_GATE_174_340 and T253 in development, refuses a path outside its part, still refuses an
+   external/s05 folder no part covers, and refuses its cosine step by name (G1's prompts lost).
 4. the draw: the claim set and the quick subset are disjoint, in salted-hash order, one document a
    group (ContraDoc) or whole papers to both minima (SciTab); too few is refused, never filled;
    a leakage result without the cosine rule, or with other thresholds, is refused.
@@ -919,6 +924,171 @@ def expected_guard():
             "ids file changed": 2, "step 2 above the ceiling": 2, "step 2's threshold used": 0.5}
 
 
+# ---- 3c: the dated part sets (D-705, issue #301) ------------------------------------------------
+
+NEW_SET, OLD_SET = "parts_2026-11-16", "parts_2026-11-12"
+NEW_FOLDERS = ("REFPAIR", "ROUTE_GATE_174_340", "T253")
+PART_RECORD = ["a record of more than eight words held in this fixture file"]
+
+
+def _tree(root, folders):
+    """Fixture folders under `root`, each with one JSON file of one record: names only, no real data."""
+    for rel in folders:
+        (root / rel).mkdir(parents=True, exist_ok=True)
+        (root / rel / "x.json").write_text(json.dumps(PART_RECORD), encoding="utf-8")
+
+
+def _new_parts(root, s05=("T", "T2E", "P2A", "P1", "VER", "D-S45") + NEW_FOLDERS):
+    """The 16 November set's parts over a fixture tree: every surviving part, the three new folders in development."""
+    _tree(root, ["external/s05/" + f for f in s05 + ("D-S56", "GATE", "T/T_TRAIN")]
+          + ["tuning/auditor_v1", "shimmer-scratch/ontology_pairs", "benchmark/dev_cases", "external/contradoc/dev"])
+    for mix in ("T2E", "T/T_TRAIN"):
+        (root / "external/s05" / mix / "replay_prompts.json").write_text(json.dumps(PART_RECORD), encoding="utf-8")
+    s = root / "external" / "s05"
+    return [("judge_mix_2e", str(s / "T2E" / "replay_prompts.json")), ("judge_mix_1", str(s / "T" / "T_TRAIN" / "replay_prompts.json")),
+            ("judge", ";".join(str(s / f) for f in ("T", "T2E", "P2A"))), ("auditor_tuning", str(root / "tuning" / "auditor_v1")),
+            ("producer", str(s / "P1")), ("verifier", str(s / "VER")), ("ontology", str(root / "shimmer-scratch" / "ontology_pairs")),
+            ("dev_cases", str(root / "benchmark" / "dev_cases")),
+            ("development", ";".join([str(root / "external" / "contradoc" / "dev"), str(s / "D-S45")] + [str(s / f) for f in NEW_FOLDERS]))]
+
+
+def _code(main, argv):
+    """A CLI's exit code, its output kept quiet; a neutralised refusal that fails past the CLI's own handler is named."""
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            return main(argv), err.getvalue()
+    except Exception as exc:
+        return "error past the refusal: " + type(exc).__name__, err.getvalue()
+
+
+def _built(fn):
+    try:
+        return fn()
+    except ValueError as exc:
+        return "refused: " + str(exc).split(":")[0]
+
+
+def observe_new_parts():
+    """The 16 November set covers a fixture tree with the three new folders in development, by name only;
+    a new folder in another part, the 12 November parts, the 12 November set over the new folders, an
+    external/s05 folder no part covers and no set named are each refused; --count runs under the set."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        s05 = root / "external" / "s05"
+        parts = _new_parts(root)
+        data = _built(lambda: leakage.fingerprint(parts, part_set=NEW_SET))
+        counted = _code(leakage.main, ["fingerprint", "--count", "--part-set", NEW_SET, "--out", str(root / "c.json")]
+                        + [a for n, p in parts for a in ("--part", "%s=%s" % (n, p))])[0]
+        moved = [(n, p + ";" + str(s05 / "REFPAIR") if n == "judge" else p) for n, p in parts if n != "development"]
+        moved += [("development", str(root / "external" / "contradoc" / "dev"))]
+        old = parts + [("auditor", str(s05 / "AUD"))]
+        new_folders_old = caught(lambda: gate_set.check_given_parts(old, OLD_SET))
+        _tree(root, ["external/s05/NEWRUN"])
+        uncovered = caught(lambda: leakage.fingerprint(parts, part_set=NEW_SET))
+        files = data["files"]["development"] if isinstance(data, dict) else []
+        return {"part set": data.get("part_set") if isinstance(data, dict) else data,
+                "parts": data["parts"] if isinstance(data, dict) else None,
+                "records": sum(data["records"].values()) if isinstance(data, dict) else None,
+                "count under the set": counted,
+                "the s05 folders in development": sorted({f["file"].replace("\\", "/").split("/external/s05/")[1].split("/")[0]
+                                                         for f in files if "/external/s05/" in f["file"].replace("\\", "/")}),
+                "a new folder in judge": caught(lambda: gate_set.check_given_parts(moved, NEW_SET)),
+                "the 12 November parts under the new set": caught(lambda: gate_set.check_given_parts(old, NEW_SET)),
+                "the new folders under the 12 November set": new_folders_old,
+                "a folder no part covers": uncovered, "listed": leakage.uncovered([q for _n, p in parts for q in p.split(";")]),
+                "no set named": caught(lambda: gate_set.part_paths(None))}
+
+
+def expected_new_parts():
+    return {"part set": NEW_SET, "parts": sorted(gate_set.PART_PATHS_2026_11_16), "records": 18, "count under the set": 0,
+            "the s05 folders in development": ["D-S45"] + sorted(NEW_FOLDERS),
+            "a new folder in judge": "refused: part set parts_2026-11-16",
+            "the 12 November parts under the new set": "refused: part set parts_2026-11-16 names the parts auditor_tuning, dev_cases, "
+            "development, judge, judge_mix_1, judge_mix_2e, ontology, producer, verifier; given auditor, auditor_tuning, dev_cases, "
+            "development, judge, judge_mix_1, judge_mix_2e, ontology, producer, verifier",
+            "the new folders under the 12 November set": "refused: part set parts_2026-11-12",
+            "a folder no part covers": "refused: external/s05 entries no part covers", "listed": ["external/s05/NEWRUN"],
+            "no set named": "refused: name a declared part set (parts_2026-11-12, parts_2026-11-16); None is not one"}
+
+
+def _old_parts(root):
+    """The 12 November set's ten parts over a fixture tree, G1 and AUD among its folders."""
+    s05 = root / "external" / "s05"
+    parts = _new_parts(root, s05=("T", "T2E", "P2A", "P1", "VER", "D-S45", "G1", "AUD"))
+    parts = [(n, ";".join([str(root / "external" / "contradoc" / "dev"), str(s05 / "D-S45"), str(s05 / "G1")]) if n == "development" else p)
+             for n, p in parts]
+    return parts + [("auditor", str(s05 / "AUD"))]
+
+
+def observe_old_parts():
+    """The 12 November set stays the default: a fixture fingerprint built as on 12 November (no set named)
+    verifies by its digest, its check result is drawn from by default, and neither is read under the 16
+    November set; a wrong digest and a result built under the new set are refused by default."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        embed = _embedder({"a": [1.0, 0.0, 0.0], "nothing": [0.0, 1.0, 0.0]})
+        data = leakage.fingerprint(_old_parts(root), embed)
+        fp = root / "fp.json.gz"
+        leakage.write(data, fp)
+        sha = hashlib.sha256(fp.read_bytes()).hexdigest()
+        cands = [{"id": "c%d" % i, "group": "g%d" % i, "texts": ["nothing shared with any part at all in this text %d" % i]} for i in range(3)]
+        leak = leakage.check(leakage.read(fp), cands, embed, ["g2"], {"exclude_ids_sha256": "e" * 64, "input_sha256": "i" * 64})
+        stamped = dict(leak, fingerprint_part_set=NEW_SET)
+        verified = _built(lambda: gate_set.verify_fingerprint(fp, sha))
+        return {"no set named in the file": "part_set" not in data,
+                "verified": (verified["part_set"], verified["parts"]) if isinstance(verified, dict) else verified,
+                "kept by default": _built(lambda: sorted(gate_set._kept(leak))),
+                "a wrong digest": caught(lambda: gate_set.verify_fingerprint(fp, "0" * 64)).split(" is ")[0],
+                "under the new set": caught(lambda: gate_set.verify_fingerprint(fp, sha, NEW_SET)),
+                "its result under the new set": caught(lambda: gate_set._kept(leak, part_set=NEW_SET)),
+                "a new-set result by default": caught(lambda: gate_set._kept(stamped))}
+
+
+def expected_old_parts():
+    return {"no set named in the file": True, "verified": (OLD_SET, sorted(gate_set.PART_PATHS)), "kept by default": ["g0", "g1"],
+            "a wrong digest": "refused: the fingerprints' SHA-256",
+            "under the new set": "refused: the fingerprints were built under part set parts_2026-11-12, not parts_2026-11-16",
+            "its result under the new set": "refused: the leakage result's fingerprints were built under part set parts_2026-11-12, "
+            "not parts_2026-11-16",
+            "a new-set result by default": "refused: the leakage result's fingerprints were built under part set parts_2026-11-16, "
+            "not parts_2026-11-12"}
+
+
+def observe_cosine_prompts():
+    """The 16 November set's cosine step is refused by name before anything is read, since G1's prompts
+    were lost and no replacement is declared; a check on new-set fingerprints with a step record from
+    another set is refused; with a step record of its own set it runs and carries the set."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        ok = root / "ok.json"
+        ok.write_text("[]", encoding="utf-8")
+        step, said = _code(leakage.main, ["cosine-step", "--part-set", NEW_SET, "--dev", str(ok), "--assignment", str(ok),
+                                          "--prompts", str(ok), "--items", str(ok), "--out", str(root / "s.json")])
+        fp = root / "fp.json.gz"
+        leakage.write(leakage.fingerprint(_new_parts(root / "tree"), part_set=NEW_SET), fp)
+        (root / "none.json").write_text(json.dumps({"group_keys": []}), encoding="utf-8")
+        cands = root / "cands.json"
+        cands.write_text(json.dumps([{"id": "a", "group": "g", "texts": ["nothing"]}]), encoding="utf-8")
+        (root / "old_step.json").write_text(json.dumps({"threshold_by_rule": 0.86}), encoding="utf-8")
+        (root / "new_step.json").write_text(json.dumps({"threshold_by_rule": 0.86, "part_set": NEW_SET}), encoding="utf-8")
+        args = ["check", "--fingerprints", str(fp), "--candidates", str(cands), "--exclude-groups", str(root / "none.json")]
+        other = _code(leakage.main, args + ["--cosine-step", str(root / "old_step.json"), "--out", str(root / "r1.json")])[0]
+        own = _code(leakage.main, args + ["--cosine-step", str(root / "new_step.json"), "--out", str(root / "r2.json")])[0]
+        carried = json.loads((root / "r2.json").read_text(encoding="utf-8")).get("fingerprint_part_set") if own == 0 else None
+        return {"cosine step under the new set": step,
+                "what is missing named": all(w in said for w in ("declares no cosine-step prompts file", "G1", "bare_model.py", "open item 134")),
+                "nothing written": not (root / "s.json").exists(),
+                "the 12 November prompts path": caught(lambda: gate_set.cosine_step_prompts(OLD_SET, "external/s05/G1/g1_prompts.json")),
+                "a step record from another set": other, "a step record of its own set": own, "the set carried": carried}
+
+
+def expected_cosine_prompts():
+    return {"cosine step under the new set": 2, "what is missing named": True, "nothing written": True,
+            "the 12 November prompts path": "accepted", "a step record from another set": 2, "a step record of its own set": 0,
+            "the set carried": NEW_SET}
+
+
 def observe_cover():
     """A fingerprint over external/s05 is refused while any of its entries but D-S56 and GATE belongs to
     no part; covered whole, it runs."""
@@ -983,6 +1153,26 @@ def run_checks():
         ("reading: an unknown archive refused", observe_reading, expected_reading, lambda: patched(leakage, "REFUSED_ARCHIVES", ())),
         ("reading: the fresh folder refused", observe_reading, expected_reading, lambda: _patches((leakage, "NEVER", ()), (leakage, "NEVER_COMPONENTS", set()))),
         ("every external/s05 folder in a part", observe_cover, expected_cover, lambda: patched(leakage, "uncovered", lambda paths: [])),
+        ("part sets: the three new folders in development", observe_new_parts, expected_new_parts, lambda: mock.patch.dict(
+            gate_set.PART_PATHS_2026_11_16, {"development": tuple(q for q in gate_set.PART_PATHS_2026_11_16["development"]
+                                                                if q.rstrip("/").rsplit("/", 1)[-1] not in NEW_FOLDERS)})),
+        ("part sets: a path outside its part's declared paths", observe_new_parts, expected_new_parts, lambda: _with_source(
+            gate_set, "check_given_parts", "                raise ValueError(\"part set %s: %s is not under part %s's declared paths\" % (part_set, q, name))",
+            "                pass")),
+        ("part sets: an uncovered folder still refused", observe_new_parts, expected_new_parts, lambda: _with_source(
+            leakage, "fingerprint", "    if left_out:", "    if False:")),
+        ("part sets: named, never inferred", observe_new_parts, expected_new_parts, lambda: patched(
+            gate_set, "part_paths", lambda part_set: gate_set.PART_SETS.get(part_set, gate_set.PART_PATHS))),
+        ("part sets: the 12 November fingerprint verified by its digest", observe_old_parts, expected_old_parts, lambda: _with_source(
+            gate_set, "verify_fingerprint", "    if digest.hexdigest() != sha256:", "    if False:")),
+        ("part sets: a result's set read by the draw", observe_old_parts, expected_old_parts, lambda: _with_source(
+            gate_set, "_kept", '    if (leak.get("fingerprint_part_set") or PARTS_2026_11_12) != part_set:', "    if False:")),
+        ("part sets: the 12 November output unchanged", observe_old_parts, expected_old_parts, lambda: _with_source(
+            leakage, "fingerprint", '    if part_set is not None:\n        out["part_set"] = part_set','    out["part_set"] = part_set or "parts_2026-11-12"')),
+        ("part sets: the lost cosine-step prompts refused", observe_cosine_prompts, expected_cosine_prompts, lambda: _with_source(
+            gate_set, "cosine_step_prompts", "    if declared is None:", "    if False:")),
+        ("part sets: fingerprints and step 2 from one set", observe_cosine_prompts, expected_cosine_prompts, lambda: _with_source(
+            leakage, "main", '        if data.get("part_set") != step.get("part_set"):', "        if False:")),
         ("the guard on every command", observe_guard, expected_guard, lambda: patched(leakage, "guard_args", lambda args: None)),
         ("the guard on archive members", observe_guard, expected_guard, lambda: _with_source(
             leakage, "_entries", "    guard(label)\n", "")),
@@ -1037,7 +1227,7 @@ def run_checks():
             gate_score, "figures", "    if not set_sha256 or set_sha256 not in {CLAIM_SET_SHA256, QUICK_SET_SHA256} - {None}:", "    if False:")),
         ("the gate: draws at deep levels", observe_gate_score, expected_gate_score, lambda: patched(gate_score, "TAIL_DRAWS", 1)),
         ("draw: the quick salt", observe_draw, expected_draw, lambda: patched(gate_set, "SALT_QUICK", "another:")),
-        ("draw: the cosine rule required", observe_draw, expected_draw, lambda: patched(gate_set, "_kept", lambda leak, input_sha256=None, required_parts=None, expected=None: set(leak["kept_group_keys"]))),
+        ("draw: the cosine rule required", observe_draw, expected_draw, lambda: patched(gate_set, "_kept", lambda leak, input_sha256=None, required_parts=None, expected=None, part_set=None: set(leak["kept_group_keys"]))),
         ("the gate: a paired bootstrap", observe_gate_score, expected_gate_score, _unpaired),
         ("the gate: bar (a) needs the interval", observe_gate_score, expected_gate_score, lambda: _with_source(
             gate_score, "compute", '"bar_a": round(a_point, 9) >= BAR_ABOVE_B1 and a_int[0] > 0,', '"bar_a": round(a_point, 9) >= BAR_ABOVE_B1,')),
@@ -1060,7 +1250,8 @@ def run_checks():
                                     neutralise=neutralise))
     return "PASS", ("%d proofs on invented pairs, rows, records and an injected embedder, no benchmark file and no key read: the "
                     "declared class setting both ways in the SciTab headline, the CLI, judge_read and choice_read; ContraDoc's R-acc(pos) and EHR over true positives; the four leakage "
-                    "rules, whole groups and no text out; the seeded draw, disjoint and refused when short; the class-setting rule; the gate's paired bootstrap and both bars") % len(results)
+                    "rules, whole groups and no text out; the dated part sets (the 12 November default verified, the 16 November set "
+                    "with the three new folders in development, the lost cosine-step prompts refused); the seeded draw, disjoint and refused when short; the class-setting rule; the gate's paired bootstrap and both bars") % len(results)
 
 
 if __name__ == "__main__":

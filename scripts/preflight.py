@@ -171,8 +171,8 @@ def sensitive_readiness(project_root=None):
         with _quiet_readiness():
             import sensitivity_layer
             if not sensitivity_layer.is_active():
-                return False, ("Sensitive cannot start because the required LAW-IV privacy layer is inactive. "
-                               "It requires operator activation; do not submit sensitive documents.")
+                return False, ("Sensitive cannot start because the privacy layer that masks sensitive content is switched off. "
+                               "Choose Normal only for documents that are not sensitive; do not submit sensitive documents.")
             import redaction_gate
             status = redaction_gate.qwen_backend_status(root)
         if not status.get("configured"):

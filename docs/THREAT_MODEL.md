@@ -68,9 +68,14 @@ STEP 11 there was no backup mechanism for them at all. There is now:
 4. **System to model providers.** Prompts, and therefore document text, leave
    the machine on every cloud call (`REALITY_MAP_P4` 4.5). This is the boundary
    LAW-IV governs, and the one the outbound masking layer exists to police.
-5. **Local model.** The Qwen redactor runs in-process via `transformers`, on
-   local hardware. Under the local backend profile every agent does, and no
-   provider client is built (gate check 313). No Ollama, no HTTP model server (`REALITY_MAP_P4` 4.5, both
+5. **Local model.** The Qwen redactor runs in-process via `transformers`, inside
+   Shimmer's own run. Under the local backend profile every agent does, and no
+   provider client is built (gate check 313). "Local" here is the product rule (no
+   provider call, no web, NO-WEB-LOCAL-A), not where the run executes: a local-profile
+   run on a rented machine is held to it the same way (gate checks 502 and 503). Where
+   the run executes is a separate boundary: a run on a rented machine sends its
+   documents to that machine (`docs/GUIDE_EN.md`, "Three ways in"), and LAW-IV keeps
+   sensitive content on the operator's own machine. No Ollama, no HTTP model server (`REALITY_MAP_P4` 4.5, both
    `NOT FOUND` rows).
 
 ---

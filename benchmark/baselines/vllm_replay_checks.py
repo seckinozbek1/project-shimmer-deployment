@@ -20,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import types
@@ -198,7 +199,7 @@ class PortProof(unittest.TestCase):
         self.assertGreater(_drive(torch, _tok(), _dev_rows(2), neutralise=True), 0)
 
 
-def _file(folder, n=2, text="prompt"):
+def _file(folder, n=2, text="prompt", hf_aux=False, vllm=True):
     import replay_prompts
     prompts = []
     for i in range(n):
@@ -207,7 +208,8 @@ def _file(folder, n=2, text="prompt"):
                         "prompt_sha256": vllm_replay._sha(prompt), "max_new_tokens": 8})
     value = {"schema": vllm_replay.SCHEMA, "batch": 4, "arms": list(vllm_replay.ARMS),
              "groups": [{"name": "plain", "kind": "plain", "current_path": "sdpa",
-                         "file": {"schema": replay_prompts.SCHEMA, "prompt_count": n, "prompts": prompts}}]}
+                         "file": {"schema": replay_prompts.SCHEMA, "prompt_count": n, "prompts": prompts},
+                         **({"hf_aux": True} if hf_aux else {}), **({} if vllm else {"vllm": False})}]}
     value["prompt_count"] = len(vllm_replay.load_value(value))
     path = Path(folder) / "replay_prompts.json"
     path.write_text(json.dumps(value), encoding="utf-8")
@@ -232,11 +234,16 @@ NF4 = {"quantization_config": {"quant_method": "bitsandbytes", "bnb_4bit_quant_t
 SECRET_PROMPT = "prompt text that never leaves the instance"
 
 
+# A sealed lock of two entries (continuation lines, as uv writes them) and a group lock of the first.
+SEALED_ENTRY = "vllm==0.33.0 " + chr(92) + chr(10) + "    --hash=sha256:" + "a" * 64 + chr(10)
+SEALED_LOCK_TEXT = SEALED_ENTRY + "accelerate==1.15.0 " + chr(92) + chr(10) + "    --hash=sha256:" + "b" * 64 + chr(10)
+
+
 class PassProof(unittest.TestCase):
     """run() with the current engine, the child, the eviction and the model paths replaced."""
 
     def _run(self, leak=False, runner=None, config=NF4, allowance=8, evict=None, dtype="bfloat16", folder=None,
-             run_id=None, compute="bfloat16"):
+             run_id=None, compute="bfloat16", adapter=None, hf_aux=False, vllm=True, venv=None, venv_runner=None):
         reply = '{"items":[{"resolved":"yes","source_document":"d"}]}'
         seen = {"order": []}
 
@@ -261,6 +268,16 @@ class PassProof(unittest.TestCase):
             return {"rows": rows}
 
         def fake_runner(argv, env, stdout, stderr, timeout, cwd):
+            if argv[1].endswith("hf_aux_child.py"):
+                seen["order"].append("hf_child")
+                job = json.loads(Path(argv[argv.index("--job") + 1]).read_text(encoding="utf-8"))
+                seen["hf_job"] = job
+                rows = {"hf_aux:" + p["prompt_id"]: {"text": reply, "token_ids": [1], "output_tokens": 4,
+                                                     "finish_reason": "stop", "constraint": None} for p in job["prompts"]}
+                Path(argv[argv.index("--out") + 1]).write_text(json.dumps(
+                    {"arms": {"hf_aux": {"seconds": 2.0, "output_tokens": 8, "rows": rows}}, "error": None,
+                     "spec": {"engine": "transformers (auxiliary stack)"}}), encoding="utf-8")
+                return types.SimpleNamespace(returncode=0)
             seen["order"].append("child")
             seen["argv"], seen["env"] = argv, env
             job = json.loads(Path(argv[argv.index("--job") + 1]).read_text(encoding="utf-8"))
@@ -279,20 +296,25 @@ class PassProof(unittest.TestCase):
             return {"free_bytes": 22, "total_bytes": 24}
 
         with (contextlib.nullcontext(folder) if folder else tempfile.TemporaryDirectory()) as d:
-            path, value = _file(d, 2, text=SECRET_PROMPT)
+            path, value = _file(d, 2, text=SECRET_PROMPT, hf_aux=hf_aux, vllm=vllm)
+            if venv is not None:
+                value["groups"][0]["venv"] = venv
+                Path(path).write_text(json.dumps(value), encoding="utf-8")
+                (Path(path).parent / vllm_replay.SEALED_LOCK).write_text(SEALED_LOCK_TEXT, encoding="utf-8")
             base = Path(d) / "base"
             base.mkdir(exist_ok=True)
             (base / "config.json").write_text(json.dumps(config), encoding="utf-8")
             os.environ["SHIMMER_FAKE_SECRET"] = "x"
             original = vllm_replay.child_env
             if leak:
-                vllm_replay.child_env = lambda python: dict(os.environ)
+                vllm_replay.child_env = lambda python, batch_invariant=True: dict(os.environ)
             try:
                 result = vllm_replay.run(path, Path(d) / "evidence" / "b1" / (run_id or "vllm"), runner=runner or fake_runner,
                                          run_id=run_id,
                                          current=current, evict=evict or fake_evict, digest_for=lambda tok: "d" * 64,
                                          tokenizer_for=lambda b: (lambda text, add_special_tokens: {"input_ids": [1, 2]}),
-                                         paths_for=lambda replay, group, prompts: (str(base), None, None))
+                                         paths_for=lambda replay, group, prompts: (str(base), adapter, 8 if adapter else None),
+                                         venv_runner=venv_runner)
             finally:
                 vllm_replay.child_env = original
                 os.environ.pop("SHIMMER_FAKE_SECRET", None)
@@ -300,6 +322,107 @@ class PassProof(unittest.TestCase):
             files = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
             leaked = [f for f in files if SECRET_PROMPT in (out / f).read_text(encoding="utf-8", errors="replace")]
             return result, files, leaked, seen, value
+
+    def test_a_complete_install_marks_its_lock_and_a_failed_one_leaves_no_mark(self):
+        venv = {"name": "venv_vllm_217f", "lock": SEALED_ENTRY, "lock_sha256": vllm_replay._sha(SEALED_ENTRY)}
+
+        def runner(fail_install):
+            def run(argv, capture_output, text, timeout, cwd):
+                if argv[1:3] == ["-m", "venv"]:
+                    python = Path(argv[3]) / "bin" / "python"
+                    python.parent.mkdir(parents=True)
+                    python.write_text("")
+                    return types.SimpleNamespace(returncode=0, stderr="")
+                return types.SimpleNamespace(returncode=1 if fail_install else 0, stderr="")
+            return run
+        for fail_install in (False, True):
+            with self.subTest(fail_install=fail_install), tempfile.TemporaryDirectory() as d:
+                (Path(d) / vllm_replay.SEALED_LOCK).write_text(SEALED_LOCK_TEXT, encoding="utf-8")
+                found, record = vllm_replay.group_python(d, {"venv": venv}, runner=runner(fail_install))
+                marker = Path(d) / "venv_vllm_217f" / vllm_replay.VENV_MARKER
+                if fail_install:
+                    self.assertIsNone(found)
+                    self.assertFalse(marker.exists())
+                else:
+                    self.assertIsNotNone(found)
+                    self.assertEqual(marker.read_text(encoding="utf-8"), venv["lock_sha256"])
+
+    def test_a_group_environment_is_made_from_the_fetched_wheels_and_runs_the_child(self):
+        lock = SEALED_ENTRY
+        venv = {"name": "venv_vllm_217f", "lock": lock, "lock_sha256": vllm_replay._sha(lock)}
+        calls = []
+
+        def venv_runner(argv, capture_output, text, timeout, cwd):
+            calls.append(argv)
+            if "-r" in argv:
+                calls.append(Path(argv[argv.index("-r") + 1]).read_text(encoding="utf-8"))
+            if argv[1:3] == ["-m", "venv"]:
+                python = Path(argv[3]) / "bin" / "python"
+                python.parent.mkdir(parents=True)
+                python.write_text("")
+            return types.SimpleNamespace(returncode=0, stderr="")
+        result, files, leaked, seen, value = self._run(venv=venv, venv_runner=venv_runner)
+        self.assertEqual(Path(seen["argv"][0]).parts[-3:], ("venv_vllm_217f", "bin", "python"))
+        self.assertTrue(seen["env"]["PATH"].startswith(str(Path(seen["argv"][0]).parent)))
+        create, install, lock_written = calls
+        self.assertEqual(create[:3], [vllm_replay.SYSTEM_PYTHON, "-m", "venv"])
+        for flag in ("--no-index", "--no-deps", "--require-hashes"):
+            self.assertIn(flag, install)
+        self.assertEqual(Path(install[install.index("--find-links") + 1]).name, "wheels_aux")   # the controller's folder
+        self.assertEqual(lock_written, lock)
+        record = result["groups"]["plain"]["venv"]
+        self.assertEqual((record["name"], record["reused"], [s["step"] for s in record["steps"]]),
+                         ("venv_vllm_217f", False, ["create", "install"]))
+
+    def test_a_group_environment_that_cannot_be_made_runs_no_child_and_says_why(self):
+        lock = SEALED_ENTRY
+        venv = {"name": "venv_vllm_217f", "lock": lock, "lock_sha256": vllm_replay._sha(lock)}
+        failing = lambda argv, capture_output, text, timeout, cwd: types.SimpleNamespace(returncode=1, stderr="no wheel")
+        result, files, leaked, seen, value = self._run(venv=venv, venv_runner=failing)
+        self.assertNotIn("child", seen["order"])
+        self.assertEqual(result["groups"]["plain"]["venv"]["error"], "the group environment's create step failed")
+
+    def test_a_group_environment_is_reused_only_from_its_own_complete_install(self):
+        venv = {"name": "venv_vllm_217f", "lock": SEALED_ENTRY, "lock_sha256": vllm_replay._sha(SEALED_ENTRY)}
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / vllm_replay.SEALED_LOCK).write_text(SEALED_LOCK_TEXT, encoding="utf-8")
+            python = Path(d) / "venv_vllm_217f" / "bin" / "python"
+            python.parent.mkdir(parents=True)
+            python.write_text("")                       # a create that ran, an install that did not
+            found, record = vllm_replay.group_python(d, {"venv": venv}, runner=lambda *a, **k: self.fail("rebuilt"))
+            self.assertIsNone(found)
+            self.assertIn("another lock or a failed install", record["error"])
+            (python.parent.parent / vllm_replay.VENV_MARKER).write_text("0" * 64, encoding="utf-8")
+            self.assertIsNone(vllm_replay.group_python(d, {"venv": venv}, runner=lambda *a, **k: None)[0])
+            (python.parent.parent / vllm_replay.VENV_MARKER).write_text(venv["lock_sha256"], encoding="utf-8")
+            found, record = vllm_replay.group_python(d, {"venv": venv}, runner=lambda *a, **k: self.fail("rebuilt"))
+            self.assertEqual((found, record["reused"]), (python, True))
+
+    def test_a_group_lock_must_be_part_of_the_sealed_lock(self):
+        extra = SEALED_ENTRY + "accelerate==9.9.9 --hash=sha256:" + "c" * 64 + chr(10)
+        venv = {"name": "venv_vllm_217f", "lock": extra, "lock_sha256": vllm_replay._sha(extra)}
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / vllm_replay.SEALED_LOCK).write_text(SEALED_LOCK_TEXT, encoding="utf-8")
+            found, record = vllm_replay.group_python(d, {"venv": venv}, runner=lambda *a, **k: self.fail("built"))
+        self.assertIsNone(found)
+        self.assertIn("accelerate==9.9.9", record["error"])
+        self.assertIsNone(vllm_replay.subset_refusal(SEALED_ENTRY, SEALED_LOCK_TEXT))
+        real = (ROOT / "benchmark/baselines/vllm_aux.lock").read_text(encoding="utf-8")
+        self.assertEqual(len(vllm_replay.lock_entries(real)), 202)
+
+    def test_a_group_environment_is_declared_or_refused(self):
+        lock = "x==1" + chr(10)
+        good = {"name": "venv_vllm_217f", "lock": lock, "lock_sha256": vllm_replay._sha(lock)}
+        self.assertIsNone(vllm_replay.venv_error(good))
+        for bad in (dict(good, name="venv_aux"), dict(good, name="../x"), dict(good, lock_sha256="0" * 64),
+                    {"name": "venv_x"}):
+            with self.subTest(bad=bad):
+                self.assertIsNotNone(vllm_replay.venv_error(bad))
+        with tempfile.TemporaryDirectory() as d:
+            path, value = _file(d, 2)
+            value["groups"][0]["venv"] = dict(good, lock_sha256="0" * 64)
+            with self.assertRaises(ValueError):
+                vllm_replay.load_value(value)
 
     def test_records_env_and_figures(self):
         result, files, leaked, seen, value = self._run()
@@ -404,7 +527,7 @@ class PassProof(unittest.TestCase):
     def test_neutralised_not_run_arm_claims_a_difference(self):
         """Neutralised (every arm counted as run), a refused group claims a difference."""
         original = vllm_replay.group_agreement
-        vllm_replay.group_agreement = lambda rows, ran: original(rows, set(vllm_replay.ARMS[1:]))
+        vllm_replay.group_agreement = lambda rows, ran, others=vllm_replay.ARMS[1:]: original(rows, set(others), others)
         try:
             result, _, _, _, _ = self._run(compute="float32")
         finally:
@@ -419,6 +542,9 @@ class PassProof(unittest.TestCase):
         self.assertEqual(g["agreement"]["vllm_batch"]["byte_identical_rate"], 0.0)
         self.assertTrue(g["stability_finding"]["differs"])
         self.assertIn("never a failure", g["stability_finding"]["reading"])
+        # Option 2's reported figure: items both listed (here every one), coverage apart.
+        self.assertEqual((g["agreement"]["vllm_batch"]["items_both_listed"], g["agreement"]["vllm_batch"]["item_coverage"]), (2, 1.0))
+        self.assertEqual(g["agreement"]["vllm_batch"]["agreement_on_items_both_listed"], 0.0)
 
     def test_two_passes_keep_their_own_work_folders(self):
         with tempfile.TemporaryDirectory() as d:
@@ -551,7 +677,7 @@ class SecondRunProof(unittest.TestCase):
     def test_neutralised_path_leaves_the_venv_off(self):
         original = vllm_replay.child_env
 
-        def old(base_python):
+        def old(base_python, batch_invariant=True):
             env = {k: os.environ[k] for k in vllm_replay.ENV_KEPT if k in os.environ}
             env.update(VLLM_BATCH_INVARIANT="1", HF_HUB_OFFLINE="1", VLLM_USE_V2_MODEL_RUNNER="1")
             return env
@@ -567,6 +693,105 @@ class SecondRunProof(unittest.TestCase):
         self.assertIn("child", seen["order"])
         self.assertEqual(seen["job"]["dtype"], "float32")
         self.assertEqual(result["groups"]["plain"]["vllm_dtype"], {"dtype": "float32", "compute_dtype": "bfloat16"})
+
+    def test_option4_transformers_on_the_aux_stack_is_a_third_compared_arm(self):
+        """217f option 4: a group marked hf_aux runs transformers in venv_aux after vLLM, with the same token
+        ids, allowances and stop ids, and the policy's generate() kwargs; it is compared with the current
+        engine like a vLLM arm, one reply record per prompt."""
+        result, files, leaked, seen, value = PassProof()._run(hf_aux=True)
+        self.assertEqual(seen["order"], ["current", "evict", "child", "evict", "hf_child"])
+        self.assertEqual(Path(seen["argv"][0]).parts[-3:], ("venv_aux", "bin", "python"))
+        self.assertEqual([p["token_ids"] for p in seen["hf_job"]["prompts"]], [p["token_ids"] for p in seen["job"]["prompts"]])
+        self.assertEqual(seen["hf_job"]["decoding"]["do_sample"], False)
+        g = result["groups"]["plain"]
+        self.assertEqual(g["agreement"]["hf_aux"]["byte_identical"], 2)
+        self.assertEqual(g["hf_aux_specification"]["engine"], "transformers (auxiliary stack)")
+        records = [f for f in files if f.startswith("b1/vllm/audit/model_replies/")]
+        self.assertEqual(len(records), value["prompt_count"])
+        self.assertEqual(value["prompt_count"], 4 * 2)
+        self.assertEqual(leaked, [])
+
+    def test_an_hf_only_group_runs_transformers_alone(self):
+        """A group marked vllm False runs no vLLM child; its one compared arm is hf_aux, one record a prompt."""
+        result, files, _, seen, value = PassProof()._run(hf_aux=True, vllm=False)
+        self.assertEqual(seen["order"], ["current", "evict", "evict", "hf_child"])
+        self.assertEqual(sorted(result["groups"]["plain"]["agreement"]), ["hf_aux"])
+        self.assertEqual(len([f for f in files if f.startswith("b1/vllm/audit/model_replies/")]), value["prompt_count"])
+        self.assertEqual(value["prompt_count"], 2 * 2)   # the current arm and hf_aux, in full mode
+
+    def test_neutralised_hf_only_runs_vllm_too(self):
+        original = vllm_replay.group_arms
+        vllm_replay.group_arms = lambda group: vllm_replay.ARMS[1:] + ((vllm_replay.HF_AUX,) if group.get("hf_aux") else ())
+        try:
+            result, _, _, _, _ = PassProof()._run(hf_aux=True, vllm=False)
+        finally:
+            vllm_replay.group_arms = original
+        self.assertNotEqual(sorted(result["groups"]["plain"]["agreement"]), ["hf_aux"])
+
+    def test_the_aux_lock_pins_what_the_transformers_child_needs(self):
+        """hf_aux_child loads with device_map, which needs accelerate (217f's arm failed without it)."""
+        import re
+        names = set(re.findall(r"^([a-z0-9][a-z0-9._-]*)==", (HERE / "vllm_aux.lock").read_text(encoding="utf-8"), re.M))
+        self.assertTrue({"accelerate", "transformers", "torch", "bitsandbytes"} <= names)
+
+    def test_neutralised_option4_arm_is_dropped(self):
+        original = vllm_replay.group_arms
+        vllm_replay.group_arms = lambda group: vllm_replay.ARMS[1:]
+        try:
+            result, _, _, seen, _ = PassProof()._run(hf_aux=True)
+        finally:
+            vllm_replay.group_arms = original
+        self.assertNotIn("hf_aux", result["groups"]["plain"]["agreement"])
+
+    def test_a_float32_lora_group_runs_in_bfloat16_with_the_difference_named(self):
+        """217e: vLLM's LoRA shrink kernel asserts float16 or bfloat16 activations, so a LoRA group whose
+        current engine runs float32 is given bfloat16, and the measurement says so."""
+        result, _, _, seen, _ = PassProof()._run(dtype="float32", adapter="/adapter")
+        self.assertEqual(seen["job"]["dtype"], "bfloat16")
+        note = result["groups"]["plain"]["vllm_dtype"]["note"]
+        self.assertIn("float32", note)
+        self.assertIn("LoRA", note)
+
+    def test_neutralised_lora_dtype_rule_passes_float32(self):
+        original = vllm_replay.LORA_DTYPES
+        vllm_replay.LORA_DTYPES = ("float16", "bfloat16", "float32")
+        try:
+            _, _, _, seen, _ = PassProof()._run(dtype="float32", adapter="/adapter")
+        finally:
+            vllm_replay.LORA_DTYPES = original
+        self.assertEqual(seen["job"]["dtype"], "float32")
+
+    def test_a_group_can_run_with_batch_invariance_off(self):
+        """The kernel-path diagnosis: a group marked batch_invariant False gets VLLM_BATCH_INVARIANT=0."""
+        original = vllm_replay.load_value
+
+        def marked(value):
+            for g in value["groups"]:
+                g["batch_invariant"] = False
+            return original(value)
+        vllm_replay.load_value = marked
+        try:
+            result, _, _, seen, _ = PassProof()._run()
+        finally:
+            vllm_replay.load_value = original
+        self.assertEqual(seen["env"]["VLLM_BATCH_INVARIANT"], "0")
+        self.assertFalse(result["groups"]["plain"]["batch_invariant"])
+
+    def test_neutralised_invariance_flag_keeps_it_on(self):
+        original = vllm_replay.child_env
+        vllm_replay.child_env = lambda base_python, batch_invariant=True: original(base_python, True)
+        orig_load = vllm_replay.load_value
+
+        def marked(value):
+            for g in value["groups"]:
+                g["batch_invariant"] = False
+            return orig_load(value)
+        vllm_replay.load_value = marked
+        try:
+            _, _, _, seen, _ = PassProof()._run()
+        finally:
+            vllm_replay.child_env, vllm_replay.load_value = original, orig_load
+        self.assertEqual(seen["env"]["VLLM_BATCH_INVARIANT"], "1")
 
     def test_neutralised_float32_is_refused(self):
         original = vllm_replay.MODEL_DTYPES
@@ -713,10 +938,19 @@ class _Req:
 class LLM:
     def __init__(self, **kw):
         _log("engine:" + _try())
+        import logging
+        _start = logging.getLogger("vllm.v1.worker")
+        _start.setLevel(logging.INFO)
+        _start.info("Model loading took %.4f GiB memory and %.6f seconds", 5.2, 12.5)
+        _start.info("Dynamo bytecode transform time: %.2f s", 7.25)
+        _start.info("torch.compile takes %.2f s in total", 31.5)
+        _start.info("Graph capturing finished in %.0f secs, took %.2f GiB", 18, 0.5)
         self.llm_engine = types.SimpleNamespace(model_config=types.SimpleNamespace(quantization="bitsandbytes", dtype="bfloat16"))
     def generate(self, prompts, params, lora_request=None, use_tqdm=False):
         return [_Req() for _ in prompts]
 '''
+FAILING_ENGINE = (chr(10) + "class LLM(LLM):" + chr(10) + "    def __init__(self, **kw):" + chr(10)
+                  + "        assert kw.get('dtype') in ('float16', 'bfloat16') and False" + chr(10))
 FAKE_MODULES = {
     "vllm/inputs/__init__.py": "class TokensPrompt(dict):\n    def __init__(self, prompt_token_ids):\n"
                                "        super().__init__(prompt_token_ids=prompt_token_ids)\n",
@@ -736,13 +970,29 @@ class ChildProof(unittest.TestCase):
     stop rule (ignore_eos with the policy's ids), what the engine loaded, and the token table held
     to the runner's digest. Neutralised (an observer whose denial does nothing), it fails."""
 
-    def _run(self, observer, digest=None, modules=True):
+    @classmethod
+    def setUpClass(cls):
+        # The child walks its own sys.prefix (the aux venv's size, for part C); on the instance that is
+        # venv_aux, here a small venv over this Python (its site-packages visible), not the whole install.
+        import subprocess
+        cls._venv = tempfile.TemporaryDirectory()
+        subprocess.run([sys.executable, "-m", "venv", "--system-site-packages", "--without-pip", cls._venv.name],
+                       check=True, timeout=300)
+        found = [Path(cls._venv.name) / sub for sub in ("Scripts/python.exe", "bin/python")]
+        cls.python = str(next(p for p in found if p.is_file()))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._venv.cleanup()
+
+    def _run(self, observer, digest=None, modules=True, fail_engine=False):
         import subprocess
         tok = _tok()
         with tempfile.TemporaryDirectory() as d:
             d = Path(d)
             (d / "fake" / "vllm").mkdir(parents=True)
-            (d / "fake" / "vllm" / "__init__.py").write_text(FAKE_VLLM, encoding="utf-8")
+            fake = FAKE_VLLM + (FAILING_ENGINE if fail_engine else "")
+            (d / "fake" / "vllm" / "__init__.py").write_text(fake, encoding="utf-8")
             for name, text in (FAKE_MODULES.items() if modules else ()):
                 (d / "fake" / name).parent.mkdir(parents=True, exist_ok=True)
                 (d / "fake" / name).write_text(text, encoding="utf-8")
@@ -753,7 +1003,7 @@ class ChildProof(unittest.TestCase):
             (d / "job.json").write_text(json.dumps(job), encoding="utf-8")
             env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(d / "fake"), str(ROOT / "scripts"), str(HERE)]),
                        FAKE_VLLM_LOG=str(d / "fake.log"), VLLM_REPLAY_CHILD="1", HF_HUB_OFFLINE="1")
-            done = subprocess.run([sys.executable, str(HERE / "vllm_child.py"), "--job", str(d / "job.json"),
+            done = subprocess.run([self.python, str(HERE / "vllm_child.py"), "--job", str(d / "job.json"),
                                    "--out", str(d / "results.json")], env=env, capture_output=True, timeout=600)
             result = json.loads((d / "results.json").read_text(encoding="utf-8"))
             log = (d / "fake.log").read_text(encoding="utf-8").split() if (d / "fake.log").is_file() else []
@@ -769,6 +1019,15 @@ class ChildProof(unittest.TestCase):
         self.assertEqual(sorted(result["arms"]), ["vllm_b1", "vllm_batch"])
         spec = result["spec"]
         self.assertEqual((spec["engine"], spec["seed"], spec["sampling"]["ignore_eos"]), ("vllm", 0, True))
+        # Part C's inputs: the engine start split by vLLM's own startup messages.
+        self.assertEqual({k: v for k, v in result["engine_phases"].items() if k != "messages"},
+                         {"model_load_seconds": 12.5, "dynamo_transform_seconds": 7.25, "compile_seconds": 31.5,
+                          "graph_capture_seconds": 18.0})
+        self.assertEqual(len(result["engine_phases"]["messages"]), 4)
+        # Part C's inputs: the aux venv's size and the import time.
+        self.assertGreater(result["aux_env"]["files"], 0)
+        self.assertGreater(result["aux_env"]["bytes"], 0)
+        self.assertIsInstance(result["import_seconds"], float)
         for key in ("platform", "nvidia_smi", "batch_invariant", "v2_model_runner", "quantisation", "lora", "dtype"):
             self.assertIn(key, spec)
         self.assertEqual(result["loaded"], {"quantization": "bitsandbytes", "dtype": "bfloat16",
@@ -781,6 +1040,26 @@ class ChildProof(unittest.TestCase):
                             "def deny_network(rec):\n    pass\n", encoding="utf-8")
             _, _, log, _ = self._run(stub)
         self.assertNotIn("import:blocked", log)
+
+    def test_a_child_failure_keeps_its_traceback(self):
+        """A failing engine leaves its exception type and frames (file, line, function, the failing source
+        line) in the results, so the evidence names the assertion that fired."""
+        code, result, _, _ = self._run(vllm_replay._observer(), fail_engine=True)
+        self.assertNotEqual(code, 0)
+        tb = result["traceback"]
+        self.assertEqual(tb["type"], "AssertionError")
+        self.assertTrue(any("assert" in f["source"] for f in tb["frames"]))
+        self.assertTrue(all({"file", "line", "function", "source"} <= set(f) for f in tb["frames"]))
+
+    def test_neutralised_traceback_is_lost(self):
+        import vllm_child
+        self.assertIsNotNone(vllm_child.traceback_frames(AssertionError()))
+        original = vllm_child.traceback_frames
+        try:
+            vllm_child.traceback_frames = lambda exc: None
+            self.assertIsNone(vllm_child.traceback_frames(AssertionError()))
+        finally:
+            vllm_child.traceback_frames = original
 
     def test_another_token_table_is_refused(self):
         code, result, _, _ = self._run(vllm_replay._observer(), digest="0" * 64)
@@ -801,6 +1080,164 @@ class ChildProof(unittest.TestCase):
         self.assertEqual(laptop.returncode, 0, laptop.stderr[-300:])
         self.assertNotEqual(child.returncode, 0)
         self.assertIn(b"ModuleNotFoundError", child.stderr)
+
+
+FAKE_TRANSFORMERS = '''
+import os, socket, torch
+__version__ = "fake"
+def _try():
+    try:
+        socket.create_connection(("192.0.2.1", 80), timeout=0.2)
+        return "connected"
+    except RuntimeError as exc:
+        return "blocked" if "forbids network" in str(exc) else "other"
+    except OSError:
+        return "attempted"
+with open(os.environ["FAKE_HF_LOG"], "a") as log:
+    log.write("import:" + _try() + " ")
+class _Tok:
+    def decode(self, ids, skip_special_tokens=True):
+        return "reply"
+class AutoTokenizer:
+    @staticmethod
+    def from_pretrained(path, local_files_only=True):
+        return _Tok()
+class _Model:
+    device = "cpu"
+    dtype = torch.float16
+    def eval(self):
+        return self
+    def generate(self, input_ids, attention_mask, max_new_tokens, **kw):
+        with open(os.environ["FAKE_HF_LOG"], "a") as log:
+            log.write("generate:" + ",".join(sorted(kw)) + " ")
+        return torch.cat([input_ids, torch.tensor([[7]])], dim=1)
+class AutoModelForCausalLM:
+    @staticmethod
+    def from_pretrained(path, device_map, local_files_only, attn_implementation):
+        with open(os.environ["FAKE_HF_LOG"], "a") as log:
+            log.write("load:" + attn_implementation + " ")
+        return _Model()
+'''
+
+
+class HfAuxChildProof(unittest.TestCase):
+    """The option-4 child, as its own process on a fake transformers: the runner's network denial applied
+    before transformers is imported, sdpa asked for, the policy's kwargs passed, determinism on, one
+    record per prompt with its stop. Neutralised (an observer whose denial does nothing), it fails."""
+
+    def _run(self, observer):
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "fake" / "transformers").mkdir(parents=True)
+            (d / "fake" / "transformers" / "__init__.py").write_text(FAKE_TRANSFORMERS, encoding="utf-8")
+            job = {"observer": str(observer), "model": "m",
+                   "decoding": {"do_sample": False, "num_beams": 1, "eos_token_id": [7], "pad_token_id": 0},
+                   "prompts": [{"prompt_id": "p0", "token_ids": [1, 2], "max_new_tokens": 4, "eos": [7], "constraint": None}]}
+            (d / "job.json").write_text(json.dumps(job), encoding="utf-8")
+            env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(d / "fake"), str(ROOT / "scripts"), str(HERE)]),
+                       FAKE_HF_LOG=str(d / "fake.log"))
+            done = subprocess.run([sys.executable, str(HERE / "hf_aux_child.py"), "--job", str(d / "job.json"),
+                                   "--out", str(d / "results.json")], env=env, capture_output=True, timeout=300)
+            result = json.loads((d / "results.json").read_text(encoding="utf-8"))
+            log = (d / "fake.log").read_text(encoding="utf-8").split()
+            return done.returncode, result, log
+
+    def test_the_child_runs_transformers_as_the_current_path_does(self):
+        code, result, log = self._run(vllm_replay._observer())
+        self.assertEqual((code, result["error"]), (0, None), result.get("error"))
+        self.assertEqual(log[:2], ["import:blocked", "load:sdpa"])
+        self.assertIn("generate:do_sample,eos_token_id,num_beams,pad_token_id", log)
+        row = result["arms"]["hf_aux"]["rows"]["hf_aux:p0"]
+        self.assertEqual((row["output_tokens"], row["finish_reason"]), (1, "stop"))
+        self.assertTrue(result["spec"]["deterministic"])
+
+    def test_neutralised_denial_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            stub = Path(d) / "stub_observer.py"
+            stub.write_text("class Recorder:\n    def __init__(self, path):\n        pass\n"
+                            "def deny_network(rec):\n    pass\n", encoding="utf-8")
+            _, _, log = self._run(stub)
+        self.assertNotIn("import:blocked", log)
+
+
+class GoldScoreProof(unittest.TestCase):
+    """D-625: the vendored DEV scorer equals the frozen per-row metrics of checkpoint 168 on all 84 DEV rows,
+    and the gold bar compares each vLLM arm with the current engine on the same rows, paired."""
+
+    def _dev(self):
+        rows = {r["example_id"]: r for r in json.loads((ROOT / "tuning/producer_v3/dataset.json").read_text(encoding="utf-8"))}
+        replies = {}
+        for line in DEV.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                x = json.loads(line)
+                replies[x["example_id"]] = x
+        frozen = {x["example_id"]: x["metrics"] for x in json.loads(
+            (DEV.parent / "full_dev_scored.json").read_text(encoding="utf-8"))}
+        return rows, replies, frozen
+
+    def _differing(self):
+        import dev_gold_score as g
+        rows, replies, frozen = self._dev()
+        differing = 0
+        for eid, metrics in frozen.items():
+            mine = g.score(g.gold_row(rows[eid]), replies[eid]["raw_output"], replies[eid]["truncated"])
+            differing += int(any(mine[k] != metrics[k] for k in set(mine) & set(metrics)))
+        return len(frozen), differing
+
+    def test_the_vendored_scorer_is_the_frozen_one(self):
+        self.assertEqual(self._differing(), (84, 0))
+
+    def test_neutralised_scorer_differs(self):
+        import dev_gold_score as g
+        original = g.values
+        g.values = lambda obj, key: []
+        try:
+            self.assertGreater(self._differing()[1], 0)
+        finally:
+            g.values = original
+
+    def _bar(self, other_texts):
+        import dev_gold_score as g
+        rows, replies, _ = self._dev()
+        ids = sorted(replies)[:12]
+        prompts = [{"prompt_id": "p%d" % n, "gold": g.gold_row(rows[eid])} for n, eid in enumerate(ids)]
+        texts = {"p%d" % n: replies[eid]["raw_output"] for n, eid in enumerate(ids) if n != 0}   # p0 not kept
+        by_id = {"p%d" % n: {"output_tokens": 1, "max_new_tokens": 99} for n in range(len(ids))}
+        child = {"arms": {"vllm_b1": {"rows": {"vllm_b1:p%d" % n: {"text": other_texts(replies[eid]["raw_output"]),
+                                                                    "finish_reason": "stop"} for n, eid in enumerate(ids)}}}}
+        return vllm_replay.gold_scores(prompts, texts, by_id, child, ("vllm_b1",), {"vllm_b1": {}})
+
+    def test_the_bar_holds_for_the_same_replies_and_fails_for_empty_ones(self):
+        same = self._bar(lambda t: t)
+        self.assertEqual((same["rows_scored"], same["rows_left_out_no_current_text"]), (11, 1))
+        self.assertTrue(same["bar"]["vllm_b1"]["passes"])
+        self.assertEqual(same["bar"]["vllm_b1"]["point"], 0.0)
+        empty = self._bar(lambda t: "")
+        self.assertFalse(empty["bar"]["vllm_b1"]["passes"])
+
+    def _paired(self):
+        import dev_gold_score as g
+        rows, replies, _ = self._dev()
+        current = [g.score(g.gold_row(rows[e]), replies[e]["raw_output"], replies[e]["truncated"]) for e in sorted(replies)]
+        worse = [dict(s, claims=dict(tp=0, fp=s["claims"]["fp"], fn=s["claims"]["fn"] + s["claims"]["tp"])) for s in current]
+        return g.paired_bar(current, current), g.paired_bar(current, worse)
+
+    def test_the_macro_f1_rule_refuses_a_worse_arm(self):
+        same, worse = self._paired()
+        self.assertTrue(same["holds"])
+        self.assertFalse(worse["holds"])
+        self.assertLess(worse["lower_bound"], -0.01)
+
+    def test_neutralised_margin_admits_the_worse_arm(self):
+        import dev_gold_score as g
+        original = g.MARGIN
+        g.MARGIN = 1.0
+        try:
+            _, worse = self._paired()
+        finally:
+            g.MARGIN = original
+        self.assertTrue(worse["holds"])
 
 
 class SealerProof(unittest.TestCase):
@@ -884,6 +1321,51 @@ class SealerProof(unittest.TestCase):
                 sealer.prepare(Path(d) / "bundle", aux_lock=HERE / "vllm_aux.lock")
             self.assertIn("auxiliary environment", str(raised.exception))
             self.assertFalse((Path(d) / "bundle").exists())
+
+
+def _reuse_any(root, group, runner=subprocess.run):
+    venv = group.get("venv")
+    python = Path(root) / venv["name"] / "bin" / "python"
+    if python.is_file():
+        return python, {"name": venv["name"], "reused": True, "steps": []}
+    return _ORIGINAL_GROUP_PYTHON(root, group, runner)
+
+
+_ORIGINAL_GROUP_PYTHON = vllm_replay.group_python
+
+
+def _mark_first(root, group, runner=subprocess.run):
+    """A neutralisation: the marker written before the steps run, so a failed install leaves one."""
+    target = Path(root) / group["venv"]["name"]
+    found = _ORIGINAL_GROUP_PYTHON(root, group, runner)
+    target.mkdir(parents=True, exist_ok=True)
+    (target / vllm_replay.VENV_MARKER).write_text(group["venv"]["lock_sha256"], encoding="utf-8")
+    return found
+
+VENV_NEUTRALIZATIONS = [
+    ("test_a_group_environment_is_made_from_the_fetched_wheels_and_runs_the_child", "WHEELS", "wheels"),
+    ("test_a_group_environment_that_cannot_be_made_runs_no_child_and_says_why", "group_python",
+     lambda root, group, runner=subprocess.run: (Path(root) / vllm_replay.AUX_PYTHON, {"steps": []})),
+    ("test_a_group_environment_is_declared_or_refused", "venv_error", lambda venv: None),
+    ("test_a_group_environment_is_reused_only_from_its_own_complete_install", "group_python", _reuse_any),
+    ("test_a_group_lock_must_be_part_of_the_sealed_lock", "subset_refusal", lambda group_lock, sealed_lock: None),
+    ("test_a_complete_install_marks_its_lock_and_a_failed_one_leaves_no_mark", "mark_installed",
+     lambda marker, sha: None),
+    ("test_a_complete_install_marks_its_lock_and_a_failed_one_leaves_no_mark", "group_python", _mark_first),
+]
+
+
+class VenvNeutralizations(unittest.TestCase):
+    def test_each_venv_proof_fails_neutralised_and_passes_restored(self):
+        import io
+        from unittest.mock import patch
+        for name, attribute, broken in VENV_NEUTRALIZATIONS:
+            with self.subTest(name=name):
+                with patch.object(vllm_replay, attribute, broken):
+                    result = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(PassProof(name))
+                self.assertFalse(result.wasSuccessful(), "%s still passes with %s neutralised" % (name, attribute))
+                restored = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(PassProof(name))
+                self.assertTrue(restored.wasSuccessful(), name)
 
 
 if __name__ == "__main__":

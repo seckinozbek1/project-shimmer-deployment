@@ -1,0 +1,1150 @@
+{
+  "schema": "table-tools-v1",
+  "note": "The tool registry (D-681 item 7, scripts/tool_registry.py). Each entry is one tool a judge may ask Python to run in the one table tool request (scripts/table_tools.py), declared in one standard form. Product rule (D-694 item 3 a): when Shimmer runs as a product, no tool sends anything to the internet (no web search, no lookup, not even a masked or anonymised query); a tool computes only on what is already inside Shimmer's own run. Only the operator adds a tool; each is vetted by tools/vet_table_tool.py (license on the allowlist below, no socket, no file written, the same output in two fresh processes with different hash seeds, every example passing), which writes `vetting`. Boot refuses an entry whose vetting digest does not match its declaration and source module, or whose `approved_by` is not on `approving_decisions` (the operator's decisions that approve tools: D-681 fixes get_cells, difference and ratio; D-689 records the design and its defaults, which add find_figure, compare and column_extreme; D-694 item 4 approves the tools the tool audit adds, docs/loop/stages/TOOL_AUDIT.md: figure_step, rounds_to, percent_change, sum_cells, mean_cells and rank_in_column, in scripts/table_tools_extra.py, vetted by the building lane lane/tool-audit). The shipped vetting digests were written by the building lane (lane/table-tool); the operator path re-vets them before the request is switched on. Nothing here is read unless a judge contract declares request_tools under a ratified amendment.",
+  "license_allowlist": [
+    "MIT"
+  ],
+  "approving_decisions": [
+    "D-681",
+    "D-689",
+    "D-694"
+  ],
+  "tools": [
+    {
+      "name": "get_cells",
+      "does": "Give the text of these cells of the whole table, including cells not shown.",
+      "inputs": [
+        {
+          "name": "cell",
+          "type": "cell",
+          "min": 1,
+          "max": 4
+        }
+      ],
+      "outputs": "each cell's text, as id = text",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:get_cells",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_cells_left_out": 1
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r2c1"
+          ],
+          "expected": "r1c2 = 12.5; r2c1 = B"
+        }
+      ],
+      "approved_by": "D-681",
+      "vetting": {
+        "sha256": "f7eeaed49eb148bd57d357bf37060cfd0935ff0b250ebea45b3fc99fca9a3456",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "difference",
+      "does": "Subtract the second figure from the first.",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "cell_or_figure"
+        },
+        {
+          "name": "b",
+          "type": "cell_or_figure"
+        }
+      ],
+      "outputs": "a number, or a refusal: not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:difference",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r2c2"
+          ],
+          "expected": "2.5"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r1c3"
+          ],
+          "refused": "percent_against_plain"
+        }
+      ],
+      "approved_by": "D-681",
+      "vetting": {
+        "sha256": "9ad491572d360e3277b35c79008800ee0fe1076c2e71b26d4a6098fb0dce86f3",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "ratio",
+      "does": "Divide the first figure by the second.",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "cell_or_figure"
+        },
+        {
+          "name": "b",
+          "type": "cell_or_figure"
+        }
+      ],
+      "outputs": "a number, or a refusal: zero_divisor, not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:ratio",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r2c2"
+          ],
+          "expected": "1.25"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r3c2"
+          ],
+          "refused": "zero_divisor"
+        }
+      ],
+      "approved_by": "D-681",
+      "vetting": {
+        "sha256": "87a4cc5e37e268a7f629cba149a28d44923ce1e7ce37bb663f194ca439b898ba",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "find_figure",
+      "does": "Find the cells of the whole table that write a figure of the claim.",
+      "inputs": [
+        {
+          "name": "figure",
+          "type": "figure"
+        }
+      ],
+      "outputs": "the cell ids, or: in no cell",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:find_figure",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_claim_figures": 1,
+        "min_shown_numbers": 1
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "f1"
+          ],
+          "expected": "r1c2"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "f2"
+          ],
+          "expected": "in no cell"
+        }
+      ],
+      "approved_by": "D-689",
+      "vetting": {
+        "sha256": "e1d1392d0f78795b7dbcd9d126e1e7639b53b2f5b56de462d1764c004efb63c7",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "compare",
+      "does": "Say whether the first figure is greater than, less than or equal to the second.",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "cell_or_figure"
+        },
+        {
+          "name": "b",
+          "type": "cell_or_figure"
+        }
+      ],
+      "outputs": "greater, less or equal, or a refusal: not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:compare",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "r1c3",
+            "f2"
+          ],
+          "expected": "greater"
+        }
+      ],
+      "approved_by": "D-689",
+      "vetting": {
+        "sha256": "c6dadb8cc48ae4464c34768eca6e5ca20a0d1b5448a0a3d5ff1a7185cbb4b900",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "column_extreme",
+      "does": "Give the highest and the lowest number of a column over every row of the table.",
+      "inputs": [
+        {
+          "name": "column",
+          "type": "column"
+        }
+      ],
+      "outputs": "the highest and lowest cells with their numbers, or a refusal: no_numbers",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools:column_extreme",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "c2"
+          ],
+          "expected": "highest r1c2 = 12.5; lowest r3c2 = 0"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "12.5",
+              "r1c3": "40%",
+              "r2c1": "B",
+              "r2c2": "10",
+              "r2c3": "25%",
+              "r3c1": "C",
+              "r3c2": "0",
+              "r3c3": "25%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "12.5",
+              "f2": "15%"
+            }
+          },
+          "args": [
+            "c1"
+          ],
+          "refused": "no_numbers"
+        }
+      ],
+      "approved_by": "D-689",
+      "vetting": {
+        "sha256": "d45f70478fe694daa26586e90d8aeb378fb25b80cd9ef74b5407b6167f0a3fc3",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "figure_step",
+      "does": "For a figure of the claim that stands in no cell, list every single step (difference, ratio, percent of, percent change) of two one-number cells of one row or one column that gives it at the figure's own rounding.",
+      "inputs": [
+        {
+          "name": "figure",
+          "type": "figure"
+        }
+      ],
+      "outputs": "the cells that write it, or up to four steps as operation(cell, cell) = result, or that no single step gives it",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:figure_step",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_claim_figures": 1,
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "f1"
+          ],
+          "expected": "in no cell; difference(r1c2, r2c2) = 3.24"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "f2"
+          ],
+          "expected": "in no cell; percent_change(r2c3, r1c3) = 11.111111; percent_change(r3c3, r1c3) = -11.111111"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "f3"
+          ],
+          "expected": "stands in r3c2"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "f4"
+          ],
+          "expected": "in no cell; no single step of two cells of one row or one column gives it"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "c3e26150fe5556ead0fb7126020c929e6b28c27324e8922ee8e4277ef8e9498c",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "rounds_to",
+      "does": "Say whether the first figure, rounded to the decimals the second writes, is the second.",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "cell_or_figure"
+        },
+        {
+          "name": "b",
+          "type": "cell_or_figure"
+        }
+      ],
+      "outputs": "equal or not equal at the second's decimal places, with the rounded first; or a refusal: not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:rounds_to",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 1
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r3c2"
+          ],
+          "expected": "equal at 1 decimal place"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r2c2",
+            "f3"
+          ],
+          "expected": "not equal at 1 decimal place: a rounds to 68.0"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r1c3"
+          ],
+          "refused": "percent_against_plain"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "0ef683e3e988e07d1487e64e3ffd88005fbe10282e1320b70b0cbfac1a01c46e",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "percent_change",
+      "does": "The change from the second figure to the first, as a percent of the second.",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "cell_or_figure"
+        },
+        {
+          "name": "b",
+          "type": "cell_or_figure"
+        }
+      ],
+      "outputs": "a number, or a refusal: zero_divisor, not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:percent_change",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r2c3",
+            "r1c3"
+          ],
+          "expected": "11.111111"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r1c3"
+          ],
+          "refused": "percent_against_plain"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "f807099a501b64195064ef730e30497f7df67198d75c82c790e01c5a3547949d",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "sum_cells",
+      "does": "Add these cells.",
+      "inputs": [
+        {
+          "name": "cell",
+          "type": "cell",
+          "min": 2,
+          "max": 6
+        }
+      ],
+      "outputs": "a number, or a refusal: not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:sum_cells",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r2c2",
+            "r3c2"
+          ],
+          "expected": "210.44"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c2",
+            "r1c3"
+          ],
+          "refused": "percent_against_plain"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "ff40702273a0e0a3059d4e1f923e87d8ea1cb7cbc6fe4fc92ca607235ce7013b",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "mean_cells",
+      "does": "The mean of these cells.",
+      "inputs": [
+        {
+          "name": "cell",
+          "type": "cell",
+          "min": 2,
+          "max": 6
+        }
+      ],
+      "outputs": "a number, or a refusal: not_one_number, percent_against_plain",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:mean_cells",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c3",
+            "r2c3",
+            "r3c3"
+          ],
+          "expected": "40.5"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c1",
+            "r2c2"
+          ],
+          "refused": "not_one_number"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "0f6d7f1cb52c4467b7b943c8aaba8e74d957cdc9035555496051c0d5178170e7",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    },
+    {
+      "name": "rank_in_column",
+      "does": "Where this cell's figure stands among the one-number cells of its column, from the highest and from the lowest, and the cells it ties.",
+      "inputs": [
+        {
+          "name": "cell",
+          "type": "cell"
+        }
+      ],
+      "outputs": "its place from the highest and from the lowest out of the column's numbers, and its ties; or a refusal: not_one_number",
+      "license": "MIT",
+      "source": "shimmer",
+      "entry": "table_tools_extra:rank_in_column",
+      "tasks": [
+        "cell_claim"
+      ],
+      "applies_when": {
+        "min_shown_numbers": 2
+      },
+      "examples": [
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r3c2"
+          ],
+          "expected": "2 of 3 from the highest; 2 of 3 from the lowest; ties none"
+        },
+        {
+          "context": {
+            "cells": {
+              "r1c1": "A",
+              "r1c2": "71.24",
+              "r1c3": "40.5%",
+              "r2c1": "B",
+              "r2c2": "68.0",
+              "r2c3": "45.0%",
+              "r3c1": "C",
+              "r3c2": "71.2",
+              "r3c3": "36.0%"
+            },
+            "columns": {
+              "c1": "Item",
+              "c2": "X",
+              "c3": "Y"
+            },
+            "rows": 3,
+            "figures": {
+              "f1": "3.24",
+              "f2": "11.1%",
+              "f3": "71.2",
+              "f4": "0.5"
+            }
+          },
+          "args": [
+            "r1c1"
+          ],
+          "refused": "not_one_number"
+        }
+      ],
+      "approved_by": "D-694",
+      "vetting": {
+        "sha256": "646b88bba0cec8d3734f23915ad2dc22dae4ce8587e2ac7cd9e118b2d2f99835",
+        "result": "passed",
+        "by": "tools/vet_table_tool.py"
+      }
+    }
+  ]
+}

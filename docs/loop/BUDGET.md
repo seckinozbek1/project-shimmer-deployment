@@ -359,3 +359,15 @@ The hard stop is 284 (D-363). The cloud reference is the D-S35 Anthropic run, ou
 | verifier-t-allowance (relaunch) | VER_T_ALLOWANCE_3, e29cc7c0, manifest 67d0053c | 6.85, cap 10.27 (245 minutes, upload included) | running |
 | verifier-t-bounds | VER_T_BOUNDS, 9316dc35 | 5.03, cap 7.55 (180 minutes, upload included) | running |
 | cloud reference (Anthropic) | claude-opus-4-8, J1 half A, 216 prompts | cap 15; worst case 13.79 | 7.07 (1,500 s; complete; D-364) |
+
+## Spending limits from 2026-11-16 17:14 UTC (operator decision D-708; supersedes the 3 USD and 120 USD figures of D-629, D-692 item 7 and D-703)
+
+Seckin, 20:14 +0300: a single Lambda step up to 5 USD needs no question, above 5 USD goes to him; the remaining-spend limit of D-599 rises from 120 to 140 USD. The figures live in one file, `config/loop_spend_limits.json`, which `tools/loop_budget_guard.py` reads at every launch decision (SPEND-LIMITS-A in docs/CLAUDE_REFERENCE.md); no figure is typed anywhere else.
+
+| Limit | Figure | Earlier | How it is counted |
+|---|---|---|---|
+| Per-step pre-approval | 5.00 USD | 3.00 (D-629, D-692 item 7, D-703 order 99) | the launch's IV.3 forecast (measured basis x live price x 1.3); above it the launch needs his approval of at least the forecast, naming its decision |
+| Remaining-spend limit | 140 USD | 100 (D-599), 120 (D-703) | counted from the 197 USD baseline of 13 November (the spend D-599 was counted from; the reaper's reading at 09:37 UTC that day is 197.94): spend, running caps, storage forecast, overrun reserve and the forecast together stay at or below 337 USD |
+| Lambda hard stop | 600 USD (budget 601, warning 463) | unchanged (D-594) | the ledger's latest budget line, read by the reaper and the guard |
+
+At 2026-11-16 about 20:25 +0300 the reaper's reading of the ledgers (private and R's) is about 251.4 USD, so about 85.6 USD of the remaining limit is left before running caps, storage and the next forecast. The API spend keeps its own ceiling in the spend store (D-S121) and is not counted in the remaining limit.

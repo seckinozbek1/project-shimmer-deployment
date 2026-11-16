@@ -97,6 +97,7 @@ from search_router import SearchRouter
 from summary_generators import render_context_summary, render_operative_summary
 import summary_generators
 import text_extract
+import reader_report
 
 
 # Distinctive-term extraction is delegated to corpus_validator.extract_distinctive_terms,
@@ -697,15 +698,25 @@ def _load_corpus(input_dir: Path) -> list[dict]:
         if not text_extract.is_corpus_file(p):
             text_extract.warn_unsupported(p, where=str(input_dir.name))
             continue
-        text = text_extract.extract_text(p)
+        # Issue #280: every layer read apart, the main text the same as extract_text, and the
+        # layer record (counts only, no text) printed for every document, an empty one
+        # included, and kept on the document for the run summary.
+        layers = text_extract.extract_layers(p)
+        text = layers["main"]
+        text_extract.print_layer_record(p.name, layers["record"])
+        # #281 gap 13: an empty file is an EMPTY INPUT, warned and recorded, never dropped silently.
+        # Imported here: the sealer runs this function with Path and text_extract only.
+        import reader_report
+        reader_report.note(input_dir.name, p, text)
         if not text.strip():
             continue
-        loaded.append((p, p.name, text))
+        loaded.append((p, p.name, text, layers))
         stem_counts[p.stem] = stem_counts.get(p.stem, 0) + 1
-    for p, name, text in loaded:
+    for p, name, text, layers in loaded:
         doc_id = p.stem if stem_counts.get(p.stem, 0) <= 1 else f"{p.stem}__{p.suffix.lstrip('.').lower()}"
         docs.append({"id": doc_id, "name": name, "text": text,
-                     "char_count": len(text), "path": str(p)})
+                     "char_count": len(text), "path": str(p),
+                     "layer_record": layers["record"]})
     return docs
 
 
@@ -3372,10 +3383,22 @@ def _cell_claim_review(orch, keys, doc, rules, unit_text, convention_assignment,
                 reply_records.write_outcome(orch.run_context, call_of.get(prompt), "not_promoted",
                                             source="cell_claim", findings_withheld=1)
 
+        # D-681: the table tool request, only where the judge's contract declares request_tools (boot
+        # refused it unless an amendment ratifies it); its reply records join the same call ids.
+        ask_request = None
+        if _judge_agent_mod.request_tools("cell_claim", judge_contracts):
+            import table_tools
+
+            def ask_request(spec, wrapper=wrapper, agent=agent, rule=rule, call_of=call_of):
+                return _narrow_ask(orch, doc, wrapper, agent, rule, judging_calls, task=table_tools.REQUEST_TASK,
+                                   plan_kind=table_tools.REQUEST_PLAN, context=context, decided=False,
+                                   send=lambda stable, dynamic: table_tools.send(wrapper, stable, dynamic, spec),
+                                   answer_of=table_tools.answer_of, outcome_of=table_tools.outcome_of,
+                                   seen={}, call_of=call_of)
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         kept, calls = cell_selection.review(units, rule, source_rule_id, ask, config, embed_with=passage_pairs.embed,
                                             fields_present=fields_present, on_kept=not_promoted,
-                                            contracts=judge_contracts)
+                                            contracts=judge_contracts, ask_request=ask_request)
         _write_tool_rows(orch, calls, call_of)
         items_by_agent.setdefault(agent, []).extend(kept)
         refused.extend(calls["refused"])
@@ -3743,6 +3766,12 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         lines.append(f'- [{doc['name']}]({doc['id']}/): {n}{localization.text(' amendment(s)')}{suffix}')
     # S2a, item 7: relations Python computed, apart from relations only a model reported.
     lines += summary_generators.relation_report_lines(deliverables, op_docs)
+    # Issue #280: each document's layer record, the layers read and those present and not read.
+    import document_layers
+    lines += document_layers.summary_lines(op_docs)
+    # #280, #281 gap 13: the files that gave no text, and what the reader read of each document.
+    import reader_report
+    lines += reader_report.summary_lines(deliv_dir)
 
     # THREE-D: the refused pairs, on the surface the operator already reads.
     # Nothing is emitted when no external rules were supplied, so a run without
@@ -5551,6 +5580,9 @@ def main(argv=None):
     op_docs = _load_corpus(ROOT / "input" / "operational")
     if args.max_docs > 0:
         op_docs = op_docs[: args.max_docs]
+    _reader = reader_report.write(run_ctx.audit_dir())
+    log_event(_LOG, f"reader_layers documents={len(_reader['documents'])} "
+                    f"empty_inputs={len(_reader['empty_inputs'])}", run_id=run_ctx.run_id, phase="0")
     # R6: the earlier version(s) the operator declared in the manifest, loaded from the
     # context corpus. A file named both as a target and as a prior is reviewed, not
     # compared, and the warning names the file (a filename, never content).

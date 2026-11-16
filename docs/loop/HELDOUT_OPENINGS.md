@@ -20,3 +20,11 @@ The first opening above. The judge's half B was read once for T (D-294) before t
 neg-advisor opening k=1 set=6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f config=a1716ab8bcb13d2324a68eb84370149ac89b5aa0374277352f68b2b921aa968e
 
 The negotiation advisor pilot's first opening (D-647, D-653): k=1, alpha 0.025, committed before any score is read; power record 8c11495a (power 0.176 and 0.143, claim A1 indicator only); the judge's wording grade not validated (kappa 0.0 on 10 entries, M9).
+
+neg-advisor opening k=2 set=6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f config=8831984b968223212b1e9f68b44c4a8f5d7b7418d0333411df010417ba881f7c
+
+The negotiation advisor pilot's re-score (D-693): k=2, alpha 0.0125, the saved answers read again and scored again under AM-1 and AM-2; no re-run and no new labelling; power record db9ed44f (power 0.10 and 0.08, claim A1 indicator only); committed before any score is read. The k=1 score stays the headline.
+
+neg-advisor opening k=3 set=6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f config=ac95bf6116fb2adad236ea74f921ab2b534c4eae80332b2f31285d96688e01e6
+
+The old pilot's third opening (D-710, AM-3), for the open-point figure M10 only: k=3, alpha 0.00625, indicator only; the saved answers read again by the scorer at 7d7af25b (code c09ac979), no re-run and no new labelling; power record 26db13f4 (docs/loop/stages/NEG_ADVISOR_POWER_k3.json; power 0.058 and 0.044, claim A1 indicator only); committed before any score is read. The k=1 score stays the headline; the limit stays two for every other set. The same opening line and record are also committed at b684578d, directly on the 7d7af25b scorer, where the record is docs/loop/stages/NEG_ADVISOR_POWER.json (role N session 32 refused without it).

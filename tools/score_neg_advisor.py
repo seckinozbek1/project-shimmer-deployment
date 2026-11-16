@@ -20,6 +20,14 @@ The role session's tools, which read items and keys in its own folder (never the
     power            --set S --k K --out F    the power record of claim A1 at opening k's alpha (plan section 7.3)
     score            --set S --configuration C --k K --b1 A --system A --cloud A --judge A [--per-item-out F]
 
+The plan amendments (docs/loop/stages/NEG_PLAN_AMENDMENTS.md): AM-1, a field whose reference gives one class
+is at the bar only at 100 percent raw agreement, labelled "single class, kappa undefined" (sample-read,
+grade-read, validate-read, bar line 4 and M9); AM-2, red lines reported declared and held (held computed from
+the key's fate) with each arm's agreement with held and every red line's source (`red_lines` in the report);
+AM-3, M10 open-point detection (movable or settled, from the key's fate and the arm's stance), indicator only,
+never a claim and never in the bar (`M10` beside M1 in `figures`, and the report's `M10` block).
+The power record's code_sha256 is of this file's LF bytes.
+
 The scorer prints aggregates only, a cell of fewer than 5 items as its count alone; per-item rows go only
 to a path inside the role session's set folder, never inside the repository. Every figure
 of plan section 6 is computed here, with the BCa cluster bootstrap, the jackknife and the cluster
@@ -72,6 +80,10 @@ SAMPLE_SHARE, SAMPLE_MIN = 0.20, 8
 GRADE_SHARE, GRADE_MIN = 0.25, 10
 HEADLINE = ("P",)
 MAX_OPENINGS = 2
+# D-710 (Seckin 20:27, docs/loop/DECISIONS.md): the one set allowed more openings than MAX_OPENINGS, named by
+# its digest: the old 24-item pilot takes a third opening, indicator only, at alpha 0.05 / 2^3 = 0.00625,
+# re-reading its saved answers. Every other set keeps MAX_OPENINGS. Declared here alone.
+EXTRA_OPENINGS = {"6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f": 3}
 MIN_POWER_SIMS = 1000
 POWER_FLOOR = 0.8
 POWER_RECORD = "docs/loop/stages/NEG_ADVISOR_POWER.json"
@@ -108,6 +120,70 @@ BAR_MARGIN = 0.10
 # What the system's withholding drops on (plan section 5, item 2).
 WITHHELD_AUDIT = "unsupported"
 SAMPLE_FIELDS = ("fate", "state", "conflict", "alignment", "red_line")
+# AM-1 (D-662, docs/loop/stages/NEG_PLAN_AMENDMENTS.md): on a field where the reference (the key, or the
+# checker against the judge) gives one class only, kappa is undefined; the raw agreement is reported and the
+# field is at the bar only at 100 percent, labelled so. Bar line 4 and M9's validation alike.
+SINGLE_CLASS_FULL = 1.0
+SINGLE_CLASS_LABEL = "single class, kappa undefined"
+# AM-2 (D-665, D-693): a declared red line held when its proposal was removed from the next round's text, not
+# held when it passed (kept or changed), and open, its own count, when it is still bracketed; from the fate.
+# The "no recorded objection" clause cannot fire: check_build refuses positions after round k.
+HELD_FATES = ("removed",)
+LET_THROUGH_FATES = ("kept", "changed")
+OPEN_FATES = ("open",)
+# The stances by which an arm's advice holds a red line (rejects or counters the proposal).
+HOLDING_STANCES = ("reject", "counter")
+# The stances an arm's piece can give; a piece with none is counted no_stance and is a disagreement (order 82).
+ANSWERED_STANCES = tuple(na.STANCES)
+# AM-3: M10, open-point detection, indicator only (never a claim, never in the bar). The key's class per
+# proposal from its fate, the arm's prediction from its stance; no stance is a miss counted by its reason.
+MOVABLE, SETTLED = "movable", "settled"
+M10_CLASSES = (MOVABLE, SETTLED)
+MOVABLE_FATES = ("open", "changed")
+SETTLED_FATES = ("kept", "removed")
+MOVABLE_STANCES = ("counter",)
+SETTLED_STANCES = ("accept", "reject")
+M10_MISSES = ("no_reply", "withheld", "no_piece", "no_stance", "stance_not_declared")
+M10_STATUS = "indicator only (AM-3): never a claim, never in the bar"
+# D-711 items 2 and 3 (Seckin 20:40): every item's record is complete or has a party's notes missing (a
+# masked-party item among them); every bar figure is reported per kind, and a bar reading needs both kinds and
+# no item of undeclared kind. The bar's lines are NEG_BAR.md's (D-709, floor 0.60 at 20:25), read per kind.
+COMPLETE, MISSING_NOTES = "complete", "missing_notes"
+RECORD_KINDS = (COMPLETE, MISSING_NOTES)
+UNDECLARED_KIND = "undeclared"
+# A set whose freeze is recorded is never built again: its keys are read as they are (D-693).
+FROZEN_RECORD = "FREEZE.json"
+# D-664: every red line carries its source; for now only the document (v1.1 adds the operator's). Declared once,
+# in the advisor's code (benchmark/baselines/neg_advisor.py), which stores it on the item's persona too.
+RED_LINE_SOURCES = na.RED_LINE_SOURCES
+# D-711: every item records whether every party's notes are on record (complete) or one party's are not
+# (missing_notes, whose key answer for that party is not_stated). Required on a synthetic build; a real build
+# without it reads as not recorded until role N records it.
+RECORD_KIND_UNSET = "not_recorded"
+# D-706 item 3 and D-707: real items alone are the headline; synthetic items are reported apart, never pooled.
+SYNTHETIC_ROW = ("synthetic items, reported apart from the real items and never pooled with them; their answers "
+                 "come from their construction (D-706 item 3, D-707)")
+# The operator's party-structure instruction (Seckin 16 November 2026 20:32, NEG_BAR.md): every item's structure,
+# computed from its declared parties alone, never read from words: two single parties, two teams (coalitions),
+# one party against a coalition, three or more parties. Every bar figure and floor is reported per structure,
+# and a bar reading is refused for a set whose headline items hold one structure only.
+TWO_SINGLES, TEAMS, ONE_VS_COALITION, THREE_OR_MORE = "two_singles", "teams", "one_vs_coalition", "three_or_more"
+STRUCTURES = (TWO_SINGLES, TEAMS, ONE_VS_COALITION, THREE_OR_MORE)
+MIN_STRUCTURES = 2
+# D-715 item 1 (Seckin 22:31): the bar passes only when every structure the set holds meets every line and floor,
+# and overall does too. The fewest headline items a structure needs in a set: a reporting cell of fewer than
+# MIN_CELL items gives its count alone, with no figure and no interval (plan section 6), so a structure with
+# fewer items could never meet a line, and a pass on it could not be read at all. Declared here alone.
+MIN_ITEMS_PER_STRUCTURE = MIN_CELL
+# What the pass is read on: each record kind (D-711), each structure the set holds and overall (D-715 item 1).
+BAR_READ_ON = ("kinds", "structures", "overall")
+UNDECLARED_STRUCTURE = "not_computed"
+OVERALL = "overall"
+PARTY_KINDS = ("single", "coalition")
+# D-668 gap 6: a coalition declares at least this many members when it declares any.
+MIN_MEMBERS = 2
+# The scorer's code digest is of its LF bytes, so a CRLF checkout names the committed code (#262 gap 2).
+CODE_EOL = (b"\r\n", b"\n")
 _ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
@@ -183,6 +259,33 @@ def bracket_spans(text):
             if depth == 0:
                 out.append(text[start:i])
     return out
+
+
+# #281 gap 8 (D-666, D-667): an unagreed article with no bracket span but numbered option markers (an option or
+# alternative label with its number, at a line's start or followed by a colon or a closing parenthesis) holds
+# several proposals the brackets do not mark. Its text is never split by guess: the build is refused with the
+# article named, and the builder brackets each proposal. Structure only (WORDS-A): the label is the one
+# _BRACKET_MARK already strips, and its number is what is counted. Other languages' labels: #281's D-668 list.
+_NUMBERED_OPTION = re.compile(r"^[ \t]*(?:alt(?:ernative)?|option)[ \t]*(\d+)\b"
+                              r"|\b(?:alt(?:ernative)?|option)[ \t]*(\d+)[ \t]*[:)]", re.I | re.M)
+UNBRACKETED_OPTIONS_MIN = 2
+
+
+def unbracketed_options(article):
+    """The distinct numbers of an unagreed article's option markers when it holds no bracket span (else [])."""
+    text = str(article.get("text") or "")
+    if article.get("agreed") or any(s.strip() for s in bracket_spans(text)):
+        return []
+    return sorted({int(a or b) for a, b in _NUMBERED_OPTION.findall(text)})
+
+
+def refuse_unbracketed_options(item_id, article):
+    """Refuse visibly an article read as one proposal although it numbers several options (#281 gap 8)."""
+    numbers = unbracketed_options(article)
+    if len(numbers) >= UNBRACKETED_OPTIONS_MIN:
+        raise ValueError("refused: %s: article %s numbers %d options (%s) and holds no bracket; it would be read as "
+                         "one proposal, so each proposal is bracketed in the build file, never split by guess"
+                         % (item_id, article.get("id"), len(numbers), ", ".join(str(n) for n in numbers)))
 
 
 def split_article(article):
@@ -287,6 +390,87 @@ def configuration(item, key):
     return "everyone"
 
 
+def structure_of(parties):
+    """The item's party structure (the operator's 20:32 instruction), from its declared parties and their kinds
+    alone: three or more parties; else two singles, two coalitions (teams), or one single against a coalition."""
+    parties = list(parties or [])
+    if len(parties) < 2:
+        raise ValueError("an item names at least two parties")
+    if len(parties) >= 3:
+        return THREE_OR_MORE
+    kinds = sorted(p.get("kind") for p in parties)
+    if kinds == ["single", "single"]:
+        return TWO_SINGLES
+    if kinds == ["coalition", "coalition"]:
+        return TEAMS
+    if kinds == ["coalition", "single"]:
+        return ONE_VS_COALITION
+    raise ValueError("a party is single or coalition")
+
+
+def check_parties(b):
+    """D-668 gap 6 and the structure tag: each party single or coalition, a coalition's declared members (at least
+    MIN_MEMBERS, never itself, each once), a position stated on behalf of a coalition only by one of its declared
+    members, and a declared `structure` the one Python computes."""
+    item_id = b.get("item_id")
+    parties = b.get("parties") or []
+    ids = [p.get("id") for p in parties]
+    if len(set(ids)) != len(ids):
+        raise ValueError("%s: a party is named twice" % item_id)
+    for p in parties:
+        if p.get("kind") not in PARTY_KINDS:
+            raise ValueError("%s: a party is single or coalition" % item_id)
+        members = p.get("members")
+        if members is None:
+            continue
+        if p["kind"] != "coalition" or not isinstance(members, list) or len(members) < MIN_MEMBERS:
+            raise ValueError("%s: only a coalition declares members, at least %d" % (item_id, MIN_MEMBERS))
+        if p["id"] in members or len(set(members)) != len(members) or not all(isinstance(m, str) and m for m in members):
+            raise ValueError("%s: a coalition's members are other parties, each once" % item_id)
+    if b["persona"].get("id") not in ids:
+        raise ValueError("%s: the persona is one of the item's parties" % item_id)
+    by_id = {p["id"]: p for p in parties}
+    if b["persona"].get("kind") != by_id[b["persona"]["id"]].get("kind"):
+        raise ValueError("%s: the persona's kind is its party's kind" % item_id)
+    for pos in b.get("positions") or []:
+        whole = pos.get("on_behalf_of")
+        if whole is None:
+            continue
+        if pos.get("party") not in ((by_id.get(whole) or {}).get("members") or []):
+            raise ValueError("%s: a position on behalf of a coalition is stated by one of its declared members"
+                             % item_id)
+    declared = b.get("structure")
+    if declared is not None and declared != structure_of(parties):
+        raise ValueError("%s: the declared structure is not the one its parties give (%s)"
+                         % (item_id, structure_of(parties)))
+
+
+def check_layers(b):
+    """D-666: each document layer entry of a build declares its kind, its text, and an article of the excerpt or
+    none; the record's layers not read are names."""
+    arts = {a.get("id") for a in b.get("articles") or []}
+    for e in b.get("layers") or []:
+        if not isinstance(e, dict) or e.get("layer") not in na.LAYER_KINDS:
+            raise ValueError("%s: a layer entry's kind is one of %s" % (b.get("item_id"), ", ".join(na.LAYER_KINDS)))
+        if not isinstance(e.get("text"), str) or not e["text"].strip():
+            raise ValueError("%s: a layer entry carries its text" % b.get("item_id"))
+        if e.get("article") is not None and e["article"] not in arts:
+            raise ValueError("%s: a layer entry's article is one of the excerpt's, or none" % b.get("item_id"))
+    if not all(isinstance(x, str) and x for x in b.get("layers_not_read") or []):
+        raise ValueError("%s: the layers not read are named" % b.get("item_id"))
+
+
+def credited(positions, parties):
+    """The positions with each one a member stated on behalf of its coalition credited to the coalition, the
+    member kept as `speaker` (D-668 gap 6); a member's own position stays its own."""
+    out = []
+    for p in positions:
+        if p.get("on_behalf_of") is not None:
+            p = dict(p, party=p["on_behalf_of"], speaker=p["party"])
+        out.append(p)
+    return out
+
+
 REQUIRED_BUILD = ("item_id", "part", "process", "round", "persona", "parties", na.TERMS_FIELD, na.ATTRIBUTION_FIELD)
 
 
@@ -303,6 +487,11 @@ def check_build(b):
         raise ValueError("%s: the round is 1 to 5" % b["item_id"])
     if b["persona"].get("kind") not in ("single", "coalition"):
         raise ValueError("%s: the persona is single or coalition" % b["item_id"])
+    if b.get("synthetic") and b.get("record_kind") is None:
+        raise ValueError("%s: a synthetic build records its record kind (D-711)" % b["item_id"])
+    check_parties(b)
+    check_layers(b)
+    na.read_red_lines(b.get("red_lines"))
     for p in b.get("positions") or []:
         if p.get("stance") not in na.POSITION_STANCES or not str(p.get("id", "")).startswith("POS-"):
             raise ValueError("%s: a position needs a POS- id and a declared stance" % b["item_id"])
@@ -315,19 +504,40 @@ def check_build(b):
                 raise ValueError("%s: a game lacks %s" % (b["item_id"], f))
     elif not 3 <= len(b.get("articles") or []) <= 6:
         raise ValueError("%s: an excerpt holds 3 to 6 articles" % b["item_id"])
+    # D-711 items 2 and 3: the record's kind, and the party a masked-party item hides (always missing notes).
+    kind = b.get("record_kind")
+    if kind is not None and kind not in RECORD_KINDS:
+        raise ValueError("%s: record_kind is one of %s" % (b["item_id"], ", ".join(RECORD_KINDS)))
+    if b.get("masked_party") is not None:
+        if kind != MISSING_NOTES or b["masked_party"] not in {p.get("id") for p in b.get("parties") or []}:
+            raise ValueError("%s: a masked party is one of the item's parties, on a missing_notes item"
+                             % b["item_id"])
 
 
 def build_item(b):
     """(item, key) of one build file, by the plan's rules."""
     check_build(b)
     persona = b["persona"]["id"]
+    red_ids, red_sources = na.read_red_lines(b.get("red_lines"))
     common = {"item_id": b["item_id"], "part": b["part"], "process": b["process"], "round": b["round"],
               "synthetic": bool(b.get("synthetic")), "post_cutoff": bool(b.get("post_cutoff"))}
+    if b.get("record_kind") is not None:
+        # D-711: declared by the set builder; never rendered into a prompt (render_advice reads named fields).
+        # Left out when undeclared, so record_kind() reads it as undeclared and the bar reading refuses it.
+        common["record_kind"] = b["record_kind"]
+    if b.get("missing_parties"):
+        common["missing_parties"] = sorted(b["missing_parties"])
     item = dict(common, schema=na.ITEM_SCHEMA,
                 **{f: str(b.get(f) or "").strip() for f in (na.TERMS_FIELD, na.ATTRIBUTION_FIELD)},
-                persona={"id": persona, "kind": b["persona"]["kind"], "red_lines": list(b.get("red_lines") or [])},
-                parties=[{"id": p["id"], "kind": p["kind"]} for p in b["parties"]])
-    key = dict(common, schema=KEY_SCHEMA, persona_kind=b["persona"]["kind"])
+                persona={"id": persona, "kind": b["persona"]["kind"], "red_lines": red_ids,
+                         # D-664 item 2: every red line with its source, in the advisor's item too.
+                         "red_line_sources": red_sources},
+                parties=[dict({"id": p["id"], "kind": p["kind"]}, **({"members": list(p["members"])} if p.get("members")
+                                                                    else {})) for p in b["parties"]])
+    # The operator's 20:32 party structure, computed from the declared parties (never rendered into a prompt).
+    key = dict(common, schema=KEY_SCHEMA, persona_kind=b["persona"]["kind"], structure=structure_of(b["parties"]))
+    if b.get("masked_party") is not None:
+        key["masked_party"] = b["masked_party"]
     if b["part"] == "G":
         g = b["game"]
         item.update(game={"issues": g["issues"], "persona_table": g["tables"][persona],
@@ -335,7 +545,8 @@ def build_item(b):
                     articles=[], positions=[], round_index=[], previous_index=[], trades_on_record=[])
         key.update(game=g, proposals={}, articles={}, alignment={}, approach_targets=[])
         return item, key
-    positions = b.get("positions") or []
+    # D-668 gap 6: a member's position stated on behalf of its coalition is the coalition's.
+    positions = credited(b.get("positions") or [], b["parties"])
     k = b["round"]
     previous_ids = {r["id"] for r in b.get("previous_index") or []}
     round_ids = {r["id"] for r in b.get("round_index") or []} | {a["id"] for a in b["articles"]}
@@ -343,6 +554,7 @@ def build_item(b):
     arts, kprops, karts, align = [], {}, {}, {}
     par = 0
     for a in b["articles"]:
+        refuse_unbracketed_options(b["item_id"], a)
         paras, props = split_article(a)
         pars = []
         for t in paras:
@@ -362,10 +574,12 @@ def build_item(b):
             adv = (("advanced" if f == "kept" else "not_advanced" if f == "removed" else None) if supports else
                    ("advanced" if f == "removed" else "not_advanced" if f == "kept" else None) if lab == "conflict"
                    else None)
+            lines = [p["id"] for p in mine if p["id"] in red_sources and p["stance"] == "oppose"]
+            red_line = lab == "conflict" and bool(lines)
             kprops[pr["id"]] = {
-                "article": a["id"], "conflict": lab, "fate": f, "advanced": adv,
-                "red_line": lab == "conflict" and any(p["id"] in (b.get("red_lines") or []) and p["stance"] == "oppose"
-                                                      for p in mine),
+                "article": a["id"], "conflict": lab, "fate": f, "advanced": adv, "red_line": red_line,
+                # D-664: the source of the red line it rests on (each declared one is from the document for now).
+                "red_line_source": red_sources[lines[0]] if red_line else None,
                 "supported_earlier": any(p["stance"] in ("support", "accept") and p["round"] < k for p in mine)}
         numbers = list(range(1, len(plist) + 1))
         align[a["id"]] = {p["id"]: alignment_label(positions, persona, p["id"], a["id"], numbers)
@@ -376,13 +590,22 @@ def build_item(b):
                      if any(c.get(p) == "aligned" for c in align.values())
                      and not any(c.get(p) == "opposed" for c in align.values()))
     item.update(articles=arts, round_index=b.get("round_index") or [], previous_index=b.get("previous_index") or [],
-                positions=[{f: p.get(f) for f in ("id", "party", "round", "article", "proposal", "quote", "source")}
-                           for p in positions],
+                positions=[dict({f: p.get(f) for f in ("id", "party", "round", "article", "proposal", "quote", "source")},
+                                **({"speaker": p["speaker"]} if p.get("speaker") else {})) for p in positions],
                 trades_on_record=[{"id": t["id"], "give": "P-%s-%d" % (t["give"][0], t["give"][1]),
                                    "get": "P-%s-%d" % (t["get"][0], t["get"][1]), "round": t["round"]}
                                   for t in b.get("trades_on_record") or []])
+    if b.get("layers") is not None or b.get("layers_not_read"):
+        # D-666: the document's own layers, each apart with its kind, author and anchor, each with a citable id.
+        item["layers"] = [dict({"id": na.LAYER_ID % (n + 1), "layer": e["layer"], "text": " ".join(e["text"].split()),
+                                "author": str(e.get("author") or ""), "article": e.get("article")},
+                               **({"anchor": " ".join(str(e["anchor"]).split())} if e.get("anchor") else {}))
+                          for n, e in enumerate(b.get("layers") or [])]
+        item["layers_not_read"] = list(b.get("layers_not_read") or [])
     key.update(proposals=kprops, articles=karts, alignment=align, approach_targets=targets)
     key["configuration"] = configuration(item, key)
+    # D-668 gap 4: every other party's movement toward or away from the persona, from the positions on record.
+    key["movement"] = na.movement_map(item, positions)
     return item, key
 
 
@@ -391,6 +614,11 @@ def build_set(set_dir, *, count=None, limit=None):
     the B1 model's tokenizer (`count`, default neg_advisor.token_counter): one over the limit (plan section
     3.1, 24,000) refuses the whole set before anything is written."""
     set_dir = outside_repository(set_dir)
+    if (set_dir / FROZEN_RECORD).is_file():
+        # A frozen set (the pilot among them) is read as it is: a rebuild would rewrite its keys (new fields
+        # such as red_line_source) and change the set_sha256 its freeze, power record and openings name.
+        raise ValueError("refused: the set is frozen (%s is recorded); its keys are read as they are, never "
+                         "built again" % FROZEN_RECORD)
     limit = na.TOKEN_LIMIT if limit is None else limit
     config = na.load_config(na.CONFIG_PATH)
     built = []
@@ -443,6 +671,10 @@ def checks(item, key, reply, *, mode):
     later = {p["id"] for p in item["positions"] if p["party"] == item["persona"]["id"] and p["round"] == item["round"]}
     out = {}
     for pid, piece in reply["proposals"].items():
+        if piece.get("written_by") == PYTHON:
+            # A piece Python wrote (system_python: a conflict the positions on record decide, no stance and
+            # no reasons) is no advice to check: it would pass every check by having nothing to check.
+            continue
         stance, reasons = piece.get("stance"), piece.get("reasons") or []
         aid = article_of[pid]
         r = {"C-cite": all(x in pars | poss for x in reasons),
@@ -483,10 +715,17 @@ def withhold(item, reply, audit):
     if item.get("game"):
         # A game reply holds a deal and trades, never proposals: nothing to withhold (session 18, 15 Nov).
         return reply, {"given": 0, "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
-    trail = {"given": len(reply["proposals"]), "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
+    trail = {"given": sum(1 for e in reply["proposals"].values() if e.get("written_by") != PYTHON),
+             "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
     results = checks(item, None, reply, mode="system")
     kept = {}
+    python_kept = 0
     for pid, piece in reply["proposals"].items():
+        if piece.get("written_by") == PYTHON:
+            # Python's own piece was never the model's advice: no audit asked it and no check reads it.
+            kept[pid] = piece
+            python_kept += 1
+            continue
         said = (audit or {}).get(pid)
         failed = [c for c, ok in results[pid].items() if not ok]
         if said == WITHHELD_AUDIT:
@@ -498,8 +737,426 @@ def withhold(item, reply, audit):
         if said != WITHHELD_AUDIT and not failed:
             kept[pid] = piece
     out = dict(reply, proposals=kept)
-    trail["kept"] = len(kept)
+    trail["kept"] = len(kept) - python_kept
     return out, trail
+
+
+# ---------------------------------------------------------------------------
+# the system's Python step (lane neg-round1, standing order 102, D-707): where the item's own positions on
+# record decide a field by the plan's declared rules (section 4.2, the same functions the key is built with:
+# `applicable`, `state_label`'s order, the previous and round indexes), Python sets it and the model's answer
+# is kept beside it; where they prove a model answer impossible, the answer is refused and kept beside it
+# (HONEST-OUTPUT-A). It never reads the key and decides nothing that needs a stance's meaning (WORDS-A):
+# whether a quote supports, opposes or accepts is left to the model. Positions after round k are refused by
+# check_build, so every position the item holds is on record before the advice.
+
+PYTHON = "python"
+SYSTEM_PYTHON_COUNTS = ("conflict_filled", "conflict_set", "conflict_agreed", "conflict_refused",
+                        "state_filled", "state_set", "state_agreed", "state_refused", "state_left",
+                        "alignment_refused",
+                        # D-711 item 1, never invent: what each model entry says it rests on, apart.
+                        "on_record", "inferred_kept", "inferred_refused", "inferred_set_aside",
+                        "on_record_without_position", "alignment_inferred_kept", "alignment_inferred_refused",
+                        "alignment_inferred_set_aside")
+INFERRED_REFUSALS = ("no_line", "line_too_short", "line_not_found")
+
+
+def _collapsed(text):
+    return " ".join(str(text or "").split())
+
+
+def item_texts(item):
+    """Every text the advice prompt shows (article titles, paragraphs, proposals, every party's position
+    quotes), each with its whitespace collapsed: what an inferred entry's line must be copied from."""
+    texts = [p.get("quote") for p in item.get("positions") or []]
+    for a in item.get("articles") or []:
+        texts.append(a.get("title"))
+        texts += [x["text"] for x in a.get("paragraphs") or []] + [x["text"] for x in a.get("proposals") or []]
+    # D-666: the document's layers the prompt shows (a comment, a tracked change, a note) are its text too.
+    texts += [e.get(f) for e in item.get("layers") or [] for f in ("text", "anchor")]
+    return [_collapsed(x) for x in texts if x]
+
+
+def basis_refusal(item, quote):
+    """None when an inferred entry's line stands in the item's text as written (whitespace collapsed, case
+    kept: the same reading as POSITION-GAPS-A's identical quotes) and holds at least BASIS_QUOTE_MIN_WORDS
+    words; else the reason it is refused: no_line, line_too_short or line_not_found."""
+    line = _collapsed(quote)
+    if not line:
+        return "no_line"
+    if len(line.split()) < na.BASIS_QUOTE_MIN_WORDS:
+        return "line_too_short"
+    return None if any(line in text for text in item_texts(item)) else "line_not_found"
+
+
+def _numbers(article):
+    return list(range(1, len(article["proposals"]) + 1))
+
+
+def structural_state(item, article):
+    """The article's state by the plan's rule with `binding` set aside: new (k > 1 and not in the previous
+    round's index), bracketed (proposals on the table, not agreed) or closed. `binding` needs the stance of the
+    persona's earlier positions, so it is only ever left possible (`binding_possible`), never decided here."""
+    previous = {r["id"] for r in item.get("previous_index") or []}
+    if item["round"] > 1 and article["id"] not in previous:
+        return "new"
+    return "bracketed" if article["proposals"] and not article.get("agreed") else "closed"
+
+
+def binding_possible(item, article_id):
+    """True when the persona holds a position on the article from an earlier round (the only positions
+    `state_label` reads for `binding`); False proves the state is not binding."""
+    persona = item["persona"]["id"]
+    return any(p["party"] == persona and p["article"] == article_id and p["round"] < item["round"]
+               for p in item.get("positions") or [])
+
+
+def dropped_articles(item):
+    """The previous round's articles no longer in this round (its index or its excerpt): dropped, by
+    construction of the round texts."""
+    previous = {r["id"] for r in item.get("previous_index") or []}
+    now = {r["id"] for r in item.get("round_index") or []} | {a["id"] for a in item.get("articles") or []}
+    return sorted(previous - now)
+
+
+def system_python(item, reply):
+    """(reply, counts): the system's advice with the fields its positions on record decide set by Python.
+
+    - conflict: a proposal with no applicable persona position (the plan's `applicable`: proposal-specific
+      positions, else article-level ones) is not_stated by the plan's own definition; a missing piece is
+      added as Python's (`written_by` python, conflict alone), a model answer set to it is kept in
+      `conflict_model`. Where such a position exists, a model's not_stated is refused (`conflict_refused`)
+      and kept in `conflict_model`; conflict against no_conflict is the model's (it needs the stance).
+    - state: dropped for every previous-round article no longer in this round; for an excerpt article where
+      binding is impossible, its structural state; where binding is possible the model's answer stands when
+      it is binding or the structural state, and is otherwise refused (kept in `state_model`).
+    - alignment: a party listed aligned or opposed on an article where, proposal by proposal, the persona or
+      that party holds no applicable position is not_stated by the plan's rule: it is taken off the list.
+    Never the key; nothing from a quote's words."""
+    counts = Counter({c: 0 for c in SYSTEM_PYTHON_COUNTS})
+    if reply is None or item.get("game"):
+        return reply, counts
+    persona = item["persona"]["id"]
+    positions = item.get("positions") or []
+    proposals = {pid: dict(piece) for pid, piece in (reply.get("proposals") or {}).items()}
+    for article in item["articles"]:
+        for n, prop in enumerate(article["proposals"], 1):
+            mine = applicable(positions, persona, article["id"], n)
+            piece = proposals.get(prop["id"])
+            inferred = False
+            if piece is not None and piece.get("written_by") != PYTHON:
+                # D-711 item 1: an entry that says nothing is held as on record; an inferred one stands only
+                # with its line found in the item's text, and is never counted as on record.
+                if piece.get("basis") == na.INFERRED:
+                    why = basis_refusal(item, piece.get("basis_quote"))
+                    if why:
+                        if "conflict" in piece:
+                            piece["conflict_model"] = piece.pop("conflict")
+                        piece["inferred_refused"] = why
+                        counts["inferred_refused"] += 1
+                    else:
+                        inferred = True
+                        counts["inferred_kept"] += 1
+                else:
+                    counts["on_record"] += 1
+            if not mine:
+                if piece is None:
+                    proposals[prop["id"]] = {"id": prop["id"], "reasons": [], "conflict": "not_stated",
+                                             "written_by": PYTHON}
+                    counts["conflict_filled"] += 1
+                elif piece.get("conflict") == "not_stated":
+                    counts["conflict_agreed"] += 1
+                else:
+                    said = piece.get("conflict")
+                    if inferred and said is not None:
+                        # Not on record is not_stated: the inference stays visible beside it, never scored.
+                        piece["inferred"] = {"conflict": said, "basis_quote": piece.get("basis_quote")}
+                        counts["inferred_set_aside"] += 1
+                    elif said is not None:
+                        counts["on_record_without_position"] += 1
+                    if "conflict_model" not in piece:
+                        piece["conflict_model"] = said
+                    piece["conflict"] = "not_stated"
+                    piece["conflict_by"] = PYTHON
+                    counts["conflict_set"] += 1
+            elif piece is not None and piece.get("conflict") == "not_stated":
+                piece["conflict_model"] = piece.pop("conflict")
+                piece["conflict_refused"] = "positions_on_record"
+                counts["conflict_refused"] += 1
+    state = dict(reply.get("state") or {})
+    state_model = {}
+    for article in item["articles"]:
+        aid, said = article["id"], state.get(article["id"])
+        structural = structural_state(item, article)
+        if not binding_possible(item, aid):
+            if said is None:
+                counts["state_filled"] += 1
+            elif said == structural:
+                counts["state_agreed"] += 1
+            else:
+                state_model[aid] = said
+                counts["state_set"] += 1
+            state[aid] = structural
+        elif said is None:
+            counts["state_left"] += 1
+        elif said in ("binding", structural):
+            counts["state_agreed"] += 1
+        else:
+            state_model[aid] = state.pop(aid)
+            counts["state_refused"] += 1
+    for aid in dropped_articles(item):
+        said = state.get(aid)
+        if said is None:
+            counts["state_filled"] += 1
+        elif said == "dropped":
+            counts["state_agreed"] += 1
+        else:
+            state_model[aid] = said
+            counts["state_set"] += 1
+        state[aid] = "dropped"
+    by_id = {a["id"]: a for a in item["articles"]}
+    alignment = {}
+    for aid, said in (reply.get("alignment") or {}).items():
+        numbers = _numbers(by_id[aid]) if aid in by_id else []
+        kept = {}
+        inferred, refused_line = False, None
+        if said.get("basis") == na.INFERRED:
+            refused_line = basis_refusal(item, said.get("basis_quote"))
+            inferred = refused_line is None
+            counts["alignment_inferred_kept" if inferred else "alignment_inferred_refused"] += 1
+        aside = []
+        for side in ("aligned", "opposed"):
+            kept[side] = []
+            for party in said.get(side) or []:
+                decided = any(applicable(positions, persona, aid, n) and applicable(positions, party, aid, n)
+                              for n in numbers or [None])
+                if refused_line:
+                    counts["alignment_refused"] += 1
+                elif decided:
+                    kept[side].append(party)
+                elif inferred:
+                    # Not on record: the inferred party stays visible beside the entry, never scored.
+                    aside.append({"party": party, "side": side})
+                    counts["alignment_inferred_set_aside"] += 1
+                else:
+                    counts["alignment_refused"] += 1
+                    counts["on_record_without_position"] += 1
+        if inferred:
+            kept.update(basis=na.INFERRED, basis_quote=said.get("basis_quote"))
+            if aside:
+                kept["inferred"] = aside
+        elif refused_line:
+            kept["inferred_refused"] = refused_line
+        alignment[aid] = kept
+    out = dict(reply, proposals=proposals, state=state, alignment=alignment)
+    if state_model:
+        out["state_model"] = state_model
+    return out, counts
+
+
+# ---------------------------------------------------------------------------
+# AM-2 (D-665): red lines measured two ways, declared and held
+
+
+def held_red_line(row):
+    """A key proposal's held red line: None when it rests on no declared red line or is still open (its own
+    count, `red_line_outcome`); True when it was removed from the next round's text; False when it passed
+    (kept or changed). Read from the fate the key already holds, the same for every arm."""
+    if not row.get("red_line"):
+        return None
+    if row["fate"] in HELD_FATES:
+        return True
+    if row["fate"] in LET_THROUGH_FATES:
+        return False
+    return None
+
+
+def red_line_outcome(row):
+    """held, not_held or open for a declared red line (None for none; a fate of no class is undetermined)."""
+    if not row.get("red_line"):
+        return None
+    held = held_red_line(row)
+    if held is not None:
+        return "held" if held else "not_held"
+    return "open" if row["fate"] in OPEN_FATES else "undetermined"
+
+
+def red_line_source(row):
+    """A declared red line's source (D-664): the key's own, or, for a key built before the field, the only
+    source this version has. A source not declared in RED_LINE_SOURCES is refused, never counted."""
+    source = row.get("red_line_source") or RED_LINE_SOURCES[0]
+    if source not in RED_LINE_SOURCES:
+        raise ValueError("refused: a red line's source is not one of %s" % ", ".join(RED_LINE_SOURCES))
+    return source
+
+
+def extracted_red_line(item, pid, piece):
+    """Whether an arm's advice treats a proposal as resting on a red line: it calls it a conflict and a
+    persona position on it is one the record marks a red line (the system-mode reading of C-mandate, no key)."""
+    number = {p["id"]: (a["id"], i + 1) for a in item["articles"] for i, p in enumerate(a["proposals"])}[pid]
+    red = set(item["persona"].get("red_lines") or [])
+    mine = applicable(item["positions"], item["persona"]["id"], number[0], number[1])
+    return piece.get("conflict") == "conflict" and any(p["id"] in red for p in mine)
+
+
+def red_line_part(item, key, reply):
+    """One item's red-line counter for one arm. The record's side (declared, held, by source) is the same for
+    every arm; the arm's side counts the red lines it extracted, those the key declares, and on those its
+    agreement with held (its advice holds the line when it rejects or counters). A piece with no stance is
+    counted (no_stance) and is a disagreement, never dropped."""
+    c = Counter()
+    props = (reply or {}).get("proposals") or {}
+    for pid, row in key["proposals"].items():
+        held = held_red_line(row)
+        if row.get("red_line"):
+            c["declared"] += 1
+            c["source:" + red_line_source(row)] += 1
+            c[red_line_outcome(row)] += 1
+        piece = props.get(pid)
+        if not piece or not extracted_red_line(item, pid, piece):
+            continue
+        c["extracted"] += 1
+        if row.get("red_line") and held is None:
+            c["on_" + red_line_outcome(row)] += 1
+        if held is None:
+            continue
+        c["on_declared"] += 1
+        stance = piece.get("stance")
+        if stance not in ANSWERED_STANCES:
+            c["no_stance"] += 1
+        else:
+            c["agree"] += (stance in HOLDING_STANCES) == held
+    return c
+
+
+def red_lines_report(per_arm, keys):
+    """AM-2's aggregates: the record's declared red lines, their sources and the held share, and each arm's
+    extraction and agreement with held. Over the arm's own items (the cloud on its subset); a cell of fewer
+    than MIN_CELL items with a declared red line is its item count alone."""
+    out = {"source_field": "every red line carries its source; this version: %s" % ", ".join(RED_LINE_SOURCES),
+           "by_arm": {}}
+    record = None
+    for arm, parts in sorted(per_arm.items()):
+        ids = [i for i in sorted(parts) if keys[i]["part"] != "G"]
+        with_red = [i for i in ids if parts[i]["RL"]["declared"]]
+        c = sum((parts[i]["RL"] for i in ids), Counter())
+        if len(with_red) < MIN_CELL:
+            out["by_arm"][arm] = {"items": len(with_red)}
+        else:
+            out["by_arm"][arm] = {"items": len(with_red), "extracted": c["extracted"], "on_declared": c["on_declared"],
+                                  "on_open": c["on_open"], "agree_with_held": c["agree"], "no_stance": c["no_stance"],
+                                  "agreement": c["agree"] / c["on_declared"] if c["on_declared"] else None}
+        if record is None or len(ids) > record[0]:
+            record = (len(ids), len(with_red), c)
+    if record is not None:
+        _n, items, c = record
+        if items < MIN_CELL:
+            out["record"] = {"items": items}
+        else:
+            decided = c["held"] + c["not_held"]
+            out["record"] = {"items": items, "declared": c["declared"], "held": c["held"], "not_held": c["not_held"],
+                             "open": c["open"], "undetermined": c["undetermined"],
+                             "held_share": c["held"] / decided if decided else None,
+                             "by_source": {k.split(":", 1)[1]: v for k, v in sorted(c.items()) if k.startswith("source:")}}
+    return out
+
+
+# ---------------------------------------------------------------------------
+# AM-3: M10, open-point detection
+
+
+def open_point_class(fate_label):
+    """The key's M10 class of a proposal from its fate: movable (open, changed), settled (kept, removed); None
+    for a fate of neither (never scored)."""
+    if fate_label in MOVABLE_FATES:
+        return MOVABLE
+    if fate_label in SETTLED_FATES:
+        return SETTLED
+    return None
+
+
+def open_point_prediction(reply, given, pid):
+    """(prediction, None) or (NO_ANSWER, reason) of one proposal: movable on a counter, settled on an accept or
+    a reject. No stance is a miss by its reason: no reply, a piece the system withheld (in what it gave, not in
+    what it kept), no piece for the proposal, a piece with no stance, a stance outside the declared ones."""
+    if reply is None:
+        return NO_ANSWER, "no_reply"
+    piece = (reply.get("proposals") or {}).get(pid)
+    if piece is not None and piece.get("written_by") == PYTHON:
+        # The system's Python step wrote this piece (a conflict alone): the model gave none.
+        return NO_ANSWER, "no_piece"
+    if piece is None:
+        gave = ((given or {}).get("proposals") or {}).get(pid)
+        return NO_ANSWER, ("withheld" if gave is not None else "no_piece")
+    stance = piece.get("stance")
+    if stance is None:
+        return NO_ANSWER, "no_stance"
+    if stance in MOVABLE_STANCES:
+        return MOVABLE, None
+    if stance in SETTLED_STANCES:
+        return SETTLED, None
+    return NO_ANSWER, "stance_not_declared"
+
+
+def open_point_part(key, reply, given=None):
+    """(rows, misses) of one item for one arm: rows a Counter of (key class, prediction), a miss predicted
+    no_answer; misses a Counter of the reasons. `given` is the reply before any withholding."""
+    rows, misses = Counter(), Counter()
+    for pid, row in key["proposals"].items():
+        true = open_point_class(row.get("fate"))
+        if true is None:
+            continue
+        pred, why = open_point_prediction(reply, given if given is not None else reply, pid)
+        rows[(true, pred)] += 1
+        if why:
+            misses[why] += 1
+    return rows, misses
+
+
+def macro_f1_two(c):
+    """M10: Macro-F1 over the two classes, movable and settled, whatever the key holds; a prediction of
+    no_answer is a miss. A class with no row in the key and none predicted has no F1, and the figure is then
+    undefined (None, left out of the bootstrap with its mass reported)."""
+    if not c:
+        return None
+    f1s = []
+    for k in M10_CLASSES:
+        tp = c.get((k, k), 0)
+        fp = sum(v for (t, p), v in c.items() if p == k and t != k)
+        fn = sum(v for (t, p), v in c.items() if t == k and p != k)
+        if tp + fp + fn == 0:
+            return None
+        f1s.append(2 * tp / (2 * tp + fp + fn))
+    return sum(f1s) / len(f1s)
+
+
+def open_points_report(per_arm, keys, figures, drops, *, k=1, resamples=None):
+    """AM-3's block: per arm on its headline items (the cloud on its subset's) the figure with its interval
+    (the same cell as M1's), the key's and the predicted classes, the misses by reason and the parser's drop
+    counts of the stance and the reply; and the system-minus-B1 difference where both arms exist. Indicator
+    only: no `shown`, never in the claims and never in the bar. A cell under MIN_CELL items is its count."""
+    out = {"status": M10_STATUS, "classes": list(M10_CLASSES), "by_arm": {}}
+    for arm, parts in sorted(per_arm.items()):
+        head = [i for i in sorted(parts) if keys[i]["part"] in HEADLINE]
+        if len(head) < MIN_CELL:
+            out["by_arm"][arm] = {"items": len(head)}
+            continue
+        rows = sum((parts[i]["M10"] for i in head), Counter())
+        misses = sum((parts[i]["M10m"] for i in head), Counter())
+        arm_drops = (drops or {}).get(arm) or {}
+        out["by_arm"][arm] = {
+            "items": len(head), "figure": figures[arm]["M10"], "rows": sum(rows.values()),
+            "key": {c: sum(v for (t, _p), v in rows.items() if t == c) for c in M10_CLASSES},
+            "predicted": {c: sum(v for (_t, p), v in rows.items() if p == c) for c in M10_CLASSES + (NO_ANSWER,)},
+            "misses": {r: misses[r] for r in M10_MISSES if misses[r]},
+            "stance_drops": dict(arm_drops.get("proposals.stance") or {}),
+            "reply_drops": dict(arm_drops.get("reply") or {})}
+    if "system" in per_arm and "B1" in per_arm:
+        head = [i for i in sorted(keys) if keys[i]["part"] in HEADLINE and i in per_arm["system"] and i in per_arm["B1"]]
+        diff = test_claim("M10", [per_arm["system"][i]["M10"] for i in head],
+                          [per_arm["B1"][i]["M10"] for i in head], k, resamples=resamples)
+        out["system_minus_B1"] = dict({f: v for f, v in diff.items() if f != "shown"}, status=M10_STATUS)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -509,18 +1166,29 @@ def withhold(item, reply, audit):
 def item_parts(item, key, reply, *, given=None):
     """{figure: Counter} of one item for one arm. `given` is the arm's reply before any withholding (for
     M8 on what it gave); None means the reply is what it gave."""
-    parts = {f: Counter() for f in ("M1", "M2", "M3", "M4", "M5", "M5a", "M5n", "M6", "M7", "M8", "M8g", "G")}
+    parts = {f: Counter() for f in ("M1", "M1s", "M1m", "M2", "M3", "M4", "M4f", "M5", "M5a", "M5n", "M6", "M7", "M8",
+                                    "M8g", "G", "RL", "M10", "M10m")}
     if item.get("game"):
         parts["G"] = game_part(key["game"], item["persona"]["id"], reply)
         return parts
     props = (reply or {}).get("proposals") or {}
+    parts["RL"] = red_line_part(item, key, reply)
+    parts["M10"], parts["M10m"] = open_point_part(key, reply, given)
+    place = {p["id"]: (a["id"], n) for a in item["articles"] for n, p in enumerate(a["proposals"], 1)}
     for pid, row in key["proposals"].items():
         piece = props.get(pid) or {}
         parts["M1"][(row["conflict"], piece.get("conflict", NO_ANSWER))] += 1
+        # M1's two parts, a diagnostic beside the plan's figure (lane neg-round1): by the item's positions alone,
+        # the same for every arm, a proposal with no applicable persona position (its conflict decided by
+        # structure) or with one (conflict against no_conflict needs a stance's meaning).
+        mine = applicable(item["positions"], item["persona"]["id"], *place[pid]) if pid in place else []
+        parts["M1m" if mine else "M1s"][(row["conflict"], piece.get("conflict", NO_ANSWER))] += 1
         stance = piece.get("stance")
         if row["fate"] in ("kept", "changed", "removed"):
             hit = (stance, row["fate"]) in (("accept", "kept"), ("counter", "changed"), ("reject", "removed"))
             parts["M4"]["hit" if hit else "miss"] += 1
+            # D-712: M4 by the key's fate, so a constant stance cannot pass on a set where one fate dominates.
+            parts["M4f"][(row["fate"], "hit" if hit else "miss")] += 1
         if row["conflict"] in ("conflict", "no_conflict"):
             hit = (row["conflict"] == "no_conflict" and stance == "accept") or \
                   (row["conflict"] == "conflict" and stance in ("reject", "counter"))
@@ -599,6 +1267,14 @@ def game_part(game, persona, reply):
     return c
 
 
+def class_f1(c, cls):
+    """F1 of one class of a (key, prediction) counter (D-712); None when the class has no row and none predicted."""
+    tp = c.get((cls, cls), 0)
+    fp = sum(v for (t, p), v in c.items() if p == cls and t != cls)
+    fn = sum(v for (t, p), v in c.items() if t == cls and p != cls)
+    return None if tp + fp + fn == 0 else 2 * tp / (2 * tp + fp + fn)
+
+
 def macro_f1(c):
     """Macro-F1 over the key's classes; a prediction outside them (no_answer among them) is a miss."""
     classes = sorted({t for (t, _p) in c if isinstance(t, str) and c[(t, _p)] > 0}) if c else []
@@ -623,7 +1299,10 @@ def _rate(c):
 
 
 FIGURES = {
-    "M1": macro_f1, "M2": macro_f1, "M3": macro_f1,
+    "M1": macro_f1, "M10": macro_f1_two, "M2": macro_f1, "M3": macro_f1,
+    # Diagnostics, not plan figures: M1 on the proposals whose conflict the positions decide by structure
+    # (M1s) and on those whose conflict needs a stance's meaning (M1m); see item_parts.
+    "M1s": macro_f1, "M1m": macro_f1,
     "M4": _rate,
     "M5": _rate,
     "M5a": _rate,
@@ -709,6 +1388,19 @@ def claim_status(power_record):
     return "indicator"
 
 
+def max_openings(set_sha256):
+    """The openings a set may take: MAX_OPENINGS, or the more D-710 grants the one set it names."""
+    return EXTRA_OPENINGS.get(set_sha256, MAX_OPENINGS)
+
+
+def opening_claim_status(power_record, k):
+    """A1's status at opening k: an opening beyond MAX_OPENINGS (D-710's third) is an indicator whatever its
+    power record says; otherwise `claim_status`."""
+    if type(k) is int and k > MAX_OPENINGS:
+        return "indicator"
+    return claim_status(power_record)
+
+
 # ---------------------------------------------------------------------------
 # the power (plan section 7.3)
 
@@ -754,14 +1446,21 @@ def simulate_power(sizes, shares, *, iccs=(0.2, 0.5), sims=MIN_POWER_SIMS, resam
     return out
 
 
-def code_sha256():
-    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+def code_sha256(path=None):
+    """The scorer's SHA-256 over its LF bytes (CRLF made LF), the same on a CRLF checkout and in the commit,
+    so a power record names the committed code (#262 gap 2, as tools/negotiation_power.py does)."""
+    return hashlib.sha256(Path(path or __file__).read_bytes().replace(*CODE_EOL)).hexdigest()
+
+
+def is_headline(key):
+    """A headline item: a real item of a headline part. A synthetic item never is (D-706 item 3, D-707)."""
+    return key["part"] in HEADLINE and not key.get("synthetic")
 
 
 def power_record(set_dir, *, k=1, sims=MIN_POWER_SIMS, resamples=500, freeze_path=None):
     keys = read_keys(set_dir)
     freeze = _read(freeze_path or Path(set_dir) / "FREEZE.json")
-    head = [k for k in keys.values() if k["part"] in HEADLINE]
+    head = [k for k in keys.values() if is_headline(k)]
     sizes = [len(k["proposals"]) for k in head]
     labels = Counter(r["conflict"] for k in head for r in k["proposals"].values())
     total = sum(labels.values())
@@ -839,8 +1538,9 @@ def refuse(*, freeze, configuration, configuration_sha256, k, openings_text, pow
     """None, or the first reason this scoring is refused (plan section 7.4)."""
     if not freeze or freeze.get("dry_run") or not freeze.get("embedding"):
         return "the freeze is a dry run or ran without its embedding test"
-    if type(k) is not int or not 1 <= k <= MAX_OPENINGS:
-        return "opening %r: at most %d openings" % (k, MAX_OPENINGS)
+    limit = max_openings(freeze.get("set_sha256"))
+    if type(k) is not int or not 1 <= k <= limit:
+        return "opening %r: at most %d openings for this set" % (k, limit)
     if openings_text is None:
         return "the openings ledger is not committed"
     if not any(int(m.group(1)) == k and m.group(2) == freeze["set_sha256"] and m.group(3) == configuration_sha256
@@ -939,8 +1639,53 @@ def withheld_counters(item, key, given, kept):
                if pid not in (kept or {}).get("proposals", {}) and na.judged(e, key["proposals"].get(pid)))
 
 
-def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None):
-    """The aggregates: per arm every figure with its interval, per configuration and round count M1 to M3
+def cell_dimensions(items, keys, structures):
+    """The report's cell dimensions, each (name, item id -> group): the plan's configuration and round count,
+    the party structure (Seckin 20:32), the persona's kind (D-668 gap 6: a coalition persona apart from a single
+    party), the part, the post-cutoff mark and the record kind (D-711)."""
+    return (("configuration", lambda i: keys[i].get("configuration")), ("round", lambda i: keys[i]["round"]),
+            ("structure", lambda i: structures.get(i)),
+            ("persona_kind", lambda i: keys[i].get("persona_kind") or items[i]["persona"]["kind"]),
+            ("part", lambda i: keys[i]["part"]), ("post_cutoff", lambda i: keys[i]["post_cutoff"]),
+            ("record_kind", lambda i: keys[i].get("record_kind", RECORD_KIND_UNSET)))
+
+
+def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
+           python_step=True):
+    """The report of a set: the real items alone give every headline figure, cell, claim and the bar; the
+    synthetic items, when the set holds any, are reported apart under `synthetic` by the same rules, never
+    pooled with the real ones, their claims indicators and their bar never the bar (D-706 item 3, D-707).
+    Per-item rows of both stay under `_per_item`, which the caller writes only inside the set folder."""
+    real = {i: v for i, v in keys.items() if not v.get("synthetic")}
+    synthetic = {i: v for i, v in keys.items() if v.get("synthetic")}
+    sub = None if subset is None else set(subset)
+    kw = dict(k=k, resamples=resamples, validation=validation, python_step=python_step)
+    if real:
+        out = _report_on(items, real, arms, judge=judge, power=power,
+                         subset=None if sub is None else sorted(sub & set(real)), **kw)
+    else:
+        out = {"schema": "neg-advisor-report-v1", "items": 0, "headline_items": 0, "figures": {}, "claims": {},
+               "bar": {"cleared": None, "why": "no real items: the synthetic row is never the bar"}, "_per_item": {}}
+    out["real_items"] = len(real)
+    if synthetic:
+        syn = _report_on(items, synthetic, arms, judge=judge, power=None,
+                         subset=None if sub is None else sorted(sub & set(synthetic)), **kw)
+        for arm, rows in syn.pop("_per_item").items():
+            out["_per_item"].setdefault(arm, {}).update(rows)
+        for claim in syn.get("claims", {}).values():
+            claim["status"] = "indicator"
+            claim["shown"] = False
+        syn["bar"] = dict(syn.get("bar") or {}, is_the_bar=False)
+        syn["row"] = SYNTHETIC_ROW
+        out["synthetic"] = syn
+    else:
+        out["synthetic"] = {"items": 0}
+    return out
+
+
+def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
+               python_step=True):
+    """The aggregates of one group of items (the real ones, or apart the synthetic ones): per arm every figure with its interval, per configuration and round count M1 to M3
     with n (a cell under 5 items its count alone), the system's audit trail, the trades, the games and the
     claims. The cloud reference is read on the cloud subset alone (D-606), with B1 and the system on the
     same subset beside their full figures; A2 is on the subset's headline items."""
@@ -948,7 +1693,9 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
     sub = sorted(subset) if subset is not None else ids
     validation = validation or {}
     per_arm, trails, trades = {}, Counter(), {}
+    advised = {}
     withheld = Counter()
+    python_counts = Counter()
     for arm, (answers, group) in arms.items():
         rows = replies_by_item(answers, group)
         mine = sub if arm == "cloud" else ids
@@ -958,10 +1705,14 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
             reply = row.get("reply")
             given = reply
             if arm == "system":
+                if python_step:
+                    reply, computed = system_python(items[i], reply)
+                    python_counts.update(computed)
                 reply, trail = withhold(items[i], reply, row.get("audit"))
                 trails.update(trail)
                 withheld[("system", i)] += withheld_counters(items[i], keys[i], given, reply)
             parts[i] = item_parts(items[i], keys[i], reply, given=given)
+            advised.setdefault(arm, {})[i] = reply
             v, n, carried, on_record = trade_checks(items[i], reply)
             tr.update({"valid": v, "given": n, "carried": carried, "on_record": on_record})
         per_arm[arm] = parts
@@ -971,10 +1722,12 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
                  for arm, parts in per_arm.items() if arm != "cloud"}
     head = [i for i in ids if keys[i]["part"] in HEADLINE]
     head_sub = [i for i in sub if keys[i]["part"] in HEADLINE]
+    # Seckin 20:32: each item's party structure, computed from its declared parties (a frozen key without the
+    # field is read from its item; a key naming another structure is refused).
+    structures = {i: item_structure(items[i], keys[i]) for i in ids if items[i].get("parties")}
     cells = {}
     for arm, parts in per_arm.items():
-        for dim, value in (("configuration", lambda i: keys[i].get("configuration")), ("round", lambda i: keys[i]["round"]),
-                           ("part", lambda i: keys[i]["part"]), ("post_cutoff", lambda i: keys[i]["post_cutoff"])):
+        for dim, value in cell_dimensions(items, keys, structures):
             groups = {}
             for i in sorted(parts):
                 if keys[i]["part"] != "G":
@@ -986,8 +1739,12 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
     out = {"schema": "neg-advisor-report-v1", "items": len(ids), "headline_items": len(head),
            "cloud_subset": {"items": len(sub), "headline_items": len(head_sub)}, "figures": figures,
            "figures_on_cloud_subset": on_subset, "cells": cells, "system_trail": dict(trails), "trades": trades,
-           "a1_status": claim_status(power), "metric": "our metric, no published benchmark",
-           "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade")},
+           # The system's Python step (system_python): what the positions on record set, filled and refused.
+           "system_python": dict(python_counts) if python_step else "off",
+           "a1_status": opening_claim_status(power, k), "metric": "our metric, no published benchmark",
+           "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade", "fields")},
+           # AM-2 (D-665): red lines declared and held, each with its source.
+           "red_lines": red_lines_report(per_arm, keys),
            # D-663: every answer field the parser could not read, by arm, field and reason.
            "drops": dict({arm: rr.drop_counts(answers, group) for arm, (answers, group) in arms.items()},
                          judge=rr.drop_counts({"rows": judge or []}))}
@@ -997,7 +1754,7 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
     if "system" in per_arm and "B1" in per_arm:
         claims["A1"] = dict(test_claim("M1", [per_arm["system"][i]["M1"] for i in head],
                                        [per_arm["B1"][i]["M1"] for i in head], k, resamples=resamples),
-                            status=claim_status(power))
+                            status=opening_claim_status(power, k))
         for fig in ("M2", "M3"):
             claims["A3_" + fig] = dict(test_claim(fig, [per_arm["system"][i][fig] for i in head],
                                                   [per_arm["B1"][i][fig] for i in head], k, resamples=resamples),
@@ -1009,6 +1766,8 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
     if claims.get("A1", {}).get("status") != "claim" and "A1" in claims:
         claims["A1"]["shown"] = False
     out["claims"] = claims
+    # AM-3: M10 beside M1, indicator only; outside the claims, so the bar never reads it.
+    out["M10"] = open_points_report(per_arm, keys, figures, out["drops"], k=k, resamples=resamples)
     if judge is not None:
         m9 = m9_parts(judge, withheld)
         out["M9"] = {}
@@ -1019,8 +1778,247 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
                               "withheld_counters": sum(v for (a, _i), v in withheld.items() if a == arm)}
         out["M9_status"] = "validated" if validation.get("grade") else "not validated"
     out["bar"] = bar(out, validation=validation)
+    # D-711 items 2 and 3, D-712: every bar figure and floor per record kind, and the NEG_BAR.md reading.
+    out["by_record_kind"] = {arm: kind_figures(parts, keys, arms[arm], resamples)
+                             for arm, parts in per_arm.items()}
+    # Seckin 20:32: every bar figure and floor per party structure and overall; the bar refused on one structure.
+    out["by_structure"] = {arm: structure_figures(parts, keys, arms[arm], resamples, structures)
+                           for arm, parts in per_arm.items()}
+    out["neg_bar"] = neg_bar_reading(keys, out["by_record_kind"].get("system"), out["by_structure"].get("system"),
+                                     structures)
+    # D-668 gap 4: whom each arm approached among the parties moving toward or away (indicator only).
+    out["movement"] = movement_report(advised, keys, structures)
     out["_per_item"] = {arm: {i: {f: {str(k): v for k, v in c.items()} for f, c in parts[i].items() if c}
                               for i in sorted(parts)} for arm, parts in per_arm.items()}
+    return out
+
+
+# ---------------------------------------------------------------------------
+# the bar of NEG_BAR.md (D-709, D-711 item 3, D-712): per record kind, the lines and the class floors
+
+BAR_FIGURES = ("M1", "M1m", "M10", "M4", "M7p", "M7r", "M8")
+NEG_BAR_LINES = (("1", (("M1", 0.60),)), ("2", (("M10", 0.60),)), ("3", (("M4", 0.60),)),
+                 ("4", (("M7r", 0.80), ("M7p", 0.70))), ("5", (("M8", 1.0),)))
+NEG_BAR_M1_LOWER = 0.33
+NEG_BAR_DROP_SHARE = 0.10
+# D-712 (Seckin 20:49): the class floors, each at 0.60 (no figure below 60), on the line of its figure. A figure
+# averaged over classes, or a rate a constant answer could pass, is floored on the class that matters:
+# M1 and M1m on the conflict class's F1; M10 on the movable class's F1; M4 on the hit rate within each fate
+# the key holds. M7's two sides are floored by line 4 itself; M8 needs 1.0; M2, M3, M5 and M6 are not bar
+# figures, their per-class rows are reported in `figures` only (NEG_BAR.md lists each).
+CLASS_FLOOR = 0.60
+CLASS_FLOORS = (("1", "M1", "conflict"), ("1", "M1m", "conflict"), ("2", "M10", MOVABLE),
+                ("3", "M4f", "kept"), ("3", "M4f", "changed"), ("3", "M4f", "removed"))
+
+
+def record_kind(key):
+    return key.get("record_kind") or UNDECLARED_KIND
+
+
+def _read_fields(reply):
+    """How many answer fields a read reply holds (the denominator of the drop share beside the drops)."""
+    if not isinstance(reply, dict):
+        return 0
+    if "deal" in reply:
+        return len(reply.get("deal") or {}) + len(reply.get("trades") or [])
+    return sum(len(reply.get(f) or []) for f in ("proposals", "state", "alignment", "approach", "trades"))
+
+
+def drop_share(answers, group, ids):
+    """Fields dropped over fields read plus dropped, on the given items' rows of one group (a reply lost whole
+    counts as one drop, its reason `reply`)."""
+    read = dropped = 0
+    for r in answers.get("rows") or []:
+        if r.get("form") == "advice" and r.get("group") == group and r.get("item_id") in ids:
+            read += _read_fields(r.get("reply"))
+            dropped += sum(sum(v.values()) for v in (r.get("drops") or {}).values())
+    return {"read": read, "dropped": dropped, "share": dropped / (read + dropped) if read + dropped else None}
+
+
+def class_floors(parts, ids):
+    """Each D-712 floor's value on the pooled rows of the items: a class F1, or for M4 the hit rate in one fate
+    (None when the fate has no row; a floor with no value is not met)."""
+    out = []
+    for line, fig, cls in CLASS_FLOORS:
+        pool = sum((parts[i][fig] for i in ids), Counter())
+        if fig == "M4f":
+            n = pool.get((cls, "hit"), 0) + pool.get((cls, "miss"), 0)
+            value = pool.get((cls, "hit"), 0) / n if n else None
+            rows = n
+        else:
+            value = class_f1(pool, cls)
+            rows = sum(v for (t, _p), v in pool.items() if t == cls)
+        out.append({"line": line, "figure": fig, "class": cls, "value": value, "rows": rows,
+                    "floor": CLASS_FLOOR, "met": value is not None and value >= CLASS_FLOOR})
+    return out
+
+
+def group_figures(parts, keys, arm_answers, resamples, group_of, groups):
+    """{group: {items, figures, floors, drops}} over the arm's headline items of each group (`group_of(item id)`):
+    the bar figures with their intervals (a cell under MIN_CELL items its count alone), the class floors and
+    the drop share. A group with no item is left out."""
+    answers, group = arm_answers
+    out = {}
+    head = [i for i in sorted(parts) if keys[i]["part"] in HEADLINE]
+    for g in groups:
+        ids = [i for i in head if group_of(i) == g]
+        if not ids:
+            continue
+        out[g] = {"items": len(ids),
+                  "figures": {fig: _cell(fig, [parts[i][SOURCE.get(fig, fig)] for i in ids], resamples)
+                              for fig in BAR_FIGURES},
+                  "floors": class_floors(parts, ids), "drops": drop_share(answers, group, set(ids))}
+    return out
+
+
+def kind_figures(parts, keys, arm_answers, resamples):
+    """{record kind: {items, figures, floors, drops}} over the arm's headline items of each kind (D-711 item 3)."""
+    return group_figures(parts, keys, arm_answers, resamples, lambda i: record_kind(keys[i]),
+                         RECORD_KINDS + (UNDECLARED_KIND,))
+
+
+def structure_figures(parts, keys, arm_answers, resamples, structures):
+    """{structure: {items, figures, floors, drops}} per party structure (the operator's 20:32 instruction), and
+    the same over every headline item as `overall`."""
+    out = group_figures(parts, keys, arm_answers, resamples, lambda i: structures.get(i) or UNDECLARED_STRUCTURE,
+                        STRUCTURES + (UNDECLARED_STRUCTURE,))
+    out.update(group_figures(parts, keys, arm_answers, resamples, lambda i: OVERALL, (OVERALL,)))
+    return out
+
+
+MOVEMENT_STATUS = "indicator only (D-668 gap 4): never a claim, never in the bar"
+
+
+def party_moves(key):
+    """{party: toward | away | mixed} of one key's movement map over its articles: toward when it moved toward
+    the persona on some article and away on none, away the reverse, mixed when both; steady and not_stated
+    parties are left out."""
+    seen = {}
+    for cells in (key.get("movement") or {}).values():
+        for party, label in cells.items():
+            if label in ("toward", "away"):
+                seen.setdefault(party, set()).add(label)
+    return {p: (labels.pop() if len(labels) == 1 else "mixed") for p, labels in seen.items()}
+
+
+def movement_report(advised, keys, structures):
+    """D-668 gap 4, three-party moves: per arm and per structure (and overall), of the parties moving toward the
+    persona the share the arm approached, and of those moving away the share it approached. A cell under
+    MIN_CELL items gives its count alone. Indicator only, never in the bar. A key built before the field has no
+    movement map and adds nothing."""
+    out = {"status": MOVEMENT_STATUS, "arms": {}}
+    for arm, replies in advised.items():
+        cells = {}
+        for i, reply in replies.items():
+            moves = party_moves(keys[i])
+            approached = set((reply or {}).get("approach") or [])
+            for group in (structures.get(i) or UNDECLARED_STRUCTURE, OVERALL):
+                c = cells.setdefault(group, {"items": set(), "counts": Counter()})
+                if moves:
+                    c["items"].add(i)
+                for party, label in moves.items():
+                    c["counts"][label] += 1
+                    c["counts"][label + "_approached"] += party in approached
+                # An arm that gives the movement itself (the step-wise chain) is read against the key, cell by cell.
+                said = (reply or {}).get("movement")
+                if isinstance(said, dict):
+                    for aid, cells_ in (keys[i].get("movement") or {}).items():
+                        for party, label in cells_.items():
+                            c["counts"]["movement_rows"] += 1
+                            c["counts"]["movement_agreed"] += (said.get(aid) or {}).get(party) == label
+        block = {}
+        for group, c in cells.items():
+            n = len(c["items"])
+            if n < MIN_CELL:
+                block[group] = {"items": n}
+                continue
+            counts = dict(c["counts"])
+            block[group] = {"items": n, "counts": counts,
+                            "toward_approached": (counts.get("toward_approached", 0) / counts["toward"]
+                                                  if counts.get("toward") else None),
+                            "away_approached": (counts.get("away_approached", 0) / counts["away"]
+                                                if counts.get("away") else None),
+                            "movement_agreement": (counts.get("movement_agreed", 0) / counts["movement_rows"]
+                                                   if counts.get("movement_rows") else None)}
+        out["arms"][arm] = block
+    return out
+
+
+def item_structure(item, key):
+    """The item's structure, computed from its declared parties; a key that names another is refused."""
+    got = structure_of(item.get("parties"))
+    if key.get("structure") is not None and key["structure"] != got:
+        raise ValueError("%s: the key's structure is not the one the item's parties give" % key.get("item_id"))
+    return got
+
+
+def bar_lines(block):
+    """One block's NEG_BAR.md lines, each with its figures and its class floors (D-712)."""
+    figs, floors = block.get("figures") or {}, block.get("floors") or []
+    lines = {}
+    for line, needs in NEG_BAR_LINES:
+        ok = all((figs.get(fig) or {}).get("estimate") is not None and figs[fig]["estimate"] >= target
+                 for fig, target in needs)
+        if line == "1":
+            lower = (figs.get("M1") or {}).get("lower")
+            ok = ok and lower is not None and lower > NEG_BAR_M1_LOWER
+        if line == "5":
+            share = (block.get("drops") or {}).get("share")
+            ok = ok and share is not None and share <= NEG_BAR_DROP_SHARE
+        missed = [f for f in floors if f["line"] == line and not f["met"]]
+        lines[line] = {"figures_met": ok, "floors_missed": ["%s:%s" % (f["figure"], f["class"]) for f in missed],
+                       "met": ok and not missed}
+    return lines
+
+
+def neg_bar_reading(keys, by_kind, by_structure=None, structures=None):
+    """The NEG_BAR.md bar read for the system arm on each record kind apart: refused for a set without both
+    kinds or with an item of undeclared kind (D-711 item 3), and for a set whose headline items hold fewer than
+    MIN_STRUCTURES party structures or an item whose structure is not computed (the operator's 20:32
+    instruction; `structures` {item id: structure}, else each key's own); else per kind every line with its
+    class floors (D-712). Refused too when a structure it holds has fewer than MIN_ITEMS_PER_STRUCTURE headline
+    items (D-715 item 1). Passed only when every line and floor holds on both kinds, on every structure the set
+    holds and overall (`structures` in the reading, D-715 item 1). Which set it may be read on (the validation
+    set, once per round) is the procedure's, not the scorer's."""
+    heads = [i for i in keys if keys[i]["part"] in HEADLINE]
+    kinds = {record_kind(keys[i]) for i in heads}
+    if structures is None:
+        structures = {i: keys[i].get("structure") for i in heads}
+    held = {structures.get(i) or UNDECLARED_STRUCTURE for i in heads}
+    refusals = []
+    if UNDECLARED_KIND in kinds:
+        refusals.append("an item's record kind is not declared (D-711 item 2)")
+    elif set(RECORD_KINDS) - kinds:
+        refusals.append("the set does not hold both record kinds (D-711 item 3): %s missing"
+                        % ", ".join(sorted(set(RECORD_KINDS) - kinds)))
+    if UNDECLARED_STRUCTURE in held:
+        refusals.append("an item's party structure is not computed (Seckin 20:32)")
+    elif len(held) < MIN_STRUCTURES:
+        refusals.append("the set holds one party structure only (Seckin 20:32): %s" % ", ".join(sorted(held)))
+    else:
+        few = sorted(s for s in held if sum(1 for i in heads if structures.get(i) == s) < MIN_ITEMS_PER_STRUCTURE)
+        if few:
+            refusals.append("the set holds fewer than %d headline items of %s (D-715 item 1)"
+                            % (MIN_ITEMS_PER_STRUCTURE, ", ".join(few)))
+    if refusals:
+        return {"refused": "; ".join(refusals), "passed": False}
+    if not by_kind:
+        return {"refused": "no system arm", "passed": False}
+    out = {"passed": True, "kinds": {}}
+    for kind in RECORD_KINDS:
+        lines = bar_lines(by_kind.get(kind) or {})
+        out["kinds"][kind] = lines
+        if "kinds" in BAR_READ_ON:
+            out["passed"] = out["passed"] and all(v["met"] for v in lines.values())
+    # D-715 item 1: every structure the set holds and overall each meet every line and floor, or the bar is not
+    # met; a structure or the overall block missing from `by_structure` is read as not met.
+    blocks = by_structure or {}
+    out["structures"] = {s: bar_lines(blocks.get(s) or {}) for s in sorted(held) + [OVERALL]}
+    for s, lines in out["structures"].items():
+        if ("overall" if s == OVERALL else "structures") in BAR_READ_ON:
+            out["passed"] = out["passed"] and all(v["met"] for v in lines.values())
+    out["structures_failing"] = sorted(s for s, lines in out["structures"].items()
+                                       if not all(v["met"] for v in lines.values()))
     return out
 
 
@@ -1050,9 +2048,12 @@ def bar(rep, *, validation=None):
     f = rep["figures"]
     if "system" not in f or "B1" not in f:
         return {"cleared": None, "why": "both arms are needed"}
+    single = sorted(f for f, v in (validation.get("fields") or {}).items()
+                    if f.split(":")[0] in ("mapping", "checker") and v.get("label"))
     if not (validation.get("mapping") and validation.get("checker")):
         return {"cleared": None, "why": "not assessable: the mapping validation or the checker's sample is below "
-                                        "kappa 0.60 or not recorded", "lines": {"4": False}}
+                                        "kappa 0.60 (a single-class field below 100 percent agreement, AM-1) or "
+                                        "not recorded", "lines": {"4": False}, "single_class_fields": single}
     s8, b8 = f["system"]["M8g"].get("estimate"), f["B1"]["M8g"].get("estimate")
     a1 = rep["claims"].get("A1", {})
     diff, lower = a1.get("difference"), a1.get("bca_lower")
@@ -1062,26 +2063,63 @@ def bar(rep, *, validation=None):
         "3": rep["withheld_rate"] is not None and rep["withheld_rate"] <= 0.30,
         "4": True,
     }
-    return {"cleared": all(lines.values()), "lines": lines}
+    return {"cleared": all(lines.values()), "lines": lines, "single_class_fields": single}
+
+
+def agreement(reference, other):
+    """One field's agreement (AM-1): its rows, Cohen's kappa, the raw agreement, whether the reference gives
+    a single class, and whether it is at the bar: kappa at or above KAPPA_FLOOR, or, on a single-class field
+    (kappa undefined, or 0 whatever the other side says), the raw agreement at SINGLE_CLASS_FULL, labelled."""
+    n = len(reference)
+    raw = sum(1 for x, y in zip(reference, other) if x == y) / n if n else None
+    kappa = _kappa(reference, other)
+    single = n > 0 and len(set(reference)) == 1
+    value = {"rows": n, "kappa": kappa, "raw_agreement": raw, "single_class": single}
+    value["at_or_above_floor"] = at_bar(value)
+    if single:
+        value["label"] = SINGLE_CLASS_LABEL
+    return value
+
+
+def at_bar(value):
+    """A recorded agreement at the bar (AM-1): a single-class field by its raw agreement at SINGLE_CLASS_FULL,
+    any other by its kappa at or above KAPPA_FLOOR. A record without the single-class fields (written before
+    AM-1) is read by its kappa alone."""
+    if not isinstance(value, dict):
+        return False
+    if value.get("single_class"):
+        raw = value.get("raw_agreement")
+        return isinstance(raw, (int, float)) and raw >= SINGLE_CLASS_FULL
+    kappa = value.get("kappa")
+    return isinstance(kappa, (int, float)) and kappa >= KAPPA_FLOOR
+
+
+def _field_numbers(value):
+    return {f: value.get(f) for f in ("rows", "kappa", "raw_agreement", "single_class", "label")
+            if value.get(f) is not None} | {"at_bar": at_bar(value)}
 
 
 def validation_state(set_dir, judge_answers=None):
     """Line 4's inputs read from the set folder: the mapping validation's latest round, every checker field,
-    and the grade agreement of these judge answers. A missing file is False."""
+    and the grade agreement of these judge answers, each at the bar by AM-1's rule (`at_bar`). A missing file
+    is False. `fields` carries each one's numbers (kappa, raw agreement, the single-class label), no text."""
     set_dir = Path(set_dir)
-    held = lambda v: isinstance(v, (int, float)) and v >= KAPPA_FLOOR
-    out = {"mapping": False, "checker": False, "grade": False}
+    out = {"mapping": False, "checker": False, "grade": False, "fields": {}}
     path = set_dir / "mapping_validation.json"
     if path.is_file():
-        out["mapping"] = held(_read(path).get("kappa"))
+        value = _read(path)
+        out["mapping"] = at_bar(value)
+        out["fields"]["mapping"] = _field_numbers(value)
     path = set_dir / "checker_agreement.json"
     if path.is_file():
         fields = _read(path).get("fields") or {}
-        out["checker"] = sorted(fields) == sorted(SAMPLE_FIELDS) and all(held(v.get("kappa")) for v in fields.values())
+        out["checker"] = sorted(fields) == sorted(SAMPLE_FIELDS) and all(at_bar(v) for v in fields.values())
+        out["fields"].update({"checker:" + f: _field_numbers(v) for f, v in sorted(fields.items())})
     path = set_dir / "grade_agreement.json"
     if path.is_file() and judge_answers is not None:
         g = _read(path)
-        out["grade"] = held(g.get("kappa")) and g.get("judge_prompts_sha256") == judge_answers.get("prompts_sha256")
+        out["grade"] = at_bar(g) and g.get("judge_prompts_sha256") == judge_answers.get("prompts_sha256")
+        out["fields"]["grade"] = _field_numbers(g)
     return out
 
 
@@ -1143,12 +2181,12 @@ def validate_read(set_dir, answers, prompts_sha256, previous=None, form_version=
         a.append(mine)
         b.append(theirs)
         agree += mine == theirs
-    kappa = _kappa(a, b)
+    measured = agreement(a, b)
     latest = {"form_version": form_version, "article_not_an_id": off_list,
               "drops": rr.drop_counts({"rows": list(rows.values())}),
               "positions": len(mapper), "answered": sum(1 for x in b if x != NO_ANSWER), "agree": agree,
-              "kappa": kappa, "floor": KAPPA_FLOOR, "at_or_above_floor": kappa is not None and kappa >= KAPPA_FLOOR,
-              "prompts_sha256": answers.get("prompts_sha256"), "models": answers.get("models")}
+              "floor": KAPPA_FLOOR, "prompts_sha256": answers.get("prompts_sha256"), "models": answers.get("models"),
+              **{f: v for f, v in measured.items() if f != "rows"}}
     rounds = list((previous or {}).get("rounds") or []) + [latest]
     return dict(latest, schema="neg-advisor-mapping-validation-v1", unit="(article, proposal, stance)", rounds=rounds)
 
@@ -1172,12 +2210,16 @@ def _persona_positions(item):
     return [p["id"] for p in item.get("positions") or [] if p["party"] == item["persona"]["id"]]
 
 
+# The persona fields the checker's sheet leaves out: the red lines, and their sources (D-664), which name them too.
+CHECKER_HIDDEN = ("red_lines", "red_line_sources")
+
+
 def sample_sheet(set_dir):
     """The checker's sheet: the sampled items with no label and no red-line mark (the persona's red lines
     are a field it labels again: `red_line` or `not_red_line` per persona position)."""
     items, keys = na.read_items(set_dir), read_keys(set_dir)
     chosen = _seeded([i for i in items if items[i]["part"] != "G"], "20261113-negadv-sample", SAMPLE_SHARE, SAMPLE_MIN)
-    unmarked = lambda item: dict(item, persona={f: v for f, v in item["persona"].items() if f != "red_lines"})
+    unmarked = lambda item: dict(item, persona={f: v for f, v in item["persona"].items() if f not in CHECKER_HIDDEN})
     return {"schema": "neg-advisor-checker-sheet-v1", "items": [
         {"item_id": i, "item": unmarked(items[i]),
          "next_articles": {a: r["next_text"] for a, r in keys[i]["articles"].items()},
@@ -1209,9 +2251,9 @@ def sample_read(set_dir, sheet):
             for q, lab in cells.items():
                 fields["alignment"][0].append(lab)
                 fields["alignment"][1].append((fill["alignment"].get(aid) or {}).get(q) or NO_ANSWER)
-    out = {f: {"rows": len(a), "kappa": _kappa(a, b)} for f, (a, b) in fields.items()}
-    for v in out.values():
-        v["at_or_above_floor"] = v["kappa"] is not None and v["kappa"] >= KAPPA_FLOOR
+    # AM-1: each field by `agreement`, the key the reference: a field where the key gives one class is at
+    # the bar only at 100 percent raw agreement, labelled "single class, kappa undefined".
+    out = {f: agreement(a, b) for f, (a, b) in fields.items()}
     return {"schema": "neg-advisor-checker-agreement-v1", "items": len(sheet["items"]), "fields": out}
 
 
@@ -1228,10 +2270,10 @@ def grade_read(sheet, judge_answers):
     judged = {r["entry_id"]: r["grade"] for r in judge_answers["rows"] if r["form"] == "judge"}
     a = [str(e["grade"]) for e in sheet["entries"]]
     b = [str(judged.get(e["entry_id"])) for e in sheet["entries"]]
-    kappa = _kappa(a, b)
-    return {"schema": "neg-advisor-grade-agreement-v1", "entries": len(a), "kappa": kappa,
-            "at_or_above_floor": kappa is not None and kappa >= KAPPA_FLOOR,
-            "judge_prompts_sha256": judge_answers.get("prompts_sha256")}
+    # AM-1 for M9's validation: the checker's grades the reference, the judge's the other side.
+    measured = agreement(a, b)
+    return dict({f: v for f, v in measured.items() if f != "rows"}, schema="neg-advisor-grade-agreement-v1",
+                entries=len(a), judge_prompts_sha256=judge_answers.get("prompts_sha256"))
 
 
 def handback(set_dir):

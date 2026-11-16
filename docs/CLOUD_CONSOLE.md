@@ -7,7 +7,7 @@ shut down after it. Every screen says, in one sentence, where the documents go:
 
 - "Your documents are copied to the rented machine for this review and deleted with it when it is
   shut down."
-- "Belgeleriniz bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla birlikte
+- "Belgelerin bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla birlikte
   silinir."
 
 ## What it goes through
@@ -93,7 +93,7 @@ At the end, the console shows:
   controller's cleanup finding its own instance gone. If either is missing, the console says the
   shutdown is not confirmed.
 - with the shutdown confirmed, "The rented machine and its copy of your documents are gone." /
-  "Kiralık makine ve belgelerinizin oradaki kopyası artık yok." (never without the confirmation);
+  "Kiralık makine ve belgelerinin oradaki kopyası artık yok." (never without the confirmation);
 - each document's deliverables, listed from the collected run
   (`<run folder>/downloaded/evidence/run/deliverables/`), each file and each document's zip downloaded
   through token routes (`GET /cloud/plans/{plan_id}/files/{doc_id}/{name}`, `_run` for the run's own

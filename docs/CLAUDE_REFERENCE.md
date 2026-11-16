@@ -224,6 +224,32 @@ widely between the fields it has run on.
   (`bound_tree_archive`, `model_cache`), pinned in every seal's `preparation_source_hashes`, so such a
   bundle's local reverify (`ordinary_final_bound_reverify.py`) also refuses with `Preparation source
   changed`. A refused extraction or checkout writes its one-line reason to `evidence/gate/refusal.json`.
+  D-630 part A (the vLLM route's sealed switch: the runner's `vllm_route_error` and `vllm_python`, the
+  sealer's `vllm_route_block` and `--vllm-agents`) changed `tools/ordinary_final_run.py` and
+  `tools/prepare_ordinary_final_run.py`, so every bundle sealed before it refuses with `Controller source
+  changed` and must be re-sealed (its local reverify refuses the same way, since `tools/ordinary_final_run.py` is a
+  controller file and reverify checks the controller hashes first).
+  The A5 comparison (D-635 item 2) changed `tools/ordinary_final_cloud.py` again (`PARKED_KEEP`: a batch keeps
+  `venv_aux` and `wheels_aux` in place between entries, as it keeps the model cache and venv), in the same re-seal.
+  Order 85's route (D-668, D-674, D-675, L-18) changed `tools/ordinary_final_cloud.py`, `tools/ordinary_final_run.py`,
+  `tools/ordinary_final_bound_cloud.py`, `tools/loop_budget_guard.py` (`seal_on` in `LEDGER_FIELDS`),
+  `tools/loop/standing_orders_check.py` (order 85's check) and `tools/prepare_ordinary_final_run.py` (`CONTROL_FILES`, a
+  launch record refused as a reused asset bundle), and made `tools/seal_route.py` a controller file (the checker's item
+  3, 16 November: the seal request's rules the bound wrapper launches by), so every bundle sealed before it refuses with
+  `Controller source changed` and must be re-sealed (its local reverify refuses the same way).
+  Item 16 (16 November, the b1 activation) changed `tools/cloud_run_common.py`, `tools/cloud_run_watchdog.py` and
+  `tools/ordinary_final_cloud.py`: an instance not yet active with a missing, null or empty public IP is not ready
+  (`ip_not_ready`), never a refusal; every metadata refusal names a declared field only (`field_message`), the IP's
+  library error included, and is kept through the provider projection and in `controller_failure.json`
+  (`KEPT_MESSAGES`); in the same re-seal.
+  DELETE-SAFE-A's shared-folder configuration (operator 16 November 15:58, item 2) changed
+  `tools/loop/instance_reaper.py` (`private_ledger`, `status_file`: the reaper's ledger and status defaults are
+  the main checkout's, resolved at use), `tools/loop_budget_guard.py` (`reaper_ledgers` reads `private_ledger`)
+  and `tools/loop/cloud_reference_spend.py` (`store_path` through `tools/loop/shared_paths.py`), added
+  `tools/loop/shared_paths.py` (`SHIMMER_MAIN_CHECKOUT`, else git's common directory) to the binding, and changed
+  `tools/prepare_ordinary_final_run.py` (`CONTROL_FILES`, the wheelhouse through `wheelhouse_path`, resolved at
+  use), so every bundle sealed before it refuses with `Controller source
+  changed` and must be re-sealed (its local reverify refuses the same way).
 <a id="loop-launch-a"></a>
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
   (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
@@ -327,7 +353,14 @@ widely between the fields it has run on.
   rate caps and the soft and hard caps are sealed manifest fields set
   by the sealer from the provider inventory it is given and the guard's formula; the type rule
   polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
-  hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
+  hardware check reads the selected candidate. Image ids are per region: the sealed `image` is
+  the launch region's entry (the manifest's `region`, the guard's preferred region, which the
+  declared asset copy forces) of the family, version and architecture the provider lists first,
+  chosen by the one helper `prepare_ordinary_final_run.region_image` for the sealer and the seal
+  route alike, and refused at sealing when that region lists none; at launch the controller
+  refuses a sealed image whose region is not the selected region (`image_region_refusal`) before
+  any lock, intent line or launch call; the provider adapter's transport refusal names the HTTP
+  status, digits only, never the body (checks 505, 506). Which figures are CODE CONSTANTS, stated
   exactly: the loop's budget rule (the 1-dollar margin, `instance_reaper.MARGIN_USD`, read by
   the guard; the 1.5 cap factor, the 1.3 forecast factor and the type rule's factor 2, which only
   `--type-rule a10_first` applies, in `tools/loop_budget_guard.py`; the overrun reserve's period and
@@ -353,6 +386,81 @@ widely between the fields it has run on.
   marker refuses a second launch with or without `--output-dir`, for the session bundle and
   for every batch entry (`ordinary_final_cloud.consumed`); a run folder left by an
   attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
+  FS-LISTING (D-705, standing order 99): `tools/loop/fs_listing.py` is the one listing-only loop launch, a
+  new tool and not a bound file (no bound file changed). It shows what `shimmer-filesystem` holds, names and
+  sizes only: the guard's decision (`loop_budget_guard.check`, standing orders 1 to 3 and the spend store
+  included) under the ledger lock with the inventory read again, its own cap (`--cap-usd`, default 1, at most
+  the per-step pre-approval, 3 USD when built and 5 USD since D-708, read from `config/loop_spend_limits.json`
+  at call time, PARALLEL-LAMBDA-A; the cap used is the smaller of it and the guard's), on the private ledger the
+  reaper reads the `launch_intent` line with a deadline of at most `--deadline-minutes` (default 30) before
+  the launch request, then `launch` and `termination` with billed minutes and cost (`ledger_line`, purpose
+  `fs-listing`, instance `shimmer-loop-fs-listing-<UTC time>`), the cheapest x86_64 single-GPU type with
+  capacity in us-east-1 launched through the provider adapter with exactly that file system attached, and over
+  ssh only a pinned command set (`TEMPLATES_SHA256`: `df`, `du -h --max-depth=3` of the mount, and per
+  `--names` pattern, each `[A-Za-z0-9_*.-]+`, a `find -maxdepth 6 -name` printing type, bytes and path, with
+  size and file count for a matching folder); no file's contents, no copy, no write on the file system. The
+  output goes to the main checkout's `docs/loop/private/fs_listing/<instance>/`; termination is requested and
+  confirmed in a finally block on every path, and only a confirmed one closes the ledger (an unconfirmed one
+  leaves it open for the reaper and exits 2). Without `--execute` it prints the one remote command and calls
+  no provider. No watchdog process is armed (open item 123). Check 395 (`tools/loop/fs_listing_checks.py`).
+<a id="spend-limits-a"></a>
+  SPEND-LIMITS-A (D-708, Seckin 16 November 2026 20:14; PARALLEL-LAMBDA-A, standing orders 84, 91 and 99):
+  the operator's two spending limits have one declared source, `config/loop_spend_limits.json`, read by
+  `loop_budget_guard.read_spend_limits` at every decision (never cached, never a constant in code): the
+  per-step pre-approval `step_preapproved_usd` (5 USD; 3 USD under D-629 and D-703) and the remaining-spend
+  limit `remaining_limit_usd` (140 USD; 100 under D-599, 120 under D-703) counted from
+  `remaining_baseline_usd` (197 USD, the spend D-599 was counted from on 13 November; the reaper's reading
+  at 09:37 UTC that day is 197.94, so 197 is the safer figure). On a real launch (no `reaped`)
+  `loop_budget_guard.check` applies both after the budget lines are read: `step_rule` admits a forecast at
+  or below the pre-approval with no question ('pre-approved') and refuses one above it unless the operator's
+  approval `{usd, source}` of at least the forecast names its decision ('approved'); `remaining_refusal`
+  refuses a forecast that, with the spend, the running caps, the storage forecast and the overrun reserve,
+  passes baseline plus limit (337 USD), and that ceiling is also a ceiling of the cap. Spend is the Lambda
+  spend by the reaper's own reading; the API spend keeps its own ceiling (D-S121) and is not counted. A
+  mocked launch reads only the limits it is given (`spend_limits=`), as with the spend store. The step is
+  the IV.3 forecast; the cap may still reach 1.5 times it. The sealer takes `--step-approval-usd` with
+  `--step-approval-source` and seals `step_approval` in the manifest only when given; the controller passes
+  `m.get('step_approval')` to the guard at launch. `tools/loop/fs_listing.py`'s own cap is at most the same
+  declared figure (`fs_listing.max_cap_usd`). The guard refuses per launch: a step made of several launches
+  is summed by the lead before it asks (D-692 item 7). The reaper's hard stop is unchanged (the ledger's
+  budget line, 600 USD). `loop_budget_guard.py` and `ordinary_final_cloud.py` are in the controller binding
+  (`CONTROL_FILES`) and `prepare_ordinary_final_run.py` in `preparation_source_hashes`, so every bundle is re-sealed; the config file itself is not
+  bound, like the ledger, so a later change of a figure needs no re-seal. Check 465
+  (`tools/loop/spend_limits_checks.py`, 4 proofs, each neutralised, failed, restored and passed).
+<a id="step-cost-a"></a>
+  STEP-COST-A (#298, D-676 item 5, D-628 A; the 16 November audit, row 6: two figures for every costly
+  step): `tools/loop/step_cost.py` (stdlib, launches nothing, calls no provider) prices a planned Lambda
+  step from a JSON step file (`step`, `instance_type`, `launches`, `minutes` by component: `boot`,
+  `upload`, `install`, `seed`, `return` paid once per launch and `workload` once, `storage` {gib, hours},
+  `measures`) and prints TWO figures, without and with the declared saving measures, each the guard's
+  IV.3 forecast (`loop_budget_guard.forecast_usd`, x1.3) plus the storage share, so they are the figures
+  the guard checks at launch, with the per-step pre-approval of `config/loop_spend_limits.json` (within,
+  or ABOVE: ask Seckin). The measures are closed: `asset_copy` (upload), `image_layers` (install),
+  `warm_file_system` (seed, plus the storage it holds), `batching` (fewer launches), `smaller_set` (a
+  fraction of the workload; it changes what is measured), each with its `source`; unknown, twice, without
+  a source, or keeping more minutes than planned is refused. Prices are never typed in: the hourly price
+  is the named type's `instance_types[].metadata.hourly_rate` in the provider inventory the launch flow
+  writes (`provider_inventory.json`; with none named, the newest by its own `observed_at` under the main
+  checkout's external/s05 and output/cloud sealing inputs and docs/fix; older than 2 days is printed), the
+  storage price `usd_per_gb_month` of `docs/loop/private/filesystem_storage.json` (per GiB-month, 730
+  hours); a step file with any key naming a price, rate, cost or USD is refused, as is a type the
+  inventory does not list or prices. Not a bound file. Checks 500 and 501 (`tools/loop/step_cost_checks.py`).
+<a id="working-store-a"></a>
+  WORKING-STORE-A (standing order 99, D-703 item 4): `tools/loop/working_store.py` plans the move of the
+  laptop's working data to `shimmer-filesystem` as a DRY RUN only (no launch, copy, upload or delete, and no
+  execute switch). It reads `config/working_store.json` (the laptop roots, today `external/`; stay-local
+  rules; the archive digests the store holds; the measured upload rate with its source; the launch type and
+  minutes; `lambda_reads`), walks with `backup_coverage.walk` (never through a link, hard links once) and
+  places each file: stays local (a name holding `answer_key`, matched by name and never opened; role B's
+  held items under `external/s05/GATE/held_D-S100`; the scorer's keys; credential-like names,
+  `backup_coverage.credential_name`), on the store (an `assets.tar` whose sibling `asset_verification.json`
+  digest is declared held), or candidate. A stay-local file is in no upload list or command, refused again
+  after placement. It prices with STEP-COST-A the move (without: the on-store archives sent again; with
+  `asset_copy`: candidates only; storage for `hold_hours`) and each `lambda_reads` part (sent with each
+  launch that reads it, or read warm from the store), and prints one `tar -cf - -T <part>.list | ssh`
+  command per part as text. Running them needs a guarded launch like `tools/loop/fs_listing.py`, which does
+  not exist (OPEN_ITEMS). The decision and its figures: docs/loop/stages/LAMBDA_WORKING_STORE.md. Check 504
+  (`tools/loop/working_store_checks.py`).
 <a id="b1-arm-a"></a>
 - B1-ARM-A (loop S5): the sealer writes `arm` (B3, B1 or L) into every manifest; a manifest
   without one is B3. A B1 manifest carries `b1` (its sealed passes `{name, checkpoint, args}`, the
@@ -396,6 +504,8 @@ widely between the fields it has run on.
   refused for another file, other inputs or other items on the two benchmarks. `judge` runs at
   the bound commit. A pass is a pilot go only, never above B1. Development, exposed; not an
   arm of the preregistration. Check 321 (with a proof on the real `LocalBackend._render`).
+<a id="reason-methods-a"></a>
+- REASON-METHODS-A (D-713, document review half; lane/reason-docreview): Shimmer's small local models have no thinking mode, so more reasoning is asked for by method, on the two choice questions ContraDoc and SciTab measure on the replay pass (doc_judge form `choice`, kinds `pair` and `claim`). `benchmark/baselines/reasoning_methods.py` declares two methods, off by default: a choice config may declare `choice.methods` and a model group picks one by `method`; with none, or `direct`, the prompt is the one forward pass over the form's own question, byte for byte (the shipped `choice_judge_prompt.json` declares no method; `doc_judge.check_config` refuses an undeclared method, a methods block naming anything else, and a step template filling other slots). Chosen in config and pinned by the config digest in every prompts file, never typed in. `reason_first`: (1) the model writes a rationale after the declared field label (generated, at most `allowance` tokens); Python keeps that field's first line, whitespace-normalised and cut at `rationale_chars`, and nothing else of the reply; (2) the label is decided over the form's own answers from probabilities (choice_decision), the rationale shown in the question, so the answer's format cannot break. The rationale is never scored and never read for meaning (WORDS-A); an empty one is shown empty and never refuses. `stepwise`: (1) evidence, generated: for a claim the ids of the cells it rests on from a list Python numbered over the selected cells (`R<row>C<column>`, the label columns of `cell_selection.key_columns` not listed); for a pair one quote from each passage after `A:` and `B:`; checked before the next step: every id listed and at most `max_cells`, each quote found in its own passage whitespace-normalised and its content (`doc_judge.quote_is_content`, open item 84); (2) comparison, decided over the method's declared answers, Python's rendering of the checked cells (or the two quotes) shown, a tie refused; (3) the label over the form's own answers, the evidence and the comparison's declared line shown. A step that fails its check stops the chain: the prompt has no decision and is counted dropped by `<step>:<reason>` (`reasoning_methods.dropped`). Python never decides the label and repairs a step's output in its form only (outer spaces, a matched pair of quote marks, the field label; ANSWER-FORM-A). Every call is one reply record (REPLIES-A): the chain's last call is the prompt's record in the pass folder, so `ordinary_final_run.replay_observation`'s one record per prompt holds unchanged, and the earlier steps' records go to `<pass>/method_steps/`; a refused step's record is written with `backend_ok` false, error `method_refused: <step> <reason>` and no decision, so no reader takes a comparison's probabilities for a label. The measurement row carries `method`, `steps` (names, checks, counts, probabilities, no text) and `method_refused`. An order control is asked on the direct form only (`load_prompts` refuses one in a method group). Reused: `choice_decision` (declare, bind, decide), `LocalBackend.generate` and `choose`, `doc_judge.pair_passages`, `select_cells`, `quote_is_content` and `normalise`'s rule, `judge_agent.claim_tools` for the `{tools}` slot, `cell_selection.tables` and `key_columns`; J1's `judge_reason` group (D-262, reasoning then the last JSON object of one reply) is the free-form precedent this replaces with a separate field and a probability-decided label. The measurement config is `benchmark/baselines/choice_methods_prompt.json` (the two forms byte for byte, groups `choice_direct`, `choice_reason_first`, `choice_stepwise`). `reasoning_methods.adopt` is D-713's adoption rule (every development set: no figure moves away from its bar, at least one moves toward it, the dropped-answer rate not above direct's). The plan is `docs/loop/stages/REASONING_METHODS_DOCREVIEW.md`. Bound files (`doc_judge.py`, the new module and config, `verify_session1.py`) take effect in a bundle only at its next re-seal; no sealed or running measurement changes. The pipeline's own `_narrow_ask` route is not wired (open item 143). Development, exposed. Checks 475 and 476 (`tools/reasoning_methods_checks.py`, a fake backend, each proof neutralise, fail, restore, pass).
 <a id="embed-route-a"></a>
 - EMBED-ROUTE-A (D-507, D-510): the leakage fingerprint's embedding (bge-m3, float32 unit rows, the fingerprint's own text form `embed_form`, one vector per distinct record in sorted-hash order) can run on a rented machine through the replay pass, with NO bound controller file changed. `benchmark/baselines/embed_records.py build` turns the driver's `{row, key, stay_local, text}` records file into SEVERAL `embed-records-v1` prompts files, ONE SESSION PER PART (`<dir>/partNN/replay_prompts.json`; each part its own B1 bundle and its own launch, sealed with `--image-layers --image-env-manifest external/image/M1_env_manifest.json` so it starts warm (the image layers need the asset copy declaration, which the sealer writes into every exposed bundle itself), since a batch of B1 entries alone cannot be built; at most 85,000 rows, 348 MB of vectors, and 60 MB of prompts a part, so each launch packs and downloads inside the controller's fixed timeouts), from `--from-row` (the laptop's done less 2,048, so the parts overlap its rows). A stay_local row's text never travels. A chunk is one prompt (one reply record), its records gzip-compressed and written as lowercase hex in 50-character lines, never base64 (random base64 spells `AIza...` and the sealer's credential scan refuses the bundle; a long unbroken word run also makes that scan quadratic), each chunk held to its SHA-256. `replay_prompts.py` hands a part to `embed_records.run` (sdpa path alone, no decision, no allowance; the sealed bge-m3 loaded offline, no fallback; batch 16 up to 6,000 characters and 2 above, float32), which writes `vectors/<chunk>.npy`, one reply record per chunk, and `replay_measurement.json` only when every chunk has exactly one finite unit vector per record. `embed_records.py merge` reads every part's vectors from collected evidence one chunk at a time (each part its own evidence folder, each chunk held to its digest), and fills a new (n, dim) `.npy` from three sources only: the laptop's rows below its `done`, its listed local rows, and the instance's rows; a row from two sources is refused (the one exception: a listed local row inside the laptop's written prefix is compared with the laptop's row by cosine and the laptop's kept), the overlap with the laptop is compared by cosine (floor 0.999) with the laptop's rows kept, `done` in its state is the count of rows that have a vector, and `--require-complete` refuses any missing row; a refusal removes only the files that call created. The LAYOUT is the fingerprint's `vectors.data` byte for byte; the instance's vectors equal the laptop's only within the tolerance. Check 325 (`scripts/embed_records_checks.py`, a stub embedder and the real fingerprint, each proof neutralise, fail, restore, pass).
 <a id="arm-l-a"></a>
@@ -513,9 +623,20 @@ widely between the fields it has run on.
   folder's launch intent names the job manifest; the bundles come only from the collected evidence the
   controller verified, each held to the job result's own manifest and seal digests; the result names the
   job; the reuse bundle is the sealed one) and admits all or none: under the ledger lock, held from the
-  stale check through the last preflight, the read copies are refused when the budget ledger or R's
-  ledger gained a line not the job's own or the spend store no longer begins with its copy
-  (`stale_reason`); each bundle is staged, linked by digest, bound, reverified and preflighted, and only
+  stale check through the last preflight, the read copies are refused when the budget ledger, R's
+  ledger or the spend store no longer begins with its copy (rewritten, not appended), or a ledger gained a
+  line that is neither the job's own nor, under standing order 99 (several Lambda launches at once), a line
+  of another instance's guarded loop launch in its record's order (`seal_route_driver.admission_stale_reason`
+  and `loop_record_reason`: launch_intent first and once with its request time, a later deadline, a price and
+  a cap; launch after it, once, with an instance id and the intent's deadline, price and cap; termination of
+  a recorded launch, its id the launch's; the reaper's termination by name; only IV.3 fields; any other kind,
+  a hand copy, a launch with no intent or a record out of order refuses); with any such foreign line, each
+  returned bundle is admitted only when the guard's decision on the current ledgers, with the bundle's own
+  sealed figures, still gives at least its sealed hard cap (`budget_reason`, as the controller requires at
+  launch; checks 460 to 464, `tools/seal_parallel_checks.py`). The job's own lines alone need no recheck, as
+  before. The seal request's launch (`ordinary_final_bound_cloud.request_stale_refusal`, a bound file) still
+  holds the strict `seal_route.stale_reason`: a request whose read copies gained any foreign line is written
+  again (open item 139). Each bundle is staged, linked by digest, bound, reverified and preflighted, and only
   when all pass are they moved in by one rename. Each heavy laptop step waits for one reading of 2 GB
   free memory, no other seal and disk above `standing_orders_check.DISK_FLOOR` after its own size, and
   logs that reading. The large inputs are stated and chunked before and after their one hash (a change
@@ -530,6 +651,47 @@ widely between the fields it has run on.
   preflight runs the controller's `admit_workload` before any provider call. The pinned sealer changed with
   it, so bundles sealed before it refuse with `Preparation source changed` at reverify and must be re-sealed.
   Proofs: `tools/seal_route_checks.py`, each neutralise, fail, restore, pass.
+  ORDER 85 (D-668, D-674, D-675 option A, L-18): every seal step runs on the instance; the laptop writes a REQUEST and
+  seals nothing. `tools/seal_route_driver.py request` (`--requests`, `--reuse`, `--inputs`, `--forecast-minutes`,
+  `--storage-forecast-usd`, `--out`) reads free disk first and refuses under 32.5 GiB (order 91), then writes the
+  request and checks it with `request_error`, printing counts only. `seal_route.write_request` writes into a new folder `seal_request.json` (schema `seal-request-v1`:
+  commit, tree, the job block, the asset identity read from the reuse bundle's manifest (digest, bytes, members digest,
+  models), the arm S budget by the sealer's own rule `budget_fields`, the image, `local_control_hashes` over
+  `prepare_ordinary_final_run.CONTROL_FILES`, `frozen_files` (every file the commit's `config/final_models.json` names, at
+  its digest), `wheelhouse` (the reuse manifest's wheels by digest) and `files` (every other file by digest)) beside the
+  bound tree (`seal_source.tar`, from git objects), the commit object, the job file, the requests' files, the read
+  copies, the reuse manifest, its `install.lock`, the runner files read from the commit and the frozen files; never an
+  asset archive, a project archive, a manifest or a seal (`request_error` refuses any, a file not at its digest or not
+  listed, another controller, an attestation naming a refusal); a launch record offered as its reuse bundle is refused.
+  `ordinary_final_bound_cloud.py` takes exactly one of `--bundle` and `--request`; `--request` takes only the
+  reaper's ledger (`ledger_refusal`), refuses a request whose read copies are no longer the live records with nothing
+  appended (`request_stale_refusal`, the admission's own `stale_reason`, before the record is made and so before any
+  provider call), derives the LAUNCH RECORD in a new run folder (`seal_route.launch_record`):
+  `execution_manifest.json` with `kind` `seal_request_launch_record`, `request_sha256`, arm S, argv `seal-job`, the
+  request's commit, job, budget, image and controller binding, the reuse manifest's environment fields
+  (`RECORD_FROM_REUSE`: assets_archive, models, packages, wheels, environment, runtime_file_hashes, decoding_policy,
+  topology, schema_version, restrictions, known_auditor_limitations), `source_archive_sha256` null and no project files,
+  support files the request's files and `seal_request.json`; `seal.json` naming it (kind and request digest too); the
+  loop's asset copy declaration; (b)'s receipt deferring the asset check to the instance; the binding; the local check
+  (request_error). It is a derived launch record, never a seal of any input, and it is refused wherever a sealed bundle
+  is read (`refuse_launch_record`: the wrapper's `--bundle` unless reached from its request, the sealer's reuse bundle, a
+  batch entry, an admission's returned bundle). The controller runs a record with no project archive and the asset
+  archive from the provider-side copy only (`record_upload_refusal`), refusing a record with no declared copy or with
+  image layers before any instance; every launch's ledger lines carry `seal_on` (`bundle_seal_place`: `instance` for a
+  record, or for a bundle the admission.json beside it lists under its own name and manifest digest; `laptop`
+  otherwise), which order 85's check reads (`check_instance_seal`: after the first instance seal, a launch of a bundle
+  sealed on the laptop breaks the order whatever its arm; D-674's and D-677's laptop seals come before it). On the
+  instance the runner (`execute_request`) holds the record to its request (every file, the request digest, the job, and
+  `record_matches_request`: support files exactly the request's files and the request file, the budget, image and
+  controller binding the request's), keeps the
+  guards a job running no model needs, places and checks the frozen files and wheels (`place_request_inputs`), seals the
+  job there (`instance_job_seal.json`, also in the evidence) and runs it as arm S (the assets verified once and the job
+  refused before any bundle seal unless they verified for the request's digest). The admission
+  (`seal_route_driver.py admit --request <folder>`, required for a record job and refused for any other) holds a record
+  job to its request (`record_error`) and the collected `evidence/instance_job_seal.json` to the request's digest,
+  commit, tree and files (`instance_seal_error`). Proofs in `tools/seal_route_checks.py`; the controller's record branches in
+  `tools/ordinary_final_record_checks.py` (mixed into the controller checks), run locally by name and in full in the
+  route's Lambda gate run.
 <a id="backup-a"></a>
 - BACKUP-A (D-612, issue #267): `tools/loop/backup_private.py` pushes every local branch and tag of the main checkout to a PRIVATE repository under its own remote `backup-private` (never origin: refused by name, by URL and by the public repository's name; the remote must have exactly one URL, fetch equal to push). One `git push --no-follow-tags <url> <sha>:<ref>` per ref, from the object id the scans read (never the ref name) and to the exact URL just checked, never --force or --mirror. Before every push the URLs are read again, the target's visibility is read with `gh api --hostname github.com` (anything but true and private, or an API failure, refuses) and the URLs are read once more (a change refuses). All refs are scanned in one pass over the range from what the backup holds (else refs/remotes/origin/main), each finding attributed to its commit, and a ref is refused when it holds such a commit (the key patterns are every alternative of CLAUDE.md's quick-scan grep, case-insensitive, never guard_secrets' heuristic line scanner; a line that mentions a key prefix only bare, followed by fewer than 16 key characters, is prose and not a hit, but only in *.md, *.txt, *.log files, files under docs/ and commit and tag messages (in code it is still refused); commits are matched by object id within the run, never by ref name; a content hit is dropped only by an entry of `tools/loop/backup_allowlist.json` keyed by path, blob object id and rule name with a recorded reason, an entry marked public only when its blob is in refs/remotes/origin/main): added lines read with `--text` and hunk lengths (an unreadable path fails closed), commit messages and annotated tag messages for key patterns, reported by file and line, never value; archives through `guard_secrets`; blobs over 50 MB and, by --name-status (moves included), external/, output/, seals/ and audit/model_replies/ paths are refused; a failed object listing refuses the ref. A ref must peel to a commit and a tag may not point at another tag; the GitHub host is read only from `https://github.com/`, `git@github.com:` or `ssh://git@github.com/`; any `url.*` git configuration refuses the run. One JSON line a run in `docs/loop/private/backup_log.jsonl`. The private pre-push hook (core.hooksPath, never committed) lets a push through only for the remote name `backup-private` at exactly its private repository's URL, after a `gh api --hostname github.com` read of exactly true then private, a check of the sha256 of the four scan files against values recorded in the hook (one fixed tool directory, updated by hand), made on copies in a fresh temporary folder that the scan runs from with `py -3.12 -I -S -B` (no site module, so no .pth or sitecustomize) and a fresh PYTHONPYCACHEPREFIX, the folder removed on every exit, and the tool's `--hook-scan` of the pushed commits (annotated tag messages included; no delete, no tag object on a branch, no replace refs; D-616, template `tools/loop/pre_push_backup_exception.sh`, proofs in `tools/loop/backup_hook_checks.py`); every other push meets the S13 refusal. `--setup <url>` adds the remote once, `--dry-run` pushes nothing. `tools/loop/register_backup_task.py --dry-run` prints the daily task; registering it is the lead's step. Check 386.
 <a id="salvage-a"></a>
@@ -578,6 +740,69 @@ widely between the fields it has run on.
   `tools/loop/register_session_hook.py` (`--dry-run` prints the XML), which refuses unless the main
   checkout holds the script and a pythonw.exe exists, and prints schtasks' own error. Check 348.
 <a id="stage-a"></a>
+- VLLM-ROUTE-A (D-630 part A, #217): an exposed B3 bundle sealed with `--vllm-agents` and an `--aux-lock` that
+  pins vllm routes the named agents' generate calls to one resident vLLM server in venv_aux
+  (`scripts/vllm_server.py`), spoken to over pipes by the protocol `vllm-link-v1` (`scripts/vllm_link.py`), never
+  HTTP (the runner's network denial refuses the HTTP clients a server is spoken to with; it lets a numeric loopback
+  socket connect). Only declared envelope agents on local_auditor
+  are routable (generate calls; JUDGE, asked through call_choice, is refused); `--vllm-memory-share` (0.7) and
+  `--vllm-max-model-len` (28672) are sealed only with the route. `AgentWrapper.call_local` calls `scripts/vllm_route.py`
+  only when the sealed switch (`SHIMMER_VLLM_AGENTS`, `SHIMMER_VLLM_JOB`, in the manifest's environment;
+  `SHIMMER_VLLM_PYTHON` set by the runner) names the agent; off otherwise, nothing changes. Outside a bundle nothing
+  sets the three: setting them by hand is the operator's own switch, as any SHIMMER_ setting is. Kept as on transformers:
+  the rendered prompt and its ids, the frozen policy (greedy, its own stop ids, required; any other policy kwarg
+  refused), the checkpoint's repetition penalty (a generation-config field the server does not carry is refused),
+  the NF4 checkpoint (else refused), the context refusal (D-058), held also to the server's sealed length, the decode,
+  the stop reason (a reply vLLM cut for length is a truncation), the usage fields and one reply record per call; the
+  server builds the DECODING-B constraint from the same prompt and agent and its declaration and contract digests
+  must equal the runner's, or the call fails. A server out-of-memory or refused kernel is the named failure
+  (`generation_failure`, raised on); any other route error is one recorded failed call, never a fall back to
+  transformers. Before the server starts, the transformers models are released and the share is checked to hold the
+  weights, one full-length KV cache and 1.5 GiB and to leave 6 GiB of the card for the transformers models loaded
+  beside it (`memory_plan`, in the record); the dtypes are checked against transformers' own load (`dtype_plan`); the
+  server builds the constraint from the wrapper's own contract, carried in the request; each request is held to the
+  sealed `request_seconds` (600); a server that failed to start, broke or hung is killed and never started again in
+  the run. The card holds one engine at a time (#297; A5 lost all 8 entries to a producer that could not load beside
+  a server holding 15.8 of the A10's 22 GiB): every model load on the server's card (`vllm_link.SERVER_DEVICE`,
+  cuda:0, the first card its process sees) runs inside `vllm_link.card_for` (`agent_wrapper._load_qwen`,
+  `execution_topology.resident_model`, `final_models.resident`, and `embedding_store._load_model` when it encodes on
+  the GPU; in the local profile it encodes on the CPU and takes nothing), which holds `vllm_link.CARD_LOCK` across
+  the hand-back and the load. The hand-back (`yield_card`) takes the servers out under `_LINKS_LOCK` and, outside it
+  but under `CARD_LOCK`, shuts each down and waits for its exit: first for a call in flight on it, up to the sealed
+  `request_seconds` (600), then the shutdown (killed after 60 s); every load and server start on the card waits
+  meanwhile, as intended (the card cannot go back during a call). A server that broke or exited is retired instead
+  and never started again. Each hand-back's record enters `vllm_link.YIELDS` before its telemetry event, and a
+  telemetry error is noted on the record (`telemetry_error`), never stopping the hand-back; `CARD_LOCK` is released
+  after a failed load or a failed hand-back. A server's start holds the same lock across the whole start (`link_for`), and before a server
+  starts the server of any other model is shut down (`vllm_route.start`), so no load runs beside a starting server
+  and no server starts between a hand-back and its load. Lock order: `CARD_LOCK` first, then `_LINKS_LOCK`, then a
+  link's lock or a load site's own lock; `free_gpu` takes the load locks inside a start, and no load site takes
+  `CARD_LOCK` or `_LINKS_LOCK` while holding its own, so the order never inverts. A load on the CPU or another card
+  takes nothing. A server shut down so is not a failure: the next routed call of its model starts it again (after
+  `free_gpu`), its record's `attention` carries `server_start` (the how-many-th start in the run), and each
+  hand-back is one `vllm_server_yield` event in the run's `logs/model_telemetry.jsonl` (model, kind, the model
+  loaded, requests, start number, exit, seconds; also in `vllm_link.YIELDS`); a request refused because another
+  lane shut its server down after the start (`vllm_link.Yielded`, nothing sent) starts it again
+  (`vllm_route.YIELD_RESTARTS`, 1), and past that it is a failed call. So the order the
+  run reaches its calls in decides when the card changes hands; each change back costs one server start (A5: about
+  2 minutes cold, 30 seconds warm). A routed agent's choice decision (`call_choice`) is refused, recorded, never run on transformers. The record's `attention` names the engine, its dtypes, the plan and
+  the RoPE scaling; the server must have loaded bitsandbytes weights in the sealed dtype and batch-invariant mode
+  (`loaded_refusal`), and the transformers load dtype is read only for transformers 4.51 and 4.52, the runner's pins
+  (217f recorded float16 on 4.51.3). The server's log goes to `logs/vllm_server/server.stderr.log` (discarded with no run folder), never the
+  workload's stderr. Stated limits: the 6 GiB floor is not a measured producer peak (the producer no longer loads
+  beside the server; the floor still holds for what does, such as a CPU embedding model's working memory); a load on
+  another lane waits for a server's start, then shuts the server down; a load of another card is not covered when the
+  server's process sees a different first card than the runner (both inherit one environment); lanes that alternate a routed agent
+  and a transformers model on one card pay a server start at each change (sleep mode, which keeps the engine and
+  frees its share, is not used: unmeasured with bitsandbytes 4-bit); the cloud observer's generation seconds
+  count transformers spans only (a routed call's are its record's `request_seconds` and its `generation_interval`); vLLM's 4-bit compute is bfloat16 whatever the model dtype, and Phi-3.5's LongRoPE
+  switch may differ between engines; a model another thread is generating with is not released; a model larger than
+  the tuned producer loaded beside the server (JUDGE's Phi-4, reached only by a declared judge task) is not covered
+  by the 6 GiB floor and is measured before any such run. Proofs:
+  `scripts/vllm_link_checks.py` (its `CardHandback` class: a fake 22 GiB card on which each load site runs out of
+  memory with the hand-back neutralised), `scripts/vllm_server_checks.py` (a fake vLLM), `scripts/vllm_route_checks.py`,
+  `tools/ordinary_final_vllm_route_checks.py`, each with neutralisations. Not yet measured on a model in a run (A5 was
+  void, #297).
 - STAGE-A (loop S5): `tools/stage_workload.py` turns an adapter or generator build into the
   sealer's workload folder (`_review_targets.json` at the top, `context/`, `conventions/`,
   and `case_manifest.json` for multi-round, copied byte for byte) and writes each B1 bundle's
@@ -815,7 +1040,7 @@ widely between the fields it has run on.
   each paid run after Seckin's "evet". The scorer draws it (`cloud_subset`, run by `freeze`, which writes
   `cloud_subset.json` and names its SHA-256), A2 is read on the subset's headline items, and `score`
   refuses a subset, a configuration (`CONFIG_FIELDS`: the judge's prompts, the subset, every checkpoint
-  digest, the validator's prompts) or a power record (the opening's own alpha, 0.025 then 0.0125) that does
+  digest, the validator's prompts) or a power record (the opening's own alpha, 0.025 then 0.0125; 0.00625 for the third opening D-710 grants the old 24-item pilot alone, named by its digest in `EXTRA_OPENINGS`, an indicator whatever its power) that does
   not hold, and a judge or validator pass whose recorded model id is not JUDGE's registry model. The judge and
   the validator load Phi-4: JUDGE's registry `local.model` is null, so `resolve_reader` alone gives
   VERIFIER's Phi-3.5; the form's groups declare the model and `neg_advisor.reader_of` loads it only as the
@@ -830,6 +1055,97 @@ widely between the fields it has run on.
   the measurement and spend line counts and cost only), the lead moving the spend file into
   `docs/loop/private/cloud_reference_handed_back/` and running `append-handed-back`. No bound controller file
   changed. Check 356 (`tools/neg_advisor_checks.py`), fixtures only (351 to 355 are other lanes' checks).
+  Round 1 of improvement (lane neg-round1, standing order 102, D-707; `docs/loop/stages/NEG_ROUND1.md`):
+  the system arm has a Python step, `score_neg_advisor.system_python`, applied before the withholding. It
+  never reads the key, and it sets only what the item's positions on record decide by the plan's own rules
+  (where arithmetic can decide, arithmetic outranks the model): `not_stated` where no persona position
+  applies (a model's `not_stated` refused where one does), `dropped` and the structural state where
+  `binding` is impossible, an alignment party taken off where either side has no applicable position, each
+  model answer kept beside it (HONEST-OUTPUT-A). Whether a quote supports, opposes or accepts is never
+  read (WORDS-A). Python's own pieces are never audited, checked or counted as advice (M8, M10 `no_piece`).
+  `report(python_step=False)` gives the earlier composition. M1s and M1m are diagnostics beside M1: M1 on
+  the proposals whose conflict structure decides, and on those that need a stance's meaning, the same for
+  every arm. The advice schema (new runs) holds one entry per proposal in the excerpt's order with its own
+  id and at most `REASONS_MAX` (8) reasons, through `scripts/schema_decoding.py`'s `tuple` and `max_items`
+  nodes. Looks and changes per set: `docs/loop/stages/NEG_ITERATION_LOG.md`. Check 450
+  (`tools/neg_advisor_round1_checks.py`), fixtures only.
+  D-711 (never invent): an advice entry (a proposal's piece, an alignment entry) may carry
+  `basis: on_record | inferred` (none said is on record). An inferred entry stands only with `basis_quote`,
+  a line of at least `BASIS_QUOTE_MIN_WORDS` (5) words found as written (whitespace collapsed, case kept) in
+  the item's own text (`basis_refusal`: no_line, line_too_short, line_not_found). An inferred claim on a
+  proposal or a party with no position on record is set aside (`inferred`, visible, never scored) and the
+  answer is `not_stated`. Counts are kept apart: on_record, inferred kept, refused and set aside, and on-record
+  claims with no position. A build declares `record_kind` (complete, missing_notes; never rendered into a
+  prompt) and `masked_party` (only on missing_notes; key only). The report gives every bar figure, class floor
+  and drop share per kind (`by_record_kind`), and `neg_bar` reads NEG_BAR.md's lines per kind. It is refused
+  for a set without both kinds or with any undeclared item. D-712: the class floors at 0.60 (conflict F1 under
+  M1 and M1m, movable F1 under M10, the hit rate in each fate under M4, `CLASS_FLOORS`) sit on their lines, and a
+  line with a floor missed is not met. D-713: the system_advice group may declare `method` (none: plain; B1
+  always plain, `check_decoding`). `reason_first` writes a `rationale` before the labels, kept apart by both
+  readers and read by no figure. `stepwise` (`stepwise_advice`, an injected `ask`) asks per proposal what it
+  changes (a quote checked in the proposal), each touched position's stance (support, oppose, accept), a red
+  line only on a marked one, an open point and wording for a counter, each answer checked before the next,
+  and composes conflict, stance and alignment by the plan's rules. The replay pass does not yet run the chain.
+  Checks 466 to 468 (`tools/neg_advisor_d711_checks.py`), fixtures and a fake generate.
+<a id="neg-synth-a"></a>
+- NEG-SYNTH-A (standing order 102; D-706, D-707, D-709, D-711, D-714): synthetic negotiation items are made for
+  the development sets, the validation set and the pilots only, NEVER for the final test, and every figure on them
+  is reported apart from the real items, never pooled. `tools/neg_synth.py` draws each item's card from one seed
+  in two random streams: `structure` (what the item shows) and `hidden` (persona, fates, stances, red lines, firm
+  wordings, trades), with the declared key computed by `score_neg_advisor`'s own label rules; every distribution,
+  name pool and constraint is declared in `config/neg_synth.json`, never in code (checks 22 and 174). Every item
+  holds both M10 classes, a conflict and a no-conflict wording and a red line; the fate and the not-stated share
+  do not depend on how many wordings an article holds. The record kind alternates with the seed (D-711), so every
+  set holds complete-record and missing-notes items; a missing party is never the persona, has no statement and is
+  `not_stated` on every article. The generator (role S, Claude, D-706) gets a brief rendered from `structure`
+  alone (`config/neg_synth_generator.json`) and writes every variant of every slot; Python picks the one each item
+  uses, so no fate, stance, red line, persona, key, rubric or Shimmer prompt reaches it. The validator checks the
+  reply's structure by Python, assembles the build file and refuses any field of the scorer's key that differs
+  from the card; one `PROVENANCE.jsonl` row per item carries its seed, sampler digest and the card, brief, reply
+  and build SHA-256. Seeds are a run-time base only role S holds plus each set's declared offset, so no one else
+  learns which seed went where. Role V labels blind: `label-sheets` gives it the articles, the parties, the persona
+  and each quote with its party and round only, and `tools/neg_synth_label.py` runs the labeller declared in
+  `config/neg_synth.json` `labeller` (OLMo, Apache-2.0 and ungated, a family Shimmer does not use; its candidate
+  repositories read live and its revision recorded; a Qwen, Phi, Claude, GPT or dated id refused); `label-compare`
+  drops an item with any mismatch or missing label and gives AM-1's agreement. Role B deduplicates
+  (`tools/neg_synth_dedup.py`: exact, 8-word run, 5-gram Jaccard 0.5, cosine 0.90 on hash-only fingerprints, and
+  keep-one within the synthetic sets). `tools/neg_synth_cue.py` checks that labels are not readable from surface
+  cues, rejecting a batch by the label-permutation null (D-714) with the majority-class figure written beside it.
+  A set folder carries its declared set; `refuse_synthetic_in_final` is the final test's guard. The scorer
+  (`score_neg_advisor.report`) reads real items alone as the headline, the power record included
+  (`is_headline`), and reports synthetic items under `synthetic`, their claims indicators and their bar never the
+  bar. Stage note: docs/loop/stages/NEG_SYNTH_PIPELINE.md. Checks 455 to 459 and 472 to 474
+  (`tools/neg_synth_checks.py`), fixtures only.
+<a id="neg-structure-a"></a>
+- NEG-STRUCTURE-A (Seckin 16 November 2026 20:32; D-664, D-666, D-668 gaps 4 and 6): each item's party
+  structure (`two_singles`, `teams`, `one_vs_coalition`, `three_or_more`) is computed by
+  `score_neg_advisor.structure_of` from the build's declared parties and their kinds alone, never read from
+  words, and stored in the key (never in a prompt); a build's declared `structure` that differs is refused,
+  a frozen key without one is read from its item, and a key naming another is refused. The report gives
+  every bar figure, class floor and drop share per structure and `overall` (`by_structure`), each line of
+  NEG_BAR.md per structure in `neg_bar.structures`, cells by
+  structure and by persona kind, and `neg_bar` is refused for a set whose headline items hold fewer than two
+  structures. Gap 6: a coalition may declare `members` (at least two, never itself), and a position a member
+  states with `on_behalf_of` its coalition is the coalition's, its `speaker` kept and shown in the prompt; a
+  member's own position stays its own; a non-member speaking for it, members on a single party and a
+  persona whose kind is not its party's are refused. Gap 4: `neg_advisor.party_movement` gives every other
+  party's movement relative to the persona over the rounds on record (toward, away, steady, not_stated) from
+  the declared stances and rounds, in the key (`movement`) and, from the stances the chain checked, in the step-wise reply; the
+  report's `movement` block (indicator only, never in the bar) gives per arm and structure the share of
+  parties moving toward and away that the arm approached. D-664: a red line is a position id or
+  `{position, source}` with a source of `neg_advisor.RED_LINE_SOURCES` (only "from the document" for now),
+  stored in the item's persona (`red_line_sources`) and the key's proposal; the checker's sheet leaves both
+  out. D-666: `neg_advisor.layers_from_reader` turns the reader's layers (a .docx's insertions, deletions,
+  anchored comments, footnotes and endnotes; PDF annotations; HTML changes) into build entries `{layer, text,
+  author, anchor, article}`; each becomes a passage `LAY-<n>` shown under its article (or outside the
+  excerpt) with its kind, author and anchor, citable as a reason and as an inferred entry's line, and the
+  layers the reader could not read (`layers_not_read`) are named in the prompt; an item without layers
+  renders as before. Checks 490 to 494 (`tools/neg_structure_checks.py`), fixtures only.
+  D-715 item 1 (Seckin 22:31): the bar is met only when every line and floor holds on both record kinds, on
+  every structure the set holds and overall (`BAR_READ_ON`); a failing or missing structure is named in
+  `neg_bar.structures_failing`, and a reading is refused when a held structure has fewer than
+  `MIN_ITEMS_PER_STRUCTURE` headline items (declared once, equal to `MIN_CELL`: a smaller cell has no figure).
+  Checks 507 and 508 (`tools/d715_checks.py`).
 <a id="asset-copy-a"></a>
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
@@ -1002,6 +1318,16 @@ widely between the fields it has run on.
   different machine types, or one recording it beside one that does not
   (`common/cli.check_same_machine`; `label --run-folder` records the arm's type through
   `factor_record.require_same_type`), and says `not recorded` when neither does. Check 342.
+- LAUNCH-TIME-SPLIT (speed plan v1, `docs/loop/stages/SPEED_PLAN_V1.md`): `tools/launch_time_split.py`
+  (standard library only) reads a collected session folder's saved records and attributes its billed
+  seconds to provider boot, setup, the phases between entries, the workloads, the tail, the controller's
+  gaps and the termination wait (a detached phase's start and collect sub-steps are never counted twice);
+  each workload to time outside the pipeline, model loads, generation and the rest; each agent to calls,
+  service, generation and prefill seconds, tokens, cap hits, retries, static and dynamic prompt characters
+  and the bytes after a reply's closed object. It prints counts, seconds and USD only (entries numbered,
+  no folder name, id or text), runs no model, changes nothing it reads, and `compare` and the sum of
+  several sessions refuse two machine types (FACTORS-A). It is measurement tooling only: no runtime path,
+  bound file or pinned function reads it. Check 445 (`tools/launch_time_split_checks.py`).
 
 ## Change discipline
 
@@ -1027,6 +1353,55 @@ widely between the fields it has run on.
 - DISK-SWEEP-A (D-611, issue #266): `tools/loop/disk_sweep.py` deletes regenerable files inside the MAIN checkout by the kinds declared in `config/disk_sweep.json` (each with a reason and how to regenerate it) and by nothing else; anything unmatched is kept. It never deletes anything under docs/loop, docs/fix, config, durable, ontology, .git or .claude, a private folder, a fingerprint, a git-tracked file, a sealed bundle (a folder with a seal or manifest file, or inside one, unless the kind declares `allow_in_sealed`), the run folder of a launch with no termination line in the budget ledger (an unreadable ledger keeps everything), a link or junction, or any path or digest named in a seal, manifest, FINAL_STATUS, fingerprint, REQUEST file or `_xfer` hand-off (the reference index). The worktree kind only reports. `--apply` needs the main checkout, a complete index and a readable ledger; each path is re-checked just before `shutil` removes it, one JSON line per deletion goes to `docs/loop/private/disk_sweep_log.jsonl`, a post-check confirms every indexed path still exists (exit 3 otherwise), and one summary line gives GiB freed, items and free disk before and after. A file with more than one hard link frees nothing and is counted as zero. `tools/loop/register_disk_sweep.py` prints (`--dry-run`) or registers the daily Task Scheduler task `ShimmerLoopDiskSweep`; `--run-now-if-low` is what the load watcher and seal gates call under 32 GiB free. Check 385 (`tools/loop/disk_sweep_checks.py`, fixtures only).
 <a id="answer-form-a"></a>
 - ANSWER-FORM-A (D-663, standing order 82, #279; lead 15 November 18:57): no answer is dropped for its form alone. `tools/answer_form.py` (standard library only) is the one reading of an answer's form at scoring, the same for every arm (system, B1, cloud): outer spaces, case, a matched pair of quotes or emphasis marks around the whole, a JSON integer for a string, a list of one for one value and one value for a list, stray punctuation at either end, code-fence lines, `_` between the words of one value, a leading answer followed by more text or preceded by a field label. Form only, never content (WORDS-A): no fuzzy match, synonym, prefix or edit distance; two declared values with one key refuse the answer as `ambiguous`. One JSON rule: the LAST top-level object of a reply, several counted `several_objects_last_read`, never dropped. The runtime parsers live in bound files (scripts/, config/, corpus_ingest/, benchmark/adapters/, benchmark/baselines/ travel in every sealed bundle) and stay unchanged until the next re-seal; `tools/reread_replies.py` reads each pass's saved replies again at scoring (`advisor`, `negotiation`, and `b1` into a new labels folder, the frozen parser first), every row carrying its drops by reason, and the two negotiation scorers refuse answers not read by it and print the drops. A field still not read carries one of `answer_form.REASONS`. `docs/loop/stages/PARSE_SWEEP.md` holds the inventory and lists each bound parser left strict for the next re-seal. Check 387 (`tools/answer_form_checks.py`).
+<a id="backup-never-lapse-a"></a>
+- BACKUP-NEVER-LAPSE-A (Seckin, 16 November 2026 17:08, standing order 98; with EVIDENCE-BACKUP-A, order 101,
+  and D-702 item 4, D-704 item 3): code goes to public main through the pre-push scan and the private records
+  to the private backup remote (`tools/loop/backup_records.py`) after every major step and at least every few
+  hours; every data folder is also compressed to the operator's private Google Drive folder at least daily,
+  keeping the last few versions, each upload verified by size and hash; credentials, keys, tokens and .env
+  files never leave the laptop. Three tools hold it:
+  - `tools/loop/backup_coverage.py` (read-only) walks the main checkout's docs/loop/private, output/ and
+    external/ (through shared_paths, never entering a junction or symlink: a link is recorded as a link) and
+    prints one line per part (a root's top-level folder, its loose files as `(files)`, each external/s05
+    folder on its own): COVERED, STALE (a backup holds the part but newer or absent files are not in it), NOT
+    COVERED, or EXCLUDED (output/cloud_wheels and __pycache__, regenerable), with the files, the time of each
+    backup, the bytes not covered (hard links once) and the newest of them. The git backup covers a file when
+    the last records/private snapshot in `shimmer-history-backup/records` holds its path with its present
+    blob id (computed, no object written); Drive covers it when a backup_log.jsonl line with `verified: true`
+    names an archive present on `G:\My Drive\Shimmer_backups` with the logged size whose manifest or member
+    list holds the path with the same size and time (a large legacy tar.gz with no manifest is judged by
+    time). Credential names, files backup_records held back and files its scan would hold back now are listed
+    as deliberately excluded, never as gaps. Exit 1 when an irreplaceable part (records, run evidence under
+    external/s05, fingerprints under external/gate_prep*, a part holding a seal.json) is STALE or NOT COVERED.
+    It runs with every backup and at every report; a fault is backed up at once and reported.
+  - `tools/loop/drive_archive.py` is the reviewed form of the 16 November scratchpad archiver: one tar.gz per
+    part in `<drive>/parts_<date>/`, hashed while written and again from Drive, a per-member manifest (path,
+    size, time, SHA-256) beside it, links never followed, credential names and files holding a key body left
+    out by path only, a 4 GiB Drive floor checked before a part starts, a part Drive already covers skipped
+    unless `--force`, one `drive_archive` line per part in backup_log.jsonl. `--keep-report --keep N` prints
+    the archives beyond the newest N of each part; nothing is ever deleted by it.
+  - `tools/loop/restore_drill.py` (now and weekly) restores the smallest settled part fully held by each
+    backup (git: `git cat-file` from the snapshot; Drive: a small archive with a content list, extracted with
+    the data filter) into a new `shimmer-scratch/restore_drill_<time>/` beside the main checkout (a folder
+    inside the checkout, a link or an existing folder is refused), compares every file's SHA-256 with the
+    live copy, prints PASS or FAIL with drill_result.json in the folder, deletes nothing and names the folder.
+  Checks 430 to 432 (`tools/loop/backup_coverage_checks.py`, fixtures only, each proof neutralised, failed,
+  restored and passed).
+  - Drive-only roots (operator, 16 November 2026 20:41): `config/backup_extra_roots.json` declares folders
+    outside the repository under the roles root (`SHIMMER_ROLES_ROOT` when set, an absolute folder that is
+    not a link; else the main checkout's sibling folder it names): the role exchange folder `_xfer` and role
+    N's folder `N` (frozen negotiation sets and downloaded texts). Each is walked as `roles/<folder>/...`, its
+    top-level folders are parts (its loose files `(files)`), reported COVERED, STALE or NOT COVERED by
+    verified Drive archives only and counted irreplaceable. Negotiation texts never go to git or GitHub: the
+    coverage never counts the git snapshot for them, a snapshot holding any `roles/` path is a fault (exit
+    1), and backup_records refuses before storing anything a snapshot holding a `roles/` path or a file inside
+    the roles root. Role folders B, V, R, C and `_seckin` (at the roles root and directly under a declared
+    root) and any name containing `answer_key` are excluded by declaration: never opened, never archived,
+    recorded as excluded (a folder directly under a root as an EXCLUDED part, deeper names as a count). For
+    these parts the printed and JSON report and every drive_archive log or printed line carry counts, sizes
+    and hashes only, never a name inside a part (the manifest beside the archive on Drive lists the members);
+    drive_archive refuses a Drive folder inside the main checkout or the git backup repository, and the
+    restore drill does not pick a drive-only part. Checks 470 and 471 (groups roles and roles_archive).
 - PUSH-TARGET GUARD: the sole origin must be `project-shimmer-deployment`. Confirm it
   before any git remote operation. Never push unless the operator explicitly says to push.
 - Before any git operation, scan the staged diff for key patterns (Anthropic `sk-ant-`,
@@ -1174,6 +1549,18 @@ widely between the fields it has run on.
   baselines), and the console's startup backend line says whether it is closed or open (read
   from the profile `/health` reports). Outside the rule: `scripts/corpus_validator.py`'s corpus
   download, an operator tool no agent and no run calls. Check 316 (`scripts/web_access_checks.py`).
+  Two rules, never mixed (D-694 item 3, the 15:11 sweep): this is the product rule, what a run may send to
+  the internet; where the run executes (the laptop or a rented Lambda machine) is a separate rule of
+  resources, under the spending and data rules. "Local" here means inside Shimmer's own run with no
+  internet access, never "on the laptop": a local-profile run on a rented machine refuses the web exactly
+  as on the laptop, and nothing about where it runs (platform, host name, home, run root, the runner's
+  variables) is an input to `backend_profile` or `web_access_open`. Check 502
+  (`scripts/where_work_runs_checks.py`) runs search() as a Lambda run sees itself, with check 316's
+  stand-ins: every local value refuses both callers, the cloud profile there tries every engine (a
+  positive control), and the rule reads the same on the laptop and on Lambda; check 503 holds every tracked
+  sealed Lambda manifest (`docs/fix/ordinary_final_cloud_run*`) to `SHIMMER_BACKEND_PROFILE=local` and
+  search() refusing under its environment. LAW-IV is the one place where privacy also decides where work
+  runs: sensitive content stays on the operator's own machine.
 <a id="replies-a"></a>
 - REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
   through `reply_records.write`, inside the backend function that holds the raw text
@@ -1305,6 +1692,31 @@ widely between the fields it has run on.
   documents. The L12 cloud evidence itself was made by the old code and is not re-run. Applied by the loop under
   Annex D D-S19 item 1 (operator's authorization, "1 dongu uygulasin"), decision D-197; the
   fresh review's fixes are D-198. Check 319.
+<a id="reading-a"></a>
+- READING-A (issue #281 gaps 2, 3, 15 and 16, the this-version fixes D-667 names, no operator
+  decision): what Python cannot read in a figure, a date or a rule's band is refused on the
+  record, never silent and never read by one locale's habit. (1) Numbers
+  (`paired_review.read_number`): one run of digits and marks is one number (`_QUANTITY`), whose
+  point and comma are decided by its own form (both marks, a repeated mark, a mark not before
+  three digits, a zero or long lead), then by the numbers of the same unit or rule that decide
+  them (`separator_convention`, a conflict refuses), then by the operator's declaration
+  `config/number_reading.json` (`undecided_single_mark`; shipped as the reading the review always
+  made, a comma groups and a point ends the whole part, pending the locale declaration #281
+  proposes for v1.1; a missing or malformed file refuses). A number none decides, or a run no
+  reading fits, is `ambiguous_separator`: a label line keeps no figure, a column with a refused
+  cell keeps none (`extract_fields`), and `plan_calls` writes a `figure_reading` row to
+  `relation_refusals` at its unit. A refused run that is a written date is a date, not a figure.
+  (2) Dates (`other_date_forms`, by shape only, no month name): on every unit a rule with a
+  duration bound is checked on, each label line writing a date in another form than ISO is a
+  `date_window` / `date_form_not_read` row. (3) Rule bands (`bounds_reading`, which
+  `bounds_from_rule` returns the first part of): exactly two figures in one measure and no
+  other figure; more in that measure is `band_too_many_figures`, another figure beside them
+  `band_mixed_roles`, a refused number `ambiguous_separator`, each a `rule_band` row at no unit,
+  and no band comparison is made. (4) A computed date window carries `order_checked: false` and
+  a `date_order_not_checked` row; the limit is stated in docs/INPUT_FORMAT.md. Every row is shown
+  where it stands in `reviewed_document.md` (`reviewed_document.not_read_entries`, a header count
+  only when there is any, in English and tr). Measured on the shipped corpora, dev cases and
+  fixtures (71 Markdown files): no figure and no convention band changed. Checks 410 to 414.
 <a id="uncomputable-a"></a>
 - UNCOMPUTABLE-A (loop S5, D-068): on a paired plan of kind `uncomputable` (Python computed no
   comparison), the model's answer is kept as a model-written Finding record, never discarded:
@@ -1333,6 +1745,8 @@ widely between the fields it has run on.
   completeness per document and arm, and add sensitivity S-6.
 <a id="cells-a"></a>
 - CELLS-A (P2 (b), D-S42): a rule declaring `[compare: cells]` (read and refused as `passages` is, default off) has its text taken as a claim. `scripts/cell_selection.py` reads a unit's pipe table and ranks rows and columns by the one tokeniser's words, weighted by rarity among the table's labels, by figures the claim writes, and by an injected embedding that only settles what those leave equal, never reading a key. It keeps the caption, header and key columns, the columns named (all when none is) and the rows named, with unnamed rows up to `fill_rows`, since a claim on one row is usually a comparison and that cannot be read structurally (`config/cell_selection.json`). A claim naming nothing in a document's one table within the caps sees the whole table (`selected_by: whole_table`, counted apart); above them, or on a tie the caps fall on, it is refused with its reason. The question is the replay's claim form, held equal by check 326, masked against the whole document, and decided by `AgentWrapper.call_choice` (D-S41); `_narrow_ask` in the pipeline driver is the one call both P2 steps make. With no measured threshold nothing is asked. Every decision stands in the pairing map's `cell_claims` row, identifiers and numbers only. A settled "not met" is also the relation `claim_not_met` (INFRA-048, operator-approved 2026-11-07), written at `cell_selection.finding` alone: `quote` holds the cells Python selected and `quote_b` the claim, so no field is new. `finding_record.TEXT_RELATIONS` holds it for the mark, `CELL_RELATIONS` tells it from a pair of passages. `paired_review._cell_claim_refusal` refuses it unless the cell step passed its `selected_cells` (so a reply on a judged path that writes it is refused, as a second unit is), the rule declares `[compare: cells]`, it is irregular, `quote_b` is the rule's own text and the cells stand in the unit; Python never checks that the claim fails, it is a model's, marked, never an amendment, and `holds` and `cannot be settled` make no record. `doc_judge.select_cells` is this selection with no embedding, so it stays pure for `load_prompts`, and a claim refused is listed in the prompts file. On SciTab the key states no cells, so reach is unknowable there. A figure in a cell or a claim is read by one reader, `cell_selection.figure_value` (D-652, audit A1): norm_number's comma rule, so "71,2%" is 71.2 and "1,254" is 1254, with a sign and a percent or footnote mark read off, matched as a magnitude; `figures` and `judge_agent.locate_figures` both use it. R-a2 (SCITAB_INSIDE, D-652): every SciTab build declares `[compare: cells]` (the build option kept as an explicit match), so a table claim never reaches an uncomputable or judged-absence plan; builds made before it keep their recorded rules and figures. Check 326 pins that the real phase makes no such plan and no refusal row for a declared claim; check 283 and the system test's declaration proofs pin the build.
+<a id="table-authority-a"></a>
+- TABLE-AUTHORITY-A (D-642 items 4 (b) and (d), D-646, D-670; `docs/loop/stages/SCITAB_INSIDE.md` (b)): on a rule declaring `[compare: cells]` the verdict is the model's, decided as CHOICE-A decides it, and Python checks only what it can compute and only LOWERS. A lowered verdict is a leaning on the pairing map's `cell_claims` decision row (`leaning` "holds" or "not met", `leaning_confidence` the model's own top probability, `leaning_why`), written by `cell_selection._row` beside the decision, whose own fields (`decided`, `settled`, `why`, `confidence`) never change; a leaning is never a record, never settled, never turned around and never raised. Four reasons, a closed set: `below_threshold` (an unsettled decision whose only reason is the measured threshold and whose top answer is a verdict; a tie, no threshold and "cannot be settled" on top never lean, so with no measured `cell_claim` threshold, as shipped, nothing leans); `figure_unverified` (`cell_selection.figure_check` on the CELLS block the model was shown: each claim figure is found in a shown cell, or is one difference or ratio of two figures of one shown row or column within the cells' own rounding, else unverified; an unverified figure lowers a settled "holds" only, since a wrong figure is evidence for "not met"; this is where arithmetic outranks the model, on the sub-step it can decide, while the meaning of the claim's words is never read, WORDS-A); `cited_cell_missing` and `no_cell_cited` (D-642 (d), cell-grounded verdicts: when the table tool request ran, TABLE-TOOL-A, the cells the judge cited are its request's cell ids in calls Python ran, recorded as `cited_cells` with `cited_missing` the lines refused `id_not_valid`; a cited cell the table does not hold, or no cell cited, lowers "holds" or "not met" alike, and a lowered "not met" writes no `claim_not_met` record; with no request, as shipped, nothing is cited and nothing is lowered by it). The row also carries `figures` (counts only) and the review counts `leanings`. Scoring (D-646, DETECTION-DEV-A's own clause): under `detection_dev` a leaning gives its unit `holds` or `violates` (the scored figure), and every row carries `class_without_leanings`, `label_without_leanings` and `low_confidence` (a leaning decided or moved it); without leanings a leaning is `uncertain`, as an unsettled decision always was; a row with no `leaning` field scores exactly as before, so runs made before the rule are unchanged; `dev_counts` adds `low_confidence_rows` and `moved_by_leanings`, `report` adds `low_confidence` and `labels_from_claims_without_leanings`, and `score_corpus.benchmark_items` carries `b3_class_without_leanings` and `low_confidence`; v2_primary and the preregistration's modes are untouched. UNCOMPUTABLE-A, CELLS-A's selection and refusals, CHOICE-A's thresholds, HONEST-OUTPUT-A and the verifiability gate are unchanged (SCITAB_INSIDE (b)); the D-670 guard (a "no contradiction" record gives no state under three_way) holds beside it. SciTab only for now; ContraDoc's reading (v2_primary, D-476) is a separate step that needs Seckin's word (D-670 item 2). Runtime source: a bundle sealed before it lacks it and is re-sealed for the next read. Checks 480 to 483 (`scripts/table_authority_checks.py`). D-715 item 2 (cells optional but recorded): every decision row also carries `cells_named` and `cells_named_by` (`cell_selection.named_cells`): every id the request's lines named, run or refused (`request`), or none with no request reply read (`no_text`: the choice writes no text); the document-review methods (benchmark/baselines/reasoning_methods.py) record on their step row every R<row>C<column> id the kept reason_first rationale or the stepwise evidence step names, also when the step is refused. Read by no leaning, figure, score or prompt; check 509 (`tools/d715_checks.py`) proves the questions, decisions and detection_dev labels byte for byte the same without it. The 0 USD what-if on saved replies is `tools/scitab_leaning_whatif.py --replies` (G1 half A only, D-296, D-649; the two macro-F1 figures need G1's keys, lost on 16 November, rebuilt and proven by `keys_sha256` first). NOT ENOUGH INFO development data (D-642 (c)): `tools/scitab_nei_dev.py` converts SEM-TAB-FACTS dev and test ground truth only into SciTab-shaped claim records (entailed, refuted, unknown to supports, refutes, not enough info; spans kept, a ragged table refused) and writes no item until role B's leakage result for the `semtab` part shows zero hits with the cosine rule applied (LEAKAGE_PROTOCOL; check 484).
 <a id="detection-dev-a"></a>
 - DETECTION-DEV-A (D-S26 item 1, D-194): the benchmark adapters have a DEVELOPMENT scoring mode,
   `label --scoring detection_dev`, built in ONE helper (`benchmark/adapters/common/detection.py`);
@@ -1368,7 +1782,13 @@ widely between the fields it has run on.
   for `exclude-ids` only), and lists what it skips (key files and model assets unread). Thresholds are constants written first (`docs/loop/stages/LEAKAGE_PROTOCOL.md`: exact, one
   8-word run, cosine at most .92 and read from step 2's record, listed source or group); other thresholds or a check without the cosine rule
   are refused by the draw. Not lane/causal's frozen `leakage.py`, which it does not replace before 12
-  November. Check 325.
+  November. Part sets are declared and dated in `gate_set.PART_SETS` (D-705, issue #301): `parts_2026-11-12`
+  (`PART_PATHS`, the set the gate was cleared on) is the default and is never edited; `parts_2026-11-16` holds the parts
+  left after the 16 November loss, REFPAIR, ROUTE_GATE_174_340 and T253 in development. A set is chosen by name only
+  (`--part-set`), never inferred; a fingerprint built under one carries its name, the fingerprint refuses other parts or
+  paths outside the declared ones, the check refuses fingerprints and a step 2 record from two sets, the draw refuses a
+  result from another set, and the new set's cosine step is refused until a prompts file replacing the lost G1's is
+  declared (`COSINE_STEP_PROMPTS`, open item 134). Check 325.
 <a id="gate-set-a"></a>
 - GATE-SET-A (D-S92, D-S100, D-380, D-S120): `benchmark/baselines/gate_set.py` draws the gate set on role B's
   side from the groups the leakage check kept (salted SHA-256 orders, whole groups and papers, the quick
@@ -1425,6 +1845,63 @@ widely between the fields it has run on.
   run reaches it (no shipped rule declares a judge task, and the pair form is reply until adopted);
   before a decision form is adopted, the peak VRAM of a run that loads both must be measured on the
   A10 (the cases or a replay), or the judge must unload what it does not need. Check 331.
+<a id="table-tool-a"></a>
+- TABLE-TOOL-A (D-681, D-689; `docs/loop/stages/TABLE_TOOL_DESIGN.md`): a cell claim's judge may
+  ask Python, ONCE per claim and table and never in a second round, for what else it needs from a
+  small set of registered tools, and only when its contract declares `request_tools` for
+  `cell_claim`. That declaration reverses two points of INFRA-049 (the judge writes one request and
+  chooses among the shown tools), so boot honours it only when `config/constitution.json` holds an
+  operator-approved amendment whose `change` names `cell_claim_request` and `request_tools` (no
+  amendment id in code; `tool_registry.request_ratified`); otherwise boot refuses with one line
+  (`[table-tool-request] STOP`, `judge_agent.refusals` through `tool_registry.startup_refusals`) and
+  the run does not start; the declaration is never ignored silently. The amendment was approved in
+  advance (D-694 item 2) and applied as INFRA-056 through `scripts/constitution_guard.py` on 16 November
+  2026 (D-705); the request stays off until a contract declares `request_tools` after the Lambda gate. Its product rule (D-694 item 3 a):
+  when Shimmer runs as a product, neither the model nor any tool sends anything to the internet, not
+  even a masked or anonymised query; tools compute only on what is inside Shimmer's own run. Apart
+  from that, running Shimmer, its tools, sealing or tests on rented machines stays allowed under the
+  spending and data rules; local means inside the run with no internet access, never laptop only. As shipped nothing is
+  declared, no request is made, the registry is not read, and the question sent is the measured one
+  byte for byte, with no request key, plan or tool row (check 394; the whole run is not compared). The registry is `config/table_tools.json`
+  (`scripts/tool_registry.py`): each tool in one standard form (`name`, `does`, typed `inputs`,
+  `outputs`, `license` on the operator's `license_allowlist`, `source` `shimmer` or a package pinned
+  by its wheel's SHA-256, `entry` module:function, `tasks`, `applies_when` on structural facts only,
+  `examples`, `approved_by` a decision id on the registry's `approving_decisions`, `vetting`, whose
+  shipped digests the lane wrote and the operator path re-vets); the field is spelled `license` because the
+  vocabulary probe (check 174) reserves the other spelling. The six tools (`scripts/table_tools.py`):
+  `get_cells`, `difference`, `ratio` (D-681) and `find_figure`, `compare`, `column_extreme` (the
+  design's additions). Their arguments are ids only: a cell `r3c2` over the WHOLE table (so a cell
+  the selection left out can be asked for), a claim figure `f1`, a column `c2`; a typed number is
+  refused (`literal_number`). The tools shown are chosen by structure (WORDS-A: shown cells holding
+  one number, cells left out, figures the claim writes) and capped by `max_shown`; with none
+  applicable nothing is asked. The request (`config/cell_selection.json` `request`) shows the
+  cells, the claim, the table's index by id and the tools, and asks for at most `max_calls` lines
+  or NONE; it is generated once under the frozen decoding policy and a per-request grammar
+  (`contract_decoding.RequestGrammar`, `for_request` inside `for_call`) that admits only the shown
+  names, valid ids and at most `max_calls` lines. Python parses every line (refused, never dropped:
+  `above_max_calls`, `not_a_call`, `tool_not_shown`, `wrong_arguments`, `literal_number`,
+  `id_not_valid`), runs every call in one batch, and puts a RESULTS block after the FIGURES block in
+  the question's existing `{tools}` slot; the unchanged `call_choice` then decides, so settled and
+  leaning records are unchanged. The request is one narrow call (`pipeline._narrow_ask`, task and
+  plan kind `cell_claim_request`, outcome `free_text`, one reply record, never promoted: REPLIES-A,
+  HONEST-OUTPUT-A), counted apart in the judging calls; each line of it is one row of
+  `<run>/audit/judge_tools.jsonl` (tool, argument ids, ok or the reason, the result's SHA-256, its
+  call id): digests only, never a value. Vetting is code (`tools/vet_table_tool.py`): the license on
+  the allowlist, a fresh process under an audit hook that refuses every socket event and every
+  write, an empty working folder after, the same output from two processes with different hash
+  seeds, every example passing; it writes `vetting` (the SHA-256 of the declaration and of the
+  tool's module source), and boot refuses an entry whose digest does not match or that names no
+  approving decision. Blocking sockets is not a sandbox: a third-party tool is read and pinned
+  before it is added. Not yet measured: the cell threshold (0.6) was measured without tool results,
+  so with the request on it is an indicator until re-measured on development items; the replay
+  arm (`doc_judge.render_choice` takes a caller's `tools` slot) is the measurement's job. Checks 388
+  to 394 (`scripts/table_tool_checks.py`). The tool audit (D-694 item 4, `docs/loop/stages/TOOL_AUDIT.md`)
+  added six more entries, approved by D-694 (on `approving_decisions`), in `scripts/table_tools_extra.py`:
+  `figure_step` (a claim figure's cells, or every single step of two one-number cells of one row or one
+  column that gives it at the figure's own rounding, never which one the claim means), `rounds_to`
+  (half up, to the decimals the second figure writes, by the one comma rule), `percent_change`,
+  `sum_cells`, `mean_cells` and `rank_in_column`; ids only, the same refusals, vetted as the six are.
+  None is declared in any contract as shipped. Checks 420 to 424 (`scripts/tool_audit_checks.py`).
 - ASSIGN-A (D-571, D-572, D-575): `scripts/agent_assignment.py` assigns the production agents per
   document (and per corpus) before dispatch. Python reads STRUCTURAL conditions only (`conditions`: table,
   table rows, numeric cells, prose lines, citation markers in declared syntax, size; nothing resting on what
@@ -1627,6 +2104,77 @@ widely between the fields it has run on.
   escapes undone and as running text (`scrub._running_views`). The matcher is not complete: open
   item 86 gives what it is known not to read. A unit that ends inside a code block has its findings shown
   after the block, and a fence left open is closed after the document. Check 320.
+<a id="reader-layers-a"></a>
+- READER-LAYERS-A (#280 PDF and HTML parts, #281 gaps 1, 12 and 13; D-666, D-667): every PDF, HTML
+  and plain-text reading in `scripts/text_extract.py` keeps a layer record
+  (`scripts/document_layers.py`: `{"format", "layers": [{"name", "read", "count", "authors",
+  "note"}], "lost"}`, `layer_record_lines`; `text_extract.layer_record(path)`), and a record with
+  anything lost is a WARN line at once. A PDF (`scripts/pdf_layers.py`) keeps its page text as
+  before and reads each page's annotations (`/Annots`: a note, free text, a highlight, a strike-out
+  and the like, never a pop-up, a link or a form field) with author `/T`, note `/Contents` and date;
+  the words under a highlight, a scan with no text layer, a page with none, a missing pypdf, a file
+  that cannot be opened and the structure ("structure not recovered"; since READER-GAPS-A only
+  when the text positions or the layout settings cannot be read) are lost layers. HTML (`scripts/html_layers.py`) is read with the standard library's parser, no
+  longer beautifulsoup4: `<h1>` to `<h6>` become `#` lines (the .docx shift rule: a level-1 heading
+  used more than once moves every heading down one), block elements paragraphs, a table `|` rows
+  with its first row the header, so `pairing_map.split_units` gives a unit per heading; insertions
+  and deletions (`<ins>`, `<del>` and the class tokens declared in `config/document_reader.json`
+  `html_track_changes`) are told apart, the main text standing accepted, each change returned apart
+  (`Reading.items`) with the author and date the declared attributes carry; a nested table is
+  flattened into its cell and lost; no heading and no table is "structure not recovered". A text or
+  HTML file whose U+FFFD share passes `replacement_character_share_above` (declared in
+  `config/document_reader.json`, never in code) loses its encoding layer; with no share declared the
+  record says the encoding was not checked. `pipeline._load_corpus` notes every file in
+  `scripts/reader_report.py`: a file with no text is an EMPTY INPUT with its reason (a WARN line,
+  `audit/reader_layers.json` written by `main` after the corpus is loaded, and the `## Empty input`
+  section of `_run_summary.md`), never dropped silently; every read document's record is listed
+  under `## What the reader read`, in both languages. The audit file and the summary carry file
+  names, counts and fixed notes only, never document text or an author's name. The .docx layers
+  are lane/reader-docx's. Checks 405 to 408 (`scripts/reader_layers_checks.py`).
+
+<a id="reader-gaps-a"></a>
+- READER-GAPS-A (D-668, the 15 November audit gaps still open; no operator decision beyond D-668):
+  (1) Gap 11, heading ids in any script. `pairing_map.words` is THE ONE TOKENISER's split
+  (normal form C, lowercased, a word a run of letters or digits of any script with their combining
+  marks, a single hyphen between two word characters joining them): `_norm_label` filters it,
+  `_slug` spells it, and `passage_pairs._words` (hyphen separating), `reference_tables._words` and
+  `relation_checks._words` delegate to it; no other word split may appear. A heading's slug is
+  `legacy_slug` byte for byte when the heading is ASCII, so no ASCII id moves (measured on all
+  1317 Markdown files under benchmark/: none has a non-ASCII heading, no id moves, every
+  `_norm_label`, `_slug` and passage is unchanged); otherwise each word is spelled in ASCII (as
+  it is, its marks taken off when that leaves ASCII, else Punycode behind `xn--`), and a slug over
+  40 characters ends in eight hex digits of the heading's hash. `pairing_map.unit_id_migration`
+  lists every id the new slug moved (`from` the legacy id, `to` the current one) and
+  `migrate_unit_id` reads a saved id through it (an id the list names twice is refused). Before
+  this a document written wholly in another script slugged every heading `unit`, so
+  version_changes, which matches units across versions by slug without the ordinal, matched every
+  such heading with every other. (2) PDF layout (`scripts/pdf_layout.py`, called
+  by `pdf_layers.read_reader`): pypdf's text visitor gives each piece's position and size
+  (`pdf_layers.fragments`); with the `pdf_layout` settings declared in
+  `config/document_reader.json` (never in code) the page is read as lines and cells, running
+  headers and footers (a margin line repeated on enough pages, digits read as one mark) are set
+  apart into `Reading.items` (layer `running`), a gutter splits columns read one after the other
+  (a line crossing it closes the columns above), aligned rows become `|` tables
+  (`html_layers._table_text`), a one-line block larger than the body size a `#` heading (the
+  shift rule), and lines filling their column run on into one paragraph. The record carries
+  `layout`, `columns`, `headings`, `tables` and `running headers and footers` (read, with
+  counts); text at an angle (`text at an angle`) and rows that do not line up (`tables not
+  recovered`) are kept as plain text and recorded lost; a reader with no visitor (the stand-ins
+  of check 405), a page with no media box or no settings keeps the plain text and records the
+  structure lost, as before. Widths are estimated (`char_width_em`), so a layout whose columns
+  sit closer than the estimate is read as one column. (3) Sentences in any script
+  (`scripts/sentence_split.py`, used by `passage_pairs.passages_read`): a terminator is a
+  character whose Unicode name says full stop, question mark, exclamation mark or danda (inverted,
+  combining and modifier marks left out); after a narrow one a sentence ends at white space before
+  a digit or a letter that is not lowercase (past one opening mark), after a wide one (`。`) at
+  once; a run of wide characters counts one word per two characters against MIN_WORDS. Every ASCII
+  line ends exactly where the old pattern ended it. A stretch of more than `LONGEST` (1200)
+  characters with no end Python can decide is refused, never handed on as one sentence:
+  `no_sentence_end` (no terminator: Thai) or `sentence_end_not_decided` (terminators before
+  lowercase letters only: Georgian), listed with unit, offsets, length and reason, never text, in
+  `prepared["not_split"]` and the passage pairs row's `not_split` (a key present only when
+  there is a row, so every other row is unchanged). Checks 495 to 499
+  (`scripts/reader_gaps_checks.py`).
 
 ## Document role resolution and task modes
 
@@ -1720,7 +2268,12 @@ widely between the fields it has run on.
   redact-nothing, logged to the governance ledger). Never a silent default, never a
   silent ship. An approved span is scrubbed from every operator-facing artifact and
   "applied" means VERIFIED ABSENT by a post-apply grep gate (a surviving or unlocatable
-  span BLOCKs).
+  span BLOCKs). The gate also greps for every string an operator rule lists in quotation
+  marks (`rules.listed_strings`), whatever was detected or proposed; a rule with no listed
+  string and no authorised detector is a "cannot detect" line, and a convention whose
+  redaction intent no pattern read while the ensemble could not run is an "intent
+  unknown" warning, both in the run, on the bus and in every document's redaction
+  report (#281 gaps 9 and 10, checks 415 to 417).
 - The full LAW-IV outbound masking layer is BUILT and WIRED (INFRA-041) and is
   OPERATOR-ACTIVATED: `LAYER_ACTIVE` defaults to False. When the operator activates a
   sensitive run, operator-marked spans are held local and replaced by typed placeholders
@@ -1741,6 +2294,31 @@ widely between the fields it has run on.
   cutoff in `config/review_scope.json`). Not manually populated.
 - `input/conventions/`: the operator review framework (`review_conventions.md` +
   `review_mandate.md`). Parsed into `config/convention_registry.json` at BOOT.
+<a id="layers-a"></a>
+- LAYERS-A (D-666, issue #280; D-667, issue #281 gap 14; the .docx part): a document's layers
+  are read apart. `text_extract.extract_layers` is the one entry (the INFRA-027 single
+  extractor still owns the main text, unchanged: a .docx as it stands with every tracked change
+  accepted); for a .docx it calls `scripts/docx_layers.py`, which reads the package parts with
+  zipfile and ElementTree: tracked insertions and deletions (moves too) with author and date,
+  comments with author, date and the text they span, footnotes and endnotes (Word's separators
+  left out). Content controls, text boxes, nested tables and headers or footers are counted as
+  present and not read (their reading is v1.1). Every document carries a LAYER RECORD
+  (`scripts/document_layers.py`, the shape shared with the PDF and HTML reader:
+  `{"format", "layers": [{"name", "read", "count", "authors", "note"}], "lost"}`, counts only,
+  never document text); `pipeline._load_corpus` prints it for every document it loads, an empty
+  one included (`text_extract.print_layer_record`), keeps it on the document as `layer_record`,
+  and `write_deliverables_run_summary` writes each operational document's record under
+  "Layers read" (`document_layers.summary_lines`), in English and Turkish. The layers themselves
+  (comment text, authors) are not put on the document or into any artifact: no consumer reads
+  them yet. A merged table cell repeats its value in python-docx's reading, so a column sum
+  counted it more than once: the reader writes one line after such a table,
+  `(merged cells repeat their value in column N)` (`document_layers.merged_note`), and
+  `paired_review.extract_fields` takes no figure from those columns (no sum, no hole), while
+  `plan_calls` records a `sum_mismatch` refusal with reason `sum_over_merged_cells` in the
+  pairing map's `relation_refusals` for each measurement column it leaves out
+  (`paired_review.merged_columns`). Both `_load_corpus` and `write_deliverables_run_summary`
+  are re-pinned in the two pinned-baseline files with one amendment each. Checks 400 to 404
+  (`scripts/document_layers_checks.py`, hand-built packages, neutralise, fail, restore, pass).
 
 ## Entry points
 

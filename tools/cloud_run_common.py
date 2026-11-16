@@ -94,24 +94,41 @@ NUMBER_FIELDS = {'gpu_count', 'hourly_rate', 'cpu', 'ram_gib', 'storage_gib'}
 METADATA_FIELDS = TEXT_FIELDS | NUMBER_FIELDS | {'public_ip'}
 
 
+def field_message(prefix, key):
+    """A metadata refusal names the declared field only, never its value, so it may be kept in a failure record."""
+    return prefix + key
+
+
+def ip_not_ready(raw):
+    """An instance not yet active whose public IP is missing, null or empty has no address yet: not ready, never a
+    refusal (item 16, the 16 November b1 activation)."""
+    return raw.get('status') != 'active' and raw.get('public_ip') in (None, '')
+
+
 def safe_metadata(raw):
-    """Only flat, typed, bounded fields survive. Never retain raw responses."""
+    """Only flat, typed, bounded fields survive. Never retain raw responses. Every refusal names the field only."""
     require(isinstance(raw, dict), 'metadata must be an object')
     result = {}
     for key in sorted(METADATA_FIELDS & raw.keys()):
         value = raw[key]
+        if key == 'public_ip' and ip_not_ready(raw):
+            continue
         if key in NUMBER_FIELDS:
             require(type(value) in (int, float) and math.isfinite(value) and value >= 0,
-                    'invalid numeric metadata: ' + key)
+                    field_message('invalid numeric metadata: ', key))
         elif key == 'public_ip':
-            require(isinstance(value, str), 'invalid public IP')
-            ipaddress.ip_address(value)
+            require(isinstance(value, str), field_message('invalid metadata: ', key))
+            try:
+                ipaddress.ip_address(value)
+            except ValueError:
+                # The library's message carries the value; the refusal names the field.
+                raise InvalidPreparation(field_message('invalid metadata: ', key)) from None
         else:
             require(isinstance(value, str) and len(value) <= 128 and
-                    re.fullmatch(r'[A-Za-z0-9 _.:+(),-]+', value), 'invalid metadata: ' + key)
-            require(not KEY.search(value), 'credential in metadata: ' + key)
+                    re.fullmatch(r'[A-Za-z0-9 _.:+(),-]+', value), field_message('invalid metadata: ', key))
+            require(not KEY.search(value), field_message('credential in metadata: ', key))
             require(not re.search(r'token|secret|password|credential|cookie|signature', value, re.I),
-                    'credential marker in metadata: ' + key)
+                    field_message('credential marker in metadata: ', key))
         result[key] = value
     return result
 
@@ -127,6 +144,9 @@ def provider_instance(raw):
             public_ip=raw.get('ip'), hourly_rate=kind.get('price_cents_per_hour', 0)/100,
             cpu=specs.get('vcpus'), ram_gib=specs.get('memory_gib'), storage_gib=specs.get('storage_gib'))
         return safe_metadata({k:v for k,v in value.items() if v is not None})
+    except InvalidPreparation as exc:
+        # safe_metadata's refusal names a field only (field_message), so it is kept.
+        raise InvalidPreparation('invalid provider instance metadata: ' + str(exc)) from None
     except Exception:
         raise InvalidPreparation('invalid provider instance metadata') from None
 

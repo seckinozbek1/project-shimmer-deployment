@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The cloud reference's spend store: one reader for the paid runners and the loop budget guard.
 
-The store is `docs/loop/private/cloud_reference_spend.jsonl` of the MAIN checkout, found from git's
-common directory (`store_path`), never from the working folder: the one path rule both the runners
+The store is `docs/loop/private/cloud_reference_spend.jsonl` of the MAIN checkout, found by
+`shared_paths` (SHIMMER_MAIN_CHECKOUT, else git's common directory; `store_path`), never from the working folder: the one path rule both the runners
 and the guard use. It is created once, empty, by the operator; an absent or unreadable store is
 never read as no spend.
 
@@ -33,14 +33,13 @@ import argparse
 import hashlib
 import json
 import os
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from cloud_run_common import no_window  # noqa: E402  (HIDDEN-A: every tools/loop start has no window)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import shared_paths  # noqa: E402  (the one rule for the main checkout's folders; its git call has no window)
 
 STORE_NAME = "cloud_reference_spend.jsonl"
 HANDBACK_DIR_NAME = "cloud_reference_handed_back"
@@ -59,15 +58,12 @@ class SpendStoreError(Exception):
 
 
 def store_path(root):
-    """The one store, from git's common directory as seen from `root`."""
+    """The one store, in the main checkout `shared_paths` names from `root`: SHIMMER_MAIN_CHECKOUT when set,
+    else git's common directory as seen from `root` (DELETE-SAFE-A: never a link)."""
     try:
-        done = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute", "--git-common-dir"],
-                              capture_output=True, text=True, timeout=30, creationflags=no_window())
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise SpendStoreError("The main checkout cannot be found from git (%s)" % type(exc).__name__)
-    if done.returncode != 0 or not done.stdout.strip():
-        raise SpendStoreError("The main checkout cannot be found from git")
-    return Path(done.stdout.strip()).resolve().parent / "docs" / "loop" / "private" / STORE_NAME
+        return shared_paths.private_dir(root) / STORE_NAME
+    except shared_paths.MainCheckoutError as exc:
+        raise SpendStoreError(str(exc))
 
 
 def handback_dir(store):

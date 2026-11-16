@@ -79,8 +79,10 @@ def below_threshold_reason():
 def leaned(decision, below=None):
     """(decision as read under TABLE-AUTHORITY-A rule 2, leaned?). Only an unsettled decision whose
     reason is the threshold (never a tie, never "no threshold") and whose top answer by its recorded
-    probabilities is "holds" or "not met" becomes settled on that answer, marked `leaning` with its
-    probability; everything else is returned unchanged."""
+    probabilities is "holds" or "not met" gains the row fields the built rule writes
+    (scripts/cell_selection._row: `leaning`, `leaning_confidence`, `leaning_why`), its decision left
+    unsettled as recorded, so the scorer reads it as detection_dev reads a leaning; everything else
+    is returned unchanged."""
     below = below or below_threshold_reason()
     if not isinstance(decision, dict) or decision.get("settled") is not False or decision.get("why") != below:
         return decision, False
@@ -93,7 +95,7 @@ def leaned(decision, below=None):
     top, probability = ranked[0]
     if top not in LEANABLE:
         return decision, False
-    return dict(decision, settled=True, decided=top, leaning=True, leaning_confidence=float(probability)), True
+    return dict(decision, leaning=top, leaning_confidence=float(probability), leaning_why=[below]), True
 
 
 def lean_pairing_map(pairing, below=None):
@@ -164,7 +166,13 @@ def self_test():
     """The rule on invented decisions: only a below-threshold unsettled decision with a verdict on top leans."""
     below = "below_threshold"
     d = dict(settled=False, why=below, decided="cannot be settled", answers={"holds": 0.5, "not met": 0.3, "cannot be settled": 0.2})
-    assert leaned(d, below)[0]["decided"] == "holds" and leaned(d, below)[1]
+    assert leaned(d, below)[0]["leaning"] == "holds" and leaned(d, below)[1]
+    assert leaned(d, below)[0]["settled"] is False, "the decision stays unsettled; the leaning is beside it"
+    rows = [{"decision": {"answers": [{"label": "holds", "probability": .5}, {"label": "not met", "probability": .3},
+                                      {"label": "cannot be settled", "probability": .2}], "declared_mass": .9}}]
+    counts = replies_counts(rows, .6)
+    assert counts["as_read"]["classes"] == {"UNDECIDED": 1} and counts["with_leanings"]["classes"] == {"CLEAR": 1}, counts
+    assert counts["moved"] == 1 and counts["leaning_probability_tenths"][5] == 1, counts
     assert not leaned(dict(d, why="no_threshold"), below)[1], "no threshold never leans"
     assert not leaned(dict(d, answers={"holds": 0.4, "not met": 0.4, "cannot be settled": 0.2}), below)[1], "a tie never leans"
     assert not leaned(dict(d, answers={"cannot be settled": 0.6, "holds": 0.4}), below)[1], "Unclear on top never leans"
@@ -194,8 +202,138 @@ def self_test():
     return "self-test passed"
 
 
+# ---------------------------------------------------------------------------------------------------
+# D-646 on saved replies: the cell question's own decisions of a finished replay pass (G1 SciTab, half A
+# only), read again at K1's recorded threshold (.6, D-477) as they were and with TABLE-AUTHORITY-A rule 2's
+# leanings. The counts need no gold and are printed at once; the two macro-F1 figures, side by side,
+# are read through the scorer only when the G1 keys are given and their digest is the pinned one
+# (benchmark/baselines/g1_bar_items.json `keys_sha256`): after the 16 November loss (D-704, D-705) G1's
+# keys must be rebuilt and proven equal first. Reads no text of any prompt and prints no id.
+
+K1_CELL_THRESHOLD = 0.6        # D-477: choice_decision cell_claim .6, chosen on G1 half A from this pass
+G1_ITEMS = ROOT / "benchmark" / "baselines" / "g1_bar_items.json"
+READINGS = ("as_read", "with_leanings")
+HOLDS, NOT_MET = "holds", "not met"
+
+
+def _reply_decisions(run):
+    """{call id: decision} of a pass folder's reply records (audit/model_replies), backend_ok only."""
+    out = {}
+    for path in sorted((Path(run) / "audit" / "model_replies").glob("*.json")):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if record.get("backend_ok") and isinstance(record.get("decision"), dict):
+            out[record.get("call_id")] = record["decision"]
+    return out
+
+
+def replies_rows(prompts_path, run, g1_items=G1_ITEMS):
+    """[{document_id, rule_id, decision}] of the pass's SciTab claim questions on G1 half A, the order
+    controls and the left-out claims set aside. A row of half B refuses the whole read (D-296)."""
+    import choice_read
+    prompts = json.loads(Path(prompts_path).read_text(encoding="utf-8"))
+    by_id = {p["prompt_id"]: p for p in prompts["prompts"]}
+    documents = prompts.get("documents") or {}
+    half_a_ids, half_b_ids = choice_read.split(documents)["scitab"]
+    listed = json.loads(Path(g1_items).read_text(encoding="utf-8"))
+    measurement = json.loads((Path(run) / "replay_measurement.json").read_text(encoding="utf-8"))
+    if measurement.get("complete") is not True:
+        raise SystemExit("the pass is not complete")
+    decisions = _reply_decisions(run)
+    rows, controls = [], 0
+    for row in measurement.get("rows") or []:
+        prompt = by_id.get(row.get("prompt_id"))
+        if prompt is None:
+            raise SystemExit("a pass row names a prompt the prompts file does not hold")
+        if prompt.get("benchmark") != "scitab" or prompt.get("choice") != "claim":
+            continue
+        if prompt.get("order_control"):
+            controls += 1
+            continue
+        if prompt["document_id"] in half_b_ids:
+            raise SystemExit(HALF_B_SPENT)
+        if prompt["document_id"] not in half_a_ids:
+            raise SystemExit("a pass row names a document in neither G1 SciTab half")
+        if prompt.get("item_id") in set(listed.get("left_out") or []):
+            continue
+        rows.append({"document_id": prompt["document_id"], "rule_id": prompt["rule_id"], "item_id": prompt.get("item_id"),
+                     "decision": decisions.get(row.get("call_id"))})
+    return rows, controls, len(half_a_ids)
+
+
+def read_claim(decision, threshold, with_leanings):
+    """(class, source) of one claim: CLEAR, FLAG, UNDECIDED or ABSTAIN (a failed call or a tie), and
+    `leaning` when rule 2 read it."""
+    import choice_decision
+    if decision is None:
+        return "ABSTAIN", "failed"
+    made = choice_decision.settle(decision, threshold)
+    if made["why"] == choice_decision.TIE:
+        return "ABSTAIN", "tie"
+    if made["settled"]:
+        return {HOLDS: "CLEAR", NOT_MET: "FLAG"}.get(made["decided"], "UNDECIDED"), "settled"
+    if with_leanings and made["why"] == choice_decision.BELOW_THRESHOLD and made["top"] in LEANABLE:
+        return {HOLDS: "CLEAR", NOT_MET: "FLAG"}[made["top"]], "leaning"
+    return "UNDECIDED", made["why"]
+
+
+def replies_counts(rows, threshold=K1_CELL_THRESHOLD):
+    """Counts only, no gold: each reading's classes and sources, the leanings by answer, and the
+    leanings' own probabilities in tenths."""
+    out = {}
+    for reading in READINGS:
+        classes, sources = {}, {}
+        for r in rows:
+            cls, source = read_claim(r["decision"], threshold, reading == "with_leanings")
+            classes[cls] = classes.get(cls, 0) + 1
+            sources[source] = sources.get(source, 0) + 1
+        out[reading] = {"classes": dict(sorted(classes.items())), "sources": dict(sorted(sources.items()))}
+    tenths = [0] * 10
+    for r in rows:
+        cls, source = read_claim(r["decision"], threshold, True)
+        if source == "leaning":
+            top = max(a["probability"] for a in r["decision"]["answers"])
+            tenths[min(9, int(top * 10))] += 1
+    out["leaning_probability_tenths"] = tenths
+    out["moved"] = sum(1 for r in rows if read_claim(r["decision"], threshold, False) != read_claim(r["decision"], threshold, True))
+    return out
+
+
+def replies_scores(rows, keys, threshold=K1_CELL_THRESHOLD, g1_items=G1_ITEMS):
+    """Both readings through the scorer, side by side, and the leanings' accuracy apart. Refused
+    unless the keys are G1's by the pinned digest."""
+    import choice_read
+    import doc_judge
+    sc = doc_judge._score_corpus()
+    listed = json.loads(Path(g1_items).read_text(encoding="utf-8"))
+    if not doc_judge._pinned(g1_items):
+        raise SystemExit("the items file is not the pinned one (doc_judge.BAR_ITEMS_SHA256)")
+    if doc_judge.keys_digest(sc, keys) != listed.get("keys_sha256"):
+        raise SystemExit("the keys are not G1's by the pinned keys_sha256: rebuild and prove them first (D-704, D-705)")
+    item_of = {}
+    for key in keys:
+        table = sc.item_table(key)
+        for i in table["items"]:
+            item_of[(table["document_id"], i["rule_id"])] = i["item_id"]
+    out = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        for reading in READINGS:
+            view = []
+            for r in rows:
+                cls, source = read_claim(r["decision"], threshold, reading == "with_leanings")
+                view.append({"document_id": r["document_id"], "item_id": item_of.get((r["document_id"], r["rule_id"])),
+                             "cls": cls, "source": source})
+            scored, figures = choice_read.score([v for v in view if v["item_id"]], keys, tmp, set(listed.get("left_out") or []), reading)
+            leaning = [s for s in scored if s.get("source") == "leaning"]
+            out[reading] = {"macro_f1": figures["macro_f1"], "accuracy": figures["accuracy"], "items": figures["items"],
+                            "leanings": len(leaning), "leanings_right": sum(1 for s in leaning if s["cls"] == s["gold"])}
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--replies", nargs=2, metavar=("PROMPTS", "RUN"),
+                    help="D-646 on saved replies: the pass's prompts file and its folder (G1 SciTab half A)")
+    ap.add_argument("--key", action="append", default=[], help="with --replies: every G1 key, proven by its pinned digest")
     ap.add_argument("--pairs", type=Path)
     ap.add_argument("--g1-documents", type=Path, help="all 29 G1 SciTab document ids, a JSON list (ids only)")
     ap.add_argument("--out", type=Path)
@@ -203,6 +341,18 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if args.self_test:
         print(self_test())
+        return 0
+    if args.replies:
+        rows, controls, half_a_documents = replies_rows(*args.replies)
+        result = {"label": "what-if from saved replies, not a system run (D-646, TABLE-AUTHORITY-A rule 2)", "half": "A",
+                  "half_a_documents": half_a_documents, "claims": len(rows), "order_controls_set_aside": controls,
+                  "threshold": K1_CELL_THRESHOLD, "setting": SETTING, "counts": replies_counts(rows),
+                  "scores": replies_scores(rows, args.key) if args.key else
+                  "not read: G1's keys were lost on 16 November (D-704); give every G1 key, rebuilt and proven by keys_sha256"}
+        text = json.dumps(result, indent=2, sort_keys=True) + "\n"
+        if args.out:
+            args.out.write_text(text, encoding="utf-8", newline="\n")
+        print(text, end="")
         return 0
     if not args.pairs or not args.out or not args.g1_documents:
         ap.error("--pairs, --g1-documents and --out are required")

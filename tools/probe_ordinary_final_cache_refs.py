@@ -14,7 +14,9 @@ BASE = ROOT / 'docs/fix/ordinary_final_cloud_run'
 
 def probe():
     manifest = json.loads((BASE / 'execution_manifest.json').read_text())
-    wheel = next((ROOT / 'output/cloud_wheels/ordinary_final_cp312').glob('huggingface_hub-*.whl'))
+    sys.path.insert(0, str(ROOT / 'tools' / 'loop'))
+    import shared_paths   # the main checkout's pinned wheelhouse, through configuration (DELETE-SAFE-A)
+    wheel = next(shared_paths.wheelhouse(start=ROOT, fallback=ROOT).glob('huggingface_hub-*.whl'))
     sys.path.insert(0, str(wheel))
     import huggingface_hub
     assert huggingface_hub.__version__ == '0.30.2'

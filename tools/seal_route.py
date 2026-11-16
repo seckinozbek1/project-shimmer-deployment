@@ -518,6 +518,8 @@ def run_job(base, job, tree, evidence, deadline, env, home, store, verify_assets
     # The reuse bundle's archive verified ONCE (the one-pass verifier): every bundle's receipt is
     # that verification under its own manifest digest.
     reuse_receipt = verify_assets(Path(places['reuse']))
+    require(job_archive_verified(reuse_receipt, base),
+            "The job's asset archive did not verify on the instance: no bundle is sealed")
     seal_env = dict(env, **{VERIFIED_INPUTS_ENV: str(record_path), ATTESTATION_ENV: str(base / 'attestation.json')})
     # The attestation bound to this job (loop_budget_guard.attested_failures): the run root, the
     # manifest's and the job file's digests, and an expiry at the job's deadline.
@@ -553,6 +555,274 @@ def run_job(base, job, tree, evidence, deadline, env, home, store, verify_assets
     result['reasons'] = [] if result['execution_integrity_passed'] else ['seal_requests_failed']
     write(evidence / 'seal_job_result.json', result)
     return result
+
+
+# D-648 (route S, 15 Nov): the seal job's own asset check is never made on the laptop. Its receipt says the
+# archive is to be verified on the instance; run_job verifies it there (the one-pass verifier over the very
+# archive the job carries) and refuses the job before any bundle seal unless that verification passed for
+# the job's own archive digest. The bound wrapper admits this receipt for an arm S job only.
+DEFERRED_RECEIPT = 'to_be_verified_on_the_instance'
+
+
+def deferred_job_receipt(bundle):
+    """Write and return the arm S job's receipt that defers its asset check to the instance."""
+    bundle = Path(bundle)
+    manifest = json.loads((bundle / 'execution_manifest.json').read_text(encoding='utf-8'))
+    require(manifest.get('arm') == 'S', 'Only an arm S seal job defers its asset check to the instance')
+    assets = manifest['assets_archive']
+    receipt = dict(passed=False, kind=DEFERRED_RECEIPT, manifest_sha256=sha(bundle / 'execution_manifest.json'),
+                   archive_sha256=assets['sha256'], archive_bytes=assets['bytes'],
+                   verified_in='the instance: run_job verifies the archive before any bundle seal and refuses otherwise')
+    write(bundle / 'asset_verification.json', receipt)
+    return receipt
+
+
+def receipt_refusal(verified, manifest_sha256, assets_sha256, arm):
+    """None when the bound wrapper may launch on this receipt, else its one-line reason: a passed
+    verification of this manifest and archive with refs at 40 bytes, or, for an arm S job only, a
+    receipt deferring the check to the instance for exactly this manifest and archive."""
+    if verified.get('kind') == DEFERRED_RECEIPT:
+        if arm != 'S':
+            return 'A receipt deferred to the instance is admitted for an arm S seal job only'
+        if verified.get('manifest_sha256') != manifest_sha256 or verified.get('archive_sha256') != assets_sha256:
+            return 'Asset verification absent for this identity'
+        return None
+    if not (verified.get('passed') is True and verified.get('manifest_sha256') == manifest_sha256
+            and verified.get('archive_sha256') == assets_sha256):
+        return 'Asset verification absent for this identity'
+    if not all(r['ref_bytes'] == 40 for r in verified.get('default_revision_resolutions') or [None]):
+        return 'Refs not verified at 40 bytes'
+    return None
+
+
+def job_archive_verified(receipt, base):
+    """True when the instance's one verification passed for the job's own archive digest."""
+    job_assets = json.loads((Path(base) / 'execution_manifest.json').read_text(encoding='utf-8'))['assets_archive']
+    return receipt.get('passed') is True and receipt.get('archive_sha256') == job_assets['sha256']
+
+
+# ---------------------------------------------------------------------------
+# the seal request (standing order 85, D-668, D-674): the laptop writes a request and seals nothing; the instance
+# seals the job and verifies the assets (docs/loop/stages/notes/DESIGN_seal_request_route.md)
+
+REQUEST_FILE = 'seal_request.json'
+REQUEST_SCHEMA = 'seal-request-v1'
+# What a request may carry: the bound tree, the commit object, the requests' files, the read copies and the reuse
+# bundle's manifest. Never the asset archive, never a project archive, never an execution manifest or a seal.
+REQUEST_REFUSED_NAMES = ('assets.tar', 'project.tar.gz', 'execution_manifest.json', 'seal.json')
+# The runner files a request carries, read from the request's own commit (their names as a bundle's support files).
+RUNNER_FILES = {'ordinary_final_run.py': 'tools/ordinary_final_run.py',
+                'ordinary_final_summary.py': 'tools/ordinary_final_summary.py',
+                'cloud_run_observer.py': 'tools/cloud_run_observer.py'}
+# D-675 (option A): the launch record the bound wrapper derives from a request at launch, in the run folder, so
+# the controller, the watchdog and the runner read their usual two files. It is no seal of any input: every input
+# is held by the request's digests, the instance seals the job (instance_job_seal.json) and verifies the assets.
+LAUNCH_RECORD_KIND = 'seal_request_launch_record'
+# The fields a launch record takes from the reuse bundle's manifest: the environment the archive's wheels and
+# models make (ROUTE-S-A rule text states the schema).
+RECORD_FROM_REUSE = ('assets_archive', 'models', 'packages', 'wheels', 'environment', 'runtime_file_hashes',
+                     'decoding_policy', 'topology', 'schema_version', 'restrictions', 'known_auditor_limitations')
+
+
+def write_request(out, source, requests_path, reuse_bundle, inputs, budget, parallel=16, now=None, prep=None,
+                  private=None, r_ledger=None, refusals=None):
+    """Write a seal request into the new folder `out` and return it. Reads no asset archive and builds no project
+    archive: the asset identity is the reuse bundle's manifest's, the budget the sealer's own rule (budget_fields)
+    for arm S on the given inventory, the controller binding the sealer's own list (CONTROL_FILES)."""
+    import prepare_ordinary_final_run as default_prep
+    import instance_reaper
+    import loop_budget_guard as guard
+    prep = prep or default_prep
+    out = Path(out)
+    require(not out.exists(), 'A seal request is written into a new folder')
+    out.mkdir(parents=True)
+    tree = prep.bound_tree_archive(prep.ROOT, source, out / SEAL_SOURCE)
+    commit = prep.git(prep.ROOT, 'rev-parse', source).decode('ascii').strip()
+    (out / COMMIT_OBJECT).write_bytes(prep.git(prep.ROOT, 'cat-file', 'commit', commit))
+    requests = json.loads(Path(requests_path).read_text(encoding='utf-8'))
+    require(isinstance(requests, dict) and isinstance(requests.get('requests'), list) and requests['requests'],
+            'The seal requests file lists its requests')
+    extra = {'inputs/' + n: Path(inputs) / n for n in ('runtime.candidate.lock', 'provider_inventory.json')}
+    listed, _archive = job_requests(requests['requests'], out, extra)
+    copies, taken = read_copies(private or instance_reaper.main_private(), r_ledger or instance_reaper.R_LEDGER, now)
+    for key, entry in copies.items():
+        (out / read_copy_name(key)).write_bytes(entry['data'])
+    found = refusals if refusals is not None else [list(f) for f in
+                                                   guard.standing_orders_failures(guard.standing_orders_root())]
+    attested = attestation(found, taken)
+    reuse_manifest = json.loads((Path(reuse_bundle) / 'execution_manifest.json').read_text(encoding='utf-8'))
+    refuse_launch_record(reuse_manifest, 'the reuse bundle of a request')
+    (out / REUSE_MANIFEST).write_bytes((Path(reuse_bundle) / 'execution_manifest.json').read_bytes())
+    job = job_block(commit, tree, listed, copies, taken, attested, parallel)
+    write(out / JOB_FILE, job)
+    shutil.copyfile(Path(reuse_bundle) / 'install.lock', out / 'install.lock')
+    for name, path in RUNNER_FILES.items():
+        (out / name).write_bytes(prep.git(prep.ROOT, 'show', '%s:%s' % (commit, path)))
+    frozen = frozen_files(json.loads(prep.git(prep.ROOT, 'show', '%s:config/final_models.json' % commit)), prep.ROOT)
+    for name, entry in frozen.items():
+        shutil.copyfile(prep.ROOT / entry['path'], out / name)
+    provider = json.loads((Path(inputs) / 'provider_inventory.json').read_text(encoding='utf-8'))
+    request = dict(schema=REQUEST_SCHEMA, commit=commit, tree=tree, job=job,
+                   assets=dict(sha256=reuse_manifest['assets_archive']['sha256'],
+                               bytes=reuse_manifest['assets_archive']['bytes'],
+                               members_sha256=hashlib.sha256(json.dumps(reuse_manifest['assets_archive']['members'],
+                                                                        sort_keys=True).encode('utf-8')).hexdigest(),
+                               models=[{k: m[k] for k in ('model_id', 'revision')} for m in reuse_manifest['models']]),
+                   budget=prep.budget_fields(provider, budget, time.time() if now is None else now, arm='S'),
+                   # A launch record always runs with the declared asset copy, whose filesystem is in the
+                   # guard's preferred region: the image is that region's (the sealer's one rule).
+                   image=default_prep.region_image(provider['images'], guard.PREFERRED_REGION), frozen_files=frozen,
+                   wheelhouse=reuse_manifest.get('wheels') or {},
+                   local_control_hashes={n: sha(prep.ROOT / n) for n in prep.CONTROL_FILES},
+                   files={p.name if p.parent == out else p.relative_to(out).as_posix(): sha(p)
+                          for p in sorted(out.rglob('*')) if p.is_file()})
+    write(out / REQUEST_FILE, request)
+    return request
+
+
+FROZEN_PREFIX = 'frozen_'
+
+
+def frozen_files(spec, root):
+    """L-18: the frozen model files the commit's config/final_models.json names (the adapters, their configs and the
+    auditor's mean and std), which git does not carry: {flat name: {role, key, path, sha256}}, each read from the
+    laptop at its digest, or refused before the request is written."""
+    out = {}
+    for role in ('producer', 'auditor'):
+        for key, entry in spec[role]['files'].items():
+            path = Path(root) / entry['path']
+            require(path.is_file(), 'A frozen model file is missing: ' + entry['path'])
+            require(sha(path) == entry['sha256'], 'A frozen model file differs from final_models.json: ' + entry['path'])
+            out['%s%s_%s' % (FROZEN_PREFIX, role, key)] = dict(role=role, key=key, path=entry['path'], sha256=entry['sha256'])
+    return out
+
+
+def refuse_launch_record(manifest, where):
+    """D-675 condition 2: a launch record is never a sealed bundle. Every reader that takes a sealed bundle
+    (the sealer's reuse, the bound wrapper's --bundle, a batch entry, the admission) refuses one."""
+    require(manifest.get('kind') != LAUNCH_RECORD_KIND,
+            'A seal request launch record is not a sealed bundle: refused as %s' % where)
+
+
+def launch_record(request_folder, out, controller_root, now=None):
+    """Derive the launch record of an admitted request into the new run folder `out`: every request file linked
+    in, then execution_manifest.json (kind LAUNCH_RECORD_KIND, the request's digest, its job, budget, image and
+    controller binding, the environment of the reuse manifest), seal.json naming it, the receipt deferring the
+    asset check to the instance, the binding the wrapper reads and the local check (request_error). Returns
+    (manifest, seal)."""
+    request_folder, out = Path(request_folder), Path(out)
+    problem = request_error(request_folder, controller_root)
+    require(problem is None, problem or '')
+    request = json.loads((request_folder / REQUEST_FILE).read_text(encoding='utf-8'))
+    require(not out.exists(), 'A launch record is written into a new run folder')
+    out.mkdir(parents=True)
+    for name in list(request['files']) + [REQUEST_FILE]:
+        target = out / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(request_folder / name, target)
+        except OSError:
+            shutil.copyfile(request_folder / name, target)
+    reuse = json.loads((out / REUSE_MANIFEST).read_text(encoding='utf-8'))
+    budget = request['budget']
+    manifest = {k: reuse[k] for k in RECORD_FROM_REUSE if k in reuse}
+    manifest.update(budget)     # the request's budget, then the record's own fields over it
+    manifest.update(dict(kind=LAUNCH_RECORD_KIND, request_sha256=sha(out / REQUEST_FILE), arm='S', argv=['seal-job'],
+                    model_mode='final', max_runs=1, multi_round=False, protected_test=False,
+                    source_commit=request['commit'], seal_job=request['job'], image=request['image'],
+                    local_control_hashes=request['local_control_hashes'],
+                    support_files=dict(request['files'], **{REQUEST_FILE: sha(out / REQUEST_FILE)}),
+                    source_archive_sha256=None, project_files={}, provider='Lambda',
+                    workload=dict(answer_key_transferred=False, file_count=0, files={}, name='seal-job', review_targets=None),
+                    classification='PREPARED_NOT_AUTHORIZED'))
+    manifest['instance'] = next(iter(budget.get('instance_candidates') or [{}]))
+    write(out / 'execution_manifest.json', manifest)
+    seal = dict(execution_manifest_sha256=sha(out / 'execution_manifest.json'), source_commit=request['commit'],
+                operator_authorized=False, classification='PREPARED_NOT_AUTHORIZED', exposure='exposed',
+                kind=LAUNCH_RECORD_KIND, request_sha256=manifest['request_sha256'])
+    write(out / 'seal.json', seal)
+    import declare_asset_copy
+    declare_asset_copy.declare(out, declare_asset_copy.LOOP_FILESYSTEM_NAME, declare_asset_copy.LOOP_MOUNT)
+    deferred_job_receipt(out)
+    write(out / 'authorization_binding.json', dict(
+        manifest_sha256=sha(out / 'execution_manifest.json'), seal_sha256=sha(out / 'seal.json'),
+        preparation_commit=request['commit'], source_commit=request['commit'], project_sha256=None,
+        assets_sha256=manifest['assets_archive']['sha256'], kind=LAUNCH_RECORD_KIND,
+        request_sha256=manifest['request_sha256']))
+    write(out / 'AUTHORIZED_LOCAL_REVERIFICATION.json', dict(
+        passed=True, manifest_sha256=sha(out / 'execution_manifest.json'),
+        checked_by='seal_route.request_error: every request file at its digest, the controller binding, no archive',
+        time_epoch=round(time.time() if now is None else now, 3)))
+    return manifest, seal
+
+
+# The instance's record of the job it sealed (ordinary_final_run.INSTANCE_JOB_SEAL), collected in its evidence.
+INSTANCE_JOB_SEAL = 'instance_job_seal.json'
+
+
+def instance_seal_error(evidence, request_folder):
+    """None when the collected evidence holds the instance's job seal of this request (the checker's item 9): sealed
+    on the instance, naming the request file's digest, and the request's commit, tree and files. Else the reason."""
+    request_folder = Path(request_folder)
+    try:
+        seal = json.loads((Path(evidence) / INSTANCE_JOB_SEAL).read_text(encoding='utf-8'))
+        request = json.loads((request_folder / REQUEST_FILE).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return 'The collected evidence holds no instance job seal of the request'
+    if seal.get('sealed_on') != 'instance' or seal.get('request_sha256') != sha(request_folder / REQUEST_FILE):
+        return 'The instance job seal is of another request'
+    if [seal.get(k) for k in ('commit', 'tree', 'files')] != [request.get(k) for k in ('commit', 'tree', 'files')]:
+        return 'The instance job seal names another commit, tree or file set than its request'
+    return None
+
+
+def record_error(base, request_folder=None):
+    """None when the launch record in `base` is the record of its request: its manifest names the request's
+    digest, the request file in `base` holds it, every support file (the request's files) is at its digest, and,
+    with `request_folder`, that folder's request file is the same one. Else the one-line reason."""
+    base = Path(base)
+    try:
+        manifest = json.loads((base / 'execution_manifest.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return 'The launch record cannot be read'
+    if manifest.get('kind') != LAUNCH_RECORD_KIND:
+        return 'Not a launch record'
+    if not (base / REQUEST_FILE).is_file() or sha(base / REQUEST_FILE) != manifest.get('request_sha256'):
+        return 'The launch record does not name its request'
+    if request_folder is not None and sha(Path(request_folder) / REQUEST_FILE) != manifest['request_sha256']:
+        return 'The launch record is of another request'
+    changed = sorted(n for n, d in (manifest.get('support_files') or {}).items()
+                     if not (base / n).is_file() or sha(base / n) != d)
+    return None if not changed else 'A file of the launch record changed: ' + ', '.join(changed[:3])
+
+
+def request_error(folder, controller_root):
+    """None when the request in `folder` may be launched by the controller at `controller_root`, else its one-line
+    reason: the schema, no archive or sealed file of a bundle, every file at its recorded digest and nothing
+    else, the controller's own files at the request's binding, and the attestation's refusals empty."""
+    folder = Path(folder)
+    try:
+        request = json.loads((folder / REQUEST_FILE).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return 'The seal request cannot be read'
+    if request.get('schema') != REQUEST_SCHEMA:
+        return 'Not a seal request'
+    present = {p.relative_to(folder).as_posix() for p in folder.rglob('*') if p.is_file()} - {REQUEST_FILE}
+    refused = sorted(n for n in present if Path(n).name in REQUEST_REFUSED_NAMES)
+    if refused:
+        return 'A seal request carries no archive or sealed file: ' + ', '.join(refused)
+    if present != set(request.get('files') or {}):
+        return 'The seal request holds other files than it names'
+    changed = sorted(n for n, digest in request['files'].items() if sha(folder / n) != digest)
+    if changed:
+        return 'A file of the seal request changed: ' + ', '.join(changed[:3])
+    moved = sorted(n for n, digest in (request.get('local_control_hashes') or {}).items()
+                   if not (Path(controller_root) / n).is_file() or sha(Path(controller_root) / n) != digest)
+    if moved or not request.get('local_control_hashes'):
+        return 'Controller source changed: ' + ', '.join(moved[:3])
+    if (request.get('job') or {}).get('attestation', {}).get('refusals'):
+        return 'The seal request attests a standing order that does not hold'
+    return None
 
 
 def per_bundle_receipt(bundle, reuse_bundle, reuse_receipt):

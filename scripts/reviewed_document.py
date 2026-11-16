@@ -157,6 +157,25 @@ REFUSAL_REASONS = {
     paired_review.RULE_NOT_MET_NOT_IRREGULAR: "it says this part does not meet the rule but does not mark it irregular",
     paired_review.RULE_NOT_MET_QUOTE_NOT_UNIT: "it says this part does not meet the rule but quotes text that is not this part's",
 }
+# READING-A (issue #281 gaps 2, 3, 15, 16): what Python did not read or did not check in
+# a figure, a date or a rule's band, from the pairing map's relation_refusals, shown where
+# it stands (a rule's band at no part). Counted in the header only when there is any, so
+# a review with none renders as before.
+COUNT_NOT_READ = "- Figures, dates and rule bands Python did not read or did not check, each shown where it stands: {n}."
+NOT_READ_LABEL = "Not read by Python."
+NOT_READ_REASONS = {
+    paired_review.AMBIGUOUS_SEPARATOR: ("The figure {figure} under {field} writes a point or a comma whose role "
+                                        "(thousands or decimal) neither the number, the text around it nor the "
+                                        "operator's declaration decides, so it was not read."),
+    paired_review.DATE_FORM_NOT_READ: ("The date under {field} is not written in the form YYYY-MM-DD this review "
+                                       "reads, so no gap was computed from it under rule {rule}."),
+    paired_review.DATE_ORDER_NOT_CHECKED: ("The two dates under {field} were compared as a gap only, under rule "
+                                           "{rule}; which of them comes first was not checked."),
+    paired_review.BAND_TOO_MANY_FIGURES: ("Rule {rule} states more than two figures in one measure, so which two "
+                                          "bound its range is not decided and no range was read from it."),
+    paired_review.BAND_MIXED_ROLES: ("Rule {rule} states figures in more than one measure or role beside its "
+                                     "range, so which two bound it is not decided and no range was read from it."),
+}
 NOT_CHECKED_LABEL = "Not checked."
 NOT_CHECKED_LINE = "Rule {rule} on this part: {why}."
 WHY_ASSIGNED_ELSEWHERE = "it is assigned to {agents} only, which do not review the document's parts"
@@ -637,6 +656,23 @@ def not_checked_entries(pairing):
     return out
 
 
+def not_read_entries(pairing):
+    """READING-A: the relation_refusals rows whose reason is a figure, a date or a rule
+    band Python did not read or did not check (NOT_READ_REASONS)."""
+    return [e for e in (pairing or {}).get("relation_refusals") or []
+            if isinstance(e, dict) and e.get("reason") in NOT_READ_REASONS]
+
+
+def _not_read_block(entry):
+    t = localization.text
+    fields = " / ".join(str(f) for f in entry.get("fields") or [] if f)
+    figures = ", ".join(str(f) for f in entry.get("figures") or [])
+    return ["**%s** %s" % (t(NOT_READ_LABEL), t(NOT_READ_REASONS[entry["reason"]],
+                                                 field=_free_text(fields) or "?",
+                                                 figure=_free_text(figures) or "?",
+                                                 rule=_free_text(entry.get("rule_id")) or "?"))]
+
+
 def refused_entries(pairing):
     """The model answers Python refused, from the pairing map (judged absences and
     D-068's answers where Python could compute nothing)."""
@@ -759,6 +795,9 @@ def render(*, document_id, document_name, document_text, master, python_findings
         at(f.get("unit_id")).append(("model", _model_block(f)))
     for e in refused:
         at(e.get("unit_id")).append(("refused", _refused_block(e)))
+    not_read = not_read_entries(pairing)
+    for e in not_read:
+        at(e.get("unit_id") or None).append(("not_read", _not_read_block(e)))
     document_level_unchecked = [e for e in unchecked if not e.get("unit_id")]
     for e in unchecked:
         if e.get("unit_id"):
@@ -780,7 +819,10 @@ def render(*, document_id, document_name, document_text, master, python_findings
               t(COUNT_AMENDMENTS, n=computed, findings=names["findings"], docx=names["docx"]),
               t(COUNT_AMENDMENTS_OTHER, n=len(amendments) - computed, findings=names["findings"],
                 docx=names["docx"])]
-    lines += _pairing_counts(pairing, refused, unchecked) + decided_counts(pairing) + ["", t(NOT_CHECKED_HEADING), ""]
+    lines += _pairing_counts(pairing, refused, unchecked) + decided_counts(pairing)
+    if not_read:
+        lines.append(t(COUNT_NOT_READ, n=len(not_read)))
+    lines += ["", t(NOT_CHECKED_HEADING), ""]
     if pairing is None:
         lines.append(t(NO_PAIRING))
     elif not _recorded(pairing, UNCHECKED_KEYS):

@@ -88,6 +88,7 @@ class LambdaExperiment(LambdaTermination):
                         and isinstance(body['file_system_names'][0],str), 'exactly one bounded filesystem attach required')
                 label(body['file_system_names'][0])
         stage='transport'
+        status=None
         try:
             executable=shutil.which('curl.exe') or shutil.which('curl')
             require(executable is not None, 'curl unavailable')
@@ -110,4 +111,7 @@ class LambdaExperiment(LambdaTermination):
             return {'data':projected}
         except Exception:
             # Never propagate a library exception or a raw response through an error.
-            raise InvalidPreparation('provider experiment request failed during '+stage) from None
+            # The HTTP status, digits only, says why a request failed (a refused launch, a missing credential)
+            # without the response body, an id or anything else the provider returned.
+            code=' (HTTP %s)'%status if isinstance(status,str) and re.fullmatch('[0-9]{3}',status) else ''
+            raise InvalidPreparation('provider experiment request failed during '+stage+code) from None

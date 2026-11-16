@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "decision": "standing order 99 (D-703 item 4): the working data lives on the persistent Lambda file system",
+  "why": "Declares what tools/loop/working_store.py plans for the persistent file system: which laptop roots are working data, what must stay on the laptop and why, which archives the file system already holds, and the measured figures the plan's two cost figures rest on. The planner is a dry run only; it never launches, copies or deletes anything.",
+  "filesystem": {
+    "name": "shimmer-filesystem",
+    "region": "us-east-1",
+    "mount": "/home/ubuntu/shimmer-filesystem",
+    "store_dir": "work",
+    "source": "docs/DEPLOYMENT_RESOURCES.md (mount, region); fs listing shimmer-loop-fs-listing-20261116t160713 (80G held: image 38G, projects 9.5G, asset archives)"
+  },
+  "roots": ["external"],
+  "stay_local": [
+    {"kind": "name_contains", "match": "answer_key", "why": "benchmark answer keys stay on the laptop (D-676 item 3); never opened, matched by name only"},
+    {"kind": "path_prefix", "match": "external/s05/GATE/held_D-S100", "why": "held-out items of role B's gate set: they leave the laptop only inside a sealed protected bundle (D-676 item 3)"},
+    {"kind": "path_prefix", "match": "benchmark/keys", "why": "the frozen scorer's keys never leave the laptop (D-676 item 3)"},
+    {"kind": "credential_name", "match": "backup_coverage.CRED", "why": "credentials, keys, tokens and .env files never leave the laptop (BACKUP-NEVER-LAPSE-A)"}
+  ],
+  "on_store": {
+    "archive_name": "assets.tar",
+    "digest_record": "asset_verification.json",
+    "digest_field": "archive_sha256",
+    "digests": [
+      {"sha256": "750cf50d579b5d84b949012a13b253fa011e23a6323301c8d02bde21bfdce85c", "source": "seeded by CASES on 8 November (filesystem_storage.json notes); every later us-east-1 launch read MATCH"},
+      {"sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6", "source": "seeded by run v12 on 19 September (docs/DEPLOYMENT_RESOURCES.md)"}
+    ]
+  },
+  "upload": {
+    "mb_per_second": 5.8,
+    "shared_mb_per_second": 2.0,
+    "source": "docs/loop/stages/TIME_BUDGET.md: one upload alone about 5.8 MB/s (C base, 22.25 GB in 3,800 s); about 2 MB/s each when three shared the uplink (D-354)"
+  },
+  "launch": {
+    "instance_type": "gpu_1x_a10",
+    "boot_minutes": 5,
+    "return_minutes": 0,
+    "source": "the only single-GPU type with us-east-1 capacity in the 16 Nov 18:10 inventory, where the file system lives; fs listing 20261116t160050 billed 5 minutes for 2.1 s of work"
+  },
+  "hold_hours": 730,
+  "lambda_reads": [],
+  "lambda_reads_note": "A part a Lambda job reads again and again from the laptop is listed here as {part, launches, source}. Tonight (16 November) none is: each job's own inputs travel once inside its sealed request, and the inputs every launch reads (asset archives, image layers, project archives) are already on the file system."
+}

@@ -16,7 +16,9 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT/'docs/fix/ordinary_final_cloud_run'
-sys.path[:0] = [str(ROOT/'scripts'), str(next((ROOT/'output/cloud_wheels/ordinary_final_cp312').glob('huggingface_hub-*.whl')))]
+sys.path.insert(0, str(ROOT/'tools'/'loop'))
+import shared_paths  # the main checkout's pinned wheelhouse, through configuration (DELETE-SAFE-A)
+sys.path[:0] = [str(ROOT/'scripts'), str(next(shared_paths.wheelhouse(start=ROOT, fallback=ROOT).glob('huggingface_hub-*.whl')))]
 import huggingface_hub
 import huggingface_hub.constants
 import agent_activation

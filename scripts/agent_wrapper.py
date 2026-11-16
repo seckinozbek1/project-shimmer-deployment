@@ -34,6 +34,8 @@ import run_options
 import generation_observation
 import contract_decoding
 import decoding_policy
+import vllm_link
+import vllm_route
 import final_models
 import model_telemetry
 import reply_records
@@ -194,68 +196,71 @@ def _load_qwen(model_id):
         return cached
     transformers = importlib.import_module("transformers")
     torch = importlib.import_module("torch")
-    with _QWEN_LOAD_LOCK:
-        cached = _QWEN_MODELS.get(model_id)        # re-check under the lock
-        if cached is None:
-            checkpoint_path = _local_checkpoint_path(model_id)
-            _evict_generation_models(keep_model_id=model_id)
-            tok = transformers.AutoTokenizer.from_pretrained(checkpoint_path, local_files_only=True)
-            # BP-6 (GPU placement): PIN the 4-bit model fully onto GPU 0. The old
-            # device_map="auto" let accelerate offload layers to CPU under VRAM
-            # pressure, which ran generation at CPU speed (~1 tok/s). 4-bit NF4 with
-            # fp16 compute fits a small (8 GB) GPU at ~4.5 GB resident, where a full
-            # fp16 7B (~14 GB) would not, so we keep 4-bit and just force the device.
-            # No CUDA -> plain CPU load (functional, slow, never a silent failure).
-            prequantised = False
-            if torch.cuda.is_available():
-                prequantised = _checkpoint_is_prequantised(transformers, checkpoint_path)
-                if prequantised:
-                    # Weights are ALREADY 4-bit on disk: no fp16 host staging, and no
-                    # BitsAndBytesConfig may be passed (it would be silently discarded,
-                    # see _checkpoint_is_prequantised). device_map pins it to GPU 0 as
-                    # before; compute dtype comes from the checkpoint's own config.
-                    mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        checkpoint_path, device_map={"": 0}, local_files_only=True,
-                        attn_implementation=LOCAL_ATTENTION)
+    # #297: the load holds vllm_link.CARD_LOCK across the hand-back of a resident vLLM server and the load
+    # (taken before _QWEN_LOAD_LOCK, the lock order vllm_link states), on the card it loads on.
+    with vllm_link.card_for(model_id, "cuda:0" if torch.cuda.is_available() else "cpu"):
+        with _QWEN_LOAD_LOCK:
+            cached = _QWEN_MODELS.get(model_id)        # re-check under the lock
+            if cached is None:
+                checkpoint_path = _local_checkpoint_path(model_id)
+                _evict_generation_models(keep_model_id=model_id)
+                tok = transformers.AutoTokenizer.from_pretrained(checkpoint_path, local_files_only=True)
+                # BP-6 (GPU placement): PIN the 4-bit model fully onto GPU 0. The old
+                # device_map="auto" let accelerate offload layers to CPU under VRAM
+                # pressure, which ran generation at CPU speed (~1 tok/s). 4-bit NF4 with
+                # fp16 compute fits a small (8 GB) GPU at ~4.5 GB resident, where a full
+                # fp16 7B (~14 GB) would not, so we keep 4-bit and just force the device.
+                # No CUDA -> plain CPU load (functional, slow, never a silent failure).
+                prequantised = False
+                if torch.cuda.is_available():
+                    prequantised = _checkpoint_is_prequantised(transformers, checkpoint_path)
+                    if prequantised:
+                        # Weights are ALREADY 4-bit on disk: no fp16 host staging, and no
+                        # BitsAndBytesConfig may be passed (it would be silently discarded,
+                        # see _checkpoint_is_prequantised). device_map pins it to GPU 0 as
+                        # before; compute dtype comes from the checkpoint's own config.
+                        mdl = transformers.AutoModelForCausalLM.from_pretrained(
+                            checkpoint_path, device_map={"": 0}, local_files_only=True,
+                            attn_implementation=LOCAL_ATTENTION)
+                    else:
+                        # Quantise on the fly (the original path, unchanged except for
+                        # double quant): reads the full fp16 checkpoint through host RAM.
+                        # bnb_4bit_use_double_quant nests the quant constants, ~0.4 bits
+                        # per parameter, roughly 300 MB of VRAM on a 7B. VRAM only: it does
+                        # NOT reduce the host-RAM staging spike.
+                        bnb = transformers.BitsAndBytesConfig(
+                            load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                            bnb_4bit_compute_dtype=torch.float16,
+                            bnb_4bit_use_double_quant=True)
+                        mdl = transformers.AutoModelForCausalLM.from_pretrained(
+                            checkpoint_path, quantization_config=bnb, device_map={"": 0},
+                            local_files_only=True, attn_implementation=LOCAL_ATTENTION)
                 else:
-                    # Quantise on the fly (the original path, unchanged except for
-                    # double quant): reads the full fp16 checkpoint through host RAM.
-                    # bnb_4bit_use_double_quant nests the quant constants, ~0.4 bits
-                    # per parameter, roughly 300 MB of VRAM on a 7B. VRAM only: it does
-                    # NOT reduce the host-RAM staging spike.
-                    bnb = transformers.BitsAndBytesConfig(
-                        load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                        bnb_4bit_compute_dtype=torch.float16,
-                        bnb_4bit_use_double_quant=True)
+                    # No CUDA: unchanged fallback, except torch_dtype. Without it the model
+                    # materialises at the fp32 default (a 7B is ~30 GB), which cannot
+                    # complete on a 16 GB machine and dies after committing all of it.
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        checkpoint_path, quantization_config=bnb, device_map={"": 0},
-                        local_files_only=True, attn_implementation=LOCAL_ATTENTION)
-            else:
-                # No CUDA: unchanged fallback, except torch_dtype. Without it the model
-                # materialises at the fp32 default (a 7B is ~30 GB), which cannot
-                # complete on a 16 GB machine and dies after committing all of it.
-                mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                    checkpoint_path, torch_dtype=torch.float16, local_files_only=True,
-                    attn_implementation=LOCAL_ATTENTION)
-            # Log the ACTUAL device every run, so a CPU fallback is never silent.
-            try:
-                dev = next(mdl.parameters()).device
-            except Exception:
-                dev = "unknown"
-            if not torch.cuda.is_available():
-                mode = "CPU (no CUDA)"
-            elif prequantised:
-                mode = "4-bit prequantised checkpoint"
-            else:
-                mode = "4-bit nf4 / fp16 compute / double quant"
-            vram_msg = ""
-            if torch.cuda.is_available():
-                vram_mb = torch.cuda.memory_allocated(0) / 1024**2
-                vram_msg = f", VRAM={vram_mb:.0f} MB"
-            print(f"[local] {model_id} loaded on device {dev} ({mode}{vram_msg})",
-                  file=sys.stderr, flush=True)
-            cached = (tok, mdl)
-            _QWEN_MODELS[model_id] = cached
+                        checkpoint_path, torch_dtype=torch.float16, local_files_only=True,
+                        attn_implementation=LOCAL_ATTENTION)
+                # Log the ACTUAL device every run, so a CPU fallback is never silent.
+                try:
+                    dev = next(mdl.parameters()).device
+                except Exception:
+                    dev = "unknown"
+                if not torch.cuda.is_available():
+                    mode = "CPU (no CUDA)"
+                elif prequantised:
+                    mode = "4-bit prequantised checkpoint"
+                else:
+                    mode = "4-bit nf4 / fp16 compute / double quant"
+                vram_msg = ""
+                if torch.cuda.is_available():
+                    vram_mb = torch.cuda.memory_allocated(0) / 1024**2
+                    vram_msg = f", VRAM={vram_mb:.0f} MB"
+                print(f"[local] {model_id} loaded on device {dev} ({mode}{vram_msg})",
+                      file=sys.stderr, flush=True)
+                cached = (tok, mdl)
+                _QWEN_MODELS[model_id] = cached
     return cached
 
 # Substrings (case-insensitive) that mark a retryable rate-limit / overload error
@@ -719,6 +724,18 @@ class AgentWrapper:
             call_id=getattr(self, "_cost_call_id", ""),
         )
 
+    def _vllm_call(self, prompt, system, max_new_tokens, decoding, template_applied, sent, model_id):
+        """D-630 part A: one routed call as a CallResult. Out of memory or a refused kernel is raised on
+        (the route recorded it, as _local_generate does); every other failure is one failed call."""
+        try:
+            return vllm_route.call(self, prompt, system, max_new_tokens, decoding, template_applied, sent)
+        except final_models.GenerationFailure:
+            raise
+        except (vllm_link.LinkError, vllm_route.RouteRefused) as e:
+            return CallResult(self.backend, model_id, "", ok=False, error=f"vllm route: {e}")
+        except Exception as e:      # a tokenizer, config, job or start error is still one recorded call
+            return CallResult(self.backend, model_id, "", ok=False, error=f"vllm route: {type(e).__name__}: {e}")
+
     def _write_reply(self, r, sent):
         """S1 Part 4: save this call's reply under <run>/audit/model_replies/
         (scripts/reply_records.py). Called from inside each backend function, the
@@ -1148,6 +1165,16 @@ class AgentWrapper:
             return _finish(CallResult(self.backend, "?", "", ok=False,
                                       error=f"no model configured for agent {self.name!r} in agent_registry.json"))
         decoding = decoding_policy.policy(self.backend)
+        # D-630 part A: an agent the sealed vLLM switch names is never loaded on transformers; the route
+        # serves generate calls only, so its choice decision is refused, recorded (never run beside the server).
+        try:
+            routed = vllm_link.routed(self.name)
+        except vllm_link.LinkError as e:
+            return _finish(CallResult(self.backend, model_id, "", ok=False, error=f"vllm route: {e}"))
+        if routed:
+            return _finish(CallResult(self.backend, model_id, "", ok=False,
+                                      error="vllm route: a choice decision is not served by the vLLM route (part A); "
+                                            "refused, not run on transformers"))
         try:
             tok, mdl = self._load_local(model_id)
         except Exception as e:
@@ -1219,6 +1246,17 @@ class AgentWrapper:
         # Producer checkpoint's own sampling config met strict deterministic mode
         # at its first sampling step and every local call raised there.
         decoding = decoding_policy.policy(self.backend)
+        # D-630 part A: an agent the sealed switch names is generated by the resident vLLM server
+        # (scripts/vllm_route.py); its transformers model is never loaded. A failure there is a
+        # failed call, recorded as one, never a fall back to transformers. Off unless sealed.
+        try:
+            routed = vllm_link.routed(self.name)
+        except vllm_link.LinkError as e:
+            r = CallResult(self.backend, model_id, "", ok=False, error=f"vllm route: {e}")
+            _record_cost(r); return r
+        if routed:
+            r = self._vllm_call(prompt, system, max_new_tokens, decoding, template_applied, _sent, model_id)
+            _record_cost(r); return r
         try:
             tok, mdl = self._load_local(model_id)
         except Exception as e:

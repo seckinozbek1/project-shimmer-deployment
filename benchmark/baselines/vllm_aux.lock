@@ -1,6 +1,10 @@
 # #217 (D-601): the auxiliary environment of the vLLM comparison, sealed with --aux-lock.
 # Made with: uv pip compile (vllm==0.33.0, vllm-bnb-plugin) --python-version 3.12.3
 #   --python-platform x86_64-manylinux_2_35 --only-binary :all: --generate-hashes
+accelerate==1.15.0 \
+    --hash=sha256:5654f8c5eaa0d4fa68b33e287a97765da6849bf6d51dcac874e73fbbddfb6134 \
+    --hash=sha256:97eacca0b73e45cb867dbf8c5d5d4dc32219544300e0c8992c7334dc2ef33cec
+    # via hf_aux_child.py (device_map), #217
 agent-detector==2.0.0 \
     --hash=sha256:19c8ae185dbdca23c24abdcd8ac2cf58b8e84dc284c6f6db536656601f9ffc3f \
     --hash=sha256:22c6a1c9c23894a12f55aea625f060b8d3330fba774de72d02d5442bb580417f

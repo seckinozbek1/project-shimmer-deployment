@@ -1,0 +1,7 @@
+{
+  "_doc": "READING-A (issue #281 gap 3, D-667). How the review reads a number whose own form does not decide its marks: one point or one comma before exactly three digits, after a lead of one to three digits (1,234 or 1.234), can be a thousands mark or a decimal mark. The number's own form decides first (both marks, a repeated mark, a mark not before three digits, a zero or long lead), then numbers in the same text that decide it (scripts/paired_review.separator_convention); only where neither decides is this declaration read. undecided_single_mark gives the comma and the point the roles group and decimal, one each; any other value, or a missing or unreadable file, refuses every such number as an ambiguous separator, recorded in the pairing map. The shipped value keeps the reading the review has always made, pending the operator's locale declaration (issue #281, proposed for v1.1).",
+  "undecided_single_mark": {
+    ",": "group",
+    ".": "decimal"
+  }
+}

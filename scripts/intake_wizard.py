@@ -60,8 +60,10 @@ SIDECAR_SUFFIX = "_corpus_ingest.json"
 # --- small prompt helper -------------------------------------------------------
 
 def _ask(prompt: str) -> str:
+    # A byte-order mark is not part of an answer: Windows PowerShell puts one in front
+    # of piped input, and the first answer (a folder path) was then never found.
     try:
-        return input(prompt).strip()
+        return input(prompt).replace("﻿", "").strip()
     except EOFError:
         return ""
 
@@ -98,9 +100,9 @@ def classify(path: Path) -> "tuple[str, str, Optional[Path]]":
     if name == SCOPE_NAME:
         return ("CONFIG", "date cutoff settings", Path("config"))
     if name.endswith(SIDECAR_SUFFIX):
-        return ("SIDECAR", "grounding case metadata", Path("input") / "context")
+        return ("SIDECAR", "description of an imported reference collection", Path("input") / "context")
     if path.suffix.lower() in SUPPORTED_DOC_EXT:
-        return ("DOCUMENT", "pipeline sorts into context or operational by the cutoff",
+        return ("DOCUMENT", "reviewed or used as reference, by its date and the cutoff",
                 Path("input") / "context")
     return ("UNSUPPORTED", "not a supported type; skipped", None)
 
@@ -118,6 +120,19 @@ def _read_scope() -> dict:
         except json.JSONDecodeError:
             return {}
     return {}
+
+
+_MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
+           "September", "October", "November", "December")
+
+
+def _in_words(value: str) -> str:
+    """A stored YYYY-MM-DD date as the screen shows it (1 June 2025); anything else as given."""
+    try:
+        day = datetime.strptime(str(value), "%Y-%m-%d")
+    except ValueError:
+        return str(value)
+    return f"{day.day} {_MONTHS[day.month - 1]} {day.year}"
 
 
 def _current_cutoff_str() -> str:
@@ -142,8 +157,8 @@ def _explain_and_maybe_update_cutoff() -> "Optional[str]":
     cur = scope.get("cutoff_date")
     print()
     if cur:
-        print(f"Current date cutoff: {cur}. Documents dated before this are context/grounding.")
-        print("Documents dated on or after this are under review.")
+        print(f"Current date cutoff: {_in_words(cur)}. Documents dated before it are reference material.")
+        print("Documents dated on or after it are reviewed.")
     else:
         print("No date cutoff is set. All documents will be treated the same.")
     new = _ask("Change the cutoff? Enter a new date (YYYY-MM-DD) or press Enter to keep: ")
@@ -154,7 +169,7 @@ def _explain_and_maybe_update_cutoff() -> "Optional[str]":
     except ValueError:
         print(f"'{new}' is not a valid YYYY-MM-DD date. Keeping the current cutoff.")
         return None
-    print(f"Proposed cutoff: {new}. It will be saved only if you confirm the import.")
+    print(f"Proposed cutoff: {_in_words(new)}. It will be saved only if you confirm the import.")
     return new
 
 
@@ -206,8 +221,8 @@ def _choose_mode() -> "tuple[str, Optional[list[str]]]":
     print("      output. Choose this only when you declare the documents non-sensitive.")
     print()
     print("  [2] Sensitive mode")
-    print("      Requires the active LAW-IV privacy layer and local redaction model.")
-    print("      Sensitive content stays on this machine; the privacy layer masks")
+    print("      Needs the privacy layer (it masks sensitive content) and the local")
+    print("      redaction model. Sensitive content stays on this machine; the layer masks")
     print("      outbound content, and local redaction applies your rules to output.")
     print("      If the required privacy layers are unavailable, setup stops.")
     print()
@@ -374,7 +389,7 @@ def _ask_and_write_review_targets(doc_names: "list[str]") -> None:
     if not doc_names:
         return
     print()
-    print("Which of these documents should be REVIEWED? The rest become reference/grounding.")
+    print("Which of these documents should be REVIEWED? The rest become reference material.")
     for i, name in enumerate(doc_names, 1):
         print(f"  [{i}] {name}")
     ans = _ask("Enter the numbers to review (comma-separated), 'all', or Enter to let "
@@ -399,7 +414,7 @@ def _ask_and_write_review_targets(doc_names: "list[str]") -> None:
     prior = []
     if grounding:
         print()
-        print("Grounding documents:")
+        print("Reference documents:")
         for i, name in enumerate(grounding, 1):
             print(f"  [{i}] {name}")
         ans2 = _ask("Is one of these an EARLIER VERSION of a document under review? "
@@ -409,7 +424,7 @@ def _ask_and_write_review_targets(doc_names: "list[str]") -> None:
     role_resolution.write_manifest(
         ROOT / "input" / "context", targets, "operator",
         grounding=grounding, prior=prior, now_iso=datetime.now(timezone.utc).isoformat())
-    print(f"Marked {len(targets)} document(s) under review; {len(grounding)} as grounding"
+    print(f"Marked {len(targets)} document(s) under review; {len(grounding)} as reference material"
           + (f"; {prior[0]} as the earlier version." if prior else "."))
 
 
@@ -423,12 +438,12 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         return 1
     folder = Path(folder_str).expanduser()
     if not folder.is_dir():
-        print(f"Not a folder: {folder}")
+        print(f"Not a folder: {folder}. Check the path and start the import again.")
         return 1
 
     files = scan(folder)
     if not files:
-        print("No files found in that folder.")
+        print("No files found in that folder. Choose a folder that holds .pdf, .docx, .md or .txt files.")
         return 1
 
     print()
@@ -442,7 +457,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         print(f"  - {p.name}: {kind} ({why}) -> {target.as_posix()}/")
         classified.append((p, kind, target))
     if not classified:
-        print("No supported files to import.")
+        print("No supported files to import. Shimmer reads .pdf, .docx, .md and .txt files.")
         return 1
 
     chosen_cutoff = _explain_and_maybe_update_cutoff()
@@ -462,6 +477,8 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         run_flags += mode_flags
         print()
         parallel_label, pflag = _ask_positive_int(
+            # This prompt is also a sealed launcher prompt (tools/prepare_ordinary_final_run.py,
+            # launcher_prompts): change both together, with a re-seal.
             "How many documents to review in parallel? (default 4, higher is faster but "
             "uses more API quota) [Enter for default]: ",
             "--max-concurrent-docs", "4 (default)")
@@ -487,7 +504,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     print(f"  Conventions: {counts['CONVENTIONS']} -> input/conventions/")
     print(f"  Config:      {counts['CONFIG']} -> config/")
     print(f"  Sidecars:    {counts['SIDECAR']} -> input/context/")
-    print(f"  Date cutoff: {chosen_cutoff or _current_cutoff_str()}")
+    print(f"  Date cutoff: {_in_words(chosen_cutoff or _current_cutoff_str())}")
     if not import_only:
         print(f"  Backend:       {profile_label}")
         print(f"  Mode:          {mode_label}")
@@ -520,8 +537,8 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     cutoff = _current_cutoff_str()
     print()
     print("What happens next:")
-    print(f"  The pipeline reads these files. Documents dated {cutoff} or later are reviewed")
-    print("  against your conventions and grounding corpus. Documents dated before the")
+    print(f"  The pipeline reads these files. Documents dated {_in_words(cutoff)} or later are reviewed")
+    print("  against your rules and reference material. Documents dated before the")
     print("  cutoff stay as reference context. The date is resolved from the filename (a")
     print("  4-digit year in the name is the primary signal).")
 

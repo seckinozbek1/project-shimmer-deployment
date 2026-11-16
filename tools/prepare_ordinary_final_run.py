@@ -37,10 +37,22 @@ from ordinary_final_run import (ARGV, MULTI_ROUND_ARGV, TOPOLOGY, CASE_MANIFEST,
 from prepare_ordinary_final_assets import build_assets
 import ordinary_final_run as runner
 import loop_budget_guard as guard
+import shared_paths   # tools/loop, on the path through the guard
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT/'docs/fix/ordinary_final_cloud_run'
-WHEELS = ROOT/'output/cloud_wheels/ordinary_final_cp312'
+# The pinned wheelhouse is the MAIN checkout's output/cloud_wheels, reached through configuration (DELETE-SAFE-A:
+# SHIMMER_MAIN_CHECKOUT, else git's common directory; this checkout when git cannot be read, as on a tree with no
+# git), never through a link in a worktree. Resolved at use, never at import (nothing starts a process at import).
+def wheelhouse_default(root=ROOT):
+    return shared_paths.wheelhouse(start=root, fallback=root)
+
+
+WHEELS = None   # None: wheelhouse_default() at use; a proof sets a folder
+
+
+def wheelhouse_path():
+    return Path(WHEELS) if WHEELS is not None else wheelhouse_default()
 WORKLOAD_STOP_RESERVE_SECONDS = 900
 TERMINATION_RESERVE_SECONDS = 180
 
@@ -181,6 +193,29 @@ def top_level_support(names):
     require(not nested, 'A support file sits in a subfolder, which a run folder does not receive: ' + ', '.join(nested))
 
 
+# The controller binding (CONTROLLER-BINDING): every file execute() holds to its sealed digest before its first
+# provider call. One list, read by the sealer and by a seal request (order 85, seal_route.write_request).
+CONTROL_FILES = ('tools/ordinary_final_watchdog.py',
+    'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py',
+    'tools/ordinary_final_cloud.py','tools/ordinary_final_bound_cloud.py',
+    'tools/lambda_experiment_provider.py',
+    # What the controller imports to decide and record a launch (S2): the budget
+    # guard, the reaper's ledger reading it reuses, the keep-awake helper and the
+    # termination and state functions it takes from the general controller.
+    'tools/loop_budget_guard.py','tools/loop/instance_reaper.py','tools/loop/keep_awake.py',
+    'tools/run_remote_experiment.py',
+    # D-401: the cloud reference spend reader the guard counts the API spend with.
+    'tools/loop/cloud_reference_spend.py',
+    # DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): the one rule the reaper's ledger and the spend store
+    # are found by (SHIMMER_MAIN_CHECKOUT, else git's common directory).
+    'tools/loop/shared_paths.py',
+    # F1 (D-421): the standing-orders checkers the guard runs before a launch.
+    'tools/loop/standing_orders_check.py',
+    # D-675 (the checker's item 3): the seal request's rules the bound wrapper launches by (receipt_refusal,
+    # refuse_launch_record, record_error, request_error, launch_record).
+    'tools/seal_route.py')
+
+
 def seal_flags_hold(manifest):
     """The runner's own flag rule (argv_for), so the seal refuses what the controller's admission would."""
     require(manifest['argv'] == runner.argv_for(manifest), 'The sealed run flags are not the ones the runner admits for this arm')
@@ -232,7 +267,11 @@ def bind_existing_assets(bundle, models, wheels, wheelhouse, target):
     every tool that reads assets_archive.filename beside the manifest still does;
     across drives, where a hard link cannot exist, it is copied and hashed again."""
     bundle = Path(bundle).resolve()
-    previous = read(bundle/'execution_manifest.json')['assets_archive']
+    reused = read(bundle/'execution_manifest.json')
+    # D-675 condition 2: a seal request's launch record carries no archive and is never reused as a sealed bundle.
+    import seal_route
+    seal_route.refuse_launch_record(reused, 'a reused asset bundle')
+    previous = reused['assets_archive']
     archive = bundle/previous['filename']
     require(previous['members'] == expected_members(models, wheels, wheelhouse),
             'Reused asset archive inventory differs from the current models or wheels')
@@ -568,6 +607,24 @@ def comparison_type(name, candidates, registry=None):
     return chosen
 
 
+def region_image(images, region):
+    """The one image a bundle or seal request is sealed with: the entry, among the provider's images, of the
+    family, version and architecture the provider lists first, whose region is `region`, the launch region.
+    Image ids on Lambda are per region and the inventory comes in the provider's own order, so the first entry
+    may be another region's id, which the launch region refuses (16 Nov 2026: us-east-2's id sealed for a
+    us-east-1 launch). Refused when that region lists no such image, or more than one id for it."""
+    require(isinstance(images, list) and images and isinstance(images[0], dict), 'The provider inventory lists no image')
+    first = images[0]
+    key = lambda x: (x.get('family'), x.get('version'), x.get('architecture'))
+    found = [x for x in images if isinstance(x, dict) and key(x) == key(first) and x.get('region') == region]
+    require(found, 'No image of family %s version %s (%s) is listed in the launch region %s; refused before sealing'
+            % (first.get('family'), first.get('version'), first.get('architecture'), region))
+    require(len({x.get('id') for x in found}) == 1,
+            'The launch region %s lists more than one image of family %s version %s; refused before sealing'
+            % (region, first.get('family'), first.get('version')))
+    return dict(found[0])
+
+
 def budget_fields(provider, budget, now_epoch, workload_files=None, arm='B3'):
     """The IV.3 budget, set from the live price in the provider inventory: the ordered
     instance candidates, and the soft cap (the forecast) and hard cap (the per-run cap).
@@ -610,11 +667,16 @@ def budget_fields(provider, budget, now_epoch, workload_files=None, arm='B3'):
     tier = dict(reference_item=reference_run['item'] if reference_run else None,
                 measured=sorted(spec.get('measured') or {}))
     rate = candidates[0]['max_hourly_rate']
+    # D-708: the per-step pre-approval and the remaining-spend limit (config/loop_spend_limits.json, read by the
+    # guard now); a step above the pre-approval carries the operator's approval, sealed so the launch reads it too.
+    approval = budget.get('step_approval')
     decision = guard.check(ledgers=budget['ledgers'], forecast_minutes=budget['forecast_minutes'], hourly_rate=rate,
                            storage_forecast_usd=budget['storage_forecast_usd'], now_epoch=now_epoch,
                            provider_names=guard.loop_inventory(provider['instances']),
-                           reserve_minutes=WORKLOAD_STOP_RESERVE_SECONDS / 60, reaped=budget.get('reaped'))
-    return dict(instance_candidates=candidates, type_rule='a10_first' if rule == 'a10_first' else 'declared',
+                           reserve_minutes=WORKLOAD_STOP_RESERVE_SECONDS / 60, reaped=budget.get('reaped'),
+                           spend_limits=budget.get('spend_limits'), step_approval=approval)
+    sealed_approval = dict(step_approval=dict(approval)) if approval else {}
+    return dict(sealed_approval, instance_candidates=candidates, type_rule='a10_first' if rule == 'a10_first' else 'declared',
         type_order=rule, tier=tier, gpus=gpus, comparison=comparison, uncompared=bool(budget.get('uncompared')),
         region=guard.PREFERRED_REGION,
         max_hourly_rate=max(c['max_hourly_rate'] for c in candidates), a10_reference_rate=reference,
@@ -870,6 +932,11 @@ def model_cache(environ=None):
 AUX_LOCK = 'aux_env.lock'
 
 
+def aux_lock_pins_vllm(data):
+    """True when the auxiliary lock pins vLLM itself (the server's engine)."""
+    return re.search(r'(?m)^vllm==[0-9]', data.decode('utf-8', 'replace')) is not None
+
+
 def aux_lock_error(data):
     """None when an auxiliary lock pins every requirement exactly and with at least one sha256
     (what pip --require-hashes needs), else a one-line reason; an option line or an index is refused."""
@@ -900,12 +967,76 @@ AUX_HASH = re.compile(r'--hash=sha256:[0-9a-f]{64}')
 AUX_FORM = 'vllm-replay-v1'
 
 
-def aux_lock_admitted(aux_lock, arm, sealed, replay_prompts):
-    """#217: an --aux-lock and a vllm-replay-v1 replay file go together, in an exposed B1 bundle only."""
+def aux_lock_admitted(aux_lock, arm, sealed, replay_prompts, vllm_route=None):
+    """#217: an --aux-lock and a vllm-replay-v1 replay file go together, in an exposed B1 bundle only;
+    D-630 part A: or an --aux-lock and a vLLM route, in an exposed B3 bundle only."""
     form = replay_prompts is not None and aux_replay_form(replay_prompts)
     if aux_lock is None:
-        return not form
+        return not form and vllm_route is None
+    if vllm_route is not None:
+        return arm == 'B3' and not sealed and not form
     return arm == 'B1' and not sealed and form
+
+
+# D-630 part A: the vLLM route's sealed switch. The agents it names are generated by the resident
+# vLLM server in venv_aux (scripts/vllm_route.py); part A routes local_auditor agents only.
+VLLM_BACKENDS = ('local_auditor',)
+VLLM_AGENTS_ENV = 'SHIMMER_VLLM_AGENTS'
+VLLM_JOB_ENV = 'SHIMMER_VLLM_JOB'
+
+
+VLLM_DEFAULT_SHARE = 0.7
+VLLM_REQUEST_SECONDS = 600
+VLLM_DEFAULT_LENGTH = 28672
+
+
+def step_approval_args(args):
+    """D-708: the operator's approval of a step above the per-step pre-approval, {usd, source}, or None. The two
+    flags go together; the guard holds the figure to the forecast and the source to a decision id."""
+    usd, source = getattr(args, 'step_approval_usd', None), getattr(args, 'step_approval_source', None)
+    require((usd is None) == (source is None), '--step-approval-usd and --step-approval-source go together')
+    return None if usd is None else dict(usd=usd, source=source)
+
+
+def vllm_route_args(args):
+    """The route from the command line, or None; a memory or length flag without --vllm-agents is refused."""
+    if not args.vllm_agents:
+        require(args.vllm_memory_share is None and args.vllm_max_model_len is None,
+                'The vLLM memory share and context length are sealed only with --vllm-agents')
+        return None
+    return dict(agents=[a.strip() for a in args.vllm_agents.split(',') if a.strip()],
+                memory_share=VLLM_DEFAULT_SHARE if args.vllm_memory_share is None else args.vllm_memory_share,
+                max_model_len=VLLM_DEFAULT_LENGTH if args.vllm_max_model_len is None else args.vllm_max_model_len)
+
+
+def vllm_route_block(vllm_route, registry, envelope=None):
+    """The manifest block and the two environment values of a vLLM route, or a refusal. `vllm_route`
+    is {agents, memory_share, max_model_len}; each agent must be registered with a local backend the
+    route serves AND declared an envelope agent on it (config/envelope_decoding.json): those are the
+    agents whose calls are call_local generate calls (an agent asked through call_choice, such as JUDGE,
+    would route nothing); the memory share is a fraction of the card, the length a positive token count."""
+    agents = list(vllm_route['agents'])
+    require(agents and len(set(agents)) == len(agents), 'The vLLM route names each agent once')
+    entries = registry.get('agents', {})
+    declared = (envelope if envelope is not None else
+                json.loads((ROOT/'config/envelope_decoding.json').read_text(encoding='utf-8')))['agents']
+    for name in agents:
+        local = (entries.get(name) or {}).get('local') or {}
+        require(local.get('backend') in VLLM_BACKENDS,
+                'The vLLM route serves %s agents only; %s is not one' % (', '.join(VLLM_BACKENDS), name))
+        require((declared.get(name) or {}).get('backend') == local.get('backend'),
+                'The vLLM route serves declared envelope agents only (generate calls); %s is not one' % name)
+    share, length = vllm_route['memory_share'], vllm_route['max_model_len']
+    require(isinstance(share, float) and 0.1 <= share <= 0.9, 'The vLLM memory share is a fraction between 0.1 and 0.9')
+    require(type(length) is int and length > 0, 'The vLLM context length is a positive token count')
+    # request_seconds: how long one request may take before the link is called broken (VERIFIER's 4096-token
+    # allowance at the 40 tokens a second vLLM measured alone on the A10 is about 100 s; 600 s is the bound).
+    job = dict(dtype='float16', max_model_len=length, gpu_memory_utilization=share, batch=1, batch_invariant=True,
+               request_seconds=VLLM_REQUEST_SECONDS)
+    block = dict(protocol='vllm-link-v1', agents=agents, job=job)
+    environment = {VLLM_AGENTS_ENV: ','.join(agents),
+                   VLLM_JOB_ENV: json.dumps(job, sort_keys=True, separators=(',', ':'))}
+    return block, environment
 
 
 def aux_replay_form(path):
@@ -919,7 +1050,7 @@ def aux_replay_form(path):
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
             test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
             b1_checkpoints=None, replay_prompts=None, launcher_question=None, gate=None, asset_copy_reason=None, layers=None,
-            seal_requests=None, seal_parallel=16, aux_lock=None):
+            seal_requests=None, seal_parallel=16, aux_lock=None, vllm_route=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -945,9 +1076,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
             'Replay prompts are sealed only into an exposed B1 bundle')
     # #217 (D-601): a second environment from a sealed, hash-pinned lock, for an exposed measurement
     # replay only (the vLLM comparison); the controller fetches and installs it, the runner never imports it.
-    require(aux_lock_admitted(aux_lock, arm, sealed, replay_prompts),
+    require(aux_lock_admitted(aux_lock, arm, sealed, replay_prompts, vllm_route),
             'An auxiliary environment is sealed only into an exposed B1 replay bundle of the vllm-replay-v1 form, '
-            'and that form only with its --aux-lock')
+            'and that form only with its --aux-lock, or into an exposed B3 bundle with a vLLM route (D-630), '
+            'and that route only with its --aux-lock')
     require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
     OUT.mkdir(parents=True,exist_ok=True)
     source_inputs = Path(inputs_from).resolve() if inputs_from else original
@@ -986,6 +1118,10 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
                                    os.environ.get('SHIMMER_PRODUCER_ATTENTION_DECISION'),
                                    os.environ.get('SHIMMER_PRODUCER_PREFILL_CHUNK'),
                                    os.environ.get('SHIMMER_PRODUCER_PREFILL_DECISION'))
+    route_block = None
+    if vllm_route is not None:
+        route_block, route_environment = vllm_route_block(vllm_route, json.loads((ROOT/'config/agent_registry.json').read_text(encoding='utf-8')))
+        environment.update(route_environment)
     # Only the explicitly selected input files may enter this bundle; named extras stay.
     files = {n:d for n,d in files.items() if not n.startswith('benchmark/') or any(named(n, p) for p in ARCHIVE_EXTRAS)}
     if arm == 'G':
@@ -1076,8 +1212,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         models.append(item)
     locked = pins(OUT/'runtime.candidate.lock')
     gate_block = gate_fields(gate, source, locked) if arm == 'G' else None
-    wheels = validate_wheels(WHEELS, locked)
-    runtime_files = {package: wheel_member_hashes(WHEELS/entry['filename'], entry['sha256'])
+    wheels_dir = wheelhouse_path()
+    wheels = validate_wheels(wheels_dir, locked)
+    runtime_files = {package: wheel_member_hashes(wheels_dir/entry['filename'], entry['sha256'])
                      for package, entry in wheels.items()}
     write(OUT/'topology.json', TOPOLOGY)
     for name in ('ordinary_final_run.py','ordinary_final_summary.py','cloud_run_observer.py'):
@@ -1105,9 +1242,9 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     import time
     budget_values = budget_fields(provider, budget, time.time() if now_epoch is None else now_epoch, workload_hashes, arm)
     if reuse_assets:
-        assets = bind_existing_assets(reuse_assets,models,wheels,WHEELS,OUT/'assets.tar')
+        assets = bind_existing_assets(reuse_assets,models,wheels,wheels_dir,OUT/'assets.tar')
     else:
-        assets = build_assets(OUT/'assets.tar',models,wheels,cache,WHEELS)
+        assets = build_assets(OUT/'assets.tar',models,wheels,cache,wheels_dir)
     workload_record = dict(name=workload_name,review_targets=None if sealed or arm in ('G', 'S') else 1,
                            files=({} if sealed else workload_hashes),file_count=len(workload_hashes),
                            answer_key_transferred=False)
@@ -1132,19 +1269,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         # receipt would say so, after the instance existed. execute() verifies every
         # name in this map before its first provider call, so a changed controller
         # now refuses before anything is created.
-        local_control_hashes={n:sha(ROOT/n) for n in ('tools/ordinary_final_watchdog.py',
-            'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py',
-            'tools/ordinary_final_cloud.py','tools/ordinary_final_bound_cloud.py',
-            'tools/lambda_experiment_provider.py',
-            # What the controller imports to decide and record a launch (S2): the budget
-            # guard, the reaper's ledger reading it reuses, the keep-awake helper and the
-            # termination and state functions it takes from the general controller.
-            'tools/loop_budget_guard.py','tools/loop/instance_reaper.py','tools/loop/keep_awake.py',
-            'tools/run_remote_experiment.py',
-            # D-401: the cloud reference spend reader the guard counts the API spend with.
-            'tools/loop/cloud_reference_spend.py',
-            # F1 (D-421): the standing-orders checkers the guard runs before a launch.
-            'tools/loop/standing_orders_check.py')},
+        local_control_hashes={n:sha(ROOT/n) for n in CONTROL_FILES},
         support_files=support,models=models,assets_archive=assets,
         preparation_source_hashes={n:sha(ROOT/n) for n in
             ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},
@@ -1153,7 +1278,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         topology=TOPOLOGY,provider='Lambda',
         instance=next(x for x in provider['instance_types']
                       if x['metadata']['type']==budget_values['instance_candidates'][0]['type']),
-        provider_observed_at=provider['observed_at'],image=provider['images'][0],
+        provider_observed_at=provider['observed_at'],image=region_image(provider['images'],budget_values['region']),
         **budget_values,
         # SHIMMER_INST_FINDER is written explicitly so the instance runs the setting the
         # operator prepared with (default on), never an ambient value. `off` is sealed
@@ -1189,9 +1314,13 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
         data = Path(aux_lock).read_bytes()
         require(not credential_locations(data, AUX_LOCK), 'Possible credential in the auxiliary lock; stop without printing content')
         require(aux_lock_error(data) is None, aux_lock_error(data) or '')
+        require(route_block is None or aux_lock_pins_vllm(data), 'The vLLM route needs an auxiliary lock that pins vllm')
         (OUT/AUX_LOCK).write_bytes(data)
         support[AUX_LOCK] = sha(OUT/AUX_LOCK)
-        manifest['aux_env'] = dict(lock=AUX_LOCK, lock_sha256=support[AUX_LOCK], purpose='vllm_replay')
+        manifest['aux_env'] = dict(lock=AUX_LOCK, lock_sha256=support[AUX_LOCK],
+                                   purpose='vllm_route' if route_block is not None else 'vllm_replay')
+    if route_block is not None:
+        manifest['vllm_route'] = route_block
     seal_flags_hold(manifest)
     write(OUT/'execution_manifest.json', manifest)
     write(OUT/'seal.json',dict(execution_manifest_sha256=sha(OUT/'execution_manifest.json'),
@@ -1199,8 +1328,8 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     write(OUT/'transfer_plan.json',dict(
         project_archive=dict(path='project.tar.gz',sha256=sha(OUT/'project.tar.gz'),bytes=(OUT/'project.tar.gz').stat().st_size),
         model_bytes=sum(e['bytes'] for m in models for e in m['files'].values()),
-        wheel_bytes=sum((WHEELS/e['filename']).stat().st_size for e in wheels.values()),
-        model_cache_local=str(cache),wheelhouse_local=str(WHEELS),
+        wheel_bytes=sum((wheels_dir/e['filename']).stat().st_size for e in wheels.values()),
+        model_cache_local=str(cache),wheelhouse_local=str(wheels_dir),
         local_paths_not_transferred=True,credentials_transferred=False,
         assets_archive={k:v for k,v in assets.items() if k!='members'},
         model_delivery='Use sealed assets.tar; refs/main are exactly 40 ASCII revision bytes, no newline',
@@ -1232,6 +1361,11 @@ if __name__ == '__main__':
     parser.add_argument('--ledger',type=Path,action='append',required=True,help='loop ledger(s) the IV.3 cap reads')
     parser.add_argument('--forecast-minutes',type=float,required=True,help='measured basis in minutes (docs/loop/BUDGET.md)')
     parser.add_argument('--storage-forecast-usd',type=float,required=True)
+    parser.add_argument('--step-approval-usd',type=float,default=None,
+                        help='D-708: for a forecast above the per-step pre-approval (config/loop_spend_limits.json), '
+                             'the USD the operator approved for this step; with --step-approval-source')
+    parser.add_argument('--step-approval-source',default=None,
+                        help='D-708: the decision (D-<n>) that records the operator\'s approval of this step')
     parser.add_argument('--seal-requests',type=Path,default=None,
                         help='arm S: {"requests": [{"name", "argv": [the sealer\'s own arguments]}]} (route S, #252)')
     parser.add_argument('--seal-parallel',type=int,default=16,help='arm S: seals at a time on the instance')
@@ -1272,6 +1406,14 @@ if __name__ == '__main__':
     parser.add_argument('--aux-lock',type=Path,default=None,
                         help='#217: B1 replay, exposed only: a hash-pinned lock (uv pip compile --generate-hashes) the '
                              'controller fetches and installs as a second environment, venv_aux, for vllm_replay.py')
+    parser.add_argument('--vllm-agents',default=None,
+                        help='D-630 part A, B3 exposed only, with --aux-lock: the local_auditor agents (comma list) '
+                             'the resident vLLM server generates for (scripts/vllm_route.py); off when not given')
+    parser.add_argument('--vllm-memory-share',type=float,default=None,
+                        help='D-630, with --vllm-agents only: the card fraction the vLLM server takes (vLLM '
+                             'gpu_memory_utilization; 0.7 when not given: Phi-3.5 at 28672 tokens needs about 0.63 of an A10)')
+    parser.add_argument('--vllm-max-model-len',type=int,default=None,
+                        help="D-630: the vLLM server's context length in tokens (a prompt plus its allowance)")
     parser.add_argument('--replay-prompts',type=Path,default=None,
                         help='B1, exposed only: replay_prompts.json (replay_prompts.py extract) for replay passes')
     args = parser.parse_args()
@@ -1280,12 +1422,13 @@ if __name__ == '__main__':
                         storage_forecast_usd=args.storage_forecast_usd,
                         instance_types=args.instance_types.split(',') if args.instance_types else None,
                         type_rule=args.type_rule, gpus=args.gpus, comparison=args.comparison,
-                        uncompared=args.uncompared),
+                        uncompared=args.uncompared, step_approval=step_approval_args(args)),
             workload=args.workload, exposure=args.exposure, test_manifest=args.test_manifest,
             protected_test=args.protected_test, inputs_from=args.inputs_from, arm=args.arm, b1_items=args.items,
             b1_checkpoints=read(args.b1_checkpoints) if args.b1_checkpoints else None,
             replay_prompts=args.replay_prompts, launcher_question=args.launcher_question,
             asset_copy_reason=args.no_asset_copy, aux_lock=args.aux_lock,
+            vllm_route=vllm_route_args(args),
             gate=dict(form=args.gate_form,
                       checks='all' if args.gate_checks == 'all' else [int(n) for n in args.gate_checks.split(',') if n],
                       known_red=[int(n) for n in args.known_red.split(',') if n]) if args.arm == 'G' else None,

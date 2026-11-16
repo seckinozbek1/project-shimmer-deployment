@@ -54,6 +54,8 @@ from ordinary_final_salvage_checks import SALVAGE_NEUTRALIZATIONS, SalvageChecks
 from ordinary_final_image_checks import IMAGE_NEUTRALIZATIONS, ImageChecks
 from ordinary_final_asset_copy_checks import ASSET_COPY_NEUTRALIZATIONS, AssetCopyChecks
 from ordinary_final_aux_env_checks import AUX_NEUTRALIZATIONS, AuxEnvChecks
+from ordinary_final_record_checks import RECORD_NEUTRALIZATIONS, RecordChecks
+from ordinary_final_activation_checks import ACTIVATION_NEUTRALIZATIONS, ActivationChecks
 
 INSTANCE = 'a' * 32
 KEY_ID = 'b' * 32
@@ -625,7 +627,7 @@ def run_controller(root, base, plan, transport, provider, clock, credential, cal
     return transport, console.getvalue().splitlines(), ran
 
 
-class ControllerChecks(AuxEnvChecks, ImageChecks, AssetCopyChecks, SalvageChecks, GateArmChecks, LauncherArmChecks, unittest.TestCase):
+class ControllerChecks(RecordChecks, ActivationChecks, AuxEnvChecks, ImageChecks, AssetCopyChecks, SalvageChecks, GateArmChecks, LauncherArmChecks, unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -1023,7 +1025,11 @@ class ControllerChecks(AuxEnvChecks, ImageChecks, AssetCopyChecks, SalvageChecks
                 'tools/lambda_experiment_provider.py', 'tools/ordinary_final_run.py',
                 # S2 (H1): what the controller imports to decide and record a launch.
                 'tools/loop_budget_guard.py', 'tools/loop/instance_reaper.py', 'tools/loop/keep_awake.py',
-                'tools/run_remote_experiment.py', 'tools/loop/cloud_reference_spend.py', 'tools/loop/standing_orders_check.py')
+                'tools/run_remote_experiment.py', 'tools/loop/cloud_reference_spend.py', 'tools/loop/standing_orders_check.py',
+                # D-675 (the checker's item 3): the seal request's rules the bound wrapper launches by.
+                'tools/seal_route.py',
+                # DELETE-SAFE-A: the one rule the reaper's ledger and the spend store are found by.
+                'tools/loop/shared_paths.py')
 
     def test_controller_binding_the_sealed_controller_launches(self):
         """Polarity one: the controller the bundle was sealed with runs the full sequence."""
@@ -1063,14 +1069,16 @@ class ControllerChecks(AuxEnvChecks, ImageChecks, AssetCopyChecks, SalvageChecks
         """The sealer binds the controller, the bound wrapper and the provider adapter,
         beside the runtime files it already bound."""
         import prepare_ordinary_final_run as sealer
+        # One list (CONTROL_FILES), read by the sealer and by a seal request; the sealer hashes exactly it.
         source = Path(sealer.__file__).read_text(encoding='utf-8')
-        block = source.split('local_control_hashes={n:sha(ROOT/n) for n in (', 1)[1].split(')}', 1)[0]
+        self.assertIn('local_control_hashes={n:sha(ROOT/n) for n in CONTROL_FILES}', source)
+        block = sealer.CONTROL_FILES
         for name in ('tools/ordinary_final_cloud.py', 'tools/ordinary_final_bound_cloud.py',
                      'tools/lambda_experiment_provider.py', 'tools/ordinary_final_watchdog.py',
                      'tools/cloud_run_watchdog.py', 'tools/cloud_run_common.py', 'tools/ordinary_final_run.py',
                      'tools/loop_budget_guard.py', 'tools/loop/instance_reaper.py', 'tools/loop/keep_awake.py',
                      'tools/run_remote_experiment.py', 'tools/loop/cloud_reference_spend.py',
-                     'tools/loop/standing_orders_check.py'):
+                     'tools/loop/standing_orders_check.py', 'tools/seal_route.py', 'tools/loop/shared_paths.py'):
             self.assertIn(name, block)
         # The verification runs before the first provider call in execute().
         body = Path(controller.__file__).read_text(encoding='utf-8')
@@ -5205,6 +5213,8 @@ NEUTRALIZATIONS += SALVAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += IMAGE_NEUTRALIZATIONS
 NEUTRALIZATIONS += ASSET_COPY_NEUTRALIZATIONS
 NEUTRALIZATIONS += AUX_NEUTRALIZATIONS
+NEUTRALIZATIONS += RECORD_NEUTRALIZATIONS
+NEUTRALIZATIONS += ACTIVATION_NEUTRALIZATIONS
 
 import lambda_experiment_provider as _experiment_adapter  # noqa: E402
 _REAL_LIVE_CASE_FIELDS_ERROR = runner.live_case_fields_error

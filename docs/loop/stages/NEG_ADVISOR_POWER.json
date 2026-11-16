@@ -3,8 +3,8 @@
  "set_sha256": "6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f",
  "headline_items": 18,
  "proposals": 179,
- "k": 1,
- "alpha": 0.025,
+ "k": 3,
+ "alpha": 0.00625,
  "sims": 1000,
  "resamples": 500,
  "shares": {
@@ -25,9 +25,9 @@
   }
  },
  "power_by_icc": {
-  "0.2": 0.176,
-  "0.5": 0.143
+  "0.2": 0.058,
+  "0.5": 0.044
  },
- "code_sha256": "9dd60d5db5a1632f8f956bd44684d27b7ddf5e9d2d0ed697b2c3d4ee6cb6e446",
+ "code_sha256": "c09ac97995b929e7c4443055edab1e049da7cc7e236fa0ef90da9aefc856d902",
  "a1": "indicator"
 }

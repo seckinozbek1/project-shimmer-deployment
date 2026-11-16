@@ -26298,6 +26298,146 @@ def check_331_the_judge_is_a_registered_agent():
     return run_checks()
 
 
+def check_388_table_tool_startup_refuses_unvetted_tools():
+    """D-681 check A: start-up refuses a table tool whose license is off the operator's allowlist,
+    one that opens a socket, one that writes a file, a non-deterministic one (two fresh processes,
+    two hash seeds), an entry no decision approves, an entry changed after vetting, and a declared
+    request_tools with no ratified amendment, on the real boot too. Fixture tool modules in a
+    temporary folder; neutralise, fail, restore, pass for each. Runs scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("A")
+
+
+def check_389_table_tools_compute_and_refuse_on_a_fixture():
+    """D-681 check B: each of the six table tools is right on a fixture table, refuses a zero
+    divisor and a percent against a plain number, runs the registry's own entry, and every shipped
+    entry of config/table_tools.json is vetted as declared. Runs scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("B")
+
+
+def check_390_table_tool_request_is_one_round():
+    """D-681 check C: one table tool request per claim and table, never a second round; lines
+    above max_calls are refused by the parser and by the per-request decoding grammar. Runs
+    scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("C")
+
+
+def check_391_table_tool_request_refuses_what_was_not_shown():
+    """D-681 check D: a tool not shown, an id the table does not hold and a typed number are each
+    refused and recorded as a tool row, and the decoding grammar admits none of them. Runs
+    scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("D")
+
+
+def check_392_table_tools_shown_by_structure_only():
+    """D-681 check E: the tools shown are chosen by structural facts only (WORDS-A): a table with
+    no numbers is shown no arithmetic tool, and nothing is asked when no tool applies. Runs
+    scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("E")
+
+
+def check_393_table_tool_request_is_one_reply_record():
+    """D-681 check F: on the real phase 5.5 each table tool request is one reply record with
+    outcome free_text, counted apart in the judging calls, decoded under its own grammar, and its
+    tool rows in audit/judge_tools.jsonl equal the reply's lines, joined to its call id, digests
+    only. A fixture judge, no model. Runs scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("F")
+
+
+def check_394_table_tool_off_is_the_measured_run():
+    """D-681 check G: with no request_tools declared (as shipped; the switch is honoured only under
+    a ratified amendment) the cell claim's question sent is byte for byte the measured one, no
+    request call is made, and the tool records, pairing-map row keys and judging calls carry nothing
+    of the request; the whole run is not compared with a run without the lane. Runs
+    scripts/table_tool_checks.py."""
+    from table_tool_checks import run_check
+    return run_check("G")
+
+
+def check_420_audit_table_tools_compute_on_a_fixture():
+    """D-694 item 4 (docs/loop/stages/TOOL_AUDIT.md) check A: percent_change, sum_cells, mean_cells and
+    rank_in_column (scripts/table_tools_extra.py) are right on a fixture table, worked by hand, through
+    the one batch executor and the registry's own entries. Runs scripts/tool_audit_checks.py."""
+    from tool_audit_checks import run_check
+    return run_check("A")
+
+
+def check_421_figure_step_finds_single_steps_at_the_figures_rounding():
+    """D-694 item 4 check B: figure_step lists every single step (difference, ratio, percent of,
+    percent change) of two one-number cells of one row or one column that gives a claim figure at
+    the figure's own rounding, says where a figure a cell writes stands, and says so when no step
+    gives it; it never says which step a claim means (WORDS-A). Runs scripts/tool_audit_checks.py."""
+    from tool_audit_checks import run_check
+    return run_check("B")
+
+
+def check_422_rounds_to_reads_the_written_decimals():
+    """D-694 item 4 check C: rounds_to rounds half up to the decimals the second figure writes, read
+    by the review's one comma rule. Runs scripts/tool_audit_checks.py."""
+    from tool_audit_checks import run_check
+    return run_check("C")
+
+
+def check_423_audit_table_tools_refuse_and_the_grammar_holds():
+    """D-694 item 4 check D: each new tool refuses a percent against a plain number, a zero divisor,
+    a cell with no single number and an unknown id; the parser refuses a typed number and too many
+    arguments for them, and the request grammar admits neither. Runs scripts/tool_audit_checks.py."""
+    from tool_audit_checks import run_check
+    return run_check("D")
+
+
+def check_424_audit_table_tools_vetted_approved_and_off():
+    """D-694 item 4 check E: every new entry of config/table_tools.json is vetted as declared (two
+    fresh processes, no socket, no write), approved by a decision on approving_decisions, shown by
+    structure only, and no shipped contract declares request_tools. Runs scripts/tool_audit_checks.py."""
+    from tool_audit_checks import run_check
+    return run_check("E")
+
+
+def check_400_docx_tracked_changes_read_apart_with_author_and_date():
+    """D-666 (issue #280) A: a hand-built .docx's tracked insertions and deletions, moves too,
+    are read apart with author and date, and the main text is the accepted text. Neutralise, fail,
+    restore, pass. Runs scripts/document_layers_checks.py."""
+    from document_layers_checks import run_check
+    return run_check("A")
+
+
+def check_401_docx_comments_footnotes_endnotes_read_apart():
+    """D-666 (issue #280) B: comments with author, date and the text they span; footnotes and
+    endnotes apart, Word's separators left out. Runs scripts/document_layers_checks.py."""
+    from document_layers_checks import run_check
+    return run_check("B")
+
+
+def check_402_docx_skipped_parts_counted_in_the_layer_record():
+    """D-667 (issue #281 gap 14) C: a content control, a text box, a nested table and a header are
+    counted as present and not read and named in the record's lost list. Runs
+    scripts/document_layers_checks.py."""
+    from document_layers_checks import run_check
+    return run_check("C")
+
+
+def check_403_sum_over_merged_cells_refused():
+    """D-667 (issue #281 gap 14) D: a column where a merged cell repeats its value is not summed
+    by paired_review.plan_calls and the refusal is recorded. Runs
+    scripts/document_layers_checks.py."""
+    from document_layers_checks import run_check
+    return run_check("D")
+
+
+def check_404_layer_record_printed_and_in_run_summary():
+    """D-666 (issue #280) E: the bound _load_corpus prints every document's layer record and
+    write_deliverables_run_summary writes it, in English and Turkish. Runs
+    scripts/document_layers_checks.py."""
+    from document_layers_checks import run_check
+    return run_check("E")
+
+
 def check_335_the_producers_training_pass_and_its_test():
     """D-S57 item 3: the producer's candidate for checkpoint 168 is trained on the replay route in
     168's own recipe and encoding (prompt masked, one end-of-turn token in the answer), then tested
@@ -26508,6 +26648,731 @@ def check_387_an_answer_is_never_dropped_for_its_form():
         sys.path.insert(0, tools)
     from answer_form_checks import check
     return check()
+
+
+def check_395_the_filesystem_listing_launch_lists_names_and_sizes_only():
+    """D-705, standing order 99: tools/loop/fs_listing.py, a listing-only loop launch of the persistent file
+    system: the budget guard's decision under the ledger lock, its own cap (default 1, at most the per-step
+    pre-approval of config/loop_spend_limits.json, 5 USD since D-708), the
+    launch_intent line with a short deadline before the launch request, then launch and termination with
+    cost, the cheapest single-GPU type in us-east-1 with the file system attached, and over ssh only the
+    pinned df, du and find command set with validated name patterns. Runs tools/loop/fs_listing_checks.py on
+    a fake provider and a fake ssh (no network): each proof neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from fs_listing_checks import check
+    return check()
+
+
+def check_405_pdf_annotations_and_lost_layers_are_recorded():
+    """#280 PDF part, #281 gaps 1 and 13 (D-666, D-667): scripts/pdf_layers.py reads each page's
+    annotations (a note, free text, a highlight, a strike-out) with author, note and date, counts
+    neither a pop-up nor a link, records the words under a highlight as lost, records a scan with no
+    text layer, a page with none, a missing pypdf and the structure (never recovered from a PDF) as
+    lost layers (scripts/document_layers.py). On a stand-in for pypdf's reader, plus a PDF file built
+    by hand read with the real pypdf, SKIPPED with its reason when pypdf is absent. Runs
+    scripts/reader_layers_checks.py: each neutralised, failed, restored and passed."""
+    from reader_layers_checks import check_405
+    return check_405()
+
+
+def check_406_html_changes_headings_and_tables_are_read():
+    """#280 HTML part, #281 gap 1: scripts/html_layers.py reads HTML with the standard library's
+    parser; insertions and deletions (<ins>, <del> and the track-change classes declared in
+    config/document_reader.json) are told apart from the main text, accepted, each with its author and
+    date; headings become `#` lines and tables `|` rows, so pairing_map.split_units gives one unit per
+    heading; no heading and no table records the structure as not recovered; a nested table is
+    flattened and counted lost. Runs scripts/reader_layers_checks.py: neutralise, fail, restore, pass."""
+    from reader_layers_checks import check_406
+    return check_406()
+
+
+def check_407_a_file_not_valid_utf8_is_warned():
+    """#281 gap 12: a text or HTML file read as UTF-8 whose replaced characters pass the share
+    declared in config/document_reader.json (never in code) gets a WARN line and its encoding layer
+    lost; a clean file gets neither, a higher declared share silences it, and with no share declared
+    the record says the encoding was not checked. Runs scripts/reader_layers_checks.py: neutralise,
+    fail, restore, pass."""
+    from reader_layers_checks import check_407
+    return check_407()
+
+
+def check_408_an_empty_input_is_recorded_in_the_run_and_report():
+    """#281 gap 13: pipeline._load_corpus notes every file in scripts/reader_report.py; a file with
+    no text (a scan, a missing library, a blank file) is an EMPTY INPUT with its reason: a WARN line,
+    a row of audit/reader_layers.json and a section of _run_summary.md (English and Turkish), never
+    an empty review that looks normal; every read document's layer record is listed there too. Real
+    loader and run summary on a fixture folder, no model. Runs scripts/reader_layers_checks.py:
+    neutralise, fail, restore, pass."""
+    from reader_layers_checks import check_408
+    return check_408()
+
+
+def check_415_redaction_listed_strings_verified_absent():
+    """#281 gap 9 (D-666, D-667): the post-apply grep gate also checks the strings an
+    operator redaction rule lists in quotation marks, whatever was detected or proposed.
+    Runs scripts/redaction_audit_checks.py on the real redaction stage with an authored
+    REDACTOR reply and the ensemble held (no model): a listed string left in a shipped file
+    BLOCKS on the NONE path, after other spans were applied and for a held document; one
+    marked passes; the record names the rule and the place, never the string. Each proof
+    neutralised, failed, restored and passed. Numbered 415: 415 to 419 reserved for
+    lane audit-redaction-neg."""
+    from redaction_audit_checks import check_415
+    return check_415()
+
+
+def check_416_redaction_cannot_detect_line():
+    """#281 gap 9: an operator rule that lists no string and authorises no shape detector
+    gets a 'cannot detect' line in the run, on the bus and in every document's redaction
+    report; a rule with either does not. Runs scripts/redaction_audit_checks.py."""
+    from redaction_audit_checks import check_416
+    return check_416()
+
+
+def check_417_redaction_intent_unknown_warning():
+    """#281 gap 10: a convention no phrasing pattern takes as redaction intent while the
+    five-voter ensemble cannot run is an 'intent unknown' warning in the run, on the bus
+    and in every document's redaction report, never a silent no; a ran ensemble's no is a
+    decision. Runs scripts/redaction_audit_checks.py."""
+    from redaction_audit_checks import check_417
+    return check_417()
+
+
+def check_410_a_numbers_marks_are_decided_or_refused():
+    """READING-A (issue #281 gap 3, D-667): a number's point and comma are read by its own form,
+    then by the numbers of the same text, then by config/number_reading.json; one run of digits
+    and marks is one number; a number none of them decides is refused (ambiguous_separator)
+    into the pairing map's relation_refusals at its unit, and a column with a refused cell
+    keeps no figure. Runs scripts/reading_checks.py."""
+    from reading_checks import run_check
+    return run_check(410)
+
+
+def check_411_a_non_iso_date_on_a_label_line_is_on_the_record():
+    """READING-A (issue #281 gap 2): a label line writing a date in a form other than ISO is
+    listed as date_form_not_read on every unit a duration rule is checked on. Runs
+    scripts/reading_checks.py."""
+    from reading_checks import run_check
+    return run_check(411)
+
+
+def check_412_a_rule_band_is_read_only_from_two_figures():
+    """READING-A (issue #281 gap 15): a band read from a rule's own prose is taken only from
+    exactly two figures in one measure; more figures, figures in another role or a refused
+    number refuse it into relation_refusals and no band comparison is made. Runs
+    scripts/reading_checks.py."""
+    from reading_checks import run_check
+    return run_check(412)
+
+
+def check_413_a_date_window_says_its_order_was_not_checked():
+    """READING-A (issue #281 gap 16): a computed date window carries order_checked false and a
+    date_order_not_checked row, and docs/INPUT_FORMAT.md states the limit. Runs
+    scripts/reading_checks.py."""
+    from reading_checks import run_check
+    return run_check(413)
+
+
+def check_414_reviewed_document_shows_what_python_did_not_read():
+    """READING-A and HONEST-OUTPUT-A: reviewed_document.md shows each figure, date and rule band
+    Python did not read or check at its unit (a band at no part), with a header count, in
+    English and in tr, and renders as before when there is none. Runs
+    scripts/reading_checks.py."""
+    from reading_checks import run_check
+    return run_check(414)
+
+
+def check_445_the_launch_time_split_attributes_every_billed_second():
+    """Speed plan v1 (docs/loop/stages/SPEED_PLAN_V1.md): tools/launch_time_split.py reads a collected
+    session's saved records only and attributes its billed seconds to provider boot, setup, the phases
+    between entries, the workloads, the tail, the controller's gaps and the termination wait, each workload
+    to time outside the pipeline, model loads, generation and the rest, and each agent's calls, seconds,
+    tokens and prompt characters; it prints no identifier or text and never compares or sums two machine
+    types (FACTORS-A). Runs tools/launch_time_split_checks.py on an invented session: each proof
+    neutralised, failed, restored and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from launch_time_split_checks import check
+    return check()
+
+
+def check_450_the_negotiation_advisors_python_step_and_one_entry_per_proposal():
+    """Lane neg-round1 (standing order 102, D-707): the negotiation advisor system's Python step
+    (tools/score_neg_advisor.py system_python) sets what the item's positions on record decide by the plan's
+    own rules, never the key and nothing from a quote's words: not_stated where no persona position applies
+    (a model's not_stated refused where one does), dropped and the structural state where binding is
+    impossible, an alignment party with no applicable position taken off; the model's answer kept beside
+    each. Python's pieces are never audited, checked or counted as advice; the report applies the step to the
+    system arm alone and splits M1 into its structural and meaning parts (M1s, M1m, diagnostics). The advice
+    schema holds one entry per proposal in order with its own id and at most 8 reasons, through the grammar's
+    new tuple and max_items nodes (scripts/schema_decoding.py). Runs tools/neg_advisor_round1_checks.py on
+    the invented fixture: each proof neutralised, failed, restored and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_advisor_round1_checks import check
+    return check()
+
+
+def _neg_advisor_d711_checks():
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import neg_advisor_d711_checks
+    return neg_advisor_d711_checks
+
+
+def check_466_the_negotiation_advisor_never_invents_and_reads_both_record_kinds():
+    """D-711 (Seckin 20:40): an advice entry may say `basis: inferred` only with a line of five words or more
+    found in the item's text, else the system's Python step refuses it; an inferred claim on a proposal or a
+    party with no position on record is set aside, visible and never scored, the answer not_stated; an
+    on-record claim with no position is counted; on_record and inferred are counted apart; the scoring reader
+    reads the basis by its form. A build declares record_kind (complete, missing_notes) and a masked party only
+    on a missing_notes item; every bar figure is reported per kind; a bar reading is refused for a set without
+    both kinds or with an item of undeclared kind. Runs the basis group of tools/neg_advisor_d711_checks.py:
+    each proof neutralised, failed, restored and passed."""
+    return _neg_advisor_d711_checks().check_basis_and_kinds()
+
+
+def check_467_the_negotiation_bar_floors_the_class_that_matters():
+    """D-712 (Seckin 20:49): the class floors of NEG_BAR.md, each at 0.60 (conflict F1 under M1 and M1m,
+    movable F1 under M10, the hit rate in each fate under M4), are reported from the rows, and a bar line
+    whose figures pass but whose floor is missed is not met. Runs the floor group of
+    tools/neg_advisor_d711_checks.py: each proof neutralised, failed, restored and passed."""
+    return _neg_advisor_d711_checks().check_class_floors()
+
+
+def check_468_the_negotiation_advisors_reasoning_methods_are_declared_and_checked():
+    """D-713 (Seckin 20:51): `method` is declared on the system's advice group alone (none: plain; B1 always
+    plain). reason_first writes a rationale before the labels, which both readers keep apart and no figure
+    reads; stepwise asks its chain (what the proposal changes, each touched position's stance, a red line,
+    an open point, wording) through an injected ask, each answer checked by Python before the next, and
+    composes conflict, stance and alignment by the plan's rules. Runs the method group of
+    tools/neg_advisor_d711_checks.py with a fake generate: each proof neutralised, failed, restored and
+    passed."""
+    return _neg_advisor_d711_checks().check_methods()
+
+
+def _table_authority_checks():
+    import table_authority_checks
+    return table_authority_checks
+
+
+def check_480_an_unsettled_table_verdict_is_kept_as_a_leaning():
+    """TABLE-AUTHORITY-A rule 2 (D-642 (b), D-646, D-670): on a rule declaring [compare: cells], an unsettled
+    decision whose only reason is the measured threshold and whose top answer is "holds" or "not met" is kept
+    on the pairing map row as a leaning with the model's own probability; a tie, no threshold and "cannot be
+    settled" on top never lean; the decision's own fields are never changed and no record is written; the
+    leaning reaches the real phase 5.5 pairing map. Runs scripts/table_authority_checks.py group 480: each
+    proof neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(480)
+
+
+def check_481_python_figure_sub_steps_only_lower_a_table_verdict():
+    """TABLE-AUTHORITY-A rule 3 (D-642 (b): where arithmetic can decide, it outranks the model): a claim
+    figure is found in a shown cell, or is one difference or ratio of two figures of one shown row or column
+    within the cells' own rounding; an unverified figure lowers a settled "holds" to a leaning, never a "not
+    met", never raises and never writes a record. Runs scripts/table_authority_checks.py group 481: each
+    proof neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(481)
+
+
+def check_482_detection_dev_scores_leanings_with_the_figure_without_them_beside():
+    """D-646 with D-670 (TABLE-AUTHORITY-A rule 5): under detection_dev, through the SciTab adapter's own
+    labeller on a run folder, a leaning gives its unit holds or violates, the row is marked low_confidence and
+    carries the class without leanings beside it; a row with no leaning field scores as before; the counts and
+    tools/score_corpus.py's item rows carry both; the D-670 no-contradiction guard holds. Runs
+    scripts/table_authority_checks.py group 482: each proof neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(482)
+
+
+def check_483_a_table_verdict_cites_cells_python_finds():
+    """D-642 (d), cell-grounded verdicts (TABLE-AUTHORITY-A with TABLE-TOOL-A): when the table tool request
+    ran, the cells the judge cited are recorded by id on the row; a cited cell the table does not hold, or no
+    cell cited, lowers the verdict ("holds" or "not met") to a leaning and a lowered "not met" writes no record;
+    with no request, as shipped, nothing changes. Runs scripts/table_authority_checks.py group 483: each proof
+    neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(483)
+
+
+def check_484_not_enough_info_development_data_waits_for_the_leakage_check():
+    """D-642 (c): tools/scitab_nei_dev.py converts SEM-TAB-FACTS dev and test ground truth only (a training
+    file refused) into SciTab-shaped claim records, entailed, refuted and unknown mapped to supports, refutes
+    and not enough info, cell positions kept through spans, and writes no item without role B's leakage result
+    showing zero hits for its part with the cosine rule applied (LEAKAGE_PROTOCOL). Fixtures only. Runs
+    scripts/table_authority_checks.py group 484: each proof neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(484)
+def _neg_structure_checks():
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import neg_structure_checks
+    return neg_structure_checks
+
+
+def _d715_check(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from d715_checks import run_check
+    return run_check(number)
+
+
+def check_507_the_negotiation_bar_passes_in_each_party_structure():
+    """D-715 item 1 (Seckin 22:31): the negotiation bar is met only when every party structure the set holds
+    meets every NEG_BAR.md line and class floor, and overall does too, beside both record kinds; a failing or
+    missing structure is named. Runs group 507 of tools/d715_checks.py: each proof neutralised, failed,
+    restored and passed."""
+    return _d715_check(507)
+
+
+def check_508_a_set_holds_enough_items_of_each_party_structure():
+    """D-715 item 1: a bar reading needs MIN_ITEMS_PER_STRUCTURE headline items (declared once in
+    tools/score_neg_advisor.py, equal to MIN_CELL, under which a cell gives no figure) of each structure the set
+    holds, else it is refused, on the scorer's report as on the reading. Runs group 508 of
+    tools/d715_checks.py: each proof neutralised, failed, restored and passed."""
+    return _d715_check(508)
+
+
+def check_509_the_cells_a_judge_names_are_recorded_and_move_no_score():
+    """D-715 item 2: every cell id the table judge names is recorded beside its decision (the cell claim's
+    request lines, run or refused; with no request an empty record, the choice writing no text; the
+    document-review methods' rationale and evidence step, refused or not), and the questions asked, the
+    decisions and the detection_dev labels are byte for byte the same without the record. Runs group 509 of
+    tools/d715_checks.py: each proof neutralised, failed, restored and passed."""
+    return _d715_check(509)
+
+
+def check_490_negotiation_items_are_tagged_by_party_structure():
+    """Seckin 16 November 2026 20:32: each negotiation item's party structure (two_singles, teams,
+    one_vs_coalition, three_or_more) is computed from its declared parties alone, never read from words; a
+    declared structure or a key naming another is refused; every bar figure and class floor is reported per
+    structure and overall; a bar reading is refused for a set holding one structure only. Runs the structure
+    group of tools/neg_structure_checks.py: each proof neutralised, failed, restored and passed."""
+    return _neg_structure_checks().check_structure()
+
+
+def check_491_the_negotiation_advisor_reads_three_party_moves():
+    """D-668 gap 4: every other party's movement toward or away from the persona over the rounds on record is
+    computed from the declared stances and rounds, in the key and, from the stances it checked, in the step-wise chain; the
+    report gives per arm and structure the share of parties moving toward (and away) the arm approached,
+    indicator only. Runs the movement group of tools/neg_structure_checks.py: each proof neutralised, failed,
+    restored and passed."""
+    return _neg_structure_checks().check_movement()
+
+
+def check_492_the_negotiation_advisor_reads_coalition_personas():
+    """D-668 gap 6: a coalition declares its members; a member's position on behalf of its coalition is the
+    coalition's, its speaker kept and shown; wrong declarations are refused; every report cell is given by
+    persona kind. Runs the coalition group of tools/neg_structure_checks.py: each proof neutralised, failed,
+    restored and passed."""
+    return _neg_structure_checks().check_coalitions()
+
+
+def check_493_negotiation_red_lines_carry_their_source():
+    """D-664 item 2: every red line is stored with its source (for now only "from the document") in the
+    advisor's item and in the key; another source is refused; the checker's sheet leaves the sources out with
+    the red lines. Runs the red-line group of tools/neg_structure_checks.py: each proof neutralised, failed,
+    restored and passed."""
+    return _neg_structure_checks().check_red_line_sources()
+
+
+def check_494_the_negotiation_advisor_takes_in_the_document_layers():
+    """D-666 item 2: the document reader's layers (.docx insertions, deletions and anchored comments, PDF
+    annotations, HTML changes) become the build's layer entries, each a citable LAY passage shown under its
+    article with its kind, author and anchor; the layers the reader could not read are named in the prompt;
+    an item without layers renders as before. Runs the layer group of tools/neg_structure_checks.py: each proof
+    neutralised, failed, restored and passed."""
+    return _neg_structure_checks().check_layers()
+
+
+def _backup_coverage_checks():
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    import backup_coverage_checks
+    return backup_coverage_checks
+
+
+def check_430_backup_coverage_names_every_uncovered_part():
+    """D-702 item 4, D-704 item 3, standing orders 98 and 101: tools/loop/backup_coverage.py reports every part
+    of docs/loop/private, output/ and external/ (and each external/s05 folder) as COVERED, STALE or NOT
+    COVERED by the private git backup (path and blob id against the records/private tree) and by verified,
+    present Drive archives of the logged size; links are recorded and never followed; credential names and
+    held-back files are excluded, never gaps; an irreplaceable gap exits 1. Runs the coverage group of
+    tools/loop/backup_coverage_checks.py on a temporary checkout, a fake bare repository and a fake Drive
+    folder: each proof neutralised, failed, restored and passed."""
+    return _backup_coverage_checks().check_coverage()
+
+
+def check_431_drive_archive_is_verified_and_deletes_nothing():
+    """Standing order 98: tools/loop/drive_archive.py writes one tar.gz per part hashed while written and again
+    from Drive, with a per-member manifest, leaves out links, credential names and key-bearing files, stops
+    before the Drive floor, and reports (never applies) the keep-last-N policy. Fixtures only; each proof
+    neutralised, failed, restored and passed."""
+    return _backup_coverage_checks().check_archive()
+
+
+def check_432_restore_drill_restores_both_backups_and_compares_hashes():
+    """D-702 item 4: tools/loop/restore_drill.py restores a small covered part from each backup into a new
+    folder outside the main checkout and compares every file's SHA-256 with the live copy; a changed file
+    fails the drill; a drill folder inside the checkout is refused; nothing is deleted. Fixtures only; each
+    proof neutralised, failed, restored and passed."""
+    return _backup_coverage_checks().check_drill()
+
+
+def check_470_drive_only_roots_are_covered_by_drive_archives_only():
+    """Operator, 16 November 2026 20:41 (standing orders 98 and 101): the role exchange folders and the
+    negotiation sets, declared in config/backup_extra_roots.json under the roles root outside the repository,
+    are reported part by part as COVERED, STALE or NOT COVERED by verified Drive archives only; the git
+    snapshot is never counted for them and a snapshot holding a roles/ path is a fault; backup_records refuses
+    such a snapshot before storing anything; declared role folders and answer_key names are never opened and
+    are recorded as excluded; the report carries counts only for these parts. Runs the roles group of
+    tools/loop/backup_coverage_checks.py on fixtures: each proof neutralised, failed, restored and passed."""
+    return _backup_coverage_checks().check_roles()
+
+
+def check_471_drive_archive_of_a_drive_only_part_logs_counts_only():
+    """Operator, 16 November 2026 20:41: tools/loop/drive_archive.py archives a drive-only part (roles/...)
+    verified by size and hash, with counts, sizes and hashes only in the log and printed line, never opens or
+    archives a declared name, and refuses a Drive folder inside the main checkout or the git backup. Fixtures
+    only; each proof neutralised, failed, restored and passed."""
+    return _backup_coverage_checks().check_roles_archive()
+
+
+def _seal_parallel(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from seal_parallel_checks import run_check
+    return run_check(number)
+
+
+def check_460_foreign_loop_records_do_not_refuse_a_seal_admission():
+    """Standing order 99 (ROUTE-S-A): several Lambda launches at once. Lines of other instances' guarded loop
+    launches written to the budget ledger or R's ledger after a seal job's read copy (intent, launch, termination,
+    the reaper's termination, a launch still open with its deadline, a record that began before the copy) do not
+    refuse the admission (seal_route_driver.admission_stale_reason); the 16 November evening case, two fs-listing
+    launches during a seal job, admits every bundle end to end through admit(). Runs tools/seal_parallel_checks.py:
+    neutralised (every foreign line refused, as before), failed, restored, passed."""
+    return _seal_parallel(460)
+
+
+def check_461_a_malformed_or_out_of_order_foreign_line_refuses():
+    """Standing order 99: a foreign ledger line after the read copy that a guarded loop launch does not write, or
+    writes out of its record's order, refuses (loop_record_reason): another kind, a field outside IV.3, a launch
+    with no intent, a second intent, a launch after its termination or with another deadline, price or cap than its
+    intent, an intent with no price or deadline, a termination of no recorded launch or of another id, a hand copy,
+    a line that is not a JSON object; in R's ledger too; admit() stages nothing. Runs tools/seal_parallel_checks.py:
+    each neutralised, failed, restored, passed."""
+    return _seal_parallel(461)
+
+
+def check_462_a_budget_the_current_ledgers_no_longer_carry_refuses():
+    """Standing order 99: with any foreign line, each returned bundle is admitted only when the guard's decision on
+    the current ledgers, with its own sealed figures and its request's storage forecast (named once, in full),
+    still gives at least its sealed hard cap (seal_route_driver.budget_reason); a guard refusal or a lower cap
+    refuses and admits nothing. Runs tools/seal_parallel_checks.py: each neutralised, failed, restored, passed."""
+    return _seal_parallel(462)
+
+
+def check_463_the_seal_job_s_own_lines_still_verify():
+    """Standing order 99: the seal job's own lines (by its instance name or id, as the controller, the reaper or the
+    admission fixture write them) are admitted alone and among foreign lines, never counted as foreign, and alone
+    need no budget recheck, as before. Runs tools/seal_parallel_checks.py: each neutralised, failed, restored,
+    passed."""
+    return _seal_parallel(463)
+
+
+def check_464_a_removed_or_rewritten_earlier_line_refuses():
+    """Standing order 99 keeps ROUTE-S-A's prefix rule: a budget ledger, R's ledger or spend store that no longer
+    begins with its read copy (a line removed, rewritten, moved or cut) refuses, whatever is appended after it.
+    Runs tools/seal_parallel_checks.py: neutralised, failed, restored, passed."""
+    return _seal_parallel(464)
+def check_465_the_spend_limits_come_from_one_declared_file():
+    """D-708 (SPEND-LIMITS-A, PARALLEL-LAMBDA-A): the per-step pre-approval (5 USD) and the remaining-spend
+    limit (140 USD from the 197 USD baseline) are read by tools/loop_budget_guard.py from
+    config/loop_spend_limits.json at call time: a 5.00 USD step admitted with no question, a 5.01 USD one
+    refused unless the operator's approval names its decision, a forecast past the remaining limit refused
+    where the hard stop alone would admit it, and tools/loop/fs_listing.py's cap following the same figure.
+    Runs tools/loop/spend_limits_checks.py on a temporary ledger and limit files (no network): each proof
+    neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from spend_limits_checks import check
+    return check()
+
+def _loop_path():
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+
+
+def check_500_step_cost_prices_come_from_the_inventory():
+    """#298 (D-676 item 5, D-628 A): tools/loop/step_cost.py reads the hourly price of the named type from the
+    provider inventory the launch flow writes and the storage price from the file system storage record, never a
+    typed figure: a step file with a price, rate, cost or USD key at any depth is refused, an unlisted or unpriced
+    type is refused, and with no inventory named the newest by its own observed_at is taken. Runs
+    tools/loop/step_cost_checks.py group 500 on fixtures (no network): each proof neutralised, failed, restored
+    and passed."""
+    _loop_path()
+    from step_cost_checks import check
+    return check(500)
+
+
+def check_501_step_cost_gives_two_figures_and_names_the_measures():
+    """#298 (D-676 item 5, D-628 A, the 16 November audit row 6): tools/loop/step_cost.py gives every costly
+    step two figures, the guard's IV.3 forecast plus storage without and with its declared saving measures
+    (asset copy, image layers, warm file system, batching, smaller set), and names each measure with what it
+    changes and its source; a measure unknown, listed twice, without a source or keeping more than planned is
+    refused. Runs tools/loop/step_cost_checks.py group 501 on fixtures: each proof neutralised, failed,
+    restored and passed."""
+    _loop_path()
+    from step_cost_checks import check
+    return check(501)
+
+
+def check_502_the_local_profile_refuses_the_web_on_lambda():
+    """D-694 item 3, NO-WEB-LOCAL-A: the product's no-internet rule is apart from where work runs. Runs
+    scripts/where_work_runs_checks.py group 502: SearchRouter.search, with check 316's network stand-ins,
+    as a run on a rented Lambda instance sees itself (Linux, the loop host name, the file system run root,
+    the runner's variables): every local profile value refuses both callers with no non-local connection,
+    the cloud profile there tries every engine (positive control), and the profile and the web rule read the
+    same on the laptop and on Lambda. Neutralised (opened on Lambda; closed everywhere; the profile read
+    from where it runs), failed, restored, passed."""
+    from where_work_runs_checks import check
+    return check(502)
+
+
+def check_503_sealed_lambda_runs_are_local_profile_runs():
+    """D-694 item 3: every tracked sealed Lambda bundle's manifest (docs/fix/ordinary_final_cloud_run*) seals
+    SHIMMER_BACKEND_PROFILE=local, and under each one's environment on a Lambda machine search() refuses. Runs
+    scripts/where_work_runs_checks.py group 503; neutralised by a planted copy sealed with cloud, failed,
+    restored, passed."""
+    from where_work_runs_checks import check
+    return check(503)
+
+
+def check_504_the_working_store_plan_is_a_dry_run_that_keeps_private_data_local():
+    """Standing order 99: tools/loop/working_store.py plans the move of the laptop's working data to the
+    persistent Lambda file system as a dry run only: answer keys (by name, never opened), held-out items and
+    credential-like names never reach an upload list or command, an asset archive the store holds is not sent,
+    the move and each repeatedly read part get two figures from the step cost estimator, and nothing starts a
+    process, opens a connection or offers an execute switch. Runs tools/loop/working_store_checks.py on a
+    temporary main checkout: each proof neutralised, failed, restored and passed."""
+    _loop_path()
+    from working_store_checks import check
+    return check()
+
+
+def _neg_synth_group(group):
+    """Checks 455 to 459 (standing order 102, D-707): one group of tools/neg_synth_checks.py, each proof
+    neutralise, fail, restore, pass on invented cards and replies; no model, no item, nothing written to the
+    repository."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_synth_checks import check
+    return check(group)
+
+
+def check_455_the_synthetic_sampler_is_seeded_and_deterministic():
+    """tools/neg_synth.py: one seed gives one card, key and brief byte for byte, whatever the global random
+    state; another seed another; the split's seed ranges never overlap (D-707)."""
+    return _neg_synth_group("455")
+
+
+def check_456_the_synthetic_brief_holds_no_key():
+    """The generator's brief is made from the card's structure alone: the same for any hidden draw (persona,
+    fates, stances, red lines, firm variants, trades), no seed, digest, id or label word, and no 8-word run of
+    Shimmer's advisor prompts; role V's labelling sheet holds no stance, target article or wording, red-line
+    mark or round k+1 (D-706, D-707)."""
+    return _neg_synth_group("456")
+
+
+def check_457_the_synthetic_validator_rejects_a_mismatch():
+    """The validator rejects a reply whose form or texts break the card, and a build whose scorer key
+    (score_neg_advisor.build_item) differs from the card's declared key; it accepts a well-formed one. Role V's
+    labels drop an item they do not match, counted with their kappa."""
+    return _neg_synth_group("457")
+
+
+def check_458_synthetic_provenance_is_written():
+    """PROVENANCE.jsonl: one row per item with every declared field and digests equal to the files' own; a
+    missing field, a second row, a dated snapshot id or a family of the system under test is refused."""
+    return _neg_synth_group("458")
+
+
+def check_459_synthetic_screens_split_and_final_guard():
+    """The cue-only check flags a planted cue and not its absence under its declared baseline; deduplication
+    counts the exact, 8-word-run, 5-gram Jaccard and cosine rules and keeps one of a pair; the split refuses a
+    final-test purpose, overlapping ranges and fewer than two pilots; the final test refuses a synthetic file."""
+    return _neg_synth_group("459")
+
+
+def check_472_synthetic_sets_hold_both_record_kinds():
+    """D-711: complete-record and missing-notes synthetic items alternate with the seed; a missing party is never
+    the persona, has no statement and is not_stated on every article; each build records its kind, and the
+    scorer refuses a synthetic build without a declared kind; a set lacking either kind is refused; `select`
+    keeps the first target items in seed order past the dropped; a generator reply is read by its form only."""
+    return _neg_synth_group("466")
+
+
+def check_473_role_v_labeller_runner_labels_from_sheets_only():
+    """Role V's runner (tools/neg_synth_label.py): the OLMo labeller declared in config and resolved live (first
+    candidate open, not gated, of the declared terms; a Qwen, Phi, Claude, GPT, other-family or dated id refused);
+    it reads label sheets only, refuses a sheet carrying an answer, its prompts are the same whatever the hidden
+    answers; a wrong or unreadable answer drops its item, counted by reason. A fake generate; nothing downloaded."""
+    return _neg_synth_group("467")
+
+
+def check_474_the_scorer_reports_synthetic_items_apart():
+    """D-706 item 3, D-707: tools/score_neg_advisor.py reads real items alone as the headline (figures, cells,
+    claims, the bar and the power record) and reports synthetic items apart under `synthetic`, its claims
+    indicators and its bar never the bar; cells by record kind (D-711)."""
+    return _neg_synth_group("468")
+def _lane_d652_checks():
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import lane_d652_checks
+    return lane_d652_checks
+
+
+def check_485_contradoc_ok_effect_reads_saved_answers_as_infra_055_keeps_them():
+    """D-652 item 1 (INFRA-055's effect on ContraDoc, from saved material only): tools/contradoc_ok_effect.py classes
+    each saved contradiction answer as today's paired_review.judged_item_refusal does (an ok answer naming no second
+    unit kept, a missing verdict refused), counts a document as able to turn CLEAR under ContraDoc's `each` reading
+    only when every unit holds an ok answer and none an irregular one, and gives exact (Clopper-Pearson) intervals.
+    Runs the ok-effect group of tools/lane_d652_checks.py on fixture run folders: each proof neutralised, failed,
+    restored and passed."""
+    return _lane_d652_checks().check_ok_effect()
+
+
+def check_486_the_negotiation_judge_is_calibrated_out_of_fold_on_development_items_only():
+    """D-656 item 1: tools/neg_judge_calibration.py fits one log-probability offset per grade on the judge's choice
+    decisions against the checker's grades, judged leaving one item out against score_neg_advisor's kappa floor
+    (0.60), refuses any pilot item, and reads too few entries as too_few_entries. Runs the calibration group of
+    tools/lane_d652_checks.py on invented decisions: each proof neutralised, failed, restored and passed."""
+    return _lane_d652_checks().check_judge_calibration()
+
+
+def check_487_the_output_side_read_counts_drops_and_choice_decisions_by_group():
+    """D-663 (b), D-672: tools/output_side_read.py reads the output side's before and after passes by group, the
+    auditor's drops under system_audit, the bar met only with no form drop but not_asked, and a choice decision's
+    top answer counted as the model's own top token only when it was. Runs the output-side group of
+    tools/lane_d652_checks.py on fixture answers and a fixture pass: each proof neutralised, failed, restored and
+    passed."""
+    return _lane_d652_checks().check_output_side()
+
+
+def check_488_the_gpu_release_read_finds_the_handback_and_entries_short_of_their_end():
+    """D-694 item 1 (#297): tools/gpu_release_read.py reads the vLLM server's hand-back by vllm_link.YIELD_EVENT, the
+    loads after it, the card's peak memory, and fails its bar for an entry that did not reach its end. Runs the
+    GPU-release group of tools/lane_d652_checks.py on fixture telemetry: each proof neutralised, failed, restored
+    and passed."""
+    return _lane_d652_checks().check_gpu_release()
+def _reasoning_methods_group(number):
+    """Checks 466 and 467 (D-713, document review half): one group of tools/reasoning_methods_checks.py,
+    the two reasoning methods of benchmark/baselines/reasoning_methods.py run through doc_judge.run on a fake
+    backend and fixture workloads in a temporary folder; each proof neutralise, fail, restore, pass. No model,
+    no key, nothing written to the repository."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from reasoning_methods_checks import run_group
+    return run_group(number)
+
+
+def check_475_reason_first_keeps_the_rationale_apart_from_the_label():
+    """reason_first: the rationale is one fixed field Python cuts from its own reply and shows to a second
+    call, the label is decided over the form's own answers, an empty rationale never refuses, every call is
+    one reply record with the runner's one-per-prompt count kept, the direct group is the shipped form byte
+    for byte, and a config naming an undeclared method or a template with other slots is refused."""
+    return _reasoning_methods_group("475")
+
+
+def check_476_stepwise_checks_each_step_before_the_next():
+    """stepwise: a cell id must be one Python listed and at most max_cells, a quote must be found in its own
+    passage and be its content, a tied comparison stops the chain, a refused step's record carries no decision,
+    the label step shows Python's rendering of the checked steps, and the dropped-answer count and D-713's
+    adoption rule read as declared."""
+    return _reasoning_methods_group("476")
+def check_495_unicode_heading_ids_and_their_migration():
+    """D-668 (gap 11): a heading in any script gets a stable ASCII id through the one tokeniser
+    (pairing_map.words, _slug: Punycode for a script with no ASCII form, marks taken off a Latin
+    letter), the same composed or decomposed; an ASCII heading's id is byte for byte the legacy
+    one on every corpus document, and pairing_map.unit_id_migration lists every id that moves;
+    version_changes tells two versions in another script apart by heading. Runs
+    scripts/reader_gaps_checks.py: each neutralised, failed, restored and passed."""
+    from reader_gaps_checks import check_495
+    return check_495()
+
+
+def check_496_one_tokeniser_reads_every_script():
+    """D-668 (gap 11): pairing_map.words is the one split behind _norm_label, _slug, passage_pairs,
+    reference_tables and relation_checks; a combining mark joins its letter and text in normal
+    form C and D reads alike. Runs scripts/reader_gaps_checks.py: neutralise, fail, restore, pass."""
+    from reader_gaps_checks import check_496
+    return check_496()
+
+
+def check_497_pdf_layout_is_recovered_or_recorded_lost():
+    """D-668, READER-LAYERS-A: a two-column PDF built in the check is read column by column from
+    where its text is drawn (scripts/pdf_layout.py), its running header and footer set apart, its
+    table written as | rows and its headings as # lines; a table that does not line up and text at
+    an angle are recorded lost, and with no pdf_layout settings declared the structure is. On a
+    stand-in for pypdf's reader, plus the built file read with the real pypdf, SKIPPED with its
+    reason when pypdf is absent. Runs scripts/reader_gaps_checks.py: neutralise, fail, restore, pass."""
+    from reader_gaps_checks import check_497
+    return check_497()
+
+
+def check_498_sentences_end_by_form_in_any_script():
+    """D-668, READING-A: scripts/sentence_split.py ends a sentence by form (a wide stop at once, a
+    full stop, question or exclamation mark or danda of any script before a letter that is not
+    lowercase), in six scripts, and every ASCII corpus line ends exactly where the old pattern
+    ended it. Runs scripts/reader_gaps_checks.py: neutralise, fail, restore, pass."""
+    from reader_gaps_checks import check_498
+    return check_498()
+
+
+def check_499_text_that_cannot_be_split_is_refused_on_the_record():
+    """D-668, READING-A: a stretch of more than sentence_split.LONGEST characters with no sentence
+    end Python can decide is refused, never handed on as one sentence, and listed with its unit,
+    offsets, length and reason (no text) in the passage pairs row's not_split. Runs
+    scripts/reader_gaps_checks.py: neutralise, fail, restore, pass."""
+    from reader_gaps_checks import check_499
+    return check_499()
+
+
+def _image_region(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from image_region_checks import run_check
+    return run_check(number)
+
+
+def check_505_the_sealed_image_is_the_launch_regions():
+    """16 November 2026: three seal-route launches were refused at launch_instance as an opaque transport
+    failure, sealed with provider['images'][0], another region's id. The sealer (prepare_ordinary_final_run)
+    and the seal route (seal_route.write_request) seal the launch region's image through the one helper
+    region_image, on a fixture inventory whose first image is us-east-2's; a region with no image of that
+    family and version is refused. Runs tools/image_region_checks.py: neutralised (the first listed image
+    again), failed, restored, passed."""
+    return _image_region(505)
+
+
+def check_506_a_region_mismatch_never_reaches_the_provider():
+    """The controller refuses a sealed image of another region than the selected one before any lock, intent
+    line or launch call, though the live inventory lists that id; the provider adapter's transport refusal
+    names the HTTP status, digits only, never the body. Runs tools/image_region_checks.py: each neutralised,
+    failed, restored, passed."""
+    return _image_region(506)
 
 
 CHECKS = [
@@ -27010,6 +27875,178 @@ CHECKS = [
      check_386_the_private_backup_refuses_unsafe_pushes),
     ("387 No answer is dropped for its form alone: one form reading for every parser, drops counted by reason (D-663)",
      check_387_an_answer_is_never_dropped_for_its_form),
+    ("388 Table tool start-up refuses an unvetted, unapproved or unratified tool request (D-681 A)",
+     check_388_table_tool_startup_refuses_unvetted_tools),
+    ("389 The six table tools compute and refuse correctly on a fixture (D-681 B)",
+     check_389_table_tools_compute_and_refuse_on_a_fixture),
+    ("390 The table tool request is one round; lines above max_calls are refused (D-681 C)",
+     check_390_table_tool_request_is_one_round),
+    ("391 An unshown tool, an invalid id or a typed number is refused and recorded (D-681 D)",
+     check_391_table_tool_request_refuses_what_was_not_shown),
+    ("392 A table with no numbers is shown no arithmetic tool (D-681 E)",
+     check_392_table_tools_shown_by_structure_only),
+    ("393 One reply record per table tool request; tool rows equal its calls (D-681 F)",
+     check_393_table_tool_request_is_one_reply_record),
+    ("394 With no request_tools declared the question is the measured one and no request is made (D-681 G)",
+     check_394_table_tool_off_is_the_measured_run),
+    ("395 The file system listing launch is guarded, terminates on every path and runs only its pinned listing (D-705)",
+     check_395_the_filesystem_listing_launch_lists_names_and_sizes_only),
+    ("420 The audit's table tools compute percent change, sum, mean and rank on a fixture (D-694 4 A)",
+     check_420_audit_table_tools_compute_on_a_fixture),
+    ("421 figure_step finds every single step that gives a claim figure at its own rounding (D-694 4 B)",
+     check_421_figure_step_finds_single_steps_at_the_figures_rounding),
+    ("422 rounds_to rounds half up to the decimals the second figure writes (D-694 4 C)",
+     check_422_rounds_to_reads_the_written_decimals),
+    ("423 The audit's table tools refuse what they cannot compute; parser and grammar hold (D-694 4 D)",
+     check_423_audit_table_tools_refuse_and_the_grammar_holds),
+    ("424 The audit's table tools are vetted, approved, shown by structure and off as shipped (D-694 4 E)",
+     check_424_audit_table_tools_vetted_approved_and_off),
+    ("400 A .docx's tracked insertions and deletions are read apart with author and date (D-666 A)",
+     check_400_docx_tracked_changes_read_apart_with_author_and_date),
+    ("401 A .docx's comments with their anchors, footnotes and endnotes are read apart (D-666 B)",
+     check_401_docx_comments_footnotes_endnotes_read_apart),
+    ("402 A .docx's content controls, text boxes, nested tables and headers are counted when not read (D-667 C)",
+     check_402_docx_skipped_parts_counted_in_the_layer_record),
+    ("403 A sum over a column with merged cells is refused and recorded (D-667 D)",
+     check_403_sum_over_merged_cells_refused),
+    ("404 Every document's layer record is printed and written into the run summary (D-666 E)",
+     check_404_layer_record_printed_and_in_run_summary),
+    ("405 PDF annotations are read with author; a scan, a missing pypdf and the structure are recorded lost (#280, #281)",
+     check_405_pdf_annotations_and_lost_layers_are_recorded),
+    ("406 HTML insertions and deletions are told apart; headings and tables become units (#280, #281 gap 1)",
+     check_406_html_changes_headings_and_tables_are_read),
+    ("407 A file not valid UTF-8 is warned above the declared replacement share (#281 gap 12)",
+     check_407_a_file_not_valid_utf8_is_warned),
+    ("408 An empty input is recorded in the run and in the run summary (#281 gap 13)",
+     check_408_an_empty_input_is_recorded_in_the_run_and_report),
+    ("415 The redaction gate verifies an operator rule's listed strings absent after apply (#281 gap 9)",
+     check_415_redaction_listed_strings_verified_absent),
+    ("416 A redaction rule the post-apply check cannot look for is a 'cannot detect' line (#281 gap 9)",
+     check_416_redaction_cannot_detect_line),
+    ("417 Redaction intent the ensemble could not decide is an 'intent unknown' warning (#281 gap 10)",
+     check_417_redaction_intent_unknown_warning),
+    ("410 A number's point and comma are decided by its form, its text or the declaration, else refused (#281 gap 3)",
+     check_410_a_numbers_marks_are_decided_or_refused),
+    ("411 A date on a label line in a form other than ISO is on the record, never silent (#281 gap 2)",
+     check_411_a_non_iso_date_on_a_label_line_is_on_the_record),
+    ("412 A rule band is read only from exactly two figures in one measure, else refused (#281 gap 15)",
+     check_412_a_rule_band_is_read_only_from_two_figures),
+    ("413 A date window records that its order was not checked; the input guide states the limit (#281 gap 16)",
+     check_413_a_date_window_says_its_order_was_not_checked),
+    ("414 reviewed_document.md shows every figure, date and band Python did not read (#281, HONEST-OUTPUT-A)",
+     check_414_reviewed_document_shows_what_python_did_not_read),
+    ("445 The launch time split attributes every billed second and prints no identifier (speed plan v1)",
+     check_445_the_launch_time_split_attributes_every_billed_second),
+    ("430 Backup coverage names every part not held by the git or Drive backup (D-702, D-704)",
+     check_430_backup_coverage_names_every_uncovered_part),
+    ("431 Drive archives are hashed twice, leave out links and credentials, and delete nothing (order 98)",
+     check_431_drive_archive_is_verified_and_deletes_nothing),
+    ("432 The restore drill restores both backups outside the checkout and matches every hash (D-702)",
+     check_432_restore_drill_restores_both_backups_and_compares_hashes),
+    ("470 The role exchange folders and negotiation sets are covered by Drive archives only, never by git (order 98)",
+     check_470_drive_only_roots_are_covered_by_drive_archives_only),
+    ("471 A drive-only part's Drive archive logs counts, sizes and hashes only and opens no declared name (order 98)",
+     check_471_drive_archive_of_a_drive_only_part_logs_counts_only),
+    ("480 An unsettled table verdict below its threshold is kept as a leaning, never forced to abstain (TABLE-AUTHORITY-A)",
+     check_480_an_unsettled_table_verdict_is_kept_as_a_leaning),
+    ("481 Python's figure sub-steps on the shown cells only lower a table verdict, never raise or flip it (D-642 (b))",
+     check_481_python_figure_sub_steps_only_lower_a_table_verdict),
+    ("482 detection_dev scores leanings as low-confidence with the figure without them beside (D-646, D-670)",
+     check_482_detection_dev_scores_leanings_with_the_figure_without_them_beside),
+    ("483 A table verdict cites cells Python finds in the table, else it is lowered (D-642 (d))",
+     check_483_a_table_verdict_cites_cells_python_finds),
+    ("484 NOT ENOUGH INFO development data comes from SEM-TAB dev and test only and waits for the leakage check (D-642 (c))",
+     check_484_not_enough_info_development_data_waits_for_the_leakage_check),
+
+
+    ("460 Other instances' complete loop records after a seal job's read copy do not refuse its admission (order 99)",
+     check_460_foreign_loop_records_do_not_refuse_a_seal_admission),
+    ("461 A malformed, other-kind or out-of-order foreign ledger line refuses a seal admission (order 99)",
+     check_461_a_malformed_or_out_of_order_foreign_line_refuses),
+    ("462 A sealed cap the current ledgers no longer carry refuses a seal admission (order 99)",
+     check_462_a_budget_the_current_ledgers_no_longer_carry_refuses),
+    ("463 A seal job's own ledger lines still verify, alone with no budget recheck (order 99)",
+     check_463_the_seal_job_s_own_lines_still_verify),
+    ("464 A removed or rewritten earlier ledger line refuses a seal admission (order 99)",
+     check_464_a_removed_or_rewritten_earlier_line_refuses),
+    ("450 The negotiation advisor's Python step decides only what the positions decide; one entry per proposal (order 102)",
+     check_450_the_negotiation_advisors_python_step_and_one_entry_per_proposal),
+    ("466 The negotiation advisor never invents a position and the bar is read on both record kinds (D-711)",
+     check_466_the_negotiation_advisor_never_invents_and_reads_both_record_kinds),
+    ("467 The negotiation bar floors the class that matters under every averaged figure (D-712)",
+     check_467_the_negotiation_bar_floors_the_class_that_matters),
+    ("468 The negotiation advisor's reasoning methods are declared, off by default and checked step by step (D-713)",
+     check_468_the_negotiation_advisors_reasoning_methods_are_declared_and_checked),
+    ("490 Negotiation items are tagged by party structure and the bar is reported per structure (Seckin 20:32)",
+     check_490_negotiation_items_are_tagged_by_party_structure),
+    ("491 The negotiation advisor reads three-party moves from the rounds on record (D-668 gap 4)",
+     check_491_the_negotiation_advisor_reads_three_party_moves),
+    ("492 The negotiation advisor reads coalition personas and their members (D-668 gap 6)",
+     check_492_the_negotiation_advisor_reads_coalition_personas),
+    ("493 Every negotiation red line is stored with its source (D-664)",
+     check_493_negotiation_red_lines_carry_their_source),
+    ("494 The negotiation advisor takes in the document reader's layers (D-666)",
+     check_494_the_negotiation_advisor_takes_in_the_document_layers),
+    ("507 The negotiation bar passes in each party structure and overall (D-715 item 1)",
+     check_507_the_negotiation_bar_passes_in_each_party_structure),
+    ("508 A negotiation set holds enough items of each party structure (D-715 item 1)",
+     check_508_a_set_holds_enough_items_of_each_party_structure),
+    ("509 The cells a table judge names are recorded and move no score or prompt (D-715 item 2)",
+     check_509_the_cells_a_judge_names_are_recorded_and_move_no_score),
+    ("465 The per-step pre-approval and the remaining-spend limit come from one declared file, read at call time (D-708)",
+     check_465_the_spend_limits_come_from_one_declared_file),
+    ("455 The synthetic negotiation sampler is seeded and deterministic (D-707)",
+     check_455_the_synthetic_sampler_is_seeded_and_deterministic),
+    ("456 The synthetic generator's brief holds no key, label or Shimmer prompt (D-706, D-707)",
+     check_456_the_synthetic_brief_holds_no_key),
+    ("457 The synthetic validator rejects a reply or build that breaks its card (D-707)",
+     check_457_the_synthetic_validator_rejects_a_mismatch),
+    ("458 Every synthetic item has its provenance row with true digests (D-707)",
+     check_458_synthetic_provenance_is_written),
+    ("459 Cue check, deduplication, split plan and the final test's synthetic guard (D-707)",
+     check_459_synthetic_screens_split_and_final_guard),
+    ("472 Every synthetic set holds complete-record and missing-notes items (D-711)",
+     check_472_synthetic_sets_hold_both_record_kinds),
+    ("473 Role V's labeller labels from the sheets only, its model declared and read live (D-706, D-707)",
+     check_473_role_v_labeller_runner_labels_from_sheets_only),
+    ("474 The negotiation advisor scorer reports synthetic items apart from the real headline (D-706, D-707)",
+     check_474_the_scorer_reports_synthetic_items_apart),
+    ("485 Saved ContraDoc answers are read as INFRA-055 keeps them, with exact intervals (D-652)",
+     check_485_contradoc_ok_effect_reads_saved_answers_as_infra_055_keeps_them),
+    ("486 The negotiation judge is calibrated out of fold, on development items only (D-656)",
+     check_486_the_negotiation_judge_is_calibrated_out_of_fold_on_development_items_only),
+    ("487 The output side's before and after passes are read by group against the bar (D-672)",
+     check_487_the_output_side_read_counts_drops_and_choice_decisions_by_group),
+    ("488 The GPU-release run's read finds the hand-back and entries short of their end (D-694)",
+     check_488_the_gpu_release_read_finds_the_handback_and_entries_short_of_their_end),
+    ("500 A step's cost is priced from the provider inventory and the storage record, never a typed figure (#298)",
+     check_500_step_cost_prices_come_from_the_inventory),
+    ("501 Every costly step gets two figures, without and with its named saving measures (#298, D-628)",
+     check_501_step_cost_gives_two_figures_and_names_the_measures),
+    ("502 The local profile refuses the web on a Lambda machine; where work runs never opens it (D-694)",
+     check_502_the_local_profile_refuses_the_web_on_lambda),
+    ("503 Every sealed Lambda bundle is a local-profile run and refuses the web under its environment (D-694)",
+     check_503_sealed_lambda_runs_are_local_profile_runs),
+    ("504 The working store plan is a dry run that keeps answer keys, held items and credentials local (order 99)",
+     check_504_the_working_store_plan_is_a_dry_run_that_keeps_private_data_local),
+    ("475 reason_first keeps the rationale a fixed field apart from the label, decided over the form's answers (D-713)",
+     check_475_reason_first_keeps_the_rationale_apart_from_the_label),
+    ("476 stepwise checks each step's output in Python before the next: cell ids, quotes, comparison (D-713)",
+     check_476_stepwise_checks_each_step_before_the_next),
+    ("495 A heading in any script gets a stable id; ASCII ids unchanged; moved ids listed (D-668 gap 11)",
+     check_495_unicode_heading_ids_and_their_migration),
+    ("496 One tokeniser reads every script: marks, normal form, every reader delegating (D-668 gap 11)",
+     check_496_one_tokeniser_reads_every_script),
+    ("497 A PDF's columns, running lines, tables and headings are recovered or recorded lost (D-668)",
+     check_497_pdf_layout_is_recovered_or_recorded_lost),
+    ("498 Sentences end by form in any script; ASCII ends unchanged (D-668, READING-A)",
+     check_498_sentences_end_by_form_in_any_script),
+    ("499 Text Python cannot split is refused on the record (D-668, READING-A)",
+     check_499_text_that_cannot_be_split_is_refused_on_the_record),
+    ("505 The sealer and the seal route seal the launch region's image (16 Nov image region)",
+     check_505_the_sealed_image_is_the_launch_regions),
+    ("506 A sealed image of another region is refused before launch; the transport refusal names its HTTP status",
+     check_506_a_region_mismatch_never_reaches_the_provider),
 ]
 
 

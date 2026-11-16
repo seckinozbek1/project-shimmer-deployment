@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "decision": "operator 16 November 2026 20:41 (standing orders 98 and 101)",
+  "why": "The role exchange folders and the negotiation sets live outside the repository. Negotiation texts never go to git or GitHub: these roots are covered by verified Drive archives only, never by the private git backup.",
+  "roots_location": {
+    "env": "SHIMMER_ROLES_ROOT",
+    "sibling_of_main_checkout": "shimmer-roles"
+  },
+  "roots": [
+    {"folder": "_xfer", "drive_only": true, "irreplaceable": "role exchange"},
+    {"folder": "N", "drive_only": true, "irreplaceable": "negotiation set"}
+  ],
+  "excluded": {
+    "role_folders": ["B", "V", "R", "C", "_seckin"],
+    "name_contains": ["answer_key"],
+    "why": "Role folders B, V, R, C and _seckin and anything named answer_key are out of scope: never opened, never archived, recorded as excluded by declaration. Role folders are matched at the roles root and directly under a declared root; answer_key at any depth."
+  }
+}

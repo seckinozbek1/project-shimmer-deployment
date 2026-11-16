@@ -83,16 +83,13 @@ def event_name(event_id):
 
 
 def main_root(start=HERE, runner=subprocess.run):
-    """The main checkout, from git's common directory as seen from `start` (D-412 item 4)."""
+    """The main checkout by shared_paths' one rule (DELETE-SAFE-A): SHIMMER_MAIN_CHECKOUT when set, else git's
+    common directory as seen from `start` (D-412 item 4)."""
+    import shared_paths
     try:
-        done = runner(['git', '-C', str(start), 'rev-parse', '--path-format=absolute', '--git-common-dir'],
-                      capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL,
-                      creationflags=no_window())
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise HookError('The main checkout cannot be found from git (%s)' % type(exc).__name__)
-    if done.returncode != 0 or not done.stdout.strip():
-        raise HookError('The main checkout cannot be found from git')
-    return Path(done.stdout.strip()).resolve().parent
+        return shared_paths.main_checkout(start, runner=runner)
+    except shared_paths.MainCheckoutError as exc:
+        raise HookError(str(exc))
 
 
 def checked_root(root, finder=None):
@@ -110,7 +107,9 @@ def resolve_root(given=None, finder=None):
     if given:
         return checked_root(given, finder), 'given'
     try:
-        return (finder or main_root)(HERE), 'git'
+        root = (finder or main_root)(HERE)
+        import shared_paths
+        return root, (shared_paths.ENV if finder is None and os.environ.get(shared_paths.ENV, '').strip() else 'git')
     except HookError as exc:
         return HERE.parents[1], 'script_location (%s)' % exc
 

@@ -5,7 +5,7 @@ gate_leakage.fingerprint embeds each distinct non-short record's text (embed_for
 its sorted exact hashes. This tool splits that one call in two, around the replay pass's embed
 form, so the embedding runs on Lambda with no bound controller file changed:
 
-  prepare --part name=path [--part ...] --out-dir D
+  prepare --part name=path [--part ...] --out-dir D [--part-set <name>]
       D/skeleton.json   the fingerprint with every field but `vectors` (computed here, no model)
       D/keys.json       the vector rows' keys (sorted exact hashes), in row order
       D/records.jsonl   the route's records ({row, key, stay_local false, text}), the texts in embed_form
@@ -47,7 +47,7 @@ def _texts(parts):
     return texts
 
 
-def prepare(parts, out_dir):
+def prepare(parts, out_dir, part_set=None):
     out_dir = Path(out_dir)
     if out_dir.exists() and any(out_dir.iterdir()):
         raise ValueError("the output folder must be new and empty")
@@ -56,7 +56,7 @@ def prepare(parts, out_dir):
     def record(texts):
         captured.extend(texts)
         return np.zeros((len(texts), er.DIM), dtype=np.float32)
-    skeleton = gl.fingerprint(parts, embed=record)
+    skeleton = gl.fingerprint(parts, embed=record, part_set=part_set)   # a declared set, carried into the skeleton (D-705)
     texts = _texts(parts)
     keys = sorted(texts)
     if captured != [texts[k] for k in keys]:
@@ -95,6 +95,7 @@ def main(argv=None):
     p = sub.add_parser("prepare")
     p.add_argument("--part", action="append", required=True, help="name=path, or name=path#key,key")
     p.add_argument("--out-dir", required=True)
+    p.add_argument("--part-set", help="a declared, dated part set (gate_set.PART_SETS), never inferred")
     f = sub.add_parser("finish")
     f.add_argument("--dir", required=True)
     f.add_argument("--merged", required=True)
@@ -106,7 +107,7 @@ def main(argv=None):
             name, _, rest = spec.partition("=")
             path, _, keys = rest.partition("#")
             parts.append((name, path, keys.split(",") if keys else None))
-        print(json.dumps(prepare(parts, a.out_dir)))
+        print(json.dumps(prepare(parts, a.out_dir, a.part_set)))
     else:
         print(json.dumps(finish(a.dir, a.merged, a.out)))
     return 0

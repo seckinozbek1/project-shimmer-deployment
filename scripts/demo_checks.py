@@ -407,7 +407,7 @@ def check_archive():
 CONSOLE = {"path": ROOT / "scripts" / "ui" / "console.html"}
 CONSOLE_LINES = {
     "en": "Demo: no installation, saved examples. Open open_demo.bat in the demo folder",
-    "tr": "Demo: kurulum yok, kayıtlı örnekler. Demo klasöründeki open_demo.bat dosyasını açın",
+    "tr": "Demo: kurulum yok, kayıtlı örnekler. Demo klasöründeki open_demo.bat dosyasını aç",
 }
 
 

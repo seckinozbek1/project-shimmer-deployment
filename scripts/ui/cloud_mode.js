@@ -8,7 +8,7 @@ var ShimmerCloud = (function () {
     "On a rented cloud machine": "Kiralık bulut makinesinde",
     "Provider key file found": "Sağlayıcı anahtar dosyası bulundu",
     "No provider key file found. Set SHIMMER_CONFIG_PATH to your own key file outside the repository, then reload.":
-      "Sağlayıcı anahtar dosyası bulunamadı. SHIMMER_CONFIG_PATH değişkenini depo dışındaki kendi anahtar dosyanıza ayarlayın, sonra sayfayı yenileyin.",
+      "Sağlayıcı anahtar dosyası bulunamadı. SHIMMER_CONFIG_PATH değişkenini depo dışındaki kendi anahtar dosyana ayarla, sonra sayfayı yenile.",
     "The key is read only by the program that starts the machine; this page never asks for it and never shows it.":
       "Anahtarı yalnızca makineyi başlatan program okur; bu sayfa anahtarı hiçbir zaman istemez ve göstermez.",
     "Settings ready": "Ayarlar hazır",
@@ -44,7 +44,7 @@ var ShimmerCloud = (function () {
     "Get a confirmation code": "Onay kodu al",
     "This starts a rented machine that costs up to": "Bu, en fazla şu tutarda ücreti olan kiralık bir makine başlatır:",
     "It is shut down after the review.": "İnceleme bitince kapatılır.",
-    "Type the amount to confirm": "Onaylamak için tutarı yazın",
+    "Type the amount to confirm": "Onaylamak için tutarı yaz",
     "The code expires at": "Kodun geçerliliği şu saatte biter:",
     "Start the rented machine": "Kiralık makineyi başlat",
     "Progress": "İlerleme",
@@ -54,7 +54,7 @@ var ShimmerCloud = (function () {
     "upper bound": "üst sınır",
     "The machine was shut down.": "Makine kapatıldı.",
     "The machine was NOT confirmed shut down. Check the provider's console now.":
-      "Makinenin kapatıldığı DOĞRULANMADI. Sağlayıcının konsoluna hemen bakın.",
+      "Makinenin kapatıldığı DOĞRULANMADI. Sağlayıcının konsoluna hemen bak.",
     "Minutes per part": "Bölüm başına dakika",
     "start_machine": "Makineyi başlatma",
     "copy_files": "Dosyaları kopyalama",
@@ -65,7 +65,7 @@ var ShimmerCloud = (function () {
     "other": "Diğer",
     "Results": "Sonuçlar",
     "Plans on this computer": "Bu bilgisayardaki planlar",
-    "Your results": "Sonuçlarınız",
+    "Your results": "Sonuçların",
     "Download all files of this document": "Bu belgenin tüm dosyalarını indir",
     "Download": "İndir",
     "This run's own files": "Bu çalışmanın kendi dosyaları",
@@ -74,7 +74,7 @@ var ShimmerCloud = (function () {
   };
   var DOCS = {
     en: "Your documents are copied to the rented machine for this review and deleted with it when it is shut down.",
-    tr: "Belgeleriniz bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla birlikte silinir."
+    tr: "Belgelerin bu inceleme için kiralık makineye kopyalanır ve makine kapatılınca onunla birlikte silinir."
   };
   function lang() { return ShimmerLocale.language() === "tr" ? "tr" : "en"; }
   function t(s) { return lang() === "tr" && Object.prototype.hasOwnProperty.call(TR, s) ? TR[s] : s; }
@@ -86,12 +86,27 @@ var ShimmerCloud = (function () {
   function head() {
     return "<h2>" + esc(t("On a rented cloud machine")) + "</h2><p class=\"notice\">" + esc(DOCS[lang()]) + "</p>";
   }
+  // Dates and times are shown in words and the viewer's own clock, never as ISO text.
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
+                "September", "October", "November", "December"];
+  function day(text) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(text == null ? "" : text));
+    if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return String(text == null ? "" : text);
+    var month = MONTHS[Number(m[2]) - 1];
+    return Number(m[3]) + " " + (ShimmerLocale.text ? ShimmerLocale.text(month) : month) + " " + m[1];
+  }
+  function clock(iso) {
+    var d = new Date(iso);
+    if (iso == null || isNaN(d.getTime())) return String(iso == null ? "" : iso);
+    var h = d.getHours(), mi = d.getMinutes();
+    return (h < 10 ? "0" : "") + h + ":" + (mi < 10 ? "0" : "") + mi;
+  }
   function money(x) { return x == null ? "-" : esc(Number(x).toFixed(2)) + " USD"; }
   function basisLine(basis) {
     if (!basis) return "";
     if (basis.kind === "measured") {
       var on = basis.measured_on || {};
-      return "<p><strong>" + esc(t("Measured")) + "</strong>: " + esc(on.date) + ", " + esc(on.machine) + "</p>";
+      return "<p><strong>" + esc(t("Measured")) + "</strong>: " + esc(day(on.date)) + ", " + esc(on.machine) + "</p>";
     }
     return "<p><strong>" + esc(t("Estimate")) + "</strong>: " + esc(basis.rests_on) + "</p>";
   }
@@ -236,7 +251,7 @@ var ShimmerCloud = (function () {
       box.innerHTML = "<p>" + esc(t("This starts a rented machine that costs up to")) + " <strong>" + esc(c.quote.cap_text) + " USD</strong>. "
         + esc(t("It is shut down after the review.")) + "</p>" + basisLine(c.basis)
         + "<p><label>" + esc(t("Type the amount to confirm")) + " <input id=\"cloud-amount\" inputmode=\"decimal\" autocomplete=\"off\"></label></p>"
-        + "<p class=\"muted\">" + esc(t("The code expires at")) + " " + esc(c.expires_utc) + "</p>"
+        + "<p class=\"muted\">" + esc(t("The code expires at")) + " " + esc(clock(c.expires_utc)) + "</p>"
         + "<p><button type=\"button\" id=\"cloud-start\">" + esc(t("Start the rented machine")) + "</button></p><div id=\"cloud-start-result\"></div>";
       document.getElementById("cloud-start").addEventListener("click", function () {
         var form = new FormData();

@@ -505,6 +505,66 @@ def proof_every_screen_says_where_the_documents_go():
     return not missing and labels, 'screens without the sentence or the name: %s; labels shown %s' % (missing, labels)
 
 
+DATES_DRIVER = r"""
+const fs = require('fs'), vm = require('vm');
+const [script, payload] = [process.argv[2], JSON.parse(fs.readFileSync(process.argv[3], 'utf8'))];
+const out = {};
+for (const lang of ['en', 'tr']) {
+  const app = {innerHTML: ''}, elements = {};
+  const months = {November: 'Kasım'};
+  const context = {console, JSON, Object, Array, String, Number, Date, isNaN, setTimeout: () => 0, clearTimeout: () => 0,
+    location: {hash: ''}, FormData: function () {},
+    ShimmerLocale: {language: () => lang, message: s => s, text: s => (lang === 'tr' && months[s]) || s},
+    document: {getElementById: id => elements[id] || (elements[id] = {listeners: {}, files: [], value: '', innerHTML: '',
+      addEventListener(k, f) { this.listeners[k] = f; }})}};
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(script, 'utf8') + ';this.ShimmerCloud = ShimmerCloud;', context);
+  const deps = {apiJson: url => ({then(f) { f({ok: true, body: url.endsWith('/confirmation') ? payload.code : payload.plan});
+    return {catch() {}}; }}), detailText: b => String(b), rerender() {}, currentPlan: () => 'abcdef012345'};
+  context.ShimmerCloud.renderPlan(app, deps, 'abcdef012345');
+  const plan = app.innerHTML;
+  elements['cloud-code'].listeners.click();
+  out[lang] = {plan: plan, confirm: elements['cloud-confirm'].innerHTML};
+}
+process.stdout.write(JSON.stringify(out));
+"""
+
+
+def proof_dates_and_times_are_shown_in_words():
+    """The ready screen and the confirmation step, rendered by the shipped cloud_mode.js under
+    node in both languages, show a measured forecast's date in words and the code's expiry as a
+    clock time, never the ISO text the server sends (interface check, finding 9)."""
+    import shutil as _shutil
+    import subprocess
+    node = _shutil.which('node')
+    if node is None:
+        return None, 'node absent: screen proof skipped'
+    basis = dict(kind='measured', minutes=30, measured_on=dict(date='2026-11-07', machine='one A10 machine'))
+    quote = dict(forecast_minutes=30, forecast_usd=0.65, cap_text='1.37', instance_type='gpu_1x_a10',
+                 hourly_rate_usd=1.29, upload_in_forecast=False)
+    payload = dict(plan=dict(state='ready', targets=['memo.md'], quote=quote, basis=basis),
+                   code=dict(code='c0de', expires_utc='2026-11-16T18:45:00+00:00', quote=quote, basis=basis))
+    with tempfile.TemporaryDirectory(prefix='shimmer_cloud_dates_') as tmp:
+        driver, data = Path(tmp) / 'driver.js', Path(tmp) / 'payload.json'
+        driver.write_text(DATES_DRIVER, encoding='utf-8')
+        data.write_text(json.dumps(payload), encoding='utf-8')
+        done = subprocess.run([node, str(driver), str(SCREEN_SCRIPT), str(data)],
+                              capture_output=True, text=True, encoding='utf-8', timeout=60,
+                              creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    if done.returncode != 0:
+        return False, 'node failed: ' + done.stderr.strip()[-300:]
+    screens = json.loads(done.stdout)
+    import re as _re
+    iso = [lang + '/' + name for lang, pair in screens.items() for name, html in pair.items()
+           if _re.search(r'\d{4}-\d{2}-\d{2}', html)]
+    words = ('7 November 2026' in screens['en']['plan'] and '7 Kasım 2026' in screens['tr']['plan']
+             and '7 Kasım 2026' in screens['tr']['confirm'])
+    clock = bool(_re.search(r'expires at \d{2}:\d{2}<', screens['en']['confirm'])
+                 and _re.search(r'biter: \d{2}:\d{2}<', screens['tr']['confirm']))
+    return not iso and words and clock, 'screens with ISO dates: %s; date in words %s; expiry as a clock time %s' % (
+        iso, words, clock)
+
+
 PROOFS = [
     ('no credential file found refuses before anything', proof_no_credential_refuses),
     ('no budget_open line refuses and no ledger line is written', proof_no_budget_refuses_and_writes_nothing),
@@ -525,6 +585,7 @@ PROOFS = [
     ('a failed step is one line and blocks the confirmation', proof_failed_step_is_reported_in_one_line),
     ('the routes never show the key or its path', proof_no_key_in_any_response),
     ('every screen says where the documents go, in both languages', proof_every_screen_says_where_the_documents_go),
+    ('dates and times are shown in words and clock time, never ISO text', proof_dates_and_times_are_shown_in_words),
 ]
 
 
@@ -569,6 +630,7 @@ NEUTRALISATIONS = [
     ('a name joined onto the path without the listing', proof_deliverables_are_listed_and_served,
      lambda: patch.object(cc.Desk, 'deliverable', _unlisted_paths)),
     ('the documents sentence dropped from the screens', proof_every_screen_says_where_the_documents_go, lambda: _sentence_dropped()),
+    ('the ISO date and expiry shown as sent', proof_dates_and_times_are_shown_in_words, lambda: _iso_dates_shown()),
 ]
 
 
@@ -582,6 +644,26 @@ def _sentence_dropped():
     with tempfile.TemporaryDirectory(prefix='shimmer_cloud_neutral_') as tmp:
         copy = Path(tmp) / 'cloud_mode.js'
         copy.write_text(source.replace(needle, '""'), encoding='utf-8')
+        saved, SCREEN_SCRIPT = SCREEN_SCRIPT, copy
+        try:
+            yield
+        finally:
+            SCREEN_SCRIPT = saved
+
+
+@contextlib.contextmanager
+def _iso_dates_shown():
+    """A copy of cloud_mode.js that shows the server's ISO date and expiry text as sent."""
+    global SCREEN_SCRIPT
+    source = SCREEN_SCRIPT.read_text(encoding='utf-8')
+    pairs = (('esc(day(on.date))', 'esc(on.date)'), ('esc(clock(c.expires_utc))', 'esc(c.expires_utc)'))
+    cc.refuse(all(source.count(old) == 1 for old, _new in pairs),
+              'the date rendering moved, so the neutralisation cannot be applied')
+    for old, new in pairs:
+        source = source.replace(old, new)
+    with tempfile.TemporaryDirectory(prefix='shimmer_cloud_neutral_') as tmp:
+        copy = Path(tmp) / 'cloud_mode.js'
+        copy.write_text(source, encoding='utf-8')
         saved, SCREEN_SCRIPT = SCREEN_SCRIPT, copy
         try:
             yield

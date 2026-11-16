@@ -579,10 +579,10 @@ def resident(role, run_context=None):
         model_telemetry.emit(run_context, name, model=key, **fields)
         if context:
             context.event(name, model=key, **fields)
-    with _LOAD_LOCK:
-        if key in cache:
-            event('model_resident', cold=False)
-            return cache[key]
+    import contextlib
+    import vllm_link
+
+    def cold():
         event('model_load_start', cold=True)
         if worker:
             if len(cache) >= worker.lane.resident_limit:
@@ -602,6 +602,20 @@ def resident(role, run_context=None):
         cache[key] = value
         event('model_load_end', cold=True)
         return value
+    # #297: a cold load holds vllm_link.CARD_LOCK across the hand-back of a resident vLLM server and the
+    # load (taken before _LOAD_LOCK, the lock order vllm_link states); a resident hit takes nothing.
+    card = None if key in cache else vllm_link.card_for(key, device)
+    with (card or contextlib.nullcontext()), _LOAD_LOCK:
+        if key in cache:
+            event('model_resident', cold=False)
+            return cache[key]
+        if card is not None:
+            return cold()
+    with vllm_link.card_for(key, device), _LOAD_LOCK:     # evicted between the check and the lock
+        if key in cache:
+            event('model_resident', cold=False)
+            return cache[key]
+        return cold()
 
 
 def release_reference_residency():

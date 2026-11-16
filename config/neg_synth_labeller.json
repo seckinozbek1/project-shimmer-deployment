@@ -1,0 +1,13 @@
+{
+  "schema": "neg-synth-labeller-v1",
+  "purpose": "Role V's labelling prompt (D-706 item 1, D-707). Filled by tools/neg_synth_label.py from a label sheet alone: the round-k articles, the parties, the persona and one statement with its party and round. Never the stance, the article or wording the statement was written for, a red-line mark, round k+1 or the card.",
+  "template": "Below is the draft text of a negotiation at round {round}, and one statement a party made during the talks. Read the statement and say what it is about and what the party wants.\n\nParties: {parties}\n\nDRAFT TEXT\n{articles}\n\nSTATEMENT by {party}, round {statement_round}:\n{quote}\n\nAnswer with one JSON object and nothing else, with these fields:\n- \"article\": the id of the article the statement is about, one of: {article_ids};\n- \"wording\": the number of the bracketed wording in that article the statement is about (counting the bracketed wordings of the article from 1, in order), or \"whole\" when it is about the article as a whole or the article has no bracketed wording;\n- \"stance\": \"support\" when the party supports that wording, \"oppose\" when it objects to it, \"accept\" when it accepts it as it stands and agrees to it;\n{firm_field}\nExample of the form only: {example}\n",
+  "firm_field_persona": "- \"firm_limit\": \"yes\" when the party says plainly that this is a limit it will not cross (for example that it cannot accept it in any form), otherwise \"no\".",
+  "firm_field_other": "- \"firm_limit\": \"no\".",
+  "article_line": "ARTICLE {id}: {title}{agreed}\n{text}",
+  "agreed_mark": " (agreed)",
+  "example": {"article": "<article id>", "wording": "<number or whole>", "stance": "<support, oppose or accept>", "firm_limit": "<yes or no>"},
+  "stances": ["support", "oppose", "accept"],
+  "whole": "whole",
+  "firm_values": {"yes": true, "no": false}
+}

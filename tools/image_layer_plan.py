@@ -7,7 +7,7 @@ reachable only from an instance, so it is updated at the start of the first laun
   record --run RUN [--record R]      append what one launch's receipts say the filesystem holds
   env-manifest --run RUN --out F     the env layer's build record, for the sealer's --image-env-manifest
 
-The record (default docs/loop/private/image_layers.jsonl) is written only from instance receipts:
+The record (default docs/loop/private/image_layers.jsonl of the main checkout, tools/loop/shared_paths.py) is written only from instance receipts:
 a layer is recorded present only when a check in that launch read it MATCH or UNSEALED there.
 """
 import argparse
@@ -19,7 +19,15 @@ import tarfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-RECORD = ROOT / 'docs/loop/private/image_layers.jsonl'
+sys.path.insert(0, str(ROOT / 'tools' / 'loop'))
+import shared_paths  # noqa: E402
+# The MAIN checkout's private record, through configuration (DELETE-SAFE-A: SHIMMER_MAIN_CHECKOUT, else git's common
+# directory; this checkout when git cannot be read), never through a link in a worktree.
+RECORD = None   # None: default_record() at use (no process starts at import); a proof or --record names a file
+
+
+def default_record():
+    return Path(RECORD) if RECORD is not None else shared_paths.private_dir(ROOT, fallback=ROOT) / 'image_layers.jsonl'
 
 
 def read(path):
@@ -41,13 +49,13 @@ def held(record):
     return out
 
 
-def plan(bundle, record=RECORD):
+def plan(bundle, record=None):
     """Each layer the bundle seals, with whether the record holds it at that key."""
     manifest = read(Path(bundle) / 'execution_manifest.json')
     block = manifest.get('layers')
     if not block:
         return dict(layers=None, reason='the bundle seals no image layers')
-    known = held(record)
+    known = held(default_record() if record is None else record)
     out = []
     for name, key in sorted(block['keys'].items()):
         row = known.get(key)
@@ -59,9 +67,10 @@ def plan(bundle, record=RECORD):
     return dict(layers=out, env_sealed=block['env_sealed'])
 
 
-def record_run(run, record=RECORD, now=None):
+def record_run(run, record=None, now=None):
     """Append one row per layer the launch's last check read, from its receipt alone."""
     run = Path(run)
+    record = default_record() if record is None else record
     receipt = read(run / 'image_receipt.json')
     manifest = read(run / 'execution_manifest.json')
     states = receipt.get('recheck') or receipt.get('first_check')
@@ -140,10 +149,10 @@ def main(argv=None):
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('plan')
     p.add_argument('--bundle', type=Path, required=True)
-    p.add_argument('--record', type=Path, default=RECORD)
+    p.add_argument('--record', type=Path, default=None)
     p = sub.add_parser('record')
     p.add_argument('--run', type=Path, required=True)
-    p.add_argument('--record', type=Path, default=RECORD)
+    p.add_argument('--record', type=Path, default=None)
     p = sub.add_parser('env-manifest')
     p.add_argument('--run', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)

@@ -1,0 +1,55 @@
+{
+  "schema": "document-reader-v1",
+  "note": "The document reader's declared settings (#280, #281 gaps 1, 12 and 13; scripts/text_extract.py, scripts/pdf_layers.py, scripts/html_layers.py). `replacement_character_share_above`: a text or HTML file is read as UTF-8 with every invalid byte replaced by U+FFFD; when the replaced characters are more than this share of the text read, the reader warns and records the encoding layer as lost. Not measured against any corpus: one replaced character in a thousand is the operator's starting value. `html_track_changes` names the markup the HTML reader takes as an insertion or a deletion (elements, class tokens) and the attributes it reads an author and a date from, first match wins.",
+  "replacement_character_share_above": 0.001,
+  "html_track_changes": {
+    "insert_elements": [
+      "ins"
+    ],
+    "delete_elements": [
+      "del"
+    ],
+    "insert_classes": [
+      "ins",
+      "ice-ins",
+      "insert",
+      "inserted",
+      "insertion"
+    ],
+    "delete_classes": [
+      "del",
+      "ice-del",
+      "delete",
+      "deleted",
+      "deletion"
+    ],
+    "author_attributes": [
+      "data-author",
+      "data-username",
+      "data-user-name",
+      "data-user",
+      "author"
+    ],
+    "date_attributes": [
+      "datetime",
+      "data-date",
+      "data-time",
+      "data-datetime"
+    ]
+  },
+  "pdf_layout_note": "D-668: how a PDF's layout is read from where its text is drawn (scripts/pdf_layout.py, scripts/pdf_layers.py). Sizes are in em (the text's own size), shares of the page or of a column. line_tolerance_em: pieces this close in height are one line. cell_gap_em: a wider gap on a line starts a new cell. margin_band_share: the top and bottom share of a page a running header or footer stands in; repeat_pages_min: on how many pages its text (digits read as one mark) must repeat. column_lines_min: how many lines must split at a gutter; column_fill_share: how much of its column a left cell must fill (a table's short cells do not). align_tolerance_em and table_rows_min: cells starting this close, on this many lines, are a table. heading_size_ratio and heading_chars_max: a one-line block this much larger than the body size and at most this long is a heading. line_fill_share: a line filling this share of its column runs on into the next. char_width_em: a character's estimated width, since the text visitor hands no glyph widths. Not measured against any corpus: the operator's starting values, proven on the gate's built PDFs. With the block missing or any value not a positive number, no layout is recovered and the record says so.",
+  "pdf_layout": {
+    "line_tolerance_em": 0.3,
+    "cell_gap_em": 1.5,
+    "margin_band_share": 0.08,
+    "repeat_pages_min": 2,
+    "column_lines_min": 3,
+    "column_fill_share": 0.6,
+    "align_tolerance_em": 0.5,
+    "table_rows_min": 2,
+    "heading_size_ratio": 1.15,
+    "heading_chars_max": 120,
+    "line_fill_share": 0.85,
+    "char_width_em": 0.5
+  }
+}

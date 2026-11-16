@@ -16,7 +16,7 @@ caches and finished-run temporaries on a schedule, and whenever free disk nears 
 * The worktree kind only REPORTS (a lane worktree whose branch is merged into the loop ref and whose tree
   is clean); no version of this tool deletes one.
 * Every run reads the free disk first; `--dry-run` deletes nothing; `--apply` deletes by
-  `shutil.rmtree` / `os.remove` on the exact path, after re-checking that path against every refusal
+  `safe_delete.check` then `safe_delete.delete` on the exact path (DELETE-SAFE-A; links inside are refused), after re-checking that path against every refusal
   just before deleting it, and appends one JSON line per deletion to
   `docs/loop/private/disk_sweep_log.jsonl` of the MAIN checkout (time from the clock, path, bytes, kind,
   reason, regenerate). After the run a post-check confirms that every indexed path that existed still
@@ -50,6 +50,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cloud_run_common import no_window  # noqa: E402  (D-079, HIDDEN-A)
 
 HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
 ROOT = HERE.parents[1]
 CONFIG = ROOT / 'config' / 'disk_sweep.json'
 LOG_NAME = 'disk_sweep_log.jsonl'
@@ -105,15 +107,13 @@ def load_config(path=None):
 
 
 def main_root(start=HERE, runner=subprocess.run):
-    """The main checkout, from git's common directory (as tools/loop/session_end_salvage.py finds it)."""
+    """The main checkout by shared_paths' one rule (SHIMMER_MAIN_CHECKOUT, else git's common directory), as
+    tools/loop/session_end_salvage.py finds it."""
+    import shared_paths
     try:
-        done = runner(['git', '-C', str(start), 'rev-parse', '--path-format=absolute', '--git-common-dir'],
-                      capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL, creationflags=no_window())
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise SweepError('The main checkout cannot be found from git (%s)' % type(exc).__name__)
-    if done.returncode != 0 or not done.stdout.strip():
-        raise SweepError('The main checkout cannot be found from git')
-    return Path(done.stdout.strip()).resolve().parent
+        return shared_paths.main_checkout(start, runner=runner)
+    except shared_paths.MainCheckoutError as exc:
+        raise SweepError(str(exc))
 
 
 def git(root, *args, timeout=120):
@@ -647,6 +647,8 @@ def refusal(ctx, cand, contents=None):
         return 'it does not exist'
     if is_link(path):
         return 'a link or junction'
+    if os.path.isdir(path) and _safe_delete().scan(path)[0]:
+        return 'a link or junction inside it (DELETE-SAFE-A: remove the links alone first)'
     try:
         if Path(path).resolve() != Path(os.path.abspath(path)).resolve() or \
                 ctx.root.resolve() not in Path(path).resolve().parents:
@@ -683,12 +685,24 @@ def log_line(when, rel, row):
             'regenerate': row['regenerate']}
 
 
+def _safe_delete():
+    """tools/loop/safe_delete.py, the one deletion path (DELETE-SAFE-A, standing order 96)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('safe_delete', str(Path(__file__).with_name('safe_delete.py')))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def delete_exact(path):
-    """shutil on the exact path: never a shell, never a glob."""
-    if os.path.isdir(path) and not is_link(path):
-        shutil.rmtree(path, onerror=_on_error)
-    else:
-        os.remove(path)
+    """Through safe_delete on the exact path: never a shell, never a glob, never through a link."""
+    sd = _safe_delete()
+    if is_link(path):
+        raise SweepError('refused: %s is a link' % path)
+    problems, entries = sd.check(path, allow_under_protected=True)
+    if problems:
+        raise SweepError('refused by safe_delete: %s' % '; '.join(problems))
+    sd.delete(entries)
 
 
 def worktree_report(root, cfg, loop_ref=None):

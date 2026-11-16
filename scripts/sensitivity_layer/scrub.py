@@ -429,3 +429,31 @@ def scrub_text_artifacts_and_verify(reds, info, located, by_artifact, also=()):
         "total_subs": sum(by_artifact.values()),
         "located": located,
     }
+
+
+def listed_string_survivors(listed, info):
+    """#281 gap 9: the post-apply grep for the strings the operator's rules LIST
+    (rules.listed_strings), run whatever was detected or proposed. `listed` is
+    [(rule_id, n, string)], n the string's 1-based place in its rule. Every final
+    artifact (VERIFY_KEYS, the rendered docx read as text) is read as the survivor grep
+    reads it, in every form it matches and in its running views. An artifact that cannot
+    be read holds every listed string (fail safe, LAW-IV). Returns
+    [{"rule_id", "listed", "artifacts"}], one per surviving string; the string itself is
+    not copied into the record (it is the content the operator listed for removal)."""
+    found = {}
+    for key in VERIFY_KEYS:
+        p = info.get(key)
+        if not p or not Path(p).exists():
+            continue
+        docx = str(p).lower().endswith(".docx")
+        try:
+            text = text_extract.extract_text(Path(p)) if docx else Path(p).read_text(encoding="utf-8")
+        except Exception:
+            for rule_id, n, _s in listed or []:
+                found.setdefault((rule_id, n), []).append(f"{key} (unreadable)")
+            continue
+        for rule_id, n, s in listed or []:
+            if _count_span(text, s) > 0 or (not docx and any(_count_span(v, s) > 0
+                                                             for v in _running_views(text))):
+                found.setdefault((rule_id, n), []).append(key)
+    return [{"rule_id": rule_id, "listed": n, "artifacts": arts} for (rule_id, n), arts in found.items()]

@@ -1358,6 +1358,11 @@ def benchmark_items(key, run_dir, arm="B3", scoring=None):
                     # location, which tells a whole-document item from one whose marked
                     # evidence matched no part
                     "location_measurable": i.get("location_measurable")})
+        if scoring and "class_without_leanings" in row:
+            # TABLE-AUTHORITY-A (D-646): the class without leanings beside the scored one, and
+            # whether a leaning decided or moved it (low confidence).
+            out[-1].update(b3_class_without_leanings=row["class_without_leanings"],
+                           low_confidence=bool(row.get("low_confidence")))
     doc = next((d for d in labels.get("documents") or [] if d.get("document_id") == doc_id), {})
     return {"availability": "labelled", "arm": arm, "document_id": doc_id, "flag": mapping.FLAG,
             "clear": mapping.CLEAR, "read": "whole document (segments not read)",

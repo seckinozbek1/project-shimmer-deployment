@@ -1035,6 +1035,50 @@ def observe_vectors_route():
                 "rows": len(texts)}
 
 
+def observe_main_route():
+    """#262 gap 3: freeze_negotiation_set.main driven with --export-records, then --vectors and --records on
+    the merged vectors, gives the in-process freeze's FREEZE.json byte for byte and the same vectors;
+    --vectors without --records is refused."""
+    import io
+    from contextlib import redirect_stdout
+    import numpy as np
+    with tempfile.TemporaryDirectory(prefix="negmeasure_main_") as td, \
+            patch.object(freezer.time, "perf_counter", lambda: 0.0):
+        td = Path(td)
+        a, b, corpus = _route_fixture(td)
+        listed = td / "corpora.txt"
+        listed.write_text("# fixture list\n%s\n" % corpus, encoding="utf-8")
+        er = freezer._embed_records()
+        export, work = td / "export", td / "work"
+        with redirect_stdout(io.StringIO()) as printed:
+            code = freezer.main(["--set", str(b), "--corpora", str(listed), "--export-records", str(export)])
+        exported = json.loads(printed.getvalue())
+        er.build(export / "records.jsonl", work / "parts")
+        pairs = []
+        for n, prompts in enumerate(sorted((work / "parts").glob("part*/replay_prompts.json"))):
+            er.run(prompts, work / ("evidence%d" % n), embedder=_stub_embedder(), run_id="fixture")
+            pairs.append((work / ("evidence%d" % n), prompts))
+        er.merge(pairs, export / "laptop", work / "merged", require_complete=True)
+        try:
+            freezer.main(["--set", str(b), "--corpora", str(listed), "--vectors", str(work / "merged")])
+            refused = False
+        except SystemExit:
+            refused = True
+        with redirect_stdout(io.StringIO()):
+            code2 = freezer.main(["--set", str(b), "--corpora", str(listed), "--vectors", str(work / "merged"),
+                                  "--records", str(export / "records.jsonl")])
+        encode = freezer.vectors_encoder(work / "merged", export / "records.jsonl")
+        freezer.freeze(a, [corpus], progress=lambda line: None, encode=freezer.formed(_onehot), model=encode.route)
+        texts = [json.loads(l)["text"] for l in (export / "records.jsonl").read_text(encoding="utf-8").splitlines()]
+        return {"codes": (code, code2), "refused_without_records": refused, "rows": exported["rows"] > 0,
+                "freeze_identical": (a / "FREEZE.json").read_bytes() == (b / "FREEZE.json").read_bytes(),
+                "vectors_identical": np.asarray(encode(texts)).tobytes() == freezer.formed(_onehot)(texts).tobytes()}
+
+
+MAIN_ROUTE = {"codes": (0, 0), "refused_without_records": True, "rows": True, "freeze_identical": True,
+              "vectors_identical": True}
+
+
 def observe_route_guards():
     """What --vectors refuses: a merged state of another key list, another row count, a row left without a
     vector, and a text the records do not hold."""
@@ -1630,6 +1674,14 @@ class NegotiationMeasureChecks(unittest.TestCase):
         self.prove("vectors_route_equals_the_in_process_freeze", observe_vectors_route, expected,
                    lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
 
+    def test_19k_main_drives_the_route(self):
+        self.assertEqual(observe_main_route(), MAIN_ROUTE)
+        er = freezer._embed_records()
+        real = er.embed_batched
+        # Neutralised: the instance's pass hands each chunk's vectors back in reverse order (a misplaced row).
+        self.prove("main_export_and_vectors_equal_the_in_process_freeze", observe_main_route, MAIN_ROUTE,
+                   lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
+
     def test_19j_vectors_route_guards(self):
         got = observe_route_guards()
         self.assertEqual(sorted(got), sorted(freezer.ROUTE_CHECKS))
@@ -1676,7 +1728,8 @@ def check():
                     "its power record, a no_answer count for every arm, every arm's records checked, a failed entry only from its status record and only as a run folder, either kind scored no_answer on every row and counted apart, infrastructure only for the runner's or the machine's causes, one model group), "
                     "the power simulation and its record read by the plan rule, the replay hook, bge-m3 loaded with the "
                     "low host peak, bytecode caches never read as corpus, and the vectors route (export, embed_records, "
-                    "--vectors equal to the in-process freeze byte for byte, its four refusals), and (D-663) a movement "
+                    "--vectors equal to the in-process freeze byte for byte, its four refusals, and main() driven "
+                    "through --export-records and --vectors), and (D-663) a movement "
                     "read again whatever its form, the rest counted by reason, answers not read again refused"
                     % len(NegotiationMeasureChecks.evidence))
 

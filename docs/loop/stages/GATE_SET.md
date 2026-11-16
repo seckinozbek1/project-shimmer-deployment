@@ -243,6 +243,29 @@ the excluded groups, every one is among the kept groups, and no drawn document, 
 The fingerprint refuses to run while any entry of `external/s05/` other than `D-S56` and `GATE`
 belongs to no part (`gate_leakage.uncovered`), so a new run folder is never left out.
 
+**Added 16 November 2026 (D-704, D-705, issue #301): the dated part sets.** The table above is the part set
+`parts_2026-11-12` (`gate_set.PART_PATHS`), unchanged; the fingerprint it names (`ad64bab9...`) and the gate set cleared
+on it stand as recorded, and it stays the default of every tool, so that fingerprint and its result read and verify as
+before (`gate_set.py verify-fingerprint --fingerprints ... --sha256 ...`). For a future set, `parts_2026-11-16`
+(`gate_set.PART_PATHS_2026_11_16`) declares the parts that remain after the 16 November loss, chosen only by name
+(`--part-set` on `gate_leakage.py fingerprint` and `cosine-step`, `fingerprint_route.py prepare`, and `gate_set.py`'s
+draws and `verify-fingerprint`), never inferred:
+
+| Part (`parts_2026-11-16`) | Its data |
+|---|---|
+| `judge_mix_2e`, `judge_mix_1`, `judge`, `auditor_tuning`, `producer`, `verifier`, `ontology`, `dev_cases` | as in the table above |
+| `auditor` | none: external/s05/AUD was lost, and the set has no such part |
+| `development` | `external/contradoc/dev/`, `external/contradoc/dev_moved/`, `external/scitab/dev/`, and the `external/s05/` folders D-S45, R1, R2, R_constraint, SAVINGS_PROOF, labels, miss_diag, staging_records_d092, suite_gen, the file suite_staging.json, and the three folders added since 12 November: REFPAIR, ROUTE_GATE_174_340, T253 (run folders of development-side work, as every run folder outside a named part has been since SAVINGS_PROOF); G1, B2_suite, C, C1, CASES, J1 and the L runs were lost |
+
+A fingerprint built under a named set carries its name (`part_set`), the check's result carries it
+(`fingerprint_part_set`), and the draw refuses a result built under another set than the one it is given (no name is
+`parts_2026-11-12`). The fingerprint refuses parts other than the set's own and any path outside its part's declared
+paths, and `uncovered` still refuses any `external/s05/` entry no part covers. The cosine step under `parts_2026-11-16`
+is refused until its prompts file, in place of the lost G1's, is declared (`gate_set.COSINE_STEP_PROMPTS`; open item
+124), and the check refuses fingerprints and a step 2 record from two sets. A set cleared under `parts_2026-11-16`
+states that it was not checked against the text that existed only in the lost runs, and is checked against the 12
+November fingerprint beside it.
+
 A gate item hit in any row is removed with its whole group or paper before the set is frozen; the
 frozen sets' two digests (the freeze's `claim_set_ids.json` and `quick_set_ids.json`, section 10) are
 written here, and judge 2f's pin reads the claim set's (D-375). The claim set's digest enters

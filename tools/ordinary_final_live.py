@@ -347,10 +347,13 @@ def crash_signal(snapshot):
 def bound_controller_files():
     """The files every new seal pins as the controller (`local_control_hashes`), read from the
     sealer's own source, so this tool can show it is not among them."""
+    import ast
     source = (ROOT / 'tools' / 'prepare_ordinary_final_run.py').read_text(encoding='utf8')
-    block = source.split('local_control_hashes={n:sha(ROOT/n) for n in (', 1)[1].split(')}', 1)[0]
-    import re
-    return sorted(set(re.findall(r"'(tools/[^']+\.py)'", block)))
+    # One list since the seal request route (6d4af314): the module constant CONTROL_FILES, which the sealer hashes
+    # (`local_control_hashes={n:sha(ROOT/n) for n in CONTROL_FILES}`) and a seal request binds.
+    node = next(n for n in ast.parse(source).body if isinstance(n, ast.Assign)
+                and any(getattr(t, 'id', None) == 'CONTROL_FILES' for t in n.targets))
+    return sorted(set(ast.literal_eval(node.value)))
 
 
 def alerts(snapshot, dev_rate):

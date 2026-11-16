@@ -1,0 +1,11 @@
+{
+  "step": "working store move, uplink alone",
+  "instance_type": "gpu_1x_a10",
+  "launches": 1,
+  "minutes": {"boot": 5, "upload": 115.78, "return": 0},
+  "storage": {"gib": 16.805, "hours": 730},
+  "measures": [
+    {"name": "asset_copy", "keeps_minutes": 51.85,
+     "source": "tools/loop/working_store.py plan of 16 Nov: the 20.72 GiB asset archive (750cf50d) already on the file system is not sent again; 16.80 GiB of candidates at 5.8 MB/s (TIME_BUDGET.md, one upload alone)"}
+  ]
+}

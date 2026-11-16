@@ -39,9 +39,9 @@ from agent_wrapper import decode_items, is_envelope
 import agent_activation
 
 from . import redaction_detect
-from .rules import redaction_rules
+from .rules import redaction_rules, listed_strings
 from .scrub import (scrub_master_and_body, scrub_text_artifacts_and_verify, _redact_obj, _redact_text,
-                    _merge_redaction_proposals)
+                    _merge_redaction_proposals, listed_string_survivors)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -323,6 +323,50 @@ def _unknown_documents(op_docs, read_docs):
     return [doc["id"] for doc in op_docs if doc["id"] not in read_docs]
 
 
+def _listed_strings(operator_rules):
+    """#281 gap 9: every string the operator's rules list in quotation marks, as
+    [(rule_id, n, string)], n its 1-based place in its rule."""
+    return [(r.get("id"), n, s) for r in operator_rules or []
+            for n, s in enumerate(listed_strings(r.get("rule")), start=1)]
+
+
+def _cannot_detect(operator_rules):
+    """#281 gap 9: the operator rules the post-apply grep has nothing to look for:
+    a rule that lists no string in quotation marks and authorises no shape detector
+    (with no cue resource, none is authorised). The redactor may still mark spans for
+    it, but whether its content is gone after apply cannot be checked, so the run says
+    so: [{id, category, reason}]."""
+    cues = redaction_detect.load_cues(str(_PROJECT_ROOT))
+    out = []
+    for r in operator_rules or []:
+        if listed_strings(r.get("rule")):
+            continue
+        if cues and redaction_detect.authorized_shapes([r], cues):
+            continue
+        out.append({"id": r.get("id"), "category": r.get("category"),
+                    "reason": ("cannot detect: this rule lists no string in quotation marks and "
+                               "authorises none of the shape detectors, so the post-apply check "
+                               "cannot look for its content; what the redactor marks is applied, "
+                               "anything it misses is not caught. List the exact strings in "
+                               "quotation marks, or check these spans by hand.")})
+    return out
+
+
+def _listed_block(orch, doc, info, listed, raw_output_path):
+    """#281 gap 9: the post-apply grep for the rules' listed strings over one
+    document's shipped artifacts. A survivor BLOCKS (LAW-IV), as a detected span's
+    does. Returns the escalation, or None when every listed string is absent."""
+    found = listed_string_survivors(listed, info) if listed else []
+    if not found:
+        return None
+    esc = build_redaction_escalation(
+        doc_id=doc["id"], document_name=doc["name"], stage="REDACT_VERIFY_LISTED",
+        failure_kind="pii_survives_in_deliverable", raw_output_path=raw_output_path,
+        detail={"listed_string_survivors": found})
+    _post_redaction_block(orch, esc)
+    return esc
+
+
 def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registry,
                         *, build_wrapper, render_deliverable, redaction_enabled=True, unit_ids=None):
     """FINAL privacy pass (LAW-IV), run when the sensitivity layer is active, regardless of whether
@@ -393,7 +437,8 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             esc = build_redaction_escalation(
                 doc_id=doc["id"], document_name=doc["name"], stage="REDACT_RULES",
                 failure_kind="no_operator_rule", raw_output_path=None,
-                detail={"warnings": rr["warnings"]})
+                detail={"warnings": rr["warnings"],
+                        "intent_unknown": rr.get("intent_unknown") or []})
             _post_redaction_block(orch, esc)
             summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
                                   "failure_kind": esc["failure_kind"], "escalation": esc}
@@ -401,12 +446,27 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
     for w in rr["warnings"]:
         print(f"[redaction-rules] WARNING: convention {w['id']} ({w['category']}) is redaction-intent "
               f"but did NOT compile: {w['reason']} - operator rule NOT applied.", file=sys.stderr)
+    # #281 gaps 9 and 10: what the post-apply check will look for beyond the detected
+    # and proposed spans (each rule's listed strings), what it cannot look for (a rule
+    # with no listed string and no detector), and the conventions whose redaction
+    # intent is unknown. Each is said in the run, on the bus and in every document's
+    # report below; none changes what is applied.
+    listed = _listed_strings(rr["operator_rules"])
+    cannot_detect = _cannot_detect(rr["operator_rules"])
+    intent_unknown = list(rr.get("intent_unknown") or [])
+    for w in intent_unknown:
+        print(f"[redaction-rules] WARNING: convention {w['id']} ({w['category']}): {w['reason']}",
+              file=sys.stderr)
+    for w in cannot_detect:
+        print(f"[redaction-gate] WARNING: rule {w['id']} ({w['category']}): {w['reason']}", file=sys.stderr)
     orch._post_orchestrator(
         recipient="OPERATOR", channel="redaction", msg_type="INFORM",
         body={"event": "REDACTION_RULES_COMPILED", "source": rr["source"],
               "operator_in_force": rr["operator_in_force"],
               "operator_rule_ids": [r.get("id") for r in rr["operator_rules"]],
-              "warnings": rr["warnings"]},
+              "warnings": rr["warnings"],
+              "listed_strings": {str(rid): n for rid, n, _s in listed},
+              "cannot_detect": cannot_detect, "intent_unknown": intent_unknown},
         constitution_check={"laws_consulted": ["LAW-IV", "LAW-V"], "result": "RESOLVED",
                             "resolution": "operator redaction rules compiled for the redaction pass"})
     # Two passes: every document's spans are proposed first, then every document's
@@ -625,6 +685,13 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             _post_redaction_block(orch, esc)
             summary[doc["id"]].update(state="BLOCKED", first_failure_kind=summary[doc["id"]].get("failure_kind"),
                                       failure_kind=esc["failure_kind"], escalation=esc)
+        # #281 gap 9: the rules' listed strings, absent from its files whatever held it.
+        esc = _listed_block(orch, doc, info, listed, None)
+        if esc is not None:
+            entry = summary[doc["id"]]
+            entry.update(state="BLOCKED",
+                         first_failure_kind=entry.get("first_failure_kind") or entry.get("failure_kind"),
+                         failure_kind=esc["failure_kind"], escalation=esc)
     for p in pending:
         doc, info, master, amendments, redactions = (p["doc"], p["info"], p["master"], p["amendments"],
                                                       p["redactions"])
@@ -632,6 +699,14 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         scrub_spans = spans_for(doc)
         unknown = {"spans_unknown_from": spans_unknown_from} if spans_unknown_from else {}
         if _no_span_at_all(redactions, scrub_spans):
+            # #281 gap 9: nothing was detected or proposed, so nothing was applied; the
+            # rules' listed strings are still grepped for in its files, and one there BLOCKS.
+            esc = _listed_block(orch, doc, info, listed,
+                                redactor_r.get("raw_text_path") or redactor_raw_path)
+            if esc is not None:
+                summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
+                                      "failure_kind": esc["failure_kind"], "escalation": esc, **unknown}
+                continue
             # genuine NONE: the redactor found nothing AND no authorized shape detected
             _post_redaction(orch, doc["id"], "REDACTION_NONE",
                             {"screened_amendments": len(amendments), "raw_output_path": redactor_raw_path,
@@ -690,6 +765,13 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
                                   "failure_kind": esc["failure_kind"], "escalation": esc}
             continue
+        # #281 gap 9: every detected and proposed span is verified absent above; the
+        # rules' listed strings are verified absent too, whatever was found.
+        esc = _listed_block(orch, doc, info, listed, redactor_r.get("raw_text_path") or redactor_raw_path)
+        if esc is not None:
+            summary[doc["id"]] = {"redacted": False, "state": "BLOCKED",
+                                  "failure_kind": esc["failure_kind"], "escalation": esc}
+            continue
         if _held_no_other_span(redactions, rep, body_red, doc):
             # This document has no span of its own and no other document's span
             # occurred in its text or artifacts (verified absent above): a genuine NONE.
@@ -715,4 +797,11 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
     if spans_unknown_from:
         for entry in summary.values():
             entry["spans_unknown_from"] = spans_unknown_from
+    # #281 gaps 9 and 10: every document's report names the rules the post-apply check
+    # could not look for and the conventions whose redaction intent is unknown.
+    for entry in summary.values():
+        if cannot_detect:
+            entry["cannot_detect"] = [w["id"] for w in cannot_detect]
+        if intent_unknown:
+            entry["intent_unknown"] = [w["id"] for w in intent_unknown]
     return summary

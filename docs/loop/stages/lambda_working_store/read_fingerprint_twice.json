@@ -1,0 +1,11 @@
+{
+  "step": "leakage fingerprint read by two Lambda launches",
+  "instance_type": "gpu_1x_a10",
+  "launches": 2,
+  "minutes": {"seed": 5.99},
+  "storage": {"gib": 0, "hours": 0},
+  "measures": [
+    {"name": "warm_file_system", "keeps_minutes": 0, "adds_storage": {"gib": 1.94, "hours": 730},
+     "source": "external/gate_prep_D-S100 (1.94 GiB, 2,084,166,609 bytes of fingerprints.json.gz, D-705 item 1) sent once and held on the store; 5.99 min a send at 5.8 MB/s (TIME_BUDGET.md); two reads is the assumption of a new leakage check on the rented-machine route (D-705 item 4), not a plan"}
+  ]
+}

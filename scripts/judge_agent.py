@@ -20,6 +20,13 @@ enters the question as the FIGURES block, and `check_quote` is the judged paths'
 (`paired_review.judged_item_refusal`), run after the decision and never shown. A tool the contract
 declares and this module does not know is refused, as is a task whose tool list names one twice.
 
+The table tool request (D-681). A contract may also declare `request_tools` for `cell_claim`: then,
+and only under a ratified amendment (boot refuses otherwise, `tool_registry.startup_refusals`), the
+judge writes ONE grammar-bound request among the shown registry tools before its question, Python
+runs every call in one batch (`table_tools.request_round`) and the RESULTS block joins the FIGURES
+block in the `{tools}` slot. Each line of the request is one record here, digests only. With no
+`request_tools` declared, as shipped, nothing of it runs.
+
 Everything is structural: a figure is digits as `cell_selection` reads them, a row's label is its
 key cells, a column's label its header. Which arithmetic a claim asks for is never read (WORDS-A).
 """
@@ -89,6 +96,18 @@ def declared_tools(task, contracts):
             if task not in KNOWN_TOOLS.get(tool, ()):
                 raise ContractRefused("the task %s declares a tool Python does not run for it: %s" % (task, tool))
         return tools
+    return []
+
+
+def request_tools(task, contracts):
+    """The tools `task`'s declaring contract lets the judge ask for in its one table tool request
+    (`request_tools`, D-681), in the contract's order; [] when none is declared, which is the shipped
+    state: no request is made and the question is the measured one. Boot (`refusals`) has already
+    refused a declaration with no ratified amendment or with an unvetted tool."""
+    for contract in (contracts or {}).values():
+        entry = (((_judge(contract) or {}).get("tasks") or {}).get(task))
+        if entry is not None:
+            return list(entry.get("request_tools") or [])
     return []
 
 
@@ -191,11 +210,12 @@ def check_quote_row(refusal):
 def tool_rows(task, contracts, rule_id, unit_id, prompt, rows):
     """The declared tools' records of one question, each stamped with the task, the rule, the unit and
     the digest of the question it served (`prompt`, None for a selection no question followed). A
-    row of a tool the task does not declare is dropped: only a declared tool is the judge's."""
+    row of a tool the task does not declare is dropped: only a declared tool is the judge's. A line of
+    the table tool request (`request_call`) is kept whatever it named, so a refused line is recorded."""
     declared = declared_tools(task, contracts)
     return [dict(row, task=task, rule_id=rule_id, unit_id=unit_id,
                  prompt_sha256=sha256(prompt) if prompt is not None else None)
-            for row in rows if row.get("tool") in declared]
+            for row in rows if row.get("tool") in declared or row.get("request_call")]
 
 
 def write_tool_rows(run_context, rows, call_of):
@@ -211,9 +231,11 @@ def write_tool_rows(run_context, rows, call_of):
     return len(rows)
 
 
-def refusals(registry, contracts):
+def refusals(registry, contracts, root=None):
     """Every reason the roster cannot run as declared, [] when it can: a task two agents declare, a
-    tool a task cannot run, a checking role on the model it checks. Boot refuses on any."""
+    tool a task cannot run, a checking role on the model it checks, and a declared table tool
+    request with no ratified amendment or with a tool the registry does not hold vetted and approved
+    (`tool_registry.startup_refusals`, D-681). Boot refuses on any."""
     out = []
     tasks = sorted({t for c in (contracts or {}).values() for t in ((_judge(c) or {}).get("tasks") or {})})
     for task in tasks:
@@ -221,6 +243,12 @@ def refusals(registry, contracts):
             role_for(task, registry, contracts)
         except ContractRefused as exc:
             out.append(str(exc))
+        names = request_tools(task, contracts)
+        if names:
+            import tool_registry
+            if task != CELL_CLAIM:
+                out.append("the task %s declares request_tools; only %s takes a table tool request" % (task, CELL_CLAIM))
+            out.extend(tool_registry.startup_refusals(task, names, root))
     for checker, checked in family_violations(registry, contracts):
         out.append("%s checks %s on the same backend or model, or on a role the registry does not hold" % (checker, checked))
     return out

@@ -20,6 +20,12 @@ refuses a launch, in one line, when:
     formula `budget - spend - caps - storage - 1`;
   * the capped run time (cap / live price) does not cover the forecast time plus the
     run's stop reserve (the runner stops its workload that long before the ceiling).
+  * (D-708) on a real launch, the operator's spending limits, read at call time from their one
+    declared source, `config/loop_spend_limits.json` (`read_spend_limits`), never from a number in
+    this file: a forecast above the per-step pre-approval (5 USD) without his approval of at least
+    that forecast (`step_rule`), and a forecast that would carry the spend past the remaining-spend
+    limit counted from its baseline (D-599: 140 USD from 197 USD, `remaining_refusal`); that limit
+    is also a ceiling of the cap. A mocked launch reads only the limits it is given.
 "Spend + forecast + storage passes the budget" needs no refusal of its own: the cap rule
 already keeps it at or below the ceiling, which is at most the budget less one dollar and
 at most the hard stop, the spend at which the reaper ends every loop instance. Spend is counted once per launch by instance id or name across
@@ -66,7 +72,9 @@ POLL_INTERVAL_SECONDS = 60
 EVENTS = ('launch_intent', 'launch', 'termination')
 LEDGER_FIELDS = ('event', 'time_utc', 'launch_requested_utc', 'instance_id', 'instance_name', 'type', 'region',
                  'price_usd_per_hour', 'purpose', 'forecast_usd', 'cap_usd', 'deadline_utc', 'actual_minutes',
-                 'actual_cost', 'by', 'reason', 'copied_from')
+                 'actual_cost', 'by', 'reason', 'copied_from',
+                 # D-675 condition 3: a seal request's launch lines name the instance as where the job is sealed.
+                 'seal_on')
 PURPOSE = re.compile(r'[a-z0-9][a-z0-9-]{0,39}')
 R_INPUT_FIELDS = ('spend_usd', 'storage_forecast_usd', 'allocation_left_usd', 'forecast_usd', 'cap_usd', 'instance_type')
 # The run's own needs, not an instance type's: the VRAM the frozen checkpoints were
@@ -137,9 +145,71 @@ def cap_ceiling(budget, hard_stop):
     return min(hard_stop, budget - RESERVE_USD)
 
 
+# D-708: the operator's spending limits, one declared source read at every call (never cached, never a
+# constant here): the per-step pre-approval and the remaining-spend limit with the baseline it counts from.
+SPEND_LIMITS = ROOT / 'config' / 'loop_spend_limits.json'
+LIMIT_TOLERANCE_USD = 1e-9      # float rounding only: a 5.00 forecast is 5.00, a 5.01 one is above it
+DECISION_ID = re.compile(r'D-\d+')
+
+
+def read_spend_limits(path=None):
+    """The per-step pre-approval and the remaining-spend limit, read now from `config/loop_spend_limits.json`
+    (or `path`): {step_preapproved_usd, remaining_limit_usd, remaining_baseline_usd, remaining_ceiling_usd,
+    decision}. An unreadable file or a figure that is not a finite positive number refuses the launch."""
+    try:
+        value = json.loads(Path(SPEND_LIMITS if path is None else path).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        refuse(False, 'The spend limits (config/loop_spend_limits.json) cannot be read')
+    refuse(isinstance(value, dict), 'The spend limits are not an object')
+    step = number(value.get('step_preapproved_usd'), 'per-step pre-approval')
+    limit = number(value.get('remaining_limit_usd'), 'remaining-spend limit')
+    baseline = number(value.get('remaining_baseline_usd'), 'remaining-spend baseline', positive=False)
+    decision = value.get('decision')
+    refuse(isinstance(decision, str) and DECISION_ID.fullmatch(decision) is not None,
+           'The spend limits name the decision that set them (D-<n>)')
+    return dict(step_preapproved_usd=step, remaining_limit_usd=limit, remaining_baseline_usd=baseline,
+                remaining_ceiling_usd=baseline + limit, decision=decision)
+
+
+def step_rule(forecast, limits, approval=None):
+    """D-708: 'pre-approved' for a forecast at or below the per-step pre-approval (no question); above it,
+    'approved' only with the operator's approval of at least the forecast ({usd, source}, the source his
+    decision's id); otherwise a refusal that sends the step to him."""
+    pre = limits['step_preapproved_usd']
+    if forecast <= pre + LIMIT_TOLERANCE_USD:
+        return 'pre-approved'
+    refuse(isinstance(approval, dict) and approval.get('usd') is not None,
+           'Forecast %.2f dollars is above the %.2f dollar per-step pre-approval (%s): ask Seckin first'
+           % (forecast, pre, limits['decision']))
+    usd = number(approval['usd'], 'approved step')
+    refuse(isinstance(approval.get('source'), str) and DECISION_ID.fullmatch(approval['source']) is not None,
+           'A step approval names the decision that records it (D-<n>)')
+    refuse(forecast <= usd + LIMIT_TOLERANCE_USD,
+           'Forecast %.2f dollars is above the %.2f dollars approved in %s' % (forecast, usd, approval['source']))
+    return 'approved'
+
+
+def remaining_refusal(committed, forecast, limits):
+    """D-599 as raised by D-703 and D-708: what is spent and held (spend, running caps, storage forecast,
+    overrun reserve) plus this forecast stays at or below the baseline plus the remaining-spend limit."""
+    ceiling = limits['remaining_ceiling_usd']
+    refuse(committed + forecast <= ceiling + LIMIT_TOLERANCE_USD,
+           'Forecast %.2f dollars would pass the remaining-spend limit: %.2f dollars from the %.2f dollar baseline '
+           '(%s) leaves %.2f dollars after the spend, running caps, storage and overrun'
+           % (forecast, limits['remaining_limit_usd'], limits['remaining_baseline_usd'], limits['decision'],
+              ceiling - committed))
+    return round(ceiling - committed, 4)
+
+
 def reaper_ledgers():
-    """The ledgers the scheduled reaper reads, resolved at call time."""
-    return [Path(instance_reaper.PRIVATE_LEDGER), Path(instance_reaper.R_LEDGER)]
+    """The ledgers the scheduled reaper reads, resolved at call time: the MAIN checkout's private ledger
+    (instance_reaper.private_ledger, through tools/loop/shared_paths.py, never a link in this checkout) and R's."""
+    import shared_paths
+    try:
+        private = instance_reaper.private_ledger()
+    except shared_paths.MainCheckoutError as exc:
+        refuse(False, str(exc))
+    return [Path(private), Path(instance_reaper.R_LEDGER)]
 
 
 def same_path(a, b):
@@ -356,13 +426,17 @@ def claim_comparison(name, machine, now_epoch, registry=None):
 
 
 def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_epoch, reserve_minutes,
-          provider_names=(), instance_type=None, r_inputs=None, reaped=None, spend_store=None):
+          provider_names=(), instance_type=None, r_inputs=None, reaped=None, spend_store=None,
+          spend_limits=None, step_approval=None):
     """Decide one loop launch. Returns the cap and the figures it rests on, or refuses.
 
     `reaped` replaces the reaper's ledgers only for a mocked launch (the rehearsal and the
     fixtures); a real launch reads the reaper's own. The cloud reference's API spend counts with
     Lambda's (D-401): a real launch reads the shared spend store (`spend_store_path`); a mocked one
-    reads only the store it is given."""
+    reads only the store it is given. Likewise the operator's spending limits (D-708): a real launch
+    reads `config/loop_spend_limits.json` now (`read_spend_limits`); a mocked one reads only the
+    limits it is given. `step_approval` ({usd, source}) is the operator's word for a step above the
+    pre-approval, sealed with the bundle."""
     ledgers = ledger_set([Path(p) for p in ledgers], reaped)
     forecast = forecast_usd(forecast_minutes, hourly_rate)
     storage = number(storage_forecast_usd, 'storage forecast', positive=False)
@@ -392,6 +466,13 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
            % ', '.join(unrecorded))
     ceiling = cap_ceiling(budget, hard_stop)
     overrun = overrun_reserve(running, hourly_rate)
+    limits = spend_limits if spend_limits is not None else (read_spend_limits() if reaped is None else None)
+    step = left = None
+    if limits is not None:
+        # D-708: the per-step pre-approval, then the remaining-spend limit, which is also a ceiling of the cap.
+        step = step_rule(forecast, limits, step_approval)
+        left = remaining_refusal(spend + running_caps + storage + overrun, forecast, limits)
+        ceiling = min(ceiling, limits['remaining_ceiling_usd'])
     cap = per_run_cap(forecast, spend, running_caps, storage, ceiling, overrun)
     if r_inputs is not None:
         cap = min(cap, number(r['cap_usd'], 'R cap'))
@@ -404,7 +485,10 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
                 spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage,
                 overrun_reserve_usd=round(overrun, 4), warning_usd=warning,
                 warning_reached=warning is not None and spend + running_caps + forecast >= warning,
-                budget_usd=budget, hard_stop_usd=hard_stop, cap_ceiling_usd=ceiling)
+                budget_usd=budget, hard_stop_usd=hard_stop, cap_ceiling_usd=ceiling, step_rule=step,
+                step_preapproved_usd=limits['step_preapproved_usd'] if limits else None,
+                remaining_ceiling_usd=limits['remaining_ceiling_usd'] if limits else None, remaining_left_usd=left,
+                spend_limits_decision=limits['decision'] if limits else None)
 
 
 def require_purpose(purpose):

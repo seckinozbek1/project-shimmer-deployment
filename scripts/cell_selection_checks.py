@@ -742,7 +742,8 @@ def run_checks():
          lambda: with_source(passage_pairs_module().paired_review, "plan_calls", 'if (rules_by_id.get(rule_id) or {}).get("compare"):', "if False:")),
         ("no legal-text check on a declared claim", observe_no_legal_text_checks,
          lambda: {"refused": 0, "uncomputable plans": 0, "absence plans": 0, "cell rows": 1}, _both_unit_guards_off),
-        ("no key, no word list", observe_imports, lambda: ["choice_decision", "json", "judge_agent", "math", "paired_review", "pairing_map", "pathlib", "re"],
+        ("no key, no word list", observe_imports, lambda: ["choice_decision", "json", "judge_agent", "math", "paired_review", "pairing_map", "pathlib", "re",
+                                                     "table_tools"],
          lambda: patched(module, "__file__", str(ROOT / "scripts" / "cell_selection_checks.py"))),
     ]
     results = []

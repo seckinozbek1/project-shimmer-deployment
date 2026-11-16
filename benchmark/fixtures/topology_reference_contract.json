@@ -20,7 +20,7 @@
     "_local_progress_bump_expected": "0893425ec9e0651ce360018512d08df4746dcba49a55a33ffbc600c6aaded333",
     "_local_contract_outcome": "f9e5201851ec447febd6f0aa55a55f969ea3a80847f1d8ec232d9dbe2300fbbe",
     "_local_progress_memory_sampler": "e131bea3eb4e5d332b932931e6d356fcc67457be51753fca9cde645dd350e6f7",
-    "_load_corpus": "db573a8ee577cfef26406c7c145f2a1b16f692058b994b285cddc9a48f992887",
+    "_load_corpus": "6e67573b221fd549e12bc9562b4f151c5426d50739c4503e1392610f67bd9f5d",
     "_prewarm_qwen": "ed82178f194ef037479e87b958df19b1598af0f4f1e3ae252ce909c599393294",
     "_truncate": "e65efb4682baed8fcc48cfca80ea58d02220556f4c7c6cca7cedd173788f4037",
     "_resolve_review_scope": "f021ad0349008fd15ba7b44bb38c60a66cb3c1077eaca2f501195710996c034e",
@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "de19d933c917003a2fcdcab7a128596a750e7c83e4c592a779d67f9fec5fb90b",
-    "_paired_convention_review": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c",
+    "_paired_convention_review": "5d288e4b39b4ac49c979830377b40f28e555f49ad121d50ebdc5e084aaf8e1d7",
     "_stamped_judged_items": "13c1affe52931469993d6ba022155db219e7a8e2c601466031e223cf1481bb88",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -63,7 +63,7 @@
     "_structural_inventory": "336876ba2164ad5f3a6d19e2d24016a25b66f4091e5cb66811325cb6f105cd1d",
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
-    "write_deliverables_run_summary": "c1efe396db34a904a19cda360828da14873d5c409292ca25f5621803dc11048d",
+    "write_deliverables_run_summary": "65aa9bd557518fe99374e92a43c0fa2cb457c0d453624799768964a8a2a78df6",
     "phase_6_synthesis": "aebac7e1f30508cfe31f2a668b764b9579929ae2d9aa204d727a797c0c4fa331",
     "_prior_refusals_for": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
@@ -87,7 +87,7 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "eec12c2cdaa7cb89c2a3b655de70eeb88111ed2c7c4bfa1606e88521c11e8a8f",
-    "main": "a7974931ad77eb66b32fae53ab09c75c48d271fd7b55a2f673ac5278612fd5ea",
+    "main": "55ed291c2f67d105b7f869a4f2c102984b89ef4323b056fd97d3234798a7840a",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
@@ -95,7 +95,7 @@
     "_inst_finder_switch": "997b82c3d86d020d20b76705ff24acfadbb1c2b1ad40e8a333cb85e60d8dd692",
     "_inst_finder_decision": "c849da06408de7a8e1489a13b81146c4a0e8edaaac624e1d7f684bbf46f44e39",
     "_passage_pair_review": "517574184b5187ce31857d229e1b32510476f78cc29ad974f6121fde7adf5be9",
-    "_cell_claim_review": "504cd31a573caf2e6af1c0d1b7cdac1d7be876ce7c742245ada1f93e401cae6c",
+    "_cell_claim_review": "42656c8f3df3016c3c8bad6342ad3cf24613921d01b7b6a55ca173fc09200c4b",
     "_narrow_ask": "593960cdca76d1f6aac7b83f5ce8e40e0a1875dcf10bc1ffc673cadec2f4d436",
     "_registry_local_profile": "2ee991bc67eff0a228dc8c06fa05aeb20b1de918a611bd1b0805a833690eb5fc",
     "_verifier_pair_decisions": "92a13ef1dd4d0453dc53aa8240e06e45f1b4d929697de07e5dffb5476f874f23",
@@ -888,6 +888,62 @@
         "_paired_convention_review": {
           "from": "d68c04e266ce093b396580f5206c978441f5edeece0b8a8f92aed3716a8fd0dd",
           "to": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c"
+        }
+      }
+    },
+    {
+      "date": "2026-11-16",
+      "reason": "Operator-directed, 16 November 2026, loop stage S-table-tool (D-681, D-689; lane/table-tool): _cell_claim_review builds the table tool request's narrow call (`ask_request`, task and plan kind cell_claim_request, decided False, table_tools.send under the request's own decoding grammar, the same call_of so its tool rows join its call id) ONLY when the judge's contract declares request_tools for cell_claim, and passes it to cell_selection.review. With nothing declared, as shipped, ask_request is None, no request is made and the question and the run are byte for byte the measured ones (check 394). The declaration is honoured only under a ratified amendment (boot refuses otherwise, tool_registry.startup_refusals, check 388); docs/TABLE_TOOL_REQUEST_DELTA_DRAFT.md is the unratified draft.",
+      "document": "docs/loop/stages/TABLE_TOOL_DESIGN.md; docs/loop/DECISIONS.md D-681; scripts/table_tool_checks.py (checks 388 to 394)",
+      "functions": {
+        "_cell_claim_review": {
+          "from": "504cd31a573caf2e6af1c0d1b7cdac1d7be876ce7c742245ada1f93e401cae6c",
+          "to": "42656c8f3df3016c3c8bad6342ad3cf24613921d01b7b6a55ca173fc09200c4b"
+        }
+      }
+    },
+    {
+      "date": "2026-11-16",
+      "reason": "Operator-directed, 2026-11-16, D-666 and D-667 (issues #280 and #281 gap 14): _load_corpus reads each document through text_extract.extract_layers (main text unchanged), prints its layer record and keeps it on the document; write_deliverables_run_summary writes each record under Layers read",
+      "document": "docs/CLAUDE_REFERENCE.md#layers-a",
+      "functions": {
+        "_load_corpus": {
+          "from": "db573a8ee577cfef26406c7c145f2a1b16f692058b994b285cddc9a48f992887",
+          "to": "10630c19816798bf1be49d32bc2c1953afb8c4c4e3ef1395a0ce4c27905e9c3e"
+        },
+        "write_deliverables_run_summary": {
+          "from": "c1efe396db34a904a19cda360828da14873d5c409292ca25f5621803dc11048d",
+          "to": "f75a996cf28ba087ef399b1a806c58ca822c09d9a4d4e4e49bd85ad013f5bf50"
+        }
+      }
+    },
+    {
+      "date": "2026-11-16",
+      "reason": "Operator-directed, 16 November 2026, merge of lane/reader-pdf-html (a525966a) onto lane/reader-docx (#280 PDF and HTML parts, #281 gaps 1, 12 and 13; D-666, D-667): _load_corpus reads each document through text_extract.extract_layers, prints its layer record and also notes it in reader_report (an empty file is an EMPTY INPUT, warned, never dropped silently; reader_report imported in the function because the sealer runs it with Path and text_extract only); main writes audit/reader_layers.json after the corpus is loaded and logs its counts; write_deliverables_run_summary writes the Layers read section and then the Empty input and What the reader read sections. No document text, author name or review decision changes.",
+      "document": "scripts/reader_report.py; scripts/reader_layers_checks.py (checks 405 to 408); scripts/document_layers_checks.py (checks 400 to 404); docs/CLAUDE_REFERENCE.md#reader-layers-a",
+      "functions": {
+        "_load_corpus": {
+          "from": "10630c19816798bf1be49d32bc2c1953afb8c4c4e3ef1395a0ce4c27905e9c3e",
+          "to": "6e67573b221fd549e12bc9562b4f151c5426d50739c4503e1392610f67bd9f5d"
+        },
+        "main": {
+          "from": "a7974931ad77eb66b32fae53ab09c75c48d271fd7b55a2f673ac5278612fd5ea",
+          "to": "55ed291c2f67d105b7f869a4f2c102984b89ef4323b056fd97d3234798a7840a"
+        },
+        "write_deliverables_run_summary": {
+          "from": "f75a996cf28ba087ef399b1a806c58ca822c09d9a4d4e4e49bd85ad013f5bf50",
+          "to": "65aa9bd557518fe99374e92a43c0fa2cb457c0d453624799768964a8a2a78df6"
+        }
+      }
+    },
+    {
+      "date": "2026-11-16",
+      "reason": "Correction of the D-652 fix 4 entry (#290, open item 121): commit fa24d228, which made D-652 fix 4, is the only commit since D-570 that changed _paired_convention_review, and its own code hashes 5d288e4b... under reference_tree, unchanged since that commit; the entry above recorded cc00c91e..., which no commit on any branch produces (each commit touching the pipeline since 13 November hashed one by one). No code changes here: the pin is moved to the hash of the code D-652 fix 4 committed, and the chain runs on from the recorded value.",
+      "document": "docs/fix/OPEN_ITEMS.md item 121; issue #290; commit fa24d228 (D-652 fix 4, D-657); docs/loop/DECISIONS.md D-652, D-657",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c",
+          "to": "5d288e4b39b4ac49c979830377b40f28e555f49ad121d50ebdc5e084aaf8e1d7"
         }
       }
     }

@@ -5,6 +5,10 @@ Run by role B on its own pool, after `common/gate_leakage.py check`, and before 
   draw-contradoc --leakage <check result> --input <release file> --assignment <split file> --out <ids file>
   draw-scitab --leakage <check result> --input <release file> --out <ids file>
   class-setting --counts <counts file>
+  verify-fingerprint --fingerprints <file> --sha256 <digest on record> [--part-set <name>]
+
+Every draw and the verification take `--part-set`, a declared, dated part set (PART_SETS), the 12
+November one by default; the name is never inferred (D-705, issue #301).
 
 The draw reads ids, group keys and the leakage result only: no text, no label (D-458). The class
 setting reads the gold-class counts of the drawn SciTab claim set, counted by role B after the draw,
@@ -76,7 +80,112 @@ def under(label, prefix) -> bool:
     starts = [0] + [i + 1 for i, ch in enumerate(path) if ch == "/"]
     return any(path.startswith(prefix, i) for i in starts)
 REQUIRED_PARTS = tuple(PART_PATHS)
-NEI = "not enough info"
+
+# The part sets, declared and dated (D-705, issue #301). PART_PATHS above is the 12 November 2026 set the
+# gate set was cleared on (fingerprints ad64bab9..., its result read by the freeze of section 10); it stays
+# exactly as it was and stays the default, so the existing fingerprint and its result still read and verify.
+# A part set is chosen by its name (`--part-set` on the fingerprint, the cosine step, the draw and
+# verify-fingerprint), never inferred from the paths given or from any count. A fingerprint built under a
+# named set carries that name, and the check, the draw and the verification refuse a mismatch; a
+# fingerprint or a result with no name is the 12 November set's.
+PARTS_2026_11_12 = "parts_2026-11-12"
+PARTS_2026_11_16 = "parts_2026-11-16"
+DEFAULT_PART_SET = PARTS_2026_11_12
+# The parts after the 16 November 2026 data loss (D-704, D-705; LEAKAGE_PROTOCOL.md's dated paragraph).
+# `auditor` (external/s05/AUD) is gone and is no part. Development keeps the three ContraDoc and SciTab
+# development folders and the external/s05 run folders that remain; lost for good are G1, B2_suite, C, C1,
+# CASES, J1 and every L run (L2 to L13). The three folders added since 12 November (REFPAIR,
+# ROUTE_GATE_174_340, T253) are placed in development: each is a run folder of development-side work (a GPU
+# speed measurement, a route launch's gate rehearsal, a test run), none is a judge mix, a tuning set, the
+# producer's partitions or a verifier bundle, and development is the part that has held every such run
+# folder since the first fingerprint (SAVINGS_PROOF, D-404). Should one prove to be a named part's
+# training data, it moves only in a new dated set, never by editing this one.
+PART_PATHS_2026_11_16 = {
+    "judge_mix_2e": PART_PATHS["judge_mix_2e"],
+    "judge_mix_1": PART_PATHS["judge_mix_1"],
+    "judge": PART_PATHS["judge"],
+    "auditor_tuning": PART_PATHS["auditor_tuning"],
+    "producer": PART_PATHS["producer"],
+    "verifier": PART_PATHS["verifier"],
+    "ontology": PART_PATHS["ontology"],
+    "dev_cases": PART_PATHS["dev_cases"],
+    "development": ("external/contradoc/dev/", "external/contradoc/dev_moved/", "external/scitab/dev/")
+    + tuple("external/s05/%s/" % f for f in ("D-S45", "R1", "R2", "R_constraint", "SAVINGS_PROOF", "labels", "miss_diag",
+                                             "staging_records_d092", "suite_gen", "REFPAIR", "ROUTE_GATE_174_340", "T253"))
+    + ("external/s05/suite_staging.json",),
+}
+PART_SETS = {PARTS_2026_11_12: PART_PATHS, PARTS_2026_11_16: PART_PATHS_2026_11_16}
+# The prompts file the cosine step (LEAKAGE_PROTOCOL.md step 2) reads for its document-against-prompt
+# distribution, by part set. G1's was lost on 16 November 2026; its replacement (B1's fixed prompt around
+# development documents, through benchmark/baselines/bare_model.py) is not built, so the new set declares
+# none and its cosine step is refused until one is declared here (open item 134).
+COSINE_STEP_PROMPTS = {PARTS_2026_11_12: "external/s05/G1/g1_prompts.json", PARTS_2026_11_16: None}
+
+
+def part_paths(part_set) -> dict:
+    """The declared parts of a part set named in full; any other name, or none, is refused."""
+    if part_set not in PART_SETS:
+        raise ValueError("name a declared part set (%s); %r is not one" % (", ".join(sorted(PART_SETS)), part_set))
+    return PART_SETS[part_set]
+
+
+def check_given_parts(parts, part_set) -> None:
+    """A fingerprint's --part list under a declared part set: exactly the set's part names, and every
+    path given lies under one of its part's declared paths (a folder as itself, path prefixes at a
+    component, never substrings). Refused otherwise, before anything is read."""
+    declared = part_paths(part_set)
+    names = [p[0] for p in parts]
+    if sorted(names) != sorted(declared):
+        raise ValueError("part set %s names the parts %s; given %s" % (part_set, ", ".join(sorted(declared)), ", ".join(sorted(names))))
+    for name, path, *_keys in parts:
+        for q in [q for q in str(path).split(";") if q]:
+            resolved = Path(q).resolve()
+            label = leakage._posix(resolved) + ("/" if resolved.is_dir() else "")
+            if not any(under(label, prefix) for prefix in declared[name]):
+                raise ValueError("part set %s: %s is not under part %s's declared paths" % (part_set, q, name))
+
+
+def cosine_step_prompts(part_set, prompts) -> None:
+    """The cosine step's prompts file under a declared part set: refused when the set declares none (the
+    lost G1, not yet replaced) or when the file given is not the declared one."""
+    part_paths(part_set)
+    declared = COSINE_STEP_PROMPTS.get(part_set)
+    if declared is None:
+        raise ValueError("part set %s declares no cosine-step prompts file: G1's (external/s05/G1/g1_prompts.json) was lost on "
+                         "16 November 2026 and its replacement, B1's fixed prompt around development documents through "
+                         "bare_model.py, is not built (open item 134)" % part_set)
+    if not under(leakage._posix(Path(prompts).resolve()), declared):
+        raise ValueError("part set %s's cosine-step prompts file is %s, not %s" % (part_set, declared, prompts))
+
+
+def verify_fingerprint(path, sha256, part_set=DEFAULT_PART_SET) -> dict:
+    """A fingerprints file read under a declared part set: its SHA-256 is the one on record, it was built
+    under that set (no name: the 12 November set), it holds exactly the set's parts, and every file of a
+    part lies under that part's declared paths. Figures only. The whole file is read (the 12 November one
+    is 2,084,166,609 bytes compressed: a machine with the memory for it)."""
+    declared = part_paths(part_set)
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(block)
+    if digest.hexdigest() != sha256:
+        raise ValueError("the fingerprints' SHA-256 is %s..., not the %s... on record" % (digest.hexdigest()[:8], str(sha256)[:8]))
+    data = leakage.read(path)
+    if (data.get("part_set") or PARTS_2026_11_12) != part_set:
+        raise ValueError("the fingerprints were built under part set %s, not %s" % (data.get("part_set") or PARTS_2026_11_12, part_set))
+    if sorted(data.get("parts") or ()) != sorted(declared):
+        raise ValueError("the fingerprints hold the parts %s; part set %s names %s" % (
+            ", ".join(sorted(data.get("parts") or ())), part_set, ", ".join(sorted(declared))))
+    files = data.get("files") or {}
+    for part in sorted(declared):
+        labels = [f["file"].replace("\\", "/").split("!")[0] for f in files.get(part, [])]
+        if any(not any(under(label, q) for q in declared[part]) for label in labels):
+            raise ValueError("part %s was fingerprinted from other paths than part set %s names" % (part, part_set))
+    return {"part_set": part_set, "sha256": sha256, "parts": sorted(declared),
+            "files": {p: len(files.get(p, [])) for p in sorted(declared)}, "records": data.get("records")}
+
+
+NEI ="not enough info"
 NEI_MIN_CLAIMS = 30              # the 3-class setting needs this many not-enough-info claims
 NEI_MIN_SHARE = 0.15             # and this share of the claim set (half the paper's 356 of 1,224)
 SETTINGS = ("2-class", "3-class")
@@ -89,11 +198,17 @@ def order(keys, salt) -> list:
 EXPECTED = ("input_sha256", "fingerprints_sha256", "exclude_ids_sha256", "cosine_step_sha256")
 
 
-def _kept(leak, input_sha256=None, required_parts=REQUIRED_PARTS, expected=None) -> set:
+def _kept(leak, input_sha256=None, required_parts=None, expected=None, part_set=DEFAULT_PART_SET) -> set:
     """The groups a leakage result kept, refused unless it is this tool's, applied the cosine rule,
-    ran rule 4 on an exclusion file, ran on this input, was fingerprinted with every required part, and
-    ran on exactly the files `expected` names by digest (audit gap 6: the fingerprints, the exclusion
-    file, step 2's record and, for ContraDoc, the assignment)."""
+    ran rule 4 on an exclusion file, ran on this input, was fingerprinted under the named part set with
+    every required part (by default the set's every part) from that set's paths, and ran on exactly the
+    files `expected` names by digest (audit gap 6: the fingerprints, the exclusion file, step 2's record
+    and, for ContraDoc, the assignment)."""
+    paths = part_paths(part_set)
+    required_parts = tuple(paths) if required_parts is None else required_parts
+    if (leak.get("fingerprint_part_set") or PARTS_2026_11_12) != part_set:
+        raise ValueError("the leakage result's fingerprints were built under part set %s, not %s"
+                         % (leak.get("fingerprint_part_set") or PARTS_2026_11_12, part_set))
     if leak.get("format") != leakage.FORMAT or leak.get("thresholds") != leakage.THRESHOLDS:
         raise ValueError("the leakage result was made with another format or other thresholds")
     if leak.get("cosine_rule") != "applied":
@@ -112,18 +227,18 @@ def _kept(leak, input_sha256=None, required_parts=REQUIRED_PARTS, expected=None)
     files = leak.get("fingerprint_files") or {}
     for part in sorted(required_parts):
         labels = [f["file"].replace("\\", "/").split("!")[0] for f in files.get(part, [])]
-        if not labels or any(not any(under(label, q) for q in PART_PATHS.get(part, ())) for label in labels):
+        if not labels or any(not any(under(label, q) for q in paths.get(part, ())) for label in labels):
             raise ValueError("part %s was fingerprinted from other paths than section 9 names" % part)
     return set(leak["kept_group_keys"])
 
 
 def draw_contradoc(candidates, leak, n_quick=CONTRADOC_QUICK_GROUPS, n_claim=CONTRADOC_CLAIM_GROUPS, input_sha256=None,
-                   required_parts=REQUIRED_PARTS, expected=None) -> dict:
+                   required_parts=None, expected=None, part_set=DEFAULT_PART_SET) -> dict:
     """Whole groups the leakage check kept: the first `n_quick` in SALT_QUICK order are the quick
     subset; then whole groups in SALT_CLAIM order until the claim set holds `n_claim` documents, one a
     group (the lowest SHA-256 of SALT_CLAIM plus its id), so the draw stops at the group that reaches it
     (D-454 item 1, D-458). A pool that cannot reach `n_claim` is refused, never filled."""
-    kept = _kept(leak, input_sha256, required_parts, expected)
+    kept = _kept(leak, input_sha256, required_parts, expected, part_set)
     members = {}
     for c in candidates:
         if c["group"] in kept:
@@ -164,14 +279,14 @@ def hold_back_v3(candidates, tables=V3_SCITAB_TABLES, demonstration=()) -> list:
 
 
 def draw_scitab(candidates, leak, quick_min=SCITAB_QUICK, n_claims=None, input_sha256=None,
-                required_parts=REQUIRED_PARTS, v3_tables=V3_SCITAB_TABLES, expected=None, demonstration=()) -> dict:
+                required_parts=None, v3_tables=V3_SCITAB_TABLES, expected=None, demonstration=(), part_set=DEFAULT_PART_SET) -> dict:
     """Whole papers the leakage check kept, every claim of every table: v3's share held back first;
     papers in SALT_QUICK order until the quick subset holds both minima; then papers in SALT_CLAIM order
     until the claim set holds `n_claims` claims as drawn (D-458: 352 whatever the class setting), the
     draw stopping at the first paper that reaches it. It reads ids only, never a label. A pool that
     cannot reach the size is refused, never filled."""
     n_claims = SCITAB_CLAIM_CLAIMS if n_claims is None else n_claims
-    kept = _kept(leak, input_sha256, required_parts, expected)
+    kept = _kept(leak, input_sha256, required_parts, expected, part_set)
     held = hold_back_v3(candidates, v3_tables, demonstration) if v3_tables else []
     papers = {}
     for c in candidates:
@@ -327,6 +442,8 @@ def main(argv=None) -> int:
         d.add_argument("--out", required=True)
         for flag in ("--fingerprints-sha256", "--exclude-ids-sha256", "--cosine-step-sha256"):
             d.add_argument(flag, required=True, help="the digest the leakage result must have run on")
+        d.add_argument("--part-set", default=DEFAULT_PART_SET, choices=sorted(PART_SETS),
+                       help="the declared part set the fingerprints were built under (default: the 12 November set)")
         if name == "draw-contradoc":
             d.add_argument("--assignment", required=True)
         else:
@@ -344,9 +461,16 @@ def main(argv=None) -> int:
     x.add_argument("--fresh-ids", required=True)
     x.add_argument("--scitab-development", required=True)
     x.add_argument("--out", required=True)
+    v = sub.add_parser("verify-fingerprint")
+    v.add_argument("--fingerprints", required=True)
+    v.add_argument("--sha256", required=True, help="the digest on record")
+    v.add_argument("--part-set", default=DEFAULT_PART_SET, choices=sorted(PART_SETS))
     args = parser.parse_args(argv)
     try:
         leakage.guard_args(args)
+        if args.command == "verify-fingerprint":
+            print(json.dumps(verify_fingerprint(args.fingerprints, args.sha256, args.part_set), indent=2))
+            return 0
         if args.command == "freeze":
             sets = freeze(_json(args.contradoc_ids), _json(args.scitab_ids), _json(args.class_setting))
             digests = {}
@@ -371,15 +495,16 @@ def main(argv=None) -> int:
             expected["assignment_sha256"] = _digest(args.assignment)
             from contradoc import adapter as cd
             cands = leakage.candidates_contradoc(cd.read_source(args.input), args.assignment, ids.HOLDOUT)
-            result = draw_contradoc(cands, leak, input_sha256=_digest(args.input), expected=expected)
+            result = draw_contradoc(cands, leak, input_sha256=_digest(args.input), expected=expected, part_set=args.part_set)
             result["assignment_sha256"] = _digest(args.assignment)
         else:
             from scitab import adapter as st
             cands = leakage.candidates_scitab(st.read_source(args.input), ids.HOLDOUT)
             demonstration = leakage._ids_file(args.demonstration_tables)
-            result = draw_scitab(cands, leak, input_sha256=_digest(args.input), expected=expected, demonstration=demonstration)
+            result = draw_scitab(cands, leak, input_sha256=_digest(args.input), expected=expected, demonstration=demonstration,
+                                 part_set=args.part_set)
             result["demonstration_tables_sha256"] = _digest(args.demonstration_tables)
-        result.update(input_sha256=_digest(args.input), leakage_sha256=_digest(args.leakage))
+        result.update(input_sha256=_digest(args.input), leakage_sha256=_digest(args.leakage), part_set=args.part_set)
         Path(args.out).write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
         print(json.dumps({"claim": len(result["claim"]), "quick": len(result["quick"])}))
         return 0

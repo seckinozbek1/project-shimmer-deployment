@@ -609,7 +609,19 @@ def loop_ledgers(store):
     and role R's ledger, where the reaper reads it."""
     import loop_budget_guard  # noqa: F401  (puts tools/loop on the path for the reaper)
     import instance_reaper
-    return [Path(store).parent / Path(instance_reaper.PRIVATE_LEDGER).name, Path(instance_reaper.R_LEDGER)]
+    return [Path(store).parent / ledger_name(), Path(instance_reaper.R_LEDGER)]
+
+
+def ledger_name():
+    """The budget ledger's file name: a proof's PRIVATE_LEDGER when one is set, else shared_paths.LEDGER_NAME.
+    Since DELETE-SAFE-A item 2 (ed7b5faf) instance_reaper.PRIVATE_LEDGER is None and resolved at use; only the
+    name is needed here, so nothing resolves the main checkout (none may exist, as on the Lambda gate)."""
+    import loop_budget_guard  # noqa: F401  (puts tools/loop on the path for the reaper)
+    import instance_reaper
+    import shared_paths
+    if instance_reaper.PRIVATE_LEDGER is not None:
+        return Path(instance_reaper.PRIVATE_LEDGER).name
+    return shared_paths.LEDGER_NAME
 
 
 def check_cap(cap_usd, store, ledgers=None, now=None, *, kind):

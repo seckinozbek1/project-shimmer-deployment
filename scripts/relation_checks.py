@@ -82,11 +82,15 @@ RATE_READING_AMBIGUOUS = "rate_reading_ambiguous"
 # than one, is refused.
 UNIT_RULE_UNDECLARED = "unit_rule_undeclared"
 UNIT_RULE_AMBIGUOUS = "unit_rule_ambiguous"
+# Issue #281 gap 14: a column where a merged table cell repeats its value is not summed; the
+# refusal is recorded under the sum relation (paired_review.merged_columns).
+SUM = "sum_mismatch"
+SUM_OVER_MERGED_CELLS = "sum_over_merged_cells"
 REFUSAL_KINDS = (RATE_THIRD_FIGURE_TIED, RATE_THIRD_FIGURE_UNNAMED, RATE_PART_WHOLE_UNDECIDED,
                  RATE_TOO_MANY_FIGURES, UNIT_NOT_CONVERTIBLE, COPY_SUBJECT_AMBIGUOUS,
                  COPY_SOURCE_LACKS_FIELD, COPY_MEASURE_DIFFERS, CARRY_SOURCE_DOES_NOT_ADD_UP,
                  CARRY_SOURCE_INCOMPLETE, CARRY_MEASURE_DIFFERS, RATE_READING_AMBIGUOUS,
-                 UNIT_RULE_UNDECLARED, UNIT_RULE_AMBIGUOUS)
+                 UNIT_RULE_UNDECLARED, UNIT_RULE_AMBIGUOUS, SUM_OVER_MERGED_CELLS)
 
 _CONVERSIONS_CACHE = None
 # A unit carrying an exponent the unit reader would drop (`m2`, `m^2`) is never

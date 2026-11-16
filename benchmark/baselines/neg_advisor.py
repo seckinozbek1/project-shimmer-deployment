@@ -61,6 +61,15 @@ STANCES = ("accept", "reject", "counter")
 STATES = ("closed", "dropped", "bracketed", "new", "binding")
 AUDIT = ("supported", "unsupported", "cannot_tell")
 POSITION_STANCES = ("support", "oppose", "accept")
+# D-711 item 1 (never invent): an advice entry may say what it rests on. `on_record` (also an entry that says
+# nothing) is held to the positions on record; `inferred` must carry `basis_quote`, the line it rests on, which
+# the scorer's Python step checks against the item's own text and never counts as on record.
+ON_RECORD, INFERRED = "on_record", "inferred"
+BASES = (ON_RECORD, INFERRED)
+BASIS_QUOTE_MAX_CHARS = 400
+# The fewest words a basis line holds (the plan's 5-gram, NGRAM in tools/score_neg_advisor.py): a shorter
+# line would be found in almost any text and support nothing.
+BASIS_QUOTE_MIN_WORDS = 5
 JUDGE_SEED = 20261113
 AGENT_LABEL = "NEG_ADVISOR"
 PHASE = "NEG_ADVISOR"
@@ -69,7 +78,7 @@ PHASE = "NEG_ADVISOR"
 TOKEN_LIMIT = 24000
 TOKENIZER = "Qwen/Qwen2.5-7B-Instruct"
 # What the judge must never see (plan section 6.3): a citation id of the item, in any wording it grades.
-CITATION_ID = re.compile(r"\b(?:PAR|POS)-\d+\b|\bP-[A-Za-z0-9.]+-\d+\b")
+CITATION_ID = re.compile(r"\b(?:PAR|POS|LAY)-\d+\b|\bP-[A-Za-z0-9.]+-\d+\b")
 # The fields load_prompts holds each prompt to (its rendering, its digest, no system turn, its allowance).
 HELD_FIELDS = ("user", "user_sha256", "system", "max_new_tokens")
 JUDGED_FATES = ("changed", "kept")
@@ -78,6 +87,16 @@ JUDGED_FATES = ("changed", "kept")
 # the code under tools/ names it only through this constant, so its own text carries no such word.
 TERMS_FIELD = "licence"
 ATTRIBUTION_FIELD = "attribution"
+# D-664 item 2: every red line carries its source. For now only the document (v1.1 adds the operator's mandate);
+# a build may give a red line as a position id (from the document) or as {"position", "source"}.
+RED_LINE_SOURCES = ("from the document",)
+# D-666 item 2: the document layers the advisor takes in, as the reader returns them apart (scripts/docx_layers.py,
+# scripts/pdf_layers.py, scripts/html_layers.py): each entry its layer kind, its text, its author and, for a
+# comment, the text it is anchored on. Each carries an id `LAY-<n>`, so a reason can cite it.
+LAYER_KINDS = ("insertion", "deletion", "comment", "footnote", "endnote", "annotation")
+LAYER_ID = "LAY-%d"
+# D-668 gap 4: how a non-persona party moved toward or away from the persona over the rounds on record.
+MOVEMENTS = ("toward", "away", "steady", "not_stated")
 
 
 def _sha(text):
@@ -199,11 +218,31 @@ def _fill(template, slots):
 # rendering
 
 
-def render_advice(config, item):
+def party_text(party):
+    """A party as the prompt names it: its id and kind, and a coalition's declared members (D-668 gap 6)."""
+    if party.get("members"):
+        return "%s (%s of %s)" % (party["id"], party["kind"], ", ".join(party["members"]))
+    return "%s (%s)" % (party["id"], party["kind"])
+
+
+def layer_line(entry):
+    """One document layer entry as the prompt shows it (D-666): its id, kind, author and anchor, then its text."""
+    who = " by %s" % entry["author"] if entry.get("author") else ""
+    on = ' on "%s"' % entry["anchor"] if entry.get("anchor") else ""
+    return "- %s, %s%s%s: %s" % (entry["id"], entry["layer"], who, on, entry["text"])
+
+
+def _layer_block(head, entries):
+    return ("\n" + head + "\n" + "\n".join(layer_line(e) for e in entries)) if entries else ""
+
+
+def render_advice(config, item, method=None):
     a = config["advice"]
+    method = method or PLAIN
     persona = item["persona"]
-    who = "%s (%s)" % (persona["id"], persona["kind"])
-    parties = ", ".join("%s (%s)" % (p["id"], p["kind"]) for p in item["parties"])
+    by_id = {p["id"]: p for p in item["parties"]}
+    who = party_text(dict(by_id.get(persona["id"]) or {}, id=persona["id"], kind=persona["kind"]))
+    parties = ", ".join(party_text(p) for p in item["parties"])
     if item.get("game"):
         g = item["game"]
         table = "\n".join("- %s: %s" % (issue, ", ".join("%s %s" % (o, s) for o, s in sorted(opts.items())))
@@ -217,15 +256,27 @@ def render_advice(config, item):
     def line(p):
         where = p["article"] + ("" if p.get("proposal") is None else " proposal %d" % p["proposal"])
         mark = " RED LINE" if p["id"] in red else ""
-        return "- %s%s, %s, round %s, on %s: %s" % (p["id"], mark, p["party"], p["round"], where, p["quote"])
+        # D-668 gap 6: a position a member stated on behalf of its coalition is the coalition's; who said it is shown.
+        party = p["party"] + (", said by %s" % p["speaker"] if p.get("speaker") else "")
+        return "- %s%s, %s, round %s, on %s: %s" % (p["id"], mark, party, p["round"], where, p["quote"])
     mandate = "\n".join(line(p) for p in item["positions"] if p["party"] == persona["id"]) or "(none on record)"
     others = "\n".join(line(p) for p in item["positions"] if p["party"] != persona["id"]) or "(none on record)"
+    layers = item.get("layers") or []
     blocks = []
     for art in item["articles"]:
         head = "ARTICLE %s: %s%s" % (art["id"], art["title"], " (agreed)" if art.get("agreed") else "")
         paras = "\n".join("%s: %s" % (p["id"], p["text"]) for p in art["paragraphs"])
         props = "\n".join("%s: %s" % (p["id"], p["text"]) for p in art["proposals"])
-        blocks.append(head + "\n" + paras + ("\nPROPOSALS:\n" + props if props else ""))
+        # D-666: the document's own layers on this article (comments, tracked changes, notes), each apart.
+        notes = _layer_block("NOTES AND CHANGES IN THE DOCUMENT ON THIS ARTICLE:",
+                             [e for e in layers if e.get("article") == art["id"]])
+        blocks.append(head + "\n" + paras + ("\nPROPOSALS:\n" + props if props else "") + notes)
+    rest = _layer_block("NOTES AND CHANGES IN THE DOCUMENT OUTSIDE THESE ARTICLES:",
+                        [e for e in layers if e.get("article") is None])
+    if rest:
+        blocks.append(rest.lstrip("\n"))
+    if item.get("layers_not_read"):
+        blocks.append("LAYERS OF THE DOCUMENT THE READER COULD NOT READ: %s" % ", ".join(item["layers_not_read"]))
     index = lambda rows: ", ".join("%s %s" % (r["id"], r["title"]) for r in rows) or "(none)"
     trades = "; ".join("%s: give %s for %s, round %s" % (t["id"], t["give"], t["get"], t["round"])
                        for t in item.get("trades_on_record") or []) or "(none)"
@@ -233,12 +284,14 @@ def render_advice(config, item):
                                  "{mandate}": mandate, "{positions}": others, "{parties}": parties,
                                  "{articles}": "\n\n".join(blocks), "{round_index}": index(item["round_index"]),
                                  "{previous_index}": index(item["previous_index"]), "{trades}": trades,
-                                 "{instructions}": a["instructions"]})
+                                 "{instructions}": a["instructions"] + method_instructions(config, method)})
 
 
 def item_ids(item):
-    """(paragraph ids, position ids, proposal ids, article ids) of an item."""
+    """(passage ids, position ids, proposal ids, article ids) of an item; the passages are its paragraphs and
+    its document layer entries (D-666), both citable as a reason."""
     pars = {p["id"] for a in item.get("articles") or [] for p in a["paragraphs"]}
+    pars |= {e["id"] for e in item.get("layers") or []}
     poss = {p["id"] for p in item.get("positions") or []}
     props = {p["id"] for a in item.get("articles") or [] for p in a["proposals"]}
     arts = {a["id"] for a in item.get("articles") or []}
@@ -256,6 +309,7 @@ def proposal_text(item, pid):
 def cited_text(item, ids):
     texts = {p["id"]: p["text"] for a in item.get("articles") or [] for p in a["paragraphs"]}
     texts.update({p["id"]: "%s, round %s: %s" % (p["party"], p["round"], p["quote"]) for p in item.get("positions") or []})
+    texts.update({e["id"]: layer_line(e)[len("- %s, " % e["id"]):] for e in item.get("layers") or []})
     return "\n".join("- %s: %s" % (i, texts[i]) for i in ids if i in texts) or "(nothing it cites is in the item)"
 
 
@@ -279,6 +333,117 @@ def render_validate(config, item, position):
         "{article}": position["article"],
         "{proposal}": "none" if position.get("proposal") is None else position["proposal"],
         "{stance}": position["stance"], "{article_ids}": VALIDATE_IDS_SEPARATOR.join(article_ids(item))})
+
+
+# ---------------------------------------------------------------------------
+# D-664 red-line sources, D-666 document layers, D-668 gap 4 movement: computed in Python, never from words
+
+
+def read_red_lines(declared):
+    """(ids, {id: source}) of a build's red lines (D-664 item 2): each a position id, from the document, or
+    {"position": id, "source": s} with s one of RED_LINE_SOURCES; anything else is refused."""
+    ids, sources = [], {}
+    for r in declared or []:
+        if isinstance(r, str):
+            pid, source = r, RED_LINE_SOURCES[0]
+        elif isinstance(r, dict) and isinstance(r.get("position"), str):
+            pid, source = r["position"], r.get("source", RED_LINE_SOURCES[0])
+        else:
+            raise ValueError("a red line is a position id or {position, source}")
+        if source not in RED_LINE_SOURCES:
+            raise ValueError("a red line's source is one of: %s" % ", ".join(RED_LINE_SOURCES))
+        if pid in sources:
+            raise ValueError("a red line is declared twice: %s" % pid)
+        ids.append(pid)
+        sources[pid] = source
+    return ids, sources
+
+
+def red_line_source(persona, position_id):
+    """The source of one of the persona's red lines (D-664); None when the position is no red line. An item
+    built before the field holds no sources: its red lines are from the document, the only source there was."""
+    if position_id not in set(persona.get("red_lines") or []):
+        return None
+    return (persona.get("red_line_sources") or {}).get(position_id) or RED_LINE_SOURCES[0]
+
+
+_READER_LAYERS = (("insertions", "insertion"), ("deletions", "deletion"), ("comments", "comment"),
+                  ("footnotes", "footnote"), ("endnotes", "endnote"))
+
+
+def layers_from_reader(reading):
+    """D-666 item 2: the build's layer entries from what the document reader returns apart, never from words.
+    `reading` is a .docx reading (scripts/docx_layers.read_layers: insertions, deletions, comments with their
+    anchors, footnotes, endnotes, and its layer record), a PDF or HTML reading (pdf_layers / html_layers: its
+    `items`, annotations or changes, and its `record`), or a list of such items. Returns {"layers": [{layer,
+    text, author, anchor, article: None}], "empty": entries with no text left out, "not_read": the record's
+    lost layers}; the set builder places each entry on its article (or leaves it None, outside the excerpt)."""
+    out, empty = [], 0
+
+    def put(kind, text, author, anchor=""):
+        nonlocal empty
+        text = " ".join(str(text or "").split())
+        if not text:
+            empty += 1
+            return
+        out.append({"layer": kind, "text": text, "author": str(author or ""), "anchor": " ".join(str(anchor or "").split()),
+                    "article": None})
+    record = None
+    if isinstance(reading, dict) and any(k in reading for k, _kind in _READER_LAYERS):
+        for key, kind in _READER_LAYERS:
+            for r in reading.get(key) or []:
+                put(kind, r.get("text"), r.get("author"), r.get("anchor") if kind == "comment" else "")
+        record = reading.get("record")
+    else:
+        items = getattr(reading, "items", reading)
+        record = getattr(reading, "record", None)
+        for r in items or []:
+            kind = r.get("layer")
+            if kind not in LAYER_KINDS:
+                raise ValueError("a reader item's layer is one of %s" % ", ".join(LAYER_KINDS))
+            put(kind, r.get("note") if kind == "annotation" else r.get("text"), r.get("author"))
+    return {"layers": out, "empty": empty, "not_read": list((record or {}).get("lost") or [])}
+
+
+def _sign_of(stances):
+    s = {1 if x in ("support", "accept") else -1 for x in stances}
+    return s.pop() if len(s) == 1 else 0
+
+
+def party_movement(positions, persona, party, article, numbers):
+    """D-668 gap 4: how `party` moved relative to the persona on one article over the rounds on record. Per
+    round in which the party holds a position on the article, its relation to the persona (same or opposite
+    sign, proposal by proposal by the plan's `applicable`, the persona's sign over all its rounds), kept when
+    every proposal they share agrees; then the first and last such round: toward (opposite, then same), away
+    (same, then opposite), steady, or not_stated (fewer than two rounds with a relation). From the declared
+    stances and rounds alone."""
+    rounds = sorted({p["round"] for p in positions if p["party"] == party and p["article"] == article})
+    relations = []
+    for rnd in rounds:
+        in_round = [p for p in positions if p["round"] == rnd]
+        rel = set()
+        for n in numbers or [None]:
+            mine = _sign_of([p["stance"] for p in _applicable(positions, persona, article, n)])
+            theirs = _sign_of([p["stance"] for p in _applicable(in_round, party, article, n)])
+            if mine and theirs:
+                rel.add(mine == theirs)
+        if len(rel) == 1:
+            relations.append(rel.pop())
+    if len(relations) < 2:
+        return "not_stated"
+    first, last = relations[0], relations[-1]
+    return "steady" if first == last else ("toward" if last else "away")
+
+
+def movement_map(item, positions):
+    """{article: {party: movement}} over every party but the persona (D-668 gap 4), from `positions` with their
+    stances: the build's declared stances for the key, the stances the step-wise chain had checked for the
+    system's advice (an item's own positions carry no stance)."""
+    persona = item["persona"]["id"]
+    return {art["id"]: {p["id"]: party_movement(positions, persona, p["id"], art["id"],
+                                                list(range(1, len(art["proposals"]) + 1)))
+                        for p in item["parties"] if p["id"] != persona}
+            for art in item.get("articles") or []}
 
 
 # ---------------------------------------------------------------------------
@@ -346,6 +511,12 @@ def parse_advice(text, item):
             entry["stance"] = e["stance"]
         if isinstance(e.get("wording"), str) and e["wording"].strip():
             entry["wording"] = e["wording"].strip()
+        if e.get("basis") in BASES:
+            entry["basis"] = e["basis"]
+        if isinstance(e.get("basis_quote"), str) and e["basis_quote"].strip():
+            entry["basis_quote"] = e["basis_quote"].strip()
+        if isinstance(e.get("rationale"), str) and e["rationale"].strip():
+            entry["rationale"] = e["rationale"].strip()   # D-713: kept apart, never scored
         proposals[entry["id"]] = entry
     trades = []
     for t in value.get("trades") if isinstance(value.get("trades"), list) else []:
@@ -362,6 +533,10 @@ def parse_advice(text, item):
             continue
         alignment[_one_id(e["article"])] = {"aligned": [p for p in (_ids(e.get("aligned")) or []) if p in parties],
                                    "opposed": [p for p in (_ids(e.get("opposed")) or []) if p in parties]}
+        if e.get("basis") in BASES:
+            alignment[_one_id(e["article"])]["basis"] = e["basis"]
+        if isinstance(e.get("basis_quote"), str) and e["basis_quote"].strip():
+            alignment[_one_id(e["article"])]["basis_quote"] = e["basis_quote"].strip()
     state = {}
     for e in value.get("state") if isinstance(value.get("state"), list) else []:
         if isinstance(e, dict) and _one_id(e.get("article")) in known_articles and e.get("state") in STATES:
@@ -461,7 +636,7 @@ def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None
             raise ValueError("the advice form runs on b1 and system_advice only")
         for group in groups:
             for item_id, item in items.items():
-                user = render_advice(config, item)
+                user = render_advice(config, item, method_of(config, group))
                 prompts.append(dict(declared[group], prompt_id="a%04d" % (len(prompts) + 1), form="advice",
                                     item_id=item_id, item=item, user=user, user_sha256=_sha(user), system=None,
                                     max_new_tokens=config["advice"]["max_new_tokens"]))
@@ -561,7 +736,7 @@ def load_prompts(path):
         if g is None or any(p.get(k) != g.get(k) for k in ("backend", "agent", "checkpoint", "model")):
             raise ValueError("a prompt names a model group its config does not declare: %s" % p.get("prompt_id"))
         if p.get("form") == "advice" and p["group"] in ("b1", "system_advice"):
-            user, key = render_advice(config, p["item"]), (p["group"], p["item_id"])
+            user, key = render_advice(config, p["item"], method_of(config, p["group"])), (p["group"], p["item_id"])
         elif p.get("form") == "validate" and p["group"] == "validate":
             user, key = render_validate(config, p["item"], p["position"]), ("validate", p["item_id"], p["position"]["id"])
         elif p.get("form") == "judge" and p["group"] == "judge":
@@ -658,6 +833,9 @@ SCHEMA_CONSTRAINT = "schema"
 CHOICE_GROUPS = {"judge": "judge", "system_audit": "audit"}
 SCHEMA_GROUPS = {"system_advice": "advice", "validate": "validate"}
 WORDING_MAX_CHARS = 1500
+# Lane neg-round1 (standing order 102): the advice's reasons list holds at most this many ids, so one entry per
+# proposal fits the 2,048-token allowance (the pilot's free replies listed up to 37 PAR ids for one piece).
+REASONS_MAX = 8
 
 
 def check_decoding(config):
@@ -679,7 +857,179 @@ def check_decoding(config):
         if g.get("constraint") is not None:
             if g["constraint"] != SCHEMA_CONSTRAINT or group not in SCHEMA_GROUPS:
                 raise ValueError("group %s may not carry the constraint %r" % (group, g["constraint"]))
+        if g.get("method") is not None:
+            if g["method"] not in METHODS or group != METHOD_GROUP:
+                raise ValueError("group %s may not declare the method %r (D-713: one of %s, on %s alone)"
+                                 % (group, g["method"], ", ".join(METHODS), METHOD_GROUP))
+            if g["method"] != PLAIN and not isinstance((config["advice"].get("methods") or {}).get(g["method"]), dict):
+                raise ValueError("the advice form declares the method %s" % g["method"])
     return config
+
+
+# ---------------------------------------------------------------------------
+# D-713 (Seckin 20:51): two reasoning methods for the system's advice, declared variants, off by default. The
+# system_advice group declares `method` in neg_advisor_prompt.json (none: plain); nothing types it in.
+# - reason_first: each advice entry writes a short `rationale` before its labels, a fixed field the reader
+#   keeps apart; no figure reads it and nothing reads its words.
+# - stepwise: one advice question becomes a chain of narrow ones per proposal (what it changes, whose position
+#   it touches and how, whether it crosses a red line, whether an open point remains, and wording for a
+#   counter), each answer checked by Python before the next; Python composes the advice from the checked
+#   answers by the plan's rules. Run through an injected `ask` (CASE-QUESTIONS-A); B1 always generates plainly.
+
+PLAIN, REASON_FIRST, STEPWISE = "plain", "reason_first", "stepwise"
+METHODS = (PLAIN, REASON_FIRST, STEPWISE)
+METHOD_GROUP = "system_advice"
+RATIONALE_MAX_CHARS = 300
+STEPS = ("changes", "stance", "red_line", "open_point", "wording")
+STEP_ANSWERS = {"stance": POSITION_STANCES, "red_line": ("yes", "no"), "open_point": ("yes", "no")}
+
+
+def method_of(config, group):
+    """The method a group declares (PLAIN when none); only the system's advice group may declare another."""
+    for g in config["models"]:
+        if g["group"] == group:
+            return g.get("method") or PLAIN
+    return PLAIN
+
+
+def method_instructions(config, method):
+    """The text a method adds after the advice instructions (none for plain or stepwise: stepwise asks its own
+    questions)."""
+    if method != REASON_FIRST:
+        return ""
+    return "\n" + config["advice"]["methods"][REASON_FIRST]["instructions_extra"]
+
+
+def _collapse(text):
+    return " ".join(str(text or "").split())
+
+
+def _step_check(step, answer, item, proposal, position=None):
+    """(value, None) or (None, reason): Python's check of one step's answer before the next step is asked."""
+    said = _collapse(answer)
+    if step == "changes":
+        if len(said.split()) < BASIS_QUOTE_MIN_WORDS:
+            return None, "line_too_short"
+        return (said, None) if said in _collapse(proposal["text"]) else (None, "not_in_the_proposal")
+    if step in STEP_ANSWERS:
+        word = said.lower().strip(" .\"'")
+        return (word, None) if word in STEP_ANSWERS[step] else (None, "not_declared")
+    if step == "wording":
+        if not said:
+            return None, "empty"
+        if CITATION_ID.search(said):
+            return None, "cites_an_id"
+        return (said[:WORDING_MAX_CHARS], None)
+    raise ValueError("no such step: %s" % step)
+
+
+def _applicable(positions, party, article, number):
+    mine = [p for p in positions if p["party"] == party and p["article"] == article]
+    specific = [p for p in mine if p.get("proposal") == number]
+    return specific if specific else [p for p in mine if p.get("proposal") is None]
+
+
+def stepwise_advice(config, item, ask):
+    """(reply, steps): the advice of one item by the step-wise chain, `reply` in parse_advice's shape (each piece
+    marked `method` stepwise and `basis` on_record), `steps` every question asked with its answer and Python's
+    verdict. `ask(step, user, answers)` returns the model's text (for a choice step, its settled label); a step
+    whose answer Python refuses ends that proposal's chain, and what it would have decided is left unanswered.
+    A position's stance is asked only of the positions the mapping puts on the proposal; a red line only when
+    one of the persona's applicable positions is marked one; conflict, alignment and the stance are Python's."""
+    block = config["advice"]["methods"][STEPWISE]
+    persona = item["persona"]["id"]
+    red = set(item["persona"].get("red_lines") or [])
+    positions = item.get("positions") or []
+    steps, proposals, signs = [], {}, {}
+    judged = {}   # position id -> the stance its step answered, Python-checked (D-668 gap 4: the movement's input)
+
+    def put(step, user, answers):
+        said = ask(step, user, answers)
+        return said
+
+    for art in item["articles"]:
+        for n, prop in enumerate(art["proposals"], 1):
+            base = {"{proposal_id}": prop["id"], "{proposal}": prop["text"], "{article}": art["id"],
+                    "{title}": art["title"]}
+            piece = {"id": prop["id"], "reasons": [], "method": STEPWISE, "basis": ON_RECORD}
+            proposals[prop["id"]] = piece
+            user = _fill(block["changes"], base)
+            said = put("changes", user, None)
+            value, why = _step_check("changes", said, item, prop)
+            steps.append({"proposal": prop["id"], "step": "changes", "accepted": why is None, "refused": why})
+            if why:
+                continue
+            piece["changes"] = value
+            touched = [p for party in sorted({q["party"] for q in positions})
+                       for p in _applicable(positions, party, art["id"], n)]
+            stances, failed = {}, False
+            for pos in touched:
+                user = _fill(block["stance"], dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"],
+                                                            "{changes}": value}))
+                got, why = _step_check("stance", put("stance", user, STEP_ANSWERS["stance"]), item, prop, pos)
+                steps.append({"proposal": prop["id"], "step": "stance", "position": pos["id"], "accepted": why is None,
+                              "refused": why})
+                if why:
+                    failed = True
+                    break
+                stances[pos["id"]] = got
+            if failed:
+                continue
+            judged.update(stances)
+            piece["reasons"] = [p["id"] for p in touched]
+            mine = [p for p in touched if p["party"] == persona]
+            for pos in touched:
+                signs.setdefault((art["id"], n, pos["party"]), set()).add(1 if stances[pos["id"]] in ("support", "accept") else -1)
+            hit = False
+            lines = [p for p in mine if p["id"] in red]
+            for pos in lines:
+                user = _fill(block["red_line"], dict(base, **{"{quote}": pos["quote"], "{changes}": value}))
+                got, why = _step_check("red_line", put("red_line", user, STEP_ANSWERS["red_line"]), item, prop, pos)
+                steps.append({"proposal": prop["id"], "step": "red_line", "position": pos["id"], "accepted": why is None,
+                              "refused": why})
+                if why:
+                    failed = True
+                    break
+                hit = hit or got == "yes"
+            if failed:
+                continue
+            if not mine:
+                piece["conflict"] = "not_stated"
+            else:
+                piece["conflict"] = "conflict" if hit or any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
+            user = _fill(block["open_point"], dict(base, **{"{changes}": value}))
+            got, why = _step_check("open_point", put("open_point", user, STEP_ANSWERS["open_point"]), item, prop)
+            steps.append({"proposal": prop["id"], "step": "open_point", "accepted": why is None, "refused": why})
+            if why:
+                continue
+            if got == "yes":
+                user = _fill(block["wording"], dict(base, **{"{changes}": value}))
+                wording, why = _step_check("wording", put("wording", user, None), item, prop)
+                steps.append({"proposal": prop["id"], "step": "wording", "accepted": why is None, "refused": why})
+                if why:
+                    continue
+                piece.update(stance="counter", wording=wording)
+            else:
+                piece["stance"] = "reject" if piece["conflict"] == "conflict" else "accept"
+    alignment = {}
+    for art in item["articles"]:
+        cells = {}
+        for party in sorted({p["id"] for p in item["parties"]} - {persona}):
+            common = []
+            for n in range(1, len(art["proposals"]) + 1) or [None]:
+                a, b = signs.get((art["id"], n, persona), set()), signs.get((art["id"], n, party), set())
+                if len(a) == 1 and len(b) == 1:
+                    common.append(a == b)
+            if common:
+                cells[party] = "aligned" if all(common) else "opposed"
+        alignment[art["id"]] = {"aligned": sorted(p for p, v in cells.items() if v == "aligned"),
+                                "opposed": sorted(p for p, v in cells.items() if v == "opposed")}
+    reply = {"proposals": proposals, "trades": [], "approach": [], "alignment": alignment, "state": {},
+             "unknown_ids": 0,
+             # D-668 gap 4: every other party's movement toward or away from the persona over the rounds,
+             # composed by Python from the stances the chain checked (a position not judged is not used).
+             "movement": movement_map(item, [dict(p, stance=judged[p["id"]]) for p in positions if p["id"] in judged])}
+    return reply, steps
 
 
 def _enum(values):
@@ -690,7 +1040,8 @@ def _list_of(node):
     return {"type": "array", "items": node}
 
 
-def advice_schema(item):
+def advice_schema(item, method=None):
+    method = method or PLAIN
     """The plan's section 5.1 reply as a schema, its ids read from the item (the game reply for a game)."""
     if item.get("game"):
         issues = item["game"]["issues"]
@@ -701,16 +1052,30 @@ def advice_schema(item):
     pars, poss, props, arts = item_ids(item)
     known_articles = arts | {r["id"] for r in item.get("previous_index") or []}
     parties = {p["id"] for p in item["parties"]}
-    proposal = {"type": "object", "keys": [
-        ["id", _enum(props), True], ["conflict", _enum(CONFLICT), True], ["stance", _enum(STANCES), True],
-        ["wording", {"type": "string", "max_chars": WORDING_MAX_CHARS}, False], ["reasons", _list_of(_enum(pars | poss)), True]]}
+    first = ([["rationale", {"type": "string", "max_chars": RATIONALE_MAX_CHARS}, True]]
+             if method == REASON_FIRST else [])
+
+    def proposal(pid):
+        return {"type": "object", "keys": [
+            ["id", _enum([pid]), True]] + first + [["conflict", _enum(CONFLICT), True], ["stance", _enum(STANCES), True],
+            ["basis", _enum(BASES), False], ["basis_quote", {"type": "string", "max_chars": BASIS_QUOTE_MAX_CHARS}, False],
+            ["wording", {"type": "string", "max_chars": WORDING_MAX_CHARS}, False],
+            ["reasons", dict(_list_of(_enum(pars | poss)), max_items=REASONS_MAX), True]]}
+    # One entry per proposal of the item, in the excerpt's order, each with its own id (lane neg-round1: on
+    # the pilot's 18 development items the free replies gave a piece for 32 of 179 proposals, the system, and
+    # 61, B1; a list of any length let the model stop after a few).
+    in_order = [p["id"] for a in item.get("articles") or [] for p in a["proposals"]]
     return {"type": "object", "keys": [
-        ["proposals", _list_of(proposal), True],
+        ["proposals", {"type": "tuple", "items": [proposal(pid) for pid in in_order]}, True],
         ["trades", _list_of({"type": "object", "keys": [["give", _enum(props), True], ["get", _enum(props), True]]}), True],
         ["approach", _list_of(_enum(parties)), True],
         ["alignment", _list_of({"type": "object", "keys": [["article", _enum(arts), True],
                                                            ["aligned", _list_of(_enum(parties)), True],
-                                                           ["opposed", _list_of(_enum(parties)), True]]}), True],
+                                                           ["opposed", _list_of(_enum(parties)), True],
+                                                           ["basis", _enum(BASES), False],
+                                                           ["basis_quote", {"type": "string",
+                                                                            "max_chars": BASIS_QUOTE_MAX_CHARS}, False]]}),
+         True],
         ["state", _list_of({"type": "object", "keys": [["article", _enum(known_articles), True],
                                                        ["state", _enum(STATES), True]]}), True]]}
 
@@ -723,7 +1088,8 @@ def validate_schema(item):
 
 
 def schema_of(prompt):
-    return advice_schema(prompt["item"]) if prompt["form"] == "advice" else validate_schema(prompt["item"])
+    return (advice_schema(prompt["item"], prompt.get("method") or PLAIN) if prompt["form"] == "advice"
+            else validate_schema(prompt["item"]))
 
 
 def choice_answers(config, prompt):

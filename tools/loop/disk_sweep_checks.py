@@ -185,6 +185,23 @@ class DiskSweepChecks(unittest.TestCase):
         self.assertTrue(result['post_check_missing'])
 
 
+    def test_the_main_checkout_variable_names_the_sweep_root(self):
+        """DELETE-SAFE-A (operator 16 Nov 2026 15:58, item 2): SHIMMER_MAIN_CHECKOUT names the main checkout the
+        sweep's --apply needs, from a folder git cannot read; a worktree named there is refused."""
+        import shared_paths
+        main = Path(self._tmp.name) / 'named_main'
+        (main / '.git').mkdir(parents=True)
+        elsewhere = Path(self._tmp.name) / 'elsewhere'
+        elsewhere.mkdir()
+        with patch.dict(os.environ, {shared_paths.ENV: str(main)}):
+            self.assertEqual(ds.main_root(elsewhere), main.resolve())
+        lane = Path(self._tmp.name) / 'lane'
+        lane.mkdir()
+        (lane / '.git').write_text('gitdir: elsewhere\n', encoding='utf-8')
+        with patch.dict(os.environ, {shared_paths.ENV: str(lane)}), self.assertRaises(ds.SweepError):
+            ds.main_root(elsewhere)
+
+
 class RegistrationChecks(unittest.TestCase):
     def test_the_task_runs_daily_in_the_main_checkout_and_starts_on_demand_only_when_low(self):
         xml = reg.task_xml('user', 'pythonw', 'script', 'root')
@@ -227,6 +244,9 @@ NEUTRALISED = [
                                       'test_a_deleted_referenced_path_fails_the_run_end_to_end']),
     ('log_line', lambda when, rel, row: {'time_utc': when, 'path': rel, 'bytes': row['bytes'], 'kind': row['kind']},
      ['test_the_log_line_is_complete']),
+    # DELETE-SAFE-A: the root read from git alone, SHIMMER_MAIN_CHECKOUT ignored.
+    ('main_root', lambda start=HERE, runner=None: __import__('shared_paths').from_git(start),
+     ['test_the_main_checkout_variable_names_the_sweep_root']),
 ]
 
 

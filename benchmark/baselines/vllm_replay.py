@@ -42,9 +42,11 @@ import hashlib
 import json
 import os
 import random
+import re
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,9 +59,21 @@ for _p in (str(ROOT / "scripts"), str(HERE)):
 
 SCHEMA = "vllm-replay-v1"
 ARMS = ("current", "vllm_b1", "vllm_batch")
+# 217f (option 4, D-608): transformers itself on the auxiliary stack (torch, bitsandbytes and
+# transformers as vLLM's environment pins them), the same prompts and settings as the current engine,
+# in its own child process. A group marked hf_aux carries this arm too.
+HF_AUX = "hf_aux"
+
+
+def group_arms(group):
+    """The arms compared with the current engine in a group: the two vLLM arms (unless the group is
+    marked vllm False, a diagnosis of transformers alone), and hf_aux if marked."""
+    vllm = ARMS[1:] if group.get("vllm", True) else ()
+    return vllm + ((HF_AUX,) if group.get("hf_aux") else ())
 AUX_PYTHON = Path("venv_aux") / "bin" / "python"
 WORK = "vllm_work"
 CHILD = HERE / "vllm_child.py"
+HF_CHILD = HERE / "hf_aux_child.py"
 CHILD_SECONDS = 4 * 3600
 # The item field each agent's label is read from (a measurement map, not product code); the
 # compact producer's items are labelled by their `status`.
@@ -139,7 +153,8 @@ def saved_texts(sources):
     return found
 
 
-def build(groups, out, batch=16, baseline=None, texts_by_sha=None):
+def build(groups, out, batch=16, baseline=None, texts_by_sha=None, invariance_off=(), hf_aux=(), dev_gold=None,
+          hf_only=()):
     """`baseline`, an earlier pass's replay_measurement.json: the vLLM arms alone run, compared with
     that session's current engine (its digests, validity and, where a saved reply matches its
     digest, its text); the timing is then cross-session."""
@@ -156,6 +171,19 @@ def build(groups, out, batch=16, baseline=None, texts_by_sha=None):
                       "file": json.loads(Path(path).read_text(encoding="utf-8"))})
         if baseline is not None:
             built[-1]["baseline"] = baseline_block(baseline, name, prompts, texts_by_sha or {})
+        if name in invariance_off:
+            built[-1]["batch_invariant"] = False
+        if name in hf_aux or name in hf_only:
+            built[-1]["hf_aux"] = True
+        if name in hf_only:
+            built[-1]["vllm"] = False
+        if dev_gold is not None:
+            # D-625: each DEV row carries its gold (development tuning data, not a key) for on-instance scoring.
+            import dev_gold_score
+            for prompt in built[-1]["file"]["prompts"]:
+                row = dev_gold.get(prompt.get("source_call_id")) if prompt.get("set") == "dev" else None
+                if row is not None:
+                    prompt["gold"] = dev_gold_score.gold_row(row)
     value = {"schema": SCHEMA, "batch": int(batch), "arms": list(ARMS if baseline is None else ARMS[1:]), "groups": built,
              "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     value["prompt_count"] = len(load_value(value))
@@ -176,6 +204,103 @@ def is_prompts_path(path):
     return '"schema": "%s"' % SCHEMA in head or '"schema":"%s"' % SCHEMA in head
 
 
+VENV_NAME = re.compile(r"venv_[a-z0-9_]+")
+WHEELS = "wheels_aux"
+SYSTEM_PYTHON = "/usr/bin/python3.12"
+VENV_SECONDS = 1800
+
+
+def venv_error(venv):
+    """None when a group's own environment is declared as built: a name, the lock's text and its SHA-256."""
+    if not (isinstance(venv, dict) and set(venv) == {"name", "lock", "lock_sha256"}):
+        return "a group environment is {name, lock, lock_sha256}"
+    if not (isinstance(venv["name"], str) and VENV_NAME.fullmatch(venv["name"]) and venv["name"] != "venv_aux"):
+        return "a group environment is named venv_<lower case>, never venv_aux"
+    if not isinstance(venv["lock"], str) or _sha(venv["lock"]) != venv["lock_sha256"]:
+        return "a group environment's lock does not match its SHA-256"
+    return None
+
+
+SEALED_LOCK = "aux_env.lock"          # the support file the controller installed venv_aux from
+VENV_MARKER = ".shimmer_lock_sha256"   # written into a group environment after its install succeeded
+
+
+def lock_entries(text):
+    """A lock's requirement entries, each with its hashes, continuation lines joined, comments and blank
+    lines dropped, whitespace collapsed: what one install line means."""
+    joined = re.sub(r"\\\r?\n", " ", text)
+    entries = []
+    for line in joined.splitlines():
+        line = " ".join(line.split("#", 1)[0].split())
+        if line:
+            entries.append(line)
+    return entries
+
+
+def subset_refusal(group_lock, sealed_lock):
+    """None when every entry of a group's lock is an entry of the sealed lock (the same version and the
+    same hashes): a group environment never installs anything the seal did not pin."""
+    sealed = set(lock_entries(sealed_lock))
+    extra = [e.split()[0] for e in lock_entries(group_lock) if e not in sealed]
+    return None if not extra else "the group lock holds entries the sealed lock does not: " + ", ".join(extra[:5])
+
+
+def mark_installed(marker, lock_sha256):
+    """Written only after both steps succeeded: what a later group's reuse is held to."""
+    marker.write_text(lock_sha256, encoding="utf-8")
+
+
+def group_python(root, group, runner=subprocess.run):
+    """The Python a group's vLLM child runs in, and the record of making it. Without `venv`: venv_aux,
+    as the controller installed it. With `venv` (217h, D-630): a second environment beside it, made on
+    the instance from the wheels the controller already fetched (wheels_aux, every one held to the
+    sealed lock's hash) and the group's own lock (a subset of the sealed lock), offline, so vLLM can
+    run without a package the hf_aux arm needs. Made once per pass and reused by a later group."""
+    venv = group.get("venv")
+    if venv is None:
+        return Path(root) / AUX_PYTHON, None
+    target = Path(root) / venv["name"]
+    python = target / "bin" / "python"
+    marker = target / VENV_MARKER
+    record = {"name": venv["name"], "lock_sha256": venv["lock_sha256"], "reused": False, "steps": []}
+    try:
+        sealed = (Path(root) / SEALED_LOCK).read_text(encoding="utf-8")
+    except OSError:
+        record["error"] = "the sealed lock is not beside the bundle"
+        return None, record
+    why = subset_refusal(venv["lock"], sealed)
+    if why:
+        record["error"] = why
+        return None, record
+    if target.exists():
+        # Reused only when an earlier group of this pass installed it, completely, from this very lock.
+        if marker.is_file() and marker.read_text(encoding="utf-8").strip() == venv["lock_sha256"] and python.is_file():
+            record["reused"] = True
+            return python, record
+        record["error"] = "an environment of this name exists from another lock or a failed install"
+        return None, record
+    lock = Path(root) / (venv["name"] + ".lock")
+    lock.write_text(venv["lock"], encoding="utf-8")
+    for label, argv in (("create", [SYSTEM_PYTHON, "-m", "venv", str(target)]),
+                        ("install", [str(python), "-m", "pip", "--disable-pip-version-check", "install", "--no-index",
+                                     "--no-deps", "--find-links", str(Path(root) / WHEELS), "--require-hashes",
+                                     "-r", str(lock)])):
+        started = time.perf_counter()
+        try:
+            done = runner(argv, capture_output=True, text=True, timeout=VENV_SECONDS, cwd=str(root))
+            step = {"step": label, "exit_code": done.returncode, "seconds": round(time.perf_counter() - started, 1),
+                    "stderr_tail": (done.stderr or "")[-1500:]}
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            step = {"step": label, "exit_code": None, "seconds": round(time.perf_counter() - started, 1),
+                    "stderr_tail": type(exc).__name__}
+        record["steps"].append(step)
+        if step["exit_code"] != 0:
+            record["error"] = "the group environment's %s step failed" % label
+            return None, record
+    mark_installed(marker, venv["lock_sha256"])
+    return python, record
+
+
 def load_value(value):
     """One row per prompt per arm, each prompt held to its SHA-256: the sealed count."""
     replay = _replay()
@@ -187,6 +312,8 @@ def load_value(value):
         raise ValueError("a vLLM-only file needs every group's baseline")
     rows, seen = [], set()
     for group in value["groups"]:
+        if "venv" in group and venv_error(group["venv"]):
+            raise ValueError("group %s: %s" % (group.get("name"), venv_error(group["venv"])))
         file = group["file"]
         if file.get("schema") != replay.SCHEMA or file.get("prompt_count") != len(file.get("prompts") or []) \
                 or not file["prompts"]:
@@ -200,7 +327,9 @@ def load_value(value):
             seen.add(key)
             if with_baseline and prompt["prompt_id"] not in group["baseline"]["rows"]:
                 raise ValueError("prompt %s has no baseline row" % prompt["prompt_id"])
-            rows += [dict(prompt, group=group["name"], arm=arm) for arm in arms]
+            rows += [dict(prompt, group=group["name"], arm=arm)
+                     for arm in [a for a in arms if group.get("vllm", True) or a not in ARMS[1:]]
+                     + ([HF_AUX] if group.get("hf_aux") else [])]
     if value.get("prompt_count") is not None and value["prompt_count"] != len(rows):
         raise ValueError("a vllm-replay-v1 file's count is wrong")
     return rows
@@ -242,7 +371,8 @@ def labels(agent, text):
     return out
 
 
-NOT_KEPT = "<text not kept>"   # baseline mode only: the earlier current reply's text is not on hand
+NOT_KEPT = "<text not kept>"
+MISSING = ("<absent>", "<unparsed>")   # baseline mode only: the earlier current reply's text is not on hand
 
 
 def pairs_of(reference, other):
@@ -319,9 +449,10 @@ def repetition_penalty(base):
     return float(config.get("repetition_penalty") or 1.0)
 
 
-def child_env(base_python):
+def child_env(base_python, batch_invariant=True):
     env = {k: os.environ[k] for k in ENV_KEPT if k in os.environ}
-    env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", VLLM_BATCH_INVARIANT="1", VLLM_NO_USAGE_STATS="1",
+    env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", VLLM_BATCH_INVARIANT="1" if batch_invariant else "0",
+               VLLM_NO_USAGE_STATS="1",
                DO_NOT_TRACK="1", VLLM_DO_NOT_TRACK="1", VLLM_ENABLE_V1_MULTIPROCESSING="0", VLLM_HOST_IP="127.0.0.1",
                VLLM_USE_V2_MODEL_RUNNER="1", VLLM_REPLAY_CHILD="1",
                PYTHONPATH=os.pathsep.join([str(ROOT / "scripts"), str(HERE)]))
@@ -342,15 +473,16 @@ def pass_folder(prompts_path, run_id):
     return work_root(prompts_path) / run_id
 
 
-def run_child(aux_python, job, folder, runner=subprocess.run):
+def run_child(aux_python, job, folder, runner=subprocess.run, script=None):
     """The child, started once; a child that cannot start or runs past its deadline is recorded
     as such, so the current engine's figures and the measurement still stand."""
     (folder / "job.json").write_text(json.dumps(job), encoding="utf-8")
     out = folder / "results.json"
     try:
         with open(folder / "child.stdout.log", "wb") as stdout, open(folder / "child.stderr.log", "wb") as stderr:
-            done = runner([str(aux_python), str(CHILD), "--job", str(folder / "job.json"), "--out", str(out)],
-                          env=child_env(aux_python), stdout=stdout, stderr=stderr, timeout=CHILD_SECONDS, cwd=str(folder))
+            done = runner([str(aux_python), str(script or CHILD), "--job", str(folder / "job.json"), "--out", str(out)],
+                          env=child_env(aux_python, job.get("batch_invariant", True)), stdout=stdout, stderr=stderr,
+                          timeout=CHILD_SECONDS, cwd=str(folder))
         code = done.returncode
     except FileNotFoundError:
         return {"error": "the auxiliary environment's python is missing", "arms": {}, "exit_code": None}
@@ -404,11 +536,24 @@ VLLM_BNB_COMPUTE = "bfloat16"
 MODEL_DTYPES = ("float16", "bfloat16", "float32")
 
 
-def vllm_dtypes(current):
-    """The dtypes vLLM runs a group in: the current engine's own model dtype (transformers 4.51's
-    4-bit quantizer forces float16 for the other layers when no torch_dtype is given, the auditor
-    path; the producer loads bfloat16), and the plugin's fixed 4-bit compute dtype."""
-    return {"dtype": current.get("dtype"), "compute_dtype": VLLM_BNB_COMPUTE}
+# vLLM 0.33's LoRA shrink kernel takes float16 or bfloat16 activations only
+# (vllm/lora/ops/triton_ops/lora_shrink_op.py:281, a bare `assert inputs.dtype in [torch.float16,
+# torch.bfloat16]`): the AssertionError of vllm-test-217e's producer groups, run in float32 with the
+# checkpoint-168 adapter. A LoRA group whose current engine runs float32 is therefore given bfloat16,
+# the producer's 4-bit compute dtype, and the difference is recorded (D-608), never hidden.
+LORA_DTYPES = ("float16", "bfloat16")
+
+
+def vllm_dtypes(current, lora=False):
+    """The dtypes vLLM runs a group in: the current engine's own model dtype where vLLM can run it
+    (transformers 4.51's 4-bit quantizer forces float16 for the other layers when no torch_dtype is
+    given, the auditor path), bfloat16 for a LoRA group the current engine runs in float32, and the
+    plugin's fixed 4-bit compute dtype; `note` names any difference from the current engine."""
+    dtype = current.get("dtype")
+    if lora and dtype not in LORA_DTYPES:
+        return {"dtype": VLLM_BNB_COMPUTE, "compute_dtype": VLLM_BNB_COMPUTE,
+                "note": "the current engine runs %s; vLLM's LoRA kernels take float16 or bfloat16 only, so bfloat16" % dtype}
+    return {"dtype": dtype, "compute_dtype": VLLM_BNB_COMPUTE}
 
 
 def dtype_refusal(current, quant):
@@ -457,7 +602,7 @@ def allowances(prompts, by_id):
 
 
 def run(prompts_path, out, *, runner=subprocess.run, current=None, tokenizer_for=None, paths_for=None, run_id=None,
-        evict=None, digest_for=None):
+        evict=None, digest_for=None, venv_runner=None):
     """The pass (module text). `runner`, `current`, `tokenizer_for`, `paths_for`, `evict` and
     `digest_for` are the seams the proofs replace: the child's start, replay_prompts.run, the
     tokenizer loader, the model paths, the GPU eviction and the token-table digest."""
@@ -509,17 +654,41 @@ def run(prompts_path, out, *, runner=subprocess.run, current=None, tokenizer_for
             allowed = allowances(prompts, by_id)
             eos = _eos(replay, prompts)
             job = {"observer": _observer(), "model": base, "tokenizer": base, "adapter": adapter, "lora_rank": rank,
-                   "batch": int(value["batch"]), "dtype": vllm_dtypes(current_dtype)["dtype"], "max_model_len": 32768,
+                   "batch": int(value["batch"]), "dtype": vllm_dtypes(current_dtype, bool(adapter))["dtype"], "max_model_len": 32768,
                    "repetition_penalty": repetition_penalty(base),
                    "token_table_sha256": (digest_for or _table_digest)(tok),
+                   # A group may run with vLLM's batch-invariant mode off (cuBLAS matmuls, closer to the
+                   # transformers path) to test whether the kernel path explains a difference (D-608).
+                   "batch_invariant": bool(group.get("batch_invariant", True)),
                    "prompts": [{"prompt_id": p["prompt_id"], "token_ids": tok(p["prompt"], add_special_tokens=False)["input_ids"],
                                 "max_new_tokens": allowed[p["prompt_id"]], "eos": eos,
                                 "constraint": None if kind == "plain" else {"prompt": p["prompt"],
                                                                              "agent": p["agent"] if kind == "envelope" else None}}
                                for p in prompts]}
-            child = run_child(aux_python, job, folder, runner)
+            vllm_python, venv_record = group_python(Path(prompts_path).resolve().parent, group,
+                                                    venv_runner or subprocess.run)
+            if not group.get("vllm", True):
+                child = {"arms": {}, "error": None}
+            elif vllm_python is None:
+                child = {"arms": {}, "error": venv_record["error"]}
+            else:
+                child = run_child(vllm_python, job, folder, runner)
+            child["venv"] = venv_record
             child["network"] = network_events(folder)
+            if group.get("hf_aux"):
+                # Option 4: transformers on the auxiliary stack, the same prompts and settings.
+                import decoding_policy
+                hf_folder = folder / "hf_aux"
+                hf_folder.mkdir()
+                evict()
+                hf = run_child(aux_python, {"observer": job["observer"], "model": base, "prompts": job["prompts"],
+                                            "decoding": decoding_policy.policy(replay.model_key(prompts[0])[0])["kwargs"]},
+                               hf_folder, runner, script=HF_CHILD)
+                child["arms"] = dict(child.get("arms") or {}, **(hf.get("arms") or {}))
+                child.update(hf_error=hf.get("error"), hf_traceback=hf.get("traceback"), hf_spec=hf.get("spec"),
+                             hf_network=network_events(hf_folder))
         child["gpu_before_child"], child["quantisation"], child["current_dtype"] = gpu, quant, current_dtype
+        child["vllm_dtype"] = vllm_dtypes(current_dtype, bool(adapter)) if current_dtype else None
         child["current_spec"] = (dict(group["baseline"]["specification"] or {}, session=group["baseline"]["run_id"])
                                  if "baseline" in group else current_spec(replay, group, prompts, base, adapter, quant, current_dtype))
         groups[name] = summarise(replay, reply_records, context, group, prompts, by_id, texts, current_seconds,
@@ -648,10 +817,12 @@ def summarise(replay, reply_records, context, group, prompts, by_id, texts, curr
                      "current_labels": (NOT_KEPT if "baseline" in group and pid not in texts
                                         else labels(p.get("agent"), texts.get(pid))),
                      "current_text_kept": pid in texts}
-    for arm in ARMS[1:]:
+    others = group_arms(group)
+    for arm in others:
         seen = (child.get("arms") or {}).get(arm)
         if not seen:
-            arms[arm] = {"error": child.get("error") or "not run", "exit_code": child.get("exit_code")}
+            error = child.get("hf_error") if arm == HF_AUX else child.get("error")
+            arms[arm] = {"error": error or "not run", "exit_code": child.get("exit_code")}
             failures += len(prompts)
             for p in prompts:
                 _record(reply_records, context, p, arm, None, "vllm_not_run")
@@ -675,43 +846,93 @@ def summarise(replay, reply_records, context, group, prompts, by_id, texts, curr
     for arm, seen in arms.items():
         if seen.get("seconds") and seen.get("output_tokens") is not None:
             seen["tokens_per_second"] = round(seen["output_tokens"] / seen["seconds"], 3)
-    for arm in ARMS[1:]:
+    for arm in others:
         if arms[arm].get("seconds") and arms["current"]["seconds"]:
             arms[arm]["speed_factor"] = round(arms["current"]["seconds"] / arms[arm]["seconds"], 3)
-    agreement = group_agreement(rows, {arm for arm in ARMS[1:] if "error" not in arms[arm]})
+    agreement = group_agreement(rows, {arm for arm in others if "error" not in arms[arm]}, others)
+    gold = gold_scores(prompts, texts, by_id, child, others, arms)
     return {"kind": kind, "current_path": group["current_path"], "prompts": len(prompts), "arms": arms,
             "timing": TIMING_CROSS % group["baseline"]["run_id"] if "baseline" in group else TIMING_SAME,
             "current_texts_kept": sum(1 for r in rows.values() if r.get("current_text_kept")),
             "current_labels_parsed": sum(1 for r in rows.values() if r.get("current_labels") not in (None, NOT_KEPT)),
-            "agreement": agreement, "stability_finding": stability_finding(agreement),
+            "agreement": agreement, "stability_finding": stability_finding(agreement), "gold": gold,
+            "batch_invariant": bool(group.get("batch_invariant", True)),
             "versions": child.get("versions"), "engine_seconds": child.get("engine_seconds"),
+            "import_seconds": child.get("import_seconds"), "aux_env_size": child.get("aux_env"),
+            "engine_phases": child.get("engine_phases"),
+            "venv": child.get("venv"),
             "specification": {"current": child.get("current_spec"), "vllm": child.get("spec")},
             "peak_gpu_bytes": child.get("peak_gpu_bytes"), "child_error": child.get("error"),
             "network": child.get("network"), "gpu_before_child": child.get("gpu_before_child"),
             "quantisation": child.get("quantisation"), "loaded": child.get("loaded"),
             "current_dtype": child.get("current_dtype"),
-            "vllm_dtype": vllm_dtypes(child["current_dtype"]) if child.get("current_dtype") else None,
+            "vllm_dtype": child.get("vllm_dtype"), "child_traceback": child.get("traceback"),
             "token_table_sha256": child.get("token_table_sha256"),
-            "failures": failures, "figures": figures(rows, prompts),
+            "hf_aux": group.get("hf_aux", False), "vllm": group.get("vllm", True),
+            "hf_aux_specification": child.get("hf_spec"),
+            "hf_aux_error": child.get("hf_error"), "hf_aux_traceback": child.get("hf_traceback"),
+            "hf_aux_network": child.get("hf_network"),
+            "failures": failures, "figures": figures(rows, prompts, others),
             "rows": {pid: {k: ({kk: vv for kk, vv in v.items() if kk != "labels"} if isinstance(v, dict) else v)
                            for k, v in r.items() if k not in ("current_labels", "current_text_kept")} for pid, r in rows.items()}}
+
+
+def gold_scores(prompts, texts, by_id, child, others, arms):
+    """D-625: the gold-scored figures of a group's DEV rows (those carrying `gold`), per arm, with each
+    vLLM arm's paired bar against the current engine. A row whose current reply text is not on hand is
+    left out of every arm (the comparison stays paired) and counted. Counts only."""
+    import dev_gold_score as g
+    rows = [p for p in prompts if p.get("gold")]
+    if not rows:
+        return None
+    kept = [p for p in rows if p["prompt_id"] in texts]
+    reply_text = {"current": {p["prompt_id"]: texts[p["prompt_id"]] for p in kept}}
+    scored = {"current": [g.score(p["gold"], texts[p["prompt_id"]],
+                                  int(by_id[p["prompt_id"]].get("output_tokens") or 0) >= int(by_id[p["prompt_id"]].get("max_new_tokens") or 0))
+                          for p in kept]}
+    for arm in others:
+        if "error" in arms.get(arm, {}):
+            continue
+        seen = (child.get("arms") or {}).get(arm) or {}
+        out = []
+        for p in kept:
+            got = seen.get("rows", {}).get(arm + ":" + p["prompt_id"]) or {}
+            out.append(g.score(p["gold"], got.get("text") or "", got.get("finish_reason") != "stop"))
+        scored[arm] = out
+        reply_text[arm] = {p["prompt_id"]: (seen.get("rows", {}).get(arm + ":" + p["prompt_id"]) or {}).get("text") for p in kept}
+    # DEV items in valid replies, per arm (the 102 of 102 condition).
+    items = {arm: sum(_items(reply_text[arm][p["prompt_id"]]) for p, s in zip(kept, scored[arm]) if s["contract_valid"])
+             for arm in scored}
+    result = {"rows_with_gold": len(rows), "rows_scored": len(kept), "rows_left_out_no_current_text": len(rows) - len(kept),
+              "arms": {arm: g.aggregate(v) for arm, v in scored.items()}, "bar": {}}
+    for arm in scored:
+        if arm == "current":
+            continue
+        bar = g.paired_bar(scored["current"], scored[arm])
+        bar["validity_not_lower"] = result["arms"][arm]["contract_validity"] >= result["arms"]["current"]["contract_validity"]
+        bar["items"] = {"current": items["current"], arm: items[arm]}
+        bar["items_not_fewer"] = items[arm] >= items["current"]
+        bar["passes"] = bool(bar["holds"] and bar["validity_not_lower"] and bar["items_not_fewer"])
+        result["bar"][arm] = bar
+    return result
 
 
 STABILITY = ("a difference between the engines is a cross-platform stability finding (D-608), "
              "recorded in aggregate; it is never a failure and never a stop")
 
 
-def group_agreement(rows, ran):
+def group_agreement(rows, ran, others=ARMS[1:]):
     """Per vLLM arm, over the group: replies byte-identical with the current engine, and item
     labels equal to the current engine's (the label field LABEL_FIELDS names, item by item). An
     arm that never ran (a refusal, a child error) is not measured: every figure None."""
     out = {}
-    for arm in ARMS[1:]:
+    for arm in others:
         if arm not in ran:
             out[arm] = {"measured": False, "replies": None, "byte_identical": None, "byte_identical_rate": None,
-                        "labels": None, "labels_equal": None, "label_agreement_rate": None}
+                        "labels": None, "labels_equal": None, "label_agreement_rate": None, "items_both_listed": None,
+                        "items_both_listed_equal": None, "agreement_on_items_both_listed": None, "item_coverage": None}
             continue
-        replies = identical = labels_total = labels_equal = 0
+        replies = identical = labels_total = labels_equal = both = both_equal = 0
         for r in rows.values():
             replies += 1
             mine = r.get(arm) or {}
@@ -719,10 +940,17 @@ def group_agreement(rows, ran):
             for a, b in pairs_of(r.get("current_labels"), mine.get("labels")):
                 labels_total += 1
                 labels_equal += int(a == b)
+                # Option 2 (reported, not the bar): items both engines listed, coverage apart.
+                if a not in MISSING and b not in MISSING:
+                    both += 1
+                    both_equal += int(a == b)
         out[arm] = {"measured": True, "replies": replies, "byte_identical": identical,
                     "byte_identical_rate": round(identical / replies, 4) if replies else None,
                     "labels": labels_total, "labels_equal": labels_equal,
-                    "label_agreement_rate": round(labels_equal / labels_total, 4) if labels_total else None}
+                    "label_agreement_rate": round(labels_equal / labels_total, 4) if labels_total else None,
+                    "items_both_listed": both, "items_both_listed_equal": both_equal,
+                    "agreement_on_items_both_listed": round(both_equal / both, 4) if both else None,
+                    "item_coverage": round(both / labels_total, 4) if labels_total else None}
     return out
 
 
@@ -742,7 +970,7 @@ def _items(text):
     return len(found) if found else 0
 
 
-def figures(rows, prompts):
+def figures(rows, prompts, others=ARMS[1:]):
     """Per agent: replies, valid on each arm, byte-identical with the current engine, batch
     identical with alone, and the label macro-F1 of each vLLM arm against the current engine's
     labels, with its paired bootstrap lower bound over prompts."""
@@ -750,17 +978,18 @@ def figures(rows, prompts):
     for p in prompts:
         agent = p.get("agent") or "PROCESSOR"
         r = rows[p["prompt_id"]]
-        f = out.setdefault(agent, {"replies": 0, "valid": {a: 0 for a in ARMS}, "items_in_valid_replies": {a: 0 for a in ARMS},
-                                   "identical_to_reference": {a: 0 for a in ARMS}, "with_reference": 0,
-                                   "identical_to_current": {a: 0 for a in ARMS[1:]},
-                                   "batch_identical_to_alone": 0, "_pairs": {a: [] for a in ARMS[1:]}})
+        every = ("current",) + tuple(others)
+        f = out.setdefault(agent, {"replies": 0, "valid": {a: 0 for a in every}, "items_in_valid_replies": {a: 0 for a in every},
+                                   "identical_to_reference": {a: 0 for a in every}, "with_reference": 0,
+                                   "identical_to_current": {a: 0 for a in others},
+                                   "batch_identical_to_alone": 0, "_pairs": {a: [] for a in others}})
         f["replies"] += 1
         f["with_reference"] += int(bool(p.get("reference_reply_sha256")))
-        for arm in ARMS:
+        for arm in every:
             f["valid"][arm] += int(bool((r.get(arm) or {}).get("valid")))
             f["items_in_valid_replies"][arm] += int((r.get(arm) or {}).get("items") or 0)
             f["identical_to_reference"][arm] += int((r.get(arm) or {}).get("reference_identical") is True)
-        for arm in ARMS[1:]:
+        for arm in others:
             mine = (r.get(arm) or {}).get("sha256")
             f["identical_to_current"][arm] += int(mine is not None and mine == r["current"]["sha256"])
             f["_pairs"][arm].append(pairs_of(r.get("current_labels"), (r.get(arm) or {}).get("labels")))
@@ -769,11 +998,11 @@ def figures(rows, prompts):
     for f in out.values():
         pairs = f.pop("_pairs")
         f["label_macro_f1_vs_current"] = {arm: dict(zip(("point", "lower_bound"), bootstrap_lower(pairs[arm])))
-                                          for arm in ARMS[1:]}
+                                          for arm in others}
         # D-608: a difference is a finding, recorded in aggregate.
         f["agreement_rate_with_current"] = {arm: round(f["identical_to_current"][arm] / f["replies"], 4)
-                                            for arm in ARMS[1:]}
-        f["differing_from_current"] = {arm: f["replies"] - f["identical_to_current"][arm] for arm in ARMS[1:]}
+                                            for arm in others}
+        f["differing_from_current"] = {arm: f["replies"] - f["identical_to_current"][arm] for arm in others}
         f["batch_agreement_rate"] = round(f["batch_identical_to_alone"] / f["replies"], 4)
     return out
 
@@ -798,6 +1027,14 @@ def main(argv=None):
     b.add_argument("--out", required=True)
     b.add_argument("--baseline", default=None,
                    help="an earlier pass's replay_measurement.json: run the vLLM arms alone against its current engine")
+    b.add_argument("--invariance-off", action="append", default=[],
+                   help="a group run with VLLM_BATCH_INVARIANT=0 (a diagnosis of the kernel path)")
+    b.add_argument("--dev-gold", default=None,
+                   help="the tuning dataset whose DEV rows' canonical targets score PROCESSOR DEV against gold (D-625)")
+    b.add_argument("--hf-only", action="append", default=[],
+                   help="a group run by transformers on the auxiliary stack alone, no vLLM arm (its vLLM arms already measured)")
+    b.add_argument("--hf-aux", action="append", default=[],
+                   help="a group also run by transformers on the auxiliary stack (a diagnosis across stacks)")
     b.add_argument("--texts-from", action="append", default=[],
                    help="a reply-records folder or a DEV replies .jsonl whose replies give the baseline's texts by digest")
     args = parser.parse_args(argv)
@@ -808,7 +1045,10 @@ def main(argv=None):
             parser.error("--group is NAME=FILE")
         groups.append((name, path))
     baseline = json.loads(Path(args.baseline).read_text(encoding="utf-8")) if args.baseline else None
-    value = build(groups, args.out, batch=args.batch, baseline=baseline, texts_by_sha=saved_texts(args.texts_from))
+    value = build(groups, args.out, batch=args.batch, baseline=baseline, texts_by_sha=saved_texts(args.texts_from),
+                  invariance_off=set(args.invariance_off), hf_aux=set(args.hf_aux), hf_only=set(args.hf_only),
+                  dev_gold=({r["example_id"]: r for r in json.loads(Path(args.dev_gold).read_text(encoding="utf-8"))}
+                            if args.dev_gold else None))
     print(json.dumps({"prompt_count": value["prompt_count"], "groups": [(g["name"], g["kind"], len(g["file"]["prompts"]))
                                                                          for g in value["groups"]]}))
     return 0

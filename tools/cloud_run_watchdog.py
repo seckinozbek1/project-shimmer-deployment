@@ -116,10 +116,13 @@ class LambdaTermination:
         require(isinstance(value, dict) and 'data' in value and 'error' not in value,
                 'invalid provider response')
         if path == 'instances':
+            from cloud_run_common import InvalidPreparation
             try:
                 return {'data': [provider_instance(item) for item in value['data']]}
+            except InvalidPreparation as exc:
+                # provider_instance's refusal names a field only, so it is kept (item 16).
+                raise InvalidPreparation('invalid provider instance list: ' + str(exc)) from None
             except Exception:
-                from cloud_run_common import InvalidPreparation
                 raise InvalidPreparation('invalid provider instance list') from None
         return {'data': {}}
 

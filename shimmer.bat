@@ -36,7 +36,7 @@ REM path lost a quote each and every start stopped here with a path syntax error
 set "PYTHON_CMD="
 for /f "delims=" %%P in ('""!SHIMMER_PYTHON!" tools\runtime_contract.py --resolve --candidate "%CD%\.venv\Scripts\python.exe" --path-only"') do set "PYTHON_CMD=%%P"
 if not defined PYTHON_CMD (
-    echo The Python in .venv does not match tools\cloud_run\runtime.json. Remove .venv and run this script again.
+    echo The Python in the .venv folder is not the version Shimmer needs, Python 3.12. Delete the .venv folder and run this script again.
     goto :end_fail
 )
 REM The menu's own entry modules, not the experiment probe (see shimmer.sh).
@@ -146,7 +146,7 @@ echo =========================================
 echo   [1] Run a review (CLI)
 echo   [2] Open the chat interface
 echo   [3] Start the server
-echo   [4] Run the verify gate
+echo   [4] Run the full self-test (long; loads models; for a prepared machine)
 echo   [5] Import documents (set up files and cutoff, no run)
 echo   [Q] Quit
 echo.
@@ -194,7 +194,7 @@ if exist "%WIZ_FLAGS_FILE%" set /p WIZ_FLAGS=<"%WIZ_FLAGS_FILE%"
 if exist "%WIZ_FLAGS_FILE%" del "%WIZ_FLAGS_FILE%"
 echo.
 echo Running the review ...
-echo (Add --help for all options.)
+echo (For every command-line option, run: .venv\Scripts\python.exe scripts\pipeline.py --help)
 REM The wizard already emitted --backend-profile into WIZ_FLAGS (from
 REM SHIMMER_BACKEND_PROFILE), so it is not repeated here.
 "!PYTHON_CMD!" scripts\pipeline.py !WIZ_FLAGS! %*
@@ -229,7 +229,7 @@ if exist "!DRAFT_FLAGS_FILE!" set /p DRAFT_FLAGS=<"!DRAFT_FLAGS_FILE!"
 if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
 echo.
 echo Drafting a memo, then reviewing it ...
-echo (Add --help for all options.)
+echo (For every command-line option, run: .venv\Scripts\python.exe scripts\pipeline.py --help)
 "!PYTHON_CMD!" scripts\pipeline.py --task draft --question "!DRAFTQ!" !DRAFT_FLAGS! %*
 goto :menu
 

@@ -37,6 +37,7 @@ import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
+import document_layers
 import finding_record
 import localization
 import pairing_map
@@ -93,7 +94,11 @@ _LETTER = r"[^\W\d_]"
 # figure read as 105 with unit "per", and "<symbol>7,000" read with no unit at all.
 _QUANTITY = re.compile(
     r"(?:(?P<code>(?<![^\W\d_])[A-Z]{2,4})[   ]+|(?P<sym>" + _SYM + r")[   ]?)?"
-    r"(?P<num>-?\d{1,3}(?:[   ,]\d{3})+(?:[.,]\d+)?|-?\d+(?:[.,]\d+)?)"
+    # READING-A (issue #281 gap 3): the whole run of digits and marks is one token, so
+    # "1.234.567" and "1.234,5" are read (or refused) whole by norm_number, never cut
+    # into two figures at the second mark. A space groups only after a lead of one to
+    # three digits and before exactly three, as before.
+    r"(?P<num>-?(?:\d{1,3}(?:[   ]\d{3}(?!\d))+|\d+)(?:[.,]\d+)*)"
     r"[   ]*(?P<unit>(?:" + _LETTER + r"|%)(?:[^\W_]|[/%·^-])*"
     r"(?:\s*/\s*" + _LETTER + r"[^\W_%]*)?)?"
 )
@@ -120,21 +125,222 @@ ABS_TOLERANCE = 1e-9
 _ISO_DATETIME = re.compile(
     r"\b(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?\b")
 
+# READING-A (issue #281 gap 2): the date forms a label line can write that the reader
+# above does not read, found by their shape alone so no month name or locale is named:
+# three numeric parts joined by one repeated mark (a day, a month and a year in some
+# order), a one- or two-digit number and a four-digit one on either side of a word, and
+# an ISO date and time carrying a zone. A line carrying one gets no duration check and
+# says so (DATE_FORM_NOT_READ); which order its parts run in is never guessed.
+_NUMERIC_DATE = re.compile(r"(?<![\d.,/-])(\d{1,4})([./-])(\d{1,2})\2(\d{1,4})(?!\d|[.,/-]\d)")
+_WORD_DATE = re.compile(
+    r"(?<!\d)\d{1,2}\.?[ \t]+" + r"[^\W\d_]{3,}\.?,?[ \t]+\d{4}(?!\d)"
+    r"|(?<![^\W\d_])[^\W\d_]{3,}\.?[ \t]+\d{1,2},?[ \t]+\d{4}(?!\d)")
+_ZONED_ISO = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})")
+DATE_FORM_NOT_READ = "date_form_not_read"
+# Gap 16: a date pair is compared as a duration only; which date comes first is not checked.
+DATE_ORDER_NOT_CHECKED = "date_order_not_checked"
 
-def norm_number(token):
-    """'1 254 000' and '1,254,000' and '1254000' are the same number."""
-    t = str(token).strip().replace(" ", " ").replace(" ", " ")
-    if re.fullmatch(r"-?\d{1,3}(?:,\d{3})+(?:\.\d+)?", t):
-        t = t.replace(",", "")
-    t = t.replace(" ", "")
-    if t.count(",") == 1 and t.count(".") == 0:
-        t = t.replace(",", ".")
-    else:
-        t = t.replace(",", "")
+
+def _numeric_date_plausible(a, b, c):
+    """True when three numeric parts can be a calendar date: a four-digit year first
+    with a month and a day after it, or a day and a month (either order) before a two-
+    or four-digit year."""
     try:
-        return float(t)
+        x, y, z = int(a), int(b), int(c)
+    except ValueError:
+        return False
+    if len(a) == 4:
+        return len(c) <= 2 and 1 <= y <= 12 and 1 <= z <= 31
+    return len(a) <= 2 and len(c) in (2, 4) and 1 <= x <= 31 and 1 <= y <= 31 and min(x, y) <= 12
+
+
+def other_date_forms(text):
+    """Every date `text` writes in a form other than the ISO one _parse_iso_datetime
+    reads, as written, in order (READING-A, issue #281 gap 2)."""
+    text = str(text or "")
+    found = []
+    for m in _NUMERIC_DATE.finditer(text):
+        if _ISO_DATETIME.fullmatch(m.group(0)) or not _numeric_date_plausible(
+                m.group(1), m.group(3), m.group(4)):
+            continue
+        found.append((m.start(), m.group(0)))
+    for pattern in (_WORD_DATE, _ZONED_ISO):
+        found += [(m.start(), m.group(0)) for m in pattern.finditer(text)]
+    return [form for _start, form in sorted(found)]
+
+
+def unread_date_lines(unit_text):
+    """The label lines of a unit whose value writes a date other_date_forms finds, as
+    (label words, number of such dates): the dates no duration check reads."""
+    import pairing_map as _pm
+    out = []
+    for line in (unit_text or "").splitlines():
+        m = _LABEL_LINE.match(line)
+        if not m:
+            continue
+        label = _pm._norm_label(m.group(1))
+        forms = other_date_forms(m.group(2))
+        if label and forms:
+            out.append((label, len(forms)))
+    return out
+
+
+# READING-A (issue #281 gap 3, D-667): which mark ends a number's whole part and which
+# groups its thousands is decided from the number's own form; failing that, from forms
+# in the same text that decide it (separator_convention); failing that, from the
+# operator's declaration in config/number_reading.json. A number none of them decides
+# is refused with this reason, recorded where the review reads it, never read by one
+# locale's habit and never cut into two figures.
+AMBIGUOUS_SEPARATOR = "ambiguous_separator"
+NUMBER_READING_PATH = _ROOT / "config" / "number_reading.json"
+# The relation a figure-reading refusal row names in the pairing map's relation_refusals.
+FIGURE_READING = "figure_reading"
+# separator_convention's value for a text whose numbers decide the marks two ways.
+CONFLICT = "conflict"
+_MARKS = (",", ".")
+_SPACE_MARKS = (" ", " ", " ")
+_NUMBER_READING_CACHE = None
+
+
+def number_reading_declaration():
+    """The declared reading of a number its form and its text leave undecided: a map
+    {",": role, ".": role} giving the roles "group" and "decimal" one each, or None,
+    meaning refuse. Read from config/number_reading.json (`undecided_single_mark`); a
+    missing, unreadable or malformed file refuses, the one reading no locale owns."""
+    global _NUMBER_READING_CACHE
+    if _NUMBER_READING_CACHE is None:
+        declared = {}
+        try:
+            value = json.loads(NUMBER_READING_PATH.read_text(encoding="utf-8")).get(
+                "undecided_single_mark")
+            if (isinstance(value, dict) and set(value) == set(_MARKS)
+                    and sorted(value.values()) == ["decimal", "group"]):
+                declared = dict(value)
+        except (OSError, ValueError, AttributeError):
+            declared = {}
+        _NUMBER_READING_CACHE = declared
+    return dict(_NUMBER_READING_CACHE) or None
+
+
+def _number_parts(token):
+    """(sign, digit runs, marks) of a number token, or None when it is not digits and
+    marks only. Every space mark is written as one plain space."""
+    t = str(token).strip()
+    for s in _SPACE_MARKS:
+        t = t.replace(s, " ")
+    sign = ""
+    if t.startswith("-"):
+        sign, t = "-", t[1:]
+    pieces = re.split(r"([ ,.])", t)
+    digits, marks = pieces[0::2], pieces[1::2]
+    if not digits or not all(d.isdigit() for d in digits):
+        return None
+    return sign, digits, marks
+
+
+def _grouped(digits):
+    """True when digit runs are a whole part grouped in thousands: a lead of one to
+    three digits, then runs of exactly three."""
+    return 1 <= len(digits[0]) <= 3 and all(len(d) == 3 for d in digits[1:])
+
+
+def _form_roles(digits, marks):
+    """The roles the number's own form gives its point and comma: {mark: "group" or
+    "decimal"}; "undecided" for one point or one comma before exactly three digits after
+    a lead of one to three digits not starting with zero (1,234 or 1.234); "malformed"
+    when no reading fits (1.234.5, 1,23,456)."""
+    kinds = [m for m in _MARKS if m in marks]
+    if not kinds:
+        return {} if len(digits) == 1 or _grouped(digits) else "malformed"
+    last = max(i for i, m in enumerate(marks) if m != " ")
+    if len(kinds) == 2:
+        # Both marks: the one that stands once, last, ends the whole part.
+        decimal = marks[last]
+        if marks.count(decimal) != 1 or last != len(marks) - 1 or not _grouped(digits[:-1]):
+            return "malformed"
+        return {decimal: "decimal", next(m for m in _MARKS if m != decimal): "group"}
+    mark = kinds[0]
+    if marks.count(mark) > 1 or last != len(marks) - 1:
+        # A decimal mark stands once and ends the number: a repeated mark, or one
+        # followed by a space group, groups, and every run must show it.
+        return {mark: "group"} if _grouped(digits) else "malformed"
+    whole = digits[:-1]
+    if not (len(whole) == 1 or _grouped(whole)):
+        return "malformed"
+    lead = whole[0]
+    if len(digits[-1]) != 3 or (len(whole) == 1 and len(lead) > 3) or lead.startswith("0"):
+        # Not three digits after it, a whole part too long for a thousands lead, or a
+        # lead of zero: the mark can only end the whole part.
+        return {mark: "decimal"}
+    return "undecided"
+
+
+def _value(sign, whole, fraction=""):
+    try:
+        return float(sign + "".join(whole) + ("." + fraction if fraction else ""))
     except ValueError:
         return None
+
+
+def read_number(token, convention=None):
+    """(value, refusal reason) for one number token; the reason is None when it is read.
+
+    Decided in this order, never by one locale's habit: the number's own form (both
+    marks, a repeated mark, a mark not before three digits, a zero or long lead); then
+    `convention`, the roles forms in the same text decide (separator_convention, whose
+    CONFLICT refuses); then the operator's declaration (number_reading_declaration).
+    A form no reading fits, or one none of the three decides, is refused as
+    AMBIGUOUS_SEPARATOR. A token that is not a number reads (None, None)."""
+    parts = _number_parts(token)
+    if parts is None:
+        return None, None
+    sign, digits, marks = parts
+    roles = _form_roles(digits, marks)
+    if roles == "malformed":
+        return None, AMBIGUOUS_SEPARATOR
+    if roles == "undecided":
+        if convention == CONFLICT:
+            return None, AMBIGUOUS_SEPARATOR
+        mark = next(m for m in marks if m != " ")
+        declared = convention or number_reading_declaration() or {}
+        if declared.get(mark) not in ("group", "decimal"):
+            return None, AMBIGUOUS_SEPARATOR
+        roles = {mark: declared[mark]}
+    if "decimal" not in roles.values():
+        return _value(sign, digits), None
+    return _value(sign, digits[:-1], digits[-1]), None
+
+
+def separator_convention(text):
+    """The roles of the point and the comma as `text` itself decides them. A number there
+    written with both marks, or with one mark repeated in thousands groups, decides both
+    (a text groups with one mark and ends the whole part with the other). Returns
+    {",": role, ".": role}, None when no number there decides, or CONFLICT when two of
+    its numbers decide them differently."""
+    found = set()
+    for m in _QUANTITY.finditer(str(text or "")):
+        parts = _number_parts(m.group("num"))
+        if parts is None:
+            continue
+        _sign, digits, marks = parts
+        if not (all(k in marks for k in _MARKS) or any(marks.count(k) > 1 for k in _MARKS)):
+            continue
+        roles = _form_roles(digits, marks)
+        if isinstance(roles, dict):
+            found.update(k for k, role in roles.items() if role == "group")
+    if not found:
+        return None
+    if len(found) > 1:
+        return CONFLICT
+    group = found.pop()
+    return {group: "group", next(k for k in _MARKS if k != group): "decimal"}
+
+
+def norm_number(token, convention=None):
+    """'1 254 000', '1,254,000', '1.254.000' and '1254000' are the same number.
+    None when the token is no number or its marks are refused (read_number says why);
+    `convention` is the roles the token's own text decides (separator_convention)."""
+    return read_number(token, convention)[0]
 
 
 def _unit_token(part):
@@ -429,7 +635,7 @@ def date_pair_for_rule(unit_text, rule_text):
 # reading the figures out of a unit
 
 
-def extract_fields(unit_text, known_units=None):
+def extract_fields(unit_text, known_units=None, *, refusals=None):
     """Named numeric fields from a unit: scalars from `label: value` lines, and
     columns from any table with a separator row.
 
@@ -444,10 +650,29 @@ def extract_fields(unit_text, known_units=None):
 
     Returns (scalars, columns) where scalars maps a label tuple to (value, unit)
     and columns maps a label tuple to a list of (value, unit).
+
+    READING-A (issue #281 gap 3): every number is read under the marks the unit's own
+    text decides (separator_convention). A label line whose figure is refused
+    (read_number) carries no scalar, and a column with a refused cell carries no
+    figures at all (a sum or a hole over the rest would be read as wrong); each goes
+    to `refusals` as {"field", "figure", "reason"} when a list is given. A refused run
+    that is a written date (other_date_forms) is a date, not a figure, and is not
+    listed here.
     """
     if known_units is None:
         known_units = unit_phrases(unit_text)
+    convention = separator_convention(unit_text)
+
+    def _refused(label, tokens, written):
+        dates = other_date_forms(written)
+        for token in tokens:
+            if refusals is not None and not any(token in d for d in dates):
+                row = {"field": " ".join(label), "figure": token, "reason": AMBIGUOUS_SEPARATOR}
+                if row not in refusals:
+                    refusals.append(row)
+
     scalars, columns, row_counts = {}, defaultdict(list), defaultdict(int)
+    refused_columns = set()
     for line in (unit_text or "").splitlines():
         m = _LABEL_LINE.match(line)
         if not m:
@@ -455,11 +680,18 @@ def extract_fields(unit_text, known_units=None):
         label = pairing_map._norm_label(m.group(1))
         if not label:
             continue
-        q = first_quantity(m.group(2), known_units)
+        refused = []
+        q = first_quantity(m.group(2), known_units, convention=convention, refused=refused)
         if q is not None:
             scalars[label] = q
+        _refused(label, refused, m.group(2))
 
-    for block in pairing_map._table_blocks(unit_text or ""):
+    # Issue #281 gap 14: a column where a merged cell repeats its value (the line the .docx
+    # reader writes after the table) gives no figures, so no sum counts one value twice and no
+    # hole is read in it; merged_columns names it for the refusal record.
+    merged_by_table = document_layers.merged_columns_by_table(unit_text or "")
+    for block_index, block in enumerate(pairing_map._table_blocks(unit_text or "")):
+        merged = merged_by_table[block_index] if block_index < len(merged_by_table) else set()
         if len(block) < 3 or not _TABLE_SEP.match(block[1]):
             continue
         raw_headers = [c.strip() for c in block[0].strip().strip("|").split("|")]
@@ -477,10 +709,15 @@ def extract_fields(unit_text, known_units=None):
         for row in block[2:]:
             cells = [c.strip() for c in row.strip().strip("|").split("|")]
             body_cells.append(cells)
-            for header, header_unit, cell in zip(headers, header_units, cells):
-                if not header:
+            for i, (header, header_unit, cell) in enumerate(zip(headers, header_units, cells)):
+                if not header or i in merged:
                     continue
-                q = first_quantity(cell)
+                refused = []
+                q = first_quantity(cell, convention=convention, refused=refused)
+                if refused:
+                    _refused(header, refused, cell)
+                    if not all(any(t in d for d in other_date_forms(cell)) for t in refused):
+                        refused_columns.add(header)
                 if q is None:
                     continue
                 value, unit = q
@@ -501,12 +738,39 @@ def extract_fields(unit_text, known_units=None):
         # counted as non-empty, so a column of ten figures and three blanks still
         # reports ten of thirteen, which is the case the check exists for.
         for i, (header, header_unit) in enumerate(zip(headers, header_units)):
-            if not header:
+            if not header or i in merged:
                 continue
             cells = [row[i] for row in body_cells if i < len(row) and row[i].strip()]
-            if header_unit or (cells and all(first_quantity(c) is not None for c in cells)):
+            if header_unit or (cells and all(first_quantity(c, convention=convention) is not None
+                                             for c in cells)):
                 row_counts[header] += block_rows
+    for header in refused_columns:
+        columns.pop(header, None)
+        row_counts.pop(header, None)
     return scalars, dict(columns), dict(row_counts)
+
+
+def merged_columns(unit_text):
+    """The labels of the measurement columns extract_fields leaves out because a merged cell
+    repeats its value in them (issue #281 gap 14): a column whose header declares a unit or
+    whose cells carry a figure. A text column with merged cells is no sum's column and is not
+    named."""
+    out = []
+    merged_by_table = document_layers.merged_columns_by_table(unit_text or "")
+    for block_index, block in enumerate(pairing_map._table_blocks(unit_text or "")):
+        merged = merged_by_table[block_index] if block_index < len(merged_by_table) else set()
+        if not merged or len(block) < 3 or not _TABLE_SEP.match(block[1]):
+            continue
+        raw_headers = [c.strip() for c in block[0].strip().strip("|").split("|")]
+        body = [[c.strip() for c in row.strip().strip("|").split("|")] for row in block[2:]]
+        for i in sorted(merged):
+            if i >= len(raw_headers):
+                continue
+            header = pairing_map.header_label(raw_headers[i])
+            if header and header not in out and (_header_unit(raw_headers[i]) or any(
+                    i < len(row) and first_quantity(row[i]) is not None for row in body)):
+                out.append(header)
+    return out
 
 
 def _header_unit(raw_header):
@@ -544,23 +808,39 @@ def _match_unit(m, text, known_units=()):
     return best
 
 
-def first_quantity(text, known_units=()):
-    """The first (value, unit) in a cell or value string, or None."""
+def first_quantity(text, known_units=(), *, convention=None, refused=None):
+    """The first (value, unit) in a cell or value string, or None.
+
+    READING-A: a first number whose marks are refused (read_number) ends the reading
+    with None, never falling through to a later figure the value does not lead with;
+    its token goes to `refused` when a list is given. `convention` is
+    separator_convention of the text the value stands in."""
     text = str(text or "")
     for m in _QUANTITY.finditer(text):
-        value = norm_number(m.group("num"))
+        value, reason = read_number(m.group("num"), convention)
+        if reason:
+            if refused is not None:
+                refused.append(m.group("num"))
+            return None
         if value is None:
             continue
         return (value, _match_unit(m, text, known_units))
     return None
 
 
-def quantities(text, known_units=()):
-    """Every (value, unit, start, end) in a string, in order."""
+def quantities(text, known_units=(), *, convention=None, refused=None):
+    """Every (value, unit, start, end) in a string, in order. READING-A: a number
+    whose marks are refused is left out, its token added to `refused` when a list is
+    given; `convention` defaults to what the string itself decides
+    (separator_convention)."""
     text = str(text or "")
+    if convention is None:
+        convention = separator_convention(text)
     out = []
     for m in _QUANTITY.finditer(text):
-        value = norm_number(m.group("num"))
+        value, reason = read_number(m.group("num"), convention)
+        if reason and refused is not None:
+            refused.append(m.group("num"))
         if value is None:
             continue
         out.append((value, _match_unit(m, text, known_units), m.start(), m.end()))
@@ -599,14 +879,40 @@ def bounds_from_rule(rule_text):
     no band comparison is attempted, which is the honest outcome rather than a
     guessed one.
     """
-    found = [(value, unit) for value, unit, _, _ in quantities(rule_text)]
+    return bounds_reading(rule_text)[0]
+
+
+# READING-A (issue #281 gap 15): a band read from a rule's own prose is taken only
+# when the rule states exactly two figures, both in the band's measure. More figures
+# in that measure, figures in another measure or with none beside them (another role:
+# a year, a count, a clause number), or a figure whose marks are refused leave which
+# two bound the band undecided, so the band is refused on the record, never formed
+# from the smallest and the largest.
+BAND_READING = "rule_band"
+BAND_TOO_MANY_FIGURES = "band_too_many_figures"
+BAND_MIXED_ROLES = "band_mixed_roles"
+
+
+def bounds_reading(rule_text):
+    """((low, high, unit) or None, refusal reason or None) for the band a rule states.
+
+    No refusal where the rule states no band at all (no measure holds two figures and
+    no figure is refused), which is the old honest outcome of no band comparison."""
+    refused = []
+    found = [(value, unit) for value, unit, _, _ in quantities(rule_text, refused=refused)]
     by_unit = defaultdict(list)
     for value, unit in found:
         by_unit[_unit_str(unit_exponents(unit))].append(value)
-    for unit, values in by_unit.items():
-        if unit and len(values) >= 2:
-            return (min(values), max(values), unit)
-    return None
+    banded = [unit for unit, values in by_unit.items() if unit and len(values) >= 2]
+    if refused and len(found) + len(refused) >= 2:
+        return None, AMBIGUOUS_SEPARATOR
+    if not banded:
+        return None, None
+    unit = banded[0]
+    if len(found) > 2:
+        return None, (BAND_TOO_MANY_FIGURES if len(by_unit) == 1 else BAND_MIXED_ROLES)
+    values = by_unit[unit]
+    return (min(values), max(values), unit), None
 
 
 # ---------------------------------------------------------------------------
@@ -788,7 +1094,12 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                     "factors": [va, vb],
                 })
 
-    bounds = bounds_from_rule(rule_text)
+    bounds, band_refused = bounds_reading(rule_text)
+    if band_refused:
+        # READING-A (gap 15): the rule's own band is not decided by its figures; on the
+        # record once per rule, at no part (the rule's text, not the unit, is unread).
+        relation_checks._refuse(refusals, "", rule_id, BAND_READING, band_refused,
+                                figures=[v for v, _u, _s, _e in quantities(rule_text)])
     if bounds:
         low, high, bound_unit = bounds
         # A band can sit on a VALUE, not only on a ratio. A rule saying a
@@ -926,6 +1237,11 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
     # the two, nothing is computed and the pair still gets its call, the same
     # honest outcome bounds_from_rule already gives a rule with no bound.
     if duration_bound is not None and unit_text:
+        # READING-A (gap 2): a label line writing a date in a form the reader does not
+        # read gets no check, and says so rather than staying silent.
+        for label, _count in unread_date_lines(unit_text):
+            relation_checks._refuse(refusals, unit_id, rule_id, "date_window",
+                                    DATE_FORM_NOT_READ, fields=[" ".join(label)])
         pair = date_pair_for_rule(unit_text, rule_text)
         if pair is not None:
             earlier, earlier_label, later, later_label, has_time = pair
@@ -949,7 +1265,13 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                         ("a %s gap" % bound_unit)),
                     "stated_field": earlier_label,
                     "ref_id": bound_ref,
+                    # READING-A (gap 16): the gap is a duration; which date comes first
+                    # is not checked, and the record says so.
+                    "order_checked": False,
                 })
+                relation_checks._refuse(refusals, unit_id, rule_id, "date_window",
+                                        DATE_ORDER_NOT_CHECKED,
+                                        fields=[earlier_label, later_label])
     return checks
 
 
@@ -1582,7 +1904,17 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
         unit = units_by_id.get(unit_id)
         if unit is None:
             continue
-        scalars, columns, row_counts = extract_fields(unit.get("text", ""), known_units)
+        figure_refusals = []
+        scalars, columns, row_counts = extract_fields(unit.get("text", ""), known_units,
+                                                      refusals=figure_refusals)
+        # Issue #281 gap 14: a sum over a column with merged cells is refused, visibly.
+        for label in merged_columns(unit.get("text", "")):
+            relation_checks._refuse(relation_refusal_sink, unit_id, "", relation_checks.SUM,
+                                    relation_checks.SUM_OVER_MERGED_CELLS, field=" ".join(label))
+        # READING-A (gap 3): a figure whose marks are refused is on the record at its unit.
+        for row in figure_refusals:
+            relation_checks._refuse(relation_refusal_sink, unit_id, "", FIGURE_READING,
+                                    row["reason"], fields=[row["field"]], figures=[row["figure"]])
         present = pairing_map.unit_fields(unit.get("text", ""))
         # A rule whose conditional suspension holds on THIS unit does not fire
         # here. Without this the declaration parsed, travelled and drew a graph
@@ -2771,6 +3103,7 @@ JUDGING_OUTCOMES = {
     "judged_passage_pair": "it answered a question on two passages",
     "judged_cell_claim": "it answered a question on a claim and a table's cells",
     "judged_case_question": "it answered a narrow question on a multi-round case",
+    "cell_claim_request": "it wrote one table tool request before a claim's question; Python ran the calls",
 }
 # S2 checker round 3 (item 1): a judging call's plan kind that asks for a judged
 # absence, never for a note on Python's findings.
@@ -2790,6 +3123,8 @@ PASSAGE_PAIR_PLAN = JUDGED_PATH_PASSAGE_PAIR
 CELL_CLAIM_PLAN = JUDGED_PATH_CELL_CLAIM
 # D-S39 item 2: the plan kind of each narrow call on a multi-round case (case_questions).
 CASE_QUESTION_PLAN = "case_question"
+# D-681: the plan kind of a table tool request (table_tools.REQUEST_PLAN), made before a cell claim's question.
+CELL_CLAIM_REQUEST_PLAN = "cell_claim_request"
 
 
 def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept, has_note,
@@ -2815,6 +3150,8 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
         outcome = "judged_cell_claim"
     elif plan_kind == CASE_QUESTION_PLAN:
         outcome = "judged_case_question"
+    elif plan_kind == CELL_CLAIM_REQUEST_PLAN:
+        outcome = "cell_claim_request"
     elif notes_kept:
         outcome = "note_kept"
     elif plan_kind == UNCOMPUTABLE_PLAN:
@@ -3170,8 +3507,11 @@ def judging_call_counts(calls) -> dict:
     uncomputable = sum(1 for c in calls if c.get("plan_kind") == UNCOMPUTABLE_PLAN)
     pairs = sum(1 for c in calls if c.get("plan_kind") == PASSAGE_PAIR_PLAN)
     cells = sum(1 for c in calls if c.get("plan_kind") == CELL_CLAIM_PLAN)
-    return {"calls": len(calls), "note_calls": len(calls) - absence - uncomputable - pairs - cells,
-            "absence_calls": absence, "uncomputable_calls": uncomputable, "pair_calls": pairs, "cell_calls": cells}
+    # D-681: a table tool request is counted apart, and its key is written only when one was made.
+    requests = sum(1 for c in calls if c.get("plan_kind") == CELL_CLAIM_REQUEST_PLAN)
+    return dict({"calls": len(calls), "note_calls": len(calls) - absence - uncomputable - pairs - cells - requests,
+                 "absence_calls": absence, "uncomputable_calls": uncomputable, "pair_calls": pairs, "cell_calls": cells},
+                **({"request_calls": requests} if requests else {}))
 
 
 def notes_on_python_findings(records) -> int:

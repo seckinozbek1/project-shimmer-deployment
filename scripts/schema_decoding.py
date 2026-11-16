@@ -11,7 +11,9 @@ around the object.
 
 Schema nodes (plain dicts, built by the caller):
     {"type": "object", "keys": [[name, node, required], ...]}
-    {"type": "array", "items": node}
+    {"type": "array", "items": node}                  optional "max_items": int, at most that many items
+    {"type": "tuple", "items": [node, ...]}           exactly these items, in this order (lane neg-round1:
+                                                      one advice entry per proposal of the item, its id fixed)
     {"type": "enum", "values": [str, ...]}
     {"type": "string", "max_chars": int}
     {"type": "integer_or_null"}
@@ -35,7 +37,7 @@ ESCAPES = '"\\/bfnrt'
 
 def _check(node, path="$"):
     kind = node.get("type") if isinstance(node, dict) else None
-    contract_decoding.require(kind in ("object", "array", "enum", "string", "integer_or_null"),
+    contract_decoding.require(kind in ("object", "array", "tuple", "enum", "string", "integer_or_null"),
                               "A schema node needs a known type: " + path)
     if kind == "object":
         names = [k[0] for k in node["keys"]]
@@ -45,6 +47,13 @@ def _check(node, path="$"):
             _check(child, path + "." + name)
     elif kind == "array":
         _check(node["items"], path + "[]")
+        if "max_items" in node:
+            contract_decoding.require(type(node["max_items"]) is int and node["max_items"] > 0,
+                                      "An array's max_items is a positive integer: " + path)
+    elif kind == "tuple":
+        contract_decoding.require(isinstance(node["items"], list), "A tuple declares its items as a list: " + path)
+        for at, child in enumerate(node["items"]):
+            _check(child, "%s[%d]" % (path, at))
     elif kind == "enum":
         values = node["values"]
         contract_decoding.require(values and all(isinstance(v, str) and v and all(c not in v for c in '"\\')
@@ -75,7 +84,9 @@ class SchemaGrammar:
         if kind == "object":
             compiled = {"type": "object", "keys": [(name, self._index(child), bool(req)) for name, child, req in node["keys"]]}
         elif kind == "array":
-            compiled = {"type": "array", "items": self._index(node["items"])}
+            compiled = {"type": "array", "items": self._index(node["items"]), "max_items": node.get("max_items")}
+        elif kind == "tuple":
+            compiled = {"type": "tuple", "items": [self._index(child) for child in node["items"]]}
         else:
             compiled = dict(node)
         self.nodes[n] = compiled
@@ -107,7 +118,7 @@ class SchemaGrammar:
         kind = node["type"]
         if kind == "object" and ch == "{":
             return stack + (("O", n, 0, "open", 0),)
-        if kind == "array" and ch == "[":
+        if kind in ("array", "tuple") and ch == "[":
             return stack + (("A", n, 0, "open", 0),)
         if kind == "enum" and ch == '"':
             return stack + (("E", n, ""),)
@@ -222,19 +233,30 @@ class SchemaGrammar:
             return None
         if kind == "A":
             _, n, count, phase, ws = top
+            node = self.nodes[n]
+            if node["type"] == "tuple":
+                # exactly len(items) values, the count-th of node items[count]; closes only when all are written
+                size = len(node["items"])
+                more, full = count < size, count == size
+                child = node["items"][count] if more else None
+            else:
+                cap = node.get("max_items")
+                more, full = cap is None or count < cap, True
+                child = node["items"]
             if ch in WS:
                 return stack + (("A", n, count, phase, ws + 1),) if ws < WS_MAX else None
             if phase == "open" and ch == "]":
-                return self._complete(stack)
+                return self._complete(stack) if full else None
             if phase in ("open", "next"):
-                child = self.nodes[n]["items"]
+                if not more:
+                    return None
                 opened = self._open_value(stack + (("A", n, count, "value", 0),), child, ch)
                 return opened
             if phase == "after":
                 if ch == ",":
-                    return stack + (("A", n, count, "next", 0),)
+                    return stack + (("A", n, count, "next", 0),) if more else None
                 if ch == "]":
-                    return self._complete(stack)
+                    return self._complete(stack) if full else None
             return None
         return None
 

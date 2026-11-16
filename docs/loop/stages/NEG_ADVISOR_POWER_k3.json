@@ -1,0 +1,33 @@
+{
+ "schema": "neg-advisor-power-v1",
+ "set_sha256": "6a8af3c7e3fd7f9ffd5cf1e64809b5d00d129f18162c6f0059e3377a18e3007f",
+ "headline_items": 18,
+ "proposals": 179,
+ "k": 3,
+ "alpha": 0.00625,
+ "sims": 1000,
+ "resamples": 500,
+ "shares": {
+  "no_conflict": 0.3407821229050279,
+  "not_stated": 0.5921787709497207,
+  "conflict": 0.0670391061452514
+ },
+ "assumed": {
+  "agreement": {
+   "system": 0.7,
+   "B1": 0.6,
+   "cloud": 0.75
+  },
+  "no_answer": {
+   "system": 0.1,
+   "B1": 0.05,
+   "cloud": 0.02
+  }
+ },
+ "power_by_icc": {
+  "0.2": 0.058,
+  "0.5": 0.044
+ },
+ "code_sha256": "c09ac97995b929e7c4443055edab1e049da7cc7e236fa0ef90da9aefc856d902",
+ "a1": "indicator"
+}

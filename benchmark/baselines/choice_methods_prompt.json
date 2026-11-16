@@ -1,0 +1,188 @@
+{
+  "schema": "doc-judge-prompt-v1",
+  "status": "development, exposed (D-713, document review half): the measurement config of the two reasoning methods; not shipped, nothing launched",
+  "note": "D-713: the two choice forms of choice_judge_prompt.json byte for byte, asked by three groups on one model: choice_direct (the form itself), choice_reason_first and choice_stepwise (benchmark/baselines/reasoning_methods.py). The label step of each method is decided over the form's own answers, so the classes and the scorer are the form's. The file's document template and outcomes are never sent.",
+  "user_template": "{document}{rule_text}{outcome_lines}",
+  "choice": {
+    "forms": {
+      "pair": {
+        "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide.",
+        "limit": 40,
+        "answers": [
+          {
+            "label": "contradicts",
+            "surface": "Yes",
+            "class": "FLAG"
+          },
+          {
+            "label": "does not",
+            "surface": "No",
+            "class": "CLEAR"
+          },
+          {
+            "label": "cannot tell",
+            "surface": "Unclear",
+            "class": "UNDECIDED"
+          }
+        ]
+      },
+      "claim": {
+        "template": "A table's caption and the cells selected for a claim follow.\n\nCELLS\n{cells}\n\nCLAIM\n{claim}\n\n{tools}Do the cells show that the claim holds?\n\nAnswer with one word.\nYes: the claim holds.\nNo: the claim does not hold.\nUnclear: the cells do not settle it.",
+        "answers": [
+          {
+            "label": "holds",
+            "surface": "Yes",
+            "class": "CLEAR"
+          },
+          {
+            "label": "not met",
+            "surface": "No",
+            "class": "FLAG"
+          },
+          {
+            "label": "cannot be settled",
+            "surface": "Unclear",
+            "class": "UNDECIDED"
+          }
+        ]
+      }
+    },
+    "methods": {
+      "reason_first": {
+        "allowance": 96,
+        "field": "Reasoning:",
+        "rationale_chars": 600,
+        "forms": {
+          "pair": {
+            "rationale": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nDo not answer yet. First write your reasoning in one or two short sentences on one line, starting with Reasoning:, and write nothing after it.",
+            "label": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nREASONING\n{reasoning}\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide."
+          },
+          "claim": {
+            "rationale": "A table's caption and the cells selected for a claim follow.\n\nCELLS\n{cells}\n\nCLAIM\n{claim}\n\n{tools}Do the cells show that the claim holds?\n\nDo not answer yet. First write your reasoning in one or two short sentences on one line, starting with Reasoning:, and write nothing after it.",
+            "label": "A table's caption and the cells selected for a claim follow.\n\nCELLS\n{cells}\n\nCLAIM\n{claim}\n\n{tools}REASONING\n{reasoning}\n\nDo the cells show that the claim holds?\n\nAnswer with one word.\nYes: the claim holds.\nNo: the claim does not hold.\nUnclear: the cells do not settle it."
+          }
+        }
+      },
+      "stepwise": {
+        "allowance": 96,
+        "max_cells": 6,
+        "fields": {
+          "cells": "Cells:",
+          "quote_a": "A:",
+          "quote_b": "B:"
+        },
+        "forms": {
+          "pair": {
+            "evidence": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nCopy, word for word, the words of each passage that speak of the same thing as the other passage. Write two lines and nothing else:\nA: the words copied from passage A\nB: the words copied from passage B",
+            "comparison": {
+              "template": "Two quotes from one document follow.\n\nQUOTE A\n{quote_a}\n\nQUOTE B\n{quote_b}\n\nHow do the two quotes stand to each other?\n\nAnswer with one word.\nAgree: both can be true of the same thing at the same time.\nConflict: both cannot be true of the same thing at the same time.\nUnrelated: they speak of different things, times or people.",
+              "answers": [
+                {
+                  "label": "agree",
+                  "surface": "Agree",
+                  "shown": "The two quotes can both be true."
+                },
+                {
+                  "label": "conflict",
+                  "surface": "Conflict",
+                  "shown": "The two quotes cannot both be true."
+                },
+                {
+                  "label": "unrelated",
+                  "surface": "Unrelated",
+                  "shown": "The two quotes speak of different things, times or people."
+                }
+              ]
+            },
+            "label": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nEVIDENCE\n{evidence}\n\nCOMPARISON\n{comparison}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide."
+          },
+          "claim": {
+            "evidence": "The cells of a table, each with its id, and a claim about the table follow.\n\nCELLS\n{cell_list}\n\nCLAIM\n{claim}\n\nWhich cells does the claim rest on? Write their ids on one line, starting with Cells:, separated by commas, at most six, and write nothing else.",
+            "comparison": {
+              "template": "Cells of a table and a claim follow.\n\nCELLS\n{evidence}\n\nCLAIM\n{claim}\n\nCompare what the claim states with these cells.\n\nAnswer with one word.\nAgrees: the cells agree with what the claim states.\nConflicts: the cells conflict with what the claim states.\nInsufficient: these cells do not settle what the claim states.",
+              "answers": [
+                {
+                  "label": "agrees",
+                  "surface": "Agrees",
+                  "shown": "The cited cells agree with what the claim states."
+                },
+                {
+                  "label": "conflicts",
+                  "surface": "Conflicts",
+                  "shown": "The cited cells conflict with what the claim states."
+                },
+                {
+                  "label": "insufficient",
+                  "surface": "Insufficient",
+                  "shown": "The cited cells do not settle what the claim states."
+                }
+              ]
+            },
+            "label": "A table's caption and the cells selected for a claim follow.\n\nCELLS\n{cells}\n\nCLAIM\n{claim}\n\n{tools}EVIDENCE\n{evidence}\n\nCOMPARISON\n{comparison}\n\nDo the cells show that the claim holds?\n\nAnswer with one word.\nYes: the claim holds.\nNo: the claim does not hold.\nUnclear: the cells do not settle it."
+          }
+        }
+      }
+    }
+  },
+  "outcomes": [
+    {
+      "value": "holds",
+      "class": "CLEAR",
+      "line": "holds",
+      "accepted": [
+        "holds"
+      ]
+    },
+    {
+      "value": "not met",
+      "class": "FLAG",
+      "line": "not met",
+      "accepted": [
+        "not met"
+      ]
+    },
+    {
+      "value": "cannot be settled",
+      "class": "UNDECIDED",
+      "line": "cannot be settled",
+      "accepted": [
+        "cannot be settled"
+      ]
+    }
+  ],
+  "quote_required_for": [],
+  "marker_patterns": [
+    "^#+ [DP]-\\S+[ \\t]*$",
+    "^Passage: \\w+[ \\t]*$"
+  ],
+  "max_new_tokens": 1,
+  "models": [
+    {
+      "group": "choice_direct",
+      "backend": "local_auditor",
+      "agent": "PRACTICE_AUDITOR",
+      "checkpoint": "base",
+      "model_id": "unsloth/phi-4-bnb-4bit",
+      "reasoning": false
+    },
+    {
+      "group": "choice_reason_first",
+      "backend": "local_auditor",
+      "agent": "PRACTICE_AUDITOR",
+      "checkpoint": "base",
+      "model_id": "unsloth/phi-4-bnb-4bit",
+      "reasoning": false,
+      "method": "reason_first"
+    },
+    {
+      "group": "choice_stepwise",
+      "backend": "local_auditor",
+      "agent": "PRACTICE_AUDITOR",
+      "checkpoint": "base",
+      "model_id": "unsloth/phi-4-bnb-4bit",
+      "reasoning": false,
+      "method": "stepwise"
+    }
+  ],
+  "models_note": "The candidate J1 loaded, on the auditor's route. A forward pass stops on nothing, so the model's own stop tokens do not arise. The method groups generate their rationale and evidence steps under the same frozen greedy decoding with the model's own stops, each within the method's allowance."
+}
