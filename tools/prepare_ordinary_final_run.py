@@ -451,7 +451,13 @@ def bound_tree_archive(root, source, archive):
         require(done.returncode == 0, 'The bound commit could not be archived for the gate (git '+args[0]+')')
         return done.stdout
     tree = run('rev-parse', source+'^{tree}').decode().strip()
-    mtime = int(run('log', '-1', '--format=%ct', source).decode().strip())
+    # The commit's own object, never `git log`: on the seal instance the laptop's commit object sits in a
+    # one-commit repository without its parents, and a log walk fails on the missing parent (route S, arm G).
+    header = run('cat-file', 'commit', source).split(b'\n\n', 1)[0]
+    committer = [row for row in header.split(b'\n') if row.startswith(b'committer ')]
+    require(len(committer) == 1 and committer[0].rsplit(b' ', 2)[-2].isdigit(),
+            'The bound commit has no committer time for the gate')
+    mtime = int(committer[0].rsplit(b' ', 2)[-2])
     entries = []
     for row in run('ls-tree', '-r', '-z', '--full-tree', source).split(b'\0'):
         if not row:

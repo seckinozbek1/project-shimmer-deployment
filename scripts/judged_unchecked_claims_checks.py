@@ -107,7 +107,8 @@ def authored(kept_quote, rule_id):
               quote="the countersignature is not stated"),                           # today
         _item(TEXT, rule_id, quote=P1, quote_b=P2),                                   # kept
         _item(TEXT, rule_id, quote=P3, quote_b=P4),                           # kept, a second
-        _item(TEXT, rule_id, quote=P1, quote_b=P2, record_verdict="ok"),              # (d)
+        _item(TEXT, rule_id, quote=P1, quote_b=P2, record_verdict="maybe"),           # (d) no verdict
+        _item(TEXT, rule_id, record_verdict="ok"),                       # INFRA-055: kept, no finding
         _item(TEXT, rule_id, quote=P1),                                               # (e)
         _item(TEXT, rule_id, quote=P1, quote_b="gate"),                               # (e) short
         _item(TEXT, rule_id, quote=P1, quote_b="words this unit does not hold"),      # (f)
@@ -203,7 +204,7 @@ def body_undeclared():
     """No earlier version declared: (a), (b) and (c) refused with their own reasons, the
     quoted absence and the figure comparison kept, today's two refusals unchanged."""
     return _verdict(observe(False),
-                    sorted(TODAY + [A_REASON, B_REASON, B_REASON, C_REASON] + CONTRADICTION_REFUSED), 4,
+                    sorted(TODAY + [A_REASON, B_REASON, B_REASON, C_REASON] + CONTRADICTION_REFUSED), 5,
                     "with no earlier version declared, on both judged paths an absence relation "
                     "with no quote, a figure relation with no figures and an earlier-version "
                     "relation are refused with their own reasons (placeholder strings are no figures), the quoted and figured answers "
@@ -213,7 +214,7 @@ def body_undeclared():
 
 def body_declared():
     """An earlier version declared: the earlier-version answer is kept, nothing else moves."""
-    return _verdict(observe(True), sorted(TODAY + [A_REASON, B_REASON, B_REASON] + CONTRADICTION_REFUSED), 5,
+    return _verdict(observe(True), sorted(TODAY + [A_REASON, B_REASON, B_REASON] + CONTRADICTION_REFUSED), 6,
                     "with an earlier version declared the earlier-version answer is kept on both "
                     "judged paths")
 
@@ -224,7 +225,15 @@ CASES = [
     ((P1, P2, UNIT, "irregular"), None),
     ((P2, P1, UNIT, "IRREGULAR"), None),
     (("The seal is intact", "The seal is intact only on paper", UNIT, "irregular"), None),
-    ((P1, P2, UNIT, "ok"), D_REASON),
+    # INFRA-055 (Seckin, 15 November 2026 19:26): a well-formed "does not contradict" answer is kept;
+    # a verdict that is neither irregular nor ok is still refused.
+    ((P1, P2, UNIT, "ok"), None),
+    ((None, None, UNIT, "ok"), None),
+    ((P1, None, UNIT, "OK"), None),
+    ((P1, "words the unit lacks", UNIT, "ok"), F_REASON),
+    (("words the unit lacks", None, UNIT, "ok"), pr.QUOTE_NOT_IN_UNIT),
+    ((P1, P2, UNIT, "maybe"), D_REASON),
+    ((P1, P2, UNIT, ""), D_REASON),
     ((P1, None, UNIT, "irregular"), E_REASON),
     ((None, P2, UNIT, "irregular"), E_REASON),
     ((5, 6, "5 and 6 and 7", "irregular"), E_REASON),
@@ -287,6 +296,12 @@ def body_only_screened():
         problems.append("a mark the model wrote survives its reading")
     if not (fr.is_finding(screened) and records.is_typed_record(screened)):
         problems.append("a screened contradiction is not a finding and a record")
+    # INFRA-055: a screened "does not contradict" answer is a benchmark record, never a finding.
+    no_clash = pr.mark_screened({"relation": TEXT, "record_verdict": "ok"})
+    if fr.is_finding(no_clash) or not records.is_typed_record(no_clash):
+        problems.append("a kept ok contradiction is a finding, or no benchmark record")
+    if fr.relation_words(TEXT, "ok") == fr.relation_words(TEXT, "irregular"):
+        problems.append("the ok phrase is the irregular one")
     if fr.SCREENED_FIELD in other:
         problems.append("the mark reaches another relation")
     if (records.TEXT_RELATIONS, records.SCREENED_FIELD) != (fr.TEXT_RELATIONS, fr.SCREENED_FIELD):
@@ -327,6 +342,14 @@ def _unapproved():
     return data
 
 
+def _unapproved_055():
+    data = json.loads((ROOT / "config" / "constitution.json").read_text(encoding="utf-8"))
+    for a in data["amendments"]:
+        if a.get("id") == "INFRA-055":
+            a["operator_approved"] = False
+    return data
+
+
 def body_governed():
     """INFRA-046 is the verified next id after INFRA-045, operator-approved, naming the
     relation, and the relation is declared in the schema and the fallback, no figure relation."""
@@ -345,8 +368,17 @@ def body_governed():
         problems.append("the relation is not declared in the schema and the fallback")
     if TEXT in fr.figure_relations():
         problems.append("the relation reads as a figure relation")
+    # INFRA-055 (D-669): the narrowed verdict is an appended, verified, operator-approved amendment.
+    if "INFRA-055" in ids:
+        upto = dict(now, amendments=now["amendments"][:ids.index("INFRA-055") + 1])
+        entry = upto["amendments"][-1]
+        verified = constitution_guard.verify_amendment_append(dict(upto, amendments=upto["amendments"][:-1]), upto)
+        if not verified.get("ok") or "INFRA-046" not in str(entry.get("change")):
+            problems.append("INFRA-055 does not verify as an append narrowing INFRA-046")
+    else:
+        problems.append("no INFRA-055: an ok contradiction is kept with no ratified amendment")
     return ("FAIL", "; ".join(problems)) if problems else (
-        "PASS", "INFRA-046 verifies as the next id and the relation is declared in words")
+        "PASS", "INFRA-046 and INFRA-055 verify as appends and the relation is declared in words")
 
 
 def _function_without(name, line, new="pass", module=pr):
@@ -458,13 +490,84 @@ def _neutralisations():
         ("the reader's line keeps a line break", body_reader,
          lambda: _neutralise_in("reader_line", 'first = " ".join(str(item.get("quote") or "?").split())',
                                 'first = str(item.get("quote") or "?")', pr.finding_record)),
+        ("D-652 fix 4: no re-ask", body_reask,
+         lambda: patch.object(pr, "reask_eligible", lambda reason, unit_text, reply: False)),
+        ("D-652 fix 4: a table unit re-asked", body_reask,
+         lambda: _neutralise_in("reask_eligible", "return not any(pairing_map._TABLE_ROW.match(line) for line in str(unit_text or \"\").splitlines())", "return True")),
+        ("D-652 fix 4: the second answer not held to the quote check", body_reask,
+         lambda: patch.object(pr, "quote_not_in_unit", lambda item, unit_text: False)),
+        ("INFRA-055: an ok contradiction refused, as before", body_cases,
+         lambda: _neutralise_in("judged_item_refusal", 'if verdict == "ok":', "if False:")),
+        ("INFRA-055: an ok contradiction counted as a finding", body_only_screened,
+         lambda: _neutralise_in("is_finding", 'if item.get("relation") == "contradiction" and str(item.get("record_verdict") or "").strip().lower() == "ok":',
+                                "if False:", pr.finding_record)),
+        ("INFRA-055: the ok phrase the irregular one", body_only_screened,
+         lambda: patch.dict(pr.finding_record.RELATION_WORDS,
+                            {TEXT: ("two passages contradict each other", "two passages contradict each other")})),
+        ("INFRA-055 not approved", body_governed,
+         lambda: patch.object(sys.modules[__name__], "_constitution", _unapproved_055)),
         ("INFRA-046 not approved", body_governed,
          lambda: patch.object(sys.modules[__name__], "_constitution", _unapproved)),
     ]
 
 
+def _reask_run(second):
+    """The real phase 5.5 on the uncomputable path (a prose unit): the first answer is an absence
+    claim with no quote and a figure relation with no figures, both refused; `second` authors the
+    one re-ask's answer. PRE-AUTHORED, NOT MODEL OUTPUT."""
+    first = [_item("missing_field", None, stated_field="seal"), _item(FIGURE, None)]
+    asked = []
+
+    def other(payload, call_id, kwargs):
+        if payload.get("rule_id") != ujc.RULE_ID:
+            return None
+        return {"ok": True, "backend": ujc.BACKEND, "model": ujc.MODEL, "call_id": call_id, "raw_text": "",
+                "item_count": len(first), "parsed": {"agent": "PRACTICE_AUDITOR", "items": first}}
+
+    def again(payload, call_id):
+        asked.append(payload.get("reask_question"))
+        items = second if payload.get("rule_id") == ujc.RULE_ID else []
+        return {"ok": True, "backend": ujc.BACKEND, "model": ujc.MODEL, "call_id": call_id, "raw_text": "",
+                "item_count": len(items), "parsed": {"agent": "PRACTICE_AUDITOR", "items": items}}
+    td = tempfile.mkdtemp(prefix="shimmer_reask_")
+    try:
+        run = hoc.mocked_run(Path(td), style_guardian=False, text=ujc.TEXT, rules=ujc.RULES,
+                             other_reply=other, reask_reply=again)
+        pairing = jrc._pairing(run)
+        rows = [r for r in pairing.get("reasked") or [] if r.get("rule_id") == ujc.RULE_ID]
+        return {"first refused": sorted(e.get("reason") for e in pairing.get("uncomputable_refused") or []
+                                        if e.get("rule_id") == ujc.RULE_ID),
+                "first kept": sum(int(e.get("items") or 0) for e in pairing.get("uncomputable_judged") or []
+                                  if e.get("rule_id") == ujc.RULE_ID),
+                "re-asks": len(asked), "rows": [(r["reasons"], r["kept"], sorted(r["refused"])) for r in rows],
+                "asked about": all("quote" in str(q) and "value_a" in str(q) for q in asked)}
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def body_reask():
+    """D-652 fix 4 (D-657): an answer refused for a missing quote or missing figures on a prose unit is
+    re-asked once; the second answer counts only if it passes judged_item_refusal unchanged (a quote
+    the unit lacks is refused again), both are recorded, and a unit with a table is never re-asked."""
+    good = [_item("missing_field", None, stated_field="seal", quote=ujc.KEPT_QUOTE),
+            _item(FIGURE, None, value_a=12, unit_a="units", value_b=13, unit_b="units")]
+    bad = [_item("missing_field", None, stated_field="seal", quote="words the unit does not hold")]
+    first = sorted([pr.ABSENCE_CLAIM_NO_QUOTE, pr.NO_FIGURES_FIGURE_RELATION])
+    got = {"kept": _reask_run(good), "refused again": _reask_run(bad),
+           "table unit": pr.reask_eligible(pr.ABSENCE_CLAIM_NO_QUOTE, chr(10).join(("Rates.", "| a | b |", "|---|---|", "| 1 | 2 |")), {}),
+           "rule check": pr.reask_eligible(pr.ABSENCE_CLAIM_NO_QUOTE, "Remark.", {"rule_check": {"plan_kind": "uncomputable"}}),
+           "other reason": pr.reask_eligible(pr.QUOTE_NOT_IN_UNIT, "Remark.", {})}
+    want = {"kept": {"first refused": first, "first kept": 0, "re-asks": 1, "rows": [(first, 2, [])], "asked about": True},
+            "refused again": {"first refused": first, "first kept": 0, "re-asks": 1,
+                              "rows": [(first, 0, [pr.QUOTE_NOT_IN_UNIT])], "asked about": True},
+            "table unit": False, "rule check": False, "other reason": False}
+    if got != want:
+        return "FAIL", "re-ask: got %s, expected %s" % (got, want)
+    return "PASS", "a refused missing quote or missing figures re-asked once on a prose unit, held to the same checks"
+
+
 BODIES = (body_undeclared, body_declared, body_cases, body_only_screened, body_dedupe, body_reader,
-          body_governed)
+          body_governed, body_reask)
 
 
 def check():

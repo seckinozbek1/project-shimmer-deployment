@@ -104,6 +104,7 @@ Shimmer is a standalone document processing swarm governed by an append-only con
 - ROUTE-S-A: bundles can be sealed on a Lambda instance as a fifth arm, returned without asset or project archives and verified from their own tree (full text: docs/CLAUDE_REFERENCE.md#route-s-a)
 - NEG-ADVISOR-A: the negotiation advisor is measured on held-out public items against its own bar, development only (full text: docs/CLAUDE_REFERENCE.md#neg-advisor-a)
 - DISK-SWEEP-A: tools/loop/disk_sweep.py deletes only regenerable files of the kinds declared in config/disk_sweep.json, and refuses everything else (full text: docs/CLAUDE_REFERENCE.md#disk-sweep-a)
+- ANSWER-FORM-A: no answer is dropped for its form alone; scoring reads saved replies again through tools/answer_form.py and tools/reread_replies.py and counts what it still drops by reason; bound runtime parsers change only with a re-seal (full text: docs/CLAUDE_REFERENCE.md#answer-form-a)
 
 ## Task modes, amendments, sensitivity, inputs (full text: docs/CLAUDE_REFERENCE.md#document-role-resolution-and-task-modes, #writing-an-amendment, #the-sensitivity-boundary, #three-input-type-model-genesis-part-xviii)
 

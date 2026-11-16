@@ -120,7 +120,8 @@ def _gold(record) -> str:
 # (common/bundle.BENCHMARK_DECLARATIONS; D-471). The rule's text is then the claim alone: the cell
 # step takes a rule's text as the claim (CELLS-A), and the measured question
 # (benchmark/baselines/choice_judge.claim_of) asked the claim without the template's other
-# sentences, which tell a model how to answer in another form. Without it the rules are as shipped.
+# sentences, which tell a model how to answer in another form. Since R-a2 (D-652) every SciTab build
+# declares it, with or without the option; `shipped_text` keeps the template for the cut (D-478).
 BUILD_OPTIONS = (("--rule-declaration", "a declaration for every claim's heading, as decided for the build "
                                         "(common/bundle.BENCHMARK_DECLARATIONS: 'compare: cells')"),)
 
@@ -131,7 +132,12 @@ def rule_text(claim, declaration=None) -> str:
 
 
 def documents(records, options=None) -> list:
-    declaration = bundle.build_declaration(BENCHMARK, options)
+    # R-a2 (SCITAB_INSIDE (a), TABLE-AUTHORITY-A, D-652 fix 1): a SciTab build always declares
+    # "compare: cells", so a table claim is answered by the cell step alone and never meets the
+    # field and absence checks built for legal text. The option is kept as an explicit match only;
+    # any other declaration is refused by build_declaration. Builds made before this keep their
+    # recorded rules and figures: a new build is a new attempt.
+    declaration = bundle.build_declaration(BENCHMARK, options) or bundle.BENCHMARK_DECLARATIONS[BENCHMARK]
     claim_ids = [ids.key_string(r[ID_FIELD]) for r in records]
     if len(set(claim_ids)) != len(claim_ids):
         raise ValueError("duplicate claim id")

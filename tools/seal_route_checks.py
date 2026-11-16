@@ -1188,6 +1188,29 @@ def proof_arm_s_sealed_through_prepare(prep=None):
                 "the run folder %s; a nested support name refused %s" % (flags, top, copies, sealed, missing, nested))
 
 
+def proof_gate_tree_archived_from_the_laptop_commit_object(prep=None):
+    """Arm G in a route-S job (22:43 refusal): the instance's repository holds the laptop's commit object
+    with no parent, as exact_commit leaves it. The gate tree is archived from it, every member's time the
+    commit's committer time (read from the object, never from a `git log` walk that needs the parent)."""
+    import prepare_ordinary_final_run as sealer
+    prep = prep or sealer
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        commit, tree, obj = laptop_commit(tmp / "laptop", FILES)
+        wanted = int(git_in(tmp / "laptop")("show", "-s", "--format=%ct", commit).strip())
+        (tmp / "commit.bin").write_bytes(obj)
+        git = instance_checkout(tmp / "inst", FILES)
+        sr.exact_commit(git, tmp / "commit.bin", commit, tree)
+        walk = subprocess.run(["git", "-C", str(tmp / "inst"), "log", "-1", "--format=%ct", commit], capture_output=True)
+        archive = tmp / "gate_source.tar"
+        made = prep.bound_tree_archive(tmp / "inst", commit, archive)
+        with tarfile.open(archive) as tar:
+            members = {m.name: m.mtime for m in tar.getmembers()}
+    ok = made == tree and set(members) == set(FILES) and set(members.values()) == {wanted}
+    return ok, "tree id %s, members %d, times %s (committer time %d); a log walk in that repository exits %d" % (
+        made == tree, len(members), sorted(set(members.values())), wanted, walk.returncode)
+
+
 def _refused(call):
     try:
         call()
@@ -1247,6 +1270,8 @@ def _swap(name, passage, replacement):
 
 PROOFS = [
     ("the instance re-creates the laptop's commit over the same tree; another tree refuses", "proof_exact_commit"),
+    ("arm G in a route-S job: the gate tree is archived from the parentless commit object, members at its committer time",
+     "proof_gate_tree_archived_from_the_laptop_commit_object"),
     ("a large input is hashed once and its digest reused only while its stat stands", "proof_verified_inputs_and_stat"),
     ("the sealer takes the verified-inputs record only on the instance", "proof_sealer_uses_the_record_only_on_the_instance"),
     ("item 3: the project archive stored once by its fingerprint, never replaced", "proof_project_stored_once"),
@@ -1451,6 +1476,10 @@ NEUTRALISATIONS = [
     ("the reverify not comparing a member read from git", "proof_reverify_reads_members_from_git", _swap_module(
         "proof_reverify_reads_members_from_git", "rv", ROOT / "tools" / "ordinary_final_bound_reverify.py",
         "require(hashlib.sha256(data).hexdigest() == digest, 'Archived runtime differs from sealed commit: ' + name)", "pass")),
+    ("the commit time read by a git log walk", "proof_gate_tree_archived_from_the_laptop_commit_object", _swap_module(
+        "proof_gate_tree_archived_from_the_laptop_commit_object", "prep", ROOT / "tools" / "prepare_ordinary_final_run.py",
+        "mtime = int(committer[0].rsplit(b' ', 2)[-2])",
+        "mtime = int(run('log', '-1', '--format=%ct', source).decode().strip())")),
     ("the commit id not compared", "proof_exact_commit", _swap("proof_exact_commit",
         "require(written == commit,", "require(True,")),
     ("the tree not compared", "proof_exact_commit", _swap("proof_exact_commit",

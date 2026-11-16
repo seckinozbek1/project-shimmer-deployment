@@ -382,12 +382,43 @@ def _image_history(ctx, before):
     return '; history since 5 Nov, reported once: %d of %d us-east-1 launches did not start from the copy' % (
         len(bad), covered)
 
-def rule_names():
-    spec = importlib.util.spec_from_file_location('agent_wrapper', ROOT / 'scripts' / 'agent_wrapper.py')
+WRAPPER_MODULE = '_standing_orders_agent_wrapper'
+
+
+def load_wrapper(path):
+    # The module is registered in sys.modules while it runs: its @dataclass reads its own module's namespace
+    # through sys.modules and fails with AttributeError otherwise (judge seal refused, 15 Nov 12:00).
+    spec = importlib.util.spec_from_file_location(WRAPPER_MODULE, path)
     module = importlib.util.module_from_spec(spec)
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        spec.loader.exec_module(module)
-    return {name for name, _ in module.candidate_config_paths()}
+    sys.modules[WRAPPER_MODULE] = module
+    folder = str(Path(path).parent)   # its own imports (call_evidence and the rest) resolve beside it
+    added = folder not in sys.path
+    if added:
+        sys.path.insert(0, folder)
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            spec.loader.exec_module(module)
+    finally:
+        sys.modules.pop(WRAPPER_MODULE, None)
+        if added:
+            sys.path.remove(folder)
+    return module
+
+
+def rule_names():
+    # The rule's names, not this shell's: the environment source is named whether or not this process sets it
+    # (a run's key_source records the shell it ran in). The placeholder is never resolved or read.
+    module = load_wrapper(ROOT / 'scripts' / 'agent_wrapper.py')
+    var = module.CONFIG_ENV_VAR
+    saved = os.environ.get(var)
+    os.environ[var] = 'unset-placeholder'
+    try:
+        return {name for name, _ in module.candidate_config_paths()}
+    finally:
+        if saved is None:
+            os.environ.pop(var, None)
+        else:
+            os.environ[var] = saved
 
 
 # The spend store's lines that record a paid run (D-S121): the store also holds the API's own

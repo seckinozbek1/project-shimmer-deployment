@@ -2642,7 +2642,20 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # call), by agent; carried on the computed bus post and in the pairing map so
     # a call the run counts is never missing from the record.
     judging_calls_by_agent: dict = {}
-    def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
+    # D-652 fix 4 (D-657): answers refused for a missing quote or missing figures on a unit with
+    # no table are re-asked ONCE (paired_review.reask_eligible). The first refusal stays recorded;
+    # the second answer is held to judged_item_refusal unchanged and counts only if it passes.
+    reask_requests: dict = {}
+    reask_payloads: dict = {}
+    reasked = []
+
+    def _want_reask(plan_index, unit, rule, refusal, r, reask):
+        if reask is None and paired_review_mod.reask_eligible(refusal, unit.get("text"), r):
+            reask_requests.setdefault(plan_index, set()).add(refusal)
+            return True
+        return False
+
+    def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r, reask=None):
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
             # A judged answer claiming a field is MISSING from a unit whose own
@@ -2663,7 +2676,12 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     prior_declared=prior_declared,
                     # INFRA-051: only the rule-check step's reply names its plan kind.
                     rule_check_plan=r.get("rule_check") if isinstance(r, dict) else None)
+                if refusal and reask is not None:
+                    # D-652 fix 4: a second answer's refusal is final and recorded on its re-ask row.
+                    reask["refused"].append(refusal)
+                    continue
                 if refusal:
+                    _want_reask(plan_index, unit, rule, refusal, r, reask)
                     refused_judged.append({
                         "unit_id": unit["unit_id"], "rule_id": rule["id"],
                         "relation": item.get("relation"),
@@ -2673,25 +2691,30 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
                     continue
                 kept.append(paired_review_mod.mark_screened(item))
-            if prediction is not None:
+            if prediction is not None and reask is None:
                 prediction.outcome(
                     doc["id"], plan_index, "returned", raw=judged, kept=kept,
                     refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
                     response_ok=isinstance(r, dict) and r.get("ok") is True)
             # S2 checker round 3 (item 1): recorded once its items are known, with
             # the claims listed and the claims refused; a failed call says so.
-            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
-                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
-                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
-                absence_listed=len(paired_review_mod.dedupe(kept)),
-                absence_refused=len(refused_judged) - refusal_start))
+            # D-652 fix 4: a re-ask's call is recorded on its own row (pairing["reasked"]).
+            if reask is None:
+                judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                    r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                    plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                    absence_listed=len(paired_review_mod.dedupe(kept)),
+                    absence_refused=len(refused_judged) - refusal_start))
             judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
                                         r.get("model") if isinstance(r, dict) else None)
-            absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "field": None,
-                            "path": "judged", "items": len(judged),
-                            "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            if reask is not None:
+                reask["kept"] = len(judged)
+            else:
+                absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "field": None,
+                                "path": "judged", "items": len(judged),
+                                "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
             log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
                             f"path=judged items={len(judged)}",
                       run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
@@ -2722,7 +2745,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     prior_declared=prior_declared,
                     # INFRA-051: only the rule-check step's reply names its plan kind.
                     rule_check_plan=r.get("rule_check") if isinstance(r, dict) else None)
+                if refusal and reask is not None:
+                    reask["refused"].append(refusal)
+                    continue
                 if refusal:
+                    _want_reask(plan_index, unit, rule, refusal, r, reask)
                     refused_uncomputable.append({
                         "unit_id": unit["unit_id"], "rule_id": rule["id"],
                         "relation": item.get("relation"), "reason": refusal})
@@ -2733,20 +2760,24 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     continue
                 kept.append(paired_review_mod.mark_screened(item))
             kept = paired_review_mod.dedupe(kept)
-            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
-                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
-                plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
-                judged_listed=len(kept), judged_refused=refused_here))
+            if reask is None:
+                judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                    r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                    plan_kind=plan.get("kind"), notes_kept=0, has_note=False,
+                    judged_listed=len(kept), judged_refused=refused_here))
             uncomputable_items_by_agent.setdefault(agent, []).extend(kept)
             if kept:
                 uncomputable_provenance[agent] = (r.get("backend"), r.get("model"))
                 reply_records.write_outcome(orch.run_context, r.get("call_id"), "not_promoted",
                                             source="paired_uncomputable", findings_withheld=len(kept))
-            uncomputable_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
-                                        "items": len(kept), "refused": refused_here,
-                                        "not_finding_shaped": not_finding_shaped,
-                                        "not_kept_reason": not_kept,
-                                        "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            if reask is not None:
+                reask.update(kept=len(kept), not_kept_reason=not_kept)
+            else:
+                uncomputable_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                                            "items": len(kept), "refused": refused_here,
+                                            "not_finding_shaped": not_finding_shaped,
+                                            "not_kept_reason": not_kept,
+                                            "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
             log_event(_LOG, f"paired_review_uncomputable unit={unit['unit_id']} rule={rule['id']} "
                             f"items={len(kept)} refused={refused_here}",
                       run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
@@ -2982,6 +3013,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                                      "plan_index": plan_index, "plan_kind": plan.get("kind")}},
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         judgment_context = (plan_index, plan, unit, rule, checks, agent, source_rule_id, refs)
+        reask_payloads[plan_index] = (wrapper, payload, refs_excerpt, advisory, judgment_context)
         if semantic_waves.enabled():
             pending_judgments.append((planned_judgment, judgment_context))
         else:
@@ -2992,6 +3024,44 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         judgment_results = await _gather_or_serial([p for p,c in pending_judgments])
         for (_, context), result in zip(pending_judgments, judgment_results):
             consume_judgment(*context, result)
+
+    # D-652 fix 4: the one re-ask per plan, in plan order, after every first answer is read. Only
+    # plans whose first answer was the shipped call's (reask_payloads) are re-asked; the second
+    # reply is read by consume_judgment with `reask` set, so it can never ask again.
+    pending_reasks = []
+    for plan_index in sorted(reask_requests):
+        if plan_index not in reask_payloads:
+            continue
+        wrapper, payload, refs_excerpt, advisory, context = reask_payloads[plan_index]
+        reasons = sorted(reask_requests[plan_index])
+        # The first question's own instruction travels inside the re-ask's, so a re-ask is never
+        # counted as a first judged question.
+        again = {k: v for k, v in payload.items() if k != "absence_question"}
+        again["reask_question"] = ((payload["absence_question"] + "\n\n") if payload.get("absence_question") else "") \
+            + paired_review_mod.reask_question(reasons)
+        unit, rule, agent = context[2], context[3], context[5]
+        reasked.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "plan_kind": context[1].get("kind"),
+                        "agent": agent, "reasons": reasons, "kept": 0, "refused": []})
+        pending_reasks.append((_run_one(
+            wrapper, again,
+            f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
+            max_tokens=PAIRED_JUDGING_MAX_TOKENS, convention_registry={"conventions": [rule]},
+            reference_index_excerpt=refs_excerpt,
+            items_are_advisory=advisory,
+            activation={"reason": "reask_after_refusal", "source_phase": "5.5",
+                        "trigger_source": "paired_plan", "doc_id": doc["id"],
+                        "consumer": "convention_finding_and_explanation",
+                        "evidence": {"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                                     "plan_index": plan_index, "plan_kind": context[1].get("kind"),
+                                     "reasons": reasons}},
+            _progress=(5.5, doc_pos[doc["id"]], n_docs, agent)), context, reasked[-1]))
+        log_event(_LOG, f"paired_review_reask unit={unit['unit_id']} rule={rule['id']} "
+                        f"reasons={len(reasons)}", run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+    if pending_reasks:
+        reask_results = await _gather_or_serial([p for p, c, row in pending_reasks])
+        for (_, context, row), result in zip(pending_reasks, reask_results):
+            row["call_id"] = result.get("call_id") if isinstance(result, dict) else None
+            consume_judgment(*context, result, reask=row)
 
     # P2 (a): a rule declaring `[compare: passages]` has pairs of the document's passages
     # judged. Its records are a model's, kept on the D-068 path: marked, never promoted.
@@ -3042,6 +3112,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     pairing["uncomputable_kept_count"] = sum(e["items"] for e in uncomputable_judged)
     pairing["uncomputable_refused"] = refused_uncomputable
     pairing["uncomputable_refused_count"] = len(refused_uncomputable)
+    # D-652 fix 4: every re-ask, with the reasons of the first refusals it asks about (those stay
+    # in absence_refused / uncomputable_refused as before), its call, what the second answer kept
+    # and the reasons Python refused the rest of it for.
+    pairing["reasked"] = reasked
+    pairing["reasked_count"] = len(reasked)
     log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
                     f"reattributed={len(reattributed)} absence_computed="
                     f"{pairing['absence_computed_count']} absence_judged="

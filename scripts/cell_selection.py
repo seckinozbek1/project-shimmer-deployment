@@ -101,14 +101,27 @@ def tables(text):
     return out
 
 
+def figure_value(token):
+    """One figure as a table cell or a claim writes it, as a float, or None: the one reader the cell
+    step uses (D-652, audit A1). "71,2%", "71.2%", "71.2" and "-3.4" read 71.2, 71.2, 71.2 and 3.4.
+    The comma is norm_number's rule, the review's one comma rule: a single comma with no point is a
+    decimal comma ("71,2" is 71.2, not 712), groups of three are thousands ("1,254" is 1254). A sign
+    and a percent or footnote mark are read off: the figure is matched as a magnitude, since a claim
+    writes "fell by 3.4" where its cell writes "-3.4"."""
+    t = str(token or "").strip().strip("%*+-−").strip()
+    if not re.fullmatch(r"\d+(?:[.,]\d+)*", t):
+        return None
+    value = paired_review.norm_number(t)
+    return None if value is None else abs(value)
+
+
 def figures(text):
-    """The numbers `text` writes, as floats."""
+    """The numbers `text` writes, as floats, each read by figure_value."""
     out = set()
     for token in _NUMBER.findall(str(text or "")):
-        try:
-            out.add(float(token.replace(",", "")))
-        except ValueError:
-            continue
+        value = figure_value(token)
+        if value is not None:
+            out.add(value)
     return out
 
 

@@ -2073,6 +2073,7 @@ var SHIMMER_TR = {
   "copied figure matches its source": "aktarılan değer kaynağıyla uyuşuyor",
   "figure written in another measure": "değer başka bir ölçü biriminde yazılmış",
   "two passages contradict each other": "iki pasaj birbiriyle çelişiyor",
+  "the passages do not contradict each other": "pasajlar birbiriyle çelişmiyor",
   "one passage says \"{first}\", another says \"{second}\"": "bir pasaj \"{first}\" diyor, başka bir pasaj \"{second}\" diyor",
   "one passage, in {unit_a}, says \"{first}\", another, in {unit_b}, says \"{second}\"": "{unit_a} içindeki bir pasaj \"{first}\" diyor, {unit_b} içindeki başka bir pasaj \"{second}\" diyor",
   "<strong>Two passages of this unit contradict each other.</strong> A model wrote this. Both passages are shown with the model findings. ": "<strong>Bu bölümdeki iki pasaj birbiriyle çelişiyor.</strong> Bunu bir model yazdı. İki pasaj da model bulgularında gösteriliyor. ",

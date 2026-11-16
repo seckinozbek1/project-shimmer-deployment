@@ -1,9 +1,13 @@
 {
   "schema": "agent-assignment-v1",
-  "description": "The per-document agent-assignment layer (D-571, D-572, D-575; scripts/agent_assignment.py). Python reads each document's STRUCTURAL conditions (no meaning, no keyword table: WORDS-A) and assigns the production agents the document needs. Every assignment and every skip is recorded with its reason (audit/agent_assignment.json and agent_activation's not_called, state unassigned). A skip is made only by a rule listed in skip_rules, each naming the built rule it rests on; with none listed every agent is assigned, as before the layer. The floor is the set of compositions the rules make mandatory; an assignment below it is refused before any call. The floor is data, so a rule change (for example INFRA-053's reading of LAW-III) is written here, never in code.",
-  "skip_rules": [],
+  "description": "The per-document agent-assignment layer (D-571, D-572, D-575; scripts/agent_assignment.py). Python reads each document's STRUCTURAL conditions (no meaning, no keyword table: WORDS-A) and assigns the production agents the document needs. Every assignment and every skip is recorded with its reason (audit/agent_assignment.json and agent_activation's not_called, state unassigned). A skip is made only by a rule listed in skip_rules, each naming the built rule it rests on; with none listed every agent is assigned, as before the layer. One is shipped (D-652): SPEECH_ACT_TAGGER is not run on a document of tables alone. The floor is the set of compositions the rules make mandatory; an assignment below it is refused before any call. The floor is data, so a rule change (for example INFRA-053's reading of LAW-III) is written here, never in code.",
+  "skip_rules": [
+    {"agent": "SPEECH_ACT_TAGGER", "when": {"has_table": true, "running_prose_lines": 0},
+     "rule": "ASSIGN-A; D-652 item 1 (authority audit A3)",
+     "note": "SPEECH_ACT_TAGGER tags what a running sentence does; a document of tables, their captions and label: value lines carries no running sentence, so the agent has nothing to work on and is not run (its tags are audit-only and decide no item). Not a floor agent (F1 to F7). The integrity rule (one bad reply voids an entry) is unchanged: the agent is not run, its reply is not forgiven."}
+  ],
   "skip_rule_form": "{\"agent\": NAME, \"when\": {CONDITION: VALUE, ...} (every listed condition equal), \"rule\": the built rule it rests on, \"note\": why}",
-  "conditions": ["has_table", "table_rows", "numeric_cells", "prose_lines", "citation_markers", "characters"],
+  "conditions": ["has_table", "table_rows", "numeric_cells", "prose_lines", "running_prose_lines", "citation_markers", "characters"],
   "floor": [
     {"id": "F1", "rule": "LAW-III", "agents": ["VERIFIER"], "when_assigned": "PROCESSOR",
      "text": "A produced draft is audited by the other model family: VERIFIER (local_auditor) on PROCESSOR's (local_producer) draft wherever PROCESSOR runs.",

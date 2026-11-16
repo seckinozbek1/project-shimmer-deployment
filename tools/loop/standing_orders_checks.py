@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -250,6 +251,19 @@ class StandingOrdersChecks(unittest.TestCase):
         for bad in (line('r3', good), line('r4', '## 2026-11-09 19:10 +0300: another'), line('r5', good, key='env var')):
             fx.write('cloud_reference_spend.jsonl', '\n'.join([old, line('r1', good), bad]))
             self.assertFalse(soc.check_api_key(fx.ctx(), names)[0], bad)
+
+    def test_rule_names_read_from_the_real_wrapper(self):
+        # The live rule, not a fixture set: order 2 refused the judge seal when this read raised (15 Nov).
+        before = os.environ.pop('SHIMMER_CONFIG_PATH', None)
+        try:
+            names = soc.rule_names()   # named although this process does not set it
+            self.assertIn('SHIMMER_CONFIG_PATH', names)
+            self.assertTrue(any(n.startswith('sibling ') for n in names), names)
+            self.assertNotIn('SHIMMER_CONFIG_PATH', os.environ)
+        finally:
+            if before is not None:
+                os.environ['SHIMMER_CONFIG_PATH'] = before
+        self.assertNotIn(soc.WRAPPER_MODULE, sys.modules)
 
     def test_budget_marks(self):
         fx = self.fx
@@ -655,6 +669,20 @@ class StandingOrdersChecks(unittest.TestCase):
 
 
 NEVER = lambda ctx, *a: (True, 'neutralised')
+
+
+def unregistered_wrapper(path):
+    # The load before the 15 Nov fix: the module is not in sys.modules while it runs.
+    import contextlib, importlib.util
+    spec = importlib.util.spec_from_file_location(soc.WRAPPER_MODULE, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(Path(path).parent))
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(Path(path).parent))
+    return module
 NEUTRALISED = (
     (soc, 'KINDS', ('script', 'record', 'broken today', 'maybe'), ('test_the_tablet_is_read_and_an_unreadable_row_fails',)),
     (soc, 'CHECKERS', {n: ('', f) for n, (_, f) in soc.CHECKERS.items()}, ('test_a_checker_bound_to_a_renumbered_order_fails',)),
@@ -707,6 +735,9 @@ NEUTRALISED = (
      ('test_the_run_writes_its_result_and_the_session_start_prints_it',)),
     (soc, 'check_image', NEVER, ('test_image_every_east_launch_since_5_november_starts_from_the_copy',)),
     (soc, 'check_api_key', NEVER, ('test_api_key_runs_need_one_evet_one_chain_and_a_rule_key',)),
+    (soc, 'load_wrapper', unregistered_wrapper, ('test_rule_names_read_from_the_real_wrapper',)),
+    (soc, 'rule_names', lambda: {n for n, _ in soc.load_wrapper(soc.ROOT / 'scripts' / 'agent_wrapper.py').candidate_config_paths()},
+     ('test_rule_names_read_from_the_real_wrapper',)),
     (soc, 'SPEND_EVENTS', (None, 'close', 'ceiling', 'reserve', 'skipped'),
      ('test_api_key_runs_need_one_evet_one_chain_and_a_rule_key',)),
     (soc, 'check_budget', NEVER, ('test_budget_marks',)),

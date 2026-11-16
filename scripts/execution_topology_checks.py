@@ -87,7 +87,11 @@ def reference_tree(source):
                     x.orelse=x.orelse[0].orelse
         if node.name == "_paired_convention_review":
             helper=next(x for x in node.body if isinstance(x,ast.FunctionDef) and x.name=="consume_judgment")
-            assert [a.arg for a in helper.args.args]==["plan_index","plan","unit","rule","checks","agent","source_rule_id","refs","r"]
+            # D-652 fix 4 adds `reask` (default None): a genuine change to both paths, recorded as a
+            # reference amendment, not inverted here.
+            assert [a.arg for a in helper.args.args] in (
+                ["plan_index","plan","unit","rule","checks","agent","source_rule_id","refs","r"],
+                ["plan_index","plan","unit","rule","checks","agent","source_rule_id","refs","r","reask"])
             class RestoreContinue(ast.NodeTransformer):
                 def visit_Return(self,n):
                     assert n.value is None

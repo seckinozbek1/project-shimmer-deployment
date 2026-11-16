@@ -40,6 +40,8 @@ machine and no item: every proof runs on fixtures written here, invented, about 
 33. D-617: the validate form lists the article ids and asks for exactly one; a heading is not an id; an exact
     id is read; proposal and stance are asked byte for byte as in round 1; round 1's form still reads.
 34. D-618: the freeze command passes the corpus list's accept-skipped kinds, as freeze_negotiation_set does.
+35. The freeze's embedding on a rented machine: export, embed_records, and --vectors equal to the in-process
+    freeze byte for byte (FREEZE.json and the cloud subset).
 
 Each proof follows scripts/effect_proof.py: neutralise, fail, restore, pass. A neutralisation changes the
 property itself (a declared constant, the data the rule reads, or the form as first written), never the
@@ -67,6 +69,7 @@ for _p in (str(ROOT / "scripts"), str(ROOT / "tools"), str(ROOT / "benchmark" / 
 
 from effect_proof import prove_effect  # noqa: E402
 import neg_advisor as na  # noqa: E402
+import reread_replies as rr  # noqa: E402
 
 
 def _load(name, path):
@@ -200,6 +203,18 @@ class FakeBackend:
         if user.startswith("A negotiation advisor gave"):
             return {"text": "unsupported" if "P-A1-2" in user else "supported"}
         return {"text": json.dumps(GOOD_REPLY)}
+
+    def generate_constrained(self, _system, user, n, schema, source):
+        # D-672: the schema groups' path; the stand-in writes the reply the schema admits.
+        out = self.generate(_system, user, n)
+        return dict(out, constraint={"name": "json-schema-contract", "source": source, "interventions": 0})
+
+    def choose(self, _system, user, answers):
+        # D-672: the choice groups' path; the stand-in's probabilities put 0.9 on the answer it means.
+        wanted = "unsupported" if "P-A1-2" in user else "supported" if user.startswith("A negotiation advisor gave") else "2"
+        rows = [{"label": a["label"], "surface": a["surface"], "token_id": k,
+                 "probability": 0.9 if a["label"] == wanted else 0.1 / (len(answers) - 1)} for k, a in enumerate(answers)]
+        return {"decision": {"schema": "choice-decision-v1", "answers": rows, "declared_mass": 1.0}}
 
 
 def fake_reader(group, allowance):
@@ -398,10 +413,11 @@ class NegAdvisorChecks(unittest.TestCase):
                "system_audit": "unsloth/Phi-3.5-mini-instruct-bnb-4bit", "judge": PHI4, "validate": PHI4}
         model = lambda g: {g: {"model_id": ids[g], "digest": digests[g]}}
         items = json.loads(subset)["items"]
-        arms = {"B1": {"prompts_sha256": "b", "models": model("b1")},
-                "system": {"prompts_sha256": "s", "models": dict(model("system_advice"), **model("system_audit"))},
-                "cloud": {"prompts_sha256": "c", "subset_sha256": subset_sha, "rows": [{"item_id": i} for i in items]}}
-        judge = {"prompts_sha256": "j", "models": model("judge")}
+        v = {"schema": rr.ADVISOR_SCHEMA}
+        arms = {"B1": dict(v, prompts_sha256="b", models=model("b1")),
+                "system": dict(v, prompts_sha256="s", models=dict(model("system_advice"), **model("system_audit"))),
+                "cloud": dict(v, prompts_sha256="c", subset_sha256=subset_sha, rows=[{"item_id": i} for i in items])}
+        judge = dict(v, prompts_sha256="j", models=model("judge"))
         validation = {"kappa": 0.8, "prompts_sha256": "v", "models": model("validate")}
         line = "neg-advisor opening k=1 set=%s config=%s" % ("a" * 64, "c" * 64)
         return dict(freeze=freeze, configuration=conf, configuration_sha256="c" * 64, k=1, power=json.loads(power_text),
@@ -521,6 +537,19 @@ class NegAdvisorChecks(unittest.TestCase):
         veto = lambda: sc.game_part(vetoed, "P1", {"deal": {"I1": "a", "I2": "y"}, "trades": []})["G1"]
         self.assertEqual(veto(), 0)
         self.prove("feasible_needs_the_veto_parties", veto, 0, lambda: patch.dict(vetoed, {"veto": []}))
+        # A game reply (deal and trades, no proposals) passes the withholding as it is: judge-prompts and
+        # score call withhold on every system reply (role N session 18 met KeyError 'proposals' here).
+        game_reply = {"deal": {"I1": "a", "I2": "x"}, "trades": [{"give": "I2", "get": "I1"}]}
+
+        def kept_game():
+            try:
+                kept, trail = sc.withhold(item, game_reply, {})
+            except KeyError as exc:
+                return f"KeyError {exc}"
+            return kept is game_reply, trail["given"]
+        self.assertEqual(kept_game(), (True, 0))
+        # Neutralised: the item read as no game takes the proposals path and fails on the game reply.
+        self.prove("game_reply_passes_withholding", kept_game, (True, 0), lambda: patch.dict(item, {"game": None}))
 
     def test_18_judge_blind(self):
         item, key = built()
@@ -539,6 +568,242 @@ class NegAdvisorChecks(unittest.TestCase):
         self.assertEqual(opaque(), [False])
         # Neutralised: the entry id no longer hashed, so it spells the arm.
         self.prove("judge_entry_ids_opaque", opaque, [False], lambda: patch.object(na, "_sha", lambda text: text))
+
+    def test_18b_judge_grade_is_the_leading_digit(self):
+        # Role N session 19 (15 Nov): all 12 Phi-4 replies opened with the grade digit and went on with text.
+        cases = {"2": 2, " 1" + chr(10): 1, "0": 0, "2 The counter keeps": 2, "1.": 1, "0, because": 0,
+                 "12": None, "3": None, "Grade: 2": None, "": None, None: None}
+        read = lambda: {repr(k): na.parse_judge(k) for k in cases}
+        want = {repr(k): v for k, v in cases.items()}
+        self.assertEqual(read(), want)
+        # Neutralised: the old rule, a bare digit only, grades nothing that goes on after the digit.
+        bare = lambda text: (int(text.strip()) if isinstance(text, str) and text.strip() in ("0", "1", "2") else None)
+        self.prove("judge_grade_is_the_leading_digit", read, want, lambda: patch.object(na, "parse_judge", bare))
+
+    def test_18c_numeric_article_id_is_read_as_its_text(self):
+        # Role N session 23 (15 Nov): the system wrote 7 article ids as JSON numbers equal to a known id; the
+        # parser compared them with the string ids and dropped them. A number is read as its text, as `_ids` does.
+        item, _key = built()
+        item["articles"][0]["id"] = "7"
+        value = {"proposals": [], "trades": [], "approach": [],
+                 "alignment": [{"article": 7, "aligned": [], "opposed": []}],
+                 "state": [{"article": 7, "state": "bracketed"}, {"article": True, "state": "closed"},
+                           {"article": 7.0, "state": "closed"}]}
+        read = lambda: (lambda r: (r["state"], sorted(r["alignment"])))(na.parse_advice(json.dumps(value), item))
+        want = ({"7": "bracketed"}, ["7"])
+        self.assertEqual(read(), want)
+        # Neutralised: the old rule, an id compared as it came, drops the numeric article.
+        self.prove("numeric_article_id_is_read_as_its_text", read, want,
+                   lambda: patch.object(na, "_one_id", lambda v: v))
+
+    def test_18d_no_answer_dropped_for_its_form(self):
+        # D-663 (standing order 82): the good reply written in the forms a model writes (a fence, case, spaces,
+        # quotes, emphasis, a trailing point, a list of one, one value for a list), after an example object,
+        # is read by the score-time re-reader (tools/reread_replies.py) as the run's parser reads the good reply;
+        # the example object before it is counted several_objects_last_read, not read (the LAST object, lead 18:57).
+        item, _key = built()
+        form = {"proposals": [
+                    {"id": " p-a1-1 ", "conflict": "No_Conflict.", "stance": "**Accept**", "reasons": "POS-1"},
+                    {"id": ["P-A1-2"], "conflict": '"not stated"', "stance": "REJECT", "reasons": ["par-2"]},
+                    dict(GOOD_REPLY["proposals"][2], stance="Counter,")],
+                "trades": [{"give": "P-A1-1", "get": "P-A2-1"}], "approach": "beta",
+                "alignment": [{"article": "a1", "aligned": "BETA", "opposed": ["group1"]},
+                              {"article": "A2.", "aligned": ["BETA"], "opposed": "GROUP1"}],
+                "state": [{"article": "A1", "state": "Bracketed"}, {"article": " A2", "state": "BRACKETED"},
+                          {"article": "A3", "state": "'closed'"}, {"article": "a9", "state": ["dropped"]}]}
+        text = 'For example {"proposals": []}. My answer:\n```json\n' + json.dumps(form) + "\n```"
+        fields = ("proposals", "trades", "approach", "alignment", "state")
+        read = lambda: {f: rr.advice(text, item)[0][f] for f in fields}
+        want = {f: na.parse_advice(json.dumps(GOOD_REPLY), item)[f] for f in fields}
+        self.assertEqual(read(), want)
+        self.assertEqual(rr.advice(text, item)[1], {"reply": {"several_objects_last_read": 1}})
+        # Neutralised: each field compared as it came, the old exact rule.
+        self.prove("advice_read_whatever_its_form", read, want,
+                   lambda: patch.object(rr, "_read", lambda v, declared, field, drops: v if isinstance(v, str) and v in declared else None))
+        # Neutralised: the first object read, as the run's parser does: the example, not the answer.
+        self.prove("advice_read_from_the_last_object", read, want,
+                   lambda: patch.object(rr.af, "last_object", lambda t: (json.loads(t[t.index("{"):t.index("}") + 1]), None, False)))
+        # An integer reason is the one known id ending in that number; two such ids refuse it as ambiguous.
+        self.assertEqual([rr._cited(4, {"PAR-4", "POS-1"}), rr._cited("4", {"PAR-4", "POS-4"}), rr._cited(9, {"PAR-4"})],
+                         [("PAR-4", None), (None, "ambiguous"), (None, "not_declared")])
+
+    def test_18f_answers_read_again_from_saved_replies(self):
+        # The answers file a score reads: the system's advice read again, its audits matched to the prompts the
+        # run derived and held to their SHA-256; a piece the run's strict parser never put to the auditor is
+        # counted not_asked; every row carries its drops, and the schema is the re-reader's.
+        with setdir() as root, tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "p.json"
+            value = na.build(root, "advice", ["system_advice"], path)
+            value["_sha256"] = "s" * 64
+            p = value["prompts"][0]
+            form = dict(GOOD_REPLY, proposals=[dict(GOOD_REPLY["proposals"][0], stance="Accept"),
+                                               GOOD_REPLY["proposals"][1], GOOD_REPLY["proposals"][2]])
+            text = json.dumps(form)
+            derived = na.audit_prompts(value["config"], p, text)
+            measured = {d["prompt_id"]: (d["user_sha256"], "Supported, as the text says") for d in derived}
+            observe = lambda: (lambda r: (r["schema"], r["rows"][0]["audit"], r["rows"][0]["drops"],
+                                          r["rows"][0]["reply"]["proposals"]["P-A1-1"]["stance"]))(
+                rr.advisor_rows(value, {p["prompt_id"]: text}, measured_audits=measured))
+            want = (rr.ADVISOR_SCHEMA, {"P-A1-2": "supported", "P-A2-1": "supported"}, {"audit": {"not_asked": 1}}, "accept")
+            self.assertEqual(observe(), want)
+            self.prove("advisor_answers_read_again_with_audits_matched", observe, want,
+                       lambda: patch.object(rr, "audit", lambda text, config: na.parse_audit(text, config) and (na.parse_audit(text, config), None) or (None, "not_declared")))
+
+    def test_18g_each_group_answers_its_declared_way(self):
+        # D-672 (a)(b): the judge and the system auditor decide by fixed choices, the system's advice and the
+        # validator generate under the schema constraint, B1 generates freely (no declaration on its group).
+        config = na.load_config()
+
+        class Recorder:
+            def __init__(self):
+                self.used = []
+            def generate(self, _s, user, n):
+                self.used.append("generate")
+                return {"text": "{}"}
+            def generate_constrained(self, _s, user, n, schema, source):
+                self.used.append("schema")
+                return {"text": "{}"}
+            def choose(self, _s, user, answers):
+                self.used.append("choice")
+                return {"decision": {}}
+        item, _key = built()
+        prompts = [dict(g, prompt_id="x", form={"b1": "advice", "system_advice": "advice", "system_audit": "audit",
+                                                "judge": "judge", "validate": "validate"}[g["group"]],
+                        item=item, user="u", max_new_tokens=4) for g in config["models"]]
+
+        def observe():
+            r = Recorder()
+            for p in prompts:
+                na.call(r, p, config)
+            return dict(zip([p["group"] for p in prompts], r.used))
+        want = {"b1": "generate", "system_advice": "schema", "system_audit": "choice", "judge": "choice", "validate": "schema"}
+        self.assertEqual(observe(), want)
+        self.prove("judge_and_auditor_decide_by_choice", observe, want,
+                   lambda: patch.object(na, "DECIDE_BY_CHOICE", "no such way"))
+        self.prove("advice_and_validator_under_the_schema", observe, want,
+                   lambda: patch.object(na, "SCHEMA_CONSTRAINT", "no such way"))
+        # Neither may be declared on B1 or anywhere else.
+        for bad in ({"decide_by": "choice"}, {"constraint": "schema"}):
+            wrong = json.loads(json.dumps(config))
+            wrong["models"][0].update(bad)
+            with self.assertRaises(ValueError):
+                na.check_decoding(wrong)
+
+    def test_18h_choice_decisions_are_read_as_their_label(self):
+        # The pass saves each choice as a decision with no reply text; the answers (the run's reader and the
+        # score-time re-reader) read it as the label it settles on under the form's declared threshold.
+        with setdir() as root, tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "p.json"
+            na.build(root, "advice", ["system_advice"], path)
+
+            def observe():
+                with tempfile.TemporaryDirectory() as out:
+                    result = na.run(path, Path(out) / "pass", backend_factory=FakeBackend, reader_for=fake_reader, run_id="fx")
+                    import reply_records
+                    records = reply_records.records(Path(out) / "pass" / "audit" / "model_replies")
+                    shapes = sorted({(r.get("reply") is None, isinstance(r.get("decision"), dict),
+                                      isinstance(r.get("decoding_constraint"), dict)) for r in records})
+                    mine = na.answers(path, Path(out) / "pass")
+                    again = rr.advisor_answers(path, Path(out) / "pass")
+                    audit = lambda a: next(r for r in a["rows"] if r["group"] == "system_advice")["audit"]
+                    return ([(r["form"], r["decided"], r["constrained"]) for r in result["rows"]][:2], shapes,
+                            audit(mine), audit(again))
+            want = ([("advice", False, True), ("audit", True, False)], [(False, False, True), (True, True, False)],
+                    {"P-A1-1": "supported", "P-A1-2": "unsupported", "P-A2-1": "supported"},
+                    {"P-A1-1": "supported", "P-A1-2": "unsupported", "P-A2-1": "supported"})
+            self.assertEqual(observe(), want)
+            self.prove("choice_decisions_read_as_their_label", observe, want,
+                       lambda: patch.object(na, "recorded_text", lambda record, config, form: None))
+        # A tie settles nothing: the reader gets the choice module's unsettled word, which no form reads.
+        tie = {"answers": [{"label": "0", "probability": 0.5}, {"label": "1", "probability": 0.5}, {"label": "2", "probability": 0.0}]}
+        said = na.recorded_text({"backend_ok": True, "decision": tie}, na.load_config(), "judge")
+        self.assertEqual((rr.judge(said)[0], na.parse_judge(said)), (None, None))
+
+    def test_18i_the_schema_constraint(self):
+        # The advice schema admits the plan's reply with the item's own ids and refuses an unknown id, a label
+        # in another case, a fence and text after the object; under the constraint a stand-in model that
+        # writes "Accept" is held to "accept" (DECODING-B: the processor masks, counts and never chooses).
+        import contract_decoding_checks as base
+        import schema_decoding as sd
+        item, _key = built()
+        good = json.dumps(GOOD_REPLY)
+        bad = [good.replace('"P-A1-1"', '"P-Z9-9"', 1), good.replace('"accept"', '"Accept"', 1),
+               "```json\n" + good + "\n```", good + " done"]
+        observe = lambda: (sd.accepts(na.advice_schema(item), good), [sd.accepts(na.advice_schema(item), t) for t in bad],
+                           sd.accepts(na.validate_schema(item), '{"article": "A2", "proposal": null, "stance": "oppose"}'),
+                           sd.accepts(na.validate_schema(item), '{"article": "Article 2", "proposal": 1, "stance": "oppose"}'))
+        want = (True, [False, False, False, False], True, False)
+        self.assertEqual(observe(), want)
+        real = na.advice_schema
+        loose = lambda it: json.loads(json.dumps(real(it)).replace(
+            '"type": "enum", "values": ["accept", "counter", "reject"]', '"type": "string", "max_chars": 20'))
+        self.prove("the_schema_holds_ids_and_labels", observe, want, lambda: patch.object(na, "advice_schema", loose))
+        reply = dict(GOOD_REPLY, proposals=[dict(p, stance=p["stance"].capitalize()) for p in GOOD_REPLY["proposals"]])
+        intended, fallback = json.dumps(reply), good
+        tok = base.FixtureTokenizer()
+
+        def decode(constrained):
+            model = base.StandInModel(tok, intended, fallback)
+            prompt = tok("<prompt>")["input_ids"]
+            extra, record = {}, None
+            if constrained:
+                built_c = sd.constraint("advice", na.advice_schema(item), tok, prompt.shape[1], [base.EOS], "fixture")
+                extra, record = built_c.generate_kwargs(), built_c.record
+            out = model.generate(prompt, 2400, eos_token_id=[base.EOS], **extra)
+            text = tok.decode(out[0, prompt.shape[1]:].tolist())
+            parsed = na.parse_advice(text, item)
+            return (sorted(e.get("stance", "dropped") for e in (parsed or {}).get("proposals", {}).values()),
+                    (record or {}).get("interventions", 0) > 0)
+        observe_decode = lambda: (decode(False), decode(True))
+        want_decode = ((["dropped", "dropped", "dropped"], False), (["accept", "counter", "reject"], True))
+        self.assertEqual(observe_decode(), want_decode)
+        self.prove("the_constraint_holds_the_model_to_the_schema", observe_decode, want_decode,
+                   lambda: patch.object(sd.SchemaGrammar, "step", lambda self, state, ch: state if state not in (None, sd.DONE) else None))
+
+    def test_18e_still_dropped_is_counted_by_reason(self):
+        # What is still not read is counted by field and reason in the row and in the score report.
+        item, _key = built()
+        value = dict(GOOD_REPLY, state=[{"article": "A1", "state": "shut"}, {"article": "A1", "state": ["closed", "new"]},
+                                        "closed"],
+                     proposals=GOOD_REPLY["proposals"] + [{"id": "P-ZZ-9"}, {"id": "p-a1-1", "stance": "accept"}])
+        read = lambda: rr.advice(json.dumps(value), item)[1]
+        want = {"proposals.id": {"duplicate": 1, "not_declared": 1}, "state": {"not_an_object": 1},
+                "state.state": {"list_not_one": 1, "not_declared": 1}}
+        self.assertEqual(read(), want)
+        # One bad entry costs only itself: the good proposals keep their reasons.
+        self.assertEqual(rr.advice(json.dumps(value), item)[0]["proposals"]["P-A1-1"]["reasons"], ["POS-1"])
+        self.prove("advice_drops_counted_by_reason", read, want,
+                   lambda: patch.object(rr.af.Drops, "add", lambda self, field, reason: None))
+        # The judge, the audit and the validator: the form taken off, a leading field label and what goes on
+        # after a leading answer read past, the rest counted by reason.
+        config = na.load_config()
+        forms = lambda: ([rr.judge(t) for t in ('"2"', "**1**", "```\n0\n```", "Grade: 2", "12", "")],
+                         [rr.audit(t, config) for t in ('"Supported."', "**Not supported**", "Cannot_Tell",
+                                                        "Supported, because the text says so", "supportedly", "maybe")],
+                         [rr.validate(t) for t in ('{"article": 7, "proposal": "1", "stance": "Support."}',
+                                                   '{"article": ["A2"], "proposal": "none", "stance": "OPPOSE"}',
+                                                   '{"article": "A2", "proposal": 1.5, "stance": "oppose"}', "no object")])
+        want_forms = ([(2, None), (1, None), (0, None), (2, None), (None, "not_declared"), (None, "empty")],
+                      [("supported", None), ("unsupported", None), ("cannot_tell", None), ("supported", None),
+                       (None, "not_declared"), (None, "not_declared")],
+                      [({"article": "7", "proposal": 1, "stance": "support"}, None),
+                       ({"article": "A2", "proposal": None, "stance": "oppose"}, None), (None, "not_text"),
+                       (None, "no_json_object")])
+        self.assertEqual(forms(), want_forms)
+        self.prove("judge_audit_validator_read_whatever_their_form", forms, want_forms,
+                   lambda: patch.object(rr.af, "bare", lambda text: text))
+        # The run's own parsers (bound, unchanged) still drop these forms: the re-reader is where they are read.
+        self.assertEqual([na.parse_judge("Grade: 2"), na.parse_audit("Supported, because", config)], [None, None])
+        # The score report carries the drops of every arm, and answers not read by the re-reader are refused.
+        rows = {"rows": [{"group": "b1", "drops": want}, {"group": "b1", "drops": {"reply": {"empty": 1}}},
+                         {"group": "system_advice", "drops": {}}]}
+        self.assertEqual(rr.drop_counts(rows, "b1"), dict(want, reply={"empty": 1}))
+        kw = self.scoring_inputs({"fx-k2-alpha": built()[1]})
+        old = lambda: sc.refuse(**dict(kw, arms=dict(kw["arms"], B1=dict(kw["arms"]["B1"], schema=na.ANSWERS_SCHEMA))))
+        self.assertTrue(str(old()).startswith("the B1 answers are not read by tools/reread_replies.py"), old())
+        self.prove("answers_not_read_again_refused",
+                   lambda: str(old()).startswith("the B1 answers are not read by tools/reread_replies.py"), True,
+                   lambda: patch.object(sc.rr, "ADVISOR_SCHEMA", na.ANSWERS_SCHEMA))
 
     def test_19_power(self):
         sizes, shares = [5] * 12, {"conflict": 0.4, "no_conflict": 0.4, "not_stated": 0.2}
@@ -968,6 +1233,56 @@ class NegAdvisorChecks(unittest.TestCase):
             self.prove("freeze_passes_the_accepted_kinds", observe, (0, True), dropped)
 
 
+    def test_35_freeze_vectors_route(self):
+        """Seckin 17:19, option (b): the advisor's freeze exports its embedding input, embed_records makes the
+        vectors (here its replay run with a stub one-hot embedder) and merges them, and --vectors gives the
+        in-process freeze's FREEZE.json and cloud subset byte for byte. Fixtures only."""
+        import hashlib
+        import shutil
+        import numpy as np
+        fz = sc.fz()
+        er = fz._embed_records()
+
+        def onehot(texts):
+            out = np.zeros((len(texts), 1024), dtype=np.float32)
+            for i, t in enumerate(texts):
+                out[i, int(hashlib.sha256(str(t).encode("utf-8")).hexdigest()[:8], 16) % 1024] = 1.0
+            return out
+        embedder = lambda texts, batch_size: onehot(texts)
+        embedder.dim, embedder.max_seq_length = 1024, 8192
+
+        def observe():
+            with setdir() as root, tempfile.TemporaryDirectory(prefix="negadv_route_") as td:
+                td = Path(td)
+                corpus = td / "corpus.md"
+                corpus.write_text("\n\n".join(" ".join("filler%d word%d" % (k, i) for i in range(12)) for k in range(4)),
+                                  encoding="utf-8")
+                other = td / "copy"
+                shutil.copytree(root, other)
+                model = {"fixture": "the same model record on both sides"}
+                sc.freeze(root, [corpus], encode=fz.formed(onehot), model=model, progress=lambda line: None)
+                exported = sc.freeze(other, [corpus], export=td / "export", progress=lambda line: None)
+                no_freeze = not (other / "FREEZE.json").exists() and not (other / sc.SUBSET_FILE).exists()
+                er.build(td / "export" / "records.jsonl", td / "parts")
+                pairs = []
+                for n, prompts in enumerate(sorted((td / "parts").glob("part*/replay_prompts.json"))):
+                    er.run(prompts, td / ("ev%d" % n), embedder=embedder, run_id="fixture")
+                    pairs.append((td / ("ev%d" % n), prompts))
+                er.merge(pairs, td / "export" / "laptop", td / "merged", require_complete=True)
+                encode = fz.vectors_encoder(td / "merged", td / "export" / "records.jsonl")
+                sc.freeze(other, [corpus], encode=encode, model=model, progress=lambda line: None)
+                same = all((root / f).read_bytes() == (other / f).read_bytes() for f in ("FREEZE.json", sc.SUBSET_FILE))
+                texts = [json.loads(l)["text"] for l in (td / "export" / "records.jsonl").read_text(encoding="utf-8").splitlines()]
+                return {"identical": same, "vectors_identical": encode(texts).tobytes() == fz.formed(onehot)(texts).tobytes(),
+                        "rows": exported["rows"], "no_freeze_on_export": no_freeze}
+        got = observe()
+        self.assertEqual((got["identical"], got["vectors_identical"]), (True, True))
+        real = er.embed_batched
+        # Neutralised: the instance's pass hands each chunk's vectors back in reverse order (a misplaced row).
+        self.prove("advisor_freeze_vectors_route_equals_in_process", observe, got,
+                   lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
+
+
 def check():
     NegAdvisorChecks.evidence = []
     result = unittest.TestResult()
@@ -987,7 +1302,12 @@ def check():
                     "the configuration's bindings, small cells and outputs kept apart, M9's withheld counters, the "
                     "token budget, terms of use and SOURCE.md, each opening's alpha, the judge's and the validator's models at "
                     "score time, the validator's binding, the three cloud-subset refusals, and the validator answering an "
-                    "article id (D-617), and the freeze passing the accepted kinds (D-618)"
+                    "article id (D-617), the freeze passing the accepted kinds (D-618), the freeze's vectors route, "
+                    "and (D-663) every saved reply read again whatever its form by tools/reread_replies.py (the last "
+                    "object, several counted), what is still dropped counted by field and reason in each row and the "
+                    "score report, and answers not read by it refused; and (D-672) the judge and the system auditor decide by "
+                    "fixed choices read as their settled label, the system's advice and the validator generate under "
+                    "the item's schema constraint, B1 freely"
                     % len(NegAdvisorChecks.evidence))
 
 

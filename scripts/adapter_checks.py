@@ -1066,7 +1066,10 @@ class OpaqueChecks(_Case):
 
 
 _HEADING = re.compile(r"^(#{1,6}) (.*)$")
-_RULE_HEADING = re.compile(r"^## (CONV-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) ([A-Za-z ]+) \[required\] \[conformance\]$")
+_RULE_HEADING = re.compile(r"^## (CONV-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) ([A-Za-z ]+) \[required\] \[conformance\](?: \[(compare: [a-z]+)\])?$")
+# R-a2 (D-652 fix 1): a SciTab build always declares its cells on every heading; no other adapter
+# declares anything unless asked (--rule-declaration).
+_ALWAYS_DECLARED = {"scitab": "compare: cells"}
 
 
 def _slug(text):
@@ -1096,13 +1099,14 @@ class StructureChecks(_Case):
             self.assertIsNone(re.search(r"\d", label.split(":", 1)[1]), "a digit in a label value")
         return headings
 
-    def _rules(self, folder):
+    def _rules(self, folder, name=None):
         lines = (folder / "conventions" / "rules.md").read_text(encoding="utf-8").split("\n")
         self.assertEqual(lines[:2], ["# Review rules", ""])
         rules, i = [], 2
         while i < len(lines) and lines[i] != "":
             m = _RULE_HEADING.match(lines[i])
             self.assertIsNotNone(m, "rule heading: " + lines[i])
+            self.assertEqual(m.group(3), _ALWAYS_DECLARED.get(name), "the heading's declaration: " + lines[i])
             self.assertEqual(lines[i + 1], "")
             self.assertTrue(lines[i + 2] and not re.match(r"^\s*([-*+]|\d+[.)])\s", lines[i + 2]))
             self.assertGreaterEqual(len(lines[i + 2]), 16)
@@ -1148,7 +1152,7 @@ class StructureChecks(_Case):
                                   "source": "operator", "resolved_at": ""})
                 self.assertEqual([p.name for p in (folder / "conventions").iterdir()], ["rules.md"])
                 units = self._document(folder, doc_id, record)
-                rules = self._rules(folder)
+                rules = self._rules(folder, name)
                 mine = [i["rule_id"] for i in items if i["document_id"] == doc_id]
                 self.assertEqual(sorted(rules), sorted(mine), "%s: one rule per item" % name)
                 self.assertEqual(len(set(rules)), len(rules))
@@ -4501,6 +4505,35 @@ class DetectionDevChecks(_Case):
         self._proof(body, lambda: mock.patch.dict(det.READING_RULES, rules))
 
     # the rest -----------------------------------------------------------------------------
+
+    def test_a_does_not_contradict_answer_is_never_supports(self):
+        """INFRA-055 with D-670 (Seckin 19:47): a kept "does not contradict" answer (an ok record of a
+        relation in words, screened) holds a unit only under ContraDoc's `each` reading. Under SciTab's
+        three_way it gives no state, so it is never "supports", and it is counted as
+        ok_contradiction_no_state on the row and in dev_counts. Neutralised by removing the guard."""
+        det = _det()
+        mark = {_common()["records"].SCREENED_FIELD: True}
+        u = ["u01-p-00001", "u02-p-00002"]
+
+        def oks(rule):
+            return [_rec("ok" + x, rule, "ok", unit=x, relation="contradiction", **mark) for x in u]
+
+        def body():
+            problems = []
+            rows, out = self._label("scitab", "dst", ["CONV-ST-01"], oks("CONV-ST-01"), u)
+            row = rows["CONV-ST-01"]
+            if row["label"] == "supports" or row["class"] == _common()["mapping"].CLEAR:
+                problems.append("SciTab read a no-clash answer as supports: %s" % row["label"])
+            if row["detection"]["ok_contradiction_no_state"] != 2:
+                problems.append("the row counts %r" % row["detection"]["ok_contradiction_no_state"])
+            if det.dev_counts(out["labels"])["ok_contradiction_no_state"] != 2:
+                problems.append("dev_counts does not count them")
+            rows, _out = self._label("contradoc", "dcn", ["CONV-CDOC-01"], oks("CONV-CDOC-01"), u)
+            if rows["CONV-CDOC-01"]["label"] != "not contradictory":
+                problems.append("ContraDoc: %s" % rows["CONV-CDOC-01"]["label"])
+            return problems
+
+        self._proof(body, lambda: mock.patch.object(det, "no_state_ok", lambda reading, record: False))
 
     def test_contradoc_reads_a_rule_of_every_passage(self):
         det = _det()

@@ -179,7 +179,7 @@ def check_config(value):
 
 
 def load_config(path=CONFIG_PATH):
-    return check_config(json.loads(Path(path).read_text(encoding="utf-8")))
+    return check_decoding(check_config(json.loads(Path(path).read_text(encoding="utf-8"))))
 
 
 def _fill(template, slots):
@@ -303,6 +303,12 @@ def _ids(value):
     return [str(v) for v in value] if isinstance(value, list) and all(isinstance(v, (str, int)) for v in value) else None
 
 
+def _one_id(value):
+    """One id as a string: a JSON integer is read as its text, as `_ids` reads a list (role N session 23: the
+    system wrote 7 article ids as numbers equal to a known id). Any other type stays as it is and is not known."""
+    return str(value) if isinstance(value, int) and not isinstance(value, bool) else value
+
+
 def parse_advice(text, item):
     """The reply read by the schema of the plan's section 5.1, or None when it does not parse. Unknown ids
     are dropped and counted (`unknown_ids`); a field outside its declared values is left out of its entry, so
@@ -329,18 +335,18 @@ def parse_advice(text, item):
     parties = {p["id"] for p in item["parties"]}
     proposals = {}
     for e in value.get("proposals") if isinstance(value.get("proposals"), list) else []:
-        if not isinstance(e, dict) or e.get("id") not in props or e["id"] in proposals:
+        if not isinstance(e, dict) or _one_id(e.get("id")) not in props or _one_id(e["id"]) in proposals:
             unknown += 1
             continue
         reasons = _ids(e.get("reasons")) or []
-        entry = {"id": e["id"], "reasons": reasons}
+        entry = {"id": _one_id(e["id"]), "reasons": reasons}
         if e.get("conflict") in CONFLICT:
             entry["conflict"] = e["conflict"]
         if e.get("stance") in STANCES:
             entry["stance"] = e["stance"]
         if isinstance(e.get("wording"), str) and e["wording"].strip():
             entry["wording"] = e["wording"].strip()
-        proposals[e["id"]] = entry
+        proposals[entry["id"]] = entry
     trades = []
     for t in value.get("trades") if isinstance(value.get("trades"), list) else []:
         if isinstance(t, dict) and isinstance(t.get("give"), str) and isinstance(t.get("get"), str):
@@ -351,15 +357,15 @@ def parse_advice(text, item):
     unknown += len(_ids(value.get("approach")) or []) - len(approach)
     alignment = {}
     for e in value.get("alignment") if isinstance(value.get("alignment"), list) else []:
-        if not isinstance(e, dict) or e.get("article") not in arts:
+        if not isinstance(e, dict) or _one_id(e.get("article")) not in arts:
             unknown += 1
             continue
-        alignment[e["article"]] = {"aligned": [p for p in (_ids(e.get("aligned")) or []) if p in parties],
+        alignment[_one_id(e["article"])] = {"aligned": [p for p in (_ids(e.get("aligned")) or []) if p in parties],
                                    "opposed": [p for p in (_ids(e.get("opposed")) or []) if p in parties]}
     state = {}
     for e in value.get("state") if isinstance(value.get("state"), list) else []:
-        if isinstance(e, dict) and e.get("article") in known_articles and e.get("state") in STATES:
-            state[e["article"]] = e["state"]
+        if isinstance(e, dict) and _one_id(e.get("article")) in known_articles and e.get("state") in STATES:
+            state[_one_id(e["article"])] = e["state"]
         else:
             unknown += 1
     return {"proposals": proposals, "trades": trades, "approach": approach, "alignment": alignment, "state": state,
@@ -376,11 +382,17 @@ def parse_audit(text, config):
     return None
 
 
+JUDGE_GRADE = re.compile(r"([012])(?![0-9])")
+
+
 def parse_judge(text):
+    # The grade is the reply's leading digit, 0, 1 or 2, as the plan's section 6.3 asks; text after it is
+    # ignored (Phi-4 goes on after the digit within max_new_tokens 4: role N session 19, 15 Nov). A reply
+    # that does not open with one of the three digits, or opens with a longer number, is not a grade.
     if not isinstance(text, str):
         return None
-    said = text.strip()
-    return int(said) if said in ("0", "1", "2") else None
+    found = JUDGE_GRADE.match(text.strip())
+    return int(found.group(1)) if found else None
 
 
 def parse_validate(text):
@@ -632,6 +644,154 @@ def audit_prompts(config, prompt, text):
     return out
 
 
+# ---------------------------------------------------------------------------
+# output side (D-672, D-663 (b)): Shimmer's own advisor groups only
+
+
+# A group declares how its answer is produced. `decide_by: choice` (the judge's grade, the auditor's answer)
+# decides from the model's next-token probabilities over the form's declared `choice_answers`, with no
+# text (CHOICE-A, scripts/choice_decision.py); `constraint: schema` (the system's advice, the validator's
+# mapping) generates under a logits constraint built from the item's own ids and the declared enums
+# (DECODING-B, scripts/schema_decoding.py). B1 and the cloud reference declare neither and generate freely.
+DECIDE_BY_CHOICE = "choice"
+SCHEMA_CONSTRAINT = "schema"
+CHOICE_GROUPS = {"judge": "judge", "system_audit": "audit"}
+SCHEMA_GROUPS = {"system_advice": "advice", "validate": "validate"}
+WORDING_MAX_CHARS = 1500
+
+
+def check_decoding(config):
+    """The groups' declarations, refused unless each is on a group of Shimmer's own that may carry it, the
+    choice forms declare their answers and a threshold, and B1 declares neither."""
+    for g in config["models"]:
+        group = g["group"]
+        if g.get("decide_by") is not None:
+            if g["decide_by"] != DECIDE_BY_CHOICE or group not in CHOICE_GROUPS:
+                raise ValueError("group %s may not decide by %r" % (group, g["decide_by"]))
+            block = config[CHOICE_GROUPS[group]]
+            answers = block.get("choice_answers")
+            if not isinstance(answers, list) or len(answers) < 2 or \
+                    not all(isinstance(a, dict) and a.get("label") and a.get("surface") for a in answers):
+                raise ValueError("the %s form declares its choice answers" % CHOICE_GROUPS[group])
+            t = block.get("choice_threshold")
+            if not (type(t) in (int, float) and 0 <= t <= 1):
+                raise ValueError("the %s form declares its choice threshold" % CHOICE_GROUPS[group])
+        if g.get("constraint") is not None:
+            if g["constraint"] != SCHEMA_CONSTRAINT or group not in SCHEMA_GROUPS:
+                raise ValueError("group %s may not carry the constraint %r" % (group, g["constraint"]))
+    return config
+
+
+def _enum(values):
+    return {"type": "enum", "values": sorted(values)}
+
+
+def _list_of(node):
+    return {"type": "array", "items": node}
+
+
+def advice_schema(item):
+    """The plan's section 5.1 reply as a schema, its ids read from the item (the game reply for a game)."""
+    if item.get("game"):
+        issues = item["game"]["issues"]
+        return {"type": "object", "keys": [
+            ["deal", {"type": "object", "keys": [[i["id"], _enum(i["options"]), True] for i in issues]}, True],
+            ["trades", _list_of({"type": "object", "keys": [["give", _enum(i["id"] for i in issues), True],
+                                                            ["get", _enum(i["id"] for i in issues), True]]}), True]]}
+    pars, poss, props, arts = item_ids(item)
+    known_articles = arts | {r["id"] for r in item.get("previous_index") or []}
+    parties = {p["id"] for p in item["parties"]}
+    proposal = {"type": "object", "keys": [
+        ["id", _enum(props), True], ["conflict", _enum(CONFLICT), True], ["stance", _enum(STANCES), True],
+        ["wording", {"type": "string", "max_chars": WORDING_MAX_CHARS}, False], ["reasons", _list_of(_enum(pars | poss)), True]]}
+    return {"type": "object", "keys": [
+        ["proposals", _list_of(proposal), True],
+        ["trades", _list_of({"type": "object", "keys": [["give", _enum(props), True], ["get", _enum(props), True]]}), True],
+        ["approach", _list_of(_enum(parties)), True],
+        ["alignment", _list_of({"type": "object", "keys": [["article", _enum(arts), True],
+                                                           ["aligned", _list_of(_enum(parties)), True],
+                                                           ["opposed", _list_of(_enum(parties)), True]]}), True],
+        ["state", _list_of({"type": "object", "keys": [["article", _enum(known_articles), True],
+                                                       ["state", _enum(STATES), True]]}), True]]}
+
+
+def validate_schema(item):
+    """The validator's reply as a schema: one of the item's article ids, a proposal number or null, a stance."""
+    return {"type": "object", "keys": [["article", _enum(article_ids(item)), True],
+                                       ["proposal", {"type": "integer_or_null"}, True],
+                                       ["stance", _enum(POSITION_STANCES), True]]}
+
+
+def schema_of(prompt):
+    return advice_schema(prompt["item"]) if prompt["form"] == "advice" else validate_schema(prompt["item"])
+
+
+def choice_answers(config, prompt):
+    return config[CHOICE_GROUPS[prompt["group"]]]["choice_answers"]
+
+
+def recorded_text(record, config, form):
+    """The answer text a reply record holds: a generated reply's text, or for a choice decision the label it
+    settles on under the form's declared threshold (a declared spelling every reader reads), or the
+    choice module's own word for an unsettled decision. None for a failed call."""
+    if not record.get("backend_ok"):
+        return None
+    decision = record.get("decision")
+    if isinstance(decision, dict):
+        import choice_decision
+        block = config["judge" if form == "judge" else "audit"]
+        return choice_decision.settle(decision, block["choice_threshold"])["decided"]
+    reply = record.get("reply") or {}
+    return reply.get("text") if isinstance(reply, dict) else None
+
+
+def make_advisor_backend(reader, context):
+    import bare_model
+
+    class AdvisorBackend(bare_model.LocalBackend):
+        """bare_model's local backend, with a constrained generate for the advisor's schema groups: the same
+        model, rendering, attention and prefill as generate(), the constraint's processor added."""
+
+        def generate_constrained(self, system, user, max_new_tokens, schema, source):
+            import torch
+            import decoding_policy
+            import final_models
+            import schema_decoding
+            tok, mdl = self._loaded()
+            prompt = self._render(system, user)
+            inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
+            attention = bare_model.declared_attention(self.reader)
+            eos = decoding_policy.effective_eos(self.reader["decoding"], mdl)
+            built = schema_decoding.constraint(source, schema, tok, int(inputs["input_ids"].shape[1]), eos, source)
+            with torch.no_grad(), bare_model.b1_attention(mdl, implementation=attention["attention_implementation"]) as observe:
+                observed = observe()
+                out, measured = final_models.generate_with_prefill(
+                    mdl, inputs, max_new_tokens=max_new_tokens, decoding_kwargs=self.reader["decoding"]["kwargs"],
+                    prefill=bare_model.prefill_of(attention), **built.generate_kwargs())
+            start = int(inputs["input_ids"].shape[1])
+            text = tok.decode(out[0][start:], skip_special_tokens=True)
+            generated = int(out[0].shape[0]) - start
+            del inputs, out
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            return {"text": text, "payload": prompt, "form": "rendered_prompt", "output_tokens": generated,
+                    "attention": dict(attention, **observed), "prefill": measured, "constraint": built.summary()}
+
+    return AdvisorBackend(reader, context)
+
+
+def call(backend, prompt, config):
+    """One prompt through its group's declared way: a choice decision, a schema-constrained generation, or a
+    free generation (B1, the cloud reference's prompts on a local model never: those carry no declaration)."""
+    n = int(prompt["max_new_tokens"])
+    if prompt.get("decide_by") == DECIDE_BY_CHOICE:
+        return backend.choose(None, prompt["user"], choice_answers(config, prompt))
+    if prompt.get("constraint") == SCHEMA_CONSTRAINT:
+        return backend.generate_constrained(None, prompt["user"], n, schema_of(prompt),
+                                            "%s:%s" % (prompt["form"], prompt["prompt_id"]))
+    return backend.generate(None, prompt["user"], n)
+
+
 def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None):
     """Every prompt through its group's model, one reply record each, then (for a file holding the
     system's advice) every derived audit prompt through the auditor group. The measurement file is
@@ -644,7 +804,7 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
     config = value["config"]
     out = outside_repository(out)
     context = bare_model.RunContext(out, run_id or ("neg-advisor-" + uuid.uuid4().hex[:12]))
-    factory = backend_factory or make_backend
+    factory = backend_factory or make_advisor_backend
     rows, models, texts = [], {}, {}
     sha = hashlib.sha256(Path(prompts_path).read_bytes()).hexdigest()
 
@@ -676,19 +836,21 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
                     row["failure"] = error = "prompt_over_context"
                 else:
                     started = time.perf_counter()
-                    result = backend.generate(None, p["user"], int(p["max_new_tokens"])) or {}
+                    result = call(backend, p, config) or {}
                     row["seconds"] = round(time.perf_counter() - started, 3)
                 text = result.get("text") if isinstance(result.get("text"), str) else None
                 texts[p["prompt_id"]] = text
                 decoding = dict(decoding_policy.usage_fields(reader["decoding"]), max_new_tokens=int(p["max_new_tokens"]))
-                call = reply_records.write(context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
+                call_id = reply_records.write(context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
                                            model_mode=reader.get("model_mode"), payload=result.get("payload"),
                                            payload_form=result.get("form"), reply=text, ok=not error, error=error,
                                            decoding=decoding, sensitive=False, phase=PHASE, doc_id=p["item_id"],
-                                           attention=result.get("attention"), prefill=result.get("prefill"))
-                if not call:
+                                           attention=result.get("attention"), prefill=result.get("prefill"),
+                                           decoding_constraint=result.get("constraint"), decision=result.get("decision"))
+                if not call_id:
                     raise RuntimeError("the reply record for prompt %s could not be written" % p["prompt_id"])
-                row["call_id"] = call
+                row.update(call_id=call_id, decided=isinstance(result.get("decision"), dict),
+                           constrained=isinstance(result.get("constraint"), dict))
                 rows.append(row)
                 _write_json(out / MEASUREMENT_FILE, snapshot(False))
         finally:
@@ -754,8 +916,7 @@ def answers(prompts_path, run_dir, out=None):
     texts, audits = {}, {}
     for row in measurement.get("rows") or []:
         record = records.get(row.get("call_id")) or {}
-        reply = record.get("reply") or {}
-        text = reply.get("text") if isinstance(reply, dict) and record.get("backend_ok") else None
+        text = recorded_text(record, value["config"], row.get("form"))
         if row.get("form") == "audit":
             audits[row["prompt_id"]] = (row.get("user_sha256"), text)
         else:

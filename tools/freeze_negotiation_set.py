@@ -440,7 +440,129 @@ def encode_chunked(encode, texts, *, progress=None, label="", chunk=None):
     return out if out is not None else np.empty((0, DIMENSIONS), dtype=np.float32)
 
 
-def freeze(root, corpus_paths, *, encode=None, model=None, progress=print, accept_skipped=()):
+# ---------------------------------------------------------------------------
+# the embedding on a rented machine (Seckin 17:19, option (b); EMBED-ROUTE-A): the freeze exports its
+# embedding input as an embed_records records file, the vectors are made by embed_records' replay pass on a
+# Lambda machine and merged, and the freeze reads them with --vectors instead of loading bge-m3.
+
+ROUTE_STATE_SCHEMA = "freeze-embed-route-v1"
+# What --vectors refuses: a merged state of another key list, of another row count (or a vector file of
+# another shape), with a row left without a vector, and a text the freeze compares that has no row.
+ROUTE_CHECKS = ("keys", "count", "complete", "every_text")
+
+
+def _embed_records():
+    name = "embed_records"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, ROOT / "benchmark" / "baselines" / "embed_records.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def embed_text(text):
+    """The one text form every route embeds: embed_records.embed_form (NFKC, whitespace collapsed, case
+    kept), on the laptop and on the rented machine alike."""
+    return _embed_records().embed_form(text)
+
+
+def text_key(text):
+    return hashlib.sha256(embed_text(text).encode("utf-8")).hexdigest()
+
+
+def formed(encode):
+    """An in-process encoder that embeds each text in embed_text's form (the route's form), its token
+    counter reading the same form."""
+    def wrapped(texts):
+        return encode([embed_text(t) for t in texts])
+    counter = getattr(encode, "count_tokens", None)
+    if counter is not None:
+        wrapped.count_tokens = lambda texts: counter([embed_text(t) for t in texts])
+    return wrapped
+
+
+def export_records(texts, out_dir):
+    """The freeze's embedding input, no model loaded: `records.jsonl` ({row, key, stay_local, text}, one
+    row a distinct text in embed_text's form, keyed by its SHA-256, in key order, embed_records' own
+    order) and `laptop/`, an empty laptop run (state done 0, a zero (n, dim) vectors.f32) for
+    `embed_records.py merge --laptop`. Returns counts and the records file's digest."""
+    import numpy as np
+    er = _embed_records()
+    out_dir = Path(out_dir)
+    if out_dir.exists() and any(out_dir.iterdir()):
+        raise ValueError("the export folder must be new and empty")
+    by_key = {}
+    for t in texts:
+        f = embed_text(t)
+        if f:
+            by_key[hashlib.sha256(f.encode("utf-8")).hexdigest()] = f
+    keys = sorted(by_key)
+    (out_dir / "laptop").mkdir(parents=True)
+    with open(out_dir / "records.jsonl", "w", encoding="utf-8", newline="\n") as fh:
+        for row, k in enumerate(keys):
+            fh.write(json.dumps({"row": row, "key": k, "stay_local": False, "text": by_key[k]}, ensure_ascii=False) + "\n")
+    zeros = np.lib.format.open_memmap(out_dir / "laptop" / "vectors.f32", mode="w+", dtype=np.float32,
+                                      shape=(len(keys), er.DIM))
+    zeros.flush()
+    del zeros
+    (out_dir / "laptop" / "state.json").write_text(json.dumps(
+        {"schema": ROUTE_STATE_SCHEMA, "keys_sha256": er.key_digests(keys)["newline"], "dim": er.DIM, "n": len(keys),
+         "done": 0}), encoding="utf-8")
+    return {"rows": len(keys), "passages": len(texts),
+            "records_sha256": hashlib.sha256((out_dir / "records.jsonl").read_bytes()).hexdigest()}
+
+
+def vectors_encoder(merged_dir, records_path):
+    """An encoder reading the merged vectors (embed_records.py merge --require-complete: vectors.f32 and
+    state.json) for the texts of the records file, in place of bge-m3. Refuses a state of another key list
+    or row count, a row with no vector, a vector file that is not (n, dim) float32 finite unit rows, and
+    any text asked for that the records do not hold (ROUTE_CHECKS)."""
+    import numpy as np
+    er = _embed_records()
+    merged_dir = Path(merged_dir)
+    keys = [k for _r, k, _t in er.read_records(records_path)]
+    state = json.loads((merged_dir / "state.json").read_text(encoding="utf-8"))
+    if "keys" in ROUTE_CHECKS and state.get("keys_sha256") != er.key_digests(keys)["newline"]:
+        raise ValueError("refused: the merged vectors are of another key list than the records file")
+    # Read whole (about 4 KB a row), never memory-mapped: Windows keeps a mapped file open and locked.
+    vectors = np.load(merged_dir / "vectors.f32", allow_pickle=False)
+    if "count" in ROUTE_CHECKS and (state.get("n") != len(keys) or vectors.shape != (len(keys), er.DIM)):
+        raise ValueError("refused: the merged vectors hold %s rows, the records file %d" % (state.get("n"), len(keys)))
+    if "complete" in ROUTE_CHECKS and (state.get("done") != len(keys) or state.get("missing_rows")):
+        raise ValueError("refused: %s row(s) of the merged vectors have no vector" % (len(state.get("missing_rows") or [])
+                                                                                  or len(keys) - int(state.get("done") or 0)))
+    fault = er.vector_fault(np.asarray(vectors), len(keys), er.DIM) if vectors.shape == (len(keys), er.DIM) else None
+    if fault:
+        raise ValueError("refused: the merged vectors: %s" % fault)
+    index = {k: i for i, k in enumerate(keys)}
+
+    def encode(texts):
+        rows = [index.get(text_key(t)) for t in texts]
+        missing = sum(1 for r in rows if r is None)
+        if "every_text" in ROUTE_CHECKS and missing:
+            raise ValueError("refused: %d text(s) the freeze compares have no row in the records file" % missing)
+        out = np.zeros((len(texts), vectors.shape[1]), dtype=np.float32)
+        for i, r in enumerate(rows):
+            if r is not None and r < vectors.shape[0]:
+                out[i] = vectors[r]
+        return out
+    encode.route = {"route": "embed_records (EMBED-ROUTE-A)", "model": er.MODEL, "rows": len(keys),
+                    "records_sha256": hashlib.sha256(Path(records_path).read_bytes()).hexdigest(),
+                    "vectors_sha256": hashlib.sha256((merged_dir / "vectors.f32").read_bytes()).hexdigest()}
+    return encode
+
+
+ROUTE_SECONDS_PER_PASSAGE = 1 / 69   # measured on the laptop's GPU (role N, 14 November 2026); the A10 is faster
+
+
+def route_forecast_minutes(rows):
+    """The instance's embedding minutes at the laptop GPU's measured rate (an upper bound for the A10)."""
+    return round(rows * ROUTE_SECONDS_PER_PASSAGE / 60, 1)
+
+
+def freeze(root, corpus_paths, *, encode=None, model=None, progress=print, accept_skipped=(), export=None):
     import multi_round as mr
     root = Path(root)
     cases = [(d, "R") for d in sorted((root / "real").glob("*")) if d.is_dir()] + \
@@ -468,6 +590,10 @@ def freeze(root, corpus_paths, *, encode=None, model=None, progress=print, accep
         source_md = (case_dir / "SOURCE.md").read_text(encoding="utf-8") if (case_dir / "SOURCE.md").is_file() else ""
         case_sources[case_id] = (set(_URL.findall(source_md)), set(documents))
         open_issues += [[case_id, i["issue_id"]] for i in manifest["issues"] if i.get("open")]
+    if export is not None:
+        # The embedding input alone, no model and no FREEZE.json (the route's first step).
+        return export_records([p for c in corpora.values() for p in c["passages"]]
+                              + [p for ps in case_passages.values() for p in ps], export)
     key, kappas = settle_all(case_dirs)
     corpus_count = sum(len(c["passages"]) for c in corpora.values())
     sizes = [len(p) for p in case_passages.values()]
@@ -787,17 +913,32 @@ def main(argv=None):
                         help="a dry run: no cosine test, FREEZE.dryrun.json written, which the scorer refuses")
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu",
                         help="where bge-m3 runs: the CPU, or the GPU only when it reads idle (D-399)")
+    parser.add_argument("--export-records", type=Path, default=None,
+                        help="write the embedding input (records.jsonl and an empty laptop run) here; no model, no freeze")
+    parser.add_argument("--vectors", type=Path, default=None,
+                        help="the merged vectors folder (embed_records.py merge --require-complete) read instead of bge-m3")
+    parser.add_argument("--records", type=Path, default=None, help="with --vectors: the records.jsonl they were made from")
     args = parser.parse_args(argv)
     lines = [line.strip() for line in args.corpora.read_text(encoding="utf-8").splitlines()
              if line.strip() and not line.startswith("#")]
     accept = [l.split(":", 1)[1].strip() for l in lines if l.startswith("accept-skipped:")]
     paths = [Path(l) for l in lines if not l.startswith("accept-skipped:")]
-    if args.no_embedding:
+    if args.export_records is not None:
+        out = freeze(args.set, paths, accept_skipped=accept, export=args.export_records)
+        print(json.dumps(dict(out, forecast_minutes=route_forecast_minutes(out["rows"]))))
+        return 0
+    if args.vectors is not None:
+        if args.no_embedding or args.records is None:
+            raise SystemExit("--vectors needs --records and takes no --no-embedding")
+        encode = vectors_encoder(args.vectors, args.records)
+        value = freeze(args.set, paths, encode=encode, model=encode.route, accept_skipped=accept)
+    elif args.no_embedding:
         value = freeze(args.set, paths, accept_skipped=accept)
     else:
         encode, release, device = bge_m3_encoder(args.device)
         try:
-            value = freeze(args.set, paths, encode=encode, model=dict(bge_m3_identity(), **device), accept_skipped=accept)
+            value = freeze(args.set, paths, encode=formed(encode), model=dict(bge_m3_identity(), **device),
+                           accept_skipped=accept)
         finally:
             release()
         if device.get("gpu_after") is not None:

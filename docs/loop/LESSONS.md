@@ -117,3 +117,14 @@ The route S `admit` (tools/seal_route_driver.py) takes the budget ledger lock fr
 The removal of 35 finished worktrees on 15 November (D-660) checked, for each removed folder, the links inside it and that their targets survived. It did not check the other direction: the kept worktree vllm-a5 had its `output` junction pointing into the removed lane-vllm-test. The next A5 seal job attempt (19:19) found no wheelhouse and was refused in 80 s; throughput repointed the junction to the main checkout's output and the job launched at 19:30. A top-level scan of every kept worktree afterwards found no other broken link.
 - Before removing a folder, list every link in the kept worktrees (top level is where this repository puts them) whose target lies inside it, and repoint or refuse first.
 - A step that reads through a junction should name a missing target as a broken link, not as a missing asset.
+
+## L-18. A fresh worktree lacks the ignored files a seal and a launch need (gate, 15 November)
+
+The gate lane made a new LF worktree, gate-1115, for the full gate's laptop job seal (D-674). Three tries were refused, each on one file that git does not carry:
+- 21:57: "Missing frozen producer adapter". Five ignored adapter files under docs/fix/.../downloaded/evidence/ were absent.
+- 22:00: "Target Python wheelhouse missing". The output/ junction to the main checkout was absent.
+- 22:10, at launch: "The launch ledger is not one the reaper reads". The docs/loop/private junction was absent. The reaper resolves its ledger from the tree it runs in.
+
+Each was fixed one at a time, by a copy or a junction matching a5-lf. The 22:02 seal passed. No instance had started, so nothing was spent. The cost was about 15 minutes and two of the scarce laptop seal tries.
+- Before sealing or launching from a new worktree, check the three items against a working worktree (a5-lf): the output junction, the docs/loop/private junction and the five frozen adapter files, by hash.
+- The sealing route (#296) builds its tree on the instance. Its request must name these ignored inputs by digest, and the instance must refuse when one is missing, before any seal step runs.

@@ -41,6 +41,7 @@ for _p in (str(ROOT / "scripts"), str(ROOT / "tools"), str(ROOT / "benchmark" / 
 
 from effect_proof import prove_effect  # noqa: E402
 import negotiation_b1 as nb  # noqa: E402
+import reread_replies as rr  # noqa: E402
 
 
 def _load(name, path):
@@ -585,7 +586,7 @@ def _scorer_fixture(td):
                {"item": "outcome", "issue_id": "venue", "outcome": "refused", "reason": "quote_missing"}]
     (run / "audit" / "multi_round.json").write_text(json.dumps({"manifest": {"case_id": "alpha-free"}, "position_gaps": gaps,
                                                                 "case_questions": {"support": support}}), encoding="utf-8")
-    b1 = {"schema": "negotiation-answers-v1", "prompts_sha256": "d" * 64,
+    b1 = {"schema": "negotiation-answers-v2", "prompts_sha256": "d" * 64,
           "rows": [dict(form="movement", group="b1", case_id="alpha-free", issue_id=r["issue_id"], rounds=r["rounds"], label=r["label"])
                    for r in key] + [{"form": "suggestion", "group": "b1", "case_id": "alpha-free", "issue_id": "fee", "kept": True,
                                      "quote": "The fee for alpha is 75 credits per month."}]}
@@ -970,6 +971,101 @@ def observe_bytecode_skipped():
 BYTECODE_SKIPPED = {"files": 1, "read": 1, "skipped": {}}
 
 
+def _onehot(texts):
+    """A stub bge-m3: each text's vector is one-hot at a place read off its SHA-256, an exact unit row, so
+    no renormalisation on any route changes a bit. No model."""
+    import hashlib
+    import numpy as np
+    out = np.zeros((len(texts), 1024), dtype=np.float32)
+    for i, t in enumerate(texts):
+        out[i, int(hashlib.sha256(str(t).encode("utf-8")).hexdigest()[:8], 16) % 1024] = 1.0
+    return out
+
+
+def _stub_embedder():
+    embed = lambda texts, batch_size: _onehot(texts)
+    embed.dim, embed.max_seq_length = 1024, 8192
+    return embed
+
+
+def _route_fixture(td):
+    """Two copies of one fixture set and a corpus: the in-process freeze on one, the route on the other."""
+    import shutil
+    td = Path(td)
+    root = _set(td / "a")
+    (root / "synthetic" / "beta" / "KEY_MOVEMENT_L3.json").write_text(
+        json.dumps({"rows": [{"issue_id": "fee", "rounds": ["r1", "r2"], "label": T}]}), encoding="utf-8")
+    corpus = td / "corpus.md"
+    corpus.write_text("\n\n".join(" ".join("filler%d word%d" % (k, i) for i in range(12)) for k in range(5)) + "\n",
+                      encoding="utf-8")
+    shutil.copytree(root, td / "b" / "set")
+    return root, td / "b" / "set", corpus
+
+
+def _route_vectors(root, corpus, work):
+    """The route on fixtures: export, embed_records build, its replay run with the stub embedder (as the
+    instance runs it), merge --require-complete. Returns (records path, merged folder)."""
+    er = freezer._embed_records()
+    export = work / "export"
+    freezer.freeze(root, [corpus], progress=lambda line: None, export=export)
+    parts = er.build(export / "records.jsonl", work / "parts")
+    pairs = []
+    for n, prompts in enumerate(sorted((work / "parts").glob("part*/replay_prompts.json"))):
+        er.run(prompts, work / ("evidence%d" % n), embedder=_stub_embedder(), run_id="fixture")
+        pairs.append((work / ("evidence%d" % n), prompts))
+    er.merge(pairs, export / "laptop", work / "merged", require_complete=True)
+    return export / "records.jsonl", work / "merged"
+
+
+def observe_vectors_route():
+    """--vectors gives the in-process freeze's FREEZE.json byte for byte (the stub embedder on both sides,
+    the clock held), and the vectors themselves byte for byte, on fixtures."""
+    import numpy as np
+    with tempfile.TemporaryDirectory(prefix="negmeasure_route_") as td, \
+            patch.object(freezer.time, "perf_counter", lambda: 0.0):
+        a, b, corpus = _route_fixture(td)
+        model = {"fixture": "the same model record on both sides"}
+        freezer.freeze(a, [corpus], progress=lambda line: None, encode=freezer.formed(_onehot), model=model)
+        records, merged = _route_vectors(b, corpus, Path(td) / "work")
+        encode = freezer.vectors_encoder(merged, records)
+        freezer.freeze(b, [corpus], progress=lambda line: None, encode=encode, model=model)
+        texts = [json.loads(l)["text"] for l in records.read_text(encoding="utf-8").splitlines()]
+        return {"freeze_identical": (a / "FREEZE.json").read_bytes() == (b / "FREEZE.json").read_bytes(),
+                "vectors_identical": np.asarray(encode(texts)).tobytes() == freezer.formed(_onehot)(texts).tobytes(),
+                "rows": len(texts)}
+
+
+def observe_route_guards():
+    """What --vectors refuses: a merged state of another key list, another row count, a row left without a
+    vector, and a text the records do not hold."""
+    import shutil
+    out = {}
+    with tempfile.TemporaryDirectory(prefix="negmeasure_guard_") as td:
+        _a, b, corpus = _route_fixture(td)
+        records, merged = _route_vectors(b, corpus, Path(td) / "work")
+        state = json.loads((merged / "state.json").read_text(encoding="utf-8"))
+
+        def with_state(name, **change):
+            folder = Path(td) / name
+            shutil.copytree(merged, folder)
+            (folder / "state.json").write_text(json.dumps(dict(state, **change)), encoding="utf-8")
+            try:
+                freezer.vectors_encoder(folder, records)
+                return "accepted"
+            except ValueError as exc:
+                return str(exc)[:40]
+        out["keys"] = with_state("k", keys_sha256="0" * 64)
+        out["count"] = with_state("c", n=state["n"] + 1)
+        out["complete"] = with_state("m", done=state["n"] - 1, missing_rows=[0])
+        try:
+            freezer.vectors_encoder(merged, records)(["a text no record holds"])
+            out["every_text"] = "accepted"
+        except ValueError as exc:
+            out["every_text"] = str(exc)[:40]
+    return out
+
+
+
 class _FakeModel:
     """bge-m3's surface the encoder uses: a device, `to`, a tokenizer and `encode`, recording the device
     of every call. No model is loaded."""
@@ -1212,6 +1308,39 @@ class NegotiationMeasureChecks(unittest.TestCase):
             return nb.NO_ANSWER
         self.prove("movement_reply_read_by_exact_spelling", observe_movement_form, MOVEMENT_FORM,
                    lambda: patch.object(nb, "parse_movement", substring))
+
+    def test_09b_movement_read_whatever_its_form(self):
+        # D-663: a movement written in a fence, quoted, in emphasis, with stray punctuation, or as the whole
+        # declared line, or with words after it, is read at scoring (tools/reread_replies.py; the run's own
+        # parser is bound and unchanged); another word is still no_answer, counted by its reason in the report.
+        config = nb.load_config()
+        replies = ('"Narrowed"', "**widened**", "```\nstayed the same\n```", "Cannot be told!",
+                   "narrowed: the gap is smaller in the later round.", "Widened, since the fee rose", "shrank", "")
+        observe = lambda: [rr.movement(r, config) for r in replies]
+        want = [(T, None), (A, None), ("unchanged_from_prior", None), ("not_computable", None), (T, None), (A, None),
+                ("no_answer", "not_declared"), ("no_answer", "empty")]
+        self.assertEqual(observe(), want)
+        self.prove("movement_read_whatever_its_form", observe, want,
+                   lambda: patch.object(rr.af, "bare", lambda text: text))
+        self.assertEqual(nb.parse_movement('"Narrowed"', config), "no_answer")   # the bound parser, unchanged
+        # The answers file a score reads: each movement row read again from its saved text, with its drop.
+        value = {"config": config, "suggestion": {}, "_sha256": "p" * 64, "prompts": [
+            {"prompt_id": "m%d" % k, "group": "b1", "form": "movement", "case_id": "c", "issue_id": "i%d" % k,
+             "rounds": [1, 2]} for k in range(len(replies))]}
+        answers = rr.negotiation_rows(value, {"m%d" % k: r for k, r in enumerate(replies)})
+        self.assertEqual((answers["schema"], [(r["label"], r["drop"]) for r in answers["rows"]]), (rr.NEGOTIATION_SCHEMA, want))
+        self.assertEqual(score.ANSWERS_SCHEMA, rr.NEGOTIATION_SCHEMA)
+        rows = {"rows": [{"form": "movement", "drop": why} for _, why in want] + [{"form": "suggestion", "drop": "x"}]}
+        self.assertEqual(score.drop_counts(rows), {"empty": 1, "not_declared": 1})
+        # Answers not read by the re-reader carry no drop reasons: refused, so every arm is read again.
+        conf = {f: "x" for f in score.CONFIGURATION_FIELDS}
+        old = lambda: str(score.refuse_records(conf, b1={"schema": "negotiation-answers-v1"},
+                                               cloud={"schema": score.ANSWERS_SCHEMA, "model_id": "m"},
+                                               b1_measurement={}, power_sha256="x"))
+        self.assertTrue(old().startswith("B1's answers are not read by tools/reread_replies.py"), old())
+        self.prove("negotiation_answers_not_read_again_refused",
+                   lambda: old().startswith("B1's answers are not read by tools/reread_replies.py"), True,
+                   lambda: patch.object(score, "ANSWERS_SCHEMA", "negotiation-answers-v1"))
 
     def test_10_suggestion_form(self):
         self.prove("suggestion_read_by_the_systems_checks", observe_suggestion_form, SUGGESTION_FORM,
@@ -1491,6 +1620,25 @@ class NegotiationMeasureChecks(unittest.TestCase):
         self.prove("utilisation_beyond_this_process_at_10_percent", observe_gpu_switch, GPU_SWITCH,
                    lambda: patch.object(freezer, "gpu_free_of_others", memory_only))
 
+    def test_19i_vectors_route(self):
+        got = observe_vectors_route()
+        self.assertEqual((got["freeze_identical"], got["vectors_identical"]), (True, True))
+        expected = dict(got)
+        # Neutralised: the instance's pass hands each chunk's vectors back in reverse order (a misplaced row).
+        er = freezer._embed_records()
+        real = er.embed_batched
+        self.prove("vectors_route_equals_the_in_process_freeze", observe_vectors_route, expected,
+                   lambda: patch.object(er, "embed_batched", lambda embed, texts, rule=er.BATCH_RULE: real(embed, texts, rule)[::-1].copy()))
+
+    def test_19j_vectors_route_guards(self):
+        got = observe_route_guards()
+        self.assertEqual(sorted(got), sorted(freezer.ROUTE_CHECKS))
+        self.assertTrue(all(v.startswith("refused:") for v in got.values()), got)
+        for check in freezer.ROUTE_CHECKS:
+            # Neutralised: that one check removed.
+            self.prove("vectors_route_refuses_" + check, lambda c=check: observe_route_guards()[c][:8], "refused:",
+                       lambda c=check: patch.object(freezer, "ROUTE_CHECKS", tuple(x for x in freezer.ROUTE_CHECKS if x != c)))
+
     def test_19g_low_peak_load(self):
         self.assertEqual(observe_low_peak_load(), LOW_PEAK_LOAD)
         # Neutralised: the load as it was, with none of the low host-memory options.
@@ -1527,7 +1675,10 @@ def check():
                     "minimums, the dry run), the scorer's command line (round 3 behind the same refusals, C1 decided by "
                     "its power record, a no_answer count for every arm, every arm's records checked, a failed entry only from its status record and only as a run folder, either kind scored no_answer on every row and counted apart, infrastructure only for the runner's or the machine's causes, one model group), "
                     "the power simulation and its record read by the plan rule, the replay hook, bge-m3 loaded with the "
-                    "low host peak, and bytecode caches never read as corpus" % len(NegotiationMeasureChecks.evidence))
+                    "low host peak, bytecode caches never read as corpus, and the vectors route (export, embed_records, "
+                    "--vectors equal to the in-process freeze byte for byte, its four refusals), and (D-663) a movement "
+                    "read again whatever its form, the rest counted by reason, answers not read again refused"
+                    % len(NegotiationMeasureChecks.evidence))
 
 
 def main():

@@ -149,7 +149,8 @@ def prior_case_items(doc_id="batch_sheet"):
 
 def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False,
                text=None, rules=None, absence_reply=None, plan_calls=None, other_reply=None,
-               context_text=None, audit_items=None, production_items=None, style_extras=None):
+               context_text=None, audit_items=None, production_items=None, style_extras=None,
+               reask_reply=None):
     """One mocked run, faithful to a real one where it matters: the computed
     findings come from the REAL phase 5.5 paired review (pairing map, planner,
     arithmetic, mint, bus post under paired/python); only the judging model's
@@ -162,6 +163,9 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     claims Python refuses), and `plan_calls` wraps the real planner. D-068:
     `other_reply(payload, call_id, kwargs)` authors the reply to any other judging
     call, or returns None to leave it to the default authored sentence.
+    D-652 fix 4: `reask_reply(payload, call_id)` authors the reply to the one re-ask after a
+    refusal (a payload carrying `reask_question`); without it a re-ask is answered with no item,
+    so a fixture that authored only first answers keeps exactly what it kept before.
     `context_text` is one more context document, indexed as main() indexes one
     (`index_document`) and given to phase 6 as main() gives it (`context_texts`).
     `audit_items` ({agent: items}) and `production_items` (LEGAL_ANALYST's items) are
@@ -221,6 +225,11 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     async def judging_reply(wrapper, payload, run_objectives, *args, **kwargs):
         call_id = uuid.uuid4().hex
         record_call(wrapper.name, call_id, "5.5")
+        if "reask_question" in payload:
+            if reask_reply is not None:
+                return reask_reply(payload, call_id)
+            return {"ok": True, "backend": "local_auditor", "model": "fixture-auditor", "call_id": call_id,
+                    "raw_text": "", "item_count": 0, "parsed": {"agent": wrapper.name, "doc_id": doc["id"], "items": []}}
         if absence_reply is not None and "absence_question" in payload:
             return absence_reply(payload, call_id)
         if other_reply is not None and "absence_question" not in payload:

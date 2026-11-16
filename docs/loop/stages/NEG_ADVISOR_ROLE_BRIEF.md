@@ -205,6 +205,31 @@ SHA-256, and prints counts only. It also draws the cloud subset (plan section 5.
 `cloud_subset.json` in the set folder, its SHA-256 in `FREEZE.json`. An item over a threshold is replaced
 by the next in its seeded order and the freeze runs again.
 
+## 8a. The freeze's embedding on a rented machine (Seckin 14 November, 17:19, option (b))
+
+The laptop cannot hold the bge-m3 load, so the freeze's vectors are made on Lambda through EMBED-ROUTE-A and
+read back; everything after the vectors (the 5-gram index, the thresholds, FREEZE.json, cloud_subset.json) is
+the freeze as before. Run every step from your code checkout, with `PYTHONDONTWRITEBYTECODE=1`, on the same
+commit and corpus list throughout (the records' keys bind the texts; a changed text refuses step 5).
+
+1. **Export** (no model, no FREEZE.json): `py -3.12 -X utf8 tools/score_neg_advisor.py freeze --set
+   <RS>/neg_advisor_set --corpora docs/loop/stages/NEGOTIATION_CORPORA.txt --export-records <RS>/embed_export`.
+   It writes `records.jsonl` (one row a distinct passage, in the embedding form, keyed by its SHA-256) and
+   `laptop/` (an empty run for the merge), and prints the rows and the forecast minutes.
+2. **Parts:** `py -3.12 -X utf8 benchmark/baselines/embed_records.py build --records <RS>/embed_export/records.jsonl
+   --out-dir <RS>/embed_parts` (one part below 85,000 rows).
+3. **Hand over:** write `_xfer\N_to_seals\EMBED_PASS.json` with each part's `replay_prompts.json` path, its
+   SHA-256, its row count and the forecast. The lead seals it as an exposed B1 bundle with the replay pass
+   (EMBED-ROUTE-A: `--image-layers --image-env-manifest external/image/M1_env_manifest.json`) without opening
+   it, launches it, and puts the run folder in `<RS>`.
+4. **Merge:** `py -3.12 -X utf8 benchmark/baselines/embed_records.py merge --part "<the run's collected
+   evidence>|<RS>/embed_parts/part00/replay_prompts.json" --laptop <RS>/embed_export/laptop --out
+   <RS>/embed_merged --require-complete`.
+5. **Freeze:** `py -3.12 -X utf8 tools/score_neg_advisor.py freeze --set <RS>/neg_advisor_set --corpora
+   docs/loop/stages/NEGOTIATION_CORPORA.txt --vectors <RS>/embed_merged --records
+   <RS>/embed_export/records.jsonl`. It refuses vectors of another key list or row count, a row with no
+   vector, and a passage the records do not hold.
+
 ## 6a. The runs and the score, step by step (the lead's ruling)
 
 You run the build, the answers, the judge's prompts, the grading and the score; the lead launches the

@@ -191,9 +191,13 @@ def is_finding(item) -> bool:
     shaped like one (is_finding_shaped). An agent's other items (an extraction, a
     redaction, an editorial observation) are untouched. INFRA-046: a relation in
     words counts only once Python screened it (SCREENED_FIELD): its quotes are all
-    there is to check, and only the judged paths check them.
+    there is to check, and only the judged paths check them. INFRA-055: a kept "does not
+    contradict" answer (relation contradiction, record_verdict ok) is a model's record, never a
+    finding: it names no pair to show.
     """
     if not is_finding_shaped(item):
+        return False
+    if item.get("relation") == "contradiction" and str(item.get("record_verdict") or "").strip().lower() == "ok":
         return False
     return item.get("relation") not in TEXT_RELATIONS or item.get(SCREENED_FIELD) is True
 
@@ -314,7 +318,7 @@ RELATION_WORDS = {
                        "carried figure matches the unit before"),
     "copy_mismatch": ("copied figure does not match its source", "copied figure matches its source"),
     "unit_mismatch": ("figure written in another measure", "figure written in its own measure"),
-    "contradiction": ("two passages contradict each other", "two passages contradict each other"),
+    "contradiction": ("two passages contradict each other", "the passages do not contradict each other"),
     "claim_not_met": ("the selected cells do not meet the claim", "the selected cells do not meet the claim"),
     "rule_not_met": ("the part does not meet the rule", "the part does not meet the rule"),
 }

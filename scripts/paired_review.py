@@ -2837,6 +2837,11 @@ def judging_call_record(reply, *, agent, unit_id, rule_id, plan_kind, notes_kept
 # each with its own reason so the pairing map's refusal lists say which one fired.
 NO_QUOTE_ABSENCE_RELATION = "absence relation supplies no quote"
 NO_FIGURES_FIGURE_RELATION = "figure relation supplies no figures"
+ABSENCE_CLAIM_NO_QUOTE = "absence claim supplies no quote"
+# D-652 fix 4 (D-657): a refusal for a missing part an answer could supply (a quote for an absence
+# claim, figures for a figure relation) is re-asked ONCE, on a unit with no table, and the second
+# answer is held to judged_item_refusal unchanged. Every other refusal is final.
+REASK_REASONS = (ABSENCE_CLAIM_NO_QUOTE, NO_QUOTE_ABSENCE_RELATION, NO_FIGURES_FIGURE_RELATION)
 PRIOR_RELATION_NO_EARLIER_VERSION = "earlier-version relation with no earlier version declared"
 # INFRA-046: what Python can check of a contradiction is its two passages, each with its
 # own reason. A quote the unit does not hold keeps the reason every answer gets.
@@ -2989,7 +2994,7 @@ def judged_item_refusal(item, rule, fields_present, unit_text, *, prior_declared
         return _rule_check_refusal(item, unit_text, rule_check_plan)
     if refuses_judged_absence(item, rule, fields_present):
         if not str(item.get("quote") or "").strip():
-            return "absence claim supplies no quote"
+            return ABSENCE_CLAIM_NO_QUOTE
         if not pairing_map._norm_label(item.get("stated_field") or item.get("field_label") or ""):
             return "absence claim names no field"
         return "claims a field absent that this unit carries"
@@ -3004,7 +3009,19 @@ def judged_item_refusal(item, rule, fields_present, unit_text, *, prior_declared
     if relation in finding_record.PRIOR_RELATIONS and not prior_declared:
         return PRIOR_RELATION_NO_EARLIER_VERSION
     if relation in finding_record.TEXT_RELATIONS:
-        if str(item.get("record_verdict") or "").strip().lower() != "irregular":
+        verdict = str(item.get("record_verdict") or "").strip().lower()
+        if verdict == "ok":
+            # INFRA-055 (Seckin, 15 November 2026 19:26): a well-formed "does not contradict" answer is
+            # kept as that answer. It names no pair: no second unit, and any quote it writes stands
+            # in the unit (`quote` was held to quote_not_in_unit above). Python checks only the words.
+            # (Parenthesised so each irregular refusal's own line stays the one a check neutralises.)
+            if str(item.get("compared_unit_id") or "") or second_unit_text is not None:
+                return (CONTRADICTION_SECOND_UNIT_NOT_CHECKED)
+            if isinstance(item.get("quote_b"), str) and item["quote_b"].strip() \
+                    and quote_not_in_unit({"quote": item["quote_b"]}, unit_text):
+                return (CONTRADICTION_SECOND_QUOTE_NOT_IN_UNIT)
+            return None
+        if verdict != "irregular":
             return CONTRADICTION_NOT_IRREGULAR
         quotes = (item.get("quote"), item.get("quote_b"))
         if not all(isinstance(q, str) and q.strip() for q in quotes):
@@ -3025,6 +3042,37 @@ def judged_item_refusal(item, rule, fields_present, unit_text, *, prior_declared
                 not _two_passages(_squash(quotes[0]), _squash(quotes[1]), _squash(unit_text))):
             return CONTRADICTION_SAME_PASSAGE
     return None
+
+
+def reask_eligible(reason, unit_text, reply):
+    """True when an answer refused for `reason` on this unit is re-asked once (D-652 fix 4): the
+    reason is a missing part the answer could supply (REASK_REASONS), the unit holds no pipe table
+    (a structural test, pairing_map._TABLE_ROW; A1's table claims go to the cell step, never here),
+    and the reply is a model's own answer, not the rule check's decision (`rule_check`), which
+    Python writes from probabilities."""
+    if reason not in REASK_REASONS:
+        return False
+    if isinstance(reply, dict) and reply.get("rule_check"):
+        return False
+    return not any(pairing_map._TABLE_ROW.match(line) for line in str(unit_text or "").splitlines())
+
+
+REASK_WORDS = {
+    ABSENCE_CLAIM_NO_QUOTE: "an absence claim with no quote",
+    NO_QUOTE_ABSENCE_RELATION: "an absence claim with no quote",
+    NO_FIGURES_FIGURE_RELATION: "a figure comparison with no figures",
+}
+
+
+def reask_question(reasons):
+    """The one re-ask's added instruction: what was missing, and that the same checks hold."""
+    said = sorted({REASK_WORDS[r] for r in reasons if r in REASK_WORDS})
+    return ("Your previous answer on this unit under this rule was refused, because it gave "
+            + " and ".join(said) + ". Answer once more, on the same unit and rule. A claim that "
+            "something is ABSENT must set `quote` to the exact words of the unit text above that it "
+            "relies on, copied verbatim. A claim comparing two figures must set `value_a` and "
+            "`value_b` to the two figures, copied from the unit text. The answer is checked by the "
+            "same rules as before; if you cannot quote the unit or give its figures, give no item.")
 
 
 def _one_wording(first, second):

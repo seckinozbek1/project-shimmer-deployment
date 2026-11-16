@@ -44,6 +44,8 @@ for _p in (str(ROOT / "scripts"), str(ROOT / "tools"), str(ROOT / "benchmark" / 
         sys.path.insert(0, _p)
 
 import neg_advisor as na  # noqa: E402
+import answer_form  # noqa: E402
+import reread_replies as rr  # noqa: E402
 
 
 def _load(name, path):
@@ -478,9 +480,10 @@ def withhold(item, reply, audit):
     withheld (it scores no_answer); its trail is returned beside it."""
     if reply is None:
         return None, {"given": 0, "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
-    trail = {"given": len(reply["proposals"]), "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
     if item.get("game"):
-        return reply, trail
+        # A game reply holds a deal and trades, never proposals: nothing to withhold (session 18, 15 Nov).
+        return reply, {"given": 0, "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
+    trail = {"given": len(reply["proposals"]), "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
     results = checks(item, None, reply, mode="system")
     kept = {}
     for pid, piece in reply["proposals"].items():
@@ -869,6 +872,9 @@ def refuse(*, freeze, configuration, configuration_sha256, k, openings_text, pow
             return "the %s arm is not given" % arm
         if answers.get("prompts_sha256") != configuration.get(field):
             return "the %s answers are not of the configuration's prompts" % arm
+        if answers.get("schema") != rr.ADVISOR_SCHEMA:
+            return "the %s answers are not read by tools/reread_replies.py (%s, not %s): read them again" % (
+                arm, answers.get("schema"), rr.ADVISOR_SCHEMA)
     if "answered" in SUBSET_REFUSALS and (arms["cloud"].get("subset_sha256") != subset_sha or sorted(
             {r["item_id"] for r in arms["cloud"].get("rows") or []}) != sorted(subset.get("items") or [])):
         return "the cloud answers are not of the cloud subset's items"
@@ -876,6 +882,8 @@ def refuse(*, freeze, configuration, configuration_sha256, k, openings_text, pow
         return "the judge's answers are not given"
     if judge.get("prompts_sha256") != configuration.get("judge_prompts_sha256"):
         return "the judge's answers are not of the configuration's judge prompts"
+    if judge.get("schema") != rr.ADVISOR_SCHEMA:
+        return "the judge's answers are not read by tools/reread_replies.py: read them again"
     if validation is None:
         return "the mapping validation is not given"
     if validation.get("prompts_sha256") != configuration.get("validate_prompts_sha256"):
@@ -979,7 +987,10 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
            "cloud_subset": {"items": len(sub), "headline_items": len(head_sub)}, "figures": figures,
            "figures_on_cloud_subset": on_subset, "cells": cells, "system_trail": dict(trails), "trades": trades,
            "a1_status": claim_status(power), "metric": "our metric, no published benchmark",
-           "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade")}}
+           "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade")},
+           # D-663: every answer field the parser could not read, by arm, field and reason.
+           "drops": dict({arm: rr.drop_counts(answers, group) for arm, (answers, group) in arms.items()},
+                         judge=rr.drop_counts({"rows": judge or []}))}
     given, kept = trails.get("given", 0), trails.get("kept", 0)
     out["withheld_rate"] = (given - kept) / given if given else None
     claims = {}
@@ -1089,7 +1100,8 @@ def validator_article(said, ids):
     """The validator's article as the reader takes it (D-617): exactly one id of the item's list, as
     written; anything else (a heading, a near spelling, an id of another item) is its own different answer,
     never mapped to an id."""
-    return said if isinstance(said, str) and said in ids else NOT_AN_ID
+    got, _ = answer_form.match(said, ids)   # by its form alone (D-663): case, spaces, quotes, a number
+    return got if got is not None else NOT_AN_ID
 
 
 # The article rule each validate form was read under: version 1 (round 1, validate_p01) took the answer
@@ -1133,6 +1145,7 @@ def validate_read(set_dir, answers, prompts_sha256, previous=None, form_version=
         agree += mine == theirs
     kappa = _kappa(a, b)
     latest = {"form_version": form_version, "article_not_an_id": off_list,
+              "drops": rr.drop_counts({"rows": list(rows.values())}),
               "positions": len(mapper), "answered": sum(1 for x in b if x != NO_ANSWER), "agree": agree,
               "kappa": kappa, "floor": KAPPA_FLOOR, "at_or_above_floor": kappa is not None and kappa >= KAPPA_FLOOR,
               "prompts_sha256": answers.get("prompts_sha256"), "models": answers.get("models")}
@@ -1342,12 +1355,16 @@ def set_digest(set_dir):
     return listing, digest
 
 
-def freeze(set_dir, corpus_paths, *, encode=None, model=None, progress=print, accept_skipped=()):
+def freeze(set_dir, corpus_paths, *, encode=None, model=None, progress=print, accept_skipped=(), export=None):
     f = fz()
     set_dir = outside_repository(set_dir)
     items = na.read_items(set_dir)
     corpora = f.corpus_passages(corpus_paths, accept_skipped=accept_skipped)
     mine = {i: item_passages(it) for i, it in items.items()}
+    if export is not None:
+        # The embedding input alone (freeze_negotiation_set.export_records), no model, no FREEZE.json.
+        return f.export_records([p for c in corpora.values() for p in c["passages"]]
+                                + [p for ps in mine.values() for p in ps], outside_repository(export))
     sources = {}
     for i in items:
         src = set_dir / "build" / i / "SOURCE.md"
@@ -1404,6 +1421,9 @@ def main(argv=None):
     sub.choices["freeze"].add_argument("--extra", action="append", type=Path, default=[])
     sub.choices["freeze"].add_argument("--no-embedding", action="store_true")
     sub.choices["freeze"].add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    sub.choices["freeze"].add_argument("--export-records", type=Path, default=None)
+    sub.choices["freeze"].add_argument("--vectors", type=Path, default=None)
+    sub.choices["freeze"].add_argument("--records", type=Path, default=None)
     s = sub.choices["score"]
     s.add_argument("--configuration", required=True, type=Path)
     s.add_argument("--k", required=True, type=int)
@@ -1459,9 +1479,21 @@ def main(argv=None):
     elif c == "freeze":
         paths, accept = corpus_list(args.corpora)
         paths += list(args.extra)
+        f = fz()
+        if args.export_records is not None:
+            out = freeze(args.set, paths, accept_skipped=accept, export=args.export_records)
+            print(json.dumps(dict(out, forecast_minutes=f.route_forecast_minutes(out["rows"]))))
+            return 0
         encode, release, model = (None, None, None)
-        if not args.no_embedding:
-            encode, release, model = fz().bge_m3_encoder(args.device)
+        if args.vectors is not None:
+            if args.no_embedding or args.records is None:
+                print("refused: --vectors needs --records and takes no --no-embedding")
+                return 2
+            encode = f.vectors_encoder(args.vectors, args.records)
+            model = encode.route
+        elif not args.no_embedding:
+            encode, release, model = f.bge_m3_encoder(args.device)
+            encode = f.formed(encode)
         try:
             value = freeze(args.set, paths, encode=encode, model=model, accept_skipped=accept)
         finally:

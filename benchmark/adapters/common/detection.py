@@ -14,7 +14,9 @@ own unit list, `units[].unit_id` of its pairing map (for a document read in segm
 segment's, translated as its records are).
 
 Unit states. For an item's rule each unit gets the set of states its kept records give:
-  holds      an ok record that is not a refusal
+  holds      an ok record that is not a refusal (INFRA-055, D-670: an ok record of a relation in
+             words, a "does not contradict" answer, holds only under the `each` reading and gives
+             no state under the others, counted as ok_contradiction_no_state)
   violates   an irregular record that is not a refusal, relation not an absence relation
   lacks      an irregular record that is not a refusal, relation an absence relation
   uncertain  a record carrying the UNCERTAIN marker
@@ -208,6 +210,16 @@ def record_state(record):
     return None
 
 
+def no_state_ok(reading, record) -> bool:
+    """INFRA-055 with D-670 (Seckin 19:47): a kept "does not contradict" answer (an ok record whose
+    relation is a relation in words, records.TEXT_RELATIONS) says only that no two passages clash.
+    Under the `each` reading (ContraDoc: a rule of every passage) that is the unit holding; under
+    `three_way` and `exists` it gives no state, since no clash can also mean not enough information,
+    so it is never read as "supports". Counted as ok_contradiction_no_state."""
+    return (reading != EACH and mapping.verdict(record) == "ok" and not mapping.is_refusal(record)
+            and str(record.get("relation") or "").casefold() in records.TEXT_RELATIONS)
+
+
 def kept_records(spec, rule_id, run, rule_count, attribute_figure_audit=False) -> tuple:
     """(records of the item's rule as v2_primary keeps them, faults): prior relations dropped
     and figure-audit records attributed by shared words set aside, exactly as
@@ -289,7 +301,8 @@ def classify(spec, rule_id, run, units, rule_count=1, reading=None) -> dict:
         return dict(out, **{"class": mapping.ABSTAIN, "basis": "run_failure", "decided_by": EXCLUDED})
     kept, faults = kept_records(spec, rule_id, run, rule_count)
     out["faults"] = faults
-    claims = [r for r in kept if record_state(r) is not None]
+    no_state = [r for r in kept if no_state_ok(reading, r)]
+    claims = [r for r in kept if record_state(r) is not None and not no_state_ok(reading, r)]
     states, unplaced = unit_states(claims, units)
     cells = cell_claims(rule_id, run)
     for unit, state in cells:
@@ -306,7 +319,8 @@ def classify(spec, rule_id, run, units, rule_count=1, reading=None) -> dict:
         "kept_records": len(kept), "claims": len(claims) + len(cells), "unplaced_claims": unplaced,
         "cell_decisions": len(cells), "cell_unsettled": sum(1 for _u, s in cells if s == UNCERTAIN),
         "cell_not_met": len(cell_not_met(rule_id, run)),
-        "refused_answers": sum(1 for e in run["pairing_refusals"] if mapping.names_rule(e, rid, run))}
+        "refused_answers": sum(1 for e in run["pairing_refusals"] if mapping.names_rule(e, rid, run)),
+        "ok_contradiction_no_state": len(no_state)}
     if not kept and not cells:     # D-194 (a): any kept record of the rule makes the row kept_claim (D-472: or a cell decision)
         cls, basis = silence_result(shipped)
         return dict(out, **{"class": cls, "basis": basis, "decided_by": SILENT,
@@ -441,7 +455,9 @@ def dev_counts(rows) -> dict:
                                      and r["class"] != mapping.ABSTAIN),
             "kept_claim_not_established": sum(1 for r in rows if r["basis"] == NOT_ESTABLISHED),
             "kept_claim_conflict": sum(1 for r in rows if r["basis"] == CONFLICT),
-            "silence_rows": sum(1 for r in rows if r.get("decided_by") == SILENT)}
+            "silence_rows": sum(1 for r in rows if r.get("decided_by") == SILENT),
+            "ok_contradiction_no_state": sum(int(((r.get("detection") or {}).get("ok_contradiction_no_state")) or 0)
+                                             for r in rows)}
 
 
 # The counts of mapping._labels that describe the v2_primary DECISION of an item (its basis

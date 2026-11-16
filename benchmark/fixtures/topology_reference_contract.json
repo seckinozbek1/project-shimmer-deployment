@@ -55,7 +55,7 @@
     "_reattribute_computed_plan": "c1a7d8bb9969fc9f01bb88b6a9dbfb19a60cb5383468a892c5437236057d7bec",
     "_wide_registry_for_agent": "ea7fb2e9fa976f0b37179bd3d46751256b8bd0c2878fb8d40c2c687552a310e5",
     "_wide_not_judged": "de19d933c917003a2fcdcab7a128596a750e7c83e4c592a779d67f9fec5fb90b",
-    "_paired_convention_review": "d68c04e266ce093b396580f5206c978441f5edeece0b8a8f92aed3716a8fd0dd",
+    "_paired_convention_review": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c",
     "_stamped_judged_items": "13c1affe52931469993d6ba022155db219e7a8e2c601466031e223cf1481bb88",
     "_first_explanation": "0d3dee05f985664cb29ec9289ef0087a3d345c9beba8630bfa2f27129ce78a34",
     "_doc_refs_excerpt": "5258555d3c487d1f4a1dd1a90f5ccfac05384d27c10104b8fd27fb4d98153c2f",
@@ -877,6 +877,17 @@
         "write_deliverables_run_summary": {
           "from": "7c2012c709ed94a6b7b1e8881dbb2e3ea4f325cd9ed405157b4f2420c9af0c84",
           "to": "c1efe396db34a904a19cda360828da14873d5c409292ca25f5621803dc11048d"
+        }
+      }
+    },
+    {
+      "date": "2026-11-15",
+      "reason": "D-652 fix 4 (D-657, Seckin 17:16): in _paired_convention_review an answer on a judged path refused for a missing quote (an absence claim) or missing figures (a figure relation), on a unit holding no table, is re-asked ONCE after every first answer is read (paired_review.reask_eligible, reask_question); the second answer is read by consume_judgment with `reask` set, held to judged_item_refusal unchanged, kept only if it passes, and never asked again; the first refusals stay in absence_refused / uncomputable_refused as before, and pairing['reasked'] records each re-ask, its reasons, call, kept count and the second answer's refusals. A1's checks are not loosened.",
+      "document": "docs/loop/DECISIONS.md D-652, D-657; scripts/judged_unchecked_claims_checks.py body_reask",
+      "functions": {
+        "_paired_convention_review": {
+          "from": "d68c04e266ce093b396580f5206c978441f5edeece0b8a8f92aed3716a8fd0dd",
+          "to": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c"
         }
       }
     }

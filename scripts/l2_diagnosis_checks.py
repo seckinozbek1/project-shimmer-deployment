@@ -181,10 +181,14 @@ class L2DiagnosisChecks(RecommendationChecks):
         self.assertEqual([r for r in self._observations() if r.get("event") == "partition_retry_skipped"], [])
 
 
-    def _refused_last(self):
+    def _refused_last(self, constrained=False):
         """A source whose last bounded request owns one span; that request's first reply is the
         refusal object ({"items": [], "status": "refused"}), every other reply answers. Returns
-        (result, the alias lists of every dispatch, the source's span count)."""
+        (result, the alias lists of every dispatch, the source's span count). `constrained`: each
+        reply holds one item per alias of the constraint contract_decoding.for_call builds for the
+        dispatched wrapper (with the decoding checks' fixture tokenizer), as the constrained model
+        can only write; else one per span of the request's payload. The refusal is keyed on the
+        payload's own aliases, whatever the constraint admits."""
         import bounded_extraction as extraction
         import compact_contracts
         size = compact_contracts.request_size()
@@ -197,12 +201,17 @@ class L2DiagnosisChecks(RecommendationChecks):
         exec(compile(ast.Module(body=[fn], type_ignores=[]), "live_run_one", "exec"), namespace)
         runtime = self.runtime(1)
         counts = []
+        self.decoded = []
         last = extraction.wire_id(spans[-1])
 
         def dispatch(instance, stable, dynamic="", **kwargs):
-            ids = [s["alias"] for s in json.loads(dynamic)["source_spans"]]
-            counts.append(ids)
-            if ids == [last] and counts.count(ids) == 1:
+            ids = asked = [s["alias"] for s in json.loads(dynamic)["source_spans"]]
+            counts.append(asked)
+            if constrained:
+                decoded = constraint_aliases(instance)
+                ids = [x for x in asked if x in decoded]
+                self.decoded.append(ids)
+            if asked == [last] and counts.count(asked) == 1:
                 body = dict(items=[], status="refused")
             else:
                 body = dict(items=[dict(span=x, claims=[], questions=[], uncertainty=[], status="empty", refs=[]) for x in ids])
@@ -243,6 +252,47 @@ class L2DiagnosisChecks(RecommendationChecks):
         self.assertTrue(posted, "the partitions posted their items")
         self.assertEqual(len(posted), len(set(posted)), "an item id is on the bus twice at one revision")
 
+
+    def test_c_b_b_a_reask_is_decoded_on_both_spans_and_keeps_the_refused_span_alone(self):
+        """D-634 (15 November quick read, 5 of 5 ContraDoc re-asks failed "Incomplete partition
+        coverage"): the with_previous_span re-ask is decoded under the request's own two spans, so
+        the constrained reply covers both and hydrates; only then are its items cut to the refused
+        span. The document is complete, every span is owned once, each item id is posted once per
+        revision and the receipts name only the spans their items come from."""
+        import bounded_extraction as extraction
+        result, counts, spans = self._refused_last(constrained=True)
+        before, last = extraction.wire_id(spans[-2]), extraction.wire_id(spans[-1])
+        self.assertEqual(counts[-1], [before, last], "the retry asks the refused span with the span before it")
+        calls = [r for r in self._observations() if r.get("event") == "changed_input_retry_call"]
+        self.assertEqual([(c["kind"], c["ok"], c["kept"], c.get("contract_missing")) for c in calls],
+                         [("with_previous_span", True, [spans[-1].id], [])],
+                         "the re-ask's reply hydrates (no 'Incomplete partition coverage') and keeps the refused span alone")
+        self.assertEqual(self.decoded[-1], [before, last], "the re-ask is decoded under both of its spans")
+        self.assertTrue(result["ok"], "the document is complete after the retry")
+        owned = [i["source_span_id"] for i in result["parsed"]["items"]]
+        self.assertEqual(sorted(owned), sorted(s.id for s in spans), "every span is owned exactly once")
+        posted = [(i.get("item_id"), i.get("revision")) for m in self.bus.read_all()
+                  for i in ((((m.get("body") or {}).get("payload")) or {}).get("items") or []) if str(i.get("item_id", "")).startswith("PROCESSOR:")]
+        self.assertEqual(len(posted), len(set(posted)), "an item id is on the bus twice at one revision")
+        receipts = result.get("source_ownership") or []
+        by_item = {i["item_id"]: i["source_span_id"] for i in result["parsed"]["items"]}
+        self.assertTrue(receipts, "the delivery carries ownership receipts")
+        self.assertTrue(all(r["source_span_ids"] == [by_item[r["producer_item_id"]]] for r in receipts),
+                        "a receipt names only its own item's span")
+        self.assertEqual(len(receipts), len({r["producer_item_id"] for r in receipts}), "an item is receipted twice")
+
+    def test_c_b_c_the_narrowed_reask_failed_on_hydrate_coverage(self):
+        """D-634, the failure itself: with the old narrowing the constraint admits the kept span alone,
+        so the constrained re-ask writes one item, and hydrate refuses the two-span request with
+        "Incomplete partition coverage" (the 15 November quick read's records), not a second refusal."""
+        with patch.object(waves, "post_only_kept", _narrowing_post_only_kept):
+            result, counts, spans = self._refused_last(constrained=True)
+        calls = [r for r in self._observations() if r.get("event") == "changed_input_retry_call"]
+        self.assertEqual(len(calls), 1)
+        self.assertFalse(calls[0]["ok"], "the narrowed re-ask is not valid")
+        self.assertIn("Incomplete partition coverage", " ".join(calls[0].get("contract_missing") or []))
+        self.assertEqual(len(self.decoded[-1]), 1, "the narrowed constraint admits the kept span alone")
+        self.assertFalse(result["ok"], "the document stays incomplete")
 
     def test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs(self):
         """#246: a VERIFIER call that ran to its cap is asked again on the two halves of its own
@@ -325,6 +375,24 @@ def _replay_prompts():
     return replay_prompts
 
 
+_REAL_POST_ONLY_KEPT = waves.post_only_kept
+
+
+def constraint_aliases(wrapper):
+    """The owned aliases of the constraint contract_decoding.for_call builds for this wrapper (the
+    decoding checks' fixture tokenizer, its eos id): what the constrained model can write items for."""
+    import contract_decoding
+    from contract_decoding_checks import FixtureTokenizer
+    constraint = contract_decoding.for_call(wrapper, FixtureTokenizer(), 1, [0])
+    return set(constraint.processor.grammar.contract.aliases) if constraint is not None else set()
+
+
+def _narrowing_post_only_kept(clone, keep):
+    """post_only_kept as it was before D-634: the decoding ownership narrowed to the kept span."""
+    _REAL_POST_ONLY_KEPT(clone, keep)
+    clone._owned_source_spans = tuple(keep)
+
+
 NEUTRALIZATIONS = [
     ("test_a_verifier_reply_that_is_no_object_is_a_recorded_contract_failure", auditor_pairs,
      "verifier_contract_failure", lambda parsed: None),
@@ -336,6 +404,12 @@ NEUTRALIZATIONS = [
      lambda spans, owned, result: ("not_failed", [])),
     ("test_c_b_a_refused_single_span_is_asked_once_with_the_span_before_it", waves, "post_only_kept",
      lambda clone, keep: None),
+    # D-634: the old narrowing (the decoding ownership cut to the kept span) fails the honest re-ask.
+    ("test_c_b_b_a_reask_is_decoded_on_both_spans_and_keeps_the_refused_span_alone", waves, "post_only_kept",
+     _narrowing_post_only_kept),
+    # The failure is the re-ask's own: with no retry planned there is no _call record to read.
+    ("test_c_b_c_the_narrowed_reask_failed_on_hydrate_coverage", waves, "retry_plan",
+     lambda spans, owned, result: ("not_failed", [])),
     ("test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs", waves, "verifier_halves",
      lambda wrapper, kwargs: None),
     ("test_c_c_a_capped_verifier_is_asked_on_two_halves_of_its_pairs", waves, "merged_halves",

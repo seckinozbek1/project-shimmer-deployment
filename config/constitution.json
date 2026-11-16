@@ -886,6 +886,39 @@
       },
       "reason": "The operator's answer to D-582 OD-1 (13 November 2026 12:21, 'Bir evet') and his instruction of 12:34 (D-597): the auditor family's own findings are writing and are audited by another family, in batches, on the cheapest suitable model. No existing role can do it: VERIFIER and JUDGE are of the auditor family and cannot audit their own family's findings (LAW-III); VERIFIER's contract is one task, PROCESSOR's draft against the source; AUDITOR896 is a classifier trained on PROCESSOR's pairs alone; every producer-family agent is a writer with its own function, and giving it the audit would breach LAW-II and make a writer its own family's judge; the editorial routing of INFRA-050 reaches observations only, by escalation.",
       "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-13 12:21 and appended on his '054 evet' of 12:56, relayed by his supervising chat; the batch form and model choice by his instruction of 12:34. Drafted by lane law3-system in docs/loop/stages/notes/INFRA_AUDITOR_DRAFT.md; the registry, contract and code entries are built after the append."
+    },
+    {
+      "id": "INFRA-055",
+      "created": "2026-11-15",
+      "kind": "relation_verdict",
+      "title": "A well-formed \"does not contradict\" answer is kept as a model's ok contradiction record, never a finding; it never reads as \"supports\" (INFRA-046's verdict clause narrowed)",
+      "genesis_part": "VII",
+      "operator_approved": true,
+      "approval": {
+        "date": "2026-11-15",
+        "by": "operator",
+        "words": "Seckin, 15 November 2026 19:26: INFRA-055 ratified as drafted (D-669); 19:47: the SciTab guard is required, a 'no contradiction' record is never scored as 'supports' (D-670)",
+        "asked": "the lead's question of 15 November 2026 (D-652 item 1, D-657): the authority audit's checker found that a 'does not contradict' answer is always refused (INFRA-046's verdict clause); fix it as a new appended amendment with its agent-instruction change",
+        "channel": "chat, 15 November 2026 19:26 and 19:47 +0300, relayed by the lead session",
+        "authorization": {
+          "date": "2026-11-15",
+          "by": "operator",
+          "words": "INFRA-055 ratified as drafted (19:26); the guard is required (19:47)",
+          "recorded_in": "docs/loop/DECISIONS.md D-652, D-657, D-667, D-669, D-670; draft docs/loop/stages/INFRA-055_DRAFT.md",
+          "what": "the operator's answer, which is also the instruction: the loop appends this one amendment through the verified no-gap path, with its agent sentences, ok phrase, check inversion and the detection_dev guard, as lane/audit-fix"
+        }
+      },
+      "change": {
+        "amends_reading_of": "INFRA-046 `verdict` (its text is never edited; from this amendment on it is read as narrowed here)",
+        "verdict": "A contradiction record is irregular (two passages that cannot both be true) or ok (the model answers that the unit does not contradict itself under the rule). An irregular record is held to every refusal INFRA-046 and INFRA-047 list, unchanged. An ok record is kept as that answer when it is well formed: relation contradiction, record_verdict ok, and any quote or quote_b it writes stands in the unit (quote_not_in_unit, unchanged). It needs no second quote, since it names no pair. It is the model's (written_by model), marked wherever shown, never a finding (finding_record.is_finding counts an irregular contradiction only), never promoted, never an amendment. Python checks only that its words stand in the unit, never that the unit does not contradict.",
+        "refusals": "paired_review.judged_item_refusal refuses CONTRADICTION_NOT_IRREGULAR only for a record whose record_verdict is neither irregular nor ok. An ok record naming a second unit is refused (CONTRADICTION_SECOND_UNIT_NOT_CHECKED), and one whose quote_b the unit does not hold (CONTRADICTION_SECOND_QUOTE_NOT_IN_UNIT). Every other contradiction refusal applies to irregular records exactly as before.",
+        "phrase": "finding_record.RELATION_WORDS contradiction: irregular keeps 'two passages contradict each other'; ok is 'the passages do not contradict each other' (Turkish in scripts/ui/localization_catalog.js).",
+        "agent_instructions": "config/agent_contracts.json quote_b: 'a contradiction marked irregular with one quote is refused. When the unit does not contradict itself, answer relation contradiction with record_verdict ok and no quote_b.' scripts/agent_wrapper.py typed-record section adds: 'When no two passages of the unit contradict each other, say so: relation contradiction, record_verdict ok, no quote_b.'",
+        "scoring": "benchmark/adapters/common/detection.py (detection_dev, development only): an ok record whose relation is a relation in words (records.TEXT_RELATIONS) holds its unit only under the `each` reading (ContraDoc); under `three_way` (SciTab, ContractNLI) and `exists` it gives no state, so it is never read as 'supports', and it is counted as ok_contradiction_no_state on the row and in dev_counts (D-670). v2_primary and the preregistration's modes are not changed here (frozen); the lead takes v2_primary line 3 to the operator.",
+        "checks": "scripts/judged_unchecked_claims_checks.py group D inverted (an ok contradiction kept, a verdict neither irregular nor ok refused; the ok record no finding but a benchmark record; the ok phrase distinct), each neutralised; scripts/adapter_checks.py test_a_does_not_contradict_answer_is_never_supports, neutralised by removing the guard."
+      },
+      "reason": "The authority audit's checker (D-643, D-647): a 'does not contradict' answer was always refused, so a document could never be CLEAR from the model's own answer. D-652 (Seckin 16:03): fixed, its effect reported (half A records: 0 refusals of this kind, 0 label changes). D-670: on SciTab no clash can also mean not enough information, so it is never 'supports'.",
+      "note": "Append-only DELTA (allowed by the INFRA-029 amendment tripwire, verified by the INFRA-043 no-gap path; no seed law or existing amendment modified or deleted). Approved by the operator in chat on 2026-11-15 19:26 and 19:47."
     }
   ]
 }

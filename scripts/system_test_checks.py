@@ -714,8 +714,11 @@ def observe_declaration():
         head, tail = scitab.RULE_TEMPLATE.split("{claim}")
         out["scitab as shipped"] = sorted({r.compare for r in rules["as shipped"]})
         out["scitab declared"] = sorted({r.compare for r in rules["declared"]})
+        # R-a2 (D-652 fix 1): a SciTab build declares "compare: cells" with or without the option, so the
+        # as-shipped build is the declared one and both take the claim alone as the rule's text.
         out["scitab claim alone"] = (len(rules["declared"]) > 0 and
-                                     [head + r.rule + tail for r in rules["declared"]] == [r.rule for r in rules["as shipped"]])
+                                     all(not r.rule.startswith(head.strip()) for r in rules["declared"] + rules["as shipped"])
+                                     and [r.rule for r in rules["declared"]] == [r.rule for r in rules["as shipped"]])
         out["scitab items, keys and parts unchanged"] = bool(files["declared"]) and files["declared"] == files["as shipped"]
         out["scitab with passages"] = caught(lambda: ftc.cli.build(scitab, claims, Path(folder) / "s_other", development=True, synthetic=True,
                                                                    rule_declaration="compare: passages") and "built")
@@ -783,7 +786,8 @@ def observe_cut():
 def expected_cut():
     row = {"same files": True, "documents cut": True, "the cut applied to every document": True,
            "only the rules files differ": True, "parts.json identical": True}
-    return {"contradoc": dict(row), "scitab": dict(row)}
+    # R-a2 (D-652 fix 1): SciTab's build always declares, so its two builds are one: no file differs.
+    return {"contradoc": dict(row), "scitab": dict(row, **{"only the rules files differ": False})}
 
 
 _SCITAB = []
@@ -886,7 +890,7 @@ def expected_scoring():
 
 def expected_declaration():
     return {"as shipped": [""], "declared": ["passages"], "another declaration": "ValueError: a rule declaration no build may add: 'scope: class=A' (CONV-CDOC-01)",
-            "scitab as shipped": [""], "scitab declared": ["cells"], "scitab claim alone": True,
+            "scitab as shipped": ["cells"], "scitab declared": ["cells"], "scitab claim alone": True,
             "scitab items, keys and parts unchanged": True,
             "scitab with passages": "ValueError: a rule declaration a scitab build may not add: 'compare: passages'",
             "contradoc with cells": "ValueError: a rule declaration a contradoc build may not add: 'compare: cells'",
@@ -1023,6 +1027,9 @@ def run_checks():
         ("each benchmark its own declaration", observe_declaration, expected_declaration, lambda: with_source(
             importlib.import_module("common.bundle"), "build_declaration",
             "    if declaration in RULE_DECLARATIONS and BENCHMARK_DECLARATIONS.get(benchmark) != declaration:", "    if False:")),
+        ("a SciTab build always declares its cells (R-a2)", observe_declaration, expected_declaration, lambda: with_source(
+            _scitab(), "documents", "    declaration = bundle.build_declaration(BENCHMARK, options) or bundle.BENCHMARK_DECLARATIONS[BENCHMARK]",
+            "    declaration = bundle.build_declaration(BENCHMARK, options)")),
         ("the claim alone under the cells declaration", observe_declaration, expected_declaration, lambda: with_source(
             _scitab(), "rule_text", "    return claim if declaration else RULE_TEMPLATE.format(claim=claim)", "    return RULE_TEMPLATE.format(claim=claim)")),
         ("the sign test at .05", observe_tests, expected_tests, lambda: patched(st, "FIGURES", dict(st.FIGURES, alpha_one_sided=.0125))),

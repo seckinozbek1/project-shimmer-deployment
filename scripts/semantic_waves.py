@@ -277,7 +277,15 @@ def post_only_kept(clone, keep):
     """Before the re-ask is dispatched: its validated items are cut to the `keep` spans inside
     the source adapter, so the reply's envelope, its bus post and its ownership receipts carry
     the refused span's items alone. The span before keeps its first answer, which is already on
-    the bus; posting it again at the same revision would put one item id there twice."""
+    the bus; posting it again at the same revision would put one item id there twice.
+
+    The ownership the call is decoded and validated under (`_owned_source_spans`, which the
+    decoding constraint reads, and the adapter's own two spans, which hydrate requires in full)
+    stays the whole request: the cut comes only after hydration. D-634: narrowing it to the kept
+    span held the model to one item while hydrate required both, so every honest re-ask failed
+    "Incomplete partition coverage" (5 of 5 ContraDoc re-asks of the 15 November quick read).
+    The receipts (auditor_pairs.stamp_ownership) are made from the cut items, so they name the
+    kept span alone."""
     ids = {s.id for s in keep}
     adapter = clone._source_adapter
 
@@ -285,7 +293,6 @@ def post_only_kept(clone, keep):
         out = adapter(obj)
         return dict(out, items=[i for i in out.get("items", []) if i.get("source_span_id") in ids])
     clone._source_adapter = kept
-    clone._owned_source_spans = tuple(keep)
 
 
 VERIFIER_HALVES = "verifier_halves"
@@ -393,7 +400,7 @@ async def changed_input_retry(runtime, calls, results, groups):
                 generation_observation.append(runtime.run_context, dict(
                     event=CHANGED_INPUT_RETRY + "_call", kind=kind, retry_of=r.get("call_id"), call_id=new.get("call_id"),
                     doc_id=doc_id, request=[s.id for s in request], kept=[s.id for s in keep],
-                    ok=bool(kept.get("ok")), truncated=kept.get("truncated")))
+                    ok=bool(kept.get("ok")), truncated=kept.get("truncated"), contract_missing=kept.get("contract_missing")))
                 out_calls.append((clone, kwargs))
                 out_results.append(kept)
         out_groups.append((start, len(out_calls), name, doc_id))

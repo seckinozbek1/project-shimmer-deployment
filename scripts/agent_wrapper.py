@@ -1634,7 +1634,9 @@ class AgentWrapper:
             "A finding that is not a comparison of figures does not need these fields, "
             f"but it still carries {required}. Two passages that cannot both be true are "
             "the one exception: relation contradiction, record_verdict irregular, each "
-            "passage copied word for word into quote and quote_b, no figures.\n\n"
+            "passage copied word for word into quote and quote_b, no figures. "
+            "When no two passages of the unit contradict each other, say so: relation "
+            "contradiction, record_verdict ok, no quote_b.\n\n"
         )
 
     _TYPE_WORDS = {"string", "null", "int", "integer", "float", "number", "bool", "boolean", "array", "list", "object"}

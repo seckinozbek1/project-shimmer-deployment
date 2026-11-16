@@ -49,6 +49,9 @@ ROOT = Path(__file__).resolve().parents[1]
 LABELS = ("moved_toward", "moved_away", "unchanged_from_prior", "not_computable")
 MOVEMENTS = ("moved_toward", "moved_away", "unchanged_from_prior")
 NO_ANSWER = "no_answer"
+# The answers schema of the score-time re-reader (tools/reread_replies.py negotiation, D-663): every movement
+# row read whatever its form and carrying its drop reason. Answers read any other way are refused.
+ANSWERS_SCHEMA = "negotiation-answers-v2"
 HEADLINE_SUBSETS = ("F", "S")
 MAX_OPENINGS = 2
 CLAIMS = (("C1", "positions", "macro_f1", "B1"), ("C2", "positions", "movement_precision", "B1"),
@@ -108,6 +111,12 @@ def reply_answers(answers):
             label = r.get("label")
             out[(r["case_id"], r["issue_id"], tuple(r["rounds"]))] = label if label in LABELS else NO_ANSWER
     return out
+
+
+def drop_counts(answers):
+    """{reason: count} of the movement rows the reader could not read (D-663), printed in the score report."""
+    out = Counter(r.get("drop") for r in (answers or {}).get("rows") or [] if r.get("form") == "movement" and r.get("drop"))
+    return dict(sorted(out.items()))
 
 
 def pairs(key_rows, predictions):
@@ -821,6 +830,9 @@ def refuse_records(configuration, *, b1=None, cloud=None, b1_measurement=None, s
         return "the cloud reference's answers carry no model id"
     if power_sha256 != configuration.get("power_record_sha256"):
         return "C1's power record is not the configuration's"
+    for name, arm in (("B1", b1), ("the cloud reference", cloud)):
+        if arm.get("schema") != ANSWERS_SCHEMA:
+            return "%s's answers are not read by tools/reread_replies.py (%s): read them again" % (name, arm.get("schema"))
     if b1 is not None and b1.get("prompts_sha256") != configuration.get("b1_prompts_sha256"):
         return "B1's answers are not of the configuration's prompts file"
     if cloud is not None and cloud.get("prompts_sha256") != configuration.get("cloud_prompts_sha256"):
@@ -935,6 +947,8 @@ def main(argv=None):
     # Every failed entry scores no_answer on all its rows (no system answer is read for it; its rows stay
     # in the frozen key), counted and named apart by kind (D-451). Only an infrastructure failure can
     # call for opening 2.
+    # D-663: every movement answer the reader could not read, by arm and reason.
+    positions["drops"] = {"B1": drop_counts(b1), "cloud": drop_counts(cloud)}
     result = {"c1_status": status, "positions": positions, "round3": round3,
               "system_failures": failure_report(failures, freeze["movement_key"]),
               "opening_2_may_be_called": any(f["kind"] == "infrastructure" for f in failures.values())}

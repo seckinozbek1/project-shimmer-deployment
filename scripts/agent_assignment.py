@@ -16,6 +16,8 @@ import re
 import threading
 from pathlib import Path
 
+import pairing_map
+
 ROOT = Path(__file__).resolve().parents[1]
 DECLARATION = ROOT / "config" / "agent_assignment.json"
 PATTERNS = ROOT / "config" / "relation_patterns.json"
@@ -55,16 +57,36 @@ def _reference_patterns(path=PATTERNS):
     return [re.compile(r["regex"], re.IGNORECASE) for r in refs if isinstance(r, dict) and r.get("regex")]
 
 
+def _captions(lines):
+    """The line indexes that caption a table: the nearest line above a table's header that is neither
+    blank nor a heading (cell_selection._caption's rule), when it is not itself a table row."""
+    out = set()
+    for at in range(1, len(lines)):
+        if not (TABLE_RULE.match(lines[at]) and TABLE_ROW.match(lines[at - 1])):
+            continue
+        for k in range(at - 2, -1, -1):
+            if lines[k].strip():
+                if not lines[k].lstrip().startswith("#") and not TABLE_ROW.match(lines[k]):
+                    out.add(k)
+                break
+    return out
+
+
 def conditions(text):
-    """The document's structural conditions, read from its own text only."""
+    """The document's structural conditions, read from its own text only. `running_prose_lines`
+    (D-652) counts the prose lines that are neither a `label: value` field line (the one field-line
+    syntax, pairing_map._LABEL_LINE) nor a table's caption (_captions): a document of tables, captions
+    and field lines has none, which no word's meaning decides (WORDS-A)."""
     lines = str(text or "").splitlines()
     rows = [l for l in lines if TABLE_ROW.match(l) and not TABLE_RULE.match(l)]
     cells = [c.strip() for l in rows for c in l.strip().strip("|").split("|")]
-    prose = [l for l in lines if l.strip() and not TABLE_ROW.match(l) and not l.lstrip().startswith("#")]
+    prose_at = [i for i, l in enumerate(lines) if l.strip() and not TABLE_ROW.match(l) and not l.lstrip().startswith("#")]
+    captions = _captions(lines)
+    running = [i for i in prose_at if i not in captions and not pairing_map._LABEL_LINE.match(lines[i])]
     markers = len(REF_ID.findall(text or "")) + sum(len(p.findall(text or "")) for p in _reference_patterns())
     return {"has_table": any(TABLE_RULE.match(l) for l in lines) and bool(rows), "table_rows": len(rows),
-            "numeric_cells": sum(1 for c in cells if NUMBER.match(c)), "prose_lines": len(prose),
-            "citation_markers": markers, "characters": len(text or "")}
+            "numeric_cells": sum(1 for c in cells if NUMBER.match(c)), "prose_lines": len(prose_at),
+            "running_prose_lines": len(running), "citation_markers": markers, "characters": len(text or "")}
 
 
 def assign(agents, found, rules=None, floor_items=None, switched_off=()):

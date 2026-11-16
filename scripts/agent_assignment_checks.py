@@ -1,7 +1,7 @@
 """Proofs of the agent-assignment layer (D-571, D-572, D-575; scripts/agent_assignment.py), on fixtures.
 
-The structural conditions are read from text alone; with the shipped declaration (no skip rule) every
-agent is assigned and the dispatch is the old one; a declared skip rule skips its agent and the skip is
+The structural conditions are read from text alone; the shipped declaration's one skip rule (D-652) keeps
+SPEECH_ACT_TAGGER off a document of tables alone and assigns every agent elsewhere, the dispatch being the old one; a declared skip rule skips its agent and the skip is
 recorded; a skip below the floor is refused before any call (PROCESSOR, VERIFIER while PROCESSOR runs,
 INST_FINDER unless the operator's switch turned it off, a replacement agent); the floor is data, read
 from the declaration; the pipeline's two production loops dispatch only the assigned agents. Each proof
@@ -27,6 +27,11 @@ import agent_assignment as aa  # noqa: E402
 TABLE = "# Results\n\n| Model | Score |\n|---|---|\n| A | 71.2 |\n| B | 68.0 |\n\nThe table compares two models (REF-0001).\n"
 PROSE = "# Terms\n\nThe parties agree to the terms below.\nParagraph 2 of Article 3 applies.\n"
 PER_DOC = ["PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST"]
+# A part holding one table with its caption under a label line, and a part of running text, as the
+# benchmark bundles write them (an invented table and invented words).
+TABLES_ONLY = ("# D-x\n\n## P-00001\n\nPassage: part\n\nTable 2: Scores of two models on one test.\n\n"
+               "| Model | Score |\n|---|---|\n| A | 71,2% |\n| B | -3.4 |\n")
+PASSAGE_ONLY = "# D-y\n\n## P-00001\n\nPassage: part\n\nThe harbour opened in spring and closed in autumn.\n"
 
 
 class AgentAssignmentChecks(unittest.TestCase):
@@ -44,7 +49,7 @@ class AgentAssignmentChecks(unittest.TestCase):
         self.assertEqual(set(t), set(aa.declaration()["conditions"]))
 
     def test_shipped_declaration_assigns_every_agent_and_records_it(self):
-        self.assertEqual(aa.declaration()["skip_rules"], [])
+        self.assertEqual([r["agent"] for r in aa.declaration()["skip_rules"]], ["SPEECH_ACT_TAGGER"])
         self.assertEqual(aa.dispatch(self.ctx, "d1", PER_DOC, TABLE), PER_DOC)
         rows = json.loads((self.ctx.audit_dir() / aa.RECORD).read_text(encoding="utf-8"))
         self.assertEqual(rows[0]["doc_id"], "d1")
@@ -62,6 +67,20 @@ class AgentAssignmentChecks(unittest.TestCase):
         self.assertEqual(not_called.call_args.kwargs["state"], "unassigned")
         with self.assertRaises(aa.AssignmentRefused):
             aa.assign(PER_DOC, aa.conditions(TABLE), [dict(rule, when=dict(meaning="normative"))])
+
+    def test_a_document_of_tables_alone_does_not_run_the_tagger(self):
+        """D-652 (audit A3): the shipped skip rule, on structure alone. A document of tables, their
+        captions and label: value lines does not run SPEECH_ACT_TAGGER, recorded as unassigned; a
+        running sentence anywhere, or no table, keeps it; PROCESSOR and LEGAL_ANALYST stay."""
+        found = aa.conditions(TABLES_ONLY)
+        self.assertEqual((found["has_table"], found["prose_lines"], found["running_prose_lines"]), (True, 2, 0))
+        with patch("agent_activation.not_called") as not_called:
+            self.assertEqual(aa.dispatch(self.ctx, "t1", PER_DOC, TABLES_ONLY), ["PROCESSOR", "LEGAL_ANALYST"])
+        self.assertEqual((not_called.call_args.args[1], not_called.call_args.kwargs["state"]), ("SPEECH_ACT_TAGGER", "unassigned"))
+        row = json.loads((self.ctx.audit_dir() / aa.RECORD).read_text(encoding="utf-8"))[-1]
+        self.assertEqual(row["decisions"]["SPEECH_ACT_TAGGER"]["rule"], "ASSIGN-A; D-652 item 1 (authority audit A3)")
+        for text in (TABLE, PROSE, TABLES_ONLY + "\nThe second model is larger than the first.\n", PASSAGE_ONLY):
+            self.assertEqual(aa.dispatch(self.ctx, "t2", PER_DOC, text), PER_DOC, text[:40])
 
     def test_the_floor_refuses_an_assignment_below_it(self):
         found = aa.conditions(TABLE)
@@ -102,6 +121,8 @@ class AgentAssignmentChecks(unittest.TestCase):
 
 
 FLOOR_PROOFS = ["test_the_floor_refuses_an_assignment_below_it", "test_the_floor_is_data"]
+# D-652: the shipped skip rule's proof, neutralised by the declaration as it was before (no skip rule).
+SKIP_PROOFS = ["test_a_document_of_tables_alone_does_not_run_the_tagger"]
 TESTS = [n for n in dir(AgentAssignmentChecks) if n.startswith("test_")]
 
 
@@ -120,6 +141,14 @@ def prove_neutralizations():
         after = _single(name)
         proofs.append(dict(check=name, neutralized="agent_assignment.refuse_below_floor", baseline_pass=before,
                            neutralized_fail=failed, restored_pass=after))
+    shipped = aa.declaration()
+    for name in SKIP_PROOFS:
+        before = _single(name)
+        with patch.object(aa, "declaration", lambda path=aa.DECLARATION: dict(shipped, skip_rules=[])):
+            failed = not _single(name)
+        after = _single(name)
+        proofs.append(dict(check=name, neutralized="config/agent_assignment.json skip_rules emptied", baseline_pass=before,
+                           neutralized_fail=failed, restored_pass=after))
     return {"passed": all(p["baseline_pass"] and p["neutralized_fail"] and p["restored_pass"] for p in proofs), "proofs": proofs}
 
 
@@ -131,9 +160,9 @@ def check():
         return ("FAIL", "%d failures/errors; first: %s" % (len(problems), problems[0][1].strip().splitlines()[-1]))
     proofs = prove_neutralizations()
     if not proofs["passed"]:
-        return ("FAIL", "a neutralise, fail, restore, pass proof of the floor did not hold")
+        return ("FAIL", "a neutralise, fail, restore, pass proof of the floor or the shipped skip rule did not hold")
     return ("PASS", "%d cases and %d neutralise/fail/restore/pass proofs (D-571, D-572, D-575): structural conditions "
-            "only; the shipped declaration assigns every agent; a declared skip is recorded; the floor, read as data, "
+            "only; the shipped declaration skips SPEECH_ACT_TAGGER on a document of tables alone (D-652) and assigns every other agent; a declared skip is recorded; the floor, read as data, "
             "refuses PROCESSOR, VERIFIER while PROCESSOR runs, INST_FINDER outside its switch and any replacement"
             % (result.testsRun, len(proofs["proofs"])))
 

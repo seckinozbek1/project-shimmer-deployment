@@ -96,9 +96,8 @@ def _written(claim):
     """The figures `claim` writes, each once, in its own order and spelling."""
     out, seen = [], set()
     for token in cell_selection._NUMBER.findall(str(claim or "")):
-        try:
-            value = float(token.replace(",", ""))
-        except ValueError:
+        value = cell_selection.figure_value(token)
+        if value is None:
             continue
         if value not in seen:
             seen.add(value)

@@ -25,7 +25,11 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
 15. no threshold asks nothing and says so; a failed or raised call is said, marks the run and
     keeps the document; the declared stop holds;
 16. the question is masked against the whole document and is the measured one;
-17. `[compare: cells]` is read and refused as `passages` is, and makes no unit plan.
+17. `[compare: cells]` is read and refused as `passages` is, and makes no unit plan;
+18. on the real phase a declared claim makes no uncomputable or absence plan and no refusal row
+    (R-a1: no legal-text check on a table claim; both unit-path guards taken away, it would);
+19. a cell's figure is read by one reader in its usual forms ("71,2%", "71.2%", "71.2", "-3.4"), so
+    a claim writing 71.2 names the cell writing "71,2%" (D-652, audit A1).
 """
 import ast
 import contextlib
@@ -114,6 +118,38 @@ def expected_rendered():
 
 def observe_figure():
     return pick(cell_selection.select(TEXT, "It reached 70.25 last year.", dict(CONFIG, fill_rows=0)))
+
+
+COMMA_TEXT = chr(10).join((
+    "Table 3: Scores by model.", "",
+    "| Model | Accuracy | Change |",
+    "|---|---|---|",
+    "| Base | 64,8% | -1,5 |",
+    "| Large | 71,2% | −3,4 |",
+    "| Small | 712 | 0,9 |", ""))
+
+
+def observe_cell_figures():
+    """D-652 (audit A1): one reader reads a cell's figure in its usual forms, and a claim's figure
+    names the cell that writes it with a decimal comma."""
+    read = [cell_selection.figure_value(t) for t in ("71,2%", "71.2%", "71.2", "-3.4", "−3,4", "1,254", "1,254.5", "n/a")]
+    import judge_agent
+    return {"read": read, "rows": pick(cell_selection.select(COMMA_TEXT, "Large reaches 71.2 and drops 3.4.", dict(CONFIG, fill_rows=0)))["rows"],
+            "located": judge_agent.locate_figures(cell_selection.render(cell_selection.tables(COMMA_TEXT)[0], [0, 1, 2], [0, 1, 2]),
+                                                  "Large reaches 71.2 and drops 3.4.")}
+
+
+def _old_figure_value(token):
+    """The reader before D-652: every comma dropped, so "71,2" was 712."""
+    try:
+        return float(str(token).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def expected_cell_figures():
+    return {"read": [71.2, 71.2, 71.2, 3.4, 3.4, 1254.0, 1254.5, None], "rows": [1],
+            "located": [("71.2", [(1, 1)]), ("3.4", [(1, 2)])]}
 
 
 def expected_figure():
@@ -554,6 +590,31 @@ def observe_not_a_plan():
     return len(paired_review.plan_calls({"u1": unit}, [("u1", "CONV-020")], {"CONV-020": CLAIM_RULE}, {}))
 
 
+def observe_no_legal_text_checks():
+    """R-a1 (SCITAB_INSIDE (a), D-652 fix 1): on the real phase a declared cells rule makes no
+    uncomputable or judged-absence plan, so no answer on it meets the field and absence checks built
+    for legal text, and no refusal row names it; the cell step answers it alone."""
+    run = _phase(lambda wrapper, prompt, n: _decision())
+    d = run["document"]
+    return {"refused": sum(1 for k in ("absence_refused", "uncomputable_refused") for r in d.get(k) or [] if r.get("rule_id") == "CONV-020"),
+            "uncomputable plans": sum(1 for r in d.get("uncomputable_judged") or [] if r.get("rule_id") == "CONV-020"),
+            "absence plans": sum(1 for r in d.get("absence") or [] if isinstance(r, dict) and r.get("rule_id") == "CONV-020"),
+            "cell rows": len(d.get("cell_claims") or [])}
+
+
+@contextlib.contextmanager
+def _both_unit_guards_off():
+    """Both places that keep a declared rule off the unit path: the pairing (not_unit_rules) and
+    plan_calls' own skip. Either alone holds it off, so the proof takes both away."""
+    review = passage_pairs_module().paired_review
+    real = review.pairs_from_map
+
+    def every_rule(pairing, cap_per_unit=None, not_unit_rules=None, **rest):
+        return real(pairing, cap_per_unit=cap_per_unit, not_unit_rules=set(), **rest)
+    with patched(review, "pairs_from_map", every_rule),             with_source(review, "plan_calls", 'if (rules_by_id.get(rule_id) or {}).get("compare"):', "if False:"):
+        yield
+
+
 def observe_imports():
     tree = ast.parse(Path(cell_selection.__file__).read_text(encoding="utf-8"))
     names = set()
@@ -611,6 +672,8 @@ def run_checks():
          lambda: with_source(module, "select", "columns_shown = sorted(set(keys) | set(kept_columns))", "columns_shown = sorted(kept_columns)")),
         ("a figure names its cell", observe_figure, expected_figure,
          lambda: patched(module, "figures", lambda text: set())),
+        ("a cell's figure in its usual forms", observe_cell_figures, expected_cell_figures,
+         lambda: patched(module, "figure_value", _old_figure_value)),
         ("rows kept for a comparison", observe_fill, expected_fill,
          lambda: with_source(module, "select", 'fill = max(config["fill_rows"] - len(named_rows), 0)', "fill = 0")),
         ("the caps", observe_caps, expected_caps,
@@ -677,6 +740,8 @@ def run_checks():
          lambda: patched(convention_parser_module(), "_refuse_compare_beside", lambda *a: None)),
         ("not a unit plan", observe_not_a_plan, lambda: 0,
          lambda: with_source(passage_pairs_module().paired_review, "plan_calls", 'if (rules_by_id.get(rule_id) or {}).get("compare"):', "if False:")),
+        ("no legal-text check on a declared claim", observe_no_legal_text_checks,
+         lambda: {"refused": 0, "uncomputable plans": 0, "absence plans": 0, "cell rows": 1}, _both_unit_guards_off),
         ("no key, no word list", observe_imports, lambda: ["choice_decision", "json", "judge_agent", "math", "paired_review", "pairing_map", "pathlib", "re"],
          lambda: patched(module, "__file__", str(ROOT / "scripts" / "cell_selection_checks.py"))),
     ]

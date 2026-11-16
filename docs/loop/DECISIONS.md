@@ -7307,3 +7307,113 @@ Written by the lead, Sat 14 Nov 2026 22:25 (from date).
 7. **Public limitations** (README now, the Medium article later): v1.0 is an early, pre-alpha-like release; the cloud and bare models were measured once on a limited set, later comparisons use those figures, and re-measuring both is planned after v1.1.
 8. **After v1.1:** the cloud and bare-model re-measurement on the same items, with an issue. Every item set also carries a counter: how many times it was looked at and which changes were tried on it.
 - **Standing orders 87 to 90.** **Rules.** D-296, D-605, D-656, D-663, B1-ARM-A, LEAKAGE_PROTOCOL, NEGOTIATION-MEASURE-A.
+
+## D-672: the output side tightened for Shimmer's own arms; steps 1 to 3 of the sweep unlock re-scoring of saved answers (Seckin 20:07)
+
+15 November 2026, 20:07 +0300 (from date), lead session b547ef8e. Seckin's answers to FOR_SECKIN 19:49, both yes, read with D-671 (no cloud and no bare-model runs until after v1.1).
+1. **Output side (sweep step 4).** (a) Fixed answer choices (CHOICE-A over the declared answers) for Shimmer's own advisor judge grade and auditor; (b) a schema constraint (DECODING-B style, ids and enums from the item) for Shimmer's local arms' advice and validator JSON. Built on lane/parse-sweep with proofs; measured on development items first, with the dropped-answer count before and after, under 3 USD on Lambda. The cloud and bare-model parts of (a) and (b), (c) and (d) are not built now; the after-v1.1 plan carries them (V1_1_PLAN A2): the same output form is applied to those arms when they run again.
+2. **Score lock.** Steps 1 to 3 of the sweep (one shared normaliser, tolerant reading at score time, drops counted by reason) unlock the re-reading and re-scoring of saved answers; step 4 applies only to new runs.
+- **Rules.** D-663, D-667, D-671, CHOICE-A, DECODING-B, B1-ARM-A, standing order 82.
+
+## D-673: A5's 3 ContraDoc runs added; A5's ceiling raised from 5.49 to 10 USD (Seckin 21:13)
+
+15 November 2026, 21:13 +0300 (from date), lead session b547ef8e. Seckin's answer to FOR_SECKIN 21:09: yes, add the 3 ContraDoc runs of the vLLM speed measurement (A5) now.
+1. **Ceiling.** The approved ceiling for the whole of A5, both kinds together, rises from 5.49 USD (D-660) to 10 USD by forecast. With the ContraDoc run, A5 is 6.71 USD by forecast: 0.92 for the two seal jobs, 2.66 for SciTab and 3.13 for ContraDoc. About 4.1 USD is expected.
+2. **As sealed.** The 3 ContraDoc bundles launch as they are, at their sealed 112 minutes, with no re-seal. They were sealed on be9cfd30, before the 15 November parser and audit fixes.
+3. **Report.** When both runs end: actual spend, and the speed figures for both kinds (minutes and cost per entry, routed call counts, vLLM server start and request times, peak VRAM). The ContraDoc agreement figures are marked as from code sealed before the 15 November parser and audit fixes; the SciTab ones as before the parser sweep.
+- **Rules.** D-634, D-648, D-655, D-660, D-668, D-671 (system arm only: every A5 entry is the system arm), LOOP-LAUNCH-A.
+
+## D-674: the full gate's package sealed once on the laptop; the full Lambda sealing route built in parallel, then no exceptions (Seckin 21:49)
+
+15 November 2026, 21:49 +0300 (from date), lead session b547ef8e. Seckin's answer to FOR_SECKIN 21:18, option (b).
+1. **One laptop job seal, for the full gate's package only.** It takes about 4 minutes and runs only when free RAM is above 2 GiB, under the normal floor (his browser load has ended). Its bundles then seal on Lambda in one route S seal job, and the full gate runs there as arm G on lane/merge-1115 (#288). The cap is 3.0 USD in total.
+2. **The full Lambda sealing route is built in parallel.** The laptop writes only a request; the rented machine builds the bound tree from git objects, seals the job, verifies the assets against the reuse manifest and refuses on any mismatch. About six bound files get a request branch, with proofs and neutralisations for every refusal, and an independent check follows.
+3. **After it is built and proven, every seal runs on Lambda with no exceptions** (standing order 85 in full).
+4. **Waiting on the route:** the output-side development measurement needs a re-seal of the advisor's files (D-672), so it waits for the route.
+- **Rules.** D-648, D-655, D-668, D-669, D-672, ROUTE-S-A, GATE-ARM-A, CONTROLLER-BINDING, standing order 85.
+
+## D-675: route unit 2 launches from a launch record derived from the request (option A)
+
+15 November 2026, 22:16 +0300 (from date), lead session b547ef8e. Throughput asked how a job sealed on the instance is launched. The controller, the watchdog and the runner read execution_manifest.json and seal.json from the run folder. The lead decides option (A) under D-667, and Seckin may overrule it.
+1. **The launch record.** At launch, the bound wrapper derives a launch manifest and its seal in the run folder from the request alone: budget, image, candidates, controller binding and asset identity. Its kind is seal_request. It reads no archive and no asset, and builds no project. The request digest is the binding, and the instance re-checks every file against it.
+2. **Why this keeps standing order 85.** The order puts every sealing step on the rented machines. The launch record seals no input: it is written by the controller at launch time, like LAUNCH_INTENT, from a request whose inputs are sealed on the instance. Nothing heavy runs on the laptop.
+3. **Conditions.**
+   - The record's schema is stated in the ROUTE-S-A rule text.
+   - The sealer, the admission check and every reader refuse a seal_request record offered as a sealed bundle. A proof fails when that refusal is removed.
+   - The ledger's seal job line names the instance seal, so order 85's record check reads the instance, not the launch record.
+4. **The other option.** (B) has every reader read the request directly, with no manifest or seal file on the laptop. It costs one more working day, and the route's first use moves from 17 Nov 17:00 to about 18 Nov. If Seckin reads order 85 as "no file named manifest or seal on the laptop", the route is rebuilt to (B).
+- **Rules.** D-667, D-668, D-674, ROUTE-S-A, CONTROLLER-BINDING, standing order 85.
+
+## D-676: any step that could stall on laptop RAM or disk runs on Lambda, decided before it starts (Seckin 22:16)
+
+15 November 2026, 22:16 +0300 (from date), lead session b547ef8e. Seckin's standing rule, recorded as standing order 91 and #298.
+1. **No RAM upgrade is planned.** The 22:14 hardware report had already been written at 22:15; it showed 16 GiB of soldered LPDDR5 with no free slot.
+2. **Placement before each step.** Estimate the step's peak memory and disk before it starts. If it could take free RAM below the floor, or free disk below 30 GiB, it runs on a rented Lambda machine instead of waiting on the laptop. Any machine type is fine, a GPU type included, since those have plenty of RAM. The rule is about RAM and disk, not GPU need.
+3. **Private data stays local.** A step that needs data that must stay on the laptop is named and stays there: the frozen scorer and anything reading benchmark answer keys, role sessions with their held-out items, and the Lambda credential and launch control.
+4. **Cost.** A move of 3 USD or less is pre-approved; above that, ask Seckin. Each move is a loop launch under LOOP-LAUNCH-A: budget guard, ledger, reaper and cap.
+5. **In force from 15 Nov 22:16.** Job seals follow the sealing route (#296, first use 17 Nov 17:00). Other steps use an estimate line written by hand until the tool in #298 exists.
+- **Rules.** D-648, D-659, D-668, D-674, D-675, RESOURCE-ALERT-A, LOOP-LAUNCH-A, GATE-ARM-A, standing orders 85 and 91.
+6. **Clarified by Seckin at 22:17: per step, on demand.** Nothing moves to Lambda in advance, and no flow is migrated. Only the single heavy step goes out: its inputs are sent to a Lambda machine, it runs there, and its result comes back to the laptop. The flow then carries on from the laptop as before. The lists in FOR_SECKIN 22:19 name the kinds of steps that may be sent out when they come up, not steps moved now.
+
+## D-677: the full gate runs tonight with a second one-time laptop seal; the gate's ceiling is 5 USD (Seckin 23:17)
+
+15 November 2026, 23:17 +0300 (from date), lead session b547ef8e. Seckin's answer to FOR_SECKIN 22:44: yes to both questions.
+1. **Why it was asked.** The first Lambda seal job (22:15 to 22:40, 0.5375 USD) sealed no bundle. Route S could not seal arm G: the sealer read the commit time with `git log -1`, which fails on the instance's one-commit tree. Fix 8814936f on lane/merge-1115 reads it from the commit object, with a proof and a neutralisation. The fix changes a bound file, so the gate's job package needs a new seal.
+2. **A second one-time laptop job seal**, of the gate's package only, from gate-1115 at 8814936f. It runs only while free RAM is above 2 GiB. Then come the Lambda seal job and the two G runs in parallel. This is the last laptop exception before the sealing route (#296); D-674 item 3 and standing order 85 hold after it.
+3. **The gate's total ceiling is 5 USD**, the 0.5375 USD already spent included. Seckin chose 5, not the 3.5 proposed. The lane stops the newer G run before 4.95 USD.
+4. **Times.** The gate result, reds classed, about 16 Nov 01:30. The merge into main and the push stay at 16 Nov 11:00.
+- **Rules.** D-667, D-668, D-674, D-676, GATE-ARM-A, ROUTE-S-A, CONTROLLER-BINDING, LOOP-LAUNCH-A, standing order 85.
+
+## D-678: the sealing route's own full gate runs on Lambda on 16 Nov afternoon, total ceiling 4.5 USD, no laptop seal (Seckin 23:36)
+
+15 November 2026, 23:36 +0300 (from date), lead session b547ef8e. Seckin's answer to FOR_SECKIN 23:20: yes.
+1. **What runs.** The route's first real use: one request, sealed on one Lambda instance, seals three arm G bundles (b1, b2, side) of lane/route-s-instance-assets merged onto the new main. The three parts then run in parallel. No laptop seal; D-677 was the last exception.
+2. **Order.** First lane/merge-1115 goes into main (16 Nov 11:00). Then the route branch is merged onto that tip: the plan with conflicts first by 12:00, the merge by 14:00. The fresh checker's findings are fixed before the launch.
+3. **Cost.** The forecast is about 3.1 USD (seal job about 0.60, parts about 0.9, 0.9 and 0.7). The total ceiling is 4.5 USD. The lane keeps a 5-minute running total and stops the newest part before 4.45.
+4. **Times.** Launch about 16 Nov 15:00. The result, reds classed, about 16 Nov 17:00. The route's first use moves from 17 Nov 17:00 to 16 Nov evening: it is this run, and it counts as proven only if the gate passes.
+- **Rules.** D-667, D-668, D-674, D-675, D-677, ROUTE-S-A, GATE-ARM-A, LOOP-LAUNCH-A, standing order 85.
+
+## D-679: a third one-time laptop seal tonight for the gate, both parts rerun on one tree (Seckin 01:13, 16 Nov)
+
+16 November 2026, 01:13 +0300 (from date), lead session b547ef8e. Seckin's answer to FOR_SECKIN 00:33: option (a).
+1. **Why.** b1 failed at boot (0.043 USD). The provider's instance description failed safe_metadata during activation. Its authorization is single use, so it needs a new seal. b2 ran on 8814936f: 184 pass, 9 fail, 4 skip; one new red, 253.
+2. **Check 253's cause**, found at 00:52, commit 42263005. The fixture's expected counts were out of date; the audit's prediction was right. The D-652 re-ask adds calls after the first answers: 17 calls = 14 plus 3 re-asks, 10 first refusals unchanged.
+3. **One tree for the whole gate.** The tree moved to 42263005 after b2 ran. The one laptop seal therefore holds both parts, b1 and b2, sealed at 42263005, and the two run in parallel. That keeps the 02:05 time and keeps the total within Seckin's 5 USD (about 4.2 expected). The lead decided this within the ceiling and reports it.
+4. **Laptop seal only while free RAM is above 2 GiB.** If b1 fails at boot again, there is no further try; the route's gate covers it (D-678).
+5. **Times.** The result, reds classed, about 16 Nov 02:05. Merge into main and push 16 Nov 11:00.
+- **Rules.** D-667, D-674, D-677, D-678, GATE-ARM-A, CONTROLLER-BINDING, LOOP-LAUNCH-A, standing order 85.
+
+## D-680: Opus for code, Sonnet for mechanical work, no Fable, until the weekly reset (Seckin 01:17, 16 Nov)
+
+16 November 2026, 01:17 +0300 (from date), lead session b547ef8e. Recorded as standing order 92.
+1. **Opus:** the lead, and every lane that writes or reviews code. Throughput (the route) stays on Opus. The loop-checker reviews stay on Opus.
+2. **Sonnet:** record and ledger writing, summaries, FOR_SECKIN entries, launching and waiting on jobs, polling and resource logs. From now, each such step the lead hands off goes to a Sonnet agent. The first is the route gate's launch and wait (D-678, about 15:00).
+3. **No cut-over mid-step.** gate-g stays until tonight's gate reds are classed, which is review work. Its remaining waits are idle. Its lane closes after the merge.
+4. **Fable never.** model_use_check proves it at every report.
+- **Rules.** D-667, standing orders 86 and 92.
+
+## D-681: v1.0 gets a table tool for the model: one batched round of fixed Python tools per table (Seckin 01:54, 16 Nov)
+
+16 November 2026, 01:54 +0300 (from date), lead session b547ef8e. Recorded as #299.
+1. **The tool.** It is domain-agnostic and works for any table.
+   - Python still selects the first cells (CELLS-A).
+   - The model may then ask, in ONE batched request (never several rounds), for what else it needs, from a small fixed tool set: get these cells, the difference of two figures, the ratio of two figures. The full set is fixed in the design.
+   - Python executes all the requests at once and returns the results.
+   - The model reasons briefly and gives its verdict through the existing decision rules (settled or leaning, records unchanged).
+2. **Audit.** Every tool request and every result goes into the audit trail.
+3. **Speed by design.** One batched tool round per table, prefix caching, and vLLM where it has passed.
+4. **Scope.** A Shimmer-only change. The bare and cloud arms are not re-run (order 87).
+5. **Order.** No run now. The design is written first, with time and cost, and brought to Seckin after the Wednesday usage reset (18 Nov 11:00), unless it fits the remaining usage without touching tonight's merge. The lead's call at 01:56 is that it does not fit (usage 87%, new steps pause at 92%). Expected: the design on 18 Nov 18:00.
+6. **Place in the plan.** Before the gate set's read, recorded in GATE_ATTEMPTS section 11 as row 2d, next to row 2a (SciTab arithmetic in Python), which it generalises. Seckin said "before step 10"; the lead found no list where that names a step, and asks him.
+- **Rules.** CELLS-A, CHOICE-A, HONEST-OUTPUT-A, JUDGE-AGENT-A, D-642, D-667, D-671, standing orders 87 and 92.
+7. **Modular, by a tool registry (Seckin 01:58).** No table operation is hard-coded.
+   - Each tool is declared in one standard form: name, what it does, inputs, outputs, licence and source. The model reads the declarations and picks from them.
+   - New tools (for example a numeric or statistics library from GitHub or Hugging Face) can be added later without changing the model's prompts or the pipeline code. The table tools are the first entries.
+   - Only the operator adds a tool, and each is vetted: its licence, that it runs locally with no network, and that it is deterministic.
+   - Every call and result is logged in the audit trail.
+   - The model is shown only the tools relevant to the unit, so a small model's list stays short.
+   - The design, with time and cost, covers the registry, its declaration form and the vetting checks.
+
+## D-682: Deletion list approved; his own name stays in the public repo (Seckin 07:13 and 07:14, 16 Nov)
+1. **Deletion (07:13).** Seckin said yes to items 1 to 6 of the FOR_SECKIN 02:17 and 02:48 list. Done at 07:16: 54 project, seal-source and gate-source archives deleted from the scratch folders c4, gate_g/failed_1, a5route, a5route2, k1dev and gate_g/run1 (14.31 GiB, each a single link). The worktrees parse-sweep, audit-fix and neg-parse-fix were removed with git worktree remove, after a check found no junctions and no uncommitted changes; their branches are kept. Records, evidence and collected_evidence archives were kept. Restore: each archive is rebuilt byte-identical from the commit and SHA-256 in its bundle manifest; a worktree comes back with git worktree add. The file list is in the lead's scratch folder as DELETED_2026-11-16.json. Free disk went from 28.55 GiB to 43.92 GiB, and the disk alert was cleared.
+2. **Names (07:14, answer to the 01:30 question on D-650).** The no-names rule covers other people's names and personal folder paths, not Seckin's own name in his own repository. His name stays in the public repo as it is, and the export does not change.
