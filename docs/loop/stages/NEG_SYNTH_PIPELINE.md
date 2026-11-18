@@ -116,7 +116,10 @@ Seckin approved the label-permutation null instead (D-714, 16 November 20:54): `
 
 1. **Role S** (Claude, this account's usage, 0 USD). `seed-base`; per set `draw`; `coverage` (refuses a batch
    below the declared class minimum); each prompt to a tool-less generator call; `assemble` per reply (rejects
-   print problem codes only); a rejected seed's next attempt is the set's next unused seed.
+   print problem codes only); a rejected seed's next attempt is the set's next unused seed. The session names
+   no card path (D-716): the tool finds `<role root>/work/keys/<set>` from `--set` (and one card from
+   `--item <id>`), the role root from SHIMMER_ROLE_S_ROOT or the code checkout's parent, as declared in
+   `config/neg_synth.json` `card_folder` (check 510).
 2. **Reference fingerprint** (the holder of the pilot, development and real items: role N, or the lead for the
    development material it already reads). `neg_synth_dedup.py fingerprint --part pilot=... --part dev=...
    --embed`: hashes and vectors only.

@@ -28,23 +28,29 @@ shared 5-gram between two wordings of one article), assembles the build file, ru
 `build_item` on it and refuses any field of the key that differs from the card's declared key. Meaning (does a
 statement say what its variant says) is role V's labelling, never a word table here (WORDS-A).
 
-Commands (role S, in its own folder; every path written is refused inside the repository):
+Commands (role S, in its own folder; every path written is refused inside the repository). The card folder
+is found by the tool from the set name (D-716): `<role root>/work/keys/<set>`, the role root read from
+SHIMMER_ROLE_S_ROOT or, unset, the parent of this code checkout (role S runs from `<S>/code`), as declared in
+`config/neg_synth.json` `card_folder`. The session names no card path; `--keys` and `--card` stay for the lead's
+side and the fixtures.
 
     seed-base   --out <S>/SEED_BASE.json                     the run's random base, drawn once, never shown
     check-split                                             the split plan's form, its sets and ranges
-    draw        --set dev_1 --seed-base F --keys <S>/keys --briefs <S>/briefs     cards and prompts; counts only
-    assemble    --set dev_1 --card C --prompt P --reply R --set-dir <S>/sets/dev_1
+    draw        --set dev_1 --seed-base F --briefs <S>/briefs   cards and prompts; counts only [--keys DIR]
+    assemble    --set dev_1 --item <item id> --prompt P --reply R --set-dir <S>/sets/dev_1
                 --generator-family claude --model-id <live alias> [--decoding JSON] [--regeneration N]
-    coverage    --keys <S>/keys                               class counts of the drawn cards only
+                                                            [--card C in place of --item]
+    coverage    --set dev_1                                   class counts of the drawn cards only [--keys DIR]
     set-check   --set-dir <S>/sets/dev_1                      D-711: both record kinds held, each item records it
-    select      --set dev_1 --keys <S>/keys/dev_1 --set-dir <S>/sets/dev_1 --dropped <B's check> <label-compare>
+    select      --set dev_1 --set-dir <S>/sets/dev_1 --dropped <B's check> <label-compare>
                 --out <S>/sets/dev_1/KEPT.json                the first `target` items in seed order no screen
-                                                            dropped; counts printed, ids only in --out
+                                                            dropped; counts printed, ids only in --out [--keys DIR]
     label-sheets --set-dir <S>/sets/dev_1 --out <V>/sheets_dev_1.json   what role V labels from: no stance,
                                                             no target article or wording, no red-line mark
-    label-compare --keys <S>/keys --set-dir <S>/sets/dev_1 --labels <V's labels .json> --out <S>/label_compare.json
+    label-compare --set dev_1 --set-dir <S>/sets/dev_1 --labels <V's labels .json> --out <S>/label_compare.json
                                                             role V's labels of every built item against its card:
                                                             counts and kappa printed, dropped ids only in --out
+                                                            [--keys DIR in place of --set]
 
 It prints counts and problem codes only, never a text, a seed or a label. No model is called here.
 """
@@ -54,6 +60,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import random
 import re
 import secrets
@@ -168,6 +175,46 @@ def split_set(cfg, name):
         if s["name"] == name:
             return s
     raise ValueError("no declared set %r" % name)
+
+
+_ITEM_ID = re.compile(r"^syn-[0-9a-f]{16}$")
+
+
+def role_root(cfg, environ=None):
+    """Role S's root (D-716): the declared environment variable when set, else the parent of this code checkout,
+    since role S runs from `<S>/code`. Declared in config/neg_synth.json `card_folder`, never a path in code."""
+    decl = cfg["card_folder"]
+    if decl.get("root_default") != "checkout_parent":
+        raise ValueError("card_folder.root_default declares an unknown default")
+    value = (os.environ if environ is None else environ).get(decl["root_env"], "").strip()
+    return Path(value) if value else ROOT.parent
+
+
+def card_folder(cfg, set_name, environ=None):
+    """The card folder of one declared set: `<role root>/<relative>/<set>` (D-716). A name that is not a declared
+    set is refused, so no other folder can be reached through it."""
+    split_set(cfg, set_name)
+    return role_root(cfg, environ).joinpath(*cfg["card_folder"]["relative"], set_name)
+
+
+def card_path(cfg, set_name, item, environ=None):
+    """One card of a declared set by its item id; an id of another form is refused."""
+    if not _ITEM_ID.match(str(item)):
+        raise SystemExit("refused: not an item id")
+    return card_folder(cfg, set_name, environ) / (item + ".card.json")
+
+
+def _keys_dir(args, cfg, *, must_exist=True):
+    """The explicit --keys folder when given (the lead's side and the fixtures), else the set's declared card
+    folder. A refusal names neither the folder nor any card in it."""
+    if getattr(args, "keys", None):
+        return Path(args.keys)
+    if not getattr(args, "set", None):
+        raise SystemExit("refused: give --set (the card folder is found from it) or --keys")
+    folder = card_folder(cfg, args.set)
+    if must_exist and not folder.is_dir():
+        raise SystemExit("refused: set %s has no card folder under the role root (D-716)" % args.set)
+    return folder
 
 
 def sampler_sha256(root=ROOT):
@@ -955,18 +1002,23 @@ def main(argv=None):
     p = sub.add_parser("draw")
     p.add_argument("--set", required=True)
     p.add_argument("--seed-base", required=True)
-    p.add_argument("--keys", required=True)
+    p.add_argument("--keys")
     p.add_argument("--briefs", required=True)
     p = sub.add_parser("assemble")
-    for f in ("--set", "--card", "--prompt", "--reply", "--set-dir", "--generator-family", "--model-id"):
+    for f in ("--set", "--prompt", "--reply", "--set-dir", "--generator-family", "--model-id"):
         p.add_argument(f, required=True)
+    one = p.add_mutually_exclusive_group(required=True)
+    one.add_argument("--item")
+    one.add_argument("--card")
     p.add_argument("--decoding", default="{}")
     p.add_argument("--regeneration", type=int, default=0)
     p = sub.add_parser("coverage")
-    p.add_argument("--keys", required=True)
+    one = p.add_mutually_exclusive_group(required=True)
+    one.add_argument("--set")
+    one.add_argument("--keys")
     p = sub.add_parser("select")
     p.add_argument("--set", required=True)
-    p.add_argument("--keys", required=True)
+    p.add_argument("--keys")
     p.add_argument("--set-dir", required=True)
     p.add_argument("--dropped", nargs="*", default=[])
     p.add_argument("--out", required=True)
@@ -976,7 +1028,9 @@ def main(argv=None):
     p.add_argument("--set-dir", required=True)
     p.add_argument("--out", required=True)
     p = sub.add_parser("label-compare")
-    p.add_argument("--keys", required=True)
+    one = p.add_mutually_exclusive_group(required=True)
+    one.add_argument("--set")
+    one.add_argument("--keys")
     p.add_argument("--labels", required=True)
     p.add_argument("--set-dir", required=True)
     p.add_argument("--out", required=True)
@@ -1000,6 +1054,7 @@ def main(argv=None):
             raise SystemExit("refused: not a seed base file")
         version, gen = sampler_sha256(), load_generator(cfg)
         drawn = refused = 0
+        keys = _keys_dir(args, cfg, must_exist=False)
         for seed in seeds_for(cfg, args.set, base["base"]):
             try:
                 card = sample_card(seed, cfg, version=version)
@@ -1007,7 +1062,7 @@ def main(argv=None):
                 refused += 1
                 continue
             card["set"] = args.set
-            _write_json(Path(args.keys) / (card["item_id"] + ".card.json"), card)
+            _write_json(keys / (card["item_id"] + ".card.json"), card)
             out = na.outside_repository(Path(args.briefs) / (card["item_id"] + ".prompt.md"))
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(render_prompt(brief_view(card), gen, cfg), encoding="utf-8")
@@ -1015,7 +1070,10 @@ def main(argv=None):
         print("set %s: %d cards drawn, %d seeds refused by the constraints" % (args.set, drawn, refused))
         return 0
     if args.cmd == "assemble":
-        card = _read_json(args.card)
+        source = Path(args.card) if args.card else card_path(cfg, args.set, args.item)
+        if not source.is_file():
+            raise SystemExit("refused: set %s holds no card of that item (D-716)" % args.set)
+        card = _read_json(source)
         if card.get("set") != args.set:
             raise SystemExit("refused: the card was drawn for another set")
         prompt = Path(args.prompt).read_text(encoding="utf-8")
@@ -1040,7 +1098,7 @@ def main(argv=None):
         print("accepted: 1 item written with its provenance row")
         return 0
     if args.cmd == "select":
-        cards = [_read_json(q) for q in sorted(Path(args.keys).glob("*.card.json"))]
+        cards = [_read_json(q) for q in sorted(_keys_dir(args, cfg).glob("*.card.json"))]
         if any(c.get("set") != args.set for c in cards):
             raise SystemExit("refused: a card of another set is in the keys folder")
         dropped = set()
@@ -1063,13 +1121,21 @@ def main(argv=None):
     if args.cmd == "label-compare":
         labels = _read_json(args.labels)
         built = {q.parent.name for q in Path(args.set_dir).glob("build/*/build.json")}
-        cards = [_read_json(Path(args.keys) / (i + ".card.json")) for i in sorted(built)]
+        keys = _keys_dir(args, cfg)
+        missing = [i for i in built if not (keys / (i + ".card.json")).is_file()]
+        if missing:
+            raise SystemExit("refused: %d built item(s) have no card in the card folder" % len(missing))
+        cards = [_read_json(keys / (i + ".card.json")) for i in sorted(built)]
+        if args.set and any(c.get("set") != args.set for c in cards):
+            raise SystemExit("refused: a card of another set is in the card folder")
         out = compare_labels(cards, labels)
         _write_json(Path(args.out), out)
         print(json.dumps({k: out[k] for k in ("items", "kept", "dropped", "mapping", "red_line")}, sort_keys=True))
         return 0
     if args.cmd == "coverage":
-        cards = [_read_json(p) for p in sorted(Path(args.keys).glob("*.card.json"))]
+        cards = [_read_json(p) for p in sorted(_keys_dir(args, cfg).glob("*.card.json"))]
+        if args.set and any(c.get("set") != args.set for c in cards):
+            raise SystemExit("refused: a card of another set is in the card folder")
         cov = coverage(cards, cfg)
         problems = coverage_problems(cov, cfg)
         print(json.dumps(cov, sort_keys=True))

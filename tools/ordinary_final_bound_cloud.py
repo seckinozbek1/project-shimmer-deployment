@@ -12,7 +12,8 @@ are required, and the budget guard decides before the launch request (IV.3).
 --output-dir runs the bundle in a fresh run folder outside it (a sealed run's folder
 must sit outside the repository); without it the run folder is the bundle, as before. A
 sealed bundle inside the repository is refused before anything is written, with or
-without --output-dir or --detach.
+without --output-dir or --detach. --batch with --output-dir is refused at argument parsing
+(open item 155 d): a batch runs in place.
 --detach starts the controller as a detached process that survives this one.
 """
 import argparse
@@ -250,10 +251,28 @@ def parser():
     return p
 
 
+BATCH_OUTPUT_REFUSAL = ('--batch and --output-dir are refused together: only the session bundle is copied to the '
+                        'run folder while the batch names its bundles where they are; run a batch in place')
+
+
+def batch_output_refusal(args):
+    """Open item 155 (d): None, or the one-line refusal of a --bundle launch naming both --batch and --output-dir,
+    given at argument parsing before anything is read or written. run_folder copies the session bundle only, so the
+    batch's first entry (the bundle as sealed) is no longer the session bundle (the run-folder copy) and the
+    controller refused only after the launch was prepared. Mapping every batch entry to a run-folder copy would
+    copy each entry's sealed files and consume each in the run folder; refusing the pair is the smaller correct
+    change, and a batch already runs in place."""
+    if args.bundle is not None and args.batch is not None and args.output_dir is not None:
+        return BATCH_OUTPUT_REFUSAL
+    return None
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(argv)
     require((args.bundle is None) != (args.request is None), 'Name exactly one of --bundle and --request')
+    problem = batch_output_refusal(args)
+    require(problem is None, problem or '')
     if args.request is not None:
         # D-675: the launch record of the request, then the bound preflight on it, then the ordinary launch of
         # the record with --from-request naming its request (re-read and re-checked by execute()).

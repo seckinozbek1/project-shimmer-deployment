@@ -27234,6 +27234,13 @@ def check_474_the_scorer_reports_synthetic_items_apart():
     claims, the bar and the power record) and reports synthetic items apart under `synthetic`, its claims
     indicators and its bar never the bar; cells by record kind (D-711)."""
     return _neg_synth_group("468")
+
+
+def check_510_synthetic_tools_find_the_card_folder_from_the_set():
+    """D-716: with only --set given, neg_synth.py coverage, assemble (--item), select and label-compare read the
+    set's card folder declared in config/neg_synth.json under the role root (SHIMMER_ROLE_S_ROOT, else the code
+    checkout's parent), never another set's; what they print holds no card text, card file name or seed."""
+    return _neg_synth_group("510")
 def _lane_d652_checks():
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
@@ -27373,6 +27380,48 @@ def check_506_a_region_mismatch_never_reaches_the_provider():
     names the HTTP status, digits only, never the body. Runs tools/image_region_checks.py: each neutralised,
     failed, restored, passed."""
     return _image_region(506)
+
+
+def _launch_hazard(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from launch_hazard_checks import run_check
+    return run_check(number)
+
+
+def check_511_a_route_s_workload_without_its_targets_file_is_refused_before_launch():
+    """Open item 155 (a): a seal job was launched (0.45 USD) for workloads with no _review_targets.json and the
+    sealer refused them on the instance. The seal route now refuses a request whose --workload (a folder or a
+    test archive) holds no targets file at its top: write_request before anything is written, and request_error
+    on a written request whose workloads archive lacks it. Runs tools/launch_hazard_checks.py on stand-ins: each
+    neutralised, failed, restored, passed."""
+    return _launch_hazard(511)
+
+
+def check_512_an_unreadable_launch_record_is_named_with_its_restore():
+    """Open item 155 (b): the standing-order check of the launch records still refuses (order 1, unable) when a
+    launch record cannot be read, and now names it with how to restore it: a record folder moved or renamed is
+    named with where it is now and the old name to move it back to; a launch.json with no epoch is restored from
+    the backup. Runs tools/launch_hazard_checks.py on a fixture tree: neutralised, failed, restored, passed."""
+    return _launch_hazard(512)
+
+
+def check_513_a_request_reads_the_inventory_again_after_a_termination():
+    """Open item 155 (c): seal_route.write_request reads the provider inventory again when its observed_at is
+    older than the newest termination line of the ledgers (the controller's or R's), and the job carries the
+    fresh reading, so a request is not refused for an instance the provider has already dropped; a reading taken
+    after the termination is not read again, and a fresh reading still older refuses. Stand-ins only: no
+    provider is reached. Each neutralised, failed, restored, passed."""
+    return _launch_hazard(513)
+
+
+def check_514_a_batch_with_an_output_dir_is_refused_at_parsing():
+    """Open item 155 (d): ordinary_final_bound_cloud.py --bundle with --batch and --output-dir is refused at
+    argument parsing, in one line and before anything is read or written (the controller refused it only after
+    the run folder was made: the batch names the sealed bundle, the session is its run-folder copy); either flag
+    alone is not refused by that rule. Neutralised, failed, restored, passed."""
+    return _launch_hazard(514)
 
 
 CHECKS = [
@@ -28011,6 +28060,8 @@ CHECKS = [
      check_473_role_v_labeller_runner_labels_from_sheets_only),
     ("474 The negotiation advisor scorer reports synthetic items apart from the real headline (D-706, D-707)",
      check_474_the_scorer_reports_synthetic_items_apart),
+    ("510 Role S's tools find the card folder from the set name; the session names no card path (D-716)",
+     check_510_synthetic_tools_find_the_card_folder_from_the_set),
     ("485 Saved ContraDoc answers are read as INFRA-055 keeps them, with exact intervals (D-652)",
      check_485_contradoc_ok_effect_reads_saved_answers_as_infra_055_keeps_them),
     ("486 The negotiation judge is calibrated out of fold, on development items only (D-656)",
@@ -28047,6 +28098,14 @@ CHECKS = [
      check_505_the_sealed_image_is_the_launch_regions),
     ("506 A sealed image of another region is refused before launch; the transport refusal names its HTTP status",
      check_506_a_region_mismatch_never_reaches_the_provider),
+    ("511 A route S workload without its targets file is refused before any job is launched (open item 155 a)",
+     check_511_a_route_s_workload_without_its_targets_file_is_refused_before_launch),
+    ("512 An unreadable launch record is named with how to restore it; the launch is still refused (open item 155 b)",
+     check_512_an_unreadable_launch_record_is_named_with_its_restore),
+    ("513 A seal request reads the provider inventory again when it is older than the last termination (open item 155 c)",
+     check_513_a_request_reads_the_inventory_again_after_a_termination),
+    ("514 --batch with --output-dir is refused at argument parsing in one line (open item 155 d)",
+     check_514_a_batch_with_an_output_dir_is_refused_at_parsing),
 ]
 
 

@@ -876,9 +876,110 @@ class SyntheticRow(NegSynthChecks):
                    lambda: patch.object(ns.sna, "is_headline", lambda key: key["part"] in ns.sna.HEADLINE))
 
 
+class CardFolder(NegSynthChecks):
+    """Check 510 (D-716): with only --set given, coverage, assemble, select and label-compare read the set's
+    declared card folder under the role root, and what they print holds no card text, card file name or seed."""
+
+    SET, DECOY = "pilot_1", "pilot_2"
+
+    def _role(self, tmp):
+        root = Path(tmp) / "role_s"
+        cards = {}
+        for name, seeds in ((self.SET, (515001, 515002, 515003, 515004)), (self.DECOY, (515101, 515102))):
+            folder = root.joinpath(*CFG["card_folder"]["relative"], name)
+            folder.mkdir(parents=True)
+            cards[name] = []
+            for seed in seeds:
+                c = ns.sample_card(seed, CFG, version="fixture")
+                c["set"] = name
+                (folder / (c["item_id"] + ".card.json")).write_text(json.dumps(c), encoding="utf-8")
+                cards[name].append(c)
+        return root, cards
+
+    @staticmethod
+    def _run(argv):
+        import io
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                code = ns.main(argv)
+        except SystemExit as e:
+            code, buf = "refused", io.StringIO(str(e))
+        return code, buf.getvalue()
+
+    @staticmethod
+    def _secrets(cards):
+        """Strings a card holds that no printed line may carry: its id and file name, seed, names and subject."""
+        out = set()
+        for c in cards:
+            out |= {c["item_id"], c["item_id"] + ".card.json", str(c["seed"]), c["structure"]["subject"]}
+            out |= {p["name"] for p in c["structure"]["parties"] if p.get("name")}
+        return out
+
+    def _observe(self):
+        with tempfile.TemporaryDirectory(prefix="neg_synth_cards_") as tmp:
+            root, cards = self._role(tmp)
+            mine = cards[self.SET]
+            printed = []
+            with patch.dict("os.environ", {CFG["card_folder"]["root_env"]: str(root)}):
+                code, text = self._run(["coverage", "--set", self.SET])
+                printed.append(text)
+                cov_ok = code == 2 or code == 0
+                cov_same = cov_ok and json.loads(text.splitlines()[0]) == json.loads(
+                    json.dumps(ns.coverage(mine, CFG), sort_keys=True))
+                set_dir = Path(tmp) / "sets" / self.SET
+                accepted = 0
+                for c in mine:
+                    prompt = Path(tmp) / (c["item_id"] + ".prompt.md")
+                    prompt.write_text(ns.brief_of(c, CFG), encoding="utf-8")
+                    reply = Path(tmp) / "reply.json"
+                    reply.write_text(json.dumps(fixture_reply(c)), encoding="utf-8")
+                    code, text = self._run(["assemble", "--set", self.SET, "--item", c["item_id"], "--prompt",
+                                            str(prompt), "--reply", str(reply), "--set-dir", str(set_dir),
+                                            "--generator-family", "claude", "--model-id", "fixture-model"])
+                    printed.append(text)
+                    accepted += code == 0
+                code, text = self._run(["select", "--set", self.SET, "--set-dir", str(set_dir),
+                                        "--out", str(Path(tmp) / "kept.json")])
+                printed.append(text)
+                built = json.loads(text.splitlines()[0])["built"] if code != "refused" else None
+                labels = {c["item_id"]: {} for c in mine}
+                (Path(tmp) / "labels.json").write_text(json.dumps(labels), encoding="utf-8")
+                code, text = self._run(["label-compare", "--set", self.SET, "--set-dir", str(set_dir), "--labels",
+                                        str(Path(tmp) / "labels.json"), "--out", str(Path(tmp) / "lc.json")])
+                printed.append(text)
+                compared = json.loads(text.splitlines()[0])["items"] if code != "refused" else None
+            default = ns.card_folder(CFG, self.SET, environ={}) == ns.ROOT.parent.joinpath(
+                *CFG["card_folder"]["relative"], self.SET)
+            secrets = self._secrets(cards[self.SET] + cards[self.DECOY])
+            leaks = sorted({s for s in secrets for t in printed if s in t})
+            return {"coverage_of_the_set": cov_same, "assembled": accepted, "selected_built": built,
+                    "compared": compared, "default_root_is_checkout_parent": default, "leaks": len(leaks)}
+
+    EXPECTED = {"coverage_of_the_set": True, "assembled": 4, "selected_built": 4, "compared": 4,
+                "default_root_is_checkout_parent": True, "leaks": 0}
+
+    def test_510_set_alone_reads_the_declared_card_folder(self):
+        real = ns.card_folder
+        decoy = lambda cfg, set_name, environ=None: real(cfg, self.DECOY, environ)
+        self.prove("set_alone_reads_its_declared_card_folder", self._observe, self.EXPECTED,
+                   lambda: patch.object(ns, "card_folder", decoy))
+
+    def test_510_printed_lines_hold_no_card_text_or_name(self):
+        real = ns.coverage
+
+        def leaky(cards, cfg):
+            out = real(cards, cfg)
+            out["items"] = sorted(c["item_id"] + ".card.json" for c in cards)
+            return out
+
+        self.prove("printed_lines_hold_no_card_text_or_name", self._observe, self.EXPECTED,
+                   lambda: patch.object(ns, "coverage", leaky))
+
+
 GROUPS = {"455": (Determinism,), "456": (BriefHoldsNoKey,), "457": (Validator,), "458": (Provenance,),
           "459": (Screens,), "466": (RecordKinds,),
-          "467": (LabellerRunner,), "468": (SyntheticRow,)}
+          "467": (LabellerRunner,), "468": (SyntheticRow,), "510": (CardFolder,)}
 
 
 def check(group=None):

@@ -23,7 +23,11 @@ In development, on the four public benchmarks measured by 31 October 2026 (Contr
 
 ## Where Shimmer is now, and where it is going
 
-This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 15 November 2026.
+This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 18 November 2026.
+
+**Version 1.0 is not released yet.** It waits until the negotiation advisor reaches its written bar on the validation items (standing order 102): on the development set its main measure stands at 0.419 against a floor of 0.60. No final test, release or ablation starts before that.
+
+**Since 15 November.** The full gate ran green on Lambda on the code pushed on 17 November. A development run on two ContraDoc documents showed that the faster inference engine (vLLM) hands the GPU back before every other model loads: every entry reached its end with no failed call, at one server restart of about two minutes per document. Four launch hazards met during the night runs are fixed, each with its own gate check.
 
 **Which code these documents describe.** The code on GitHub's main branch is the loop's merged and checked state, pushed as one snapshot commit (tag `code-2026-11-15-a`) after a pre-push scan. Later code changes are pushed the same way, with their documents (D-488, D-650).
 
@@ -257,7 +261,7 @@ tests whose keys the project had read. They are history, with their dates and ca
 
 ## Limitations
 
-- Version 1.0 is an early release, close to a pre-alpha: expect gaps and changes.
+- Version 1.0 is not yet released (see "Where Shimmer is now"). The current code is a development state, close to a pre-alpha: expect gaps and changes.
 - The cloud model and the bare model were each measured once, on a limited set of items. Later comparisons use those figures, so Shimmer and the two references were not measured on the same items. Re-measuring both on the same items is planned after version 1.1.
 - It is a prototype. Coverage depends on the corpus: Python can check only rules
   whose fields and scope the document and the conventions make usable.

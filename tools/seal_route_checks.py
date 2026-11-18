@@ -1817,6 +1817,8 @@ def request_inputs(tmp, control_files=None, reuse_extra=None):
     work = tmp / "work"
     work.mkdir()
     (work / "a.txt").write_text("a", encoding="utf-8")
+    # The targets file at the workload's top, as the sealer requires (open item 155 a, check 511).
+    (work / "_review_targets.json").write_text('{"targets": []}\n', encoding="utf-8")
     (tmp / "requests.json").write_text(json.dumps({"requests": [{"name": "r0", "argv": ["--workload", str(work)]}]}),
                                        encoding="utf-8")
     private = tmp / "private"
@@ -2478,7 +2480,7 @@ def proof_the_request_command_writes_and_checks_a_request(drv=None):
     import seal_route_driver as driver
     drv = drv or driver
     outcomes = {}
-    for case, free, spoil in (("written", 40, False), ("low disk", 31, False), ("does not check", 40, True)):
+    for case, free, spoil in (("written", 40, False), ("low disk", 11, False), ("does not check", 40, True)):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             prep, reuse, inputs, requests_path, private, root = request_inputs(tmp)

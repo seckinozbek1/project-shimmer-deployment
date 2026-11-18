@@ -1088,7 +1088,7 @@ widely between the fields it has run on.
   and composes conflict, stance and alignment by the plan's rules. The replay pass does not yet run the chain.
   Checks 466 to 468 (`tools/neg_advisor_d711_checks.py`), fixtures and a fake generate.
 <a id="neg-synth-a"></a>
-- NEG-SYNTH-A (standing order 102; D-706, D-707, D-709, D-711, D-714): synthetic negotiation items are made for
+- NEG-SYNTH-A (standing order 102; D-706, D-707, D-709, D-711, D-714, D-716): synthetic negotiation items are made for
   the development sets, the validation set and the pilots only, NEVER for the final test, and every figure on them
   is reported apart from the real items, never pooled. `tools/neg_synth.py` draws each item's card from one seed
   in two random streams: `structure` (what the item shows) and `hidden` (persona, fates, stances, red lines, firm
@@ -1114,8 +1114,14 @@ widely between the fields it has run on.
   A set folder carries its declared set; `refuse_synthetic_in_final` is the final test's guard. The scorer
   (`score_neg_advisor.report`) reads real items alone as the headline, the power record included
   (`is_headline`), and reports synthetic items under `synthetic`, their claims indicators and their bar never the
-  bar. Stage note: docs/loop/stages/NEG_SYNTH_PIPELINE.md. Checks 455 to 459 and 472 to 474
-  (`tools/neg_synth_checks.py`), fixtures only.
+  bar. The card folder is found by the tool from the set name; the session names no card path (D-716):
+  `draw`, `coverage --set`, `assemble --set S --item ID`, `select --set` and `label-compare --set` read
+  `<role root>/work/keys/<set>`, the role root from SHIMMER_ROLE_S_ROOT or, unset, the parent of the code checkout
+  (role S runs from `<S>/code`), declared in `config/neg_synth.json` `card_folder`; only a declared set name and an
+  item id of the sampler's form are accepted, and the explicit `--keys` and `--card` stay for the lead's side and
+  the fixtures. Printed lines carry counts and digests only, never a card's text, file name or seed. Stage note:
+  docs/loop/stages/NEG_SYNTH_PIPELINE.md. Checks 455 to 459, 472 to 474 and 510 (`tools/neg_synth_checks.py`),
+  fixtures only.
 <a id="neg-structure-a"></a>
 - NEG-STRUCTURE-A (Seckin 16 November 2026 20:32; D-664, D-666, D-668 gaps 4 and 6): each item's party
   structure (`two_singles`, `teams`, `one_vs_coalition`, `three_or_more`) is computed by

@@ -86,6 +86,11 @@ class SalvageChecks:
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'fresh')
         self.usage(98, at=now - timedelta(seconds=fresh + 1))
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'stale')
+        # A reading written a moment after the clock read (small negative age) is fresh; far ahead is stale.
+        self.usage(98, at=now + timedelta(seconds=1))
+        self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'fresh')
+        self.usage(98, at=now + timedelta(seconds=instance_reaper.USAGE_CLOCK_SKEW_SECONDS + 1))
+        self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'stale')
 
     def test_salvage_usage_trigger_requests_every_instance_then_reports(self):
         """Trigger (a): usage at 98 percent (the D-529 threshold before the reset). The first pass terminates nothing and writes a request

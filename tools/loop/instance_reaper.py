@@ -161,6 +161,9 @@ USAGE_STOP_EXCEPTION = {'percent': 98, 'until_epoch': 1794988800, 'source': 'Sec
 # moment of decision is "usage unknown, stale by N s": reported, never a trigger. The bound is the
 # measured write gap of the status line while a session works (see the decision recording it).
 USAGE_FRESH_SECONDS = 300
+# A status line written a moment after the reaper read its clock gives a small negative age (18 Nov:
+# -1.1 s read as stale). Up to this many seconds ahead counts as the same moment; further ahead is stale.
+USAGE_CLOCK_SKEW_SECONDS = 60
 SILENCE_MINUTES = 90
 SALVAGE_ITEM_SECONDS = 300
 SALVAGE_ANSWER_SECONDS = 600
@@ -428,7 +431,7 @@ def usage_reading(path=None, now=None):
     age = None if written is None else round(_epoch(now) - written.timestamp(), 1)
     if value is None or age is None:
         state = 'unreadable'
-    elif 0 <= age <= USAGE_FRESH_SECONDS:
+    elif -USAGE_CLOCK_SKEW_SECONDS <= age <= USAGE_FRESH_SECONDS:
         state = 'fresh'
     else:
         state = 'stale'

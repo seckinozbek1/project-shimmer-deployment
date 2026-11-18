@@ -7648,6 +7648,7 @@ Applies from the first turn of the restarted session on the other account. Recor
 3. **Both kinds in every set.** Every set (development, validation, each pilot) holds complete-record and missing-notes items; the bar (NEG_BAR.md) is read on both kinds separately and must pass on both.
 4. **Training later.** First rules and prompts, measured on these items. If that is not enough, a small additional LoRA training on masked-party items, its data strictly apart from the validation set, the pilots and the final test; brought to him with its cost before it runs.
 - **Rules.** D-671, D-706, D-707, D-709, WORDS-A, HONEST-OUTPUT-A, standing orders 102 and 103.
+- Note (17 Nov, order-103 check): recorded at 20:48 from Seckin's words of 20:40; the inbox entry is stamped 20:49.
 
 ## D-712: A floor on the class that matters: conflict-class F1 at least 0.60 beside M1, and the same for M1m and every averaged figure (Seckin 20:49, via SUPERVISOR_INBOX 20:51)
 
@@ -7662,11 +7663,13 @@ Applies from the first turn of the restarted session on the other account. Recor
 - **Not now:** repeated sampling with a majority vote.
 - **Adoption rule.** A method is adopted only if, on the development sets, it moves the figures toward the bar and does not raise the dropped-answer rate; time and USD reported beside it. Each Lambda step within the 5 USD pre-approval. No sealed or running measurement is changed; methods apply before the next seal.
 - **Rules.** D-707, D-708, D-709, D-711, D-712, DECODING-A, ANSWER-FORM-A, standing order 102.
+- Note (17 Nov, order-103 check): recorded at 20:53 from Seckin's words of 20:51; the inbox entry is stamped 20:54.
 
 ## D-714: The synthetic items' cue check uses the label-permutation null, not the majority-class baseline (Seckin 20:54, via SUPERVISOR_INBOX 20:57)
 
 16 November 2026, 20:54 +0300, lead session 74472805. The method's majority-class macro-F1 baseline flags a cue-free fixture with balanced classes (lower bound 0.12 against 0.10), so it would reject batches for being balanced. Seckin approved the label-permutation null instead: `screens.cue.baseline` in config/neg_synth.json becomes `"permutation"`, committed before the check is first used on real synthetic items (lane/neg-synth). A method amendment to the D-706 synthetic-items method.
 - **Rules.** D-706, D-709, D-711.
+- Note (17 Nov, order-103 check): recorded at 20:54 from Seckin's words of 20:54; the inbox entry is stamped 20:57.
 
 ## D-715: Six answers to the 22:05 questions: the bar per party structure, cells optional but recorded, the ContraDoc order, the calibration ban, the 15-document run, the G1 keys (Seckin 22:31, via SUPERVISOR_INBOX 22:34)
 
@@ -7678,8 +7681,92 @@ Applies from the first turn of the restarted session on the other account. Recor
 5. **Yes to the 15-document ContraDoc run** for the "does not contradict" fix, about 3.4 USD, after the re-seal.
 6. **Yes to rebuilding G1's lost answer keys** in a role B session, matched to the recorded digests; the request is written and the start line given to him.
 - **Rules.** D-642, D-652, D-656, D-670, D-704, D-708, D-711, D-712, the 20:32 party-structure instruction, standing order 102.
+- Note (17 Nov, order-103 check): recorded at 22:33 from Seckin's words of 22:31; the inbox entry is stamped 22:34.
 
 ## D-716: Role S's tools may read the cards; the session itself still may not (Seckin, approved 23:16, via SUPERVISOR_INBOX 23:17)
 
 16 November 2026, 23:16 +0300, lead session 74472805. Role S session 1 stopped at 21:43 because its settings' Read deny on `S/work/keys` was also applied to the tool commands that must read the cards. Seckin approved adding exactly one rule to the allow list of `shimmer-roles/S/role_settings_S.json`: `Bash(py -3.12 -X utf8 <USER_HOME>/local/shimmer-roles/S/code/tools/neg_synth.py *)`. Nothing else changes: the deny on the card folder stays, so the session may not open a card itself; only the tool reads them. Added by the lead at 23:16 (one rule added, deny list and every other setting unchanged, checked by comparing the parsed files); the earlier file is kept in the lead's scratchpad as role_settings_S_kept_2317.json. If the deny still wins over the allow at run time, role S reports it and stops again.
 - **Rules.** D-706, D-709, D-711, D-714, NEG-SYNTH-A.
+- Note (17 Nov, order-103 check): recorded at 23:16 from Seckin's words of 23:16; the inbox entry is stamped 23:17, and its read note of 23:17 records the rule as added then, so "Added by the lead at 23:16" above is one minute earlier than the entry it acts on.
+- Amendment (17 Nov, order-103 check): the allow rule did not help: at 00:24 the deny on the card folder outranked it when a command named the folder, and S1 stopped again (FOR_SECKIN 00:35). The tool now finds the card folder from the set name, so no command names it: f65f7bc2 (D-716 tool fix, lane/synth-keys-default), merged as 0e822027, check 510.
+
+## D-717: Until 03:00 the supervisor takes the lead's recommended option on every SORU, within limits (Seckin 00:57, via SUPERVISOR_INBOX 00:58)
+
+17 November 2026, 00:58 +0300, lead session 74472805. Seckin went to sleep and said: until 03:00, go with the recommended options.
+- **Standing word.** For any SORU until 03:00 the lead takes its own recommended option and records it as "recommended path, Seckin's standing word of 00:57".
+- **Not covered, these wait for him in the handoff:** any deletion; spend above 5 USD in one step; publishing anything other than the gate-passed code push already ordered; a change to a sealed measurement; a permission change.
+- **No role start tonight.** No one can press Win+R; no role B or other new role session is planned before 03:00. The start lines for role S (start_s1.cmd, after the D-716 tool fix 0e822027) and role B (start_b_g1keys.cmd, second request) go to the top of the handoff for the morning.
+- **The wrap-up stands:** nothing long started from 02:15; the handoff and START_AFTER_SWITCH.md by 02:45.
+- **Rules.** Standing orders 95, 100, 102; D-716; the 21:52 and 21:59 supervisor orders.
+
+## D-718: The lead may start the approved role-session scripts itself (Seckin 01:51, via SUPERVISOR_INBOX, stamped 01:55)
+
+17 November 2026, 01:52 +0300, lead session 74472805. Seckin approved that the lead starts the role-session scripts in `docs/loop/private/role_starts/` (`start_*.cmd`) itself.
+- **The rule is his.** He runs `role_starts/add_role_start_rule.ps1`, which backs up `<USER_HOME>\.claude\settings.json` and adds one `permissions.allow` rule, `Bash(cmd //c "<USER_HOME>\local\shimmer-deployment\docs\loop\private\role_starts\start_*.cmd")`, and one `autoMode.allow` line. The lead does not edit permission settings.
+- **Use.** After about 02:00, start role S (`start_s1.cmd`) and role B (`start_b_g1keys.cmd`) with exactly that command form. If the rule has not taken effect in the running session, say so in FOR_SECKIN and try no other way around the filter. Both save their state by 02:45 (the 02:40 wrap-up note in each request).
+- **Scope.** Only role sessions he has approved in substance; any new kind of script still needs his word. This partly supersedes D-717's "no role start before 03:00".
+- **Rules.** D-716, D-717; the 21:52 and 21:59 supervisor orders; standing order 100.
+
+## D-719: "Morning" means Wednesday 18 November after 11:00; no Claude usage from 03:00 until then (Seckin 02:01, via SUPERVISOR_INBOX, stamped 02:03)
+
+17 November 2026, 02:02 +0300, lead session 74472805.
+- **No Claude usage** on any account from 03:00 until Wednesday 18 November 11:00 (his own account's reset). Every item left for "the morning" resumes then, on his own account.
+- **The handoff and START_AFTER_SWITCH.md** carry that time. Roles S and B (started 01:55) stop at a clean point from 02:40 and resume from their session logs then (resume note 3 in each request).
+- **Unattended capped Lambda jobs** may run in between; the handoff lists each with its end time and the reaper's state.
+- **Rules.** D-717, D-718; the 21:52 and 21:59 supervisor orders.
+
+## D-720: Turbo mode from 18 November: speed of flow, normal effort (Seckin 10:36 on 17 Nov, via SUPERVISOR_INBOX 10:38); the session resumes on his own account
+
+18 November 2026, 11:14 +0300, lead session a2d949df (Seckin's own account; lock taken from 74472805, whose heartbeat stopped at 03:00 on 17 Nov under D-719).
+- **Standing order 104.** Every ready item starts at once, unchained items run in parallel, heavy or blocking steps go to rented machines straight away, the queue stays full. Turbo is not the highest reasoning setting and never Fable: lead and code lanes Opus medium, mechanical work Sonnet or a script.
+- **Resume checks done.** Both night Lambda jobs have termination lines (route-gate-90c3-part 1.29 USD; night-gpu-release-part2 1.161 USD); the reaper ran at 08:11 UTC, 0 instances listed, total 257.88 USD. Weekly usage 0 percent. Role B G1KEYS_2 DONE (keys rebuilt, digest matched; clearance zero hits). Role S session 1 held at pilot_1 steps 4 and 5 (resume point in its SESSION_LOG).
+- **Rules.** Standing orders 95, 99, 100, 104; D-719.
+
+## D-721: Laptop below both floors at resume; no deletion without Seckin's word; the launch-hazard lane reuses an existing worktree
+
+18 November 2026, 11:24 +0300, lead session a2d949df (first written as 11:40, ahead of the clock; corrected by order 15).
+- **Measured.** Free disk 22.0 GiB at 11:13, 16.0 GiB at 11:31 (floor 30); free RAM 1.0 to 2.9 GiB (floor 2). Since 17 Nov 13:00 the WSL Ubuntu disk file grew to 43 GiB (written 10:00 today); Google Drive's WebView process wrote 22.5 GB and OneDrive 7.4 GB since boot. No loop process holds the space. ALERT.md line and a push sent at 11:31 (RESOURCE-ALERT-A).
+- **Options.** (a) Delete merged lane worktrees now (about 17 GiB under .claude/worktrees); (b) ask Seckin, and meanwhile create no new worktree, clone, download or build; reuse an existing worktree for code work; heavy steps to Lambda. Chosen (b): deletion goes to him (standing orders 84 and 96), and the space eaters are his own apps.
+- **Reversal.** His word on the SORU of 11:32 starts the safe_delete dry run.
+- **Rules.** Standing orders 84, 91, 93, 96; RESOURCE-ALERT-A; H12.
+## D-722: Three standing points from the supervisor's 11:13 to 11:37 notes: the mode's name, deletion absolute, a compliance checker that runs by itself; role start files at medium
+
+18 November 2026, 11:38 +0300, lead session a2d949df.
+- **Order 104 amended (Seckin 11:27):** the mode is written "turbo (low-usage mode)" / "turbo (düşük kullanım düzeni)" in every report and record.
+- **Order 107 (Seckin 11:27; first written as 96a, renumbered so the tablet check reads it):** no deletion without the safe deletion tool, resolved real paths, links removed first, a dry run, a verified off-machine backup, then the list to him with "emin misin?" and his explicit yes.
+- **Order 105 (Seckin 16 Nov 19:19 and 20:56, now on the tablet):** a helper starts only while 2.1 GiB stays free after its measured peak; floor 2 GiB; at most 3 helpers.
+- **Order 106 (Seckin 11:29):** a fresh compliance checker every 2 hours and at every restart, resume and compaction; brief docs/loop/private/compliance/BRIEF.md; dated reports in docs/loop/private/compliance/; BEHIND and BROKEN to the top of FOR_SECKIN and the queue; a second checker samples it daily. Run 1 started about 11:34; in-session schedule every 2 hours at :17. WARNINGS_FROM_SECKIN.md written (84 rows, 11:35).
+- **Role start files** start_n31.cmd (max), start_n33.cmd and start_s1.cmd (high) set to medium; the earlier files kept as *.kept_20261118. Role S restarted by the supervisor at 11:36 from the medium file (pid 4516).
+- **Correction:** the lead ran wsl --shutdown before reading the supervisor's 11:37 note not to (at about 11:30 by the clock); WSL was already stopped; nothing else changed.
+- **Rules.** Standing orders 79, 93, 96, 103, 104; supervisor notes 11:13, 11:29, 11:31, 11:32, 11:37.
+## D-723: Merge the launch-hazard lane with its review's findings left open; re-seal next
+
+18 November 2026, 12:19 +0300, lead session a2d949df.
+- **Fork.** The vekil review of fe5019e1 found one SERIOUS item (check 512 proves a rename race, not the night's lasting refusal, whose cause no record shows) and three MINOR ones. Options: (a) fix all before merging; (b) merge now, record them under open item 155 and issue #302, and fix them in a follow-up lane. Chosen (b): the fixes refuse more, weaken nothing, and every measurement Seckin asked for today waits on the re-seal that this merge unblocks (P19, standing order 104).
+- **Reversal.** Revert the merge commit; the lane branch is kept.
+- **Rules.** Standing orders 16, 28, 104; P10, P19.
+
+## D-724: Seckin's three decisions on the 12:30 batch: no fixed helper count, a PreToolUse command guard, one audit file deleted (Seckin 12:21, via SUPERVISOR_INBOX 12:24)
+
+18 November 2026, 12:24 +0300, lead session a2d949df.
+1. **Helpers:** as many as free RAM allows; the 2 GiB floor holds; heavy work goes to Lambda. Orders 79 and 105 amended (the cap of 3 removed).
+2. **PreToolUse guard:** a hook in the project's .claude settings blocks deletion commands except through tools/loop/safe_delete.py with a recorded yes, reads of the answer keys and role folders, and pushes when the pre-push hook is missing; every block logged. Built by a helper (tools/loop/command_guard.py), tested on dry cases.
+3. **Deleted:** tools/loop/_e_audit_old_ss.py (untracked, made by audit E, identical to session_start.py at 264a6906^), through safe_delete.py, dry run then --execute; logged in docs/loop/private/deletion_log.txt.
+- **Also (12:30 batch K):** order 76's /compact part is void; order 104 wins over order 94 where they clash.
+- **Rules.** Standing orders 79, 93, 96, 104, 105, 107.
+
+## D-725: Role N session 35 builds the prompts files for three development measurements; advice allowance 4,096
+
+18 November 2026, 12:25 +0300, lead session a2d949df.
+- **Why.** The parse sweep (D-663, D-672) and negotiation round 1 M-plain (NEG_ROUND1.md section 6) were blocked since 16 Nov on prompts files only role N can build from its development items; no request had asked for them (external/s05/NIGHT_UNBLOCK_REPORT.md).
+- **Request.** REQUEST_ROLE_N_S35.md (copy in the lead's scratchpad; placed in role N's inputs at 12:25): no new set, no split, no model call, no rented machine; hand-back digests and counts only. Start file docs/loop/private/role_starts/start_n35.cmd (effort medium). Order 90 does not apply: no set is built.
+- **Allowance.** M-plain's advice allowance is 4,096 new tokens (options 2,048 or 4,096; 2,048 is tight for 19 entries; the plan recommends 4,096; reversible by a re-seal).
+- **Rules.** Standing orders 89, 90, 102, 104; D-713, D-715.
+
+## D-726: Laptop floors in route-launch folders lowered so a measurement never waits on laptop RAM or disk (Seckin 12:08, 18 Nov, via SUPERVISOR_INBOX 12:09)
+Written 2026-11-18 12:33 +0300 by the lead (a2d949df).
+- What: in the launch folders' launch.py (external/s05/NIGHT_reason_pilot, external/s05/ROUTE_GATE_90588740), REQUEST_DISK_FLOOR_GIB 32.5 to 12.0, FETCH_DISK_FLOOR_GIB 30.0 to 10.0, MIN_RAM_GIB to 1.2 (2.6 in the pilot folder, 1.4 in the gate folder; the folders live outside git). In tracked code, tools/seal_route_driver.py REQUEST_DISK_FLOOR_GIB 32.5 to 12.0 (order 91's floor; the route's laptop worst case is 2.5 GiB), and the low-disk case in tools/seal_route_checks.py proof_the_request_command_writes_and_checks_a_request moves from 31 to 11 GiB (passes; with the floor neutralised to 10 it fails). The 12:08 order is newer than order 91 and wins for measurements; order 91's own laptop-step rule stands for other work.
+- Why: Seckin's order says laptop RAM or disk below a floor must never again be the reason a measurement waits. A route launch uploads a small source archive and fetches a few MB of evidence; its laptop process is ssh and scp only. The work runs on Lambda.
+- Kept: the 5 USD per-step guard caps, the 4.90 USD watch-stop sum for the three pilot launches (one step, D-692 item 7), the budget guard, ledger and reaper. The laptop-wide floors (2 GiB RAM, 30 GiB disk) still hold for helpers and local work.
+- Also: the CRLF fix commit 90588740 (content-neutral); both folders now point at it. The branch backup ran clean after the pinned scan folder was rebuilt: pushed 91, refused 0, unchanged 229, private (inbox D1 closed).
+- Checker: vekil and records checks by a fresh loop-checker before the launch (orders 16, 46).

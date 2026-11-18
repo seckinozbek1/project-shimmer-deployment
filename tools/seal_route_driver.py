@@ -484,8 +484,9 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
 
 
 # Order 91 (D-678): the route gate's laptop worst case (2.5 GiB: the request, its evidence and the stored
-# projects) over the 30 GiB floor; the request is not written below it.
-REQUEST_DISK_FLOOR_GIB = 32.5
+# projects) over the 30 GiB floor; the request is not written below it. D-726 (Seckin 12:08, 18 Nov): laptop disk
+# below a floor never again makes a measurement wait; the route's laptop worst case is 2.5 GiB, so 12 GiB leaves room.
+REQUEST_DISK_FLOOR_GIB = 12.0
 
 
 def free_gib(folder):

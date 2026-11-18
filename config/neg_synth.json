@@ -51,6 +51,14 @@
     "firm_variant_other_parties_share": 0.20,
     "trade_share": 0.30
   },
+  "card_folder": {
+    "decision": "D-716 (Seckin 16 November 2026 23:16): role S's tools read the cards and the session never does; the tool finds a set's card folder from the set name, so the session names no card path",
+    "root_env": "SHIMMER_ROLE_S_ROOT",
+    "root_default": "checkout_parent",
+    "root_default_note": "unset, the role root is the parent of the code checkout's folder, since role S runs from <role root>/code",
+    "relative": ["work", "keys"],
+    "rule": "a set's cards are read from <role root>/work/keys/<set>, one <item id>.card.json each; only a declared set name is accepted; --keys and --card stay for the lead's side and the fixtures"
+  },
   "record_kinds": {
     "decision": "D-711 (Seckin 16 November 2026 20:40): every set holds complete-record items and missing-notes items; a missing-notes item has one party whose notes are not on record, its key answer not_stated, never the persona",
     "kinds": ["complete", "missing_notes"],

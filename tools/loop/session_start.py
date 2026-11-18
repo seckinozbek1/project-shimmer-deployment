@@ -86,7 +86,18 @@ def standing_orders_block(private=None):
     return '\n'.join(lines)
 
 
+def _utf8_stdout():
+    """The hook's output goes to a pipe, where Windows Python defaults to cp1252, which cannot
+    encode Turkish letters in the standing orders (the 18 Nov startup crash). Write UTF-8."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding='utf-8', errors='replace')
+        except (AttributeError, ValueError):
+            pass
+
+
 def main():
+    _utf8_stdout()
     if '--orders' in sys.argv[1:]:
         print(standing_orders_block())
         return 0
@@ -100,22 +111,37 @@ def main():
     text = state.read_text(encoding='utf-8')
     if '- Status: DONE' in text:
         return 0
+    # Audit H, 18 Nov: a long hook output is seen by its head only, so the current state comes first
+    # and every part is capped; each cap says where the rest is.
     if data.get('source') == 'compact':
         print(compact_reminder(text))
         print()
-    print(standing_orders_block())
-    print()
     print(NOTICE)
     print()
     print('This session id: {}'.format(data.get('session_id') or 'unknown'))
     print()
-    print('## LOOP_STATE.md')
-    print(text)
+    print('## LOOP_STATE.md (head)')
+    print(capped(text, STATE_CAP, 'docs/loop/private/LOOP_STATE.md'))
     handoffs = sorted((PRIVATE / 'handoff').glob('*.md'), key=lambda p: p.stat().st_mtime)
     if handoffs:
-        print('## Newest handoff: ' + handoffs[-1].name)
-        print(handoffs[-1].read_text(encoding='utf-8'))
+        print('## Newest handoff (head): ' + handoffs[-1].name)
+        print(capped(handoffs[-1].read_text(encoding='utf-8'), HANDOFF_CAP,
+                     'docs/loop/private/handoff/' + handoffs[-1].name))
+    print()
+    print(capped(standing_orders_block(), ORDERS_CAP, 'docs/loop/private/STANDING_ORDERS.md'))
     return 0
+
+
+STATE_CAP = 8000
+HANDOFF_CAP = 8000
+ORDERS_CAP = 12000
+
+
+def capped(text, cap, path):
+    """The text up to `cap` characters, with a closing line naming the file to read for the rest."""
+    if len(text) <= cap:
+        return text
+    return text[:cap] + '\n... (cut at {} of {} characters; read {} for the rest)'.format(cap, len(text), path)
 
 
 if __name__ == '__main__':

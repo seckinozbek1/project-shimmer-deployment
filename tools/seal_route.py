@@ -154,6 +154,67 @@ def job_requests(requests, folder, extra=None):
     return out, archive
 
 
+# Open item 155 (a): the sealer refuses a workload without its targets file at the top
+# (prepare_ordinary_final_run.prepare: "The workload names its review targets"). A route S request is refused for
+# it on the laptop, before the request is written and again before it is launched, never on the instance.
+TARGETS_FILE = '_review_targets.json'
+
+
+def _archive_has_targets(stream):
+    try:
+        with tarfile.open(fileobj=stream) as archive:
+            return any(m.isfile() and m.name.removeprefix('./') == TARGETS_FILE for m in archive.getmembers())
+    except (tarfile.TarError, OSError):
+        return False
+
+
+def workload_targets_error(requests):
+    """None when every request's `--workload` (a folder or a test archive, as the sealer reads it) holds the
+    targets file at its top, else the one-line reason naming the request. A request with no --workload seals
+    the sealer's own default workload, which carries one."""
+    for request in requests:
+        argv = list(request.get('argv') or [])
+        for i, value in enumerate(argv[:-1]):
+            if value != '--workload':
+                continue
+            source = Path(argv[i + 1])
+            if source.is_dir():
+                held = (source / TARGETS_FILE).is_file()
+            elif source.is_file():
+                with source.open('rb') as stream:
+                    held = _archive_has_targets(stream)
+            else:
+                held = False
+            if not held:
+                return 'Request %s: its workload holds no %s at its top; the sealer would refuse it on the instance' % (
+                    request.get('name'), TARGETS_FILE)
+    return None
+
+
+def request_targets_error(folder, job):
+    """The same rule on a written request (request_error): each request's `--workload` member of WORKLOADS, a
+    folder's members or an archive member, holds the targets file at its top."""
+    try:
+        with tarfile.open(Path(folder) / WORKLOADS) as stream:
+            members = {m.name: m for m in stream.getmembers()}
+            for request in job.get('requests') or []:
+                argv = list(request.get('argv') or [])
+                for i, value in enumerate(argv[:-1]):
+                    if value != '--workload':
+                        continue
+                    place = argv[i + 1].removeprefix('{ws}/')
+                    if place + '/' + TARGETS_FILE in members:
+                        continue
+                    member = members.get(place)
+                    if member is not None and member.isfile() and _archive_has_targets(stream.extractfile(member)):
+                        continue
+                    return 'Request %s: its workload holds no %s at its top; the sealer would refuse it on the instance' % (
+                        request.get('name'), TARGETS_FILE)
+    except (tarfile.TarError, OSError):
+        return 'The seal request workloads cannot be read'
+    return None
+
+
 def _plain(info):
     info.uid = info.gid = 0
     info.uname = info.gname = ''
@@ -624,24 +685,93 @@ RECORD_FROM_REUSE = ('assets_archive', 'models', 'packages', 'wheels', 'environm
                      'decoding_policy', 'topology', 'schema_version', 'restrictions', 'known_auditor_limitations')
 
 
+def _epoch(text):
+    from datetime import datetime, timezone
+    try:
+        when = datetime.fromisoformat(str(text).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    return (when if when.tzinfo else when.replace(tzinfo=timezone.utc)).timestamp()
+
+
+def last_termination_epoch(ledgers):
+    """The time of the newest termination line in the ledgers that exist (the controller's and the reaper's),
+    or None when none holds one. A line that is not a JSON object is skipped here: the guard judges it."""
+    newest = None
+    for path in ledgers:
+        if path is None or not Path(path).is_file():
+            continue
+        for line in Path(path).read_text(encoding='utf-8').splitlines():
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(row, dict) and row.get('event') == 'termination':
+                when = _epoch(row.get('time_utc'))
+                if when is not None and (newest is None or when > newest):
+                    newest = when
+    return newest
+
+
+def inventory_stale(provider, ledgers):
+    """Open item 155 (c): True when the provider inventory was read before the newest termination line of the
+    ledgers (or carries no readable observed_at while one exists), so an instance it lists may already be gone."""
+    ended = last_termination_epoch(ledgers)
+    if ended is None:
+        return False
+    observed = _epoch((provider or {}).get('observed_at'))
+    return observed is None or observed < ended
+
+
+def live_inventory():
+    """The provider inventory read now, through the one read-only reader (console_cloud_inventory.inventory)."""
+    import console_cloud_inventory
+    from lambda_experiment_provider import LambdaExperiment
+    from ordinary_final_cloud import credential_path
+    return console_cloud_inventory.inventory(LambdaExperiment(credential_path()))
+
+
+def fresh_inventory(inputs, ledgers, reread=None):
+    """The inventory the request is written from: `inputs/provider_inventory.json`, read again from the provider
+    (and written there, so the job carries the same reading) when it is older than the newest termination line,
+    instead of refusing for an instance the provider has already dropped. A fresh reading that is still older is
+    refused."""
+    path = Path(inputs) / 'provider_inventory.json'
+    provider = json.loads(path.read_text(encoding='utf-8'))
+    if not inventory_stale(provider, ledgers):
+        return provider, False
+    provider = (reread or live_inventory)()
+    require(isinstance(provider, dict) and not inventory_stale(provider, ledgers),
+            'The provider inventory read again is still older than the last termination line in the ledger')
+    write(path, provider)
+    return provider, True
+
+
 def write_request(out, source, requests_path, reuse_bundle, inputs, budget, parallel=16, now=None, prep=None,
-                  private=None, r_ledger=None, refusals=None):
+                  private=None, r_ledger=None, refusals=None, reread=None):
     """Write a seal request into the new folder `out` and return it. Reads no asset archive and builds no project
     archive: the asset identity is the reuse bundle's manifest's, the budget the sealer's own rule (budget_fields)
-    for arm S on the given inventory, the controller binding the sealer's own list (CONTROL_FILES)."""
+    for arm S on the given inventory, the controller binding the sealer's own list (CONTROL_FILES). A request whose
+    workload has no targets file is refused before anything is written (open item 155 a); an inventory read before
+    the ledgers' last termination is read again first (155 c; `reread` stands in for the provider read)."""
     import prepare_ordinary_final_run as default_prep
     import instance_reaper
     import loop_budget_guard as guard
     prep = prep or default_prep
     out = Path(out)
     require(not out.exists(), 'A seal request is written into a new folder')
+    requests = json.loads(Path(requests_path).read_text(encoding='utf-8'))
+    require(isinstance(requests, dict) and isinstance(requests.get('requests'), list) and requests['requests'],
+            'The seal requests file lists its requests')
+    problem = workload_targets_error(requests['requests'])
+    require(problem is None, problem or '')
+    ledgers = list((budget or {}).get('ledgers') or []) + [
+        Path(private or instance_reaper.main_private()) / 'budget_ledger.jsonl', Path(r_ledger or instance_reaper.R_LEDGER)]
+    provider, _reread = fresh_inventory(inputs, ledgers, reread)
     out.mkdir(parents=True)
     tree = prep.bound_tree_archive(prep.ROOT, source, out / SEAL_SOURCE)
     commit = prep.git(prep.ROOT, 'rev-parse', source).decode('ascii').strip()
     (out / COMMIT_OBJECT).write_bytes(prep.git(prep.ROOT, 'cat-file', 'commit', commit))
-    requests = json.loads(Path(requests_path).read_text(encoding='utf-8'))
-    require(isinstance(requests, dict) and isinstance(requests.get('requests'), list) and requests['requests'],
-            'The seal requests file lists its requests')
     extra = {'inputs/' + n: Path(inputs) / n for n in ('runtime.candidate.lock', 'provider_inventory.json')}
     listed, _archive = job_requests(requests['requests'], out, extra)
     copies, taken = read_copies(private or instance_reaper.main_private(), r_ledger or instance_reaper.R_LEDGER, now)
@@ -661,7 +791,6 @@ def write_request(out, source, requests_path, reuse_bundle, inputs, budget, para
     frozen = frozen_files(json.loads(prep.git(prep.ROOT, 'show', '%s:config/final_models.json' % commit)), prep.ROOT)
     for name, entry in frozen.items():
         shutil.copyfile(prep.ROOT / entry['path'], out / name)
-    provider = json.loads((Path(inputs) / 'provider_inventory.json').read_text(encoding='utf-8'))
     request = dict(schema=REQUEST_SCHEMA, commit=commit, tree=tree, job=job,
                    assets=dict(sha256=reuse_manifest['assets_archive']['sha256'],
                                bytes=reuse_manifest['assets_archive']['bytes'],
@@ -822,7 +951,7 @@ def request_error(folder, controller_root):
         return 'Controller source changed: ' + ', '.join(moved[:3])
     if (request.get('job') or {}).get('attestation', {}).get('refusals'):
         return 'The seal request attests a standing order that does not hold'
-    return None
+    return request_targets_error(folder, request.get('job') or {})
 
 
 def per_bundle_receipt(bundle, reuse_bundle, reuse_receipt):

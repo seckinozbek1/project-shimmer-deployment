@@ -34,7 +34,8 @@ The registered checkers, and what each reads:
                 on the loop branch) started from the copy (receipt MATCH and used), or recorded a
                 non-empty reason it admits (the first seed of a missing digest; a sealed run);
                 the history since 5 November is reported once; an unreadable launch record is
-                unable to check. Before the landing every launch since 5 November is read.
+                unable to check, named with how to restore it (a moved or renamed record folder:
+                where it is now and its old name to move it back to; open item 155 b). Before the landing every launch since 5 November is read.
   2  API key    every cloud_reference_spend.jsonl close line since D-S106 (9 Nov 14:44 UTC) names
                 a FOR_SECKIN heading with exactly one "Seckin: evet (...)" line under it, no two
                 run chains share a heading, and its key_source is a name of the repository's
@@ -267,18 +268,42 @@ def launch_records(root):
     return sorted(found, key=lambda p: (len(p.parts), p.as_posix()))
 
 
+def _epoch_of(path):
+    """True when the launch record at `path` reads with an epoch."""
+    try:
+        float((_json(path) or {}).get('epoch'))
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def unreadable_record(root, path, listed):
+    """Open item 155 (b): the line naming a launch record that cannot be read, and how to restore it. A record
+    whose folder is gone since it was listed was moved or renamed: it is named, with where a launch record not
+    listed before now sits (a fresh walk), and the way back is to move that folder back to its old name. One that
+    is still there but holds no readable epoch is restored from the backup. The check still refuses either way."""
+    rel = path.parent.relative_to(root).as_posix()
+    if path.is_file():
+        return '%s (its launch.json holds no readable epoch: restore that file from the backup of external/)' % rel
+    moved = [p.parent.relative_to(root).as_posix() for p in launch_records(root) if p not in listed and _epoch_of(p)]
+    where = ('now at %s; ' % ', '.join(moved[:3])) if moved else ''
+    return ('%s (the record folder was moved or renamed: %smove it back to %s, a launch record folder keeps its '
+            'name)' % (rel, where, rel))
+
+
 def image_launches(root, unreadable=None):
     """Every loop launch since 5 November, one per instance (a batch entry's copy of the
     session's launch.json is the same launch), oldest first: (epoch, folder, record). A launch
-    record that cannot be read is added to `unreadable`."""
+    record that cannot be read is added to `unreadable`, with why and how to restore it."""
     seen, out = set(), []
-    for path in launch_records(root):
+    listed = launch_records(root)
+    for path in listed:
         record = _json(path)
         try:
             epoch = float((record or {}).get('epoch'))
         except (TypeError, ValueError):
             if unreadable is not None:
-                unreadable.append(path.parent.relative_to(root).as_posix())
+                unreadable.append(unreadable_record(root, path, set(listed)))
             continue
         if datetime.fromtimestamp(epoch, timezone.utc) < SINCE_LAUNCHES:
             continue
