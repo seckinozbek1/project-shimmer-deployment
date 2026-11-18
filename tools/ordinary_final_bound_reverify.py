@@ -117,16 +117,29 @@ def main(bundle):
     for backend, entry in resolved.items():
         require(entry['kwargs']['do_sample'] is False and entry['kwargs']['num_beams'] == 1, 'Policy not greedy: ' + backend)
     receipt.update(decoding_policy_admitted=resolved)
-    refs = {}
-    with tarfile.open(base / m['assets_archive']['filename']) as archive:
-        for member in archive:
-            if member.name.endswith('/refs/main'):
-                refs[member.name] = archive.extractfile(member).read()
-    require(len(refs) == len(m['models']), 'Ref count differs from the model count')
-    for model in m['models']:
-        name = 'hf_cache/hub/models--' + model['model_id'].replace('/', '--') + '/refs/main'
-        require(refs[name] == cache_ref_bytes(model) and len(refs[name]) == 40, 'Ref is not the exact 40-byte revision: ' + model['model_id'])
-    receipt.update(refs_exact_40_bytes={k: len(v) for k, v in refs.items()})
+    if (m['assets_archive'].get('held_on') or None) == 'filesystem':
+        # D-739: no laptop archive to read; each ref member's sealed digest and size must be the exact 40-byte
+        # revision, and the instance hashes every member against these before anything is extracted.
+        members_in = m['assets_archive']['members']
+        refs = {n: e for n, e in members_in.items() if n.endswith('/refs/main')}
+        require(len(refs) == len(m['models']), 'Ref count differs from the model count')
+        for model in m['models']:
+            name = 'hf_cache/hub/models--' + model['model_id'].replace('/', '--') + '/refs/main'
+            want = cache_ref_bytes(model)
+            require(name in refs and refs[name] == dict(bytes=40, sha256=hashlib.sha256(want).hexdigest()),
+                    'Ref is not the exact 40-byte revision: ' + model['model_id'])
+        receipt.update(refs_exact_40_bytes={k: v['bytes'] for k, v in refs.items()}, assets_held_on='filesystem')
+    else:
+        refs = {}
+        with tarfile.open(base / m['assets_archive']['filename']) as archive:
+            for member in archive:
+                if member.name.endswith('/refs/main'):
+                    refs[member.name] = archive.extractfile(member).read()
+        require(len(refs) == len(m['models']), 'Ref count differs from the model count')
+        for model in m['models']:
+            name = 'hf_cache/hub/models--' + model['model_id'].replace('/', '--') + '/refs/main'
+            require(refs[name] == cache_ref_bytes(model) and len(refs[name]) == 40, 'Ref is not the exact 40-byte revision: ' + model['model_id'])
+        receipt.update(refs_exact_40_bytes={k: len(v) for k, v in refs.items()})
     for name, digest in m['local_control_hashes'].items():
         require(sha(ROOT / name) == digest, 'Controller source changed: ' + name)
     for name, digest in m['support_files'].items():

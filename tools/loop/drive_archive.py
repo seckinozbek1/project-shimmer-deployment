@@ -14,6 +14,9 @@ part already COVERED by a verified Drive archive is skipped unless --force. Each
 - Links are never followed: a junction or symlink is stored as nothing and its path is listed in the log line.
 - Credential-like names (backup_coverage.CRED) and files up to 5 MB holding a key body (backup_records.STRICT)
   are left out and listed by path only; a match is never printed.
+- Files a rule of config/drive_archive_exclusions.json declares regenerable (read at call time: the sealed
+  asset bundles admitted/*/assets.tar, large hard-linked copies of frozen files) are left out and listed with
+  their rule; the evidence and records beside them are kept.
 - The archive is hashed while written and hashed again from Drive; a manifest (path, size, modification
   time, SHA-256 of every member) is written beside it and hashed too.
 - A part of a declared drive-only root (roles/<folder>/..., config/backup_extra_roots.json: the role exchange
@@ -105,6 +108,7 @@ def gather(main, part, patterns, extra=None):
     drive-only root a name the declaration excludes is never opened; it is left out as 'declared out of scope'."""
     root, loose = part_root(main, part, extra)
     prefix = part.rsplit('/', 1)[0] if loose else part
+    rules = cov.archive_exclusions()       # config/drive_archive_exclusions.json, read now
     spec = (extra or {}).get('spec') or {} if cov.drive_only(part) else None
     base_depth = 1
     files, links, left = [], [], []
@@ -133,11 +137,19 @@ def gather(main, part, patterns, extra=None):
                     stack.append((Path(e.path), logical))
             elif cov.credential_name(e.name):
                 left.append((logical, 'credential name'))
+            elif rules and cov.archive_excluded(logical, *size_links(e.path), rules):
+                left.append((logical, cov.archive_excluded(logical, *size_links(e.path), rules)))
             elif patterns and e.stat(follow_symlinks=False).st_size <= SCAN_MAX and key_body(e.path, patterns):
                 left.append((logical, 'key pattern'))
             else:
                 files.append((logical, e.path))
     return files, links, left
+
+
+def size_links(path):
+    """(size, hard link count); os.stat, not the scandir entry, so Windows fills st_nlink."""
+    st = os.stat(path, follow_symlinks=False)
+    return st.st_size, st.st_nlink
 
 
 def key_body(path, patterns):

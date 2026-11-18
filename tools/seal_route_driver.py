@@ -31,6 +31,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -44,7 +45,7 @@ import seal_route as sr  # noqa: E402
 JOB_SET_FLAGS = ('--reuse-assets', '--inputs-from', '--ledger', '--output-dir')
 # D-585, D-099: what the laptop must have free before a heavy step starts: memory, and disk above
 # the standing orders' own floor (standing_orders_check.DISK_FLOOR, read at each gate, never copied)
-# after the step's expected size.
+# after the step's expected size; the admission's steps use ADMIT_DISK_FLOOR_GIB instead (D-726).
 MIN_MEMORY_GB = 2.0
 MIN_DISK_GB = 5.0
 EXPECTED_BYTES = {'seal': 512 * 2 ** 20, 'ordinary_final_bound_reverify.py': 16 * 2 ** 20,
@@ -80,33 +81,71 @@ def resources(disk_path):
                 disk_gb=round(free / 2**30, 2), other_seals=others)
 
 
-def admits(reading, expected_bytes=0):
+def disk_floor_bytes(floor_bytes=None):
+    """The disk floor a gate holds: the one passed (the admission's, D-726), else the D-099 floor read
+    from standing_orders_check now."""
+    if floor_bytes is not None:
+        return int(floor_bytes)
+    import standing_orders_check as orders
+    return orders.DISK_FLOOR
+
+
+def admits(reading, expected_bytes=0, floor_bytes=None):
     """The one reading admits the step: memory, no other seal, and disk free after the step's own
-    expected size at or above the D-099 floor, read from standing_orders_check now."""
+    expected size at or above the floor: the one passed (the admission's, D-726), else the D-099 floor
+    read from standing_orders_check now."""
     import standing_orders_check as orders
     disk = reading.get('disk_bytes', reading['disk_gb'] * 2 ** 30)
+    if floor_bytes is not None:
+        return (reading['memory_gb'] >= MIN_MEMORY_GB and reading['disk_gb'] >= MIN_DISK_GB
+                and reading['other_seals'] == 0 and disk - expected_bytes >= int(floor_bytes))
     return (reading['memory_gb'] >= MIN_MEMORY_GB and reading['disk_gb'] >= MIN_DISK_GB and reading['other_seals'] == 0
             and disk - expected_bytes >= orders.DISK_FLOOR)
 
 
-def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None):
+def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None, floor_bytes=None, expected=None,
+                  wait=True):
     """Gate a heavy step on ONE reading per wait cycle and log that same reading as its start line
     (never a second reading taken after the condition held: the gate and the record are one
-    reading). Returns the reading the step started on."""
+    reading). Returns the start line of the reading the step started on (written to `log` unless it
+    is None). With `wait` False one reading decides: no room is a refusal, never a wait (a gate under
+    the ledger lock never waits, D-726)."""
     import time
     sleep = time.sleep if sleep is None else sleep
     clock = time.time if clock is None else clock
+    expected = EXPECTED_BYTES.get(step, 0) if expected is None else int(expected)
     while True:
         reading = read(disk_path)
-        expected = EXPECTED_BYTES.get(step, 0)
-        if admits(reading, expected):
-            import standing_orders_check as orders
+        if admits(reading, expected, floor_bytes):
             line = dict(reading, step=step, event='start', time_epoch=round(clock(), 3), expected_bytes=expected,
-                        disk_floor_bytes=orders.DISK_FLOOR)
+                        disk_floor_bytes=disk_floor_bytes(floor_bytes))
+            if log is not None:
+                with open(log, 'a', encoding='utf-8') as stream:
+                    stream.write(json.dumps(line, sort_keys=True) + chr(10))
+            return line
+        if not wait and log is not None:
+            # The refusing reading is the gate's record too (follow-up of a14bd4ab): event 'refused'.
+            line = dict(reading, step=step, event='refused', time_epoch=round(clock(), 3), expected_bytes=expected,
+                        disk_floor_bytes=disk_floor_bytes(floor_bytes))
             with open(log, 'a', encoding='utf-8') as stream:
                 stream.write(json.dumps(line, sort_keys=True) + chr(10))
-            return reading
+        sr.require(wait, 'No room for %s under the ledger lock (free %.2f GiB, memory %.2f GiB, %d other seals; floor '
+                         '%.1f GiB after %d bytes): the room read before the lock is gone; admit again'
+                   % (step, reading['disk_gb'], reading['memory_gb'], reading['other_seals'],
+                      disk_floor_bytes(floor_bytes) / 2 ** 30, expected))
         sleep(WAIT_SECONDS)
+
+
+# D-726 (Seckin 12:08, 18 Nov): laptop disk below a floor never again makes a measurement wait. The admission's
+# laptop steps (reverify, preflight) need their expected bytes plus this, not the 30 GiB D-099 floor; and the room
+# is waited for before the budget ledger lock is taken, so a wait never holds every other launch.
+ADMIT_DISK_FLOOR_GIB = 12.0
+ADMIT_STEPS = ('ordinary_final_bound_reverify.py', 'ordinary_final_bound_preflight.py')
+ADMIT_ROOM = 'admission'
+
+
+def admit_floor_bytes():
+    return int(ADMIT_DISK_FLOOR_GIB * 2 ** 30)
 
 
 def plan_requests(plan, sessions, base='.'):
@@ -390,8 +429,109 @@ def budget_reason(manifest, request, live, now_epoch, guard=None):
     return None
 
 
+# Open item 157 (the lead, 18 November 2026 17:33): ROUTE_GATE_e21d4b53's admission was refused at 16:53 by the bound
+# preflight ("No declared instance type offered at its sealed rate; poll again later": the free A10s were taken),
+# and admit.log said only "refused". (a) A refusing step's stdout and stderr tails go to admit.log (this process's
+# stdout) before the refusal is raised, with key-like strings masked. (b) Before the ledger lock, the returned
+# bundles' sealed manifests (read from the verified archive, nothing extracted) are held to the free inventory under
+# their sealed type rule, read-only, every poll_interval_seconds up to wait_limit_minutes (config/admit_capacity_wait
+# .json, read at call time); the lock is taken only once a declared type is offered at its sealed rate.
+TAIL_LINES = 20
+CAPACITY_PHRASE = 'No declared instance type offered at its sealed rate'
+CAPACITY_CONFIG = ROOT / 'config' / 'admit_capacity_wait.json'
+MASKS = (re.compile(r'sk-(?:ant-|proj-)?[A-Za-z0-9_-]{16,}'), re.compile(r'AKIA[A-Z0-9]{16}'),
+         re.compile(r'AIza[A-Za-z0-9_-]{35}'),
+         re.compile(r'(?i)((?:api_key|secret|token|password|credential)\w*\s*[=:]\s*)["\']?[^\s"\']{8,}'))
+
+
+def masked(text):
+    for rx in MASKS:
+        text = rx.sub(lambda m: (m.group(1) if m.groups() else '') + '[masked]', text)
+    return text
+
+
+def write_refusal_tail(step, name, done, stream=None):
+    """The refusing step's last TAIL_LINES lines of stdout and stderr, masked, to admit.log (stdout), flushed."""
+    stream = stream or sys.stdout
+    stream.write('%s refused %s (exit %s); its last %d lines:\n' % (step, name, done.returncode, TAIL_LINES))
+    for label in ('stdout', 'stderr'):
+        lines = (getattr(done, label, '') or '').splitlines()[-TAIL_LINES:]
+        stream.write('  [%s] %s\n' % (label, 'nothing' if not lines else ''))
+        for line in lines:
+            stream.write('    %s\n' % masked(line)[:500])
+    stream.flush()
+
+
+def capacity_settings(path=None):
+    """(poll interval seconds, wait limit minutes) from config/admit_capacity_wait.json; (0, 0) when absent."""
+    p = Path(path or CAPACITY_CONFIG)
+    if not p.is_file():
+        return 0, 0
+    data = json.loads(p.read_text(encoding='utf-8'))
+    return int(data.get('poll_interval_seconds', 0)), float(data.get('wait_limit_minutes', 0))
+
+
+def archived_manifests(run_folder, names):
+    """The returned bundles' sealed manifests read from the controller-verified archive, before the lock; nothing
+    is extracted or written."""
+    import tarfile
+    run_folder = Path(run_folder)
+    record = json.loads((run_folder / 'collection_integrity.json').read_text(encoding='utf-8'))
+    archive = run_folder / 'collected_evidence.tar.gz'
+    sr.require(sr.sha(archive) == record['sha256'], 'The collected evidence is not the archive the controller verified')
+    out = []
+    with tarfile.open(archive) as stream:
+        for name in names:
+            try:
+                member = stream.extractfile('evidence/sealed/%s/execution_manifest.json' % name)
+            except KeyError:
+                continue
+            if member is not None:
+                out.append(json.loads(member.read().decode('utf-8')))
+    return out
+
+
+def live_capacity(manifests):
+    """The bound preflight's own capacity reading, read-only: one free inventory, each manifest's sealed type rule
+    (guard.select_instance, no polling); the refusal text, or None. No provider call when no manifest declares
+    instance candidates."""
+    declared = [m for m in manifests if m.get('instance_candidates')]
+    if not declared:
+        return None
+    import loop_budget_guard as guard
+    from lambda_experiment_provider import LambdaExperiment
+    from ordinary_final_cloud import credential_path
+    types = LambdaExperiment(credential_path()).request('instance-types')['data']
+    for m in declared:
+        try:
+            guard.select_instance(lambda: types, m['instance_candidates'], m['a10_reference_rate'], time, poll_seconds=0,
+                                  type_rule=m.get('type_rule', 'a10_first'))
+        except guard.GuardRefusal as exc:
+            return str(exc)
+    return None
+
+
+def wait_for_capacity(manifests, probe, stream=None):
+    """Poll `probe` before the ledger lock while it refuses for capacity, every interval up to the declared limit;
+    any other answer returns at once (the preflight under the lock decides). Refuses after the limit."""
+    stream = stream or sys.stdout
+    interval, limit_min = capacity_settings()
+    polls = int(limit_min * 60 // interval) if interval > 0 else 0
+    for n in range(polls + 1):
+        why = probe(manifests)
+        if not why or CAPACITY_PHRASE not in why:
+            return n
+        if n == polls:
+            break
+        stream.write('waiting for capacity before the ledger lock (poll %d of %d, every %d s): %s\n'
+                     % (n + 1, polls, interval, why))
+        stream.flush()
+        time.sleep(interval)
+    sr.require(False, 'No capacity within %s minutes before the ledger lock: %s' % (limit_min, why))
+
+
 def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subprocess.run, gate=None, lock=None, unlock=None,
-          request=None, clock=None):
+          request=None, clock=None, capacity=None):
     """The returned bundles of one seal job made laptop bundles, all or none. Bound to the job: the
     run folder's launch intent names the job bundle's manifest; the bundles come only from the
     collected evidence the controller verified; each bundle's manifest and seal digests are the job
@@ -401,7 +541,13 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
     the guard's decision on the current ledgers when other launches wrote lines since the read copy
     (budget_reason, order 99), linked, bound, reverified and preflighted. Only when every bundle passes
     are they moved into `out` in one rename; otherwise nothing is admitted and the staging folder is
-    kept, renamed refused, for the operator."""
+    kept, renamed refused, for the operator. D-726: the room for the laptop steps (their expected bytes
+    plus ADMIT_DISK_FLOOR_GIB) is waited for before the lock is taken, never while it is held; under
+    the lock each step's gate reads once and refuses when the room is gone. A refusal there on memory
+    (under MIN_MEMORY_GB) or on another heavy sealing step running is intended too: the lock is never
+    held through a wait, and the admission is simply run again. Open item 157: before the lock the returned
+    bundles' capacity is polled read-only (wait_for_capacity, config/admit_capacity_wait.json), and a refusing
+    step writes its stdout and stderr tails to admit.log (write_refusal_tail) before the refusal is raised."""
     import loop_budget_guard as guard
     lock = guard.acquire_lock if lock is None else lock
     unlock = guard.release_lock if unlock is None else unlock
@@ -423,6 +569,23 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
         sr.require(problem is None, problem or '')
     own = own_identifiers(run_folder, job_sha, job_bundle)
     sr.require(not out.exists(), 'The admission folder exists already')
+    # D-726: the room for every laptop step of the admission is waited for before the ledger lock, never under
+    # it; under the lock each step's own gate reads once and refuses when the room is gone (step_gate).
+    room = None
+    if steps:
+        if gate is not None:
+            gate(ADMIT_ROOM)
+        else:
+            # The steps' expected bytes for every bundle, plus the collected evidence archive (extracted into the
+            # staging folder under the lock; its compressed size, follow-up of a14bd4ab).
+            archive = Path(run_folder) / 'collected_evidence.tar.gz'
+            evidence = archive.stat().st_size if archive.is_file() else 0
+            room = wait_for_room(ADMIT_ROOM, None, out.parent, read=resources, floor_bytes=admit_floor_bytes(),
+                                 expected=sum(EXPECTED_BYTES.get(s, 0) for s in ADMIT_STEPS) * len(job['requests'])
+                                 + evidence)
+        # Open item 157 (b): capacity for every returned bundle, read-only, before the lock (never under it).
+        wait_for_capacity(archived_manifests(run_folder, [r['name'] for r in job['requests']]),
+                          capacity or live_capacity)
     held = lock(ledger)
     try:
         foreign = []
@@ -441,6 +604,11 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
             rows_by = {r['name']: r for r in result.get('rows') or []}
             bundles = staging / 'bundles'
             bundles.mkdir()
+            if room is not None:
+                with open(staging / 'gate_log.jsonl', 'a', encoding='utf-8') as stream:
+                    stream.write(json.dumps(dict(room, lock='before'), sort_keys=True) + chr(10))
+            step_gate = gate or (lambda name: wait_for_room(name, staging / 'gate_log.jsonl', out.parent, read=resources,
+                                                            floor_bytes=admit_floor_bytes(), wait=False))
             for request in job['requests']:
                 row = rows_by.get(request['name']) or {}
                 source = sealed / request['name']
@@ -464,10 +632,12 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
                 entry.update(sr.admit_returned(target, reuse))
                 entry['binding'] = binding(target, out / request['name'])['manifest_sha256']
                 if steps:
-                    for step in ('ordinary_final_bound_reverify.py', 'ordinary_final_bound_preflight.py'):
-                        (gate or (lambda name: wait_for_room(name, staging / 'gate_log.jsonl', out.parent)))(step)
+                    for step in ADMIT_STEPS:
+                        step_gate(step)
                         done = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools' / step), '--bundle', str(target)],
                                    capture_output=True, text=True)
+                        if done.returncode != 0:
+                            write_refusal_tail(step, request['name'], done)      # open item 157 (a)
                         sr.require(done.returncode == 0, '%s refused %s' % (step, request['name']))
                         entry[step] = done.returncode
                 rows.append(dict(entry, admitted=True))

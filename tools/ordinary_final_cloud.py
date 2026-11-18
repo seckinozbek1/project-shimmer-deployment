@@ -178,7 +178,7 @@ def batch_entries(plan,m,assets,sealed=False):
         b=Path(e['bundle']).resolve()
         em=read(b/'execution_manifest.json');es=read(b/'seal.json')
         # D-675 condition 2: a seal request's launch record is never a batch entry.
-        require(em.get('kind')!=LAUNCH_RECORD_KIND,'A seal request launch record is not a sealed bundle: refused as a batch entry')
+        require(em.get('kind') not in RECORD_KINDS,'A seal request launch record is not a sealed bundle: refused as a batch entry')
         require(es['execution_manifest_sha256']==sha(b/'execution_manifest.json'),'Batch manifest seal mismatch')
         require(read(b/'AUTHORIZED_LOCAL_REVERIFICATION.json')['passed'],'Batch local reverification missing')
         for name,digest in em['support_files'].items():require(sha(b/name)==digest,'Batch support source changed')
@@ -555,6 +555,23 @@ def save_disk_after_evidence(folder,stdout):
 
 # D-675: a seal request's launch record (tools/seal_route.py) carries no asset archive.
 LAUNCH_RECORD_KIND='seal_request_launch_record'
+# D-736, D-739: a one-off asset build's launch record (tools/asset_build.py): no project, no laptop archive either.
+ASSET_BUILD_KIND='asset_build_launch_record'
+RECORD_KINDS=(LAUNCH_RECORD_KIND,ASSET_BUILD_KIND)
+# D-739 (Seckin 15:22): an archive HELD ON THE FILESYSTEM ONLY. The laptop keeps its manifest (file list and
+# SHA-256) and never the bytes; the instance takes the provider-side copy whose name is that digest, hashes it
+# there against the laptop-held digest (the probe) and again after it is in place (archive_integrity), and stops on
+# a mismatch or an absence: never an upload, never a seed, never a silent re-download.
+HELD_ON_FILESYSTEM='filesystem'
+HELD_COPY_REFUSAL='An archive held on the filesystem only is taken from the provider-side copy, checked against the laptop-held SHA-256, and the copy was not used'
+HELD_NO_COPY_REFUSAL='An archive held on the filesystem only needs the declared provider-side copy in its region: no laptop archive exists'
+
+
+def held_on_filesystem(manifest):
+    """True when the sealed manifest declares its asset archive held on the filesystem only (D-739)."""
+    return (manifest.get('assets_archive') or {}).get('held_on')==HELD_ON_FILESYSTEM
+
+
 RECORD_COPY_REFUSAL='A seal request takes the asset archive from the provider-side copy only, and the copy was not used'
 RECORD_NO_COPY_REFUSAL='A seal request launch record needs the declared provider-side copy in its region: no laptop archive exists'
 
@@ -595,9 +612,27 @@ def seal_place(record):
     return 'instance' if record else 'laptop'
 
 
-def record_upload_refusal(record,used,state):
+def payload_extract_command(manifest):
+    """What a launch record unpacks from the verified assets.tar. An asset build (D-736) needs only the wheels
+    (its pinned runtime): it copies assets.tar byte for byte into the new archive and never reads the models, so
+    the model cache (about 18 GB of the reuse archive) is left packed; a seal request unpacks everything."""
+    return 'tar -xf assets.tar wheels' if manifest.get('kind')==ASSET_BUILD_KIND else 'tar -xf assets.tar'
+
+
+def transferred_support(m,no_project):
+    """The files support_transfer sends to the instance: the project archive (unless held in the store or a launch
+    record), the manifest, its seal, the authorization and every sealed support file; nothing else reaches it."""
+    support=['project.tar.gz','execution_manifest.json','seal.json','operator_authorization.json',*m['support_files']]
+    if no_project:support.remove('project.tar.gz')
+    return support
+
+
+def record_upload_refusal(record,used,state,held=False):
     """D-675: None when the assets may come as they do, else why not: a launch record takes the provider-side
-    copy or nothing (no laptop archive exists to upload)."""
+    copy or nothing (no laptop archive exists to upload). D-739: so does a bundle whose archive is held on the
+    filesystem only; its MISSING, MISMATCH, UNREACHABLE or failed copy stops the run."""
+    if held and not used:
+        return HELD_COPY_REFUSAL+': '+str(state)
     if record and not used:
         return RECORD_COPY_REFUSAL+': '+str(state)
     return None
@@ -860,7 +895,8 @@ def execute():
     for name,digest in m['support_files'].items():require(sha(BASE/name)==digest,'Support source changed')
     # D-675: a seal request's launch record carries no project archive and no asset archive; the instance seals
     # the job and takes the assets from the provider-side copy only.
-    launch_record=m.get('kind')==LAUNCH_RECORD_KIND
+    launch_record=m.get('kind') in RECORD_KINDS
+    held_archive=held_on_filesystem(m)
     assets=read(BASE/'assets_transfer_archive.json')
     if launch_record:
         stored=None
@@ -868,7 +904,12 @@ def execute():
     else:
         # #252 item 3: the project archive's bytes here, or held in the store by its fingerprint.
         stored=runner.project_held(BASE,m['source_archive_sha256'])
-        require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
+        if held_archive:
+            # D-739: no laptop archive; the laptop holds the sealed digest, which the instance checks.
+            require(assets['manifest_sha256']==MANIFEST and assets['path'] is None
+                    and assets['sha256']==m['assets_archive']['sha256'],'Transfer archive changed')
+        else:
+            require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
     require(not (BASE/'LAUNCH_INTENT.json').exists(),'Authorization consumed; no launch retry')
     plan=launch_plan()
     workload=admit(m,seal,plan,BASE)
@@ -916,6 +957,9 @@ def execute():
     # region where the declared filesystem is not) is refused here, before any instance exists; it carries no layers.
     require(not launch_record or copy is not None,RECORD_NO_COPY_REFUSAL)
     require(not (launch_record and m.get('layers')),'A seal request launch record carries no image layers')
+    # D-739: the same before any instance exists for an archive held on the filesystem only; no layers either.
+    require(not held_archive or copy is not None,HELD_NO_COPY_REFUSAL)
+    require(not (held_archive and m.get('layers')),'An archive held on the filesystem only carries no image layers')
     copy_receipt=dict(declared=copy is not None,used=False,seeded=False,suspect=False,state=None,
                       filesystem_name=copy['filesystem_name'] if copy else None,
                       path=asset_copy_path(copy['mount'],assets['sha256']) if copy else None)
@@ -1233,8 +1277,7 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         else:raise RuntimeError('SSH not ready')
         remote('python_gate',"/usr/bin/python3.12 -I -S -c 'import sys;assert sys.version_info[:3]==(3,12,3);print(sys.version)'",30)
         remote('fresh_directory','test ! -e '+REMOTE+' && mkdir -p '+REMOTE+'/project',30)
-        support=['project.tar.gz','execution_manifest.json','seal.json','operator_authorization.json',*m['support_files']]
-        if stored or launch_record:support.remove('project.tar.gz')
+        support=transferred_support(m,bool(stored) or launch_record)
         transport('support_transfer',['scp',*options,*[str(BASE/n) for n in support],host+':'+REMOTE+'/'],300)
         prefix='cd '+REMOTE+' && '
         if stored:
@@ -1296,14 +1339,14 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
                     save('asset_copy_receipt.json',copy_receipt)
             if not copy_receipt['used']:
                 # D-675: a launch record has no laptop archive to upload: anything but a used copy stops it.
-                problem=record_upload_refusal(launch_record,copy_receipt['used'],copy_state)
+                problem=record_upload_refusal(launch_record,copy_receipt['used'],copy_state,held_archive)
                 require(problem is None,problem or '')
                 # The v9 path, byte for byte: the same scp invocation whether no copy was
                 # declared or the copy was missing, unreachable, corrupt or unusable.
                 transport('assets_transfer',['scp',*options,str(ROOT/assets['path']),host+':'+REMOTE+'/assets.tar'],10800)
             if launch_record:
                 remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(assets['sha256']+'  assets.tar')+' | sha256sum -c -',300)
-                remote('extract_payload',prefix+'tar -xf assets.tar',900)
+                remote('extract_payload',prefix+payload_extract_command(m),900)
                 return copy_state
             remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(m['source_archive_sha256']+'  project.tar.gz')+' '+shlex.quote(assets['sha256']+'  assets.tar')+' | sha256sum -c -',300)
             if copy and copy_state=='MISSING':

@@ -44,7 +44,11 @@ is given, and carries the file's digest in the result and in the count of reads.
 
 --pass is NAME[:STEPS]=PROMPTS,RUN, repeated for a second file of the same candidate. `base` is the
 base model; any other name is trained, bound to `base` by prompt_id and user_sha256, and its
-checkpoints differ by STEPS. A row's `source` says where its label came from: top_answer, threshold,
+checkpoints differ by STEPS. A pass of several model groups (one launch carrying choice_direct,
+choice_reason_first and choice_stepwise, D-713) is read one group a candidate, named by #GROUP: `base`
+reads the direct group, and a candidate named `reason_first` or `stepwise` reads the group declaring that
+method, the base model with no adapter, bound to `base` by each question's document, item, pair, order and
+text; each carries its dropped-answer figure (reasoning_methods.dropped). A row's `source` says where its label came from: top_answer, threshold,
 tie, refusal or failed. A tie or a failed call is never a label; an item with no prompt is ABSTAIN.
 
 A prompt marked `order_control` asks the same question with its answer lines in another order, on
@@ -77,6 +81,7 @@ import doc_judge  # noqa: E402
 import judge_read  # noqa: E402
 import pair_judge  # noqa: E402
 import passage_pairs  # noqa: E402
+import reasoning_methods as rm  # noqa: E402
 
 BASE = "base"
 DEV_MIX, PERMISSIVE_MIX = "dev_mix", "permissive_mix"     # the two trained candidates, read together
@@ -206,54 +211,104 @@ def open_bar(bar_path, passes, keys, b1_root, source, items_path):
 
 
 def parse_passes(specs):
-    """{name: [{steps, files: [(prompts, run)]}]} from NAME[:STEPS]=PROMPTS,RUN."""
+    """{name: [{steps, group, files: [(prompts, run)]}]} from NAME[:STEPS]=PROMPTS,RUN[#GROUP]. A pass whose
+    prompts file holds several model groups names the one this candidate reads (open item 148 (b)): one
+    launch carries the direct, reason-first and stepwise groups on one machine and session, and each is
+    read as its own candidate from the same pass."""
     out = {}
     for spec in specs:
         head, _, tail = spec.partition("=")
         name, _, steps = head.partition(":")
+        tail, _, group = tail.partition("#")
         prompts, _, run = tail.partition(",")
-        if not (name and prompts and run):
-            raise ValueError("a pass is NAME[:STEPS]=PROMPTS,RUN")
+        if not (name and prompts and run) or (group and not re.fullmatch(r"[a-z0-9_]+", group)):
+            raise ValueError("a pass is NAME[:STEPS]=PROMPTS,RUN[#GROUP]")
         rows = out.setdefault(name, [])
         steps = int(steps) if steps else None
         entry = next((r for r in rows if r["steps"] == steps), None)
         if entry is None:
-            entry = {"steps": steps, "files": []}
+            entry = {"steps": steps, "group": group or None, "files": []}
             rows.append(entry)
+        if entry["group"] != (group or None):
+            raise ValueError("a candidate reads one model group in all its files")
         entry["files"].append((prompts, run))
     if BASE not in out or len(out[BASE]) != 1:
         raise ValueError("one base candidate")
     return out
 
 
-def pass_identity(name, prompts, measurement):
-    """What a pass is: its files' digests and its models. The base has no adapter applied and a
-    trained candidate has one, with its digest, or the pass is refused."""
+# Open item 148 (b): a reasoning method's group is read as a candidate of its own, named by its method, beside
+# the base (the direct group) from the same pass: the base model, no adapter, its group declaring that method.
+def method_candidates():
+    """The method candidates' names: every method reasoning_methods declares but direct, read at call time."""
+    return tuple(m for m in rm.METHODS if m != rm.DIRECT)
+
+
+def candidate_method(name):
+    """The method a candidate's group must declare: its own for a method candidate, direct for the others."""
+    return name if name in method_candidates() else rm.DIRECT
+
+
+def pass_identity(name, prompts, measurement, group=None):
+    """What a pass is: its files' digests and its models (of `group` alone when the candidate names one).
+    The base and a method candidate have no adapter applied and a trained candidate has one, with its
+    digest, or the pass is refused."""
     models = json.loads(Path(measurement).read_text(encoding="utf-8")).get("models") or {}
+    if group is not None:
+        models = {g: m for g, m in models.items() if g == group}
     if not models:
-        raise ValueError("the pass names no model")
+        raise ValueError("the pass names no model" + ("" if group is None else " of group " + group))
     for model in models.values():
         applied, digest = model.get("adapter_applied") is True, model.get("adapter_sha256")
-        if name == BASE and (applied or digest):
-            raise ValueError("the base pass had an adapter applied")
-        if name != BASE and not (applied and re.fullmatch(r"[0-9a-f]{64}", str(digest))):
+        if (name == BASE or name in method_candidates()) and (applied or digest):
+            raise ValueError("the %s pass had an adapter applied" % ("base" if name == BASE else "method"))
+        if name != BASE and name not in method_candidates() and not (applied and re.fullmatch(r"[0-9a-f]{64}", str(digest))):
             raise ValueError("a trained pass has no adapter with a digest")
-    return {"prompts_sha256": _sha(prompts), "measurement_sha256": _sha(measurement),
-            "models": {g: {"model_id": m.get("model_id"), "adapter_sha256": m.get("adapter_sha256")} for g, m in sorted(models.items())}}
+    return dict({"prompts_sha256": _sha(prompts), "measurement_sha256": _sha(measurement),
+                 "models": {g: {"model_id": m.get("model_id"), "adapter_sha256": m.get("adapter_sha256")} for g, m in sorted(models.items())}},
+                **({"group": group} if group is not None else {}))
+
+
+def pass_group(name, value, group):
+    """The model group a candidate reads in one pass, or ValueError: a file of several groups is read only
+    with one named, a named group is one the file's config declares and holds prompts of, and the group's
+    method is the candidate's (candidate_method). None for a one-group file read whole, as before."""
+    held = sorted({p["group"] for p in value["prompts"] if p.get("form") == doc_judge.CHOICE_FORM})
+    if group is None:
+        if len(held) > 1:
+            raise ValueError("the pass holds the groups %s: name the one this candidate reads (NAME=PROMPTS,RUN#GROUP)"
+                             % ", ".join(held))
+        declared = {g["group"]: g for g in value["config"]["models"]}.get(held[0] if held else None) or {}
+    else:
+        if group not in held:
+            raise ValueError("the pass holds no choice prompt of group %s" % group)
+        declared = {g["group"]: g for g in value["config"]["models"]}[group]
+    import reasoning_methods
+    if reasoning_methods.method_of(declared) != candidate_method(name):
+        raise ValueError("candidate %s reads a group of method %s, not %s"
+                         % (name, reasoning_methods.method_of(declared), candidate_method(name)))
+    return group
 
 
 def load(name, entry):
-    """{rows, controls, documents, forms, identity} of a candidate's passes. A row is a prompt with
-    its decision, None for a failed call, and what the pass measured of it; `controls` are the
-    order_control rows, kept apart so that nothing else can read them."""
-    rows, controls, documents, forms, identity = [], [], {}, {}, []
+    """{rows, controls, documents, forms, identity, dropped} of a candidate's passes, of its named group
+    alone when the entry names one (parse_passes). A row is a prompt with its decision, None for a failed
+    call or a refused method step, and what the pass measured of it; `controls` are the order_control rows,
+    kept apart so that nothing else can read them; `dropped` is reasoning_methods.dropped over the group's
+    measurement rows."""
+    import reasoning_methods
+    rows, controls, documents, forms, identity, measured = [], [], {}, {}, [], []
     for prompts, run in entry["files"]:
         value, seen, records = pair_judge.finished_pass(prompts, run)
-        identity.append(pass_identity(name, prompts, Path(run) / doc_judge.MEASUREMENT_FILE))
+        group = pass_group(name, value, entry.get("group"))
+        measurement = Path(run) / doc_judge.MEASUREMENT_FILE
+        identity.append(pass_identity(name, prompts, measurement) if group is None
+                        else pass_identity(name, prompts, measurement, group))
         documents.update(value["documents"])
         forms.update(value["config"]["choice"]["forms"])
+        measured += [r for r in seen.values() if group is None or r.get("group") == group]
         for p in value["prompts"]:
-            if p.get("form") != doc_judge.CHOICE_FORM:
+            if p.get("form") != doc_judge.CHOICE_FORM or (group is not None and p["group"] != group):
                 continue
             row = seen.get(p["prompt_id"]) or {}
             record = records.get(row.get("call_id")) or {}
@@ -261,11 +316,33 @@ def load(name, entry):
                     | {"seconds": row.get("seconds"), "decision": record.get("decision") if record.get("backend_ok") else None})
             kept["undeclared_above_top"] = above_top(kept)
             (controls if p.get("order_control") else rows).append(kept)
-    return {"rows": rows, "controls": controls, "documents": documents, "forms": forms, "identity": identity}
+    return {"rows": rows, "controls": controls, "documents": documents, "forms": forms, "identity": identity,
+            "measured": {r["prompt_id"]: r for r in measured}, "dropped": reasoning_methods.dropped(measured)}
 
 
-def bound(base_rows, rows):
-    """A trained pass is read beside the base only on the same questions."""
+def dropped_on(data, mine):
+    """reasoning_methods.dropped over the measurement rows of `mine` (one benchmark's prompts on a half), as one
+    figure: {prompts, decided, dropped, rate, by_reason}."""
+    import reasoning_methods
+    found = reasoning_methods.dropped([data["measured"][r["prompt_id"]] for r in mine if r["prompt_id"] in data["measured"]])
+    if len(found) > 1:
+        raise ValueError("a candidate's rows hold more than one group")
+    return next(iter(found.values()), {"prompts": 0, "decided": 0, "dropped": 0, "by_reason": {}, "rate": None})
+
+
+def question_key(row):
+    """A question as two groups of one pass both ask it: its document, item, pair, order and text."""
+    return (row["document_id"], row["item_id"], tuple(row.get("pair") or ()), row.get("order"), row["user_sha256"])
+
+
+def bound(base_rows, rows, by_question=False):
+    """A trained pass is read beside the base only on the same questions; a method candidate, whose group
+    numbers its prompts apart in the same pass, by each question's key (question_key), once each."""
+    if by_question:
+        mine, theirs = [question_key(r) for r in rows], [question_key(r) for r in base_rows]
+        if len(set(mine)) != len(mine) or sorted(mine) != sorted(theirs):
+            raise ValueError("the method group does not bind to the base by its questions")
+        return
     if {r["prompt_id"]: r["user_sha256"] for r in base_rows} != {r["prompt_id"]: r["user_sha256"] for r in rows}:
         raise ValueError("the pass does not bind to the base by prompt_id and user_sha256")
 
@@ -617,7 +694,10 @@ def above_top(row):
 def _candidate_a(name, entry, base, benchmark, half, ctx):
     data = load(name, entry)
     rows, forms = data["rows"], data["forms"]
-    if base is not None:
+    if base is not None and name in method_candidates():
+        # A method group refuses order controls (doc_judge.load_prompts): it binds to the base's own questions.
+        bound(base["rows"], rows + data["controls"], by_question=True)
+    elif base is not None:
         bound(base["rows"] + base["controls"], rows + data["controls"])
     documents = {d: ctx["universe"][benchmark][d] for d in half}
     mine = within(rows, benchmark, documents)
@@ -630,6 +710,7 @@ def _candidate_a(name, entry, base, benchmark, half, ctx):
               "read_b": ("refused: decisions not read from float32 logits" if any(r["decision"] and r["decision"].get("logits_dtype") != FLOAT32
                                                                                  for r in rows + data["controls"]) else "admitted: float32 logits"),
               "ties": sum(state(r) == TIE for r in mine), "failed": sum(state(r) == FAILED for r in mine), "refused_prompts": len(refused),
+              "group": entry.get("group"), "dropped": dropped_on(data, mine),
               "prompts_readable": readable, "documents_whole": whole, "undeclared_tokens": undeclared_tokens(mine),
               "order_control": order_shift(mine, data["controls"], forms, benchmark, documents)}
 

@@ -539,9 +539,17 @@ def admit_returned(bundle, reuse_bundle, link=os.link):
     manifest = json.loads((bundle / 'execution_manifest.json').read_text(encoding='utf-8'))
     previous = json.loads((Path(reuse_bundle) / 'execution_manifest.json').read_text(encoding='utf-8'))['assets_archive']
     assets = manifest['assets_archive']
-    require({k: assets.get(k) for k in ('sha256', 'bytes', 'members')} == {k: previous.get(k) for k in ('sha256', 'bytes', 'members')},
+    require({k: assets.get(k) for k in ('sha256', 'bytes', 'members', 'held_on')}
+            == {k: previous.get(k) for k in ('sha256', 'bytes', 'members', 'held_on')},
             'The bundle reuses another asset archive than the reuse bundle')
     target = bundle / assets['filename']
+    if assets.get('held_on') == HELD_ON_FILESYSTEM:
+        # D-739: the archive stays on the filesystem; the laptop keeps the manifest and its digest only.
+        require(not target.exists(), 'An archive held on the filesystem only has no laptop copy')
+        stored = json.loads((bundle / PROJECT_IN_STORE).read_text(encoding='utf-8'))
+        require(stored.get('sha256') == manifest['source_archive_sha256'], "The stored project archive is not the manifest's")
+        return dict(bundle=bundle.name, assets_linked=False, assets_held_on=HELD_ON_FILESYSTEM,
+                    project_in_store=stored['store_name'])
     if not target.exists():
         link(Path(reuse_bundle) / previous['filename'], target)
     require(target.stat().st_size == assets['bytes'], 'Linked asset archive size mismatch')
@@ -679,6 +687,12 @@ RUNNER_FILES = {'ordinary_final_run.py': 'tools/ordinary_final_run.py',
 # the controller, the watchdog and the runner read their usual two files. It is no seal of any input: every input
 # is held by the request's digests, the instance seals the job (instance_job_seal.json) and verifies the assets.
 LAUNCH_RECORD_KIND = 'seal_request_launch_record'
+# D-736: an asset build's launch record (tools/asset_build.py) is a launch record too: never a sealed bundle.
+ASSET_BUILD_KIND = 'asset_build_launch_record'
+ASSET_BUILD_REQUEST_SCHEMA = 'asset-build-request-v1'   # tools/asset_build.py REQUEST_SCHEMA (check 528)
+RECORD_KINDS = (LAUNCH_RECORD_KIND, ASSET_BUILD_KIND)
+# D-739: an archive held on the filesystem only (the laptop keeps its manifest, never its bytes).
+HELD_ON_FILESYSTEM = 'filesystem'
 # The fields a launch record takes from the reuse bundle's manifest: the environment the archive's wheels and
 # models make (ROUTE-S-A rule text states the schema).
 RECORD_FROM_REUSE = ('assets_archive', 'models', 'packages', 'wheels', 'environment', 'runtime_file_hashes',
@@ -829,7 +843,7 @@ def frozen_files(spec, root):
 def refuse_launch_record(manifest, where):
     """D-675 condition 2: a launch record is never a sealed bundle. Every reader that takes a sealed bundle
     (the sealer's reuse, the bound wrapper's --bundle, a batch entry, the admission) refuses one."""
-    require(manifest.get('kind') != LAUNCH_RECORD_KIND,
+    require(manifest.get('kind') not in RECORD_KINDS,
             'A seal request launch record is not a sealed bundle: refused as %s' % where)
 
 
@@ -914,7 +928,7 @@ def record_error(base, request_folder=None):
         manifest = json.loads((base / 'execution_manifest.json').read_text(encoding='utf-8'))
     except (OSError, ValueError):
         return 'The launch record cannot be read'
-    if manifest.get('kind') != LAUNCH_RECORD_KIND:
+    if manifest.get('kind') not in RECORD_KINDS:
         return 'Not a launch record'
     if not (base / REQUEST_FILE).is_file() or sha(base / REQUEST_FILE) != manifest.get('request_sha256'):
         return 'The launch record does not name its request'
@@ -934,6 +948,10 @@ def request_error(folder, controller_root):
         request = json.loads((folder / REQUEST_FILE).read_text(encoding='utf-8'))
     except (OSError, ValueError):
         return 'The seal request cannot be read'
+    if request.get('schema') == ASSET_BUILD_REQUEST_SCHEMA:
+        # D-736: an asset build's request has its own reader (tools/asset_build.py), imported only for one.
+        import asset_build
+        return asset_build.request_error(folder, controller_root)
     if request.get('schema') != REQUEST_SCHEMA:
         return 'Not a seal request'
     present = {p.relative_to(folder).as_posix() for p in folder.rglob('*') if p.is_file()} - {REQUEST_FILE}

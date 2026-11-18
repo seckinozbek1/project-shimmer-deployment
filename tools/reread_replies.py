@@ -289,11 +289,14 @@ def validate(text):
     return {"article": article, "proposal": proposal, "stance": stance}, None
 
 
-def advisor_rows(value, texts, *, measured_audits=None):
+def advisor_rows(value, texts, *, measured_audits=None, composed=None):
     """{schema, prompts_sha256, rows} as neg_advisor.answers_from_texts writes them, each row read by the
     readers above and carrying `drops`. A system advice's audits are matched to the audit prompts the run
     derived (neg_advisor.audit_prompts, the run's own rule, held to the SHA-256 the pass recorded); a piece
-    read here that the run never audited is counted `not_asked` under `audit`."""
+    read here that the run never audited is counted `not_asked` under `audit`. A step-wise prompt (S0) has no
+    reply text: its reply is the one Python composed from its checked steps (`composed`: prompt id to
+    (reply, steps), neg_advisor.stepwise_replies), each refused step counted under `steps` by step and reason,
+    and its audits read and counted the same way."""
     na, _ = _modules()
     config = value["config"]
     rows = []
@@ -301,12 +304,20 @@ def advisor_rows(value, texts, *, measured_audits=None):
         text = texts.get(p["prompt_id"])
         row = {"prompt_id": p["prompt_id"], "group": p["group"], "form": p["form"], "item_id": p["item_id"]}
         if p["form"] == "advice":
-            reply, found = advice(text, p["item"])
+            chain = (composed or {}).get(p["prompt_id"])
+            if chain is None:
+                reply, found = advice(text, p["item"])
+                drops = af.Drops().merge(found)
+            else:
+                reply, drops = chain[0], af.Drops()
+                for s in chain[1]:
+                    if s["refused"]:
+                        drops.add("steps", "%s:%s" % (s["step"], s["refused"]))
+                row.update(method=na.STEPWISE, steps=len(chain[1]))
             row.update(reply=reply)
-            drops = af.Drops().merge(found)
             if p["group"] == "system_advice":
                 audits = {}
-                for d in na.audit_prompts(config, p, text):
+                for d in (na.audit_prompts(config, p, text) if chain is None else na.audit_prompts(config, p, None, reply)):
                     sha, said = (measured_audits or {}).get(d["prompt_id"], (None, None))
                     if sha is not None and sha != d["user_sha256"]:
                         raise ValueError("an audit prompt the pass ran is not the rendering of its advice: %s" % d["prompt_id"])
@@ -343,7 +354,8 @@ def advisor_answers(prompts_path, run_dir, out=None):
             audits[pid] = (row.get("user_sha256"), text)
         else:
             texts[pid] = text
-    result = advisor_rows(value, texts, measured_audits=audits)
+    result = advisor_rows(value, texts, measured_audits=audits,
+                          composed=na.stepwise_replies(value, run_dir, measurement))
     result["models"] = measurement.get("models")
     if out:
         na._write_json(na.outside_repository(out), result)

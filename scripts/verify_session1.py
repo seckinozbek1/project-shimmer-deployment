@@ -27001,7 +27001,9 @@ def check_430_backup_coverage_names_every_uncovered_part():
     of docs/loop/private, output/ and external/ (and each external/s05 folder) as COVERED, STALE or NOT
     COVERED by the private git backup (path and blob id against the records/private tree) and by verified,
     present Drive archives of the logged size; links are recorded and never followed; credential names and
-    held-back files are excluded, never gaps; an irreplaceable gap exits 1. Runs the coverage group of
+    held-back files are excluded, never gaps; an irreplaceable gap exits 1; a file gone between listing and reading
+    is skipped and counted as vanished, never fatal, and a declared not_parts file (config/drive_archive_
+    exclusions.json, the budget ledger's lock) belongs to no part (18 Nov 16:22). Runs the coverage group of
     tools/loop/backup_coverage_checks.py on a temporary checkout, a fake bare repository and a fake Drive
     folder: each proof neutralised, failed, restored and passed."""
     return _backup_coverage_checks().check_coverage()
@@ -27422,6 +27424,207 @@ def check_514_a_batch_with_an_output_dir_is_refused_at_parsing():
     the run folder was made: the batch names the sealed bundle, the session is its run-folder copy); either flag
     alone is not refused by that rule. Neutralised, failed, restored, passed."""
     return _launch_hazard(514)
+
+
+def _replay_methods(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from replay_methods_checks import run_group
+    return run_group(str(number))
+
+
+def check_515_the_stepwise_advice_chain_runs_on_the_replay_pass():
+    """S0 (NEG_ROUND1.md section 6, D-713, REASON-METHODS-A): a system advice group declaring `method: stepwise` in
+    its prompts file's own config runs, through replay_prompts.py's own `run`, neg_advisor.stepwise_advice on the
+    resident model: generated steps within the method's declared allowance, choice steps decided over their
+    declared answers at its declared threshold (CHOICE-A), each answer checked by Python before the next, one
+    reply record a step (the item's last in the pass folder as the prompt's own, the earlier ones under
+    stepwise_steps), the reply composed again from the saved steps by answers and the re-reader, each held to the
+    SHA-256 the pass recorded, the audits derived from the composed reply; off unless declared. Runs
+    tools/replay_methods_checks.py with a fake model: each proof neutralised, failed, restored and passed."""
+    return _replay_methods(515)
+
+
+def check_516_one_replay_of_three_groups_is_read_one_group_a_candidate():
+    """Open item 148 (b): one prompts file holding choice_direct, choice_reason_first and choice_stepwise (one launch,
+    one machine and session) is read by choice_read one group a candidate (NAME=PROMPTS,RUN#GROUP): a file of
+    several groups is refused read whole, a method candidate reads only the group declaring its method on the base
+    model with no adapter, binds to the base by each question, and carries its own dropped-answer figure. Runs
+    tools/replay_methods_checks.py with a fake model: each proof neutralised, failed, restored and passed."""
+    return _replay_methods(516)
+
+
+def check_517_a_ready_launch_step_launches_in_the_same_move():
+    """Seckin 18 Nov 13:40 ("Bekletilmesin"): tools/loop/launch_chain.py reads each launch folder's chain.json and
+    launches every step whose prerequisites are done, preflight first (a failure alerts and launches nothing), one
+    launch at a time against the budget ledger lock (a GuardRefusal is not a launch and is retried), a request
+    only on a quiet ledger with its seal at once (a stale request renamed aside, never deleted), under a lock no
+    second pass passes; the watchdog alerts and starts one pass for a step ready over 5 minutes. Against double
+    launches (review of 393a1d37): status and ledger read again right before each launch, a launch_started record
+    before the call, launching and unconfirmed steps never relaunched, a GuardRefusal read only from the step's
+    own log after the launch began, only the chain's own request renamed, on a non-zero stale exit. Runs
+    tools/loop/launch_chain_checks.py on fixture folders with a fake launch.py, no provider call: each proof
+    neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from launch_chain_checks import run_all
+    return run_all()
+
+
+def check_518_mplain_advice_allowance_is_a_declared_config_value():
+    """D-725 (lane/mplain-fix2): M-plain's advice allowance is declared in benchmark/baselines/neg_advisor_prompt.json
+    as advice.methods.plain.max_new_tokens (4,096) and read by neg_advisor.advice_allowance when a prompt is built
+    and again when it is loaded: the system's advice under the plain method carries it, reason_first carries its own
+    equal advice.methods.reason_first.max_new_tokens (4,096, D-740), B1 and stepwise keep advice.max_new_tokens
+    (2,048; stepwise's per-step 512 unchanged), another declared figure is the prompt's figure, check_config refuses a
+    figure that is not a positive integer, and a prompts file whose allowance differs from its config is refused. The
+    replay pass's reader and rows carry the prompt's figure. Runs tools/replay_methods_checks.py with a fake model:
+    each proof neutralised, failed, restored and passed."""
+    return _replay_methods(518)
+
+
+def check_519_the_watchdog_alerts_a_due_issue_update_and_unsynced_commits():
+    """Seckin 18 Nov 13:53: tools/loop/sync_watch.py, run by the 15-minute watchdog, alerts "issue update due: D-xxx"
+    when a decision or verified result over 60 minutes old has no GitHub issue update after it (gh called for the
+    project origin only), when commits on the lead tip are on no backup-private ref for over 2 hours, and when the
+    newest green gate's commit is not on origin/main an hour after the gate; the private and public remotes are
+    read apart and nothing is fetched or pushed. Runs tools/loop/sync_watch_checks.py with git and gh faked: each
+    proof neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from sync_watch_checks import run_all
+    return run_all()
+
+
+def check_520_role_v_labelling_rides_the_replay_pass_and_is_read_from_evidence():
+    """Seckin 18 November 2026 14:20 (D-706 item 1, NEG-SYNTH-A): role V's blind labelling job runs on Lambda as a
+    sealed replay pass. tools/neg_synth_label.py build-pass holds each sheets file to the SHA-256 role S handed over,
+    refuses a sheet carrying an answer, and renders every question on the laptop into a neg-synth-label-pass-v1
+    file the sealer's reader counts; replay_prompts.py hands it to benchmark/baselines/neg_synth_label_pass.py,
+    which resolves the declared OLMo labeller from the sealed cache alone (not sealed or not loadable passed over
+    and counted, other terms refused, a Qwen or dated candidate refused), decodes greedily and leaves one reply
+    record a prompt; read-pass reads each set's labels from the collected evidence (a reply that differs from its
+    recorded digest refused) and prints counts only. Runs tools/neg_synth_label_pass_checks.py with a fake model and
+    the invented cards of tools/neg_synth_checks.py: each proof neutralised, failed, restored and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_synth_label_pass_checks import run_group
+    return run_group("520")
+
+
+def _neg_synth_review(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_synth_review_checks import run_group
+    return run_group(number)
+
+
+def check_522_the_labeller_confidence_is_read_at_the_deciding_token():
+    """D-736: each label records the labeller's probability over the declared answer set at the deciding token
+    (CHOICE-A's bind and probabilities on the generation's own logits, no extra pass): the step whose decoded prefix
+    ends with the field's key, two answers sharing a first token refused, never guessed; the stance's top
+    probability is the label's confidence, held to its recorded digest, read back by read-pass into role V's
+    confidence file and never printed. tools/neg_synth_review_checks.py: each proof neutralised, failed, restored
+    and passed."""
+    return _neg_synth_review("522")
+
+
+def check_523_seckins_blind_review_is_drawn_batched_and_read_into_counts():
+    """D-736, D-739: role V draws about 50 positions uniformly (seeded, the seed recorded) and about 150 of the
+    lowest confidence, in a seeded shuffled order; writes them for the supervisor in batches of 10 (a short id,
+    the text, every field's answers numbered; no labeller label, probability or group); reads the supervisor's
+    answers by option number (a number no option has, an id outside its batch, another version of a batch
+    refused) and writes counts only for the lead, his label replacing the labeller's on the low group alone.
+    Fixtures only: each proof neutralised, failed, restored and passed."""
+    return _neg_synth_review("523")
+
+
+def check_524_no_label_is_reused_as_a_few_shot_example_in_the_labeller_prompt():
+    """D-736: no few-shot reuse of his labels in OLMo's prompt. The questions are the same bytes whether or not
+    his answers or reviewed labels lie beside the sheets, and a template whose example carries a value, or names
+    a slot render() does not fill from the sheet, is refused (neg_synth_label.assert_no_shots). Each proof
+    neutralised, failed, restored and passed."""
+    return _neg_synth_review("524")
+
+
+def _asset_build(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from asset_build_checks import run_group
+    return run_group(number)
+
+
+def check_525_an_asset_build_declares_one_model_and_reaches_only_its_hub_hosts():
+    """D-736: a one-off asset build may reach the network only to fetch the one model its declaration names (a 40-hex
+    revision, every file with its size and one hub pin, hub host suffixes, the reuse archive it builds on; anything
+    else refused). During the fetch a lookup for any other host, and a connection to an address no declared host
+    gave, are refused and recorded; after it the run's network is denied. tools/asset_build_checks.py, fake
+    lookups and connections: each proof neutralised, failed, restored and passed."""
+    return _asset_build("525")
+
+
+def check_526_the_asset_build_adds_the_pinned_model_and_places_the_archive_once():
+    """D-736, D-739: every fetched file held to its size and pin; the new archive is the reuse archive byte for byte
+    plus the model's refs and snapshot members, placed on the file system under its digest once and never over
+    other bytes; the laptop's admission writes a manifest-only reuse bundle (no archive, held on the filesystem)
+    and refuses a receipt of another declaration; the sealer takes the model only with the explicit declaration.
+    Fixture archives: each proof neutralised, failed, restored and passed."""
+    return _asset_build("526")
+
+
+def check_527_an_archive_held_on_the_filesystem_is_checked_by_its_digest_and_never_uploaded():
+    """D-739 (Seckin 15:22): the real controller against the controller checks' fakes, for a bundle whose archive is
+    held on the filesystem only. With the copy matching the laptop-held SHA-256 it is used and hashed again on the
+    instance before the workload; a MISSING copy, a copy whose hash differs, and an archive failing the instance's
+    own hash stop the run with no upload, no seed and no workload; no declared copy refuses before any instance.
+    Neutralised (the controller treating it as an ordinary bundle), the run uploads and seeds: it fails."""
+    return _asset_build("527")
+
+
+def check_528_the_asset_build_record_and_held_bundles_are_admitted_as_declared():
+    """D-736, D-739: the asset build's launch record passes the runner's workload admission and is refused as a
+    sealed bundle; its request is refused for a changed or extra file; a returned bundle whose archive is held on
+    the filesystem is admitted with no laptop archive and one naming another archive is refused. Each proof
+    neutralised, failed, restored and passed."""
+    return _asset_build("528")
+
+
+def check_521_the_admission_waits_for_room_before_the_ledger_lock():
+    """D-726 (Seckin 12:08, 18 Nov; the parse sweep admission of 18 Nov 14:19): tools/seal_route_driver.py admit gates
+    its laptop steps (reverify, preflight) on their expected bytes plus ADMIT_DISK_FLOOR_GIB (12 GiB), not the 30 GiB
+    D-099 floor; it waits for that room before it takes the budget ledger lock, and under the lock a step whose room
+    is gone is refused at once (nothing admitted, the staging kept as refused, the lock released), never waited for,
+    its refusing reading written as an event 'refused' gate line; the room before the lock counts the collected
+    evidence archive; a refusal on memory under the lock is intended. Open item 157: a refusing step's stdout and
+    stderr tails (masked) reach admit.log before the refusal, and the returned bundles' capacity is polled read-only
+    before the lock up to config/admit_capacity_wait.json's limit.
+    Runs tools/admit_floor_checks.py on the route S stand-ins: each proof neutralised, failed, restored and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from admit_floor_checks import run_check
+    return run_check()
+
+
+def check_529_an_unacknowledged_role_hand_back_alerts_after_10_minutes():
+    """The lead 18 Nov 16:05 (N35 done 12:39 and N36 done 14:17 waited over an hour): tools/loop/handback_watch.py, run by
+    the 15-minute watchdog, lists the *_DONE.json and *_HANDBACK.json names and modification times in the role
+    exchange folders config/handback_watch.json declares (roles root through its roots_location, never typed in code;
+    no file opened, no junction followed) and writes ALERT.md "role hand-back not taken up: <name> since <time>" once
+    per file and version for each one older than 10 minutes that docs/loop/private/handback_ack.json does not
+    acknowledge at or after its time. Runs tools/loop/handback_watch_checks.py on fixtures: each proof neutralised,
+    failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from handback_watch_checks import run_all
+    return run_all()
 
 
 CHECKS = [
@@ -28106,6 +28309,36 @@ CHECKS = [
      check_513_a_request_reads_the_inventory_again_after_a_termination),
     ("514 --batch with --output-dir is refused at argument parsing in one line (open item 155 d)",
      check_514_a_batch_with_an_output_dir_is_refused_at_parsing),
+    ("515 The step-wise advice chain runs on the replay pass, each step checked by Python (S0, D-713)",
+     check_515_the_stepwise_advice_chain_runs_on_the_replay_pass),
+    ("516 One replay of three choice groups is read one group a candidate (open item 148 (b))",
+     check_516_one_replay_of_three_groups_is_read_one_group_a_candidate),
+    ("517 A ready launch step launches in the same move, one at a time, preflight first (Seckin 18 Nov 13:40)",
+     check_517_a_ready_launch_step_launches_in_the_same_move),
+    ("518 M-plain's advice allowance 4,096 is a declared config value read at build and load (D-725)",
+     check_518_mplain_advice_allowance_is_a_declared_config_value),
+    ("519 The watchdog alerts a due issue update, unbacked commits and a green gate not on origin (Seckin 18 Nov 13:53)",
+     check_519_the_watchdog_alerts_a_due_issue_update_and_unsynced_commits),
+    ("520 Role V's labelling rides the sealed replay pass and its labels are read from the fetched evidence (D-706)",
+     check_520_role_v_labelling_rides_the_replay_pass_and_is_read_from_evidence),
+    ("521 The seal admission waits for its room (expected bytes plus 12 GiB) before the ledger lock, never under it (D-726)",
+     check_521_the_admission_waits_for_room_before_the_ledger_lock),
+    ("522 The labeller's confidence is read at the deciding token over the declared answers (D-736)",
+     check_522_the_labeller_confidence_is_read_at_the_deciding_token),
+    ("523 Seckin's blind review is drawn, batched for the supervisor and read into counts only (D-736, D-739)",
+     check_523_seckins_blind_review_is_drawn_batched_and_read_into_counts),
+    ("524 No label is reused as a few-shot example in the labeller's prompt (D-736)",
+     check_524_no_label_is_reused_as_a_few_shot_example_in_the_labeller_prompt),
+    ("525 An asset build declares one model and reaches only its hub hosts, during the fetch alone (D-736)",
+     check_525_an_asset_build_declares_one_model_and_reaches_only_its_hub_hosts),
+    ("526 The asset build adds the pinned model and places the archive once under its digest (D-736, D-739)",
+     check_526_the_asset_build_adds_the_pinned_model_and_places_the_archive_once),
+    ("527 An archive held on the filesystem is checked by its laptop-held digest and never uploaded (D-739)",
+     check_527_an_archive_held_on_the_filesystem_is_checked_by_its_digest_and_never_uploaded),
+    ("528 The asset build record and held bundles are admitted as declared (D-736, D-739)",
+     check_528_the_asset_build_record_and_held_bundles_are_admitted_as_declared),
+    ("529 An unacknowledged role hand-back alerts after 10 minutes, names and times only (the lead 18 Nov 16:05)",
+     check_529_an_unacknowledged_role_hand_back_alerts_after_10_minutes),
 ]
 
 

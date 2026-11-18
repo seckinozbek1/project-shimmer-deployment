@@ -143,7 +143,10 @@ B1 0.193). The cloud reference meets only M4's `kept` floor (0.75): conflict F1 
      and the alignment by the plan's rule. This folds in L2 (the stance of each position) and L3 (the open
      point, which is M10's class and drives M4's stance).
   The `stepwise` chain runs through an injected `ask`. The replay pass has no sequential chain yet: building
-  it as derived prompts in rounds (as the audits are derived) is step S0 below.
+  it as derived prompts in rounds (as the audits are derived) is step S0 below. S0 built by lane/replay-methods
+  (18 November 2026, check 515): neg_advisor.run asks the chain on the resident model, one prompt's steps in
+  order (generated steps within the method's declared `max_new_tokens`, 512; choice steps at its declared
+  `choice_threshold`, 0), one reply record a step, and `answers` composes the reply again from the saved steps.
 
 ### Lambda measurement plan for D-713 (development sets only; nothing launched; each step at most 5 USD)
 
@@ -159,6 +162,12 @@ scripts/schema_decoding.py, benchmark/baselines/neg_advisor.py and neg_advisor_p
 
 The development sets: the pilot (24 items, development since D-695) and at least one more (D-710 item 2, two
 sets for any adoption); the new sets need items of both record kinds (D-711 item 3).
+
+M-plain's allowance (D-725, 18 November 2026): 4,096 new tokens, declared as `advice.methods.plain.max_new_tokens`
+in neg_advisor_prompt.json and read by `neg_advisor.advice_allowance` when a prompt is built and loaded (check 518);
+reason_first has the same 4,096 as `advice.methods.reason_first.max_new_tokens` (D-740), so the methods are compared
+to M-plain at equal allowances; B1 and stepwise keep `advice.max_new_tokens` (2,048), stepwise its per-step 512.
+Fix 2 is commit 55d9c840.
 
 **Adoption rule (D-713, D-710):** a method is adopted only if, on at least two development sets, it moves the
 bar figures and class floors toward the bar on both record kinds, lowers none beyond its interval, and does not

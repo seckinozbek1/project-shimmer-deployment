@@ -1,0 +1,64 @@
+{
+ "schema": "asset-build-declaration-v1",
+ "decision": "D-736",
+ "purpose": "Role V's blind labeller (NEG-SYNTH-A, D-706 item 1): allenai/OLMo-2-1124-7B-Instruct, Apache-2.0 and ungated, the first declared labeller candidate the sealed transformers 4.51.3 loads (olmo2); fetched once on Lambda into a new archive that stays on the Lambda file system (D-739). Pins read from the hub's public tree of this revision on 18 November 2026: LFS SHA-256 for the weights, git blob SHA-1 for the rest.",
+ "model": {
+  "model_id": "allenai/OLMo-2-1124-7B-Instruct",
+  "revision": "470b1fba1ae01581f270116362ee4aa1b97f4c84",
+  "files": {
+   "README.md": {
+    "bytes": 9345,
+    "git_sha1": "b4d819de309765363628ff44baf3a43cf63c9c6f"
+   },
+   "config.json": {
+    "bytes": 679,
+    "git_sha1": "a8fc7bfaff3a137d9c0739db1c6e95aad8ebef18"
+   },
+   "generation_config.json": {
+    "bytes": 126,
+    "git_sha1": "417ff8cf12c2334a1a4b1554b7b7bb8964bedad8"
+   },
+   "merges.txt": {
+    "bytes": 916646,
+    "git_sha1": "354558edcdbd64ca7abd407b8be3d5d09d39d781"
+   },
+   "model-00001-of-00003.safetensors": {
+    "bytes": 4970591184,
+    "lfs_sha256": "05ae91e1171f1f1753b23df3a5a6740d89da377932b33a1661bb7485d6ec530e"
+   },
+   "model-00002-of-00003.safetensors": {
+    "bytes": 4981161496,
+    "lfs_sha256": "0d41b81fe0d7e4c1d673a77beded5ee77080e39d6a6940b523e82f61eaa1dcbd"
+   },
+   "model-00003-of-00003.safetensors": {
+    "bytes": 4645523448,
+    "lfs_sha256": "51d701cc400703094ae4b6434b067ee8810056170ce4703e93b2f5b2cb93a51d"
+   },
+   "model.safetensors.index.json": {
+    "bytes": 29594,
+    "git_sha1": "5897f0ef1399d0ec455ff4f235ebcac40e7a1ece"
+   },
+   "special_tokens_map.json": {
+    "bytes": 581,
+    "git_sha1": "9d133a8f4995ff315a8a3e68dbba03409d214a8e"
+   },
+   "tokenizer.json": {
+    "bytes": 7137177,
+    "git_sha1": "5fe172127988c3709a49d8d2ce20e11bb266cd57"
+   },
+   "tokenizer_config.json": {
+    "bytes": 4884,
+    "git_sha1": "6a68ef73052b644e4a32208ae0114236db221028"
+   },
+   "vocab.json": {
+    "bytes": 1611056,
+    "git_sha1": "51135344eec01a62fc4deaca39c72ac08f5b9709"
+   }
+  }
+ },
+ "allowed_host_suffixes": [
+  "huggingface.co",
+  "hf.co"
+ ],
+ "base_assets_sha256": "750cf50d579b5d84b949012a13b253fa011e23a6323301c8d02bde21bfdce85c"
+}

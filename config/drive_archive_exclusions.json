@@ -1,0 +1,25 @@
+{
+  "_about": "Declared regenerable files the Google Drive archives leave out (lead and supervisor, 18 November 2026; EVIDENCE-BACKUP-A keeps the evidence and records). Read at call time by tools/loop/drive_archive.py (gather) and tools/loop/backup_coverage.py (a matched file is excluded, not a gap). A rule has an id, a reason, and either a glob over the logical path or min_bytes with min_links.",
+  "_why": "external/s05/DEV_contradoc15 measured 334988500552 bytes on 18 November because each of its 15 admitted bundles holds assets.tar, one 20.72 GiB file hard-linked 15 times (21.4 GiB unique in the whole part). assets.tar is the sealed asset bundle (model weights and adapter) the sealer builds again from the frozen model store; it is not evidence.",
+  "rules": [
+    {
+      "id": "sealed-asset-bundle",
+      "glob": "external/s05/*/admitted/*/assets.tar",
+      "reason": "the sealed asset bundle, rebuilt by the sealer from the frozen model store"
+    },
+    {
+      "id": "hard-linked-large",
+      "min_bytes": 1073741824,
+      "min_links": 2,
+      "reason": "a file of 1 GiB or more with more than one hard link is a copy of a frozen store file"
+    }
+  ],
+  "_not_parts": "Files that belong to no part at all, read at call time by tools/loop/backup_coverage.py: never listed, stat'ed or hashed (the lead, 18 November 2026 16:30, after the 16:22 coverage run failed on a lock file that vanished between listing and hashing). A rule has an id, a glob over the logical path (private/ is docs/loop/private) and a reason.",
+  "not_parts": [
+    {
+      "id": "private-lock-files",
+      "glob": "private/*.lock",
+      "reason": "a lock a running tool holds for seconds and removes (budget_ledger.jsonl.lock); it records nothing"
+    }
+  ]
+}

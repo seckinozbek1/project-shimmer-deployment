@@ -242,6 +242,75 @@ def proof_archive_leaves_out_links_and_keys(fx):
 
 
 @with_fixture
+def proof_declared_exclusions_leave_out_bundles(fx):
+    """config/drive_archive_exclusions.json (here a fixture copy): a sealed asset bundle and a large
+    hard-linked copy stay out of the archive, the evidence beside them goes in, and the part is COVERED."""
+    cfg = fx.base / 'drive_archive_exclusions.json'
+    cfg.write_text(json.dumps({'rules': [
+        {'id': 'sealed-asset-bundle', 'glob': 'external/s05/*/admitted/*/assets.tar', 'reason': 'fixture'},
+        {'id': 'hard-linked-large', 'min_bytes': 100, 'min_links': 2, 'reason': 'fixture'}]}), encoding='utf-8')
+    fx.write('external/s05/P3/admitted/B1/assets.tar', 'w' * 2000)
+    fx.write('external/s05/P3/admitted/B1/evidence.json', '{"e": 1}\n')
+    frozen = fx.write('external/s05/P3/frozen_copy.bin', 'f' * 500)
+    os.link(frozen, fx.base / 'frozen_store_copy.bin')          # a second link, outside the checkout
+    old = cov.ARCHIVE_EXCLUSIONS
+    cov.ARCHIVE_EXCLUSIONS = cfg
+    try:
+        line = archive_now(fx, 'external/s05/P3')
+        import tarfile
+        with tarfile.open(line['file'], 'r:gz') as t:
+            names = t.getnames()
+        assert names == ['external/s05/P3/admitted/B1/evidence.json'], names
+        assert sorted(line['left_out']) == ['external/s05/P3/admitted/B1/assets.tar',
+                                            'external/s05/P3/frozen_copy.bin'], line['left_out']
+        assert row(fx.report(), 'external/s05/P3')['status'] == 'COVERED', row(fx.report(), 'external/s05/P3')
+    finally:
+        cov.ARCHIVE_EXCLUSIONS = old
+
+
+@with_fixture
+def proof_vanished_and_lock_files_never_fatal(fx):
+    """A file gone between the folder listing and its stat is skipped and counted as vanished, never fatal, and a
+    file a declared not_parts glob of config/drive_archive_exclusions.json matches (here private/*.lock, the
+    budget ledger's lock) belongs to no part (the coverage run of 18 November 16:22 failed on such a lock)."""
+    cfg = fx.base / 'drive_archive_exclusions.json'
+    cfg.write_text(json.dumps({'rules': [], 'not_parts': [
+        {'id': 'private-lock-files', 'glob': 'private/*.lock', 'reason': 'fixture'}]}), encoding='utf-8')
+    fx.write('docs/loop/private/budget_ledger.jsonl.lock', '{"pid": 1}\n')
+    gone = fx.main / 'external' / 'other' / 'y.txt'
+    real = cov.stat_entry
+
+    def vanishing(path):
+        if Path(path) == gone:
+            raise FileNotFoundError(2, 'The system cannot find the file specified', str(path))
+        return real(path)
+    old = cov.ARCHIVE_EXCLUSIONS, cov.stat_entry
+    cov.ARCHIVE_EXCLUSIONS, cov.stat_entry = cfg, vanishing
+    try:
+        report = fx.report()
+        listed = cov.walk(fx.main)[0]
+        text = cov.render(report)
+    finally:
+        cov.ARCHIVE_EXCLUSIONS, cov.stat_entry = old
+    assert report['vanished'] == ['external/other/y.txt'], report['vanished']
+    assert report['not_parts'] == 1, report['not_parts']
+    assert 'private/budget_ledger.jsonl.lock' not in listed and 'external/other/y.txt' not in listed
+    assert 'vanished during the scan' in text and 'not parts by declaration' in text
+
+
+@with_fixture
+def proof_located_copy_covers_a_part(fx):
+    """A part too large for Drive is covered by a verified located_copy line (location and hash) for the
+    files written no later than the copy (Seckin 18 November 15:20)."""
+    assert row(fx.report(), 'external/s05/P1')['status'] == 'NOT COVERED'
+    later = dt.datetime.now().astimezone() + dt.timedelta(seconds=60)
+    fx.log(tool='located_copy', part='external/s05/P1', location='lambda-fs:fixture/external/s05/P1',
+           sha256='0' * 64, bytes=1000, verified=True, time=later.isoformat(timespec='seconds'))
+    r = row(fx.report(), 'external/s05/P1')
+    assert r['status'] == 'COVERED' and r['located']['location'].startswith('lambda-fs:'), r
+
+
+@with_fixture
 def proof_keep_report_deletes_nothing(fx):
     start = dt.datetime.now().astimezone()
     files = [archive_now(fx, 'external/s05/GATE', when=start + dt.timedelta(seconds=i))['file'] for i in range(4)]
@@ -573,12 +642,18 @@ GROUPS = {
         (proof_credentials_and_held_back_excluded, patch_attr(cov, 'credential_name', lambda name: False)),
         # the change time no longer read
         (proof_time_only_legacy_archive, patch_attr(cov, 'changed_time', lambda st: 0.0)),
+        # a vanished file fatal again: the scan stops on it
+        (proof_vanished_and_lock_files_never_fatal, patch_attr(cov, 'VANISHED_ERRORS', ())),
     ],
     'archive': [
         (proof_archive_hashes_twice_and_logs, hashwriter_not_hashing()),
         (proof_archive_leaves_out_links_and_keys, patch_attr(cov, 'credential_name', lambda name: False)),
         (proof_keep_report_deletes_nothing, patch_attr(cov, 'drive_archives', lambda *a, **k: [])),
         (proof_drive_floor_stops_before_writing, patch_attr(da, 'FLOOR', 0)),
+        # no declared rule matches any more: the asset bundle and the hard-linked copy are archived
+        (proof_declared_exclusions_leave_out_bundles, patch_attr(cov, 'archive_excluded', lambda *a, **k: '')),
+        # located copies no longer read: the part stays NOT COVERED
+        (proof_located_copy_covers_a_part, patch_attr(cov, 'located_copies', lambda lines: {})),
     ],
     'drill': [
         (proof_drill_restores_and_matches, patch_attr(rd, 'restore_git', git_restore_writes_nothing)),
@@ -615,10 +690,13 @@ GROUPS = {
 DETAIL = {
     'coverage': 'git coverage by blob id, Drive coverage only from verified archives of the logged size, links '
                 'recorded and never followed, exit 1 on an irreplaceable gap, credential names and held-back '
-                'files excluded, a legacy archive judged by time',
+                'files excluded, a legacy archive judged by time, a file vanished during the scan skipped and '
+                'counted and a declared not_parts lock file in no part',
     'archive': 'each archive hashed while written and again from Drive with a per-member manifest, links and '
                'key-bearing or credential-named files left out, the keep-last-N report deleting nothing, the '
-               'Drive floor stopping a part before anything is written',
+               'Drive floor stopping a part before anything is written, the declared regenerable files '
+               '(config/drive_archive_exclusions.json) left out with the evidence kept, a located copy '
+               'covering a part too large for Drive',
     'drill': 'both backups restored into a new folder outside the checkout and matched by hash, a changed file '
              'caught, a drill folder inside the main checkout refused',
     'roles': 'the declared drive-only roots (role exchange folders, negotiation sets) reported part by part '

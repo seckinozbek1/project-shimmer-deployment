@@ -1078,7 +1078,8 @@ class ControllerChecks(RecordChecks, ActivationChecks, AuxEnvChecks, ImageChecks
                      'tools/cloud_run_watchdog.py', 'tools/cloud_run_common.py', 'tools/ordinary_final_run.py',
                      'tools/loop_budget_guard.py', 'tools/loop/instance_reaper.py', 'tools/loop/keep_awake.py',
                      'tools/run_remote_experiment.py', 'tools/loop/cloud_reference_spend.py',
-                     'tools/loop/standing_orders_check.py', 'tools/seal_route.py', 'tools/loop/shared_paths.py'):
+                     'tools/loop/standing_orders_check.py', 'tools/seal_route.py', 'tools/loop/shared_paths.py',
+                     'tools/asset_build.py'):
             self.assertIn(name, block)
         # The verification runs before the first provider call in execute().
         body = Path(controller.__file__).read_text(encoding='utf-8')

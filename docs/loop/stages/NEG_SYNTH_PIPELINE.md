@@ -136,5 +136,16 @@ Seckin approved the label-permutation null instead (D-714, 16 November 20:54): `
    data; a family Shimmer does not use; a 7B instruct model fits an A10), its candidates read live and the first
    open one used with its revision recorded; one narrow question per statement, greedy, every reply read once by
    `tools/answer_form.py`; a field still not read leaves the position unlabelled, counted by reason (check 467).
+   On Lambda (Seckin 18 November 2026 14:20: role V launches its own job under the guard, the ledger and the
+   reaper; the lead sees counts only) the questions ride a sealed B1 replay pass: `neg_synth_label.py build-pass`
+   holds each sheets file to role S's SHA-256 and renders every question on the laptop;
+   `benchmark/baselines/neg_synth_label_pass.py` (handed the file by `replay_prompts.py`) resolves the labeller
+   from the sealed model cache alone, since a loop instance denies the network, and leaves one reply record a
+   prompt; `neg_synth_label.py read-pass` reads each set's labels from the fetched evidence (check 520). The launch
+   folder template is `external/s05/V_SYNLAB1_template` (outside git). The model comes from the one-off asset build
+   `external/s05/ASSET_OLMO2` (ASSET-BUILD-A, D-736, D-739), held on the Lambda file system only. Each label carries
+   the labeller's probability at its deciding token (check 522); role V then draws Seckin's 200 blind positions,
+   writes them in tens to `_xfer/V_to_supervisor`, reads his answers from `_xfer/supervisor_to_V` and writes counts
+   only to the lead (`tools/neg_synth_review.py`, check 523); no label is ever a few-shot example (check 524).
 5. **Role N.** `score_neg_advisor.py build` per set folder (the token budget), freeze, `refuse_synthetic_in_final`
    on the final test.

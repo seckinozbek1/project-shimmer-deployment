@@ -1,0 +1,7 @@
+{
+ "version": 1,
+ "decision": "the lead 18 November 2026 17:33, open item 157: ROUTE_GATE_e21d4b53's admission was refused at 16:53 because the free A10s were taken; an admission now waits for capacity before the ledger lock instead of refusing",
+ "poll_interval_seconds": 120,
+ "wait_limit_minutes": 60,
+ "why": "Read at call time by tools/seal_route_driver.py admit: the returned bundles' sealed manifests are held to the free inventory (read-only, the bound preflight's own rule) every poll_interval_seconds, up to wait_limit_minutes, before the budget ledger lock is taken; past the limit the admission is refused, the lock never taken."
+}

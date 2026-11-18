@@ -162,8 +162,10 @@ def execute(bundle, plan, output_dir=None, from_request=None):
     # The archive path is stored relative to the repository when the bundle is inside it and
     # absolute otherwise, so a bundle outside the repository launches as one inside does.
     archive = b / assets['filename']
-    if from_request is not None:
-        stored = None        # no laptop archive: the instance takes the provider-side copy or nothing
+    if from_request is not None or controller.held_on_filesystem(m):
+        # no laptop archive: the instance takes the provider-side copy or nothing (D-675; D-739 for an archive
+        # held on the filesystem only, checked there against the digest kept here)
+        stored = None
     else:
         try:
             stored = archive.relative_to(controller.ROOT).as_posix()
@@ -285,7 +287,12 @@ def main(argv=None):
         problem = request_stale_refusal(request)
         require(problem is None, problem or '')
         record = Path(args.output_dir).resolve() if args.output_dir else request.with_name(request.name + '.run')
-        seal_route.launch_record(request, record, controller.ROOT)
+        # D-736: an asset build's request derives its own record (tools/asset_build.py); a seal request its own.
+        import asset_build
+        if asset_build.is_request(request):
+            asset_build.launch_record(request, record, controller.ROOT)
+        else:
+            seal_route.launch_record(request, record, controller.ROOT)
         preflight.main(record)
         rest, skip = [], False
         for a in argv:

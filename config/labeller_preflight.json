@@ -1,0 +1,12 @@
+{
+ "schema": "labeller-preflight-v1",
+ "note": "Checked on the instance after the labeller loads and before its first prompt (the lead 18:39, Seckin 18:37): the class the pinned transformers resolves, the tokenizer's built-in chat template markers and its end-of-text token. A labeller with no entry here is refused. The labelling pass runs transformers generate (sdpa); it has no vLLM route.",
+ "models": {
+  "allenai/OLMo-2-1124-7B-Instruct": {
+   "model_type": "olmo2",
+   "model_class": "Olmo2ForCausalLM",
+   "chat_template_markers": ["<|user|>", "<|assistant|>"],
+   "eos_token": "<|endoftext|>"
+  }
+ }
+}

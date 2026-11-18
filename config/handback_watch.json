@@ -1,0 +1,13 @@
+{
+ "version": 1,
+ "decision": "the lead 18 November 2026 16:05: two role hand-backs waited over an hour (N35 done 12:39, N36 done 14:17); the 15-minute watchdog lists them",
+ "roots_location": {
+  "env": "SHIMMER_ROLES_ROOT",
+  "sibling_of_main_checkout": "shimmer-roles"
+ },
+ "folders": ["_xfer/N_to_lead", "_xfer/S_to_lead", "_xfer/B_to_lead_dev", "_xfer/_handoff"],
+ "patterns": ["*_DONE.json", "*_HANDBACK.json"],
+ "late_minutes": 10,
+ "ack_file": "docs/loop/private/handback_ack.json",
+ "why": "Names and modification times only: the watchdog never opens a file in a role folder. The lead writes {name: ack time} into the ack file when it takes a hand-back up."
+}

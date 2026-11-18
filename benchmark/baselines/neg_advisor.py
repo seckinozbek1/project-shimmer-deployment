@@ -15,6 +15,10 @@ Four forms, fixed in `neg_advisor_prompt.json` before any item exists:
 - `validate`: the role session's check of a position-to-article mapping (group `validate`;
   tools/score_neg_advisor.py validate-prompts).
 
+A system advice group that declares `method: stepwise` (D-713) runs, on the pass, the step-wise chain in
+place of its one prompt (S0: `stepwise_call`), one reply record per step, and `answers` composes the reply
+again from the saved steps (`recompose_stepwise`). Off unless the prompts file's own config declares it.
+
     build    --set <set folder> --form advice --groups b1[,system_advice] --out <prompts.json>
     run      --prompts <prompts.json> --out <pass folder>         every prompt through its group (a GPU)
     answers  --prompts <prompts.json> --run <pass folder> --out <answers.json>
@@ -38,6 +42,7 @@ import re
 import sys
 import time
 import uuid
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -170,6 +175,12 @@ def check_config(value):
                 raise ValueError("the %s template fills %s once" % (form, slot))
         if type(block.get("max_new_tokens")) is not int or block["max_new_tokens"] <= 0:
             raise ValueError("the %s form declares a positive max_new_tokens" % form)
+    for method in ALLOWANCE_METHODS:
+        block = (value["advice"].get("methods") or {}).get(method)
+        if block is None or (method != PLAIN and isinstance(block, dict) and "max_new_tokens" not in block):
+            continue
+        if not isinstance(block, dict) or type(block.get("max_new_tokens")) is not int or block["max_new_tokens"] <= 0:
+            raise ValueError("the %s method declares a positive max_new_tokens (D-725, D-740)" % method)
     for slot in ("{persona}", "{round}", "{table}", "{threshold}", "{parties}", "{issues}", "{instructions}"):
         if str(value["advice"].get("game_template")).count(slot) != 1:
             raise ValueError("the game template fills %s once" % slot)
@@ -639,7 +650,7 @@ def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None
                 user = render_advice(config, item, method_of(config, group))
                 prompts.append(dict(declared[group], prompt_id="a%04d" % (len(prompts) + 1), form="advice",
                                     item_id=item_id, item=item, user=user, user_sha256=_sha(user), system=None,
-                                    max_new_tokens=config["advice"]["max_new_tokens"]))
+                                    max_new_tokens=advice_allowance(config, group)))
         audit = "system_advice" in groups
         return _write(out, _file(config, prompts, dict(extra, audit=audit)))
     if form == "validate":
@@ -744,7 +755,8 @@ def load_prompts(path):
         else:
             raise ValueError("a prompt names a form or group this file does not declare: %s" % p.get("prompt_id"))
         wanted = {"user": user, "user_sha256": _sha(user), "system": None,
-                  "max_new_tokens": config[p["form"]]["max_new_tokens"]}
+                  "max_new_tokens": (advice_allowance(config, p["group"]) if p["form"] == "advice"
+                                     else config[p["form"]]["max_new_tokens"])}
         if any(p.get(f) != wanted[f] for f in HELD_FIELDS):
             raise ValueError("a prompt is not its template's rendering: %s" % p.get("prompt_id"))
         if p["prompt_id"] in ids or key in keys:
@@ -802,9 +814,10 @@ def token_counter(name=TOKENIZER):
                                                     add_generation_prompt=True))
 
 
-def audit_prompts(config, prompt, text):
-    """The derived audit prompts of one system advice reply: one per piece of advice that parses."""
-    reply = parse_advice(text, prompt["item"])
+def audit_prompts(config, prompt, text, reply=None):
+    """The derived audit prompts of one system advice reply: one per piece of advice that parses. A
+    step-wise reply (composed by Python from the checked steps, `reply`) is audited the same way."""
+    reply = parse_advice(text, prompt["item"]) if reply is None else reply
     if reply is None or prompt["item"].get("game"):
         return []
     group = {g["group"]: g for g in config["models"]}["system_audit"]
@@ -863,6 +876,12 @@ def check_decoding(config):
                                  % (group, g["method"], ", ".join(METHODS), METHOD_GROUP))
             if g["method"] != PLAIN and not isinstance((config["advice"].get("methods") or {}).get(g["method"]), dict):
                 raise ValueError("the advice form declares the method %s" % g["method"])
+            if g["method"] == STEPWISE:
+                block = config["advice"]["methods"][STEPWISE]
+                t = block.get("choice_threshold")
+                if type(block.get("max_new_tokens")) is not int or block["max_new_tokens"] <= 0 or \
+                        not (type(t) in (int, float) and 0 <= t <= 1):
+                    raise ValueError("the stepwise method declares its step allowance and its choice threshold")
     return config
 
 
@@ -878,6 +897,7 @@ def check_decoding(config):
 
 PLAIN, REASON_FIRST, STEPWISE = "plain", "reason_first", "stepwise"
 METHODS = (PLAIN, REASON_FIRST, STEPWISE)
+ALLOWANCE_METHODS = (PLAIN, REASON_FIRST)    # methods whose advice prompt may declare its own max_new_tokens (D-725, D-740)
 METHOD_GROUP = "system_advice"
 RATIONALE_MAX_CHARS = 300
 STEPS = ("changes", "stance", "red_line", "open_point", "wording")
@@ -890,6 +910,22 @@ def method_of(config, group):
         if g["group"] == group:
             return g.get("method") or PLAIN
     return PLAIN
+
+
+def advice_allowance(config, group):
+    """The advice form's allowance of new tokens for one group, read from the config when a prompt is built
+    and again when it is loaded: the system's advice under the plain method (M-plain) takes
+    `advice.methods.plain.max_new_tokens` when the config declares it (D-725: 4,096, since 2,048 is tight for
+    one entry per proposal under the tuple advice schema), and under reason_first
+    `advice.methods.reason_first.max_new_tokens` (D-740: the same 4,096, so the methods compared to M-plain
+    are not cut shorter); B1 and stepwise keep the form's own `advice.max_new_tokens` (stepwise's declared
+    figure, 512, is its per-step allowance, not the advice prompt's)."""
+    method = method_of(config, group)
+    if group == METHOD_GROUP and method in ALLOWANCE_METHODS:
+        block = (config["advice"].get("methods") or {}).get(method)
+        if isinstance(block, dict) and block.get("max_new_tokens") is not None:
+            return block["max_new_tokens"]
+    return config["advice"]["max_new_tokens"]
 
 
 def method_instructions(config, method):
@@ -929,18 +965,31 @@ def _applicable(positions, party, article, number):
     return specific if specific else [p for p in mine if p.get("proposal") is None]
 
 
-def stepwise_advice(config, item, ask):
+class _NotedSteps(list):
+    """The chain's list of steps, telling `hook` of each step's verdict as it is appended (right after its ask)."""
+
+    def __init__(self, hook):
+        super().__init__()
+        self.hook = hook
+
+    def append(self, entry):
+        super().append(entry)
+        self.hook(entry)
+
+
+def stepwise_advice(config, item, ask, on_step=None):
     """(reply, steps): the advice of one item by the step-wise chain, `reply` in parse_advice's shape (each piece
     marked `method` stepwise and `basis` on_record), `steps` every question asked with its answer and Python's
     verdict. `ask(step, user, answers)` returns the model's text (for a choice step, its settled label); a step
     whose answer Python refuses ends that proposal's chain, and what it would have decided is left unanswered.
     A position's stance is asked only of the positions the mapping puts on the proposal; a red line only when
-    one of the persona's applicable positions is marked one; conflict, alignment and the stance are Python's."""
+    one of the persona's applicable positions is marked one; conflict, alignment and the stance are Python's.
+    `on_step(entry)`, when given, receives each step's verdict right after its ask, before the next ask."""
     block = config["advice"]["methods"][STEPWISE]
     persona = item["persona"]["id"]
     red = set(item["persona"].get("red_lines") or [])
     positions = item.get("positions") or []
-    steps, proposals, signs = [], {}, {}
+    steps, proposals, signs = (_NotedSteps(on_step) if on_step is not None else []), {}, {}
     judged = {}   # position id -> the stance its step answered, Python-checked (D-668 gap 4: the movement's input)
 
     def put(step, user, answers):
@@ -1158,28 +1207,170 @@ def call(backend, prompt, config):
     return backend.generate(None, prompt["user"], n)
 
 
+# S0 (NEG_ROUND1.md section 6): the step-wise chain on the replay pass. A system advice prompt whose group declares
+# `method: stepwise` in the prompts file's own config is not generated: stepwise_advice asks its chain on the same
+# resident model, each generated step (changes, wording) within the method's declared allowance and each choice
+# step (stance, red line, open point) decided from next-token probabilities over its declared answers (CHOICE-A)
+# and settled at the method's declared threshold, every answer checked by Python before the next. Every step call
+# writes one reply record: the item's last one in the pass folder as the prompt's own (one record per prompt
+# there, as the sealed pass counts), the earlier ones under <pass>/STEPWISE_DIR (`stepwise_steps`, this pass's own
+# name; the choice form's method chain uses reasoning_methods.STEPS_DIR, `method_steps`). A choice step's record
+# carries its decision and no reply (CHOICE-A). A step Python's check refuses is written as REASON-METHODS-A writes
+# one: backend_ok false, error `method_refused: <step> <reason>`, no decision, a generated step keeping its text.
+# A call that raises leaves every step already asked written and in the measurement rows. An item with no proposal
+# (a game) has no chain and runs its prompt as plain. Off unless the file declares the method.
+STEPWISE_DIR = "stepwise_steps"
+STEP_FORM = "step"
+
+
+def is_stepwise(config, prompt):
+    return prompt.get("form") == "advice" and method_of(config, prompt.get("group")) == STEPWISE and \
+        not prompt["item"].get("game") and any(a["proposals"] for a in prompt["item"].get("articles") or [])
+
+
+def step_answers(labels):
+    """A choice step's declared answers: each label its own surface (STEP_ANSWERS, fixed in code)."""
+    return [{"label": a, "surface": a} for a in labels]
+
+
+def stepwise_call(backend, prompt, config, limit, record, rows, verdict):
+    """(reply, steps) of one step-wise prompt: stepwise_advice with an `ask` on `backend`. Each step's row is
+    appended to `rows` once its call returned (ids, counts, seconds and hashes, never a text); `record(row,
+    result, text, error)` holds its reply record and `verdict(row, entry)` gives it Python's check of the
+    answer, before the next step is asked."""
+    import choice_decision
+    block = config["advice"]["methods"][STEPWISE]
+    allowance, threshold = int(block["max_new_tokens"]), block["choice_threshold"]
+
+    def ask(step, user, answers):
+        tokens = int(backend.count_prompt(None, user))
+        n = 0 if answers else allowance
+        row = {"prompt_id": "%s-s%03d" % (prompt["prompt_id"], len(rows) + 1), "form": STEP_FORM, "step": step,
+               "group": prompt["group"], "derived_from": prompt["prompt_id"], "prompt_tokens": tokens,
+               "max_new_tokens": n, "failure": None, "seconds": None, "user_sha256": _sha(user)}
+        result, error, text = {}, "", None
+        if tokens + n > int(limit):
+            row["failure"] = error = "prompt_over_context"
+        else:
+            started = time.perf_counter()
+            result = (backend.choose(None, user, step_answers(answers)) if answers
+                      else backend.generate(None, user, n)) or {}
+            row["seconds"] = round(time.perf_counter() - started, 3)
+        if isinstance(result.get("decision"), dict):
+            text = choice_decision.settle(result["decision"], threshold)["decided"]
+        elif isinstance(result.get("text"), str):
+            text = result["text"]
+        rows.append(row)
+        record(row, result, text, error)
+        return text
+
+    return stepwise_advice(config, prompt["item"], ask, on_step=lambda entry: verdict(rows[-1], entry))
+
+
+REFUSED_CATEGORY = "method_refused"
+
+
+def refusal_error(entry):
+    """A refused step's record error, REASON-METHODS-A's form: `method_refused: <step> <reason>`."""
+    return "%s: %s %s" % (REFUSED_CATEGORY, entry["step"], entry["refused"])
+
+
+def step_texts(config, record):
+    """A step record's answer as the chain read it: a choice decision settled at the method's threshold, or the
+    generated text. None for a failed call; for a step Python's check refused (no decision, backend_ok false),
+    its generated text if it had one, so the check refuses it again for the same reason."""
+    if not record.get("backend_ok"):
+        if record.get("error_category") != REFUSED_CATEGORY:
+            return None
+        reply = record.get("reply") or {}
+        return reply.get("text") if isinstance(reply, dict) else None
+    decision = record.get("decision")
+    if isinstance(decision, dict):
+        import choice_decision
+        return choice_decision.settle(decision, config["advice"]["methods"][STEPWISE]["choice_threshold"])["decided"]
+    reply = record.get("reply") or {}
+    return reply.get("text") if isinstance(reply, dict) else None
+
+
+def recompose_stepwise(config, prompt, step_rows, records):
+    """(reply, steps) of a step-wise prompt from its saved step records, no model: the chain asked again with each
+    recorded answer in order, every question held to the SHA-256 the pass recorded for it. A pass whose steps do
+    not replay is refused."""
+    queue = list(step_rows)
+
+    def ask(step, user, answers):
+        if not queue:
+            raise ValueError("the pass holds fewer steps than the chain asks: %s" % prompt["prompt_id"])
+        row = queue.pop(0)
+        if row.get("step") != step or row.get("user_sha256") != _sha(user):
+            raise ValueError("a saved step is not the chain's question: %s" % row.get("prompt_id"))
+        return step_texts(config, records.get(row.get("call_id")) or {})
+
+    reply, steps = stepwise_advice(config, prompt["item"], ask)
+    if queue:
+        raise ValueError("the pass holds more steps than the chain asks: %s" % prompt["prompt_id"])
+    for row, entry in zip(step_rows, steps):
+        record = records.get(row.get("call_id")) or {}
+        if record.get("error_category") == REFUSED_CATEGORY and record.get("error") != refusal_error(entry):
+            raise ValueError("a saved step's refusal is not the chain's: %s" % row.get("prompt_id"))
+        if record.get("backend_ok") and entry["refused"]:
+            raise ValueError("a saved step the pass accepted is refused on reading: %s" % row.get("prompt_id"))
+    return reply, steps
+
+
+def stepwise_replies(value, run_dir, measurement):
+    """{prompt id: (reply, steps)} of every step-wise prompt of a pass, composed again from its saved step records
+    (the pass folder's and STEPWISE_DIR's), each held to its recorded question and refusal (recompose_stepwise)."""
+    import reply_records
+    run_dir = Path(run_dir)
+    records = {}
+    for folder in (run_dir / "audit" / "model_replies", run_dir / STEPWISE_DIR / "audit" / "model_replies"):
+        if folder.is_dir():
+            records.update({r.get("call_id"): r for r in reply_records.records(folder)})
+    steps = {}
+    for row in measurement.get("rows") or []:
+        if row.get("form") == STEP_FORM:
+            steps.setdefault(row["derived_from"], []).append(row)
+        elif row.get("method") == STEPWISE:
+            steps.setdefault(row["prompt_id"], [])
+    by_id = {p["prompt_id"]: p for p in value["prompts"]}
+    composed = {}
+    for pid, saved in steps.items():
+        if pid not in by_id or not is_stepwise(value["config"], by_id[pid]):
+            raise ValueError("the pass holds steps of a prompt that is not step-wise: %s" % pid)
+        composed[pid] = recompose_stepwise(value["config"], by_id[pid], saved, records)
+    return composed
+
+
 def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None):
     """Every prompt through its group's model, one reply record each, then (for a file holding the
-    system's advice) every derived audit prompt through the auditor group. The measurement file is
-    written after every prompt, so a stopped pass stays readable."""
+    system's advice) every derived audit prompt through the auditor group. A step-wise prompt runs its
+    chain (S0, above). The measurement file is written after every prompt, so a stopped pass stays
+    readable."""
     import bare_model
     import decoding_policy
     import final_models
     import reply_records
     value = read_file(prompts_path)
-    config = value["config"]
+    config = check_decoding(value["config"])
     out = outside_repository(out)
     context = bare_model.RunContext(out, run_id or ("neg-advisor-" + uuid.uuid4().hex[:12]))
+    side = {}
+
+    def steps_context():
+        if "context" not in side:
+            side["context"] = bare_model.RunContext(out / STEPWISE_DIR, context.run_id)
+        return side["context"]
     factory = backend_factory or make_advisor_backend
-    rows, models, texts = [], {}, {}
+    rows, models, texts, composed = [], {}, {}, {}
     sha = hashlib.sha256(Path(prompts_path).read_bytes()).hexdigest()
 
     def snapshot(complete):
         return {"schema": MEASUREMENT_SCHEMA, "run_id": context.run_id, "complete": complete,
                 "prompts": len(value["prompts"]), "derived": sum(1 for r in rows if r["form"] == "audit"),
+                "steps": sum(1 for r in rows if r["form"] == STEP_FORM),
                 "prompts_sha256": sha, "config_sha256": value["config_sha256"], "models": models,
-                "seconds": round(sum(r["seconds"] or 0 for r in rows), 3), "rows": rows,
-                "reads": "ids, counts and seconds only here; the replies in the reply records"}
+                "seconds": round(sum(r["seconds"] or 0 for r in rows), 3), "rows": rows, "reads": "ids, counts and seconds only here; the replies in the reply records"}
 
     def one_group(group, mine):
         allowance = max(int(p["max_new_tokens"]) for p in mine)
@@ -1192,7 +1383,68 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
             models[group["group"]] = {"model_id": loaded.get("model_id"), "digest": loaded.get("digest"),
                                       "backend": reader["backend"], "agent": reader["agent"]}
             limit = backend.max_context()
+
+            def write(where, p, result, text, error):
+                decoding = dict(decoding_policy.usage_fields(reader["decoding"]), max_new_tokens=int(p["max_new_tokens"]))
+                call_id = reply_records.write(where, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
+                                              model_mode=reader.get("model_mode"), payload=result.get("payload"),
+                                              payload_form=result.get("form"),
+                                              # CHOICE-A: a decided call has a decision and no reply.
+                                              reply=None if isinstance(result.get("decision"), dict) else text,
+                                              ok=not error, error=error,
+                                              decoding=decoding, sensitive=False, phase=PHASE, doc_id=p["item_id"],
+                                              attention=result.get("attention"), prefill=result.get("prefill"),
+                                              decoding_constraint=result.get("constraint"), decision=result.get("decision"))
+                if not call_id:
+                    raise RuntimeError("the reply record for prompt %s could not be written" % p["prompt_id"])
+                return call_id
+
             for p in mine:
+                if is_stepwise(config, p):
+                    # S0: the chain. Each step's record is held until the next step is asked, then written
+                    # under STEPWISE_DIR; the last one in the pass folder as the prompt's own. A step Python's
+                    # check refuses is written as REASON-METHODS-A writes one: backend_ok false, its error
+                    # `method_refused: <step> <reason>`, no decision (a generated step keeps its text).
+                    pending, step_rows = [], []
+
+                    def record(row, result, text, error, p=p, pending=pending):
+                        if pending:
+                            flush(pending.pop(), steps_context())
+                        pending.append({"row": row, "result": result, "text": text, "error": error, "p": p})
+
+                    def verdict(row, entry, pending=pending):
+                        if not entry["refused"] or not pending or pending[-1]["row"] is not row:
+                            return
+                        held, row["refused"] = pending[-1], entry["refused"]
+                        if not held["error"]:
+                            held["error"] = refusal_error(entry)
+                            if isinstance(held["result"].get("decision"), dict):
+                                held["result"], held["text"] = dict(held["result"], decision=None), None
+
+                    def flush(held, where):
+                        row = held["row"]
+                        row["call_id"] = write(where, dict(held["p"], max_new_tokens=row["max_new_tokens"]), held["result"],
+                                               held["text"], held["error"])
+                        row["record"] = "pass" if where is context else STEPWISE_DIR
+                        row["decided"] = isinstance(held["result"].get("decision"), dict)
+
+                    parent = {"prompt_id": p["prompt_id"], "form": "advice", "group": group["group"], "method": STEPWISE,
+                              "prompt_tokens": None, "max_new_tokens": int(p["max_new_tokens"]), "failure": None,
+                              "seconds": None, "user_sha256": p["user_sha256"], "derived_from": None, "call_id": None}
+                    rows.append(parent)
+                    try:
+                        reply, steps = stepwise_call(backend, p, config, limit, record, step_rows, verdict)
+                    finally:
+                        # A later call that raised leaves every step already asked written and in the rows.
+                        if pending:
+                            flush(pending.pop(), context)
+                        rows.extend(step_rows)
+                        parent.update(steps=len(step_rows), last_step=step_rows[-1]["prompt_id"] if step_rows else None)
+                        _write_json(out / MEASUREMENT_FILE, snapshot(False))
+                    composed[p["prompt_id"]] = reply
+                    parent["steps_refused"] = sum(1 for s in steps if s["refused"])
+                    _write_json(out / MEASUREMENT_FILE, snapshot(False))
+                    continue
                 tokens = int(backend.count_prompt(None, p["user"]))
                 row = {"prompt_id": p["prompt_id"], "form": p["form"], "group": group["group"], "prompt_tokens": tokens,
                        "max_new_tokens": int(p["max_new_tokens"]), "failure": None, "seconds": None,
@@ -1206,15 +1458,7 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
                     row["seconds"] = round(time.perf_counter() - started, 3)
                 text = result.get("text") if isinstance(result.get("text"), str) else None
                 texts[p["prompt_id"]] = text
-                decoding = dict(decoding_policy.usage_fields(reader["decoding"]), max_new_tokens=int(p["max_new_tokens"]))
-                call_id = reply_records.write(context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
-                                           model_mode=reader.get("model_mode"), payload=result.get("payload"),
-                                           payload_form=result.get("form"), reply=text, ok=not error, error=error,
-                                           decoding=decoding, sensitive=False, phase=PHASE, doc_id=p["item_id"],
-                                           attention=result.get("attention"), prefill=result.get("prefill"),
-                                           decoding_constraint=result.get("constraint"), decision=result.get("decision"))
-                if not call_id:
-                    raise RuntimeError("the reply record for prompt %s could not be written" % p["prompt_id"])
+                call_id = write(context, p, result, text, error)
                 row.update(call_id=call_id, decided=isinstance(result.get("decision"), dict),
                            constrained=isinstance(result.get("constraint"), dict))
                 rows.append(row)
@@ -1230,7 +1474,8 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
             one_group(group, mine)
     if value.get("audit"):
         derived = [d for p in value["prompts"] if p["group"] == "system_advice"
-                   for d in audit_prompts(config, p, texts.get(p["prompt_id"]))]
+                   for d in (audit_prompts(config, p, None, composed[p["prompt_id"]]) if p["prompt_id"] in composed
+                             else audit_prompts(config, p, texts.get(p["prompt_id"])))]
         if derived:
             one_group({g["group"]: g for g in config["models"]}["system_audit"], derived)
     result = snapshot(True)
@@ -1242,20 +1487,26 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
 # answers
 
 
-def answers_from_texts(value, texts, *, measured_audits=None):
+def answers_from_texts(value, texts, *, measured_audits=None, composed=None):
     """{schema, prompts_sha256, rows}: per prompt its parsed reply. For the system's advice, each piece's
     audit answer, its prompt rendered again from the advice reply and held to the SHA-256 the pass recorded
-    (`measured_audits`: derived prompt id to (user_sha256, text))."""
+    (`measured_audits`: derived prompt id to (user_sha256, text)). A step-wise prompt's reply is the one
+    Python composed from its checked steps (`composed`: prompt id to (reply, steps)), with the steps'
+    refusals counted by reason."""
     config = value["config"]
     rows = []
     for p in value["prompts"]:
         text = texts.get(p["prompt_id"])
         row = {"prompt_id": p["prompt_id"], "group": p["group"], "form": p["form"], "item_id": p["item_id"]}
         if p["form"] == "advice":
-            row["reply"] = parse_advice(text, p["item"])
+            chain = (composed or {}).get(p["prompt_id"])
+            row["reply"] = parse_advice(text, p["item"]) if chain is None else chain[0]
+            if chain is not None:
+                refused = Counter("%s:%s" % (s["step"], s["refused"]) for s in chain[1] if s["refused"])
+                row.update(method=STEPWISE, steps=len(chain[1]), steps_refused=dict(sorted(refused.items())))
             if p["group"] == "system_advice":
                 audits = {}
-                for d in audit_prompts(config, p, text):
+                for d in (audit_prompts(config, p, text) if chain is None else audit_prompts(config, p, None, chain[0])):
                     sha, said = (measured_audits or {}).get(d["prompt_id"], (None, None))
                     if sha is not None and sha != d["user_sha256"]:
                         raise ValueError("an audit prompt the pass ran is not the rendering of its advice: %s" % d["prompt_id"])
@@ -1281,13 +1532,16 @@ def answers(prompts_path, run_dir, out=None):
     records = {r.get("call_id"): r for r in reply_records.records(run_dir / "audit" / "model_replies")}
     texts, audits = {}, {}
     for row in measurement.get("rows") or []:
+        if row.get("form") == STEP_FORM or row.get("method") == STEPWISE:
+            continue
         record = records.get(row.get("call_id")) or {}
         text = recorded_text(record, value["config"], row.get("form"))
         if row.get("form") == "audit":
             audits[row["prompt_id"]] = (row.get("user_sha256"), text)
         else:
             texts[row["prompt_id"]] = text
-    result = answers_from_texts(value, texts, measured_audits=audits)
+    composed = stepwise_replies(value, run_dir, measurement)
+    result = answers_from_texts(value, texts, measured_audits=audits, composed=composed)
     result["models"] = measurement.get("models")
     if out:
         _write_json(outside_repository(out), result)

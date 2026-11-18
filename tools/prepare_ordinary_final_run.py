@@ -213,7 +213,10 @@ CONTROL_FILES = ('tools/ordinary_final_watchdog.py',
     'tools/loop/standing_orders_check.py',
     # D-675 (the checker's item 3): the seal request's rules the bound wrapper launches by (receipt_refusal,
     # refuse_launch_record, record_error, request_error, launch_record).
-    'tools/seal_route.py')
+    'tools/seal_route.py',
+    # D-736, D-739: the asset build's request and launch record rules, imported by the bound wrapper (--request)
+    # and by seal_route.request_error for an asset-build request.
+    'tools/asset_build.py')
 
 
 def seal_flags_hold(manifest):
@@ -256,6 +259,21 @@ def input_sha(path):
         if digest:
             return digest
     return sha(path)
+
+
+def sealed_candidates(declared, extra_model=None):
+    """The models a seal carries beside tools/cloud_run/models.json: the judging candidates `declared` lists (D-261,
+    D-262) and, only with the explicit --extra-model-declaration, the one model an asset build added to the reuse
+    archive (D-736, tools/asset_build.py), pinned by its revision and its declared files, as a candidate is."""
+    candidates = read(declared) if Path(declared).is_file() else {}
+    if extra_model is not None:
+        import asset_build
+        declaration = asset_build.load_declaration(extra_model)
+        model = declaration['model']
+        require(model['model_id'] not in candidates, 'The declared model is already a judging candidate')
+        candidates[model['model_id']] = dict(decision=declaration['decision'], revision=model['revision'],
+                                             files=sorted(model['files']))
+    return candidates
 
 
 def bind_existing_assets(bundle, models, wheels, wheelhouse, target):
@@ -1050,7 +1068,7 @@ def aux_replay_form(path):
 def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, workload=None, exposure='exposed',
             test_manifest=None, protected_test=False, inputs_from=None, now_epoch=None, arm='B3', b1_items=None,
             b1_checkpoints=None, replay_prompts=None, launcher_question=None, gate=None, asset_copy_reason=None, layers=None,
-            seal_requests=None, seal_parallel=16, aux_lock=None, vllm_route=None):
+            seal_requests=None, seal_parallel=16, aux_lock=None, vllm_route=None, extra_model=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -1192,7 +1210,7 @@ def prepare(output, source_commit='HEAD', reuse_assets=None, *, budget=None, wor
     # are pinned by this seal's manifest alone, since no frozen specification names it. Only the
     # candidate's lane holds this file.
     declared = ROOT/'tools/cloud_run/judge_candidates.json'
-    candidates = read(declared) if declared.is_file() else {}
+    candidates = sealed_candidates(declared, extra_model)
     listed = dict(read(ROOT/'tools/cloud_run/models.json'), **{m: c['revision'] for m, c in candidates.items()})
     for model, revision in listed.items():
         snapshot = cache/('models--'+model.replace('/','--'))/'snapshots'/revision
@@ -1416,6 +1434,9 @@ if __name__ == '__main__':
                         help="D-630: the vLLM server's context length in tokens (a prompt plus its allowance)")
     parser.add_argument('--replay-prompts',type=Path,default=None,
                         help='B1, exposed only: replay_prompts.json (replay_prompts.py extract) for replay passes')
+    parser.add_argument('--extra-model-declaration',type=Path,default=None,
+                        help='D-736: the asset-build declaration (tools/asset_build.py) of the one model an asset build '
+                             'added to the reuse archive; without it no model beyond the declared lists is sealed')
     args = parser.parse_args()
     prepare(args.output_dir, args.source_commit, args.reuse_assets,
             budget=dict(ledgers=args.ledger, forecast_minutes=args.forecast_minutes,
@@ -1434,4 +1455,5 @@ if __name__ == '__main__':
                       known_red=[int(n) for n in args.known_red.split(',') if n]) if args.arm == 'G' else None,
             layers=dict(env_manifest=args.image_env_manifest, measure=args.image_measure)
             if args.image_layers or args.image_env_manifest or args.image_measure else None,
-            seal_requests=args.seal_requests if args.arm == 'S' else None, seal_parallel=args.seal_parallel)
+            seal_requests=args.seal_requests if args.arm == 'S' else None, seal_parallel=args.seal_parallel,
+            extra_model=args.extra_model_declaration)

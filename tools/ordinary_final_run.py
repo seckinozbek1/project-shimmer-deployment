@@ -387,6 +387,19 @@ def arm_declaration(manifest):
                 'B1 fields sealed in an arm L bundle')
         return arm
     require('launcher' not in manifest, 'A launcher block sealed in a %s bundle' % arm)
+    if arm == 'S' and manifest.get('kind') == ASSET_BUILD_KIND:
+        # D-736: a one-off asset build's record: its declared model and the reuse archive it builds on, its own
+        # files sealed; no seal job, no project, never multi-round, never sealed.
+        block = manifest.get('asset_build')
+        require(isinstance(block, dict) and isinstance(block.get('revision'), str) and re.fullmatch('[0-9a-f]{40}', block['revision'])
+                and isinstance(block.get('base_assets_sha256'), str) and re.fullmatch(HEX64, block['base_assets_sha256'])
+                and block['base_assets_sha256'] == (manifest.get('assets_archive') or {}).get('sha256'),
+                'An asset build carries its model\'s revision and the reuse archive it builds on')
+        require(all(isinstance(support.get(n), str) and re.fullmatch(HEX64, support[n]) for n in ASSET_BUILD_SUPPORT),
+                'The asset build files are not all sealed')
+        require(manifest.get('multi_round') is False and manifest.get('protected_test') is False and 'seal_job' not in manifest
+                and 'b1' not in manifest and 'gate' not in manifest, 'An asset build is never a seal job, a pass or a gate')
+        return arm
     if arm == 'S':
         job = manifest.get('seal_job')
         require(isinstance(job, dict) and isinstance(job.get('commit'), str) and isinstance(job.get('tree'), str)
@@ -1878,6 +1891,73 @@ def execute_seal(base, manifest, evidence, deadline):
 # D-675: a seal request's launch record (tools/seal_route.py): no project, no laptop seal; the job is sealed here.
 LAUNCH_RECORD_KIND = 'seal_request_launch_record'
 INSTANCE_JOB_SEAL = 'instance_job_seal.json'
+# D-736: a one-off asset build's launch record (tools/asset_build.py): the one step whose instance may reach the
+# declared hub hosts, only while it fetches the declared model; denied for the rest of it, as every other run is.
+ASSET_BUILD_KIND = 'asset_build_launch_record'
+# asset_copy_declaration.json: the file system's mount the build places the archive on (18 Nov 18:01: it was not sent).
+ASSET_BUILD_SUPPORT = ('asset_build.py', 'asset_build_declaration.json', 'reuse_manifest.json', 'seal_request.json',
+                       'asset_copy_declaration.json')
+
+
+def execute_asset_build(base, download=None):
+    """The asset build (D-736) after every guard a job running no model needs, as execute_request applies them (the
+    record's seal, every file at its digest, the authorization, the watchdog, RUN_CLAIMED, the budget stop, the
+    cleaned environment, the pinned runtime); then asset_build.build: the hub opened to the declared hosts for the
+    fetch alone, deny_network for the rest, the archive built and placed on the file system under its digest."""
+    base = Path(base).resolve()
+    manifest = read(base/'execution_manifest.json')
+    seal = read(base/'seal.json')
+    require(manifest.get('kind') == ASSET_BUILD_KIND and seal.get('execution_manifest_sha256') == sha(base/'execution_manifest.json'),
+            'Manifest seal mismatch')
+    for name, digest in manifest['support_files'].items():
+        require(sha(base / name) == digest, 'Support hash mismatch: ' + name)
+    require(sha(base / 'seal_request.json') == manifest['request_sha256'], 'The asset build record does not name its request')
+    request = read(base/'seal_request.json')
+    require(request.get('asset_build') == manifest['asset_build'] and request.get('commit') == manifest['source_commit'],
+            'The asset build is not the one the request names')
+    admit_workload(manifest, seal, base)
+    require(sys.platform == 'linux', 'Remote Linux execution only')
+    permit = read(base/'operator_authorization.json')
+    authorization(base, manifest, permit)
+    require((base/'WATCHDOG_ARMED.json').is_file(), 'Independent operator watchdog required')
+    watch = read(base/'WATCHDOG_ARMED.json')
+    require(watch.get('execution_manifest_sha256') == sha(base/'execution_manifest.json') and
+            watch.get('instance_id') == permit.get('instance_id') and
+            0 <= time.time()-watch.get('heartbeat_epoch', 0) < 30, 'Watchdog not current')
+    with (base/'RUN_CLAIMED').open('x', encoding='utf8') as stream:
+        stream.write(str(time.time()))
+    deadline = (permit['active_start_epoch'] + manifest['hard_ceiling_usd']/permit['hourly_rate']*3600
+                - manifest['workload_stop_reserve_seconds'])
+
+    def budget_stop():
+        time.sleep(max(0, deadline-time.time()))
+        write(base/'BUDGET_WORKLOAD_STOP.json', {'epoch': time.time(), 'completed': False})
+        os._exit(124)
+    threading.Thread(target=budget_stop, name='ordinary-budget-stop', daemon=True).start()
+    for key in list(os.environ):
+        if key.startswith(('SHIMMER_', 'HF_', 'TRANSFORMERS_')) or key.endswith(('API_KEY', 'TOKEN', 'SECRET', 'PASSWORD')):
+            os.environ.pop(key, None)
+    os.environ.update(manifest['environment'])
+    os.environ.update(HF_HOME=str(base/'asset_build_hf'), PYTHONDONTWRITEBYTECODE='1')
+    installed_runtime(manifest)
+    copy = read(base/'asset_copy_declaration.json')
+    from cloud_run_observer import Recorder, deny_network
+    evidence = base/'evidence'
+    evidence.mkdir(exist_ok=False)
+    rec = Recorder(evidence/'network.jsonl')
+    sys.path.insert(0, str(base))
+    import asset_build
+    try:
+        receipt = asset_build.build(base, evidence, rec, deny_network, copy['mount'],
+                                    **({'download': download} if download else {}))
+        result = dict(execution_integrity_passed=True, arm='S', asset_build=True,
+                      archive_sha256=receipt['archive']['sha256'], archive_bytes=receipt['archive']['bytes'],
+                      placed=receipt['filesystem'].get('placed'), network_refused=receipt['network']['refused'])
+    except Exception as exc:
+        result = dict(execution_integrity_passed=False, arm='S', asset_build=True,
+                      reasons=['asset_build: %s: %s' % (type(exc).__name__, ' '.join(str(exc).split())[:300])])
+    write(evidence/'result.json', result)
+    return 0 if result['execution_integrity_passed'] else 2
 
 
 def place_request_inputs(base, request):
@@ -1985,6 +2065,8 @@ def execute_request(base):
 
 def execute(base):
     base = Path(base).resolve()
+    if read(base/'execution_manifest.json').get('kind') == ASSET_BUILD_KIND:
+        return execute_asset_build(base)
     if read(base/'execution_manifest.json').get('kind') == LAUNCH_RECORD_KIND:
         return execute_request(base)
     manifest = verify(base)

@@ -23,9 +23,16 @@ Each part is COVERED (every file held), STALE (a backup holds the part but some 
 in it) or NOT COVERED (no backup holds anything of it); the line gives the bytes and newest time not covered.
 Deliberately excluded, never counted as gaps: credential-like names (CRED), the files backup_records holds back
 for review (its last log line), files its secret scan would hold back now, and the folders it leaves out as
-regenerable (output/cloud_wheels, __pycache__). The exit is 1 when an irreplaceable part (the records under
+regenerable (output/cloud_wheels, __pycache__), and files a rule of config/drive_archive_exclusions.json
+declares regenerable (read at call time: today the sealed asset bundles admitted/*/assets.tar and large
+hard-linked copies of frozen files; drive_archive leaves the same files out). A part too large for Drive is
+covered by a `located_copy` line in backup_log.jsonl (part, location, sha256, bytes, verified true): its files
+written no later than that copy count as held there (Seckin, 18 November 2026 15:20). The exit is 1 when an irreplaceable part (the records under
 docs/loop/private, run evidence under external/s05, fingerprints under external/gate_prep*, a sealed set: any
 part holding a seal.json) is STALE or NOT COVERED, 2 when the coverage cannot be read, otherwise 0.
+A file that disappears between the folder listing and its stat (a lock a running tool removes) is skipped and
+counted as vanished, never fatal; files a `not_parts` glob of config/drive_archive_exclusions.json matches (today
+private/*.lock) belong to no part: never listed, stat'ed or hashed (the lead, 18 November 2026 16:30).
 
 Drive-only roots outside the repository (operator, 16 November 2026 20:41): config/backup_extra_roots.json
 declares folders under the roles root (SHIMMER_ROLES_ROOT when set, else the main checkout's sibling folder it
@@ -69,6 +76,66 @@ DRIVE_TOOLS = ('drive_archive', 'drive_external', 'drive_backup')
 LOOSE = '(files)'
 EXTRA_CONFIG = HERE.parents[1] / 'config' / 'backup_extra_roots.json'
 EXTRA_NS = 'roles'                             # every declared extra root is walked as roles/<folder>/...
+# Declared regenerable files the Drive archives leave out (lead and supervisor, 18 November 2026): read at
+# call time, never typed into code; a file a rule matches is excluded, not a gap.
+ARCHIVE_EXCLUSIONS = HERE.parents[1] / 'config' / 'drive_archive_exclusions.json'
+LOCATED_TOOL = 'located_copy'                  # a backup_log line naming a copy kept elsewhere (Seckin 15:20)
+
+
+def archive_exclusions(path=None):
+    """The declared rules of config/drive_archive_exclusions.json, read now; [] when the file is absent."""
+    p = Path(path or ARCHIVE_EXCLUSIONS)
+    if not p.is_file():
+        return []
+    data = json.loads(p.read_text(encoding='utf-8'))
+    return [r for r in data.get('rules', ()) if isinstance(r, dict) and r.get('id')]
+
+
+def not_parts(path=None):
+    """The declared not_parts globs of config/drive_archive_exclusions.json, read now: files such as the budget
+    ledger's lock, which a running tool holds for seconds and removes, belong to no part (never listed, never
+    hashed). [] when none is declared."""
+    p = Path(path or ARCHIVE_EXCLUSIONS)
+    if not p.is_file():
+        return []
+    data = json.loads(p.read_text(encoding='utf-8'))
+    return [r['glob'] for r in data.get('not_parts', ()) if isinstance(r, dict) and r.get('id') and r.get('glob')]
+
+
+# A file can disappear between the folder listing and its stat or hash (a lock file a running tool removes, the
+# 16:22 run on 18 Nov): it is skipped and counted as vanished, never fatal.
+VANISHED_ERRORS = (FileNotFoundError,)
+
+
+def stat_entry(path):
+    return os.stat(path, follow_symlinks=False)
+
+
+def archive_excluded(logical, size, links, rules):
+    """'declared regenerable (<rule id>)' when a declared rule matches the file, else ''."""
+    from fnmatch import fnmatchcase
+    for r in rules:
+        if r.get('glob') and fnmatchcase(logical, r['glob']):
+            return 'declared regenerable (%s)' % r['id']
+        if r.get('min_bytes') is not None and size >= int(r['min_bytes']) and links >= int(r.get('min_links', 2)):
+            return 'declared regenerable (%s)' % r['id']
+    return ''
+
+
+def located_copies(lines):
+    """{part: (time, line)} of the newest verified copy of a whole part kept outside Drive and git (a
+    `located_copy` backup_log line: part, location, sha256, bytes, verified true), as Seckin's 15:20 answer
+    asks for parts too large for Drive."""
+    out = {}
+    for line in lines:
+        if line.get('tool') != LOCATED_TOOL or line.get('verified') is not True or not line.get('part'):
+            continue
+        if not line.get('location') or not line.get('sha256'):
+            continue
+        when = parse_time(line.get('time'))
+        if when is not None and (line['part'] not in out or when > out[line['part']][0]):
+            out[line['part']] = (when, line)
+    return out
 
 
 class CoverageError(Exception):
@@ -221,13 +288,18 @@ def wanted(logical_dir, within):
             or logical_dir.startswith(within + '/'))
 
 
-def walk(main, within=None, extra=None, declared=None):
+def walk(main, within=None, extra=None, declared=None, vanished=None, outside=None):
     """(files {logical: (disk path, size, mtime, changed, (device, inode))}, links [logical], regenerable
     {part: reason}); with `within` (a part), only the folders that part can hold are entered. `extra` adds the
     declared drive-only roots; a name they exclude by declaration is never opened and goes into `declared`
-    {logical: (why, is a folder)}."""
+    {logical: (why, is a folder)}. A file gone before its stat goes into `vanished`; a file a declared not_parts
+    glob matches is never stat'ed and goes into `outside`."""
+    from fnmatch import fnmatchcase
     files, links, skipped = {}, [], {}
     declared = {} if declared is None else declared
+    vanished = [] if vanished is None else vanished
+    outside = [] if outside is None else outside
+    globs = not_parts()
     extra = extra or {}
     sources = [(name, Path(main).joinpath(*rel), None) for name, rel in ROOTS]
     sources += [(r['logical'], Path(r['disk']), extra.get('spec') or {}) for r in extra.get('roots', ())]
@@ -265,8 +337,15 @@ def walk(main, within=None, extra=None, declared=None):
                     elif wanted(logical, within):
                         stack.append((Path(e.path), logical))
                     continue
+                if any(fnmatchcase(logical, g) for g in globs):
+                    outside.append(logical)
+                    continue
                 # os.stat, not the entry's: on Windows only it fills st_ino and st_dev (hard links counted once)
-                st = os.stat(e.path, follow_symlinks=False)
+                try:
+                    st = stat_entry(e.path)
+                except VANISHED_ERRORS:
+                    vanished.append(logical)
+                    continue
                 files[logical] = (e.path, st.st_size, st.st_mtime, changed_time(st), (st.st_dev, st.st_ino))
     return files, links, skipped
 
@@ -284,7 +363,10 @@ def blob_id(path):
 def git_holds(tree, logical, disk, size):
     """The snapshot holds this path with the blob id of the file's present content."""
     held = tree.get(logical)
-    return bool(held) and size <= GIT_MAX and blob_id(disk) == held
+    try:
+        return bool(held) and size <= GIT_MAX and blob_id(disk) == held
+    except OSError:      # held open by another process (Windows): not proven held, so a gap, never a crash
+        return False
 
 
 def git(repo, *args):
@@ -517,14 +599,16 @@ def coverage(paths, secret_check=default_secret_check, list_max=None):
     """{'parts': [...], 'links': [...], 'excluded': [...], 'git': {...}, 'drive': [...]}."""
     main = paths['main']
     extra = paths.get('extra') or {}
-    declared = {}
-    files, links, skipped = walk(main, extra=extra, declared=declared)
+    declared, vanished, outside = {}, [], []
+    files, links, skipped = walk(main, extra=extra, declared=declared, vanished=vanished, outside=outside)
     reasons = {r['logical']: r['irreplaceable'] for r in extra.get('roots', ())}
     tree, commit, git_when = git_snapshot(paths['repo'])
     in_git_refused = sorted(p for p in tree if drive_only(p))
     lines = read_log(paths['log'])
     archives = drive_archives(lines, paths['drive'], main, list_max)
     held = held_back(lines)
+    located = located_copies(lines)
+    rules = archive_exclusions()
     by_part = {}
     for logical, info in files.items():
         by_part.setdefault(part_of(logical), {})[logical] = info
@@ -556,13 +640,27 @@ def coverage(paths, secret_check=default_secret_check, list_max=None):
             git_when if any(part_of(p) == part for p in tree) else None)
         times = [a.when for a in archives if touches(a, part)]
         row['drive_time'] = max(times) if times else None
-        for logical, (disk, size, mtime, changed, ident) in members.items():
+        copy = located.get(part)
+        row['located'] = ({'location': copy[1]['location'], 'sha256': copy[1]['sha256'], 'time': copy[0]}
+                          if copy else None)
+        row['located_files'] = 0
+        for logical, (disk, size, mtime, changed, ident) in list(members.items()):
+            try:
+                links_now = stat_entry(disk).st_nlink if rules else 1
+            except VANISHED_ERRORS:            # gone since the listing: skipped and counted, never fatal
+                vanished.append(logical)
+                row['files'] -= 1
+                continue
             in_git = (not row['drive_only']) and git_holds(tree, logical, disk, size)
             in_drive = any(drive_holds(a, logical, size, mtime, changed) for a in archives)
+            in_located = bool(copy) and max(mtime, changed) <= copy[0] + MTIME_SLACK
             row['git_files'] += in_git
             row['drive_files'] += in_drive
-            if not (in_git or in_drive):
+            row['located_files'] += in_located and not (in_git or in_drive)
+            if not (in_git or in_drive or in_located):
                 if credential_name(Path(logical).name) or logical in held:
+                    row['excluded'].append(logical)
+                elif rules and archive_excluded(logical, size, links_now, rules):
                     row['excluded'].append(logical)
                 else:
                     row['gap'].append((logical, disk, size, max(mtime, changed), ident))
@@ -586,6 +684,7 @@ def coverage(paths, secret_check=default_secret_check, list_max=None):
         else:
             row['status'] = 'NOT COVERED'
     return {'parts': list(result.values()), 'links': sorted(links), 'held_back': sorted(held),
+            'vanished': sorted(set(vanished)), 'not_parts': len(outside),
             'git': {'repo': str(paths['repo']), 'commit': commit, 'time': git_when, 'files': len(tree),
                     'drive_only_in_git': len(in_git_refused)},
             'drive': [{'file': str(a.path), 'time': a.when, 'how': a.how} for a in archives],
@@ -616,6 +715,8 @@ def public(report):
     out['links'] = [x for x in report['links'] if not drive_only(x)]
     out['drive_only_links'] = len(report['links']) - len(out['links'])
     out['held_back'] = [x for x in report.get('held_back', ()) if not drive_only(x)]
+    out['vanished'] = [x for x in report.get('vanished', ()) if not drive_only(x)]
+    out['drive_only_vanished'] = len(report.get('vanished', ())) - len(out['vanished'])
     return out
 
 
@@ -662,6 +763,13 @@ def render(report, gaps=0):
         out.extend('    ' + x for x in report['links'])
     if report['drive_only_links']:
         out.append('links under drive-only roots recorded, never followed: %d' % report['drive_only_links'])
+    if report['vanished'] or report['drive_only_vanished']:
+        out.append('vanished during the scan (gone between listing and reading), skipped: %d%s' % (
+            len(report['vanished']) + report['drive_only_vanished'],
+            ''.join('\n    ' + x for x in report['vanished'])))
+    if report.get('not_parts'):
+        out.append('not parts by declaration (config/drive_archive_exclusions.json not_parts), never listed: %d'
+                   % report['not_parts'])
     x = report.get('extra') or {}
     if x.get('roots') or x.get('missing') or x.get('refused'):
         out.append('drive-only roots (%s, %s): %s; missing %s; refused %s; excluded by declaration, never '

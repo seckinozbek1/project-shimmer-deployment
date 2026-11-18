@@ -347,6 +347,20 @@ def is_embed_records(path):
         return False
 
 
+def _neg_synth_label_pass():
+    import neg_synth_label_pass
+    return neg_synth_label_pass
+
+
+def is_neg_synth_label(path):
+    """True when the file is a `neg-synth-label-pass-v1` file (tools/neg_synth_label.py build-pass, D-706 item 1):
+    the same sealed pass, which asks role V's declared labeller one question per sheet position."""
+    try:
+        return _neg_synth_label_pass().is_prompts_path(path)
+    except ImportError:
+        return False
+
+
 def _vllm_replay():
     import vllm_replay
     return vllm_replay
@@ -471,6 +485,8 @@ def load_prompts(path):
     by doc_judge.load_prompts, which re-renders every prompt from the file's own template)."""
     if is_embed_records(path):
         return _embed_records().load_prompts(path)
+    if is_neg_synth_label(path):
+        return _neg_synth_label_pass().load_prompts(path)
     if is_vllm_replay(path):
         return _vllm_replay().load_prompts(path)
     if is_producer_training(path):
@@ -1020,6 +1036,13 @@ def main(argv=None):
             if [p for p in args.paths.split(",") if p] != ["sdpa"] or args.decision or args.max_new_tokens:
                 raise ValueError("an embedding pass runs the sdpa path alone, no decision, no token allowance")
             result = _embed_records().run(args.prompts, args.out)
+            print(json.dumps({"prompts": result["prompts"], "failures": result["failures"], "seconds": result["seconds"]}, indent=2))
+            return 0
+        if is_neg_synth_label(args.prompts):
+            # D-706 item 1: the same sealed pass, role V's blind labeller (neg_synth_label_pass.py).
+            if [p for p in args.paths.split(",") if p] != ["sdpa"] or args.decision or args.max_new_tokens:
+                raise ValueError("a labelling pass runs the sdpa path alone, no decision, no token allowance")
+            result = _neg_synth_label_pass().run(args.prompts, args.out)
             print(json.dumps({"prompts": result["prompts"], "failures": result["failures"], "seconds": result["seconds"]}, indent=2))
             return 0
         if is_vllm_replay(args.prompts):

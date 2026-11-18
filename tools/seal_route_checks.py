@@ -1542,7 +1542,7 @@ NEUTRALISATIONS = [
      lambda: _with_a_parent_walk()()),
     ("seal_route.py dropped from CONTROL_FILES", "proof_the_seal_route_is_a_controller_file", _swap_module(
         "proof_the_seal_route_is_a_controller_file", "prep", ROOT / "tools" / "prepare_ordinary_final_run.py",
-        "    'tools/seal_route.py')", "    )")),
+        "    'tools/seal_route.py',\n", "")),
     ("a returned launch record admitted", "proof_the_admission_refuses_a_returned_launch_record", _swap_module(
         "proof_the_admission_refuses_a_returned_launch_record", "drv", DRIVER,
         "                sr.refuse_launch_record(json.loads((source / 'execution_manifest.json').read_text(encoding='utf-8')),\n"
@@ -1646,7 +1646,7 @@ NEUTRALISATIONS = [
         ("        require(sha(base/name) == digest, 'Support hash mismatch: '+name)\n    pass", "        pass\n    pass"))),
     ("a launch record admitted as a sealed bundle", "proof_a_launch_record_is_no_sealed_bundle", _swap(
         "proof_a_launch_record_is_no_sealed_bundle",
-        "    require(manifest.get('kind') != LAUNCH_RECORD_KIND,", "    require(True,")),
+        "    require(manifest.get('kind') not in RECORD_KINDS,", "    require(True,")),
     ("a launch record not held to its request", "proof_a_launch_record_is_its_request_s", _swap(
         "proof_a_launch_record_is_its_request_s",
         "    if request_folder is not None and sha(Path(request_folder) / REQUEST_FILE) != manifest['request_sha256']:",
@@ -1936,7 +1936,7 @@ def proof_a_launch_record_is_no_sealed_bundle(mod=sr):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         node = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == function)
         text = ast.unparse(node)
-        read_sites[function] = "LAUNCH_RECORD_KIND" in text or "refuse_launch_record" in text
+        read_sites[function] = any(n in text for n in ("LAUNCH_RECORD_KIND", "RECORD_KINDS", "refuse_launch_record"))
     refused = {k: bool(v) and "not a sealed bundle" in v for k, v in outcomes.items()}
     return all(refused.values()) and all(read_sites.values()), "refused %s; call sites %s" % (refused, read_sites)
 
