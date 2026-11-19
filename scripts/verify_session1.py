@@ -27095,7 +27095,8 @@ def check_464_a_removed_or_rewritten_earlier_line_refuses():
     return _seal_parallel(464)
 def check_465_the_spend_limits_come_from_one_declared_file():
     """D-708 (SPEND-LIMITS-A, PARALLEL-LAMBDA-A): the per-step pre-approval (5 USD) and the remaining-spend
-    limit (140 USD from the 197 USD baseline) are read by tools/loop_budget_guard.py from
+    limit (203 USD from the 197 USD baseline since D-749; the proofs read the figures from the file, never
+    typed in) are read by tools/loop_budget_guard.py from
     config/loop_spend_limits.json at call time: a 5.00 USD step admitted with no question, a 5.01 USD one
     refused unless the operator's approval names its decision, a forecast past the remaining limit refused
     where the hard stop alone would admit it, and tools/loop/fs_listing.py's cap following the same figure.
@@ -27463,7 +27464,13 @@ def check_517_a_ready_launch_step_launches_in_the_same_move():
     second pass passes; the watchdog alerts and starts one pass for a step ready over 5 minutes. Against double
     launches (review of 393a1d37): status and ledger read again right before each launch, a launch_started record
     before the call, launching and unconfirmed steps never relaunched, a GuardRefusal read only from the step's
-    own log after the launch began, only the chain's own request renamed, on a non-zero stale exit. Runs
+    own log after the launch began, only the chain's own request renamed, on a non-zero stale exit. No process
+    blocks another (Seckin 18 Nov 20:37): an admission runs detached and never holds the pass, its parts follow the
+    first reading that finds it full; a folder whose chain.json declares "template": true is never launched. A part
+    retried into NAME.2 is read there (tools/loop/run_folder_pick.py: the ledger's newest launch, else the highest
+    suffix; the lead 18 Nov 22:2x, ROUTE_GATE_3efb3a37). A batch part (plan.json names more than one bundle) writes
+    no workload_return: it reads done from terminated_and_cleaned, TERMINATION_VERIFIED, no controller_failure and
+    one batch/NN_* evidence per bundle with pipeline_exit_code 0, else failed with the count. Runs
     tools/loop/launch_chain_checks.py on fixture folders with a fake launch.py, no provider call: each proof
     neutralised, failed, restored and passed."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
@@ -27507,8 +27514,12 @@ def check_520_role_v_labelling_rides_the_replay_pass_and_is_read_from_evidence()
     which resolves the declared OLMo labeller from the sealed cache alone (not sealed or not loadable passed over
     and counted, other terms refused, a Qwen or dated candidate refused), decodes greedily and leaves one reply
     record a prompt; read-pass reads each set's labels from the collected evidence (a reply that differs from its
-    recorded digest refused) and prints counts only. Runs tools/neg_synth_label_pass_checks.py with a fake model and
-    the invented cards of tools/neg_synth_checks.py: each proof neutralised, failed, restored and passed."""
+    recorded digest refused) and prints counts only. D-799 (lane/label-constrained): a v2 prompts file's replies
+    are generated under a per-request logits constraint (LabelGrammar on DECODING-B's ContractProcessor), so only
+    the declared values can be written, the wording list from the decoded article's own count; a reply still outside
+    is counted by reason in the pass record; a v1 file is read unchanged. Runs tools/neg_synth_label_pass_checks.py
+    with a fake model, a tiny fake tokenizer and the invented cards of tools/neg_synth_checks.py: each proof
+    neutralised, failed, restored and passed."""
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
         sys.path.insert(0, tools)
@@ -27597,8 +27608,8 @@ def check_528_the_asset_build_record_and_held_bundles_are_admitted_as_declared()
 
 def check_521_the_admission_waits_for_room_before_the_ledger_lock():
     """D-726 (Seckin 12:08, 18 Nov; the parse sweep admission of 18 Nov 14:19): tools/seal_route_driver.py admit gates
-    its laptop steps (reverify, preflight) on their expected bytes plus ADMIT_DISK_FLOOR_GIB (12 GiB), not the 30 GiB
-    D-099 floor; it waits for that room before it takes the budget ledger lock, and under the lock a step whose room
+    its laptop steps (reverify, preflight) on their expected bytes plus the 12 GiB margin of
+    config/laptop_disk_floor.json (Seckin 19 Nov 2026 12:03), not the old 30 GiB D-099 floor; it waits for that room before it takes the budget ledger lock, and under the lock a step whose room
     is gone is refused at once (nothing admitted, the staging kept as refused, the lock released), never waited for,
     its refusing reading written as an event 'refused' gate line; the room before the lock counts the collected
     evidence archive; a refusal on memory under the lock is intended. Open item 157: a refusing step's stdout and
@@ -27625,6 +27636,410 @@ def check_529_an_unacknowledged_role_hand_back_alerts_after_10_minutes():
         sys.path.insert(0, loop)
     from handback_watch_checks import run_all
     return run_all()
+
+
+def check_530_a_lambda_launch_is_never_refused_for_laptop_ram():
+    """Seckin 18 Nov 18:54 (the lead 18:58): the laptop RAM floor of a launch folder step is per step kind, declared in
+    config/launch_ram_floors.json and read at each call by tools/loop/launch_floors.py, which each launch.py loads by
+    path. Steps whose heavy work runs on Lambda (request, seal, part, watch) hold a small floor from their measured
+    laptop peak; laptop steps (admit, local reads) keep the D-726 floor; an unreadable declaration falls back to it.
+    The launch chain names the step it preflights. Runs tools/loop/launch_floors_checks.py on fixtures: each proof
+    neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from launch_floors_checks import run_all
+    return run_all()
+
+
+def _neg_improve(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_improve_checks import run_group
+    return run_group(str(number))
+
+
+def check_531_the_stepwise_chain_asks_its_choice_steps_first_and_carries_two_stance_arms():
+    """D-756 items 5 and 6 and the margins of item 3 (lane/neg-improve, Seckin 20:35 and 20:36): under the declared
+    order choice_first (advice.methods.stepwise.order in benchmark/baselines/neg_advisor_prompt.json; the shipped
+    generated_first stays the default) neg_advisor.stepwise_advice asks every choice step of a proposal (stance per
+    touched position, red line, open point; CHOICE-A) before any generated step (changes, wording), and a refused
+    generated step drops only its own field, counted by step and reason, never ending the chain; the stance step's
+    context full or trimmed (the proposal, the one position and the persona's red lines) is chosen per prompt at
+    build time (build --stance-contexts), both arms side by side in one prompts file, each prompt and answers row
+    marked, and a scorer reads one arm or refuses; each choice step's per-answer probabilities stay in its reply
+    record and are carried with the oppose margin into the composed reply's position_stances. Runs
+    tools/neg_improve_checks.py with a fake model: each proof neutralised, failed, restored and passed."""
+    return _neg_improve(531)
+
+
+def check_532_a_proposals_conflict_by_a_declared_threshold_on_its_largest_oppose_margin():
+    """D-756 item 3 (P3, lane/neg-improve): tools/score_neg_advisor.py decides a proposal's conflict by one threshold
+    on the largest oppose margin among the persona's positions on it, declared in config/neg_advisor_dev.json (null
+    until tuned) and read at call time, and reports M1, M1m and the conflict class's F1 with and without it, beside
+    the bar; tune-threshold picks the value on a split of item ids and refuses a split that overlaps the deciding
+    set or names an item the set does not hold, writing nothing. Runs tools/neg_improve_checks.py on fixture answers:
+    each proof neutralised, failed, restored and passed."""
+    return _neg_improve(532)
+
+
+def check_533_oppose_recall_and_precision_over_positions_is_a_development_figure():
+    """D-756 item 2 (N1, lane/neg-improve): tools/score_neg_advisor.py dev-figures reports oppose recall and
+    precision over every (proposal, position) pair the mapping puts on a proposal against the build files' stances,
+    a pair the chain did not judge a miss, with item-clustered BCa intervals, the real and synthetic items apart,
+    beside the bar and never inside it. Runs tools/neg_improve_checks.py on fixture answers: each proof
+    neutralised, failed, restored and passed."""
+    return _neg_improve(533)
+
+
+def check_534_nothing_silently_waits_late_failed_and_role_gap_alert():
+    """Seckin 18 Nov 21:46 (SUPERVISOR_INBOX: nothing silently waits): tools/loop/promise_watch.py, run by the
+    watchdog, reads docs/loop/private/PLANNED_STEPS.jsonl (one line per planned step, appended by its add command)
+    against the launch chain's trace lines, the budget ledger and the lead's role exit files, and writes ALERT.md once
+    per cause for a step past expected_start + 5 minutes with no launch, a failed launch with no new launch within 5
+    minutes, and a role session whose exit file shows exit while its expected output does not exist (existence only,
+    no role file opened); an unreadable plan line writes one ALERT line and stops (standing order 110); its ready
+    command lists steps whose needs exist but which are not launched or not running. tools/loop/role_start_check.py
+    evaluates a role start .cmd's guards with existence only and prints PASS or the failing guard, and matches every
+    command its requests name (backtick spans starting with a command word) against the --settings allow and deny
+    Bash rules, deny winning, an unmatched command NOT ALLOWED, any such making it FAIL. Runs
+    tools/loop/promise_watch_checks.py on fixtures: each proof neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from promise_watch_checks import run_all
+    return run_all()
+
+
+def check_535_the_composition_step_links_an_article_level_position_to_its_single_proposal():
+    """D-758 (Seckin 22:15, SUPERVISOR_INBOX 22:17): tools/score_neg_advisor.py link_article_positions, run by the
+    system's composition step (system_python in score and dev-figures, and the N1 units) when
+    config/neg_advisor_dev.json declares article_proposal_link true (false as shipped, read at call time), puts an
+    article-level position on the single proposal under its declared article from structure alone (no stance,
+    quote, word, label or key read); an article with several proposals is not linked (the position stays
+    article-level) and a position with no article, on an article outside the excerpt or on one with no proposal is
+    refused, each by its reason and counted; off leaves every figure and the Python step unchanged. Runs
+    tools/neg_improve_checks.py on fixtures: each proof neutralised, failed, restored and passed."""
+    return _neg_improve(535)
+
+
+def check_536_the_cell_claim_step_asks_with_no_threshold_and_saves_the_probabilities():
+    """N1 (Seckin 19 Nov 01:11-01:13): with no cell_claim threshold the cell step still asks the model; the
+    answer's probabilities stand on its row (and on its one reply record, REPLIES-A), every decision stays
+    UNSETTLED (no_threshold), no record is written and the rule is listed not judged, so a threshold set later
+    decides from the saved probabilities at no cost. Runs scripts/cell_selection_checks.py run_n1 on the real
+    phase 5.5 with a mocked backend: neutralised (the early return restored), failed, restored, passed."""
+    from cell_selection_checks import run_n1
+    result = run_n1()
+    return "PASS", "%s: before and after the neutralisation the observation differs, restored" % result["name"]
+
+
+def check_538_a_missing_cell_threshold_is_recorded_loudly_before_any_call():
+    """SciTab P6 (Seckin 19 Nov 01:11, changed by the lead 01:25: record, never refuse, since N1 asks with no
+    threshold): pipeline.record_cell_threshold_missing, called in phase 0 of main right after the convention
+    registry is parsed and before any model call, writes for a paired run whose rules declare [compare: cells]
+    with no measured cell_claim threshold one ERROR-level event naming the rule ids and the record
+    {cell_threshold_missing: [ids], decisions_unsettled: true} on orch.run_flags, which the real
+    TopOrchestrator.run_summary carries into run_summary.md; with a threshold, with no cell rule and in wide mode
+    nothing is written, and the run is never refused. Executed on fixture rules with the threshold injected:
+    neutralised (the threshold test taken away), failed, restored and passed."""
+    import contextlib
+    import inspect
+    import tempfile
+    import types
+    import cell_selection
+    import orchestrator as _orch
+    import pipeline
+    from effect_proof import prove_effect
+    cells = {"id": "CONV-920", "rule": "The total exceeds 10.", "compare": "cells"}
+    plain = {"id": "CONV-921", "rule": "Dates are written in full."}
+
+    @contextlib.contextmanager
+    def patched(owner, name, value):
+        old = getattr(owner, name)
+        setattr(owner, name, value)
+        try:
+            yield
+        finally:
+            setattr(owner, name, old)
+
+    def outcome(rules, mode, value):
+        events = []
+        orch = types.SimpleNamespace()
+        with patched(cell_selection, "threshold_of", lambda config: value), \
+                patched(pipeline, "log_event", lambda logger, event, **kw: events.append((kw.get("level"), event))), \
+                contextlib.redirect_stderr(io.StringIO()):
+            try:
+                pipeline.record_cell_threshold_missing(orch, {"conventions": rules}, mode, run_id="fixture")
+            except SystemExit:
+                return "refused"
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "run_summary.md"
+            stub = types.SimpleNamespace(
+                bus=types.SimpleNamespace(summarize=lambda: {"total": 0}, query=lambda **kw: []),
+                constitution=types.SimpleNamespace(seed_laws=list, task_force_laws=list, precedents=list, amendments=list),
+                list_input_documents=list, task_forces={}, block_gate=types.SimpleNamespace(blocks={}),
+                _collect_memory_stats=lambda: None, run_context=types.SimpleNamespace(run_summary_path=lambda: path),
+                _post_orchestrator=lambda **kw: None, run_flags=getattr(orch, "run_flags", None))
+            summary = _orch.TopOrchestrator.run_summary(stub)
+            shown = '- cell_threshold_missing: ["CONV-920"]' in path.read_text(encoding="utf-8")
+        return {"error events": [e.split(" ")[0] + (" CONV-920" if "CONV-920" in e else "") for lvl, e in events if lvl == "error"],
+                "flags": summary.get("run_flags"), "in summary file": shown}
+
+    def observe():
+        return {"missing": outcome([plain, cells], "paired", None), "measured": outcome([plain, cells], "paired", .7),
+                "no cell rule": outcome([plain], "paired", None), "wide": outcome([plain, cells], "wide", None)}
+
+    quiet = {"error events": [], "flags": None, "in summary file": False}
+    expected = {"missing": {"error events": ["cell_threshold_missing CONV-920"],
+                            "flags": {"cell_threshold_missing": ["CONV-920"], "threshold_family": "cell_claim",
+                                      "decisions_unsettled": True}, "in summary file": True},
+                "measured": quiet, "no cell rule": quiet, "wide": quiet}
+
+    @contextlib.contextmanager
+    def neutralise():
+        source = inspect.getsource(cell_selection.missing_threshold)
+        line = "    if threshold_of(config) is not None:\n        return None\n"
+        assert source.count(line) == 1
+        space = dict(vars(cell_selection))
+        exec(source.replace(line, ""), space)
+        with patched(cell_selection, "missing_threshold", space["missing_threshold"]):
+            yield
+
+    prove_effect(name="missing cell threshold recorded", validate=lambda: cell_selection.CONFIG_PATH.is_file(),
+                 observe=observe, check=lambda: ("PASS" if observe() == expected else "FAIL", "P6"), neutralise=neutralise)
+    return "PASS", ("a paired run with a [compare: cells] rule and no cell_claim threshold writes one ERROR event and "
+                    "cell_threshold_missing with decisions_unsettled into its run summary before any call, never refused; "
+                    "with a threshold, no cell rule or wide mode nothing; neutralise, fail, restore, pass")
+
+
+def check_537_a_fidelity_record_on_a_cell_rule_carries_no_verdict_rule_id():
+    """S4/P3 (SciTab item 21, Seckin 19 Nov 01:11-01:13): on a rule declaring [compare: cells] only the cell
+    step decides the claim. Executed through pipeline._stamp_source_rule_ids on fixtures: a VERIFIER (and an
+    AUDITOR896) extraction-fidelity ok record naming the cell rule, with and without its own source_rule_id,
+    leaves with no source_rule_id, the id kept in off_task_source_rule_id and the record marked off_task, still
+    in the list (HONEST-OUTPUT-A); the cell step's own record (judged path cell_claim) keeps its id; the same
+    VERIFIER record on a rule with no compare declaration, and a PRACTICE_AUDITOR record on the cell rule, are
+    stamped as before; and the scorer's own filter (records whose source_rule_id names the item) then sees
+    the cell record and not the fidelity ok. Neutralised (no agent passed): the fidelity record keeps the id."""
+    import pipeline as _pl
+    import paired_review as _pr
+    reg = {"conventions": [
+        {"id": "CONV-001", "category": "CONV-T21", "severity": "required", "action": "flag",
+         "rule": "claim text", "compare": "cells"},
+        {"id": "CONV-002", "category": "CONV-T22", "severity": "required", "action": "flag",
+         "rule": "plain rule"}]}
+    fid = {"rule_id": "CONV-001", "unit_id": "u01", "relation": "sum_mismatch", "record_verdict": "ok",
+           "explanation": "F1 matches the source"}
+    fid_own = dict(fid, source_rule_id="CONV-T21")
+    cell = {"rule_id": "CONV-001", "unit_id": "u01", "relation": "claim_not_met", "record_verdict": "irregular",
+            _pr.JUDGED_PATH_FIELD: _pr.JUDGED_PATH_CELL_CLAIM}
+    plain = dict(fid, rule_id="CONV-002")
+    for agent in ("VERIFIER", "AUDITOR896"):
+        out = _pl._stamp_source_rule_ids([fid, fid_own, cell, plain], reg, agent)
+        if len(out) != 4:
+            return _fail("%s: a record was dropped, not kept visible: %d of 4" % (agent, len(out)))
+        for i in (0, 1):
+            r = out[i]
+            if r.get("source_rule_id") or r.get("off_task_source_rule_id") != "CONV-T21" \
+                    or r.get("off_task") != "fidelity_record_on_cell_rule":
+                return _fail("%s: fidelity record %d on a cell rule still carries the rule id or is unmarked: %r"
+                             % (agent, i, r))
+        if out[2].get("source_rule_id") != "CONV-T21" or out[2].get("off_task"):
+            return _fail("%s: the cell step's own record lost its rule id: %r" % (agent, out[2]))
+        if out[3].get("source_rule_id") != "CONV-T22" or out[3].get("off_task"):
+            return _fail("%s: a fidelity record on a rule with no compare declaration changed: %r" % (agent, out[3]))
+        deciding = [r for r in out if str(r.get("source_rule_id") or "").casefold() == "conv-t21"]
+        if [r.get("record_verdict") for r in deciding] != ["irregular"]:
+            return _fail("%s: the item's records are %r, not the cell record alone" % (agent, deciding))
+    pa = _pl._stamp_source_rule_ids([fid], reg, "PRACTICE_AUDITOR")
+    if pa[0].get("source_rule_id") != "CONV-T21" or pa[0].get("off_task"):
+        return _fail("a convention reviewer's record on a cell rule was treated as fidelity: %r" % pa[0])
+    neutral = _pl._stamp_source_rule_ids([fid], reg)
+    if neutral[0].get("source_rule_id") != "CONV-T21":
+        return _fail("neutralised path (no agent) no longer stamps the id: the proof would not discriminate")
+    if fid.get("source_rule_id") or fid_own.get("off_task"):
+        return _fail("an input record was mutated in place")
+    return _ok("fidelity ok on a cell rule: no source_rule_id, off_task marked, kept; cell record decides; "
+               "plain rule and convention reviewer unchanged; neutralised path stamps")
+
+
+def check_544_a_small_named_table_is_shown_whole_with_its_caption():
+    """N4 (Seckin 2026-11-19 01:11): scripts/cell_selection.py select shows a table the claim names whole, caption
+    and every cell (selected_by small_table), when its body cells are within config/cell_selection.json
+    whole_table_max_cells (a size bound set from the caps, never from a key or score); above it the selection cuts
+    by labels as before. The verdict stays the model's (CELLS-A, TABLE-AUTHORITY-A). Runs
+    scripts/cell_selection_checks.py run_small_table_check on fixtures, on the selection, the replay and the real
+    phase 5.5: each proof neutralised, failed, restored and passed."""
+    from cell_selection_checks import run_small_table_check
+    return run_small_table_check()
+
+
+def check_545_named_columns_are_filled_with_unnamed_ones_up_to_the_declared_fill():
+    """S3 of the SciTab diagnosis (Seckin 01:11 to 01:13, 19 November): when a claim names fewer columns than
+    the selection has room for, scripts/cell_selection.py fills the rest with unnamed columns up to
+    config/cell_selection.json `fill_columns` (0 when absent), as `fill_rows` fills rows, within `max_columns`,
+    so a named label column cannot crowd out the figures. Runs scripts/cell_selection_checks.py
+    run_column_fill on an invented table, no model: neutralised, failed, restored and passed."""
+    from cell_selection_checks import run_column_fill
+    return run_column_fill()
+
+
+def check_546_the_passage_pair_step_asks_with_no_threshold_and_saves_the_probabilities():
+    """Seckin 19 Nov 01:11-01:22 (as N1 for cells): under the decision form with no passage_pair threshold the
+    pair step still asks every proposed pair in both orders; each order's probabilities stand on its decisions
+    row (and its one reply record, REPLIES-A), every decision stays UNSETTLED (no_threshold), no record is kept
+    and the rule is listed not judged in the reader's words, so a threshold set later decides from what was
+    saved. The shipped reply form is unchanged. Runs scripts/choice_decision_checks.py run_no_measure_asks on
+    the real phase 5.5 with a mocked backend: neutralised (the early return restored), failed, restored, passed."""
+    from choice_decision_checks import run_no_measure_asks
+    result = run_no_measure_asks()
+    return "PASS", "%s: before and after the neutralisation the observation differs, restored" % result["name"]
+
+
+def check_585_semtabfacts_is_a_separate_auxiliary_set_in_scitabs_bundle_form():
+    """D-798 item 4: benchmark/adapters/semtabfacts/adapter.py freezes SEM-TAB-FACTS dev and test XML into one
+    set (semtabfacts_aux_val, its digest, a look counter at 0) and builds SciTab's claim-against-a-table bundle
+    from it: spanning cells expanded over their rows and columns, entailed, refuted and unknown mapped to
+    supports, refutes and not enough info from config/semtabfacts_aux_val.json read at call time, every
+    evidence mark stripped, a span outside the grid, a missing type and an unknown type refused on the record
+    and counted by reason, its own benchmark name, ids and set name, refused by the SciTab adapter. Runs
+    scripts/semtabfacts_checks.py on two hand-written XML fixtures: each proof neutralised, failed, restored,
+    passed."""
+    from semtabfacts_checks import run_check
+    return run_check(585)
+
+
+def _drive_no_download(name):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import drive_no_download_checks
+    return drive_no_download_checks.run_group(name)
+
+
+def check_575_drive_archive_verifies_by_stream_hash_and_size_without_reading_drive():
+    """D-763 (19 Nov 2026, Drive for desktop downloaded 38.8 GiB of archives on C:): tools/loop/drive_archive.py
+    hashes SHA-256 and MD5 from the local write stream, verifies the Drive copy by os.stat size only and keeps a
+    local manifest copy; an audit hook sees no read open under the fake Drive folder. Runs
+    tools/loop/drive_no_download_checks.py group archive on fixtures: neutralised (read-back), failed, restored, passed."""
+    return _drive_no_download('archive')
+
+
+def check_576_drive_paced_confirms_with_the_recorded_md5_without_reading_drive():
+    """D-763: tools/loop/drive_paced.py compares the Drive app metadata's server MD5 (stubbed) with the MD5
+    recorded at write time; with none recorded it compares size and cloud id only and never hashes the Drive
+    file. Group paced of tools/loop/drive_no_download_checks.py: neutralised, failed, restored, passed."""
+    return _drive_no_download('paced')
+
+
+def check_577_backup_coverage_reads_the_log_and_stat_only():
+    """D-763: tools/loop/backup_coverage.py judges Drive archives from backup_log.jsonl, the local manifest copy
+    and os.stat; no Drive manifest, no member listing of a legacy archive. Group coverage of
+    tools/loop/drive_no_download_checks.py: neutralised (manifest read from Drive), failed, restored, passed."""
+    return _drive_no_download('coverage')
+
+
+def check_578_restore_drill_refuses_a_cloud_only_archive_above_the_declared_limit():
+    """D-763: tools/loop/restore_drill.py refuses, before opening it, a cloud-only archive (OFFLINE,
+    RECALL_ON_OPEN or RECALL_ON_DATA_ACCESS, faked through a monkeypatched stat) above
+    config/drive_no_download.json cloud_only_max_bytes and a local one above local_max_bytes. Group drill of
+    tools/loop/drive_no_download_checks.py: neutralised, failed, restored, passed."""
+    return _drive_no_download('drill')
+
+
+def _drive_pause(name):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import drive_pause_checks
+    return drive_pause_checks.run_group(name)
+
+
+def check_640_drive_archive_writes_nothing_under_the_upload_pause_floor():
+    """D-764: tools/loop/drive_archive.py reads free disk on the disk config/drive_no_download.json
+    upload_pause declares before an archive write; under floor_gib (C: free monkeypatched) nothing is written
+    under Drive, a paused line is logged and one ALERT.md line "Drive uploads paused: C: free X GiB under floor
+    Y GiB" is written (fixture ALERT.md). Group before of tools/loop/drive_pause_checks.py: neutralised,
+    failed, restored, passed."""
+    return _drive_pause('before')
+
+
+def check_641_drive_archive_stops_between_files_under_the_upload_pause_floor():
+    """D-764: free disk falling under the floor between the files of one archive stops the write at the next
+    file; the .partial is left, never renamed, no manifest. Group between of tools/loop/drive_pause_checks.py:
+    neutralised (no guard between files), failed, restored, passed."""
+    return _drive_pause('between')
+
+
+def check_642_drive_paced_stops_its_run_under_the_floor_and_the_next_run_resumes():
+    """D-764: tools/loop/drive_paced.py under the floor starts no part and exits 6 with one ALERT.md line;
+    the next run above the floor archives every part. Group paced of tools/loop/drive_pause_checks.py:
+    neutralised, failed, restored, passed."""
+    return _drive_pause('paced')
+
+
+def check_643_the_upload_pause_floor_is_read_from_config_at_call_time():
+    """D-764: the floor is config/drive_no_download.json upload_pause.floor_gib (12 GiB, D-729's figure),
+    read at call time; with none declared the write is refused. Group config of
+    tools/loop/drive_pause_checks.py: neutralised (a typed-in floor), failed, restored, passed."""
+    return _drive_pause('config')
+
+
+def _neg_optional(number):
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_optional_checks import run_group
+    return run_group(str(number))
+
+
+def check_539_a_fate_forecast_under_one_declared_precedence_rule():
+    """P2 (lane/neg-optional, Seckin 19 Nov 01:23): with advice.methods.stepwise.fate_forecast true
+    (benchmark/baselines/neg_advisor_prompt.json, false as shipped) neg_advisor.stepwise_advice asks one fate
+    choice per proposal after its stance (CHOICE-A, the article's positions shown), marks it fate_basis inferred
+    (D-711) and applies the one declared fate_precedence (stance: the stance stays; fate: the stance from
+    fate_stance, the earlier one kept as stance_from_fate); the fate never writes the conflict field; a missing
+    precedence is refused; off asks and composes exactly as before. Runs tools/neg_optional_checks.py with a
+    scripted model: neutralised, failed, restored, passed."""
+    return _neg_optional(539)
+
+
+def check_540_the_conflict_question_as_two_yes_no_checks():
+    """C2 (lane/neg-optional): conflict_question two_checks asks each position's touches and holds yes/no
+    steps in place of the stance step; oppose is yes then no, else two_checks_otherwise; the oppose margin is
+    the smaller of the two toward oppose; with conditional_accept it is refused; off unchanged. Runs
+    tools/neg_optional_checks.py: neutralised, failed, restored, passed."""
+    return _neg_optional(540)
+
+
+def check_541_an_oppose_is_grounded_by_a_numbered_sentence_choice():
+    """P6 (lane/neg-optional): quote_grounding true asks, after an oppose, which of the position's own
+    sentences (ended by form, scripts/sentence_split.py, at most 9) opposes, by number or 0 (CHOICE-A, verbatim
+    by construction); 0 sends the oppose back to quote_none_stance, a refused answer keeps it ungrounded and
+    counted, never ending the chain; off unchanged. Runs tools/neg_optional_checks.py: neutralised, failed,
+    restored, passed."""
+    return _neg_optional(541)
+
+
+def check_542_a_second_family_auditor_on_the_margin_band_flips_only_on_supported():
+    """P5 (lane/neg-optional): auditor_band [low, high) (null as shipped, needs quote_grounding) grounds a
+    persona position the chain did not read as oppose whose oppose margin is in the band; a chosen sentence
+    makes it a candidate, neg_advisor.audit_prompts derives one system_audit question per candidate of a
+    no_conflict proposal, and both readers (neg_advisor.answers_from_texts, tools/reread_replies.py) flip the
+    proposal to conflict only on supported (auditor_flip), counted; no cue word is read (WORDS-A); off
+    unchanged. Runs tools/neg_optional_checks.py: neutralised, failed, restored, passed."""
+    return _neg_optional(542)
+
+
+def check_543_a_conditional_acceptance_counts_as_its_declared_stance():
+    """C3 (lane/neg-optional): conditional_accept {label, counts_as} (null as shipped) offers a fourth stance
+    answer from its own template; Python counts it as counts_as (accept, from D-748) and keeps answered on the
+    position; a label equal to a declared stance and the trimmed arm are refused; off unchanged; the
+    carry-forward of open item 158 is not modelled. Runs tools/neg_optional_checks.py: neutralised, failed,
+    restored, passed."""
+    return _neg_optional(543)
 
 
 CHECKS = [
@@ -28339,6 +28754,58 @@ CHECKS = [
      check_528_the_asset_build_record_and_held_bundles_are_admitted_as_declared),
     ("529 An unacknowledged role hand-back alerts after 10 minutes, names and times only (the lead 18 Nov 16:05)",
      check_529_an_unacknowledged_role_hand_back_alerts_after_10_minutes),
+    ("530 A Lambda launch is never refused for laptop RAM: each step kind holds its declared floor (Seckin 18 Nov 18:54)",
+     check_530_a_lambda_launch_is_never_refused_for_laptop_ram),
+    ("531 The stepwise chain asks its choice steps first and carries the full and trimmed stance arms (D-756 items 5, 6)",
+     check_531_the_stepwise_chain_asks_its_choice_steps_first_and_carries_two_stance_arms),
+    ("532 A proposal's conflict by one declared threshold on its largest oppose margin, with and without (D-756 item 3)",
+     check_532_a_proposals_conflict_by_a_declared_threshold_on_its_largest_oppose_margin),
+    ("533 Oppose recall and precision over positions is a development figure beside the bar (D-756 item 2)",
+     check_533_oppose_recall_and_precision_over_positions_is_a_development_figure),
+    ("534 Nothing silently waits: a late planned step, a failed launch and a role exit with no output alert (Seckin 18 Nov 21:46)",
+     check_534_nothing_silently_waits_late_failed_and_role_gap_alert),
+    ("535 The composition step links an article-level position to its article's single proposal, off by default (D-758)",
+     check_535_the_composition_step_links_an_article_level_position_to_its_single_proposal),
+    ("536 The cell-claim step asks with no threshold and saves the answer probabilities (N1)",
+     check_536_the_cell_claim_step_asks_with_no_threshold_and_saves_the_probabilities),
+    ("537 A VERIFIER or AUDITOR fidelity record on a [compare: cells] rule carries no verdict rule id, kept off-task (S4/P3)",
+     check_537_a_fidelity_record_on_a_cell_rule_carries_no_verdict_rule_id),
+    ("538 A paired run with a [compare: cells] rule and no cell_claim threshold says so loudly in phase 0 and in its summary (SciTab P6)",
+     check_538_a_missing_cell_threshold_is_recorded_loudly_before_any_call),
+    ("539 A fate forecast per proposal under one declared precedence rule, off by default (P2)",
+     check_539_a_fate_forecast_under_one_declared_precedence_rule),
+    ("540 The conflict question as two yes/no checks, off by default (C2)",
+     check_540_the_conflict_question_as_two_yes_no_checks),
+    ("541 An oppose is grounded by a numbered sentence choice, off by default (P6)",
+     check_541_an_oppose_is_grounded_by_a_numbered_sentence_choice),
+    ("542 A second-family auditor on the margin band flips a proposal only on supported, off by default (P5)",
+     check_542_a_second_family_auditor_on_the_margin_band_flips_only_on_supported),
+    ("543 A conditional acceptance counts as its declared stance, off by default (C3)",
+     check_543_a_conditional_acceptance_counts_as_its_declared_stance),
+    ("544 A small table the claim names is shown whole with its caption (N4)",
+     check_544_a_small_named_table_is_shown_whole_with_its_caption),
+    ("545 Named columns are filled with unnamed ones up to the declared fill_columns, within max_columns (S3)",
+     check_545_named_columns_are_filled_with_unnamed_ones_up_to_the_declared_fill),
+    ("546 The passage-pair step asks with no threshold and saves the answer probabilities",
+     check_546_the_passage_pair_step_asks_with_no_threshold_and_saves_the_probabilities),
+    ("575 drive_archive verifies by stream hash and os.stat size, never reading Drive (D-763)",
+     check_575_drive_archive_verifies_by_stream_hash_and_size_without_reading_drive),
+    ("576 drive_paced confirms with the MD5 recorded at write time, never reading Drive (D-763)",
+     check_576_drive_paced_confirms_with_the_recorded_md5_without_reading_drive),
+    ("577 backup_coverage reads the upload log, local manifest copies and stat only (D-763)",
+     check_577_backup_coverage_reads_the_log_and_stat_only),
+    ("578 restore_drill refuses a cloud-only archive above the declared limit before opening it (D-763)",
+     check_578_restore_drill_refuses_a_cloud_only_archive_above_the_declared_limit),
+    ("585 SEM-TAB-FACTS is a separate auxiliary set in SciTab's bundle form: spans, mapping, evidence, refusals (D-798 item 4)",
+     check_585_semtabfacts_is_a_separate_auxiliary_set_in_scitabs_bundle_form),
+    ("640 drive_archive writes nothing under the Drive upload pause floor, one ALERT.md line (D-764)",
+     check_640_drive_archive_writes_nothing_under_the_upload_pause_floor),
+    ("641 drive_archive stops between files under the upload pause floor, the .partial never renamed (D-764)",
+     check_641_drive_archive_stops_between_files_under_the_upload_pause_floor),
+    ("642 drive_paced stops its run under the floor, exit 6; the next run resumes above it (D-764)",
+     check_642_drive_paced_stops_its_run_under_the_floor_and_the_next_run_resumes),
+    ("643 The upload pause floor is read from config/drive_no_download.json at call time (D-764)",
+     check_643_the_upload_pause_floor_is_read_from_config_at_call_time),
 ]
 
 

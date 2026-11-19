@@ -630,8 +630,12 @@ def region_image(images, region):
     family, version and architecture the provider lists first, whose region is `region`, the launch region.
     Image ids on Lambda are per region and the inventory comes in the provider's own order, so the first entry
     may be another region's id, which the launch region refuses (16 Nov 2026: us-east-2's id sealed for a
-    us-east-1 launch). Refused when that region lists no such image, or more than one id for it."""
+    us-east-1 launch). Only x86_64 images count, the architecture every candidate type has and the sealed wheels
+    are built for (18 Nov 2026: the provider listed an arm64 image of us-east-3 first, and a us-east-1 A10
+    request was refused). Refused when that region lists no such image, or more than one id for it."""
     require(isinstance(images, list) and images and isinstance(images[0], dict), 'The provider inventory lists no image')
+    images = [x for x in images if isinstance(x, dict) and x.get('architecture') == 'x86_64']
+    require(images, 'The provider inventory lists no x86_64 image; refused before sealing')
     first = images[0]
     key = lambda x: (x.get('family'), x.get('version'), x.get('architecture'))
     found = [x for x in images if isinstance(x, dict) and key(x) == key(first) and x.get('region') == region]

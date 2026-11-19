@@ -75,7 +75,8 @@ CONFIRM_MINUTES = 10           # a launch must show in the ledger (or its done f
 RETRY_MINUTES = 10             # a refused launch, a GuardRefusal or a failed preflight is tried again after this
 REPEAT_ALERT = 3               # refusals of one kind in a row before ALERT.md
 INTENT_WINDOW_MIN = 30         # a launch_intent younger than this with no termination is a launch in flight
-ADMIT_WAIT_MINUTES = 20
+ADMIT_WAIT_MINUTES = 20        # an admit with no visible work counts as launching this long after its launch
+ADMIT_LOG_QUIET_MINUTES = 15   # an admit.log written more recently than this is an admission at work
 POLL_S = 15
 PASS_BUDGET_S = 50 * 60        # no new launch is begun after this
 TIMEOUT_S = {'status': 180, 'preflight': 600, 'request': 1800, 'admit': 900, 'ledger': 1200}
@@ -269,7 +270,18 @@ def chain_folders(root=None):
     if not root.is_dir():
         return []
     return sorted(p for p in root.iterdir() if not is_reparse(p) and p.is_dir() and (p / 'chain.json').is_file()
-                  and (p / 'launch.py').is_file())
+                  and (p / 'launch.py').is_file() and not is_template(p))
+
+
+def is_template(folder):
+    """True when the folder's chain.json declares "template": true (OPEN_ITEMS 159): a template folder is copied by
+    hand (role V drives its own copy) and is never planned or launched. An unreadable chain.json is not a template:
+    its error surfaces where it is loaded."""
+    try:
+        chain = json.loads((Path(folder) / 'chain.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return False
+    return isinstance(chain, dict) and chain.get('template') is True
 
 
 def own_logs(folder, step):
@@ -382,6 +394,86 @@ def in_a_row(trace, folder_name, step_name, result):
     return n
 
 
+def step_bundles(folder, step):
+    """The step's bundle names in order: plan.json `bundles[step]` (what launch.py BUNDLES is read from), else a
+    literal BUNDLES in launch.py (never executed); None when neither names the step."""
+    try:
+        plan = json.loads((Path(folder) / 'plan.json').read_text(encoding='utf-8'))
+        named = (plan.get('bundles') or {}).get(step['step']) if isinstance(plan, dict) else None
+        if isinstance(named, list) and all(isinstance(b, str) for b in named):
+            return named
+    except (OSError, ValueError, AttributeError):
+        pass
+    try:
+        tree = ast.parse((Path(folder) / 'launch.py').read_text(encoding='utf-8'))
+    except (OSError, SyntaxError, ValueError):
+        return None
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'BUNDLES' for t in node.targets):
+            try:
+                value = ast.literal_eval(node.value)
+            except ValueError:
+                return None
+            named = value.get(step['step']) if isinstance(value, dict) else None
+            return named if isinstance(named, list) and all(isinstance(b, str) for b in named) else None
+    return None
+
+
+EVIDENCE = 'collected_evidence.tar.gz'
+RESULT_MEMBER = 'evidence/result.json'
+
+
+def batch_run_folder(folder, step, bundles):
+    """admitted/<first bundle> (where launch.py runs a batch), else the folder of the step's own controller log."""
+    first = Path(folder) / 'admitted' / bundles[0]
+    if first.is_dir() and not through_links(folder, first):
+        return first
+    logs = own_logs(folder, step)
+    return logs[0].parent if logs else None
+
+
+def evidence_exit_code(path):
+    """pipeline_exit_code of evidence/result.json in one collected_evidence.tar.gz (only that member is read)."""
+    import tarfile
+    try:
+        with tarfile.open(path, 'r:gz') as tar:
+            member = tar.getmember(RESULT_MEMBER)
+            if not member.isfile():
+                return None
+            handle = tar.extractfile(member)
+            result = json.loads(handle.read().decode('utf-8')) if handle else None
+    except (OSError, KeyError, ValueError, EOFError, tarfile.TarError):
+        return None
+    return result.get('pipeline_exit_code') if isinstance(result, dict) else None
+
+
+def batch_state(folder, step, row, bundles):
+    """A batch part (more than one bundle) never writes workload_return.json: done when the instance ended
+    terminated_and_cleaned with TERMINATION_VERIFIED, no controller_failure, and one batch/NN_*/collected_evidence
+    per bundle whose evidence/result.json has pipeline_exit_code 0; failed otherwise, with the reason."""
+    phase, cost, n = row['phase'], row['cost'], len(bundles)
+    current = (phase.get('CURRENT_PHASE') or {}).get('phase')
+    problems = []
+    if current != 'terminated_and_cleaned':
+        problems.append('phase %s' % current)
+    if 'TERMINATION_VERIFIED' not in phase:
+        problems.append('no TERMINATION_VERIFIED')
+    if 'controller_failure' in phase:
+        problems.append('controller_failure %s' % (phase['controller_failure'].get('error_type')))
+    run = batch_run_folder(folder, step, bundles)
+    found = [] if run is None else sorted(p for p in (run / 'batch').glob('[0-9][0-9]_*/' + EVIDENCE)
+                                          if not through_links(folder, p))
+    if len(found) != n:
+        problems.append('%d of %d batch evidences' % (len(found), n))
+    bad = [p.parent.name for p in found if evidence_exit_code(p) != 0]
+    if bad:
+        problems.append('%d evidences without pipeline_exit_code 0 (%s)' % (len(bad), ', '.join(bad[:3])))
+    if problems:
+        return 'failed', 'ended batch of %d: %s (%.3f USD)' % (n, '; '.join(problems), cost)
+    return 'done', 'ended batch, %d of %d batch evidences with pipeline_exit_code 0, terminated_and_cleaned (%.3f USD)' % (
+        len(found), n, cost)
+
+
 def own_state(folder, step, status, rows=(), t=None):
     """done, running, launching, failed, pending or unknown, from the evidence alone (no trace)."""
     kind = step['kind']
@@ -401,6 +493,9 @@ def own_state(folder, step, status, rows=(), t=None):
     if row['state'] == 'running':
         return 'running', 'ledger launch line, no termination (%.3f USD so far)' % row['cost']
     if row['state'] == 'ended':
+        bundles = step_bundles(folder, step)
+        if bundles and len(bundles) > 1:
+            return batch_state(folder, step, row, bundles)
         code = (row['phase'].get('workload_return') or {}).get('exit_code')
         if code == 0:
             return 'done', 'ended, workload_return exit_code 0 (%.3f USD)' % row['cost']
@@ -487,6 +582,9 @@ def evaluate(folder, chain, status, trace, t, root=None, cache=None, rows=()):
             if age is not None and age < window:
                 state, why = 'launching', 'launch begun by the chain %.0f min ago (%s), not yet in the evidence' % (
                     age, last['result'])
+            elif step['kind'] == 'admit' and admit_active(folder, step):
+                state, why = 'launching', ('admission at work (staging folder or admit.log written in the last %d min), '
+                                           'begun by the chain %.0f min ago' % (ADMIT_LOG_QUIET_MINUTES, age or 0))
             else:
                 state, why = 'unconfirmed', ('launch begun by the chain at %s (%s), never confirmed by the evidence; '
                                              'held until --clear %s:%s' % (last['time'], last['result'], folder.name, name))
@@ -875,7 +973,9 @@ def launch_step(folder, step, row, chain):
         mc.trace(NAME, 'deferred', folder=folder.name, step=name, why='the budget ledger lock was held for %d s'
                  % LEDGER_LOCK_WAIT_S)
         return False
-    rc, out, err = call_launch(folder, ['preflight'], TIMEOUT_S['preflight'])
+    # The step is named so launch.py holds that step kind's RAM floor (tools/loop/launch_floors.py, Seckin 18 Nov
+    # 18:54); a launch.py that predates it reads only its first argument and holds its one floor.
+    rc, out, err = call_launch(folder, ['preflight', name], TIMEOUT_S['preflight'])
     if rc != 0:
         tail = (out.strip().splitlines() or [''])[0][:300]
         mc.trace(NAME, 'preflight_failed', folder=folder.name, step=name, rc=rc, preflight=tail)
@@ -957,15 +1057,32 @@ def launch_step(folder, step, row, chain):
     if kind == 'ledger' and step.get('watch', True) and (folder / 'watch.py').is_file():
         mc.trace(NAME, 'watch_started', folder=folder.name, step=name, pid=start_watcher(folder, name))
     if kind == 'admit':
-        if wait_admission(folder, step):
-            mc.trace(NAME, 'admit_done', folder=folder.name, step=name, admission=admission(folder, step).get('admitted'))
-        else:
-            mc.trace(NAME, 'admit_timeout', folder=folder.name, step=name,
-                     minutes=step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES))
-            mc.alert('launch_chain:admit:%s' % folder.name,
-                     'Launch chain: admit in %s did not write a full admission within %s minutes; the parts wait. '
-                     'Read admit.log.' % (folder.name, step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES)))
+        after_admit_launch(folder, step)
     return True
+
+
+def after_admit_launch(folder, step):
+    """Seckin 18 Nov 20:37 (no process blocks another): the admission runs detached and the pass goes on at once;
+    the parts are planned when a later reading finds admission.json full. The step counts as launching while its
+    admission is visibly at work (admit_active), else for admit_wait_minutes after the launch."""
+    mc.trace(NAME, 'admit_detached', folder=folder.name, step=step['step'],
+             admitted=admitted_all(folder, step), window_minutes=step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES))
+
+
+def admit_active(folder, step, now=None):
+    """True while an admission is visibly at work: its staging folder exists (never through a link), or admit.log
+    was written within ADMIT_LOG_QUIET_MINUTES (the capacity wait writes a line every 2 minutes)."""
+    folder = Path(folder)
+    out = folder / Path(step.get('admission', 'admitted/admission.json')).parts[0]
+    staging = out.with_name(out.name + '.staging')
+    if staging.is_dir() and not is_reparse(staging):
+        return True
+    log = folder / 'admit.log'
+    try:
+        age = (now or time.time()) - log.stat().st_mtime
+    except OSError:
+        return False
+    return age < ADMIT_LOG_QUIET_MINUTES * 60
 
 
 def ledger_failure_result(rc):
@@ -1009,15 +1126,6 @@ def start_watcher(folder, step_name):
     return proc.pid
 
 
-def wait_admission(folder, step):
-    limit = time.time() + 60 * step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES)
-    while time.time() < limit:
-        if admitted_all(folder, step):
-            return True
-        time.sleep(POLL_S)
-    return admitted_all(folder, step)
-
-
 def flag_problems(folder_name, steps):
     for name, row in steps.items():
         if row['state'] == 'failed':
@@ -1043,8 +1151,17 @@ def seal_exempt(chain, step, follow):
     return bool(follow) and step['kind'] == 'ledger' and stale_request_of(chain, step) is not None
 
 
+def skip_without_chain(folder):
+    """A folder whose chain.json was held (renamed) or removed after the listing is skipped cleanly: one trace
+    line, no folder error (the REBUILD_J1_B1 TypeError of 18 Nov 19:42)."""
+    mc.trace(NAME, 'skipped', folder=Path(folder).name, why='no chain.json now (held or removed after the listing)')
+    return True
+
+
 def run_folder(folder, root, started_s, tally):
     chain = load_chain(folder)
+    if chain is None and skip_without_chain(folder):
+        return
     follow = False          # True right after this pass wrote a request: its seal is next, budget or not
     for _ in range(passes_for(chain)):
         if budget_spent(started_s) and not follow:

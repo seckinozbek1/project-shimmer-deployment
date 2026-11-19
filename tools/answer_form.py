@@ -31,8 +31,12 @@ JSON_INVALID = "json_invalid"      # a JSON object that does not parse, even rep
 NOT_OBJECT = "not_an_object"       # an entry of a list of objects that is no object
 DUPLICATE = "duplicate"            # a second entry for one id, the first kept
 NOT_ASKED = "not_asked"            # a piece the run never put to its next step (an audit it never asked)
+# A step of a method chain whose answer Python's check refused (lane/neg-improve: the re-reader counted such a
+# step as "<step>:<reason>", which is no declared reason, so a pass with one refused step could not be read
+# again); the step and its own reason stay in the row's `steps_refused`.
+STEP_REFUSED = "step_refused"
 REASONS = (EMPTY, NOT_TEXT, LIST_NOT_ONE, NOT_DECLARED, AMBIGUOUS, NO_OBJECT, JSON_INVALID, NOT_OBJECT, DUPLICATE,
-           NOT_ASKED)
+           NOT_ASKED, STEP_REFUSED)
 # Counted, never dropped: a reply holding more than one JSON object; the last one is read (lead 18:57).
 SEVERAL_OBJECTS = "several_objects_last_read"
 NOTES = (SEVERAL_OBJECTS,)

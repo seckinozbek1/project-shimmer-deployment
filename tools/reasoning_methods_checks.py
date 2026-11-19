@@ -78,7 +78,7 @@ def default_text(step, user):
     if step == "rationale":
         return "Reasoning: the second row's figure is the higher one.\nAnswer: Yes\n{\"outcome\": \"holds\"}"
     if "Which cells" in user:
-        return "Cells: R2C2, R1C2"
+        return "Cells: R2C3, R1C3"
     first, second = _PASSAGES.search(user).groups()
     return "A: \"%s\"\nB: %s" % (" ".join(first.split()[:4]), " ".join(second.split()[:4]))
 
@@ -330,8 +330,8 @@ def _one_cell(value):
 
 def observe_claim_cells_checked():
     out = {}
-    for name, reply, edit in (("listed", "Cells: R2C2, R1C2", None), ("not_listed", "Cells: R9C9", None),
-                              ("none", "I cannot tell.", None), ("too_many", "Cells: R2C2, R1C2", _one_cell)):
+    for name, reply, edit in (("listed", "Cells: R2C3, R1C3", None), ("not_listed", "Cells: R9C9", None),
+                              ("none", "I cannot tell.", None), ("too_many", "Cells: R2C3, R1C3", _one_cell)):
         with tempfile.TemporaryDirectory() as folder:
             seen = caught(lambda: _stepwise(folder, {"text": lambda step, user, reply=reply: reply}, edit=edit))
             if isinstance(seen, str):
@@ -340,7 +340,7 @@ def observe_claim_cells_checked():
             row = _rows_of(seen, "choice_stepwise")[0]
             compared = [c for c in seen["calls"] if c["step"] == "comparison"]
             out[name] = {"refused": (row.get("method_refused") or {}).get("reason"), "comparisons": len(compared),
-                         "python_cells": bool(compared) and "R2C2: BERT large / F1 score = 70\nR1C2: GloVe vectors / F1 score = 60" in compared[0]["user"],
+                         "python_cells": bool(compared) and "R2C3: BERT large / F1 score = 70\nR1C3: GloVe vectors / F1 score = 60" in compared[0]["user"],
                          "label_asked": any(c["step"] == "label" for c in seen["calls"])}
     return out
 
@@ -419,7 +419,7 @@ def observe_label_step_shows_checked_steps():
         label = [c for c in seen["calls"] if c["step"] == "label"][0]
         row = _rows_of(seen, "choice_stepwise")[0]
         record = seen["by_call"][row["call_id"]]
-        return {"evidence": "EVIDENCE\nR2C2: BERT large / F1 score = 70\nR1C2: GloVe vectors / F1 score = 60\n\n" in label["user"],
+        return {"evidence": "EVIDENCE\nR2C3: BERT large / F1 score = 70\nR1C3: GloVe vectors / F1 score = 60\n\n" in label["user"],
                 "comparison": "COMPARISON\nThe cited cells conflict with what the claim states.\n\n" in label["user"],
                 "label_answers": sorted(label["labels"]),
                 "record_answers": sorted(a["label"] for a in record["decision"]["answers"]),

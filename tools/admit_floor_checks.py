@@ -3,10 +3,12 @@
 
 On 18 November the parse sweep's admission (tools/seal_route_driver.py admit) took the ledger lock, then waited in
 wait_for_room for the 30 GiB D-099 floor (standing_orders_check.DISK_FLOOR) at 28.7 GiB free, holding every other
-launch. D-726 (Seckin 12:08): laptop disk below a floor never again makes a measurement wait. Three proofs:
+launch. D-726 (Seckin 12:08): laptop disk below a floor never again makes a measurement wait. Seckin 19 Nov 2026
+12:03: heavy laptop work needs its own footprint plus the margin of config/laptop_disk_floor.json. Proofs:
 
-1. floor: the admission's steps (reverify, preflight) need their expected bytes plus ADMIT_DISK_FLOOR_GIB (12 GiB),
-   not the 30 GiB floor: at 20 GiB free every bundle is admitted, each gate line names the 12 GiB floor.
+1. floor: the admission's steps (reverify, preflight) need their expected bytes plus the laptop rule's margin
+   (admit_floor_bytes, margin_gib 12 GiB read at each call), not the old fixed 30 GiB floor: at 20 GiB free every
+   bundle is admitted, each gate line names the 12 GiB margin; a margin moved in the file moves the gate.
 2. no wait under the lock: with no room at first, the admission waits before it takes the lock and takes it only
    once the room is there.
 3. refusal under the lock: when the room read before the lock is gone at a step's own gate, the admission refuses
@@ -101,22 +103,31 @@ def _raise():
 
 
 def proof_floor(drv=None):
+    import json
+    import launch_floors as lf
     drv = drv or driver
     seen = _admit(drv, [20.0], _raise)
     direct = (drv.admits(_reading(12.02), 16 * 2 ** 20, drv.admit_floor_bytes()),
               drv.admits(_reading(11.99), 16 * 2 ** 20, drv.admit_floor_bytes()))
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = Path(tmp) / "laptop_disk_floor.json"
+        cfg.write_text(json.dumps({"margin_gib": 25}), encoding="utf-8")
+        with patch.object(lf, "DISK_CONFIG", cfg):
+            moved = drv.admits(_reading(20.0), 16 * 2 ** 20, drv.admit_floor_bytes())
     return {"outcome": seen["outcome"], "floors_gib": seen["floors_gib"], "gate_lines": seen["gate_lines"],
-            "12 GiB plus expected": direct}
+            "12 GiB plus expected": direct, "margin 25 in the file holds at 20 GiB": moved}
 
 
 def expected_floor():
-    # 3 bundles x 2 steps under the lock, plus the room line read before it; every line at the 12 GiB floor.
-    return {"outcome": "admitted 3", "floors_gib": [12.0], "gate_lines": 7, "12 GiB plus expected": (True, False)}
+    # 3 bundles x 2 steps under the lock, plus the room line read before it; every line at the 12 GiB margin.
+    return {"outcome": "admitted 3", "floors_gib": [12.0], "gate_lines": 7, "12 GiB plus expected": (True, False),
+            "margin 25 in the file holds at 20 GiB": False}
 
 
 def neutralise_floor():
-    return _swap("proof_floor", "def admit_floor_bytes():\n    return int(ADMIT_DISK_FLOOR_GIB * 2 ** 30)",
-                 "def admit_floor_bytes():\n    return None")
+    # The old fixed 30 GiB floor (D-099) typed back into the admission.
+    return _swap("proof_floor", "def admit_floor_bytes():\n    return int(launch_floors.margin_gib()[0] * 2 ** 30)",
+                 "def admit_floor_bytes():\n    return int(30.0 * 2 ** 30)")
 
 
 def proof_no_wait_under_the_lock(drv=None):
@@ -330,7 +341,7 @@ def run_check():
             return "FAIL", "%s after restore: %s" % (name, str(again)[:400])
         done.append(name)
     return "PASS", ("%d proofs, each neutralise, fail, restore, pass, stand-ins only: the admission's room is its "
-                    "expected bytes plus 12 GiB (D-726), waited for before the ledger lock, refused (never waited "
+                    "expected bytes plus the 12 GiB margin of config/laptop_disk_floor.json (Seckin 19 Nov 12:03), waited for before the ledger lock, refused (never waited "
                     "for) under it, its refusing reading logged, the evidence archive counted, a refusing step's tail in admit.log, capacity waited for before the lock (%s)" % (len(done), ", ".join(done)))
 
 

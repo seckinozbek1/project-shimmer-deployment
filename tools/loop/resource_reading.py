@@ -5,9 +5,10 @@
 Run by the Windows task ShimmerResourceReading every 30 minutes (pyw.exe, no window), so it does not die
 with a Claude session. Each run reads free RAM, free disk on C:, the commit charge (RAM plus page file),
 the page file size, and how many python and claude processes are open with their memory, then appends one
-line to docs/loop/private/mechanism_trace.jsonl (mechanism resource_reading). Below a floor (RAM 2 GiB,
-disk 30 GiB) it writes a dated line at the top of docs/loop/private/ALERT.md, at most once per hour per
-floor. It also checks that the 15-minute watchdog has left a trace line in the last 45 minutes (the watchdog
+line to docs/loop/private/mechanism_trace.jsonl (mechanism resource_reading). Below a floor (RAM 2 GiB;
+disk: the 12 GiB margin of config/laptop_disk_floor.json, read at each run, since any heavy laptop job needs its
+own footprint plus that margin, Seckin 19 Nov 2026 12:03) it writes a dated line at the top of
+docs/loop/private/ALERT.md, at most once per hour per floor. It also checks that the 15-minute watchdog has left a trace line in the last 45 minutes (the watchdog
 of the watchdog). It reads only; it deletes and stops nothing.
 """
 from __future__ import annotations
@@ -23,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mechanism_common as mc  # noqa: E402
+import launch_floors  # noqa: E402
 
 NAME = 'resource_reading'
 GROUPS = {'python': ('python.exe', 'pythonw.exe', 'py.exe', 'pyw.exe'), 'claude': ('claude.exe',)}
@@ -88,10 +90,13 @@ def main():
                  'ShimmerResourceReading). Python processes %s, claude processes %s. Nothing was stopped.' % (
                      ram, reading.get('processes', {}).get('python', {}).get('count', '?'),
                      reading.get('processes', {}).get('claude', {}).get('count', '?')))
-    if reading['disk_free_gib'] < mc.DISK_FLOOR_GIB:
+    margin, source = launch_floors.margin_gib()
+    reading['disk_margin_gib'] = margin
+    if reading['disk_free_gib'] < margin:
         alerts.append('disk')
-        mc.alert('resource_disk', 'Disk below the 30 GiB floor: %.2f GiB free on C: (resource reading, task '
-                 'ShimmerResourceReading). Nothing was deleted.' % reading['disk_free_gib'])
+        mc.alert('resource_disk', 'Disk below the %.0f GiB margin (%s rule: heavy laptop work needs its own footprint '
+                 'plus this): %.2f GiB free on C: (resource reading, task ShimmerResourceReading). No heavy laptop '
+                 'job can start. Nothing was deleted.' % (margin, source, reading['disk_free_gib']))
     age = watchdog_age_s(mc.read_trace(), mc.now())
     reading['watchdog_age_min'] = None if age is None else round(age / 60, 1)
     if age is not None and age > WATCHDOG_STALE_S:

@@ -14,16 +14,25 @@ folder of external/s05 is its own part. Each file is covered when one of the two
     when its path is in the tree with the blob id its present content has (the id `git hash-object --no-filters`
     gives, computed here without writing any object);
 (b) a verified Google Drive archive: a backup_log.jsonl line with `verified: true` whose archive is present on
-    the Drive folder with the logged size. A file is covered when the archive's manifest (drive_archive) or its
-    member list (a zip, or a tar.gz up to LIST_MAX bytes) holds its path with the same size and modification
-    time. A larger legacy tar.gz with no manifest is judged by time only: a file of its part is covered when it
-    was last written or created no later than the archive.
+    the Drive folder with the logged size (os.stat only). A file is covered when the archive's manifest holds
+    its path with the same size and modification time; the manifest is read from its LOCAL copy (the log's
+    `manifest_local`, under the folder config/drive_no_download.json declares, checked against the logged
+    manifest_sha256), never from Drive. An archive with no local manifest copy (legacy archives) is judged by
+    time only: a file of its part is covered when it was last written or created no later than the archive.
+    Either way the log line must carry the archive's size and its SHA-256, and a time-judged archive holds
+    only the files of its own exact part (the part the line names): the archive of the loose files of a
+    folder (`external/s05/(files)`, logged with source `external/s05`) never covers that folder's sub-parts
+    (19 November 2026: it made external/s05/NIGHT_gpu_release, never backed up, look covered).
+
+No content of any file under the Drive folder is ever read here (D-763, 19 November 2026: Google Drive for
+desktop downloads a cloud-only file as soon as its content is read, and the old member listing of legacy
+archives and the manifest reads pulled 38.8 GiB into its cache on C:). Size and attributes come from os.stat.
 
 Each part is COVERED (every file held), STALE (a backup holds the part but some files are newer than it or not
 in it) or NOT COVERED (no backup holds anything of it); the line gives the bytes and newest time not covered.
 Deliberately excluded, never counted as gaps: credential-like names (CRED), the files backup_records holds back
 for review (its last log line), files its secret scan would hold back now, and the folders it leaves out as
-regenerable (output/cloud_wheels, __pycache__), and files a rule of config/drive_archive_exclusions.json
+regenerable (output/cloud_wheels except a declared part, __pycache__), and files a rule of config/drive_archive_exclusions.json
 declares regenerable (read at call time: today the sealed asset bundles admitted/*/assets.tar and large
 hard-linked copies of frozen files; drive_archive leaves the same files out). A part too large for Drive is
 covered by a `located_copy` line in backup_log.jsonl (part, location, sha256, bytes, verified true): its files
@@ -42,6 +51,18 @@ only: the git snapshot is never counted for them, and a snapshot that holds any 
 1). Declared role folders (at the roles root and directly under a declared root) and any name containing a
 declared word are never opened: they are recorded as excluded by declaration. For these roots the printed and
 JSON report carry counts only, never a path inside a part.
+
+Declared drive-only parts inside the checkout (supervisor, 19 November 2026): the `parts` list of
+config/backup_extra_roots.json names folders directly inside a folder both backups otherwise leave out as
+regenerable (today output/cloud_wheels/ordinary_final_cp312, the pinned wheelhouse the sealed runs read). Each
+is walked as a part of its own, covered by verified Drive archives only (never by the git snapshot), and
+archived by drive_archive (drive_paced takes it with --include-drive-only); the rest of the regenerable folder
+stays excluded.
+
+Every run of this tool writes its result as well as printing it (supervisor, 19 November 2026):
+docs/loop/private/backup_coverage_latest.json of the main checkout (shared_paths) and a dated copy under
+docs/loop/private/backup_coverage_history/. The file holds counts, part names, each part's status with its
+reason, sizes and times: never a path inside a part, never a file's content.
 """
 from __future__ import annotations
 
@@ -53,9 +74,6 @@ import os
 import re
 import subprocess
 import sys
-import tarfile
-import time
-import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -69,7 +87,6 @@ REGENERABLE = {'output/cloud_wheels': 'rebuilt from the pinned requirements (bac
 SKIP_DIRS = ('__pycache__',)
 BRANCH = 'records/private'
 GIT_MAX = 50 * 1024 * 1024                     # backup_records stores nothing larger
-LIST_MAX = 256 * 1024 * 1024                   # a legacy tar.gz up to this size is read for its member list
 MTIME_SLACK = 2.0                              # zip times have two-second steps
 CRED = ('.env', 'credential', 'api_key', 'secret', 'token', 'config.py', '.pem', '.key')
 DRIVE_TOOLS = ('drive_archive', 'drive_external', 'drive_backup')
@@ -80,6 +97,45 @@ EXTRA_NS = 'roles'                             # every declared extra root is wa
 # call time, never typed into code; a file a rule matches is excluded, not a gap.
 ARCHIVE_EXCLUSIONS = HERE.parents[1] / 'config' / 'drive_archive_exclusions.json'
 LOCATED_TOOL = 'located_copy'                  # a backup_log line naming a copy kept elsewhere (Seckin 15:20)
+# D-763: where the local manifest copies live and how large a Drive file the restore drill may read, read at
+# call time. Windows marks a cloud-only placeholder with one of these attribute bits (os.stat shows them
+# without downloading anything).
+NO_DOWNLOAD_CONFIG = HERE.parents[1] / 'config' / 'drive_no_download.json'
+FILE_ATTRIBUTE_OFFLINE = 0x1000
+FILE_ATTRIBUTE_RECALL_ON_OPEN = 0x40000
+FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x400000
+CLOUD_ONLY_BITS = FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_OPEN | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
+SHA256_HEX = re.compile(r'[0-9a-f]{64}')
+# The declared drive-only parts inside the checkout (config/backup_extra_roots.json `parts`), set by coverage()
+# from paths['extra'] at call time: part_of and walk read them.
+DECLARED_PARTS = ()
+RESULT_NAME = 'backup_coverage_latest.json'
+RESULT_HISTORY = 'backup_coverage_history'
+
+
+def drive_stat(path):
+    """os.stat of a file under the Drive folder: size and attributes, never its content (no download)."""
+    return os.stat(path, follow_symlinks=False)
+
+
+def cloud_only(path):
+    """True when the file is a cloud-only placeholder: reading its content would make Drive download it."""
+    return bool((getattr(drive_stat(path), 'st_file_attributes', 0) or 0) & CLOUD_ONLY_BITS)
+
+
+def no_download_config(path=None):
+    """config/drive_no_download.json, read now; {} when absent."""
+    p = Path(path or NO_DOWNLOAD_CONFIG)
+    if not p.is_file():
+        return {}
+    return json.loads(p.read_text(encoding='utf-8'))
+
+
+def manifest_dir(main, config=None):
+    """The local folder of the manifest copies: the main checkout's sibling folder the config names (outside
+    the repository, so a drive-only part's member names never reach git)."""
+    cfg = (no_download_config() if config is None else config).get('manifest_copies') or {}
+    return Path(main).parent / cfg.get('sibling_of_main_checkout', 'shimmer-drive-manifests')
 
 
 def archive_exclusions(path=None):
@@ -147,6 +203,7 @@ def default_paths(main=None, environ=None, config_path=None):
     return {'main': main, 'repo': main.parent / 'shimmer-history-backup' / 'records',
             'drive': Path('G:/My Drive/Shimmer_backups'),
             'log': main.joinpath('docs', 'loop', 'private', 'backup_log.jsonl'),
+            'manifests': manifest_dir(main),
             'extra': extra_roots(main, environ, config_path)}
 
 
@@ -168,7 +225,26 @@ def load_extra_config(path=None):
         if r.get('drive_only') is not True:
             raise CoverageError('%s: root %s is not declared drive_only; the git backup never carries a '
                                 'root outside the repository' % (path.name, folder))
+    drive_only_parts(data, path.name)       # raises on a malformed parts declaration
     return data
+
+
+def drive_only_parts(data, name='backup_extra_roots.json'):
+    """[{part, irreplaceable}] of the declaration's `parts`: each a folder directly inside a folder both backups
+    leave out as regenerable (REGENERABLE), declared drive_only. Anything else raises CoverageError."""
+    out = []
+    for p in (data or {}).get('parts') or ():
+        part = str(p.get('part') or '')
+        bits = part.split('/')
+        parent = '/'.join(bits[:-1])
+        if (len(bits) < 3 or any(b in ('', '.', '..') or any(c in b for c in '\\:') for b in bits)
+                or parent not in REGENERABLE):
+            raise CoverageError('%s: a declared part must be one folder directly inside a regenerable folder (%s)'
+                                % (name, ', '.join(sorted(REGENERABLE))))
+        if p.get('drive_only') is not True:
+            raise CoverageError('%s: part %s is not declared drive_only' % (name, part))
+        out.append({'part': part, 'irreplaceable': str(p.get('irreplaceable') or '')})
+    return out
 
 
 def excluded_name(name, depth, spec):
@@ -206,9 +282,11 @@ def extra_roots(main, environ=None, config_path=None):
     """{'roots': [{logical, disk, irreplaceable}], 'refused': [(logical, why)], 'missing': [logical],
     'location', 'how', 'spec' (the exclusions)}; nothing declared when the file is absent."""
     data = load_extra_config(config_path)
-    out = {'roots': [], 'refused': [], 'missing': [], 'location': None, 'how': 'not declared', 'spec': {}}
+    out = {'roots': [], 'refused': [], 'missing': [], 'location': None, 'how': 'not declared', 'spec': {},
+           'parts': []}
     if not data:
         return out
+    out['parts'] = drive_only_parts(data)
     location, how = roles_location(main, environ, data.get('roots_location'))
     out.update(location=str(location) if location else None, how=how, spec=data.get('excluded') or {})
     for r in data['roots']:
@@ -265,7 +343,18 @@ def changed_time(st):
     return max(st.st_mtime, getattr(st, 'st_birthtime', 0.0) or 0.0)
 
 
+def declared_part(logical):
+    """The declared drive-only part (DECLARED_PARTS) this path is or lies in, or ''."""
+    for p in DECLARED_PARTS:
+        if logical == p or logical.startswith(p + '/'):
+            return p
+    return ''
+
+
 def part_of(logical):
+    declared = declared_part(logical)
+    if declared and logical != declared:
+        return declared
     bits = logical.split('/')
     if bits[0] == EXTRA_NS and len(bits) >= 3:
         return '/'.join(bits[:2]) + '/' + (bits[2] if len(bits) > 3 else LOOSE)
@@ -277,6 +366,8 @@ def part_of(logical):
 
 
 def link_part(logical):
+    if logical in DECLARED_PARTS:      # the declared part's folder is itself a link: recorded on that part
+        return logical
     if '/' not in logical or (drive_only(logical) and logical.count('/') == 1):
         return logical + '/' + LOOSE
     return part_of(logical)
@@ -331,6 +422,15 @@ def walk(main, within=None, extra=None, declared=None, vanished=None, outside=No
                 if e.is_dir(follow_symlinks=False):
                     if logical in REGENERABLE:
                         skipped[logical] = REGENERABLE[logical]
+                        # a declared drive-only part directly inside it is walked; the rest stays out
+                        for p in DECLARED_PARTS:
+                            if p.rsplit('/', 1)[0] != logical or not wanted(p, within):
+                                continue
+                            disk = Path(e.path) / p.rsplit('/', 1)[1]
+                            if is_link(disk):
+                                links.append(p)
+                            elif disk.is_dir():
+                                stack.append((disk, p))
                     elif e.name in SKIP_DIRS:
                         if part_of(logical + '/x') == logical:      # a part of its own; deeper ones are skipped
                             skipped[logical] = 'regenerable (__pycache__)'
@@ -441,9 +541,11 @@ class Archive:
 
 
 def archive_ok(line, path):
-    """The log says verified and the archive is on Drive with the logged size."""
+    """The log says verified, records the archive's SHA-256, and the archive is on Drive with the logged size
+    (os.stat: no download)."""
     try:
-        return bool(line.get('verified') is True and path.is_file() and int(line.get('bytes')) == path.stat().st_size)
+        return bool(line.get('verified') is True and SHA256_HEX.fullmatch(str(line.get('sha256') or ''))
+                    and path.is_file() and int(line.get('bytes')) == drive_stat(path).st_size)
     except (TypeError, ValueError, OSError):
         return False
 
@@ -465,28 +567,28 @@ def read_manifest(path):
     return {e['path']: (e['size'], e['mtime']) for e in data['entries']}
 
 
-def list_members(archive, prefix, list_max=None):
-    p = archive.path
-    if p.suffix == '.zip':
-        out = {}
-        with zipfile.ZipFile(p) as z:
-            for i in z.infolist():
-                if not i.is_dir():
-                    out[prefix + i.filename] = (i.file_size, time.mktime(i.date_time + (0, 0, -1)))
-        return out
-    if p.name.endswith('.tar.gz') and p.stat().st_size <= (LIST_MAX if list_max is None else list_max):
-        out = {}
-        with tarfile.open(p, 'r|gz') as t:
-            for m in t:
-                if m.isfile():
-                    out[prefix + m.name] = (m.size, float(m.mtime))
-                elif m.islnk():          # a hard link member carries no size; its target holds the bytes
-                    out[prefix + m.name] = (None, float(m.mtime))
-        return out
-    return None
+def under(path, root):
+    try:
+        Path(path).resolve().relative_to(Path(root).resolve())
+        return True
+    except (ValueError, OSError):
+        return False
 
 
-def drive_archives(lines, drive, main, list_max=None):
+def local_manifest(line, drive):
+    """The local manifest copy a log line names, or None: never a file under the Drive folder (D-763)."""
+    m = line.get('manifest_local')
+    if not m or not line.get('manifest_sha256'):
+        return None
+    p = Path(m)
+    if not p.is_absolute() or under(p, drive) or not p.is_file():
+        return None
+    return p
+
+
+def drive_archives(lines, drive, main):
+    """The verified Drive archives in the log: size by os.stat, members from the local manifest copy, else
+    judged by time. No file under the Drive folder is opened (D-763)."""
     found = []
     for line in lines:
         tool = line.get('tool')
@@ -499,28 +601,23 @@ def drive_archives(lines, drive, main, list_max=None):
         if when is None or not archive_ok(line, path):
             continue
         a = Archive(line, path, when)
-        prefix = line.get('arc_prefix', 'external/' if tool == 'drive_external' else '')
-        manifest = line.get('manifest')
-        if manifest:
-            mpath = Path(manifest) if Path(manifest).is_absolute() else Path(drive) / manifest
-            if mpath.is_file() and (not line.get('manifest_sha256')
-                                    or sha256_file(mpath) == line['manifest_sha256']):
-                a.members, a.how = read_manifest(mpath), 'manifest'
-        if a.members is None:
-            try:
-                a.members = list_members(a, prefix, list_max)
-                a.how = 'members' if a.members is not None else ''
-            except (OSError, tarfile.TarError, zipfile.BadZipFile, EOFError):
-                a.members = None
-        if a.members is None:
-            if tool == 'drive_external' and line.get('part'):
-                a.scope, a.how = legacy_scope(line['part'], main), 'time'
-            elif line.get('source'):
-                a.scope, a.how = line['source'], 'time'
-            else:
+        mpath = local_manifest(line, drive)
+        if mpath is not None and sha256_file(mpath) == line['manifest_sha256']:
+            a.members, a.how = read_manifest(mpath), 'manifest'
+        if a.members is None:      # judged by time, within the exact part the line names
+            a.scope, a.how = time_scope(line, main), 'time'
+            if not a.scope:
                 continue
         found.append(a)
     return found
+
+
+def time_scope(line, main):
+    """The exact part a time-judged archive line holds, or None: drive_external's legacy part name, else the
+    line's part, never its source (a `(files)` part's source is its parent folder)."""
+    if line.get('tool') == 'drive_external' and line.get('part'):
+        return legacy_scope(line['part'], main)
+    return line.get('part') or line.get('source') or None
 
 
 def sha256_file(path):
@@ -538,7 +635,12 @@ def drive_holds(archive, logical, size, mtime, changed):
             return False
         hsize, hmtime = held
         return (hsize is None or hsize == size) and abs(float(hmtime) - mtime) <= MTIME_SLACK
-    return (logical == archive.scope or logical.startswith(archive.scope + '/')) and changed <= archive.when
+    return scope_holds(archive.scope, part_of(logical)) and changed <= archive.when
+
+
+def scope_holds(scope, part):
+    """A time-judged archive holds the files of its own exact part only, never a sibling or a sub-part."""
+    return part == scope
 
 
 def touches(archive, part):
@@ -546,7 +648,7 @@ def touches(archive, part):
         if not hasattr(archive, 'parts'):
             archive.parts = {part_of(m) for m in archive.members}
         return part in archive.parts
-    return archive.scope == part or archive.scope.startswith(part + '/') or part.startswith(archive.scope + '/')
+    return scope_holds(archive.scope, part)
 
 
 def default_secret_check(uncovered):
@@ -595,17 +697,20 @@ def unique_bytes(pairs):
     return sum(seen.values()) + loose
 
 
-def coverage(paths, secret_check=default_secret_check, list_max=None):
+def coverage(paths, secret_check=default_secret_check):
     """{'parts': [...], 'links': [...], 'excluded': [...], 'git': {...}, 'drive': [...]}."""
+    global DECLARED_PARTS
     main = paths['main']
     extra = paths.get('extra') or {}
+    own_parts = {p['part']: p['irreplaceable'] for p in extra.get('parts') or ()}
+    DECLARED_PARTS = tuple(own_parts)
     declared, vanished, outside = {}, [], []
     files, links, skipped = walk(main, extra=extra, declared=declared, vanished=vanished, outside=outside)
     reasons = {r['logical']: r['irreplaceable'] for r in extra.get('roots', ())}
     tree, commit, git_when = git_snapshot(paths['repo'])
     in_git_refused = sorted(p for p in tree if drive_only(p))
     lines = read_log(paths['log'])
-    archives = drive_archives(lines, paths['drive'], main, list_max)
+    archives = drive_archives(lines, paths['drive'], main)
     held = held_back(lines)
     located = located_copies(lines)
     rules = archive_exclusions()
@@ -631,9 +736,11 @@ def coverage(paths, secret_check=default_secret_check, list_max=None):
                'git_files': 0, 'drive_files': 0, 'gap': [], 'excluded': [],
                'links': sorted(x for x in links if link_part(x) == part),
                'regenerable': skipped.get(part), 'irreplaceable': irreplaceable(part, members),
-               'drive_only': drive_only(part), 'declared': own_declared.get(part),
+               'drive_only': drive_only(part) or part in own_parts, 'declared': own_declared.get(part),
                'declared_excluded': declared_in.get(part, 0) + (1 if part in own_declared else 0)}
-        if row['drive_only']:      # its declared reason; a part out of scope by declaration is never a fault
+        if part in own_parts:      # a declared drive-only part inside the checkout: its declared reason, if any
+            row['irreplaceable'] = own_parts[part] or row['irreplaceable']
+        elif row['drive_only']:    # its declared reason; a part out of scope by declaration is never a fault
             row['irreplaceable'] = '' if row['declared'] else reasons.get('/'.join(part.split('/')[:2]),
                                                                            'drive-only root')
         row['git_time'] = None if row['drive_only'] else (
@@ -799,6 +906,75 @@ def render(report, gaps=0):
     return '\n'.join(out)
 
 
+def reason(r):
+    """One line on why a part has its status: counts and times only, never a path inside the part."""
+    if r['status'] == 'EXCLUDED':
+        return r.get('regenerable') or r.get('declared') or 'excluded'
+    held = 'git %d, Drive %d, located copy %d of %d files' % (r['git_files'], r['drive_files'],
+                                                              r.get('located_files', 0), r['files'])
+    if r['status'] == 'COVERED':
+        return 'held: ' + held + ('; %d excluded by rule' % r['excluded_count'] if r['excluded_count'] else '')
+    if r['status'] == 'STALE':
+        return '%d files (%d bytes) newer than the backups or not in them, newest %s; %s' % (
+            r['gap_files'], r['gap_bytes'], stamp(r['gap_newest']), held)
+    return ('no verified Drive archive (size and SHA-256 in the log) and no git snapshot holds any file of '
+            'this part: %d files, %d bytes not covered' % (r['gap_files'], r['gap_bytes']))
+
+
+def summary(report, code, now=None):
+    """The written result: counts, part names, status with reason, sizes and times. Never a path inside a
+    part, never a file's content."""
+    now = now or dt.datetime.now().astimezone()
+    parts, counts = [], {}
+    for r in report['parts']:
+        counts[r['status']] = counts.get(r['status'], 0) + 1
+        parts.append({'part': r['part'], 'status': r['status'], 'reason': reason(r), 'files': r['files'],
+                      'bytes': r['bytes'], 'not_covered_files': r['gap_files'], 'not_covered_bytes': r['gap_bytes'],
+                      'not_covered_newest': stamp(r['gap_newest']) if r['gap_newest'] else None,
+                      'git_files': r['git_files'], 'drive_files': r['drive_files'],
+                      'located_files': r.get('located_files', 0), 'excluded': r['excluded_count'],
+                      'links': r['links_count'], 'git_time': stamp(r['git_time']) if r['git_time'] else None,
+                      'drive_time': stamp(r['drive_time']) if r['drive_time'] else None,
+                      'irreplaceable': r['irreplaceable'] or None, 'drive_only': bool(r.get('drive_only'))})
+    g = report['git']
+    return {'tool': 'backup_coverage', 'time': now.isoformat(timespec='seconds'), 'exit': code, 'readable': True,
+            'counts': counts, 'parts_total': len(parts),
+            'not_covered': [p['part'] for p in parts if p['status'] == 'NOT COVERED'],
+            'stale': [p['part'] for p in parts if p['status'] == 'STALE'],
+            'irreplaceable_faults': [r['part'] for r in faults(report)],
+            'git': {'commit': (g['commit'] or '')[:12] or None, 'time': stamp(g['time']) if g['time'] else None,
+                    'files': g['files'], 'drive_only_in_git': g.get('drive_only_in_git', 0)},
+            'drive_archives': {'verified_present': len(report['drive']),
+                               'with_content_list': sum(1 for a in report['drive'] if a['how'] != 'time'),
+                               'judged_by_time': sum(1 for a in report['drive'] if a['how'] == 'time')},
+            'parts': parts}
+
+
+def result_dir(main_arg=None, main=None):
+    """docs/loop/private of the main checkout: shared_paths' rule, or of the checkout --main names."""
+    if main_arg:
+        return Path(main).joinpath(*shared_paths.PRIVATE)
+    return shared_paths.private_dir()
+
+
+def write_result(data, folder, now=None):
+    """The latest result and a dated copy (each written whole, then renamed); returns the two paths."""
+    now = now or dt.datetime.now().astimezone()
+    folder = Path(folder)
+    if is_link(folder):
+        raise CoverageError('the result folder %s is a link' % folder)
+    history = folder / RESULT_HISTORY
+    history.mkdir(parents=True, exist_ok=True)
+    body = json.dumps(data, indent=1, default=str) + '\n'
+    out = []
+    for target in (folder / RESULT_NAME, history / ('backup_coverage_%s.json' % now.strftime('%Y%m%d-%H%M%S'))):
+        tmp = target.with_name(target.name + '.tmp')
+        tmp.write_text(body, encoding='utf-8', newline='\n')
+        os.replace(tmp, target)
+        out.append(target)
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--main', help='the main checkout (default: shared_paths)')
@@ -807,21 +983,40 @@ def main(argv=None):
     ap.add_argument('--log')
     ap.add_argument('--gaps', type=int, default=0, help='print up to N uncovered paths per part')
     ap.add_argument('--json', action='store_true')
+    ap.add_argument('--result-dir', help='where the result file goes (default: docs/loop/private of the main '
+                                         'checkout, through shared_paths)')
     args = ap.parse_args(argv)
+    now = dt.datetime.now().astimezone()
+    folder = None
     try:
         paths = default_paths(args.main)
+        folder = Path(args.result_dir) if args.result_dir else result_dir(args.main, paths['main'])
         for key in ('repo', 'drive', 'log'):
             if getattr(args, key):
                 paths[key] = Path(getattr(args, key))
         report = coverage(paths)
     except (CoverageError, shared_paths.MainCheckoutError, OSError) as exc:
         print('coverage not readable: %s' % exc)
+        if folder is not None:
+            try:
+                write_result({'tool': 'backup_coverage', 'time': now.isoformat(timespec='seconds'), 'exit': 2,
+                              'readable': False, 'reason': str(exc)[:300]}, folder, now)
+            except (CoverageError, OSError):
+                pass
         return 2
+    code = 1 if faults(report) or git_refusal(report) else 0
     if args.json:
         print(json.dumps(public(report), default=str, indent=1))
     else:
         print(render(report, args.gaps))
-    return 1 if faults(report) or git_refusal(report) else 0
+    try:
+        written = write_result(summary(report, code, now), folder, now)
+        if not args.json:
+            print('result written: %s and %s' % tuple(written))
+    except (CoverageError, OSError) as exc:
+        print('result file not written: %s' % exc)
+        return 2
+    return code
 
 
 if __name__ == '__main__':

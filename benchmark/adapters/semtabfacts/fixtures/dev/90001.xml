@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written synthetic fixture, invented for the adapter checks; no real item is copied. -->
+<document>
+ <table id="Table 1">
+  <caption text="Pump output by line and shift."></caption>
+  <row row="0">
+   <cell col-end="0" col-start="0" row-end="0" row-start="0" text="Line"></cell>
+   <cell col-end="2" col-start="1" row-end="0" row-start="0" text="Output"></cell>
+  </row>
+  <row row="1">
+   <cell col-end="0" col-start="0" row-end="2" row-start="1" text="A"></cell>
+   <cell col-end="1" col-start="1" row-end="1" row-start="1" text="12.5">
+    <evidence statement_id="1" type="relevant" version="1"></evidence>
+   </cell>
+   <cell col-end="2" col-start="2" row-end="1" row-start="1" text="14.0">
+    <evidence statement_id="2" type="relevant" version="1"></evidence>
+   </cell>
+  </row>
+  <row row="2">
+   <cell col-end="1" col-start="1" row-end="2" row-start="2" text="9.0"></cell>
+   <cell col-end="2" col-start="2" row-end="2" row-start="2" text="11.5"></cell>
+  </row>
+  <statements>
+   <statement id="1" text="Line A puts out 12.5 in its first row." type="entailed"></statement>
+   <statement id="2" text="Line A puts out 30 in every cell." type="refuted"></statement>
+   <statement id="3" text="Line A was serviced last spring." type="unknown"></statement>
+  </statements>
+ </table>
+</document>

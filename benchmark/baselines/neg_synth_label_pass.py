@@ -19,6 +19,17 @@ The split, so nothing on the instance needs the laptop's tools:
     form reader (tools/answer_form.py, ANSWER-FORM-A) into labels_<set>.json and LABELLER_<set>.json.
 
 Nothing here prints a text, a quote, an item id or a label: counts and digests only.
+
+D-799 (operator, 19 November 2026 15:28; lane/label-constrained): a `neg-synth-label-pass-v2` file carries, per
+prompt, a `constraint` block (the fixed key order, the article ids, the stances, the firm-limit values, and each
+article's own count of bracketed wordings). Its replies are generated under a per-request logits constraint
+(LabelGrammar, run by DECODING-B's own processor, scripts/contract_decoding.ContractProcessor): every token whose text
+would leave the one reply object is set to -inf, so only `{"article": "<id>", "wording": "<whole or 1..n of that
+article>", "stance": "<declared>", "firm_limit": "<declared>"}` can be generated, keys, order and punctuation forced,
+the wording list chosen after the article is decoded. The declared greedy decoding is unchanged (the constraint is a
+logits processor beside it). A reply still outside the language is never read by guess here: it is counted by
+reason in replay_measurement.json (`constraint.by_reason`). A `neg-synth-label-pass-v1` file (no constraint) is read,
+checked and run exactly as before, so the saved first pass stays re-readable.
 """
 from __future__ import annotations
 
@@ -36,6 +47,17 @@ ROOT = HERE.parents[1]
 SCRIPTS = ROOT / "scripts"
 
 SCHEMA = "neg-synth-label-pass-v1"
+# D-799: a v2 file's prompts each carry a `constraint` block; v1 files (no constraint) are read unchanged.
+SCHEMA_V2 = "neg-synth-label-pass-v2"
+SCHEMAS = (SCHEMA, SCHEMA_V2)
+CONSTRAINT_SCHEMA = "neg-synth-label-constraint-v1"
+CONSTRAINT_NAME = "neg_synth_label_reply"
+CONSTRAINT_VERSION = 1
+CONSTRAINT_KEYS = {"schema", "order", "values", "wording"}
+CONSTRAINT_VALUE_FIELDS = ("article", "stance", "firm_limit")
+# Why a constrained reply is still outside the one reply object (counted, never read by guess).
+INSIDE = "inside"
+OUTSIDE_REASONS = ("dead_end", "at_allowance", "unfinished", "left_language")
 MEASUREMENT_SCHEMA = "neg-synth-label-pass-measurement-v1"
 MEASUREMENT_FILE = "replay_measurement.json"
 PROGRESS_FILE = "label_progress.json"
@@ -85,7 +107,7 @@ def check_model(model_id, labeller, generator_family):
 
 
 def is_prompts_file(value):
-    return isinstance(value, dict) and value.get("schema") == SCHEMA
+    return isinstance(value, dict) and value.get("schema") in SCHEMAS
 
 
 def is_prompts_path(path):
@@ -94,13 +116,44 @@ def is_prompts_path(path):
             head = fh.read(256)
     except OSError:
         return False
-    return (b'"schema": "' + SCHEMA.encode() + b'"') in head or (b'"schema":"' + SCHEMA.encode() + b'"') in head
+    return any((b'"schema": "' + s.encode() + b'"') in head or (b'"schema":"' + s.encode() + b'"') in head
+               for s in SCHEMAS)
+
+
+def _plain_value(v):
+    """A declared value the reply object can carry with no JSON escape: a non-empty string with no quote, no
+    backslash and no control character."""
+    return isinstance(v, str) and bool(v) and not any(c in '"\\' or c < " " for c in v)
+
+
+def check_constraint(c, answers):
+    """Every refusal of one prompt's constraint block (D-799); returns it."""
+    if not isinstance(c, dict) or set(c) != CONSTRAINT_KEYS or c["schema"] != CONSTRAINT_SCHEMA:
+        raise ValueError("a prompt's constraint is not a %s block" % CONSTRAINT_SCHEMA)
+    if list(c["order"]) != list(FIELDS):
+        raise ValueError("a prompt's constraint does not hold the declared key order")
+    values = c["values"]
+    if not isinstance(values, dict) or set(values) != set(CONSTRAINT_VALUE_FIELDS) or any(
+            not isinstance(v, list) or not v or len(set(v)) != len(v) or not all(_plain_value(x) for x in v)
+            for v in values.values()):
+        raise ValueError("a prompt's constraint values are not one list of plain distinct values per field")
+    w = c["wording"]
+    if not isinstance(w, dict) or set(w) != {"whole", "per_article"} or not _plain_value(w["whole"]) \
+            or w["whole"].isdigit() or not isinstance(w["per_article"], dict) \
+            or set(w["per_article"]) != set(values["article"]) \
+            or any(not isinstance(n, int) or isinstance(n, bool) or n < 0 for n in w["per_article"].values()):
+        raise ValueError("a prompt's constraint does not give every article its own count of wordings")
+    for field in CONSTRAINT_VALUE_FIELDS:
+        if field in answers and list(answers[field]) != list(values[field]):
+            raise ValueError("a prompt's constraint and its declared answers differ")
+    return c
 
 
 def write_file(path, labeller, generator_family, template_sha256, sets, prompts):
     """The prompts file, schema first (so `is_prompts_path` reads the head only). `sets` is
-    {name: {sheets_sha256, items, positions}}; `prompts` the rendered questions in order."""
-    value = {"schema": SCHEMA, "written_at": _now(),
+    {name: {sheets_sha256, items, positions}}; `prompts` the rendered questions in order. Prompts carrying a
+    `constraint` block make a v2 file (D-799); prompts without one a v1 file, as before."""
+    value = {"schema": SCHEMA_V2 if any("constraint" in p for p in prompts) else SCHEMA, "written_at": _now(),
              "labeller": {k: labeller[k] for k in LABELLER_KEYS}, "generator_family": generator_family,
              "template_sha256": template_sha256, "sets": sets, "prompt_count": len(prompts), "prompts": prompts}
     check_file(value)
@@ -127,13 +180,16 @@ def check_file(value):
     if not isinstance(prompts, list) or not prompts or value.get("prompt_count") != len(prompts):
         raise ValueError("the file holds no prompt, or its count is wrong")
     ids, per_set = set(), {}
+    keys = PROMPT_KEYS | {"constraint"} if value["schema"] == SCHEMA_V2 else PROMPT_KEYS
     for p in prompts:
-        if set(p) != PROMPT_KEYS:
-            raise ValueError("a prompt carries other fields than %s" % sorted(PROMPT_KEYS))
+        if set(p) != keys:
+            raise ValueError("a prompt carries other fields than %s" % sorted(keys))
         answers = p["answers"]
         if not isinstance(answers, dict) or set(answers) - set(FIELDS) or CONFIDENCE_FIELD not in answers \
                 or any(not isinstance(v, list) or len(v) < 2 or len(set(v)) != len(v) for v in answers.values()):
             raise ValueError("a prompt's declared answers are not one list of two or more per field")
+        if "constraint" in keys:
+            check_constraint(p["constraint"], answers)
         if not isinstance(p["prompt"], str) or _sha(p["prompt"]) != p["prompt_sha256"]:
             raise ValueError("a prompt does not match its SHA-256")
         if p["prompt_id"] in ids or p["set"] not in sets:
@@ -265,6 +321,147 @@ def confidence_of(decisions):
     return d.get("top_probability")
 
 
+# ---------------------------------------------------------------------------
+# D-799: the reply object generated under a per-request logits constraint
+
+
+def wording_values(constraint, article):
+    """The wording field's declared values once `article` is decoded: `whole` and 1..n of that article's own
+    bracketed wordings (n from the prompts file, counted on the laptop), never the sheet's largest count."""
+    w = constraint["wording"]
+    return [w["whole"]] + [str(i) for i in range(1, int(w["per_article"][article]) + 1)]
+
+
+class LabelGrammar:
+    """The language of one labelling reply (D-799): exactly
+    {"article": "<id>", "wording": "<value>", "stance": "<value>", "firm_limit": "<value>"}, the keys in the declared
+    order, `": "` and `", "` between them as the template's example writes them, nothing before or after, and each
+    value one of its declared values (the wording's list chosen from the article already decoded). Same interface as
+    contract_decoding.Grammar, so DECODING-B's ContractProcessor runs it unchanged. A state is
+    ('lit', i, matched, article), ('val', i, partial, article) or contract_decoding.DONE."""
+
+    def __init__(self, constraint):
+        import contract_decoding as cd
+        self.done = cd.DONE
+        self.c = constraint
+        self.order = list(constraint["order"])
+        keys = [json.dumps(k) for k in self.order]
+        self.lits = ["{" + keys[0] + ': "'] + ['", ' + k + ': "' for k in keys[1:]] + ['"}']
+        self.signature = _sha(json.dumps(constraint, sort_keys=True, ensure_ascii=False))
+
+    def values(self, i, article):
+        field = self.order[i]
+        return wording_values(self.c, article) if field == "wording" else self.c["values"][field]
+
+    def start(self):
+        return ("lit", 0, 0, None)
+
+    def step(self, state, ch):
+        if state is None or state == self.done:
+            return None
+        kind, i, got, article = state
+        if kind == "lit":
+            lit = self.lits[i]
+            if ch != lit[got]:
+                return None
+            if got + 1 < len(lit):
+                return ("lit", i, got + 1, article)
+            return self.done if i == len(self.order) else ("val", i, "", article)
+        values = self.values(i, article)
+        if ch == '"' and got in values:
+            return ("lit", i + 1, 1, got if self.order[i] == "article" else article)
+        grown = got + ch
+        return ("val", i, grown, article) if any(v.startswith(grown) for v in values) else None
+
+    def walk(self, state, text):
+        for ch in text:
+            state = self.step(state, ch)
+            if state is None:
+                return None
+        return state
+
+    def next_chars(self, state):
+        if state is None or state == self.done:
+            return set()
+        kind, i, got, article = state
+        if kind == "lit":
+            return {self.lits[i][got]}
+        values = self.values(i, article)
+        out = {v[len(got)] for v in values if v.startswith(got) and len(v) > len(got)}
+        return out | ({'"'} if got in values else set())
+
+    def free(self, state):
+        return False
+
+    def unrestricted(self, state):
+        return False
+
+    def accepting(self, state):
+        return state == self.done
+
+    def article_of(self, text):
+        """The article the reply decoded, or None when the reply never closed that field."""
+        state, article = self.start(), None
+        for ch in text:
+            state = self.step(state, ch)
+            if state is None or state == self.done:
+                break
+            article = state[3]
+        return article
+
+
+def accepts(constraint, text):
+    """True when `text` is a complete reply of the constraint's language."""
+    g = LabelGrammar(constraint)
+    return g.accepting(g.walk(g.start(), text))
+
+
+def outcome(constraint, text, new_tokens, max_new_tokens, dead_end=False):
+    """`inside`, or why a reply is still outside the language: the constraint reached a dead end, the reply ran to
+    its token allowance before the object closed, it stopped before closing, or it left the language (a reply not
+    generated under the constraint). Python only; the reply is never read here."""
+    g = LabelGrammar(constraint)
+    state = g.walk(g.start(), text)
+    if g.accepting(state):
+        return INSIDE
+    if dead_end:
+        return "dead_end"
+    if state is None:
+        return "left_language"
+    return "at_allowance" if int(new_tokens) >= int(max_new_tokens) else "unfinished"
+
+
+def constrained_answers(answers, constraint, reply):
+    """The declared answers the confidence record reads for a constrained reply: the wording's list narrowed to the
+    decoded article's own values (dropped, as declared_answers drops a field, when that article has none to choose
+    between); the other fields as declared. Unchanged when the article was not decoded."""
+    article = LabelGrammar(constraint).article_of(reply)
+    if article is None or article not in constraint["wording"]["per_article"]:
+        return dict(answers)
+    out = dict(answers)
+    values = wording_values(constraint, article)
+    if len(values) >= 2:
+        out["wording"] = values
+    else:
+        out.pop("wording", None)
+    return out
+
+
+def constraint_processor(tok, prompt_tokens, eos_ids, constraint, record):
+    """DECODING-B's logits processor (contract_decoding.ContractProcessor) over this request's LabelGrammar: every
+    token whose text would leave the language set to -inf, the stop tokens admitted only once the object closed,
+    each step where the model's own top token was not admitted counted into `record`."""
+    import contract_decoding as cd
+    return cd.ContractProcessor(None, None, tok, prompt_tokens, eos_ids, record, grammar=LabelGrammar(constraint))
+
+
+def _eos_ids(model, tok):
+    ids = [tok.eos_token_id]
+    extra = getattr(getattr(model, "generation_config", None), "eos_token_id", None)
+    ids += extra if isinstance(extra, (list, tuple)) else [extra]
+    return sorted({int(i) for i in ids if i is not None})
+
+
 PREFLIGHT_FILE = ROOT / "config" / "labeller_preflight.json"
 
 
@@ -300,22 +497,48 @@ def hf_generate(model_id, revision, decoding):
                                                  attn_implementation=PATH)
     model.eval()
     checked = model_preflight(model_id, model, tok)
+    generate = make_generate(model, tok, decoding)
+    generate.preflight = checked
+    return generate
 
-    def generate(prompt, answers):
+
+def make_generate(model, tok, decoding):
+    """`generate(prompt, answers, constraint=None)` over a loaded model and tokenizer (the sealed labeller on the
+    instance; a fake tokenizer and model in the proofs). Greedy as declared, the decoding values read from the
+    prompts file at call time and never typed here. With a constraint (a v2 prompt, D-799) the one logits processor
+    of DECODING-B rides beside those values, the raw logits are kept for the confidence record, and its counts come
+    back as `constraint`; without one (a v1 prompt) the call is the one the first pass made."""
+    import torch
+
+    def generate(prompt, answers, constraint=None):
         ids = tok.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True,
                                       return_tensors="pt").to(model.device)
+        kwargs = dict(attention_mask=torch.ones_like(ids), do_sample=False,
+                      max_new_tokens=int(decoding["max_new_tokens"]), pad_token_id=tok.eos_token_id,
+                      output_scores=True, return_dict_in_generate=True)
+        record = None
+        if constraint is not None:
+            from transformers import LogitsProcessorList
+            record = {}
+            processor = constraint_processor(tok, int(ids.shape[1]), _eos_ids(model, tok), constraint, record)
+            kwargs.update(logits_processor=LogitsProcessorList([processor]), output_logits=True)
         with torch.no_grad():
-            gen = model.generate(ids, attention_mask=torch.ones_like(ids), do_sample=False,
-                                 max_new_tokens=int(decoding["max_new_tokens"]), pad_token_id=tok.eos_token_id,
-                                 output_scores=True, return_dict_in_generate=True)
+            gen = model.generate(ids, **kwargs)
         new = gen.sequences[0, ids.shape[1]:].tolist()
-        # scores[k] are the logits that chose generated token k, so the deciding step k reads scores[k].
-        decisions = field_decisions(new, lambda k: gen.scores[k][0].float().tolist(),
+        reply = tok.decode(new, skip_special_tokens=True)
+        # scores[k] (logits[k] under a constraint, before its mask) chose generated token k, so step k reads [k].
+        chosen = gen.scores if constraint is None else gen.logits
+        asked = answers if constraint is None else constrained_answers(answers, constraint, reply)
+        decisions = field_decisions(new, lambda k: chosen[k][0].float().tolist(),
                                     lambda t: tok.decode(t, skip_special_tokens=True),
-                                    lambda text: tok.encode(text, add_special_tokens=False), answers)
-        return {"reply": tok.decode(new, skip_special_tokens=True), "prompt_tokens": int(ids.shape[1]),
-                "new_tokens": len(new), "decisions": decisions}
-    generate.preflight = checked
+                                    lambda text: tok.encode(text, add_special_tokens=False), asked)
+        out = {"reply": reply, "prompt_tokens": int(ids.shape[1]), "new_tokens": len(new), "decisions": decisions}
+        if constraint is not None:
+            out["constraint"] = dict(name=CONSTRAINT_NAME, version=CONSTRAINT_VERSION,
+                                     constraint_sha256=LabelGrammar(constraint).signature,
+                                     **{k: record.get(k) for k in ("steps", "interventions",
+                                                                    "first_intervention_step", "dead_end")})
+        return out
     return generate
 
 
@@ -340,25 +563,40 @@ def run(prompts_path, out, *, paths=(PATH,), decision=None, max_new_tokens=None,
     out.mkdir(parents=True, exist_ok=True)
     context = bare_model.RunContext(out, run_id or ("label-" + uuid.uuid4().hex[:12]))
     started, rows, at_allowance = time.perf_counter(), [], 0
+    constrained = value["schema"] == SCHEMA_V2
+    by_reason, interventions = {}, 0
     for n, p in enumerate(prompts, 1):
         t0 = time.perf_counter()
-        got = gen(p["prompt"], p["answers"])
+        c = p.get("constraint")
+        got = gen(p["prompt"], p["answers"], c) if c is not None else gen(p["prompt"], p["answers"])
         reply, prompt_tokens, new_tokens = got["reply"], got["prompt_tokens"], got["new_tokens"]
         decisions = got["decisions"]
+        held = None
+        if c is not None:
+            # D-799: whether the reply is inside the one reply object, decided in Python; never read by guess.
+            held = dict(got.get("constraint") or {"name": CONSTRAINT_NAME, "version": CONSTRAINT_VERSION,
+                                                    "applied": False})
+            held["outcome"] = outcome(c, reply, new_tokens, decoding["max_new_tokens"], bool(held.get("dead_end")))
+            by_reason[held["outcome"]] = by_reason.get(held["outcome"], 0) + 1
+            interventions += int(held.get("interventions") or 0)
         call = reply_records.write(context, agent=AGENT_LABEL, backend="local_labeller", model_id=model["model_id"],
                                    model_mode="sealed", payload=p["prompt"], payload_form="chat_user",
                                    reply=reply, ok=True, error="", decoding=decoding, sensitive=False,
                                    phase=PHASE, doc_id=p["prompt_id"],
                                    attention={"implementation": PATH, "revision": model["revision"]},
+                                   decoding_constraint=held,
                                    decision={"schema": "neg-synth-label-fields-v1", "fields": decisions})
         if not call:
             raise RuntimeError("the reply record of prompt %d could not be written" % n)
         at_allowance += int(new_tokens >= int(decoding["max_new_tokens"]))
-        rows.append({"prompt_id": p["prompt_id"], "set": p["set"], "prompt_sha256": p["prompt_sha256"],
-                     "reply_sha256": _sha(reply), "call_id": call, "prompt_tokens": prompt_tokens,
-                     "confidence": confidence_of(decisions),
-                     "decisions_sha256": _sha(json.dumps(decisions, sort_keys=True)),
-                     "new_tokens": new_tokens, "seconds": round(time.perf_counter() - t0, 3)})
+        row = {"prompt_id": p["prompt_id"], "set": p["set"], "prompt_sha256": p["prompt_sha256"],
+               "reply_sha256": _sha(reply), "call_id": call, "prompt_tokens": prompt_tokens,
+               "confidence": confidence_of(decisions),
+               "decisions_sha256": _sha(json.dumps(decisions, sort_keys=True)),
+               "new_tokens": new_tokens, "seconds": round(time.perf_counter() - t0, 3)}
+        if held is not None:
+            row["constraint_outcome"] = held["outcome"]
+        rows.append(row)
         (out / PROGRESS_FILE).write_text(json.dumps({"done": n, "prompts": len(prompts),
                                                      "seconds": round(time.perf_counter() - started, 1)}),
                                          encoding="utf-8")
@@ -367,7 +605,12 @@ def run(prompts_path, out, *, paths=(PATH,), decision=None, max_new_tokens=None,
                    "path": PATH, "prompts_file_sha256": hashlib.sha256(Path(prompts_path).read_bytes()).hexdigest(),
                    "template_sha256": value["template_sha256"], "sets": value["sets"], "rows": rows,
                    "at_allowance": at_allowance, "prompts": len(prompts), "failures": 0,
-                   "preflight": getattr(gen, "preflight", None),
+                   "preflight": getattr(gen, "preflight", None), "prompts_schema": value["schema"],
+                   # D-799: each constrained reply by outcome; everything but `inside` is outside the lists.
+                   "constraint": None if not constrained else {
+                       "schema": CONSTRAINT_SCHEMA, "name": CONSTRAINT_NAME, "version": CONSTRAINT_VERSION,
+                       "by_reason": by_reason, "outside": sum(v for k, v in by_reason.items() if k != INSIDE),
+                       "interventions": interventions},
                    "seconds": round(time.perf_counter() - started, 1), "finished_at": _now()}
     (out / MEASUREMENT_FILE).write_text(json.dumps(measurement, indent=1, sort_keys=True), encoding="utf-8")
     return measurement

@@ -143,13 +143,84 @@ def render(sheet, position, t):
     return out
 
 
+def _spans(article):
+    return [s for s in ns.sna.bracket_spans(article["text"]) if s.strip()]
+
+
 def _wordings(article):
-    return len([s for s in ns.sna.bracket_spans(article["text"]) if s.strip()])
+    return len(_spans(article))
+
+
+# The wording field's own refusals beyond answer_form's (lane/label-wording-reader, 19 November 2026): form only.
+QUOTE_AMBIGUOUS = "quote_ambiguous"            # the value is the identical text of two or more bracketed wordings
+QUOTE_NOT_EXACT = "quote_not_exact"            # the value only overlaps a bracketed wording: never guessed
+NUMBER_ABOVE_ARTICLE = "number_above_article"  # a number above the chosen article's own count of wordings
+WORDING_REASONS = (QUOTE_AMBIGUOUS, QUOTE_NOT_EXACT, NUMBER_ABOVE_ARTICLE)
+# A matched pair of marks around a whole number ("[2]", "(2)", "<2>"), taken off as form.
+MARKED_NUMBER = re.compile(r"^(?:\[\s*([0-9]+)\s*\]|\(\s*([0-9]+)\s*\)|<\s*([0-9]+)\s*>)$")
+
+
+def marked_number(k):
+    """The digits of a key that is a whole number, bare or in one matched pair of marks; else None."""
+    found = MARKED_NUMBER.match(k)
+    if found:
+        return next(g for g in found.groups() if g)
+    return k if k.isascii() and k.isdigit() else None
+
+
+def quoted_wordings(k, span_keys):
+    """The numbers (1-based, as text) of the bracketed wordings whose key IS `k`, the value written with or
+    without one pair of the article's own brackets around it. Identity of keys only, never a part of one."""
+    inner = af.key(k[1:-1]) if len(k) >= 2 and k[0] == "[" and k[-1] == "]" else None
+    return [str(i + 1) for i, s in enumerate(span_keys) if s and (s == k or s == inner)]
+
+
+def overlaps(k, span_keys):
+    """True when `k` and a bracketed wording's key hold one another without being equal: refused, never read."""
+    return bool(k) and any(s and s != k and (k in s or s in k) for s in span_keys)
+
+
+def read_wording(value, article, t):
+    """(the declared wording, None) or (None, reason): `whole` or the 1-based number of one of the chosen
+    article's bracketed wordings, read by form only (WORDS-A, ANSWER-FORM-A), against the chosen article's own
+    count n. In order: answer_form's own match against `whole` and 1..n; a whole number, bare or in one matched
+    pair of marks, read as that number, and refused `number_above_article` above n; a value whose answer_form key
+    IS the key of exactly one bracketed wording (with or without one pair of the article's own brackets around
+    it) read as that wording's number, several refused `quote_ambiguous`, a value that only overlaps one refused
+    `quote_not_exact`; a number reading and a quote reading that disagree refused `quote_ambiguous`. Nothing else
+    is read: never a prefix, never a fuzzy or partial match."""
+    spans, count = _spans(article), _wordings(article)
+    declared = [t["whole"]] + [str(i) for i in range(1, count + 1)]
+    got, why = af.match(value, declared)
+    if why and why != af.NOT_DECLARED:
+        return None, why
+    text, _ = af.one_value(value)
+    k = af.key(text)
+    span_keys = [af.key(s) for s in spans]
+    quoted = quoted_wordings(k, span_keys)
+    if got is not None:
+        return (got, None) if not quoted or quoted == [got] else (None, QUOTE_AMBIGUOUS)
+    digits = marked_number(k)
+    if digits is not None:
+        n = int(digits)
+        number = str(n) if 1 <= n <= count else None
+        if quoted:
+            return (number, None) if quoted == [number] else (None, QUOTE_AMBIGUOUS)
+        if n > count:
+            return None, NUMBER_ABOVE_ARTICLE
+        return (number, None) if number else (None, af.NOT_DECLARED)
+    if len(quoted) > 1:
+        return None, QUOTE_AMBIGUOUS
+    if quoted:
+        return quoted[0], None
+    if overlaps(k, span_keys):
+        return None, QUOTE_NOT_EXACT
+    return None, af.NOT_DECLARED
 
 
 def read_answer(reply, sheet, position, t):
     """(label, None) or (None, reason): the reply read once by answer_form, every value against the sheet's own
-    ids and the declared values."""
+    ids and the declared values; the wording through read_wording against the chosen article's own wordings."""
     obj, why, _several = af.last_object(reply)
     if why:
         return None, why
@@ -157,8 +228,7 @@ def read_answer(reply, sheet, position, t):
     article, why = af.match(obj.get("article"), sorted(arts))
     if why:
         return None, "article:" + why
-    n = _wordings(arts[article])
-    wording, why = af.match(obj.get("wording"), [t["whole"]] + [str(i) for i in range(1, n + 1)])
+    wording, why = read_wording(obj.get("wording"), arts[article], t)
     if why:
         return None, "wording:" + why
     stance, why = af.match(obj.get("stance"), t["stances"])
@@ -250,13 +320,39 @@ def set_of(path):
 def declared_answers(sheet, position, t):
     """Each reply field's declared answer set for one question (what read_answer accepts, as surfaces): the
     sheet's article ids, `whole` and every wording number an article of the sheet holds, the stances, and the
-    firm-limit values for the persona's own statements. The option sets only, never an answer."""
+    firm-limit values for the persona's own statements. The option sets only, never an answer.
+
+    Recorded, not changed (lane/label-wording-reader): the wording set here is the sheet-wide 1..most, while
+    read_wording reads against the chosen article's own 1..n. The set is fixed when the prompts file is built,
+    before the model names its article, and the pass module (benchmark/baselines/neg_synth_label_pass.py, a bound
+    file) takes one flat list per field; a per-article set needs that module to choose the list after the article
+    field is decoded, so a re-seal and a new paid pass. Changing it here alone would also change every prompts
+    file's digest, so the saved pass could no longer be read again. The confidence record's wording decision
+    therefore runs over the sheet-wide values; the label never does.
+
+    D-799 (lane/label-constrained): this set stays as it was, so a v1 file is read again unchanged; a v2 prompt
+    also carries constraint_of's block, from which the pass chooses the wording list after the article is
+    decoded, both for the constraint and for the confidence record."""
     most = max([_wordings(a) for a in sheet["articles"]] + [0])
     out = {"article": [a["id"] for a in sheet["articles"]], "wording": [t["whole"]] + [str(i) for i in range(1, most + 1)],
            "stance": list(t["stances"])}
     if position["party"] == sheet["persona"]["id"]:
         out["firm_limit"] = sorted(t["firm_values"])
     return {k: v for k, v in out.items() if len(v) >= 2 or k == "stance"}
+
+
+def constraint_of(sheet, position, t):
+    """D-799: the reply object one question may produce, for the pass's logits constraint
+    (neg_synth_label_pass.LabelGrammar): the fixed key order, the sheet's article ids, the stances, the firm-limit
+    values (the persona's own statements both, every other statement the one the template asks for, the value
+    mapped to false), and each article's own count of bracketed wordings, counted here as read_wording counts it.
+    Option sets and counts only, never an answer."""
+    persona = position["party"] == sheet["persona"]["id"]
+    firm = sorted(t["firm_values"]) if persona else sorted(k for k, v in t["firm_values"].items() if v is False)
+    return {"schema": lp.CONSTRAINT_SCHEMA, "order": list(lp.FIELDS),
+            "values": {"article": [a["id"] for a in sheet["articles"]], "stance": list(t["stances"]),
+                       "firm_limit": firm},
+            "wording": {"whole": t["whole"], "per_article": {a["id"]: _wordings(a) for a in sheet["articles"]}}}
 
 
 def build_pass(sheet_paths, expected, out, cfg):
@@ -279,7 +375,8 @@ def build_pass(sheet_paths, expected, out, cfg):
                 text = render(s, p, t)
                 prompts.append({"prompt_id": "%s-%05d" % (name, len(prompts) - n0 + 1), "set": name,
                                 "item_id": s["item_id"], "position_id": p["id"], "prompt": text,
-                                "prompt_sha256": lp._sha(text), "answers": declared_answers(s, p, t)})
+                                "prompt_sha256": lp._sha(text), "answers": declared_answers(s, p, t),
+                                "constraint": constraint_of(s, p, t)})
         sets[name] = {"file_sha256": digest, "sheets_sha256": ns._sha(value), "items": len(sheets),
                       "positions": len(prompts) - n0}
     if set(expected) != set(sets):
@@ -384,6 +481,10 @@ def read_pass(prompts_path, sheets_path, evidence_path, cfg):
               "prompts_file_sha256": measurement["prompts_file_sha256"], "route": "replay pass, sealed B1",
               "labelled_at": measurement["finished_at"], "read_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     record["confidence_read"] = sum(1 for v in confidence.values() for c in v.values() if c["confidence"] is not None)
+    # D-799: the set's constrained replies by outcome, as the pass recorded them (a v1 pass has none).
+    outcomes = Counter(r["constraint_outcome"] for r in measurement["rows"]
+                       if r["set"] == name and "constraint_outcome" in r)
+    record["constraint_by_reason"] = dict(outcomes) if value["schema"] == lp.SCHEMA_V2 else None
     return {"schema": LABELS_SCHEMA, "labels": labels, "confidence": confidence}, record
 
 
@@ -395,6 +496,14 @@ def _expected(values):
             raise SystemExit("--expect takes SET=SHA256")
         out[name] = digest.lower()
     return out
+
+
+def refuse_existing(paths):
+    """A second reading of the same saved replies goes to new names: an output that exists refuses the read
+    before anything is read or written (lane/label-wording-reader), so an earlier reading is never overwritten."""
+    for target in paths:
+        if target and Path(target).exists():
+            raise SystemExit("refused: %s exists already (nothing is overwritten)" % Path(target).name)
 
 
 def main(argv=None):
@@ -424,6 +533,7 @@ def main(argv=None):
                                    for k, v in value["sets"].items()}}, sort_keys=True))
         return 0
     if args.cmd == "read-pass":
+        refuse_existing((args.out, args.record, args.confidence))
         labels, record = read_pass(args.prompts, args.sheets, args.evidence, cfg)
         ns._write_json(Path(args.out), labels["labels"])
         ns._write_json(Path(args.record), record)
@@ -431,7 +541,8 @@ def main(argv=None):
             ns._write_json(Path(args.confidence), {"schema": CONFIDENCE_SCHEMA, "set": set_of(args.sheets),
                                                    "field": lp.CONFIDENCE_FIELD, "positions": labels["confidence"]})
         print(json.dumps({k: record[k] for k in ("family", "model_id", "items", "positions", "by_reason",
-                                                 "at_allowance", "confidence_read")}, sort_keys=True))
+                                                 "at_allowance", "confidence_read", "constraint_by_reason")},
+                         sort_keys=True))
         return 0
     value = json.loads(Path(args.sheets).read_text(encoding="utf-8"))
     labels, record = run(value, cfg)

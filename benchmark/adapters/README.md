@@ -177,6 +177,14 @@ The tables the paper prints as in-context examples are not held in the adapter: 
 
 No gold reaches a bundle: the 41 rules are the same text for every contract, and a build from the same input with every `answers` list emptied differs only in `answer_key.json` (the `cuadclaim` check group, which also scans every bundle for the contract's answer spans of three words or more outside its document and key, and runs the development build where `external/` holds it). A build that declares its side outside `--development` takes only the category list whose SHA-256 the B-dev manifest records. No S8 run reads this adapter until preregistration version 3 is frozen.
 
+## SEM-TAB-FACTS as an auxiliary validation set (D-798 item 4)
+
+`semtabfacts/adapter.py` turns SEM-TAB-FACTS (SemEval-2021 Task 9) dev and test XML into SciTab's claim-against-a-table bundle, as a SEPARATE auxiliary validation set holding a not-enough-info class: benchmark name `semtabfacts` (ids of its own), set name `semtabfacts_aux_val`, never mixed into, sampled with, or reported as a SciTab set or score. Everything the set declares (parts, the type map entailed, refuted, unknown to supports, refutes, not enough info, side, span fill, report line) is read at call time from `config/semtabfacts_aux_val.json`.
+
+- `freeze --part dev=<folder> --part test=<folder> --out <file>` reads the XML files carrying the gold types, strips every evidence mark before any cell is read, expands each spanning cell over the rows and columns it spans, refuses on the record what it cannot read (a span outside the grid, a missing type, an unknown type value and the rest of `REASONS`, counted by reason, ids only), and writes one frozen file with its digest and an empty `looks` list. A frozen file is never overwritten.
+- `build`, `split`, `bands`, `label` and `score` are the common commands over the frozen file alone; `read_source` refuses a file whose digest, set name or type map does not match. `score --class-setting 3-class` gives our own 3-class macro-F1, named by the set; it is not the task's official per-table micro-F1.
+- The schema names come from role B's element and attribute count; the nesting is PROVISIONAL until a freeze runs on the fetched files. Gate check 585 (`scripts/semtabfacts_checks.py`) holds it on two hand-written fixtures.
+
 ## Words
 
 One rule counts words for the length band, the cut line and `parts.json` (section 5.6, Words): `common/ids.py` `word_count`, Python's `str.split()` with no argument, line by line, where on a pipe row (table text) a token made only of `-`, `:` and `|` is not a word; a SciTab cell is counted on its own as table text (`cell_word_count`). `common/cut.py` `words` is the same function, and every adapter counts its parts with it, so a table's words are its cell words wherever they are counted.

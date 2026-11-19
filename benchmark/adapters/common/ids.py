@@ -6,7 +6,9 @@ import hashlib
 
 # cuad_claim is CUAD v1 as a claim check (cuad_claim/adapter.py), a draft for
 # preregistration version 3 (Annex D, D-S13 item 8): its own name keeps its ids apart.
-BENCHMARKS = ("contradoc", "cuad", "scitab", "findver", "contractnli", "cuad_claim")
+# semtabfacts is SEM-TAB-FACTS, an auxiliary validation set (semtabfacts/adapter.py, D-798 item 4):
+# its own name keeps its ids apart from SciTab's, whose bundle form it shares.
+BENCHMARKS = ("contradoc", "cuad", "scitab", "findver", "contractnli", "cuad_claim", "semtabfacts")
 OPAQUE_LENGTH = 12
 SPLIT_MODULUS = 5
 DEVELOPMENT = "development"

@@ -1,0 +1,19 @@
+{
+  "_about": "D-763 (19 November 2026): Google Drive for desktop downloads a cloud-only file the moment its content is read, and the backup tools' read-backs pulled whole archives (38.8 GiB) into its cache on C:. No tool reads a file under the Drive folder; size and attributes come from os.stat. Read at call time by tools/loop/backup_coverage.py, tools/loop/drive_archive.py and tools/loop/restore_drill.py.",
+  "manifest_copies": {
+    "sibling_of_main_checkout": "shimmer-drive-manifests",
+    "_why": "drive_archive writes each manifest beside its archive on Drive and a local copy here; backup_coverage and restore_drill read only the local copy. Outside the repository, so a drive-only part's member names never reach git."
+  },
+  "upload_pause": {
+    "disk": "C:/",
+    "floor_gib": 12,
+    "source": "D-729 (supervisor for Seckin, 18 November 2026 13:08): the Drive uploader's own disk floor, 12 GiB on C: (tools/loop/drive_paced.py DISK_FLOOR); not a new figure. The general 30 GiB floor of config/disk_sweep.json (D-611) and tools/loop_budget_guard.py is not used: D-729 says a backup never waits on the laptop's general floor.",
+    "decision": "D-764 (Seckin, 19 November 2026 08:17): an automatic pause of our Drive uploads when free C: falls below the floor.",
+    "_why": "tools/loop/drive_archive.py (the only tool that writes into the Drive folder; drive_paced writes through it) reads free disk on this disk before each archive write and between its files; under floor_gib it writes nothing more, puts one ALERT.md line (Drive uploads paused: C: free X GiB under floor Y GiB) and exits 6; the next scheduled run resumes above the floor. With no floor_gib here nothing is written."
+  },
+  "restore_drill": {
+    "local_max_bytes": 268435456,
+    "cloud_only_max_bytes": 20971520,
+    "_why": "the drill reads an archive Windows shows as already local up to local_max_bytes (the former 256 MiB drill bound), and a cloud-only archive (OFFLINE, RECALL_ON_OPEN or RECALL_ON_DATA_ACCESS attribute) only up to cloud_only_max_bytes (20 MiB, the drilled part bound); any other archive is refused before it is opened."
+  }
+}

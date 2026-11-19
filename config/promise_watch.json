@@ -1,0 +1,15 @@
+{
+ "version": 1,
+ "decision": "Seckin 18 November 2026 21:46 (SUPERVISOR_INBOX): nothing silently waits; every planned step is written down with its expected start and output, and the watchdog alerts a late step, a failed launch with no new launch and a role session that ended without its output",
+ "planned_file": "docs/loop/private/PLANNED_STEPS.jsonl",
+ "launch_root": "external/s05",
+ "role_exit_dir": "docs/loop/private/role_starts",
+ "ledger": "docs/loop/private/budget_ledger.jsonl",
+ "late_minutes": 5,
+ "relaunch_minutes": 5,
+ "launched_results": ["launch_started", "launch", "admit_detached", "watch_started"],
+ "failed_results": ["launch_failed"],
+ "ledger_launch_events": ["launch_intent", "launch"],
+ "required_fields": ["step", "owner", "needs", "expected_start", "expected_output"],
+ "why": "Read, record and alert only (standing order 110): the watch reads PLANNED_STEPS.jsonl, the launch chain's trace lines, the budget ledger and the lead's own role exit files, and checks role outputs by existence only (no file in a role folder is ever opened). An unreadable plan line writes one ALERT line and stops the check."
+}

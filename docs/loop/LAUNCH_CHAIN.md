@@ -20,7 +20,9 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
   never seen; held until `--clear FOLDER:STEP`), `held` (a failed launch, a GuardRefusal or a failed preflight
   under 10 minutes ago), `waiting` (a prerequisite not met) or `ready`. A step in `launching` or `unconfirmed` is
   never launched again.
-- For each ready step, in plan order: `launch.py preflight` (a failure traces, writes ALERT.md and launches
+- For each ready step, in plan order: `launch.py preflight STEP` (the step named, so launch.py holds that step
+  kind's laptop RAM floor through `tools/loop/launch_floors.py` and `config/launch_ram_floors.json`, LAUNCH-FLOORS-A;
+  a failure traces, writes ALERT.md and launches
   nothing); then the status and the ledger are read again, and a step no longer `not launched`, or with a launch in
   flight for its purpose (the lead may have launched it meanwhile), is not launched (`already_launched`); then a
   `launch_started` trace line, then `launch.py <step>`.
@@ -45,8 +47,11 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
   before it writes any intent line. It is never retried on a timer.
 - No link or junction is followed: a launch folder that is one, and a controller log reached through one, are
   skipped. `requires.repo` must be the main checkout or one of its worktrees (`git worktree list`).
-- Admit runs in the foreground of the chain: after `launch.py admit` the chain waits up to `admit_wait_minutes` for
-  the admission file to show `admitted` equal to `requests`, then launches the parts in the same pass.
+- No process blocks another (Seckin, 18 November 2026 20:37): `launch.py admit` starts the admission detached and the
+  pass goes on at once; the parts are launched by the first reading that finds the admission file showing `admitted`
+  equal to `requests` (the same pass when it is already there, else a later pass). The admit counts as `launching`
+  while its staging folder exists or `admit.log` was written in the last 15 minutes, else for `admit_wait_minutes`
+  after its launch; after that, with no full admission, it is `unconfirmed` (held, with an alert, until `--clear`).
 - A ledger step with `watch` true gets `watch.py <step>` started detached beside it.
 - The pass budget is checked before each reading and each launch: after 50 minutes no new step is begun, except
   the seal that follows the request this pass just wrote. The longest step begun just before that is a request and
@@ -87,7 +92,11 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
 - `kind`: `request` (foreground; done when `done_when.exists`, a path relative to the folder, exists), `admit`
   (done when the admission file, default `admitted/admission.json`, has `admitted` equal to `requests`), or
   `ledger` (seal or part: done when status says `ended` with `workload_return` exit code 0; running while it has a
-  ledger launch line and no termination).
+  ledger launch line and no termination). A batch part, one whose `plan.json` `bundles[step]` (or a literal
+  `BUNDLES` in launch.py) names more than one bundle, writes no `workload_return`: it is done when its phase is
+  `terminated_and_cleaned` with `TERMINATION_VERIFIED` and no `controller_failure`, and `admitted/<first>/batch/`
+  holds one `NN_*/collected_evidence.tar.gz` per bundle whose `evidence/result.json` has `pipeline_exit_code` 0;
+  otherwise failed, the reason naming the count (e.g. "7 of 10 batch evidences").
 - `purpose` (ledger steps, required): the ledger purpose, of the form `[a-z0-9][a-z0-9-]{0,39}`; by default read
   from `launch.py` PURPOSES as a literal (never run). A ledger step with none is refused.
 - `controller_logs` (ledger steps): the step's own controller_detached.log paths (globs allowed), where a
@@ -102,7 +111,10 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
 - Every folder path (`done_when.exists`, `admission`, `controller_logs`) is relative to the folder; `..` and
   absolute paths are refused, and the whole chain.json with them.
 - `watch` (ledger steps, default true): start `watch.py <step>` detached after the launch.
-- `admit_wait_minutes` (admit, default 20).
+- `"template": true` (top level, OPEN_ITEMS 159): the folder is a template copied by hand; the chain never plans
+  or launches it (its copies carry no marker).
+- `admit_wait_minutes` (admit, default 20): how long after its launch an admit with no visible work still counts
+  as launching; the chain never waits on it.
 
 ## Commands
 

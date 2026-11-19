@@ -1,8 +1,9 @@
 """Delete only regenerable files inside the main checkout, by declared kinds (D-611, issue #266).
 
 The standing approval of 13 November 2026 (D-611) lets the loop delete regenerable intermediates,
-caches and finished-run temporaries on a schedule, and whenever free disk nears the 30 GiB floor
-(D-099). This tool is that deletion and nothing wider:
+caches and finished-run temporaries on a schedule, and whenever free disk is under the sweep's own
+32 GiB trigger (register_disk_sweep.py; set from the old 30 GiB floor of D-099, which the 19 November 2026
+rule of a job's footprint plus 12 GiB replaced for heavy work). This tool is that deletion and nothing wider:
 
 * It deletes ONLY a path that a kind declared in `config/disk_sweep.json` matches (a name rule, a
   reason and how to regenerate it). Anything unmatched is kept.

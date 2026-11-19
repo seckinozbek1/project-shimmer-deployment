@@ -10,8 +10,10 @@ writes his answers as JSON to _xfer/supervisor_to_V, and this tool merges them a
 
     draw --random-only  --sheets S1 --sheets S2 [--seed N] [--random 50] --out <work>/review_random.json
              [--counts <_xfer/V_to_lead>/V_SYNLAB1_RANDOM_DRAWN.json]   before the labeller (Seckin 16:45)
+    draw --random2 300 --after <work>/review_random.json --sheets S1 --sheets S2 --out <work>/review_random2.json
+             [--counts <_xfer/V_to_lead>/V_SYNLAB1_RANDOM2_DRAWN.json]   300 more, uniformly, before the labeller
     draw     --sheets S1 --sheets S2 --labels L1 --labels L2 --confidence C1 --confidence C2
-             --after <work>/review_random.json [--low 150] --out <work>/review_set.json
+             --after <work>/review_random2.json (or review_random.json) [--low 150] --out <work>/review_set.json
              (without --after: both groups at once, [--seed N] [--random 50])
     batches  --review <work>/review_set.json --sheets S1 --sheets S2 --out-dir <_xfer/V_to_supervisor>
     read     --review <work>/review_set.json --sheets S1 --sheets S2 --answers-dir <_xfer/supervisor_to_V>
@@ -29,6 +31,7 @@ import argparse
 import hashlib
 import json
 import random
+import re
 import secrets
 import sys
 import time
@@ -43,7 +46,7 @@ import neg_synth_label as nsl  # noqa: E402
 
 REVIEW_SCHEMA = "neg-synth-review-set-v1"
 COUNTS_SCHEMA = "neg-synth-review-counts-v1"
-GROUPS = ("random", "low")
+GROUPS = ("random", "random2", "low")   # random2: the 300 drawn second (Seckin 17:59)
 
 
 def _sha(data):
@@ -58,16 +61,40 @@ def _sheets(paths):
     return out
 
 
-def _by_set(paths, schema_key=None):
+_READING = re.compile(r"^(?P<set>.+)_r[0-9]+$")
+
+
+def label_set(path, sets=None):
+    """A labels file's set, from its name: `labels_<set>.json`, or `labels_<set>_r<k>.json` for a later reading of
+    the same saved replies (lane/label-wording-reader). With `sets` (the sheets' set names) the name must be one of
+    them, alone or with that reading tag, else it is refused, so a labels file never goes silently unmatched."""
+    name = Path(path).name
+    if not (name.startswith("labels_") and name.endswith(".json")):
+        raise ValueError("refused: a labels file is named labels_<set>.json or labels_<set>_r<k>.json")
+    stem = name[len("labels_"):-len(".json")]
+    if sets is None:
+        return stem
+    if stem in sets:
+        return stem
+    tagged = _READING.match(stem)
+    if tagged and tagged.group("set") in sets:
+        return tagged.group("set")
+    raise ValueError("refused: the labels file %s names no set of the sheets given" % name)
+
+
+def _by_set(paths, schema_key=None, sets=None):
     out = {}
     for path in paths:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
         if schema_key:
             if value.get("schema") != nsl.CONFIDENCE_SCHEMA:
                 raise ValueError("refused: not a confidence file")
-            out[value["set"]] = value["positions"]
+            name = value["set"]
         else:
-            out[Path(path).name[len("labels_"):-len(".json")]] = value
+            name = label_set(path, sets)
+        if name in out:
+            raise ValueError("refused: two files of one set")
+        out[name] = value["positions"] if schema_key else value
     return out
 
 
@@ -126,14 +153,46 @@ def draw_random(sheets, *, seed=None, n_random=50):
             "drawn_sha256": _keys_sha(rows), "drawn_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
 
 
+RANDOM2_SCHEMA = "neg-synth-review-random2-v1"
+RECORD_GROUPS = {RANDOM_SCHEMA: ("random",), RANDOM2_SCHEMA: ("random", "random2")}
+
+
 def prior_rows(prior, sheets):
-    """The random group of an earlier draw_random, held to its own SHA-256 and to these sheets."""
-    if prior.get("schema") != RANDOM_SCHEMA or _keys_sha(prior.get("rows") or []) != prior.get("drawn_sha256"):
+    """Every row of an earlier random record (draw_random's, or draw_random2's which carries the first one's rows
+    unchanged before its own), held to the record's own SHA-256 and to these sheets."""
+    groups = RECORD_GROUPS.get(prior.get("schema"))
+    if groups is None or _keys_sha(prior.get("rows") or []) != prior.get("drawn_sha256"):
         raise ValueError("refused: not the recorded random draw (its positions differ from their SHA-256)")
     pool = set(_pool(sheets))
-    if any((r["set"], r["item_id"], r["position_id"]) not in pool or r["group"] != "random" for r in prior["rows"]):
+    if any((r["set"], r["item_id"], r["position_id"]) not in pool or r["group"] not in groups for r in prior["rows"]):
         raise ValueError("refused: the recorded random draw names a position these sheets do not hold")
+    keys = [(r["set"], r["item_id"], r["position_id"]) for r in prior["rows"]]
+    if len(set(keys)) != len(keys):
+        raise ValueError("refused: the recorded random draw names one position twice")
     return [dict(r) for r in prior["rows"]]
+
+
+def draw_random2(sheets, prior, *, n=300):
+    """Seckin 17:59 (the lead 18:01): `n` more positions drawn uniformly at random, before the labeller, from the
+    pool minus every position the recorded draw holds; all of them when fewer remain (`short` says so). Sampled and
+    shuffled with random.Random of the recorded seed and the step, ids continuing after the record's; the record's
+    rows come first unchanged, so its batches keep their digests; the new record's SHA-256 covers every row."""
+    if prior.get("schema") != RANDOM_SCHEMA:
+        raise ValueError("refused: the second random draw follows the first random draw's record")
+    first = prior_rows(prior, sheets)
+    taken = {(r["set"], r["item_id"], r["position_id"]) for r in first}
+    rest = [k for k in _pool(sheets) if k not in taken]
+    rng = random.Random("%s:random2" % prior["seed"])
+    chosen = rng.sample(rest, min(n, len(rest)))
+    rows = [dict(group="random2", set=k[0], item_id=k[1], position_id=k[2]) for k in chosen]
+    rng.shuffle(rows)
+    for number, row in enumerate(rows, len(first) + 1):
+        row["review_id"] = "P%03d" % number
+    every = first + rows
+    return {"schema": RANDOM2_SCHEMA, "seed": prior["seed"], "random": len(first), "random2": len(rows), "asked": n,
+            "short": len(rows) < n, "pool": prior["pool"], "remaining_after": len(rest) - len(rows), "rows": every,
+            "random_sha256": prior["drawn_sha256"], "drawn_sha256": _keys_sha(every),
+            "drawn_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
 
 
 def draw_after(sheets, labels, confidence, prior, *, n_low=150):
@@ -152,8 +211,10 @@ def draw_after(sheets, labels, confidence, prior, *, n_low=150):
     random.Random(prior["seed"]).shuffle(low)
     for n, row in enumerate(low, len(first) + 1):
         row["review_id"] = "P%03d" % n
-    return {"schema": REVIEW_SCHEMA, "seed": prior["seed"], "random": len(first), "low": len(low),
+    return {"schema": REVIEW_SCHEMA, "seed": prior["seed"], "random": sum(r["group"] == "random" for r in first),
+            "random2": sum(r["group"] == "random2" for r in first), "low": len(low),
             "pool": prior["pool"], "rows": first + low, "random_sha256": prior["drawn_sha256"],
+            "drawn_sha256": _keys_sha(first + low),
             "drawn_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
 
 
@@ -206,6 +267,33 @@ def batches(review, sheets, t, size=BATCH_SIZE):
 
 
 ANSWERS_SCHEMA = "neg-synth-seckin-answers-v1"
+# D-748: the supervisor's list of conditional acceptances sits beside the answers files; it is no answers file.
+CONDITIONAL_FILE = "conditional_items.json"
+# D-745 (Seckin 17:39 and 17:42): an answers file says where its labels came from. Its top-level field PROVENANCE_FIELD
+# names one of PROVENANCES; a file without it, or with any other value, is refused (the lead 17:46: refusing is the
+# safe side). Only BLIND answers are his independent labels: every other provenance is counted and reported apart,
+# never pooled with them. Declared by the supervisor who writes the files (the lead 18:03): the key "provenance" at
+# the top level, beside schema, batch, batch_sha256 and answers; "blind" (Seckin's own independent reading),
+# "suggested_and_approved" (he approved the supervisor's suggested labels), "agent_annotated_and_approved" (three
+# blind agent annotators, two reviewers, a recommender, Seckin approving the open items). A free-text
+# "provenance_note" beside it is never read.
+PROVENANCE_FIELD = "provenance"
+BLIND = "blind"
+SUGGESTED = "suggested_and_approved"
+AGENT_ANNOTATED = "agent_annotated_and_approved"
+PROVENANCES = (BLIND, SUGGESTED, AGENT_ANNOTATED)
+
+
+def provenance_of(files):
+    """{review id: provenance} from the answer files' top-level provenance field (D-745)."""
+    out = {}
+    for value in files:
+        prov = value.get(PROVENANCE_FIELD)
+        if prov not in PROVENANCES:
+            raise ValueError("refused: an answers file carries no declared provenance (D-745)")
+        for rid in (value.get("answers") or {}):
+            out[rid] = prov
+    return out
 
 
 def answers_from(files, review, sheets, t):
@@ -250,17 +338,27 @@ def as_label(answer, t):
             "stance": answer["stance"], "red_line": bool(t["firm_values"].get(answer.get("firm_limit", "no"), False))}
 
 
-def read(review, answer_files, labels, sheets, t):
+def _zero():
+    return {"drawn": 0, "answered": 0, "agree_all": 0, "agree_stance": 0, "changed": 0, "labeller_had_none": 0}
+
+
+def read(review, answer_files, labels, sheets, t, conditional=None):
     """(counts, merged labels by set): agreement on the random group, how many of the low group changed; his
-    label replaces the labeller's on the low group only. Counts, never a label."""
+    label replaces the labeller's on the low group only. Counts, never a label. D-745: `groups` counts his BLIND
+    answers only (the unbiased figure); answers of any other provenance are counted under `by_provenance` and never
+    pooled into `groups`; `positions_by_provenance` counts the answered positions of each."""
     given = answers_from(answer_files, review, sheets, t)
-    counts = {g: {"drawn": 0, "answered": 0, "agree_all": 0, "agree_stance": 0, "changed": 0,
-                  "labeller_had_none": 0} for g in GROUPS}
+    prov = provenance_of(answer_files)
+    counts = {g: _zero() for g in GROUPS}
+    by_prov = {p: {g: _zero() for g in GROUPS} for p in PROVENANCES}
     merged = json.loads(json.dumps(labels))
     for row in review["rows"]:
-        c = counts[row["group"]]
-        c["drawn"] += 1
         his = as_label(given.get(row["review_id"], {}), t)
+        p = prov.get(row["review_id"], BLIND)
+        c = counts[row["group"]] if p == BLIND else by_prov[p][row["group"]]
+        if p == BLIND:
+            c["drawn"] += 1
+        by_prov[p][row["group"]]["drawn"] += int(p != BLIND)
         if his is None:
             continue
         c["answered"] += 1
@@ -273,8 +371,21 @@ def read(review, answer_files, labels, sheets, t):
         c["changed"] += int(not same)
         if row["group"] == "low":
             merged.setdefault(row["set"], {}).setdefault(row["item_id"], {})[row["position_id"]] = his
+    by_prov[BLIND] = counts
     out = {"schema": COUNTS_SCHEMA, "seed": review["seed"], "pool": review["pool"], "groups": counts,
+           "groups_are": "blind answers only (D-745); other provenances under by_provenance, never pooled",
+           "by_provenance": by_prov,
+           "positions_by_provenance": {p: sum(by_prov[p][g]["answered"] for g in GROUPS) for p in PROVENANCES},
+           # D-745 (all five random batches suggested and approved, 17:48): with no blind answer there is no blind
+           # figure, said so in the record, never a zero read as one.
+           "blind_figure": ("none: no answer is blind; every answered position is %s"
+                            % "/".join(p for p in PROVENANCES if p != BLIND and by_prov[p]["random"]["answered"]
+                                       + sum(by_prov[p][g]["answered"] for g in GROUPS if g != "random"))
+                            if not any(counts[g]["answered"] for g in GROUPS)
+                            else "groups: %d blind answers" % sum(counts[g]["answered"] for g in GROUPS)),
            "answers_sha256": _sha(json.dumps(given, sort_keys=True)), "batches_answered": len(answer_files),
+           # D-748: the supervisor's list of conditional acceptances, carried by count alone (optional; absent is None).
+           "conditional_items": None if conditional is None else len(conditional),
            "read_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
            "note": "counts only: agreement on the random group, changes on the low group; no item id or label"}
     return out, merged
@@ -304,6 +415,8 @@ def main(argv=None):
     d.add_argument("--random-only", action="store_true",
                    help="the uniform group alone, before the labeller runs (Seckin 16:45); no labels needed")
     d.add_argument("--after", default=None, help="the recorded random draw: take it unchanged and exclude it")
+    d.add_argument("--random2", type=int, default=None,
+                   help="with --after the first random record: N more drawn uniformly now, before the labeller")
     d.add_argument("--counts", default=None, help="with --random-only: a counts-only record for the lead")
     d.add_argument("--seed", type=int, default=None)
     d.add_argument("--random", type=int, default=50)
@@ -315,11 +428,26 @@ def main(argv=None):
     r.add_argument("--answers-dir", required=True)
     r.add_argument("--counts", required=True)
     r.add_argument("--merged-dir", required=True)
+    r.add_argument("--conditional", default=None,
+                   help="the supervisor's conditional_items.json (D-748, optional): carried by count alone")
     args = ap.parse_args(argv)
     cfg = ns.load_config()
     t = nsl.load_template(cfg)
     sheets = _sheets(args.sheets)
     if args.cmd == "draw":
+        if args.random2 is not None:
+            if args.labels or args.confidence or args.random_only or not args.after:
+                raise SystemExit("refused: --random2 takes the first random record (--after) and the sheets alone")
+            prior = json.loads(Path(args.after).read_text(encoding="utf-8"))
+            value = draw_random2(sheets, prior, n=args.random2)
+            _write(Path(args.out), value)
+            shown = {k: value[k] for k in ("seed", "pool", "random", "random2", "asked", "short", "remaining_after",
+                                           "drawn_sha256")}
+            if args.counts:
+                _write(Path(args.counts), dict(shown, schema="neg-synth-review-random2-counts-v1",
+                                               drawn_at=value["drawn_at"], note="counts, the seed and a digest only"))
+            print(json.dumps(shown, sort_keys=True))
+            return 0
         if args.random_only:
             if args.labels or args.confidence or args.after:
                 raise SystemExit("refused: --random-only reads the sheets alone")
@@ -333,18 +461,17 @@ def main(argv=None):
             return 0
         if not args.labels or not args.confidence:
             raise SystemExit("refused: the draw after the labeller needs its labels and confidence")
+        labels, confidence = _by_set(args.labels, sets=sheets), _by_set(args.confidence, "confidence")
         if args.after:
             prior = json.loads(Path(args.after).read_text(encoding="utf-8"))
-            value = draw_after(sheets, _by_set(args.labels), _by_set(args.confidence, "confidence"), prior,
-                               n_low=args.low)
+            value = draw_after(sheets, labels, confidence, prior, n_low=args.low)
         else:
-            value = draw(sheets, _by_set(args.labels), _by_set(args.confidence, "confidence"), seed=args.seed,
-                         n_random=args.random, n_low=args.low)
+            value = draw(sheets, labels, confidence, seed=args.seed, n_random=args.random, n_low=args.low)
         _write(Path(args.out), value)
         print(json.dumps({k: value[k] for k in ("seed", "pool", "random", "low")}, sort_keys=True))
         return 0
     review = json.loads(Path(args.review).read_text(encoding="utf-8"))
-    if review.get("schema") == RANDOM_SCHEMA and args.cmd == "batches":
+    if review.get("schema") in RECORD_GROUPS and args.cmd == "batches":
         review = dict(review, rows=prior_rows(review, sheets))
     elif review.get("schema") != REVIEW_SCHEMA:
         raise SystemExit("refused: not a review set")
@@ -362,8 +489,15 @@ def main(argv=None):
             _write(target.with_suffix(".txt"), text + chr(10))
         print(json.dumps({"batches": len(written), "kept": kept, "positions": len(review["rows"])}, sort_keys=True))
         return 0
-    files = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(Path(args.answers_dir).glob("*.json"))]
-    counts, merged = read(review, files, _by_set(args.labels), sheets, t)
+    files = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(Path(args.answers_dir).glob("*.json"))
+             if f.name != CONDITIONAL_FILE]
+    conditional = None
+    if args.conditional and Path(args.conditional).is_file():
+        value = json.loads(Path(args.conditional).read_text(encoding="utf-8"))
+        conditional = value if isinstance(value, list) else (value.get("items") if isinstance(value, dict) else None)
+        if not isinstance(conditional, list):
+            raise SystemExit("refused: conditional_items.json is not a list of items (D-748)")
+    counts, merged = read(review, files, _by_set(args.labels, sets=sheets), sheets, t, conditional=conditional)
     _write(Path(args.counts), counts)
     for name, value in merged.items():
         _write(Path(args.merged_dir) / ("labels_%s_reviewed.json" % name), value)

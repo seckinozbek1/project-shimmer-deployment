@@ -10,6 +10,10 @@
     {"folder": "_xfer", "drive_only": true, "irreplaceable": "role exchange"},
     {"folder": "N", "drive_only": true, "irreplaceable": "negotiation set"}
   ],
+  "parts_why": "Drive-only parts inside the main checkout (supervisor, 19 November 2026): each is one folder directly inside a folder both backups leave out as regenerable (output/cloud_wheels). It becomes a part of its own, covered by verified Drive archives only, never by the git snapshot; drive_paced archives it with --include-drive-only. The rest of the regenerable folder stays excluded.",
+  "parts": [
+    {"part": "output/cloud_wheels/ordinary_final_cp312", "drive_only": true, "why": "the pinned wheelhouse the sealed runs read (shared_paths.WHEELHOUSE)"}
+  ],
   "excluded": {
     "role_folders": ["B", "V", "R", "C", "_seckin"],
     "name_contains": ["answer_key"],

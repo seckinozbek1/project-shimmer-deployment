@@ -97,6 +97,9 @@ BLOCKED = [
     ('grep -r over checkout', sh('grep -rn secret .'), 'protected_read'),
     ('grep -r, working folder implied', sh('grep -r secret'), 'protected_read'),
     ('Grep tool on benchmark', tool('Grep', pattern='x', path=MAIN + '/benchmark'), 'protected_read'),
+    ('RemoteTrigger list', tool('RemoteTrigger', action='list'), 'remote_trigger'),
+    ('RemoteTrigger run of another trigger', tool('RemoteTrigger', action='run', trigger_id='trig_other'), 'remote_trigger'),
+    ('RemoteTrigger update of the wake-up', tool('RemoteTrigger', action='update', trigger_id='trig_01CRyVDA63iUXtMAeYweiJGq', body={}), 'remote_trigger'),
     ('Read role B', tool('Read', file_path=ROLES + '/B/notes.md'), 'protected_read'),
     ('Read role V', tool('Read', file_path=ROLES + '/V/x.md'), 'protected_read'),
     ('Read role N', tool('Read', file_path=ROLES + '/N/x.md'), 'protected_read'),
@@ -104,6 +107,8 @@ BLOCKED = [
     ('Read _xfer/B_to_V', tool('Read', file_path=ROLES + '/_xfer/B_to_V/x.md'), 'protected_read'),
     ('Read _xfer/N_to_seals', tool('Read', file_path=ROLES + '/_xfer/N_to_seals/x'), 'protected_read'),
     ('Read _xfer/lead_to_B', tool('Read', file_path=ROLES + '/_xfer/lead_to_B/x.md'), 'protected_read'),
+    ('Write _xfer/V_to_lead', tool('Write', file_path=ROLES + '/_xfer/V_to_lead/x.md', content='x'), 'protected_read'),
+    ('Get-Content lead_to_N read', ps('Get-Content $HOME\\local\\shimmer-roles\\_xfer\\lead_to_N\\a'), 'protected_read'),
     ('Write role B', tool('Write', file_path=ROLES + '/B/x.md', content='x'), 'protected_read'),
     ('Edit _xfer/C_to_B', tool('Edit', file_path=ROLES + '/_xfer/C_to_B/x.md'), 'protected_read'),
     ('Get-Content role C', ps('Get-Content C:\\Users\\fixture_user\\local\\shimmer-roles\\C\\a.md'),
@@ -167,6 +172,9 @@ ALLOWED = [
     ('Read _xfer/N_to_lead', tool('Read', file_path=ROLES + '/_xfer/N_to_lead/r.md')),
     ('Read _xfer/B_to_seals', tool('Read', file_path=ROLES + '/_xfer/B_to_seals/r.md')),
     ('Read _handoff', tool('Read', file_path=ROLES + '/_handoff/h.md')),
+    ('RemoteTrigger run of the emergency wake-up (Seckin 23:51)', tool('RemoteTrigger', action='run', trigger_id='trig_01CRyVDA63iUXtMAeYweiJGq', body={'text': 'DENEME'})),
+    ('Read _xfer/lead_to_V (Seckin 23:26 read-only allow)', tool('Read', file_path=ROLES + '/_xfer/lead_to_V/syn_label/V_SYNLAB1/admit.log')),
+    ('Get-Content lead_to_V log', ps('Get-Content $HOME\\local\\shimmer-roles\\_xfer\\lead_to_V\\syn_label\\V_SYNLAB1\\admit.log -Tail 5')),
     ('Write _xfer/lead_to_B', tool('Write', file_path=ROLES + '/_xfer/lead_to_B/x.md', content='x')),
     ('Copy-Item into lead_to_S', ps('Copy-Item report.md C:\\Users\\fixture_user\\local\\'
                                     'shimmer-roles\\_xfer\\lead_to_S\\')),
@@ -187,6 +195,46 @@ ALLOWED = [
     ('grep for the key path text', sh('grep -n "benchmark/keys" scripts/verify_session1.py')),
     ('cd into an allowed folder', ps('cd C:\\Users\\fixture_user\\local\\shimmer-roles\\_xfer\\S_to_lead')),
 ]
+# write positions (open item 160, 18 Nov): each form is refused into _xfer/V_to_lead and a role
+# folder and allowed into _xfer/lead_to_B; {d} is the folder, unquoted as in the real incident
+WIN_ROLES = 'C:\\Users\\fixture_user\\local\\shimmer-roles'
+WRITE_DIRS = (('V_to_lead', WIN_ROLES + '\\_xfer\\V_to_lead'), ('role B', WIN_ROLES + '\\B'))
+WRITE_OK_DIR = WIN_ROLES + '\\_xfer\\lead_to_B'
+WRITE_FORMS = [
+    ('Set-Content -Path unquoted', ps, 'Set-Content -Path {d}\\guard_test.txt -Value x'),
+    ('Set-Content -LiteralPath', ps, 'Set-Content -LiteralPath "{d}\\a.txt" -Value x'),
+    ('Set-Content -Path:', ps, 'Set-Content -Path:{d}\\a.txt -Value x'),
+    ('Set-Content positional', ps, 'Set-Content {d}\\a.txt x'),
+    ('sc alias', ps, 'sc {d}\\a.txt x'),
+    ('Add-Content -Path', ps, 'Add-Content -Path {d}\\a.txt -Value x'),
+    ('Add-Content positional', ps, 'Add-Content {d}\\a.txt "x"'),
+    ('Out-File -FilePath', ps, '"x" | Out-File -FilePath {d}\\a.txt -Encoding utf8'),
+    ('Out-File positional', ps, 'Get-Date | Out-File {d}\\a.txt'),
+    ('New-Item -Path', ps, 'New-Item -ItemType File -Path {d}\\a.txt -Value x'),
+    ('New-Item positional', ps, 'New-Item {d}\\a.txt -ItemType File'),
+    ('Copy-Item -Destination', ps, 'Copy-Item -Path report.md -Destination {d}\\'),
+    ('Copy-Item positional destination', ps, 'Copy-Item report.md {d}\\'),
+    ('Copy-Item -Path then positional', ps, 'Copy-Item -Path report.md {d}\\'),
+    ('Move-Item -Destination', ps, 'Move-Item report.md -Destination {d}\\r.md'),
+    ('Move-Item positional destination', ps, 'Move-Item report.md {d}\\r.md'),
+    ('IO.File WriteAllText', ps, "[IO.File]::WriteAllText('{d}\\a.txt', 'x')"),
+    ('System.IO.File AppendAllText', ps, '[System.IO.File]::AppendAllText("{d}\\a.txt", "x")'),
+    ('IO.File WriteAllBytes', ps, "[IO.File]::WriteAllBytes('{d}\\a.bin', $b)"),
+    ('redirect >', ps, 'echo x > {d}\\a.txt'),
+    ('redirect >>', ps, 'echo x >> {d}\\a.txt'),
+    ('redirect joined >', ps, 'echo x >{d}\\a.txt'),
+    ('bash redirect >', sh, 'echo x > ~/local/shimmer-roles/{u}/a.txt'),
+    ('bash redirect >>', sh, 'echo x >> ~/local/shimmer-roles/{u}/a.txt'),
+    ('cmd /c redirect', ps, 'cmd /c "echo x > {d}\\a.txt"'),
+]
+UNIX = {'V_to_lead': '_xfer/V_to_lead', 'role B': 'B'}
+for _form, _mk, _cmd in WRITE_FORMS:
+    for _where, _d in WRITE_DIRS:
+        BLOCKED.append(('write %s into %s' % (_form, _where),
+                        _mk(_cmd.format(d=_d, u=UNIX[_where])), 'protected_read'))
+    ALLOWED.append(('write %s into lead_to_B' % _form,
+                    _mk(_cmd.format(d=WRITE_OK_DIR, u='_xfer/lead_to_B'))))
+WRITE_LABELS = tuple(l for l, _p, _r in BLOCKED if l.startswith('write '))
 # the reads the 14:34 change must keep blocking, used for the code-level neutralisation
 READ_LABELS = ('python script argument', 'cmd type', 'redirect source', 'Copy-Item source key',
                'Get-Content -Path:', 'grep file argument', 'dir keys', 'Get-ChildItem role V',
@@ -229,6 +277,21 @@ def main():
                      % sorted(set(l for l, _ in cases) - set(leaked)))
     if restored:
         fails.append('restored read_tokens lets through: %s' % restored)
+    # the same for write_tokens: neutralised, every write case leaks; restored, all block
+    saved = cg.write_tokens
+    cases = [(l, p) for l, p, _ in BLOCKED if l in WRITE_LABELS]
+    try:
+        cg.write_tokens = lambda prog, toks, seg='': []
+        leaked = [l for l, p in cases if cg.evaluate(p, ctx()) is None]
+    finally:
+        cg.write_tokens = saved
+    restored = [l for l, p in cases if cg.evaluate(p, ctx()) is None]
+    neutral['write_tokens (code)'] = (len(leaked), len(cases))
+    if len(leaked) != len(cases) or not cases:
+        fails.append('neutralised write_tokens still blocks: %s'
+                     % sorted(set(l for l, _ in cases) - set(leaked)))
+    if restored:
+        fails.append('restored write_tokens lets through: %s' % restored)
     with tempfile.TemporaryDirectory() as tmp:
         out = io.StringIO()
         cg.main(io.StringIO(json.dumps(sh('rm -rf ' + HOME + '/local/x'))), out, ctx(private=tmp))

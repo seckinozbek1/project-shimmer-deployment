@@ -29,7 +29,9 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
 18. on the real phase a declared claim makes no uncomputable or absence plan and no refusal row
     (R-a1: no legal-text check on a table claim; both unit-path guards taken away, it would);
 19. a cell's figure is read by one reader in its usual forms ("71,2%", "71.2%", "71.2", "-3.4"), so
-    a claim writing 71.2 names the cell writing "71,2%" (D-652, audit A1).
+    a claim writing 71.2 names the cell writing "71,2%" (D-652, audit A1);
+20. a table the claim names, within the declared whole_table_max_cells, is shown whole with its
+    caption (`small_table`, N4); above the bound or with it off, the claim is cut by labels.
 """
 import ast
 import contextlib
@@ -116,6 +118,12 @@ def expected_rendered():
             "| Southern | Beta | 1 |", "| Eastern | Gamma | 2 |"]
 
 
+def expected_whole_rendered():
+    """TEXT's one table shown whole with its caption: what the shipped bound (N4) gives a named claim."""
+    return ["Table 2: Harbour dues by quay.", "| Quay | Berth | Dues | Depth | Crane |", "|---|---|---|---|---|",
+            "| Northern | Alpha | 61.5 | 12 | 3 |", "| Southern | Beta | 44.0 | 9 | 1 |", "| Eastern | Gamma | 70.25 | 14 | 2 |"]
+
+
 def observe_figure():
     return pick(cell_selection.select(TEXT, "It reached 70.25 last year.", dict(CONFIG, fill_rows=0)))
 
@@ -197,6 +205,20 @@ def expected_whole():
     return ["whole_table", [0, 1, 2], [0, 1, 2, 3, 4], None, "labels"]
 
 
+def observe_small_table():
+    """N4: a named table within the declared cell bound is shown whole, caption first; above it, or
+    with the bound off, the same claim is cut by labels."""
+    claim = "The crane count differs."
+    small = cell_selection.select(TEXT, claim, dict(CONFIG, whole_table_max_cells=15))
+    over = cell_selection.select(TEXT, claim, dict(CONFIG, whole_table_max_cells=14))
+    return [small["selected_by"], small["rows"], small["columns"], small["left_out_columns"], small["cells"].splitlines()[0],
+            small["named_columns"], over["selected_by"], over["columns"], cell_selection.select(TEXT, claim, CONFIG)["selected_by"]]
+
+
+def expected_small_table():
+    return ["small_table", [0, 1, 2], [0, 1, 2, 3, 4], 0, "Table 2: Harbour dues by quay.", 1, "labels", [0, 1, 4], "labels"]
+
+
 def observe_two_tables():
     other = chr(10).join(("Table 3: Rainfall by month.", "", "| Month | Rainfall |", "|---|---|", "| March | 20 |", "| April | 30 |", ""))
     same = chr(10).join(("| Quay | Dues |", "|---|---|", "| One | 1 |", "| Two | 2 |", "", "text", "",
@@ -265,14 +287,14 @@ def observe_replay():
         real = cell_selection.load_config
         with patched(cell_selection, "load_config", lambda: dict(real(), max_rows=2)):
             value = choice_judge.build(folder / "p.json", claim_workloads=[work], claim_items=[items])
-    return {"cells": first == second and first["cells"] == "\n".join(expected_rendered()), "shape": sorted(first),
+    return {"cells": first == second and first["cells"] == "\n".join(expected_whole_rendered()), "shape": sorted(first),
             "prompts": [p["item_id"] for p in value["prompts"]], "refused": value["refused_claims"], "counts": value["cell_counts"]}
 
 
 def expected_replay():
     return {"cells": True, "shape": ["cells", "columns", "of_columns", "of_rows", "rows", "selected_by"], "prompts": ["a"],
             "refused": [{"document_id": "d", "item_id": "b", "rule_id": "CONV-b", "reason": "no_match"}],
-            "counts": {"labels": 1, "refused": 1}}
+            "counts": {"small_table": 1, "refused": 1}}
 
 
 CLAIM_RULE = {"id": "CONV-020", "category": "conv-h20", "severity": "required", "compare": "cells",
@@ -349,20 +371,42 @@ def observe_product():
 
 def expected_product():
     return {"sent": 1, "answers": ["holds", "not met", "cannot be settled"], "threshold": .7,
-            "shows": [True, False, True, False], "row": (1, 1, 1, "not met", .9, [0, 1]), "no text": False, "findings": 1,
+            "shows": [True, True, True, False], "row": (1, 1, 1, "not met", .9, [0, 1, 2]), "no text": False, "findings": 1,
             "calls_made": True, "judging": ["judged_cell_claim"], "audit": [("model_finding_not_promoted", "batch_sheet")],
             "evidence": [("batch_sheet", "CONV-020")], "outcomes": ["not_promoted"]}
 
 
 def observe_no_threshold():
-    run = _phase(lambda wrapper, prompt, n: _decision(), threshold=None)
+    """N1 (Seckin 19 Nov 01:11): with no threshold the claim is still asked, the answer's
+    probabilities stand on its row (and, in agent_wrapper.call_choice, its one reply record),
+    nothing is decided and no record written; a threshold set later decides from the saved row."""
+    import choice_decision
+    run = _phase(lambda wrapper, prompt, n: choice_decision.settle(_decision(), None), threshold=None)
     row = run["document"]["cell_claims"][0]
-    return {"sent": len(run["sent"]), "said": row["not_asked"], "reader": "no threshold has been measured for deciding that" in run["reader"],
+    saved = row["decisions"][0] if row["decisions"] else {}
+    later = choice_decision.settle({"answers": [{"label": k, "probability": p} for k, p in (saved.get("answers") or {}).items()]}, .7) \
+        if saved else {}
+    findings = [f for f in run["data"].get("model_findings_not_promoted") or [] if f.get("rule_id") == "CONV-020"]
+    return {"sent": [(s["threshold"], s["answers"]) for s in run["sent"]], "row": (row["made"], row["not_met"], row["kept"], row.get("no_threshold")),
+            "saved": (saved.get("decided"), saved.get("why"), saved.get("answers")), "findings": len(findings),
+            "later": later.get("decided"), "reader": "so the answers were saved and nothing was decided" in run["reader"],
             "not judged": [e["why"] for e in run["document"]["not_judged"] if e.get("kind") == "cell_claim"]}
 
 
 def expected_no_threshold():
-    return {"sent": 0, "said": "no question asked: no threshold measured for cell_claim", "reader": True, "not judged": ["cells_no_threshold"]}
+    return {"sent": [(None, ["holds", "not met", "cannot be settled"])], "row": (1, 0, 0, "cell_claim"),
+            "saved": ("cannot be settled", "no_threshold", {"holds": .05, "not met": .9, "cannot be settled": .05}), "findings": 0,
+            "later": "not met", "reader": True, "not judged": ["cells_no_threshold"]}
+
+
+def run_n1():
+    """Check 536: the no-threshold proof alone, neutralised by restoring the early return."""
+    result = prove_effect(name="no threshold still asks and saves", validate=lambda: cell_selection.CONFIG_PATH.is_file(),
+                          observe=observe_no_threshold,
+                          check=lambda: ("PASS" if observe_no_threshold() == expected_no_threshold() else "FAIL", "n1"),
+                          neutralise=lambda: with_source(cell_selection, "review", 'calls["no_threshold"] = config["decision"]["threshold_family"]',
+                                                         'calls["no_threshold"] = config["decision"]["threshold_family"]; return records, calls'))
+    return result
 
 
 def observe_failures():
@@ -659,6 +703,26 @@ def convention_parser_module():
     return convention_parser
 
 
+def observe_column_fill():
+    claim = "The Northern dues are high."
+    return [cell_selection.select(TEXT, claim, dict(CONFIG, **extra))["columns"]
+            for extra in ({}, {"fill_columns": 10}, {"fill_columns": 2}, {"fill_columns": 10, "max_columns": 4})]
+
+
+def run_column_fill():
+    """Check 545 (S3 of the SciTab diagnosis, 19 November): a claim naming fewer columns than the room
+    has keeps the unnamed columns too, up to `fill_columns` (0 when not declared, as before) and within
+    `max_columns`, so a named label column cannot crowd out the figures. Neutralise, fail, restore, pass."""
+    prove_effect(
+        name="columns kept for a comparison", validate=lambda: cell_selection.CONFIG_PATH.is_file(),
+        observe=observe_column_fill,
+        check=lambda: ("PASS" if observe_column_fill() == [[0, 1, 2], [0, 1, 2, 3, 4], [0, 1, 2, 3], [0, 1, 2, 3]]
+                       else "FAIL", "columns kept for a comparison"),
+        neutralise=lambda: with_source(cell_selection, "select", "unnamed_columns[:column_fill]", "[]"))
+    return "PASS", ("1 proof, neutralise, fail, restore, pass: named columns are filled with unnamed ones up to "
+                    "fill_columns, none when it is not declared, within max_columns")
+
+
 def run_checks():
     module = cell_selection
     proofs = [
@@ -667,7 +731,7 @@ def run_checks():
         ("key columns", observe_keys, lambda: [0, 1],
          lambda: patched(module, "key_columns", lambda table: [0])),
         ("a named column", observe_column, expected_column,
-         lambda: with_source(module, "select", "wanted_columns = named_columns or others", "wanted_columns = others")),
+         lambda: with_source(module, "select", "wanted_columns = named_columns + unnamed_columns[:column_fill] if named_columns else others", "wanted_columns = others")),
         ("header and key column stay", observe_rendered, expected_rendered,
          lambda: with_source(module, "select", "columns_shown = sorted(set(keys) | set(kept_columns))", "columns_shown = sorted(kept_columns)")),
         ("a figure names its cell", observe_figure, expected_figure,
@@ -684,6 +748,8 @@ def run_checks():
          lambda: patched(module, "_within_caps", lambda table, config: True)),
         ("no match within the caps is the whole table", observe_whole, expected_whole,
          lambda: patched(module, "_within_caps", lambda table, config: False)),
+        ("a small named table is shown whole", observe_small_table, expected_small_table,
+         lambda: patched(module, "_small", lambda table, config: False)),
         ("two tables", observe_two_tables, expected_two_tables,
          lambda: with_source(module, "select", "if strength.count(best) > 1:", "if False:")),
         ("the embedding settles ties only", observe_embedding, expected_embedding,
@@ -724,7 +790,7 @@ def run_checks():
          lambda: with_source(rescreen_module(), "kept_items", 'else "cell_claim" if written == paired_review.JUDGED_PATH_CELL_CLAIM', "")),
         ("holds and unsettled make no record", observe_only_flag, lambda: [0, 0, 1, 2],
          lambda: with_source(cell_selection, "review", 'if cls != "FLAG":', "if False:")),
-        ("no threshold asks nothing", observe_no_threshold, expected_no_threshold,
+        ("no threshold still asks and saves", observe_no_threshold, expected_no_threshold,
          lambda: with_source(cell_selection, "review", "if threshold_of(config) is None:", "if False:")),
         ("failed and raised calls", observe_failures, expected_failures,
          lambda: patched(cell_selection, "CAUGHT", ())),
@@ -755,6 +821,36 @@ def run_checks():
                     "named columns cut the rest, a written figure names its cell, unnamed rows stay for a comparison up to the "
                     "declared fill, the caps hold and say so, a claim matching nothing is the whole table within the caps, no table, no match above them and a tie are refused, and the embedding only "
                     "settles what words and figures leave equal" % len(results))
+
+
+@contextlib.contextmanager
+def _no_small_no_column_fill():
+    """The product proof's neutraliser: no table is small and, since S3's shipped fill_columns would
+    show this fixture's unnamed columns too, no column fill either, so the bound's own effect is seen."""
+    real = cell_selection.load_config
+    with patched(cell_selection, "_small", lambda table, config: False), \
+            patched(cell_selection, "load_config", lambda: dict(real(), fill_columns=0)):
+        yield
+
+
+def run_small_table_check():
+    """Check 544 (N4): a named table within the declared whole_table_max_cells is shown whole with its
+    caption, above it or with it off the claim is cut by labels; and the shipped bound is declared in
+    config/cell_selection.json, so the product path and the replay show such a table whole."""
+    shipped = cell_selection.load_config().get("whole_table_max_cells")
+    if not isinstance(shipped, int) or shipped <= 0:
+        return "FAIL", "config/cell_selection.json declares no positive whole_table_max_cells"
+    proofs = [("a small named table is shown whole", observe_small_table, expected_small_table,
+               lambda: patched(cell_selection, "_small", lambda table, config: False)),
+              ("the shipped bound reaches the replay", observe_replay, expected_replay,
+               lambda: patched(cell_selection, "_small", lambda table, config: False)),
+              ("the shipped bound reaches the product path", observe_product, expected_product, _no_small_no_column_fill)]
+    for name, observe, expected, neutralise in proofs:
+        prove_effect(name=name, validate=lambda: cell_selection.CONFIG_PATH.is_file(), observe=observe,
+                     check=lambda: ("PASS" if observe() == expected() else "FAIL", name), neutralise=neutralise)
+    return "PASS", ("%d proofs, each neutralise, fail, restore, pass: a table the claim names with at most the declared %d "
+                    "body cells is shown whole with its caption (small_table), above the bound it is cut by labels, and the "
+                    "shipped bound reaches the replay and the real phase 5.5" % (len(proofs), shipped))
 
 
 if __name__ == "__main__":

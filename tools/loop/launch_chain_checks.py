@@ -49,6 +49,12 @@ watch.py. No provider call, no key, no ledger of the loop: the mechanism paths p
   links_skipped                 a junction launch folder and a controller log reached through a junction are skipped
   repo_limited                  requires.repo outside the main checkout and its worktrees is refused, git not called
   guard_alert_quotes_line       the GuardRefusal alert quotes the refusal line from the log
+  retry_folder_read             a part retried into NAME.2 (exit 0) beside a first NAME with no workload_return reads
+                                done: status reads the ledger's newest launch folder, else the highest suffix
+                                (tools/loop/run_folder_pick.py), and prints the folder it read
+  batch_part_read               a batch part (plan.json names more than one bundle) writes no workload_return: done
+                                from terminated_and_cleaned, TERMINATION_VERIFIED, no controller_failure and one
+                                batch/NN_* evidence per bundle with pipeline_exit_code 0; one missing reads failed
 
 Each proof is run as built (passes), neutralised (must fail), restored and run again (passes).
 """
@@ -121,7 +127,13 @@ if step == 'request':
     raise SystemExit(0)
 if step == 'admit':
     (HERE / 'admitted').mkdir(exist_ok=True)
-    (HERE / 'admitted' / 'admission.json').write_text(json.dumps({'admitted': 2, 'requests': 2}), encoding='utf-8')
+    body = json.dumps({'admitted': 2, 'requests': 2})
+    if S.get('slow_admit'):          # a detached admission that writes its file later, as the real one does
+        subprocess.Popen([sys.executable, '-c', 'import time, pathlib; time.sleep(%r); pathlib.Path(%r).write_text(%r, '
+                          'encoding="utf-8")' % (S['slow_admit'], str(HERE / 'admitted' / 'admission.json'), body)],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        (HERE / 'admitted' / 'admission.json').write_text(body, encoding='utf-8')
     print('started detached, pid 1')
     raise SystemExit(0)
 for rel, text in S.get('touch_on_launch', {}).get(step, []):
@@ -270,19 +282,77 @@ def caught(fn):
 # ---- proofs ----
 
 def observe_admit_then_part_same_move():
+    """An admission already written when the chain reads again: its part follows in the same pass. A slow one never
+    holds the pass (Seckin 18 Nov 20:37): another folder's step launches meanwhile, the part waits for a later pass."""
     with Fixture() as f:
         d = f.folder('G', gate_chain(), {'seal': ENDED, 'part': NOT})
         lc.run_once(f.root)
-        return f.launches(d), (d / 'admitted' / 'admission.json').is_file(), f.watchers(d, 1), \
-            f.results().count('launch'), 'admit_done' in f.results()
+        quick = (f.launches(d), (d / 'admitted' / 'admission.json').is_file(), f.watchers(d, 1),
+                 f.results().count('launch'), 'admit_detached' in f.results())
+    with Fixture() as f:
+        slow = f.folder('G', gate_chain(), {'seal': ENDED, 'part': NOT}, slow_admit=12)
+        other = f.folder('H', gate_chain(), {'seal': ENDED, 'part': NOT}, admitted=True)
+        lc.run_once(f.root)
+        first = (f.launches(slow), f.launches(other), (slow / 'admitted' / 'admission.json').is_file(),
+                 f.state('G', 'admit'))
+        end = time.time() + 30
+        while time.time() < end and not (slow / 'admitted' / 'admission.json').is_file():
+            time.sleep(0.2)
+        lc.run_once(f.root)
+        return quick, first, f.launches(slow)
 
 
 def expected_admit_then_part_same_move():
-    return ['admit', 'part'], True, ['part'], 2, True
+    return ((['admit', 'part'], True, ['part'], 2, True), (['admit'], ['part'], False, 'launching'),
+            ['admit', 'part'])
 
 
 def neutralise_admit_then_part_same_move():
-    return patch.object(lc, 'admitted_all', lambda folder, step: False)
+    def hold(folder, step):          # the old foreground wait: the pass held until the admission is written
+        end = time.time() + 30
+        while time.time() < end and not lc.admitted_all(folder, step):
+            time.sleep(0.2)
+    return patch.object(lc, 'after_admit_launch', hold)
+
+
+def observe_template_folder_skipped():
+    """OPEN_ITEMS 159: a folder whose chain.json declares "template": true is never planned or launched; its copy
+    without the marker is."""
+    with Fixture() as f:
+        chain = dict(gate_chain(), template=True)
+        tpl = f.folder('T1', chain, {'seal': ENDED, 'part': NOT}, admitted=True)
+        copy = f.folder('T2', gate_chain(), {'seal': ENDED, 'part': NOT}, admitted=True)
+        lc.run_once(f.root)
+        return [p.name for p in lc.chain_folders(f.root)], f.launches(tpl), f.launches(copy)
+
+
+def expected_template_folder_skipped():
+    return ['T2'], [], ['part']
+
+
+def neutralise_template_folder_skipped():
+    return patch.object(lc, 'is_template', lambda folder: False)
+
+
+def observe_held_chain_skipped():
+    """A chain.json held (renamed) after the folder was listed is skipped with one trace line, never a folder error;
+    the other folders still launch."""
+    with Fixture() as f:
+        held = f.folder('K1', gate_chain(), {'seal': ENDED, 'part': NOT}, admitted=True)
+        other = f.folder('K2', gate_chain(), {'seal': ENDED, 'part': NOT}, admitted=True)
+        listed = lc.chain_folders(f.root)
+        (held / 'chain.json').rename(held / 'chain.json.held_x')
+        with patch.object(lc, 'chain_folders', lambda root=None: listed):
+            lc.run_once(f.root)
+        return f.launches(held), f.launches(other), 'skipped' in f.results(), 'folder_error' in f.results()
+
+
+def expected_held_chain_skipped():
+    return [], ['part'], True, False
+
+
+def neutralise_held_chain_skipped():
+    return patch.object(lc, 'skip_without_chain', lambda folder: False)
 
 
 def observe_request_then_seal_same_move():
@@ -339,7 +409,7 @@ def neutralise_failed_preflight_alerts():
 
     def ignore(folder, args, timeout):
         rc, out, err = real(folder, args, timeout)
-        return (0, out, err) if args == ['preflight'] else (rc, out, err)
+        return (0, out, err) if args[:1] == ['preflight'] else (rc, out, err)
     return patch.object(lc, 'call_launch', ignore)
 
 
@@ -938,14 +1008,114 @@ def neutralise_guard_alert_quotes_line():
         real(folder, step, offsets)))
 
 
-PROOFS = ('admit_then_part_same_move', 'request_then_seal_same_move', 'unfinished_prerequisite_stays',
+def status_through_pick(base, ledger):
+    """`launch.py status` for a part as the launch folders print it: the folder run_folder_pick chooses, the four
+    phase files read from it, the step line parsed by the chain and judged by own_state."""
+    import run_folder_pick as rfp
+    printed = io.StringIO()
+    with contextlib.redirect_stdout(printed):
+        folder = rfp.chosen(base, 'GX_FULL', ledger, 'fx-part', 'part')
+    phase = {}
+    for name in ('CURRENT_PHASE.json', 'controller_failure.json', 'TERMINATION_VERIFIED.json', 'workload_return.json'):
+        if (folder / name).is_file():
+            value = json.loads((folder / name).read_text(encoding='utf-8'))
+            phase[name.split('.')[0]] = {k: value.get(k) for k in ('phase', 'error_type', 'message', 'exit_code') if k in value}
+    status = lc.parse_status('%s\npart (1.268, %r) %r\n' % (printed.getvalue().strip(), 'ended', phase))
+    return lc.own_state(base.parent, {'kind': 'ledger', 'step': 'part', 'purpose': 'fx-part'}, status)[0], \
+        printed.getvalue().strip().split(' (')[0]
+
+
+def observe_retry_folder_read():
+    """The lead 18 Nov 22:2x (ROUTE_GATE_3efb3a37, ALERT 21:24): a part retried into run_part/NAME.2, which holds
+    workload_return exit 0, while run_part/NAME (the first attempt) holds none: status reads the folder of the
+    ledger's newest launch (its instance id in launch.json) and the step is done; with no ledger match, the highest
+    suffix; the folder read is printed."""
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp) / 'run_part'
+        (base / 'GX_FULL').mkdir(parents=True)
+        retry = base / 'GX_FULL.2'
+        retry.mkdir()
+        (retry / 'launch.json').write_text(json.dumps({'instance_id': 'i-two'}), encoding='utf-8')
+        (retry / 'workload_return.json').write_text(json.dumps({'exit_code': 0}), encoding='utf-8')
+        (base / 'GX_FULLER.9').mkdir()                  # another bundle's name is never a candidate
+        ledger = Path(tmp) / 'ledger.jsonl'
+        rows = [{'event': 'launch', 'purpose': 'fx-part', 'instance_id': 'i-one'},
+                {'event': 'launch', 'purpose': 'fx-other', 'instance_id': 'i-x'},
+                {'event': 'launch', 'purpose': 'fx-part', 'instance_id': 'i-two'},
+                {'event': 'termination', 'purpose': 'fx-part', 'instance_id': 'i-two'}]
+        ledger.write_text(''.join(json.dumps(r) + '\n' for r in rows), encoding='utf-8')
+        by_ledger = status_through_pick(base, ledger)
+        ledger.write_text(json.dumps({'event': 'launch', 'purpose': 'fx-part', 'instance_id': 'i-gone'}) + '\n',
+                          encoding='utf-8')
+        by_suffix = status_through_pick(base, ledger)
+        return by_ledger, by_suffix
+
+
+def expected_retry_folder_read():
+    return ('done', 'part reads run_part/GX_FULL.2'), ('done', 'part reads run_part/GX_FULL.2')
+
+
+def neutralise_retry_folder_read():
+    import run_folder_pick as rfp            # the old reading: run_part/NAME whenever it exists
+    return patch.object(rfp, 'pick', lambda base, name, rows, purpose: (
+        (Path(base) / name, 'the first folder') if (Path(base) / name).is_dir() else (None, 'none')))
+
+
+def evidence_tar(path, exit_code):
+    import tarfile
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = json.dumps({'pipeline_exit_code': exit_code, 'execution_integrity_passed': exit_code == 0}).encode('utf-8')
+    with tarfile.open(path, 'w:gz') as tar:
+        info = tarfile.TarInfo('evidence/result.json')
+        info.size = len(body)
+        tar.addfile(info, io.BytesIO(body))
+
+
+def observe_batch_part_read():
+    """The lead 18 Nov (DEV_contradoc_full, DEV_scitab_dev): a batch part writes no workload_return.json; it reads
+    done from terminated_and_cleaned, TERMINATION_VERIFIED, no controller_failure and one batch/NN_* evidence per
+    bundle with pipeline_exit_code 0; one evidence missing, or one with exit 2, reads failed with the count."""
+    with tempfile.TemporaryDirectory() as tmp:
+        folder = Path(tmp) / 'DEV_fx'
+        bundles = ['FX_%02d' % i for i in range(3)]
+        (folder / 'admitted' / bundles[0]).mkdir(parents=True)
+        (folder / 'plan.json').write_text(json.dumps({'bundles': {'part': bundles, 'single': ['FX_solo']}}), encoding='utf-8')
+        step = {'kind': 'ledger', 'step': 'part', 'purpose': 'fx-part',
+                'controller_logs': ['admitted/%s/controller_detached.log' % bundles[0]]}
+        phase = {'CURRENT_PHASE': {'phase': 'terminated_and_cleaned'}, 'TERMINATION_VERIFIED': {}}
+        status = lc.parse_status('part (2.041, %r) %r\n' % ('ended', phase))
+        batch = folder / 'admitted' / bundles[0] / 'batch'
+        for i, b in enumerate(bundles):
+            evidence_tar(batch / ('%02d_%s_B3' % (i, b[-2:])) / lc.EVIDENCE, 0)
+        full = lc.own_state(folder, step, status)[0]
+        (batch / '02_02_B3' / lc.EVIDENCE).rename(batch / '02_02_B3' / 'aside.tar.gz')
+        short = lc.own_state(folder, step, status)
+        evidence_tar(batch / '02_02_B3' / lc.EVIDENCE, 2)
+        exit2 = lc.own_state(folder, step, status)[0]
+        failed = lc.own_state(folder, step, lc.parse_status('part (2.041, %r) %r\n' % (
+            'ended', dict(phase, controller_failure={'error_type': 'X'}))))[0]
+        single = lc.own_state(folder, dict(step, step='single'), lc.parse_status(
+            'single (1.0, %r) %r\n' % ('ended', {'workload_return': {'exit_code': 0}})))[0]
+        return full, short[0], '2 of 3 batch evidences' in short[1], exit2, failed, single
+
+
+def expected_batch_part_read():
+    return 'done', 'failed', True, 'failed', 'failed', 'done'
+
+
+def neutralise_batch_part_read():
+    return patch.object(lc, 'step_bundles', lambda folder, step: None)   # the old rule: workload_return only
+
+
+PROOFS = ('batch_part_read', 'retry_folder_read','admit_then_part_same_move', 'request_then_seal_same_move', 'unfinished_prerequisite_stays',
           'failed_preflight_alerts', 'lock_prevents_overlap', 'request_waits_for_quiet_ledger',
           'stale_request_set_aside', 'stale_needs_nonzero_exit', 'stale_three_alert', 'foreign_request_untouched',
           'one_launch_at_a_time', 'guard_refusal_held_retried', 'guard_three_alert', 'own_log_new_bytes_only',
           'lead_launches_meanwhile', 'killed_pass_leaves_record', 'folder_fault_contained', 'dry_run_writes_nothing',
           'chain_paths_refused', 'clear_checked', 'watchdog_five_minutes', 'watchdog_pass_started_apart',
           'marker_window_only', 'timeout_unconfirmed', 'ledger_step_declared', 'seal_follows_budget',
-          'quiet_after_preflight', 'links_skipped', 'repo_limited', 'guard_alert_quotes_line')
+          'quiet_after_preflight', 'links_skipped', 'repo_limited', 'guard_alert_quotes_line',
+          'template_folder_skipped', 'held_chain_skipped')
 
 
 def run_all(names=None):

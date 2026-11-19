@@ -243,6 +243,112 @@ def neutralise_two_phase():
     return patch.object(nsr, "draw_after", after_without_exclusion)
 
 
+def observe_random2():
+    """Seckin 17:59: a second uniform draw before the labeller, from the pool minus the first draw: the first draw's
+    rows kept unchanged ahead of it (so batches 1 to 5 keep their digests), ids continuing, no position twice;
+    asking for more than remain takes all and says so; the later low draw excludes both draws and continues the ids."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fx, sheets, labels, confidence = _review_fixture(tmp)
+        first = nsr.draw_random(sheets, seed=4, n_random=10)
+        second = nsr.draw_random2(sheets, first, n=20)
+        again = nsr.draw_random2(sheets, first, n=20)
+        pool = nsr._pool(sheets)
+        keys = lambda rows: [(r["set"], r["item_id"], r["position_id"]) for r in rows]
+        new = [r for r in second["rows"] if r["group"] == "random2"]
+        later = nsr.draw_after(sheets, labels, confidence, second, n_low=5)
+        low = [r for r in later["rows"] if r["group"] == "low"]
+        everything = nsr.draw_random2(sheets, first, n=len(pool))
+        b1 = nsr.batches(dict(first, rows=nsr.prior_rows(first, sheets)), sheets, T)
+        b2 = nsr.batches(dict(second, rows=nsr.prior_rows(second, sheets)), sheets, T)
+        tampered = json.loads(json.dumps(second))
+        tampered["rows"][12]["position_id"] = tampered["rows"][0]["position_id"]
+        return {"reproducible": second["rows"] == again["rows"], "first_kept": second["rows"][:10] == first["rows"],
+                "excludes_first": not (set(keys(new)) & set(keys(first["rows"]))), "count": len(new),
+                "ids": [r["review_id"] for r in second["rows"]] == ["P%03d" % n for n in range(1, 31)],
+                "first_batch_same": b1[0][1]["sha256"] == b2[0][1]["sha256"],
+                "low_excludes_both": not (set(keys(low)) & set(keys(second["rows"]))),
+                "low_ids": [r["review_id"] for r in low] == ["P%03d" % n for n in range(31, 36)],
+                "short": (everything["short"], everything["random2"] == len(pool) - 10, everything["remaining_after"]),
+                "tampered": _attempt(lambda: nsr.draw_after(sheets, labels, confidence, tampered, n_low=5))}
+
+
+def expected_random2():
+    return {"reproducible": True, "first_kept": True, "excludes_first": True, "count": 20, "ids": True,
+            "first_batch_same": True, "low_excludes_both": True, "low_ids": True, "short": (True, True, 0),
+            "tampered": "refused"}
+
+
+def neutralise_random2():
+    """The exclusion removed: the second draw samples the whole pool, the first draw's positions included."""
+    real2 = nsr.draw_random2
+
+    def random2_whole_pool(sheets, prior, *, n=300):
+        out = real2(sheets, dict(prior, rows=[], drawn_sha256=nsr._keys_sha([])), n=n)
+        rows = nsr.prior_rows(prior, sheets) + [dict(r, review_id="P%03d" % (k + len(prior["rows"])))
+                                                for k, r in enumerate(out["rows"], 1)]
+        return dict(out, rows=rows, drawn_sha256=nsr._keys_sha(rows))
+    return patch.object(nsr, "draw_random2", random2_whole_pool)
+
+
+def observe_provenance():
+    """D-745: batches whose labels the supervisor suggested and Seckin approved are counted apart from his blind
+    batches. In the fixture the suggested batch takes the labeller's stance wherever it has one and the blind
+    batches change three, so a pooled figure would differ from the blind one; the tool's headline counts the blind
+    answers alone, and an answers file with no declared provenance is refused."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fx, sheets, labels, confidence = _review_fixture(tmp)
+        first = nsr.draw_random(sheets, seed=9, n_random=30)
+        review = nsr.draw_after(sheets, labels, confidence, first, n_low=0)
+        written = nsr.batches(review, sheets, T)
+        blind_rows = [i["id"] for _n, v, _t in written[1:] for i in v["items"]]
+        files = _answers_for(review, labels, written, flip=set(blind_rows[:3]),
+                             provenance={1: nsr.SUGGESTED})
+        three = _answers_for(review, labels, written, flip=set(blind_rows[:3]),
+                             provenance={1: nsr.SUGGESTED, 2: nsr.AGENT_ANNOTATED})
+        for f in three:
+            f["provenance_note"] = "free text, never read"
+        apart, _m3 = nsr.read(review, three, labels, sheets, T)
+        carried = nsr.read(review, files, labels, sheets, T, conditional=[{"id": "P001"}, {"id": "P002"}])[0]["conditional_items"]
+        counts, _merged = nsr.read(review, files, labels, sheets, T)
+        blind = counts["groups"]["random"]
+        suggested = counts["by_provenance"][nsr.SUGGESTED]["random"]
+        pooled = (blind["agree_stance"] + suggested["agree_stance"], blind["answered"] + suggested["answered"])
+        missing = [dict(f) for f in files]
+        missing[0].pop(nsr.PROVENANCE_FIELD)
+        unknown = [dict(f) for f in files]
+        unknown[0][nsr.PROVENANCE_FIELD] = "someone else"
+        every = _answers_for(review, labels, written, flip=set(), provenance={n: nsr.SUGGESTED for n in (1, 2, 3)})
+        all_suggested, _m = nsr.read(review, every, labels, sheets, T)
+        return {"all_suggested": (all_suggested["blind_figure"], all_suggested["groups"]["random"]["answered"],
+                                  all_suggested["positions_by_provenance"]),
+                "mixed_statement": counts["blind_figure"],
+                "conditional_items": (carried, counts["conditional_items"]),
+                "three_apart": (apart["positions_by_provenance"], apart["groups"]["random"]["answered"],
+                                apart["by_provenance"][nsr.AGENT_ANNOTATED]["random"]["answered"]),
+                "blind": (blind["agree_stance"], blind["answered"]),
+                "suggested": (suggested["agree_stance"], suggested["answered"]),
+                "pooled_differs": pooled[0] * blind["answered"] != blind["agree_stance"] * pooled[1],
+                "by_provenance_counts": counts["positions_by_provenance"],
+                "missing_field": _attempt(lambda: nsr.read(review, missing, labels, sheets, T)),
+                "unknown_value": _attempt(lambda: nsr.read(review, unknown, labels, sheets, T))}
+
+
+def expected_provenance():
+    return {"all_suggested": ("none: no answer is blind; every answered position is suggested_and_approved", 0,
+                              {"blind": 0, "suggested_and_approved": 30, "agent_annotated_and_approved": 0}),
+            "mixed_statement": "groups: 20 blind answers",
+            "conditional_items": (2, None),
+            "three_apart": ({"blind": 10, "suggested_and_approved": 10, "agent_annotated_and_approved": 10}, 10, 10),
+            "blind": (17, 20), "suggested": (6, 10), "pooled_differs": True,
+            "by_provenance_counts": {"blind": 20, "suggested_and_approved": 10, "agent_annotated_and_approved": 0},
+            "missing_field": "refused", "unknown_value": "refused"}
+
+
+def neutralise_provenance():
+    """Pooling: every answer read as blind, whatever its provenance says."""
+    return patch.object(nsr, "provenance_of", lambda files: {rid: nsr.BLIND for f in files for rid in f.get("answers") or {}})
+
+
 FORBIDDEN_IN_BATCH = ('"group"', '"confidence"', 'probabilit', '"random"', '"low"', '"stance": "', '"proposal"')
 
 
@@ -275,7 +381,7 @@ def neutralise_batches():
     return patch.object(nsr, "page_items", leaky)
 
 
-def _answers_for(review, labels, written, flip, as_text=False):
+def _answers_for(review, labels, written, flip, as_text=False, provenance=None):
     """The supervisor's answer files: the labeller's own label by option number, the stance changed on `flip`."""
     files = []
     for number, value, _txt in written:
@@ -292,7 +398,9 @@ def _answers_for(review, labels, written, flip, as_text=False):
                 want["firm_limit"] = "no"
             out[item["id"]] = {f: (v if as_text and not v.isdigit() else next(n for n, o in item["options"][f].items() if o == v))
                                for f, v in want.items()}
-        files.append({"schema": nsr.ANSWERS_SCHEMA, "batch": number, "batch_sha256": value["sha256"], "answers": out})
+        prov = (provenance or {}).get(number, nsr.BLIND)
+        files.append({"schema": nsr.ANSWERS_SCHEMA, "batch": number, "batch_sha256": value["sha256"], "answers": out,
+                      nsr.PROVENANCE_FIELD: prov})
     return files
 
 
@@ -342,6 +450,48 @@ def expected_reader():
 
 def neutralise_reader():
     return patch.object(nsr, "as_label", lambda answer, t: None)
+
+
+def observe_reading_tag():
+    """lane/label-wording-reader: a second reading of the same saved replies (labels_<set>_r2.json) is read by
+    `read` as its set's labels, end to end through main, with the same counts as the first reading's names; a
+    labels file naming no set of the sheets, or two files of one set, is refused, never silently unmatched."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fx, sheets, labels, confidence = _review_fixture(tmp)
+        review = nsr.draw(sheets, labels, confidence, seed=3, n_random=5, n_low=10)
+        written = nsr.batches(review, sheets, T)
+        files = _answers_for(review, labels, written, set())
+        want, _merged = nsr.read(review, files, labels, sheets, T)
+        root = Path(tmp)
+        (root / "answers").mkdir()
+        for n, f in enumerate(files):
+            (root / "answers" / ("a%02d.json" % n)).write_text(json.dumps(f), encoding="utf-8")
+        (root / "review.json").write_text(json.dumps(review), encoding="utf-8")
+        paths = []
+        for name, value in labels.items():
+            paths.append(root / ("labels_%s_r2.json" % name))
+            paths[-1].write_text(json.dumps(value), encoding="utf-8")
+        argv = ["read"] + sum((["--sheets", str(p)] for p in fx.paths), []) + sum((["--labels", str(p)] for p in paths), [])
+        with contextlib.redirect_stdout(io.StringIO()):
+            nsr.main(argv + ["--review", str(root / "review.json"), "--answers-dir", str(root / "answers"),
+                             "--counts", str(root / "counts_r2.json"), "--merged-dir", str(root / "reviewed_r2")])
+        got = json.loads((root / "counts_r2.json").read_text(encoding="utf-8"))
+        stray = root / "labels_other_1.json"
+        stray.write_text("{}", encoding="utf-8")
+        return {"same_counts": got["groups"] == want["groups"],
+                "merged_names": sorted(p.name for p in (root / "reviewed_r2").iterdir()),
+                "no_set": _attempt(lambda: nsr._by_set([str(stray)], sets=sheets)),
+                "two_of_one_set": _attempt(lambda: nsr._by_set([str(paths[0]), str(paths[0])], sets=sheets))}
+
+
+def expected_reading_tag():
+    return {"same_counts": True, "merged_names": sorted("labels_%s_reviewed.json" % s for s in pc.SETS),
+            "no_set": "refused", "two_of_one_set": "refused"}
+
+
+def neutralise_reading_tag():
+    """The set read off the name as written (the old reader): labels_dev_1_r2.json becomes a set of its own."""
+    return patch.object(nsr, "label_set", lambda path, sets=None: Path(path).name[len("labels_"):-len(".json")])
 
 
 # ---------------------------------------------------------------------------
@@ -416,7 +566,8 @@ def neutralise_stance_definition():
     return patch.object(nsl, "render", lambda sheet, position, t: real(sheet, position, dict(t, stance_definition="")))
 
 
-PROOFS = {"522": ("deciding_token", "confidence_read_back"), "523": ("draw", "two_phase", "batches", "reader"),
+PROOFS = {"522": ("deciding_token", "confidence_read_back"), "523": ("draw", "two_phase", "random2", "batches", "reader", "provenance",
+                                                                        "reading_tag"),
           "524": ("no_few_shot", "stance_definition")}
 WHAT = {"522": "the labeller's confidence at the deciding token over the declared answers, read back unprinted",
         "523": "the seeded 50 (drawn first, before the labeller) and lowest-confidence 150 excluding them, blind numbered batches of 10, a counts-only answers reader",

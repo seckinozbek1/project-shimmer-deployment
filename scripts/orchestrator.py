@@ -435,6 +435,8 @@ class TopOrchestrator:
         summary["blocks"] = [b.as_dict() for b in self.block_gate.blocks.values()]
         mem = self._collect_memory_stats()
         if mem is not None: summary["verification_cache"] = mem
+        # SciTab P6: what phase 0 recorded loudly (pipeline.record_cell_threshold_missing).
+        if getattr(self, "run_flags", None): summary["run_flags"] = dict(self.run_flags)
         out_path = self.run_context.run_summary_path()
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(_format_summary_md(summary), encoding="utf-8")
@@ -533,6 +535,9 @@ def _format_summary_md(s):
         m = s["verification_cache"]
         lines.append(f"- tier 2 entries: {m.get('tier2', 0)}")
         lines.append(f"- tier 3 entries: {m.get('tier3', 0)}")
+    if s.get("run_flags"):
+        lines.append("\n## Run flags")
+        for k, v in s["run_flags"].items(): lines.append(f"- {k}: {json.dumps(v)}")
     lines.append("\n## Messages by type")
     for k, v in sorted((s.get("by_type") or {}).items()): lines.append(f"- {k}: {v}")
     lines.append("\n## Messages by sender")

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "decision": "Seckin 18 Nov 18:54 (a Lambda launch is never refused for laptop RAM), the lead 18:58; replaces the one D-726 floor of 1.2 GiB for every step",
+  "read_by": "tools/loop/launch_floors.py, at each call (launch.py preflight in each launch folder through it)",
+  "fallback_gib": 1.2,
+  "kinds": {
+    "request": {
+      "floor_gib": 0.5,
+      "where": "lambda",
+      "heavy_work": "the seal itself runs on Lambda (order 85); the laptop writes and checks the request",
+      "measured_peak_mib": 264,
+      "measured": "18 Nov 18:58, seal_route_driver.py request of ROUTE_GATE_90588740's one request into a scratch folder: whole process tree, 264 MiB working set, 210 MiB private, 45 s"
+    },
+    "seal": {
+      "floor_gib": 0.3,
+      "where": "lambda",
+      "heavy_work": "the seal job on Lambda; the laptop starts the detached controller",
+      "measured_peak_mib": 109,
+      "measured": "18 Nov 18:57 to 18:59, running detached controllers (ASSET_OLMO2 build, NIGHT_neg_round1 mplain, REBUILD_J1_B1 direct): controller 54, its watchdog 36, ssh 12, console 7 MiB peak working set"
+    },
+    "part": {
+      "floor_gib": 0.3,
+      "where": "lambda",
+      "heavy_work": "the workload on Lambda; the laptop starts the detached controller (the same controller as the seal)",
+      "measured_peak_mib": 109,
+      "measured": "as for seal"
+    },
+    "watch": {
+      "floor_gib": 0.3,
+      "where": "lambda",
+      "heavy_work": "reads the run folder and the ledger only",
+      "measured_peak_mib": 20,
+      "measured": "18 Nov 18:57, watch.py of ASSET_OLMO2 and NIGHT_neg_round1: 20 and 19 MiB peak working set"
+    },
+    "admit": {
+      "floor_gib": 1.2,
+      "where": "laptop",
+      "heavy_work": "the returned archive unpacked and reverified on the laptop; seal_route_driver's own room wait (MIN_MEMORY_GB 2.0) also holds before the ledger lock",
+      "measured_peak_mib": null,
+      "measured": "not measured: an admission was not run for a measurement (it takes the ledger lock and unpacks the archive); the D-726 floor is kept"
+    },
+    "local": {
+      "floor_gib": 1.2,
+      "where": "laptop",
+      "heavy_work": "local reads and the folders' own laptop steps (inventory, labels, draws, answers, review, a bare preflight)",
+      "measured_peak_mib": 41,
+      "measured": "18 Nov 18:58, launch.py preflight of REBUILD_J1_B1 41 MiB and status of NIGHT_neg_round1 31 MiB (whole tree); the D-726 floor is kept for laptop steps"
+    }
+  }
+}

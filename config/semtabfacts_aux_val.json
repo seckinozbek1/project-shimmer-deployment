@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "description": "SEM-TAB-FACTS (SemEval-2021 Task 9) dev and test as a SEPARATE auxiliary validation set holding a not-enough-info class (D-798 item 4). Read at call time by benchmark/adapters/semtabfacts/adapter.py; nothing below is written in code. Never mixed into, sampled with, or reported as a SciTab set or score.",
+  "decision": "D-798 item 4",
+  "set_name": "semtabfacts_aux_val",
+  "benchmark": "semtabfacts",
+  "never_with": ["scitab"],
+  "parts": ["dev", "test"],
+  "gold_values": {
+    "entailed": "supports",
+    "refuted": "refutes",
+    "unknown": "not enough info"
+  },
+  "classes": ["supports", "refutes", "not enough info"],
+  "class_setting": "3-class",
+  "side": "development",
+  "span_fill": "repeat",
+  "span_fill_values": {
+    "repeat": "a spanning cell's text is written at every grid position its row and column span covers",
+    "first": "a spanning cell's text is written at its first position and an empty cell over the rest of its span"
+  },
+  "header_rows": 1,
+  "report_line": "semtabfacts_aux_val (SEM-TAB-FACTS dev and test, auxiliary validation): our own 3-class macro-F1 over supports, refutes and not enough info, reported on its own line beside SciTab and never merged with it; not the task's official per-table micro-F1",
+  "looks_at_freeze": 0
+}

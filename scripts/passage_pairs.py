@@ -482,6 +482,8 @@ def unjudged(rule_id, calls, kept):
         why, reason = "pairs_some_failed", "%d of %d calls failed" % (calls["failed"], calls["made"])
     elif not calls["made"] and not calls.get("reused"):
         why, reason = "pairs_none", "no pair to ask: %d passages" % calls["passages"]
+    elif calls.get("no_threshold"):
+        why, reason = NO_THRESHOLD_WHY, "asked, nothing decided: no threshold measured for " + calls["no_threshold"]
     else:
         return None
     return {"unit_id": None, "rule_id": rule_id, "kind": "passage_pair", "reason": reason, "why": why,
@@ -504,8 +506,9 @@ def review(prepared, rule, source_rule_id, ask, config, memo=None, fields_presen
 
     Under the `decision` form `ask` gives a decision, `reason` is no sentence of the model's, and
     `calls` adds `form`, `unsettled`, `decisions` (each order's probabilities) and `decision_notes`
-    ({item id: Python's sentence}); with no measured threshold nothing is asked either, and `why`
-    says so.
+    ({item id: Python's sentence}); with no measured threshold every pair is asked all the same,
+    each decision stays UNSETTLED with its probabilities saved, nothing is kept, and `no_threshold`
+    names the family.
 
     `contracts` are the judge agent's (D-S55): each `check_quote` of a pair both orders flagged is one
     row of `calls["tool_rows"]` (present only once a row is kept) when its contract declares the tool, stamped with the first order's
@@ -530,9 +533,10 @@ def review(prepared, rule, source_rule_id, ask, config, memo=None, fields_presen
         calls["not_asked"] = "no pair asked: %d passages, above the declared %d" % (len(items), config["max_passages"])
         return records, calls
     if decided and threshold_of(config) is None:
-        calls["not_asked"] = "no pair asked: no threshold measured for " + config["decision"]["threshold_family"]
-        calls["why"] = NO_THRESHOLD_WHY
-        return records, calls
+        # Seckin 19 Nov 01:11-01:22 (as N1 for cells): asked all the same; each order's probabilities
+        # stand on its reply record and its decisions row, every decision UNSETTLED (no_threshold), so
+        # no record is written and a threshold set later decides from what was saved.
+        calls["no_threshold"] = config["decision"]["threshold_family"]
     memo = {} if memo is None else memo
     text_of = {u.get("unit_id"): u.get("text") for u in prepared["units"]}
     streak = [0]

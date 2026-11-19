@@ -303,6 +303,9 @@ def advisor_rows(value, texts, *, measured_audits=None, composed=None):
     for p in value["prompts"]:
         text = texts.get(p["prompt_id"])
         row = {"prompt_id": p["prompt_id"], "group": p["group"], "form": p["form"], "item_id": p["item_id"]}
+        if p.get("stance_context") is not None:
+            # D-756 item 5 (P8): the arm a stepwise prompt was built in, so a scorer never mixes the two arms.
+            row["stance_context"] = p["stance_context"]
         if p["form"] == "advice":
             chain = (composed or {}).get(p["prompt_id"])
             if chain is None:
@@ -310,13 +313,18 @@ def advisor_rows(value, texts, *, measured_audits=None, composed=None):
                 drops = af.Drops().merge(found)
             else:
                 reply, drops = chain[0], af.Drops()
+                refused = {}
                 for s in chain[1]:
                     if s["refused"]:
-                        drops.add("steps", "%s:%s" % (s["step"], s["refused"]))
-                row.update(method=na.STEPWISE, steps=len(chain[1]))
+                        # Counted in the drop share under the declared reason; the step and its own reason as
+                        # neg_advisor.answers writes them (`steps_refused`).
+                        drops.add("steps", af.STEP_REFUSED)
+                        name = "%s:%s" % (s["step"], s["refused"])
+                        refused[name] = refused.get(name, 0) + 1
+                row.update(method=na.STEPWISE, steps=len(chain[1]), steps_refused=dict(sorted(refused.items())))
             row.update(reply=reply)
             if p["group"] == "system_advice":
-                audits = {}
+                audits, flips = {}, {}
                 for d in (na.audit_prompts(config, p, text) if chain is None else na.audit_prompts(config, p, None, reply)):
                     sha, said = (measured_audits or {}).get(d["prompt_id"], (None, None))
                     if sha is not None and sha != d["user_sha256"]:
@@ -324,11 +332,18 @@ def advisor_rows(value, texts, *, measured_audits=None, composed=None):
                     label, why = audit(said, config) if sha is not None else (None, None)
                     if why:
                         drops.add("audit", why)
-                    audits[d["proposal_id"]] = label
+                    if d.get("kind") == na.CONFLICT_AUDIT:
+                        # P5 (lane/neg-optional): the second family's answer on one candidate, kept apart.
+                        flips[(d["proposal_id"], d["position_id"])] = label
+                    else:
+                        audits[d["proposal_id"]] = label
                 for pid, piece in sorted(((reply or {}).get("proposals") or {}).items()):
                     if pid not in audits and "stance" in piece and "conflict" in piece:
                         drops.add("audit", af.NOT_ASKED)
                 row["audit"] = audits
+                if flips:
+                    row["reply"], counts = na.auditor_flip(reply, flips)
+                    row["auditor_flip"] = dict(sorted(counts.items()))
             row["drops"] = drops.as_dict()
         elif p["form"] == "judge":
             grade, why = judge(text)

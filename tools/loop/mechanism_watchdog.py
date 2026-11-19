@@ -44,6 +44,11 @@ each *_DONE.json or *_HANDBACK.json in the role exchange folders config/handback
 modification times only, never a file's content) that the lead has not acknowledged in
 docs/loop/private/handback_ack.json and that is over 10 minutes old writes ALERT.md "role hand-back not taken
 up: <name> since <time>", once per file.
+
+Planned steps (Seckin 21:46, nothing silently waits): every run also calls tools/loop/promise_watch.py check (its
+own trace line): each step in docs/loop/private/PLANNED_STEPS.jsonl 5 minutes past its expected start with no
+launch, each failed launch with no new launch within 5 minutes, and each role session whose exit file shows exit
+while its expected output does not exist writes ALERT.md once per cause.
 """
 from __future__ import annotations
 
@@ -256,9 +261,14 @@ def main(argv=None):
         handback = handback_watch.check()['result']    # its own trace line (mechanism handback_watch)
     except Exception as exc:  # noqa: BLE001 - the watchdog's own line is still written
         handback = 'error %s: %s' % (type(exc).__name__, str(exc)[:200])
+    try:
+        import promise_watch
+        promise = promise_watch.check()['result']      # its own trace line (mechanism promise_watch)
+    except Exception as exc:  # noqa: BLE001 - the watchdog's own line is still written
+        promise = 'error %s: %s' % (type(exc).__name__, str(exc)[:200])
     mc.trace(NAME, 'alert' if overdue or reaper.get('error') or chain['late'] else 'ok', overdue=overdue,
              alert_written=written, mechanisms=rows, reaper=reaper, launch_chain=chain, sync_watch=sync,
-             handback_watch=handback)
+             handback_watch=handback, promise_watch=promise)
     if args.print:
         for n, r in rows.items():
             print('%-17s %-8s last %-25s age_min %-8s %s' % (n, 'OVERDUE' if r['overdue'] else 'ok', r['last'],

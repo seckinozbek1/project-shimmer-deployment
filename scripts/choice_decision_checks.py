@@ -888,8 +888,8 @@ def observe_build():
 
 def expected_build():
     return {"both_orders": True, "max_new_tokens": [0], "claim": CLAIM,
-            "selection": {"rows": 3, "of_rows": 3, "columns": 2, "of_columns": 3, "selected_by": "labels"},
-            "shown": [True, True, False], "caption": True, "template_left": False,
+            "selection": {"rows": 3, "of_rows": 3, "columns": 3, "of_columns": 3, "selected_by": "small_table"},
+            "shown": [True, True, True], "caption": True, "template_left": False,
             "reads": "the staged workloads only: no answer key, no reply, no label"}
 
 
@@ -1097,18 +1097,46 @@ def _posted_as_python():
         POSTED["as"] = None
 
 
+NO_MEASURE_CALLS = 4     # the fixture document's two proposed pairs, each in both orders
+
+
 def observe_no_measure():
     calls = []
     with patched(passage_pairs, "load_config", lambda: _config()), \
             patch.object(agent_wrapper.AgentWrapper, "call_choice", _choice_call(calls)):
         rows, unjudged, _, reader, incomplete = pjc._phase_run(pjc._contradict_call([]))
-    return {"calls": len(calls), "rows": [(r["not_asked"], r.get("why")) for r in rows], "not_judged": [e.get("why") for e in unjudged],
-            "reader": "no threshold has been measured" in reader, "incomplete": incomplete}
+    return {"calls": len(calls), "thresholds": sorted({c[4] for c in calls}, key=str),
+            "rows": [(r["not_asked"], r.get("no_threshold"), r.get("kept"), r.get("unsettled"),
+                      sorted({(d["decided"], d["why"], d["settled"]) for d in r.get("decisions", [])}),
+                      all(sorted(d["answers"]) == ["cannot tell", "contradicts", "does not"] for d in r.get("decisions", [])))
+                     for r in rows],
+            "not_judged": [e.get("why") for e in unjudged], "reader": "the answers were saved and nothing was decided" in reader,
+            "incomplete": incomplete}
 
 
 def expected_no_measure():
-    said = "no pair asked: no threshold measured for passage_pair"
-    return {"calls": 0, "rows": [(said, "no_threshold")], "not_judged": ["no_threshold"], "reader": True, "incomplete": False}
+    """With no measured threshold every pair is asked all the same (Seckin 19 Nov 01:11-01:22, as N1 for
+    cells): each order's probabilities stand on its decisions row, every decision unsettled (no_threshold),
+    no record kept, and the rule listed not judged in the reader's words."""
+    return {"calls": NO_MEASURE_CALLS, "thresholds": [None],
+            "rows": [(None, "passage_pair", 0, NO_MEASURE_CALLS, [("cannot be settled", "no_threshold", False)], True)],
+            "not_judged": ["no_threshold"], "reader": True, "incomplete": False}
+
+
+NO_MEASURE_ASKS = 'calls["no_threshold"] = config["decision"]["threshold_family"]'
+
+
+def _no_measure_returns_early():
+    """The step as it was before 19 Nov: with no threshold it returned before asking."""
+    return with_source(passage_pairs, "review", NO_MEASURE_ASKS, NO_MEASURE_ASKS + "; return records, calls")
+
+
+def run_no_measure_asks():
+    """Check 546: the no-threshold pair proof alone, neutralised by restoring the early return."""
+    return prove_effect(name="no measure, still asked and saved", validate=lambda: passage_pairs.CONFIG_PATH.is_file(),
+                        observe=observe_no_measure,
+                        check=lambda: ("PASS" if observe_no_measure() == expected_no_measure() else "FAIL", "pairs"),
+                        neutralise=_no_measure_returns_early)
 
 
 # 16 and 17: the deliverables
@@ -1290,7 +1318,8 @@ def run_checks():
         ("both orders", observe_both_orders, expected_both_orders, lambda: patched(passage_pairs, "read_decision", _read_top)),
         ("each order in the row", observe_both_orders, expected_both_orders, lambda: patched(passage_pairs, "decision_row", lambda a, b, d: {
             "passages": [0, 1], "decided": "?", "confidence": 0, "threshold": 0, "declared_mass": 0, "answers": {}})),
-        ("no measure, no question", observe_no_measure, expected_no_measure, lambda: patched(cd, "threshold", lambda family: .6)),
+        ("no measure, undecided", observe_no_measure, expected_no_measure, lambda: patched(cd, "threshold", lambda family: .6)),
+        ("no measure, still asked", observe_no_measure, expected_no_measure, _no_measure_returns_early),
         ("no measure, in the reader's words", observe_no_measure, expected_no_measure,
          lambda: patched(reviewed_document, "WHY_BY_KIND", {k: v for k, v in reviewed_document.WHY_BY_KIND.items() if k != "no_threshold"})),
         ("the note", observe_phase, expected_phase, lambda: with_source(paired_review, "model_item_notes", 'if note:', "if False:")),

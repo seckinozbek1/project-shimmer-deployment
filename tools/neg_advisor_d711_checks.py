@@ -336,7 +336,7 @@ class MethodChecks(_Proofs):
         self.assertEqual({p: key["proposals"][p]["conflict"] for p in key["proposals"]},
                          {p: c for p, (c, _s, _w) in want[0].items()})
         self.prove("stepwise_each_answer_checked_before_the_next", observe, want,
-                   lambda: patch.object(na, "_step_check", lambda step, answer, item, proposal, position=None: (answer, None)))
+                   lambda: patch.object(na, "_step_check", lambda step, answer, item, proposal, position=None, answers=None: (answer, None)))
 
 
 def _run(cls, what):

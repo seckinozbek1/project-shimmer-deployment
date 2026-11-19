@@ -10,6 +10,7 @@ data is read or written. Each proof is run as built (passes), neutralised (must 
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import os
 import subprocess
@@ -42,7 +43,7 @@ class Fixture:
         self.base = Path(base)
         self.main = self.base / 'main'
         self.paths = {'main': self.main, 'repo': self.base / 'repo', 'drive': self.base / 'drive',
-                      'log': self.base / 'backup_log.jsonl'}
+                      'log': self.base / 'backup_log.jsonl', 'manifests': self.base / 'manifests'}
         self.paths['drive'].mkdir()
         self.links = []
         self.write('docs/loop/private/notes/a.md', 'note a\n')
@@ -127,7 +128,8 @@ def with_fixture(fn):
 
 
 def archive_now(fx, part, when=None):
-    return da.archive_part(fx.paths, part, now=when, patterns=da.strict_patterns(), free=lambda p: 100 * 2 ** 30)
+    return da.archive_part(fx.paths, part, now=when, patterns=da.strict_patterns(), free=lambda p: 100 * 2 ** 30,
+                           disk_free=lambda d: 100 * 2 ** 30)   # the upload pause reading (D-764), never real C:
 
 
 # --- coverage -------------------------------------------------------------------------------------------
@@ -176,7 +178,7 @@ def proof_links_recorded_never_followed(fx):
 @with_fixture
 def proof_exit_on_irreplaceable_gap(fx):
     argv = ['--main', str(fx.main), '--repo', str(fx.paths['repo']), '--drive', str(fx.paths['drive']),
-            '--log', str(fx.paths['log'])]
+            '--log', str(fx.paths['log']), '--result-dir', str(fx.base / 'results')]
     fx.snapshot(['private/notes/a.md', 'private/notes/b.md', 'private/LOOP_STATE.md'])
     for part in ('external/s05/GATE', 'external/s05/P1'):
         archive_now(fx, part)
@@ -203,15 +205,75 @@ def proof_credentials_and_held_back_excluded(fx):
 def proof_time_only_legacy_archive(fx):
     target = fx.paths['drive'] / 'external_20261116' / 's05__P1.tar.gz'
     target.parent.mkdir()
-    target.write_bytes(b'not read: judged by time')
+    body = b'not read: judged by time'
+    target.write_bytes(body)
     later = dt.datetime.now().astimezone() + dt.timedelta(seconds=60)
     fx.log(tool='drive_external', part='s05__P1', file=str(target), bytes=target.stat().st_size, verified=True,
-           time=later.isoformat(timespec='seconds'))
-    assert row(fx.report(list_max=0), 'external/s05/P1')['status'] == 'COVERED'
+           sha256=hashlib.sha256(body).hexdigest(), time=later.isoformat(timespec='seconds'))
+    assert row(fx.report(), 'external/s05/P1')['status'] == 'COVERED'
     p = fx.main / 'external' / 's05' / 'P1' / 'x.bin'
     future = time.time() + 3600
     os.utime(p, (future, future))
-    assert row(fx.report(list_max=0), 'external/s05/P1')['status'] == 'STALE'
+    assert row(fx.report(), 'external/s05/P1')['status'] == 'STALE'
+
+
+def without_local_manifest(fx, line):
+    """The log line as an archive written before D-763 left it: no local manifest copy, so judged by time."""
+    os.replace(line['manifest_local'], line['manifest_local'] + '.moved')
+    lines = [json.loads(x) for x in fx.paths['log'].read_text(encoding='utf-8').splitlines()]
+    for x in lines:
+        if x.get('file') == line['file']:
+            x.pop('manifest_local', None)
+    fx.paths['log'].write_text(''.join(json.dumps(x) + '\n' for x in lines), encoding='utf-8')
+
+
+@with_fixture
+def proof_loose_files_archive_covers_only_its_part(fx):
+    """19 November 2026: the time-judged archive of external/s05/(files) (logged with source external/s05) made
+    every older folder of external/s05 look covered, external/s05/NIGHT_gpu_release among them, which no backup
+    ever held. A part never backed up comes out NOT COVERED and drive_archive does not skip it as already
+    covered; the loose files' own part stays COVERED."""
+    fx.write('external/s05/README.md', 'loose file\n')
+    fx.write('external/s05/NEVER_BACKED/run.json', '{"run": 1}\n')
+    line = archive_now(fx, 'external/s05/(files)', when=dt.datetime.now().astimezone() + dt.timedelta(seconds=60))
+    assert line['verified'] is True and line['source'] == 'external/s05', line
+    without_local_manifest(fx, line)
+    r = fx.report()
+    never = row(r, 'external/s05/NEVER_BACKED')
+    assert never['status'] == 'NOT COVERED' and never['drive_files'] == 0 and never['drive_time'] is None, never
+    assert not da.already_covered(never)
+    assert row(r, 'external/s05/(files)')['status'] == 'COVERED', row(r, 'external/s05/(files)')
+    assert row(r, 'external/s05/P1')['status'] == 'NOT COVERED'
+    # a verified record of the exact part covers it; a line without its SHA-256 does not
+    archive_now(fx, 'external/s05/NEVER_BACKED')
+    assert row(fx.report(), 'external/s05/NEVER_BACKED')['status'] == 'COVERED'
+    lines = [json.loads(x) for x in fx.paths['log'].read_text(encoding='utf-8').splitlines()]
+    lines[-1].pop('sha256')
+    fx.paths['log'].write_text(''.join(json.dumps(x) + '\n' for x in lines), encoding='utf-8')
+    assert row(fx.report(), 'external/s05/NEVER_BACKED')['status'] == 'NOT COVERED'
+
+
+@with_fixture
+def proof_result_file_written(fx):
+    """Each run writes its result (latest and a dated copy): counts, part names, status with reason; never a
+    path inside a part or a file's content."""
+    out = fx.base / 'results'
+    argv = ['--main', str(fx.main), '--repo', str(fx.paths['repo']), '--drive', str(fx.paths['drive']),
+            '--log', str(fx.paths['log']), '--result-dir', str(out)]
+    code = quiet(cov.main, argv)
+    latest = out / cov.RESULT_NAME
+    assert latest.is_file(), 'no result file'
+    text = latest.read_text(encoding='utf-8')
+    data = json.loads(text)
+    dated = list((out / cov.RESULT_HISTORY).glob('backup_coverage_*.json'))
+    assert len(dated) == 1 and json.loads(dated[0].read_text(encoding='utf-8')) == data
+    assert data['exit'] == code and data['readable'] is True and data['parts_total'] == len(data['parts'])
+    rows = {p['part']: p for p in data['parts']}
+    assert rows['external/s05/P1']['status'] == 'NOT COVERED' and 'no verified Drive archive' in \
+        rows['external/s05/P1']['reason'], rows['external/s05/P1']
+    assert 'external/s05/P1' in data['not_covered'] and data['counts'].get('NOT COVERED', 0) >= 1
+    for leak in ('x.bin', 'ids.json', 'note a', 'NAME=value', str(fx.main), json.dumps(str(fx.main))[1:-1]):
+        assert leak not in text, leak
 
 
 # --- drive archive --------------------------------------------------------------------------------------
@@ -325,6 +387,42 @@ def proof_keep_report_deletes_nothing(fx):
         os.remove, os.unlink = real_remove, real_unlink
     assert report == [('external/s05/GATE', [files[1], files[0]])], report
     assert all(Path(f).exists() for f in files)
+
+
+WHEELS = 'output/cloud_wheels/ordinary_final_cp312'
+
+
+@with_fixture
+def proof_declared_wheelhouse_part_accepted(fx):
+    """The shipped config/backup_extra_roots.json declares output/cloud_wheels/ordinary_final_cp312 a drive-only
+    part (supervisor, 19 November 2026): it is reported as a part of its own, NOT COVERED until archived, taken
+    by drive_paced only with --include-drive-only, archived by drive_archive and then COVERED; every other
+    wheel folder stays excluded as regenerable. The roles root resolves beside the fixture, so it is missing."""
+    fx.write(WHEELS + '/pkg-1.0-py3-none-any.whl', 'pinned wheel')
+    fx.write('output/cloud_wheels/linux_cp312/other-1.0-py3-none-any.whl', 'older wheel')
+    fx.paths['extra'] = cov.extra_roots(fx.main, environ={})
+    assert fx.paths['extra']['roots'] == [], fx.paths['extra']['roots']
+    r = fx.report()
+    wheels = row(r, WHEELS)
+    assert wheels['status'] == 'NOT COVERED' and wheels['drive_only'] and wheels['files'] == 1, wheels
+    assert wheels['git_time'] is None and not wheels['irreplaceable'], wheels
+    rest = row(r, 'output/cloud_wheels')
+    assert rest['status'] == 'EXCLUDED' and rest['files'] == 0, rest
+    assert not any(p['part'].startswith('output/cloud_wheels/linux') for p in r['parts'])
+    import drive_paced as dp
+    old_free = dp.free_disk
+    dp.free_disk = lambda: 100 * 2 ** 30
+    try:
+        assert WHEELS not in [x['part'] for x in dp.pending(fx.paths, False)]
+        assert WHEELS in [x['part'] for x in dp.pending(fx.paths, True)]
+    finally:
+        dp.free_disk = old_free
+    line = archive_now(fx, WHEELS)
+    import tarfile
+    with tarfile.open(line['file'], 'r:gz') as t:
+        names = t.getnames()
+    assert line['verified'] is True and names == [WHEELS + '/pkg-1.0-py3-none-any.whl'], names
+    assert row(fx.report(), WHEELS)['status'] == 'COVERED'
 
 
 @with_fixture
@@ -616,6 +714,20 @@ def patch_attr(owner, name, value):
     return apply
 
 
+def both(*patches):
+    def apply():
+        undo = [p() for p in patches]
+        return lambda: [u() for u in reversed(undo)]
+    return apply
+
+
+def old_time_scope(line, main):
+    """The scope rule before 19 November 2026: the line's source first (the parent folder of a `(files)` part)."""
+    if line.get('tool') == 'drive_external' and line.get('part'):
+        return cov.legacy_scope(line['part'], main)
+    return line.get('source') or None
+
+
 def hashwriter_not_hashing():
     def write(self, b):
         self.n += len(b)
@@ -644,6 +756,14 @@ GROUPS = {
         (proof_time_only_legacy_archive, patch_attr(cov, 'changed_time', lambda st: 0.0)),
         # a vanished file fatal again: the scan stops on it
         (proof_vanished_and_lock_files_never_fatal, patch_attr(cov, 'VANISHED_ERRORS', ())),
+        # the 19 November defect back: the scope taken from the line's source and every folder under it held
+        (proof_loose_files_archive_covers_only_its_part, both(
+            patch_attr(cov, 'time_scope', old_time_scope),
+            patch_attr(cov, 'scope_holds', lambda scope, part: part == scope or part.startswith(scope + '/')))),
+        # the scope alone taken from the source: the loose files' own part no longer recognised
+        (proof_loose_files_archive_covers_only_its_part, patch_attr(cov, 'time_scope', old_time_scope)),
+        # the result printed only, never written
+        (proof_result_file_written, patch_attr(cov, 'write_result', lambda data, folder, now=None: [])),
     ],
     'archive': [
         (proof_archive_hashes_twice_and_logs, hashwriter_not_hashing()),
@@ -654,6 +774,8 @@ GROUPS = {
         (proof_declared_exclusions_leave_out_bundles, patch_attr(cov, 'archive_excluded', lambda *a, **k: '')),
         # located copies no longer read: the part stays NOT COVERED
         (proof_located_copy_covers_a_part, patch_attr(cov, 'located_copies', lambda lines: {})),
+        # the parts declaration no longer read: the wheelhouse stays inside the excluded regenerable folder
+        (proof_declared_wheelhouse_part_accepted, patch_attr(cov, 'drive_only_parts', lambda data, name='': [])),
     ],
     'drill': [
         (proof_drill_restores_and_matches, patch_attr(rd, 'restore_git', git_restore_writes_nothing)),
@@ -691,12 +813,15 @@ DETAIL = {
     'coverage': 'git coverage by blob id, Drive coverage only from verified archives of the logged size, links '
                 'recorded and never followed, exit 1 on an irreplaceable gap, credential names and held-back '
                 'files excluded, a legacy archive judged by time, a file vanished during the scan skipped and '
-                'counted and a declared not_parts lock file in no part',
-    'archive': 'each archive hashed while written and again from Drive with a per-member manifest, links and '
+                'counted and a declared not_parts lock file in no part, a time-judged archive holding its own '
+                'exact part only (a folder never backed up NOT COVERED, a log line without its SHA-256 '
+                'refused) and the result written to a file with counts, part names and reasons only',
+    'archive': 'each archive hashed while written and its Drive copy checked by size (os.stat) with a per-member manifest, links and '
                'key-bearing or credential-named files left out, the keep-last-N report deleting nothing, the '
                'Drive floor stopping a part before anything is written, the declared regenerable files '
                '(config/drive_archive_exclusions.json) left out with the evidence kept, a located copy '
-               'covering a part too large for Drive',
+               'covering a part too large for Drive, the declared wheelhouse part (config/backup_extra_roots.json '
+               'parts) accepted and archived while the rest of output/cloud_wheels stays excluded',
     'drill': 'both backups restored into a new folder outside the checkout and matched by hash, a changed file '
              'caught, a drill folder inside the main checkout refused',
     'roles': 'the declared drive-only roots (role exchange folders, negotiation sets) reported part by part '

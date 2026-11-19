@@ -37,8 +37,10 @@ RULE_TAGS = "[required] [conformance]"
 # here, never inferred; any other is refused.
 RULE_DECLARATIONS = ("compare: passages", "compare: cells")
 # Which declaration which benchmark's build may add, each as decided for it (ContraDoc: D-331; SciTab:
-# D-471). A build of one benchmark never adds the other's.
-BENCHMARK_DECLARATIONS = {"contradoc": "compare: passages", "scitab": "compare: cells"}
+# D-471; SEM-TAB-FACTS, which shares SciTab's bundle form: D-798 item 4). A build of one benchmark
+# never adds the other's.
+BENCHMARK_DECLARATIONS = {"contradoc": "compare: passages", "scitab": "compare: cells",
+                          "semtabfacts": "compare: cells"}
 
 RULE_ID_PREFIX = "CONV-"
 TASK_LINE = "Review the document against the conventions."

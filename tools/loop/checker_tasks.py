@@ -14,7 +14,9 @@ in restricted mode with no MCP servers, no saved session, and permission mode do
 listed is refused without a prompt: Read, Grep, Glob; Bash only for the read-only commands in BASH_ALLOWED;
 Write only under docs/loop/private/compliance/. The working folder is the main checkout, so role folders
 outside it cannot be read; benchmark/keys is refused. A checker that writes no report but returns text has
-that text saved by this runner as the report, as compliance/BRIEF.md asks.
+that text saved by this runner as the report, as compliance/BRIEF.md asks. The compliance checker also runs
+tools/loop/seckin_language_check.py (D-780: no decision numbers, file names, paths, commit ids or em dashes in
+the main text of FOR_SECKIN and ALERT since 19 November 13:09) and reads the same entries for the language part.
 
 disksweep runs tools/loop/disk_sweep.py --dry-run only and traces what it would remove. It never passes
 --apply: deletions need Seckin's explicit yes to a dry-run list (his 11:29 rule, standing order 96) and this
@@ -46,11 +48,14 @@ COMPLIANCE_DIR = mc.PRIVATE / 'compliance'
 FOR_SECKIN = mc.PRIVATE / 'FOR_SECKIN.md'
 CLAUDE_TIMEOUT_S = 45 * 60
 SILENT_S = 30 * 60
+# D-780 (Seckin 19 Nov 2026 13:09): the form of what the loop writes for him, checked by pattern; read-only.
+SECKIN_LANGUAGE_COMMAND = 'py -3.12 -X utf8 tools/loop/seckin_language_check.py'
 BASH_ALLOWED = [
     'Bash(gh issue list:*)', 'Bash(gh issue view:*)', 'Bash(git log:*)', 'Bash(git show:*)',
     'Bash(git status:*)', 'Bash(git rev-parse:*)', 'Bash(git diff:*)', 'Bash(git branch:*)', 'Bash(date:*)',
     'Bash(ls:*)', 'Bash(wc:*)', 'Bash(stat:*)', 'Bash(df:*)', 'Bash(tasklist:*)', 'Bash(cd:*)',
     'Bash(py -3.12 -X utf8 launch.py preflight)',
+    'Bash(%s)' % SECKIN_LANGUAGE_COMMAND,
     'Bash(powershell.exe -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB")',
 ]
 RULES = ('Tools: Read, Grep and Glob anywhere in this checkout; Bash only for these read-only commands: %s; '
@@ -61,7 +66,13 @@ KINDS = {
     'compliance': ('compliance_checker', 'COMPLIANCE',
                    'Read docs/loop/private/compliance/BRIEF.md and carry it out exactly. Write your report to '
                    'docs/loop/private/compliance/COMPLIANCE_%(stamp)s.md. For free RAM use the one allowed '
-                   'powershell.exe command; for part (f) use cd into the folder, then the allowed preflight command.'),
+                   'powershell.exe command; for part (f) use cd into the folder, then the allowed preflight command. '
+                   'Also run the allowed seckin_language_check.py command (D-780, Seckin\'s language rule for '
+                   'FOR_SECKIN and ALERT since 2026-11-19 13:09) and put its last line and every flagged heading '
+                   'and time in your report as a row | D-780 form | OK or BROKEN | its output |; then read the '
+                   'same entries yourself for what the script cannot decide (natural Turkish with full Turkish '
+                   'characters, short plain sentences, decisions shaped durum, soru, öneri) and say BROKEN with '
+                   'the heading where one is not.'),
     'followthrough': ('followthrough_checker', 'FOLLOWTHROUGH',
                       'You are a fresh, read-only decision follow-through checker for the Shimmer loop (standing '
                       'order 103). You are not the lead and did not do the work. Read '

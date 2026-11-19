@@ -4,7 +4,8 @@ for a us-east-1 launch).
 
 505: the sealer (prepare_ordinary_final_run.prepare) and the seal route (seal_route.write_request) seal the image
 of the launch region through the one helper, prepare_ordinary_final_run.region_image, on fixture inventories whose
-first image is another region's; a region that lists no image of that family and version is refused.
+first image is another region's, and before it an arm64 image (18 November 2026: only x86_64 images count); a
+region that lists no image of that family and version is refused.
 506: the controller (ordinary_final_cloud.execute) refuses a sealed image of another region before any launch call
 (no instance, no ledger launch_intent or launch line), and the provider adapter's transport refusal carries the HTTP
 status, digits only, never the response body.
@@ -34,18 +35,29 @@ OTHER_ID = '517e9546' + '0' * 24
 LAUNCH_ID = 'ff79a459' + '1' * 24
 
 
-def image(identifier, region, family=FAMILY, version=VERSION):
-    return dict(id=identifier, family=family, version=version, architecture='x86_64', region=region)
+def image(identifier, region, family=FAMILY, version=VERSION, architecture='x86_64'):
+    return dict(id=identifier, family=family, version=version, architecture=architecture, region=region)
 
 
-# The 21:10 shape: the provider's first entry is another region's id of the same family and version.
-IMAGES = [image(OTHER_ID, 'us-east-2'), image('2' * 32, 'us-east-2', 'gpu-base-24-04'),
+# The 21:10 shape: the provider's first entry is another region's id of the same family and version; and the
+# 18 November shape: before it an arm64 image of another family and region, which no candidate type boots.
+ARM_FIRST = image('4' * 32, 'us-east-3', 'lambda-stack-22-04', '22.4.5-4040', 'arm64')
+IMAGES = [ARM_FIRST, image(OTHER_ID, 'us-east-2'), image('2' * 32, 'us-east-2', 'gpu-base-24-04'),
           image(LAUNCH_ID, LAUNCH_REGION), image('3' * 32, LAUNCH_REGION, 'gpu-base-24-04')]
 
 
 def old_rule(images, region):
     """The neutralisation: the rule before the fix, the provider's first entry whatever its region."""
     return dict(images[0])
+
+
+REGION_RULE = sealer.region_image
+
+
+def any_architecture_rule(images, region):
+    """The neutralisation of the 18 November fix: the region rule with arm64 images counted again."""
+    return REGION_RULE([dict(x, architecture='x86_64') if x.get('architecture') == 'arm64' else x for x in images],
+                       region)
 
 
 # ---- 505 ---------------------------------------------------------------------------------------------------------
@@ -188,7 +200,8 @@ PROOFS = {
 
 def neutralisations(number):
     if number == 505:
-        return [('region_image back to the first listed image', lambda: patch.object(sealer, 'region_image', old_rule))]
+        return [('region_image back to the first listed image', lambda: patch.object(sealer, 'region_image', old_rule)),
+                ('arm64 images counted again', lambda: patch.object(sealer, 'region_image', any_architecture_rule))]
     return [('the launch region check removed', lambda: patch.object(controller, 'image_region_refusal',
                                                                       lambda image, region: None)),
             ('the status suffix removed', lambda: patch.dict(globals(), ADAPTER=[neutralised_adapter()]))]

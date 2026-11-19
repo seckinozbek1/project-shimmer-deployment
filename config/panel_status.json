@@ -1,0 +1,57 @@
+{
+ "version": 1,
+ "decision": "Seckin 19 November 2026 13:16 and 13:18: the loop keeps his claude.ai control panel current itself; one event is written in the same step to FOR_SECKIN, the matching GitHub issue and the panel. Text follows his language rule of 13:09 (natural Turkish, no codes, decision numbers, file names or tool words in the main text, no em dashes).",
+ "out_dir": "docs/loop/private/panel",
+ "max_bytes": 20000,
+ "max_plan_rows": 200,
+ "show_done_rows": true,
+ "soru_window_hours": 72,
+ "max_questions": 6,
+ "text_max_chars": 240,
+ "records": {
+  "planned_steps": "docs/loop/private/PLANNED_STEPS.jsonl",
+  "for_seckin": "docs/loop/private/FOR_SECKIN.md",
+  "answers": "docs/loop/private/panel_answers.json",
+  "labels": "docs/loop/private/panel_labels.json",
+  "reaper_status": "docs/loop/private/reaper_status.json",
+  "spend_limits": "config/loop_spend_limits.json",
+  "coverage": "docs/loop/private/backup_coverage_last.json",
+  "bars_glob": "docs/loop/private/BARS_STATUS_*.md",
+  "v105_plan_glob": "docs/loop/private/V105_PLAN_*.md",
+  "loop_status": [".claude/loop_status.json", "docs/loop/private/loop_status.json"],
+  "spend_list_glob": "docs/loop/private/SPEND_LIST_*.md",
+  "push_record": "docs/loop/private/PUSH_RECORD.md",
+  "issues": "docs/loop/private/gh_issues_last.json",
+  "issue_map": "docs/loop/private/event_issue_map.json"
+ },
+ "spend_list_patterns": {
+  "version_forecast": "\\b(v\\d+(?:\\.\\d+)+) forecast (\\d+\\.\\d+)",
+  "storage_month": "(\\d+\\.\\d+) \\(at [\\d.]+ USD per GiB-month\\)",
+  "unset_budget": "\\((b)\\) (v\\d+(?:\\.\\d+)+), budget NOT SET"
+ },
+ "push_heading": "^## (\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d [+-]\\d{4}): the code snapshot of loop ([0-9a-f]{7,40})",
+ "push_main_move": "main ([0-9a-f]{7,40}) to ([0-9a-f]{7,40})",
+ "issues_read_command": "gh issue list --repo seckinozbek1/project-shimmer-deployment --state all --limit 500 --json number,state,milestone,title > docs/loop/private/gh_issues_last.json",
+ "targets": {
+  "plan_done_percent": 100,
+  "v105_done_percent": 100,
+  "spend_cap_usd_from": "remaining_baseline_usd + remaining_limit_usd of config/loop_spend_limits.json",
+  "coverage_percent": 100
+ },
+ "v105_prefix": "v105:",
+ "v105_items": {
+  "A": "Çalışma hızı iyileştirmeleri",
+  "B": "Kullanıcının verdiği kırmızı çizgiler",
+  "C": "Öğrenen ağ ve kavram haritası",
+  "D": "İlk kullanıcı arayüzü",
+  "E": "Birleştirme ve yeni sürüm"
+ },
+ "step_groups": [
+  {"prefix": "v105:", "label": "Yeni sürümün parçası"},
+  {"prefix": "role", "label": "Rol oturumu"},
+  {"prefix": "lane", "label": "Yan çalışma"},
+  {"prefix": "", "label": "Adım"}
+ ],
+ "answer_line_starts": ["Cevap", "CEVAP", "Yanıt", "Seckin:", "Seçkin:"],
+ "tool_words": ["RemoteTrigger", "Artifact", "ArtifactComments", "Monitor", "PowerShell", "Bash", "ToolSearch", "ListAgents", "SendMessage", "Agent", "WebFetch", "commit", "branch", "worktree", "lane", "merge", "push", "seal", "chain", "launcher", "hook", "settings"]
+}

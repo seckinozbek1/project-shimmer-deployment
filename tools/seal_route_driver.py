@@ -12,7 +12,8 @@ laptop bundles. Never launches; the job bundle launches through the bound wrappe
               --out <new folder> [--source COMMIT]
               Order 85 (D-675): a seal request written (seal_route.write_request) and checked as the bound
               wrapper will check it (request_error); nothing is sealed on the laptop. Refused before anything
-              is written when the output drive has less free than REQUEST_DISK_FLOOR_GIB (order 91).
+              is written when the output drive has less free than request_floor_gib() (order 91;
+              config/laptop_disk_floor.json lambda_launch_floor_gib).
               Launch it with tools/ordinary_final_bound_cloud.py --request <folder> ...
     admit     --job <job bundle> --run <the job's run folder> --sealed <folder of returned bundles>
               --reuse <the reuse bundle> --out <new folder>
@@ -42,10 +43,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'tools' / 'loop')]
 import seal_route as sr  # noqa: E402
 
+import launch_floors  # noqa: E402
+
 JOB_SET_FLAGS = ('--reuse-assets', '--inputs-from', '--ledger', '--output-dir')
-# D-585, D-099: what the laptop must have free before a heavy step starts: memory, and disk above
-# the standing orders' own floor (standing_orders_check.DISK_FLOOR, read at each gate, never copied)
-# after the step's expected size; the admission's steps use ADMIT_DISK_FLOOR_GIB instead (D-726).
+# D-585; Seckin 19 Nov 2026 12:03 (replacing the fixed 30 GiB D-099 floor): what the laptop must have free before a
+# heavy step starts: memory, and free disk at least the step's own expected size plus the margin of
+# config/laptop_disk_floor.json (launch_floors.margin_gib, read at each gate, never copied). A step whose size is
+# not known is held to launch_floors.FALLBACK_DISK_GIB and its gate line says footprint_known false.
 MIN_MEMORY_GB = 2.0
 MIN_DISK_GB = 5.0
 EXPECTED_BYTES = {'seal': 512 * 2 ** 20, 'ordinary_final_bound_reverify.py': 16 * 2 ** 20,
@@ -82,25 +86,19 @@ def resources(disk_path):
 
 
 def disk_floor_bytes(floor_bytes=None):
-    """The disk floor a gate holds: the one passed (the admission's, D-726), else the D-099 floor read
-    from standing_orders_check now."""
+    """The margin a gate holds above the step's expected size: the one passed, else the laptop rule's margin
+    read from config/laptop_disk_floor.json now (launch_floors.margin_gib; unreadable: the 30 GiB fallback)."""
     if floor_bytes is not None:
         return int(floor_bytes)
-    import standing_orders_check as orders
-    return orders.DISK_FLOOR
+    return int(launch_floors.margin_gib()[0] * 2 ** 30)
 
 
 def admits(reading, expected_bytes=0, floor_bytes=None):
     """The one reading admits the step: memory, no other seal, and disk free after the step's own
-    expected size at or above the floor: the one passed (the admission's, D-726), else the D-099 floor
-    read from standing_orders_check now."""
-    import standing_orders_check as orders
+    expected size at or above the margin (disk_floor_bytes: the one passed, else the laptop rule's, read now)."""
     disk = reading.get('disk_bytes', reading['disk_gb'] * 2 ** 30)
-    if floor_bytes is not None:
-        return (reading['memory_gb'] >= MIN_MEMORY_GB and reading['disk_gb'] >= MIN_DISK_GB
-                and reading['other_seals'] == 0 and disk - expected_bytes >= int(floor_bytes))
     return (reading['memory_gb'] >= MIN_MEMORY_GB and reading['disk_gb'] >= MIN_DISK_GB and reading['other_seals'] == 0
-            and disk - expected_bytes >= orders.DISK_FLOOR)
+            and disk - expected_bytes >= disk_floor_bytes(floor_bytes))
 
 
 def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None, floor_bytes=None, expected=None,
@@ -109,16 +107,24 @@ def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None, 
     (never a second reading taken after the condition held: the gate and the record are one
     reading). Returns the start line of the reading the step started on (written to `log` unless it
     is None). With `wait` False one reading decides: no room is a refusal, never a wait (a gate under
-    the ledger lock never waits, D-726)."""
+    the ledger lock never waits, D-726). A step with no expected size (none passed, none in EXPECTED_BYTES)
+    is held to the fallback floor launch_floors.FALLBACK_DISK_GIB, never to the margin alone, and its line
+    says footprint_known false."""
     import time
     sleep = time.sleep if sleep is None else sleep
     clock = time.time if clock is None else clock
-    expected = EXPECTED_BYTES.get(step, 0) if expected is None else int(expected)
+    known = expected is not None or step in EXPECTED_BYTES
+    if known:
+        expected = EXPECTED_BYTES[step] if expected is None else int(expected)
+    else:
+        expected = 0
+        if floor_bytes is None:
+            floor_bytes = int(launch_floors.required_gib(None)[0] * 2 ** 30)
     while True:
         reading = read(disk_path)
         if admits(reading, expected, floor_bytes):
             line = dict(reading, step=step, event='start', time_epoch=round(clock(), 3), expected_bytes=expected,
-                        disk_floor_bytes=disk_floor_bytes(floor_bytes))
+                        footprint_known=known, disk_floor_bytes=disk_floor_bytes(floor_bytes))
             if log is not None:
                 with open(log, 'a', encoding='utf-8') as stream:
                     stream.write(json.dumps(line, sort_keys=True) + chr(10))
@@ -126,7 +132,7 @@ def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None, 
         if not wait and log is not None:
             # The refusing reading is the gate's record too (follow-up of a14bd4ab): event 'refused'.
             line = dict(reading, step=step, event='refused', time_epoch=round(clock(), 3), expected_bytes=expected,
-                        disk_floor_bytes=disk_floor_bytes(floor_bytes))
+                        footprint_known=known, disk_floor_bytes=disk_floor_bytes(floor_bytes))
             with open(log, 'a', encoding='utf-8') as stream:
                 stream.write(json.dumps(line, sort_keys=True) + chr(10))
         sr.require(wait, 'No room for %s under the ledger lock (free %.2f GiB, memory %.2f GiB, %d other seals; floor '
@@ -136,16 +142,16 @@ def wait_for_room(step, log, disk_path, read=resources, sleep=None, clock=None, 
         sleep(WAIT_SECONDS)
 
 
-# D-726 (Seckin 12:08, 18 Nov): laptop disk below a floor never again makes a measurement wait. The admission's
-# laptop steps (reverify, preflight) need their expected bytes plus this, not the 30 GiB D-099 floor; and the room
-# is waited for before the budget ledger lock is taken, so a wait never holds every other launch.
-ADMIT_DISK_FLOOR_GIB = 12.0
+# D-726 (Seckin 12:08, 18 Nov): laptop disk below a floor never again makes a measurement wait; the room is waited
+# for before the budget ledger lock is taken, so a wait never holds every other launch. Seckin 19 Nov 12:03: the
+# admission's laptop steps (unpack, reverify, preflight) need their expected bytes plus the laptop rule's margin
+# (config/laptop_disk_floor.json margin_gib, 12 GiB), read at each call.
 ADMIT_STEPS = ('ordinary_final_bound_reverify.py', 'ordinary_final_bound_preflight.py')
 ADMIT_ROOM = 'admission'
 
 
 def admit_floor_bytes():
-    return int(ADMIT_DISK_FLOOR_GIB * 2 ** 30)
+    return int(launch_floors.margin_gib()[0] * 2 ** 30)
 
 
 def plan_requests(plan, sessions, base='.'):
@@ -542,7 +548,7 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
     (budget_reason, order 99), linked, bound, reverified and preflighted. Only when every bundle passes
     are they moved into `out` in one rename; otherwise nothing is admitted and the staging folder is
     kept, renamed refused, for the operator. D-726: the room for the laptop steps (their expected bytes
-    plus ADMIT_DISK_FLOOR_GIB) is waited for before the lock is taken, never while it is held; under
+    plus the laptop rule's margin, admit_floor_bytes) is waited for before the lock is taken, never while it is held; under
     the lock each step's gate reads once and refuses when the room is gone. A refusal there on memory
     (under MIN_MEMORY_GB) or on another heavy sealing step running is intended too: the lock is never
     held through a wait, and the admission is simply run again. Open item 157: before the lock the returned
@@ -653,10 +659,12 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
         unlock(held)
 
 
-# Order 91 (D-678): the route gate's laptop worst case (2.5 GiB: the request, its evidence and the stored
-# projects) over the 30 GiB floor; the request is not written below it. D-726 (Seckin 12:08, 18 Nov): laptop disk
-# below a floor never again makes a measurement wait; the route's laptop worst case is 2.5 GiB, so 12 GiB leaves room.
-REQUEST_DISK_FLOOR_GIB = 12.0
+# Order 91 (D-678): the route request is not written below a floor. D-726 (Seckin 12:08, 18 Nov): laptop disk below a
+# floor never again makes a measurement wait; the route's laptop worst case is 2.5 GiB, so 12 GiB leaves room. That
+# Lambda launch floor is config/laptop_disk_floor.json lambda_launch_floor_gib (12), read at each call; the 19 Nov
+# decision kept it as it is.
+def request_floor_gib():
+    return launch_floors.lambda_launch_floor_gib()[0]
 
 
 def free_gib(folder):
@@ -679,9 +687,9 @@ def request_budget(ledgers, forecast_minutes, storage_forecast_usd, instance_typ
 def write_checked_request(out, source, requests, reuse, inputs, budget, parallel=16):
     """The request command: the disk floor read first, then the request written, then checked by request_error against
     this checkout's controller (what the bound wrapper checks before any provider call). Returns the request."""
-    free = free_gib(out)
-    sr.require(free >= REQUEST_DISK_FLOOR_GIB, 'Free disk %.1f GiB is below the request floor of %.1f GiB (order 91)'
-               % (free, REQUEST_DISK_FLOOR_GIB))
+    free, floor = free_gib(out), request_floor_gib()
+    sr.require(free >= floor, 'Free disk %.1f GiB is below the request floor of %.1f GiB (order 91)'
+               % (free, floor))
     request = sr.write_request(out, source, requests, reuse, inputs, budget, parallel=parallel)
     problem = sr.request_error(out, ROOT)
     sr.require(problem is None, 'The written request does not check: ' + str(problem))

@@ -23,7 +23,11 @@ by printing a PreToolUse "deny" decision when one of four rules matches:
                         reading or listing program's path argument, an interpreter's
                         arguments or heredoc program, a redirect source, a cd target, a
                         recursive read over a folder holding them), never a literal string
-                        or here-string written to a file (lead, 18 Nov 14:34)
+                        or here-string written to a file (lead, 18 Nov 14:34); a writing
+                        position (a redirect target, a writing cmdlet's -Path or first
+                        positional, a copy or move destination, a .NET file-write call's
+                        path) into any protected folder other than _xfer/lead_to_* is
+                        refused too (open item 160, 18 Nov)
   push_hook             git push when the pre-push hook (core.hooksPath, file pre-push) is
                         missing or empty, and git push --no-verify
 
@@ -46,12 +50,16 @@ from pathlib import Path
 HERE = Path(__file__).resolve()
 REPO = HERE.parents[2]
 
-RULES = ('delete', 'safe_delete_approval', 'protected_read', 'push_hook')
+RULES = ('delete', 'safe_delete_approval', 'protected_read', 'push_hook', 'remote_trigger')
 
 ROLES_NAME = 'shimmer-roles'
 ROLE_DIRS = frozenset(('b', 'v', 'r', 'c', 's', 'n', '_seckin'))
-XFER_ALLOWED = frozenset(('b_to_lead_dev', 'n_to_lead', 's_to_lead', 'b_to_seals'))
+# lead_to_v: read allowed too (Seckin 23:26, 18 Nov 2026, SUPERVISOR_INBOX 23:28: a read-only allow on
+# _xfer\lead_to_V so the lead can read role V's launch logs and status; writes there were already allowed).
+# The lead still never opens labels, answers or work\ contents there (its own rule, not this guard's).
+XFER_ALLOWED = frozenset(('b_to_lead_dev', 'n_to_lead', 's_to_lead', 'b_to_seals', 'lead_to_v'))
 WILD = re.compile(r'[*?\[\]]')
+EMERGENCY_TRIGGER = 'trig_01CRyVDA63iUXtMAeYweiJGq'   # "Acil uyandırma", the supervisor chat (Seckin 23:51)
 
 DELETE_PROGRAMS = frozenset((
     'rm', 'rmdir', 'del', 'erase', 'rd', 'ri', 'remove-item', 'unlink', 'shred', 'sdelete',
@@ -515,8 +523,12 @@ def read_tokens(prog, toks):
         j += 1
     if prog in PATTERN_FIRST and not pattern_given and positional:
         positional = positional[1:]
-    if prog in COPY_PROGRAMS and not dest_given and len(positional) > 1:
-        positional = positional[:-1]
+    if prog in COPY_PROGRAMS and not dest_given:
+        if any(o in PATH_PARAMS or o.split(':', 1)[0] in PATH_PARAMS
+               for o in (a.lower() for a in args)):
+            positional = []  # Copy-Item -Path a b: b is the destination, checked as a write
+        elif len(positional) > 1:
+            positional = positional[:-1]
     return out + positional
 
 
@@ -565,6 +577,154 @@ def check_read_token(tok, prog, recursive, cwd, ctx):
             raise Deny('protected_read', 'recursive %s over the role folders root' % prog)
 
 
+# programs whose first positional argument (or -Path / -LiteralPath / -FilePath) is written
+WRITE_FIRST = frozenset(('set-content', 'sc', 'add-content', 'ac', 'out-file', 'new-item', 'ni',
+                         'export-csv', 'epcsv', 'export-clixml', 'set-item', 'si'))
+# programs that write every positional argument
+WRITE_ALL = frozenset(('tee', 'tee-object', 'mkdir', 'md', 'touch', 'new-itemproperty'))
+# programs that write their destination (-Destination, else the last positional)
+WRITE_DEST = COPY_PROGRAMS | frozenset(('ln', 'install', 'rename-item', 'rni', 'ren',
+                                        'expand-archive', 'compress-archive'))
+WRITE_VALUE_PARAMS = VALUE_PARAMS | LITERAL_PARAMS | frozenset((
+    '-itemtype', '-width', '-stream', '-credential', '-newname', '-property', '-propertytype'))
+REDIRECT = re.compile(r'^[0-9*]?>{1,2}$')
+REDIRECT_JOINED = re.compile(r'[0-9*]?>{1,2}(?!&)([^>]+)$')
+DOTNET_WRITE = re.compile(
+    r'\[(?:system\.)?io\.(?:file|directory)\]::(write\w*|append\w*|create\w*|open\w*|copy|move|replace'
+    r'|setaccesscontrol)\s*\(|new-object\s+(?:-typename\s+)?(?:system\.)?io\.(?:streamwriter|filestream)'
+    r'\s*\(?', re.I)
+
+
+def _call_args(text):
+    """The comma-separated arguments of a call whose opening parenthesis was just passed."""
+    args, cur, q, level = [], [], None, 0
+    for ch in text:
+        if q:
+            if ch == q:
+                q = None
+            else:
+                cur.append(ch)
+            continue
+        if ch in '"\'':
+            q = ch
+            continue
+        if ch == '(':
+            level += 1
+        elif ch == ')':
+            if level == 0:
+                break
+            level -= 1
+        elif ch == ',' and level == 0:
+            args.append(''.join(cur).strip())
+            cur = []
+            continue
+        cur.append(ch)
+    args.append(''.join(cur).strip())
+    return [a for a in args if a]
+
+
+def write_tokens(prog, toks, seg=''):
+    """The argument tokens a command writes to (open item 160, 18 Nov 2026).
+
+    A redirect target (> >> 2> *> for any program), the path a writing cmdlet names (-Path,
+    -LiteralPath, -FilePath, -PSPath, or its first positional), every positional of tee and
+    mkdir, a copy or move destination (-Destination, else the last positional), and the
+    first argument of a .NET file-write call ([IO.File]::WriteAllText, AppendAllText,
+    WriteAllBytes, Create, Open..., both for Copy, Move and Replace, New-Object StreamWriter).
+    A -Value or a quoted literal is never a write target."""
+    out = []
+    args = toks[1:]
+    for j, t in enumerate(args):  # redirect targets, for any program
+        if REDIRECT.match(t):
+            if j + 1 < len(args):
+                out.append(args[j + 1])
+        elif '>' in t and not re.search(r'\s', t):
+            m = REDIRECT_JOINED.search(t)
+            if m and m.group(1).strip():
+                out.append(m.group(1))
+    for m in DOTNET_WRITE.finditer(seg):
+        call = _call_args(seg[m.end():])
+        method = (m.group(1) or '').lower()
+        out.extend(call[:2] if method in ('copy', 'move', 'replace') else call[:1])
+    for j, t in enumerate(args):  # a destination named for any program
+        tl = t.lower()
+        if tl.startswith('-') and ':' in tl and tl.split(':', 1)[0] in DEST_PARAMS:
+            out.append(t.split(':', 1)[1])
+        elif tl in DEST_PARAMS and j + 1 < len(args):
+            out.append(args[j + 1])
+    if prog not in WRITE_FIRST and prog not in WRITE_ALL and prog not in WRITE_DEST:
+        return out
+    positional, path_given = [], False
+    j = 0
+    while j < len(args):
+        t = args[j]
+        tl = t.lower()
+        if tl.startswith('-') and ':' in tl and not tl.startswith('--'):
+            name, value = tl.split(':', 1)[0], t.split(':', 1)[1]
+            if name in PATH_PARAMS:
+                path_given = True
+                if prog not in WRITE_DEST:
+                    out.append(value)
+            j += 1
+            continue
+        if tl in PATH_PARAMS:
+            path_given = True
+            if prog not in WRITE_DEST and j + 1 < len(args):
+                out.append(args[j + 1])
+            j += 2
+            continue
+        if tl in DEST_PARAMS or tl in WRITE_VALUE_PARAMS or tl in PATTERN_PARAMS:
+            j += 2
+            continue
+        if REDIRECT.match(tl):
+            j += 2
+            continue
+        if tl.startswith('-') or tl.startswith(('>', '2>', '<')):
+            j += 1
+            continue
+        if tl.startswith('/') and len(tl) <= 3 and prog in WIN_SWITCH_PROGRAMS:
+            j += 1
+            continue
+        positional.append(t)
+        j += 1
+    if prog in WRITE_ALL:
+        out += positional
+    elif prog in WRITE_FIRST:
+        if not path_given and positional:
+            out.append(positional[0])
+    elif prog in WRITE_DEST:
+        dest_given = any(a.lower().split(':', 1)[0] in DEST_PARAMS for a in args)
+        if not dest_given:
+            if prog in ('robocopy', 'xcopy') and len(positional) > 1:
+                out.append(positional[1])  # robocopy src dst [files]
+            elif path_given and positional:
+                out.append(positional[0])  # Copy-Item -Path a b: b is the destination
+            elif len(positional) > 1:
+                out.append(positional[-1])
+            elif prog in ('rename-item', 'rni', 'ren') and positional:
+                out.append(positional[0])
+    return out
+
+
+def check_write_token(tok, prog, cwd, ctx):
+    """A write target into a protected folder is refused; _xfer/lead_to_* stays writable."""
+    for part in [p for p in tok.split(',') if p.strip()] or [tok]:
+        part = part.strip()
+        nt = norm(expand_home(part, ctx.home))
+        k = key_hit(nt) or (key_hit(resolve(part, cwd, ctx.home) + '/')
+                            if not re.search(r'\s', part) else None)
+        if k:
+            raise Deny('protected_read', '%s writes into the answer keys (%s)' % (prog, k))
+        hits = role_hits(nt)
+        if not re.search(r'\s', part):
+            hits += role_hits(resolve(part, cwd, ctx.home))
+        for kind, comp in hits:
+            if kind == 'blocked':
+                raise Deny('protected_read', '%s writes into role folder %s' % (prog, comp))
+            if kind in ('root', 'xfer_root'):
+                raise Deny('protected_read', '%s writes into the role folders root' % prog)
+
+
 def check_command_paths(text, cwd, ctx, depth=0):
     if depth > 5:
         return
@@ -595,6 +755,8 @@ def check_command_paths(text, cwd, ctx, depth=0):
             recursive = True
         for tok in read_tokens(prog, toks):
             check_read_token(tok, prog, recursive, cwd, ctx)
+        for tok in write_tokens(prog, toks, seg):
+            check_write_token(tok, prog, cwd, ctx)
         if prog in WRAPPERS:  # the inner command of cmd /c, powershell -Command, bash -c ...
             inner = [t for t in toks[1:] if not (t.startswith('-') or
                      (prog == 'cmd' and re.match(r'^/[a-z]$', t.lower())))]
@@ -819,6 +981,14 @@ def evaluate(payload, ctx=None):
     ti = payload.get('tool_input') or {}
     cwd = payload.get('cwd') or os.getcwd()
     try:
+        if (tool == 'RemoteTrigger' or tool.endswith('fire_trigger')) and ctx.on('remote_trigger'):
+            # Seckin 23:51, 18 Nov 2026 (SUPERVISOR_INBOX 23:53): the one emergency wake-up of the
+            # supervisor chat; nothing else of that API (list, get, create, update, runs, logs).
+            if tool == 'RemoteTrigger' and ti.get('action') != 'run':
+                raise Deny('remote_trigger', 'RemoteTrigger: only action run is allowed')
+            if (ti.get('trigger_id') or '') != EMERGENCY_TRIGGER:
+                raise Deny('remote_trigger', 'RemoteTrigger: only the emergency wake-up trigger is allowed')
+            return None
         if tool in ('Bash', 'PowerShell'):
             cmd = ti.get('command') or ''
             if ctx.on('protected_read'):

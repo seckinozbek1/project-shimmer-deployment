@@ -34,7 +34,8 @@ ALERT_STATE = PRIVATE / 'mechanism_alert_state.json'
 GIB = 2 ** 30
 RAM_FLOOR_GIB = 2.0          # the operator's floor
 RAM_START_GIB = 2.1          # a heavy Python job waits below this
-DISK_FLOOR_GIB = 30.0
+# The laptop disk rule (Seckin 19 Nov 2026 12:03: a job's own footprint plus a 12 GiB margin) is read from
+# config/laptop_disk_floor.json at each call by launch_floors.py (disk_problem, margin_gib); no figure is kept here.
 ALERT_EVERY_S = 3600
 
 

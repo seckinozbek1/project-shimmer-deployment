@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written synthetic fixture, invented for the adapter checks; no real item is copied. -->
+<document>
+ <table id="Table 2">
+  <caption text="Bench sizes."></caption>
+  <row row="0">
+   <cell col-end="0" col-start="0" row-end="0" row-start="0" text="Bench"></cell>
+   <cell col-end="1" col-start="1" row-end="0" row-start="0" text="Width"></cell>
+  </row>
+  <row row="1">
+   <cell col-end="0" col-start="0" row-end="1" row-start="1" text="North"></cell>
+   <cell col-end="1" col-start="1" row-end="1" row-start="1" text="40">
+    <evidence statement_id="1" type="relevant" version="1"></evidence>
+   </cell>
+  </row>
+  <statements>
+   <statement id="1" text="The north bench is 40 wide." type="entailed"></statement>
+   <statement id="2" text="The north bench is painted." type="unknown"></statement>
+   <statement id="3" text="The north bench is 41 wide." type=""></statement>
+   <statement id="4" text="The north bench is 50 wide." type="perhaps"></statement>
+  </statements>
+ </table>
+ <table id="Table 3">
+  <caption text="Spans that run past the last row."></caption>
+  <row row="0">
+   <cell col-end="0" col-start="0" row-end="0" row-start="0" text="Item"></cell>
+   <cell col-end="1" col-start="1" row-end="0" row-start="0" text="Count"></cell>
+  </row>
+  <row row="1">
+   <cell col-end="0" col-start="0" row-end="5" row-start="1" text="Pins"></cell>
+   <cell col-end="1" col-start="1" row-end="1" row-start="1" text="7"></cell>
+  </row>
+  <statements>
+   <statement id="1" text="There are 7 pins." type="entailed"></statement>
+   <statement id="2" text="There are 9 pins." type="refuted"></statement>
+  </statements>
+ </table>
+</document>

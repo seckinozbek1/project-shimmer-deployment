@@ -1,9 +1,12 @@
 {
   "schema": "cell-selection-v1",
-  "note": "Cell selection (P2 (b), scripts/cell_selection.py): how many rows and columns a model is shown of a table. `fill_rows` is how many rows a selection reaches with rows the claim does not name; `max_rows` and `max_columns` cut what is left, the key columns counted. No figure here is measured against a key: SciTab's key states no cells. `decision` is the question a rule declaring [compare: cells] asks, held equal to the replay's claim form (benchmark/baselines/choice_judge_prompt.json) by check 326.",
+  "note": "Cell selection (P2 (b), scripts/cell_selection.py): how many rows and columns a model is shown of a table. `fill_rows` is how many rows a selection reaches with rows the claim does not name, and `fill_columns` how many non-key columns it reaches with columns the claim does not name (S3, 0 when absent); `max_rows` and `max_columns` cut what is left, the key columns counted. No figure here is measured against a key: SciTab's key states no cells. `decision` is the question a rule declaring [compare: cells] asks, held equal to the replay's claim form (benchmark/baselines/choice_judge_prompt.json) by check 326.",
   "fill_rows": 12,
+  "fill_columns": 10,
   "max_rows": 16,
   "max_columns": 10,
+  "whole_table_note": "N4 (Seckin 2026-11-19 01:11): a table the claim names is shown whole, caption and every cell, when its body cells (rows times columns) are at most whole_table_max_cells. The bound is max_rows times max_columns, the most cells the caps already let a selection show; it is a size, set from the caps, not measured against any key, score or item. 0 turns it off.",
+  "whole_table_max_cells": 160,
   "max_units_per_rule": 40,
   "stop_after_failed_calls": 5,
   "request": {

@@ -4,6 +4,28 @@
 
 Rewritten whole on 2026-11-08 by the lead (D-321), as D-S51 and D-S56 ask and D-S69 item 2 repeats: each step appears once, in order, and names the Annex D entry it comes from and the decision that records where it stands. It replaces every earlier ordering in this file. Work that is finished, superseded or cancelled is in `DECISIONS.md` and in the request ledger, and is named once at the end of this file. Opus, medium effort (D-S11); routine lanes on the cheaper model where D-S27 item 1 allows, and everything listed in D-S27 item 2 on the strong one.
 
+## The release order, with no pause between releases (Seckin 01:31, 19 November 2026, standing order 111, BACK-TO-BACK-A)
+
+This section replaces every earlier rest, pause or dated gap between releases, here and in the issues, and replaces the 01:25 order. Each release starts at once after the one before it is done and nothing blocks it (an unfinished prerequisite, a decision waiting for the operator, a spend above the approved limit, a resource floor). Items inside a release run in parallel where independent. Times are expected durations, not dates. A cost is a figure only where `tools/loop/step_cost.py`, a `*.cost.json` or a decision records one; every other line says "estimate" and how it is derived. Lambda steps up to 5 USD are pre-approved (D-708). GitHub milestones v1.0, v1.05, v1.1 and v1.15 hold the matching issues.
+
+Two budgets (Seckin 08:40, 19 November 2026): (a) the 400 USD cap covers v1.0 and v1.05 only; (b) v1.1 (full-set final test, negotiation final test, old-system, bare-model and cloud re-measurement, ablations) has its own budget, not set yet, and no paid v1.1 step starts before he sets it.
+
+| Release | Item | Issue | Time | Cost |
+|---|---|---|---|---|
+| v1.0 | The release as now: the steps of `docs/loop/private/V10_PLAN_20261118.md` (negotiation bar, fourth full gate, quick read, pilot, release; the full-set final test and the negotiation final test moved to v1.1 by Seckin, 19 November 2026 08:38, so v1.0 ships on development and pilot figures, stated in its limitations). Starts when every development bar holds (D-707, order 102) | #290 (#259 and #301 moved to v1.1) | recorded per step there; negotiation rounds 3 to 5 hours each | recorded: remaining steps about 55 USD after the move of the final tests to v1.1 (SPEND_LIST_20261119, 19 November; was 82 to 86) |
+| v1.05 | Runtime speed improvements (the D-531 candidates in the speed section below) | #241 | estimate: 1 to 3 days, derived from the measured gate (150 to 33 minutes) and training (12.5 to about 6.3 hours) savings below | each proof costs about one gate run, recorded 0.71 USD (G_FULL2); the rest estimate |
+| v1.05 | Operator-given red lines with their benchmark items | #278 | estimate: 1 to 2 days, derived from one negotiation round | estimate: about 6.6 USD a measured round with the saving measures (V10 plan) |
+| v1.05 | The GNN and ontology work (unit context, ontology, GNN and rule set; the decisions of 10 September 2026 are not indexed by date in DECISIONS.md, so the lead names them from the issues: D-609, S6c) | #261, #265, #218, #200, #75, #142 | estimate: 2 to 4 days, derived from the S6 stage length | recorded: the GNN run on a review-run graph 1.70 USD (D-S13 allocation); the rest estimate |
+| v1.05 | A first user interface: it need not look professional, it must work | new issue | estimate: 1 to 2 days on the laptop; the console already exists | no Lambda cost expected; any cloud proof priced first by step_cost.py |
+| v1.1 | The ablations (the technical report's table, step 9b) | new issue | estimate: 1 to 2 days, derived from the negotiation round time | estimate: one measured round each, about 6.6 USD, number of ablations not yet fixed |
+| v1.1 | The full-set final test (half size ContraDoc and SciTab, about 32.1 USD) and the negotiation final test (1.7 to 4.9 USD), moved from v1.0 by Seckin 08:38, 19 November 2026; run beside the re-measurement below | #259, #301 | estimate: 4 to 6 hours, V10 plan row 11 | recorded 16 November 17:34 plan: 32.1 and up to 4.9 USD, no split |
+| v1.1 | Re-measure the old system, the bare model and the cloud model on the same items, with the same output form | #292, #279 | estimate: 4 to 6 hours, same machine count as the final test (V10 plan row 11) | recorded: cloud reference share 15 USD (D-S35); the rest estimate from the final-test figure of 32.1 USD, which has no split |
+| v1.15 | The table tool for the model (optional) | #299 | estimate: 2 to 3 days | estimate, no figure recorded |
+| v1.15 | CLadder and Corr2Cause as further benchmarks | new issue | estimate: 1 to 2 days each | estimate: adapters and one read each, no figure recorded |
+| v1.15 | Everything else still open: productize and launch (#285), recall and reader-sense measures (#284), the after-v1 tooling items (#242, #243, #244), install and documentation, a robust operational side | #285, #284, #242, #243, #244 | estimate, set per item by the lead's first plan for it | Lambda steps priced by step_cost.py before launch |
+
+The "pause" in the earlier ordering (issue #259, D-628) is cancelled.
+
 ## The principle (D-S42)
 
 Shimmer's governance and honesty layer stays as it is. What changes is everything a model-backed role sees and returns: **(a) context:** a short prompt with one narrow question, only the passages or cells Python selected for it, no agent contract text, no filled or worked example; **(b) output:** fixed answers read from the model's probabilities, no free text (D-S41, D-S62 item 3); **(c) the model:** trained for its task where training beats its untrained form (D-S57 item 3, D-S70 item 6). Since D-S57 and D-S70 this holds for every model-backed role, not the judge alone.

@@ -15,26 +15,35 @@ minutes and writing a "waiting" trace line every 30 minutes, for at most --max-w
 it stops with a "held" trace line and an ALERT.md line, and the next daily run starts again. A part too big
 for the disk right now goes after the parts that fit.
 
+Upload pause (D-764): before each part and at every pacing check, free disk is compared with the floor
+config/drive_no_download.json upload_pause declares (12 GiB on C:, D-729's figure, read at call time); below it
+the run writes nothing more, puts one ALERT.md line ("Drive uploads paused: C: free X GiB under floor Y GiB")
+and exits 6; drive_archive checks the same floor between the files of an archive. The next scheduled run
+resumes when free disk is above the floor.
+
 Each part is written by drive_archive.archive_part (its rules hold: links never followed, credential names
-and key bodies left out, .partial then rename, sha256 while writing and again from the file, a manifest, one
+and key bodies left out, .partial then rename, SHA-256 and MD5 while writing, the Drive file's size by os.stat, a manifest, one
 backup_log.jsonl line). A part larger than the Google Drive account's free space (keeping drive_archive's
 4 GiB) is skipped with a "skipped_too_big_for_drive" line and one ALERT.md line a day, and the smaller parts
 go on (the 13:07 run of 18 November ended at the first such part). Drive-only parts (roles/...) are left out unless --include-drive-only is given.
 
-What "verified" means here: drive_archive's check reads the file back from G:\\My Drive, which is the Drive
-app's LOCAL copy and proves nothing about the cloud. This tool then looks the archive up in the Drive app's
-own metadata database (read-only): an item with a Google cloud id, the same size, and the MD5 checksum that
-Google's servers computed from the uploaded bytes equal to the MD5 of the local archive is traced as
-"cloud_confirmed". That checksum comes from the server, but it is read from the app's synced metadata, not
-by a live call to the Google Drive API (that needs an OAuth login this machine does not have); the trace
-line says so in its "how" field. An archive with no matching cloud checksum yet is traced
-"not_yet_on_drive" and checked again on the next run. Nothing is ever deleted by this tool.
+What "verified" means here: drive_archive hashes the archive (SHA-256 and MD5) from the local stream while
+writing it and checks the Drive file's size by os.stat; no tool reads a file under G:\\My Drive back (D-763,
+19 November 2026: such a read made Drive for desktop download whole archives, 38.8 GiB, into its cache on
+C:). This tool then looks the archive up in the Drive app's own metadata database (read-only; a local
+SQLite file of the app, not a Drive file): an item with a Google cloud id, the same size, and the MD5
+checksum that Google's servers computed from the uploaded bytes equal to the MD5 recorded at write time
+(the log line's md5, or an earlier trace line's) is traced as "cloud_confirmed". That checksum comes from
+the server, but it is read from the app's synced metadata, not by a live call to the Google Drive API (that
+needs an OAuth login this machine does not have), and it is found as a 32-hex token in the item record, so
+it is not guaranteed to be there; the trace line says so in its "how" field. An archive with no recorded
+MD5 (older archives) is compared by size and cloud id only ("cloud_present"), never hashed from Drive. An
+archive with no matching cloud checksum yet is traced "not_yet_on_drive" and checked again on the next run.
+Nothing is ever deleted by this tool.
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
-import msvcrt
 import os
 import re
 import shutil
@@ -58,7 +67,6 @@ FLAT_WINDOW_S = 20 * 60
 FLAT_BAND = int(0.2 * GIB)
 POLL_S = 120
 WAIT_TRACE_S = 30 * 60
-LEGACY_MD5_MAX = 100 * 1024 * 1024    # an older archive is hashed for MD5 only when this small
 HOW = ('server MD5 and cloud id read from the Drive app metadata database (read-only); '
        'not a live Google Drive API read, which needs a login')
 DRIVEFS = Path(os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData/Local'))) / 'Google' / 'DriveFS'
@@ -82,14 +90,6 @@ def cache_bytes():
             except OSError:
                 pass
     return total
-
-
-def md5_file(path):
-    h = hashlib.md5()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(8 << 20), b''):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def cloud_lookup(path):
@@ -118,22 +118,22 @@ def cloud_lookup(path):
 
 
 def confirm(path, md5=None):
-    """('cloud_confirmed' | 'cloud_present' | 'not_yet_on_drive' | 'missing', details)."""
+    """('cloud_confirmed' | 'cloud_present' | 'not_yet_on_drive' | 'missing', details). `md5` is the one
+    recorded at write time; the file itself is only stat'ed, never read (D-763)."""
     path = Path(path)
     if not path.is_file():
         return 'missing', {}
-    size = path.stat().st_size
+    size = cov.drive_stat(path).st_size
     items = [i for i in cloud_lookup(path) if i[3] in (None, path.parent.name)]
     cloud = [i for i in items if i[0] and not i[0].startswith('local') and i[1] == size]
     if not cloud:
         return 'not_yet_on_drive', {'items_found': len(items)}
-    if md5 is None and size <= LEGACY_MD5_MAX:
-        md5 = md5_file(path)
     if md5 and any(md5 in i[2] for i in cloud):
         return 'cloud_confirmed', {'cloud_id': cloud[0][0], 'md5': md5}
     if md5:
         return 'not_yet_on_drive', {'items_found': len(items), 'note': 'cloud item has no matching server MD5 yet'}
-    return 'cloud_present', {'cloud_id': cloud[0][0], 'note': 'size and cloud id match; MD5 not compared (large)'}
+    return 'cloud_present', {'cloud_id': cloud[0][0],
+                             'note': 'size and cloud id match; no MD5 recorded at write time, so none compared'}
 
 
 def confirm_pass(paths):
@@ -148,7 +148,7 @@ def confirm_pass(paths):
         if f in done:
             counts['cloud_confirmed_before'] = counts.get('cloud_confirmed_before', 0) + 1
             continue
-        state, det = confirm(f, known_md5.get(f))
+        state, det = confirm(f, line.get('md5') or known_md5.get(f))
         counts[state] = counts.get(state, 0) + 1
         if state == 'cloud_confirmed':
             mc.trace(NAME, 'cloud_confirmed', file=f, archive_time=line.get('time'), bytes=line.get('bytes'),
@@ -170,10 +170,30 @@ def free_disk():
     return shutil.disk_usage('C:/').free
 
 
+def paused_now(part):
+    """True when this run must write nothing more (D-764): free disk on the disk config/drive_no_download.json
+    upload_pause declares is under its floor_gib (read now; drive_archive.pause_check), or no floor is declared.
+    A pause writes one 'paused' trace line and one ALERT.md line; the next scheduled run resumes."""
+    try:
+        da.pause_check()
+    except da.Paused as exc:
+        mc.trace(NAME, 'paused', part=part, disk=str(exc.disk), free_gib=round(exc.free / GIB, 2),
+                 floor_gib=round(exc.floor / GIB, 2), note='the next scheduled run resumes above the floor')
+        da.pause_alert(exc, 'task ShimmerDriveBackup, before part %s' % part)
+        return True
+    except da.Refused as exc:
+        mc.trace(NAME, 'paused', part=part, reason=str(exc)[:200])
+        return True
+    return False
+
+
 def wait_for_room(part, need, max_wait_s):
-    """True when the part may start; False when the wait ran out (a 'held' line is then written)."""
+    """True when the part may start; False when the wait ran out (a 'held' line is then written); None when
+    free disk fell under the upload pause floor (paused_now: the run stops)."""
     start, seen, last_trace = time.time(), [], 0.0
     while True:
+        if paused_now(part):
+            return None
         free, cache, t = free_disk(), cache_bytes(), time.time()
         seen = [(s, c) for s, c in seen if t - s <= FLAT_WINDOW_S + 300] + [(t, cache)]
         flat = (t - seen[0][0] >= FLAT_WINDOW_S and max(c for _, c in seen) - min(c for _, c in seen) <= FLAT_BAND
@@ -197,7 +217,7 @@ def wait_for_room(part, need, max_wait_s):
 def pending(paths, include_drive_only):
     for attempt in range(3):     # a file another process holds open (Windows) refuses a read: try again
         try:
-            report = cov.coverage(paths, secret_check=lambda u: set(), list_max=0)
+            report = cov.coverage(paths, secret_check=lambda u: set())
             break
         except OSError as exc:
             mc.trace(NAME, 'coverage_retry', attempt=attempt + 1, reason='%s: %s' % (type(exc).__name__, exc)[:200])
@@ -223,9 +243,17 @@ def pending(paths, include_drive_only):
 
 
 def lock():
+    """The open lock file when this run holds the drive_paced lock, None when another run does. Windows:
+    an msvcrt byte-range lock; POSIX: flock on the open file description (as launch_chain._lock_region),
+    imported where used so the module imports on either system (the Linux gate, 0acab665)."""
     f = open(mc.PRIVATE / 'drive_paced.lock', 'a+')
     try:
-        msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        if os.name == 'nt':
+            import msvcrt
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         f.close()
         return None
@@ -285,7 +313,12 @@ def main(argv=None):
             mc.trace(NAME, 'skipped_too_big_for_drive', part=part, part_gib=round(r['need_bytes'] / GIB, 2),
                      drive_free_gib=round(drive_free / GIB, 2))
             continue
-        if not wait_for_room(part, r['need_bytes'], args.max_wait_min * 60):
+        if paused_now(part):
+            return da.PAUSED_EXIT
+        room = wait_for_room(part, r['need_bytes'], args.max_wait_min * 60)
+        if room is None:
+            return da.PAUSED_EXIT
+        if not room:
             return 4
         try:
             line = da.archive_part(paths, part)
@@ -298,15 +331,19 @@ def main(argv=None):
             mc.alert('drive_paced:error', 'Drive backup error on part %s: %s.' % (part, type(exc).__name__))
             status = 1
             continue
+        if line.get('paused'):     # drive_archive stopped before or between files and wrote the ALERT.md line
+            mc.trace(NAME, 'paused', part=part, reason=line['paused'], partial_left=line.get('partial_left'),
+                     note='the next scheduled run resumes above the floor')
+            return da.PAUSED_EXIT
         if line.get('stopped') or not line.get('file'):
             mc.trace(NAME, 'skipped_too_big_for_drive' if line.get('stopped') else 'stopped', part=part,
                      reason=line.get('stopped'))
             too_big.append(part)
             continue
-        md5 = md5_file(line['file'])
+        md5 = line.get('md5')       # hashed from the local stream while writing; the Drive file is never read
         mc.trace(NAME, 'written', part=part, file=line['file'], bytes=line.get('bytes'), sha256=line.get('sha256'),
                  md5=md5, local_verified=line.get('verified'), archive_time=line.get('time'),
-                 note='written to the Drive app folder; local read-back only until cloud_confirmed')
+                 note='written to the Drive app folder; size checked by os.stat until cloud_confirmed')
         deadline = time.time() + args.confirm_wait_min * 60
         while True:
             state, det = confirm(line['file'], md5)

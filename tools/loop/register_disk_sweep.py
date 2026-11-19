@@ -7,8 +7,9 @@ demand: the loop's load watcher and every seal gate that reads free disk under 3
 
     py -3.12 -X utf8 tools/loop/register_disk_sweep.py --run-now-if-low
 
-which runs the registered task with `schtasks /Run` only when free disk is under 32 GiB (the 30 GiB floor of
-D-099 plus a margin) and does nothing otherwise. One pass at a time (MultipleInstancesPolicy IgnoreNew, and
+which runs the registered task with `schtasks /Run` only when free disk is under 32 GiB (the sweep's own trigger,
+D-611, set from the old 30 GiB floor of D-099 plus a margin; kept when the laptop floor became a job's footprint plus
+12 GiB on 19 November 2026, since sweeping regenerable files early only leaves more room) and does nothing otherwise. One pass at a time (MultipleInstancesPolicy IgnoreNew, and
 the sweep's own lock file).
 
     py -3.12 -X utf8 tools/loop/register_disk_sweep.py --dry-run   # print the task XML only

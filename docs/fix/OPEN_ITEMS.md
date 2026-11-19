@@ -1403,3 +1403,24 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 ## 158. Conditional acceptance across rounds is not modelled on the negotiation side (lead, 18 November 2026)
 - Found 2026-11-18 18:49 +0300 (D-748): Seckin's rule labels "could support X provided Y" in an intermediate round as conditional acceptance, carried forward only while Y holds. Neither the label schema nor the negotiation advisor, its scoring or the movement measures (NEGOTIATION-MEASURE-A, POSITION-GAPS-A) have a field or step for a condition and its later check.
 - Not fixed tonight (Seckin: do not change the schema tonight). Next: a declared condition field in the label schema, Python carrying it forward by round from declared units, a later-round check that marks it met or unmet, and the advisor reading it; with checks.
+
+## 159. A template launch folder under external/s05 carried a live chain.json (lead, 18 November 2026)
+- Found 2026-11-18 20:28 +0300: external/s05/V_SYNLAB1_template/chain.json had every prerequisite met once the OLMo admission ran; the launch chain tried its request step at 20:01 and was refused only because the template has no build (its preflight). Role V drives its own copy by hand, so a launch from the template would have doubled the labelling seal. Renamed to chain.json.held_template_only.
+- To fix: the launch chain should skip folders that declare themselves templates (a template marker in chain.json), with a proof; for the chain lane.
+- Fixed 2026-11-18 (lane/admit-detached): a chain.json with top-level `"template": true` is never planned or launched (`launch_chain.is_template`, read by `chain_folders`); proof template_folder_skipped in check 517. The held file can go back to chain.json once it carries the marker.
+- Closed 2026-11-18 20:58 +0300 by 450d379a (merged 20aacd90): a chain.json with "template": true is never planned or launched (check 517 proof).
+
+## 160. The command guard lets a PowerShell Set-Content -Path write into a role exchange folder it should refuse (lead, 18 November 2026)
+- Found 2026-11-18 23:28 +0300 while testing the read-only allow on _xfer/lead_to_V (6150081c): the fixture case for the Write tool into _xfer/V_to_lead is refused, but a real `Set-Content -Path C:\...\_xfer\V_to_lead\guard_test.txt -Value x` ran. It left a 3-byte test file there; deleting it needs safe_delete and Seckin's yes. The guard's PowerShell write parsing misses -Path arguments.
+- To fix: cover Set-Content, Out-File, Add-Content and redirection with -Path/-LiteralPath in the PowerShell parser, with a proof; for a code lane.
+- Closed 2026-11-18 23:52 +0300 by 67d8b9a0: write positions (Set-Content and Add-Content -Path, Out-File, New-Item, Copy-Item and Move-Item destinations, [IO.File] writes, redirection, tee, mkdir) are checked; 50 write refusals and 25 allowed cases in command_guard_checks, PASS.
+
+## 161. SciTab rerun table 80526d752106 returned exit 2 with semantic_incomplete: PROCESSOR delivered 1 of 3 calls (lead, 19 November 2026)
+- Found 2026-11-19 03:47 +0300 in external/s05/DEV_scitab_rerun (shard E3, batch 02, code 2a090652): execution_integrity_passed false, pipeline_exit_code 0, single reason semantic_incomplete; its 4 claims were still scored (labels_argmax.json counts 1 semantic-incomplete document, none excluded). Not open item 156 (no b1_reply_record codes).
+- Not fixed tonight: needs a look at the PROCESSOR partial delivery on that table (EXTRACTION-C owned_spans_per_request, PAIRING-A partial deliveries) before the next seal; the figure is reported with it included.
+
+## 162. The SEM-TAB-FACTS adapter leaves three things open (lane/semtabfacts-adapter, 19 November 2026)
+- Found 2026-11-19 15:56 +0300 while building benchmark/adapters/semtabfacts/adapter.py (D-798 item 4).
+- (a) tools/scitab_nei_dev.py (D-642 (c), check 484) still converts SEM-TAB-FACTS into SciTab-shaped records that the SciTab adapter builds under the benchmark name `scitab`, and it skips an unknown type value silently. Under D-798 item 4 that path would mix the set into SciTab; it was not retired here. To settle: the lead decides whether D-798 item 4 replaces it (retire to scripts/archived/ with check 484) or it stays for D-642 alone.
+- (b) benchmark/baselines/b1_prompt.json has no `semtabfacts` entry, so a B1 run or a cut-rule build (outside `--development`) of the set refuses. Not added: the file is read by sealed runs, so adding an entry is a re-seal question. To settle: add the entry (SciTab's text) with a re-seal when B1 on this set is planned.
+- (c) The XML nesting (rows and statements inside their table, evidence inside a cell) is PROVISIONAL, from role B's element and attribute count only. To settle: role B's first freeze; a statement outside any table is refused and counted (`statement_outside_table`), so a wrong nesting shows in the counts.

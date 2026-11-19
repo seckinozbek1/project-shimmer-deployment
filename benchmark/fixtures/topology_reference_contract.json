@@ -8,7 +8,7 @@
     "_segment_doc_text": "69dfe699c15c688e4287496e6762f026d0e5456f442b5d030591d27c95431c22",
     "_convention_provision_texts": "eb55d3f5a631e8f3500ccdcea7b9e69daacb4dd4e43caca0ec2872dee2df0117",
     "_typed_for_agent": "35b22d11c72aecc24f3c8b53b22f219137818b87b900396e76f20947ccde7cfb",
-    "_stamp_source_rule_ids": "c41300ce20e61cf547c6cfc9c772f47228b78749ff226f8e4b4774854ed05fc2",
+    "_stamp_source_rule_ids": "98be87e93010614d098a7ce35090a1b8f4d8157e1760750d6ceb89fe55897ea2",
     "_normalize_finding": "f9e20e70ead9283db9bd3e02288d8f565edfb70626289df4ea0606ecd40c28de",
     "_convention_review_firing_agents": "266e0eda0c3214e04de6916e412321eb17b8ca8db66325fb6b2f591197bde9dc",
     "_resolve_local_models": "6ffe9b435946a360f857b768a070123b10bf959ab578006600e6c00809ffb215",
@@ -64,7 +64,7 @@
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
     "write_deliverables_run_summary": "65aa9bd557518fe99374e92a43c0fa2cb457c0d453624799768964a8a2a78df6",
-    "phase_6_synthesis": "aebac7e1f30508cfe31f2a668b764b9579929ae2d9aa204d727a797c0c4fa331",
+    "phase_6_synthesis": "a2193d80dc4af64fbc6e6f7b9917b7b1e584a96408c10b5643afe90f9119c7b9",
     "_prior_refusals_for": "53ca877130deb1dcdaf138e6ea506c0a81fc79a4d861944582e0c3b8a67e0417",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
     "_category_for_conv": "0b36fc194a24a4028716d0f25c0e84af97ade28a9b7d564cf30ca1592ab21617",
@@ -87,7 +87,7 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "eec12c2cdaa7cb89c2a3b655de70eeb88111ed2c7c4bfa1606e88521c11e8a8f",
-    "main": "55ed291c2f67d105b7f869a4f2c102984b89ef4323b056fd97d3234798a7840a",
+    "main": "4a9368169f916e77e8900154430221041c2167514c4d9cd2331b56824be942ea",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
@@ -101,7 +101,10 @@
     "_verifier_pair_decisions": "92a13ef1dd4d0453dc53aa8240e06e45f1b4d929697de07e5dffb5476f874f23",
     "_judging_role": "9bf6f31f5d7c408925dbf765fd1b6654c5a77b22ef654282f8002ac5b483a72c",
     "_write_tool_rows": "6ecd20d7ede79750b8a7c0ce326891500d6a5a239f766729b7700a9c3b3be990",
-    "_ontology_run_end": "791bb0dffecce8ae4de099c06380ed1f57db31d3df1ca92669b6dafb6c9d72b7"
+    "_ontology_run_end": "791bb0dffecce8ae4de099c06380ed1f57db31d3df1ca92669b6dafb6c9d72b7",
+    "_cell_rule_ids": "92326780d07a8f435478fdb50114620c79babf3a37ab63da9341eea757d5242b",
+    "_fidelity_agent": "a9496ca698227b363918f07b6b88a61b33eaa7cbd01e553558ff8303c6ee9c46",
+    "record_cell_threshold_missing": "e8aac3793d7f1b1c43aa8bb9155cf3f39969275dcba2a3dfb023dc9465de34cd"
   },
   "reference_amendments": [
     {
@@ -944,6 +947,44 @@
         "_paired_convention_review": {
           "from": "cc00c91e45ab5cca6df3c6276928ddba36801a6df5e4189fb5d1524ce3b6619c",
           "to": "5d288e4b39b4ac49c979830377b40f28e555f49ad121d50ebdc5e084aaf8e1d7"
+        }
+      }
+    },
+    {
+      "date": "2026-11-19",
+      "reason": "Operator-directed, 19 November 2026 01:11-01:13, SciTab item (d) S4/P3 (producer side; docs/loop/private/SCITAB_FABLE_REVIEW_20261119.md, SCITAB_DIAGNOSIS_20261119.md item 21): phase_6_synthesis passes each upstream agent's name to _stamp_source_rule_ids; for a fidelity agent (_fidelity_agent: VERIFIER, the AUDITOR family) a record naming a rule that declares [compare: cells] (_cell_rule_ids, cell_selection.declared) and not on the cell_claim judged path carries no source_rule_id: the id moves to off_task_source_rule_id and the record is marked off_task fidelity_record_on_cell_rule, kept visible (HONEST-OUTPUT-A), so only cell-step records decide the item. Every other record is stamped as before.",
+      "document": "scripts/verify_session1.py check 536",
+      "functions": {
+        "_cell_rule_ids": {
+          "from": null,
+          "to": "92326780d07a8f435478fdb50114620c79babf3a37ab63da9341eea757d5242b"
+        },
+        "_fidelity_agent": {
+          "from": null,
+          "to": "a9496ca698227b363918f07b6b88a61b33eaa7cbd01e553558ff8303c6ee9c46"
+        },
+        "_stamp_source_rule_ids": {
+          "from": "c41300ce20e61cf547c6cfc9c772f47228b78749ff226f8e4b4774854ed05fc2",
+          "to": "98be87e93010614d098a7ce35090a1b8f4d8157e1760750d6ceb89fe55897ea2"
+        },
+        "phase_6_synthesis": {
+          "from": "aebac7e1f30508cfe31f2a668b764b9579929ae2d9aa204d727a797c0c4fa331",
+          "to": "a2193d80dc4af64fbc6e6f7b9917b7b1e584a96408c10b5643afe90f9119c7b9"
+        }
+      }
+    },
+    {
+      "date": "2026-11-19",
+      "reason": "Operator-directed, 2026-11-19, SciTab P6 (Seckin 01:11, lead 01:25): a paired run whose rules declare [compare: cells] with no cell_claim threshold is recorded loudly in phase 0 (ERROR event and run_flags in the run summary) through the new record_cell_threshold_missing, one call in main; never refused",
+      "document": "scripts/cell_selection.py missing_threshold; scripts/verify_session1.py check 538",
+      "functions": {
+        "main": {
+          "from": "55ed291c2f67d105b7f869a4f2c102984b89ef4323b056fd97d3234798a7840a",
+          "to": "4a9368169f916e77e8900154430221041c2167514c4d9cd2331b56824be942ea"
+        },
+        "record_cell_threshold_missing": {
+          "from": null,
+          "to": "e8aac3793d7f1b1c43aa8bb9155cf3f39969275dcba2a3dfb023dc9465de34cd"
         }
       }
     }

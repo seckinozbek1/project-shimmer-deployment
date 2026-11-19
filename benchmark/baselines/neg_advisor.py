@@ -624,11 +624,13 @@ def read_subset(path):
     return list(value["items"]), hashlib.sha256(data).hexdigest()
 
 
-def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None, subset=None):
+def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None, subset=None, stance_contexts=None):
     """The advice prompts of every item for each named group, or one validate prompt per position (the
     positions with their mapping come from the role session's build files, `positions`). With `subset`
     (a cloud_subset.json), the b1 group's prompts of the subset's items alone: the cloud reference's
-    file, each prompt B1's byte for byte."""
+    file, each prompt B1's byte for byte. With `stance_contexts` (D-756 item 5, P8: e.g. full,trimmed), the
+    system's stepwise advice is built once per named arm, each prompt marked `stance_context`, so one run carries
+    the arms side by side; without it nothing is marked and the file is as before."""
     out = outside_repository(out)
     config = load_config(config_path)
     declared = {g["group"]: g for g in config["models"]}
@@ -645,12 +647,31 @@ def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None
     if form == "advice":
         if not groups or any(g not in ("b1", "system_advice") for g in groups):
             raise ValueError("the advice form runs on b1 and system_advice only")
+        if stance_contexts is not None:
+            if "system_advice" not in groups or not list(stance_contexts) or \
+                    len(set(stance_contexts)) != len(list(stance_contexts)):
+                raise ValueError("stance contexts name each arm once, on the system's advice")
+            for c in stance_contexts:
+                check_stance_context(config, "system_advice", c)
         for group in groups:
-            for item_id, item in items.items():
-                user = render_advice(config, item, method_of(config, group))
-                prompts.append(dict(declared[group], prompt_id="a%04d" % (len(prompts) + 1), form="advice",
-                                    item_id=item_id, item=item, user=user, user_sha256=_sha(user), system=None,
-                                    max_new_tokens=advice_allowance(config, group)))
+            arms = list(stance_contexts) if (stance_contexts is not None and group == "system_advice") else [None]
+            for arm in arms:
+                for item_id, item in items.items():
+                    if arm is not None and not has_chain(item):
+                        # An item with no chain (a game, or no proposal) asks no stance: built once, unmarked
+                        # (read as the full arm), never twice.
+                        if arm != arms[0]:
+                            continue
+                        arm_here = None
+                    else:
+                        arm_here = arm
+                    user = render_advice(config, item, method_of(config, group))
+                    prompt = dict(declared[group], prompt_id="a%04d" % (len(prompts) + 1), form="advice",
+                                  item_id=item_id, item=item, user=user, user_sha256=_sha(user), system=None,
+                                  max_new_tokens=advice_allowance(config, group))
+                    if arm_here is not None:
+                        prompt["stance_context"] = arm_here
+                    prompts.append(prompt)
         audit = "system_advice" in groups
         return _write(out, _file(config, prompts, dict(extra, audit=audit)))
     if form == "validate":
@@ -747,7 +768,9 @@ def load_prompts(path):
         if g is None or any(p.get(k) != g.get(k) for k in ("backend", "agent", "checkpoint", "model")):
             raise ValueError("a prompt names a model group its config does not declare: %s" % p.get("prompt_id"))
         if p.get("form") == "advice" and p["group"] in ("b1", "system_advice"):
-            user, key = render_advice(config, p["item"], method_of(config, p["group"])), (p["group"], p["item_id"])
+            # D-756 item 5: a marked arm is held to the config's declarations; one (group, item) per arm.
+            arm = check_stance_context(config, p["group"], p.get("stance_context"))
+            user, key = render_advice(config, p["item"], method_of(config, p["group"])), (p["group"], p["item_id"], arm)
         elif p.get("form") == "validate" and p["group"] == "validate":
             user, key = render_validate(config, p["item"], p["position"]), ("validate", p["item_id"], p["position"]["id"])
         elif p.get("form") == "judge" and p["group"] == "judge":
@@ -829,6 +852,19 @@ def audit_prompts(config, prompt, text, reply=None):
         out.append(dict(group, prompt_id="%s-audit-%s" % (prompt["prompt_id"], pid), form="audit",
                         item_id=prompt["item_id"], derived_from=prompt["prompt_id"], proposal_id=pid, user=user,
                         user_sha256=_sha(user), max_new_tokens=config["audit"]["max_new_tokens"]))
+    # P5 (lane/neg-optional): one second-family question per candidate of a no_conflict proposal, the chosen
+    # sentence shown; only a chain under a declared auditor_band writes candidates.
+    for pid, piece in sorted(reply["proposals"].items()):
+        if piece.get("conflict") != "no_conflict" or not piece.get("auditor_candidates"):
+            continue
+        template = config["advice"]["methods"][STEPWISE]["auditor"]
+        for c in piece["auditor_candidates"]:
+            user = _fill(template, {"{proposal_id}": pid, "{proposal}": proposal_text(prompt["item"], pid) or "",
+                                    "{party}": c["party"], "{sentence}": c["sentence"]})
+            out.append(dict(group, prompt_id="%s-caudit-%s-%s" % (prompt["prompt_id"], pid, c["position"]),
+                            form="audit", kind=CONFLICT_AUDIT, item_id=prompt["item_id"],
+                            derived_from=prompt["prompt_id"], proposal_id=pid, position_id=c["position"], user=user,
+                            user_sha256=_sha(user), max_new_tokens=config["audit"]["max_new_tokens"]))
     return out
 
 
@@ -882,7 +918,199 @@ def check_decoding(config):
                 if type(block.get("max_new_tokens")) is not int or block["max_new_tokens"] <= 0 or \
                         not (type(t) in (int, float) and 0 <= t <= 1):
                     raise ValueError("the stepwise method declares its step allowance and its choice threshold")
+                check_stepwise_block(block)
     return config
+
+
+def step_order(block):
+    """The chain's declared order (GENERATED_FIRST when none is declared)."""
+    return block.get("order") or GENERATED_FIRST
+
+
+def check_stepwise_block(block):
+    """D-756 items 5 and 6: the declared order is one of ORDERS; under choice_first each choice-first template is
+    declared and none shows `{changes}` (no line is generated yet when it is asked); a declared trimmed stance
+    template fills each of TRIMMED_SLOTS once and shows nothing of `{changes}`, `{article}` or `{title}`."""
+    if step_order(block) not in ORDERS:
+        raise ValueError("the stepwise order is one of %s" % ", ".join(ORDERS))
+    if step_order(block) == CHOICE_FIRST:
+        first = block.get("choice_first")
+        if not isinstance(first, dict) or not all(isinstance(first.get(k), str) for k in CHOICE_FIRST_TEMPLATES):
+            raise ValueError("the choice_first order declares its templates: %s" % ", ".join(CHOICE_FIRST_TEMPLATES))
+        if any("{changes}" in first[k] for k in CHOICE_FIRST_TEMPLATES):
+            raise ValueError("a choice_first template shows {changes}, which is not asked yet")
+    trimmed = block.get("stance_trimmed")
+    if trimmed is not None:
+        if not isinstance(trimmed, str) or any(trimmed.count(s) != 1 for s in TRIMMED_SLOTS) or \
+                any(s in trimmed for s in ("{changes}", "{article}", "{title}")):
+            raise ValueError("the trimmed stance template fills %s once each and nothing more" % ", ".join(TRIMMED_SLOTS))
+    optional_switches(block)
+    return block
+
+
+# ---------------------------------------------------------------------------
+# lane/neg-optional (Seckin 19 November 2026 01:23, the optional ideas of D-756: P2, C2, P6, P5, C3), each behind
+# its own switch in `advice.methods.stepwise`, every one off as shipped, read when the chain runs. Off, the chain
+# asks exactly the questions it asked before. Every new step is a choice step (CHOICE-A); none ends a chain.
+# - P2 `fate_forecast`: after a proposal's stance, one choice over `fate_answers`, shown the proposal and every
+#   position on record on its article (never the trimmed context); the piece keeps `fate` marked `fate_basis`
+#   inferred (D-711). One declared precedence rule, `fate_precedence`: `stance` (the stance stays, the fate sits
+#   beside it) or `fate` (the stance is `fate_stance[fate]`, the earlier stance kept as `stance_from_fate`). The
+#   fate never writes the conflict field.
+# - C2 `conflict_question: two_checks`: each position's stance step becomes two yes/no steps, `touches` (does it
+#   speak to what the proposal changes) and `holds` (would what it asks for still hold if the proposal were
+#   adopted); oppose is yes then no, anything else `two_checks_otherwise`; the oppose margin is the smaller of the
+#   two answers' margins toward oppose, so P3's threshold reads it as before.
+# - P6 `quote_grounding`: an oppose is grounded by choosing, from the position's own sentences numbered by
+#   form (scripts/sentence_split.py), the one that opposes, or 0 for none (CHOICE-A, so the quote is verbatim
+#   by construction). 0 sends the oppose back to `quote_none_stance`; a refused or unaskable choice keeps the
+#   oppose unground and is counted, never ending the chain.
+# - P5 `auditor_band` [low, high): a persona position the chain did not read as oppose whose oppose margin lies
+#   in the band is grounded as in P6 (P6 must be on); a chosen sentence makes it a candidate, and audit_prompts
+#   derives one question per candidate for the second family (group system_audit, the audit's own answers). A
+#   proposal flips from no_conflict to conflict only on that auditor's `supported` (auditor_flip). No cue word
+#   is read: the trigger is the margin band (WORDS-A).
+# - C3 `conditional_accept` {label, counts_as}: the stance step offers a fourth answer for a conditional
+#   acceptance, from its own template; Python counts it as `counts_as`, declared from D-748 (labelled accept),
+#   and keeps it marked on the piece. Its later-round carry-forward (open item 158) is not modelled here.
+STANCE_QUESTION, TWO_CHECKS = "stance", "two_checks"
+CONFLICT_QUESTIONS = (STANCE_QUESTION, TWO_CHECKS)
+FATE_PRECEDENCES = ("stance", "fate")
+YES_NO = ("yes", "no")
+QUOTE_MAX_SENTENCES = 9
+NO_SENTENCE = "0"
+CONFLICT_AUDIT = "conflict_audit"
+OPTIONAL_DEFAULTS = {"fate_forecast": False, "conflict_question": STANCE_QUESTION, "quote_grounding": False,
+                     "auditor_band": None, "conditional_accept": None}
+
+
+def _template(block, key, need=(), never=("{changes}",)):
+    t = block.get(key)
+    if not isinstance(t, str) or any(s not in t for s in need) or any(s in t for s in never):
+        raise ValueError("the stepwise method declares its %s template (with %s, never %s)"
+                         % (key, ", ".join(need) or "no slot", ", ".join(never)))
+    return t
+
+
+def optional_switches(block):
+    """The declared optional switches of the stepwise block, each checked, every one off when not declared."""
+    got = {k: (v if block.get(k) is None else block[k]) for k, v in OPTIONAL_DEFAULTS.items()}
+    for k in ("fate_forecast", "quote_grounding"):
+        if type(got[k]) is not bool:
+            raise ValueError("advice.methods.stepwise.%s is true or false" % k)
+    if got["fate_forecast"]:
+        _template(block, "fate", ("{proposal}", "{positions}"))
+        answers = block.get("fate_answers")
+        if not isinstance(answers, list) or len(answers) < 2 or len(set(answers)) != len(answers) or \
+                not all(isinstance(a, str) and a for a in answers):
+            raise ValueError("the fate forecast declares its answers")
+        if block.get("fate_precedence") not in FATE_PRECEDENCES:
+            raise ValueError("the fate forecast declares one precedence rule: %s" % ", ".join(FATE_PRECEDENCES))
+        if block["fate_precedence"] == "fate":
+            to = block.get("fate_stance")
+            if not isinstance(to, dict) or set(to) != set(answers) or not all(v in STANCES for v in to.values()):
+                raise ValueError("fate precedence maps every fate answer to one stance (fate_stance)")
+    if got["conflict_question"] not in CONFLICT_QUESTIONS:
+        raise ValueError("advice.methods.stepwise.conflict_question is one of %s" % ", ".join(CONFLICT_QUESTIONS))
+    if got["conflict_question"] == TWO_CHECKS:
+        _template(block, "touches", ("{proposal}", "{quote}"))
+        _template(block, "holds", ("{proposal}", "{quote}"))
+        if block.get("two_checks_otherwise") not in POSITION_STANCES or block["two_checks_otherwise"] == OPPOSE:
+            raise ValueError("two_checks_otherwise is a declared stance other than oppose")
+    if got["quote_grounding"]:
+        _template(block, "quote", ("{proposal}", "{sentences}"))
+        if block.get("quote_none_stance") not in POSITION_STANCES or block["quote_none_stance"] == OPPOSE:
+            raise ValueError("quote_none_stance is a declared stance other than oppose")
+    band = got["auditor_band"]
+    if band is not None:
+        if not (isinstance(band, list) and len(band) == 2 and all(type(v) in (int, float) for v in band)
+                and -1 <= band[0] < band[1] <= 1):
+            raise ValueError("auditor_band is [low, high) within -1 and 1")
+        if not got["quote_grounding"]:
+            raise ValueError("the auditor band needs quote_grounding: a flip needs a chosen sentence")
+        _template(block, "auditor", ("{proposal}", "{sentence}"))
+    cond = got["conditional_accept"]
+    if cond is not None:
+        if not isinstance(cond, dict) or not isinstance(cond.get("label"), str) or not cond["label"] or \
+                cond["label"] in POSITION_STANCES or cond.get("counts_as") not in POSITION_STANCES:
+            raise ValueError("conditional_accept declares a new label and the declared stance it counts as")
+        if got["conflict_question"] != STANCE_QUESTION:
+            raise ValueError("conditional_accept is a fourth answer of the stance question, not of two_checks")
+        _template(block, "stance_conditional", ("{proposal}", "{quote}", cond["label"]))
+    return got
+
+
+def position_sentences(quote):
+    """A position's sentences, ended by form (scripts/sentence_split.py), each stripped and non-empty."""
+    import sentence_split
+    text = " ".join(str(quote or "").split())
+    cuts = [0] + list(sentence_split.ends(text)) + [len(text)]
+    return [s for s in (text[a:b].strip() for a, b in zip(cuts, cuts[1:])) if s]
+
+
+def _margin_toward(probabilities, label):
+    if not probabilities or label not in probabilities or len(probabilities) < 2:
+        return None
+    return probabilities[label] - max(v for k, v in probabilities.items() if k != label)
+
+
+def auditor_flip(reply, labels):
+    """(reply, counts): P5's flip, a no_conflict proposal put to conflict when the second family's answer on one
+    of its candidates is `supported` (labels: (proposal id, position id) to the audit label, None unanswered); an
+    accept stance becomes reject, a counter is kept. A copy; `reply` is never changed."""
+    import copy as _copy
+    out, counts = _copy.deepcopy(reply), Counter()
+    for (pid, pos), label in sorted(labels.items()):
+        counts["asked"] += 1
+        piece = ((out or {}).get("proposals") or {}).get(pid)
+        if label is None:
+            counts["unanswered"] += 1
+        elif label != "supported":
+            counts["not_supported"] += 1
+        elif piece is not None and piece.get("conflict") == "no_conflict":
+            piece["conflict"] = "conflict"
+            if piece.get("stance") == "accept":
+                piece["stance"] = "reject"
+            piece["flipped_by"] = {"position": pos, "auditor": label}
+            counts["flipped"] += 1
+        else:
+            counts["already_conflict"] += 1
+    return out, counts
+
+
+def check_stance_context(config, group, context):
+    """A prompt's stance context: none (the shipped question) or one of STANCE_CONTEXTS, only on the system's
+    advice under the stepwise method, `trimmed` only when its template is declared."""
+    if context is None:
+        return None
+    if context not in STANCE_CONTEXTS:
+        raise ValueError("a stance context is one of %s" % ", ".join(STANCE_CONTEXTS))
+    if group != METHOD_GROUP or method_of(config, group) != STEPWISE:
+        raise ValueError("a stance context is a stepwise arm of the system's advice alone")
+    if context == TRIMMED_CONTEXT and not isinstance(config["advice"]["methods"][STEPWISE].get("stance_trimmed"), str):
+        raise ValueError("the trimmed arm needs advice.methods.stepwise.stance_trimmed")
+    return context
+
+
+def decision_probabilities(decision):
+    """{label: probability} of a choice decision, or None when there is none."""
+    if not isinstance(decision, dict) or not isinstance(decision.get("answers"), list):
+        return None
+    return {a["label"]: a["probability"] for a in decision["answers"]}
+
+
+def oppose_margin(probabilities):
+    """p(oppose) minus the largest probability of another answer; None without probabilities."""
+    if not probabilities or OPPOSE not in probabilities or len(probabilities) < 2:
+        return None
+    return probabilities[OPPOSE] - max(v for k, v in probabilities.items() if k != OPPOSE)
+
+
+def red_lines_text(item):
+    """The persona's red lines on record as the trimmed stance step shows them, one quote a line."""
+    red = set(item["persona"].get("red_lines") or [])
+    lines = [p["quote"] for p in item.get("positions") or [] if p["id"] in red and p["party"] == item["persona"]["id"]]
+    return "\n".join("- %s" % q for q in lines) or "(none on record)"
 
 
 # ---------------------------------------------------------------------------
@@ -902,6 +1130,27 @@ METHOD_GROUP = "system_advice"
 RATIONALE_MAX_CHARS = 300
 STEPS = ("changes", "stance", "red_line", "open_point", "wording")
 STEP_ANSWERS = {"stance": POSITION_STANCES, "red_line": ("yes", "no"), "open_point": ("yes", "no")}
+# D-756 item 6 (N3): the chain's declared order, `advice.methods.stepwise.order`. `generated_first` (none declared,
+# the order S0 shipped with): per proposal the generated `changes` step first, its checked line shown to every later
+# step, so a refused `changes` ends the proposal's chain before any stance is asked. `choice_first`: the choice steps
+# (each touched position's stance, the persona's red lines, the open point) are asked first from the templates of
+# `advice.methods.stepwise.choice_first` (none of them shows `{changes}`), then the generated steps (`changes`, and
+# the counter `wording` when the open point is yes); a refused generated step drops only its own field, is counted
+# with its reason like every refused step, and never ends the chain.
+GENERATED_FIRST, CHOICE_FIRST = "generated_first", "choice_first"
+ORDERS = (GENERATED_FIRST, CHOICE_FIRST)
+CHOICE_FIRST_TEMPLATES = ("stance", "red_line", "open_point", "wording")
+# D-756 item 5 (P8): the context a stance step is shown, chosen per prompt at build time (`stance_context`), so one
+# prompts file can carry both arms side by side, each prompt marked. `full` (none marked, the shipped question):
+# the stance template of the declared order. `trimmed`: `advice.methods.stepwise.stance_trimmed`, only the
+# proposal's text, the one position and the persona's red lines on record. No fate forecast exists in the chain;
+# one added later keeps the whole item whatever the arm.
+FULL_CONTEXT, TRIMMED_CONTEXT = "full", "trimmed"
+STANCE_CONTEXTS = (FULL_CONTEXT, TRIMMED_CONTEXT)
+TRIMMED_SLOTS = ("{proposal}", "{party}", "{quote}", "{red_lines}")
+# D-756 items 2 and 3 (N1, P3): the oppose margin of a stance step, its probability of `oppose` minus the largest
+# probability of another declared stance (CHOICE-A's renormalised probabilities, read from the step's decision).
+OPPOSE = "oppose"
 
 
 def method_of(config, group):
@@ -940,9 +1189,13 @@ def _collapse(text):
     return " ".join(str(text or "").split())
 
 
-def _step_check(step, answer, item, proposal, position=None):
-    """(value, None) or (None, reason): Python's check of one step's answer before the next step is asked."""
+def _step_check(step, answer, item, proposal, position=None, answers=None):
+    """(value, None) or (None, reason): Python's check of one step's answer before the next step is asked
+    (`answers`, a step's own declared answers when they are not STEP_ANSWERS')."""
     said = _collapse(answer)
+    if answers is not None:
+        word = said.lower().strip(" .\"'")
+        return (word, None) if word in answers else (None, "not_declared")
     if step == "changes":
         if len(said.split()) < BASIS_QUOTE_MIN_WORDS:
             return None, "line_too_short"
@@ -977,24 +1230,43 @@ class _NotedSteps(list):
         self.hook(entry)
 
 
-def stepwise_advice(config, item, ask, on_step=None):
+def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
     """(reply, steps): the advice of one item by the step-wise chain, `reply` in parse_advice's shape (each piece
     marked `method` stepwise and `basis` on_record), `steps` every question asked with its answer and Python's
-    verdict. `ask(step, user, answers)` returns the model's text (for a choice step, its settled label); a step
-    whose answer Python refuses ends that proposal's chain, and what it would have decided is left unanswered.
-    A position's stance is asked only of the positions the mapping puts on the proposal; a red line only when
-    one of the persona's applicable positions is marked one; conflict, alignment and the stance are Python's.
-    `on_step(entry)`, when given, receives each step's verdict right after its ask, before the next ask."""
+    verdict. `ask(step, user, answers)` returns the model's text (for a choice step, its settled label), or a pair
+    (that text, the choice step's {answer: probability}). A choice step whose answer Python refuses ends that
+    proposal's chain, and what it would have decided is left unanswered; a refused generated step does the same
+    under the `generated_first` order and drops only its own field under `choice_first` (D-756 item 6, N3).
+    A position's stance is asked only of the positions the mapping puts on the proposal, in the declared
+    `stance_context` (D-756 item 5, P8: none or `full`, the order's own stance template; `trimmed`, the proposal,
+    the one position and the persona's red lines); a red line only when one of the persona's applicable positions
+    is marked one; conflict, alignment and the stance are Python's. Each piece keeps its checked stances with
+    their probabilities and oppose margins (`position_stances`, D-756 items 2 and 3) and, when a red line was
+    asked, `red_line_hit`. `on_step(entry)`, when given, receives each step's verdict right after its ask, before
+    the next ask."""
     block = config["advice"]["methods"][STEPWISE]
+    check_stepwise_block(block)
+    order = step_order(block)
+    context = stance_context or FULL_CONTEXT
+    if context not in STANCE_CONTEXTS:
+        raise ValueError("a stance context is one of %s" % ", ".join(STANCE_CONTEXTS))
+    if context == TRIMMED_CONTEXT and not isinstance(block.get("stance_trimmed"), str):
+        raise ValueError("the trimmed arm needs advice.methods.stepwise.stance_trimmed")
+    first = block.get("choice_first") or {}
+    opt = optional_switches(block)
+    cond = opt["conditional_accept"]
+    if cond is not None and context == TRIMMED_CONTEXT:
+        raise ValueError("conditional_accept has its own stance template; the trimmed arm does not carry it")
     persona = item["persona"]["id"]
     red = set(item["persona"].get("red_lines") or [])
+    red_text = red_lines_text(item)
     positions = item.get("positions") or []
     steps, proposals, signs = (_NotedSteps(on_step) if on_step is not None else []), {}, {}
     judged = {}   # position id -> the stance its step answered, Python-checked (D-668 gap 4: the movement's input)
 
     def put(step, user, answers):
         said = ask(step, user, answers)
-        return said
+        return said if isinstance(said, tuple) else (said, None)
 
     for art in item["articles"]:
         for n, prop in enumerate(art["proposals"], 1):
@@ -1002,64 +1274,193 @@ def stepwise_advice(config, item, ask, on_step=None):
                     "{title}": art["title"]}
             piece = {"id": prop["id"], "reasons": [], "method": STEPWISE, "basis": ON_RECORD}
             proposals[prop["id"]] = piece
-            user = _fill(block["changes"], base)
-            said = put("changes", user, None)
-            value, why = _step_check("changes", said, item, prop)
-            steps.append({"proposal": prop["id"], "step": "changes", "accepted": why is None, "refused": why})
+            touched = [p for party in sorted({q["party"] for q in positions})
+                       for p in _applicable(positions, party, art["id"], n)]
+            mine = [p for p in touched if p["party"] == persona]
+            lines = [p for p in mine if p["id"] in red]
+
+            def generated(step, template, slots):
+                said, _probs = put(step, _fill(template, slots), None)
+                value, why = _step_check(step, said, item, prop)
+                steps.append({"proposal": prop["id"], "step": step, "accepted": why is None, "refused": why})
+                return value, why
+
+            def choice(step, user, pos=None, answers=None):
+                said, probs = put(step, user, tuple(answers) if answers is not None else STEP_ANSWERS[step])
+                got, why = _step_check(step, said, item, prop, pos, answers)
+                entry = {"proposal": prop["id"], "step": step, "accepted": why is None, "refused": why}
+                if pos is not None:
+                    entry = {"proposal": prop["id"], "step": step, "position": pos["id"], "accepted": why is None,
+                             "refused": why}
+                steps.append(entry)
+                return got, why, probs
+
+            def stance_user(pos, changes):
+                slots = dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"]})
+                if context == TRIMMED_CONTEXT:
+                    return _fill(block["stance_trimmed"], {"{proposal}": prop["text"], "{party}": pos["party"],
+                                                           "{quote}": pos["quote"], "{red_lines}": red_text})
+                if order == CHOICE_FIRST:
+                    return _fill(first["stance"], slots)
+                return _fill(block["stance"], dict(slots, **{"{changes}": changes}))
+
+            def position_stance(pos, changes):
+                """(stance, refused, entry): one position's stance by the declared conflict question (C2, C3)."""
+                if opt["conflict_question"] == TWO_CHECKS:
+                    slots = dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"]})
+                    said, probs = {}, {}
+                    for step in ("touches", "holds"):
+                        got, why, p = choice(step, _fill(block[step], slots), pos, YES_NO)
+                        if why:
+                            return None, why, None
+                        said[step], probs[step] = got, p
+                    stance = OPPOSE if (said["touches"], said["holds"]) == ("yes", "no") else block["two_checks_otherwise"]
+                    a, b = _margin_toward(probs["touches"], "yes"), _margin_toward(probs["holds"], "no")
+                    return stance, None, {"party": pos["party"], "stance": stance, "checks": said, "probabilities": probs,
+                                          "oppose_margin": None if a is None or b is None else min(a, b)}
+                if cond is not None:
+                    slots = dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"]})
+                    got, why, probs = choice("stance", _fill(block["stance_conditional"], slots), pos,
+                                             POSITION_STANCES + (cond["label"],))
+                    if why:
+                        return None, why, None
+                    entry = {"party": pos["party"], "stance": got, "probabilities": probs,
+                             "oppose_margin": oppose_margin(probs)}
+                    if got == cond["label"]:
+                        entry.update(stance=cond["counts_as"], answered=got)
+                    return entry["stance"], None, entry
+                got, why, probs = choice("stance", stance_user(pos, changes), pos)
+                if why:
+                    return None, why, None
+                return got, None, {"party": pos["party"], "stance": got, "probabilities": probs,
+                                   "oppose_margin": oppose_margin(probs)}
+
+            def ground(pos, entry):
+                """P6 (and P5's candidates): the sentence of the position that opposes, chosen by number."""
+                sentences = position_sentences(pos["quote"])
+                if not sentences or len(sentences) > QUOTE_MAX_SENTENCES:
+                    entry["quote"] = {"chosen": None, "reason": "too_many_sentences" if sentences else "no_sentence"}
+                    return None
+                listed = "\n".join("%d. %s" % (k, s) for k, s in enumerate(sentences, 1))
+                user = _fill(block["quote"], dict(base, **{"{party}": pos["party"], "{sentences}": listed}))
+                got, why, _p = choice("quote", user, pos, (NO_SENTENCE,) + tuple(str(k) for k in range(1, len(sentences) + 1)))
+                if why:
+                    entry["quote"] = {"chosen": None, "reason": "refused"}
+                    return None
+                if got == NO_SENTENCE:
+                    entry["quote"] = {"chosen": 0}
+                    return None
+                entry["quote"] = {"chosen": int(got), "sentence": sentences[int(got) - 1]}
+                return entry["quote"]["sentence"]
+
+            def in_band(pos, entry):
+                band, m = opt["auditor_band"], entry.get("oppose_margin")
+                return band is not None and pos["party"] == persona and entry["stance"] != OPPOSE and m is not None \
+                    and band[0] <= m < band[1]
+
+            def choice_steps(changes):
+                """The choice steps of one proposal: (stances, hit, open point) or None when one is refused."""
+                stances, kept = {}, {}
+                for pos in touched:
+                    got, why, entry = position_stance(pos, changes)
+                    if why:
+                        if kept:
+                            piece["position_stances"] = kept
+                        return None
+                    if opt["quote_grounding"] and got == OPPOSE:
+                        ground(pos, entry)
+                        if entry["quote"].get("chosen") == 0:
+                            got = entry["stance"] = block["quote_none_stance"]
+                            entry["sent_back"] = True
+                    elif opt["quote_grounding"] and in_band(pos, entry):
+                        sentence = ground(pos, entry)
+                        if sentence:
+                            piece.setdefault("auditor_candidates", []).append(
+                                {"position": pos["id"], "party": pos["party"], "sentence": sentence,
+                                 "oppose_margin": entry["oppose_margin"]})
+                    stances[pos["id"]] = got
+                    kept[pos["id"]] = entry
+                if kept:
+                    piece["position_stances"] = kept
+                judged.update(stances)
+                piece["reasons"] = [p["id"] for p in touched]
+                for pos in touched:
+                    signs.setdefault((art["id"], n, pos["party"]), set()).add(
+                        1 if stances[pos["id"]] in ("support", "accept") else -1)
+                hit = False
+                for pos in lines:
+                    slots = dict(base, **{"{quote}": pos["quote"]})
+                    template = first["red_line"] if order == CHOICE_FIRST else block["red_line"]
+                    if order != CHOICE_FIRST:
+                        slots["{changes}"] = changes
+                    got, why, _probs = choice("red_line", _fill(template, slots), pos)
+                    if why:
+                        return None
+                    hit = hit or got == "yes"
+                if lines:
+                    piece["red_line_hit"] = hit
+                if not mine:
+                    piece["conflict"] = "not_stated"
+                else:
+                    piece["conflict"] = "conflict" if hit or any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
+                template = first["open_point"] if order == CHOICE_FIRST else block["open_point"]
+                slots = dict(base) if order == CHOICE_FIRST else dict(base, **{"{changes}": changes})
+                got, why, _probs = choice("open_point", _fill(template, slots))
+                if why:
+                    return None
+                return stances, hit, got
+
+            def forecast():
+                """P2: the proposal's fate, one choice over the declared answers, the whole article shown."""
+                if not opt["fate_forecast"] or "stance" not in piece:
+                    return
+                shown = "\n".join("- %s: %s" % (p["party"], p["quote"]) for p in positions
+                                  if p["article"] == art["id"]) or "(none on record)"
+                user = _fill(block["fate"], dict(base, **{"{positions}": shown, "{red_lines}": red_text}))
+                got, why, probs = choice("fate", user, None, tuple(block["fate_answers"]))
+                if why:
+                    return
+                piece.update(fate=got, fate_basis=INFERRED, fate_probabilities=probs)
+                if block["fate_precedence"] == "fate":
+                    new = block["fate_stance"][got]
+                    if new != piece["stance"]:
+                        piece["stance_from_fate"] = {"was": piece["stance"]}
+                        piece["stance"] = new
+                    if new != "counter":
+                        piece.pop("wording", None)
+
+            if order == CHOICE_FIRST:
+                # N3: the choice steps first; then the generated ones, each refused one dropping its own field only.
+                decided = choice_steps(None)
+                if decided is None:
+                    continue
+                value, why = generated("changes", block["changes"], base)
+                if not why:
+                    piece["changes"] = value
+                if decided[2] == "yes":
+                    piece["stance"] = "counter"
+                    wording, why = generated("wording", first["wording"], base)
+                    if not why:
+                        piece["wording"] = wording
+                else:
+                    piece["stance"] = "reject" if piece["conflict"] == "conflict" else "accept"
+                forecast()
+                continue
+            value, why = generated("changes", block["changes"], base)
             if why:
                 continue
             piece["changes"] = value
-            touched = [p for party in sorted({q["party"] for q in positions})
-                       for p in _applicable(positions, party, art["id"], n)]
-            stances, failed = {}, False
-            for pos in touched:
-                user = _fill(block["stance"], dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"],
-                                                            "{changes}": value}))
-                got, why = _step_check("stance", put("stance", user, STEP_ANSWERS["stance"]), item, prop, pos)
-                steps.append({"proposal": prop["id"], "step": "stance", "position": pos["id"], "accepted": why is None,
-                              "refused": why})
-                if why:
-                    failed = True
-                    break
-                stances[pos["id"]] = got
-            if failed:
+            decided = choice_steps(value)
+            if decided is None:
                 continue
-            judged.update(stances)
-            piece["reasons"] = [p["id"] for p in touched]
-            mine = [p for p in touched if p["party"] == persona]
-            for pos in touched:
-                signs.setdefault((art["id"], n, pos["party"]), set()).add(1 if stances[pos["id"]] in ("support", "accept") else -1)
-            hit = False
-            lines = [p for p in mine if p["id"] in red]
-            for pos in lines:
-                user = _fill(block["red_line"], dict(base, **{"{quote}": pos["quote"], "{changes}": value}))
-                got, why = _step_check("red_line", put("red_line", user, STEP_ANSWERS["red_line"]), item, prop, pos)
-                steps.append({"proposal": prop["id"], "step": "red_line", "position": pos["id"], "accepted": why is None,
-                              "refused": why})
-                if why:
-                    failed = True
-                    break
-                hit = hit or got == "yes"
-            if failed:
-                continue
-            if not mine:
-                piece["conflict"] = "not_stated"
-            else:
-                piece["conflict"] = "conflict" if hit or any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
-            user = _fill(block["open_point"], dict(base, **{"{changes}": value}))
-            got, why = _step_check("open_point", put("open_point", user, STEP_ANSWERS["open_point"]), item, prop)
-            steps.append({"proposal": prop["id"], "step": "open_point", "accepted": why is None, "refused": why})
-            if why:
-                continue
-            if got == "yes":
-                user = _fill(block["wording"], dict(base, **{"{changes}": value}))
-                wording, why = _step_check("wording", put("wording", user, None), item, prop)
-                steps.append({"proposal": prop["id"], "step": "wording", "accepted": why is None, "refused": why})
+            if decided[2] == "yes":
+                wording, why = generated("wording", block["wording"], dict(base, **{"{changes}": value}))
                 if why:
                     continue
                 piece.update(stance="counter", wording=wording)
             else:
                 piece["stance"] = "reject" if piece["conflict"] == "conflict" else "accept"
+            forecast()
     alignment = {}
     for art in item["articles"]:
         cells = {}
@@ -1223,9 +1624,14 @@ STEPWISE_DIR = "stepwise_steps"
 STEP_FORM = "step"
 
 
+def has_chain(item):
+    """An item the stepwise chain asks questions of: no game, at least one proposal."""
+    return not item.get("game") and any(a["proposals"] for a in item.get("articles") or [])
+
+
 def is_stepwise(config, prompt):
     return prompt.get("form") == "advice" and method_of(config, prompt.get("group")) == STEPWISE and \
-        not prompt["item"].get("game") and any(a["proposals"] for a in prompt["item"].get("articles") or [])
+        has_chain(prompt["item"])
 
 
 def step_answers(labels):
@@ -1262,9 +1668,10 @@ def stepwise_call(backend, prompt, config, limit, record, rows, verdict):
             text = result["text"]
         rows.append(row)
         record(row, result, text, error)
-        return text
+        return text, decision_probabilities(result.get("decision"))
 
-    return stepwise_advice(config, prompt["item"], ask, on_step=lambda entry: verdict(rows[-1], entry))
+    return stepwise_advice(config, prompt["item"], ask, on_step=lambda entry: verdict(rows[-1], entry),
+                           stance_context=prompt.get("stance_context"))
 
 
 REFUSED_CATEGORY = "method_refused"
@@ -1304,9 +1711,11 @@ def recompose_stepwise(config, prompt, step_rows, records):
         row = queue.pop(0)
         if row.get("step") != step or row.get("user_sha256") != _sha(user):
             raise ValueError("a saved step is not the chain's question: %s" % row.get("prompt_id"))
-        return step_texts(config, records.get(row.get("call_id")) or {})
+        record = records.get(row.get("call_id")) or {}
+        # D-756 item 3: a choice step's per-answer probabilities, as its reply record saved them (CHOICE-A).
+        return step_texts(config, record), decision_probabilities(record.get("decision") if record.get("backend_ok") else None)
 
-    reply, steps = stepwise_advice(config, prompt["item"], ask)
+    reply, steps = stepwise_advice(config, prompt["item"], ask, stance_context=prompt.get("stance_context"))
     if queue:
         raise ValueError("the pass holds more steps than the chain asks: %s" % prompt["prompt_id"])
     for row, entry in zip(step_rows, steps):
@@ -1431,6 +1840,8 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
                     parent = {"prompt_id": p["prompt_id"], "form": "advice", "group": group["group"], "method": STEPWISE,
                               "prompt_tokens": None, "max_new_tokens": int(p["max_new_tokens"]), "failure": None,
                               "seconds": None, "user_sha256": p["user_sha256"], "derived_from": None, "call_id": None}
+                    if p.get("stance_context") is not None:
+                        parent["stance_context"] = p["stance_context"]
                     rows.append(parent)
                     try:
                         reply, steps = stepwise_call(backend, p, config, limit, record, step_rows, verdict)
@@ -1498,6 +1909,8 @@ def answers_from_texts(value, texts, *, measured_audits=None, composed=None):
     for p in value["prompts"]:
         text = texts.get(p["prompt_id"])
         row = {"prompt_id": p["prompt_id"], "group": p["group"], "form": p["form"], "item_id": p["item_id"]}
+        if p.get("stance_context") is not None:
+            row["stance_context"] = p["stance_context"]
         if p["form"] == "advice":
             chain = (composed or {}).get(p["prompt_id"])
             row["reply"] = parse_advice(text, p["item"]) if chain is None else chain[0]
@@ -1505,13 +1918,20 @@ def answers_from_texts(value, texts, *, measured_audits=None, composed=None):
                 refused = Counter("%s:%s" % (s["step"], s["refused"]) for s in chain[1] if s["refused"])
                 row.update(method=STEPWISE, steps=len(chain[1]), steps_refused=dict(sorted(refused.items())))
             if p["group"] == "system_advice":
-                audits = {}
+                audits, flips = {}, {}
                 for d in (audit_prompts(config, p, text) if chain is None else audit_prompts(config, p, None, chain[0])):
                     sha, said = (measured_audits or {}).get(d["prompt_id"], (None, None))
                     if sha is not None and sha != d["user_sha256"]:
                         raise ValueError("an audit prompt the pass ran is not the rendering of its advice: %s" % d["prompt_id"])
-                    audits[d["proposal_id"]] = parse_audit(said, config) if sha is not None else None
+                    label = parse_audit(said, config) if sha is not None else None
+                    if d.get("kind") == CONFLICT_AUDIT:
+                        flips[(d["proposal_id"], d["position_id"])] = label
+                    else:
+                        audits[d["proposal_id"]] = label
                 row["audit"] = audits
+                if flips:
+                    row["reply"], counts = auditor_flip(row["reply"], flips)
+                    row["auditor_flip"] = dict(sorted(counts.items()))
         elif p["form"] == "judge":
             row.update(entry_id=p["entry"]["entry_id"], arm=p["entry"]["arm"], proposal_id=p["entry"]["proposal_id"],
                        grade=parse_judge(text))
@@ -1569,6 +1989,8 @@ def main(argv=None):
     b.add_argument("--form", required=True, choices=("advice",))
     b.add_argument("--groups", required=True)
     b.add_argument("--subset", type=Path, help="cloud_subset.json: the cloud reference's file, group b1 alone")
+    b.add_argument("--stance-contexts", default=None,
+                   help="D-756 item 5: the stepwise system advice built once per arm, e.g. full,trimmed")
     b.add_argument("--out", required=True, type=Path)
     r = sub.add_parser("run", allow_abbrev=False)
     r.add_argument("--prompts", required=True, type=Path)
@@ -1583,7 +2005,9 @@ def main(argv=None):
     t.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
     if args.command == "build":
-        value = build(args.set, args.form, [g for g in args.groups.split(",") if g], args.out, subset=args.subset)
+        value = build(args.set, args.form, [g for g in args.groups.split(",") if g], args.out, subset=args.subset,
+                      stance_contexts=None if args.stance_contexts is None
+                      else [c for c in args.stance_contexts.split(",") if c])
         print(json.dumps({"prompts": value["prompt_count"]}))
     elif args.command == "run":
         result = run(args.prompts, args.out)

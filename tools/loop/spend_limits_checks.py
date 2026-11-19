@@ -22,6 +22,7 @@ import fs_listing as fs  # noqa: E402
 
 START = 1_800_000_000.0
 RATE = 1.29
+HARD_STOP = 600.0      # the ledger's budget line (the reaper's hard stop), above every declared remaining ceiling
 
 
 def minutes_for(usd, rate=RATE):
@@ -33,7 +34,7 @@ def ledger_with_spend(base, spend):
     """A budget line at the real figures (601, hard stop 600) and one closed launch that cost `spend`."""
     path = Path(base) / 'budget_ledger.jsonl'
     t = guard.utc(START - 86400)
-    lines = [dict(event='budget_open', time_utc=t, loop_start_utc=t, budget_usd=601.0, hard_stop_usd=600.0,
+    lines = [dict(event='budget_open', time_utc=t, loop_start_utc=t, budget_usd=HARD_STOP + 1.0, hard_stop_usd=HARD_STOP,
                   storage_usd_per_day=0.0, a10_reference_price_usd_per_hour=RATE),
              dict(event='launch', time_utc=t, launch_requested_utc=t, instance_id='e' * 32,
                   instance_name='shimmer-loop-past', price_usd_per_hour=RATE, deadline_utc=guard.utc(START - 3600)),
@@ -71,7 +72,7 @@ def proof_step_five_admitted_five_point_oh_one_refused(base):
     ledger = ledger_with_spend(base, 250.0)
     admitted = decide(ledger, 5.00, limits)
     assert round(admitted['forecast_usd'], 2) == 5.00 and admitted['step_rule'] == 'pre-approved', admitted
-    assert admitted['step_preapproved_usd'] == 5.0 and admitted['spend_limits_decision'] == 'D-708', admitted
+    assert admitted['step_preapproved_usd'] == 5.0 and admitted['spend_limits_decision'] == limits['decision'], admitted
     said = refusal(lambda: decide(ledger, 5.01, limits))
     assert said and 'per-step pre-approval' in said and 'ask Seckin' in said, said
     # his word, recorded under a decision, admits exactly what it approves
@@ -82,23 +83,37 @@ def proof_step_five_admitted_five_point_oh_one_refused(base):
                                                            step_approval=dict(usd=6.0, source='yes'))) or '')
 
 
-def proof_remaining_limit_is_140_from_197(base):
-    """The declared remaining-spend limit is 140 USD from the 197 USD baseline (ceiling 337): a spend of 328
-    (131 since the baseline, over 120 and under 140) still admits a 4 USD step; a spend of 333 refuses it by
-    the remaining limit, though the budget's own hard stop (600) would admit it; the cap never passes it."""
+def declared_history_entry(limits):
+    """The history entry of config/loop_spend_limits.json that the top-level figures come from: the newest one
+    naming a remaining_limit_usd, which must carry the top-level decision and limit (else the file disagrees)."""
+    raw = json.loads(Path(guard.SPEND_LIMITS).read_text(encoding='utf-8'))
+    named = [h for h in raw.get('history') or [] if 'remaining_limit_usd' in h]
+    return named[-1] if named else None
+
+
+def proof_remaining_limit_from_the_declared_baseline(base):
+    """The remaining-spend limit is the declared one from the declared baseline (D-749: 203 USD from 197, ceiling
+    400; D-708 was 140, ceiling 337), read from the file as it is, never typed in here: a spend 9 USD under the
+    ceiling still admits a 4 USD step; a spend 4 USD under it refuses that step by the remaining limit, though
+    the budget's own hard stop would admit it; the cap never passes the ceiling."""
     limits = guard.read_spend_limits()
-    assert (limits['remaining_limit_usd'], limits['remaining_baseline_usd'], limits['remaining_ceiling_usd']) \
-        == (140.0, 197.0, 337.0), limits
+    ceiling = limits['remaining_ceiling_usd']
+    assert ceiling == limits['remaining_baseline_usd'] + limits['remaining_limit_usd'], limits
+    newest = declared_history_entry(limits)
+    assert newest and (newest['decision'], newest['remaining_limit_usd'])         == (limits['decision'], limits['remaining_limit_usd']), (newest, limits)
+    assert ceiling + 10.0 < HARD_STOP, limits          # the fixture's hard stop must lie above the ceiling
     overrun = guard.overrun_reserve([], RATE)
-    above_120 = decide(ledger_with_spend(base, 328.0), 4.0, limits)
-    assert above_120['remaining_ceiling_usd'] == 337.0 and above_120['cap_usd'] >= above_120['forecast_usd'], above_120
-    assert abs(above_120['remaining_left_usd'] - (337.0 - 328.0 - overrun)) < 1e-6, above_120
-    tight = ledger_with_spend(base, 333.0)
+    under = decide(ledger_with_spend(base, ceiling - 9.0), 4.0, limits)
+    assert under['remaining_ceiling_usd'] == ceiling and under['cap_usd'] >= under['forecast_usd'], under
+    assert abs(under['remaining_left_usd'] - (9.0 - overrun)) < 1e-6, under
+    tight = ledger_with_spend(base, ceiling - 4.0)
     said = refusal(lambda: decide(tight, 4.0, limits))
-    assert said and 'remaining-spend limit' in said and '140.00 dollars from the 197.00 dollar baseline' in said, said
+    expected = '%.2f dollars from the %.2f dollar baseline' % (limits['remaining_limit_usd'],
+                                                              limits['remaining_baseline_usd'])
+    assert said and 'remaining-spend limit' in said and expected in said, said
     assert decide(tight, 4.0, None)['cap_usd'] >= 4.0       # the hard stop alone admits it: the limit refused it
-    near = decide(ledger_with_spend(base, 331.5), 4.0, limits)
-    assert near['cap_usd'] <= 337.0 - 331.5 - overrun + 1e-6 < guard.CAP_FACTOR * near['forecast_usd'], near
+    near = decide(ledger_with_spend(base, ceiling - 5.5), 4.0, limits)
+    assert near['cap_usd'] <= 5.5 - overrun + 1e-6 < guard.CAP_FACTOR * near['forecast_usd'], near
 
 
 def proof_a_real_launch_reads_the_file_at_call_time(base):
@@ -150,7 +165,7 @@ def proof_listing_cap_follows_the_declared_step(base):
         guard.SPEND_LIMITS = saved
 
 
-PROOFS = [proof_step_five_admitted_five_point_oh_one_refused, proof_remaining_limit_is_140_from_197,
+PROOFS = [proof_step_five_admitted_five_point_oh_one_refused, proof_remaining_limit_from_the_declared_baseline,
           proof_a_real_launch_reads_the_file_at_call_time, proof_listing_cap_follows_the_declared_step]
 
 
@@ -171,7 +186,7 @@ NEUTRALISE = {
     # the per-step rule admits everything: a 5.01 USD step goes ahead with no question
     'proof_step_five_admitted_five_point_oh_one_refused': patch_attr(guard, 'step_rule', lambda f, l, a=None: 'pre-approved'),
     # the remaining-spend refusal removed: only the cap rule is left, with another message
-    'proof_remaining_limit_is_140_from_197': patch_attr(guard, 'remaining_refusal', lambda committed, forecast, limits:
+    'proof_remaining_limit_from_the_declared_baseline': patch_attr(guard, 'remaining_refusal', lambda committed, forecast, limits:
                                                          round(limits['remaining_ceiling_usd'] - committed, 4)),
     # a real launch no longer reads the file: no limit applies
     'proof_a_real_launch_reads_the_file_at_call_time': patch_attr(guard, 'read_spend_limits', lambda path=None: None),
@@ -191,6 +206,12 @@ def neutralised(proof):
     return False
 
 
+def _declared_figures():
+    limits = guard.read_spend_limits()
+    return (limits['decision'], limits['remaining_limit_usd'], limits['remaining_baseline_usd'],
+            limits['remaining_ceiling_usd'])
+
+
 def check():
     passed = []
     for proof in PROOFS:
@@ -204,9 +225,10 @@ def check():
         passed.append(proof.__name__)
     return 'PASS', ('%d proofs, each neutralise, fail, restore, pass, fixtures and the declared file only: a 5.00 USD '
                     'step admitted with no question and a 5.01 USD one refused unless approved under a decision; the '
-                    'remaining-spend limit 140 USD from the 197 USD baseline (ceiling 337) refusing a forecast past '
-                    'it that the hard stop would admit; a real launch reading config/loop_spend_limits.json at call '
-                    'time; the listing cap following the declared step' % len(passed))
+                    'declared remaining-spend limit from the declared baseline (%s: %.0f USD from %.0f, ceiling %.0f) '
+                    'refusing a forecast past it that the hard stop would admit; a real launch reading config/loop_spend_limits.json at call '
+                    'time; the listing cap following the declared step'
+                    % ((len(passed),) + _declared_figures()))
 
 
 if __name__ == '__main__':

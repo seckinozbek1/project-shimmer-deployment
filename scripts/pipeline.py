@@ -295,7 +295,26 @@ def _typed_for_agent(payload):
     return payload
 
 
-def _stamp_source_rule_ids(items, convention_registry):
+OFF_TASK_FIELD = "off_task"
+OFF_TASK_SOURCE_RULE_ID_FIELD = "off_task_source_rule_id"
+OFF_TASK_FIDELITY_ON_CELL_RULE = "fidelity_record_on_cell_rule"
+
+
+def _fidelity_agent(agent) -> bool:
+    """The phase-5 extraction-fidelity agents (VERIFIER, the AUDITOR family): they judge
+    whether an extraction matches its source, never a rule's claim."""
+    name = str(agent or "").upper()
+    return name == "VERIFIER" or name.startswith("AUDITOR")
+
+
+def _cell_rule_ids(convention_registry):
+    if not isinstance(convention_registry, dict):
+        return set()
+    import cell_selection
+    return {c.get("id") for c in cell_selection.declared(convention_registry.get("conventions"))}
+
+
+def _stamp_source_rule_ids(items, convention_registry, agent=None):
     """Carry the operator's own rule id alongside the registry id.
 
     The convention parser mints CONV-NNN because that is the only form the
@@ -303,14 +322,30 @@ def _stamp_source_rule_ids(items, convention_registry):
     rule's `category`. Without this, a finding can only ever be attributed to the
     renumbered id, and a reader comparing the review against the operator's own
     rule list has to do the mapping by hand. Items that carry no recognisable rule
-    id are returned untouched."""
+    id are returned untouched.
+
+    S4/P3 (SciTab item 21): on a rule declaring `[compare: cells]` only the cell step
+    (judged path cell_claim) decides the claim. A fidelity agent's record naming such a
+    rule does not carry its source_rule_id as a verdict: the id moves to
+    `off_task_source_rule_id` and the record is marked `off_task`, kept visible
+    (HONEST-OUTPUT-A), deciding nothing for that rule."""
     out = []
+    cell_rules = _cell_rule_ids(convention_registry) if _fidelity_agent(agent) else set()
     for item in items or []:
         if not isinstance(item, dict):
             out.append(item)
             continue
         rule = finding_record.resolved_rule_id(item)
         source = finding_record.source_rule_id_for(rule, convention_registry)
+        if (rule in cell_rules and item.get(paired_review_mod.JUDGED_PATH_FIELD)
+                != paired_review_mod.JUDGED_PATH_CELL_CLAIM):
+            item = dict(item)
+            off = item.pop("source_rule_id", None) or source
+            if off:
+                item[OFF_TASK_SOURCE_RULE_ID_FIELD] = off
+            item[OFF_TASK_FIELD] = OFF_TASK_FIDELITY_ON_CELL_RULE
+            out.append(item)
+            continue
         if source and not item.get("source_rule_id"):
             item = dict(item)
             item["source_rule_id"] = source
@@ -1155,6 +1190,31 @@ def resolve_review_mode(review_mode, backend_profile):
     if review_mode:
         return review_mode
     return "paired" if backend_profile == "local" else "wide"
+
+
+def record_cell_threshold_missing(orch, convention_registry, review_mode, run_id=""):
+    """SciTab P6: a paired run whose rules declare `[compare: cells]` with no measured cell_claim
+    threshold says so loudly in phase 0, before any model call: one ERROR-level log event, one
+    stderr line, and the record on `orch.run_flags`, which the run summary carries. The run is not
+    refused (N1 asks and saves the probabilities). A wide run asks no cell question. Returns the record."""
+    if review_mode != "paired":
+        return None
+    import cell_selection
+    record = cell_selection.missing_threshold((convention_registry or {}).get("conventions") or [])
+    if record is None:
+        return None
+    rules = ",".join(str(i) for i in record["cell_threshold_missing"])
+    log_event(_LOG, "cell_threshold_missing rules=%s family=%s decisions_unsettled=true"
+              % (rules, record["threshold_family"]), level="error", run_id=run_id, phase="0")
+    print("[pipeline] ERROR cell step: no %s threshold is measured, so no decision on rules %s will settle; "
+          "the answer probabilities are saved and a figure from this run is a default until a threshold is chosen"
+          % (record["threshold_family"], rules), file=sys.stderr, flush=True)
+    flags = getattr(orch, "run_flags", None)
+    if not isinstance(flags, dict):
+        flags = {}
+        orch.run_flags = flags
+    flags.update(record)
+    return record
 
 
 def _is_local_profile():
@@ -3874,7 +3934,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         # model findings in the run log.)
         upstream_findings = {
             name: _stamp_source_rule_ids(finding_record.stamp_written_by(
-                results, _items_for(results, name, doc_id=doc["id"]) or []), convention_registry)
+                results, _items_for(results, name, doc_id=doc["id"]) or []), convention_registry, name)
             for name, results in (("PRACTICE_AUDITOR", conv_review), ("STYLE_GUARDIAN", conv_review),
                                   ("VERIFIER", audit), ("FACT_CHECKER", audit),
                                   ("LEGAL_ANALYST", production))
@@ -5632,6 +5692,7 @@ def main(argv=None):
     convention_review_enabled = bool(conv_registry_dict.get("conventions"))
     log_event(_LOG, f"convention_registry rules={len(conv_registry_dict.get('conventions', []))} "
                     f"review_enabled={convention_review_enabled}", run_id=run_ctx.run_id, phase="0")
+    record_cell_threshold_missing(orch, conv_registry_dict, args.review_mode, run_id=run_ctx.run_id)
 
     # THREE-D: the second rule set, and the conflicts between it and the
     # operator's own conventions.

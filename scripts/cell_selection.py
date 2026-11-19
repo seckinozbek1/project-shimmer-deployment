@@ -22,7 +22,11 @@ the comparison. Above the declared caps the lowest ranked are left out, and the 
 
 A claim that shares a word or a figure with no row and no column of a document's one table, the
 table being within the caps, is shown the whole table (`selected_by: whole_table`): these tables are
-small, and silence would lose the claim for nothing. It is still only Python's evidence.
+small, and silence would lose the claim for nothing. It is still only Python's evidence. A table the
+claim does name is shown whole too, caption and every cell, when its body cells (rows times columns)
+are within the declared `whole_table_max_cells` (`selected_by: small_table`, N4): no cut then hides
+what the claim needs. The bound is a size, never fitted to a claim or a score. The verdict stays the
+model's and Python's checks only lower it (TABLE-AUTHORITY-A).
 
 Two paths differ, and a figure from one is no figure of the other. The replay selects on a document's
 whole text for the claim alone, with no embedding; `review` selects per unit, with the embedding
@@ -69,6 +73,10 @@ import pairing_map
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "cell_selection.json"
 NO_TABLE, NO_MATCH, TIE = "no_table", "no_match", "tie"
 COMPARE_CELLS = "cells"
+# N4: a table the claim names, small by the declared `whole_table_max_cells`, is shown whole; it is
+# still a table the claim named, so a document's whole tables of no match give way to it as to labels.
+SMALL_TABLE = "small_table"
+NAMED_BY = ("labels", SMALL_TABLE)
 # Python's sentence on a decided finding: its catalog row reads these words (as passage_pairs').
 DECISION_NOTE = "Decided from the model's own answer probabilities on the cells Python selected; it wrote no text: %s, confidence %.3f."
 # What a review survives: any failure of a call, so a document never loses its computed findings.
@@ -370,9 +378,15 @@ def _within_caps(table, config):
     return len(table["rows"]) <= config["max_rows"] and len(table["header"]) <= config["max_columns"]
 
 
-def _whole(table, of_tables):
+def _small(table, config):
+    """N4 (Seckin 01:11): whether a table's body cells (rows times columns) are within the declared
+    `whole_table_max_cells`; absent or 0, no table is small. A size bound only, read on the table."""
+    return len(table["rows"]) * len(table["header"]) <= int(config.get("whole_table_max_cells") or 0)
+
+
+def _whole(table, of_tables, chosen=0, selected_by="whole_table"):
     rows, columns = list(range(len(table["rows"]))), list(range(len(table["header"])))
-    return {"selected": True, "refused": None, "selected_by": "whole_table", "table": 0, "of_tables": of_tables,
+    return {"selected": True, "refused": None, "selected_by": selected_by, "table": chosen, "of_tables": of_tables,
             "of_rows": len(rows), "of_columns": len(columns), "named_rows": 0, "named_columns": 0,
             "cells": render(table, rows, columns), "rows": rows, "columns": columns, "left_out_rows": 0,
             "left_out_columns": 0, "ranked_by": None}
@@ -401,14 +415,24 @@ def select(text, claim, config, embed_with=None):
     chosen = strength.index(best)
     table = found[chosen]
     rows, columns, keys = ranked[chosen]
+    # N4: the table the claim names, when small, is shown whole with its caption, nothing cut.
+    if _small(table, config):
+        named = _whole(table, len(found), chosen, SMALL_TABLE)
+        named.update(named_rows=sum(1 for r in rows if _matched(r)),
+                     named_columns=sum(1 for i, c in enumerate(columns) if _matched(c) and i not in keys))
+        return named
     # The embedding only orders what a cut would choose between, so with no cut it is not asked.
     cut_ahead = (len(table["rows"]) > min(config["fill_rows"], config["max_rows"])
                  or len(columns) - len(keys) > max(config["max_columns"] - len(keys), 1))
     row_extra, column_extra = _embedded(table, keys, claim, embed_with if cut_ahead else None)
-    # A column is kept only when named, or all of them when none is. Key columns stand outside it.
+    # A column is kept when named, or all of them when none is. Key columns stand outside it. Named
+    # columns are filled with unnamed ones up to `fill_columns` (0 when not declared), as rows are, so a
+    # named label column cannot crowd out the figures.
     named_columns = [i for i in _order(columns, column_extra) if _matched(columns[i]) and i not in keys]
     others = [i for i in range(len(columns)) if i not in keys]
-    wanted_columns = named_columns or others
+    unnamed_columns = [i for i in _order(columns, column_extra) if not _matched(columns[i]) and i not in keys]
+    column_fill = max(config.get("fill_columns", 0) - len(named_columns), 0)
+    wanted_columns = named_columns + unnamed_columns[:column_fill] if named_columns else others
     room = max(config["max_columns"] - len(keys), 1)
     kept_columns, column_tie = _cut(wanted_columns, columns, room)
     named_rows = [i for i in _order(rows, row_extra) if _matched(rows[i])]
@@ -444,6 +468,22 @@ def question(config, cells, claim, contracts=None, results=""):
 
 def threshold_of(config):
     return choice_decision.threshold(config["decision"]["threshold_family"])
+
+
+def missing_threshold(rules, config=None):
+    """SciTab P6 (Seckin 19 Nov 01:11, changed by the lead 01:25): the record a run states before any
+    model call when a rule declares `[compare: cells]` and no threshold is measured for the cell
+    step's family, None otherwise. The run is not refused: the step still asks and saves the answer
+    probabilities (N1), but no decision settles, so a figure from it is a scorer's default unless a
+    threshold is chosen later (the silent 0.225 of 19 Nov)."""
+    ids = [r.get("id") for r in declared(rules)]
+    if not ids:
+        return None
+    config = load_config() if config is None else config
+    if threshold_of(config) is not None:
+        return None
+    return {"cell_threshold_missing": ids, "threshold_family": config["decision"]["threshold_family"],
+            "decisions_unsettled": True}
 
 
 def call(wrapper, stable, dynamic, config):
@@ -523,8 +563,8 @@ def _selections(units, claim, config, embed_with, calls, on_selected=None):
             calls["selection_refused"].append({"unit_id": unit.get("unit_id"), "reason": selection["refused"]})
             if on_selected:
                 on_selected(unit, None, judge_agent.find_cells_row(selection))
-    if any(s["selected_by"] == "labels" for _, s in chosen):
-        kept = [(u, s) for u, s in chosen if s["selected_by"] == "labels"]
+    if any(s["selected_by"] in NAMED_BY for _, s in chosen):
+        kept = [(u, s) for u, s in chosen if s["selected_by"] in NAMED_BY]
         calls["whole_tables_left"] = len(chosen) - len(kept)
         chosen = kept
     calls["whole_table"] = sum(1 for _, s in chosen if s["selected_by"] == "whole_table")
@@ -563,9 +603,9 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
                                                         prompt, rows))
     records = []
     if threshold_of(config) is None:
-        calls["not_asked"] = "no question asked: no threshold measured for " + config["decision"]["threshold_family"]
-        calls["why"] = "cells_no_threshold"
-        return records, calls
+        # N1 (Seckin 19 Nov 01:11): asked all the same; each answer's probabilities stand on its reply
+        # record and its row, every decision UNSETTLED (no_threshold), so no record is written.
+        calls["no_threshold"] = config["decision"]["threshold_family"]
     streak = 0
     try:
         chosen = _selections(units, rule.get("rule") or "", config, embed_with, calls, on_selected=tools)
@@ -647,6 +687,8 @@ def unjudged(rule_id, calls):
         why, reason = "cells_some_failed", "%d of %d calls failed" % (calls["failed"], calls["made"])
     elif not calls["made"]:
         why, reason = "cells_none", "no question asked: %d tables, %d selections refused" % (calls["tables"], len(calls["selection_refused"]))
+    elif calls.get("no_threshold"):
+        why, reason = "cells_no_threshold", "asked, nothing decided: no threshold measured for " + calls["no_threshold"]
     else:
         return None
     return {"unit_id": None, "rule_id": rule_id, "kind": "cell_claim", "reason": reason, "why": why,

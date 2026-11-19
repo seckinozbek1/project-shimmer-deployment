@@ -12,6 +12,13 @@ compares the SHA-256 of every restored file with the live copy. The drill reads 
 files only, writes only inside its own new folder (and drill_result.json there), deletes nothing, and says
 the folder's path. PASS when every kind found a part and every file matched; exit 0 on PASS, 1 on FAIL, 2
 when refused.
+
+Drive files and downloads (D-763, 19 November 2026): the drive kind reads an archive only when Windows shows
+it is already local (no OFFLINE, RECALL_ON_OPEN or RECALL_ON_DATA_ACCESS attribute, read by os.stat) and it
+is at most restore_drill.local_max_bytes, or when it is cloud-only and at most
+restore_drill.cloud_only_max_bytes (config/drive_no_download.json, read at call time); any other archive is
+refused before it is opened, so the drill never streams a whole cloud archive. Its content list comes from
+the local manifest copy (backup_coverage.drive_archives), never from Drive.
 """
 from __future__ import annotations
 
@@ -32,7 +39,6 @@ import backup_coverage as cov  # noqa: E402
 
 KINDS = ('git', 'drive')
 SMALL = 20 * 1024 * 1024        # a drilled part is at most this many bytes
-ARCHIVE_MAX = cov.LIST_MAX      # a drive drill reads an archive at most this large
 
 
 class DrillRefused(Exception):
@@ -111,23 +117,44 @@ def restore_git(paths, part, dest):
     return set(wanted), 'git %s' % (commit or '')[:12]
 
 
+def read_refusal(path, config=None):
+    """Why the drill must not read this Drive archive ('' when it may): stat only, never its content."""
+    limits = (cov.no_download_config() if config is None else config).get('restore_drill') or {}
+    size = cov.drive_stat(path).st_size
+    if cov.cloud_only(path):
+        cap = int(limits.get('cloud_only_max_bytes', 0))
+        if size > cap:
+            return 'cloud-only on Drive, %d bytes above the declared cloud_only_max_bytes %d: not read' % (size, cap)
+        return ''
+    cap = int(limits.get('local_max_bytes', 0))
+    if size > cap:
+        return 'local, %d bytes above the declared local_max_bytes %d: not read' % (size, cap)
+    return ''
+
+
 def pick_archive(paths, part, live):
-    """The newest verified archive with a content list that holds every live file of the part."""
+    """(the newest verified archive with a content list that holds every live file of the part and may be
+    read, [refusals of the holding archives that may not])."""
     lines = cov.read_log(paths['log'])
-    best = None
+    config = cov.no_download_config()
+    best, refused = None, []
     for a in cov.drive_archives(lines, paths['drive'], paths['main']):
-        if a.members is None or a.path.stat().st_size > ARCHIVE_MAX:
+        if a.members is None:
             continue
         if all(cov.drive_holds(a, lg, i[1], i[2], i[3]) for lg, i in live.items()):
-            if best is None or a.when > best.when:
+            why = read_refusal(a.path, config)
+            if why:
+                refused.append(why)
+            elif best is None or a.when > best.when:
                 best = a
-    return best
+    return best, refused
 
 
 def restore_drive(paths, part, dest, live):
-    a = pick_archive(paths, part, live)
+    a, refused = pick_archive(paths, part, live)
     if a is None:
-        raise DrillRefused('no small verified archive with a content list holds %s' % part)
+        raise DrillRefused('no readable verified archive with a content list holds %s%s' % (
+            part, ('; ' + refused[0]) if refused else ''))
     prefix = a.line.get('arc_prefix', 'external/' if a.line.get('tool') == 'drive_external' else '')
     got = set()
     if a.path.suffix == '.zip':

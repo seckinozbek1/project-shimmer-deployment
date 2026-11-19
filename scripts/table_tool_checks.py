@@ -405,7 +405,9 @@ def proofs_d():
 WORDS = "\n".join(("## Roles", "", "Table 4: Roles by team.", "", "| Team | Lead | Region |", "|---|---|---|",
                    "| Northern | Avery | Coast |", "| Southern | Blake | Inland |", ""))
 WORDS_LONG = "\n".join(("## Roles", "", "Table 5: Roles by team.", "", "| Team | Lead | Region |", "|---|---|---|")
-                       + tuple("| Team%s | Lead%s | Region%s |" % (chr(65 + i), chr(65 + i), chr(65 + i)) for i in range(15)) + ("",))
+                       + tuple("| Team%s | Lead%s | Region%s |" % ((chr(65 + i) if i < 26 else "Z%d" % i,) * 3)
+                               # above the shipped whole_table_max_cells (N4), so the selection cuts it
+                               for i in range(max(15, cell_selection.load_config()["whole_table_max_cells"] // 3 + 1))) + ("",))
 WORDS_RULE = dict(RULE, rule="The Northern team is led by Avery.")
 WORDS_LONG_RULE = dict(RULE, rule="TeamA is led by LeadA on RegionA.")
 

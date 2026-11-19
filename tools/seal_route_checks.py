@@ -791,20 +791,33 @@ def proof_driver_gates_and_logs_one_reading(drv=None):
 
 
 def proof_driver_gate_holds_the_disk_floor(drv=None):
-    """D-099: the gate admits a step only when the disk free after the step's own expected size stays at
-    or above standing_orders_check.DISK_FLOOR, read at the gate (moved here to 40 GiB, the gate follows
-    it); one byte short waits."""
+    """Seckin 19 Nov 2026 12:03 (replacing the fixed D-099 floor): the gate admits a step only when the disk free
+    after the step's own expected size stays at or above the margin of config/laptop_disk_floor.json, read at the
+    gate (moved here to 40 GiB in a fixture file, the gate follows it); one byte short waits; a step with no known
+    size is held to the 30 GiB fallback, never to the margin alone."""
     import seal_route_driver as driver
-    import standing_orders_check as orders
+    import launch_floors as lf
     drv = drv or driver
     expected = drv.EXPECTED_BYTES["seal"]
-    with patch.object(orders, "DISK_FLOOR", 40 * 2 ** 30):
-        floor = orders.DISK_FLOOR
-        at = dict(memory_gb=4.0, disk_gb=99.0, disk_bytes=floor + expected, other_seals=0)
-        short = dict(at, disk_bytes=floor + expected - 1)
-        between = dict(at, disk_bytes=35 * 2 ** 30)   # above the shipped 30 GiB, below the moved floor
-        out = {"at the floor admitted": drv.admits(at, expected), "one byte short waits": not drv.admits(short, expected),
-               "the floor read, not copied": not drv.admits(between, expected)}
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = Path(tmp) / "laptop_disk_floor.json"
+        cfg.write_text(json.dumps({"margin_gib": 40, "lambda_launch_floor_gib": 12}), encoding="utf-8")
+        with patch.object(lf, "DISK_CONFIG", cfg):
+            floor = 40 * 2 ** 30
+            at = dict(memory_gb=4.0, disk_gb=99.0, disk_bytes=floor + expected, other_seals=0)
+            short = dict(at, disk_bytes=floor + expected - 1)
+            between = dict(at, disk_bytes=35 * 2 ** 30)   # above the shipped 12 GiB margin, below the moved one
+            out = {"at the floor admitted": drv.admits(at, expected),
+                   "one byte short waits": not drv.admits(short, expected),
+                   "the floor read, not copied": not drv.admits(between, expected)}
+        # The shipped rule: 20 GiB free admits the seal (512 MiB + 12 GiB); an unknown step at 20 GiB is refused.
+        twenty = dict(memory_gb=4.0, disk_gb=20.0, disk_bytes=20 * 2 ** 30, other_seals=0)
+        out["shipped margin admits the seal at 20 GiB"] = drv.admits(twenty, expected)
+        try:
+            drv.wait_for_room("an unsized step", None, tmp, read=lambda p: twenty, wait=False, clock=lambda: 1.0)
+            out["an unknown footprint held to the fallback"] = False
+        except Exception as exc:
+            out["an unknown footprint held to the fallback"] = "No room" in str(exc) and "floor 30.0 GiB" in str(exc)
     return all(out.values()), "; ".join("%s %s" % (k, v) for k, v in out.items())
 
 
@@ -1310,7 +1323,7 @@ PROOFS = [
     ("unit 4: the admission holds a record job to its request", "proof_the_admission_holds_a_record_job_to_its_request"),
     ("the laptop driver admits returned bundles and refuses a stale read copy", "proof_driver_admits_returned_bundles"),
     ("the laptop driver gates a heavy step on one reading and logs that reading", "proof_driver_gates_and_logs_one_reading"),
-    ("the gate holds the D-099 disk floor after the step's expected size", "proof_driver_gate_holds_the_disk_floor"),
+    ("the gate holds the laptop disk margin after the step's expected size", "proof_driver_gate_holds_the_disk_floor"),
     ("a large input that changes while it is hashed gets no digest", "proof_input_changed_while_hashed_refused"),
     ("hash-once reaches the sealer: the archive keyed by the path it opens, the full digest taken", "proof_hash_once_reaches_the_sealer"),
     ("the gated seal reads the disk of its output drive", "proof_seal_command_reads_the_output_drive"),
@@ -1495,12 +1508,21 @@ NEUTRALISATIONS = [
         "if record and sys.platform == 'linux':", "if record:")),
     ("the project archive left in the returned bundle", "proof_job_end_to_end", _swap("proof_job_end_to_end",
         "row['store'] = store_project(bundle, store)", "row['store'] = None")),
-    ("the disk floor copied into the gate", "proof_driver_gate_holds_the_disk_floor", _swap_module(
+    ("the disk margin copied into the gate", "proof_driver_gate_holds_the_disk_floor", _swap_module(
         "proof_driver_gate_holds_the_disk_floor", "drv", ROOT / "tools" / "seal_route_driver.py",
-        "and disk - expected_bytes >= orders.DISK_FLOOR)", "and disk - expected_bytes >= 30 * 2 ** 30)")),
+        "    return int(launch_floors.margin_gib()[0] * 2 ** 30)\n\n\ndef admits(",
+        "    return int(12.0 * 2 ** 30)\n\n\ndef admits(")),
+    ("the old fixed 30 GiB floor kept", "proof_driver_gate_holds_the_disk_floor", _swap_module(
+        "proof_driver_gate_holds_the_disk_floor", "drv", ROOT / "tools" / "seal_route_driver.py",
+        "    return int(launch_floors.margin_gib()[0] * 2 ** 30)\n\n\ndef admits(",
+        "    return int(30.0 * 2 ** 30)\n\n\ndef admits(")),
     ("the step's expected size not counted", "proof_driver_gate_holds_the_disk_floor", _swap_module(
         "proof_driver_gate_holds_the_disk_floor", "drv", ROOT / "tools" / "seal_route_driver.py",
-        "and disk - expected_bytes >= orders.DISK_FLOOR)", "and disk >= orders.DISK_FLOOR)")),
+        "and disk - expected_bytes >= disk_floor_bytes(floor_bytes))", "and disk >= disk_floor_bytes(floor_bytes))")),
+    ("an unknown footprint held to the margin alone", "proof_driver_gate_holds_the_disk_floor", _swap_module(
+        "proof_driver_gate_holds_the_disk_floor", "drv", ROOT / "tools" / "seal_route_driver.py",
+        "            floor_bytes = int(launch_floors.required_gib(None)[0] * 2 ** 30)",
+        "            floor_bytes = None")),
     ("a second reading logged after the gate", "proof_driver_gates_and_logs_one_reading", _swap_module(
         "proof_driver_gates_and_logs_one_reading", "drv", ROOT / "tools" / "seal_route_driver.py",
         "line = dict(reading, step=step, event='start',", "line = dict(read(disk_path), step=step, event='start',")),
@@ -1596,7 +1618,7 @@ NEUTRALISATIONS = [
                   "                sr.require(problem is None, problem or '')", "                pass")),
     ("a request written under the disk floor", "proof_the_request_command_writes_and_checks_a_request",
      _swap_module("proof_the_request_command_writes_and_checks_a_request", "drv", DRIVER,
-                  "    sr.require(free >= REQUEST_DISK_FLOOR_GIB,", "    sr.require(True,")),
+                  "    sr.require(free >= floor,", "    sr.require(True,")),
     ("the request's budget block without the ledgers the sealer reads", "proof_the_request_command_writes_and_checks_a_request",
      _swap_module("proof_the_request_command_writes_and_checks_a_request", "drv", DRIVER,
                   "    return dict(ledgers=[Path(p) for p in ledgers], forecast_minutes=forecast_minutes,",
@@ -2474,7 +2496,7 @@ def proof_the_request_command_writes_and_checks_a_request(drv=None):
     """The request command (order 85, D-675): the driver's `request` writes a seal request and checks it as the bound
     wrapper will (request_error against this checkout's controller), printing counts only, and hands write_request the
     budget block the sealer's own command line builds (the ledgers, the declared types, uncompared), which the real
-    budget_fields reads; refused before anything is written when the output drive is under REQUEST_DISK_FLOOR_GIB
+    budget_fields reads; refused before anything is written when the output drive is under request_floor_gib() (12 GiB)
     (order 91); and refused when the written request does not check (a file changed as it is written)."""
     import io
     import seal_route_driver as driver

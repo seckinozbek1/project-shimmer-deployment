@@ -19,6 +19,11 @@ The role session's tools, which read items and keys in its own folder (never the
     handback         --set S --out F    counts only
     power            --set S --k K --out F    the power record of claim A1 at opening k's alpha (plan section 7.3)
     score            --set S --configuration C --k K --b1 A --system A --cloud A --judge A [--per-item-out F]
+    dev-figures      --set S --system A [--stance-context full|trimmed] [--config F] [--resamples N]
+                                        D-756: N1 (oppose recall and precision over positions) and P3 (conflict
+                                        by the declared margin threshold, with and without), beside the bar
+    tune-threshold   --set S --system A --split F --deciding F [--stance-context X]
+                                        D-756: P3's threshold picked on a split that is not the deciding set
 
 The plan amendments (docs/loop/stages/NEG_PLAN_AMENDMENTS.md): AM-1, a field whose reference gives one class
 is at the bar only at 100 percent raw agreement, labelled "single class, kappa undefined" (sample-read,
@@ -333,6 +338,61 @@ def applicable(positions, party, article, number):
     mine = [p for p in positions if p["party"] == party and p["article"] == article]
     specific = [p for p in mine if p.get("proposal") == number]
     return specific if specific else [p for p in mine if p.get("proposal") is None]
+
+
+# D-758 (Seckin 22:15): the system's composition step may link an article-level position (mapped to the article,
+# proposal null) to the proposal under that article, from structure alone: the position's declared article id and
+# the item's own proposals on that article. Off unless config/neg_advisor_dev.json declares
+# `article_proposal_link: true`. No stance, quote, word, label or key is read: every article-level position is
+# treated alike, whatever its stance (the opposing ones are among them).
+ARTICLE_LINK_KEY = "article_proposal_link"
+LINK_REFUSALS = ("no_article", "article_not_in_excerpt", "no_proposal", "several_proposals")
+
+
+def link_article_positions(item):
+    """(item, record): `item` with each article-level position whose article holds exactly one proposal set to
+    that proposal (`proposal` 1, `linked_from` article); the record lists each link and each refusal with its
+    reason, counted: no_article (none declared), article_not_in_excerpt, no_proposal (the article holds none),
+    several_proposals (not linked: no structure says which; the position stays article-level, so the plan's
+    `applicable` still applies it to each proposal on which its party holds no proposal-level position). A
+    position already on a proposal is left as it is (proposal_level). The item given is never changed."""
+    counts = Counter({c: 0 for c in ("linked", "proposal_level") + LINK_REFUSALS})
+    linked, refused = [], []
+    by_id = {a["id"]: a for a in item.get("articles") or []}
+    out = []
+    for p in item.get("positions") or []:
+        if p.get("proposal") is not None:
+            counts["proposal_level"] += 1
+            out.append(p)
+            continue
+        aid = p.get("article")
+        if aid is None or aid == "":
+            why = "no_article"
+        elif aid not in by_id:
+            why = "article_not_in_excerpt"
+        else:
+            n = len(by_id[aid]["proposals"])
+            why = None if n == 1 else "no_proposal" if n == 0 else "several_proposals"
+        if why:
+            counts[why] += 1
+            refused.append({"position": p.get("id"), "article": aid, "reason": why})
+            out.append(p)
+        else:
+            counts["linked"] += 1
+            linked.append({"position": p["id"], "article": aid, "proposal": by_id[aid]["proposals"][0]["id"]})
+            out.append(dict(p, proposal=1, linked_from="article"))
+    return dict(item, positions=out), {"linked": linked, "refused": refused, "counts": counts}
+
+
+def linked_item(item, on, counts=None):
+    """The item the composition step reads: linked under D-758 when `on`, else the item itself; the link's
+    counts are added to `counts` when given."""
+    if not on or item.get("game"):
+        return item
+    out, record = link_article_positions(item)
+    if counts is not None:
+        counts.update(record["counts"])
+    return out
 
 
 def _sign(stances):
@@ -1609,8 +1669,31 @@ def registry_model(group):
     return registry["agents"][declared["agent"]]["model"]
 
 
-def replies_by_item(answers, group):
-    return {r["item_id"]: r for r in answers["rows"] if r["form"] == "advice" and r["group"] == group}
+def replies_by_item(answers, group, stance_context=None):
+    """{item id: advice row} of one group. D-756 item 5 (P8): a file whose system advice carries two stance
+    arms is read one arm at a time (`stance_context`, or `select_arm`); two rows of one item are refused,
+    never one of them silently taken."""
+    out = {}
+    for r in answers["rows"]:
+        if r["form"] != "advice" or r["group"] != group:
+            continue
+        if stance_context is not None and r.get("stance_context", na.FULL_CONTEXT) != stance_context:
+            continue
+        if r["item_id"] in out:
+            raise ValueError("an answers file holds two %s rows of item %s (two stance arms?): read one arm"
+                             % (group, r["item_id"]))
+        out[r["item_id"]] = r
+    return out
+
+
+def select_arm(answers, stance_context, group="system_advice"):
+    """The answers with `group`'s advice rows of one stance arm alone (a row with none marked is `full`), the
+    other rows unchanged; refused when the arm has no row."""
+    keep = [r for r in answers["rows"] if r.get("group") != group or r.get("form") != "advice"
+            or r.get("stance_context", na.FULL_CONTEXT) == stance_context]
+    if not any(r.get("group") == group and r.get("form") == "advice" for r in keep):
+        raise ValueError("the answers hold no %s row of the arm %s" % (group, stance_context))
+    return dict(answers, rows=keep)
 
 
 def _cell(fig, pool, resamples):
@@ -1651,15 +1734,18 @@ def cell_dimensions(items, keys, structures):
 
 
 def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
-           python_step=True):
+           python_step=True, article_link=None):
     """The report of a set: the real items alone give every headline figure, cell, claim and the bar; the
     synthetic items, when the set holds any, are reported apart under `synthetic` by the same rules, never
     pooled with the real ones, their claims indicators and their bar never the bar (D-706 item 3, D-707).
-    Per-item rows of both stay under `_per_item`, which the caller writes only inside the set folder."""
+    Per-item rows of both stay under `_per_item`, which the caller writes only inside the set folder.
+    `article_link` (D-758): None reads config/neg_advisor_dev.json at call time."""
     real = {i: v for i, v in keys.items() if not v.get("synthetic")}
     synthetic = {i: v for i, v in keys.items() if v.get("synthetic")}
     sub = None if subset is None else set(subset)
-    kw = dict(k=k, resamples=resamples, validation=validation, python_step=python_step)
+    if article_link is None:
+        article_link = article_link_on(dev_config())
+    kw = dict(k=k, resamples=resamples, validation=validation, python_step=python_step, article_link=article_link)
     if real:
         out = _report_on(items, real, arms, judge=judge, power=power,
                          subset=None if sub is None else sorted(sub & set(real)), **kw)
@@ -1684,7 +1770,7 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
 
 
 def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
-               python_step=True):
+               python_step=True, article_link=False):
     """The aggregates of one group of items (the real ones, or apart the synthetic ones): per arm every figure with its interval, per configuration and round count M1 to M3
     with n (a cell under 5 items its count alone), the system's audit trail, the trades, the games and the
     claims. The cloud reference is read on the cloud subset alone (D-606), with B1 and the system on the
@@ -1696,6 +1782,7 @@ def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None
     advised = {}
     withheld = Counter()
     python_counts = Counter()
+    link_counts = Counter()
     for arm, (answers, group) in arms.items():
         rows = replies_by_item(answers, group)
         mine = sub if arm == "cloud" else ids
@@ -1706,7 +1793,8 @@ def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None
             given = reply
             if arm == "system":
                 if python_step:
-                    reply, computed = system_python(items[i], reply)
+                    # D-758: the composition step alone reads the linked positions; scoring keeps the item.
+                    reply, computed = system_python(linked_item(items[i], article_link, link_counts), reply)
                     python_counts.update(computed)
                 reply, trail = withhold(items[i], reply, row.get("audit"))
                 trails.update(trail)
@@ -1741,6 +1829,8 @@ def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None
            "figures_on_cloud_subset": on_subset, "cells": cells, "system_trail": dict(trails), "trades": trades,
            # The system's Python step (system_python): what the positions on record set, filled and refused.
            "system_python": dict(python_counts) if python_step else "off",
+           # D-758: the article-to-proposal link of the composition step, each link and refusal counted.
+           "article_link": dict(link_counts) if article_link and python_step else "off",
            "a1_status": opening_claim_status(power, k), "metric": "our metric, no published benchmark",
            "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade", "fields")},
            # AM-2 (D-665): red lines declared and held, each with its source.
@@ -2447,6 +2537,258 @@ def freeze(set_dir, corpus_paths, *, encode=None, model=None, progress=print, ac
 # the command line
 
 
+# ---------------------------------------------------------------------------
+# D-756 items 2 and 3 (lane/neg-improve): development figures beside the bar, never inside it. The position-level
+# oppose yardstick (N1) and the proposal-level oppose-margin threshold (P3), each read from the stepwise chain's
+# saved choice steps (neg_advisor.stepwise_advice keeps each piece's `position_stances` with their probabilities
+# and oppose margins). Both read the key and the build files: the role session's tools, never the builder's.
+
+DEV_CONFIG = ROOT / "config" / "neg_advisor_dev.json"
+DEV_SCHEMA = "neg-advisor-dev-v1"
+DEV_STATUS = "development figure (D-756): reported beside the bar, never inside it, never a claim"
+SPLIT_SCHEMA = "neg-advisor-split-v1"
+
+
+def dev_config(path=None):
+    """config/neg_advisor_dev.json, read at call time: the one declared margin threshold (null until tuned)."""
+    value = _read(path or DEV_CONFIG)
+    if value.get("schema") != DEV_SCHEMA:
+        raise ValueError("not the advisor's development config (%s)" % DEV_SCHEMA)
+    t = value.get("conflict_margin_threshold")
+    if t is not None and not (type(t) in (int, float) and -1 <= t <= 1):
+        raise ValueError("the conflict margin threshold is null or a number from -1 to 1")
+    if type(value.get(ARTICLE_LINK_KEY, False)) is not bool:
+        raise ValueError("%s is true or false (D-758)" % ARTICLE_LINK_KEY)
+    return value
+
+
+def article_link_on(cfg):
+    """D-758: True only when the development config declares the article-to-proposal link on."""
+    return cfg.get(ARTICLE_LINK_KEY, False) is True
+
+
+def _system_reader(answers):
+    if (answers or {}).get("schema") != rr.ADVISOR_SCHEMA:
+        raise ValueError("refused: the system answers were not read by tools/reread_replies.py")
+    return answers
+
+
+def stance_units(item, reply):
+    """[(proposal id, position id, the chain's checked stance or None, its oppose margin or None)] over every
+    pair the mapping puts on a proposal (each party's applicable positions), the units of N1."""
+    props = ((reply or {}).get("proposals") or {})
+    parties = sorted({p["party"] for p in item.get("positions") or []})
+    out = []
+    for art in item.get("articles") or []:
+        for n, prop in enumerate(art["proposals"], 1):
+            kept = (props.get(prop["id"]) or {}).get("position_stances") or {}
+            for party in parties:
+                for pos in applicable(item["positions"], party, art["id"], n):
+                    said = kept.get(pos["id"]) or {}
+                    out.append((prop["id"], pos["id"], said.get("stance"), said.get("oppose_margin")))
+    return out
+
+
+def oppose_part(item, truth, reply):
+    """{tp, fp, fn, units, judged} of one item: `truth` is position id -> the build's stance."""
+    c = Counter()
+    for _pid, pos_id, said, _m in stance_units(item, reply):
+        if pos_id not in truth:
+            raise ValueError("a position on the item has no stance in its build file: %s" % pos_id)
+        true = truth[pos_id] == OPPOSE_STANCE
+        c["units"] += 1
+        c["judged"] += said is not None
+        c["tp"] += true and said == OPPOSE_STANCE
+        c["fn"] += true and said != OPPOSE_STANCE
+        c["fp"] += (not true) and said == OPPOSE_STANCE
+    return c
+
+
+OPPOSE_STANCE = na.OPPOSE
+
+
+def _recall(c):
+    d = c.get("tp", 0) + c.get("fn", 0)
+    return c["tp"] / d if d else None
+
+
+def _precision(c):
+    d = c.get("tp", 0) + c.get("fp", 0)
+    return c["tp"] / d if d else None
+
+
+def _dev_interval(fn, parts, resamples):
+    est, lo, hi, und = sn.bca(fn, parts, resamples=resamples, seed=SEED)
+    return {"estimate": est, "lower": lo, "upper": hi, "undefined_mass": und, "items": len(parts)}
+
+
+def _dev_groups(items, keys):
+    """The non-game items of a set, the real and the synthetic apart (never pooled, D-706 item 3)."""
+    ids = [i for i in sorted(keys) if keys[i]["part"] != "G" and not items[i].get("game")]
+    return {"real": [i for i in ids if not keys[i].get("synthetic")],
+            "synthetic": [i for i in ids if keys[i].get("synthetic")]}
+
+
+def position_oppose_report(items, keys, builds, answers, *, stance_context=None, resamples=None, article_link=False):
+    """N1: oppose recall and precision over all positions against the build's stances, item-clustered BCa
+    intervals, the real and synthetic items apart; a group under MIN_CELL items gives its counts alone. Under
+    the D-758 link the units are the pairs the linked mapping puts on a proposal."""
+    rows = replies_by_item(_system_reader(answers), "system_advice", stance_context)
+    out = {"status": DEV_STATUS, "stance_context": stance_context, "figure": "N1"}
+    for name, ids in _dev_groups(items, keys).items():
+        parts = []
+        for i in ids:
+            truth = {p["id"]: p.get("stance") for p in builds.get(i) or []}
+            parts.append(oppose_part(linked_item(items[i], article_link), truth, (rows.get(i) or {}).get("reply")))
+        total = sum(parts, Counter())
+        block = {"items": len(ids), "units": total.get("units", 0), "judged": total.get("judged", 0),
+                 "true_oppose": total.get("tp", 0) + total.get("fn", 0),
+                 "predicted_oppose": total.get("tp", 0) + total.get("fp", 0)}
+        if len(ids) >= MIN_CELL:
+            block["recall"] = _dev_interval(_recall, parts, resamples)
+            block["precision"] = _dev_interval(_precision, parts, resamples)
+        out[name] = block
+    return out
+
+
+def margin_conflict_reply(item, reply, threshold):
+    """(reply, counts): P3, each proposal's conflict decided by `threshold` on the largest oppose margin among
+    the persona's checked positions on it (or a red line answered yes); an accept or reject stance follows the
+    conflict, a counter is kept. A proposal with no conflict answer, no persona position or a position without
+    a margin is left as it is (counted). None threshold: the reply unchanged."""
+    if reply is None or threshold is None:
+        return reply, Counter()
+    persona, counts = item["persona"]["id"], Counter()
+    proposals = {}
+    for pid, piece in (reply.get("proposals") or {}).items():
+        piece = dict(piece)
+        mine = [v for v in (piece.get("position_stances") or {}).values() if v.get("party") == persona]
+        if piece.get("conflict") in ("conflict", "no_conflict") and mine:
+            margins = [v.get("oppose_margin") for v in mine]
+            if any(m is None for m in margins):
+                counts["no_margin"] += 1
+            else:
+                new = "conflict" if piece.get("red_line_hit") or max(margins) >= threshold else "no_conflict"
+                counts["decided"] += 1
+                if new != piece["conflict"]:
+                    counts["moved_to_" + new] += 1
+                piece["conflict"] = new
+                if piece.get("stance") in ("accept", "reject"):
+                    piece["stance"] = "reject" if new == "conflict" else "accept"
+        proposals[pid] = piece
+    return dict(reply, proposals=proposals), counts
+
+
+def _conflict_f1(c):
+    return class_f1(c, "conflict")
+
+
+def _threshold_parts(items, keys, rows, ids, threshold, article_link=False):
+    """Per item its M1 and M1m counters for the system's reply under `threshold` (None: as answered), after the
+    system's Python step (reading the D-758 linked positions when on) and before any withholding, the same for
+    both readings."""
+    parts, counts = [], Counter()
+    for i in ids:
+        reply, moved = margin_conflict_reply(items[i], (rows.get(i) or {}).get("reply"), threshold)
+        counts.update(moved)
+        reply, _computed = system_python(linked_item(items[i], article_link), reply)
+        p = item_parts(items[i], keys[i], reply)
+        parts.append((p["M1"], p["M1m"]))
+    return parts, counts
+
+
+def margin_threshold_report(items, keys, answers, threshold, *, stance_context=None, resamples=None,
+                            article_link=False):
+    """P3: M1, M1m and the conflict class's F1 on the headline items without and with the declared threshold,
+    the real and synthetic items apart; null threshold gives the figure without it alone."""
+    rows = replies_by_item(_system_reader(answers), "system_advice", stance_context)
+    out = {"status": DEV_STATUS, "stance_context": stance_context, "threshold": threshold, "figure": "P3",
+           "reading": "after the system's Python step, before the audit's withholding, both readings alike"}
+    for name, ids in _dev_groups(items, keys).items():
+        head = [i for i in ids if keys[i]["part"] in HEADLINE]
+        block = {"items": len(head)}
+        for label, t in (("without", None), ("with", threshold)):
+            if label == "with" and threshold is None:
+                block["with"] = "no threshold declared (config/neg_advisor_dev.json)"
+                continue
+            parts, counts = _threshold_parts(items, keys, rows, head, t, article_link)
+            m1, m1m = [p[0] for p in parts], [p[1] for p in parts]
+            if len(head) < MIN_CELL:
+                block[label] = {"items": len(head)}
+            else:
+                block[label] = {"M1": _dev_interval(macro_f1, m1, resamples),
+                                "M1m": _dev_interval(macro_f1, m1m, resamples),
+                                "conflict_f1": _dev_interval(_conflict_f1, m1, resamples)}
+            if label == "with":
+                block[label]["proposals"] = dict(counts)
+        out[name] = block
+    return out
+
+
+def read_split(path):
+    """The item ids a split file names: {"schema": SPLIT_SCHEMA, "items": [...]} or a bare list."""
+    value = _read(path)
+    ids = value.get("items") if isinstance(value, dict) else value
+    if isinstance(value, dict) and value.get("schema") != SPLIT_SCHEMA:
+        raise ValueError("not a split file (%s)" % SPLIT_SCHEMA)
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, str) for i in ids) or len(set(ids)) != len(ids):
+        raise ValueError("a split names its item ids once each")
+    return list(ids)
+
+
+def tune_threshold(items, keys, answers, split_ids, deciding_ids, *, stance_context=None):
+    """P3's tuning helper: the threshold that gives the conflict class its best F1 on the split's headline items
+    (pooled), the candidates being the largest persona oppose margins the split's proposals hold; a tie goes to
+    the higher threshold (fewer conflicts). Refused when the split overlaps the deciding set or names an item
+    the set does not hold. Returns the value; never writes the config."""
+    overlap = sorted(set(split_ids) & set(deciding_ids))
+    if overlap:
+        raise ValueError("refused: the split overlaps the deciding set (%d item(s))" % len(overlap))
+    missing = sorted(set(split_ids) - set(keys))
+    if missing:
+        raise ValueError("refused: the split names %d item(s) the set does not hold" % len(missing))
+    rows = replies_by_item(_system_reader(answers), "system_advice", stance_context)
+    head = [i for i in sorted(split_ids) if keys[i]["part"] in HEADLINE and not items[i].get("game")]
+    persona_tops = set()
+    for i in head:
+        reply = (rows.get(i) or {}).get("reply") or {}
+        for piece in (reply.get("proposals") or {}).values():
+            mine = [v.get("oppose_margin") for v in (piece.get("position_stances") or {}).values()
+                    if v.get("party") == items[i]["persona"]["id"]]
+            if mine and None not in mine:
+                persona_tops.add(round(max(mine), 12))
+    if not persona_tops:
+        raise ValueError("refused: the split's answers hold no oppose margin")
+    best = None
+    for t in sorted(persona_tops):
+        parts, _c = _threshold_parts(items, keys, rows, head, t)
+        f1 = _conflict_f1(sum((p[0] for p in parts), Counter()))
+        score = -1.0 if f1 is None else f1
+        if best is None or score >= best[1]:
+            best = (t, score)
+    return {"status": DEV_STATUS, "threshold": best[0], "conflict_f1_on_split": None if best[1] < 0 else best[1],
+            "split_items": len(head), "candidates": len(persona_tops), "deciding_items": len(set(deciding_ids)),
+            "overlap": 0, "written": "nothing: the lead declares the value in config/neg_advisor_dev.json"}
+
+
+def dev_figures(set_dir, answers, *, stance_context=None, config_path=None, resamples=None):
+    """N1 and P3 of one stance arm of a set's system answers, the threshold read from the config at call time."""
+    items, keys = na.read_items(set_dir), read_keys(set_dir)
+    cfg = dev_config(config_path)
+    resamples = resamples if resamples is not None else cfg.get("resamples")
+    link = article_link_on(cfg)
+    out = {"N1": position_oppose_report(items, keys, build_positions(set_dir), answers,
+                                        stance_context=stance_context, resamples=resamples, article_link=link),
+           "P3": margin_threshold_report(items, keys, answers, cfg.get("conflict_margin_threshold"),
+                                         stance_context=stance_context, resamples=resamples, article_link=link)}
+    # D-758: every link and refusal of the composition step's article-to-proposal link, over the set's items.
+    counts = Counter()
+    for i in sorted(items):
+        linked_item(items[i], link, counts)
+    out["article_link"] = {"on": True, "counts": dict(counts)} if link else "off"
+    return out
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], allow_abbrev=False)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -2473,7 +2815,9 @@ def main(argv=None):
         s.add_argument("--" + arm, required=True, type=Path)
     s.add_argument("--judge", required=True, type=Path)
     s.add_argument("--per-item-out", type=Path)
-    jp = sub.add_parser("judge-prompts", allow_abbrev=False)
+    s.add_argument("--dev-config", type=Path, default=None,
+                   help="D-758: the development config whose article_proposal_link is read (default the repository's)")
+    jp =sub.add_parser("judge-prompts", allow_abbrev=False)
     jp.add_argument("--set", required=True, type=Path)
     for arm in ("b1", "system", "cloud"):
         jp.add_argument("--" + arm, required=True, type=Path)
@@ -2485,8 +2829,27 @@ def main(argv=None):
     gr.add_argument("--set", required=True, type=Path)
     gr.add_argument("--sheet", required=True, type=Path)
     gr.add_argument("--judge-answers", required=True, type=Path)
+    dv = sub.add_parser("dev-figures", allow_abbrev=False)
+    tt = sub.add_parser("tune-threshold", allow_abbrev=False)
+    for s in (dv, tt):
+        s.add_argument("--set", required=True, type=Path)
+        s.add_argument("--system", required=True, type=Path)
+        s.add_argument("--stance-context", default=None, choices=na.STANCE_CONTEXTS)
+    dv.add_argument("--config", type=Path, default=None)
+    dv.add_argument("--resamples", type=int, default=None)
+    tt.add_argument("--split", required=True, type=Path)
+    tt.add_argument("--deciding", required=True, type=Path)
     args = parser.parse_args(argv)
     c = args.command
+    if c == "dev-figures":
+        print(json.dumps(dev_figures(args.set, _read(args.system), stance_context=args.stance_context,
+                                     config_path=args.config, resamples=args.resamples), indent=1, sort_keys=True))
+        return 0
+    if c == "tune-threshold":
+        print(json.dumps(tune_threshold(na.read_items(args.set), read_keys(args.set), _read(args.system),
+                                        read_split(args.split), read_split(args.deciding),
+                                        stance_context=args.stance_context), indent=1, sort_keys=True))
+        return 0
     if c == "build":
         print(json.dumps(build_set(args.set)))
     elif c == "handback":
@@ -2565,7 +2928,8 @@ def main(argv=None):
         rep = report(items, keys, {"B1": (arms["B1"], "b1"), "system": (arms["system"], "system_advice"),
                                    "cloud": (arms["cloud"], "b1")}, k=args.k, judge=judge, power=json.loads(power_text),
                      subset=json.loads(subset_bytes.decode("utf-8"))["items"],
-                     validation=validation_state(args.set, judge_answers))
+                     validation=validation_state(args.set, judge_answers),
+                     article_link=article_link_on(dev_config(args.dev_config)))
         if args.per_item_out:
             _write_json(inside_set(args.per_item_out, args.set), rep.pop("_per_item"))
         rep.pop("_per_item", None)
