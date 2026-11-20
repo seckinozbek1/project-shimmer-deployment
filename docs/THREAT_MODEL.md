@@ -124,7 +124,7 @@ by a post-apply grep gate; a survivor BLOCKs (exit 5) rather than shipping.
 
 Not mitigated: while the layer is inactive, a run the operator declares
 non-sensitive sends document text to cloud providers in full. That is the
-posture, stated plainly in `README.md`. Activation is an operator DELTA.
+posture, stated plainly under [Privacy (LAW-IV)](#privacy-law-iv) below. Activation is an operator DELTA.
 
 ### T3. Loss or corruption of the governance record and learning state
 **Residual risk: MEDIUM (was HIGH before STEP 11).**
@@ -340,3 +340,33 @@ it is NOT a customer deployment posture. Real customer use needs per-user
 identity, revocable credentials, request attribution, a spend cap, off-site
 backups and a deployment that outlives a laptop. None of that is built, and none
 of it should be inferred from the presence of a token gate.
+
+---
+
+The two sections below were moved from the README on 19 November 2026 (D-816);
+the README, [LIMITATIONS.md](LIMITATIONS.md) and [METHOD.md](METHOD.md) link here.
+
+## Privacy (LAW-IV)
+
+LAW-IV says that sensitive content must stay on local hardware, the operator's own
+machine. That is the one place where the privacy rule also decides where work runs;
+it is apart from the local backend profile (see the
+[configuration](USER_GUIDE.md#12-configuration)), which decides what a run may send
+to the internet wherever it runs. Today Shimmer
+enforces that by refusing, not by masking. The masking layer
+(`scripts/sensitivity_layer/`) is built and wired but switched off
+(`LAYER_ACTIVE = False`). While it is off, the console refuses a Sensitive
+submission, and a run starts only when the operator declares it non-sensitive
+(`--sensitivity-layer-inactive-override`, which is logged); without that a run
+exits with code 6.
+Switching masking on needs its own operator-approved amendment (a DELTA).
+Operator redaction rules, when the operator writes them, are applied locally and
+checked by a search that the redacted text is gone.
+
+## Access (one operator)
+
+The server checks one shared access token: it stores only the token's SHA-256
+hash (`SHIMMER_TOKEN_HASH`) and compares each request with it. There are no user
+accounts and no per-caller records, so Shimmer is a single-operator system today.
+Only `/health` and `/console` answer without the token; FastAPI's own `/docs`,
+`/redoc` and `/openapi.json` pages are switched off.

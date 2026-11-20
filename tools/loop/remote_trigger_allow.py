@@ -9,7 +9,7 @@ nothing and exits 0.
 import json
 import sys
 
-WAKE_TRIGGER = "trig_01CRyVDA63iUXtMAeYweiJGq"
+WAKE_TRIGGER = "trig_01Mp33SofFidG8jxNry86wsH"
 ALLOW = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow",
                                 "permissionDecisionReason": "Seçkin onayı 18 Kasım 23:51 ve 19 Kasım 14:58"}}
 

@@ -55,6 +55,13 @@ watch.py. No provider call, no key, no ledger of the loop: the mechanism paths p
   batch_part_read               a batch part (plan.json names more than one bundle) writes no workload_return: done
                                 from terminated_and_cleaned, TERMINATION_VERIFIED, no controller_failure and one
                                 batch/NN_* evidence per bundle with pipeline_exit_code 0; one missing reads failed
+  admit_refused_retried         an admission refused before anything was admitted (exit record exit 75 refused_retry,
+                                or an older driver's admit.log last line) is held 10 minutes, retried, never unconfirmed
+  admit_refused_three_alert     three refused admissions in a row write ALERT.md
+  admit_silent_stays_unconfirmed a detached admission with no evidence of its own stays unconfirmed until --clear; an
+                                earlier attempt's record or log bytes are not read as this one's
+  driver_admit_exit             seal_route_driver.py admit exits 75 with <out>.exit.json refused_retry on a held ledger
+                                lock, records failed and raises on another refusal, records admitted on success
 
 Each proof is run as built (passes), neutralised (must fail), restored and run again (passes).
 """
@@ -124,6 +131,24 @@ if step == 'request':
     time.sleep(S.get('slow_request', 0))
     (HERE / 'request').mkdir(exist_ok=True)
     (HERE / 'request' / 'seal_request.json').write_text('{}', encoding='utf-8')
+    raise SystemExit(0)
+if step == 'admit' and S.get('admit_refuse'):
+    mode = S['admit_refuse'].pop(0)
+    save()
+    import os
+    if mode == 'record':             # the driver's exit record: exit 75, refused_retry, this process's pid
+        (HERE / 'admitted.exit.json').write_text(json.dumps({
+            'command': 'admit', 'exit_code': 75, 'outcome': 'refused_retry', 'kind': 'ledger_lock',
+            'message': 'Another launch holds the ledger lock (fixture)', 'pid': os.getpid(),
+            'ended_epoch': time.time()}), encoding='utf-8')
+    elif mode == 'log':              # an older driver: no record, the traceback's last line in admit.log
+        with open(HERE / 'admit.log', 'a', encoding='utf-8') as f:
+            f.write('Traceback (most recent call last):\n  File "seal_route_driver.py", line 138, in wait_for_room\n'
+                    'seal_route.RouteError: No room for ordinary_final_bound_reverify.py under the ledger lock (free '
+                    '11.87 GiB, memory 5.00 GiB, 0 other seals; floor 12.0 GiB after 16777216 bytes): the room read '
+                    'before the lock is gone; admit again\n')
+    # mode 'silent': a detached admission that leaves no evidence at all
+    print('started detached, pid %d' % os.getpid())
     raise SystemExit(0)
 if step == 'admit':
     (HERE / 'admitted').mkdir(exist_ok=True)
@@ -1107,7 +1132,135 @@ def neutralise_batch_part_read():
     return patch.object(lc, 'step_bundles', lambda folder, step: None)   # the old rule: workload_return only
 
 
-PROOFS = ('batch_part_read', 'retry_folder_read','admit_then_part_same_move', 'request_then_seal_same_move', 'unfinished_prerequisite_stays',
+def observe_admit_refused_retried():
+    """CHAIN_ADMIT_RETRY: an admission refused before anything was admitted (its exit record, exit 75 refused_retry)
+    is held 10 minutes as a refused launch, then admitted on the retry and its part follows; never unconfirmed.
+    The same from an older driver's admit.log last line (the no-room RouteError), with no exit record."""
+    out = []
+    for mode in ('record', 'log'):
+        with Fixture() as f:
+            d = f.folder('A' + mode, gate_chain(), {'seal': ENDED, 'part': NOT}, admit_refuse=[mode])
+            lc.run_once(f.root)
+            first = f.state('A' + mode, 'admit')
+            lc.run_once(f.root)                    # within the 10 minutes: held, not tried
+            held = f.launches(d).count('admit')
+            with later(11):
+                lc.run_once(f.root)
+                final = f.state('A' + mode, 'admit')
+            out.append((f.launches(d), f.results().count('guard_refused'), first, held, final,
+                        lc.UNCONFIRMED in f.results()))
+    return out
+
+
+def expected_admit_refused_retried():
+    return [(['admit', 'admit', 'part'], 1, 'held', 1, 'done', False)] * 2
+
+
+def neutralise_admit_refused_retried():
+    return patch.object(lc, 'admit_refusal', lambda folder, step, trace: None)   # the old rule: no refusal read
+
+
+def observe_admit_refused_three_alert():
+    with Fixture() as f:
+        f.folder('AV', gate_chain(), {'seal': ENDED, 'part': NOT}, admit_refuse=['record', 'record', 'record'])
+        texts = []
+        for k in range(3):
+            with later(11 * k):
+                lc.run_once(f.root)
+            texts.append('(admission) was refused 3 times in a row' in f.alert_text())
+        return f.results().count('guard_refused'), texts
+
+
+def expected_admit_refused_three_alert():
+    return 3, [False, False, True]
+
+
+def neutralise_admit_refused_three_alert():
+    real = lc.in_a_row
+    return patch.object(lc, 'in_a_row', lambda trace, fo, st, result, skip=None: real(trace, fo, st, result))
+
+
+def observe_admit_silent_stays_unconfirmed():
+    """The other way: a detached admission that leaves no evidence of its own stays launching, then unconfirmed
+    until --clear, and is never tried again; an earlier attempt's refusal (an exit record of another pid, ended
+    before this launch, and admit.log bytes written before it) is not read as this attempt's."""
+    with Fixture() as f:
+        d = f.folder('AS', gate_chain(), {'seal': ENDED, 'part': NOT}, admit_refuse=['silent'])
+        old = time.time() - 3600
+        (d / 'admitted.exit.json').write_text(json.dumps({
+            'command': 'admit', 'exit_code': 75, 'outcome': 'refused_retry', 'kind': 'ledger_lock',
+            'message': 'an earlier attempt', 'pid': 999999, 'ended_epoch': old}), encoding='utf-8')
+        (d / 'admit.log').write_text('loop_budget_guard.GuardRefusal: Another launch holds the ledger lock (old)\n',
+                                     encoding='utf-8')
+        os.utime(d / 'admit.log', (old, old))
+        lc.run_once(f.root)
+        first = f.state('AS', 'admit')
+        with later(11):
+            lc.run_once(f.root)
+            again = f.state('AS', 'admit')
+        with later(25):
+            lc.run_once(f.root)
+            last = f.state('AS', 'admit')
+        return f.launches(d).count('admit'), first, again, last, 'guard_refused' in f.results()
+
+
+def expected_admit_silent_stays_unconfirmed():
+    return 1, 'launching', 'unconfirmed', 'unconfirmed', False
+
+
+def neutralise_admit_silent_stays_unconfirmed():
+    real = lc.attempt_of
+
+    def whole_log_any_record(trace, folder_name, step_name):    # reads every byte of admit.log, any record
+        started, _ = real(trace, folder_name, step_name)
+        return (dict(started, admit_log_offset=0, time='1970-01-01T00:00:00+00:00') if started else None), None
+    return patch.object(lc, 'attempt_of', whole_log_any_record)
+
+
+def observe_driver_admit_exit():
+    """seal_route_driver.py (not controller-bound): a held ledger lock is an AdmitRetry; the admit command exits 75
+    and writes <out>.exit.json refused_retry with its pid; another failure writes failed and raises; an admission
+    writes admitted and exits 0. The chain's exit code is the driver's."""
+    tools = str(HERE.parent)
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import seal_route_driver as drv
+    import loop_budget_guard as guard
+    import types
+    rows = []
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / 'admitted'
+        args = types.SimpleNamespace(job=None, run=None, reuse=None, out=out, request=None)
+
+        def held(*a, **k):
+            drv.lock_refusal_is_retry(lambda ledger: (_ for _ in ()).throw(guard.GuardRefusal(
+                'Another launch holds the ledger lock (fixture)')))('ledger')
+
+        def broken(*a, **k):
+            raise drv.sr.RouteError('Seal job read copy is stale: fixture')
+        with contextlib.redirect_stdout(io.StringIO()):
+            for fn in (held, broken, lambda *a, **k: [{'name': 'b'}]):
+                try:
+                    rc = drv.admit_main(args, {}, 'ledger', admit_fn=fn)
+                except drv.sr.RouteError:
+                    rc = 'raised'
+                body = json.loads(drv.admit_exit_path(out).read_text(encoding='utf-8'))
+                rows.append((rc, body['exit_code'], body['outcome'], body['kind'], body['pid'] == os.getpid()))
+    return rows, drv.ADMIT_RETRY_EXIT == lc.ADMIT_RETRY_EXIT, drv.ADMIT_EXIT_SUFFIX == lc.ADMIT_EXIT_SUFFIX
+
+
+def expected_driver_admit_exit():
+    return ([(75, 75, 'refused_retry', 'ledger_lock', True), ('raised', 1, 'failed', 'RouteError', True),
+             (0, 0, 'admitted', None, True)], True, True)
+
+
+def neutralise_driver_admit_exit():
+    import seal_route_driver as drv
+    return patch.object(drv, 'lock_refusal_is_retry', lambda lock: lock)   # the GuardRefusal raised as is
+
+
+PROOFS = ('admit_refused_retried', 'admit_refused_three_alert', 'admit_silent_stays_unconfirmed',
+          'driver_admit_exit', 'batch_part_read','retry_folder_read','admit_then_part_same_move', 'request_then_seal_same_move', 'unfinished_prerequisite_stays',
           'failed_preflight_alerts', 'lock_prevents_overlap', 'request_waits_for_quiet_ledger',
           'stale_request_set_aside', 'stale_needs_nonzero_exit', 'stale_three_alert', 'foreign_request_untouched',
           'one_launch_at_a_time', 'guard_refusal_held_retried', 'guard_three_alert', 'own_log_new_bytes_only',

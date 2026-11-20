@@ -65,7 +65,12 @@ ARCHIVE_EXTRAS = ('benchmark/adapters/', 'benchmark/baselines/')
 NEVER_IN_SOURCE_ARCHIVE = ('input/', 'benchmark/corpora/', 'benchmark/keys/', 'seals/', '_xfer/', 'external/',
                            'output/', 'docs/')
 RUNTIME_PREFIXES = ('scripts/', 'config/', 'corpus_ingest/')
-RUNTIME_FILES = ('requirements.txt', 'genesis.md', 'tools/run_local_demo.py', 'tools/score_corpus.py')
+# tools/ontology_training_graphs.py and tools/ontology_training_leakage.py: scripts/ontology_train.py
+# hashes the first into every weights record and imports the second for the structural overlap
+# (GNN_TRAIN_6f48d5ed stopped on the instance without them, docs/loop/stages/GNN_TRAIN_6F48_FAILURE.md).
+# A listed file the bound commit does not hold is simply not carried.
+RUNTIME_FILES = ('requirements.txt', 'genesis.md', 'tools/run_local_demo.py', 'tools/score_corpus.py',
+                 'tools/ontology_training_graphs.py', 'tools/ontology_training_leakage.py')
 
 
 def named(name, path):

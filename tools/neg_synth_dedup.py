@@ -20,9 +20,17 @@ vectors only, never a text; `check` and `within` run in role B's folder on the s
 counts and item ids only.
 
     candidates  --set-dir <S set folder> --out <B>/candidates.json          the items' own texts, by item id
-    fingerprint --part <name>=<path>[;<path>...] [--part ...] --out <B>/reference.json [--embed]
-    check       --fingerprints F --candidates C --out <B>/dedup_check.json [--embed]
-    within      --candidates C [C ...] --out <B>/dedup_within.json --embed
+    fingerprint --part <name>=<path>[;<path>...] [--part ...] --out <B>/reference.json [--embed | VECTORS] [--sidecar]
+    check       --fingerprints F --candidates C --out <B>/dedup_check.json [--embed | VECTORS]
+    within      --candidates C [C ...] --out <B>/dedup_within.json (--embed | VECTORS)
+    export      (--part ... | --candidates C [C ...]) --out-dir <new folder>   the embedding input alone, no model
+
+The embedding may run on a rented machine (EMBED-ROUTE-A, the freeze's route, NEG-SYNTH-A): `export` writes the
+texts the command will embed, in the one embedding form, as freeze_negotiation_set.export_records does (records.jsonl
+and an empty laptop run); benchmark/baselines/embed_records.py builds the parts, the replay pass embeds them on
+Lambda and `merge --require-complete` reads them back; then VECTORS, `--vectors <merged folder> --records
+<records.jsonl>`, stands in for `--embed` (freeze_negotiation_set.vectors_encoder: another key list, a missing row or
+a text the records do not hold is refused). The laptop never loads bge-m3 on this route.
 """
 from __future__ import annotations
 
@@ -91,17 +99,84 @@ def _unit(rows):
     return m / n
 
 
-def fingerprint(parts, cfg=None, embed=None):
+def _kept(items, t):
+    return [x for x in items if _n_words(x) >= t["short_min_words"]]
+
+
+def embed_inputs(parts=None, candidates=None, cfg=None):
+    """The texts `fingerprint` (over `parts`) or `check` and `within` (over `candidates`) give the embedder, in
+    its form, so an export holds exactly what the vectors are later asked for."""
+    t = thresholds(cfg)
+    texts = []
+    for _part, items in sorted((parts or {}).items()):
+        texts += [gl.embed_form(x) for x in _kept(items, t)]
+    for c in candidates or []:
+        texts += [gl.embed_form(x) for x in _kept(c["texts"], t)]
+        texts.append(gl.embed_form(" ".join(c["texts"])))
+    return texts
+
+
+def _freeze_tools():
+    import freeze_negotiation_set as fns
+    return fns
+
+
+def route_embedder(vectors_dir, records_path):
+    """The merged vectors of the rented machine's pass, in place of bge-m3 (EMBED-ROUTE-A)."""
+    return _freeze_tools().vectors_encoder(vectors_dir, records_path)
+
+
+SIDECAR_SUFFIX = ".vectors.npy"
+
+
+def sidecar_path(fingerprint_path):
+    p = Path(fingerprint_path)
+    return p.with_name(p.stem + SIDECAR_SUFFIX)
+
+
+def _sha_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def reference_vectors(fp, base=None):
+    """The fingerprint's unit rows: inline (`rows`) or, in the sidecar form, the float32 .npy beside the fingerprint,
+    memory-mapped read-only and held to its recorded SHA-256 and shape (a missing, changed or misshapen file is
+    refused). None when the fingerprint carries no vectors."""
+    v = fp.get("vectors")
+    if not v:
+        return None
+    if "rows" in v:
+        return _unit(v["rows"])
+    import numpy as np
+    if base is None:
+        raise ValueError("the fingerprint keeps its vectors in a sidecar: name the fingerprint's folder")
+    path = Path(base) / v["file"]
+    if not path.is_file():
+        raise ValueError("the fingerprint's vectors file is missing: " + v["file"])
+    if _sha_file(path) != v["sha256"]:
+        raise ValueError("the fingerprint's vectors file differs from its recorded SHA-256")
+    m = np.load(path, mmap_mode="r", allow_pickle=False)
+    if m.dtype != np.float32 or m.shape != (v["count"], v["dim"]):
+        raise ValueError("the fingerprint's vectors file is not (%d, %d) float32" % (v["count"], v["dim"]))
+    return m
+
+
+def fingerprint(parts, cfg=None, embed=None, sidecar=None):
     """{part: [texts]} to hashes only: exact hashes, 8-word runs, 5-gram hashes of passages of at least the
-    declared words, and (with an embedder) one unit vector per record. No text is kept."""
+    declared words, and (with an embedder) one unit vector per record. No text is kept. With `sidecar` (a .npy
+    path) the vectors go there as float32, one row per distinct text in the embedding form, the parts owning it
+    listed per row, and the fingerprint keeps the file's name, shape and SHA-256 (a JSON list of floats would be
+    gigabytes for the reference material and could not be read on the laptop)."""
     t = thresholds(cfg)
     fp = {"format": FORMAT, "thresholds": t, "counts": {}, "exact": {}, "runs": {}, "grams": [], "vectors": None}
     texts, owners = [], []
     for part, items in sorted(parts.items()):
         n = 0
-        for text in items:
-            if _n_words(text) < t["short_min_words"]:
-                continue
+        for text in _kept(items, t):
             n += 1
             fp["exact"].setdefault(gl.exact_hash(text), []).append(part)
             for r in gl.runs(text):
@@ -114,9 +189,25 @@ def fingerprint(parts, cfg=None, embed=None):
     for d in (fp["exact"], fp["runs"]):
         for h in d:
             d[h] = sorted(set(d[h]))
-    if embed is not None and texts:
+    if embed is not None and texts and sidecar is not None:
+        import numpy as np
+        rows = {}
+        for text, part in zip(texts, owners):
+            rows.setdefault(text, set()).add(part)
+        distinct = sorted(rows)
+        m = np.ascontiguousarray(_unit(embed(distinct)), dtype=np.float32)
+        sidecar = ns.na.outside_repository(Path(sidecar))
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        with open(sidecar, "wb") as fh:
+            np.save(fh, m, allow_pickle=False)
+        fp["vectors"] = {"dim": int(m.shape[1]), "count": int(m.shape[0]), "parts": [sorted(rows[x]) for x in distinct],
+                         "file": sidecar.name, "sha256": _sha_file(sidecar), "dtype": "float32"}
+    elif embed is not None and texts:
         m = _unit(embed(texts))
         fp["vectors"] = {"dim": int(m.shape[1]), "parts": owners, "rows": [[float(x) for x in r] for r in m]}
+    if fp["vectors"] is not None:
+        if getattr(embed, "route", None):
+            fp["vectors"]["route"] = dict(embed.route)
     return fp
 
 
@@ -129,8 +220,9 @@ def best_jaccard(passage_grams, index, sizes):
     return max((n / (sizes[i] + len(passage_grams) - n) for i, n in shared.items()), default=0.0)
 
 
-def check(fp, candidates, cfg=None, embed=None):
-    """Each candidate item against the reference fingerprint, by the four rules. Counts and ids only."""
+def check(fp, candidates, cfg=None, embed=None, base=None):
+    """Each candidate item against the reference fingerprint, by the four rules. Counts and ids only. `base` is
+    the fingerprint's folder, where a sidecar vectors file lies."""
     t = thresholds(cfg)
     if fp.get("format") != FORMAT:
         raise ValueError("not a synthetic dedup fingerprint")
@@ -141,7 +233,7 @@ def check(fp, candidates, cfg=None, embed=None):
         sizes.append(len(grams))
         for g in grams:
             index.setdefault(g, []).append(i)
-    ref = _unit(fp["vectors"]["rows"]) if fp.get("vectors") else None
+    ref = reference_vectors(fp, base)
     hits = {r: [] for r in RULES}
     for c in candidates:
         texts = [x for x in c["texts"] if _n_words(x) >= t["short_min_words"]]
@@ -206,6 +298,28 @@ def _candidates(paths):
     return rows
 
 
+def _parts(specs):
+    parts = {}
+    for spec in specs:
+        name, _, paths = spec.partition("=")
+        for q in paths.split(";"):
+            gl.guard(q)
+            parts.setdefault(name, []).extend(text for _f, _sha, text, _short in gl.records(q))
+    return parts
+
+
+def _embedder(args):
+    """--embed (bge-m3 on this machine), VECTORS (the rented machine's merged vectors) or neither; never both."""
+    vectors, records = getattr(args, "vectors", None), getattr(args, "records", None)
+    if (vectors is None) != (records is None):
+        raise SystemExit("refused: --vectors and --records go together")
+    if vectors is not None:
+        if getattr(args, "embed", False):
+            raise SystemExit("refused: --embed or --vectors, not both")
+        return route_embedder(vectors, records)
+    return gl.shipped_embedder() if getattr(args, "embed", False) else None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -216,6 +330,8 @@ def main(argv=None):
     p.add_argument("--part", action="append", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--embed", action="store_true")
+    p.add_argument("--sidecar", action="store_true",
+                   help="vectors to <out stem>.vectors.npy beside the fingerprint (float32, one row a distinct text)")
     p = sub.add_parser("check")
     p.add_argument("--fingerprints", required=True)
     p.add_argument("--candidates", nargs="+", required=True)
@@ -224,29 +340,49 @@ def main(argv=None):
     p = sub.add_parser("within")
     p.add_argument("--candidates", nargs="+", required=True)
     p.add_argument("--out", required=True)
-    p.add_argument("--embed", action="store_true", required=True)
+    p.add_argument("--embed", action="store_true")
+    for name in ("fingerprint", "check", "within"):
+        sub.choices[name].add_argument("--vectors", help="the merged vectors folder (embed_records.py merge)")
+        sub.choices[name].add_argument("--records", help="the records.jsonl `export` wrote for them")
+    p = sub.add_parser("export")
+    p.add_argument("--part", action="append")
+    p.add_argument("--candidates", nargs="+")
+    p.add_argument("--out-dir", required=True)
     args = ap.parse_args(argv)
     cfg = ns.load_config()
-    embed = gl.shipped_embedder() if getattr(args, "embed", False) else None
+    if args.cmd == "export":
+        if bool(args.part) == bool(args.candidates):
+            raise SystemExit("refused: export takes --part or --candidates, one of them")
+        out_dir = ns.na.outside_repository(Path(args.out_dir))
+        if args.part:
+            texts = embed_inputs(parts=_parts(args.part), cfg=cfg)
+        else:
+            texts = embed_inputs(candidates=_candidates(args.candidates), cfg=cfg)
+        fns = _freeze_tools()
+        got = fns.export_records(texts, out_dir)
+        print("export: %d texts, %d distinct rows, records %s..., forecast %.1f min at the laptop GPU's rate"
+              % (got["passages"], got["rows"], got["records_sha256"][:12], fns.route_forecast_minutes(got["rows"])))
+        return 0
+    embed = _embedder(args)
+    if args.cmd == "within" and embed is None:
+        raise SystemExit("refused: the within-set rule needs --embed or --vectors")
     if args.cmd == "candidates":
         value = candidates_of_set(args.set_dir)
         _write(Path(args.out), value)
         print("candidates: %d items" % len(value["candidates"]))
         return 0
     if args.cmd == "fingerprint":
-        parts = {}
-        for spec in args.part:
-            name, _, paths = spec.partition("=")
-            for q in paths.split(";"):
-                gl.guard(q)
-                parts.setdefault(name, []).extend(text for _f, _sha, text, _short in gl.records(q))
-        fp = fingerprint(parts, cfg, embed)
+        if args.sidecar and embed is None:
+            raise SystemExit("refused: --sidecar holds vectors; name --embed or --vectors")
+        fp = fingerprint(_parts(args.part), cfg, embed, sidecar=sidecar_path(args.out) if args.sidecar else None)
         _write(Path(args.out), fp)
-        print("fingerprint: " + ", ".join("%s %d records" % kv for kv in sorted(fp["counts"].items())))
+        print("fingerprint: " + ", ".join("%s %d records" % kv for kv in sorted(fp["counts"].items()))
+              + ("; vectors %d x %d in %s" % (fp["vectors"]["count"], fp["vectors"]["dim"], fp["vectors"]["file"])
+                 if fp["vectors"] and "file" in fp["vectors"] else ""))
         return 0
     if args.cmd == "check":
         fp = json.loads(Path(args.fingerprints).read_text(encoding="utf-8"))
-        out = check(fp, _candidates(args.candidates), cfg, embed)
+        out = check(fp, _candidates(args.candidates), cfg, embed, base=Path(args.fingerprints).parent)
         out["fingerprints_sha256"] = hashlib.sha256(Path(args.fingerprints).read_bytes()).hexdigest()
         _write(Path(args.out), out)
         print("check: %d candidates, %d dropped, by rule %s" % (out["candidates"], out["dropped"], out["by_rule"]))

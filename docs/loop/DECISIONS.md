@@ -8154,3 +8154,109 @@ Written 2026-11-19 15:43 +0300 by the lead (8fee59db). Replaces the "wake at eac
 ## D-802: the constrained relabelling may spend up to 3.9 USD, seal and label together (Seckin 15:57 via the panel, G-20261119-1557)
 Written 2026-11-19 15:59 +0300 by the lead (8fee59db). Option (a) of the 15:51 question; raises D-799's about 2.5 USD.
 - Forecast 3.44 to 3.89 USD (step_cost.py), last actual 2.34 USD. Start it; the constrained generation and the other conditions of D-799 hold. Result and actual cost to the panel and FOR_SECKIN, no wake (D-801).
+
+## D-803: no new agent today (Seckin 16:56, relayed 17:07, G-20261119-1707)
+Written 2026-11-19 17:08 +0300 by the lead (8fee59db).
+- The lead spawns no new helper, lane, fork or checker for the rest of 19 November and does the remaining work itself. Role sessions through role_starter stay allowed under D-793. The supervisor moved to a new chat with new trigger ids; the lead's own wake target and hook stay as they are until Seckin's message from the loop window.
+
+## D-804: retry the SYNLAB2 seal once (Seckin 18:31, relayed, G-20261119-1831)
+Written 2026-11-19 18:31 +0300 by the lead (8fee59db). Option (a) of the 18:29 question.
+- After the GNN training and gate e958ecc4 have ended, with free RAM at least 1.5 GiB and no other cloud job running: one retry of the seal step only, same cap (3.64 USD left of 3.9), nothing else changed; then the label steps as planned. Result and actual cost to FOR_SECKIN and the panel.
+- Cause recorded: the 18:27 seal ended with the controller error 'Transport deadline exceeded' at 0.86 GiB free laptop RAM while two other cloud jobs ran.
+
+## D-805: no cloud job depends on laptop memory; the shortest path to v1.0 (Seckin 18:33, relayed, G-20261119-1832; replaces D-804)
+Written 2026-11-19 18:32 +0300 by the lead (8fee59db).
+- (1) Seal, watch and transport processes that hold laptop memory move onto the rented machine; on the laptop only a small record-writing step stays. Retry the negotiation relabel this way without waiting (same cap, 3.64 USD left); the 1.5 GiB wait is dropped. Money rules and caps unchanged.
+- (2) The shortest path to v1.0 to FOR_SECKIN by 19:15: every remaining step, its order, where it runs, expected finish and cost, what it waits on. Start everything parallelisable. Every v1.0 blocker that needs his decision as its own SORU.
+
+## D-806: full mobilisation; the negotiation conflict fix first; v1.0 needs all three bars (Seckin 18:35, relayed, G-20261119-1835; replaces D-803, settles the two 18:33 questions)
+Written 2026-11-19 18:34 +0300 by the lead (8fee59db).
+- (1) 18:33 controller question, option (a): the relabel retries tonight in the old way, alone, after the two running cloud jobs end, without a memory wait (3.64 USD left). Moving the controller onto the instance goes into the grouped re-seal.
+- (2) v1.0 condition unchanged: all three bars must hold. The negotiation conflict detection (now 0) must be fixed; it goes first.
+- (3) Full mobilisation: every item of every v1.0 and v1.05 plan and open item starts now when ready; independent work runs at once (separate helpers, working copies, rented machines); a job waits only on another job's output, and says what. Money rules and caps unchanged; a new spend or decision goes in as a SORU without stopping other work. Usage rate in every report. D-803 (no new agent today) is replaced.
+
+## D-807: decide within the limits, batch the real questions (Seckin 18:39, relayed, G-20261119-1839)
+Written 2026-11-19 18:36 +0300 by the lead (8fee59db).
+- Every choice inside the approved limits and rules is the lead's: made, recorded, no question. A question that truly needs Seckin does not hold the work: the lead goes on with everything else and brings such questions together in one entry, each with a recommendation and what it holds. Full mobilisation (D-806) continues.
+
+## D-808: the lead clears disk and memory floors itself, deleting only two kinds of item (Seckin 18:41, relayed, G-20261119-1841)
+Written 2026-11-19 18:37 +0300 by the lead (8fee59db).
+- Memory: close the lead's own finished processes, order the concurrent cloud jobs, run heavy steps on the rented machine, not the laptop.
+- Disk: only (a) working copies the lead opened whose work is done and (b) regenerable temporary copies a job made itself may be deleted, each with two independent checks (one Opus, one Fable) calling it SAFE, the backup re-proved at deletion, a dry run, safe_delete, links removed first. Nothing else (old gate folders, records, run evidence, answer keys, sync and cache folders, Seckin's files) is deleted; if space is needed for those, a SORU without holding work. Every deletion with before and after disk readings in FOR_SECKIN.
+
+## D-809: Seckin is out of the loop except for decisions and emergencies (Seckin 18:40, relayed, G-20261119-1840)
+Written 2026-11-19 18:39 +0300 by the lead (8fee59db).
+- Only two things go to him: SORU entries that need his decision, and emergencies. He is never asked to do anything (paste, start, check, close windows). Status, results and spend keep going to the panel and FOR_SECKIN, with no wake. Whatever the lead can solve, it solves.
+
+## D-810: the 18 November output-side measurement is complete; its integrity failure is a counting rule (lead, within limits, D-807)
+Written 2026-11-19 18:39 +0300 by the lead (8fee59db). docs/loop/stages/PARSE_SWEEP_FAILURE_20261119.md.
+- Both passes wrote every reply (before 66 records for 25 prompts plus 41 derived audits; after 246 for 128 plus 118); tools/ordinary_final_run.py:655-664 counts one record per prompt and so reports b1_reply_record_missing. tools/reread_replies.py advisor reads 25 and 128 rows (2 and 1 dropped). Decision: score the saved replies as a development measurement, with the integrity flag and its cause written beside the figure; fix the counting rule to count derived audits (controller-bound, so it joins the grouped re-seal); no paid rerun.
+
+## D-811: the table tool switches on before v1.0 ships (lead, within limits, D-807; D-681 item 6)
+Written 2026-11-19 18:43 +0300 by the lead (8fee59db). docs/loop/private/DRAFT_SORU_D681_6.md, ISSUES_SYNC_20261119.md, D637_D645_STATE_20261119.md.
+- "Before step 10" (D-681 item 6) most likely names the full-set final test, which D-766 moved to v1.1. Switching on before v1.0 (option b) is earlier than that reading, so it meets every reading; no SORU. The switch turns on when gate e958ecc4 is green, and the tool is measured on the fresh table set; it stays in v1.0 only if that measurement holds.
+- lane/neg-draft-bench (D-637 plan with the D-645 merge inside) merged, plan only. Track A step 5's cloud reference run conflicts with D-752 and is restated before it runs; nothing of it runs now.
+
+## D-812: the negotiation conflict fix is merged off by default and measured on its own fresh sets (lead, within limits, D-806, D-807)
+Written 2026-11-19 18:53 +0300 by the lead (8fee59db). docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md.
+- Cause found: oppose was never the top answer in 1453 stance decisions (largest probability 0.034), because the stance question asks about a proposal that did not exist when 73 of 85 persona positions were recorded; no item declares a red line. Fix C4: `conflict_question: compare` (against, fits, aside; against counts as oppose), off by default, check 651. No controller-bound file changed.
+- Measurement: a 24-item pilot (3.16 USD) and then a 40-item validation set as two launches of 20 (2.71 USD each), all with measures; every step under the 5 USD step approval (D-708), total 8.58 USD within the D-749 cap. The pilot first; validation only if the pilot's form counts hold. Preparation by lane neg-c4-measure-prep; no launch before its report.
+- Open: no item declares red lines (item 163); a build and labelling question for roles S and V, not part of this measurement.
+
+## D-813: the quick read and the 50-document pilot run without asking, under D-703 (supervisor note G-20261119-1856)
+Written 2026-11-19 18:55 +0300 by the lead (8fee59db).
+- D-703 item 2 (Seckin 16 November 17:39) approved a new quick read (about 12 USD) and the 50-document pilot (about 12 USD) at those sizes; nothing since withdrew it (D-766 moved only the full-set final test; D-767 keeps v1.0 money inside the 400 USD cap), and neither has been launched. The forecasts are 11.6 and 11.8 USD, inside the approved sizes, so both start in their turn without a SORU; the 18:36 FOR_SECKIN plan line saying "size sorulacak" is corrected. D-703's rule stays: a failed quick read stops spending and comes back to him, and anything materially larger comes to him first. A budget_change note goes into the ledger notes at the first launch.
+- The negotiation round-limit question (18:33) is with Seckin; the first measurement round does not wait for it.
+
+## D-814: three negotiation rounds at full speed, then a SORU (Seckin 18:57, relayed, G-20261119-1857; answer to the 18:33 question)
+Written 2026-11-19 18:57 +0300 by the lead (8fee59db).
+- Option (c): at most three measurement rounds toward the negotiation bar, run back to back with no wait and no question between them. After the third round the loop does NOT fall back to option (b) by itself: it brings Seckin a SORU with each round's figures, the money spent, the lead's view of whether a next round would hold, and a recommendation; he decides then.
+- A round is one fix measured on its own fresh sets (D-789); round 1 is C4 (D-812).
+- Also recorded: lane/reply-count-derived (8889257f, D-810 counting rule; both 18 November passes pass it: 66 of 66, 246 of 246) touches the controller-bound tools/ordinary_final_run.py, so it merges after ROUTE_GATE_e958ecc4 has ended and joins the grouped re-seal.
+
+## D-815: the ontology training relaunches once with the archive fixed; a closure preflight guards every seal (lead, within limits; supervisor G-20261119-2029)
+Written 2026-11-19 20:53 +0300 by the lead (8fee59db). docs/loop/stages/GNN_TRAIN_6F48_FAILURE.md.
+- GNN_TRAIN_6f48d5ed ended with workload exit 2 (0.9245 USD with the seal): the sealer's fixed project-archive list (tools/prepare_ordinary_final_run.py:67-68 at 6f48d5ed) left out tools/ontology_training_graphs.py and tools/ontology_training_leakage.py, both reached by scripts/ontology_train.py. Fixed on lane/gnn-train-archive-fix (1a2726d7); new preflight tools/loop/archive_closure.py (check 660) refuses a seal or launch whose workload reaches a file outside the archive, run by the launch chain and the relaunch's preflight. It found ROUTE_GATE_e958ecc4 and V_SYNLAB2 complete.
+- Relaunch external/s05/GNN_TRAIN_R2 armed: forecast 2.10 USD against 4.8855 USD left of the 5.81 USD D-800 cap; it must finish before declared/open_train_d800.json expires (20 November 15:36).
+- The branch is not merged into the lead line now (it carries the unmerged lane/v105-c3b lineage); the sealer change and archive_closure.py join the grouped re-seal with the D-810 counting-rule fix.
+
+## D-816: the first-results text is approved; the README becomes short with links (Seckin 21:26, relayed, G-20261119-2126; after G-20261119-2106 and -2108)
+Written 2026-11-19 21:27 +0300 by the lead (8fee59db). docs/loop/private/PUBLIC_FIRST_RESULTS_DRAFT.md.
+- Public places lead with the measured first results on development and validation sets, saying the final test set has not been run. The README testing rule (old README.md:540) is updated to allow that, labelled as first results; sealed final-test figures remain the evidence bar.
+- The lead applies the short README and moves details into docs pages (lane readme-short); it reaches origin only with a green full gate on its commit (D-783), then FOR_SECKIN and the panel get the commit id. The website, LinkedIn and Medium are the supervisor's; the lead does not touch them.
+
+## D-817: v1.05 fallback and scope (Seckin 22:23, relayed, G-20261119-2223; answers to the 22:20 SORU)
+Written 2026-11-19 22:24 +0300 by the lead (8fee59db). docs/loop/private/V105_PLAN_20261119.md section 8 items 5 and 8.
+- Fallback (item 5): option (a). If v1.0 has not shipped by 23 November 09:00, v1.05 still ships on 23 November with only the parts that need no bound change (new interface, ontology GNN and red-line modules off by default, speed code without its measurement), each written as "not yet measured"; nothing shown better than it is. Seckin: "for now I agree, we can change it later."
+- Scope (item 8): option (b). #265 (our default ontology against the external ontology tool's, each with and without the GNN) and #218 (the full update calibration curve) stay in v1.05 ("olmuşken tam olsun"). The date risk and about 5 to 6 USD of measurement are accepted, inside the 400 USD cap. Measured with the redesigned GNN if it passes its rule (lane gnn-redesign), otherwise with the current one and that stated. Every paid step carries its own forecast and cap; a step above the 5 USD step approval is asked.
+
+## D-818: the grouped re-seal gate runs without the table tool switch; the switch gets its own lane (lead, within limits, D-807)
+Written 2026-11-19 22:55 +0300 by the lead (8fee59db). docs/loop/stages/GROUPED_RESEAL_GATE.md.
+- lane/grouped-reseal tip 26d13e31 holds the D-810 counting rule, the archive fix with archive_closure (check 660), the short README with the audit fixes, and is bound to external/s05/ROUTE_GATE_26d13e31 (forecast 2.38 USD, each step under 5 USD). It is armed when the SYNLAB2C labelling has ended (Seckin: the labelling runs alone); after a green result, the export route pushes it with the progress page rebuilt (the QUICKSCORE2 rows are in the private GATE_SCOREBOARD.md).
+- With the table tool switch on, checks 326 and 544 fail (a decided "not met" claim no longer becomes its finding), so the switch stays off in this gate and lane table-tool-on traces and fixes the request path first (D-681, D-811 still hold: on before v1.0, measured on the fresh table set). ROUTE_GATE_eba76f56 is superseded.
+
+## D-819: the redesigned ontology network is not relaunched on the D-800 bar; the pair-aware model and the LAW-IV allowlist point wait for Seckin (lead, within limits, D-807)
+Written 2026-11-20 00:18 +0300 by the lead (8fee59db). Lane gnn-redesign (G-20261119-2216), report docs/loop/stages/GNN_REDESIGN_REPORT.md on lane/gnn-redesign at 499c7e7b.
+- The deciding test (link prediction, rules written in 3e474f63 before any figure) FAILED on all 5 seeds: GNN 0 of 40 graphs, GOVERNED_BY MRR 0.34 to 0.42 against 0.73 to 0.75 for a logistic regression on path counts. Masked reconstruction passed by the letter only (machinery check).
+- Proposal A (no relaunch of the D-800 bar with these models) is taken: it spends nothing and a launch would only repeat a known fail. The reference stays; nothing promoted; validation block unopened.
+- Proposal B (pair-aware model, about a day plus 2 to 4 CPU hours) and C (provision kind on the SAFE allowlist: a LAW-IV change, his alone) go to Seckin batched with the next SORU, not as a wake of their own (D-809, low priority). D (per-field errors for any reconstruction task) is a measuring rule for B if he takes it.
+- The branch is not merged into lead now (14 files, 78,823 lines, mostly result files); it stays on lane/gnn-redesign.
+
+## D-820: the ontology goes on with the plain knowledge graph; no network in v1.0 or v1.05 (Seckin, G-20261120-0028)
+Written 2026-11-20 00:29 +0300 by the lead (8fee59db), Seckin's answer of 00:28 to the 00:18 entry and D-819.
+- v1.0 and v1.05: the ontology side runs on the existing knowledge graph with no network; the GNN stays off and is never promoted.
+- The path-count method of the redesign (link suggestion, MRR 0.73 to 0.75 on development graphs) may be added to the graph as a method; if it enters v1.05, its measurement and rule are written first, with a forecast and a limit.
+- #265 (comparison with the outside builder) is done on the no-network side only; #218 (update calibration curve) without the network.
+- A pair-aware model and every network attempt move to v1.1 (#261 moved). The two failed results (GNN_TRAIN_R2 and gnn-redesign) go into docs/LIMITATIONS.md ("tried, not working, because") and the record.
+- D-819 option C (provision kind on the SAFE allowlist) is closed: the privacy rule is not touched. Option B / (1) goes to v1.1.
+
+## D-821: the C4 negotiation measurement keeps its bound tree at 3632f1f7 (lead, within limits, D-807)
+Written 2026-11-20 00:35 +0300 by the lead (8fee59db). NEG_C4_MEASURE_PREP.md section 2 says to move COMMIT to the new tip if the lead tip moves with a controller-bound change before H's request.
+- What came in after 3632f1f7: the D-810 reply counting rule (output-side scoring), the archive fix with archive_closure (check 660), the short README and audit fixes, the table tool switch (JUDGE cell claims only), D-819 to D-821 records. None touches the negotiation path (the C4 compare, the producer and B1 on negotiation items, the labeller).
+- Keeping 3632f1f7 keeps the C4 measurement on the exact code the fix and its R1 comparison were built on, needs no edit of request files the lead cannot read (lead_to_V is write-only), and the archive risk is covered: launch_chain runs archive_closure before every seal of every chain folder.
+- The bound worktree .claude/worktrees/neg-c4-3632f1f7 is made now by launch.py's bind() alone (no inventory, no intake, no spend) so role V's C4LAB precheck can pass; S5_DONE 00:31; B C4DEDUP_A started 00:33; V C4LAB refused at 00:33 on the missing worktree, restarted once it exists.
+
+## D-822: the two dedup folders are rebound to the gate tree 0872ce14; the C4 dedup seal is requested again after an activation timeout (lead, within limits, D-807, D-708)
+Written 2026-11-20 01:05 +0300 by the lead (8fee59db).
+- SYN_DEDUP_N01 and SYN_DEDUP_B01 were bound to gnn-train-6f48d5ed. The chain's archive_closure preflight (check 660) refused N01 at 00:47 and 00:59: at 6f48d5ed scripts/ontology_training_set.py names tools/ontology_training_graphs.py, which that sealer does not archive (the GNN_TRAIN_6f48d5ed fault). Both folders now bind .claude/worktrees/gate-0872ce14 (COMMIT 0872ce14, holding the archive fix): benchmark/baselines/embed_records.py is byte-identical between the two commits, and replay_prompts.py differs only by the removed ontology train dispatch. archive_closure: COMPLETE for both (304 archived files, 62 followed); N01 preflight rc 0. The old launch.py files are kept as launch.py.pre_rebind_6f48. N01's hold cleared.
+- C4_DEDUP_EMBED's seal ended at about 01:00 with controller_failure RuntimeError "Activation timeout" (the instance never became active), 0.28 USD. As with VER_T_ALLOWANCE, a fresh request and seal follow; the step's cap and the 5 USD pre-approval hold (0.28 plus the forecast stays under both).

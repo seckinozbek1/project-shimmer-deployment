@@ -27470,7 +27470,10 @@ def check_517_a_ready_launch_step_launches_in_the_same_move():
     retried into NAME.2 is read there (tools/loop/run_folder_pick.py: the ledger's newest launch, else the highest
     suffix; the lead 18 Nov 22:2x, ROUTE_GATE_3efb3a37). A batch part (plan.json names more than one bundle) writes
     no workload_return: it reads done from terminated_and_cleaned, TERMINATION_VERIFIED, no controller_failure and
-    one batch/NN_* evidence per bundle with pipeline_exit_code 0, else failed with the count. Runs
+    one batch/NN_* evidence per bundle with pipeline_exit_code 0, else failed with the count. An admission refused
+    before anything was admitted (seal_route_driver.py admit exit 75 with admitted.exit.json refused_retry, or an
+    older driver's last admit.log line after the launch began) is a refused launch: held, retried, alerted after 3,
+    never unconfirmed; one with no evidence of its own stays unconfirmed (CHAIN_ADMIT_RETRY, 19 Nov). Runs
     tools/loop/launch_chain_checks.py on fixture folders with a fake launch.py, no provider call: each proof
     neutralised, failed, restored and passed."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
@@ -27911,6 +27914,22 @@ def check_585_semtabfacts_is_a_separate_auxiliary_set_in_scitabs_bundle_form():
     return run_check(585)
 
 
+def check_660_the_archive_closure_preflight_refuses_a_workload_file_outside_the_project_archive():
+    """GNN_TRAIN_6f48d5ed (19 Nov 2026, docs/loop/stages/GNN_TRAIN_6F48_FAILURE.md): tools/loop/archive_closure.py
+    follows a bundle's workload from its entry files by imports, config-declared module:function names and literal
+    .py paths, and refuses (exit 1) when one lies outside the project archive (the sealed manifest's project_files,
+    or the bound commit's sealer rule read from its constants); an import inside a try is listed apart and another
+    pass's branch is latent, neither refused. Fixture git repository of tools/loop/archive_closure_checks.py:
+    refused at the first commit, complete once the sealer carries both files; on HEAD the constants rule equals the
+    sealer's archive_names and the GNN training pass closure is complete. Neutralised (nothing resolved), failed;
+    restored, passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    import archive_closure_checks
+    return archive_closure_checks.run_group(660)
+
+
 def _drive_no_download(name):
     tools = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
     if tools not in sys.path:
@@ -27987,6 +28006,20 @@ def check_643_the_upload_pause_floor_is_read_from_config_at_call_time():
     return _drive_pause('config')
 
 
+def check_644_synthetic_sets_draw_by_party_structure_when_declared():
+    """D-711 items 2 and 3, D-715 item 1, the 20:32 structure instruction, D-732: a synthetic set declaring
+    `strata` in config/neg_synth.json draws each seed inside one party structure ((seed // 2) modulo its strata,
+    crossed with the record kind), select keeps the declared count of each structure, a top-up set
+    (validation_strata) joins the one validation set, a plain set draws as before, and the split refuses a
+    malformed stratified set. Runs tools/neg_stratified_draw_checks.py: five proofs, each neutralised, failed,
+    restored and passed; fixtures only."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import neg_stratified_draw_checks
+    return neg_stratified_draw_checks.run_check()
+
+
 def _neg_optional(number):
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
@@ -28040,6 +28073,38 @@ def check_543_a_conditional_acceptance_counts_as_its_declared_stance():
     carry-forward of open item 158 is not modelled. Runs tools/neg_optional_checks.py: neutralised, failed,
     restored, passed."""
     return _neg_optional(543)
+
+
+def check_651_the_compare_conflict_question_turns_an_against_answer_into_a_conflict():
+    """C4 (lane/neg-conflict-fix, D-806): conflict_question compare (stance as shipped) asks each touched position
+    one CHOICE-A question setting what it asks for against what the proposal would do, both rounds shown, over the
+    declared compare_answers, each counted as its declared stance (exactly one as oppose). On the fixture with a
+    scripted model: the runs' shape (stance never oppose, no red line) composes no conflict; an against answer on
+    the persona's position composes conflict and reject, a neutral one none; recompose_stepwise gives the same reply
+    from saved records; the trimmed arm, conditional_accept, two oppose answers, a stance label and an unnamed label
+    are refused; off unchanged. Runs tools/neg_conflict_fix_checks.py: neutralised, failed, restored, passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_conflict_fix_checks import run
+    return run()
+
+
+def check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict():
+    """R2 (lane/neg-round2-candidate, D-814 round 2): limit_read (false as shipped) reads each persona position not
+    marked a red line once per item, before any proposal and without its text, over the declared limit_answers
+    (exactly one counting as a limit); each proposal a read limit applies to is asked limit_cross, and a yes makes
+    it a conflict marked limit_basis inferred, apart from red_line_hit. On the fixture with a scripted model: the
+    runs' shape (stance never oppose, no red line) with a crossed read limit composes conflict and reject; no
+    crossing and wishes compose none; a marked red line is kept and never read; composes with C4 under both orders;
+    a refused read is no limit; recompose_stepwise gives the same reply; P3 keeps the crossing; malformed switches
+    and templates are refused; off unchanged. Runs tools/neg_round2_checks.py: two neutralisations, failed,
+    restored, passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_round2_checks import run
+    return run()
 
 
 CHECKS = [
@@ -28788,6 +28853,8 @@ CHECKS = [
      check_545_named_columns_are_filled_with_unnamed_ones_up_to_the_declared_fill),
     ("546 The passage-pair step asks with no threshold and saves the answer probabilities",
      check_546_the_passage_pair_step_asks_with_no_threshold_and_saves_the_probabilities),
+    ("660 The archive closure preflight refuses a workload file outside the project archive (GNN_TRAIN_6f48d5ed)",
+     check_660_the_archive_closure_preflight_refuses_a_workload_file_outside_the_project_archive),
     ("575 drive_archive verifies by stream hash and os.stat size, never reading Drive (D-763)",
      check_575_drive_archive_verifies_by_stream_hash_and_size_without_reading_drive),
     ("576 drive_paced confirms with the MD5 recorded at write time, never reading Drive (D-763)",
@@ -28806,6 +28873,12 @@ CHECKS = [
      check_642_drive_paced_stops_its_run_under_the_floor_and_the_next_run_resumes),
     ("643 The upload pause floor is read from config/drive_no_download.json at call time (D-764)",
      check_643_the_upload_pause_floor_is_read_from_config_at_call_time),
+    ("644 Synthetic sets draw by party structure when declared; validation_strata tops up validation (D-715 item 1, D-732)",
+     check_644_synthetic_sets_draw_by_party_structure_when_declared),
+    ("651 The compare conflict question turns an against answer into a conflict, off by default (C4, D-806)",
+     check_651_the_compare_conflict_question_turns_an_against_answer_into_a_conflict),
+    ("652 A read limit the proposal crosses is a second route to a conflict, off by default (R2, D-814)",
+     check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict),
 ]
 
 

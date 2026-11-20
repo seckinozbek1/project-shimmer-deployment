@@ -59,7 +59,7 @@ ROLE_DIRS = frozenset(('b', 'v', 'r', 'c', 's', 'n', '_seckin'))
 # The lead still never opens labels, answers or work\ contents there (its own rule, not this guard's).
 XFER_ALLOWED = frozenset(('b_to_lead_dev', 'n_to_lead', 's_to_lead', 'b_to_seals', 'lead_to_v'))
 WILD = re.compile(r'[*?\[\]]')
-EMERGENCY_TRIGGER = 'trig_01CRyVDA63iUXtMAeYweiJGq'   # "Acil uyandırma", the supervisor chat (Seckin 23:51)
+EMERGENCY_TRIGGER = 'trig_01Mp33SofFidG8jxNry86wsH'   # "Acil uyandırma", the supervisor's new chat (Seckin 23:51; new id 19 Nov 17:10)
 
 DELETE_PROGRAMS = frozenset((
     'rm', 'rmdir', 'del', 'erase', 'rd', 'ri', 'remove-item', 'unlink', 'shred', 'sdelete',

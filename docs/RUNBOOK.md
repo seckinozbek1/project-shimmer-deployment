@@ -233,7 +233,7 @@ audit. The secret guard and staged review remain required before a commit.
 Unsupported/unproven here: Local Draft (it runs on the local model but is not yet proven); usable Sensitive review with the shipped
 inactive layer; complete semantic coverage; historical rule reconstruction through
 the rule endpoint; general sparse speedup; ontology/GNN feedback into agent tasks;
-automatic resume; private-document quality; fresh-clone startup from the README's steps
+automatic resume; private-document quality; fresh-clone startup from the install steps (docs/INSTALL.md)
 alone (in loop S10 both launchers installed and reached their menus on fresh clones; the
 final fresh-clone proof follows S11); and a complete
 review inside the unmounted image. The

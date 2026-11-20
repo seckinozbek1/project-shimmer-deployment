@@ -23,6 +23,10 @@ Double launches are what this guards against first (review of 393a1d37, the lead
   cannot take the ledger lock (tools/loop_budget_guard.py acquire_lock), before the guard's decision, before the
   launch_intent line and before any machine is created, so a refused launch cost nothing. A refused step is held
   10 minutes like a failed launch and alerts after 3 refusals in a row.
+- an admission refused before anything was admitted (the ledger lock held by another launch, or the room gone
+  under it; its exit record <out>.exit.json says exit 75 refused_retry, or for an older driver the last line
+  admit.log gained after this launch began says so) is a refused launch like a GuardRefusal: held 10 minutes,
+  tried again, alerted after 3 in a row, never held unconfirmed (docs/loop/stages/CHAIN_ADMIT_RETRY.md);
 - a ledger launch call that exits non-zero or times out after launch_started is held as unconfirmed until
   --clear (a detached controller may still be polling for an instance type, up to 30 minutes, before any intent
   line; ordinary_final_cloud.py), with an alert; it is never retried on a timer;
@@ -93,6 +97,19 @@ STALE_MARK = 'read copy is stale'
 MARKER = 'request.launch_chain.json'
 FOLDER_PATH_KEYS = ('admission',)
 SEAL_LOG = 'request.run/controller_detached.log'
+# CHAIN_ADMIT_RETRY (19 Nov: ROUTE_GATE_e958ecc4 18:55 and 20:08, SYN_DEDUP_LEAD 20:07): an admission refused before
+# anything was admitted is a refused launch, retried after RETRY_MINUTES, never held unconfirmed. Read first from
+# the admission's own exit record (seal_route_driver.py writes <out>.exit.json, exit ADMIT_RETRY_EXIT, outcome
+# refused_retry); for a driver that predates it, from the final exception line of the bytes admit.log gained after
+# this launch began (a Python traceback ends with exactly one `module.Class: message` line as the process exits).
+ADMIT_RETRY_EXIT = 75
+ADMIT_EXIT_SUFFIX = '.exit.json'
+ADMIT_LOG = 'admit.log'
+RETRYABLE_LAST_LINE = (
+    ('ledger_lock', re.compile(r'^(?:[A-Za-z_][\w.]*\.)?GuardRefusal: Another launch holds the ledger lock\b')),
+    ('no_room', re.compile(r'^(?:[A-Za-z_][\w.]*\.)?RouteError: No room for .* under the ledger lock .*admit again\s*$')),
+)
+PID_LINE = re.compile(r'started detached, pid (\d+)')
 
 
 class ChainError(ValueError):
@@ -305,6 +322,25 @@ def call_launch(folder, args, timeout):
     return done.returncode, done.stdout or '', (done.stderr or '')[-400:]
 
 
+def archive_problems(folder):
+    """'' when every file the folder's workloads run or import is inside their project archive
+    (tools/loop/archive_closure.py, GNN_TRAIN_6f48d5ed), else the first refusal line. A folder without
+    requests.json or launch.py has no bundle request and is not checked; an unreadable one is refused."""
+    folder = Path(folder)
+    if not (folder / 'requests.json').is_file() or not (folder / 'launch.py').is_file():
+        return ''
+    import archive_closure
+    try:
+        results = archive_closure.check_folder(folder)
+    except (archive_closure.Unreadable, OSError, ValueError) as exc:
+        return 'unreadable: %s' % exc
+    for result in results:
+        bad, text = archive_closure.report(result)
+        if bad:
+            return ' | '.join(line.strip() for line in text.splitlines()[:3])
+    return ''
+
+
 def read_status(folder, timeout=None):
     rc, text, err = call_launch(folder, ['status'], timeout or TIMEOUT_S['status'])
     if rc != 0:
@@ -382,11 +418,12 @@ def last_action(trace, folder_name, step_name):
     return rows[-1] if rows else None
 
 
-def in_a_row(trace, folder_name, step_name, result):
-    """How many of the step's latest actions in a row ended in `result` (launch_started lines skipped)."""
+def in_a_row(trace, folder_name, step_name, result, skip=(STARTED,)):
+    """How many of the step's latest actions in a row ended in `result` (launch_started lines skipped, and for an
+    admission its detached `launch` lines too: each refused admission was begun by one)."""
     n = 0
     for x in reversed(actions(trace, folder_name, step_name)):
-        if x['result'] == STARTED:
+        if x['result'] in skip:
             continue
         if x['result'] != result:
             break
@@ -577,8 +614,16 @@ def evaluate(folder, chain, status, trace, t, root=None, cache=None, rows=()):
             state, why = 'unconfirmed', ('launch.py %s exited %s at %s after launch_started; a detached controller may '
                                          'still be waiting for an instance; held until --clear %s:%s'
                                          % (name, last.get('rc'), last['time'], folder.name, name))
+        refusal = None
+        if (state == 'pending' and step['kind'] == 'admit' and last
+                and (last['result'] == STARTED or (last['result'] == 'launch' and last.get('rc') == 0))):
+            refusal = admit_refusal(folder, step, trace)
+            if refusal:
+                state, why = 'held', ('admission refused before anything was admitted (%s, from %s): %s; a refused '
+                                      'launch, tried again after %d min' % (refusal['kind'], refusal['source'],
+                                                                            refusal['detail'][:160], RETRY_MINUTES))
         if state == 'pending' and last and (last['result'] == STARTED or (last['result'] == 'launch' and last.get('rc') == 0)):
-            window = CONFIRM_MINUTES + (step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES) if step['kind'] == 'admit' else 0)
+            window =CONFIRM_MINUTES + (step.get('admit_wait_minutes', ADMIT_WAIT_MINUTES) if step['kind'] == 'admit' else 0)
             if age is not None and age < window:
                 state, why = 'launching', 'launch begun by the chain %.0f min ago (%s), not yet in the evidence' % (
                     age, last['result'])
@@ -609,7 +654,93 @@ def evaluate(folder, chain, status, trace, t, root=None, cache=None, rows=()):
                     (p if isinstance(p, str) else '%s %s' % (p['step'], p.get('state'))) for p in step.get('after', []))
                     or 'none')
         out[name] = {'step': name, 'kind': step['kind'], 'state': state, 'why': why}
+        if refusal:
+            out[name]['admit_refusal'] = refusal
     return out
+
+
+def attempt_of(trace, folder_name, step_name):
+    """(the latest launch_started line of the step, the pid its detached `launch` line printed or None)."""
+    started, pid = None, None
+    for x in actions(trace, folder_name, step_name):
+        if x['result'] == STARTED:
+            started, pid = x, None
+        elif x['result'] == 'launch' and started is not None:
+            m = PID_LINE.search(str(x.get('tail') or ''))
+            pid = int(m.group(1)) if m else None
+    return started, pid
+
+
+def read_tail_from(path, offset, limit=1 << 20):
+    """The text a file gained after `offset` bytes (never through a link), or None."""
+    if is_reparse(path):
+        return None
+    try:
+        with open(path, 'rb') as f:
+            f.seek(int(offset))
+            return f.read(limit).decode('utf-8', 'replace')
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def admit_refusal(folder, step, trace):
+    """{'kind', 'source', 'detail'} when this chain's latest admission of the step ended refused before anything was
+    admitted and may be tried again; None otherwise (still running, admitted, failed another way, or unknown).
+    First the admission's own exit record <out>.exit.json (exit ADMIT_RETRY_EXIT, outcome refused_retry) of this
+    attempt (its pid, else ended after the launch began); else, for a driver without one, the last line admit.log
+    gained after this launch began, when it is the ledger-lock GuardRefusal or the no-room RouteError."""
+    folder = Path(folder)
+    out = folder / Path(step.get('admission', 'admitted/admission.json')).parts[0]
+    if out.exists() or is_reparse(out):
+        return None
+    started, pid = attempt_of(trace, folder.name, step['step'])
+    if started is None:
+        return None
+    begun = parse_time(started.get('time'))
+    record = out.with_name(out.name + ADMIT_EXIT_SUFFIX)
+    if record.is_file() and not is_reparse(record):
+        try:
+            body = json.loads(record.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            body = None
+        if isinstance(body, dict):
+            if pid is not None:
+                ours = body.get('pid') == pid
+            else:
+                ended = body.get('ended_epoch')
+                ours = isinstance(ended, (int, float)) and begun is not None and ended >= begun.timestamp()
+            if ours:
+                if body.get('exit_code') == ADMIT_RETRY_EXIT and body.get('outcome') == 'refused_retry':
+                    return {'kind': str(body.get('kind')), 'source': record.name,
+                            'detail': str(body.get('message') or '')[:300]}
+                return None          # this attempt's record says admitted or failed: not a refusal
+    offset = started.get('admit_log_offset')
+    if not isinstance(offset, int):
+        return None
+    text = read_tail_from(folder / ADMIT_LOG, offset)
+    lines = [x.strip() for x in (text or '').splitlines() if x.strip()]
+    if not lines or any(re.match(r'^\d+ of \d+ admitted$', x) for x in lines):
+        return None
+    for kind, pattern in RETRYABLE_LAST_LINE:
+        if pattern.match(lines[-1]):
+            return {'kind': kind, 'source': ADMIT_LOG, 'detail': lines[-1][:300]}
+    return None
+
+
+def record_admit_refusal(folder, name, refusal):
+    """The trace line of a refused admission (result guard_refused, so the hold and retry of HOLDING apply), and
+    ALERT.md after REPEAT_ALERT in a row."""
+    folder = Path(folder)
+    mc.trace(NAME, 'guard_refused', folder=folder.name, step=name, kind='admit', refusal_kind=refusal['kind'],
+             log=refusal['source'], refusal=refusal['detail'],
+             why='the admission was refused before anything was admitted; held %d minutes, then tried again'
+                 % RETRY_MINUTES)
+    n = in_a_row(mc.read_trace(), folder.name, name, 'guard_refused', skip=(STARTED, 'launch'))
+    if n >= REPEAT_ALERT:
+        mc.alert('launch_chain:guard:%s:%s' % (folder.name, name), 'Launch chain: %s %s (admission) was refused %d '
+                 'times in a row, nothing admitted; the last refusal (%s): %s'
+                 % (folder.name, name, n, refusal['source'], refusal['detail']))
+    return n
 
 
 def folder_states(folder, trace, t, root=None, cache=None, rows=None, status_timeout=None):
@@ -949,7 +1080,16 @@ def still_not_launched(folder, step):
 
 
 def record_intent(folder, step):
-    mc.trace(NAME, STARTED, folder=folder.name, step=step['step'], kind=step['kind'], purpose=step.get('purpose'))
+    extra = {}
+    if step['kind'] == 'admit':
+        # Where this attempt's admit.log bytes begin (admit_refusal reads only what came after).
+        log = Path(folder) / ADMIT_LOG
+        try:
+            extra['admit_log_offset'] = 0 if is_reparse(log) else log.stat().st_size
+        except OSError:
+            extra['admit_log_offset'] = 0
+    mc.trace(NAME, STARTED, folder=folder.name, step=step['step'], kind=step['kind'], purpose=step.get('purpose'),
+             **extra)
 
 
 def launch_step(folder, step, row, chain):
@@ -982,6 +1122,13 @@ def launch_step(folder, step, row, chain):
         mc.alert('launch_chain:preflight:%s:%s' % (folder.name, name),
                  'Launch chain: %s %s is ready but launch.py preflight failed (exit %d): %s. Not launched; the chain '
                  'tries again after %d minutes.' % (folder.name, name, rc, tail, RETRY_MINUTES))
+        return False
+    closure = archive_problems(folder)
+    if closure:
+        mc.trace(NAME, 'preflight_failed', folder=folder.name, step=name, rc=1, preflight=closure[:300])
+        mc.alert('launch_chain:archive:%s:%s' % (folder.name, name),
+                 'Launch chain: %s %s is ready but the archive closure preflight refused it: %s. Not launched; the '
+                 'chain tries again after %d minutes.' % (folder.name, name, closure[:300], RETRY_MINUTES))
         return False
     if not wait_ledger_lock():
         mc.trace(NAME, 'deferred', folder=folder.name, step=name, why='the budget ledger lock was held after preflight')
@@ -1175,6 +1322,9 @@ def run_folder(folder, root, started_s, tally):
             if s['kind'] == 'request':
                 retire_marker(folder, s)
         steps = plans[folder.name]
+        for name, row in steps.items():
+            if row.get('admit_refusal'):
+                record_admit_refusal(folder, name, row['admit_refusal'])
         flag_problems(folder.name, steps)
         ready = [s for s in chain['steps'] if steps[s['step']]['state'] == 'ready']
         started = False

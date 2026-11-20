@@ -2653,8 +2653,8 @@ def position_oppose_report(items, keys, builds, answers, *, stance_context=None,
 
 def margin_conflict_reply(item, reply, threshold):
     """(reply, counts): P3, each proposal's conflict decided by `threshold` on the largest oppose margin among
-    the persona's checked positions on it (or a red line answered yes); an accept or reject stance follows the
-    conflict, a counter is kept. A proposal with no conflict answer, no persona position or a position without
+    the persona's checked positions on it (or a red line answered yes, or a read limit crossed, R2); an accept
+    or reject stance follows the conflict, a counter is kept. A proposal with no conflict answer, no persona position or a position without
     a margin is left as it is (counted). None threshold: the reply unchanged."""
     if reply is None or threshold is None:
         return reply, Counter()
@@ -2668,7 +2668,10 @@ def margin_conflict_reply(item, reply, threshold):
             if any(m is None for m in margins):
                 counts["no_margin"] += 1
             else:
-                new = "conflict" if piece.get("red_line_hit") or max(margins) >= threshold else "no_conflict"
+                # A marked red line answered yes, or (R2, limit_read) a read limit the proposal crosses, holds the
+                # conflict whatever the margins.
+                new = "conflict" if piece.get("red_line_hit") or piece.get("limit_hit") or max(margins) >= threshold \
+                    else "no_conflict"
                 counts["decided"] += 1
                 if new != piece["conflict"]:
                     counts["moved_to_" + new] += 1

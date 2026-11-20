@@ -115,9 +115,26 @@
       {"name": "dev_2", "purpose": "development", "target": 40, "drawn": 80, "offset": 1000},
       {"name": "dev_3", "purpose": "development", "target": 40, "drawn": 80, "offset": 2000},
       {"name": "validation", "purpose": "validation", "target": 40, "drawn": 80, "offset": 10000},
+      {"name": "validation_strata", "purpose": "validation", "tops_up": "validation", "target": 30, "drawn": 120,
+       "offset": 11000, "strata": {"two_singles": 10, "teams": 10, "one_vs_coalition": 10}},
       {"name": "pilot_1", "purpose": "pilot", "target": 24, "drawn": 48, "offset": 20000},
-      {"name": "pilot_2", "purpose": "pilot", "target": 24, "drawn": 48, "offset": 21000}
+      {"name": "pilot_2", "purpose": "pilot", "target": 24, "drawn": 48, "offset": 21000},
+      {"name": "c4val_1", "purpose": "validation", "fix": "C4", "fix_decision": "D-789, D-806 (docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md section 5)",
+       "target": 40, "drawn": 120, "offset": 12000,
+       "strata": {"three_or_more": 10, "two_singles": 10, "teams": 10, "one_vs_coalition": 10}},
+      {"name": "c4pilot_1", "purpose": "pilot", "fix": "C4", "fix_decision": "D-789, D-806 (docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md section 5)",
+       "target": 24, "drawn": 64, "offset": 22000}
     ],
-    "refused_purposes": ["final", "test", "final_test"]
+    "fix_rule": {
+      "decision": "D-789 (Seckin 19 November 2026 14:07): every fix is measured on its own fresh validation and pilot sets, built before the fix is tried and opened only for that check, sizes and look counts recorded; D-806: the negotiation conflict fix (C4, conflict_question compare) first",
+      "rule": "A set naming `fix` (an upper-case fix id) and `fix_decision` is that fix's own fresh validation or pilot set: drawn from its own seed range like every other set, never a top-up and never topped up, and not counted as the plan's one validation set or one of its pilots. A fix declares at most one validation and one pilot set. Its names match the label pass's set-name form (letters and digits, an underscore, a number). It is read only for its fix's check; afterwards it joins development like every pilot (D-671).",
+      "c4": "c4val_1: 40 items, 10 of each party structure the scorer reads (D-715 item 1: at least 5 per structure), 30 seeds drawn per structure. c4pilot_1: 24 items, plain draw, the pilot's counts check only (the compare question answered by form, against occurring at all, the declared mass). Both overlap no other set's range."
+    },
+    "refused_purposes": ["final", "test", "final_test"],
+    "strata_rule": {
+      "decision": "D-711 items 2 and 3, D-715 item 1 (Seckin 16 November 2026 22:31), the party-structure instruction of 20:32 and D-732 (18 November 14:06): every set holds enough items of each party structure for the bar to be read per structure",
+      "rule": "A set declaring `strata` {structure: count} draws each seed inside one structure, (seed // 2) modulo the number of strata in the scorer's structure order, so it is crossed with the record kind (seed modulo 2); two_singles, teams and one_vs_coalition fix the two parties' kinds (one_vs_coalition in a drawn order), three_or_more draws the number from `parties` restricted to three or more and each kind from `coalition_share`. `select` keeps per structure the first `count` items in seed order no screen dropped; a structure never borrows from another. The target is the sum of the counts, and each stratum draws at least two seeds per item it keeps. The seed scheme is unchanged: base + offset + i over the set's own range, fresh seeds that overlap no other set.",
+      "tops_up": "A set naming `tops_up` adds its kept items to that declared plain set of the same purpose and is not a set of its own (still exactly one validation set). validation_strata tops up validation: S3's validation draw held 51 three_or_more items, 1 two_singles, 1 teams and 0 one_vs_coalition; the scorer needs MIN_ITEMS_PER_STRUCTURE (5) headline items of each structure a set holds (D-715 item 1), and 10 per structure leaves room for the screens' drops."
+    }
   }
 }

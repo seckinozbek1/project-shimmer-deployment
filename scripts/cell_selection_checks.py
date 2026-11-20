@@ -31,7 +31,11 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
 19. a cell's figure is read by one reader in its usual forms ("71,2%", "71.2%", "71.2", "-3.4"), so
     a claim writing 71.2 names the cell writing "71,2%" (D-652, audit A1);
 20. a table the claim names, within the declared whole_table_max_cells, is shown whole with its
-    caption (`small_table`, N4); above the bound or with it off, the claim is cut by labels.
+    caption (`small_table`, N4); above the bound or with it off, the claim is cut by labels;
+21. with the table tool request declared (D-811) the fixture judge's one request cites the cells the
+    claim turns on, one more reply record (free_text), and the decided "not met" is its finding as with
+    the request off; a request citing no cell (NONE) lowers it to a leaning that writes no record
+    (TABLE-AUTHORITY-A `no_cell_cited`, D-715 item 2), a proof run only while the request is declared.
 """
 import ast
 import contextlib
@@ -310,20 +314,45 @@ def _decision(decided="not met", settled=True):
             "answers": [{"label": a, "probability": p} for a, p in (("holds", .05), ("not met", .9), ("cannot be settled", .05))]}
 
 
-def _phase(choose, threshold=.7, mask=None, rules=None):
+def request_declared():
+    """Whether the shipped judge contract declares the table tool request (TABLE-TOOL-A, D-811)."""
+    import judge_agent
+    return bool(judge_agent.request_tools(judge_agent.CELL_CLAIM, judge_agent.shipped_contracts()))
+
+
+# The fixture judge's one table tool request when the shipped contract declares it (D-811): one call of a
+# tool shown on this table (compare; get_cells is not shown, every cell being shown already) on the two
+# cells the claim turns on (the Northern and the Eastern dues), so the verdict is cell-grounded and
+# TABLE-AUTHORITY-A lowers nothing. A reply citing no cell (NONE) is lowered by that rule (D-715 item 2),
+# which `observe_none_cited` proves on its own.
+CITING_REQUEST = "compare(r1c2, r3c2)"
+
+
+def _phase(choose, threshold=.7, mask=None, rules=None, request=CITING_REQUEST):
     """The real phase 5.5 on a mocked run with a declared claim: (the pairing map's document, a
-    review_data.json, the reader's file, run context, what the backend was sent, audit rows)."""
+    review_data.json, the reader's file, run context, what the backend was sent, audit rows). With
+    the table tool request declared, the judge's request is answered by `request`, one reply record,
+    as a backend function writes it; with it not declared nothing is generated."""
     import agent_wrapper
     import harness.run_agent as run_agent
     import honest_output_checks as hoc
     import passage_pairs
     from unittest.mock import patch
-    sent = []
+    sent, requested = [], []
+    real_local = agent_wrapper.AgentWrapper.call_local
 
     def call_choice(self, prompt, answers, value):
         sent.append({"prompt": prompt, "answers": [a["label"] for a in answers], "threshold": value})
         result = choose(self, prompt, len(sent))
         return result if isinstance(result, agent_wrapper.CallResult) else agent_wrapper.CallResult(self.backend, "fixture-auditor", "", parsed=result)
+
+    def call_local(self, prompt, *args, **kwargs):
+        if not getattr(self, "_tool_request", None):
+            return real_local(self, prompt, *args, **kwargs)
+        requested.append(prompt)
+        r = agent_wrapper.CallResult(self.backend, "fixture-auditor", request, usage={"truncated": False})
+        self._write_reply(r, {"payload": prompt, "form": "rendered_prompt"})
+        return r
     real = run_agent.build_orchestrator
 
     def orchestrator(**kwargs):
@@ -333,6 +362,7 @@ def _phase(choose, threshold=.7, mask=None, rules=None):
         return orch
     text = chr(10).join((hoc.DOC_TEXT, QUAY_UNIT))
     with tempfile.TemporaryDirectory() as td, patch.object(agent_wrapper.AgentWrapper, "call_choice", call_choice), \
+            patch.object(agent_wrapper.AgentWrapper, "call_local", call_local), \
             patched(cell_selection, "threshold_of", lambda config: threshold), patch.object(passage_pairs, "embed", lambda items: None), \
             patch.object(run_agent, "build_orchestrator", orchestrator):
         run = hoc.mocked_run(Path(td), style_guardian=False, text=text, rules=rules or (hoc.RULES + [CLAIM_RULE]))
@@ -345,7 +375,7 @@ def _phase(choose, threshold=.7, mask=None, rules=None):
         path = folder / "logs" / "call_evidence.jsonl"
         evidence = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()] if path.is_file() else []
     return {"document": document, "data": data, "reader": reader, "context": run["ctx"], "sent": sent, "audit": audit,
-            "outcomes": outcomes, "evidence": evidence}
+            "outcomes": outcomes, "evidence": evidence, "requested": requested}
 
 
 def observe_product():
@@ -370,10 +400,32 @@ def observe_product():
 
 
 def expected_product():
+    # With the table tool request declared (D-811) the judge's one request is one more reply record,
+    # outcome free_text (TABLE-TOOL-A, REPLIES-A); the decision and its finding are the same.
     return {"sent": 1, "answers": ["holds", "not met", "cannot be settled"], "threshold": .7,
             "shows": [True, True, True, False], "row": (1, 1, 1, "not met", .9, [0, 1, 2]), "no text": False, "findings": 1,
             "calls_made": True, "judging": ["judged_cell_claim"], "audit": [("model_finding_not_promoted", "batch_sheet")],
-            "evidence": [("batch_sheet", "CONV-020")], "outcomes": ["not_promoted"]}
+            "evidence": [("batch_sheet", "CONV-020")],
+            "outcomes": ["free_text", "not_promoted"] if request_declared() else ["not_promoted"]}
+
+
+def observe_none_cited():
+    """With the table tool request declared and the judge's request citing no cell (NONE), the decided
+    "not met" at 0.9 is lowered to a leaning (no_cell_cited, TABLE-AUTHORITY-A, D-715 item 2): its
+    decision row is unchanged, it writes no record and is no not-promoted finding."""
+    run = _phase(lambda wrapper, prompt, n: _decision(), request="NONE")
+    row = run["document"]["cell_claims"][0]
+    decision = row["decisions"][0]
+    findings = [f for f in run["data"].get("model_findings_not_promoted") or [] if f.get("rule_id") == "CONV-020"]
+    return {"row": (row["made"], row["not_met"], row["kept"], row.get("requests"), row.get("request_failed")),
+            "decision": (decision["decided"], decision["settled"], decision["confidence"]),
+            "leaning": (decision.get("leaning"), decision.get("leaning_why"), decision.get("cited_cells")),
+            "findings": len(findings)}
+
+
+def expected_none_cited():
+    return {"row": (1, 0, 0, 1, 0), "decision": ("not met", True, .9), "leaning": ("not met", ["no_cell_cited"], []),
+            "findings": 0}
 
 
 def observe_no_threshold():
@@ -583,11 +635,14 @@ def observe_masked():
         seen.append(("Entry Alpha" in context, "Northern" in stable))
         return stable.replace("Northern", "[PLACE]"), dynamic
     run = _phase(lambda wrapper, prompt, n: _decision(), mask=masker)
-    return {"context": seen, "sent raw": any("Northern" in s["prompt"] for s in run["sent"])}
+    return {"context": seen, "sent raw": any("Northern" in s["prompt"] for s in run["sent"]),
+            "request sent raw": any("Northern" in str(p) for p in run["requested"]), "requests": len(run["requested"])}
 
 
 def expected_masked():
-    return {"context": [(True, True)], "sent raw": False}
+    # With the table tool request declared (D-811) the request is one more narrow call, masked the same way.
+    calls = 2 if request_declared() else 1
+    return {"context": [(True, True)] * calls, "sent raw": False, "request sent raw": False, "requests": calls - 1}
 
 
 def observe_same_form():
@@ -812,6 +867,10 @@ def run_checks():
                                                      "table_tools"],
          lambda: patched(module, "__file__", str(ROOT / "scripts" / "cell_selection_checks.py"))),
     ]
+    if request_declared():
+        # D-811: with the request on, a reply citing no cell lowers the decided verdict (TABLE-AUTHORITY-A).
+        proofs.append(("a request citing no cell lowers the verdict", observe_none_cited, expected_none_cited,
+                       lambda: with_source(cell_selection, "leaning_of", "why.append(LEAN_NONE_CITED)", "pass")))
     results = []
     for name, observe, expected, neutralise in proofs:
         results.append(prove_effect(name=name, validate=lambda: cell_selection.CONFIG_PATH.is_file(), observe=observe,

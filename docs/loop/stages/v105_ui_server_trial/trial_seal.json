@@ -1,0 +1,8 @@
+{
+  "step": "v105-ui-server-trial-seal",
+  "instance_type": "gpu_1x_a10",
+  "launches": 1,
+  "minutes": {"boot": 0, "upload": 0, "install": 0, "seed": 0, "workload": 20, "return": 0},
+  "storage": {"gib": 0, "hours": 0},
+  "measures": []
+}

@@ -52,6 +52,10 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
   equal to `requests` (the same pass when it is already there, else a later pass). The admit counts as `launching`
   while its staging folder exists or `admit.log` was written in the last 15 minutes, else for `admit_wait_minutes`
   after its launch; after that, with no full admission, it is `unconfirmed` (held, with an alert, until `--clear`).
+  An admission refused before anything was admitted (the ledger lock held by another launch, or the room gone
+  under it) is a refused launch instead: read from its exit record `admitted.exit.json` (exit 75,
+  `refused_retry`, this attempt's pid), or for an older driver from the last line `admit.log` gained after this
+  launch began; held 10 minutes, tried again, alerted after 3 in a row (docs/loop/stages/CHAIN_ADMIT_RETRY.md).
 - A ledger step with `watch` true gets `watch.py <step>` started detached beside it.
 - The pass budget is checked before each reading and each launch: after 50 minutes no new step is begun, except
   the seal that follows the request this pass just wrote. The longest step begun just before that is a request and

@@ -52,6 +52,12 @@ side and the fixtures.
                                                             counts and kappa printed, dropped ids only in --out
                                                             [--keys DIR in place of --set]
 
+A set declaring `strata` (a stratified draw, D-711 items 2 and 3, D-715 item 1, D-732; a top-up set such as
+`validation_strata` names the set it joins in `tops_up`) draws each seed inside one party structure, (seed // 2)
+modulo its strata in the scorer's order, crossed with the record kind; `draw`, `coverage` and `select` read it
+from the set name alone, and `select` keeps the declared count of each structure. The seed scheme is unchanged
+(base + offset + i, the set's own range).
+
 It prints counts and problem codes only, never a text, a seed or a label. No model is called here.
 """
 from __future__ import annotations
@@ -139,12 +145,15 @@ def load_generator(cfg):
 def check_split(cfg):
     """The split plan's form: unique names, declared purposes (never a final test), at least one development
     set, exactly one validation set, at least two pilots, a target no larger than its draw, and seed ranges
-    that never overlap. Returns the sets."""
+    that never overlap. A top-up set (`tops_up`, a stratified draw, `check_strata`) adds items to the declared
+    set it names and is not counted as a set of its own. A fix set (`fix`, `check_fix`: one fix's own fresh
+    validation or pilot set, D-789) is not counted either. Returns the sets."""
     split = cfg.get("split") or {}
     sets = split.get("sets") or []
     refused = {str(p).lower() for p in split.get("refused_purposes") or []}
     names, spans = set(), []
     purposes = Counter()
+    fixes = Counter()
     for s in sets:
         name, purpose = s.get("name"), str(s.get("purpose", "")).lower()
         if not name or name in names:
@@ -158,8 +167,20 @@ def check_split(cfg):
         if not 0 < s["target"] <= s["drawn"]:
             raise ValueError("set %s: its target is above zero and at most its draw" % name)
         names.add(name)
-        purposes[purpose] += 1
         spans.append((s["offset"], s["offset"] + s["drawn"], name))
+        fix = check_fix(s)
+        if fix is not None:
+            fixes[(fix, purpose)] += 1
+        elif "tops_up" not in s:
+            purposes[purpose] += 1
+    if any(n > 1 for n in fixes.values()):
+        raise ValueError("a fix declares at most one validation set and one pilot set")
+    by_name = {s["name"]: s for s in sets}
+    for s in sets:
+        check_strata(s, by_name)
+        up = by_name.get(s.get("tops_up"))
+        if up is not None and "fix" in up:
+            raise ValueError("set %s tops up a fix set; a fix set takes no top-up" % s["name"])
     if purposes["development"] < 1 or purposes["validation"] != 1 or purposes["pilot"] < 2:
         raise ValueError("the split needs at least one development set, exactly one validation set and at "
                          "least two pilots")
@@ -168,6 +189,72 @@ def check_split(cfg):
         if b0 < a1:
             raise ValueError("the seed ranges of %s and %s overlap" % (an, bn))
     return sets
+
+
+FIX_ID = re.compile(r"^[A-Z][A-Z0-9]{0,15}$")
+FIX_PURPOSES = ("validation", "pilot")
+
+
+def check_fix(s):
+    """A fix set's declaration (D-789: every fix is measured on its own fresh validation and pilot sets, built
+    before the fix is tried; config/neg_synth.json `split.fix_rule`): `fix` names the fix (an upper-case id such as
+    C4), `fix_decision` the decision that orders it; its purpose is validation or pilot, it tops up nothing, and it
+    is never counted as the plan's one validation set or one of its pilots. None for a set without `fix`."""
+    if "fix" not in s:
+        return None
+    fix, name = s.get("fix"), s["name"]
+    if not isinstance(fix, str) or not FIX_ID.match(fix):
+        raise ValueError("set %s: fix is an upper-case id of a declared fix (for example C4)" % name)
+    if not isinstance(s.get("fix_decision"), str) or not s["fix_decision"].strip():
+        raise ValueError("set %s: a fix set names the decision that orders it (fix_decision)" % name)
+    if str(s.get("purpose", "")).lower() not in FIX_PURPOSES:
+        raise ValueError("set %s: a fix set is a validation or a pilot set" % name)
+    if "tops_up" in s:
+        raise ValueError("set %s: a fix set tops up no other set" % name)
+    return fix
+
+
+def check_strata(s, by_name):
+    """A stratified draw's declaration (D-711 items 2 and 3, D-715 item 1, D-732; config/neg_synth.json
+    `strata`): `strata` {party structure: the fewest items the set keeps of it}, each a structure the scorer
+    computes (score_neg_advisor.STRUCTURES), each at least one, its target their sum, and at least two seeds per
+    item it keeps of each structure. `tops_up` names the declared set the items join, of the same purpose, which
+    is no top-up itself and draws no strata; a top-up always draws strata. A set without either draws as before."""
+    name, strata, up = s["name"], s.get("strata"), s.get("tops_up")
+    if strata is None and up is None:
+        return None
+    if up is not None:
+        base = by_name.get(up)
+        if base is None or up == name or "tops_up" in base or "strata" in base:
+            raise ValueError("set %s tops up %r, which is not a declared plain set" % (name, up))
+        if str(base.get("purpose", "")).lower() != str(s.get("purpose", "")).lower():
+            raise ValueError("set %s tops up a set of another purpose" % name)
+        if strata is None:
+            raise ValueError("set %s: a top-up set declares its strata" % name)
+    if not isinstance(strata, dict) or not strata or set(strata) - set(sna.STRUCTURES):
+        raise ValueError("set %s: strata name the scorer's party structures only: %s"
+                         % (name, ", ".join(sna.STRUCTURES)))
+    if any(type(v) is not int or v < 1 for v in strata.values()):
+        raise ValueError("set %s: each stratum keeps a whole number of items, at least one" % name)
+    if s["target"] != sum(strata.values()):
+        raise ValueError("set %s: its target is the sum of its strata" % name)
+    if any(s["drawn"] // len(strata) < 2 * v for v in strata.values()):
+        raise ValueError("set %s: it draws at least two seeds per item it keeps of each stratum" % name)
+    return strata
+
+
+def strata_order(s):
+    """A stratified set's structures in the scorer's order: the one order its seeds are assigned in."""
+    strata = s.get("strata") or {}
+    return [x for x in sna.STRUCTURES if x in strata]
+
+
+def stratum_of(seed, s):
+    """The party structure a stratified set's seed is drawn in (D-732): (seed // 2) modulo the number of strata,
+    so with the record kind (seed modulo 2, D-711) the two are crossed and every stratum holds both kinds about
+    half and half. None for a set without strata, whose seeds draw as before."""
+    order = strata_order(s)
+    return order[(seed // 2) % len(order)] if order else None
 
 
 def split_set(cfg, name):
@@ -271,16 +358,39 @@ def _party_id(name):
     return re.sub(r"[^A-Z0-9]+", "-", name.upper()).strip("-")
 
 
-def draw_structure(seed, cfg):
-    """What the item shows, from the seed's structure stream alone."""
+def party_kinds(rng, d, structure=None):
+    """The parties' kinds. With no stratum, the number from `parties` and each kind from `coalition_share`, as
+    always. In a stratum (D-732) the two-party structures fix them (two singles, two coalitions, or one of each
+    in a drawn order), and three_or_more draws the number from `parties` restricted to three or more and each
+    kind from `coalition_share`."""
+    if structure is None:
+        n = int(_pick(rng, d["parties"]))
+        return ["coalition" if rng.random() < d["coalition_share"] else "single" for _ in range(n)]
+    if structure == sna.TWO_SINGLES:
+        return ["single", "single"]
+    if structure == sna.TEAMS:
+        return ["coalition", "coalition"]
+    if structure == sna.ONE_VS_COALITION:
+        return rng.sample(["single", "coalition"], 2)
+    if structure == sna.THREE_OR_MORE:
+        many = {n: w for n, w in d["parties"].items() if int(n) >= 3}
+        if not many:
+            raise ValueError("the declared parties distribution gives no three-party item")
+        n = int(_pick(rng, many))
+        return ["coalition" if rng.random() < d["coalition_share"] else "single" for _ in range(n)]
+    raise ValueError("not a party structure: %r" % (structure,))
+
+
+def draw_structure(seed, cfg, structure=None):
+    """What the item shows, from the seed's structure stream alone; in a stratified set, inside the seed's
+    stratum (`structure`, stratum_of)."""
     rng = _rng(seed, "structure")
     d, pools = cfg["distributions"], cfg["pools"]
     lo_round, hi_round = cfg["constraints"]["rounds"]
     k = int(_pick(rng, d["round_k"]))
     if not lo_round <= k < hi_round:
         raise ValueError("round k is %d; it needs a round k+1 inside %s" % (k, cfg["constraints"]["rounds"]))
-    n = int(_pick(rng, d["parties"]))
-    kinds = ["coalition" if rng.random() < d["coalition_share"] else "single" for _ in range(n)]
+    kinds = party_kinds(rng, d, structure)
     singles = iter(rng.sample(pools["single_names"], kinds.count("single")))
     groups = iter(rng.sample(pools["coalition_names"], kinds.count("coalition")))
     parties = []
@@ -482,17 +592,23 @@ def meets_constraints(key, cfg):
             and sum(1 for p in props if p["red_line"]) >= c["min_red_line"])
 
 
-def sample_card(seed, cfg=None, *, version=None):
-    """One seed's card: structure, hidden draw, declared key. Deterministic in (seed, config, code)."""
+def sample_card(seed, cfg=None, *, version=None, stratum=None):
+    """One seed's card: structure, hidden draw, declared key. Deterministic in (seed, config, code). In a
+    stratified set the card records its `stratum`, the party structure the scorer computes from its parties."""
     cfg = cfg or load_config()
-    structure = draw_structure(seed, cfg)
+    structure = draw_structure(seed, cfg, stratum)
+    if stratum is not None and sna.structure_of(structure["parties"]) != stratum:
+        raise ValueError("the drawn parties are not of the seed's stratum")
     for attempt in range(cfg["constraints"]["max_hidden_attempts"]):
         hidden = draw_hidden(seed, structure, cfg, attempt)
         key = declared_key(structure, hidden)
         if meets_constraints(key, cfg):
-            return {"schema": CARD_SCHEMA, "item_id": item_id_of(seed), "seed": seed, "synthetic": True,
+            card = {"schema": CARD_SCHEMA, "item_id": item_id_of(seed), "seed": seed, "synthetic": True,
                     "sampler_sha256": version or sampler_sha256(), "hidden_attempt": attempt,
                     "structure": structure, "hidden": hidden, "declared_key": key}
+            if stratum is not None:
+                card["stratum"] = stratum
+            return card
     raise SeedRefused("no hidden draw met the declared constraints")
 
 
@@ -778,6 +894,40 @@ def select(cards, set_dir, target, dropped=()):
             "kept": kept, "short": max(0, target - len(kept)), "record_kinds": dict(kinds)}
 
 
+def structure_counts(cards):
+    """{party structure: cards}, each computed by the scorer from the card's declared parties alone."""
+    return dict(Counter(sna.structure_of(c["structure"]["parties"]) for c in cards))
+
+
+def select_strata(cards, set_dir, strata, dropped=()):
+    """A stratified set's kept items (D-732): per declared structure, the first `strata[structure]` built items
+    of that structure in seed order that no screen dropped; a structure with fewer is short by the difference,
+    so a stratum never borrows from another. Ids out, in seed order; the seeds never leave."""
+    built = {q.parent.name for q in Path(set_dir).glob("build/*/build.json")}
+    drop = set(dropped)
+    order = [c for c in sorted(cards, key=lambda c: c["seed"]) if c["item_id"] in built]
+    keep, by_structure = set(), Counter()
+    for c in order:
+        st = sna.structure_of(c["structure"]["parties"])
+        if c["item_id"] in drop or by_structure[st] >= strata.get(st, 0):
+            continue
+        keep.add(c["item_id"])
+        by_structure[st] += 1
+    kept = [c["item_id"] for c in order if c["item_id"] in keep]
+    kinds = Counter(c["structure"]["record_kind"] for c in order if c["item_id"] in keep)
+    short = {st: strata[st] - by_structure[st] for st in strata if by_structure[st] < strata[st]}
+    return {"schema": SELECT_SCHEMA, "target": sum(strata.values()), "built": len(order),
+            "dropped": len(drop & {c["item_id"] for c in order}), "kept": kept, "short": sum(short.values()),
+            "record_kinds": dict(kinds), "structures": {st: by_structure[st] for st in strata},
+            "short_by_structure": short}
+
+
+def strata_problems(cov, s):
+    """A stratified set's drawn cards against its declared strata: a structure with fewer cards than it keeps."""
+    return ["structure:%s" % st for st, n in (s.get("strata") or {}).items()
+            if cov.get("structure", {}).get(st, 0) < n]
+
+
 # ---------------------------------------------------------------------------
 # role V's labels against the cards
 
@@ -939,10 +1089,11 @@ def coverage(cards, cfg):
     """Class counts over a batch's declared keys: fates, conflict, M10 (movable or settled, AM-3) and the red
     lines' outcome (AM-2: held on removed, not held on kept or changed, open apart)."""
     out = {"fate": Counter(), "conflict": Counter(), "m10": Counter(), "red_line_outcome": Counter(),
-           "record_kind": Counter(), "items": 0}
+           "record_kind": Counter(), "structure": Counter(), "items": 0}
     for card in cards:
         out["items"] += 1
         out["record_kind"][card["structure"]["record_kind"]] += 1
+        out["structure"][sna.structure_of(card["structure"]["parties"])] += 1
         for p in card["declared_key"]["proposals"].values():
             out["fate"][p["fate"]] += 1
             out["conflict"][p["conflict"]] += 1
@@ -969,6 +1120,22 @@ def set_kind_problems(set_dir, cfg):
         kinds[kind] += 1
     floor = cfg["constraints"]["batch_min_per_class"]["record_kind"]
     out += ["record_kind:" + k for k in sna.RECORD_KINDS if kinds[k] < floor]
+    return out
+
+
+def built_structures(set_dir):
+    """{party structure: {record kind: built items}} of a set folder, the structure computed by the scorer from
+    each build's declared parties; counts only."""
+    out = {}
+    for p in sorted(Path(set_dir).glob("build/*/build.json")):
+        b = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            st = sna.structure_of(b.get("parties"))
+        except ValueError:
+            st = sna.UNDECLARED_STRUCTURE
+        kind = b.get("record_kind") if b.get("record_kind") in sna.RECORD_KINDS else sna.UNDECLARED_KIND
+        out.setdefault(st, {}).setdefault(kind, 0)
+        out[st][kind] += 1
     return out
 
 
@@ -1045,8 +1212,12 @@ def main(argv=None):
         return 0
     if args.cmd == "check-split":
         for s in check_split(cfg):
-            print("%-10s %-11s target %3d drawn %3d offset %6d" % (s["name"], s["purpose"], s["target"], s["drawn"],
-                                                                  s["offset"]))
+            print("%-17s %-11s target %3d drawn %3d offset %6d" % (s["name"], s["purpose"], s["target"], s["drawn"],
+                                                                  s["offset"])
+                  + ("" if "strata" not in s else "  strata %s%s" % (
+                      ", ".join("%s %d" % (st, s["strata"][st]) for st in strata_order(s)),
+                      ", tops up %s" % s["tops_up"] if "tops_up" in s else ""))
+                  + ("  fix %s (%s)" % (s["fix"], s["fix_decision"].split(" (")[0]) if "fix" in s else ""))
         return 0
     if args.cmd == "draw":
         base = _read_json(args.seed_base)
@@ -1055,9 +1226,10 @@ def main(argv=None):
         version, gen = sampler_sha256(), load_generator(cfg)
         drawn = refused = 0
         keys = _keys_dir(args, cfg, must_exist=False)
+        declared = split_set(cfg, args.set)
         for seed in seeds_for(cfg, args.set, base["base"]):
             try:
-                card = sample_card(seed, cfg, version=version)
+                card = sample_card(seed, cfg, version=version, stratum=stratum_of(seed, declared))
             except SeedRefused:
                 refused += 1
                 continue
@@ -1105,13 +1277,20 @@ def main(argv=None):
         for f in args.dropped:
             value = _read_json(f)
             dropped |= set(value.get("dropped_ids") or [])
-        out = select(cards, args.set_dir, split_set(cfg, args.set)["target"], dropped)
+        declared = split_set(cfg, args.set)
+        if declared.get("strata"):
+            out = select_strata(cards, args.set_dir, declared["strata"], dropped)
+        else:
+            out = select(cards, args.set_dir, declared["target"], dropped)
         _write_json(Path(args.out), out)
-        print(json.dumps({k: out[k] for k in ("target", "built", "dropped", "short", "record_kinds")}, sort_keys=True))
+        print(json.dumps({k: out[k] for k in ("target", "built", "dropped", "short", "record_kinds", "structures",
+                                              "short_by_structure") if k in out}, sort_keys=True))
         return 2 if out["short"] or len(out["record_kinds"]) < len(sna.RECORD_KINDS) else 0
     if args.cmd == "set-check":
         problems = set_kind_problems(args.set_dir, cfg)
         print("set check: " + (", ".join(problems) if problems else "both record kinds present, each item records its kind"))
+        print("built items by party structure and record kind: " + json.dumps(built_structures(args.set_dir),
+                                                                               sort_keys=True))
         return 2 if problems else 0
     if args.cmd == "label-sheets":
         sheets = [label_sheet(_read_json(p)) for p in sorted(Path(args.set_dir).glob("build/*/build.json"))]
@@ -1138,6 +1317,8 @@ def main(argv=None):
             raise SystemExit("refused: a card of another set is in the card folder")
         cov = coverage(cards, cfg)
         problems = coverage_problems(cov, cfg)
+        if args.set:
+            problems += strata_problems(cov, split_set(cfg, args.set))
         print(json.dumps(cov, sort_keys=True))
         if problems:
             print("below the declared batch minimum: " + ", ".join(problems))

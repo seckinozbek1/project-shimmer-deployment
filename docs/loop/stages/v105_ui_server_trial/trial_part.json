@@ -1,0 +1,11 @@
+{
+  "step": "v105-ui-server-trial-part",
+  "instance_type": "gpu_1x_a10",
+  "launches": 1,
+  "minutes": {"boot": 4, "upload": 64, "install": 4.7, "seed": 0, "workload": 5, "return": 1},
+  "storage": {"gib": 0, "hours": 0},
+  "measures": [
+    {"name": "asset_copy", "keeps_minutes": 9.0,
+     "source": "ROUTE_GATE_174_340 part G1116_174_340 (16 Nov): support_transfer 82 s + asset_copy_probe 306 s + asset_copy_use 151 s; without the copy the archive upload took 64 minutes (D-298)"}
+  ]
+}

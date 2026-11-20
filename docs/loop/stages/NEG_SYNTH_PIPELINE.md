@@ -82,8 +82,24 @@ deduplication and the labeller; the rest are counted, never used.
 | validation | validation (one set) | 40 | 80 | 10,000 |
 | pilot_1 | pilot, read once then development (D-671) | 24 | 48 | 20,000 |
 | pilot_2 | pilot, read once then development | 24 | 48 | 21,000 |
+| validation_strata | top-up of validation, stratified (two_singles 10, teams 10, one_vs_coalition 10) | 30 | 120 | 11,000 |
+| c4val_1 | fix C4's own validation set (D-789), stratified 10 per structure | 40 | 120 | 12,000 |
+| c4pilot_1 | fix C4's own pilot (D-789), plain draw, counts check only | 24 | 64 | 22,000 |
 
-208 items kept from 416 seeds. The pilots match the first pilot's 24 items; the validation set the advisor plan's
+**Fix sets (D-789; `split.fix_rule`, `check_fix`, check 644 proof 6).** A set naming `fix` and `fix_decision` is one
+fix's own fresh validation or pilot set: its own seed range, never a top-up, not counted as the plan's one
+validation set or a pilot, at most one of each purpose per fix, its name of the label pass's set-name form. C4's
+order of work: docs/loop/stages/NEG_C4_MEASURE_PREP.md.
+
+**Stratified draw (D-711 items 2 and 3, D-715 item 1, D-732; check 644).** A set declaring `strata` draws each
+seed inside one party structure, (seed // 2) modulo its strata in the scorer's order, crossed with the record
+kind; the two-party structures fix the parties' kinds, three_or_more draws its number and kinds as before.
+`select` keeps the declared count of each structure, first in seed order, never borrowing. `validation_strata`
+names `tops_up: validation`: its kept items join the one validation set (role S session 3's draw held 51
+three_or_more, 1 two_singles, 1 teams, 0 one_vs_coalition, below the scorer's 5 per structure). The six sets
+above draw exactly as before. Report: NEG_STRATIFIED_DRAW_REPORT.md.
+
+208 items kept from 416 seeds in the six plain sets. The pilots match the first pilot's 24 items; the validation set the advisor plan's
 40 held-out items. Every figure on synthetic items is reported in its own row, with its n, its answers stated as
 from construction (D-706 item 3, Bean et al.): `score_neg_advisor.report` reads the real items alone as the
 headline (figures, cells, claims, the bar and the power record) and the synthetic items apart under `synthetic`,
@@ -122,9 +138,14 @@ Seckin approved the label-permutation null instead (D-714, 16 November 20:54): `
    `config/neg_synth.json` `card_folder` (check 510).
 2. **Reference fingerprint** (the holder of the pilot, development and real items: role N, or the lead for the
    development material it already reads). `neg_synth_dedup.py fingerprint --part pilot=... --part dev=...
-   --embed`: hashes and vectors only.
+   --embed`: hashes and vectors only. Where the laptop cannot hold bge-m3 (19 November 2026,
+   SYN_DEDUP_INPUTS_REPORT.md), the embedding rides the replay pass (EMBED-ROUTE-A): `neg_synth_dedup.py export`
+   writes the texts the command will embed, `embed_records.py build` the parts, the lead seals and launches them
+   unopened, `merge --require-complete` reads the vectors back, and `fingerprint ... --vectors <merged> --records
+   <records.jsonl> --sidecar` writes the fingerprint with its vectors in `<stem>.vectors.npy` beside it.
 3. **Role B.** `candidates` from role S's set folders, `check` against the fingerprint, `within` across every
-   synthetic set; ids to role S only, counts to the lead.
+   synthetic set; ids to role S only, counts to the lead. On the rented route role B exports its candidates too
+   (`export --candidates`) and runs `check` and `within` with `--vectors` and `--records` in place of `--embed`.
 4. **Role V** (Lambda, an open-weight Llama, Gemma or OLMo instruct model, D-706 item 1). Labels every kept
    position (article, wording, stance) and red line from the item text alone, never the card or the build
    file: role S gives it `neg_synth.py label-sheets` (the articles, the parties, the persona, and each quote

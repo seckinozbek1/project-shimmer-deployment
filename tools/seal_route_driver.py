@@ -55,7 +55,13 @@ MIN_DISK_GB = 5.0
 EXPECTED_BYTES = {'seal': 512 * 2 ** 20, 'ordinary_final_bound_reverify.py': 16 * 2 ** 20,
                   'ordinary_final_bound_preflight.py': 16 * 2 ** 20}
 WAIT_SECONDS = 30
-HEAVY = ('prepare_ordinary_final_run.py', 'verify_ordinary_final_assets.py', 'ordinary_final_bound_reverify.py',
+# Open item: an admission refused before anything was admitted, in a way a later admission will not trip on (the
+# budget ledger lock held by another launch, or the room read before the lock gone under it), exits with this code
+# and writes it into <out>.exit.json; tools/loop/launch_chain.py reads that file and tries the admission again after
+# RETRY_MINUTES instead of holding it unconfirmed. This file is not controller-bound (CONTROL_FILES), so no re-seal.
+ADMIT_RETRY_EXIT = 75
+ADMIT_EXIT_SUFFIX = '.exit.json'
+HEAVY =('prepare_ordinary_final_run.py', 'verify_ordinary_final_assets.py', 'ordinary_final_bound_reverify.py',
          'ordinary_final_bound_preflight.py')
 
 
@@ -181,6 +187,64 @@ def plan_requests(plan, sessions, base='.'):
             out.append(dict(name='%s_%s' % (name, e['item']), argv=argv + kept))
     sr.require(len({r['name'] for r in out}) == len(out), 'Request names repeat')
     return out
+
+
+class AdmitRetry(sr.RouteError):
+    """Nothing was admitted and admitting again is safe: `kind` is 'ledger_lock' (another launch held the budget
+    ledger lock) or 'no_room' (the room read before the lock was gone under it; the staging folder renamed aside)."""
+
+    def __init__(self, kind, message):
+        super().__init__(message)
+        self.kind = kind
+
+
+def lock_refusal_is_retry(lock):
+    """The admission's budget ledger lock call with a GuardRefusal (another launch holds it) made an
+    AdmitRetry('ledger_lock'): the lock is taken before anything is staged, so there is nothing to undo."""
+    import loop_budget_guard as guard
+
+    def take(ledger):
+        try:
+            return lock(ledger)
+        except guard.GuardRefusal as exc:
+            raise AdmitRetry('ledger_lock', str(exc)) from exc
+    return take
+
+
+def no_room_is_retry(step_gate):
+    """The gate under the lock with its refusal (one reading, no room) made an AdmitRetry('no_room'): the staging
+    folder is renamed aside on the way out, so the next admission finds nothing in its way."""
+    def gated(name):
+        try:
+            return step_gate(name)
+        except AdmitRetry:
+            raise
+        except sr.RouteError as exc:
+            raise AdmitRetry('no_room', str(exc)) from exc
+    return gated
+
+
+def admit_exit_path(out):
+    """<out>.exit.json beside the admission folder: the admission's own exit record."""
+    out = Path(out)
+    return out.with_name(out.name + ADMIT_EXIT_SUFFIX)
+
+
+def write_admit_exit(out, exit_code, outcome, kind, message, started_utc):
+    """The admission's exit record, written whole (a temporary file replaced): exit code, outcome (admitted,
+    refused_retry, failed), the refusal kind, the message's first 300 characters, this process id and the times.
+    A record that cannot be written never changes the admission's own exit."""
+    path = admit_exit_path(out)
+    body = dict(command='admit', exit_code=int(exit_code), outcome=outcome, kind=kind, message=str(message)[:300],
+                pid=os.getpid(), started_utc=started_utc,
+                ended_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), ended_epoch=round(time.time(), 3))
+    tmp = path.with_name(path.name + '.tmp')
+    try:
+        tmp.write_text(json.dumps(body, sort_keys=True) + chr(10), encoding='utf-8')
+        os.replace(str(tmp), str(path))
+    except OSError:
+        pass
+    return body
 
 
 def refused_name(out):
@@ -556,6 +620,7 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
     step writes its stdout and stderr tails to admit.log (write_refusal_tail) before the refusal is raised."""
     import loop_budget_guard as guard
     lock = guard.acquire_lock if lock is None else lock
+    lock = lock_refusal_is_retry(lock)
     unlock = guard.release_lock if unlock is None else unlock
     job_bundle, out = Path(job_bundle), Path(out)
     job_manifest = json.loads((job_bundle / 'execution_manifest.json').read_text(encoding='utf-8'))
@@ -615,6 +680,7 @@ def admit(job_bundle, run_folder, reuse, out, live, ledger, steps=True, run=subp
                     stream.write(json.dumps(dict(room, lock='before'), sort_keys=True) + chr(10))
             step_gate = gate or (lambda name: wait_for_room(name, staging / 'gate_log.jsonl', out.parent, read=resources,
                                                             floor_bytes=admit_floor_bytes(), wait=False))
+            step_gate = no_room_is_retry(step_gate)
             for request in job['requests']:
                 row = rows_by.get(request['name']) or {}
                 source = sealed / request['name']
@@ -769,7 +835,24 @@ def main(argv=None):
     private = instance_reaper.main_private()
     live = dict(budget_ledger=private / 'budget_ledger.jsonl', spend_store=private / 'cloud_reference_spend.jsonl',
                 r_ledger=instance_reaper.R_LEDGER)
-    rows = admit(args.job, args.run, args.reuse, args.out, live, private / 'budget_ledger.jsonl', request=args.request)
+    return admit_main(args, live, private / 'budget_ledger.jsonl')
+
+
+def admit_main(args, live, ledger, admit_fn=None):
+    """The admit command: its exit code and <out>.exit.json. A retryable refusal (AdmitRetry) exits
+    ADMIT_RETRY_EXIT with outcome refused_retry; any other failure is recorded as failed and raised as before."""
+    admit_fn = admit if admit_fn is None else admit_fn
+    started = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    try:
+        rows = admit_fn(args.job, args.run, args.reuse, args.out, live, ledger, request=args.request)
+    except AdmitRetry as exc:
+        write_admit_exit(args.out, ADMIT_RETRY_EXIT, 'refused_retry', exc.kind, exc, started)
+        print('admission refused, nothing admitted; admit again (%s): %s' % (exc.kind, exc), flush=True)
+        return ADMIT_RETRY_EXIT
+    except BaseException as exc:
+        write_admit_exit(args.out, 1, 'failed', type(exc).__name__, exc, started)
+        raise
+    write_admit_exit(args.out, 0, 'admitted', None, '%d of %d admitted' % (len(rows), len(rows)), started)
     print('%d of %d admitted' % (len(rows), len(rows)))
     return 0
 

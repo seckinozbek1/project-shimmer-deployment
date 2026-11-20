@@ -508,6 +508,79 @@ class Screens(NegSynthChecks):
 
         self.prove("dedup_counts_four_rules_and_keeps_one_of_a_pair", observe, expected, neutralise)
 
+    def test_459_dedup_vectors_from_the_rented_route(self):
+        """EMBED-ROUTE-A for the dedup: `export` writes exactly the texts the commands embed; the merged vectors
+        (here written by Python from a fixed 1,024-wide stand-in, as embed_records.py merge leaves them) give the
+        same fingerprint vectors and the same check and within results as the embedder itself; a text the
+        records do not hold is refused."""
+        import numpy as np
+        fns = dd._freeze_tools()
+        er = fns._embed_records()
+        rng = random.Random("dedup-route-fixture")
+        para = _words(rng, 25)
+        refs = {"development": [" ".join(para), " ".join(_words(rng, 30))]}
+        cands = [{"id": "r-cos", "group": "r-cos", "texts": [" ".join(reversed(para))]},
+                 {"id": "r-clean", "group": "r-clean", "texts": [" ".join(_words(rng, 30))]},
+                 {"id": "r-twin", "group": "r-twin", "texts": [" ".join(reversed(para)) + " "]}]
+
+        def wide(texts):
+            return [v + [0.0] * (er.DIM - len(v)) for v in fake_embed(texts)]
+
+        def merged(texts, folder):
+            got = fns.export_records(texts, folder / "export")
+            keys = [k for _r, k, _t in er.read_records(folder / "export" / "records.jsonl")]
+            rows = [t for _r, _k, t in er.read_records(folder / "export" / "records.jsonl")]
+            (folder / "merged").mkdir()
+            with open(folder / "merged" / "vectors.f32", "wb") as fh:
+                np.save(fh, er.unit_rows(np.asarray(wide(rows), dtype=np.float32)))
+            (folder / "merged" / "state.json").write_text(json.dumps(
+                {"schema": fns.ROUTE_STATE_SCHEMA, "keys_sha256": er.key_digests(keys)["newline"], "dim": er.DIM,
+                 "n": len(keys), "done": len(keys)}), encoding="utf-8")
+            return got, dd.route_embedder(folder / "merged", folder / "export" / "records.jsonl")
+
+        def observe():
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                (tmp / "ref").mkdir()
+                (tmp / "cand").mkdir()
+                _got, ref_embed = merged(dd.embed_inputs(parts=refs, cfg=CFG), tmp / "ref")
+                _got, cand_embed = merged(dd.embed_inputs(candidates=cands, cfg=CFG), tmp / "cand")
+                direct = dd.fingerprint(refs, CFG, wide)
+                routed = dd.fingerprint(refs, CFG, ref_embed)
+                same_vectors = bool(np.allclose(np.asarray(direct["vectors"]["rows"]),
+                                                np.asarray(routed["vectors"]["rows"]), atol=1e-6))
+                got = dd.check(routed, cands, CFG, cand_embed)
+                w = dd.within(cands, CFG, cand_embed)
+                try:
+                    cand_embed(["a text the records never held at all"])
+                    unknown = "accepted"
+                except ValueError:
+                    unknown = "refused"
+                side = dd.fingerprint(refs, CFG, ref_embed, sidecar=tmp / "fp" / ("reference" + dd.SIDECAR_SUFFIX))
+                side_got = dd.check(side, cands, CFG, cand_embed, base=tmp / "fp")
+                (tmp / "fp" / ("reference" + dd.SIDECAR_SUFFIX)).write_bytes(b"changed")
+                try:
+                    dd.check(side, cands, CFG, cand_embed, base=tmp / "fp")
+                    changed = "accepted"
+                except ValueError:
+                    changed = "refused"
+                return {"same_vectors": same_vectors, "route_recorded": "route" in routed["vectors"],
+                        "cosine": got["ids"]["cosine"], "within": w["dropped_ids"], "unknown_text": unknown,
+                        "sidecar_cosine": side_got["ids"]["cosine"], "sidecar_inline_rows": "rows" in side["vectors"],
+                        "sidecar_changed": changed}
+
+        expected = {"same_vectors": True, "route_recorded": True, "cosine": ["r-cos", "r-twin"], "within": ["r-twin"],
+                    "unknown_text": "refused", "sidecar_cosine": ["r-cos", "r-twin"], "sidecar_inline_rows": False,
+                    "sidecar_changed": "refused"}
+
+        def zeros(_vectors, _records):
+            def embed(texts):
+                return [[0.0] * er.DIM for _ in texts]
+            return embed
+
+        self.prove("dedup_takes_the_rented_route_vectors_as_the_embedder", observe, expected,
+                   lambda: patch.object(dd, "route_embedder", zeros))
+
     def test_459_split_plan_and_final_guard(self):
         def refused(fn):
             try:

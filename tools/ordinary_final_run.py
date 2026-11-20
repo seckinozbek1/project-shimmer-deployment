@@ -652,16 +652,54 @@ def b1_observation(folder, item_ids):
                 summary_written=(folder/'b1_summary.json').is_file())
 
 
+def replay_derived(folder, prompt_count, calls):
+    """(derived, problems): the derived prompts a replay pass itself declares (D-810), built at run
+    time from its own replies and so not in the sealed prompts file, e.g. the negotiation advisor's
+    system_audit questions (benchmark/baselines/neg_advisor.py run). Read from the pass's
+    replay_measurement.json only when it declares `derived`: that figure must equal its rows of form
+    `audit`, its `prompts` the sealed prompt count, and each such row's call_id must be exactly one
+    record in `calls`; any of these failing is a problem, never a smaller count. A measurement
+    without `derived` (every other replay workload) declares none."""
+    try:
+        measurement = read(Path(folder)/REPLAY_MEASUREMENT)
+    except (OSError, ValueError):
+        return 0, []
+    if not isinstance(measurement, dict) or 'derived' not in measurement:
+        return 0, []
+    declared, rows = measurement.get('derived'), measurement.get('rows')
+    if not (isinstance(declared, int) and not isinstance(declared, bool) and declared >= 0 and isinstance(rows, list)):
+        return 0, ['replay_derived_unreadable']
+    audits = [r for r in rows if isinstance(r, dict) and r.get('form') == 'audit']
+    problems = []
+    if len(audits) != declared:
+        problems.append('replay_derived_rows')
+    if measurement.get('prompts') != prompt_count:
+        problems.append('replay_prompts_declared')
+    if any(not r.get('call_id') or calls.count(r.get('call_id')) != 1 for r in audits):
+        problems.append('replay_derived_record')
+    return declared, problems
+
+
 def replay_observation(folder, prompt_count, paths):
     """What one replay pass left in its own folder (D-061 item 4): one reply record per prompt
-    per path, and its replay_measurement.json. Counts only, in b1_observation's shape, so the
-    entry's assessment holds a replay pass to the same one-record-per-call rule."""
+    per path, plus one per derived prompt the pass itself declares (replay_derived, D-810), and its
+    replay_measurement.json. Counts only, in b1_observation's shape, so the entry's assessment
+    holds a replay pass to the same one-record-per-call rule."""
     folder = Path(folder)
     replies = folder/'audit'/'model_replies'
-    records = len(list(replies.glob('*.json'))) if replies.is_dir() else 0
-    expected = prompt_count*len(paths)
-    return dict(items=expected, reply_records=records, items_without_one_record=[] if records == expected else ['replay'],
-                summary_written=(folder/REPLAY_MEASUREMENT).is_file(), replay=True)
+    files = sorted(replies.glob('*.json')) if replies.is_dir() else []
+    calls = []
+    for path in files:
+        try:
+            calls.append(read(path).get('call_id'))
+        except (OSError, ValueError, AttributeError):
+            calls.append(None)
+    records = len(files)
+    derived, problems = replay_derived(folder, prompt_count, calls)
+    expected = prompt_count*len(paths) + derived
+    missing = problems + ([] if records == expected else ['replay'])
+    return dict(items=expected, reply_records=records, items_without_one_record=missing,
+                summary_written=(folder/REPLAY_MEASUREMENT).is_file(), replay=True, derived=derived)
 
 
 def pass_observation(base_evidence, manifest, entry):
@@ -950,7 +988,10 @@ def b1_argv(base, project, out, checkpoint):
 
 
 def expected_records(manifest):
-    """One reply record per item per bare_model pass, and per prompt per path per replay pass."""
+    """One reply record per item per bare_model pass, and per prompt per path per replay pass. The
+    progress total only: derived prompts a pass builds at run time (replay_derived, D-810) are not
+    known at sealing, so a pass that declares them ends above this figure; integrity is judged by
+    replay_observation on the pass's own declaration, never by this total."""
     total = 0
     for entry in b1_checkpoints(manifest):
         total += (manifest['b1']['replay']['prompt_count']*len(replay_paths(entry['args'])) if is_replay(entry)

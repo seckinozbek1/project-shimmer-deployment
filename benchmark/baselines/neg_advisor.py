@@ -973,15 +973,43 @@ def check_stepwise_block(block):
 # - C3 `conditional_accept` {label, counts_as}: the stance step offers a fourth answer for a conditional
 #   acceptance, from its own template; Python counts it as `counts_as`, declared from D-748 (labelled accept),
 #   and keeps it marked on the piece. Its later-round carry-forward (open item 158) is not modelled here.
-STANCE_QUESTION, TWO_CHECKS = "stance", "two_checks"
-CONFLICT_QUESTIONS = (STANCE_QUESTION, TWO_CHECKS)
+# - C4 `conflict_question: compare` (lane/neg-conflict-fix, D-806; docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md):
+#   the stance question asks whether a position on record "supports, opposes or accepts" a proposal, though 73 of
+#   the 85 persona positions of the pilot were put on record in an earlier round than the item's (most in round
+#   0), before any proposal text existed, so none can express an attitude toward it; in 1,453 saved stance steps
+#   oppose was never the top answer (largest share 0.034). `compare` asks instead, per touched position, one
+#   CHOICE-A question that sets what the position asks for against what the proposal would do if adopted as
+#   written, both rounds shown (`{position_round}`, `{round}`), over the declared `compare_answers` (each a label,
+#   named in the template, and the declared stance it counts as, exactly one of them oppose). The piece keeps the
+#   label answered beside the stance it counts as; the oppose margin is the margin toward the label counting as
+#   oppose, so P3's threshold reads it as before. Not with conditional_accept, not in the trimmed arm.
+# - R2 `limit_read` (lane/neg-round2-candidate, D-814 round 2; docs/loop/stages/NEG_ROUND2_CANDIDATE.md): the second
+#   route to a conflict, a crossed red line, is asked only of positions the build marks red lines, and no pilot item
+#   marks one (0 of 24; 0 red-line steps among 2,696 saved step records), so conflict had one route, the stance
+#   step. `limit_read` true reads the persona's own positions for limits: once per item, before any proposal, each
+#   persona position not marked a red line is asked one CHOICE-A question from `limit` (the party, the round it was
+#   put on record in and the quote, never a proposal's text, so the read does not lean on the stance or compare
+#   step) over the declared `limit_answers` (each a label named in the template and whether it counts as a limit,
+#   exactly one of them true). Then each proposal a position read as a limit applies to is asked `limit_cross`
+#   (yes or no); a yes makes the proposal a conflict as a marked red line's yes does. The piece keeps `limit_hit`
+#   and the crossed `limit_lines` marked `limit_basis` inferred (D-711: read by the model, never on record), apart
+#   from the declared `red_line_hit`; the reply keeps every read in `limit_reads`. A refused read or crossing
+#   check is no limit and no crossing, counted, never ending a chain. Composes with every conflict question, both
+#   orders and both stance contexts; a marked red line is never read again.
+STANCE_QUESTION, TWO_CHECKS, COMPARE = "stance", "two_checks", "compare"
+CONFLICT_QUESTIONS = (STANCE_QUESTION, TWO_CHECKS, COMPARE)
+COMPARE_SLOTS = ("{proposal}", "{quote}", "{party}", "{position_round}", "{round}")
 FATE_PRECEDENCES = ("stance", "fate")
 YES_NO = ("yes", "no")
 QUOTE_MAX_SENTENCES = 9
 NO_SENTENCE = "0"
 CONFLICT_AUDIT = "conflict_audit"
+LIMIT_READ, LIMIT_CROSS = "limit_read", "limit_cross"
+LIMIT_SLOTS = ("{party}", "{quote}", "{position_round}")
+LIMIT_NEVER = ("{changes}", "{proposal}", "{proposal_id}", "{article}", "{title}")
+LIMIT_CROSS_SLOTS = ("{proposal}", "{quote}")
 OPTIONAL_DEFAULTS = {"fate_forecast": False, "conflict_question": STANCE_QUESTION, "quote_grounding": False,
-                     "auditor_band": None, "conditional_accept": None}
+                     "auditor_band": None, "conditional_accept": None, "limit_read": False}
 
 
 def _template(block, key, need=(), never=("{changes}",)):
@@ -995,7 +1023,7 @@ def _template(block, key, need=(), never=("{changes}",)):
 def optional_switches(block):
     """The declared optional switches of the stepwise block, each checked, every one off when not declared."""
     got = {k: (v if block.get(k) is None else block[k]) for k, v in OPTIONAL_DEFAULTS.items()}
-    for k in ("fate_forecast", "quote_grounding"):
+    for k in ("fate_forecast", "quote_grounding", "limit_read"):
         if type(got[k]) is not bool:
             raise ValueError("advice.methods.stepwise.%s is true or false" % k)
     if got["fate_forecast"]:
@@ -1017,6 +1045,10 @@ def optional_switches(block):
         _template(block, "holds", ("{proposal}", "{quote}"))
         if block.get("two_checks_otherwise") not in POSITION_STANCES or block["two_checks_otherwise"] == OPPOSE:
             raise ValueError("two_checks_otherwise is a declared stance other than oppose")
+    if got["conflict_question"] == COMPARE:
+        compare_answers(block)
+    if got["limit_read"]:
+        limit_answers(block)
     if got["quote_grounding"]:
         _template(block, "quote", ("{proposal}", "{sentences}"))
         if block.get("quote_none_stance") not in POSITION_STANCES or block["quote_none_stance"] == OPPOSE:
@@ -1038,6 +1070,54 @@ def optional_switches(block):
             raise ValueError("conditional_accept is a fourth answer of the stance question, not of two_checks")
         _template(block, "stance_conditional", ("{proposal}", "{quote}", cond["label"]))
     return got
+
+
+def compare_answers(block):
+    """C4: the compare question's declared answers as (labels in declared order, {label: stance it counts as},
+    the label counting as oppose). Its template fills every COMPARE_SLOTS slot and names every label; the labels
+    are distinct and none is a declared stance (so a record never reads as the stance question's); each counts
+    as one of POSITION_STANCES, exactly one as oppose (so, with at least two answers, another as another stance)."""
+    template = _template(block, "compare", COMPARE_SLOTS)
+    answers = block.get("compare_answers")
+    if not isinstance(answers, list) or len(answers) < 2 or \
+            not all(isinstance(a, dict) and isinstance(a.get("label"), str) and a["label"] for a in answers):
+        raise ValueError("the compare question declares its answers, each a label and the stance it counts as")
+    labels = tuple(a["label"] for a in answers)
+    if len(set(labels)) != len(labels) or any(l in POSITION_STANCES or l != l.strip().lower() for l in labels):
+        raise ValueError("the compare answers are distinct lower-case labels, none a declared stance")
+    if any(a.get("counts_as") not in POSITION_STANCES for a in answers):
+        raise ValueError("each compare answer counts as one of %s" % ", ".join(POSITION_STANCES))
+    against = [a["label"] for a in answers if a["counts_as"] == OPPOSE]
+    if len(against) != 1:
+        raise ValueError("exactly one compare answer counts as oppose")
+    if any(l not in template for l in labels):
+        raise ValueError("the compare template names every declared answer")
+    return labels, {a["label"]: a["counts_as"] for a in answers}, against[0]
+
+
+def limit_answers(block):
+    """R2: the limit read's declared answers as (labels in declared order, {label: counts as a limit}). Its
+    template `limit` fills every LIMIT_SLOTS slot, shows none of LIMIT_NEVER (it reads the position alone, before
+    any proposal) and names every label; the labels are distinct lower-case words, none a declared stance or yes or
+    no; each declares `limit` true or false, exactly one true. The crossing template `limit_cross` fills
+    LIMIT_CROSS_SLOTS and never shows `{changes}` (it is asked under either order)."""
+    template = _template(block, "limit", LIMIT_SLOTS, LIMIT_NEVER)
+    _template(block, "limit_cross", LIMIT_CROSS_SLOTS)
+    answers = block.get("limit_answers")
+    if not isinstance(answers, list) or len(answers) < 2 or \
+            not all(isinstance(a, dict) and isinstance(a.get("label"), str) and a["label"] for a in answers):
+        raise ValueError("the limit read declares its answers, each a label and whether it counts as a limit")
+    labels = tuple(a["label"] for a in answers)
+    if len(set(labels)) != len(labels) or \
+            any(l in POSITION_STANCES or l in YES_NO or l != l.strip().lower() for l in labels):
+        raise ValueError("the limit answers are distinct lower-case labels, none a declared stance, yes or no")
+    if any(type(a.get("limit")) is not bool for a in answers):
+        raise ValueError("each limit answer declares limit true or false")
+    if sum(1 for a in answers if a["limit"]) != 1:
+        raise ValueError("exactly one limit answer counts as a limit")
+    if any(l not in template for l in labels):
+        raise ValueError("the limit template names every declared answer")
+    return labels, {a["label"]: a["limit"] for a in answers}
 
 
 def position_sentences(quote):
@@ -1257,6 +1337,9 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
     cond = opt["conditional_accept"]
     if cond is not None and context == TRIMMED_CONTEXT:
         raise ValueError("conditional_accept has its own stance template; the trimmed arm does not carry it")
+    compare = compare_answers(block) if opt["conflict_question"] == COMPARE else None
+    if compare is not None and context == TRIMMED_CONTEXT:
+        raise ValueError("the compare question has its own template; the trimmed arm does not carry it")
     persona = item["persona"]["id"]
     red = set(item["persona"].get("red_lines") or [])
     red_text = red_lines_text(item)
@@ -1267,6 +1350,24 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
     def put(step, user, answers):
         said = ask(step, user, answers)
         return said if isinstance(said, tuple) else (said, None)
+
+    # R2: the persona's positions read for limits, once per item, before any proposal (none marked a red line).
+    read_lines, limit_reads = set(), {}
+    if opt["limit_read"]:
+        limit_labels, counts_limit = limit_answers(block)
+        for pos in positions:
+            if pos["party"] != persona or pos["id"] in red:
+                continue
+            user = _fill(block["limit"], {"{party}": pos["party"], "{quote}": pos["quote"],
+                                          "{position_round}": str(pos.get("round"))})
+            said, probs = put(LIMIT_READ, user, limit_labels)
+            got, why = _step_check(LIMIT_READ, said, item, None, pos, limit_labels)
+            steps.append({"proposal": None, "step": LIMIT_READ, "position": pos["id"], "accepted": why is None,
+                          "refused": why})
+            limit_reads[pos["id"]] = {"answered": got, "limit": bool(why is None and counts_limit[got]),
+                                      "probabilities": probs, "basis": INFERRED}
+            if limit_reads[pos["id"]]["limit"]:
+                read_lines.add(pos["id"])
 
     for art in item["articles"]:
         for n, prop in enumerate(art["proposals"], 1):
@@ -1318,6 +1419,16 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                     a, b = _margin_toward(probs["touches"], "yes"), _margin_toward(probs["holds"], "no")
                     return stance, None, {"party": pos["party"], "stance": stance, "checks": said, "probabilities": probs,
                                           "oppose_margin": None if a is None or b is None else min(a, b)}
+                if compare is not None:
+                    labels, counts_as, against = compare
+                    slots = dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"],
+                                          "{position_round}": str(pos.get("round")), "{round}": str(item.get("round"))})
+                    got, why, probs = choice("compare", _fill(block["compare"], slots), pos, labels)
+                    if why:
+                        return None, why, None
+                    return counts_as[got], None, {"party": pos["party"], "stance": counts_as[got], "answered": got,
+                                                  "probabilities": probs,
+                                                  "oppose_margin": _margin_toward(probs, against)}
                 if cond is not None:
                     slots = dict(base, **{"{party}": pos["party"], "{quote}": pos["quote"]})
                     got, why, probs = choice("stance", _fill(block["stance_conditional"], slots), pos,
@@ -1399,10 +1510,20 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                     hit = hit or got == "yes"
                 if lines:
                     piece["red_line_hit"] = hit
+                crossed, read = [], [p for p in mine if p["id"] in read_lines]
+                for pos in read:
+                    slots = dict(base, **{"{quote}": pos["quote"], "{party}": pos["party"],
+                                          "{position_round}": str(pos.get("round")), "{round}": str(item.get("round"))})
+                    got, why, _probs = choice(LIMIT_CROSS, _fill(block["limit_cross"], slots), pos, YES_NO)
+                    if not why and got == "yes":
+                        crossed.append(pos["id"])
+                if read:
+                    piece.update(limit_hit=bool(crossed), limit_lines=crossed, limit_basis=INFERRED)
                 if not mine:
                     piece["conflict"] = "not_stated"
                 else:
-                    piece["conflict"] = "conflict" if hit or any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
+                    piece["conflict"] = "conflict" if hit or crossed or \
+                        any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
                 template = first["open_point"] if order == CHOICE_FIRST else block["open_point"]
                 slots = dict(base) if order == CHOICE_FIRST else dict(base, **{"{changes}": changes})
                 got, why, _probs = choice("open_point", _fill(template, slots))
@@ -1479,6 +1600,8 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
              # D-668 gap 4: every other party's movement toward or away from the persona over the rounds,
              # composed by Python from the stances the chain checked (a position not judged is not used).
              "movement": movement_map(item, [dict(p, stance=judged[p["id"]]) for p in positions if p["id"] in judged])}
+    if opt["limit_read"]:
+        reply["limit_reads"] = limit_reads
     return reply, steps
 
 
@@ -1991,6 +2114,9 @@ def main(argv=None):
     b.add_argument("--subset", type=Path, help="cloud_subset.json: the cloud reference's file, group b1 alone")
     b.add_argument("--stance-contexts", default=None,
                    help="D-756 item 5: the stepwise system advice built once per arm, e.g. full,trimmed")
+    b.add_argument("--config", type=Path, default=CONFIG_PATH,
+                   help="the prompts config to build from (default the shipped neg_advisor_prompt.json); a run's "
+                        "declared switches, e.g. conflict_question compare (C4), live in its own copy")
     b.add_argument("--out", required=True, type=Path)
     r = sub.add_parser("run", allow_abbrev=False)
     r.add_argument("--prompts", required=True, type=Path)
@@ -2006,7 +2132,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.command == "build":
         value = build(args.set, args.form, [g for g in args.groups.split(",") if g], args.out, subset=args.subset,
-                      stance_contexts=None if args.stance_contexts is None
+                      config_path=args.config, stance_contexts=None if args.stance_contexts is None
                       else [c for c in args.stance_contexts.split(",") if c])
         print(json.dumps({"prompts": value["prompt_count"]}))
     elif args.command == "run":

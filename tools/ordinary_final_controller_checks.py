@@ -3148,6 +3148,50 @@ class ControllerChecks(RecordChecks, ActivationChecks, AuxEnvChecks, ImageChecks
                       runner.assess(None, [], arm='B1', b1=dict(seen(), base=dict(seen()['base'], exit_code=4)))['reasons'])
         self.assertEqual(runner.assess(None, [], arm='B1', b1={})['reasons'], ['b1_no_checkpoint_ran'])
 
+    def test_a_replay_pass_counts_the_derived_prompts_it_declares_and_a_short_set_still_fails(self):
+        """D-810: a negotiation advisor replay pass writes one reply record per sealed prompt and one
+        per derived audit prompt it builds at run time (neg_advisor.run, replay_measurement.json
+        `derived` and its rows of form `audit`). The runner expects the sealed prompts plus the
+        derived prompts the pass declares, each derived row's call_id one record; a short set, a
+        declared figure its rows do not hold, a derived row with no record, a declared prompt count
+        other than the sealed one, and extra records with nothing declared all still fail."""
+        def lay(name, prompts=2, audits=2, declared=None, files=None, sealed_prompts=None, measured=True):
+            folder = self.root / 'replay_derived' / name
+            (folder / 'audit' / 'model_replies').mkdir(parents=True)
+            rows = [dict(prompt_id='p%d' % k, form='advice', call_id='c-p%d' % k) for k in range(prompts)]
+            rows += [dict(prompt_id='d%d' % k, form='audit', call_id='c-d%d' % k) for k in range(audits)]
+            calls = [r['call_id'] for r in rows] if files is None else files
+            for n, call in enumerate(calls):
+                write(folder / 'audit' / 'model_replies' / ('%06d_%s.json' % (n + 1, call)), dict(call_id=call))
+            if measured:
+                body = dict(complete=True, prompts=prompts if sealed_prompts is None else sealed_prompts, rows=rows,
+                            derived=audits if declared is None else declared)
+                if declared == 'absent':
+                    body.pop('derived')
+                write(folder / 'replay_measurement.json', body)
+            return folder
+
+        def assessed(folder):
+            seen = runner.replay_observation(folder, 2, ['sdpa'])
+            return seen, runner.assess(None, [], arm='B1', b1={'pass': dict(seen, exit_code=0)})['reasons']
+        seen, reasons = assessed(lay('complete'))
+        self.assertEqual((seen['items'], seen['reply_records'], seen['derived'], reasons), (4, 4, 2, []))
+        # No derived audits at all: the old rule, one record per prompt.
+        self.assertEqual(assessed(lay('none', audits=0))[1], [])
+        both = ['b1_reply_record_missing:pass', 'b1_reply_record_count:pass']
+        for name, layout in (
+                ('short', dict(files=['c-p0', 'c-p1', 'c-d0'])),
+                ('rows_short_of_declared', dict(declared=3, files=['c-p0', 'c-p1', 'c-d0', 'c-d1', 'c-x'])),
+                ('derived_row_without_record', dict(files=['c-p0', 'c-p1', 'c-d0', 'c-x'])),
+                ('derived_row_twice', dict(files=['c-p0', 'c-p1', 'c-d0', 'c-d0'])),
+                ('prompts_not_sealed', dict(sealed_prompts=3)),
+                ('nothing_declared', dict(declared='absent')),
+                ('no_measurement', dict(measured=False))):
+            seen, reasons = assessed(lay(name, **layout))
+            self.assertIn('b1_reply_record_missing:pass', reasons, (name, seen))
+            if name in ('short', 'nothing_declared', 'no_measurement'):
+                self.assertEqual(reasons, both, (name, seen))
+
     def test_a_b3_only_exposed_batch_runs_every_entry_and_a_sealed_one_is_refused(self):
         """Item 0.4, DS5-2: exposed bundles with no B1 arm run as a B3-only batch, every entry
         once, in the order given, each with its own run folder; the paired form still refuses
@@ -5129,6 +5173,13 @@ NEUTRALIZATIONS = [
     # R19 (v): a B1 assessment that counts files and so passes a missing record.
     ('test_b1_assessment_needs_one_record_per_item_per_checkpoint_and_no_pipeline_marker', runner, 'b1_observation',
      b1_observation_counting_files_only),
+    # D-810: the derived prompts a replay pass declares not counted, so a complete advisor pass fails.
+    ('test_a_replay_pass_counts_the_derived_prompts_it_declares_and_a_short_set_still_fails', runner, 'replay_derived',
+     lambda folder, prompt_count, calls: (0, [])),
+    # D-810: the declared derived figure taken on its word, never held to its rows and records.
+    ('test_a_replay_pass_counts_the_derived_prompts_it_declares_and_a_short_set_still_fails', runner, 'replay_derived',
+     lambda folder, prompt_count, calls: (read(Path(folder) / 'replay_measurement.json').get('derived', 0)
+                                          if (Path(folder) / 'replay_measurement.json').is_file() else 0, [])),
     # D-056 condition 6: the pass's name passed as its checkpoint (base_eager is refused by bare_model).
     ('test_b1_passes_run_by_name_and_load_their_sealed_checkpoint', runner, 'b1_argv',
      b1_argv_with_the_pass_name_as_checkpoint),

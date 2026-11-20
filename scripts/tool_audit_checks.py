@@ -15,8 +15,8 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
       many arguments for them, and the request grammar admits none of those;
   E (424) every new entry is vetted as declared in two fresh processes with no socket and no write,
       is approved by a decision on the registry's approving_decisions, is shown by structure only (a
-      table with no numbers is shown none of them), and no shipped contract declares request_tools,
-      so the request stays off until the lead switches it on.
+      table with no numbers is shown none of them), and no shipped contract declares request_tools
+      but JUDGE's cell_claim, which, when the lead switches it on (D-811), the ratified amendment covers.
 """
 import contextlib
 import json
@@ -50,6 +50,14 @@ def patched(owner, name, value):
         yield
     finally:
         setattr(owner, name, old)
+
+
+@contextlib.contextmanager
+def both(*managers):
+    with contextlib.ExitStack() as stack:
+        for manager in managers:
+            stack.enter_context(manager)
+        yield
 
 
 def with_source(module, name, old, new):
@@ -248,12 +256,15 @@ def observe_shipped():
             "shown numbers": [e["name"] for e in tool_registry.relevant(registry, EXTRA, "cell_claim", _facts(TABLE, CLAIM), 6)],
             "shown words": [e["name"] for e in tool_registry.relevant(registry, EXTRA, "cell_claim",
                                                                        _facts(WORDS_TABLE, "Alpha is first."), 6)],
-            "declared": _declared_request_tools()}
+            # D-811: the shipped request switch, on or off, is held to JUDGE's cell_claim and, when on, ratified.
+            "declared": set(_declared_request_tools()) <= {"JUDGE:cell_claim"},
+            "ratified when declared": not _declared_request_tools() or tool_registry.request_ratified() is not None}
 
 
 def expected_shipped():
     return {"refusals": {name: [] for name in EXTRA}, "vetted": {name: [True, []] for name in EXTRA},
-            "approved_by": ["D-694"], "shown numbers": EXTRA, "shown words": [], "declared": []}
+            "approved_by": ["D-694"], "shown numbers": EXTRA, "shown words": [], "declared": True,
+            "ratified when declared": True}
 
 
 def _unapproved_load(original=tool_registry.load):
@@ -272,8 +283,11 @@ def proofs_e():
          lambda: patched(tool_registry, "vetted_sha256", lambda entry_, root=None, search=None: "0" * 64)),
         ("a table with no numbers is shown none of them", observe_shipped, expected_shipped,
          lambda: patched(tool_registry, "applies", lambda entry_, facts: True)),
-        ("no shipped contract declares request_tools", observe_shipped, expected_shipped,
-         lambda: patched(sys.modules[__name__], "_declared_request_tools", lambda: ["JUDGE:cell_claim"])),
+        ("no shipped contract declares request_tools but JUDGE's cell_claim", observe_shipped, expected_shipped,
+         lambda: patched(sys.modules[__name__], "_declared_request_tools", lambda: ["JUDGE:passage_pair"])),
+        ("a shipped request_tools is ratified", observe_shipped, expected_shipped,
+         lambda: both(patched(sys.modules[__name__], "_declared_request_tools", lambda: ["JUDGE:cell_claim"]),
+                      patched(tool_registry, "request_ratified", lambda root=None: None))),
     ]
 
 
@@ -282,7 +296,7 @@ SAYS = {"A": "percent change, sum, mean and rank are right on a fixture table, t
         "B": "figure_step finds the single steps of one row or one column at the figure's own rounding, and says where a written figure stands",
         "C": "rounds_to rounds half up to the decimals the second figure writes, by the review's one comma rule",
         "D": "each new tool refuses a percent against a plain number, a zero divisor, a cell with no single number and an unknown id; the parser and grammar refuse a typed number and too many arguments",
-        "E": "every new entry is vetted as declared with no socket and no write, approved by a listed decision, shown by structure only, and no shipped contract declares request_tools"}
+        "E": "every new entry is vetted as declared with no socket and no write, approved by a listed decision, shown by structure only, and no shipped contract declares request_tools but JUDGE's cell_claim, ratified when on (D-811)"}
 
 
 def run_check(letter):

@@ -136,7 +136,8 @@
             "declared_by": "[compare: cells]",
             "question": "config/cell_selection.json decision",
             "evidence": ["cells", "claim"],
-            "tools": ["find_cells", "locate_figures", "check_quote"]
+            "tools": ["find_cells", "locate_figures", "check_quote"],
+            "request_tools": ["get_cells", "difference", "ratio", "find_figure", "compare", "column_extreme", "figure_step", "rounds_to", "percent_change", "sum_cells", "mean_cells", "rank_in_column"]
           },
           "passage_pair": {
             "declared_by": "[compare: passages]",

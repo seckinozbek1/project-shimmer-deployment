@@ -539,7 +539,7 @@ parity proves shipped bytes, not end-to-end container review quality.
 
 The agent/model roster, canonical artifact names, API routes and environment
 variables above have executable parity checks against the source. Use the
-no-generation checks in the [project guide](../README.md#development-and-validation)
+no-generation checks in the [method page](METHOD.md#development-and-validation-checks)
 for local development. The full verification gate can load models even with
 --offline; it requires a separately prepared environment and workload approval.
 

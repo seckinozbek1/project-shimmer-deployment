@@ -1,4 +1,108 @@
-# Shimmer v1 results: development, exposed
+# Shimmer results
+
+Every result Shimmer has, newest first: the first results of November 2026 with their
+sources, the earlier development state, the development results to 31 October 2026, the
+testing rules and how to reproduce the evaluation. Every figure on this page is a
+development or validation figure. The final test set has not been run. The short
+[README](../README.md) gives a summary; the earlier README sections on results were moved
+here on 19 November 2026 (D-816).
+
+## First results (November 2026)
+
+This section is updated in the same step as every measurement and every stage change (D-481). Last updated: 19 November 2026.
+
+Shimmer is an open-source system that reviews documents against rules a person writes down. Several agents built on models from different families check each other, Python does every comparison that arithmetic or a field check can decide, and every finding a model writes stays marked as unchecked. It also advises on multi-round negotiation drafts.
+
+These are first results. They come from development and validation material, much of it seen while the system was being built. The final test set has not been run, and nothing here shows how Shimmer does on documents it has never seen. We publish them now because the weak results matter as much as the good ones.
+
+**Contradictions in documents (ContraDoc, public benchmark).** On 15 development documents, scored on 19 November 2026, Shimmer found contradictions with an F1 of 0.615 (precision 0.667, recall 0.571). Accuracy on the same documents reads 0.667, but 9 of the 15 were decided by silence; counting only items the model actually decided, accuracy is 0.267. On an earlier 15 documents (18 November) it found 4 of 10 contradictions with no false alarm. On a 40-document steering subset (runs of 18 November, before the latest fixes), Shimmer scored 55.0 percent accuracy, against 52.5 for the same local model used bare and 90.0 for a large cloud model on the same 40 documents (references scored on 13 November). 26 of the 40 went undecided. Under the project's own rules this run does not count, because it is void on integrity with too many items left undecided, and it is well short of both bars (at least 10 points above the bare model, at most 5 below the cloud model).
+
+**Claims about scientific tables (SciTab, public benchmark).** On 47 development claims from 15 tables (19 November), Shimmer reached a macro-F1 of 0.776 on the two classes this set holds (supports, refutes) and 0.517 on the declared three-class setting (95 percent interval 0.471 to 0.566); the set has no "not enough information" claims, so the three-class figure cannot exceed 0.667 here. This reading takes the model's most likely answer; the official path, which waits for a threshold not yet chosen, still reads 0.225, the score of answering "supports" every time. On a 78-claim steering subset, older code left every claim undecided (0.190), while the bare model scored 55.8 and the cloud model 81.7 on the same claims. This run, on the same quick subset 0127b080, does not count under the project's rules either (void on integrity, every claim undecided), and it is below both bars.
+
+**Negotiation advice (our own benchmark).** On 18 headline items (179 proposals) of a 24-item development pilot, scored on 18 November, the new system raised the main conflict measure (three-class macro-F1) from 0.419 to 0.629, a paired gain of 0.210 (interval 0.103 to 0.322). Dropped answers fell from 11.2 percent to 0. Open-point detection rose to 0.435 and stance-against-outcome to 0.330, both short of our 0.60 bar. On the same items, the bare model's earlier answers scored 0.217 on the main measure; the cloud model scored 0.648 on 14 of them. Both are references only; every measured Shimmer run so far used local open-weight models.
+
+The weak point is plain: Shimmer found none of the 12 real conflicts. Conflict-class F1 is 0, in three different methods. We traced the cause from the system's own outputs: the step that asks whether a party's position opposes a proposal never chose "oppose" in 1,453 decisions, because most positions were written before the proposal existed, so the question did not fit. A new question now asks whether the proposal, if adopted, would go against what the position asks for. It is built and tested on fixtures, and will be measured on fresh sets of 24 and 40 items made for it. It has not been measured yet.
+
+**What comes next.** The final test set is read once, after the system meets its written bars on validation items. Until then, every figure here is a development figure.
+
+### Sources of the first results
+
+"(record)" marks a figure whose source is one of the project's private records, kept off the public repository; a source that is public is named with its file and line.
+
+| Number | Source | Set | Items | Date |
+|---|---|---|---|---|
+| ContraDoc contradiction F1 0.615, P 0.667, R 0.571 | (record) | development, G1 half A, second 15 documents (D1/D2) | 15 documents | run 18 Nov, scored 19 Nov 00:31 |
+| ContraDoc accuracy 0.667; 9 of 15 by silence; model-only 0.267 | (record) | same | 15 | 19 Nov |
+| ContraDoc 4 of 10 contradictions, no false alarm (accuracy 60.0) | docs/loop/DECISIONS.md:7843 | development, first 15 documents | 15 | 18 Nov (D-737) |
+| ContraDoc steering subset 55.0 [40.0, 70.0], 26 of 40 undecided; void on integrity, does not count, below both bars | (record) | quick subset 0127b080, code before the night fixes | 40 documents | run 18 Nov, scored 19 Nov 01:09 |
+| ContraDoc bare 52.5 [37.5, 67.5], cloud 90.0 [80.0, 97.5] | (record) | quick subset 0127b080 | 40 | 13 Nov |
+| SciTab 2-class macro-F1 0.776 | (record) | development, G1 half A (D1/D2) | 47 claims, 15 tables | 19 Nov 03:37 |
+| SciTab 3-class macro-F1 0.517 [0.471, 0.566] | (record) | same | 47 claims | 19 Nov |
+| SciTab 3-class ceiling 0.667 (no not-enough-info gold) | (record) | same | 47 | 19 Nov |
+| SciTab official path 0.225 (3-class) = all-supports baseline | (record) | same | 47 | 19 Nov |
+| SciTab steering subset 0.190 [0.142, 0.227], 78 of 78 undecided; void on integrity, does not count, below both bars | (record) | quick subset 0127b080, code before the night fixes | 78 claims, 13 tables | run 18 Nov, scored 19 Nov 01:09 |
+| SciTab bare 55.8 [40.7, 62.7], cloud 81.7 [55.0, 92.9] | (record) | quick subset 0127b080 | 78 | 13 Nov |
+| Negotiation M1 0.419 to 0.629 [0.578, 0.665], gain +0.210 [+0.103, +0.322] | (record) | old pilot 6a8af3c7 (development) | 18 headline items, 179 proposals (docs/loop/stages/NEG_ROUND1.md:3-4, 9) | scored 18 Nov 20:02 |
+| Negotiation dropped answers 11.2 percent to 0 | (record) | same | 18 | 18 Nov |
+| Negotiation M10 0.435, M4 0.330 (bar 0.60) | (record); docs/loop/stages/NEG_BAR.md:9-10 | same | 18 | 18 Nov |
+| Negotiation conflict-class F1 0, 12 conflicts | (record) | same | 18 | 18 Nov |
+| Conflict F1 0 in plain, stepwise and improved methods | (record) | same pilot | 18 | 19 Nov 15:17 |
+| "Oppose" never chosen in 1,453 decisions (147 + 1,306) | docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md:28-29, 44 | stepwise runs' saved replies | 24 items | 19 Nov |
+| Bare model M1 0.217 | (record) | same pilot, bare model's saved answers, no Python step | 18 | answers 15 Nov, rescored 16 Nov |
+| Cloud model M1 0.648 | (record) | subset of the pilot | 14 | 15 Nov, rescored 16 Nov |
+| C4 fix sets: 24-item pilot, 40-item validation, not measured | docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md:126 | fresh sets built for the fix | 24 and 40 | not run |
+
+Comparison conditions to keep beside every reference figure: the steering-subset references are on the same items as Shimmer but from a different run and date; the negotiation bare-model figure is from older saved answers without the Python step; the cloud negotiation figure covers 14 of the 18 items. Every measured Shimmer run so far used local open-weight models; the bare-model and cloud model figures are references only.
+
+## Earlier development results (to 18 November 2026)
+
+**Status: v1, a prototype.** "v1" names this documented state of the repository, published on GitHub on 2 November 2026;
+its code version is the one in [VERSION](../VERSION) (`0.1.0.dev8` at this commit; `CITATION.cff` states the same version, gate check 314).
+Every result in this repository is a development
+result on exposed material (material the project saw while it was being built).
+None of it is a held-out or sealed result, and none of it shows how well Shimmer
+works on documents it has not seen. After v1, a fresh, unseen set is read only if
+the whole system first passes a gate on development items no attempt was tuned on
+(D-S92, D-371 in docs/loop/DECISIONS.md). As of 11 November 2026 the gate had not
+been measured, and the loop's deadline for it was 14 November 2026; on 18 November
+2026 no gate result existed yet, and the first results above are development and
+validation figures. This
+version is not released as a Python package, and no package release is promised.
+
+In development, on the four public benchmarks measured by 31 October 2026 (ContraDoc, SciTab, ContractNLI and CUAD), Shimmer scores below the bare model on two (ContraDoc, and CUAD, where it found none of the gold flags), ties it on ContractNLI on precision, recall, F1 and accuracy (the bare model leads only on correct refusals), and is about even on SciTab (F1 0.571 against 0.600); it leads only on the synthetic suite (F1 0.875 against 0.614), whose rules are the kind its own computations were built for. On the public benchmarks the rule items go instead to judging calls by PRACTICE_AUDITOR on the local auditor model, and in L12's six B3 entries 686 of its 803 answers copy the filled example in its own contract (VIOLATION, missing_field), 409 of 410 on CUAD; the quote rule refuses them, so nothing is kept (the parallel track's measurement on the saved runs, 1 November). The work after v1 that addressed it, recorded as D-S22 in docs/loop/DECISIONS.md (D-176): a Python-only refusal of answers with no quote, figures or earlier version behind them (R1) is merged (D-210), and a document-level judging experiment (G1) gave no usable signal on either model (D-248). The gate above is the next step.
+
+### Which benchmarks count
+
+On 4 November 2026 the operator cancelled CUAD and ContractNLI for all further development work, for poor fit, after their development scores were known (D-S34, applied in D-226 in docs/loop/DECISIONS.md); the record gives no reason beyond poor fit. The gate (D-S92, 9 November 2026, D-371) is read on ContraDoc and SciTab only. PUBHEALTH is a separate out-of-domain check, not part of the gate, and CLadder and Corr2Cause are a causal probe, an indicator rather than a Shimmer benchmark (D-335, D-357); as of 11 November 2026 none of the three has been measured.
+
+### The state on 18 November 2026
+
+This is the README's former "Where Shimmer is now" section as it stood on 18 November 2026, kept for the record; the first results above replace it.
+
+**Version 1.0 is not released yet.** It waits until the negotiation advisor reaches its written bar on the validation items (standing order 102): on the development set its main measure stands at 0.419 against a floor of 0.60. No final test, release or ablation starts before that.
+
+**Since 15 November.** The full gate ran green on Lambda on the code pushed on 17 November. A development run on two ContraDoc documents showed that the faster inference engine (vLLM) hands the GPU back before every other model loads: every entry reached its end with no failed call, at one server restart of about two minutes per document. Four launch hazards met during the night runs are fixed, each with its own gate check.
+
+**Which code these documents describe.** The code on GitHub's main branch is the loop's merged and checked state, pushed as one snapshot commit (tag `code-2026-11-15-a`) after a pre-push scan. Later code changes are pushed the same way, with their documents (D-488, D-650).
+
+**Then.** No gate result existed yet. Every figure Shimmer had was development, exposed and in-sample.
+
+- A second steering read on a quick subset of the gate set did not pass: too many entries were void on integrity. No figures from it are quoted, because a void read measures the run, not the system. (The first results above give a later read of the same quick subset, run on 18 November; it is void on integrity too and does not count.)
+- One cause of that is found: a retry step re-asked a refused extraction with a narrower context than the one its answer was checked against, so good answers were refused. The fix is written and is now being proven on development items before it is read again.
+- Most remaining misses came from parts that Python compared and found consistent, so no model was asked there. A model is now asked in those places too, and its answer stays marked as not checked by Python. Where arithmetic or a field check can decide, Python still decides.
+- A faster inference engine, vLLM, scored as well as the current engine on development items and is being built into the pipeline, one part at a time, each part checked against correct answers before use.
+- Every parser and scorer is being made tolerant of answer form (spaces, case, quotes, a number written for a string, code fences), the same way for every system compared, so that no answer is dropped for its form alone. No scored measurement runs until this is done.
+
+### Our negotiation benchmark
+
+Beside the public benchmarks, Shimmer is building its own benchmark for multi-round negotiation drafts:
+
+- each item's answer comes from what the parties actually did in the real next round, not from a judgement written afterwards;
+- agent labels are checked twice, by two agents of different model families, with a third for ties, and their agreement is reported;
+- the items, the labels and the scorer are frozen before any system is run on them; the benchmark is to be published with its scorer (for sources whose terms do not allow the texts to be shared, the source links instead, so anyone can fetch them and rerun);
+- a small pilot has run. It is indicative only, below the size needed for a claim; it is used to find and fix faults in the measurement, never to tune the system. Its first results, labelled as such, are in the first results above.
+
+## Development results to 31 October 2026 (development, exposed)
 
 Purpose: development measurement and run health, on exposed material, with no seal and no manifest.
 
@@ -205,3 +309,153 @@ The three that still failed after L12b, and `f1_s1102_mstx` after L12c, are reco
 - **Who wrote what.** The public benchmarks' documents and gold labels are their authors' (docs/benchmarks/SELECTION.md). The synthetic suite's generators and keys, the adapters that map a run to a benchmark label and compute its metric, and the repository scorer were written by this project, by the same model family that builds Shimmer.
 - **Catches that depended on a directive** (a `[scope:]` or `[requires:]` declaration) were not recorded per catch for these runs.
 - **Cost.** Instance cost only; no model API cost was incurred (every model ran on the instance). The per-finding figures leave out the session overhead and the storage share (4.00 USD a month for the asset filesystem).
+
+## Summary to 31 October 2026, as the README gave it
+
+This is the README's former "What has been measured" section, moved here on 19 November 2026 (D-816). Its table copied the [summary above](#summary-development-exposed) and is not repeated; every figure it held (B3 in benchmark mode and as shipped, B1 tuned, minutes per document) is in that table. Every figure here is **development, exposed**.
+
+- **B3** is Shimmer, the whole pipeline in paired review. **B1** is the bare
+  model: the main reading model given one fixed prompt per item, with no
+  pipeline. "B1 tuned" carries the producer's tuned adapter.
+- **Benchmark mode** counts a model judgement that the pipeline shows as advice
+  as a finding. **As shipped (S-8)** counts only Python's findings: it is the
+  adapters' sensitivity analysis S-8, which scores a run as if every
+  model-written record were absent. This scoring rule was chosen after
+  development scores had been seen.
+- **Every benchmark here is a pilot:** each has fewer than 30 documents and fewer
+  than 100 scored decisions.
+- **Purpose of these runs:** development measurement and run health, on exposed
+  material, with no seal and no manifest.
+- **These development runs were not preregistered.** For sealed results, the
+  order of preregistration, freeze and sampling will be attested only by the
+  project's local records.
+- Precision, recall and F1 are those of the benchmark's flag class (for example
+  "contradiction" or "refutes"). "n/a" means nothing was flagged.
+
+What these figures do not show:
+
+- **B3's correct labels here come from saying nothing, not from detection.** An
+  item with no kept record is labelled the "nothing wrong" class; on L12, 27 of
+  B3's correct labels are of that kind (CUAD 7 present, ContractNLI 18
+  entailment, ContraDoc 2 not contradictory), in benchmark mode and as shipped.
+- **Samples are tiny.** One to three documents per benchmark, one counted run per
+  document; runs that failed integrity were re-run up to twice. One item more or
+  less changes a figure a great deal.
+- **Some B3 runs still failed their execution checks after a second re-run**
+  and are counted as failed: the CUAD contract and 2 of the 20 suite bundles.
+  Five suite bundles counted as passed did so only through a change removed at
+  the S5 close (Python writing a field the model left out); re-run once more
+  (L12c, not scored on the page), four passed and one failed. The results page
+  names each one with its cause.
+- **The synthetic suite is exposed by construction.** Its generators, seeds and
+  answer keys are in this repository. It measures regressions, not recall on
+  unseen material. On the suite's clean twins, B1 flagged 31 items and B3 in
+  benchmark mode flagged 6; B3 in benchmark mode also wrote 45 records on units
+  with no planted flaw.
+- **The suite's generators were written by the same model family that builds
+  Shimmer**, so the tests and the pipeline may share blind spots.
+- **Public benchmark documents may have been seen by the models in training.**
+- **Every B3 flag on the external benchmarks came from a model-written record.**
+  Counting only Python's findings (as shipped, S-8), B3 flagged nothing on them.
+  Reviews of model-written texts, a seeded sample of 15 per launch, found:
+  L11 (external benchmarks) 1 correct, 5 partly correct, 9 wrong; L8 (the
+  synthetic suite) 4 correct, 9 wrong, 2 empty; L12 (benchmarks and suite) 4
+  correct, 5 partly correct, 6 wrong; L12b (re-runs) 2 correct, 1 partly
+  correct, 12 wrong. L12c (the integrity re-run of five suite entries, not
+  scored) has no model-text review. The results page says which rows each
+  launch counts for.
+- **Not every field a sealed result report needs is here.** The project's
+  testing rules list the fields of a result report. The results page gives, for
+  these development runs: the purpose, that they are exposed, the dates, the
+  code commits, the models, the decoding settings, the machine and its price,
+  the cost, who wrote the tests, keys and scorer, the scorer's commit, recall
+  and precision, the clean-twin result, the layer that produced the catches
+  (Python or a model), the withheld agent (FACT_CHECKER) and the model-text
+  review. It does not give a test version or manifest hash (there is none: no
+  seal), attribution counts, false positives counted in every deliverable,
+  or whether each catch depended on a directive (not recorded for these runs).
+  The sealed evaluation, after v1, fills every field.
+
+**Which code was measured.** The runs were built from commits `8b48f78`,
+`344522f`, `18eee21`, `d50b299`, `55f1dd1` and `2b585af`; labels and scores were
+computed at `6fa01b9`. The second re-run of the entries that still failed (L12b)
+was built from `d6ce19a`, which adds a decoding constraint on the output of
+VERIFIER, PRACTICE_AUDITOR and ARCHIVIST and a larger VERIFIER output allowance
+(4,096 tokens). So the rows that use an L12b run (one ContraDoc document, the
+CUAD contract and 11 suite bundles) are on newer code than the rest; the results
+page says which run each row uses. Changes made after `d6ce19a` were not
+measured (L12c, built from `5c3c129`, re-ran five entries for their integrity
+only; their scores were not computed). There is no release-candidate commit.
+
+**Which schedule was measured.** Every B3 run in the table used the
+`report_optimized` execution topology on the local backend profile, with paired
+review (the sealed runner's arguments, `ARGV` in `tools/ordinary_final_run.py`).
+The multi-round family 4 used `reference_serial` (`MULTI_ROUND_ARGV`). The
+pipeline's default is `reference_serial`, and the console, the menu launchers and
+the command in the [quickstart](USER_GUIDE.md#11-quickstart) do not select `report_optimized`, so an ordinary review started
+from them runs a schedule no B3 figure here was measured on. The measured one
+needs `--execution-topology report_optimized` and a `--topology-config` lane file
+(the runner's is one lane on `cuda:0`, `TOPOLOGY` in the same file).
+
+**History.** The reports under `docs/fix/` from September 2026 describe runs on
+tests whose keys the project had read. They are history, with their dates and caveats, and are not evidence of what Shimmer can do now.
+
+## Testing rules
+
+The project's testing rules bind every change, run, score and public statement.
+In short:
+
+- Every test used so far is exposed, and can be used only for development and
+  regression.
+- A sealed test is written, checked, run and scored by separate roles. The builder
+  never sees its documents, key or per-item results, and nobody changes it after
+  a result has been seen.
+- A sealed test is fixed by a hash recorded before the run, with the code commit
+  and the scorer.
+- Every report states its purpose, whether its test is sealed or exposed, and
+  which layer (Python or a model) produced each catch.
+- Sealed final-test figures remain the evidence bar: no number is quoted publicly
+  as evidence of what Shimmer can do on unseen documents until it holds on at
+  least three independently prepared tests, sealed before the run, on one code
+  commit, with the spread reported. First results on development and validation
+  sets may be quoted publicly when they are labelled as first results and say
+  that the final test set has not been run (the operator's decision of
+  19 November 2026, D-816).
+
+The preregistration draft is
+[docs/benchmarks/PREREGISTRATION.md](benchmarks/PREREGISTRATION.md) and the
+benchmark choice is [docs/benchmarks/SELECTION.md](benchmarks/SELECTION.md).
+
+## Reproducing the evaluation
+
+- **Synthetic suite.** Regenerate it from its committed seeds and score a run with
+  the repository scorer:
+
+```powershell
+py -3.12 benchmark/generators/generate.py suite dev
+py -3.12 -X utf8 tools/score_corpus.py --key <answer_key.json> --run <run folder>
+```
+
+  [benchmark/dev_suite/README.md](../benchmark/dev_suite/README.md) gives the twin
+  options and the multi-round form. The scorer reads a judged absence from
+  Python's stamped copy only; the model's raw reply, and any answer Python
+  refused, are counted apart and locate nothing.
+- **External benchmarks.** The adapters in `benchmark/adapters/` build test
+  bundles from a benchmark file, label a run's output and score the labels
+  (`build`, `label --scoring benchmark|v2_primary|detection_dev`, `score`; the synthetic suite's
+  adapter names its first command `items`). `label` also writes
+  the sensitivity analyses, S-8 among them; the "as shipped (S-8)" figures above
+  are S-8, not `--scoring v2_primary`, which gives today's reading and can differ
+  (on the suite, precision 42 of 46 against S-8's 40 of 40). The bare-model arm
+  is `benchmark/baselines/bare_model.py`. No benchmark data is committed;
+  `docs/benchmarks/SELECTION.md` names each source, version and licence.
+- **Runs.** Full runs go to a rented GPU through the sealed controller
+  (`tools/ordinary_final_bound_cloud.py`), which refuses a launch the budget
+  cannot carry. The [cloud preparation guide](CLOUD_RUN_PREPARATION.md)
+  describes it.
+- The run folders behind the results page were kept outside version control and
+  were not published. Most of them were lost in a data loss on the build machine
+  on 16 November 2026 (D-704): the older development figures can no longer be
+  re-scored, and only their recorded results remain. The sealed sets, the gate
+  set and the 12 November leakage fingerprint were recovered and checked against
+  their recorded digests (D-705).

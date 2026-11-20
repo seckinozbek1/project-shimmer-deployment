@@ -21,6 +21,8 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
   G (394) with no request_tools declared (as shipped) the question sent is byte for byte the
       measured one, no request call is made, and the tool records, pairing-map row keys and judging
       calls carry nothing of the request; the whole run is not compared with a run without the lane.
+      These proofs run on a fixture contract that declares nothing. The shipped switch (D-811, on or
+      off) is held to JUDGE's cell_claim and honoured at boot only under the ratified amendment.
 """
 import contextlib
 import json
@@ -548,14 +550,46 @@ def observe_off():
     return {"same question": run["sent"] == [question], "generated": len(run["generated"]),
             "tools": [r["tool"] for r in run["tools"]], "request keys": sorted(k for k in row if k.startswith("request")),
             "request plans": [c for c in run["document"].get("judging_calls") or [] if c.get("plan_kind") == table_tools.REQUEST_PLAN],
-            "shipped request_tools": judge_agent.request_tools("cell_claim", judge_agent.shipped_contracts()),
             "question unchanged": cell_selection.question(cell_selection.load_config(), cells, RULE["rule"], {}) ==
             cell_selection.question(cell_selection.load_config(), cells, RULE["rule"], {}, "")}
 
 
 def expected_off():
     return {"same question": True, "generated": 0, "tools": TOOLS, "request keys": [], "request plans": [],
-            "shipped request_tools": [], "question unchanged": True}
+            "question unchanged": True}
+
+
+SHIPPED_JUDGE_TASK = "JUDGE:" + judge_agent.CELL_CLAIM
+
+
+def declared_request_tasks(contracts):
+    """Each AGENT:task whose judge block declares request_tools, sorted."""
+    return sorted("%s:%s" % (name, task) for name, contract in (contracts or {}).items()
+                  for task, spec in (((judge_agent._judge(contract) or {}).get("tasks")) or {}).items()
+                  if isinstance(spec, dict) and spec.get("request_tools"))
+
+
+def observe_shipped_request(contracts=None):
+    """The shipped switch (D-811): the request is declared at most on JUDGE's cell_claim, and a
+    declaration is honoured at boot (ratified, no start-up refusal), whether it is on or off."""
+    contracts = judge_agent.shipped_contracts() if contracts is None else contracts
+    names = judge_agent.request_tools(judge_agent.CELL_CLAIM, contracts)
+    return {"held to the judge's cell_claim": set(declared_request_tasks(contracts)) <= {SHIPPED_JUDGE_TASK},
+            "honoured at boot": not names or (tool_registry.request_ratified() is not None
+                                              and tool_registry.startup_refusals(judge_agent.CELL_CLAIM, names) == [])}
+
+
+def expected_shipped_request():
+    return {"held to the judge's cell_claim": True, "honoured at boot": True}
+
+
+def _contracts_declaring(task, names, original=judge_agent.shipped_contracts):
+    """The shipped contracts with JUDGE's `task` declaring `names` as its request tools."""
+    def contracts(path=None):
+        out = json.loads(json.dumps(original()))
+        out["JUDGE"]["judge"]["tasks"][task]["request_tools"] = list(names)
+        return out
+    return contracts
 
 
 def proofs_g():
@@ -568,6 +602,12 @@ def proofs_g():
                              "judge_agent.claim_tools(cells, claim, contracts) + (results or 'RESULTS\\n\\n')")),
         ("with nothing declared the review adds no key", observe_off, expected_off,
          lambda: with_source(cell_selection, "review", "if requested:\n        calls.update", "if True:\n        calls.update")),
+        # D-811: the shipped declaration, on or off, is held to JUDGE's cell_claim and honoured at boot only when ratified.
+        ("the shipped request is held to the judge's cell_claim", observe_shipped_request, expected_shipped_request,
+         lambda: patched(judge_agent, "shipped_contracts", _contracts_declaring("passage_pair", SIX))),
+        ("a shipped request is honoured only when ratified", observe_shipped_request, expected_shipped_request,
+         lambda: both(patched(judge_agent, "shipped_contracts", _contracts_declaring(judge_agent.CELL_CLAIM, SIX)),
+                      patched(tool_registry, "request_ratified", lambda root=None: None))),
     ]
 
 
@@ -585,7 +625,7 @@ SAYS = {"A": "start-up refuses a license off the allowlist, a socket, a file wri
         "E": "a table with no numbers is shown no arithmetic tool, and nothing is asked when no tool applies",
         "F": "on the real phase each request is one reply record (free_text), its lines are its tool rows joined "
              "to its call, digests only, decoded under its grammar",
-        "G": "with no request_tools declared, as shipped, the question sent is byte for byte the measured one, no request call is made, and the tool records, pairing-map row keys and judging calls carry nothing of the request (the whole run is not compared)"}
+        "G": "with no request_tools declared, as shipped, the question sent is byte for byte the measured one, no request call is made, and the tool records, pairing-map row keys and judging calls carry nothing of the request (the whole run is not compared); the shipped declaration, on or off (D-811), is held to JUDGE's cell_claim and honoured at boot only when ratified"}
 
 
 def run_check(letter):
