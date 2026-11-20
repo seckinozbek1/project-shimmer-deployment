@@ -7,10 +7,16 @@ import threading
 
 
 def serve() -> int:
-    if not os.environ.get("SHIMMER_TOKEN_HASH"):
+    import server
+    # D-835: keyless local mode is decided from server.HOST, the host bound below.
+    try:
+        keyless = server.arm_keyless_local(server.HOST)
+    except server.KeylessRefused as error:
+        print("Cannot start: %s" % error, file=sys.stderr)
+        return 1
+    if not keyless and not os.environ.get("SHIMMER_TOKEN_HASH"):
         print("Cannot start: no access token was configured.", file=sys.stderr)
         return 1
-    import server
     import uvicorn
 
     app_server = uvicorn.Server(uvicorn.Config(

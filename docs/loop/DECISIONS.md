@@ -8260,3 +8260,190 @@ Written 2026-11-20 00:35 +0300 by the lead (8fee59db). NEG_C4_MEASURE_PREP.md se
 Written 2026-11-20 01:05 +0300 by the lead (8fee59db).
 - SYN_DEDUP_N01 and SYN_DEDUP_B01 were bound to gnn-train-6f48d5ed. The chain's archive_closure preflight (check 660) refused N01 at 00:47 and 00:59: at 6f48d5ed scripts/ontology_training_set.py names tools/ontology_training_graphs.py, which that sealer does not archive (the GNN_TRAIN_6f48d5ed fault). Both folders now bind .claude/worktrees/gate-0872ce14 (COMMIT 0872ce14, holding the archive fix): benchmark/baselines/embed_records.py is byte-identical between the two commits, and replay_prompts.py differs only by the removed ontology train dispatch. archive_closure: COMPLETE for both (304 archived files, 62 followed); N01 preflight rc 0. The old launch.py files are kept as launch.py.pre_rebind_6f48. N01's hold cleared.
 - C4_DEDUP_EMBED's seal ended at about 01:00 with controller_failure RuntimeError "Activation timeout" (the instance never became active), 0.28 USD. As with VER_T_ALLOWANCE, a fresh request and seal follow; the step's cap and the 5 USD pre-approval hold (0.28 plus the forecast stays under both).
+
+## D-823: role B's C4 dedup CROSS is resolved by dropping the C4 member of each cross pair; the earlier sets stay as they are (lead, within limits, D-807)
+Written 2026-11-20 03:05 +0300 by the lead (8fee59db). NEG_C4_MEASURE_PREP.md section 5 names the CROSS stop but not its resolution.
+- C4DEDUP Part B (02:57 to 03:00, no spend): check drops c4pilot_1 2 of 43 (reference_N runs 2), c4val_1 15 of 95 (reference_N runs 10 and cosine 4, reference_lead runs 1); within: all six sets 14 pairs, C4 only 4, earlier only 5, so 5 pairs link a C4 item to an earlier one. Nothing handed to role S.
+- Resolution: the earlier sets (pilot_1, dev_1, validation, validation_strata) are already in use (R1, R2 and the D-798 validation), so they are not edited; the new C4 item of each cross pair is dropped, together with the check drops and the C4-only within drops. The 5 earlier-only pairs are recorded, not acted on (they were inside sets already measured; a note for the synthetic sets' reporting).
+- Request REQUEST_ROLE_B_C4DEDUP_CROSS.md (Part C, ids found by Python from role B's own outputs, exactly 5 cross pairs with one C4 member each or stop CROSS_UNRESOLVED), start file start_b_c4dedup_c.cmd (allow-listed, role_start_check PASS). S6 starts only after C4DEDUP_C_DONE.json says RESOLVED_CROSS.
+- Expected sizes stay above the plan's needs (pilot 24 of 43, validation 40 of 95): at most 2 + 2 of the pilot and 15 + 2 + 5 of the validation go.
+- Follow-up 03:15: Part C ended RESOLVED_CROSS (c4pilot_1 kept 40 of 43: check 2, cross 1; c4val_1 kept 73 of 95: check 15, C4-only within 4, cross 4, one overlap), but it handed role S the tool's original dedup_within.json (SHA-256 6172b4be, the same as Part B's), whose drops take the earlier member in 4 of the 5 cross pairs. Part D (REQUEST_ROLE_B_C4DEDUP_CROSS_D.md, start_b_c4dedup_d.cmd, allow-listed, check PASS) keeps the original as dedup_within.raw.json and hands a dedup_within.json in the same form with the D-823 drops of the two C4 sets only, checked to keep 40 and 73. S6 waits for C4DEDUP_D_DONE.json HANDED.
+
+## D-824: five public standing order texts reworded so the progress page names no private record (lead, within limits, STANDING-ORDERS-A)
+Written 2026-11-20 04:16 +0300 by the lead (8fee59db). The progress page rebuild at the export of 1277050c was refused twice by tools/progress_charts.py's own guards: refuse_private_words (orders 69, 100, 103 named the operator, FOR_SECKIN, SUPERVISOR_INBOX, DECISION_FOLLOWTHROUGH) and check_output (orders 96, 100 named the private folder path). Wording only, meaning unchanged: "the operator's report", "the supervisor's inbox", "the operator", "the decision follow-through record", "the private records", "the inbox wait script". Both guards pass over every public row; the page was built (self-test 61 of 61) and pushed: public main 23ee59d2 (snapshot of 1277050c, tag code-2026-11-20-a) then 1428bb2d (page). Issues #294 and #226 commented.
+
+## D-825: the C4 blind label check keeps an item when the "oppose" reading matches at every position; the table tool is measured small; the cap stays at 400 until Seckin decides (Seckin 08:48, relayed, G-20261120-0848)
+Written 2026-11-20 08:49 +0300 by the lead (8fee59db), before any C4 measurement figure exists.
+- KARAR 1 (answer to the 03:41 SORU): the keep rule for the C4 sets' blind label check is S6E's R4: an item is kept when, at every position, a card "oppose" is labelled "oppose" and a label "oppose" is "oppose" on the card; article, proposal level, support against accept and red lines are not part of the keep rule. Applied after role B's D-823 drops. Kept before dedup: c4pilot_1 39 of 43, c4val_1 92 of 95. The measurement report states plainly that, on these items, the article and proposal level, support against accept and the red lines were not checked by an outside reading. NEG-SYNTH-A's blind labelling stays: the labels are blind, Python validates the one field the rule uses. Round 1 starts.
+- KARAR 2: the table tool measurement runs in its small form (b): 30 tables, no pilot step, about 19.84 USD (SPEND_LIST_20261120.md). Not launched before KARAR 3; preparation (role B's table build, the closure fix, now merged) may go ahead.
+- KARAR 3 (the 06:38 SORU on the cap): not given; the cap stays 400 USD; round 1 of the C4 measurement (about 10.12 USD) runs inside it.
+- Also asked: a list, with no deletion, of the large files on the Lambda persistent file system that are no longer needed, each with where its backup is and the GiB and USD a month it would save; any deletion comes to Seckin.
+
+## D-826: the total Lambda cap rises from 400 to 435 USD; the table tool measurement (b) may start once prepared (Seckin 08:50, relayed, G-20261120-0850)
+Written 2026-11-20 08:52 +0300 by the lead (8fee59db).
+- KARAR 3 (answer to the 06:38 SORU): the total cap is 435 USD on the loop's total-spend basis, so `remaining_limit_usd` in config/loop_spend_limits.json goes from 203 to 238 over the 197 USD baseline of 13 November. The per-step pre-approval stays 5 USD (D-708). Changing a figure needs no re-seal (SPEND-LIMITS-A); the guard reads the file at call time.
+- The supervisor's sum: 71.67 left + 35 = 106.67, which covers the paid steps still to come (70.44), the small table tool measurement (b) (about 19.8) and one month of storage (about 24.4; about half if the old files are deleted). The v1.05 speed measurements stay in the plan.
+- Rounds 2 and 3 of the negotiation measurement (about 10.1 each) are not counted in this cap: after round 1's result, the lead asks again if they are needed (D-814 already asks a SORU after three rounds).
+- The table tool measurement (b) starts when its preparation is done (the lane's plan amendment, role B's table build, import and plan), with no further question while its steps stay inside the limits.
+- CLAUDE.md (PARALLEL-LAMBDA-A) and docs/CLAUDE_REFERENCE.md (SPEND-LIMITS-A) name the new figures. The 06:38 panel card (butce-400) is closed.
+
+## D-827: Lambda storage trim, option (a), under six conditions (Seckin 09:05, relayed, G-20261120-0905)
+Written 2026-11-20 09:06 +0300 by the lead (8fee59db). Answer to the 09:03 SORU (list docs/loop/private/LAMBDA_STORAGE_TRIM_20261120.md: yes 16.29 GiB, 3.26 USD a month; with unsure 54.83 GiB, 10.97).
+1. First the laptop evidence of the five run folders not yet on Drive (DEV_scitab_rerun, NIGHT_gpu_release, NIGHT_neg_improved, GNN_TRAIN_6f48d5ed, C4_DEDUP_EMBED) goes to the private Drive folder, each upload verified by size and hash (no spend).
+2. A fresh named listing of the persistent file system is taken (one machine, about 0.20 USD, inside the 5 USD step pre-approval).
+3. The deletion list is derived again from that listing; every file is matched one by one with its own backup record; a file that does not match is not deleted.
+4. Before any deletion two independent checkers (one Fable) check the list separately; a file is deleted only if both say SAFE. Their reports are kept under docs/loop/private.
+5. Never touched: the OLMo archive (the only copy), the current asset archive (assets-750cf50d), the model and wheels layers, the newest env layer (6950eca2).
+6. Every deleted file, its size and its backup location go on the record; then the new storage size and monthly cost go to FOR_SECKIN and the panel.
+
+## D-828: the table tool measurement runs on 38 tables, as the split rule written before the split gives, at 23.12 USD (lead, within limits, D-807)
+Written 2026-11-20 09:28 +0300 by the lead (8fee59db), before any read of the validation part (look counter 0).
+- Role B's Part A (TTM_A_DONE.json, 09:22) split semtabfacts_aux_val by the plan's section 3 rule, written and committed before the split: whole articles in seeded order until at least 30 tables. The 18th article took the validation part from under 30 to 38 tables; the reserve holds 66. Returned keyless: 38 workloads, no answer-key names.
+- make_plan.py on the real statement counts: off arm 9.98 USD (seal 1.23, V1 3.07, V2 3.02, V3 2.66), on arm 13.14 USD (seal 1.23, V1 3.05, V2 3.02, V3 2.96, V4 2.88); total 23.12 USD, 3.28 above D-825's 19.84 forecast for 30 tables. Every step under 3.1 USD (caps under 4.7), inside the 5 USD pre-approval and the 435 cap (D-826).
+- Not trimmed to 30: dropping part of an article breaks the whole-article unit the paired cluster bootstrap needs, and changing the rule after the split is a change after seeing the split's counts. Both arms run the same 38 tables.
+- Reported to Seckin with the new figure and the money picture. The fresh storage listing of 20 Nov (136.61 GiB, 27.32 USD a month) is higher than the 18 Nov estimate (24.4), so the remaining plan is tight; this is reported, not asked, until a step is refused.
+
+## D-829: the C4 pilot's runner exit 2 is accepted as the known reply-count defect when the D-810 recount passes on the saved evidence; no re-seal, no relaunch (lead, within limits, D-807, ANSWER-FORM-A)
+Written 2026-11-20 10:33 +0300 by the lead (8fee59db), before any score of the pilot is read.
+- NEG_c4_pilot's part ended with workload_return exit_code 2 (0.688 USD, 31 minutes). A read-only trace found the bound runner's integrity false for two reasons only, b1_reply_record_missing:c4 and b1_reply_record_count:c4: its count expects one reply per prompt per path (24) and finds 176 (152 derived audits + 24 final stepwise steps). This is open item 156, fixed by D-810 (6ff16ade, 19 Nov 21:42), after this bundle was sealed at 3632f1f7.
+- The records are complete: replay_measurement.json complete true, 944 rows, 920 calls with exactly one reply file each (176 + 744), no duplicate, orphan or failed row. D-810's rule applied to the saved archive with no model gives expected 176, written 176, no reasons.
+- The same two reasons ended NR1118_MSTEP_PILOT and NR1118_IMPROVED_PILOT with 2, and their saved replies were scored. ANSWER-FORM-A: no answer is dropped for its form alone; scoring reads the saved replies again.
+- So the launch folders' `after` (NEG_c4_pilot and NEG_c4_validation, outside git) accepts exit 2 only when (a) the reasons are exactly that pair, (b) the D-810 recount gives expected == written with no reasons, and (c) the measurement is complete with one file per row. On acceptance it writes ACCEPTED_COUNTING_DEFECT.json beside the evidence. Any other exit 2 refuses as before.
+- Not chosen: a re-seal at a commit with D-810 plus a relaunch (forecast 3.86 USD; and D-821 keeps 3632f1f7 for C4). The measurement report states that the runner's integrity was false by this counting defect and the records were complete.
+
+## D-830: D-827 carried out: 90 project archives (11.06 GiB) deleted from the persistent file system, each SAFE by both checkers (lead, under D-827)
+Written 2026-11-20 12:32 +0300 by the lead (8fee59db), when the trim launch began.
+- Step 1: the five run folders went to the private Drive folder, each verified by size and SHA-256: NIGHT_neg_improved, GNN_TRAIN_6f48d5ed, C4_DEDUP_EMBED, NIGHT_gpu_release and DEV_scitab_rerun. First 13 of the lead's own finished worktrees were freed (D-808, both checkers SAFE in three rounds) to meet the laptop disk floor.
+- Step 2: a fresh listing at 06:11 UTC (0.172 USD): 136.61 GiB, 27.32 USD a month.
+- Step 3: LAMBDA_STORAGE_DELETE_LIST_20261120.md version 2, 95 rows (v1 kept). DEV_scitab_rerun's 15 archives were held on the lead's word, although its records show the bundles ran.
+- Step 4: two independent checkers, LAMBDA_DELETE_CHECK_OPUS_20261120.md and LAMBDA_DELETE_CHECK_FABLE_20261120.md.
+  - Both SAFE: rows 1 to 88, 92 and 95, 90 files, 11,875,348,101 bytes.
+  - Not deleted: rows 90, 91, 93 and 94 (no local Drive manifest copy) and row 89 (its own bundle never ran; NOT SAFE by the Opus check).
+- Step 5: nothing on the never-touch list was in the set. The approved list is docs/loop/private/LAMBDA_TRIM_APPROVED_20261120.json. The tool is tools/loop/fs_trim.py (check 661): it deletes only an exact projects/ archive of exact size, after a link and size check on the instance, with df before and after (forecast 0.42 USD).
+- Step 6: the record is under docs/loop/private/fs_trim/<instance>/. The new size and monthly cost go to FOR_SECKIN and the panel.
+- Two rules of the list were weaker than D-827, as the checkers found. Rule (d) accepted a backup log line without the local manifest copy. Rule (e) counted only admitted bundles. Any later trim list uses both checks.
+
+## D-831: this week's development stops at v1.0; the one addition is the new interface, fully integrated; every other v1.05 item waits (Seckin 12:35, relayed, G-20261120-1235)
+Written 2026-11-20 12:36 +0300 by the lead (8fee59db).
+1. v1.05 work does not start after v1.0; it waits.
+2. v1.0's one addition is the new interface, integrated into v1.0. The design and screens are built (lane/v105-ui D1, lane/v105-ui-d2 D2, lane/v105-ui-guide D3/D4 prep). What remains is the trial on the real system, the wiring and the user guide, so that v1.0 can be shown to people. No other v1.05 part enters v1.0.
+3. These stay in v1.05: the speed measurement; the red-line trials (the rules are in the code, and the pages say "to be added"); the two knowledge-graph items; the path-count suggestion; the v1.05 final steps.
+4. The rest of the v1.0 path:
+   - negotiation round 1, plus further rounds only after asking about money;
+   - the small table tool measurement;
+   - the interface integration;
+   - the v1.0 final steps and release.
+5. Usage: 75 to 76 percent weekly at 12:15 to 12:36, about 0.85 points an hour. Spend what is left only on this path; park the lanes outside it. The interface's usage and money forecast is written, and if the whole path does not fit within 95 percent, an ordered cut is proposed and asked (SORU 12:4x).
+6. At the v1.0 release, the supervisor drafts a short LinkedIn post (not sent without Seckin), prepares a short deck for data scientists, and does a last check of the README, the site, LinkedIn and Medium. On release day the README's "v1.0 is not released yet" line and the scope are updated, and the supervisor is told.
+
+## D-832: version names (alpha, beta, full) and the cut order for the alpha path (Seckin 12:41, relayed, G-20261120-1241; answers the 12:37 SORU)
+Written 2026-11-20 12:43 +0300 by the lead (8fee59db).
+- Name mapping, written once: v1.0 -> v1.0-alpha; v1.05 -> v1.0-beta; v1.1 -> v1.0 (the full release); v1.15 -> v1.1.
+  - From here on, the plan, the order of remaining work, the panel, the GitHub milestones and the records use the new names.
+  - Earlier records keep their old names; this line maps them.
+  - On the public pages the rename is made at the alpha release, with the last page check. The README's "Version 1.0 is not released yet" line changes then too.
+- Cut order, option (a) as changed by Seckin:
+  1. Negotiation rounds are not cut. Rounds 2 and 3 run if needed, and money for them is still asked.
+  2. The interface is not tried on a rented machine with a real run (0 USD). The loop checks on the laptop, with saved examples, that every button and screen reaches the right server route and the right record: a link test.
+  3. The Turkish user guide comes after the alpha release.
+  4. The 50-document trial drops to 40 documents, in force now rather than at 88 percent usage.
+  5. Everything outside the new alpha stops, as D-831 already says.
+- The panel card v10-kesme-sirasi is closed.
+
+
+## D-833: the causal review gaps go on the beta fix list, before the CLadder and Corr2Cause measurements (Seckin 13:06 and 13:09, relayed, G-20261120-1306 and G-20261120-1309 KARAR 2)
+Written 2026-11-20 13:12 +0300 by the lead (8fee59db).
+- Source: docs/loop/private/CAUSAL_REVIEW_SYNTHESIS_20261120.md (independent Opus and Fable reviews of the same five outputs).
+- Order: the alpha and its numeric improvements first. The items below are done in the beta. On the public pages they are called "future direction".
+- The five beta items, recorded only; they do not delay the alpha:
+  1. A difference check between the source text and the proposed text that flags legally significant changes to the user: a dropped condition, a ban that becomes one-way, a widened scope, an obligation that becomes a statement.
+  2. Negotiation prompts name the advised party, its interests, the opposing position and the round history (today three different parties get the same text, because the prompt does not name the party).
+  3. A separate reasoning field in the answer: for each change, the mechanism and the expected effect.
+  4. A counterfactual step in the game: the other parties' tables and the acceptance rule go into the prompt, with why the offer would be accepted.
+  5. CLadder and Corr2Cause (the earlier plan, so they stay on v1.1, old name v1.15), with a question and answer API for our own use only; the public API comes after the full release (v1.0).
+- Dependency (KARAR 2): items 1 to 4 (beta, #309 to #312) come before the item 5 measurements (#306, v1.1). The plan and the GitHub records say so.
+
+## D-834: the alpha's last day is 21 November 2026 23:59 Istanbul time (Seckin 13:09, relayed, G-20261120-1309 KARAR 1)
+Written 2026-11-20 13:12 +0300 by the lead (8fee59db).
+- The alpha ends today or tomorrow, at the latest 21 November 23:59; it must not slip to 25 November.
+- The lead writes an hour by hour timeline with an expected start and end for each step, in two paths: the negotiation round 1 bar holds, or round 2 is needed.
+- Steps that do not depend on each other run in parallel (table tool restart, negotiation scoring, interface link test), with no waits between steps.
+- Weekly usage reaches 95 percent before the last day (about 10:30 on 21 November at 0.85 points an hour, read 13:09). The lead does not change the stop threshold; the options go to Seckin as a SORU.
+
+## D-835: the alpha interface opens without a key on the local machine only; privacy checks go to the beta (Seckin 13:11, relayed, G-20261120-1311)
+Written 2026-11-20 13:18 +0300 by the lead (8fee59db).
+- KARAR 1: in the alpha the review desk opens with no key or credential, so it can be tried freely. Authentication, credentials and security work stay for the beta.
+  - Supervisor's condition, told to Seckin: keyless mode is on only while the server listens on a loopback address (127.0.0.1, ::1, localhost). On any other address the token is required or the server does not start.
+  - The guide and the README say "Alpha: keyless for local trial only". The link test passes again in this mode.
+  - A lane builds it on its own worktree with a new gate check; it runs in parallel with the other alpha steps.
+- KARAR 2: personal data (PII) checks, masking and the sensitive mode (the sensitivity layer, inactive today) are built and tried in the beta. Recorded in the beta plan, on GitHub and in the panel's beta rows.
+
+## D-836: the table tool measurement cannot hold its form bar; the tool stays off for the alpha and the later parts stop (TABLE_TOOL_MEASURE_PLAN sections 5.4 and 8; D-811)
+Written 2026-11-20 13:18 +0300 by the lead (8fee59db).
+- Evidence (workload_return.json, counted by the lead and by the rescue lane): four distinct validation tables ended with exit 2 (semantic_incomplete): 1872a2acdac6 in both arms, and 3fbb76b81239, 43ee685e8150 and 6643c8e64d5d in OFF V1.
+- So at most 34 of 38 tables (89.5 percent) can end with exit 0 in both arms. Section 8 condition 1 needs 90 percent. The bar cannot hold, whatever the other parts return.
+- Section 8: "Otherwise it does not hold, and the switch goes off for v1.0 (D-811), with the figures recorded." Under the D-832 names that is the alpha.
+- Section 5.4: a failing first-part check stops the later parts of both arms. Done at 13:16 with `launch.py stop` for ON V2 and OFF V3. The 14-table rescue folders (TABLE_TOOL_MEASURE_OFF_R and _ON_R) and the sealed ON V3 and V4 are not launched. No score is read, because not every part ended (section 5.4).
+- Lead error, recorded: V2 should have been held after OFF V1 (section 5.4, mechanical rule). The lead launched the later parts by hand and read the OFF V1 form check as passed from request counters, without the exit codes. Hand launches now check the previous part's exit codes first (OPEN_ITEMS 174).
+- Saving: about 12 to 15 USD not spent (the rescue's 6.37 USD forecast plus the remaining ON V2, V3, V4 and OFF V3 parts). The alpha path is about 4 hours shorter.
+- Reported: the four exit-2 tables go to the beta list as a finding (why semantic_incomplete happens on these tables in both arms).
+- Within limits (the plan's own rule); not a SORU. Reported in FOR_SECKIN.
+
+## D-837: progress is shown by version everywhere; GitHub issues kept current (Seckin 13:22, relayed, G-20261120-1322)
+Written 2026-11-20 13:18 +0300 by the lead (8fee59db).
+- The panel's REL field (supervisor, version 112) shows each version (alpha, beta, full v1.0, v1.1): what is done and what is not. The lead checks REL against the records at every panel write and keeps V105 the same as REL's beta. PLAN stays as the step order.
+- The supervisor's one-time issue sweep (milestones and new names) runs now. The lead does not touch issue milestones or titles until its FOR_SECKIN note.
+- Standing rule from then on:
+  - every new issue opens with a version milestone;
+  - finished work is closed the same day with its evidence (commit, result file);
+  - every decision is written to its issue the same day;
+  - alpha issues are opened where missing: the 40-document trial, the short measurement, the LinkedIn post, the slides, the last page check.
+- Plan file, panel REL and GitHub milestones show the same work under the same version. A mismatch is fixed and noted in FOR_SECKIN in one line.
+- With Seckin's leave: the public progress page gets a section by version (done and left), committed and pushed at the next push after the usual pre-push scans.
+
+## D-838: the 95 percent stop stays; if round 3 is really needed, ask again (Seckin 13:22, panel answer, G-20261120-1322b; answers the 13:17 SORU)
+Written 2026-11-20 13:22 +0300 by the lead (8fee59db).
+- Option (a): the 95 percent stop threshold does not change.
+- If negotiation round 3 is really needed, the lead asks Seckin again at that moment, before it starts.
+- The panel card yuzde95-son-gun is closed.
+
+## D-839: every GitHub issue update is a full sweep, tracked by the watcher (Seckin 13:27, relayed, G-20261120-1327)
+Written 2026-11-20 13:27 +0300 by the lead (8fee59db).
+- At every issue update, all open issues are scanned in the same pass. Issues with no real work left, or stale ones, are closed with evidence: the decision, commit or result file, or the issue that covers them. Issues that need it are updated.
+- Each sweep ends with one FOR_SECKIN line (closed, updated, open per version), and the same counts go into the panel REL gh field.
+- Standing order 117. A lane adds the sweep record (tools/loop/issue_sweep.py) and the watcher's "issue sweep due" alert (sync_watch.py, check 519).
+- It starts with the one-time cleanup of G-20261120-1326, alpha issues first; a helper is doing items 1 and 3 now.
+
+## D-840: the alpha goes ahead now; a negotiation round 2 aimed at M4 and M10 runs alongside it (Seckin 13:46, relayed, G-20261120-1346; answers the 13:31 SORU, option (a))
+Written 2026-11-20 13:47 +0300 by the lead (8fee59db).
+- The alpha's last steps start now: the full check, freeze and lock, the quick read, the 40-document trial, then the release (about 23:45).
+  - For the alpha only, the rule that the quick read and the trial wait for the negotiation bar (D-767, relayed 19:30 on 18 Nov) is relaxed.
+  - Seckin's note: "sonra bakarız". The negotiation bar and this relaxed rule are an open item, put to him after the alpha release.
+- At the same time, round 2 is prepared and run, aimed at the two lines that failed in round 1:
+  - M4: stance matches fate, 0.268, floors kept 0.405, changed 0.525, removed 0.075.
+  - M10: open-point detection, 0.469, movable class 0.492.
+  - Approved about 9 to 12 USD inside the 435 USD cap; each step stays within the 5 USD pre-approval (D-708).
+  - If it is ready by the lock and holds the bar, it enters the alpha. Otherwise the alpha states the negotiation figures as "measured, the bar not yet met".
+- Round 3 and the 95 percent stop: unchanged (D-838). Ask again if needed.
+- The panel card muzakere-tur1 is closed.
+
+## D-841: for the alpha, a quick read "fails" only when it does not complete properly; up to 14.1 USD approved; round 2 goes to the beta (Seckin 14:12, relayed, G-20261120-1412 KARAR 1; answers the 14:10 SORU, option (a))
+Written 2026-11-20 14:15 +0300 by the lead (8fee59db).
+- For the alpha, D-596's "fails" means the quick read did not complete properly: records missing or broken.
+  - Its figures are written as they are, beside B1 and the cloud model, and the 40-document trial runs after it.
+  - Line 5 stays the full-release condition, with the new margin of D-842.
+- Spend: the quick read is approved up to its 14.1 USD forecast (guard cap 21.13), inside the 435 USD cap.
+- Negotiation round 2 (D-840) cannot enter the alpha. Its change is built (check 686, lane commits 83e59061 and 3676f77e), but no unused validation set exists, and a fresh one takes 13 to 15 hours to build.
+  - It goes to the beta. Its development reading on the two C4 sets (about 5.3 USD forecast, about 2.9 at C4's actual rates) is held, not launched.
+  - The alpha states the negotiation figures as "measured, the bar not yet met" (D-840).
+
+## D-842: the cloud closeness condition is at most 10 points below the cloud model, no longer 5 (Seckin 14:12, relayed, G-20261120-1412 KARAR 2; his own decision)
+Written 2026-11-20 14:15 +0300 by the lead (8fee59db).
+- Everywhere and in every calculation: D-596 line 5, the completion definition, the full-release condition, the scoreboard and the progress page.
+  - "At least 10 points above B1" stays exactly as it is.
+  - Example: ContraDoc with the cloud model at 90 now needs at least 80 (85 before).
+- The old threshold stays in the record as "5 points until 20 November 2026".
+- A lane changes gate_score.BAR_BELOW_CLOUD and its check, the docs and the progress page, and recomputes past results (docs/loop/stages/D842_RECOMPUTE.md). Each changed status goes to FOR_SECKIN one by one.
+- The alpha freeze waits for this merge.
+- Public pages that state the completion definition are fixed at the alpha's last page check (#318).
+- Not changed: the table tool plan's on-minus-off non-inferiority margin. It is a different quantity, and that measurement is closed (D-836).

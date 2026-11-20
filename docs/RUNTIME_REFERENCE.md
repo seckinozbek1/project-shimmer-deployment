@@ -397,7 +397,10 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/ontology/relations` | token | Stored relation summaries, preserving mechanisms and agreement. |
 | `GET` | `/ontology/conflicts` | token | Recorded ontology conflict answers and qualified override counts; not proof a review consumed them. |
 | `GET` | `/rules/{rule_id}` | token | Current compiled rule text by registry or source ID; may differ from historical run rules. |
-| `GET` | `/console` | none | Static operator console HTML; no authentication to load the page. |
+| `GET` | `/console` | none | Static operator console HTML; no authentication to load the page. `?view=desk` serves the v1.05 review desk page (`scripts/ui/desk.html`) instead, which also holds no data and asks for the token before any other call; any other `view` is 404. Alpha (D-835): in keyless local mode (`SHIMMER_KEYLESS_LOCAL=1`, honoured only on a loopback bind) the desk page connects with no token and every token-gated route answers loopback requests without one; a non-local address needs the token. |
+| `GET` | `/inputs` | token | Files in place under `input/conventions`, `input/context` and `input/operational` (names, sizes, times; never content) and the compiled rules by id, category and severity. Read-only. |
+| `GET` | `/runs/{run_id}/progress` | token | PROGRESS-A's four values measured from the run folder and job record: documents done against the pipeline's own total, elapsed, rate, remaining at that rate; each unmeasurable value null with its reason. Counts and timings only, so a sealed run answers too. |
+| `GET` | `/runs/{run_id}/reviewed/{doc_id}` | token | One document's `reviewed_document.md` as text; the name is matched against the run's deliverables listing first, 404 otherwise. Refuses a sealed run (403). |
 | `GET` | `/health` | none | Liveness, current backend/default review mode and layer posture; no model execution or readiness proof. |
 | `GET` | `/runs` | token | Run resources; state/outcome and available document projections. |
 | `GET` | `/approvals` | token | Pending governed questions with the same pending_approval shape as run resources. |
@@ -467,7 +470,8 @@ outside source; this table contains no credentials.
 
 | Variable | Direct server default | Consumer/meaning |
 |---|---|---|
-| `SHIMMER_TOKEN_HASH` | required | sha256 hash of the access token; the server refuses to start without it |
+| `SHIMMER_TOKEN_HASH` | required | sha256 hash of the access token; the server refuses to start without it, except in keyless local mode |
+| `SHIMMER_KEYLESS_LOCAL` | unset (the desktop starter sets `1`) | alpha (D-835): `1` asks for keyless local mode, honoured only when the bound host is loopback (127.0.0.1, ::1, localhost); on any other host the server refuses to start. While on, token-gated routes answer requests from this computer with no token and refuse other clients, foreign Host or Origin and forwarded requests (403); a non-local address needs the token |
 | `SHIMMER_MODE` | `integrated` | pipeline `--mode`; integrated activates the ingested-corpus promotion exclusion |
 | `SHIMMER_TASK` | `review` | default task for `/submit` (`review` or `draft`) |
 | `SHIMMER_SENSITIVE` | `false` | legacy submission default; native submission requires an explicit true/false choice |

@@ -13,6 +13,12 @@ The archive is read, never guessed:
 The workload's entry files come from each request's argv: arm G runs scripts/verify_session1.py; arm B1 with
 --replay-prompts runs benchmark/baselines/replay_prompts.py and the pass module whose SCHEMA equals the pass
 file's "schema"; arm B1 without it runs benchmark/baselines/bare_model.py; any other arm runs scripts/pipeline.py.
+In the replay dispatcher a per-pass lazy loader (`def _x(): import m; return m`, m imported nowhere else in the
+file) other than the B1 pass module's belongs to another pass: what is reached only through it is latent. A
+workload not run through the dispatcher (B3, B1 bare, arm G, the commit mode) hands no file to any pass, so when
+it reaches replay_prompts.py by an import every loader there is latent (B3 reaches it through scripts/vllm_route.py
+and vllm_replay.py; tools/build_auditor_training.py sits behind its auditor-training loader); every other import
+of the dispatcher stays on the normal path and is refused when absent.
 
 From the entries, Python files of the commit are followed by their import statements, literal
 importlib.import_module names and "module:function" names declared in archived config JSON. Within a file only
@@ -307,13 +313,29 @@ def config_imports(tree, archive):
 
 
 def lazy_loader_modules(source):
-    """Module names of a file's `def _x(): import m; return m` loaders (a dispatcher's per-pass modules)."""
-    names = set()
-    for node in ast.walk(_parse(source)):
+    """Module names of a file's `def _x(): import m; return m` loaders (a dispatcher's per-pass modules): the
+    loader returns the module object itself, and a module the file also imports anywhere else is on the normal
+    path, never a loader's."""
+    loaders, loader_nodes = set(), set()
+    module = _parse(source)
+    for node in ast.walk(module):
         if isinstance(node, ast.FunctionDef) and len(node.body) == 2 and isinstance(node.body[0], ast.Import) \
-                and isinstance(node.body[1], ast.Return):
-            names.update(a.name for a in node.body[0].names)
-    return names
+                and isinstance(node.body[1], ast.Return) and isinstance(node.body[1].value, ast.Name) \
+                and len(node.body[0].names) == 1 \
+                and node.body[1].value.id == (node.body[0].names[0].asname or node.body[0].names[0].name):
+            loaders.add(node.body[0].names[0].name)
+            loader_nodes.add(id(node.body[0]))
+    elsewhere = set()
+    for node in ast.walk(module):
+        if isinstance(node, ast.Import) and id(node) not in loader_nodes:
+            elsewhere.update(a.name for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and not node.level:
+            elsewhere.add(node.module or '')
+            elsewhere.update(((node.module + '.') if node.module else '') + a.name for a in node.names)
+        elif isinstance(node, ast.Call) and ast.unparse(node.func) in ('importlib.import_module', 'import_module') \
+                and node.args and isinstance(node.args[0], ast.Constant):
+            elsewhere.add(node.args[0].value)
+    return loaders - elsewhere
 
 
 def closure(tree, archive, entries, present=(), dispatcher=None, handler=None):
@@ -321,7 +343,8 @@ def closure(tree, archive, entries, present=(), dispatcher=None, handler=None):
 
     `present` names files the instance holds beside the archive (the runner's support files, never followed).
     In the `dispatcher` (replay_prompts.py) a lazy loader's module other than the `handler` belongs to another
-    pass: what is reached only through it is latent, reported and never refused (that pass's launch refuses it)."""
+    pass: what is reached only through it is latent, reported and never refused (that pass's launch refuses it).
+    With no handler (a workload that runs no pass, B3 among them) every loader's module is latent."""
     have = set(archive) | set(present)
     missing, missing_named, optional_missing, latent, notes = {}, {}, {}, {}, set()
     used = {True: {}, False: {}}      # strength -> {file: names of it used}
@@ -430,11 +453,15 @@ def entries_for(tree, argv, folder=None):
     return ['scripts/pipeline.py']
 
 
+REPLAY = 'benchmark/baselines/replay_prompts.py'
+
+
 def dispatch(entries):
-    """(dispatcher, handler) of a B1 replay entry list, else (None, None)."""
-    if entries and entries[0] == 'benchmark/baselines/replay_prompts.py':
+    """(dispatcher, handler): for a B1 replay entry list the dispatcher and the pass module its file is handed
+    to; for any other workload the dispatcher with no handler, since it runs no pass (module docstring)."""
+    if entries and entries[0] == REPLAY:
         return entries[0], (entries[1] if len(entries) > 1 else None)
-    return None, None
+    return REPLAY, None
 
 
 def _launch_constant(folder, name):

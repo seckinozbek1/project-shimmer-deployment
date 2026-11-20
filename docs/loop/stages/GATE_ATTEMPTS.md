@@ -203,7 +203,8 @@ without its example C1 (not usable, dropped; D-248, D-257).
    and run it on the quick subset"; it is never sealed for the claim set from a what-if.
 5. **Whether the claim set is read at all.** The claim set is sealed and launched only if the chosen
    configuration's point figures on the quick subset meet both bars as coded on both benchmarks: at
-   least 10 points above B1 and at most 5 below the cloud reference. The intervals are reported beside
+   least 10 points above B1 and at most 10 below the cloud reference (D-842, Seckin 20 November 2026;
+   5 points until 20 November 2026). The intervals are reported beside
    them and do not gate this step, since 40 documents cannot show a 10-point gain (standard error near
    .08, GATE_SET section 5). Reason: the claim read is one opening at the 97.5 percent level, a second
    one is at 98.75 and costs about 43 to 69 USD of Lambda (estimate: plan rows 10a, 10b) from the
@@ -229,7 +230,8 @@ bars on the quick subset, and the work goes on (D-S92 item 3).
 
 **One thing only Seckin can settle.** In 2-class, B1's .838 plus 10 points is above the cloud's own
 .89 (measured figures, tuned items). If the gate set comes out 2-class, or B1 stays near the cloud in
-3-class, bar (a) on SciTab asks the system to beat the cloud reference. The numbers 10 and 5 are his.
+3-class, bar (a) on SciTab asks the system to beat the cloud reference. The numbers 10 and 5 are his
+(bar (b)'s 5 became 10 by D-842 on 20 November 2026; bar (a) unchanged).
 
 **Settled (D-550, Seckin 21:29, 12 November).** The bars stay as they are, in each paper's metric and the
 class setting the freeze declared (3-class, D-543), and are not changed before or after any read. If B1

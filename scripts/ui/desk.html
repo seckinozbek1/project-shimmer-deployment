@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shimmer Review Desk</title>
+<style>
+  :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #5f6368; --line: #d0d4d9; --model: #8a4b00; --python: #1f5f2e; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16181b; --fg: #e8eaed; --muted: #9aa0a6; --line: #3c4043; --model: #f0a35a; --python: #81c995; } }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; margin: 0 auto; max-width: 980px; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 8px; } h2 { font-size: 17px; margin: 22px 0 8px; } h3 { font-size: 15px; margin: 14px 0 6px; }
+  section { border-top: 1px solid var(--line); padding-top: 6px; }
+  table { border-collapse: collapse; width: 100%; } td, th { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
+  pre { white-space: pre-wrap; word-break: break-word; border: 1px solid var(--line); padding: 8px; max-height: 60vh; overflow: auto; }
+  .muted { color: var(--muted); } .model-item { color: var(--model); } .python-item { color: var(--python); }
+  .error { color: #c5221f; } button { font: inherit; padding: 3px 10px; cursor: pointer; } input[type=password] { font: inherit; width: 22em; max-width: 100%; } input[type=text] { max-width: 100%; box-sizing: border-box; }
+  .table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>Shimmer review desk</h1>
+<p class="muted">A plain page over the server's own routes: what is in place, starting a review, decisions waiting, the runs, their measured progress, the reviewed document and its findings. The full console is at <a href="/console">/console</a>.</p>
+<form id="token-form">
+  <label>Token <input type="password" id="token" autocomplete="off"></label>
+  <button type="submit">Connect</button> <span id="token-state" class="muted">not connected</span>
+</form>
+<section><h2>In place</h2><div id="inputs" class="muted">Connect to list the inputs.</div></section>
+<section><h2>Start a review</h2>
+  <p class="muted">Files go to the server's own /submit route, the same path the console uses. Nothing starts until you confirm the plan.</p>
+  <p><label>Files <input type="file" id="start-files" multiple></label></p>
+  <div id="start-roles" class="muted">Choose files, then give each one a role.</div>
+  <p><label>Framing question (optional) <input type="text" id="start-question" size="50"></label></p>
+  <p>Privacy:
+    <label><input type="radio" name="start-privacy" value="normal"> Normal</label>
+    <label><input type="radio" name="start-privacy" value="sensitive"> Sensitive</label></p>
+  <div id="start-plan"></div>
+  <p><label><input type="checkbox" id="start-confirm"> I have read this plan</label>
+    <button type="button" id="start-submit">Start the review</button> <span id="start-state" class="muted"></span></p>
+</section>
+<section><h2>Waiting for a decision</h2><div id="approvals" class="muted">Connect to list pending decisions.</div></section>
+<section><h2>Runs</h2><div id="runs" class="muted">Connect to list the runs.</div></section>
+<section><h2>Run</h2><div id="run" class="muted">Choose a run.</div><div id="reader"></div></section>
+<script>
+var DeskViews = (function () {
+  function esc(v) {
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function show(v, none) { return v === null || v === undefined || v === "" ? '<span class="muted">' + esc(none || "not known") + "</span>" : esc(v); }
+  var LIVE = { queued: 1, running: 1, awaiting_approval: 1 };
+
+  function isSealed(record) { return !!record && record.exposure === "sealed"; }
+
+  // The routes the page calls for one run. A sealed run gets counts and timings only:
+  // no findings, no model findings, no reviewed document (CONSOLE-A, Annex B.8).
+  function plan(record) {
+    var id = encodeURIComponent(record.run_id), out = ["/runs/" + id + "/progress"];
+    if (isSealed(record)) { return out; }
+    out.push("/runs/" + id + "/findings", "/runs/" + id + "/model-findings");
+    (record.documents || []).forEach(function (d) {
+      if (d && d.status === "done") { out.push("/runs/" + id + "/reviewed/" + encodeURIComponent(d.doc_id)); }
+    });
+    return out;
+  }
+
+  function inputsHtml(data) {
+    var html = "", folders = (data && data.folders) || {};
+    ["conventions", "context", "operational"].forEach(function (name) {
+      var f = folders[name] || { present: false, files: [], count: 0 };
+      html += "<h3>input/" + esc(name) + "</h3>";
+      if (!f.present) { html += '<p class="muted">This folder is not present.</p>'; return; }
+      if (!f.count) { html += '<p class="muted">No files.</p>'; return; }
+      html += "<ul>" + f.files.map(function (x) { return "<li>" + esc(x.name) + ' <span class="muted">' + esc(x.bytes) + " bytes</span></li>"; }).join("") + "</ul>";
+      if (f.truncated) { html += '<p class="muted">' + esc(f.count) + " files; the first " + esc(f.files.length) + " are listed.</p>"; }
+    });
+    var rules = (data && data.conventions_compiled) || [];
+    html += "<h3>Compiled rules</h3>" + (rules.length
+      ? "<p>" + rules.map(function (r) { return esc(r.id) + (r.category ? " (" + esc(r.category) + ")" : ""); }).join(", ") + "</p>"
+      : '<p class="muted">No compiled rules: config/convention_registry.json is absent or empty until a run compiles input/conventions.</p>');
+    return html;
+  }
+
+  function runsHtml(runs) {
+    if (!runs || !runs.length) { return '<p class="muted">No runs yet.</p>'; }
+    return '<div class="table-wrap"><table><tr><th>Run</th><th>State</th><th>Outcome</th><th>Submitted</th><th></th></tr>' +
+      runs.slice().reverse().map(function (r) {
+        return "<tr><td>" + esc(r.run_id) + (isSealed(r) ? ' <span class="muted">(sealed: counts only)</span>' : "") + "</td><td>" + show(r.state) +
+          "</td><td>" + show(r.outcome, "none yet") + "</td><td>" + show(r.submitted_at) +
+          '</td><td><button data-run="' + esc(r.run_id) + '">Open</button></td></tr>';
+      }).join("") + "</table></div>";
+  }
+
+  function progressHtml(p) {
+    if (!p) { return '<p class="muted">No progress reading.</p>'; }
+    var why = p.not_measurable || {};
+    function cell(v, key, unit) { return v === null || v === undefined ? '<span class="muted">not measurable: ' + esc(why[key] || "no reading") + "</span>" : esc(v) + (unit ? " " + unit : ""); }
+    return "<h3>Progress (measured)</h3><table>" +
+      "<tr><td>Documents done</td><td>" + esc(p.documents_done) + " of " + cell(p.documents_total, "total") + "</td></tr>" +
+      "<tr><td>Elapsed</td><td>" + cell(p.elapsed_seconds === null || p.elapsed_seconds === undefined ? null : (p.elapsed_seconds / 60).toFixed(1), "elapsed", "min") + "</td></tr>" +
+      "<tr><td>Rate</td><td>" + cell(p.rate_documents_per_minute, "rate", "documents/min") + "</td></tr>" +
+      "<tr><td>Remaining at that rate</td><td>" + cell(p.remaining_minutes, "remaining", "min") + "</td></tr></table>" +
+      (p.phase_note ? '<p class="muted">' + esc(p.phase_note) + "</p>" : "") +
+      (p.reading ? '<p class="muted">' + esc(p.reading) + "</p>" : "");
+  }
+
+  function runHtml(record) {
+    var html = "<p><b>" + esc(record.run_id) + "</b>: " + show(record.state) + (record.outcome ? ", " + esc(record.outcome) : "") + "</p>";
+    if (record.stop_reason && record.stop_reason.code) { html += "<p>Stopped: " + esc(record.stop_reason.code) + (record.stop_reason.detail ? ", " + esc(record.stop_reason.detail) : "") + "</p>"; }
+    if (isSealed(record)) {
+      return html + '<p class="muted">Sealed run: counts and timings only. ' + esc(record.documents_done || 0) + " of " + esc(record.document_count || 0) +
+        " documents done. Findings and the reviewed document are not shown for a sealed run.</p>";
+    }
+    var docs = record.documents || [];
+    html += "<h3>Documents</h3>" + (docs.length ? "<ul>" + docs.map(function (d) {
+      return "<li>" + esc(d.doc_id) + " " + (d.status === "done"
+        ? '<button data-doc="' + esc(d.doc_id) + '">Read reviewed document</button>' : '<span class="muted">in progress</span>') + "</li>";
+    }).join("") + "</ul>" : '<p class="muted">No document has reached the review phase yet.</p>');
+    return html;
+  }
+
+  // HONEST-OUTPUT-A: every model-written record stays visible and carries the server's own mark.
+  function findingsHtml(data, mark) {
+    var rows = (data && data.findings) || [];
+    if (!rows.length) { return '<h3>Findings</h3><p class="muted">No typed findings on the bus. This does not certify a clean review.</p>'; }
+    return "<h3>Findings (" + esc(rows.length) + ')</h3><div class="table-wrap"><table><tr><th>Document</th><th>Unit</th><th>Rule</th><th>Verdict</th><th>Written by</th><th>Explanation</th></tr>' +
+      rows.map(function (f) {
+        var model = f.written_by !== "python";
+        return '<tr class="' + (model ? "model-item" : "python-item") + '"><td>' + esc(f.doc_id) + "</td><td>" + esc(f.unit_id) + "</td><td>" + esc(f.source_rule_id || f.rule_id) +
+          "</td><td>" + show(f.record_verdict) + "</td><td>" + (model ? "model. " + esc(mark || "") : "Python") + "</td><td>" + esc(f.explanation) + "</td></tr>";
+      }).join("") + "</table></div>";
+  }
+
+  function modelFindingsHtml(data) {
+    var docs = (data && data.documents) || [], mark = (data && data.mark) || "";
+    var items = [];
+    docs.forEach(function (d) { (d.items || []).forEach(function (i) { items.push([d.doc_id, i]); }); });
+    if (!items.length) { return ""; }
+    return "<h3>Model findings, not promoted (" + esc(items.length) + ")</h3><ul>" + items.map(function (p) {
+      return '<li class="model-item">' + esc(p[0]) + " " + esc(p[1].unit_id) + " " + esc(p[1].rule_id) + ": " + esc(p[1].line || p[1].model_wrote) + " <i>" + esc(p[1].mark || mark) + "</i></li>";
+    }).join("") + "</ul>";
+  }
+
+  function reviewedHtml(docId, text) {
+    return "<h3>Reviewed document: " + esc(docId) + "</h3><pre>" + esc(text) + "</pre>";
+  }
+
+  // ---- Start a review (step 2). The page only builds the fields /submit already takes;
+  // the server classifies each file, adds the two override flags for a Normal run and
+  // refuses a Sensitive one while the privacy layer is inactive.
+  var ROLES = { target: "Review target", prior: "Earlier version", grounding: "Grounding", rules: "Review rules file" };
+
+  function privacyNote(health, privacy) {
+    var active = !!(health && health.sensitive_layer_active);
+    if (privacy === "sensitive") {
+      return active ? "Sensitive: the privacy layer is active, so redaction stays on and the server adds no override flag."
+        : "Sensitive cannot start here: the privacy layer (LAW-IV) ships inactive, so the server refuses a Sensitive review before any file is used.";
+    }
+    if (privacy === "normal") {
+      return "Normal: the run declares that it redacts nothing, and the server adds the two override flags " +
+        "(--sensitivity-layer-inactive-override and --no-redaction-override) for this run, as it does for the console.";
+    }
+    return "Choose Normal or Sensitive. The privacy layer is " + (active ? "active." : "inactive, so only Normal can start.");
+  }
+
+  function startPlan(files, roles, privacy, health, question) {
+    var errors = [], groups = { target: [], prior: [], grounding: [], rules: [] }, seen = {};
+    (files || []).forEach(function (f) {
+      var key = String(f.name).toLowerCase();
+      if (seen[key]) { errors.push("Two selected files are named " + f.name + ". Rename one and choose them again."); }
+      seen[key] = 1;
+      var role = (roles || {})[f.name];
+      (groups[role] || groups.grounding).push(f.name);
+    });
+    if (!files || !files.length) { errors.push("Choose at least one file."); }
+    else if (!groups.target.length) { errors.push("Mark at least one file as a review target."); }
+    if (privacy !== "normal" && privacy !== "sensitive") { errors.push("Choose Normal or Sensitive."); }
+    if (privacy === "sensitive" && !(health && health.sensitive_layer_active)) {
+      errors.push("Sensitive cannot start while the privacy layer is inactive. Nothing will be uploaded.");
+    }
+    var fields = errors.length ? null : {
+      task: "review", intake_mode: "standalone",
+      sensitive: privacy === "sensitive" ? "true" : "false",
+      review_targets: JSON.stringify(groups.target), prior_files: JSON.stringify(groups.prior),
+      question: String(question || "").trim()
+    };
+    return { ok: !errors.length, errors: errors, targets: groups.target, prior: groups.prior,
+             grounding: groups.grounding, rules: groups.rules, note: privacyNote(health, privacy), fields: fields };
+  }
+
+  // The multipart fields, in order, or null when the plan is refused or not confirmed.
+  function submitFields(startplan, confirmed) {
+    if (!startplan || !startplan.ok || confirmed !== true) { return null; }
+    var out = [];
+    Object.keys(startplan.fields).forEach(function (k) {
+      if (k !== "question" || startplan.fields[k]) { out.push([k, startplan.fields[k]]); }
+    });
+    out.push(["confirmed", "true"]);
+    return out;
+  }
+
+  function rolesHtml(files, roles) {
+    if (!files || !files.length) { return '<p class="muted">Choose files, then give each one a role.</p>'; }
+    return "<table><tr><th>File</th><th>Role</th></tr>" + files.map(function (f, i) {
+      var role = (roles || {})[f.name] || "grounding";
+      return "<tr><td>" + esc(f.name) + ' <span class="muted">' + esc(f.size) + ' bytes</span></td><td><select data-role-file="' + i + '">' +
+        Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (k === role ? " selected" : "") + ">" + esc(ROLES[k]) + "</option>"; }).join("") +
+        "</select></td></tr>";
+    }).join("") + "</table>";
+  }
+
+  function list(names) { return names.length ? names.map(esc).join(", ") : '<span class="muted">none</span>'; }
+
+  function startPlanHtml(p) {
+    var html = "<h3>Plan</h3><p>" + esc(p.note) + "</p>";
+    if (!p.ok) { return html + '<ul class="error">' + p.errors.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ul>"; }
+    return html + "<table>" +
+      "<tr><td>Review</td><td>" + list(p.targets) + "</td></tr>" +
+      "<tr><td>Earlier versions</td><td>" + list(p.prior) + "</td></tr>" +
+      "<tr><td>Grounding</td><td>" + list(p.grounding) + ' <span class="muted">(with the documents already in input/context)</span></td></tr>' +
+      "<tr><td>Review rules files</td><td>" + list(p.rules) + ' <span class="muted">(the server\'s parser decides; a file it reads as a document is used as grounding)</span></td></tr>' +
+      "</table><p class=\"muted\">The rules already in input/conventions stay in force. A file whose name exists with different content is refused by the server, never overwritten.</p>";
+  }
+
+  function submitResultHtml(answer) {
+    return "<span>Queued as " + esc(answer.run_id) + " (" + esc(answer.review_mode) + " review, " +
+      (answer.sensitive ? "Sensitive" : "Normal") + "). Open it under Runs to follow its progress.</span>";
+  }
+
+  // ---- Cancel, decisions, log and downloads (step 3). A sealed run gets cancel and the
+  // decision form only: no log, no download (the server refuses both with 403 in any case).
+  function actions(record) {
+    var id = encodeURIComponent(record.run_id);
+    var acts = { cancel: LIVE[record.state] ? "/runs/" + id + "/cancel" : null,
+                 approval: record.pending_approval ? "/runs/" + id + "/approval" : null, log: null, downloads: [] };
+    var sealed = isSealed(record);
+    if (sealed) { return acts; }
+    if (record.has_log) { acts.log = "/runs/" + id + "/log"; }
+    var done = (record.documents || []).filter(function (d) { return d && d.status === "done"; });
+    if (done.length) {
+      acts.downloads.push({ label: "All deliverables", path: "/runs/" + id + "/deliverables" });
+      done.forEach(function (d) { acts.downloads.push({ label: d.doc_id, path: "/runs/" + id + "/deliverables/" + encodeURIComponent(d.doc_id) }); });
+    }
+    return acts;
+  }
+
+  function actionsHtml(record) {
+    var a = actions(record), html = "";
+    if (a.cancel) { html += '<p><button data-cancel="' + esc(record.run_id) + '">Cancel this run</button> <span class="muted">Cancelling stops further work and deletes nothing; partial output stays.</span></p>'; }
+    if (a.log) { html += '<p><button data-log="' + esc(a.log) + '">Show the end of the log</button></p>'; }
+    if (a.downloads.length) {
+      html += "<p>Download (zip): " + a.downloads.map(function (d) { return '<button data-download="' + esc(d.path) + '">' + esc(d.label) + "</button>"; }).join(" ") + "</p>";
+    }
+    return html;
+  }
+
+  function cancelResultHtml(record) {
+    return "<p>" + esc(record.run_id) + ": " + show(record.state) + (record.stop_reason && record.stop_reason.detail ? ", " + esc(record.stop_reason.detail) : "") +
+      '. <span class="muted">Nothing was deleted; whatever the run wrote before the stop stays in its folder.</span></p>';
+  }
+
+  function approvalHtml(record) {
+    var pa = record && record.pending_approval;
+    if (!pa) { return ""; }
+    var html = "<h3>Waiting for your decision</h3>";
+    if (isSealed(record)) {
+      html += '<p class="muted">Sealed run: the question is not shown, timings only. Asked ' + show(pa.asked_at) + ".</p>";
+    } else if (pa.message || pa.topic) {
+      html += "<p>" + esc(pa.message || pa.topic) + "</p>";
+      var keys = Object.keys(pa.payload || {}).filter(function (k) { return k !== "message"; });
+      if (keys.length) { html += "<table>" + keys.map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(typeof pa.payload[k] === "object" ? JSON.stringify(pa.payload[k]) : pa.payload[k]) + "</td></tr>"; }).join("") + "</table>"; }
+    } else {
+      html += '<p class="muted">The run recorded no message for this question. Read the log before answering.</p>';
+    }
+    if (pa.timeout_at) { html += '<p class="muted">With no answer by ' + esc(pa.timeout_at) + ", it defaults to " + esc(pa.default_on_timeout || "DEFERRED") + ".</p>"; }
+    return html + '<p><label>Rationale (optional) <input type="text" data-rationale="' + esc(record.run_id) + '" size="40"></label> ' +
+      '<button data-approve="' + esc(record.run_id) + '" data-decision="APPROVE">Approve</button> ' +
+      '<button data-approve="' + esc(record.run_id) + '" data-decision="DENY">Deny</button></p>';
+  }
+
+  function approvalBody(decision, rationale) { return { decision: String(decision), rationale: String(rationale || "").trim() }; }
+
+  // The server records the decision; the run's own poll decides what it means.
+  function approvalResultHtml(answer) {
+    return "<p>Decision recorded: " + esc(answer.decision) + '. <span class="muted">Recorded is not resumed: the run reads the decision on its next poll, and its state here changes when it does.</span></p>';
+  }
+
+  function approvalsHtml(data) {
+    var rows = (data && data.approvals) || [];
+    if (!rows.length) { return '<p class="muted">No run is waiting for a decision.</p>'; }
+    return "<ul>" + rows.map(function (a) {
+      var sealed = a.exposure === "sealed";
+      return "<li>" + esc(a.run_id) + ": " + (sealed ? '<span class="muted">sealed run, timings only</span>' : esc(a.message || a.topic || "no message recorded")) +
+        ' <button data-run="' + esc(a.run_id) + '">Open</button></li>';
+    }).join("") + "</ul>";
+  }
+
+  function logTail(text, lines) {
+    var all = String(text || "").replace(/\s+$/, "").split(/\r?\n/), n = lines || 40;
+    return all.slice(Math.max(0, all.length - n));
+  }
+
+  function logHtml(text) {
+    var tail = logTail(text, 40);
+    return "<h3>End of the log (" + esc(tail.length) + " lines)</h3><pre>" + esc(tail.join("\n")) + "</pre>";
+  }
+
+  function downloadNote(partial) {
+    return partial ? "Partial archive: the run has not finished successfully, so documents or files may be missing." : "Complete archive.";
+  }
+
+  return { esc: esc, plan: plan, isSealed: isSealed, live: function (r) { return !!LIVE[r && r.state]; },
+           inputsHtml: inputsHtml, runsHtml: runsHtml, progressHtml: progressHtml, runHtml: runHtml,
+           findingsHtml: findingsHtml, modelFindingsHtml: modelFindingsHtml, reviewedHtml: reviewedHtml,
+           privacyNote: privacyNote, startPlan: startPlan, submitFields: submitFields, rolesHtml: rolesHtml,
+           startPlanHtml: startPlanHtml, submitResultHtml: submitResultHtml, actions: actions, actionsHtml: actionsHtml,
+           cancelResultHtml: cancelResultHtml, approvalHtml: approvalHtml, approvalBody: approvalBody,
+           approvalResultHtml: approvalResultHtml, approvalsHtml: approvalsHtml, logTail: logTail, logHtml: logHtml,
+           downloadNote: downloadNote };
+})();
+
+(function () {
+  if (typeof document === "undefined" || !document.getElementById("token-form")) { return; }
+  var token = "", timer = null, current = null, health = null, chosen = [], roles = {};
+  // D-835 (alpha): the server marks the page when it runs in keyless local mode (loopback
+  // only); the page then connects with no token. Anywhere else the token is asked for.
+  var keyless = typeof DESK_ACCESS !== "undefined" && DESK_ACCESS === "keyless-local";
+  function $(id) { return document.getElementById(id); }
+  function send(path, options) {
+    options = options || {};
+    options.headers = Object.assign(token ? { Authorization: "Bearer " + token } : {}, options.headers || {});
+    return fetch(path, options).then(function (r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(path + ": " + r.status + " " + t.slice(0, 300)); }); }
+      return r;
+    });
+  }
+  function call(path, asText) {
+    return send(path).then(function (r) { return asText ? r.text() : r.json(); });
+  }
+  function privacy() {
+    var picked = document.querySelector('input[name="start-privacy"]:checked');
+    return picked ? picked.value : null;
+  }
+  function currentPlan() {
+    return DeskViews.startPlan(chosen.map(function (f) { return { name: f.name, size: f.size }; }), roles, privacy(), health, $("start-question").value);
+  }
+  function refreshPlan() {
+    $("start-roles").innerHTML = DeskViews.rolesHtml(chosen, roles);
+    $("start-plan").innerHTML = DeskViews.startPlanHtml(currentPlan());
+  }
+  function loadApprovals() {
+    return call("/approvals").then(function (d) { $("approvals").innerHTML = DeskViews.approvalsHtml(d); }, fail($("approvals")));
+  }
+  $("start-files").addEventListener("change", function () {
+    chosen = Array.prototype.slice.call($("start-files").files || []); roles = {};
+    chosen.forEach(function (f) { roles[f.name] = "grounding"; });
+    refreshPlan();
+  });
+  document.addEventListener("change", function (ev) {
+    var t = ev.target;
+    if (t.getAttribute && t.getAttribute("data-role-file") !== null && chosen[+t.getAttribute("data-role-file")]) {
+      roles[chosen[+t.getAttribute("data-role-file")].name] = t.value; refreshPlan();
+    }
+    if (t.name === "start-privacy") { refreshPlan(); }
+  });
+  $("start-question").addEventListener("input", refreshPlan);
+  $("start-submit").addEventListener("click", function () {
+    var p = currentPlan(), fields = DeskViews.submitFields(p, $("start-confirm").checked);
+    refreshPlan();
+    if (!token && !keyless) { $("start-state").textContent = "Connect first."; return; }
+    if (!fields) { $("start-state").textContent = p.ok ? "Read the plan and tick the box first." : "The plan is refused; nothing was sent."; return; }
+    var form = new FormData();
+    fields.forEach(function (kv) { form.append(kv[0], kv[1]); });
+    chosen.forEach(function (f) { form.append("files", f, f.name); });
+    $("start-state").textContent = "Sending...";
+    send("/submit", { method: "POST", body: form }).then(function (r) { return r.json(); }).then(function (answer) {
+      $("start-state").innerHTML = DeskViews.submitResultHtml(answer);
+      $("start-confirm").checked = false;
+      loadRuns();
+    }, function (e) { $("start-state").textContent = "Refused, nothing started: " + e.message; });
+  });
+  function fail(el) { return function (e) { el.innerHTML = '<p class="error">' + DeskViews.esc(e.message) + "</p>"; }; }
+
+  function loadRuns() {
+    return call("/runs").then(function (d) { $("runs").innerHTML = DeskViews.runsHtml(d.runs); }, fail($("runs")));
+  }
+  function openRun(runId) {
+    if (timer) { clearTimeout(timer); timer = null; }
+    current = runId; $("reader").innerHTML = "";
+    call("/runs/" + encodeURIComponent(runId)).then(function (record) {
+      if (current !== runId) { return; }
+      var routes = DeskViews.plan(record), box = $("run");
+      box.innerHTML = DeskViews.runHtml(record) + DeskViews.approvalHtml(record) + DeskViews.actionsHtml(record) +
+        '<div id="action-result"></div><div id="progress"></div><div id="findings"></div><div id="model-findings"></div><div id="log"></div>';
+      call(routes[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress")));
+      if (!DeskViews.isSealed(record)) {
+        call(routes[2]).then(function (mf) {
+          $("model-findings").innerHTML = DeskViews.modelFindingsHtml(mf);
+          return call(routes[1]).then(function (f) { $("findings").innerHTML = DeskViews.findingsHtml(f, mf.mark); });
+        }).catch(fail($("findings")));
+      }
+      if (DeskViews.live(record)) {
+        var tick = function () {
+          // Never redraw under a rationale being typed; look again in 5 seconds.
+          var typing = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-rationale");
+          if (typing) { timer = setTimeout(tick, 5000); return; }
+          openRun(runId); loadRuns(); loadApprovals();
+        };
+        timer = setTimeout(tick, 5000);
+      }
+    }, fail($("run")));
+  }
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    if (t.getAttribute && t.getAttribute("data-run")) { openRun(t.getAttribute("data-run")); }
+    if (t.getAttribute && t.getAttribute("data-doc") && current) {
+      var doc = t.getAttribute("data-doc");
+      call("/runs/" + encodeURIComponent(current) + "/reviewed/" + encodeURIComponent(doc), true)
+        .then(function (text) { $("reader").innerHTML = DeskViews.reviewedHtml(doc, text); }, fail($("reader")));
+    }
+    if (t.getAttribute && t.getAttribute("data-cancel")) {
+      var cid = t.getAttribute("data-cancel");
+      if (!window.confirm("Cancel run " + cid + "? Further work stops; nothing is deleted.")) { return; }
+      send("/runs/" + encodeURIComponent(cid) + "/cancel", { method: "POST" }).then(function (r) { return r.json(); }).then(function (rec) {
+        if (timer) { clearTimeout(timer); timer = null; }
+        $("action-result").innerHTML = DeskViews.cancelResultHtml(rec); loadRuns();
+      }, fail($("action-result")));
+    }
+    if (t.getAttribute && t.getAttribute("data-approve")) {
+      var aid = t.getAttribute("data-approve"), box = document.querySelector('[data-rationale="' + aid + '"]');
+      send("/runs/" + encodeURIComponent(aid) + "/approval", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(DeskViews.approvalBody(t.getAttribute("data-decision"), box ? box.value : "")) })
+        .then(function (r) { return r.json(); }).then(function (answer) {
+          $("action-result").innerHTML = DeskViews.approvalResultHtml(answer); loadApprovals();
+        }, fail($("action-result")));
+    }
+    if (t.getAttribute && t.getAttribute("data-log")) {
+      call(t.getAttribute("data-log"), true).then(function (text) { $("log").innerHTML = DeskViews.logHtml(text); }, fail($("log")));
+    }
+    if (t.getAttribute && t.getAttribute("data-download")) {
+      var path = t.getAttribute("data-download");
+      send(path).then(function (r) {
+        var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "deliverables.zip";
+        var partial = r.headers.get("X-Shimmer-Partial") === "true";
+        return r.blob().then(function (b) {
+          var a = document.createElement("a"), url = URL.createObjectURL(b);
+          a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          $("action-result").innerHTML = '<p class="muted">' + DeskViews.esc(name) + ": " + DeskViews.esc(DeskViews.downloadNote(partial)) + "</p>";
+        });
+      }, fail($("action-result")));
+    }
+  });
+  function connect() {
+    return call("/inputs").then(function (d) {
+      $("token-state").textContent = keyless && !token ? "connected (local trial: no token needed on this computer)" : "connected";
+      $("inputs").innerHTML = DeskViews.inputsHtml(d);
+      fetch("/health").then(function (r) { return r.json(); }).then(function (h) { health = h; refreshPlan(); }, function () { refreshPlan(); });
+      loadApprovals();
+      return loadRuns();
+    }, function (e) { $("token-state").textContent = "not connected: " + e.message; });
+  }
+  $("token-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    token = $("token").value.trim();
+    connect();
+  });
+  if (keyless) { connect(); }
+})();
+</script>
+</body>
+</html>

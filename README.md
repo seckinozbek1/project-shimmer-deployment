@@ -31,8 +31,8 @@ set has not been run, and no figure here shows accuracy on unseen documents.
 
 Under the project's own rules the steering-subset run (quick subset 0127b080) does
 not count: it is void on integrity, with many items left undecided, and it is well
-short of both bars (at least 10 points above the bare model, at most 5 below the
-cloud model). Every measured Shimmer run so far used local open-weight models; the
+short of both bars (at least 10 points above the bare model, at most 10 below the
+cloud model: D-842, 5 points until 20 November 2026). Every measured Shimmer run so far used local open-weight models; the
 cloud model figures are references only.
 
 Shimmer found none of the negotiation pilot's 12 conflicts. The cause is found and
@@ -44,6 +44,8 @@ figure: [docs/RESULTS.md](docs/RESULTS.md).
 - What Shimmer does, how a review runs, the constitution and agents: [docs/METHOD.md](docs/METHOD.md)
 - Install, hardware and cost: [docs/INSTALL.md](docs/INSTALL.md)
 - First review, step by step: [English](docs/GUIDE_EN.md), [Turkish](docs/GUIDE_TR.md); every task: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+- The review desk, one plain page for a single review: [docs/DESK_GUIDE.md](docs/DESK_GUIDE.md).
+  Alpha: keyless for local trial only (loopback); a non-local address needs the token.
 - Results, testing rules and how to reproduce them: [docs/RESULTS.md](docs/RESULTS.md)
 - Limitations, privacy and access: [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)
 - Agents, output files, server routes and settings: [docs/RUNTIME_REFERENCE.md](docs/RUNTIME_REFERENCE.md)

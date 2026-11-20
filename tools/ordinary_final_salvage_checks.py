@@ -201,6 +201,29 @@ class SalvageChecks:
         self.assertEqual(read(state)['instances'][0]['status'], 'terminated')
         self.assertIn('no answer within 600 s of the request: terminated anyway', Path(status['salvage']['report']).read_text())
 
+    def test_loop_heartbeat_file_is_a_lead_heartbeat(self):
+        """G-20261120-1300: the lead's LOOP_HEARTBEAT.txt is one of the reaper's heartbeat files, so a lead that beats
+        it inside one long turn is not read as silent: with the three record files 100 minutes old and only
+        LOOP_HEARTBEAT.txt fresh, the silence trigger stays quiet; with it old too, it fires (the threshold unchanged)."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('instance_reaper_default', instance_reaper.__file__)
+        fresh = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fresh)   # the module's own default list, not the fixture's patched one
+        self.assertIn('LOOP_HEARTBEAT.txt', [Path(p).name for p in fresh.HEARTBEATS])
+        self.assertEqual(instance_reaper.SILENCE_MINUTES, 90)
+        now = instance_reaper.utc_now()
+        self.usage(50)
+        folder = self.root / 'beatfile'
+        folder.mkdir(parents=True, exist_ok=True)
+        files = [folder / n for n in ('continue_hook_state.json', 'LOOP_STATE.md', 'FOR_SECKIN.md', 'LOOP_HEARTBEAT.txt')]
+        for f in files:
+            f.write_text('x', encoding='utf8')
+            os.utime(f, (time.time() - 100 * 60,) * 2)
+        os.utime(files[3], (time.time() - 5 * 60,) * 2)
+        self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=files))
+        os.utime(files[3], (time.time() - 100 * 60,) * 2)
+        self.assertEqual((instance_reaper.salvage_trigger(now, ['x'], heartbeats=files) or {}).get('trigger'), 'lead_silent')
+
     def test_salvage_silence_trigger_fires_only_after_ninety_minutes_with_an_instance_running(self):
         """Trigger (b): usage below the stop. A heartbeat 30 minutes old fires nothing; a
         heartbeat 91 minutes old fires nothing while no loop instance runs; with one running it

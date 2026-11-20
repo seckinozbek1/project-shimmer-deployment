@@ -21,6 +21,7 @@ Evidence (age is measured from the last SUCCESSFUL run where a run can fail):
   restore_drill      trace line restore_drill, result PASS                  every 24 h,   late after 26 h
   backup_coverage    trace line backup_coverage, the check completed        every 24 h,   late after 26 h
   launch_chain       trace line launch_chain, a pass completed or locked    every 3 min,  late after 15 min
+  panel_freshness    trace line panel_freshness (ok, alert or no_copy)      every 1 h,    late after 1 h 30
 
 It also copies the Lambda reaper's last result (listed, terminated, error, spend) into its trace line and
 writes ALERT.md when the reaper's last run ended in an error (hourly at most) or terminated a machine (once
@@ -78,6 +79,7 @@ LIMITS = {   # name: (expected period s, late after s)
     'restore_drill': (24 * H, 26 * H),
     'backup_coverage': (24 * H, 26 * H),
     'launch_chain': (3 * MIN, 15 * MIN),
+    'panel_freshness': (1 * H, 1 * H + 30 * MIN),   # PANEL-FRESH-A: task ShimmerPanelFreshness every hour
 }
 REPEAT_S = 3 * H
 CHAIN_LATE_MIN = 5
@@ -162,6 +164,8 @@ def evidence(private=None):
     out['backup_coverage'] = (from_trace('backup_coverage', lambda x: x.get('result') in ('ok', 'faults')),
                               'trace')
     out['launch_chain'] = (from_trace('launch_chain', lambda x: x.get('result') in ('ok', 'locked')), 'trace')
+    out['panel_freshness'] = (from_trace('panel_freshness', lambda x: x.get('result') in ('ok', 'alert', 'no_copy')),
+                              'trace (task ShimmerPanelFreshness, panel_freshness.py alert)')
     return out
 
 

@@ -484,7 +484,10 @@ def live_server_check():
         env = os.environ.copy()
         env.update({"SHIMMER_PORT": str(port), "SHIMMER_OUTPUT_DIR": str(root / "runs"),
                     "SHIMMER_AUTO_CLEAR": "false", "PYTHONPATH": str(guard),
-                    "TMP": str(root), "TEMP": str(root)})
+                    "TMP": str(root), "TEMP": str(root),
+                    # D-835: the first session keeps the token-only server, so the bearer
+                    # proof below is unchanged; the restart takes the alpha default.
+                    "SHIMMER_KEYLESS_LOCAL": "0"})
         opened = []
         session = desktop.DesktopSession(root=root, environment=env,
                                          browser=lambda u: opened.append(u) or True)
@@ -499,8 +502,12 @@ def live_server_check():
             session.stop()
             assert proc.poll() == 0, "server still running or failed shutdown"
             desktop.ensure_port_available("127.0.0.1", port)
-            # Restart receives a new token; owner EOF also shuts the child down.
+            # Restart receives a new token; owner EOF also shuts the child down. The
+            # restart runs the starter's alpha default (D-835): keyless on loopback, so
+            # a request with no valid bearer is served by this owned child.
+            session.environment.pop("SHIMMER_KEYLESS_LOCAL", None)
             assert session.start("cloud", confirmed=True, open_browser=False, timeout=30)
+            assert desktop.authenticated_ready(session.settings.console_url, "fixture-invalid")
             restarted = session.process
             restarted.stdin.close()
             assert restarted.wait(timeout=20) == 0
@@ -508,7 +515,8 @@ def live_server_check():
             assert not (guard / "forbidden_attempt").exists()
         finally:
             session.stop()
-    return "real authenticated console, restart, Stop and owner EOF; zero forbidden dispatches"
+    return ("real authenticated console, restart (keyless on loopback by default, D-835), Stop and owner EOF; "
+            "zero forbidden dispatches")
 
 
 def check():

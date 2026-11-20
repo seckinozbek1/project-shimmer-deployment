@@ -27,7 +27,7 @@ What it does on every run:
    never refunded; its reason says it was charged that way.
 5. Salvage, then stop (D-S84), with no Claude involved. Two triggers are read on every run:
    seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 95, or the dated ``USAGE_STOP_EXCEPTION``) in ``.claude/loop_status.json``, and no
-   lead heartbeat (the continue hook's state, LOOP_STATE or FOR_SECKIN written) for
+   lead heartbeat (the continue hook's state, LOOP_STATE, FOR_SECKIN or LOOP_HEARTBEAT.txt written) for
    ``SILENCE_MINUTES`` while a loop instance runs. Either opens a salvage episode
    (``salvage/episode.json``): every running loop instance gets a request file its controller
    polls (``salvage_request``). The controller gives the item in hand ``SALVAGE_ITEM_SECONDS``,
@@ -120,7 +120,12 @@ def status_file():
 # the controllers and the hook share) is the main checkout's through salvage_dir().
 PRIVATE = ROOT / 'docs' / 'loop' / 'private'
 LOOP_STATUS = ROOT / '.claude' / 'loop_status.json'
-HEARTBEATS = (PRIVATE / 'continue_hook_state.json', PRIVATE / 'LOOP_STATE.md', PRIVATE / 'FOR_SECKIN.md')
+# G-20261120-1300: the lead's own heartbeat file (tools/loop/loop_heartbeat.py beat, at least every 15 minutes,
+# LOOP-IO-A) is a lead heartbeat too; without it a lead busy inside one long turn (no Stop hook, no LOOP_STATE or
+# FOR_SECKIN write for 90 minutes) was read as silent and salvage stopped three live runs on 20 Nov 12:31.
+# The 90-minute threshold is unchanged.
+HEARTBEATS = (PRIVATE / 'continue_hook_state.json', PRIVATE / 'LOOP_STATE.md', PRIVATE / 'FOR_SECKIN.md',
+              PRIVATE / 'LOOP_HEARTBEAT.txt')
 FOR_SECKIN = PRIVATE / 'FOR_SECKIN.md'
 REPORT_DIR = PRIVATE
 # D-412 item 2: one salvage folder for the reaper, every controller's poll and the sign-out hook:

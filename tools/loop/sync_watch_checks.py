@@ -20,6 +20,11 @@ Proofs:
   exported_gate_counts_pushed  a green gate whose bound source commit PUSH_RECORD.md names as exported, or whose
                         tree is an exported commit's tree, counts as pushed (no alert); another export, or none,
                         still alerts
+  issue_sweep_due       D-839: no sweep record alerts "issue sweep due"; a record older than the decision alerts;
+                        a fresh record does not; a record over 24 hours old alerts with no decision at all
+  sweep_record          tools/loop/issue_sweep.py record writes the per-milestone counts from a faked gh api reply
+                        (project origin only, another origin refused and gh not called), and line gives the
+                        FOR_SECKIN line and the panel REL gh object; the fresh record then clears the sweep alert
 
 Each proof is run as built (passes), neutralised (must fail), restored and run again (passes).
 """
@@ -76,13 +81,17 @@ class Fake:
 
 
 class Fixture:
-    def __init__(self, decisions='', results=''):
+    def __init__(self, decisions='', results='', sweep_min=1):
         self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.base = Path(self.tmp.name)
         (self.base / 'docs' / 'loop' / 'private').mkdir(parents=True)
         self.private = self.base / 'docs' / 'loop' / 'private'
         (self.base / 'docs' / 'loop' / 'DECISIONS.md').write_text(decisions, encoding='utf-8')
         (self.private / 'FOR_SECKIN.md').write_text(results, encoding='utf-8')
+        if sweep_min is not None:     # the other proofs run with a fresh sweep record, so only their own alert shows
+            (self.private / 'issue_sweep.json').write_text(json.dumps(
+                {'at': (NOW - dt.timedelta(minutes=sweep_min)).isoformat(), 'closed': 0, 'updated': 0,
+                 'milestones': {}}), encoding='utf-8')
         self.root = self.base / 'external' / 's05'
         self.root.mkdir(parents=True)
         self.patches = [patch.object(mc, 'PRIVATE', self.private), patch.object(mc, 'TRACE', self.private / 'trace.jsonl'),
@@ -285,8 +294,80 @@ def neutralise_exported_gate_counts_pushed():
     return patch.object(sw, 'exported_sources', lambda private: [])
 
 
+def observe_issue_sweep_due():
+    out = []
+    for ds, sweep_min in (([('D-902', 90)], None),          # no sweep record: due
+                          ([('D-902', 90)], 120),           # the sweep is older than the decision: due
+                          ([('D-902', 90)], 10),            # a fresh sweep after the decision: not due
+                          ([], 25 * 60)):                   # no decision, but the last sweep is over 24 hours old
+        with Fixture(decisions(*ds), sweep_min=sweep_min) as f:
+            fake = Fake(issues=[(7, iso_ago(5))])            # the issue update itself is after the decision
+            r = f.check(fake)
+            out.append((bool(r['issue_sweep'].get('due')), r['issue_sweep'].get('last_sweep') is not None,
+                        'issue sweep due: ' in f.alert_text(), f.traces(), fake.pushed_or_fetched()))
+    return out
+
+
+def expected_issue_sweep_due():
+    return [(True, False, True, ['alert'], False), (True, True, True, ['alert'], False),
+            (False, True, False, ['ok'], False), (True, True, True, ['alert'], False)]
+
+
+def neutralise_issue_sweep_due():
+    return patch.object(sw, 'sweep_time', lambda private: NOW)
+
+
+MILESTONES = [{'title': 'v1.0-alpha', 'open_issues': 4, 'closed_issues': 11, 'description': 'not read'},
+              {'title': 'v1.0-beta', 'open_issues': 7, 'closed_issues': 2},
+              {'title': 'v1.0', 'open_issues': 9, 'closed_issues': 0},
+              {'title': 'v1.1', 'open_issues': 3, 'closed_issues': 1}]
+
+
+class FakeGhApi(Fake):
+    def __call__(self, argv):
+        if argv[:2] == ['gh', 'api']:
+            self.calls.append(list(argv))
+            return 0, json.dumps(MILESTONES)
+        return super().__call__(argv)
+
+
+def observe_sweep_record():
+    import issue_sweep
+    out = []
+    for origin in (PROJECT, 'https://github.com/someone-else/project-shimmer-deployment.git'):
+        with Fixture(sweep_min=None) as f:
+            fake = FakeGhApi(origin=origin)
+            try:
+                issue_sweep.record(5, 3, main=f.base, private=f.private, runner=fake, now=NOW)
+            except issue_sweep.SweepError:
+                pass
+            body = issue_sweep.load(f.private)
+            gh = [c for c in fake.calls if c[0] == 'gh']
+            line = issue_sweep.for_seckin_line(body) if body else None
+            panel = issue_sweep.panel_gh(body) if body else None
+            fresh = f.check(Fake(issues=[(7, iso_ago(5))]))['issue_sweep'].get('due') if body else 'no record'
+            out.append((body and body['milestones'], line, panel and panel['alpha'], panel and panel['v11']['open'],
+                        [c[2] for c in gh], fresh, fake.pushed_or_fetched()))
+    return out
+
+
+def expected_sweep_record():
+    at = NOW.isoformat(timespec='seconds')
+    return [({'v1.0-alpha': {'open': 4, 'closed': 11}, 'v1.0-beta': {'open': 7, 'closed': 2},
+              'v1.0': {'open': 9, 'closed': 0}, 'v1.1': {'open': 3, 'closed': 1}},
+             'GitHub taraması: 5 konu kapandı, 3 güncellendi; açık: v1.0-alpha 4, v1.0-beta 7, v1.0 9, v1.1 3',
+             {'open': 4, 'closed': 11, 'at': at}, 3,
+             ['repos/seckinozbek1/project-shimmer-deployment/milestones?state=all&per_page=100'], None, False),
+            (None, None, None, None, [], 'no record', False)]
+
+
+def neutralise_sweep_record():
+    import issue_sweep
+    return patch.object(issue_sweep, 'milestone_counts', lambda main=None, runner=None: {})
+
+
 PROOFS = ('issue_update_due', 'origin_only', 'unbacked_commits', 'green_gate_on_origin', 'gate_commit_checked',
-          'exported_gate_counts_pushed')
+          'exported_gate_counts_pushed', 'issue_sweep_due', 'sweep_record')
 
 
 def run_all():

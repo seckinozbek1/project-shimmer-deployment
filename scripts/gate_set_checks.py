@@ -29,8 +29,9 @@ Each proof is neutralise, fail, restore, pass.
    a leakage result without the cosine rule, or with other thresholds, is refused.
 5. the class setting: 3-class at 30 not-enough-info claims and 15 percent, 2-class below either.
 6. the gate's figures (gate_score.py): one paired cluster bootstrap (two identical arms differ by
-   exactly zero), bar (a) at 10 points with the interval above zero, bar (b) at 5 points below the
-   cloud reference, SciTab resampled by table in its declared setting, the same items in every arm.
+   exactly zero), bar (a) at 10 points with the interval above zero, bar (b) at 10 points below the
+   cloud reference (D-842; 5 points until 20 November 2026), SciTab resampled by table in its
+   declared setting, the same items in every arm.
 """
 from __future__ import annotations
 
@@ -733,10 +734,10 @@ def observe_gate_score():
     same = gate_score.compute("contradoc", {"system": _gate_rows(40, 30), "b1": _gate_rows(40, 30)}, draws=300)
     strong = gate_score.compute("contradoc", {"system": _gate_rows(60, 54), "b1": _gate_rows(60, 36)}, draws=300)
     weak = gate_score.compute("contradoc", {"system": _gate_rows(10, 6), "b1": _gate_rows(10, 5)}, draws=300)
-    cloud5 = gate_score.compute("contradoc", {"system": _gate_rows(100, 70), "b1": _gate_rows(100, 50),
-                                              "cloud": _gate_rows(100, 75)}, draws=200)["against_cloud"]["bar_b"]
-    cloud6 = gate_score.compute("contradoc", {"system": _gate_rows(100, 70), "b1": _gate_rows(100, 50),
-                                              "cloud": _gate_rows(100, 76)}, draws=200)["against_cloud"]["bar_b"]
+    cloud10 = gate_score.compute("contradoc", {"system": _gate_rows(100, 70), "b1": _gate_rows(100, 50),
+                                               "cloud": _gate_rows(100, 80)}, draws=200)["against_cloud"]["bar_b"]
+    cloud11 = gate_score.compute("contradoc", {"system": _gate_rows(100, 70), "b1": _gate_rows(100, 50),
+                                               "cloud": _gate_rows(100, 81)}, draws=200)["against_cloud"]["bar_b"]
     sci = gate_score.compute("scitab", {"system": _gate_rows(24, 20, "scitab", 4), "b1": _gate_rows(24, 12, "scitab", 4)},
                              setting="2-class", draws=200)
     pairs = [(r["label"], r["gold"]) for r in _gate_rows(24, 20, "scitab", 4)]
@@ -745,7 +746,7 @@ def observe_gate_score():
     return {"same": (same["above_b1"]["value"], same["above_b1"]["interval"], same["above_b1"]["bar_a"]),
             "strong": (strong["above_b1"]["value"], strong["above_b1"]["bar_a"], strong["above_b1"]["gain_called"]),
             "weak": (weak["above_b1"]["value"], weak["above_b1"]["bar_a"], weak["above_b1"]["gain_called"]),
-            "cloud 5 below": cloud5, "cloud 6 below": cloud6, "no cloud": strong["against_cloud"]["bar_b"],
+            "cloud 10 below": cloud10, "cloud 11 below": cloud11, "no cloud": strong["against_cloud"]["bar_b"],
             "scitab": (sci["arms"]["system"]["value"] == round(scitab.headline(pairs, setting="2-class")["macro_f1"], 6),
                        sci["clusters"], sci["cluster"], sci["measure"]),
             "scitab needs a setting": caught(lambda: gate_score.compute("scitab", {"system": _gate_rows(4, 4, "scitab"), "b1": _gate_rows(4, 4, "scitab")})),
@@ -802,7 +803,7 @@ def _gate_reads():
 
 def expected_gate_score():
     return {"same": (0.0, [0.0, 0.0], False), "strong": (0.3, True, True), "weak": (0.1, False, False),
-            "cloud 5 below": True, "cloud 6 below": False, "no cloud": None,
+            "cloud 10 below": True, "cloud 11 below": False, "no cloud": None,
             "scitab": (True, 6, "table", "2-class macro-F1 (declared, D-380)"),
             "scitab needs a setting": "refused: SciTab's class setting is declared per item set (D-380)",
             "same items": "refused: arm system does not score the same items as arm b1",
@@ -1233,7 +1234,7 @@ def run_checks():
             gate_score, "compute", '"bar_a": round(a_point, 9) >= BAR_ABOVE_B1 and a_int[0] > 0,', '"bar_a": round(a_point, 9) >= BAR_ABOVE_B1,')),
         ("the gate: bar (a)'s 10 points", observe_gate_score, expected_gate_score, lambda: patched(gate_score, "BAR_ABOVE_B1", 0.35)),
         ("the gate: alpha halves each claim read", observe_gate_score, expected_gate_score, lambda: patched(gate_score, "level", lambda claim_read=None: 0.95)),
-        ("the gate: bar (b)'s 5 points", observe_gate_score, expected_gate_score, lambda: patched(gate_score, "BAR_BELOW_CLOUD", 0.06)),
+        ("the gate: bar (b)'s 10 points", observe_gate_score, expected_gate_score, lambda: patched(gate_score, "BAR_BELOW_CLOUD", 0.11)),
         ("the gate: SciTab by tables", observe_gate_score, expected_gate_score, lambda: _with_source(
             gate_score, "compute", 'by_cluster[n].setdefault(r["cluster"], [])', 'by_cluster[n].setdefault(r["item_id"], [])')),
         ("rule 4's list: SciTab's papers and tables", observe_exclude, expected_exclude, lambda: _with_source(

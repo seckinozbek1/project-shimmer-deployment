@@ -208,10 +208,10 @@ detail. Neither is a quality score. On a run you will find, among others:
 The other pages: **Agents** shows the current description of every agent (not a past run's), **Test changes**
 lists the requested changes to tests, read-only.
 
-### The review desk (v1.05, after its merge)
+### The review desk
 
-v1.05 adds one plain page for a single review, at `/console?view=desk`, built on `lane/v105-ui` and
-`lane/v105-ui-d2` and not yet merged. It walks one journey: paste the token and **Connect**; **In place** lists the
+v1.0-alpha adds one plain page for a single review, at `/console?view=desk`; its short guide is
+[DESK_GUIDE.md](DESK_GUIDE.md). It walks one journey: paste the token and **Connect**; **In place** lists the
 files in the three input folders (names and sizes, never content) and the compiled rules; **Start a review** takes
 files, a role for each (**Review target**, **Earlier version**, **Grounding**, **Review rules file**), an optional
 framing question and the privacy choice, shows the plan, and starts only after **I have read this plan** and **Start

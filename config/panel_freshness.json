@@ -1,0 +1,35 @@
+{
+ "version": 1,
+ "decision": "Seckin 20 November 2026 (G-20261120-1220 and G-20261120-1227): at every panel write every section (KPIS, BARS, PLAN, V105, OPEN, RES, ISTEK, CHG) is compared with the records; a section whose oldest line is over 24 hours old, or which contradicts a record, is rewritten; every new decision enters CHG as one line; a finished job shows done with its result in the same write; OPEN and ISTEK rows done for over 24 hours leave the list as one CHG line each; BARS numbers come from the real counts, never typed.",
+ "sections": ["KPIS", "BARS", "PLAN", "V105", "OPEN", "RES", "ISTEK", "CHG"],
+ "row_name": {"KPIS": "l", "BARS": "t", "PLAN": 1, "V105": 0, "OPEN": 0, "RES": 0, "ISTEK": 0, "CHG": 1},
+ "row_state": {"PLAN": 2, "V105": 1, "OPEN": 1, "RES": 1, "ISTEK": 1},
+ "log_sections": ["CHG"],
+ "terminal_states": ["done", "moved", "off"],
+ "move_sections": ["OPEN", "ISTEK"],
+ "move_states": ["done", "moved", "off"],
+ "max_age_hours": 24,
+ "done_max_hours": 24,
+ "past_slack_hours": 2,
+ "future_time_patterns": [
+  "tahmini başlangıç\\s*:?\\s*(\\d{1,2}):(\\d\\d)",
+  "tahmini bitiş\\s*:?\\s*(\\d{1,2}):(\\d\\d)",
+  "(\\d{1,2}):(\\d\\d)\\s*civarı"
+ ],
+ "stale_words_any": ["yarın"],
+ "stale_words_terminal": ["sürüyor", "tahmini"],
+ "bars": {
+  "Ana plan": {"status": "Plan", "kind": "count"},
+  "v1.05": {"status": "Yeni sürüm parçaları", "kind": "count"},
+  "Harcanan para": {"status": "Harcama", "kind": "spend"},
+  "Haftalık Claude": {"status": "kullanim", "kind": "usage"}
+ },
+ "spend_tolerance_usd": 0.5,
+ "decisions_file": "docs/loop/DECISIONS.md",
+ "decisions_from": "D-825",
+ "chg_map": "docs/loop/private/panel/chg_decisions.json",
+ "done_since": "docs/loop/private/panel/done_since.json",
+ "saved_copies": ["docs/loop/private/panel/copies/durum_*.json"],
+ "copies_env": "SHIMMER_PANEL_COPIES",
+ "alert_every_s": 3600
+}

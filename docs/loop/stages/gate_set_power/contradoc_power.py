@@ -6,7 +6,7 @@ from statistics import NormalDist
 
 N = NormalDist()
 DELTA = 0.10          # bar (a): the system 10 points above B1 (D-S92, Seckin's)
-MARGIN = 0.05         # bar (b): at most 5 points below the cloud reference
+MARGIN = 0.10         # bar (b): at most 10 points below the cloud reference (D-842; 0.05 until 20 November 2026)
 POWER = 0.80
 
 
@@ -33,7 +33,7 @@ def bar_a(n, d, true, level):
 
 
 def bar_b(n, d, level, true=0.0):
-    """(as coded: the point at least -.05; read on the interval: its low end above -.05) at a true difference."""
+    """(as coded: the point at least -MARGIN; read on the interval: its low end above -MARGIN) at a true difference."""
     s = (d / n) ** 0.5
     point = 1 - N.cdf((-MARGIN - true) / s)
     interval = 1 - N.cdf(z(level) - (MARGIN + true) / s)

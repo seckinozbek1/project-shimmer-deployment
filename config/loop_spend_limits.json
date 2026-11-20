@@ -1,18 +1,19 @@
 {
   "version": 1,
-  "decision": "D-749",
-  "source": "Seckin 19:25, 18 November 2026 (relayed SUPERVISOR_INBOX 19:26): \"Tamam tabanı 400 USD yapalım\": the total cap becomes 400 USD, so the remaining-spend limit over the 197 USD baseline rises from 140 to 203 USD; a single Lambda step up to 5 USD still needs no question (D-708), above 5 USD goes to him",
+  "decision": "D-826",
+  "source": "Seckin 08:50, 20 November 2026 (relayed SUPERVISOR_INBOX G-20261120-0850): KARAR 3, the total cap rises from 400 to 435 USD on the loop's total-spend basis, so the remaining-spend limit over the 197 USD baseline rises from 203 to 238 USD; a single Lambda step up to 5 USD still needs no question (D-708), above 5 USD goes to him",
   "step_preapproved_usd": 5.0,
-  "remaining_limit_usd": 203.0,
+  "remaining_limit_usd": 238.0,
   "remaining_baseline_usd": 197.0,
   "remaining_baseline_utc": "2026-11-13T09:37:00+00:00",
-  "counted": "Lambda spend only, by the reaper's own reading of the ledgers the guard reads (instance_reaper.ledger_view), plus the running caps, the storage forecast, the overrun reserve and the forecast of the launch asked for; the API spend has its own ceiling in the spend store (D-S121) and is not counted here. The baseline is the spend D-599 is counted from (FOR_SECKIN 16 Nov 17:34: 197 USD on 13 November; the reaper's reading at 13 Nov 09:37 UTC, the time of D-599, is 197.94 USD, so 197 is the lower, safer figure). The guard admits a launch only while baseline + limit (400 USD since D-749; 337 USD before) is not passed.",
+  "counted": "Lambda spend only, by the reaper's own reading of the ledgers the guard reads (instance_reaper.ledger_view), plus the running caps, the storage forecast, the overrun reserve and the forecast of the launch asked for; the API spend has its own ceiling in the spend store (D-S121) and is not counted here. The baseline is the spend D-599 is counted from (FOR_SECKIN 16 Nov 17:34: 197 USD on 13 November; the reaper's reading at 13 Nov 09:37 UTC, the time of D-599, is 197.94 USD, so 197 is the lower, safer figure). The guard admits a launch only while baseline + limit (435 USD since D-826; 400 under D-749, 337 before) is not passed.",
   "step_rule": "The step is the launch's IV.3 forecast (the measured basis x the live price x 1.3). A forecast at or below step_preapproved_usd is admitted with no question; above it the launch needs the operator's approval of at least the forecast, naming its decision (loop_budget_guard.step_rule). The per-run cap may still reach 1.5 x the forecast, as IV.3 has it.",
   "history": [
     {"decision": "D-599", "time": "2026-11-13T12:37:00+03:00", "remaining_limit_usd": 100.0, "baseline_usd": 197.0},
     {"decision": "D-629", "time": "2026-11-14T18:11:00+03:00", "step_preapproved_usd": 3.0},
     {"decision": "D-703", "time": "2026-11-16T17:39:00+03:00", "remaining_limit_usd": 120.0, "step_preapproved_usd": 3.0},
     {"decision": "D-708", "time": "2026-11-16T20:14:00+03:00", "remaining_limit_usd": 140.0, "step_preapproved_usd": 5.0},
-    {"decision": "D-749", "time": "2026-11-18T19:25:00+03:00", "remaining_limit_usd": 203.0, "step_preapproved_usd": 5.0}
+    {"decision": "D-749", "time": "2026-11-18T19:25:00+03:00", "remaining_limit_usd": 203.0, "step_preapproved_usd": 5.0},
+    {"decision": "D-826", "time": "2026-11-20T08:50:00+03:00", "remaining_limit_usd": 238.0, "step_preapproved_usd": 5.0}
   ]
 }

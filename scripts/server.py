@@ -8,8 +8,10 @@ resources. Native ownership-aware cleanup differs from legacy ingestion cleanup.
 The desktop starter supplies a loopback server and ephemeral authentication.
 Direct server setup, environment variables and the exact route table live in
 docs/RUNTIME_REFERENCE.md; operator instructions live in docs/RUNBOOK.md. No token value belongs
-in source, URLs or logs. /health and /console are public; data/action routes
-require Bearer authentication. /health is liveness, not readiness or quality.
+in source, URLs or logs. /health and /console (with its ?view=desk page, no data
+in either) are public; data/action routes
+require Bearer authentication, except in keyless local mode (D-835, SHIMMER_KEYLESS_LOCAL=1),
+honoured only on a loopback bind and for loopback clients. /health is liveness, not readiness or quality.
 
 Approval writes a decision; the pipeline evaluates it. A successful process,
 nonempty document folder or downloadable ZIP does not certify coverage or privacy.
@@ -39,8 +41,8 @@ from typing import List, Optional          # 3.9-safe type hints for FastAPI.
 # FastAPI is the web framework. uvicorn is the program that actually serves it.
 # BackgroundTasks/Depends/Header/HTTPException/UploadFile/File are FastAPI helpers
 # explained at their first use below.
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 import uvicorn
 
 # ---------------------------------------------------------------------------
@@ -64,6 +66,8 @@ PIPELINE = ROOT / "scripts" / "pipeline.py"       # the review pipeline (subproc
 VALIDATOR = ROOT / "corpus_ingest" / "validate_contract.py"  # the contract validator.
 SIDECAR_NAME = "_corpus_ingest.json"              # the manifest the collaborator uploads.
 UI_CONSOLE_PATH = ROOT / "scripts" / "ui" / "console.html"  # STEP 6: the operator console.
+UI_DESK_PATH = ROOT / "scripts" / "ui" / "desk.html"        # v1.05: the review desk page.
+INPUT_DIR = CONTEXT_DIR.parent                              # input/: listed by GET /inputs.
 
 # The environment variable that holds the SHA-256 hash of the collaborator's token.
 TOKEN_HASH_ENV = "SHIMMER_TOKEN_HASH"
@@ -266,10 +270,99 @@ def _check_token(authorization):
     return None
 
 
+# ---------------------------------------------------------------------------
+# KEYLESS LOCAL MODE (D-835, Seckin 20 November 2026: the alpha opens with no key)
+# ---------------------------------------------------------------------------
+# Asked for by SHIMMER_KEYLESS_LOCAL=1 (the alpha desktop starter sets it), but
+# switched on only by arm_keyless_local(host), which a start path calls with the
+# exact host it then hands to uvicorn. A loopback host (127.0.0.0/8, ::1,
+# localhost) arms it; any other host (0.0.0.0, ::, a LAN or public address) is
+# refused, so the server never starts open on a network. Nothing read from a
+# request can switch it on. While it is on, a request is still refused unless its
+# client address is loopback, it names a loopback Host, carries no foreign Origin
+# and no proxy forwarding header (a local tunnel or a page on another site cannot
+# use it). Without the switch the token gate is exactly as before. Credentials
+# return for the beta.
+KEYLESS_ENV = "SHIMMER_KEYLESS_LOCAL"
+_KEYLESS = {"host": None}          # the armed loopback bind host, or None (token mode)
+_FORWARD_HEADERS = ("forwarded", "x-forwarded-for", "x-forwarded-host", "x-real-ip",
+                    "cf-connecting-ip", "true-client-ip")
+
+
+class KeylessRefused(RuntimeError):
+    """Keyless local mode was asked for on a host that is not loopback."""
+
+
+def is_loopback_host(host) -> bool:
+    """True for localhost and any loopback address (127.0.0.0/8, ::1), bracketed or not."""
+    import ipaddress
+    name = str(host or "").strip().lower()
+    if name.startswith("[") and name.endswith("]"):
+        name = name[1:-1]
+    if name == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(name).is_loopback
+    except ValueError:
+        return False
+
+
+def keyless_requested(env=None) -> bool:
+    v = (os.environ if env is None else env).get(KEYLESS_ENV)
+    return v is not None and v.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def arm_keyless_local(host, env=None):
+    """Called with the host the server binds. Returns True when keyless local mode is
+    now on, False when it was not asked for (token mode, unchanged); raises
+    KeylessRefused when it was asked for on a non-loopback host."""
+    _KEYLESS["host"] = None
+    if not keyless_requested(env):
+        return False
+    if not is_loopback_host(host):
+        raise KeylessRefused(
+            "keyless local mode (%s=1) serves a loopback address only (127.0.0.1, ::1, "
+            "localhost), and the server would bind %r. Bind a loopback address, or unset %s "
+            "and set %s to use the token." % (KEYLESS_ENV, str(host), KEYLESS_ENV, TOKEN_HASH_ENV))
+    _KEYLESS["host"] = str(host)
+    return True
+
+
+def keyless_active() -> bool:
+    return _KEYLESS["host"] is not None and is_loopback_host(_KEYLESS["host"])
+
+
+def _host_name(value):
+    """The host part of a Host header or an Origin URL ("127.0.0.1:8000", "http://[::1]:8000")."""
+    v = str(value or "").strip()
+    if "://" in v:
+        v = v.split("://", 1)[1].split("/", 1)[0]
+    if v.startswith("["):
+        return v[: v.find("]") + 1] if "]" in v else v
+    return v.rsplit(":", 1)[0] if v.count(":") == 1 else v
+
+
+def _check_keyless_request(client_host, headers):
+    """The second layer while keyless: refuse (403) anything that is not this computer."""
+    headers = {str(k).lower(): v for k, v in (headers or {}).items()}
+    if not is_loopback_host(client_host):
+        raise HTTPException(status_code=403, detail="keyless local mode answers this computer only")
+    if not is_loopback_host(_host_name(headers.get("host"))):
+        raise HTTPException(status_code=403, detail="keyless local mode answers a loopback Host only")
+    origin = headers.get("origin")
+    if origin is not None and not is_loopback_host(_host_name(origin)):
+        raise HTTPException(status_code=403, detail="keyless local mode refuses a page from another site")
+    if any(h in headers for h in _FORWARD_HEADERS):
+        raise HTTPException(status_code=403, detail="keyless local mode refuses a forwarded request")
+
+
 # A FastAPI "dependency": FastAPI runs this before a protected route. Header(...)
 # tells FastAPI to pull the Authorization header out of the request for us. If
 # _check_token raises, FastAPI turns it into the 401 response automatically.
-async def verify_token(authorization: Optional[str] = Header(default=None)):
+async def verify_token(request: Request, authorization: Optional[str] = Header(default=None)):
+    if keyless_active():
+        _check_keyless_request(request.client.host if request.client else None, request.headers)
+        return
     _check_token(authorization)
 
 
@@ -3199,7 +3292,7 @@ async def rule_text(rule_id: str):
 # STEP 6: the operator console and its supporting routes.
 # ---------------------------------------------------------------------------
 @app.get("/console", response_class=HTMLResponse)
-async def console():
+async def console(view: Optional[str] = None):
     """Serve the operator console: one static HTML file, vanilla JavaScript,
     no framework, no build step, no CDN dependency (see scripts/ui/console.html).
     UNGATED like /health, because the browser has no token yet the first time
@@ -3228,7 +3321,14 @@ async def console():
     was never specific to /status or /results in the first place -- the
     client-side collapse applies to any {run_id}-suffixed path, including
     every route built in api STEPs B1-B4 -- so retiring those two names in
-    STEP B5 changes nothing about why /console lives where it does."""
+    STEP B5 changes nothing about why /console lives where it does.
+
+    v1.05 (DESK-A): `?view=desk` serves the review desk page instead (_desk_page);
+    any other view value is 404, so a typo never falls back to a different page."""
+    if view is not None:
+        if view != "desk":
+            raise HTTPException(status_code=404, detail="unknown view")
+        return _desk_page()
     if not UI_CONSOLE_PATH.exists():
         raise HTTPException(status_code=500, detail="console.html missing")
     import localization
@@ -3253,6 +3353,66 @@ async def health():
                          "backend_profile": _backend_profile(),
                          "default_review_mode": _default_review_mode(),
                          "sensitive_layer_active": sensitivity_layer.is_active()})
+
+
+# ---------------------------------------------------------------------------
+# v1.05: the review desk (docs/loop/stages/V105_UI_DESIGN.md, step 1). One plain
+# page and three read-only routes; the projections live in scripts/review_desk.py.
+# ---------------------------------------------------------------------------
+def _desk_page():
+    """The review desk page (GET /console?view=desk): one static HTML file, vanilla
+    JavaScript, no build step. Served by the console shell route so the set of routes
+    that answer without a token stays /health and /console (the launcher banners and
+    their check name exactly that set); the page holds no data and asks for the token
+    before it calls any other route. In keyless local mode (D-835) the page is served with
+    one line naming that mode, so it connects with no token; it still holds no data."""
+    if not UI_DESK_PATH.is_file():
+        raise HTTPException(status_code=500, detail="desk.html missing")
+    page = UI_DESK_PATH.read_text(encoding="utf-8")
+    if keyless_active():
+        page = page.replace("<script>", '<script>var DESK_ACCESS = "keyless-local";</script>\n<script>', 1)
+    return HTMLResponse(content=page)
+
+
+@app.get("/inputs", dependencies=[Depends(verify_token)])
+async def inputs():
+    """The files in place under input/conventions, input/context and input/operational
+    (names, sizes and times, never content) and the compiled convention rules by id,
+    operator category and severity (their text is GET /rules/{rule_id})."""
+    import review_desk
+    registry = _load_convention_registry()
+    rules = [{"id": r.get("id"), "category": r.get("category"), "severity": r.get("severity")}
+             for r in registry.get("conventions") or [] if isinstance(r, dict)]
+    return {"folders": review_desk.inputs_listing(INPUT_DIR), "conventions_compiled": rules}
+
+
+@app.get("/runs/{run_id}/progress", dependencies=[Depends(verify_token)])
+async def run_progress(run_id: str):
+    """PROGRESS-A's four values for one run, measured from its folder and job record
+    (review_desk.progress_reading): counts and timings only, so a sealed run answers too."""
+    import review_desk
+    import console_views
+    run_dir = _validated_run_dir(run_id)
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        job = dict(job) if job else None
+    return dict(review_desk.progress_reading(job, run_dir), run_id=run_id,
+                exposure=console_views.exposure(run_dir))
+
+
+@app.get("/runs/{run_id}/reviewed/{doc_id}", dependencies=[Depends(verify_token)])
+async def run_reviewed_document(run_id: str, doc_id: str):
+    """One document's reviewed_document.md (READABLE-A) as text. doc_id is matched against
+    the run's deliverables listing before any path is built; 404 otherwise. Refuses a
+    sealed run (403): the reviewed document quotes findings under their units."""
+    import review_desk
+    run_dir = _validated_run_dir(run_id)
+    _refuse_sealed(run_dir)
+    try:
+        text = review_desk.reviewed_document(run_dir, doc_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    return PlainTextResponse(text, media_type="text/markdown; charset=utf-8")
 
 
 @app.get("/runs", dependencies=[Depends(verify_token)])
@@ -3450,8 +3610,15 @@ _rebuild_jobs_from_disk()
 # STARTUP (only when you run this file directly: python scripts/server.py)
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    # D-835: keyless local mode is decided from HOST, the very value uvicorn binds below;
+    # asked for on a non-loopback host, the server refuses to start.
+    try:
+        _keyless = arm_keyless_local(HOST)
+    except KeylessRefused as error:
+        print("Refusing to start: %s" % error, file=sys.stderr)
+        sys.exit(1)
     # Refuse to start without a token hash: an open dock would let anyone in.
-    if not os.environ.get(TOKEN_HASH_ENV):
+    if not _keyless and not os.environ.get(TOKEN_HASH_ENV):
         print(
             "Refusing to start: the {env} environment variable is not set.\n"
             "Generate a token and its hash with:\n"
@@ -3478,8 +3645,13 @@ if __name__ == "__main__":
     # Echo the resolved configuration so the operator can confirm every knob at a glance.
     print(_config_summary(), file=sys.stderr)
     print(f"Shimmer operator console: {CONSOLE_URL}", file=sys.stderr)
-    print(f"Expose it publicly with:  cloudflared tunnel --url http://localhost:{PORT}",
-          file=sys.stderr)
+    if _keyless:
+        print(f"Keyless local mode (alpha, {KEYLESS_ENV}=1): no token on {HOST}, this computer only; "
+              f"review desk: {CONSOLE_URL}?view=desk. A tunnel or a non-local address needs the token.",
+              file=sys.stderr)
+    else:
+        print(f"Expose it publicly with:  cloudflared tunnel --url http://localhost:{PORT}",
+              file=sys.stderr)
     # HOST 0.0.0.0 means listen on all network interfaces, not just localhost. A public
     # tunnel needs this to forward traffic from the internet to your server.
     uvicorn.run(app, host=HOST, port=PORT, log_level=LOG_LEVEL)

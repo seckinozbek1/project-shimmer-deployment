@@ -9,6 +9,10 @@
     checkout's origin and must be the project repository (seckinozbek1/project-shimmer-deployment, owner and name);
     any other origin is refused
     and gh is not called. Otherwise ALERT.md "issue update due: D-xxx" (or the result's time).
+    Every issue update is a full sweep (Seckin 20 November 2026 13:27, D-839), so the update counts as done only
+    when the last sweep record (docs/loop/private/issue_sweep.json "at", written by tools/loop/issue_sweep.py
+    record) is newer than that decision or result; a missing record, an older one, or one over 24 hours old
+    alerts "issue sweep due". The sweep record is a local file; nothing is fetched for it.
 (2) Commits: those on the lead tip (HEAD of the main checkout) on no backup-private ref
     (`git log HEAD --not --remotes=backup-private`) alert once one is over 2 hours old; the commit of the newest
     green gate (an external/s05/ROUTE_GATE_*/<folder>/evidence/result.json of arm G with execution integrity passed,
@@ -41,6 +45,8 @@ PROJECT_OWNER = 'seckinozbek1'
 PROJECT_REPO = 'project-shimmer-deployment'
 COMMIT = re.compile(r'[0-9a-f]{7,40}')
 ISSUE_GRACE_MIN = 60
+SWEEP_RECORD = 'issue_sweep.json'     # written by tools/loop/issue_sweep.py record at the end of a full sweep
+SWEEP_STALE_H = 24
 BACKUP_LATE_H = 2
 ORIGIN_LATE_H = 1
 BACKUP_REFS = '--remotes=backup-private'
@@ -101,9 +107,40 @@ def origin_repo(main, runner):
     return '%s/%s' % (m.group(1), m.group(2))
 
 
-def issue_check(main, private, now, runner):
-    events = decision_events(_read(Path(main) / 'docs' / 'loop' / 'DECISIONS.md')) + \
+def events_of(main, private):
+    return decision_events(_read(Path(main) / 'docs' / 'loop' / 'DECISIONS.md')) + \
         result_events(_read(Path(private) / 'FOR_SECKIN.md'))
+
+
+def sweep_time(private):
+    """The time of the last full issue sweep (docs/loop/private/issue_sweep.json "at"), or None."""
+    try:
+        body = json.loads((Path(private) / SWEEP_RECORD).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return None
+    return mc_time(body.get('at')) if isinstance(body, dict) else None
+
+
+def sweep_check(main, private, now):
+    """D-839: an issue update counts as done only when the last full sweep is newer than the decision or result
+    that made it due; a missing sweep, or one over 24 hours old, is due as well. Local files only."""
+    last = sweep_time(private)
+    old = [e for e in events_of(main, private) if (now - e[1]).total_seconds() > ISSUE_GRACE_MIN * 60]
+    newest = max(old, key=lambda e: e[1]) if old else None
+    if last is None:
+        due = 'no sweep recorded'
+    elif (now - last).total_seconds() > SWEEP_STALE_H * 3600:
+        due = 'last sweep over %d hours old' % SWEEP_STALE_H
+    elif newest is not None and last < newest[1]:
+        due = 'sweep older than %s' % newest[0]
+    else:
+        due = None
+    return {'due': due, 'last_sweep': last.isoformat() if last else None,
+            'event': newest[0] if newest else None, 'event_time': newest[1].isoformat() if newest else None}
+
+
+def issue_check(main, private, now, runner):
+    events = events_of(main, private)
     old = [e for e in events if (now - e[1]).total_seconds() > ISSUE_GRACE_MIN * 60]
     if not old:
         return {'due': None, 'note': 'no decision or result older than %d minutes' % ISSUE_GRACE_MIN}
@@ -244,11 +281,16 @@ def check(now=None, main=None, private=None, root=None, runner=None):
     root = Path(root or main / 'external' / 's05')
     runner = runner or run
     issues = issue_check(main, private, now, runner)
+    sweep = sweep_check(main, private, now)
     backup = backup_check(main, now, runner)
     origin = origin_check(main, root, now, runner, private)
     if issues.get('due'):
         mc.alert('sync:issue:%s' % issues['due'], 'issue update due: %s (written %s; newest issue update %s).'
                  % (issues['due'], issues['event_time'][:16].replace('T', ' '), issues['newest_issue_update']))
+    if sweep.get('due'):
+        mc.alert('sync:sweep:%s' % (sweep['event'] or sweep['due']), 'issue sweep due: %s (last sweep %s). Sweep '
+                 'all open issues, then run tools/loop/issue_sweep.py record and line (D-839).'
+                 % (sweep['due'], sweep['last_sweep'] or 'none'))
     if backup.get('late'):
         mc.alert('sync:backup:%s' % backup['late'][0][:12], 'Commits on the lead tip not on any backup-private ref '
                  'for over %d hours: %d (oldest late %s). Run tools/loop/backup_private.py.'
@@ -257,8 +299,8 @@ def check(now=None, main=None, private=None, root=None, runner=None):
         mc.alert('sync:origin:%s' % origin['late'][:12], 'The green gate commit %s (%s) is not on origin/main %.1f '
                  'hours after its gate; push it through the pre-push scan when the operator says to push.'
                  % (origin['late'][:12], origin['gate'], origin['age_h']))
-    result = 'alert' if issues.get('due') or backup.get('late') or origin.get('late') else 'ok'
-    details = {'issues': issues, 'backup_private': backup, 'origin_main': origin}
+    result = 'alert' if issues.get('due') or sweep.get('due') or backup.get('late') or origin.get('late') else 'ok'
+    details = {'issues': issues, 'issue_sweep': sweep, 'backup_private': backup, 'origin_main': origin}
     mc.trace(NAME, result, **details)
     return dict(details, result=result)
 

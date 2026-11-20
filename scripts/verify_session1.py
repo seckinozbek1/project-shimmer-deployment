@@ -27500,8 +27500,11 @@ def check_519_the_watchdog_alerts_a_due_issue_update_and_unsynced_commits():
     when a decision or verified result over 60 minutes old has no GitHub issue update after it (gh called for the
     project origin only), when commits on the lead tip are on no backup-private ref for over 2 hours, and when the
     newest green gate's commit is not on origin/main an hour after the gate; the private and public remotes are
-    read apart and nothing is fetched or pushed. Runs tools/loop/sync_watch_checks.py with git and gh faked: each
-    proof neutralised, failed, restored and passed."""
+    read apart and nothing is fetched or pushed. D-839 (Seckin 20 Nov 13:27): an issue update counts as done only
+    when the full-sweep record docs/loop/private/issue_sweep.json (tools/loop/issue_sweep.py record, per-milestone
+    counts from gh api) is newer than the decision or result; a missing, older or over-24-hour record alerts
+    "issue sweep due". Runs tools/loop/sync_watch_checks.py with git and gh faked: each proof neutralised, failed,
+    restored and passed."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
     if loop not in sys.path:
         sys.path.insert(0, loop)
@@ -27715,6 +27718,23 @@ def check_534_nothing_silently_waits_late_failed_and_role_gap_alert():
     return run_all()
 
 
+def check_680_panel_freshness_flags_stale_sections_missing_decisions_and_wrong_bars():
+    """PANEL-FRESH-A (Seckin 20 Nov 2026, G-20261120-1220 and G-20261120-1227): tools/loop/panel_freshness.py compares
+    every section of the panel document (KPIS, BARS, PLAN, V105, OPEN, RES, ISTEK, CHG) with the records and prints one
+    line per finding: an unfinished row or a card first seen in a saved copy over 24 hours ago (STALE), a promised
+    time ("tahmini başlangıç HH:MM", "HH:MM civarı") over 2 hours past (PAST), "yarın" anywhere or "sürüyor" or
+    "tahmini" in a finished row (WORD), a decision from decisions_from on with no CHG line named in
+    chg_decisions.json (NO-CHG), a BARS number that differs from panel_status (BARS), and an OPEN or ISTEK row done
+    for over 24 hours by done_since.json (MOVE; `move` turns it into one CHG line); check exits 1 on any finding,
+    mark records rows newly done, and the alert mode writes one ALERT line through the injected writer. Runs
+    tools/loop/panel_freshness_checks.py on temp fixtures only: each proof neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from panel_freshness_checks import run_all
+    return run_all()
+
+
 def check_535_the_composition_step_links_an_article_level_position_to_its_single_proposal():
     """D-758 (Seckin 22:15, SUPERVISOR_INBOX 22:17): tools/score_neg_advisor.py link_article_positions, run by the
     system's composition step (system_python in score and dev-figures, and the N1 units) when
@@ -27921,13 +27941,34 @@ def check_660_the_archive_closure_preflight_refuses_a_workload_file_outside_the_
     or the bound commit's sealer rule read from its constants); an import inside a try is listed apart and another
     pass's branch is latent, neither refused. Fixture git repository of tools/loop/archive_closure_checks.py:
     refused at the first commit, complete once the sealer carries both files; on HEAD the constants rule equals the
-    sealer's archive_names and the GNN training pass closure is complete. Neutralised (nothing resolved), failed;
-    restored, passed."""
+    sealer's archive_names and the GNN training pass closure is complete. B3: a request whose only absent files sit
+    behind replay_prompts.py's per-pass loaders is complete with them latent, and refused once the dispatcher
+    imports an absent file on its normal path. Neutralised (nothing resolved; every dispatcher import taken as a
+    loader's), each failed; restored, passed."""
     loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
     if loop not in sys.path:
         sys.path.insert(0, loop)
     import archive_closure_checks
     return archive_closure_checks.run_group(660)
+
+
+def check_661_the_filesystem_trim_launch_deletes_only_validated_project_archives_of_exact_size():
+    """D-827, FS-TRIM-A: tools/loop/fs_trim.py, the deletion counterpart of tools/loop/fs_listing.py, reusing its
+    guard decision, cap, ledger lines, provider adapter, temporary ssh key and finally-terminate unchanged. The
+    entry list is refused before any provider call for a path at the mount root, assets-*, image/*, outside
+    projects/, with dot-dot, below projects/, with a wildcard or shell character, not a project-<hex>.tar.gz name,
+    bad bytes, a repeat, empty or over 200; the remote command is only the pinned templates (TEMPLATES_SHA256) with
+    the validated names; per entry SKIP_LINK, SKIP_MISSING, SKIP_NOT_FILE, SKIP_SIZE, else rm -f -- that path;
+    a run cut by the local timeout, the remote time budget or a lost connection keeps its outcome lines, the
+    file in flight and the files not tried (the 20 Nov 09:32 run lost them); the script goes on standard input
+    to `bash -s`, never on the command line the Windows ssh client cut near 8 KB on 20 Nov 10:06, and a short
+    list stops at LIST_SHORT before the loop. Runs tools/loop/fs_trim_checks.py on a fake provider and a fake ssh (no network): each proof neutralised,
+    failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from fs_trim_checks import check
+    return check()
 
 
 def _drive_no_download(name):
@@ -28018,6 +28059,82 @@ def check_644_synthetic_sets_draw_by_party_structure_when_declared():
         sys.path.insert(0, tools)
     import neg_stratified_draw_checks
     return neg_stratified_draw_checks.run_check()
+
+
+def check_620_the_review_desk_reads_inputs_progress_and_the_reviewed_document():
+    """DESK-A (v1.05 step 1, docs/loop/stages/V105_UI_DESIGN.md; numbered 539 on lane/v105-ui, renumbered 620
+    when the lane met the negotiation check 539): scripts/review_desk.py executed on fixtures (input names
+    without content, PROGRESS-A's four values equal to hand-computed figures and each unmeasurable one with its
+    reason, the reviewed document served only by the deliverables listing: neutralised, an escaping name is
+    served, restored, refused); with fastapi and node, the real app through a test client with Popen replaced
+    (GET /console?view=desk ungated and an unknown view 404, /inputs, /progress and /reviewed 401 without the
+    token, 200 with it, a sealed run's reviewed document 403, no process started) and the page's own DeskViews
+    run in Node on those answers (a sealed run plans progress only, the model mark on the model finding alone,
+    text escaped, every planned route 200). Runs scripts/review_desk_checks.py."""
+    from review_desk_checks import run_all
+    return run_all()
+
+
+def check_621_the_desk_start_form_submits_through_the_existing_route():
+    """DESK-A (v1.05 step 2): the desk's start form (scripts/ui/desk.html DeskViews.startPlan and submitFields,
+    run in Node) refuses no target, a duplicate name, no privacy choice and Sensitive while the privacy layer is
+    inactive (the server's /submit refuses that one too, 409) and gives no field before the plan is confirmed;
+    its confirmed fields and files go to the existing POST /submit through FastAPI's test client on a server
+    confined to a temporary root, and the fake run starter sees both override flags, --output-dir on the run's
+    folder, --mode standalone and the planned targets and earlier version. No pipeline runs. Runs
+    scripts/review_desk_actions_checks.py group start: neutralised (the privacy field dropped: 400, nothing
+    starts), failed, restored, passed. Needs fastapi and node; without them it says it did not run."""
+    from review_desk_actions_checks import run_group
+    return run_group("start")
+
+
+def check_622_the_desk_cancels_records_decisions_and_keeps_sealed_runs_to_timings():
+    """DESK-A (v1.05 step 3) on fixture runs, Popen trapped: the page shows an exposed run's pending question
+    and its Approve body is recorded verbatim by POST /runs/{run_id}/approval (202; a second answer 409), the
+    page saying recorded, not resumed (HONEST-OUTPUT-A); a queued run is cancelled through the page's planned
+    route and the page says nothing was deleted; every log and zip route the page plans answers 200 and a
+    running run's archive is called partial; a sealed run's question is timings only, it plans no log and no
+    download, and GET /approvals shows it without its text (CONSOLE-A). Runs
+    scripts/review_desk_actions_checks.py group actions: neutralised (the sealed return taken out, the page
+    plans a sealed log route the server refuses with 403), failed, restored, passed."""
+    from review_desk_actions_checks import run_group
+    return run_group("actions")
+
+
+def check_662_every_desk_control_calls_its_mapped_route_on_a_running_server():
+    """D-831 item 2, D-832 item 3 (the link test on the laptop, no rented machine): scripts/server.py runs as
+    its own process on 127.0.0.1 on a temporary root with a mock pipeline (no pipeline runs) and is asked over
+    HTTP. Without a token hash it refuses to start; /health and /console?view=desk are open, the data routes 401
+    without or with a wrong token. The desk page's own script runs in Node with its fetch on the live server and
+    every control is fired: the page's controls equal the declared map, every route literal belongs to a mapped
+    route, every mapped route is registered in server.py and listed in docs/RUNTIME_REFERENCE.md, and each control
+    calls exactly its routes (200 or 202) and reads or writes the right record (one mock start with both override
+    flags, run succeeded, bus findings with the model mark, reviewed document, log, a complete archive, the
+    decision file verbatim, a cancel that deletes nothing). A sealed run shows counts only and its findings,
+    reviewed document and log are 403 (CONSOLE-A); no token, hash, fixture credential or fixture answer key
+    reaches any answer or screen. Runs scripts/review_desk_live_checks.py: neutralised twice (the sealed refusal a
+    no-op; the log control taken out of the page), each failed, restored, passed. D-835: a keyless pass runs the
+    same walk with SHIMMER_KEYLESS_LOCAL=1 on 127.0.0.1 and no token hash; the served page connects by itself
+    and every control reaches its routes with no token, a sealed run still counts only. Needs fastapi, uvicorn,
+    httpx and node; without them it says it did not run."""
+    from review_desk_live_checks import run_check
+    return run_check()
+
+
+def check_681_keyless_local_mode_only_on_a_loopback_bind():
+    """D-835 (Seckin 20 November 2026 13:11, DESK-A): in the alpha the review desk opens with no key, only while
+    the server binds a loopback address. scripts/server.py arm_keyless_local(host), called by each start path
+    with the host it hands to uvicorn, on a server module loaded on a temporary root through FastAPI's test
+    client: with SHIMMER_KEYLESS_LOCAL unset the data routes are 401 without or with a wrong token and 200 with
+    it (no change); asked for on 0.0.0.0, ::, a LAN address, a name or an empty host it refuses and the routes
+    stay 401; on 127.0.0.1, ::1 and localhost they are 200 with no token and the desk page is marked keyless;
+    while keyless a non-loopback client, a foreign Host, a foreign Origin and a forwarded request are 403.
+    `python scripts/server.py` and scripts/desktop_server.py with the mode on and SHIMMER_HOST=0.0.0.0 exit 1
+    with the keyless refusal; with no mode and no token hash server.py still refuses. Runs
+    scripts/loopback_access_checks.py: neutralised twice (every host loopback; the second layer a no-op), each
+    failed, restored, passed. Needs fastapi and httpx; without them it says it did not run."""
+    from loopback_access_checks import run_check
+    return run_check()
 
 
 def _neg_optional(number):
@@ -28855,6 +28972,8 @@ CHECKS = [
      check_546_the_passage_pair_step_asks_with_no_threshold_and_saves_the_probabilities),
     ("660 The archive closure preflight refuses a workload file outside the project archive (GNN_TRAIN_6f48d5ed)",
      check_660_the_archive_closure_preflight_refuses_a_workload_file_outside_the_project_archive),
+    ("661 The file system trim launch deletes only validated project archives of exact size, pinned script, terminates on every path (D-827)",
+     check_661_the_filesystem_trim_launch_deletes_only_validated_project_archives_of_exact_size),
     ("575 drive_archive verifies by stream hash and os.stat size, never reading Drive (D-763)",
      check_575_drive_archive_verifies_by_stream_hash_and_size_without_reading_drive),
     ("576 drive_paced confirms with the MD5 recorded at write time, never reading Drive (D-763)",
@@ -28879,6 +28998,18 @@ CHECKS = [
      check_651_the_compare_conflict_question_turns_an_against_answer_into_a_conflict),
     ("652 A read limit the proposal crosses is a second route to a conflict, off by default (R2, D-814)",
      check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict),
+    ("680 Panel freshness: a stale section, a missing CHG decision, a past promised time and a wrong bar are flagged (PANEL-FRESH-A)",
+     check_680_panel_freshness_flags_stale_sections_missing_decisions_and_wrong_bars),
+    ("620 The v1.05 review desk reads inputs, measured progress and the reviewed document behind the token; sealed runs get counts only (DESK-A)",
+     check_620_the_review_desk_reads_inputs_progress_and_the_reviewed_document),
+    ("621 The review desk's start form sends the plan to /submit, which adds both override flags, with no run (DESK-A)",
+     check_621_the_desk_start_form_submits_through_the_existing_route),
+    ("622 The review desk cancels, records decisions and serves log and downloads; a sealed run gets timings only (DESK-A)",
+     check_622_the_desk_cancels_records_decisions_and_keeps_sealed_runs_to_timings),
+    ("662 Every review desk control calls its mapped route on a running server with a mock pipeline; sealed runs counts only (DESK-A, D-832)",
+     check_662_every_desk_control_calls_its_mapped_route_on_a_running_server),
+    ("681 Keyless local mode serves the desk with no token on a loopback bind only; a non-loopback host refuses to start, a non-local request is refused (DESK-A, D-835)",
+     check_681_keyless_local_mode_only_on_a_loopback_bind),
 ]
 
 

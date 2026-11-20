@@ -196,6 +196,10 @@ class DesktopSession:
             "SHIMMER_PORT": str(self.settings.port),
             "SHIMMER_BACKEND_PROFILE": profile,
         })
+        # D-835 (alpha): the review desk opens with no key on this computer. The server
+        # honours it only because the host above is loopback; SHIMMER_KEYLESS_LOCAL=0
+        # in the starter's environment keeps the token-only console.
+        child_env.setdefault("SHIMMER_KEYLESS_LOCAL", "1")
         log_dir = self.root / "output" / "startup"
         try:
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -338,7 +342,9 @@ def run_gui(*, no_browser=False):
         state["busy"] = False
         state["exit"] = 0
         url.set(session.settings.console_url)
-        status.set("Console ready. Click Copy access token, paste it into the browser's Access token field, then click Use this token.")
+        status.set("Console ready. Alpha: the review desk (" + session.settings.console_url + "?view=desk) opens with no token "
+                   "on this computer only. For the full console, click Copy access token, paste it into the browser's "
+                   "Access token field, then click Use this token.")
         controls()
         if not no_browser and not session.open_console():
             status.set("Console ready, but the browser could not open. Click Open console to retry. "

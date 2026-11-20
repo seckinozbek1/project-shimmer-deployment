@@ -105,7 +105,8 @@ section 9 after role B returns them.
 
 Bar (a) as coded (`gate_score.compute`): the point difference from B1 at least .10 **and** the low end
 of the interval above zero. Bar (b) as coded: the point difference from the cloud reference at least
--.05, its interval shown beside it. Both are Seckin's (D-S92) and unchanged. The first claim read is
+-.10 (D-842, Seckin 20 November 2026; -.05, 5 points, until 20 November 2026), its interval shown
+beside it. Both are Seckin's (D-S92); bar (a) is unchanged. The first claim read is
 at the 97.5 percent level (D-403). The sizes are Seckin's choice (D-S120, option A); this section states
 their power, it does not choose them.
 
@@ -119,9 +120,13 @@ group, so items are independent; normal approximation; d the discordant share):
 
 - **Bar (a) as coded is .50 at a true 10-point difference at any size**: the point estimate clears .10
   only about half the time when the truth is exactly .10. This is a property of the bar, not of the size.
-- **Bar (b):** as coded (point at least -.05), at a true zero difference and d .25: .94. It passes a
-  system truly 5 points below the cloud reference about half the time (.50), so as coded it does not
-  show closeness. Read on its interval (low end above -.05): .23 at 97.5 percent, .33 at 95, .45 at 90.
+- **Bar (b), 10 points (D-842, `contradoc_power.py` at MARGIN .10):** as coded (point at least -.10),
+  at a true zero difference and d .25, n 230: above .99. It passes a system truly 10 points below the
+  cloud reference about half the time (.50), so as coded it does not show closeness. Read on its
+  interval (low end above -.10): .79 at 97.5 percent, .86 at 95, .92 at 90.
+- **Bar (b), 5 points (until 20 November 2026):** as coded (point at least -.05), at a true zero
+  difference and d .25: .94; .50 at a true 5 points below; on its interval (low end above -.05): .23 at
+  97.5 percent, .33 at 95, .45 at 90.
 
 **SciTab, 352 claims drawn (D-458), macro-F1 in the declared setting, cluster
 bootstrap over tables** (`scitab_power.py`, simulated in macro-F1: the system's accuracy set so its

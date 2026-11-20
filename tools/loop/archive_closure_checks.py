@@ -9,8 +9,12 @@ optional import is listed and not refused, the other pass's tools import is late
 import inside a function nothing calls is not followed. At the
 second commit the sealer's RUNTIME_FILES lists both: COMPLETE (exit 0). On the repository itself, the rule read
 from the sealer's constants equals the sealer's own archive_names on HEAD, and, where HEAD holds the GNN training
-pass, its closure is complete. Neutralised (resolve finds nothing, so no import is followed): failed; restored,
-passed.
+pass, its closure is complete. B3 (TABLE_TOOL_MEASURE_ON and _OFF, 20 Nov 2026: tools/build_auditor_training.py
+refused though only the auditor-training pass reaches it): a B3 request (entry scripts/pipeline.py) that reaches
+the dispatcher by an import, its only absent files behind the per-pass loaders, is COMPLETE with them latent; once
+the dispatcher imports a pass module at module level and an absent tools module in a function that is no loader,
+the same request is REFUSED naming both. Neutralised (resolve finds nothing; the loader rule takes every import of
+the dispatcher as a loader's, which must fail the B3 refusal): each failed; restored, passed.
 """
 from __future__ import annotations
 
@@ -138,6 +142,65 @@ def proof_fixture():
         shutil.rmtree(base, ignore_errors=True)
 
 
+B3_FILES = {
+    # A B3 workload (scripts/pipeline.py) reaches the dispatcher by an import, as scripts/vllm_route.py reaches
+    # vllm_replay.py and it replay_prompts.py; it hands no file to any pass.
+    'scripts/pipeline.py': "import route_mod\n",
+    'scripts/route_mod.py': ("import importlib\n\n\ndef _replay():\n    return importlib.import_module('replay_prompts')\n"
+                             "\n\nSTATE = _replay()\n"),
+    'tools/normal_tool.py': "def read(path):\n    return path\n",
+}
+NORMAL_PATH = (
+    # The second commit: the dispatcher imports a pass module at module level (so it is no loader's) and a tools
+    # module inside a function that returns a value of it (not a loader): both on the normal path.
+    "\nimport other_pass\n\n\ndef load_prompts(path):\n    import normal_tool\n    return normal_tool.read(path)\n")
+
+
+def _b3_folder(base, commit):
+    folder = base / 'LAUNCH_B3'
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / 'launch.py').write_text("COMMIT = %r\n" % commit, encoding='utf-8')
+    (folder / 'requests.json').write_text(json.dumps({"requests": [{"name": "FIXTURE_B3", "argv": [
+        "--arm", "B3", "--bundle", "b3"]}]}), encoding='utf-8')
+    return folder
+
+
+def proof_b3():
+    """A B3 fixture whose only out-of-archive files sit behind the dispatcher's per-pass loaders passes, listed
+    latent; once the dispatcher imports an absent file on its normal path, the same request is refused."""
+    base = Path(tempfile.mkdtemp(prefix='shimmer_archive_closure_b3_'))
+    try:
+        repo = base / 'repo'
+        for name, text in {**FILES, **B3_FILES}.items():
+            (repo / name).parent.mkdir(parents=True, exist_ok=True)
+            (repo / name).write_text(text, encoding='utf-8')
+        _git(repo, 'init', '-q')
+        first = _commit(repo, ('genesis.md',), 'B3, absent files behind the loaders only')
+        result = ac.check_folder(_b3_folder(base, first), repo)[0]
+        need(result['entries'] == ['scripts/pipeline.py'], 'the B3 entry is not scripts/pipeline.py: %s' % result['entries'])
+        need('benchmark/baselines/replay_prompts.py' in result['followed'], 'the B3 fixture did not reach the dispatcher')
+        need(not result['missing'] and not result['missing_named'],
+             'a file behind the dispatcher\'s loaders was refused on B3: %s'
+             % sorted(set(result['missing']) | set(result['missing_named'])))
+        need(sorted(result['latent']) == ['tools/graph_builder.py', 'tools/other_only.py', 'tools/overlap_tool.py'],
+             'the B3 files behind the loaders were not listed latent: %s' % sorted(result['latent']))
+        rc, text = _main(base / 'LAUNCH_B3', repo)
+        need(rc == 0 and text.startswith('COMPLETE FIXTURE_B3'), 'the B3 latent fixture was not complete (exit %d): %s'
+             % (rc, text.splitlines()[:3]))
+        replay = repo / 'benchmark/baselines/replay_prompts.py'
+        replay.write_text(replay.read_text(encoding='utf-8') + NORMAL_PATH, encoding='utf-8')
+        second = _commit(repo, ('genesis.md',), 'B3, absent files on the normal path')
+        result = ac.check_folder(_b3_folder(base, second), repo)[0]
+        need(result['missing'] == {'tools/normal_tool.py': ['benchmark/baselines/replay_prompts.py'],
+                                   'tools/other_only.py': ['benchmark/baselines/other_pass.py']},
+             'a file the B3 normal path imports was not refused: %s' % result['missing'])
+        rc, text = _main(base / 'LAUNCH_B3', repo)
+        need(rc == 1 and text.startswith('REFUSED FIXTURE_B3'), 'the B3 normal-path fixture was not refused (exit %d)' % rc)
+        return 'B3 fixture: behind the loaders latent and complete (exit 0); on the normal path refused (exit 1)'
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
 def proof_repository():
     head = subprocess.run(['git', '-C', str(REPO), 'rev-parse', 'HEAD'], capture_output=True, text=True,
                           creationflags=ac.no_window()).stdout.strip()
@@ -161,36 +224,49 @@ def proof_repository():
 
 
 def proof():
-    return proof_fixture() + '; ' + proof_repository()
+    return proof_fixture() + '; ' + proof_b3() + '; ' + proof_repository()
 
 
 @contextlib.contextmanager
-def _neutralised():
-    original = ac.resolve
-    ac.resolve = lambda module, level, importer, names: []
+def _patched(name, value):
+    original = getattr(ac, name)
+    setattr(ac, name, value)
     try:
         yield
     finally:
-        ac.resolve = original
+        setattr(ac, name, original)
+
+
+def _every_import(source):
+    """The neutralised loader rule: every module the dispatcher imports counts as a pass loader's."""
+    return {a.name for n in ac.ast.walk(ac._parse(source)) if isinstance(n, ac.ast.Import) for a in n.names}
+
+
+NEUTRALISATIONS = (
+    ('resolve finds nothing, so no import is followed', 'resolve', lambda module, level, importer, names: [],
+     proof_fixture),
+    ('the dispatcher rule accepts every import as a loader\'s', 'lazy_loader_modules', _every_import, proof_b3),
+)
 
 
 def run_group(number=660):
-    """(status, detail): shipped PASS, neutralised FAIL, restored PASS."""
+    """(status, detail): shipped PASS, each neutralised FAIL, restored PASS."""
     try:
         shipped = proof()
     except ProofFailed as exc:
         return 'FAIL', 'shipped: %s' % exc
-    with _neutralised():
+    for label, name, value, target in NEUTRALISATIONS:
+        with _patched(name, value):
+            try:
+                target()
+                return 'FAIL', 'neutralised (%s), the proof still passed: it proves nothing' % label
+            except ProofFailed:
+                pass
         try:
-            proof_fixture()
-            return 'FAIL', 'neutralised, the proof still passed: it proves nothing'
-        except ProofFailed:
-            pass
-    try:
-        proof_fixture()
-    except ProofFailed as exc:
-        return 'FAIL', 'restored: %s' % exc
-    return 'PASS', '%s; neutralised, failed; restored, passed' % shipped
+            target()
+        except ProofFailed as exc:
+            return 'FAIL', 'restored (%s): %s' % (label, exc)
+    return 'PASS', '%s; %d neutralisations, each failed; restored, passed' % (shipped, len(NEUTRALISATIONS))
 
 
 if __name__ == '__main__':

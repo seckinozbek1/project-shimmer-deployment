@@ -40,6 +40,8 @@ Register-LoopTask 'ShimmerMechanismWatchdog' (New-LoopAction 'mechanism_watchdog
     'Shimmer loop: every 15 minutes, ALERT.md when a standing mechanism is overdue.'
 Register-LoopTask 'ShimmerLaunchChain' (New-LoopAction 'launch_chain.py') (Every 3 1) 180 `
     'Shimmer loop: every 3 minutes, launches each planned step (chain.json beside launch.py) whose prerequisites are done; preflight first, one launch at a time, never a cap raised. A pass begins no launch after 50 min (but the seal after its request); worst case about 152 min, under the 180-minute limit.'
+Register-LoopTask 'ShimmerPanelFreshness' (New-LoopAction 'panel_freshness.py' 'alert') (Every 60 37) 5 `
+    'Shimmer loop: every hour, the newest saved panel copy against the records (PANEL-FRESH-A); ALERT.md when a section is stale or contradicts a record.'
 Register-LoopTask 'ShimmerBranchBackup' (New-LoopAction 'backup_guarded.py' 'branches') (Every 60 50) 180 `
     'Shimmer loop: backup_private.py (all branches and tags to backup-private) every hour; ALERT.md on failure.'
 Register-LoopTask 'ShimmerDriveBackup' (New-LoopAction 'drive_paced.py') (New-ScheduledTaskTrigger -Daily -At '03:30') 480 `

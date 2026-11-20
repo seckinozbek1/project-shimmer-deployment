@@ -7,8 +7,9 @@ item 14). Every figure carries its item count and a 95 percent interval; a diffe
 paired, the same clusters for both arms.
 
   bar (a): the system at least 10 points above B1, and the interval of the difference above zero;
-  bar (b): the system at most 5 points below the cloud reference, read on the point difference with
-           its interval beside it (this set cannot prove non-inferiority, GATE_SET.md section 5).
+  bar (b): the system at most 10 points below the cloud reference (D-842, Seckin 20 November 2026;
+           5 points until 20 November 2026), read on the point difference with its interval beside it
+           (this set cannot prove non-inferiority, GATE_SET.md section 5).
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ if str(ROOT / "benchmark" / "adapters") not in sys.path:
 from common import metrics  # noqa: E402
 
 BAR_ABOVE_B1 = 0.10
-BAR_BELOW_CLOUD = 0.05
+BAR_BELOW_CLOUD = 0.10   # D-842 (Seckin, 20 November 2026); 0.05 (5 points) until 20 November 2026
 CONFIDENCE = 0.95        # a quick-subset read, steering only
 FAMILY_ALPHA = 0.05      # the k-th claim read is judged at FAMILY_ALPHA / 2^k (D-403, D-373, D-330)
 BOOTSTRAP_DRAWS = 2000

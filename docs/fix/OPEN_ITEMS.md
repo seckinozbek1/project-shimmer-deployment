@@ -1453,3 +1453,45 @@ unseen, then fails restored. A suffix in no list is still not recognised as an a
 ## 167. A launch folder's watch.py reads a step's first ended record after a retry (SYNLAB2R, 19 November 2026)
 - Found 2026-11-19 22:32 +0300: in V_SYNLAB2 the retried seal (22:02) was not watched, because `watch.py seal` returned at once on the first seal's ended record (18:27) still in the ledger; the role session stopped after step 3 and `launch.py status` showed the first seal's 0.258 USD beside the new run's phase.
 - Not fixed in that folder (role V's copy). To settle: the watch and status of the launch-folder template read the newest run of a step (by launch time or run folder), with a fixture proof of a retried step; then every live launch folder copies it.
+
+## 168. Role V's C4LAB settings deny its own _handoff files (V_C4LAB, 20 November 2026)
+- Found 2026-11-20 02:47 +0300: session V_C4LAB finished (1360 of 1360 positions labelled, 2.021 USD) but could not write `_handoff/V_C4LAB_HEARTBEAT.txt` or `V_C4LAB_DONE.json`: its settings deny every write to `_handoff\`. The lead wrote `V_C4LAB_DONE.json` from the session result, marked as lead-written. S6's precheck reads `V_to_S/V_C4LAB_HANDBACK.json`, which role V did write, so nothing waits on it.
+- The watcher of 167 bit here too: the label watcher outlived the one-hour call limit, so the session read `launch.py status` once more. That is allowed during a wait.
+- To settle: the next V role settings draft allows writes to its own `_handoff/V_<TAG>_*` files (allow-listed per session), with role_start_check reporting the gap.
+
+## 169. Earlier synthetic negotiation figures were measured before their deduplication (SYNDEDUP2, 20 November 2026)
+- Found 2026-11-20 04:20 +0300: role B's SYNDEDUP2 (a37ccd7f, rented A10 vectors, 4414 rows) kept pilot_1 30 of 31, dev_1 57 of 65 (reference_N drops 7: exact 1, runs 7) and validation 49 of 53, 136 of 149 in all. The R1 and R2 negotiation figures on pilot_1 and dev_1 were measured on the undeduplicated sets.
+- Not re-scored now. To settle: report the earlier synthetic figures again on the kept items only (counts already apart under NEG-SYNTH-A), beside the originals, once the C4 rule question is answered; the kept lists are with role S (B_to_S, file SHA-256 562f225a).
+
+## 170. disk_sweep.py --dry-run stops after "index: 500 files read" (20 November 2026)
+- Found 2026-11-20 06:25 +0300: the mechanism watchdog marked disk_sweep_dry_run overdue (last 18 Nov 14:52). Two dry runs (05:05 for 500 s, 06:15 for 590 s with --top 10) both printed "index: 500 files read" and nothing more until the timeout; no file was touched (dry run). The restore drill, overdue too, passed at 06:11 (git and Drive parts restored).
+- Not traced now. To settle: find where the index stalls after its first progress line (a folder it walks slowly, a lock, or a read of a cloud-only file), fix with a fixture proof, and run the dry run again so the watchdog's overdue line clears.
+
+## 171. A launch chain pass held its lock for over 50 minutes with no step launched (20 November 2026)
+- Found 2026-11-20 10:07 to 10:40 +0300: the pass that began at 09:49 (pid 29012), right after the pass that launched NEG_c4_pilot's part, held `launch_chain.lock` with no child process and no trace line. It used CPU the whole time (about 1100 s CPU in 49 minutes). Meanwhile TABLE_TOOL_MEASURE_ON/OFF's requests and NEG_c4_validation's request sat ready, and the mechanism watchdog marked launch_chain overdue.
+- The lead wrote the two table requests, their seals and admits and the validation request by hand, under the chain's own rule (status read right before each launch).
+- Not traced now. Likely cause: the in-process archive_closure before a seal over 38-bundle folders (about 11 minutes per folder when run alone), possibly repeated per folder within one pass. To settle: time each stage of a pass (status read, closure, preflight) in the trace, move closure to a child process with its own timeout, and prove on a fixture that a slow closure never holds every other folder.
+
+## 172. A local admit holds the budget ledger lock for its whole run, so a seal launched meanwhile is refused (20 November 2026)
+- Found 2026-11-20 10:42 +0300: NEG_c4_validation's `launch.py seal` was refused with GuardRefusal "Another launch holds the ledger lock (... by pid 22044 (running))". pid 22044 was TABLE_TOOL_MEASURE_OFF's admit, a laptop-side admission with no instance, which held the lock for over 8 minutes.
+- Handled: the lead relaunches the seal once the lock is gone (a background wait).
+- To settle: decide whether an admit needs the ledger lock at all, or only for its ledger line; if only the line, take the lock for the append alone. Prove with a fixture that a seal and an admit can overlap.
+
+## 173. safe_delete.py reports 0 hard-linked files on Windows, always (20 November 2026)
+- Found 2026-11-20 12:00 +0300 by both deletion checkers (Opus and Fable): `tools/loop/safe_delete.py` lines 69 and 137 read `st_nlink` from `os.scandir` entries, which Windows returns as 0; `os.stat` on the same file returns 20 (the five frozen model files hard-linked into every gate worktree).
+- Effect: report only. Deleting a hard link leaves the main checkout's copy, so no deletion was unsafe; but every dry run's "0 hard-linked files" was unverified on this laptop, and its freed-bytes total is overstated (about 141 MB per gate tree stays on disk).
+- To settle: read the count with `os.stat(path, follow_symlinks=False)` per file, report linked files and the bytes that stay, and prove it with a fixture that makes a hard link.
+
+
+## 174. Hand launches of later measurement parts do not check the previous part's exit codes (20 November 2026)
+- Found: the table tool measurement's V2 parts were launched by hand while OFF V1 had four tables with exit 2. The chain would have held them (TABLE_TOOL_MEASURE_PLAN 5.4), but the hand path has no such check. The lead read the form check from request counters only (D-836).
+- Not fixed in code now (alpha deadline, D-834). Practice until fixed: before any hand launch of part N+1, count `exit_code` in every `workload_return.json` of part N in both arms.
+- Fix later: `launch.py <part>` refuses when an earlier part of either arm has a table with a non-zero exit code, unless a decision id is given.
+
+## 175. Four SciTab validation tables end semantic_incomplete (exit 2) in the table tool measurement (20 November 2026)
+- 1872a2acdac6 (both arms), 3fbb76b81239, 43ee685e8150 and 6643c8e64d5d (OFF V1). Their claims are labelled ABSTAIN (`s6_semantic_incomplete`).
+- Not traced now (alpha deadline). Beta work: find why, before the measurement is repeated.
+
+## 176. fs_trim deletes about one archive a minute on the network disk, so 90 entries do not fit its 900 s bound (20 November 2026)
+- Third run: 18 of 90 deleted (2,375,083,220 bytes) in the 900 s bound, 0.473 USD; 72 untouched; the outcome lines were kept (FS-TRIM-A).
+- Not done now (alpha deadline, D-834): the remaining 72 (about 9.5 GB, about 1.9 USD a month at 0.20 USD per GB a month) wait until after the alpha. Then either chunks of 15 entries per launch or a time bound read from the list size, under the same D-827 approval.
