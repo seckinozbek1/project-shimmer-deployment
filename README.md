@@ -9,54 +9,53 @@ It also advises on multi-round negotiation drafts.
 - Several agents built on models from different families check each other.
 - Python decides every check that arithmetic or a field can decide; a model is
   asked only where Python cannot.
-- A constitution read at run time governs the agents; only the operator can amend it.
 - A finding a model wrote stays visible and marked as not checked by Python. It
   never becomes an amendment.
+- The instruction finder (INST_FINDER) is optional, off by default, and under
+  development.
 
-**Status: a development prototype, published on GitHub on 2 November 2026.**
-v1.0-alpha is not released yet; v1.0-beta, v1.0 and v1.1 follow it.
+How a review runs, the constitution and the agents: [docs/METHOD.md](docs/METHOD.md).
 
-## First results
+## Current state (alpha, 21 November 2026)
 
-These are first results on development and validation material. The final test
-set has not been run, and no figure here shows accuracy on unseen documents.
+"Alpha" here means the current state of the code. It is not a release that met its
+targets. The alpha did not meet its targets, which were:
 
-| Task | Set | Shimmer | Bare model / cloud model (references only) |
-|---|---|---|---|
-| Contradictions (ContraDoc) | 15 development documents | contradiction F1 0.615 | not measured on these items |
-| Contradictions (ContraDoc) | 40-document steering subset, older code | accuracy 55.0 % (26 of 40 undecided); does not count (void on integrity), below both bars | 52.5 % / 90.0 % |
-| Table claims (SciTab) | 47 development claims | macro-F1 0.776 (2 classes), 0.517 (3 classes) | not measured on these items |
-| Table claims (SciTab) | 78-claim steering subset, older code | 0.190 (every claim undecided); does not count (void on integrity), below both bars | 55.8 / 81.7 |
-| Negotiation advice | 18-item development pilot | conflict macro-F1 0.629 (was 0.419); conflict class 0 | 0.217 / 0.648 (14 items) |
+- the system at least 10 points above the bare model;
+- the system at most 10 points below the cloud model;
+- every negotiation measure at least 0.60.
 
-Under the project's own rules the steering-subset run (quick subset 0127b080) does
-not count: it is void on integrity, with many items left undecided, and it is well
-short of both bars (at least 10 points above the bare model, at most 10 below the
-cloud model: D-842, 5 points until 20 November 2026). Every measured Shimmer run so far used local open-weight models; the
-cloud model figures are references only.
+These are first results; the final test set has not run yet. Each headline figure
+below was scored once, on untouched items, with thresholds written before the look;
+the SciTab information-only figure was read again after a reader fault was fixed. The
+untouched comparison against the bare and the cloud model is not yet measured and is
+in progress, so nothing here says whether the system is ahead of or behind either.
 
-Shimmer found none of the negotiation pilot's 12 conflicts. The cause is found and
-a fix is built; it is not measured yet. Sources, dates and conditions for every
-figure: [docs/RESULTS.md](docs/RESULTS.md).
+| Task | Untouched set | Result |
+|---|---|---|
+| Contradictions (ContraDoc) | 8 documents, 6 groups | 0.875, interval 0.625 to 1.0; not distinguishable from chance (permutation p 0.249) |
+| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | no headline score |
+| Negotiation advice | 31 items, 197 proposals | conflict detection 0.955 (interval 0.924 to 0.980, p 0.0001); open point detection 0.393; stance matches fate 0.299 |
 
-## How figures are checked
+- SciTab has no headline score because the coverage rule (at most 5 percent of
+  items unanswered) was not met: 13 of 15 claims were answered. For information
+  only, not a headline: accuracy 0.846 on the 13 answered claims, interval 0.769 to
+  1.0. This is a small set.
+- In negotiation, open point detection (0.393) and stance matches fate (0.299) are
+  below the 0.60 target. Conflict detection is the only measure above it.
+- Left for the beta: the table tool refusal, the step output cap, two known faults
+  (C23, C40), and a larger SciTab set.
 
-Every figure is checked before it is written: if more than 5 percent of the items lack the system's own answer
-(empty, a default, or withheld), the figure is refused (`tools/coverage_check.py`). Each figure carries a
-label-permutation test (`tools/chance_test.py`). Confidence thresholds are fixed before the measurement they govern;
-where one was chosen afterwards, it was chosen on development items only and is labelled so. A proxy reading, such
-as the model's most likely answer read from saved probabilities, is labelled and never reported as the system's own
-figure. Rules and their origin: [docs/LESSONS.md](docs/LESSONS.md).
+Sources, dates and conditions for every figure, and the rules for testing:
+[docs/RESULTS.md](docs/RESULTS.md), [docs/LESSONS.md](docs/LESSONS.md). Limits and
+privacy: [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
-## Where to start
+## How to start
 
-- What Shimmer does, how a review runs, the constitution and agents: [docs/METHOD.md](docs/METHOD.md)
 - Install, hardware and cost: [docs/INSTALL.md](docs/INSTALL.md)
 - First review, step by step: [English](docs/GUIDE_EN.md), [Turkish](docs/GUIDE_TR.md); every task: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 - The review desk, one plain page for a single review: [docs/DESK_GUIDE.md](docs/DESK_GUIDE.md).
-  Alpha: keyless for local trial only (loopback); a non-local address needs the token.
-- Results, testing rules and how to reproduce them: [docs/RESULTS.md](docs/RESULTS.md)
-- Limitations, privacy and access: [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)
+  Keyless for local trial only (loopback); a non-local address needs the token.
 - Agents, output files, server routes and settings: [docs/RUNTIME_REFERENCE.md](docs/RUNTIME_REFERENCE.md)
 - Contributing: [CLAUDE.md](CLAUDE.md) and the founding design, [genesis.md](genesis.md)
 
