@@ -1,11 +1,47 @@
 # Shimmer results
 
-Every result Shimmer has, newest first: the first results of November 2026 with their
+Every result Shimmer has, newest first: the first results on untouched items of 21 November 2026 (seen and untouched items apart), the first results of November 2026 with their
 sources, the earlier development state, the development results to 31 October 2026, the
 testing rules and how to reproduce the evaluation. Every figure on this page is a
 development or validation figure. The final test set has not been run. The short
 [README](../README.md) gives a summary; the earlier README sections on results were moved
 here on 19 November 2026 (D-816).
+
+## First results on untouched items (21 November 2026)
+
+These are first results. The final test set has not run yet, and the alpha did not meet its targets (at least 10 points above the bare model, at most 10 points below the cloud model, every negotiation measure at least 0.60). Each untouched figure below was scored once, on items nobody had looked at, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a release that met its targets.
+
+### Untouched items
+
+| Task | Set | Measure | Result | Interval (95 percent) | Chance test | Note |
+|---|---|---|---|---|---|---|
+| Contradictions (ContraDoc) | 8 documents, 6 groups | score on the set | 0.875 | 0.625 to 1.0 | permutation p 0.249 | not distinguishable from chance |
+| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | none: no headline score | none | none | none | coverage rule not met: 13 of 15 claims answered, the limit is at most 5 percent unanswered |
+| Table claims (SciTab), information only | the 13 answered claims | accuracy | 0.846 | 0.769 to 1.0 | chance p 0.026 | not a headline; small set; read again on the same outputs after a reader fault was fixed; the coverage rule did not change |
+| Negotiation advice | 31 items, 197 proposals | conflict detection | 0.955 | 0.924 to 0.980 | p 0.0001 | above the 0.60 target |
+| Negotiation advice | 31 items, 197 proposals | open point detection | 0.393 | 0.342 to 0.452 | p 0.753 | below the 0.60 target |
+| Negotiation advice | 31 items, 197 proposals | stance matches fate | 0.299 | 0.219 to 0.389 | p 0.938 | below the 0.60 target |
+
+Two further negotiation measures were refused by the coverage rule and have no figure. Of the three negotiation measures above, only conflict detection is above the 0.60 target.
+
+### Seen items
+
+These are figures on items the project had already looked at while building the system, measured before the look at the untouched items. They are development figures and do not show accuracy on unseen documents.
+
+| Task | Set | Measure | Result | Source |
+|---|---|---|---|---|
+| Table claims (SciTab) | 78 development claims, 13 tables | three-class macro-F1 | 0.598 (interval 0.444 to 0.656, chance p 0.0001) | measured before the look at the untouched items |
+| Contradictions (ContraDoc) | 15 development documents | contradiction F1 | 0.615 (precision 0.667, recall 0.571) | the section "First results (November 2026)" below |
+| Negotiation advice | 18 headline items (179 proposals) of a 24-item development pilot | three-class macro-F1 on conflicts | 0.629 | the same section below |
+| Negotiation advice | the same 18 items | open point detection / stance against outcome | 0.435 / 0.330, both below the 0.60 bar | the same section below |
+
+The seen SciTab figure is a three-class macro-F1; the untouched information-only figure is an accuracy on the answered claims, so the two are not directly comparable.
+
+### Comparison with the bare and the cloud model (negotiation, open point and stance)
+
+The comparison on the untouched items is running. This subsection will carry its table when it is done; until then nothing here says whether the system is ahead of or behind the bare model or the cloud model.
+
+Note on seen items, from the answers of the 15 November pilot. On 24 seen items, the cloud model (on its own 14-item subset) scored 0.507 on open point detection (interval 0.425 to 0.612, p 0.51) and 0.396 on stance matches fate (interval 0.292 to 0.537, p 0.0001). Both are below 0.60 too. The bare model and the system as it was then got no figure: more than half of their proposals had no answer piece, and the scorer refuses a figure when more than 50 percent are unanswered.
 
 ## First results (November 2026)
 

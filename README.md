@@ -42,7 +42,7 @@ in progress, so nothing here says whether the system is ahead of or behind eithe
   only, not a headline: accuracy 0.846 on the 13 answered claims, interval 0.769 to
   1.0. This is a small set.
 - In negotiation, open point detection (0.393) and stance matches fate (0.299) are
-  below the 0.60 target. Conflict detection is the only measure above it.
+  below the 0.60 target. Of the three negotiation measures, only conflict detection is above it.
 - Left for the beta: the table tool refusal, the step output cap, two known faults
   (C23, C40), and a larger SciTab set.
 
