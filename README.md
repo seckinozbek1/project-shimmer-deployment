@@ -1,52 +1,135 @@
 # Project Shimmer
 
 Shimmer reviews documents against rules that a person writes down. It reads the
-documents, compares their figures and fields with those rules and with reference
-material, and proposes cited amendments for a person to accept or reject. It never
-edits a source document, and every step leaves a record a reader can inspect.
-It also advises on multi-round negotiation drafts.
+documents and compares their figures and fields with those rules and with reference
+material. It proposes changes, with citations, for a person to accept or reject. It
+never edits a source document, and every step leaves a record a reader can inspect.
+It also advises on drafts in a negotiation with several rounds.
 
-- Several agents built on models from different families check each other.
-- Python decides every check that arithmetic or a field can decide; a model is
-  asked only where Python cannot.
-- A finding a model wrote stays visible and marked as not checked by Python. It
-  never becomes an amendment.
-- The instruction finder (INST_FINDER) is optional, off by default, and under
-  development.
+- Several agents (separate model-driven programs) built on models from different
+  families check each other.
+- Plain code decides every check that arithmetic or a field can settle. A model is
+  asked only when code cannot decide.
+- A finding written by a model stays visible and is marked as not checked by code. It
+  never becomes a proposed change.
+- The institution finder maps the institutions that a document names. It is optional,
+  off by default, and under development.
 
-How a review runs, the constitution and the agents: [docs/METHOD.md](docs/METHOD.md).
+How a review runs and how the agents are governed: [docs/METHOD.md](docs/METHOD.md).
 
-## Current state (alpha, 21 November 2026)
+## Current state (alpha, 22 November 2026)
 
-"Alpha" here means the current state of the code. It is not a release that met its
-targets. The alpha did not meet its targets, which were:
+"Alpha" means the code as it is today. It is not a finished release, and it fell
+short of its targets. These are first results. The final test set has not been run
+yet.
 
-- the system at least 10 points above the bare model;
-- the system at most 10 points below the cloud model;
-- every negotiation measure at least 0.60.
+On 21 November we scored the system for the first time on untouched items: items the
+project had not used to build or tune it. We did not check what the models saw in
+their own original training. ContraDoc and SciTab are public sets. We wrote the
+marks before we looked at any score, and we scored each set once.
 
-These are first results; the final test set has not run yet. Each headline figure
-below was scored once, on untouched items, with thresholds written before the look;
-the SciTab information-only figure was read again after a reader fault was fixed. On the 31 untouched negotiation items, the cloud model scored about the same as the system
-on open point detection (0.381 against 0.393) and on stance matches fate (0.295 against
-0.299); both are far below the 0.60 target. The bare model got no figure: it wrote no
-answer for 120 of the 197 proposals, and the scorer refuses a figure when more than half
-are unanswered. The cloud figures cover 20 of the 31 items.
+### The three targets
 
-| Task | Untouched set | Result |
+- **Cloud model.** The system should score at most 10 points below the cloud model.
+  The cloud model is claude-opus-4-8, a large model run by an outside provider.
+  This target was 5 points until 20
+  November. Before we looked at any untouched item, the project owner changed it to 10,
+  after every earlier check on items we had already seen had missed 5. His reason: 5
+  points would be an unfair comparison against a large cloud model. No result changed
+  because of this: every earlier check still fell short of 10. No cloud run exists on
+  the untouched ContraDoc and SciTab items, so the target was not read there.
+- **Bare model.** The system should score at least 10 points above the bare model.
+  The bare model is Qwen2.5-7B-Instruct, the same open model Shimmer builds on, used
+  on its own with nothing around it. On negotiation it got no figure, so this target
+  could not be read.
+- **Negotiation.** Each of the five lines of the negotiation score has its own
+  mark. Three of them are 0.60. The table below shows each line.
+
+### Results
+
+A range is where the true score probably lies. The chance test p tells how often luck
+alone would give a score this good or better. A high p means luck alone often scores
+this well.
+
+| Task | Untouched items | Result |
 |---|---|---|
-| Contradictions (ContraDoc) | 8 documents, 6 groups | 0.875, interval 0.625 to 1.0; not distinguishable from chance (permutation p 0.249) |
-| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | no headline score |
-| Negotiation advice | 31 items, 197 proposals | conflict detection 0.955 (interval 0.924 to 0.980, p 0.0001); open point detection 0.393; stance matches fate 0.299 |
+| Finding contradictions in documents (ContraDoc) | 8 documents, 6 groups | accuracy 0.875 (range 0.625 to 1.0); chance test p 0.249 |
+| Checking claims about tables (SciTab) | 3 papers, 4 tables, 15 claims | no main score |
+| Advising on negotiation drafts | 31 synthetic items, 197 proposals | five lines, below |
 
-- SciTab has no headline score because the coverage rule (at most 5 percent of
-  items unanswered) was not met: 13 of 15 claims were answered. For information
-  only, not a headline: accuracy 0.846 on the 13 answered claims, interval 0.769 to
-  1.0. This is a small set.
-- In negotiation, open point detection (0.393) and stance matches fate (0.299) are
-  below the 0.60 target. Of the three negotiation measures, only conflict detection is above it.
-- Left for the beta: the table tool refusal, the step output cap, two known faults
-  (C23, C40), and a larger SciTab set.
+**ContraDoc.** The score is accuracy: 7 of the 8 documents were judged right. Two
+documents hold a contradiction. The system found 1 of them and raised no false alarm.
+Answering "no contradiction" every time would score 0.75 on this set. The chance test
+cannot tell 0.875 from luck. The set is small.
+
+**SciTab.** A main score counts only if at most 5 percent of answers are missing,
+held back, or filled in by the scoring code. Here 13 of 15 claims were answered, so
+there is no main score. For information only: accuracy on the 13 answered claims was
+0.846 (range 0.769 to 1.0, chance test p 0.026). The set is small. This figure was
+read after we fixed a fault in the code that reads the system's answers. The answers
+did not change.
+
+**Negotiation.** The 31 items are synthetic: a program wrote them. They are not
+taken from real negotiations. A proposal is one bracketed option in an article of a
+draft text. Its fate is what happened to it in the next round: still open, kept,
+changed, or removed.
+
+| Line | What it asks | Result | Against its mark |
+|---|---|---|---|
+| Conflict | Does a proposal clash with the position of the party being advised? | 0.955 (range 0.924 to 0.980, p 0.0001) | above 0.60 |
+| Code checks | Do the advice pieces satisfy the code's own checks, such as "cited items exist"? | 1.0, with 2.5 percent of pieces dropped (the mark allows at most 10 percent) | at its mark of 1.0 |
+| Open point | Is a proposal still open to change, or already settled? | 0.393 (range 0.342 to 0.452, p 0.753) | below 0.60 |
+| Stance | Does the advice (accept, counter, reject) match what the parties did next? | 0.299 (range 0.219 to 0.389, p 0.938) | below 0.60 |
+| Approach | Whom does the advice say to approach? | no figure, too few answers | refused |
+
+### The cloud model on negotiation
+
+The cloud model answered all 31 items. By a rule fixed in advance to limit cost, its
+answers are scored on a set of 20 items (132 proposals). We also scored the system on
+those same 20 items, from its saved answers.
+
+| Measure | System (31 items) | System (same 20 items) | Cloud model (20 items) |
+|---|---|---|---|
+| Open point | 0.393 | 0.407 (range 0.348 to 0.480) | 0.381 (range 0.334 to 0.449) |
+| Stance | 0.299 | 0.330 (range 0.244 to 0.435) | 0.295 (range 0.221 to 0.364) |
+
+On the same items the system is slightly higher, but the ranges overlap, so the two
+are about equal. On those 20 items the bare model had no answer for 81 of the 132
+proposals. Over the whole set it had none for 120 of 197. More than 5 percent were
+missing, so it gets no figure. We checked that the answers are really absent, not
+misread.
+
+### What the findings show
+
+- **Level with the cloud model on two hard measures.** On open point and stance, on
+  20 synthetic items, the system and the cloud model we tested are about equal. Even
+  the cloud model we tested is far below 0.60 on them, so the measures are hard. The
+  system's open point and stance figures cannot be told from chance, so being level
+  tells us little yet. On synthetic items, what the parties did next was chosen by a
+  program.
+- **Conflict.** On synthetic items Shimmer found clashes well: 0.955. We have no
+  baseline for this line yet.
+- **Coverage.** Shimmer answered nearly all proposals (192 of 197). The bare model
+  left 120 of 197 empty. This is coverage, not accuracy.
+- **Test discipline.** The marks were written first, each figure was scored once, and
+  a coverage rule refuses a score when too many answers are missing.
+
+The 0.60 mark was set for our own benchmark, with no outside source for a normal level.
+Together with the chance test results, that means the target needs to be reconsidered. The beta will make the benchmark
+more reasonable, and it will review the chance test.
+
+### Tests of the code
+
+The frozen alpha code ran its own 502 checks. 485 of 502 checks passed, 6 were
+skipped, and 11 known failures are carried as known.
+
+### Left for the beta
+
+- A refusal in the table tool: on some tables, a step that pulls out facts refuses
+  and is not asked again.
+- A limit on how long one reasoning step may write.
+- Two known faults.
+- A larger set of table claims.
 
 Sources, dates and conditions for every figure, and the rules for testing:
 [docs/RESULTS.md](docs/RESULTS.md), [docs/LESSONS.md](docs/LESSONS.md). Limits and

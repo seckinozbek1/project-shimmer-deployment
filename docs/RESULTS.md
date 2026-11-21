@@ -9,44 +9,58 @@ here on 19 November 2026 (D-816).
 
 ## First results on untouched items (21 November 2026)
 
-These are first results. The final test set has not run yet, and the alpha did not meet its targets (at least 10 points above the bare model, at most 10 points below the cloud model, every negotiation measure at least 0.60). Each untouched figure below was scored once, on items nobody had looked at, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a release that met its targets.
+These are first results. The final test set has not run yet, and the alpha fell short of its targets (at least 10 points above the bare model, at most 10 points below the cloud model, and a mark for each of the five negotiation lines, three of them 0.60). Each untouched figure below was scored once, on items the project had not used to build or tune it, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a finished release.
+
+The bare model is Qwen2.5-7B-Instruct, the open model Shimmer builds on, used on its own with nothing around it. The cloud model is claude-opus-4-8, a large model run by an outside provider. No cloud run exists on the untouched ContraDoc and SciTab items. The cloud target was 5 points until 20 November. Before the look at any untouched item, the project owner changed it to 10, after every earlier check on seen items had missed 5. His reason: 5 points would be an unfair comparison against a large cloud model. No result changed because of this; every earlier check still fell short of 10.
+
+How to read the figures. An interval is the range the true score probably lies in. It comes from a bootstrap: the items are drawn again many times and the score is recomputed each time. The chance test p tells how often luck alone would give a score this good or better; a high p means luck alone often scores this well. Macro-F1 is an average of the score of each answer class, so every class counts equally. The coverage rule refuses a main score when more than 5 percent of answers are missing, held back or filled in by the scoring code.
 
 ### Untouched items
 
 | Task | Set | Measure | Result | Interval (95 percent) | Chance test | Note |
 |---|---|---|---|---|---|---|
-| Contradictions (ContraDoc) | 8 documents, 6 groups | score on the set | 0.875 | 0.625 to 1.0 | permutation p 0.249 | not distinguishable from chance |
-| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | none: no headline score | none | none | none | coverage rule not met: 13 of 15 claims answered, the limit is at most 5 percent unanswered |
-| Table claims (SciTab), information only | the 13 answered claims | accuracy | 0.846 | 0.769 to 1.0 | chance p 0.026 | not a headline; small set; read again on the same outputs after a reader fault was fixed; the coverage rule did not change |
-| Negotiation advice | 31 items, 197 proposals | conflict detection | 0.955 | 0.924 to 0.980 | p 0.0001 | above the 0.60 target |
-| Negotiation advice | 31 items, 197 proposals | open point detection | 0.393 | 0.342 to 0.452 | p 0.753 | below the 0.60 target |
-| Negotiation advice | 31 items, 197 proposals | stance matches fate | 0.299 | 0.219 to 0.389 | p 0.938 | below the 0.60 target |
+| Contradictions (ContraDoc) | 8 documents, 6 groups | accuracy (7 of 8 documents right) | 0.875 | 0.625 to 1.0 | permutation p 0.249 | not distinguishable from chance; 2 documents hold a contradiction, 1 was found, no false alarm; answering "no contradiction" every time scores 0.75 on this set |
+| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | none: no main score | none | none | none | coverage rule not reached: 13 of 15 claims answered; at most 5 percent of answers may be missing, held back or filled in by the scoring code |
+| Table claims (SciTab), information only | the 13 answered claims | accuracy | 0.846 | 0.769 to 1.0 | chance p 0.026 | not a main score; small set; read again on the same answers after a fault in the code that reads them was fixed; the coverage rule did not change |
+| Negotiation advice, conflict | 31 synthetic items, 197 proposals | conflict detection | 0.955 | 0.924 to 0.980 | p 0.0001 | above the 0.60 mark |
+| Negotiation advice, code checks | 31 synthetic items, 197 proposals | share of advice pieces that satisfy the code's own checks | 1.0, with 2.5 percent of pieces dropped (the mark allows at most 10 percent) | not given | not given | at its mark of 1.0 |
+| Negotiation advice, open point | 31 synthetic items, 197 proposals | open point detection | 0.393 | 0.342 to 0.452 | p 0.753 | below the 0.60 mark |
+| Negotiation advice, stance | 31 synthetic items, 197 proposals | stance matches fate | 0.299 | 0.219 to 0.389 | p 0.938 | below the 0.60 mark |
+| Negotiation advice, approach | 31 synthetic items, 197 proposals | whom the advice says to approach | none | none | none | refused by the coverage rule: too few answers |
 
-Two further negotiation measures were refused by the coverage rule and have no figure. Of the three negotiation measures above, only conflict detection is above the 0.60 target.
+The 31 negotiation items are synthetic: a program wrote them. They are not taken from real negotiations. A proposal is one bracketed option in an article of a draft text. Its fate is what happened to it in the next round: still open, kept, changed, or removed. Conflict detection asks whether a proposal clashes with the position of the party being advised. Open point detection asks whether a proposal is still open to change or already settled. Stance matches fate asks whether the advice (accept, counter, reject) matches what the parties did next (kept, changed, removed).
 
 ### Seen items
 
-These are figures on items the project had already looked at while building the system, measured before the look at the untouched items. They are development figures and do not show accuracy on unseen documents.
+These are figures on items the project had already looked at while building the system, measured before the look at the untouched items. They are development figures and do not show accuracy on untouched documents.
 
-| Task | Set | Measure | Result | Source |
-|---|---|---|---|---|
-| Table claims (SciTab) | 78 development claims, 13 tables | three-class macro-F1 | 0.598 (interval 0.444 to 0.656, chance p 0.0001) | measured before the look at the untouched items |
-| Contradictions (ContraDoc) | 15 development documents | contradiction F1 | 0.615 (precision 0.667, recall 0.571) | the section "First results (November 2026)" below |
-| Negotiation advice | 18 headline items (179 proposals) of a 24-item development pilot | three-class macro-F1 on conflicts | 0.629 | the same section below |
-| Negotiation advice | the same 18 items | open point detection / stance against outcome | 0.435 / 0.330, both below the 0.60 bar | the same section below |
+| Task | Set | Measure | Result |
+|---|---|---|---|
+| Table claims (SciTab) | 78 seen claims, 13 tables | three-class macro-F1 | 0.598 (interval 0.444 to 0.656, chance p 0.0001) |
+| Contradictions (ContraDoc) | 15 seen documents | accuracy, same scoring rule as the untouched set | 0.533 |
+| Negotiation advice | 18 headline items (179 proposals) of a 24-item development pilot, an earlier version of the system | three-class macro-F1 on conflicts | 0.629 |
+| Negotiation advice | the same 18 items | open point detection / stance matches fate | 0.435 / 0.330, both below the 0.60 mark |
 
-The seen SciTab figure is a three-class macro-F1; the untouched information-only figure is an accuracy on the answered claims, so the two are not directly comparable.
+The seen SciTab figure is a three-class macro-F1; the untouched information-only figure is an accuracy on the answered claims, so the two are not directly comparable. The older ContraDoc and negotiation figures in the section below use other scores or other versions of the system.
 
 ### Comparison with the bare and the cloud model (negotiation, open point and stance)
 
-| Measure | Bare model | Cloud model | System |
-|---|---|---|---|
-| Open point detection | no figure (120 of 197 proposals unanswered) | 0.381 (0.334 to 0.449), 20 items, 132 proposals | 0.393 (0.342 to 0.452), 31 items, 197 proposals |
-| Stance matches fate | no figure (same reason) | 0.295 (0.221 to 0.364) | 0.299 (0.219 to 0.389) |
+| Measure | Bare model | Cloud model (20 items) | System (31 synthetic items, 197 proposals) | System (same 20 items) |
+|---|---|---|---|---|
+| Open point detection | no figure (120 of 197 proposals unanswered; 81 of 132 on the 20 items) | 0.381 (0.334 to 0.449), 132 proposals | 0.393 (0.342 to 0.452) | 0.407 (0.348 to 0.480) |
+| Stance matches fate | no figure (same reason) | 0.295 (0.221 to 0.364) | 0.299 (0.219 to 0.389) | 0.330 (0.244 to 0.435) |
 
-Same written rules and scorer, untouched items, one look; a comparison, not a reading against the target. The cloud and the system overlap on both measures. The cloud figures cover 20 of the 31 items. The bare model's missing answers were checked as a real absence, not a reading fault.
+The cloud model answered all 31 items. By a rule fixed in advance to limit cost, its answers are scored on a set of 20 items. We also scored the system on those same 20 items, from its saved answers. Same written rules and scorer, untouched items, one look: a comparison, not a reading against a target. On the same items the system is slightly higher, but the ranges overlap, so the two are about equal. The bare model had no answer for 81 of the 132 proposals on the 20 items, and for 120 of the 197 over the whole set. More than 5 percent were missing, so it gets no figure. The missing answers were checked as a real absence, not a reading fault.
 
-Note on seen items, from the answers of the 15 November pilot. On 24 seen items, the cloud model (on its own 14-item subset) scored 0.507 on open point detection (interval 0.425 to 0.612, p 0.51) and 0.396 on stance matches fate (interval 0.292 to 0.537, p 0.0001). Both are below 0.60 too. The bare model and the system as it was then got no figure: more than half of their proposals had no answer piece, and the scorer refuses a figure when more than 50 percent are unanswered.
+On two hard measures, open point and stance, on 20 synthetic items, the system and the cloud model we tested are about equal. Even the cloud model we tested is far below 0.60 on them, so the measures are hard. The system's open point and stance figures cannot be told from chance, so being level tells us little yet. On synthetic items, what the parties did next was chosen by a program.
+
+On conflict, Shimmer found clashes well on synthetic items (0.955); we have no baseline for this line yet.
+
+Shimmer answered nearly all proposals (192 of 197), while the bare model left 120 of 197 empty; that is coverage, not accuracy. The frozen alpha code ran its own 502 checks: 485 of 502 checks passed, 6 were skipped, and 11 known failures are carried as known.
+
+The 0.60 mark was set for our own benchmark, with no outside source for a normal level, so, taken together with the chance test results, it needs to be reconsidered. The beta will make the benchmark itself more reasonable and will also review the chance test.
+
+Note on seen items, from the answers of the 15 November pilot. On 24 seen items, the cloud model (on its own 14-item subset) scored 0.507 on open point detection (interval 0.425 to 0.612, p 0.51) and 0.396 on stance matches fate (interval 0.292 to 0.537, p 0.0001). Both are below 0.60 too. The bare model and the system as it was then got no figure: more than half of their proposals had no answer piece.
 
 ## First results (November 2026)
 
@@ -64,7 +78,7 @@ These are first results. They come from development and validation material, muc
 
 The weak point is plain: Shimmer found none of the 12 real conflicts. Conflict-class F1 is 0, in three different methods. We traced the cause from the system's own outputs: the step that asks whether a party's position opposes a proposal never chose "oppose" in 1,453 decisions, because most positions were written before the proposal existed, so the question did not fit. A new question now asks whether the proposal, if adopted, would go against what the position asks for. It is built and tested on fixtures, and will be measured on fresh sets of 24 and 40 items made for it. It has not been measured yet.
 
-**What comes next.** The final test set is read once, after the system meets its written bars on validation items. Until then, every figure here is a development figure.
+**What comes next.** The final test set is read once, after the system reaches its written bars on validation items. Until then, every figure here is a development figure.
 
 ### Sources of the first results
 
@@ -120,7 +134,7 @@ On 4 November 2026 the operator cancelled CUAD and ContractNLI for all further d
 
 This is the README's former "Where Shimmer is now" section as it stood on 18 November 2026, kept for the record; the first results above replace it.
 
-**Version 1.0 is not released yet.** It waits until the negotiation advisor reaches its written bar on the validation items (standing order 102): on the development set its main measure stands at 0.419 against a floor of 0.60. No final test, release or ablation starts before that.
+**Version 1.0 is not released yet.** It waits until the negotiation advisor reaches its written bar on the validation items (standing order 102): on the 31 untouched synthetic items its conflict line is 0.955, but open point detection (0.393) and stance matches fate (0.299) are below the 0.60 mark. No final test, release or ablation starts before that.
 
 **Since 15 November.** The full gate ran green on Lambda on the code pushed on 17 November. A development run on two ContraDoc documents showed that the faster inference engine (vLLM) hands the GPU back before every other model loads: every entry reached its end with no failed call, at one server restart of about two minutes per document. Four launch hazards met during the night runs are fixed, each with its own gate check.
 
