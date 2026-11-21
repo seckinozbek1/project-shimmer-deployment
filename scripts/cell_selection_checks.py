@@ -35,7 +35,12 @@ Each proof is neutralise, fail, restore, pass (scripts/effect_proof.py):
 21. with the table tool request declared (D-811) the fixture judge's one request cites the cells the
     claim turns on, one more reply record (free_text), and the decided "not met" is its finding as with
     the request off; a request citing no cell (NONE) lowers it to a leaning that writes no record
-    (TABLE-AUTHORITY-A `no_cell_cited`, D-715 item 2), a proof run only while the request is declared.
+    (TABLE-AUTHORITY-A `no_cell_cited`, D-715 item 2), a proof run only while the request is declared;
+22. the shipped config reads the cell_claim threshold 0.40 (D-870) and the not-enough-info floor 0.70
+    (D-897), both chosen post hoc on development records (C02, D-901);
+23. in `review` a settled "cannot be settled" below the floor is settled among the other answers, one at
+    or above it stays, a tie among the rest stays as it was, the saved probabilities never change and the
+    row says the floor was applied (D-896).
 """
 import ast
 import contextlib
@@ -627,6 +632,49 @@ def observe_only_flag():
     return [len(seen), calls["not_met"], calls["unsettled"], len(calls["decisions"])]
 
 
+def observe_shipped_values():
+    """C02 (D-901): the shipped config's cell_claim threshold (D-870) and not-enough-info floor (D-897)."""
+    config = cell_selection.load_config()
+    return [cell_selection.threshold_of(config), cell_selection.floor_of(config)]
+
+
+def _floor_case(nei, holds, not_met):
+    import choice_decision
+    answers = [{"label": "holds", "probability": holds}, {"label": "not met", "probability": not_met},
+               {"label": "cannot be settled", "probability": nei}]
+    return choice_decision.settle({"answers": answers, "declared_mass": .95}, .40)
+
+
+def observe_floor():
+    """C02 (D-896, D-897): in `review`, a settled "cannot be settled" below the shipped floor 0.70 is settled
+    among the other answers (to "not met", FLAG, or "holds", CLEAR), one at or above the floor stays, a tie
+    among the rest stays as it was (UNDECIDED), every saved probability is unchanged and the row says the
+    floor was applied; with no floor (None) the decision is the one given."""
+    cases = [_floor_case(.5, .2, .3), _floor_case(.8, .1, .1), _floor_case(.5, .25, .25), _floor_case(.6, .3, .1)]
+    given = [{a["label"]: a["probability"] for a in d["answers"]} for d in cases]
+    answers = iter(cases)
+    units = [{"unit_id": "u%d" % n, "text": TEXT} for n in range(1, 5)]
+    config = cell_selection.load_config()
+    with patched(cell_selection, "threshold_of", lambda c: .40), patched(cell_selection, "finding", lambda *a: None):
+        _, calls = cell_selection.review(units, {"id": "R", "rule": "The crane count differs."}, None,
+                                         lambda user: next(answers), config)
+    rows = calls["decisions"]
+    return {"rows": [(r["decided"], r["settled"], round(r["confidence"], 6), cell_selection.class_of(r, config),
+                      (r.get("not_enough_info_floor") or {}).get("outcome"),
+                      (r.get("not_enough_info_floor") or {}).get("set_aside_probability"),
+                      (r.get("not_enough_info_floor") or {}).get("floor")) for r in rows],
+            "probabilities unchanged": [r["answers"] for r in rows] == given, "not met": calls["not_met"],
+            "no floor": cell_selection.floored(cases[0], config, None) is cases[0]}
+
+
+def expected_floor():
+    return {"rows": [("not met", True, .3, "FLAG", "settled_among_the_rest", .5, .7),
+                     ("cannot be settled", True, .8, "UNDECIDED", None, None, None),
+                     ("cannot be settled", True, .5, "UNDECIDED", "tie", .5, .7),
+                     ("holds", True, .3, "CLEAR", "settled_among_the_rest", .6, .7)],
+            "probabilities unchanged": True, "not met": 1, "no floor": True}
+
+
 def observe_masked():
     """A sensitive run's masker sees the whole document as context, and the backend what it returned."""
     seen = []
@@ -753,6 +801,11 @@ def passage_pairs_module():
     return passage_pairs
 
 
+def choice_decision_module():
+    import choice_decision
+    return choice_decision
+
+
 def convention_parser_module():
     import convention_parser
     return convention_parser
@@ -847,6 +900,10 @@ def run_checks():
          lambda: with_source(cell_selection, "review", 'if cls != "FLAG":', "if False:")),
         ("no threshold still asks and saves", observe_no_threshold, expected_no_threshold,
          lambda: with_source(cell_selection, "review", "if threshold_of(config) is None:", "if False:")),
+        ("the shipped cell threshold and floor", observe_shipped_values, lambda: [0.40, 0.70],
+         lambda: patched(choice_decision_module(), "threshold", lambda family, path=None: None)),
+        ("the not-enough-info floor", observe_floor, expected_floor,
+         lambda: with_source(cell_selection, "review", "decision = floored(decision, config, floor)", "pass")),
         ("failed and raised calls", observe_failures, expected_failures,
          lambda: patched(cell_selection, "CAUGHT", ())),
         ("the run is not called complete", observe_failures, expected_failures,

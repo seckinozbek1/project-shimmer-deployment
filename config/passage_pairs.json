@@ -1,8 +1,8 @@
 {
   "schema": "passage-pairs-v1",
   "note": "Find then judge (P2 (a), D-S38): the one question a model is asked of two passages of a document. Held equal to the measured prompt (benchmark/baselines/pair_judge_prompt.json) by check 324.",
-  "form": "reply",
-  "form_note": "reply: the model answers in JSON, read by read_reply. decision: the block below, read from the model's own probabilities with no text (D-S41, local backends only). Adopting decision is a recorded decision; until semantic_thresholds.json holds this family's measured threshold every pair is asked all the same, its probabilities saved and nothing decided (Seckin, 19 November 01:11-01:22).",
+  "form": "decision",
+  "form_note": "reply: the model answers in JSON, read by read_reply. decision: the block below, read from the model's own probabilities with no text (D-S41, local backends only). Adopted as the shipped form by D-887 (root cause D-885); semantic_thresholds.json holds no passage_pair value, so every pair is asked in both orders, its probabilities saved and nothing decided until a threshold is applied to the saved records.",
   "decision": {
     "template": "Two passages from one document follow.\n\nPASSAGE A\n{passage_a}\n\nPASSAGE B\n{passage_b}\n\nDo the two passages contradict each other, so that both cannot be true of the same thing at the same time? Passages about different things, different times or different people do not contradict each other.\n\nAnswer with one word.\nYes: they contradict each other.\nNo: they do not.\nUnclear: the two passages do not let you decide.",
     "threshold_family": "passage_pair",

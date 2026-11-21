@@ -626,7 +626,15 @@ def expected_failed_order():
 
 
 SECOND_RULE = dict(COMPARE_RULE, id="CONV-010", category="conv-h10", rule="No two passages may disagree about one thing.")
-REAL_PREPARE, REAL_REVIEW, REAL_LOAD = passage_pairs.prepare, passage_pairs.review, passage_pairs.load_config
+REAL_PREPARE, REAL_REVIEW, _FILE_LOAD = passage_pairs.prepare, passage_pairs.review, passage_pairs.load_config
+
+
+def REAL_LOAD():
+    """The shipped config with the reply form pinned: these proofs exercise the reply path whatever form
+    config/passage_pairs.json ships (D-887 ships decision); run_checks patches load_config with it."""
+    return dict(_FILE_LOAD(), form=passage_pairs.REPLY_FORM)
+
+
 REAL_RECORD = passage_pairs.record
 
 
@@ -1437,10 +1445,11 @@ def run_checks():
          lambda: patched(pair_judge, "verdict", lambda row, readable, b1, python, bar=None: {"result": "keep"})),
     ]
     results = []
-    for name, observe, expected, neutralise in proofs:
-        results.append(prove_effect(name=name, validate=lambda: pair_judge.CONFIG_PATH.is_file(), observe=observe,
-                                    check=lambda: ("PASS" if observe() == expected() else "FAIL", name),
-                                    neutralise=neutralise))
+    with patched(passage_pairs, "load_config", REAL_LOAD):
+        for name, observe, expected, neutralise in proofs:
+            results.append(prove_effect(name=name, validate=lambda: pair_judge.CONFIG_PATH.is_file(), observe=observe,
+                                        check=lambda: ("PASS" if observe() == expected() else "FAIL", name),
+                                        neutralise=neutralise))
     return "PASS", "%d proofs, each neutralise, fail, restore, pass: passages keep their place, pairs share rare words, a flag needs both orders and the marked passage, a tampered pair prompt is refused, the verdict needs every condition; the product path is masked, holds each quote to its own unit (a second unit only from this step) and to the judged refusals, reads a reply as the replay does, survives a failed or raised call, costs one encoding and no second call, is declared one way and leaves run_task's audit trail" % len(results)
 
 

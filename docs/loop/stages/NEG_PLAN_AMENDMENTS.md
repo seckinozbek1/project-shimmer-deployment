@@ -77,3 +77,13 @@ limit stays two for every other set. Built in tools/score_neg_advisor.py: `EXTRA
 its digest, `max_openings` gives each set its limit to `refuse`, and `opening_claim_status` makes A1 an indicator on
 any opening beyond two whatever its power record says. Proofs: neg_advisor_checks test_11 (k=3 refused on any other
 set, k=4 on the pilot, the set the ledger's first neg-advisor line names) and test_29 (the third opening's alpha).
+
+## AM-4 (D-878, 21 November 2026, 03:52 +0300): an audit-unsupported piece kept and marked
+Plan section 5 item 2 withheld every piece the system's audit called unsupported, and the piece scored no_answer.
+On the round 3 pilot the audit withheld 43 of 152 pieces (28 percent), so the coverage rule (D-871: over 5 percent
+withheld refuses the figure) refuses M1, M10, M4 and M5 as scored. From the next round on, on items not yet seen,
+the system's figure reads each such piece as the system wrote it, marked "audit: unsupported" (HONEST-OUTPUT-A), and
+the withheld reading is reported beside it from the same replies; a piece a system-mode check refuses stays withheld.
+Switch: config/neg_advisor_dev.json audit_unsupported_kept, false until set true under a decision id before that
+round's deciding read. Bar line 3 (withheld share at most 0.30) is reported unchanged. Fixed before any figure of that
+round; the pilot figures that showed the loss (D-877) are same-item readings and labelled so.

@@ -1146,9 +1146,15 @@ TRADE_READ, TRADE_SLOTS = "trade_read", ("{give}", "{get}", "{trade_round}", "{r
 OPTIONAL_DEFAULTS = {"fate_forecast": False, "conflict_question": STANCE_QUESTION, "quote_grounding": False,
                      "auditor_band": None, "conditional_accept": None, "limit_read": False,
                      "room_fate": False, "changes_id_echo": False, "party_frame": False, "reason_field": False,
-                     "trade_read": False, "mandate_split": False, "room_unanchored": False}
+                     "trade_read": False, "mandate_split": False, "room_unanchored": False,
+                     "open_stance": False}
 # Round 3: the one stance a second room fate answer may set (a proposal still open and one reworded both move).
 ROOM_FATE_SHARED = "counter"
+# Round 4 (D-888): with `open_stance` true the room fate answer named by `open_stance_answer` carries its own stance
+# kind, `open`, on the piece (`stance_kind`, marked inferred). The piece's `stance` stays counter (the conflict,
+# wording, red-line, audit and judge readers are unchanged); only the M4 comparison reads the kind, so a still-open
+# answer is compared with the key's open fate and not with kept or removed.
+OPEN_STANCE = "open"
 
 
 def _template(block, key, need=(), never=("{changes}",)):
@@ -1163,11 +1169,13 @@ def optional_switches(block):
     """The declared optional switches of the stepwise block, each checked, every one off when not declared."""
     got = {k: (v if block.get(k) is None else block[k]) for k, v in OPTIONAL_DEFAULTS.items()}
     for k in ("fate_forecast", "quote_grounding", "limit_read", "room_fate", "changes_id_echo", "party_frame",
-              "reason_field", "trade_read", "mandate_split", "room_unanchored"):
+              "reason_field", "trade_read", "mandate_split", "room_unanchored", "open_stance"):
         if type(got[k]) is not bool:
             raise ValueError("advice.methods.stepwise.%s is true or false" % k)
     if got["room_unanchored"] and not got["room_fate"]:
         raise ValueError("room_unanchored changes the room fate question: it needs room_fate")
+    if got["open_stance"] and not got["room_fate"]:
+        raise ValueError("open_stance reads the room fate answer: it needs room_fate")
     if got["fate_forecast"]:
         _template(block, "fate", ("{proposal}", "{positions}"))
         answers = block.get("fate_answers")
@@ -1194,7 +1202,11 @@ def optional_switches(block):
     if got["room_fate"]:
         if got["fate_forecast"]:
             raise ValueError("room_fate and fate_forecast each ask a proposal's fate: declare one")
-        room_fate_answers(block)
+        labels, sets = room_fate_answers(block)
+        if got["open_stance"] and (block.get("open_stance_answer") not in labels
+                                   or sets.get(block.get("open_stance_answer")) != ROOM_FATE_SHARED):
+            raise ValueError("open_stance names one declared room fate answer that sets %s (open_stance_answer)"
+                             % ROOM_FATE_SHARED)
     if got["party_frame"]:
         _template(block, "party_frame_text", PARTY_FRAME_SLOTS)
         if not isinstance(block.get("party_frame_none"), str) or not block["party_frame_none"].strip():
@@ -1858,6 +1870,8 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                 if why:
                     return None
                 piece[ROOM_FATE] = {"answered": got, "probabilities": probs, "basis": INFERRED}
+                if opt["open_stance"] and got == block["open_stance_answer"]:
+                    piece["stance_kind"] = {"kind": OPEN_STANCE, "basis": INFERRED}
                 return sets[got]
 
             def reason_step():

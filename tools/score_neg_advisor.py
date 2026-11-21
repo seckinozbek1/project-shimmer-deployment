@@ -346,6 +346,10 @@ def applicable(positions, party, article, number):
 # `article_proposal_link: true`. No stance, quote, word, label or key is read: every article-level position is
 # treated alike, whatever its stance (the opposing ones are among them).
 ARTICLE_LINK_KEY = "article_proposal_link"
+# D-878 (AM-4): the development config's switch keeping audit-unsupported pieces, marked, instead of withheld.
+AUDIT_KEEP_KEY = "audit_unsupported_kept"
+# D-888 (round 4): the development config's switch for the still-open stance in M4 (false until the lead sets it).
+OPEN_STANCE_KEY = "open_stance_m4"
 LINK_REFUSALS = ("no_article", "article_not_in_excerpt", "no_proposal", "several_proposals")
 
 
@@ -767,9 +771,12 @@ def trade_checks(item, reply):
     return valid, len(reply["trades"]), carried, len(on_record)
 
 
-def withhold(item, reply, audit):
+def withhold(item, reply, audit, marked=False):
     """The system's kept reply: a piece the audit calls unsupported, or a system-mode check refuses, is
-    withheld (it scores no_answer); its trail is returned beside it."""
+    withheld (it scores no_answer); its trail is returned beside it. With `marked` (D-878, AM-4: the
+    development config's audit_unsupported_kept), a piece the audit alone calls unsupported stays as the
+    system wrote it, marked `audit: unsupported` (HONEST-OUTPUT-A) and counted in the trail as
+    `audit_marked`; a piece a check refuses is withheld either way."""
     if reply is None:
         return None, {"given": 0, "audit_unsupported": 0, "audit_missing": 0, **{c: 0 for c in CHECKS}}
     if item.get("game"):
@@ -796,6 +803,9 @@ def withhold(item, reply, audit):
             trail[c] += 1
         if said != WITHHELD_AUDIT and not failed:
             kept[pid] = piece
+        elif marked and said == WITHHELD_AUDIT and not failed:
+            kept[pid] = dict(piece, audit=WITHHELD_AUDIT)
+            trail["audit_marked"] = trail.get("audit_marked", 0) + 1
     out = dict(reply, proposals=kept)
     trail["kept"] = len(kept) - python_kept
     return out, trail
@@ -1223,15 +1233,21 @@ def open_points_report(per_arm, keys, figures, drops, *, k=1, resamples=None):
 # section 6.1 and 6.4: the rows of each figure, per item
 
 
-def item_parts(item, key, reply, *, given=None):
+M4_FATES = ("kept", "changed", "removed")
+
+
+def item_parts(item, key, reply, *, given=None, open_stance=None):
     """{figure: Counter} of one item for one arm. `given` is the arm's reply before any withholding (for
-    M8 on what it gave); None means the reply is what it gave."""
+    M8 on what it gave); None means the reply is what it gave. `open_stance` (D-888): None reads
+    config/neg_advisor_dev.json at call time; true compares a piece with the still-open stance kind with the
+    key's open fate in M4 (and scores the open fate rows), false is rounds 2 and 3 exactly."""
     parts = {f: Counter() for f in ("M1", "M1s", "M1m", "M2", "M3", "M4", "M4f", "M5", "M5a", "M5n", "M6", "M7", "M8",
                                     "M8g", "G", "RL", "M10", "M10m")}
     if item.get("game"):
         parts["G"] = game_part(key["game"], item["persona"]["id"], reply)
         return parts
     props = (reply or {}).get("proposals") or {}
+    open_on = open_stance_on(dev_config()) if open_stance is None else open_stance
     parts["RL"] = red_line_part(item, key, reply)
     parts["M10"], parts["M10m"] = open_point_part(key, reply, given)
     place = {p["id"]: (a["id"], n) for a in item["articles"] for n, p in enumerate(a["proposals"], 1)}
@@ -1244,11 +1260,16 @@ def item_parts(item, key, reply, *, given=None):
         mine = applicable(item["positions"], item["persona"]["id"], *place[pid]) if pid in place else []
         parts["M1m" if mine else "M1s"][(row["conflict"], piece.get("conflict", NO_ANSWER))] += 1
         stance = piece.get("stance")
-        if row["fate"] in ("kept", "changed", "removed"):
-            hit = (stance, row["fate"]) in (("accept", "kept"), ("counter", "changed"), ("reject", "removed"))
+        if open_on and (piece.get("stance_kind") or {}).get("kind") == na.OPEN_STANCE:
+            # Round 4 (D-888): the still-open answer has its own stance; it compares with the key's open fate alone.
+            stance = na.OPEN_STANCE
+        if row["fate"] in M4_FATES or (open_on and row["fate"] in OPEN_FATES):
+            hit = (stance, row["fate"]) in (("accept", "kept"), ("counter", "changed"), ("reject", "removed"),
+                                            (("open", "open") if open_on else None))
             parts["M4"]["hit" if hit else "miss"] += 1
             # D-712: M4 by the key's fate, so a constant stance cannot pass on a set where one fate dominates.
             parts["M4f"][(row["fate"], "hit" if hit else "miss")] += 1
+        stance = piece.get("stance")   # M5 and M6 read the piece's own stance: an open answer is a counter there
         if row["conflict"] in ("conflict", "no_conflict"):
             hit = (row["conflict"] == "no_conflict" and stance == "accept") or \
                   (row["conflict"] == "conflict" and stance in ("reject", "counter"))
@@ -1734,7 +1755,7 @@ def cell_dimensions(items, keys, structures):
 
 
 def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
-           python_step=True, article_link=None):
+           python_step=True, article_link=None, audit_marked=None):
     """The report of a set: the real items alone give every headline figure, cell, claim and the bar; the
     synthetic items, when the set holds any, are reported apart under `synthetic` by the same rules, never
     pooled with the real ones, their claims indicators and their bar never the bar (D-706 item 3, D-707).
@@ -1745,7 +1766,10 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
     sub = None if subset is None else set(subset)
     if article_link is None:
         article_link = article_link_on(dev_config())
-    kw = dict(k=k, resamples=resamples, validation=validation, python_step=python_step, article_link=article_link)
+    if audit_marked is None:
+        audit_marked = audit_marked_on(dev_config())
+    kw = dict(k=k, resamples=resamples, validation=validation, python_step=python_step, article_link=article_link,
+              audit_marked=audit_marked)
     if real:
         out = _report_on(items, real, arms, judge=judge, power=power,
                          subset=None if sub is None else sorted(sub & set(real)), **kw)
@@ -1770,7 +1794,7 @@ def report(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, su
 
 
 def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None, subset=None, validation=None,
-               python_step=True, article_link=False):
+               python_step=True, article_link=False, audit_marked=False):
     """The aggregates of one group of items (the real ones, or apart the synthetic ones): per arm every figure with its interval, per configuration and round count M1 to M3
     with n (a cell under 5 items its count alone), the system's audit trail, the trades, the games and the
     claims. The cloud reference is read on the cloud subset alone (D-606), with B1 and the system on the
@@ -1796,7 +1820,7 @@ def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None
                     # D-758: the composition step alone reads the linked positions; scoring keeps the item.
                     reply, computed = system_python(linked_item(items[i], article_link, link_counts), reply)
                     python_counts.update(computed)
-                reply, trail = withhold(items[i], reply, row.get("audit"))
+                reply, trail = withhold(items[i], reply, row.get("audit"), marked=audit_marked)
                 trails.update(trail)
                 withheld[("system", i)] += withheld_counters(items[i], keys[i], given, reply)
             parts[i] = item_parts(items[i], keys[i], reply, given=given)
@@ -1831,6 +1855,8 @@ def _report_on(items, keys, arms, *, k=1, judge=None, power=None, resamples=None
            "system_python": dict(python_counts) if python_step else "off",
            # D-758: the article-to-proposal link of the composition step, each link and refusal counted.
            "article_link": dict(link_counts) if article_link and python_step else "off",
+           # D-878 (AM-4): audit-unsupported pieces kept and marked, or withheld as before.
+           "audit_unsupported": "kept_marked" if audit_marked else "withheld",
            "a1_status": opening_claim_status(power, k), "metric": "our metric, no published benchmark",
            "validation": {f: validation.get(f) for f in ("mapping", "checker", "grade", "fields")},
            # AM-2 (D-665): red lines declared and held, each with its source.
@@ -2124,7 +2150,8 @@ def judge_prompts(set_dir, arms, out):
             row = rows.get(i) or {}
             reply = row.get("reply")
             if arm == "system":
-                reply, _trail = withhold(items[i], reply, row.get("audit"))
+                reply, _trail = withhold(items[i], reply, row.get("audit"),
+                                         marked=audit_marked_on(dev_config()))
             replies[arm][i] = reply
     entries = na.judge_entries(items, keys, replies, na.mandate_text)
     return na.build_judge(entries, outside_repository(out))
@@ -2559,12 +2586,26 @@ def dev_config(path=None):
         raise ValueError("the conflict margin threshold is null or a number from -1 to 1")
     if type(value.get(ARTICLE_LINK_KEY, False)) is not bool:
         raise ValueError("%s is true or false (D-758)" % ARTICLE_LINK_KEY)
+    if type(value.get(AUDIT_KEEP_KEY, False)) is not bool:
+        raise ValueError("%s is true or false (D-878)" % AUDIT_KEEP_KEY)
+    if type(value.get(OPEN_STANCE_KEY, False)) is not bool:
+        raise ValueError("%s is true or false (D-888)" % OPEN_STANCE_KEY)
     return value
+
+
+def open_stance_on(cfg):
+    """D-888: True only when the development config declares the still-open stance read in M4."""
+    return cfg.get(OPEN_STANCE_KEY, False) is True
 
 
 def article_link_on(cfg):
     """D-758: True only when the development config declares the article-to-proposal link on."""
     return cfg.get(ARTICLE_LINK_KEY, False) is True
+
+
+def audit_marked_on(cfg):
+    """D-878 (AM-4): True only when the development config declares audit-unsupported pieces kept, marked."""
+    return cfg.get(AUDIT_KEEP_KEY, False) is True
 
 
 def _system_reader(answers):

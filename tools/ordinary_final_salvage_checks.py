@@ -1,9 +1,10 @@
 """Salvage, then stop (D-S84): the reaper's two triggers and the controller's answer.
 
 When Claude stops while loop instances run, the reaper (a scheduled task that needs no Claude)
-reads two triggers on every run: seven-day usage at or above 98 percent (the standing value since 20 November 2026 19:37 +0300, D-857;
-before it the dated history: 98 until the reset of 18 November 2026, D-529, then 95) in the status line's
-file, and no lead heartbeat for 90 minutes while a loop instance runs. Either opens a salvage
+reads two triggers on every run: seven-day usage at or above 100 percent (the standing value since 21 November 2026 13:00 +0300, D-915;
+before it the dated history: 98 until the reset of 18 November 2026, D-529, then 95, then 98 from 20 November 2026 19:37 +0300, D-857)
+in the status line's file, and no lead heartbeat for 90 minutes while a loop instance runs (D-915: an off-by-default
+switch in config/reaper_silence.json leaves a chain-launched instance out of the silence trigger). Either opens a salvage
 episode: a request for every running loop instance, which its controller answers by giving the
 phase in hand five minutes, stopping the workload, packing and copying the evidence, terminating
 the instance and writing a done file. An instance with no answer ten minutes after its request is
@@ -57,8 +58,8 @@ class SalvageChecks:
         write(instance_reaper.LOOP_STATUS, dict(time_utc=stamp, seven_day_used_percentage=percent))
 
     def test_salvage_usage_stop_acts_only_on_a_live_reading(self):
-        """D-583: the reading is taken again at the moment of decision. A fresh 98 stops (the standing
-        value, D-857), a stale 98 does not stop and is reported as usage unknown with its age, a fresh 97
+        """D-583: the reading is taken again at the moment of decision. A fresh 100 stops (the standing
+        value, D-915), a stale 100 does not stop and is reported as usage unknown with its age, a fresh 99
         does not stop, and an unreadable figure stops nothing. The silence trigger is untouched."""
         since = instance_reaper.USAGE_STOP_SINCE['until_epoch']
         fresh = DECLARED_FRESH_SECONDS   # the decision's measured bound, held equal to the reaper's constant
@@ -68,29 +69,29 @@ class SalvageChecks:
         beat_file.write_text('beat', encoding='utf8')
         os.utime(beat_file, (now.timestamp(), now.timestamp()))
         beat = [beat_file]
-        self.usage(98, at=now - timedelta(seconds=30))
+        self.usage(100, at=now - timedelta(seconds=30))
         trigger = instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat)
         self.assertEqual((trigger['trigger'], trigger['seven_day_used_percentage'], trigger['reading_age_seconds']),
-                         ('usage', 98.0, 30.0))
-        self.usage(98, at=now - timedelta(seconds=fresh + 60))
+                         ('usage', 100.0, 30.0))
+        self.usage(100, at=now - timedelta(seconds=fresh + 60))
         reading = instance_reaper.usage_reading(None, now)
-        self.assertEqual((reading['state'], reading['value'], reading['age_seconds']), ('stale', 98.0, fresh + 60.0))
+        self.assertEqual((reading['state'], reading['value'], reading['age_seconds']), ('stale', 100.0, fresh + 60.0))
         self.assertEqual(reading['note'], 'usage unknown, stale by %d s' % (fresh + 60))
         self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
-        self.usage(97, at=now - timedelta(seconds=10))
+        self.usage(99, at=now - timedelta(seconds=10))
         self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
         write(instance_reaper.LOOP_STATUS, dict(time_utc=(now - timedelta(seconds=10)).isoformat()))
         self.assertEqual(instance_reaper.usage_reading(None, now)['note'], 'usage unknown, unreadable')
         self.assertIsNone(instance_reaper.salvage_trigger(now, ['x'], heartbeats=beat))
         # One second past the bound is stale; at the bound it is fresh.
-        self.usage(98, at=now - timedelta(seconds=fresh))
+        self.usage(100, at=now - timedelta(seconds=fresh))
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'fresh')
-        self.usage(98, at=now - timedelta(seconds=fresh + 1))
+        self.usage(100, at=now - timedelta(seconds=fresh + 1))
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'stale')
         # A reading written a moment after the clock read (small negative age) is fresh; far ahead is stale.
-        self.usage(98, at=now + timedelta(seconds=1))
+        self.usage(100, at=now + timedelta(seconds=1))
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'fresh')
-        self.usage(98, at=now + timedelta(seconds=instance_reaper.USAGE_CLOCK_SKEW_SECONDS + 1))
+        self.usage(100, at=now + timedelta(seconds=instance_reaper.USAGE_CLOCK_SKEW_SECONDS + 1))
         self.assertEqual(instance_reaper.usage_reading(None, now)['state'], 'stale')
 
     def test_salvage_usage_trigger_requests_every_instance_then_reports(self):
@@ -145,16 +146,19 @@ class SalvageChecks:
         self.assertIsNone(instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=26))['salvage'])
 
     def test_salvage_usage_threshold_follows_its_dated_history(self):
-        """D-529 and D-857: one function, usage_stop_percent(now), is every reader's threshold. Before
-        the reset instant (18 November 2026, 11:00 +03:00, epoch 1794988800) 97.9 does not trigger and
-        98 does; from that instant 95 triggers and 94.9 does not; from 20 November 2026 19:37 +0300
-        (epoch 1795192620, G-20261120-1937) the standing value is 98: 97.9 does not trigger and 98
-        does, at the boundary instant and after it; one second before it 95 still holds. The status and
-        the trigger name the threshold in force and why."""
-        d529, d857 = (entry['until_epoch'] for entry in instance_reaper.USAGE_STOP_HISTORY)
-        self.assertEqual((d529, d857), (1794988800, 1795192620))
-        self.assertEqual(instance_reaper.USAGE_STOP_SINCE['until_epoch'], d857)
-        self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 98)
+        """D-529, D-857 and D-915: one function, usage_stop_percent(now), is every reader's threshold.
+        Before the reset instant (18 November 2026, 11:00 +03:00, epoch 1794988800) 97.9 does not trigger
+        and 98 does; from that instant 95 triggers and 94.9 does not; from 20 November 2026 19:37 +0300
+        (epoch 1795192620, G-20261120-1937) the value is 98: 97.9 does not trigger and 98 does, at the
+        boundary instant and until the next; from 21 November 2026 13:00 +0300 (epoch 1795255200,
+        G-20261121-1300 / D-915) the standing value is 100: 99.9 does not trigger and 100 does, at the
+        boundary instant and after it; one second before it 98 still holds. The status and the trigger
+        name the threshold in force and why."""
+        d529, d857, d915 = (entry['until_epoch'] for entry in instance_reaper.USAGE_STOP_HISTORY)
+        self.assertEqual((d529, d857, d915), (1794988800, 1795192620, 1795255200))
+        self.assertEqual(d915, int(datetime(2026, 11, 21, 13, 0, tzinfo=timezone(timedelta(hours=3))).timestamp()))
+        self.assertEqual(instance_reaper.USAGE_STOP_SINCE['until_epoch'], d915)
+        self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 100)
         utc = lambda epoch: datetime.fromtimestamp(epoch, timezone.utc)
         fires = lambda percent, epoch: (self.usage(percent, at=epoch), (instance_reaper.salvage_trigger(utc(epoch), ['x']) or {}).get('trigger') == 'usage')[1]
         # D-529: 98 before the reset.
@@ -169,24 +173,36 @@ class SalvageChecks:
         self.assertFalse(fires(94.9, d529 + 1))
         self.assertTrue(fires(97.9, d857 - 1))
         self.assertEqual(instance_reaper.usage_stop_percent(utc(d857 - 1)), 95)
-        # D-857: the boundary instant is already the standing 98, and it stays.
+        # D-857: the boundary instant is already 98, until the D-915 instant.
         self.assertEqual(instance_reaper.usage_stop_percent(utc(d857)), 98)
         self.assertEqual(instance_reaper.usage_stop_percent(d857), 98)   # an epoch is read too
         self.assertFalse(fires(97.9, d857))
         self.assertTrue(fires(98, d857))
-        self.assertFalse(fires(97.9, d857 + 86400))
-        self.assertTrue(fires(98, d857 + 7 * 86400))
-        self.usage(98.5, at=d857 + 5)
-        trigger = instance_reaper.salvage_trigger(utc(d857 + 5), ['x'])
-        standing = '98 (the standing value since epoch 1795192620, G-20261120-1937 / D-857)'
-        self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (98, standing))
+        self.assertFalse(fires(97.9, d857 + 3600))
+        self.assertTrue(fires(98, d915 - 1))
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d915 - 1)), 98)
+        # D-915: the boundary instant is already the standing 100, and it stays.
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d915)), 100)
+        self.assertEqual(instance_reaper.usage_stop_percent(d915), 100)
+        self.assertFalse(fires(99.9, d915))
+        self.assertFalse(fires(98, d915))
+        self.assertTrue(fires(100, d915))
+        self.assertFalse(fires(99.9, d915 + 86400))
+        self.assertTrue(fires(100, d915 + 7 * 86400))
+        self.usage(100.5, at=d915 + 5)
+        trigger = instance_reaper.salvage_trigger(utc(d915 + 5), ['x'])
+        standing = '100 (the standing value since epoch 1795255200, G-20261121-1300 / D-915)'
+        self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (100, standing))
         self.assertIn('stop at ' + standing, instance_reaper.trigger_words(trigger))
         self.usage(10)
+        self.assertEqual(instance_reaper.usage_stop_basis(utc(d915 - 3600)),
+                         '98 (in force until epoch 1795255200, 98 until 21 November 2026 13:00 +0300, '
+                         'G-20261121-1300 / D-915; 100 is the standing value)')
         self.assertEqual(instance_reaper.usage_stop_basis(utc(d857 - 3600)),
                          '95 (in force until epoch 1795192620, 95 until 20 November 2026 19:37 +0300, '
-                         'G-20261120-1937 / D-857; 98 is the standing value)')
+                         'G-20261120-1937 / D-857; 100 is the standing value)')
         self.assertEqual(instance_reaper.usage_stop_basis(utc(d529 - 3600)),
-                         '98 (in force until epoch 1794988800, D-529, Seckin 14:16, 12 November 2026; 98 is the standing value)')
+                         '98 (in force until epoch 1794988800, D-529, Seckin 14:16, 12 November 2026; 100 is the standing value)')
 
     def test_salvage_usage_stop_reads_only_the_overall_weekly_figure(self):
         """D-534: a high per-model figure in the status file beside a low seven_day_used_percentage
@@ -257,6 +273,101 @@ class SalvageChecks:
         self.assertEqual(request['trigger'], 'lead_silent')
         self.assertEqual(read(instance_reaper.SALVAGE_DIR / 'episode.json')['trigger']['silent_minutes'], 91)
 
+    def silence_case(self, folder, names, minutes_old=100, deadline_minutes=600):
+        """D-915: a mock provider with one loop instance per name ('chain' in the name: made by the launch chain,
+        else by hand), each with a purpose, a heartbeat 91.5 minutes old, usage 50, and a chain trace holding a
+        launch_started line for each chain-launched purpose 80 s before its launch request."""
+        now = instance_reaper.utc_now()
+        start = now - timedelta(minutes=minutes_old)
+        launches, trace = [], []
+        for n, name in enumerate(names):
+            purpose = 'dev-fix-%d' % n
+            launches.append(dict(event='launch', instance_id=format(n + 1, '032x'), instance_name=name, purpose=purpose,
+                                 price_usd_per_hour=1.29, cap_usd=20.0, launch_requested_utc=start.isoformat(),
+                                 deadline_utc=(start + timedelta(minutes=deadline_minutes)).isoformat()))
+            if 'chain' in name:
+                trace.append(dict(time=(start - timedelta(seconds=80)).isoformat(), mechanism='launch_chain',
+                                  result='launch_started', folder='FIXTURE', step='D%d' % n, kind='ledger', purpose=purpose))
+        ledger, state, provider = self.two_loop_instances(folder, launches)
+        trace_file = self.root / folder / 'mechanism_trace.jsonl'
+        trace_file.write_text(''.join(json.dumps(x) + '\n' for x in trace), encoding='utf8')
+        self.usage(50, at=now)
+        os.utime(instance_reaper.HEARTBEATS[0], (time.time() - 91.5 * 60,) * 2)
+        return now, ledger, provider, trace_file
+
+    def silence_reap(self, folder, names, switch, **kwargs):
+        config = self.root / folder / 'reaper_silence.json'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        if switch is not None:
+            config.write_text(json.dumps(dict(exempt_chain_launches=switch)), encoding='utf8')
+        now, ledger, provider, trace_file = self.silence_case(folder, names, **kwargs)
+        with patch.object(instance_reaper, 'SILENCE_CONFIG', config), patch.object(instance_reaper, 'CHAIN_TRACE', trace_file), \
+                patch.object(instance_reaper, 'SALVAGE_DIR', self.root / folder / 'salvage'):
+            status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+            requested = {n: (instance_reaper.salvage_request(n) or {}).get('trigger') for n in names}
+        return status, requested
+
+    def test_silence_switch_off_salvages_a_chain_launched_instance_as_before(self):
+        """D-915: with exempt_chain_launches false, or the file missing or unreadable, no heartbeat for 91.5
+        minutes salvages a chain-launched instance (trigger lead_silent) exactly as before; the committed config
+        holds false."""
+        committed = json.loads((ROOT / 'config' / 'reaper_silence.json').read_text(encoding='utf8'))
+        self.assertIs(committed['exempt_chain_launches'], False)
+        for number, switch in enumerate((False, None, 'unreadable', 'yes')):
+            folder = 'silence_off_%d' % number
+            if switch == 'unreadable':
+                (self.root / folder).mkdir(parents=True, exist_ok=True)
+                (self.root / folder / 'reaper_silence.json').write_text('{not json', encoding='utf8')
+                switch = None
+            elif switch == 'yes':
+                switch = 'yes'   # only a literal true counts
+            status, requested = self.silence_reap(folder, ['shimmer-loop-chain'], switch)
+            self.assertEqual(status['salvage']['trigger'], 'lead_silent')
+            self.assertEqual(requested, {'shimmer-loop-chain': 'lead_silent'})
+            self.assertEqual(status['terminated'], [])
+
+    def test_silence_switch_on_leaves_a_chain_launched_instance_out_of_the_silence_trigger(self):
+        """D-915: with the switch true a chain-launched instance is not salvaged for silence (no episode, no
+        request), but is still ended at its deadline; the usage trigger still takes it; and when a hand-launched
+        instance runs beside it, the silence episode takes the hand-launched one only."""
+        status, requested = self.silence_reap('silence_on_alone', ['shimmer-loop-chain'], True)
+        self.assertIsNone(status['salvage'])
+        self.assertEqual(requested, {'shimmer-loop-chain': None})
+        self.assertEqual(status['terminated'], [])
+        # Its own deadline termination stays.
+        status, requested = self.silence_reap('silence_on_deadline', ['shimmer-loop-chain'], True, deadline_minutes=60)
+        self.assertEqual(status['terminated'], [dict(instance_name='shimmer-loop-chain', reason='deadline_passed')])
+        self.assertIsNone(status['salvage'])
+        # The usage trigger stays.
+        config = self.root / 'silence_on_usage' / 'reaper_silence.json'
+        (self.root / 'silence_on_usage').mkdir(parents=True, exist_ok=True)
+        config.write_text(json.dumps(dict(exempt_chain_launches=True)), encoding='utf8')
+        now, ledger, provider, trace_file = self.silence_case('silence_on_usage', ['shimmer-loop-chain'])
+        self.usage(100, at=now)
+        with patch.object(instance_reaper, 'SILENCE_CONFIG', config), patch.object(instance_reaper, 'CHAIN_TRACE', trace_file), \
+                patch.object(instance_reaper, 'SALVAGE_DIR', self.root / 'silence_on_usage' / 'salvage'):
+            status = instance_reaper.reap(provider, [ledger], ledger, now=now)
+            self.assertEqual(status['salvage']['trigger'], 'usage')
+            self.assertEqual(instance_reaper.salvage_request('shimmer-loop-chain')['trigger'], 'usage')
+        # Beside a hand-launched instance: only that one is taken by the silence episode.
+        status, requested = self.silence_reap('silence_on_mixed', ['shimmer-loop-chain', 'shimmer-loop-hand'], True)
+        self.assertEqual(status['salvage']['trigger'], 'lead_silent')
+        self.assertEqual(requested, {'shimmer-loop-chain': None, 'shimmer-loop-hand': 'lead_silent'})
+        self.assertEqual(sorted(status['salvage']['states']), ['shimmer-loop-hand'])
+
+    def test_silence_switch_on_still_salvages_a_hand_launched_instance(self):
+        """D-915: with the switch true, a hand-launched instance (no chain start line for its purpose) is
+        salvaged for silence as before; a chain start line made long before its launch does not count."""
+        status, requested = self.silence_reap('silence_hand', ['shimmer-loop-hand'], True)
+        self.assertEqual(status['salvage']['trigger'], 'lead_silent')
+        self.assertEqual(requested, {'shimmer-loop-hand': 'lead_silent'})
+        started = [('dev-fix-0', datetime(2026, 11, 21, 8, 0, tzinfo=timezone.utc))]
+        rec = dict(purpose='dev-fix-0', launch_requested_utc='2026-11-21T08:01:20+00:00')
+        self.assertTrue(instance_reaper.chain_launched(rec, started))
+        self.assertFalse(instance_reaper.chain_launched(dict(rec, launch_requested_utc='2026-11-21T09:00:00+00:00'), started))
+        self.assertFalse(instance_reaper.chain_launched(dict(rec, launch_requested_utc='2026-11-21T07:00:00+00:00'), started))
+        self.assertFalse(instance_reaper.chain_launched(dict(rec, purpose='dev-fix-1'), started))
+
     def test_the_controller_answers_a_salvage_request_with_its_pack_and_a_verified_stop(self):
         """D-S84 item 2 on the real controller: a request that arrives while the workload runs
         gives it 300 s, then the controller stops the workload, packs, hashes and copies the
@@ -317,7 +428,7 @@ SALVAGE_NEUTRALIZATIONS = [
     # The history is ignored: 98 at every instant, so 95 never held between the reset and D-857.
     ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
      lambda now=None: 98),
-    # The D-857 raise never happened: 95 at every instant, so 97.9 would trigger after it.
+    # The D-857 and D-915 raises never happened: 95 at every instant, so 97.9 would trigger after them.
     ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
      lambda now=None: 95),
     # The old reader: 98 before the reset, 95 for ever after it (D-857 not taken up).
@@ -327,8 +438,13 @@ SALVAGE_NEUTRALIZATIONS = [
     ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
      lambda now=None: next((e['percent'] for e in instance_reaper.USAGE_STOP_HISTORY
                             if instance_reaper._epoch(now) <= e['until_epoch']), instance_reaper.USAGE_STOP_PERCENT)),
-    # The standing constant left at the old 95.
+    # The standing constant left at the old 95, or at the D-857 98.
     ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'USAGE_STOP_PERCENT', 95),
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'USAGE_STOP_PERCENT', 98),
+    # The D-915 raise never taken up: the first two history entries, then 98 for ever.
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
+     lambda now=None: next((e['percent'] for e in instance_reaper.USAGE_STOP_HISTORY[:2]
+                            if instance_reaper._epoch(now) < e['until_epoch']), 98)),
     # The trigger reads the standing constant directly, not the one function.
     ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop',
      lambda usage, now=None: usage is not None and usage >= instance_reaper.USAGE_STOP_PERCENT),
@@ -353,4 +469,16 @@ SALVAGE_NEUTRALIZATIONS = [
     # A request seen before a phase does not refuse it.
     ('test_no_new_phase_starts_once_a_salvage_request_is_seen', controller, 'salvage_stop',
      lambda label, name, seen, now, starting: False),
+    # D-915: the switch reads true whatever the file says, so a chain-launched instance is never salvaged for silence.
+    ('test_silence_switch_off_salvages_a_chain_launched_instance_as_before', instance_reaper, 'exempt_chain_launches',
+     lambda: True),
+    # D-915: the switch reads false whatever the file says, so the exemption never applies.
+    ('test_silence_switch_on_leaves_a_chain_launched_instance_out_of_the_silence_trigger', instance_reaper,
+     'exempt_chain_launches', lambda: False),
+    # D-915: an exempt instance is dropped from the reaper altogether, so its deadline is never enforced.
+    ('test_silence_switch_on_leaves_a_chain_launched_instance_out_of_the_silence_trigger', instance_reaper,
+     'loop_instances', lambda listed: [i for i in listed if 'chain' not in i['name']]),
+    # D-915: every instance reads as chain-launched, so a hand-launched one is exempt too.
+    ('test_silence_switch_on_still_salvages_a_hand_launched_instance', instance_reaper, 'chain_launched',
+     lambda rec, started: True),
 ]

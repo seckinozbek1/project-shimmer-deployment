@@ -118,6 +118,20 @@ class DiskSweepChecks(unittest.TestCase):
         self.assertTrue(all(self.exists(p) for p in ('goes/__pycache__', 'external/closed.refused_1')))
         self.assertFalse(self.log.exists())
 
+    def test_the_cached_existence_answers_as_lexists(self):
+        """G-20261121-0640: Index.exists, read from one listing per folder, gives os.path.lexists' answer for
+        files, folders, missing names, a missing parent, a file used as a parent, other case and the spellings
+        that fall back ('..', a trailing dot, a short name)."""
+        idx = ds.Index()
+        top = ds.norm(self.root)
+        names = ['named', 'named/__pycache__', 'named/__pycache__/n.pyc', 'named/nothing', 'nowhere/x',
+                 'named/__pycache__/n.pyc/child', 'NAMED/__PYCACHE__', 'named/../named', 'named.', 'NAMED~1']
+        for rel in names:
+            text = ds.norm(top + '/' + rel)
+            self.assertEqual(idx.exists(text), os.path.lexists(text), rel)
+        with patch.object(ds.os, 'listdir', side_effect=AssertionError('listed')):
+            self.assertEqual(idx.exists(ds.norm(top + '/named/__pycache__/n.pyc')), True)  # the cached listing
+
     def test_a_path_a_seal_names_is_kept(self):
         result = sweep(self.root, self.ledger, self.log, True)
         self.assertTrue(self.exists('named/__pycache__/n.pyc'))

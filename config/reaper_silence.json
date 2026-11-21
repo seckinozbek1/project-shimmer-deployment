@@ -1,0 +1,5 @@
+{
+ "exempt_chain_launches": true,
+ "note": "D-915. OFF by default. When true, a loop instance whose ledger launch was made by the launch chain (a launch_chain launch_started ledger line for its purpose in mechanism_trace.jsonl) does not count toward the reaper's lead-silence trigger (no heartbeat for 90 minutes). It keeps its deadline termination, its spend cap and the usage trigger. Read at call time; a missing or unreadable file means false. Only the operator turns it on.",
+ "switched_on": "21 November 2026, D-915: Seckin G-20261121-1302 (the Claude-free chain keeps running after the loop Claude sessions stop); chain launches keep their deadline, spend cap and usage trigger"
+}

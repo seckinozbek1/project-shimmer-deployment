@@ -1,0 +1,21 @@
+{
+ "note": "D-916: tools/loop/graceful_stop.py. stop = Windows tasks that START new work, disabled by --execute and re-enabled by --resume. keep = tasks that finish or close work safely, never touched. Nothing here kills a process or ends an instance.",
+ "stop": [
+  "ShimmerLaunchChain",
+  "ShimmerUntScitabPrepare",
+  "ShimmerUntContradocPrepare",
+  "ShimmerDevpStart",
+  "ShimmerNscoreStart"
+ ],
+ "keep": [
+  "ShimmerLoopReaper",
+  "ShimmerFreezeTag",
+  "ShimmerUntScitabAfter",
+  "ShimmerUntContradocAfter",
+  "ShimmerDevCdAfter",
+  "ShimmerBScore",
+  "ShimmerMechanismWatchdog",
+  "ShimmerNuntAfter",
+  "ShimmerChainBoard"
+ ]
+}

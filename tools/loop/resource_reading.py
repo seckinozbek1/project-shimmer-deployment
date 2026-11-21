@@ -4,7 +4,8 @@
 
 Run by the Windows task ShimmerResourceReading every 30 minutes (pyw.exe, no window), so it does not die
 with a Claude session. Each run reads free RAM, free disk on C:, the commit charge (RAM plus page file),
-the page file size, and how many python and claude processes are open with their memory, then appends one
+the page file size, how many python and claude processes are open with their memory, the five largest
+processes by memory (names only), and the graphics card's memory, load and temperature, then appends one
 line to docs/loop/private/mechanism_trace.jsonl (mechanism resource_reading). Below a floor (RAM 2 GiB;
 disk: the 12 GiB margin of config/laptop_disk_floor.json, read at each run, since any heavy laptop job needs its
 own footprint plus that margin, Seckin 19 Nov 2026 12:03) it writes a dated line at the top of
@@ -50,6 +51,35 @@ def processes():
     return out
 
 
+def gpu():
+    """The graphics card's memory in use, its total, load and temperature from nvidia-smi (G-20261121-1030:
+    after the 10:14 graphics driver crash of 21 Nov no record held the card's memory); None when absent."""
+    exe = shutil.which('nvidia-smi')
+    if not exe:
+        return None
+    done = subprocess.run([exe, '--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu',
+                           '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=30,
+                          stdin=subprocess.DEVNULL, creationflags=mc.no_window())
+    first = (done.stdout.strip().splitlines() or [''])[0]
+    parts = [p.strip() for p in first.split(',')]
+    if done.returncode != 0 or len(parts) != 4:
+        return {'error': 'nvidia-smi exit %d' % done.returncode}
+    keys = ('mem_used_mib', 'mem_total_mib', 'util_percent', 'temp_c')
+    return {k: (int(v) if v.isdigit() else None) for k, v in zip(keys, parts)}
+
+
+def top_memory(n=5):
+    """The n largest processes by working set, names and GiB only (no command lines)."""
+    done = subprocess.run(['tasklist', '/fo', 'csv', '/nh'], capture_output=True, text=True, timeout=60,
+                          stdin=subprocess.DEVNULL, creationflags=mc.no_window())
+    rows = []
+    for row in csv.reader(io.StringIO(done.stdout)):
+        if len(row) >= 5:
+            rows.append((int(''.join(ch for ch in row[4] if ch.isdigit()) or 0), row[0]))
+    rows.sort(reverse=True)
+    return [[name, round(kb / 1024 / 1024, 2)] for kb, name in rows[:n]]
+
+
 def pagefile_gib():
     try:
         return round(os.stat('C:/pagefile.sys').st_size / mc.GIB, 2)
@@ -83,6 +113,11 @@ def main():
         reading['processes'] = processes()
     except (OSError, subprocess.SubprocessError) as exc:
         reading['processes_error'] = type(exc).__name__
+    try:
+        reading['gpu'] = gpu()
+        reading['top_memory'] = top_memory()
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        reading['gpu_error'] = type(exc).__name__
     ram = reading.get('ram_free_gib')
     if ram is not None and ram < mc.RAM_FLOOR_GIB:
         alerts.append('ram')

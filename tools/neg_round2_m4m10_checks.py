@@ -65,6 +65,7 @@ for _p in (str(ROOT / "benchmark" / "baselines"), str(ROOT / "scripts"), str(ROO
 
 import neg_advisor as na  # noqa: E402
 import neg_advisor_checks as nb  # noqa: E402
+import score_neg_advisor as sc  # noqa: E402
 import neg_optional_checks as noc  # noqa: E402
 
 caught, with_source = noc.caught, noc.with_source
@@ -436,8 +437,119 @@ def expected_r3_refusals():
             "unanchored_not_bool": raised, "unanchored_without_room": raised, "shipped_unanchored": False}
 
 
+# Round 4 (D-888): the still-open answer's own stance kind, `open_stance` (false as shipped) with the declared
+# `open_stance_answer`, and the scorer's `open_stance_m4` (config/neg_advisor_dev.json, false as shipped).
+
+def _r4(**switches):
+    return _r3(**dict({"open_stance": True, "open_stance_answer": "open"}, **switches))
+
+
+def observe_open_stance_advisor():
+    """open_stance true: the open answer's piece carries the kind open, its stance stays counter and its wording is
+    asked as in round 3; the other answers carry no kind; off (declared false, or not declared) no piece carries it."""
+    fates = dict(FATES, **{"P-A1-1": "open"})
+    out = {}
+    for name, cfg in (("on", _r4()), ("off", _r4(open_stance=False)), ("round3", _r3())):
+        reply, _s, asked = _run(cfg, fates=fates)
+        out[name] = {"kinds": {p: (e.get("stance_kind") or {}).get("kind") for p, e in sorted(reply["proposals"].items())},
+                     "pieces": _summary(reply), "wording_for": [p for p, _q in _of(asked, "wording")]}
+    out["on_same_users"] = [u for *_x, u in _run(_r4(), fates=fates)[2]] == [u for *_x, u in _run(_r3(), fates=fates)[2]]
+    out["basis"] = _run(_r4(), fates=fates)[0]["proposals"]["P-A1-1"]["stance_kind"]["basis"]
+    return out
+
+
+def expected_open_stance_advisor():
+    pieces = dict(ROOM_PIECES, **{"P-A1-1": ("no_conflict", "counter")})
+    none = {"P-A1-1": None, "P-A1-2": None, "P-A2-1": None}
+    return {"on": {"kinds": dict(none, **{"P-A1-1": "open"}), "pieces": pieces, "wording_for": ["P-A1-1", "P-A1-2"]},
+            "off": {"kinds": none, "pieces": pieces, "wording_for": ["P-A1-1", "P-A1-2"]},
+            "round3": {"kinds": none, "pieces": pieces, "wording_for": ["P-A1-1", "P-A1-2"]},
+            "on_same_users": True, "basis": na.INFERRED}
+
+
+def _scored(reply_pieces, open_on, fates):
+    """item_parts' M4 rows (and M4 by fate) of the fixture item whose key fates are `fates`."""
+    still = copy.deepcopy(nb.BUILD)
+    if fates.get("P-A2-1") == "open":
+        still["next_articles"]["A2"] = ("A fund is established. [Contributions shall be mandatory for developed "
+                                        "parties and assessed annually]")
+    item, key = nb.built(still)
+    reply = nb.reply_of(item)
+    for pid, (stance, kind) in reply_pieces.items():
+        piece = reply["proposals"][pid]
+        piece["stance"] = stance
+        if kind:
+            piece["stance_kind"] = {"kind": kind, "basis": na.INFERRED}
+    parts = sc.item_parts(item, key, reply, open_stance=open_on)
+    return {"fates": {p: r["fate"] for p, r in sorted(key["proposals"].items())},
+            "M4": dict(sorted(parts["M4"].items())), "M4f": sorted((f, v, n) for (f, v), n in parts["M4f"].items()),
+            "M5": dict(sorted(parts["M5"].items())), "M10": sorted((k, v) for k, v in parts["M10"].items())}
+
+
+OPEN_PIECES = {"P-A1-1": ("accept", None), "P-A1-2": ("reject", None), "P-A2-1": ("counter", "open")}
+
+
+def observe_open_stance_scorer():
+    """The key's fates: P-A1-1 kept, P-A1-2 removed, P-A2-1 open. Off: M4 reads the three settled fates as round 3
+    did (the open fate unscored). On: an open-kind piece on the open fate is a hit, a plain counter on it a miss, an
+    open-kind piece on a kept fate a miss; M5 and M10 read the piece's own stance (counter) either way."""
+    plain = dict(OPEN_PIECES, **{"P-A2-1": ("counter", None)})
+    on_kept = dict(OPEN_PIECES, **{"P-A1-1": ("counter", "open"), "P-A2-1": ("counter", None)})
+    return {"off": _scored(OPEN_PIECES, False, {"P-A2-1": "open"}),
+            "on": _scored(OPEN_PIECES, True, {"P-A2-1": "open"}),
+            "on_plain_counter": _scored(plain, True, {"P-A2-1": "open"})["M4"],
+            "on_open_on_kept": _scored(on_kept, True, {"P-A2-1": "open"})["M4"],
+            "changed_fate": _scored(dict(OPEN_PIECES, **{"P-A2-1": ("counter", "open")}), True, {})["M4"],
+            "from_config": _scored(OPEN_PIECES, None, {"P-A2-1": "open"})["M4"],
+            "default_off": dev_default_off()}
+
+
+def dev_default_off():
+    cfg = sc.dev_config()
+    return (cfg.get(sc.OPEN_STANCE_KEY), sc.open_stance_on(cfg))
+
+
+def expected_open_stance_scorer():
+    fates = {"P-A1-1": "kept", "P-A1-2": "removed", "P-A2-1": "open"}
+    M5 = {"hit": 2}
+    M10 = [(("movable", "movable"), 1), (("settled", "settled"), 2)]
+    return {"off": {"fates": fates, "M4": {"hit": 2}, "M4f": [("kept", "hit", 1), ("removed", "hit", 1)],
+                    "M5": M5, "M10": M10},
+            "on": {"fates": fates, "M4": {"hit": 3}, "M4f": [("kept", "hit", 1), ("open", "hit", 1), ("removed", "hit", 1)],
+                   "M5": M5, "M10": M10},
+            "on_plain_counter": {"hit": 2, "miss": 1}, "on_open_on_kept": {"hit": 1, "miss": 2},
+            "changed_fate": {"hit": 2, "miss": 1}, "from_config": {"hit": 2}, "default_off": (False, False)}
+
+
+def observe_open_stance_refusals():
+    def bad(**change):
+        return caught(lambda: na.check_decoding(_r4(**change)))
+    return {"ok": caught(lambda: na.check_decoding(_r4())) == _r4(),
+            "not_bool": bad(open_stance="true"),
+            "no_room_fate": caught(lambda: na.check_decoding(_config(open_stance=True, open_stance_answer="open"))),
+            "no_answer": bad(open_stance_answer=None),
+            "unknown_answer": bad(open_stance_answer="moved"),
+            "answer_not_counter": bad(open_stance_answer="kept"),
+            "shipped_off": na.optional_switches(na.load_config()["advice"]["methods"][na.STEPWISE])["open_stance"],
+            "dev_not_bool": caught(lambda: _dev_with(open_stance_m4="yes"))}
+
+
+def _dev_with(**change):
+    with tempfile.TemporaryDirectory(prefix="r4dev_") as td:
+        path = Path(td) / "dev.json"
+        path.write_text(json.dumps(dict(sc.dev_config(), **change)), encoding="utf-8")
+        return sc.dev_config(path)
+
+
+def expected_open_stance_refusals():
+    raised = "raised ValueError"
+    return {"ok": True, "not_bool": raised, "no_room_fate": raised, "no_answer": raised, "unknown_answer": raised,
+            "answer_not_counter": raised, "shipped_off": False, "dev_not_bool": raised}
+
+
 PROOFS = ("blind_open_point", "room_fate", "both_orders", "refused_fate", "id_echo", "replay", "rebuild", "refusals",
-          "r2_unchanged", "open_counter", "unanchored", "r3_refusals")
+          "r2_unchanged", "open_counter", "unanchored", "r3_refusals",
+          "open_stance_advisor", "open_stance_scorer", "open_stance_refusals")
 NEUTRALISATIONS = {
     # The room answer's stance no longer used: every answered proposal reads accept.
     "room": ((na, "stepwise_advice", "return sets[got]", 'return "accept"'),
@@ -457,6 +569,26 @@ NEUTRALISATIONS = {
     # Round 3: the read labels dropped although room_unanchored is false (round 2 changed).
     "anchored_off": ((na, "stepwise_advice", 'read.append(line if opt["room_unanchored"] else',
                       'read.append(line if True else'), ("r2_unchanged", "room_fate")),
+    # Round 4: the open kind never put on the piece.
+    "kind_not_set": ((na, "stepwise_advice", 'piece["stance_kind"] = {"kind": OPEN_STANCE, "basis": INFERRED}', "pass"),
+                     ("open_stance_advisor",)),
+    # Round 4: the kind put on the piece although open_stance is false.
+    "kind_always": ((na, "stepwise_advice", 'if opt["open_stance"] and got == block["open_stance_answer"]:',
+                     'if got == block["open_stance_answer"]:'), ("open_stance_advisor",)),
+    # Round 4: the answer not checked against the declared answers and its stance.
+    "answer_unchecked": ((na, "optional_switches", 'if got["open_stance"] and (block.get("open_stance_answer") not in labels',
+                          'if False and (block.get("open_stance_answer") not in labels'), ("open_stance_refusals",)),
+    # Round 4: the scorer no longer reads the kind (the open answer stays a counter in M4).
+    "scorer_kind": ((sc, "item_parts", '(piece.get("stance_kind") or {}).get("kind") == na.OPEN_STANCE', "False"),
+                    ("open_stance_scorer",)),
+    # Round 4: open with open no longer a hit.
+    "open_hit": ((sc, "item_parts", '(("open", "open") if open_on else None)', "None"), ("open_stance_scorer",)),
+    # Round 4: the open fate rows no longer scored when the switch is on.
+    "open_rows": ((sc, "item_parts", 'or (open_on and row["fate"] in OPEN_FATES)', "or False"),
+                  ("open_stance_scorer",)),
+    # Round 4: the switch read although the scorer's config declares it false (round 3 replay changes).
+    "scorer_off": ((sc, "item_parts", "open_on = open_stance_on(dev_config()) if open_stance is None else open_stance",
+                    "open_on = True if open_stance is None else open_stance"), ("open_stance_scorer",)),
 }
 
 

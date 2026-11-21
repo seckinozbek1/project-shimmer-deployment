@@ -26904,6 +26904,19 @@ def check_484_not_enough_info_development_data_waits_for_the_leakage_check():
     showing zero hits for its part with the cosine rule applied (LEAKAGE_PROTOCOL). Fixtures only. Runs
     scripts/table_authority_checks.py group 484: each proof neutralised, failed, restored and passed."""
     return _table_authority_checks().run_check(484)
+
+
+def check_696_contradoc_leanings_stand_on_their_own_line_beside_the_unchanged_headline():
+    """D-907 (#289; TABLE-AUTHORITY-A carried to ContraDoc, D-670 item 2): tools/contradoc_leaning.py reads the
+    passage pair step's saved decisions (both orders, D-887, optionally settled again at a post hoc threshold); a pair
+    both FLAG is a detection, both CLEAR clear, anything else a low-confidence leaning counted as its stronger
+    order's direction, on its own labelled line beside the headline, whose v2_primary figure is the same bytes with
+    and without the pair reading; tools/coverage_check.py counts a leaning-only document apart, never as the
+    system's own answer. Synthetic run folders only. Runs scripts/table_authority_checks.py group 696: each proof
+    neutralised, failed, restored and passed."""
+    return _table_authority_checks().run_check(696)
+
+
 def _neg_structure_checks():
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
@@ -28246,12 +28259,32 @@ def check_686_a_room_fate_sets_the_stance_and_an_echoed_id_is_read_off():
     reply; neg_advisor.py rebuild keeps prompt ids and items; malformed switches and templates are refused; off
     unchanged. Round 3 (D-864; docs/loop/stages/NEG_ROUND3.md): a fourth room fate answer may set counter (open),
     room_unanchored (false as shipped) drops the read labels, round 2 asks the same with it off, a duplicate or
-    undeclared answer is refused. Runs tools/neg_round2_m4m10_checks.py: seven neutralisations, failed, restored,
+    undeclared answer is refused. Round 4 (D-888): open_stance (false as shipped) with open_stance_answer puts the
+    stance kind open on the piece of the still-open answer (its stance stays counter), and the scorer's
+    open_stance_m4 (config/neg_advisor_dev.json, false as shipped) compares that kind with the key's open fate in
+    M4, every other fate unchanged. Runs tools/neg_round2_m4m10_checks.py: fourteen neutralisations, failed, restored,
     passed."""
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
         sys.path.insert(0, tools)
     from neg_round2_m4m10_checks import run
+    return run()
+
+
+def check_695_the_in_run_early_stop_stops_an_empty_run_and_leaves_a_good_one():
+    """D-873 fail-fast, D-888 (Seckin G-20261121-0735): tools/loop/fail_fast.py, one importable decision every launch
+    folder's watch.py calls, reads the run's own counts (the live view's per-call rows: status and item id, never a
+    reply or a label) after the first 3 items and every 6 more, and stops the part through the folder's own stop
+    (TERMINATE_REQUEST, then the controller's termination and evidence download) when more than 5 percent of the
+    returned items returned no answer or the refused calls pass the form limit; FAIL_FAST_<part>.json keeps the
+    reason, counts and cost. Runs tools/loop/fail_fast_checks.py: a fake run with empty replies stops, a good one does
+    not; the whole watch loop (cost stop, looks, cost record) too; thirteen neutralisations, failed, restored, passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    for p in (loop, tools):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    from fail_fast_checks import run
     return run()
 
 
@@ -28880,6 +28913,8 @@ CHECKS = [
      check_483_a_table_verdict_cites_cells_python_finds),
     ("484 NOT ENOUGH INFO development data comes from SEM-TAB dev and test only and waits for the leakage check (D-642 (c))",
      check_484_not_enough_info_development_data_waits_for_the_leakage_check),
+    ("696 ContraDoc leanings stand on their own labelled line beside the unchanged v2_primary headline; coverage never counts them answered (D-907)",
+     check_696_contradoc_leanings_stand_on_their_own_line_beside_the_unchanged_headline),
 
 
     ("460 Other instances' complete loop records after a seal job's read copy do not refuse its admission (order 99)",
@@ -29076,6 +29111,8 @@ CHECKS = [
      check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict),
     ("686 A room fate sets the stance by the declared pairs and an echoed proposal id is read off a changes line, both off by default (R3, R3b, D-840)",
      check_686_a_room_fate_sets_the_stance_and_an_echoed_id_is_read_off),
+    ("695 The in-run early stop stops a part whose replies are empty or whose form fails and leaves a good run, through the folder's own stop (D-873, D-888)",
+     check_695_the_in_run_early_stop_stops_an_empty_run_and_leaves_a_good_one),
     ("687 The D-798 validation pool is split into parts by a frozen seeded rule, balanced by structure and record kind (D-843)",
      check_687_the_d798_pool_is_split_into_parts_by_a_frozen_seeded_rule),
     ("688 Party frame, reason field, trade read and mandate split with operator red lines are declared switches, off by default (D-845, D-846, D-848)",

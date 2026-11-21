@@ -129,3 +129,12 @@ Each was fixed one at a time, by a copy or a junction matching a5-lf. The 22:02 
 - Before sealing or launching from a new worktree, check the three items against a working worktree (a5-lf): the output junction, the docs/loop/private junction and the five frozen adapter files, by hash.
 - Superseded for the two junctions (16 November, DELETE-SAFE-A): no working copy links into the main checkout. The reaper's ledger and the wheelhouse are found through `tools/loop/shared_paths.py` (`SHIMMER_MAIN_CHECKOUT`, else git's common directory); `py -3.12 -X utf8 tools/loop/shared_paths.py` prints what a worktree will use. The frozen adapter files are still checked by hash.
 - The sealing route (#296) builds its tree on the instance. Its request must name these ignored inputs by digest, and the instance must refuse when one is missing, before any seal step runs.
+
+## 21 November 2026: a fix is checked against everything it invalidates before it is applied (D-903, G-20261121-1009)
+- Seckin had to name the order himself (G-1007): small untouched sets were about to run before the no-run fixes and
+  one new freeze. The lead must find this alone: for every new fix, decision or finding, list the running and queued
+  steps it invalidates (measurements on older code, freezes, untouched sets, release text, scorings) and stop, reorder
+  or redo them without asking.
+- Order of measurement, always: no-run fixes, development check, ex ante thresholds, one full gate and one freeze,
+  then the untouched or validation reading.
+- A written lesson is not a fix: where a check can be code (the coverage gate, the chain's requires lines), it is code.

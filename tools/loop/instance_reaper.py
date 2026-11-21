@@ -26,7 +26,7 @@ What it does on every run:
    measurement (the instance may have cost less, or nothing), counted as actual spend and
    never refunded; its reason says it was charged that way.
 5. Salvage, then stop (D-S84), with no Claude involved. Two triggers are read on every run:
-   seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 98 since 20 November 2026 19:37 +0300, D-857; before it the dated ``USAGE_STOP_HISTORY``) in ``.claude/loop_status.json``, and no
+   seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 100 since 21 November 2026 13:00 +0300, D-915; 98 from 20 November 2026 19:37 +0300, D-857, until then; before it the dated ``USAGE_STOP_HISTORY``) in ``.claude/loop_status.json``, and no
    lead heartbeat (the continue hook's state, LOOP_STATE, FOR_SECKIN or LOOP_HEARTBEAT.txt written) for
    ``SILENCE_MINUTES`` while a loop instance runs. Either opens a salvage episode
    (``salvage/episode.json``): every running loop instance gets a request file its controller
@@ -156,18 +156,20 @@ def salvage_dir():
 
 
 
-USAGE_STOP_PERCENT = 98   # the standing value (D-857); read through usage_stop_percent(now), never directly
+USAGE_STOP_PERCENT = 100   # the standing value (G-20261121-1300 / D-915); read through usage_stop_percent(now), never directly
 # The dated history of the threshold, oldest first: each entry was in force strictly before its
 # until_epoch (and at or after the previous entry's); at or after the last one the standing value holds.
 # D-529: 98 until the reset of 18 November 2026, 11:00 +03:00 (the `seven_day_resets_at` of
 # `.claude/loop_status.json` on 12 November 2026). Then 95 until 20 November 2026 19:37 +0300, when
 # the operator raised the standing value to 98 (G-20261120-1937, D-857; only alpha steps may use the
-# margin above 95, D-850; past 95 the lead writes an information line to FOR_SECKIN, not a stop).
+# margin above 95, D-850; past 95 the lead writes an information line to FOR_SECKIN, not a stop). Then 98 until
+# 21 November 2026 13:00 +0300 (epoch 1795255200), when the operator raised it to 100 (G-20261121-1300, D-915).
 USAGE_STOP_HISTORY = (
     {'percent': 98, 'until_epoch': 1794988800, 'source': 'D-529, Seckin 14:16, 12 November 2026'},
     {'percent': 95, 'until_epoch': 1795192620, 'source': '95 until 20 November 2026 19:37 +0300, G-20261120-1937 / D-857'},
+    {'percent': 98, 'until_epoch': 1795255200, 'source': '98 until 21 November 2026 13:00 +0300, G-20261121-1300 / D-915'},
 )
-USAGE_STOP_SINCE = {'until_epoch': USAGE_STOP_HISTORY[-1]['until_epoch'], 'source': 'G-20261120-1937 / D-857'}
+USAGE_STOP_SINCE = {'until_epoch': USAGE_STOP_HISTORY[-1]['until_epoch'], 'source': 'G-20261121-1300 / D-915'}
 # D-583: the usage stop acts only on a LIVE reading. The status line rewrites .claude/loop_status.json
 # each time a Claude session's status line refreshes; a reading older than USAGE_FRESH_SECONDS at the
 # moment of decision is "usage unknown, stale by N s": reported, never a trigger. The bound is the
@@ -509,8 +511,78 @@ def lead_silent(now, beat):
     return beat is None or (now - beat).total_seconds() >= SILENCE_MINUTES * 60
 
 
-def salvage_trigger(now, running, status_path=None, heartbeats=None):
-    """Which D-S84 trigger fires, or None. Neither acts while no loop instance runs."""
+# D-915: an OFF-by-default switch (config/reaper_silence.json, "exempt_chain_launches"). When true, a loop
+# instance whose ledger launch was made by the launch chain does not count toward the silence trigger (it keeps
+# its deadline, spend cap and the usage trigger). A chain launch is recognised from the chain's own trace line
+# (mechanism launch_chain, result launch_started, kind ledger) naming the launch's purpose, written within
+# CHAIN_LAUNCH_WINDOW_S before the ledger line's launch_requested_utc (the ledger line carries no marker).
+SILENCE_CONFIG = None
+CHAIN_TRACE = None
+CHAIN_LAUNCH_WINDOW_S = 1800
+CHAIN_LAUNCH_SKEW_S = 5
+
+
+def silence_config_path():
+    return Path(SILENCE_CONFIG) if SILENCE_CONFIG is not None else ROOT / 'config' / 'reaper_silence.json'
+
+
+def exempt_chain_launches():
+    """The switch, read at call time; only a literal true counts, a missing or unreadable file is false."""
+    try:
+        return json.loads(silence_config_path().read_text(encoding='utf-8')).get('exempt_chain_launches') is True
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def chain_trace_path():
+    return Path(CHAIN_TRACE) if CHAIN_TRACE is not None else main_private() / 'mechanism_trace.jsonl'
+
+
+def chain_started(path=None):
+    """The launch chain's ledger-step start lines: [(purpose, datetime)], from the mechanism trace."""
+    out = []
+    try:
+        lines = Path(path or chain_trace_path()).read_text(encoding='utf-8').splitlines()
+    except (OSError, ValueError):
+        return out
+    for raw in lines:
+        try:
+            x = json.loads(raw)
+            if (x.get('mechanism') == 'launch_chain' and x.get('result') == 'launch_started'
+                    and x.get('kind') == 'ledger' and x.get('purpose')):
+                out.append((x['purpose'], parse_time(x['time'])))
+        except (ValueError, TypeError, AttributeError, KeyError):
+            continue
+    return out
+
+
+def chain_launched(rec, started):
+    """True when the launch record `rec` was made by the launch chain: a start line for its purpose, from
+    CHAIN_LAUNCH_WINDOW_S before to CHAIN_LAUNCH_SKEW_S after its launch request."""
+    if not rec or not rec.get('purpose'):
+        return False
+    try:
+        asked = parse_time(rec.get('launch_requested_utc') or rec.get('time_utc'))
+    except (ValueError, TypeError, AttributeError):
+        return False
+    return any(purpose == rec['purpose'] and -CHAIN_LAUNCH_SKEW_S <= (asked - at).total_seconds() <= CHAIN_LAUNCH_WINDOW_S
+               for purpose, at in started)
+
+
+def silence_exempt(running, by_name):
+    """Names of running instances left out of the silence trigger: empty unless the switch is true."""
+    if not running or not exempt_chain_launches():
+        return set()
+    try:
+        started = chain_started()
+    except Exception:  # noqa: BLE001 - an unreadable trace exempts nothing
+        return set()
+    return {item['name'] for item in running if chain_launched(by_name.get(item['name']), started)}
+
+
+def salvage_trigger(now, running, status_path=None, heartbeats=None, exempt=()):
+    """Which D-S84 trigger fires, or None. Neither acts while no loop instance runs. The usage trigger
+    judges every running instance; the silence trigger leaves out the names in `exempt` (D-915)."""
     if not running:
         return None
     # D-583: read again now; only a fresh reading can trigger. A stale one is reported in the status.
@@ -519,6 +591,8 @@ def salvage_trigger(now, running, status_path=None, heartbeats=None):
         return {'trigger': 'usage', 'seven_day_used_percentage': reading['value'],
                 'stop_percent': usage_stop_percent(now), 'stop_basis': usage_stop_basis(now),
                 'reading_age_seconds': reading['age_seconds'], 'reading_written_utc': reading['written_utc']}
+    if exempt and not [item for item in running if item['name'] not in exempt]:
+        return None
     beat = last_heartbeat(heartbeats)
     if lead_silent(now, beat):
         return {'trigger': 'lead_silent', 'last_heartbeat_utc': beat.isoformat() if beat else None,
@@ -552,7 +626,7 @@ def salvage_overdue(now, requested_utc):
     return (now - parse_time(requested_utc)).total_seconds() >= SALVAGE_ANSWER_SECONDS
 
 
-def salvage_pass(now, running, due, status_path=None, heartbeats=None):
+def salvage_pass(now, running, due, status_path=None, heartbeats=None, exempt=()):
     """D-S84 items 1 and 2 on one reaper pass. Opens an episode when a trigger fires, writes a
     request for every running loop instance, and adds to `due` each instance whose controller
     did not answer in time or answered while it is still listed. Returns the episode or None."""
@@ -563,7 +637,7 @@ def salvage_pass(now, running, due, status_path=None, heartbeats=None):
         episode = {'id': now.strftime('%Y%m%dT%H%M%SZ'), 'started_utc': now.isoformat(),
                    'trigger': {'trigger': 'episode_file_unreadable'}, 'instances': {}}
     if episode is None:
-        trigger = salvage_trigger(now, running, status_path, heartbeats)
+        trigger = salvage_trigger(now, running, status_path, heartbeats, exempt)
         if trigger is None:
             return None
         episode = {'id': now.strftime('%Y%m%dT%H%M%SZ'), 'started_utc': now.isoformat(), 'trigger': trigger,
@@ -576,7 +650,7 @@ def salvage_pass(now, running, due, status_path=None, heartbeats=None):
         # D-435: a launch made while a session-end episode is open is still covered by the usual
         # triggers; when one fires for it, it joins the episode with that trigger named.
         unnamed = [item for item in running if item['name'] not in episode['instances']]
-        later = salvage_trigger(now, unnamed, status_path, heartbeats) if unnamed else None
+        later = salvage_trigger(now, unnamed, status_path, heartbeats, exempt) if unnamed else None
         for item in unnamed if later else []:
             episode['instances'][item['name']] = {'instance_id': item.get('instance_id'), 'type': item.get('type'),
                                                   'region': item.get('region'), 'trigger': later}
@@ -584,6 +658,9 @@ def salvage_pass(now, running, due, status_path=None, heartbeats=None):
         name = item['name']
         if named_only and name not in episode['instances']:
             continue
+        if (name in exempt and name not in episode['instances']
+                and (episode.get('trigger') or {}).get('trigger') == 'lead_silent'):
+            continue   # D-915: a silence episode does not take a chain-launched instance
         entry =episode['instances'].setdefault(name, {'instance_id': item.get('instance_id'),
                                                        'type': item.get('type'), 'region': item.get('region')})
         if name in reasons:
@@ -811,7 +888,7 @@ def reap(provider, ledger_paths, append_path, now=None, salvage=True):
         due.append((item, reason))
     salvage_error = None
     try:
-        episode = salvage_pass(now, running, due) if salvage else None
+        episode = salvage_pass(now, running, due, exempt=silence_exempt(running, by_name)) if salvage else None
     except Exception as exc:  # the deadline and the hard stop above still bound every instance
         episode, salvage_error = None, type(exc).__name__
     costs = {}

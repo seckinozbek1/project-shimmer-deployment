@@ -350,6 +350,13 @@ class NegAdvisorChecks(unittest.TestCase):
         # Neutralised: the withholding answer is another one than the audit's `unsupported`.
         self.prove("unsupported_advice_withheld", observe, observe(),
                    lambda: patch.object(sc, "WITHHELD_AUDIT", "cannot_tell"))
+        # D-878 (AM-4): marked keeps the audit-unsupported piece as written, marked, and counts it.
+        marked = lambda: (sorted(sc.withhold(item, reply_of(item), audit, marked=True)[0]["proposals"]),
+                          sc.withhold(item, reply_of(item), audit, marked=True)[0]["proposals"]["P-A1-2"].get("audit"),
+                          sc.withhold(item, reply_of(item), audit, marked=True)[1].get("audit_marked"))
+        self.assertEqual(marked(), (["P-A1-1", "P-A1-2", "P-A2-1"], "unsupported", 1))
+        self.assertFalse(sc.audit_marked_on({}))
+        self.assertTrue(sc.audit_marked_on({sc.AUDIT_KEEP_KEY: True}))
         value = copy.deepcopy(GOOD_REPLY)
         value["state"][1]["state"] = "closed"     # the reply's own state: its counter on A2 fails C-closed
         refused = lambda: (sorted(sc.withhold(item, reply_of(item, value), {})[0]["proposals"]),

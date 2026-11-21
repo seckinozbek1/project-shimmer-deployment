@@ -47,6 +47,12 @@ probabilities (D-S41) with no text. Every decision goes to the pairing map row; 
 is also a model's record (`finding`, INFRA-048), marked and never an amendment. With no measured
 threshold nothing is asked.
 
+The alpha ships the `cell_claim` threshold 0.40 (D-870) and the not-enough-info floor 0.70 (D-896,
+D-897), both chosen post hoc on development records. `floored` applies the floor where a decision
+comes back, before its class is read: a settled "cannot be settled" below the floor is settled among
+the other declared answers, its probabilities unchanged and the row saying so; no floor declared, no
+floor applied.
+
 Decision authority on tables (TABLE-AUTHORITY-A, D-642 (b) and (d), D-646, D-670). The verdict is the
 model's, decided as CHOICE-A decides it. Python checks only what it can compute and only lowers: a
 lowered verdict is a LEANING on the pairing map row (`leaning`, `leaning_confidence`, `leaning_why`),
@@ -92,6 +98,10 @@ LEAN_BELOW, LEAN_FIGURE = "below_threshold", "figure_unverified"
 LEAN_CITED_MISSING, LEAN_NONE_CITED = "cited_cell_missing", "no_cell_cited"
 _CITED_CELL = re.compile(r"r[1-9][0-9]*c[1-9][0-9]*")
 ID_NOT_VALID = "id_not_valid"     # table_tools.ID_NOT_VALID, held equal by check 483
+# D-896, D-897: the not-enough-info floor is the family's entry with this suffix (semantic_thresholds.json),
+# and what `floored` did with a decision below it.
+FLOOR_SUFFIX = "_not_enough_info_floor"
+FLOOR_MOVED, FLOOR_TIE, FLOOR_KEPT = "settled_among_the_rest", "tie", "kept"
 
 
 def load_config(path=CONFIG_PATH):
@@ -537,6 +547,43 @@ def class_of(decision, config):
     return next((a["class"] for a in config["decision"]["answers"] if a["label"] == decision.get("decided")), None)
 
 
+def floor_of(config):
+    """The not-enough-info floor of the cell step's family (D-896, D-897), None when none is declared:
+    `config/semantic_thresholds.json` `choice_decision` `<threshold_family>_not_enough_info_floor`,
+    read and checked as a probability by `choice_decision.threshold`."""
+    return choice_decision.threshold(config["decision"]["threshold_family"] + FLOOR_SUFFIX)
+
+
+def floored(decision, config, floor):
+    """`decision` read against the not-enough-info floor (D-896 rule, D-897 value; ported from SciTab
+    stage c's nei_rule.py). A decision settled on the answer whose declared class is UNDECIDED, with
+    that answer's probability below `floor`, has that answer set aside and the remaining declared
+    answers settled by `choice_decision.settle(rest, 0.0)`: when they give FLAG or CLEAR that is the
+    decision, otherwise (a tie, an undeclared answer, fewer than two left) the decision stays as it
+    was. Every answer's probability is kept unchanged; `not_enough_info_floor` on the decision says the
+    floor was applied, with the floor, the answer and probability set aside, and the outcome. No floor,
+    an unsettled decision, another class or a probability at or above the floor: the decision as it is."""
+    if floor is None or not isinstance(decision, dict) or not decision.get("settled") \
+            or class_of(decision, config) != "UNDECIDED":
+        return decision
+    answers = decision["answers"]
+    top = max(answers, key=lambda a: a["probability"])
+    if top["probability"] >= floor:
+        return decision
+    note = {"floor": floor, "set_aside": top["label"], "set_aside_probability": top["probability"],
+            "threshold": decision.get("threshold")}
+    rest = [a for a in answers if a["label"] != top["label"]]
+    if len(rest) < 2:
+        return dict(decision, not_enough_info_floor=dict(note, outcome=FLOOR_KEPT))
+    settled = choice_decision.settle(dict(decision, answers=rest), 0.0)
+    if not settled["settled"]:
+        return dict(decision, not_enough_info_floor=dict(note, outcome=FLOOR_TIE))
+    moved = dict(settled, answers=answers, not_enough_info_floor=dict(note, outcome=FLOOR_MOVED))
+    if class_of(moved, config) in ("FLAG", "CLEAR"):
+        return moved
+    return dict(decision, not_enough_info_floor=dict(note, outcome=FLOOR_KEPT))
+
+
 def finding(rule, unit, selection, decision, source_rule_id=None):
     """The Finding record of a claim the cells do not meet (INFRA-048): the cells Python selected in
     `quote`, the claim in `quote_b`, no sentence of the model's. That the claim fails is the model's
@@ -561,6 +608,8 @@ def _row(unit, selection, decision, authority=None):
            "why": decision["why"], "confidence": decision["confidence"], "threshold": decision["threshold"],
            "declared_mass": decision["declared_mass"], "logits_dtype": decision.get("logits_dtype"),
            "answers": {a["label"]: a["probability"] for a in decision["answers"]}}
+    if decision.get("not_enough_info_floor"):
+        row["not_enough_info_floor"] = decision["not_enough_info_floor"]
     if authority is not None:
         check, cited = authority.get("check"), authority.get("cited")
         leaning, confidence, why = leaning_of(decision, check, cited)
@@ -629,6 +678,7 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
         calls["tool_rows"].extend(judge_agent.tool_rows(judge_agent.CELL_CLAIM, contracts, rule["id"], unit.get("unit_id"),
                                                         prompt, rows))
     records = []
+    floor = floor_of(config)
     if threshold_of(config) is None:
         # N1 (Seckin 19 Nov 01:11): asked all the same; each answer's probabilities stand on its reply
         # record and its row, every decision UNSETTLED (no_threshold), so no record is written.
@@ -669,6 +719,7 @@ def review(units, rule, source_rule_id, ask, config, embed_with=None, fields_pre
                     break
                 continue
             streak = 0
+            decision = floored(decision, config, floor)
             cls = class_of(decision, config)
             if cls is None:
                 calls["unreadable"] += 1

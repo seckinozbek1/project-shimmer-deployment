@@ -78,7 +78,26 @@
     "word_overlap": 0.2
   },
   "choice_decision": {
-    "_what_this_is": "Thresholds of the choice decision (scripts/choice_decision.py, D-S41): the confidence below which a decision is cannot be settled. One entry per family, each measured on development material and recorded with the error rate it produces, as above. No family has one yet: a family with no entry decides nothing; the cell claim and passage pair steps still ask, save the answer probabilities and say nothing was decided (19 November)."
+    "_what_this_is": "Thresholds of the choice decision (scripts/choice_decision.py, D-S41): the confidence below which a decision is cannot be settled. One entry per family, each measured on development material and recorded with the error rate it produces, as above. Only the cell claim family has one (cell_claim, with its not-enough-info floor cell_claim_not_enough_info_floor), chosen post hoc on development records in the alpha (D-869, D-870, D-896, D-897). A family with no entry decides nothing: the passage pair step still asks, saves the answer probabilities and says nothing was decided (19 November).",
+    "cell_claim": 0.40,
+    "_cell_claim_note": {
+      "label": "chosen post hoc on development records in the alpha (D-869, D-870); the ex ante threshold and the fresh-set measurement are in the beta",
+      "source_decision": "D-870 (docs/loop/DECISIONS.md), within D-869 as amended",
+      "development_set": "DEV_scitab_rerun half A: 15 tables, 47 claims, saved answer probabilities, supports and refutes only (D-762, D-778)",
+      "rule": "grid 0.34, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, fixed before any figure; at each value a saved decision whose top answer reaches it is settled and classed as the cell step does; chosen: the value with the highest development 2-class macro-F1, ties to the highest value among them",
+      "development_figures": "threshold, claims decided, 3-class macro-F1, 2-class macro-F1: 0.34 47 0.517 0.776; 0.40 47 0.517 0.776; 0.45 44 0.491 0.736; 0.50 43 0.491 0.736; 0.55 41 0.498 0.747; 0.60 35 0.456 0.683; 0.65 33 0.451 0.676; 0.70 32 0.451 0.676; 0.75 31 0.463 0.695; 0.80 27 0.439 0.658; 0.85 26 0.418 0.627; 0.90 26 0.418 0.627; 0.95 21 0.388 0.582. The highest 2-class figure ties at 0.34 and 0.40; the rule takes 0.40",
+      "error_rate_on_development": "at 0.40 all 47 claims settled, none below the value; 2-class macro-F1 0.776. The not-enough-info error rate cannot be measured on development (it holds no such claim) and is a stated limitation"
+    },
+    "cell_claim_not_enough_info_floor": 0.70,
+    "_cell_claim_not_enough_info_floor_note": {
+      "label": "chosen post hoc on development records in the alpha (D-869, D-870); the ex ante threshold and the fresh-set measurement are in the beta",
+      "source_decision": "D-896 (the rule, written before any figure) and D-897 (the value)",
+      "what_it_does": "scripts/cell_selection.py floored: a cell claim decision settled at the cell_claim threshold on the answer whose declared class is UNDECIDED (not enough info) keeps it only when that answer's probability reaches this floor; below it that answer is set aside and the remaining declared answers are settled by choice_decision.settle at 0.0 (a tie, or a class other than FLAG or CLEAR, keeps the decision as it was). The saved probabilities never change and the row records that the floor was applied",
+      "development_set": "DEV_scitab_rerun half A: 15 tables, 47 claims, supports and refutes only, no key opened; cell_claim threshold 0.40 kept",
+      "rule": "grid 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.01 (1.01: never kept); chosen: the smallest grid value whose development not-enough-info share (not-enough-info answers over decided claims) is at most 0.10, else the highest",
+      "development_figures": "not-enough-info share by floor: 0.30 0.149; 0.40 0.149; 0.50 0.128; 0.60 0.106; 0.70 0.085; 0.80 0.064; 0.90 0.064; 0.95 0.021; 1.01 0.000. Chosen 0.70, the smallest at most 0.10",
+      "error_rate_on_development": "every not-enough-info answer on development is an error, since development holds supports and refutes only: share 0.085 at 0.70. The cost in not-enough-info recall cannot be measured on development and is a stated limitation; on the quick subset (D-898) the floor moved nothing measurable (+0.011, paired p 0.787)"
+    }
   },
   "shape_name": {
     "_measured_on": "14 positive, 13 negative. Same construction and same union.",

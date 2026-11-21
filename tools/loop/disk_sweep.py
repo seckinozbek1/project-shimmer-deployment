@@ -233,6 +233,28 @@ class Index:
         self.skipped = []
         self.existing = set()
         self.files_read = 0
+        self._dirs = {}              # parent folder -> its lower-case names (G-20261121-0640, open item 183)
+
+    def exists(self, text):
+        """os.path.lexists(text), answered from one cached listing of the parent folder. A spelling Windows
+        rewrites ('..', '.', a trailing dot or space, a short '~' name, a stream ':'), a drive root or an
+        unreadable folder falls back to os.path.lexists itself, so the answer is the same as before."""
+        parent, _, name = text.rpartition('/')
+        if (not parent or not name or parent.endswith(':') or name in ('.', '..') or '/./' in text
+                or '/../' in text or name[-1] in '. ' or '~' in text or ':' in name):
+            return os.path.lexists(text)
+        names = self._dirs.get(parent, False)
+        if names is False:
+            try:
+                names = {n.lower() for n in os.listdir(parent)}
+            except (FileNotFoundError, NotADirectoryError):
+                names = set()
+            except OSError:
+                names = None
+            self._dirs[parent] = names
+        if names is None:
+            return os.path.lexists(text)
+        return name in names
 
     def finish(self, root):
         self.sorted = sorted(self.paths)
@@ -295,7 +317,7 @@ def read_reference_file(index, root, path, cfg):
     for text in local:       # only a path that exists can be a candidate or be removed: keep those
         if text in index.paths:
             continue
-        if os.path.lexists(text):
+        if index.exists(text):
             index.paths.add(text)
 
 

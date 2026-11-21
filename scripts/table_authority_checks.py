@@ -21,6 +21,11 @@ SEM-TAB-FACTS file. Each proof is neutralise, fail, restore, pass (scripts/effec
        dev and test only (a train file is refused), maps entailed, refuted and unknown to SciTab's
        labels, keeps cell positions through spans, and writes no item until role B's leakage result
        shows zero hits for its part against the SciTab gate and quick pools (LEAKAGE_PROTOCOL).
+  696  the rule carried to ContraDoc (D-907, #289): tools/contradoc_leaning.py reads the passage pair step's saved
+       decisions; a pair not both FLAG and not both CLEAR is a low-confidence leaning, counted as its stronger
+       order's direction, on its own labelled line beside the headline, whose v2_primary figure is the same bytes
+       with and without the pair reading; tools/coverage_check.py counts a leaning-only document apart, never as
+       the system's own answer.
 """
 import contextlib
 import inspect
@@ -441,9 +446,193 @@ def proofs_484():
     ]
 
 
+# ---------- 696: ContraDoc's leaning line (D-907) ------------------------------------------------
+
+CDOC_RULE = "CONV-CDOC-01"
+CDOC_CLASSES = {"contradicts": "FLAG", "does not": "CLEAR", "cannot tell": "UNDECIDED"}
+
+
+def _cl():
+    import contradoc_leaning
+    return contradoc_leaning
+
+
+def _coverage():
+    import coverage_check
+    return coverage_check
+
+
+def pair_row(top, probability, settled=True, why=None, passages=(0, 1)):
+    """One order's saved decision row, as passage_pairs.decision_row writes it."""
+    rest = (1 - probability) / 2
+    return {"passages": list(passages), "decided": top if settled else choice_decision.UNSETTLED, "settled": settled,
+            "why": why, "confidence": probability, "threshold": .6 if why != choice_decision.NO_THRESHOLD else None,
+            "declared_mass": .97, "answers": {a: (probability if a == top else rest) for a in CDOC_CLASSES}}
+
+
+def both(first, second):
+    """A pair's two orders, the second with its passages turned round."""
+    return [first, dict(second, passages=list(reversed(first["passages"])))]
+
+
+FLAG_ORDER, CLEAR_ORDER = pair_row("contradicts", .9), pair_row("does not", .9)
+UNCLEAR_ORDER = pair_row("cannot tell", .8)
+# The four fixture documents: (pairs, v2_primary record kept?, gold).
+CDOC_DOCS = {"d-det": (both(FLAG_ORDER, FLAG_ORDER), True, "contradictory"),
+             "d-lean": (both(FLAG_ORDER, UNCLEAR_ORDER), False, "contradictory"),
+             "d-clear": (both(CLEAR_ORDER, CLEAR_ORDER), False, "not contradictory"),
+             "d-clean": (both(CLEAR_ORDER, UNCLEAR_ORDER), False, "not contradictory")}
+
+
+def _pair_entry(decisions, kept=0):
+    return {"rule_id": CDOC_RULE, "form": "decision", "made": len(decisions), "reused": 0, "failed": 0,
+            "unreadable": 0, "refused": [], "stopped": None, "raised": None, "not_asked": None, "kept": kept,
+            "decisions": decisions}
+
+
+def cdoc_runs(tmp, with_pairs=True):
+    """[{key, run}] of the four synthetic ContraDoc runs; `with_pairs` False leaves the pair decisions out, as a run
+    the leaning reading had nothing to read in."""
+    ac = _adapter_checks()
+    mark = {ac._common()["records"].SCREENED_FIELD: True}
+    unit = "u01-p-00001"
+    root = Path(tmp) / ("cdoc-%s" % with_pairs)
+    out = []
+    for doc, (decisions, kept, gold) in CDOC_DOCS.items():
+        records = [ac._rec("r-" + doc, CDOC_RULE, "irregular", unit=unit, relation="contradiction", **mark)] if kept else []
+        pairing = dict(ac._units_pairing([unit]), passage_pairs=[_pair_entry(decisions if with_pairs else [], int(kept))])
+        lines = [ac._bus_line("PRACTICE_AUDITOR", doc, records, "paired", "python")]
+        ac._incomplete_run(root, doc, completion=ac._completion(), bus_lines=lines, pairing=pairing)
+        key = root / ("%s.key.json" % doc)
+        key.write_text(json.dumps({"benchmark": "contradoc", "document": doc + ".md",
+                                   "items": [{"item_id": "i-" + doc, "rule_id": CDOC_RULE, "gold": gold}]}), encoding="utf-8")
+        out.append({"key": str(key), "run": str(root / doc)})
+    return out
+
+
+def _independent_headline(pairs):
+    """The v2_primary figure straight from the scorer's rows and the adapter's metrics, no pair reading."""
+    import score_corpus
+    adapter = score_corpus._adapter_for("contradoc")
+    labelled = []
+    for pair in pairs:
+        key = json.loads(Path(pair["key"]).read_text(encoding="utf-8"))
+        for r in score_corpus.benchmark_items(key, Path(pair["run"]))["items"]:
+            labelled.append((adapter.SPEC.label(r["b3_class"]), adapter.SPEC.label(r["gold_class"])))
+    return adapter.metrics.accuracy(labelled)["accuracy"]
+
+
+def observe_cdoc_headline():
+    """(a) The headline block is the same bytes with the pair decisions and without them, and is the v2_primary
+    figure the scorer gives alone."""
+    cl = _cl()
+    with tempfile.TemporaryDirectory() as tmp:
+        with_pairs = cl.score(cdoc_runs(tmp, True))
+        without = cl.score(cdoc_runs(tmp, False))
+        independent = _independent_headline(cdoc_runs(tmp + "/x", True))
+    same = json.dumps(with_pairs["headline"], sort_keys=True) == json.dumps(without["headline"], sort_keys=True)
+    return [same, with_pairs["headline"]["accuracy"] == independent, independent]
+
+
+def expected_cdoc_headline():
+    return [True, True, .75]
+
+
+def observe_cdoc_pairs():
+    """(b) Each pair kind read as the rule says, with and without the post hoc threshold."""
+    cl = _cl()
+    no_t = pair_row("contradicts", .5, False, choice_decision.NO_THRESHOLD)
+    below = pair_row("contradicts", .5, False, choice_decision.BELOW_THRESHOLD)
+    cases = {"FLAG/FLAG": both(FLAG_ORDER, FLAG_ORDER), "CLEAR/CLEAR": both(CLEAR_ORDER, CLEAR_ORDER),
+             "FLAG/UNDECIDED": both(FLAG_ORDER, UNCLEAR_ORDER), "CLEAR/FLAG stronger CLEAR": both(FLAG_ORDER, pair_row("does not", .95)),
+             "below threshold leans": both(below, UNCLEAR_ORDER), "no threshold never leans": both(no_t, UNCLEAR_ORDER),
+             "one order only": [FLAG_ORDER]}
+    out = {name: list(cl.pair_reading(orders, CDOC_CLASSES)) for name, orders in cases.items()}
+    out["settled again at .4"] = list(cl.pair_reading([no_t, no_t], CDOC_CLASSES, .4))
+    out["settled again at .6"] = list(cl.pair_reading([no_t, no_t], CDOC_CLASSES, .6))
+    return out
+
+
+def expected_cdoc_pairs():
+    return {"FLAG/FLAG": ["detection", None, "FLAG"], "CLEAR/CLEAR": ["clear", None, "CLEAR"],
+            "FLAG/UNDECIDED": ["leaning", "FLAG/UNDECIDED", "FLAG"], "CLEAR/FLAG stronger CLEAR": ["leaning", "CLEAR/FLAG", "CLEAR"],
+            "below threshold leans": ["leaning", "UNDECIDED/UNDECIDED", "FLAG"],
+            "no threshold never leans": ["leaning", "UNDECIDED/UNDECIDED", None],
+            "one order only": ["leaning", "FAILED/FLAG", "FLAG"],
+            "settled again at .4": ["detection", None, "FLAG"], "settled again at .6": ["leaning", "UNDECIDED/UNDECIDED", "FLAG"]}
+
+
+def observe_cdoc_lines():
+    """(b) The leaning line moves, the headline does not, and the counts say why."""
+    cl = _cl()
+    with tempfile.TemporaryDirectory() as tmp:
+        got = cl.score(cdoc_runs(tmp, True))
+    w, p = got["with_leanings"], got["pairs"]
+    return [got["headline"]["accuracy"], w["accuracy"], w["low_confidence_items"], w["moved_and_right"],
+            p["detections"], p["clear"], p["leanings_by_kind"], p["leanings_by_direction"], got["documents_by_reading"]]
+
+
+def expected_cdoc_lines():
+    return [.75, 1.0, 1, 1, 1, 1, {"CLEAR/UNDECIDED": 1, "FLAG/UNDECIDED": 1}, {"CLEAR": 1, "FLAG": 1},
+            {"all_clear": 1, "detection": 1, "leaning_only": 2}]
+
+
+def observe_cdoc_coverage():
+    """Coverage: a leaning-only document is counted apart and never answered; an all-clear decision-form document and
+    a reply-form document are judged absences, as before."""
+    cov = _coverage()
+    with tempfile.TemporaryDirectory() as tmp:
+        runs = Path(tmp) / "runs"
+        docs = {"d-lean": [_pair_entry(both(FLAG_ORDER, UNCLEAR_ORDER))],
+                "d-clear": [_pair_entry(both(CLEAR_ORDER, CLEAR_ORDER))],
+                "d-reply": [{"rule_id": CDOC_RULE, "made": 2, "failed": 0, "unreadable": 0, "refused": [], "kept": 0,
+                             "one_order_only": 1}]}
+        for doc, rows in docs.items():
+            (runs / doc / "audit").mkdir(parents=True)
+            (runs / doc / "audit" / "pairing_map.json").write_text(json.dumps({doc: {"passage_pairs": rows}}), encoding="utf-8")
+        labels = Path(tmp) / "labels.json"
+        labels.write_text(json.dumps({"primary": {"labels": [{"document_id": d, "basis": "silent", "class": "CLEAR"}
+                                                             for d in docs]}}), encoding="utf-8")
+        got = cov.counts(labels, str(runs))
+    return got
+
+
+def expected_cdoc_coverage():
+    return {"items": 3, "answered": 2, "post_hoc": 0, "not_answered": 1,
+            "by_basis": {"judged_absence": 2, "leaning_only": 1}, "leaning_only": 1}
+
+
+LEAK = ('headline = headline_line(items)',
+        'headline = headline_line([(n, dict(r, b3_class=with_leanings(r["b3_class"], document_reading(pairs[n]["run"], '
+        'str(json.loads(Path(pairs[n]["key"]).read_text(encoding="utf-8")).get("document") or "").rsplit(".", 1)[0], '
+        'classes)))) for n, r in items])')
+
+
+def proofs_696():
+    cl, cov = _cl(), _coverage()
+    return [
+        ("the headline is the v2_primary figure alone, the same bytes with and without the pair reading",
+         observe_cdoc_headline, expected_cdoc_headline, lambda: with_source(cl, "score", *LEAK)),
+        ("FLAG/FLAG stays a detection, FLAG/UNDECIDED is a leaning", observe_cdoc_pairs, expected_cdoc_pairs,
+         lambda: with_source(cl, "pair_reading", "if names == [FLAG, FLAG]:", "if FLAG in names:")),
+        ("CLEAR/CLEAR stays clear", observe_cdoc_pairs, expected_cdoc_pairs,
+         lambda: with_source(cl, "pair_reading", "if names == [CLEAR, CLEAR]:", "if CLEAR in names:")),
+        ("a leaning counts as its stronger order's direction", observe_cdoc_pairs, expected_cdoc_pairs,
+         lambda: with_source(cl, "pair_reading", "best = max(p for p, _d in directed)", "best = min(p for p, _d in directed)")),
+        ("the post hoc threshold settles from the saved probabilities", observe_cdoc_pairs, expected_cdoc_pairs,
+         lambda: with_source(cl, "order_reading", "if threshold is not None:", "if False:")),
+        ("the leaning line moves while the headline does not", observe_cdoc_lines, expected_cdoc_lines,
+         lambda: patched(cl, "with_leanings", lambda base, reading: base)),
+        ("coverage: a leaning-only document is counted apart", observe_cdoc_coverage, expected_cdoc_coverage,
+         lambda: with_source(cov, "pair_state", "return LEANING_ONLY", "return 'judged_absence'")),
+        ("coverage: a leaning is never the system's own answer", observe_cdoc_coverage, expected_cdoc_coverage,
+         lambda: patched(cov, "ANSWERED", cov.ANSWERED + (cov.LEANING_ONLY,))),
+    ]
+
+
 # ---------- running -------------------------------------------------------------------------------
 
-PROOFS = {480: proofs_480, 481: proofs_481, 482: proofs_482, 483: proofs_483, 484: proofs_484}
+PROOFS = {480: proofs_480, 481: proofs_481, 482: proofs_482, 483: proofs_483, 484: proofs_484, 696: proofs_696}
 SAYS = {480: "an unsettled verdict below its threshold is kept as a leaning with the model's probability; a tie, no threshold "
              "and cannot-be-settled on top never lean; the decision is never changed; it reaches the real pairing map",
         481: "a claim figure is found in a shown cell or one difference or ratio away within the cells' rounding; an "
@@ -453,7 +642,10 @@ SAYS = {480: "an unsettled verdict below its threshold is kept as a leaning with
         483: "the cells the judge's request cited are recorded by id; a cited cell the table does not hold, or none cited, "
              "lowers the verdict and a lowered not met writes no record; with no request nothing changes",
         484: "SEM-TAB-FACTS dev and test only are converted with labels mapped and spans kept, and no item is written "
-             "without role B's zero-hit leakage result for the part"}
+             "without role B's zero-hit leakage result for the part",
+        696: "ContraDoc's headline is the v2_primary figure alone, the same bytes with and without the pair reading; a pair "
+             "not both FLAG and not both CLEAR is a low-confidence leaning counted as its stronger order's direction, on "
+             "its own line beside the headline; coverage counts a leaning-only document apart, never as answered"}
 
 
 def validate():

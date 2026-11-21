@@ -8695,3 +8695,313 @@ Written 2026-11-21 02:50 +0300 by the lead (8fee59db).
 - The stage (b) fix (embedding fallback for no_match, check 690, lane commit e3b4bc42, merged 5c118ad8) changes the system, so its figure must come from frozen code: freeze and seal are never skipped (G-20261121-0251 item 3).
 - Order: the full gate on a rented machine at the lead tip (arm G, as ROUTE_GATE_ALPHA did for d12da1cd); on green, a local annotated tag v1.0-alpha-freeze-b on that commit (the alpha's own tag stays on d12da1cd); then a rerun folder QUICK_READ_ALPHA_B (QUICK_READ_ALPHA_R's tooling) for the one SciTab table whose 3 claims were refused no_match (document 37788c0e8f71), sealed and run at the tagged commit; role B scores the quick subset with the D-870 threshold and the new table's labels in place of the old, coverage first (D-871) and the chance test beside (D-872), labelled "on the same items, after the fix".
 - Spend: gate about 1 to 2 USD, seal and one table about 1 USD, each step inside the 5 USD pre-approval (D-708), within the 435 USD cap. Folders built by one Sonnet lane; launches by the chain.
+- D-870 result (development, 47 claims, the argmax_labels.py reading with CELL_THRESHOLD; log kept at external/s05/DEV_scitab_rerun/D870_grid.log): threshold, claims decided, 3-class, 2-class macro-F1: 0.34 47 0.517 0.776; 0.40 47 0.517 0.776; 0.45 44 0.491 0.736; 0.50 43 0.491 0.736; 0.55 41 0.498 0.747; 0.60 35 0.456 0.683; 0.65 33 0.451 0.676; 0.70 32 0.451 0.676; 0.75 31 0.463 0.695; 0.80 27 0.439 0.658; 0.85 26 0.418 0.627; 0.90 26 0.418 0.627; 0.95 21 0.388 0.582. The highest 2-class figure ties at 0.34 and 0.40; the rule takes the higher: 0.40. Error on development at 0.40: all 47 settled, none below the value; 2-class macro-F1 0.776.
+
+## D-875 (lead, 21 November 2026 03:32 +0300): round 3 pilot: the fate answer moved; two form bars did not hold; the second development set waits; role N reads the pilot alone
+- The pilot (NR_R3DEV_PILOT, c4pilot_1, 24 items) ended with exit 0 at 2.04 USD and was handed to role N (launch.py after, 1,064 files). Room fate answers: open 61, changed 1, kept 52, removed 38 of 152 (round 2: changed 17, kept 71, removed 64): the movable answer (open or changed) rose from 17 to 62 of 152.
+- R3_BARS (written before any run): five hold; changes_kept_by_form and reason_by_form do not. With 62 counters in place of 17 the generated steps run more often and refuse more: changes not_in_the_proposal 41 (round 2: 9), reason no_effect 35 and no_mechanism 1 (round 2: 0); the drop share is 8.57 percent (bar line 5 limit 10). By the pre-written rule no R3_PILOT_OK.json is written, so NEG_r3_devval does not launch.
+- Role N session R3DP (start_n_r3dp.cmd, REQUEST_ROLE_N_R3DP.md: R3D on the pilot alone, with the D-871/D-872 addendum) gives M1, M10, M4, coverage with and without withholding, and the chance test on c4pilot_1 against round 2 and C4 on the same items, at 0 USD. It is a development reading, not the adoption reading.
+- Next: trace the change and reason refusals on open points from the pilot's saved replies (development); a fix and a new pilot only if it is concrete.
+
+## D-876 (lead, 21 November 2026 03:33 +0300): a finished request refused as stale at its seal, never launched, is deletable under D-808
+- Both independent checks of 03:13 (Opus a33a5, Fable a26df) found ROUTE_GATE_e958ecc4/request_stale_1820 and _1824 never launched (no launch intent in the ledger for those attempts, no .run folder, trace "stale request, not launched", no hard link, nothing links into them) and named one ruling that clears them: that this class is deletable. The lead rules so; both are deleted through safe_delete.py with DELETE_APPROVALS lines.
+- Why now: the D-874 gate request needs about 0.55 GiB and its seal holds an 11.0 GiB floor; with 11.05 GiB free the next request would hold the seal again.
+
+## D-877 (lead, 21 November 2026 03:40 +0300): round 3 is not adopted on the pilot reading; part 2 stays unread; the audit withholding is the next root cause
+- Role N R3DP (03:38, hand-back sha deb0589a...), c4pilot_1, 24 items, the same items as round 2, scorer as is: M1 0.831 (round 2 0.817, +0.015, -0.061 to +0.068), M10 0.474 (0.415, +0.059, -0.024 to +0.140; permutation p 0.069), M4 0.204 (0.265, -0.061, -0.136 to -0.010). D-864's rule (M10 up, no bar figure down beyond its interval) fails on M4: not adopted. R3_DEV_ADOPTED.json is not written, NEG_r3_devval and the part 2 run stay unlaunched (about 4 USD not spent); part 2 stays unread for a later round.
+- Coverage (D-871): the audit withholds 43 of 152 pieces (28 percent), so M1, M10, M4 and M5 are coverage-refused as scored. With each withheld piece kept as written and marked "audit: unsupported" (same replies): M1 0.994, M10 0.540 (round 2 kept 0.479, +0.061, paired p 0.22), M4 0.337 (round 2 kept 0.439, -0.102, paired p 0.042). The withholding costs every measure; round 3's open answer (mapped to counter) lowers M4 because kept and removed fates now meet counter stances.
+- Next (root cause, development): the withholding rule (score_neg_advisor.py:770, an unsupported piece scores no_answer) is the largest single loss; the fix is to keep the stance visible and marked (HONEST-OUTPUT-A) and to score both lines, decided as its own rule before any further round; and the open answer gets its own stance rather than counter. Both need a new round on new items, in the beta unless Seckin decides otherwise.
+
+## D-878 (lead, 21 November 2026 03:52 +0300): AM-4, the audit-unsupported piece kept and marked from the next round on
+- Root-cause fix for D-877: tools/score_neg_advisor.py withhold() takes marked (config/neg_advisor_dev.json audit_unsupported_kept, false by default, read at call time like D-758); with it a piece the audit alone calls unsupported stays, marked audit: unsupported, counted as audit_marked; a check-refused piece stays withheld. The report states audit_unsupported kept_marked or withheld. Plan amendment AM-4 in docs/loop/stages/NEG_PLAN_AMENDMENTS.md.
+- Ex ante: set true before the next round's deciding read on unseen items; the withheld reading reported beside. Proof: tools/neg_advisor_checks.py test_06 (marked keeps P-A1-2 marked, counts 1; the switch reads false by default), 56 advisor checks pass.
+
+## D-879 (lead, 21 November 2026 04:03 +0300, under D-873): the very small untouched sets, by a rule written before any draw or run
+- Drawn only from material moved to validation by D-848 with no look on record; the final test sets (ContraDoc 230, SciTab 363) and the SciTab v3 share stay closed.
+- SciTab: 3 whole papers of the 14 unused papers (two classes only), drawn by Python's random.Random(20261121).sample over the sorted paper ids. ContraDoc: the 6 leftover kept groups of BDRAW1, all of them. Negotiation: the highest-numbered frozen D-843 part not yet read by any round (round 3's part 2 does not count, it is held for round 3).
+- The holding role (B for SciTab and ContraDoc, N for negotiation) writes the id list, its SHA-256 and a look counter at 0, and hands the lead the SHA-256 and counts only, before any run that reads them. A set is read once, for the stage it is declared for, and reported beside the seen-item figure with its interval and the D-872 chance test; under 5 items, the count alone.
+- Requests go with the next role session of each role (no session of its own, G-0230 usage).
+
+## D-880 (lead, 21 November 2026 04:32 +0300): a copy the admit step made is D-808 class (b) when a byte-identical copy stays in the same finished gate folder
+- Disk hold (Drive paused at 10.6 GiB, 04:13; the next request needs about 11.55 GiB). Deleted at 04:27 under D-876 and D-808 after both checks: ROUTE_GATE_B_695c6d4b/request_stale_0331 (0.547 GiB, never launched) and the lead's scratch copies qa2test/QUICK_READ_ALPHA, qa2test/QUICK_READ_ALPHA_R and exp_judge/laptop (all archives byte-identical to the external/s05 originals; the zero vectors regenerable). Kept: qa2test/stage (six files with no copy found) and exp_judge/records.jsonl (Fable found no named source).
+- Ruling: ROUTE_GATE_e958ecc4/admitted/G1119_E958_FULL/gate_source.tar (441,446,400 bytes, link count 1) is a copy the admit step made; SHA-256 7064e709...afded69d equals run_part/G1119_E958_FULL/gate_source.tar and request/seal_source.tar, which stay. The gate ended (watch.log terminated_and_cleaned exit 0, TERMINATION_VERIFIED.json, collected_evidence.tar.gz hash matches collection_integrity.json). Both checks (Opus ad8ba, Fable a3a33): deletable. Free before: 11621M.
+- Not deleted: ROUTE_GATE_e958ecc4/admitted.refused (holds gate_log.jsonl found nowhere else, and a 462-link assets.tar name) and every assets.tar name (hard links free nothing).
+
+## D-881 (lead, 21 November 2026 05:24 +0300): stage (b) frozen and the one-table rerun armed
+- ROUTE_GATE_B_695c6d4b (D-874) green: 500 checks run, 483 pass, 11 known red (28, 31, 118, 121, 146, 193, 257, 325, 333, 338, 348), 0 unexpected, 0 now green; check 690 (the stage (b) fix) and 326, 536 to 538 pass; execution integrity passed; 1.913 USD (seal 0.516, part 1.397). Watch read of the end at 05:13:40.
+- Tag v1.0-alpha-freeze-b (annotated, local, not pushed) on 695c6d4b86dc3112f70d47beebf8d47a35d38a7c, tagger date 05:16:07. Its message says "05:17", a time typed by hand; the guard refuses a tag delete, so the tag stays and this line is the correction.
+- QUICK_READ_ALPHA_B armed at 05:16:18 (LEAD_GO.txt, chain.json): one SciTab entry, forecast seal 0.839 and r1 0.531 USD, inside the 5 USD step approval (D-708); spend before it 370.96 of 435.
+
+## D-882 (lead, 21 November 2026 06:21 +0300): the one-table rerun delivered; role B scores stage (b)
+- QUICK_READ_ALPHA_B: seal exit 0 (0.473 USD), admitted, r1 0.537 USD. The entry batch/00_37788c0e8f71_B3 returned exit 0 (remote work completed, 27 polls, none unreachable), and its collected_evidence.tar.gz (SHA-256 8ad81e4e...) matches its collection_integrity.json. The chain marked r1 failed because it reads workload_return at the bundle top, where a batch-form run has none (open item 184); nothing waits on r1, so the held line is cleared.
+- The system's own record (counts only): 3 claims selected by embedding_fallback, 0 no_match, 0 tie; the decisions keep their probabilities (no_threshold, as frozen).
+- Role B session STAGEB started 06:21:44 (pid 26496, role_start_check PASS; request and inputs in _xfer/lead_to_B/stageb, INPUT_SHA256.txt there): the rerun table in place, threshold 0.40 once (D-870), coverage (D-871), figures with the cluster interval, the chance test (D-872), and the D-879 untouched-set ids (SHA-256 only to the lead).
+
+## D-883 (lead, 21 November 2026 06:31 +0300): SciTab stage (b) read; coverage within; the figure is written and both bars fail
+- Role B STAGEB (hand-back result.json, SHA-256 c1be440e...; first start stopped cleanly at step 3 because the lead's code tree lacked config/, resumed after config/ was added): the rerun table replaced in place (digests recorded), threshold 0.40 applied once (D-870): 77 of 78 claims decided, 1 below the threshold, 0 refused by selection.
+- Coverage (D-871): before 0 of 78 answered (refused); after 77 of 78 (1.3 percent not answered): within, the figure may be written.
+- Figure, labelled "stage (b): root-cause fix, frozen 695c6d4b; threshold chosen post hoc from development records; on the same items, after the fix": 3-class macro-F1 0.587 (95 percent cluster interval 0.409 to 0.686, 13 tables, 2000 draws), chance test p 0.0001 (10,000 shuffles, seed 20261121). Per class: supports 0.633, refutes 0.679, not enough info 0.450. 2-class on the 61 two-class items 0.704 (0.595 to 0.797), p 0.0001.
+- Bars on the 3-class figure (D-842, D-867 recorded references B1 55.8, cloud 81.7): at least 65.8, short by 7.1 points; at least 71.7, short by 13.0 points. Both fail. B1's per-item rows were lost on 16 Nov, so the paired interval of the difference is not computed.
+- Stages so far: argmax-only reading 0.190 (silent default, not the system's figure) -> stage (a) refused by coverage -> stage (b) 0.587. The weakest class is not enough info (0.450); stage (c) starts from there.
+- Untouched sets (D-879) recorded by role B, looks 0: SciTab 3 papers (SHA-256 ee922c24...), ContraDoc 6 groups (SHA-256 f6e10f81...).
+
+## D-884 (lead, 21 November 2026 06:35 +0300): ContraDoc stage (b) starts from a loss diagnosis; SciTab stage (c) starts from not enough info
+- ContraDoc (frozen alpha, quick subset, accuracy 0.55 against 62.5 and 80.0) has no threshold stage: its pairs are judged in reply form. Root cause first (D-873): role B session CDDIAG (0 USD, counts only) puts each of the 40 documents in one loss class: hit, evidence not among the passages, evidence passages never paired by the ranking's 40 (config/passage_pairs.json limit), pair asked and judged compatible, a kept pair elsewhere, correct none, false alarm. The fix is chosen from the largest class and frozen before any run.
+- SciTab stage (c) (root cause plus the fixes seen): the weakest class is not enough info (F1 0.450, D-883); the seen candidates are #254 (not enough info decided from evidence) and #272 (table authority, routing and abstention). Chosen after CDDIAG, one change at a time, each frozen and gated.
+- Negotiation: AM-4 (D-878) is switched on before the next round on unseen items; the round is planned after the two above, inside the usage left (90 percent of the week, stop at 98).
+
+## D-885 (lead, 21 November 2026 06:54 +0300): ContraDoc's root cause is the pair judge, not the ranking
+- Role B CDDIAG (hand-back result.json, SHA-256 d00ab781...; frozen alpha d12da1cd, quick subset, seen items, no figure). Classes reproduce the scored accuracy 0.55 (A + E + F over 40). Of 18 documents with a contradiction: 4 hits (A), 0 evidence missing from the passages (B), 3 evidence passages never paired within the ranking's 40 (C; 149 passages, 4,182 possible pairs, 120 asked), 8 asked with the evidence and not kept (D: 5 judged compatible in both orders, 3 flagged in one order only), 3 a kept pair elsewhere (E; their evidence pair was asked and not kept). Of 22 without: 15 correct none (F), 7 false alarms (G, 10 kept pairs).
+- So 11 of 18 contradictions reached the judge with the right passages and were not kept, and 7 of 22 clean documents were flagged: the judge step is the root cause; the ranking costs 3.
+- Next (stage (b) for ContraDoc, a fix chosen before any new run): the judge's decision read from the model's own probabilities over the declared answers (config/passage_pairs.json form decision, CHOICE-A), both orders combined by a rule written first, and its threshold chosen on the 15 development documents only (as D-870 did for tables); then freeze, gate, and the quick subset again beside the 6 untouched groups (D-879). Spend planned per step inside D-708.
+- Issue sweep 06:55: #272 and #307 updated; #314 (40-document trial, stopped by D-869) and #315 (short measurement, done, D-866) closed with evidence; milestone notes v1.0-alpha and v1.0-beta updated (alpha stopped until the bars hold, last day 28 November).
+
+## D-886 (lead, 21 November 2026 06:59 +0300): D-880's class also covers a superseded gate whose part ended red; Drive floor work (G-20261121-0640 item 2)
+- Checks (Opus a2254, Fable a98f3): ROUTE_GATE_1277050c/admitted/G1120_1277_FULL/gate_source.tar deletable (gate ended exit 0; SHA-256 dc318ac9... equal to run_part and request copies; link count 1; not referenced). ROUTE_GATE_0872ce14/admitted/G1119_0872_FULL/gate_source.tar: points 2 to 4 pass (SHA-256 34b95fed... equal to the run_part and request copies, link count 1, not referenced); point 1 fails only because the part ended exit 2 and the gate is superseded (SUPERSEDED.txt); Fable names the ruling that closes it.
+- Ruling: the copy the admit step made is an input copy, not run evidence; in a terminated, superseded gate whose evidence is collected and verified (collected_evidence.tar.gz equals collection_integrity.json) and whose two other identical copies stay, it is in D-880's class. The gate's evidence, logs and records stay untouched.
+- Also deleted just before the 06:56 heartbeat under D-880: ROUTE_GATE_e958ecc4/admitted.refused/bundles/G1119_E958_FULL/gate_source.tar (hash 7064e709... confirmed by both earlier checks, Opus ad8ba and Fable a3a33). Purpose: the Drive archive floor (12 GiB, D-764, unchanged).
+
+## D-887 (lead, 21 November 2026 07:09 +0300): ContraDoc stage (b), the pair judge read from the model's own probabilities; the rule, written before any run or figure
+- Change (one, D-885's root cause): config/passage_pairs.json form "decision" (D-S41, CHOICE-A; built and wired, scripts/passage_pairs.py read_decision). semantic_thresholds.json keeps no passage_pair value in the frozen code, so every pair is asked in both orders, its answer probabilities saved and nothing settled; the threshold is applied afterwards to saved records, as D-870 did for tables.
+- Order: a lane makes the change and its checks on a branch; full gate on a rented machine; on green a local tag v1.0-alpha-freeze-c; one launch folder on that commit with the 15 development documents (DEV_contradoc_full's D set) and the 40 quick-subset documents (Q); the 6 untouched groups (D-879) follow as their own part through role B, who holds their ids.
+- Grid, fixed now: 0.34, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95. At each value an order's saved decision is settled when its top answer's probability reaches the value (choice_decision.settle) and classed as the step does (contradicts FLAG, does not CLEAR, cannot tell UNDECIDED); a pair is kept when both orders are FLAG; a document with a kept pair is contradictory, one without is the step's judged none.
+- Choice: the value with the highest development accuracy (ContraDoc's binary judgment, the adapter's v2_primary); ties go to the highest value among them; its development error counts recorded with it. Applied once, unchanged, to Q by role B (keys), reported "threshold chosen post hoc from development records; on the same items, after the fix", with coverage (D-871) and the chance test (D-872); then to the untouched groups.
+- Spend, each step inside the 5 USD approval (D-708): gate about 2 USD, seal about 1.5, parts about 2.9 each (55 documents in about six parts, DEV_contradoc_full's rates), about 20 USD in all, within the 435 cap (spent 372.66 before it).
+
+## D-888 (Seckin 07:32, relayed G-20261121-0732): negotiation round 4 with tonight's fixes; the lead's plan
+- Seckin: "Müzakereyi de bir daha mı yapsak? Kök neden ve bazı iyileştirmeler 3. tur çalışırken verildi." Round 4 carries: (1) AM-4 on (D-878): an audit-unsupported piece stays, marked, counted apart, not scored no_answer; (2) its own stance for the "still open" answer, with round 3's option change tried again with it; (3) coverage (D-871), fail-fast, a 3 to 5 item smoke test, the chance test (D-872), staged figures: withholding fix alone, then withholding plus the option.
+- Order: the same 24 development items (c4pilot_1) under D-864 (M10 up, no figure down beyond its interval); if it holds, D-798 part 2 and the untouched part (D-879). Cap 15 USD for round 4; the 98 percent rule unchanged. SONUÇ and one wake at the end.
+- Lead's plan (07:32): stage one (withholding fix alone) is read from round 3's saved replies by role N with audit_unsupported_kept on, no run; a lane builds round 4 (the own stance for "open", AM-4 switched on ex ante in config/neg_advisor_dev.json before the deciding read, the smoke part, the pilot, part 2 and the untouched part as launch folders held on LEAD_GO, fail-fast at the watch: stop a part when the first items return no answer or the no-answer share passes 5 percent).
+- The ContraDoc track (D-887) goes on beside it: lead tip fast-forwarded to 01ae4f9f (lane/cd-decision: config form decision; check 324's proofs pin the reply form; one check-325 proof that asserts the shipped reply form is reported, inside a known red). Gate ROUTE_GATE_C_01ae4f9f and DEV_contradoc_decision preflighted, waiting for disk room (seal floor 11.0 plus the request).
+
+## D-889 (lead, 21 November 2026 07:33 +0300): AM-4 switched on ex ante for round 4
+- config/neg_advisor_dev.json audit_unsupported_kept set true before any round 4 reading (D-888 item 1, D-878): from now on the scorer keeps an audit-unsupported piece as written, marked, counted as audit_marked; check-refused pieces stay withheld. Every figure reported before this line was scored with false and stays as reported.
+- Stage one of D-888 (withholding fix alone, no run): role N rescores the saved round 2 and round 3 pilot replies (c4pilot_1, 24 items) with the switch on, coverage and the chance test; labelled "on the same items, after the fix".
+
+## D-890 (lead, 21 November 2026 07:45 +0300): two finished lane worktrees deleted; the ContraDoc gate armed
+- Disk 10.96 GiB at 07:35 (push sent, ALERT line). Both checks (Opus a56dd, Fable a99b6): .claude/worktrees/agent-aa499ad4f7087d517 (lane/cd-decision, HEAD 01ae4f9f on the lead tip) and agent-affa500d9e2150027 (HEAD e3b4bc42, on the lead tip and in tag v1.0-alpha-freeze-b) deletable (clean, no link inside, no chain names them); deleted through safe_delete.py (876 MB), git worktree prune. neg-609b4fb0 and neg-f1961c32 are kept: their HEADs are patch-equal cherry-picks not reachable from a ref, and NIGHT_neg_mstep and NIGHT_neg_improved still hold armed chain.json files whose last step ended exit 2; retiring those two chains is its own decision.
+- ROUTE_GATE_C_01ae4f9f armed at 07:45 (LEAD_GO.txt, chain.json) with 11.81 GiB free. Drive stays paused under its 12 GiB floor.
+
+## D-891 (lead, 21 November 2026 08:01 +0300): round 4 merged and its scoring switches set ex ante; stage one read
+- lane/neg-r4 merged (e25e75da; merge b72134f0, config conflict resolved by union): the stepwise switch open_stance (round 4 config neg_advisor_prompt_r4.json: R3 switches plus open_stance, open_stance_answer "open"), the scorer switch open_stance_m4, and tools/loop/fail_fast.py called by every round 4 part watch (check 695, 10 proofs, a deliberately empty fake run stops and a good one does not). Checks on the merged tip: fail_fast_checks, neg_round2_m4m10_checks, neg_advisor_checks, 50 passed.
+- open_stance_m4 set true now, before any round 4 reading, beside audit_unsupported_kept (D-889).
+- Stage one (role N R4S1B, saved replies, 24 pilot items, AM-4 on; labelled on the same items after the fix): round 2 with the fix M1 0.987 [0.964, 0.998], M10 0.473 [0.403, 0.561], M4 0.429 [0.344, 0.533]; the fix alone on round 2: M1 +0.170 [0.120, 0.254], M10 +0.058 [0.014, 0.146] (paired p 0.010). Round 3 with the fix: M1 0.984, M10 0.538 [0.468, 0.607], M4 0.337 [0.253, 0.413]. Coverage within for M1 and M10 (2 of 152 withheld by checks); M3 refused (26 of 113 no_state). Bars (each at least 0.60): M1 holds; M10 and M4 do not.
+- Next: the smoke part (5 items), then the 24-item pilot under D-864 with the open stance; part 2 only after R4_DEV_ADOPTED.json.
+
+## D-892 (lead, 21 November 2026 08:11 +0300): two round 4 lane worktrees deleted; the gate C seal released
+- Gate C's seal was held at 07:49 by its 11.0 GiB floor (10.81 free; push sent, ALERT line). Both checks (Opus ab84c, Fable a1513): .claude/worktrees/neg-r4-e428f123 (superseded; HEAD on the lead tip) and agent-af01a4df081cd31e4 (lane/neg-r4, merged) deletable; the round 4 folders bind neg-r4-e25e75da. Deleted through safe_delete.py (1.01 GB), git worktree prune. Five evidence files hard-linked into A were removed as names only: the main checkout's copy kept its SHA-256 (8354d654... for the producer adapter) with link count 16 to 15.
+- Free disk 11.40 GiB; gate C preflight holds; its held seal step cleared at 08:11 for the chain's next pass.
+
+## D-893 (lead, 21 November 2026 08:27 +0300): three model copies deleted from the laptop's Hugging Face cache
+Under Seckin's G-20261121-0822 ("Evet, silinsin, kurallarla."), in his order: every local file of phi-4, Qwen2.5-7B
+and Phi-3.5-mini matched its member's SHA-256 in the asset archive verified MATCH on the instance (750cf50d, 133 of
+133); Opus and Fable checkers each said SAFE; 31 internal snapshot links removed as links; safe_delete dry run then
+execute. 16,928,448,512 bytes opened (free 11.6 GB to 28.6 GB). Record and re-download commands:
+docs/loop/private/HF_CACHE_DELETE_20261121.md. The NEG_r4_smoke seal hold released (no instance had launched); Drive
+backup started again.
+
+## D-894 (lead, 21 November 2026 08:29 +0300): usage at 92 percent, pace kept
+Seckin's G-20261121-0828: helpers only when needed, mechanical work light, scheduled wakes over long waits, no
+re-reading; ready work starts at once, independent work in parallel; order of the remaining usage: round 4, SciTab
+stage (c), the ContraDoc fix; the 98 percent stop stays. Every FOR_SECKIN entry carries the hourly rate and the
+estimated time of 98 percent.
+
+## D-895 (lead, 21 November 2026 08:36 +0300): SciTab stage (c) starts from a loss diagnosis of not enough info
+- As D-885 did for ContraDoc: role B session SCIDIAG (0 USD, counts only, stage (b) records of 695c6d4b, seen items, no
+  figure) gives the confusion counts and, per loss cell, the cell selection method, the selected cell count, the top
+  probability and the not-enough-info probability, beside the correct rows. The fix (#254 or #272) is chosen from it,
+  one change, frozen and gated, inside the usage order of D-894. Started 08:36:26 (pid 7896, role_start_check PASS).
+
+## D-896 (lead, 21 November 2026 08:43 +0300): SciTab stage (c) is the not-enough-info floor; the rule, written before any figure
+- Found (role B SCIDIAG, hand-back result.json; counts only, reproduces D-883's per-class F1): the confusion counts
+  (gold by system) supports 19/4/8, refutes 4/19/6 (1 below the threshold), not enough info 5/3/9. The largest loss is
+  14 supports or refutes claims answered not enough info, every one with that answer at 0.30 or more; 8 go the other
+  way. Every claim's cells were the small or whole table (more than 8 cells, 3 by embedding fallback), so the cell
+  selection does not separate them. #272's abstention side is the change; #254 stays for the beta.
+- The change, one: a saved decision whose settled answer is not enough info keeps it only when that probability
+  reaches NEI_MIN; below it the decision is settled between the other two answers by choice_decision.settle at 0.0 (a
+  tie stays unsettled and keeps its normal label). CELL_THRESHOLD 0.40 is kept (D-870). Saved records only; the frozen
+  alpha's config is not changed.
+- NEI_MIN is chosen on the development records alone (DEV_scitab_rerun half A, 15 tables, 47 claims, supports and
+  refutes only, no key opened): grid 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.01 (never kept); the smallest
+  value whose development not-enough-info share is at most 0.10, else the highest. Applied once to the quick subset's
+  78 claims; coverage (D-871), figures with the cluster interval, chance test and the paired line against stage (b)
+  (D-872), labelled "on the same items, after the fix". The cost in not-enough-info recall cannot be measured on
+  development and is stated as a limitation.
+- Tool: external/s05/R2_ROLE_STARTS/SCIC/nei_rule.py (tested on synthetic decisions with the 695c6d4b code); role B
+  session SCIC.
+
+## D-897 (lead, 21 November 2026 08:54 +0300): NEI_MIN 0.70 chosen on development by D-896's rule
+- Role B SCIC stopped rightly at step 1 (no development records in its folder). The lead ran the choice itself, no
+  key opened: DEV_scitab_rerun's score.py extracted the 15 tables (730 files) and the adapter's labels; nei_rule.py
+  choose with CELL_THRESHOLD 0.40 gave development not-enough-info shares 0.149 (0.30), 0.149 (0.40), 0.128 (0.50),
+  0.106 (0.60), 0.085 (0.70), 0.064 (0.80, 0.90), 0.021 (0.95), 0.000 (1.01). Chosen 0.70, the smallest at most 0.10.
+  choice.json goes to role B unchanged; SCIC resumed from step 2 (started 08:54:28, pid 12840).
+
+## D-898 (lead, 21 November 2026 09:01 +0300): SciTab stage (c) read; the not-enough-info floor moves nothing measurable
+- Role B SCIC (hand-back result.json; NEI_MIN 0.70 from D-897 applied once): 77 of 78 decided, 1 below the threshold;
+  coverage within (1.3 percent). Labelled "stage (c): the not-enough-info floor (D-896), value chosen on development
+  records ex ante by a rule written first, applied once; on the same items, after the fix".
+- 3-class macro-F1 0.598 (95 percent cluster interval 0.444 to 0.656, 13 tables), chance p 0.0001; per class
+  supports 0.635, refutes 0.721, not enough info 0.438. 2-class on the 61 two-class items 0.736 (0.649 to 0.822), p 0.0001.
+- Stage (c) minus stage (b), same 78 items: +0.011, paired sign-flip p 0.787 (no interval from the tool). The floor
+  turned 6 wrong not-enough-info answers into supports or refutes and 2 right ones away; the errors moved, not fell.
+- Bars (3-class): at least 65.8, short by 6.0 points; at least 71.7, short by 11.9 points. Both fail.
+- Next for SciTab: no further same-item stage in the alpha; #254 (not enough info decided from evidence) and the ex
+  ante threshold go to the beta with a fresh set (D-869). The usage order (D-894) moves to round 4 and ContraDoc.
+
+## D-899 (lead, 21 November 2026 09:29 +0300): round 4 smoke read; the mechanics hold; the pilot is armed
+- NEG_r4_smoke (5 items, Phi-3.5-mini, 0.45 USD seal plus 0.50 USD part; workload exit 0, termination verified):
+  from the returned evidence, 5 of 5 items answered, 175 calls, 172 passed, 3 refused by the step check on one item
+  (1.7 percent); no crash, no item without an answer; the watch looked once (3 returned) and did not stop.
+- launch.py after (counts by form, R4_COUNTS.json): 148 steps, dropped share 0.020 (limit 0.10), room fate mass median
+  0.999, room fates kept 12, open 5, removed 10, changed 0. Two of round 3's pilot count bars do not hold on these
+  5 items: changes kept by form (3 of 27 refused, 0.111 against 0.10) and every fate occurs (changed 0). The others
+  hold.
+- Reading: the smoke checks the mechanics, and they hold; the count bars are the pilot's, judged on its 24 items, where
+  these two are watched first (5 items are too few: one refusal fewer passes the first). R4_SMOKE_OK.json written with
+  both lines; NEG_r4_devpilot armed (chain.json). Round 4 spend so far about 0.95 USD of its 15 USD cap.
+
+## D-900 (lead, 21 November 2026 10:00 +0300): round 4's adoption reading is prepared ex ante
+- Role N session R4DP (start_n_r4dp.cmd, role_start_check PASS; request in _xfer/lead_to_N/R4DP with INPUT_SHA256.txt)
+  scores the round 4 pilot (c4pilot_1, 24 items) against round 2 with the fix (R4S1B), the adopted round scored with
+  AM-4 on, over the same items. Scorer and round 4 code from a plain tree of e892d905 (both development switches true,
+  D-889 and D-891); role N's checkout is not touched.
+- D-864's rule read on it: adopted (R4_DEV_ADOPTED.json, which releases part 2) only if M10 rises and no bar figure's
+  paired interval lies wholly below 0. Started by the lead after launch.py after in NEG_r4_devpilot.
+
+## D-901 (Seckin 10:04, relayed G-20261121-1004): every recorded low-score cause swept; no-run fixes now, runs in the beta
+- One helper (Sonnet, read-only) writes docs/loop/private/ROOT_CAUSE_SCAN_20261121.md from DECISIONS, FOR_SECKIN,
+  AUDIT_*, LESSONS, OPEN_ITEMS and the open issues since 13 November: each cause, its status (fixed and measured, fixed
+  not measured, waiting, left for the beta, not acted on) and whether it needs a run; the supervisor's named items are
+  in it.
+- The lead makes each no-run fix (code, config, rule record, scorer, saved outputs), each with a check and a commit;
+  each run-dependent one gets a beta issue. Result to FOR_SECKIN as a table (cause, done, evidence, left). Round 4 and
+  the ContraDoc decision run go on beside it.
+
+## D-902 (Seckin 10:06 and 10:07, relayed G-20261121-1006 and G-20261121-1007): the small untouched sets run once, after one new freeze
+- Order: (1) the D-901 sweep and every no-run fix, the table tool's half-finished tables included, each with a check
+  and a commit; (2) each checked on development items or saved records only, thresholds fixed ex ante; (3) one full
+  gate and one new freeze for all of them together; (4) only then the small untouched sets (D-879: SciTab 3 papers,
+  ContraDoc 6 groups, the negotiation part) with that frozen code, fail-fast and coverage on. No SciTab run now.
+- What fits before 98 percent runs without asking; the rest is chained to just after the 25 November 11:00 reset.
+  One FOR_SECKIN entry with the plan and times.
+- Wording: never "validated" on a small n; "on the small untouched set it held (or did not), interval, p"; the
+  independent measurement is in the beta.
+- Preparation only: role B session UNTS hands the 3 SciTab untouched paper ids to the lead side (ids only, no label,
+  look counter still 0) so the build can be made once the freeze exists.
+
+## D-903 (Seckin 10:09, relayed G-20261121-1009): standing order 120, the dependency check; applied to the queue now
+- Standing order 120 and a LESSONS entry: every new fix, decision or finding is checked against the running and
+  queued steps it invalidates before it is applied; the measurement order is no-run fixes, development check, ex ante
+  thresholds, one full gate and one freeze, then the untouched or validation reading.
+- Applied at once: NEG_r4_devpilot (a development check on the 24 seen items) goes on. NEG_r4_part2 stays unarmed
+  (chain.json.ready) even if round 4 is adopted: part 2 is an independent reading and waits for the one new freeze of
+  D-902. DEV_contradoc_decision (the 55-document development run, about 17.9 USD) stays unarmed until the D-901 sweep
+  table is read, since a no-run ContraDoc fix from it may change the code that run would measure. The gate C tag is
+  not made a measurement freeze: the one freeze comes after the sweep fixes. The untouched negotiation part and the
+  SciTab and ContraDoc untouched sets wait for that freeze.
+
+## D-904 (lead, 21 November 2026 10:38 +0300): the 10:14 laptop crash; both rented machines closed; work resumed from the records
+- Cause read from the Windows event log: an unclean reboot at 10:14 (Kernel-Power 41) after bugcheck 0x10E, a graphics driver video memory fault; not Windows Update (only a Defender signature update at 10:04). No setting changed; the driver update is Seckin's, in the evening (G-20261121-1030).
+- Both laptop controllers died with the machine and have no reattach path. Gate C (ROUTE_GATE_C_01ae4f9f) was at check 320 of about 700 after 79 minutes of workload and could not end before its 10:50 deadline; its partial results were copied off the instance over SSH with the run's own temporary key (run_part/GC_01ae4f9f_FULL/hand_collected_20261121), then the lead terminated it (99 min, 2.13 USD). NEG_r4_devpilot was in setup and could not progress; terminated (17 min, 0.37 USD). Both ledger launches closed with by lead lines. Options weighed: let the reaper end both at their deadlines (spends up to 2.4 USD more for nothing collectable) or close now (chosen; P6, P12 reversible).
+- Gate C is not redone now: under D-903 the one new freeze after the D-901 sweep fixes gets its own full gate. The pilot is rebuilt as NEG_r4_devpilot_b (names and purposes only changed; archive closure COMPLETE) and armed through its chain at 10:37 (D-903 keeps the development check going).
+- Lock taken by session 5fc003be, RESTART_UP written, the wake fired once (HTTP 200). Reverse: none needed; the closed runs stay in the ledger.
+
+## D-905 (lead, 21 November 2026 10:43 +0300): sweep items C09, C21, C41 diagnosed from saved evidence (no run)
+- C21 closed, nothing to fix: every one of the 54 collected alpha entries ran with INST_FINDER off (audit/agent_switches.json: source variable, ratified by INFRA-052; run_record.json agrees). Not traced: whether an unset variable also ends off; it is read in the next seal's report line.
+- C09 diagnosed: on three of the four failing SciTab tables PROCESSOR answered the compact extraction with the refusal form (8 calls, 10 output tokens each, empty items), 0 or 1 of 3 calls delivered, the shape of open item 161; refused replies are never asked again (semantic_waves skips them). The fourth is one LEGAL_ANALYST contract violation, cause not settled. Fix candidates (one single-span retry of a refused extraction, or counting refused extractions in the run summary) change bound files and need a run to measure: beta, with an issue.
+- C41 diagnosed: the 56 "crashed" calls are stepwise reply records refused by the method (method_refused: changes 25, reason 23, 8 unmatched), not crashes; no ssh drop, no memory class. The half was slow because 34 steps ran to the 512-token cap (1,809 of 2,685 s); exit 124 is the workload deadline. Fix candidates (a shorter cap or stop rule on the stepwise reason and changes steps; a larger forecast or two parts) change bound files or need a run: beta, with an issue; the label "crashed" is corrected in the record here.
+- Evidence: docs/loop/private/SWEEP_DIAG_20261121.md (counts and paths only).
+
+## D-906 (lead, 21 November 2026 10:47 +0300): sweep item C36 read on saved records; no code change; C40 needs a role B hand-over
+- Role N SWP (hand-back sha 71b461e7..., counts only, no model): round 3's 42 refused change steps sit on open points 16, removed 17, changed 7, kept 2; its 36 refused reason steps on open 13, removed 15, changed 4, kept 4 (round 2 on the same 24 items: 9 and 0). So the scan's proposed fix (a "no change yet" answer for open points) would reach under half of them, and round 3's configuration is already replaced by round 4, whose smoke shows 3 and 0 refusals on 5 items. Decision: no code change for C36; the round 4 pilot reading (R4DP step 5) reports the same refusal table on the 24 items, and a fix is written only if round 4 still refuses beyond round 2 there (P11: a general fix needs its own evidence).
+- C40 BLOCKED in that session: the kept lists of the duplicate sweep are role B's (start_b_d798dedup_a/b); role N holds only the fingerprints. Next: one role B request handing role N the kept ids through an exchange folder (ids only, no labels), then role N re-scores rounds 1 and 2 on them, labelled "kept items only, re-scored from saved outputs". No run, no money; queued after the C02 merge.
+
+## D-907 (Seckin 10:55, relayed G-20261121-1055): sweep items C14 yes, C23 not now
+- Seckin: "İki önerine de katılıyorum."
+- C14: the ContraDoc low-confidence leaning line is built. A pair whose two orders are neither both FLAG nor both CLEAR (UNDECIDED under D-887's decision form) is a labelled low-confidence leaning; the headline (v2_primary) does not change; the figure with the leanings is reported beside it on its own labelled line. First on development records only, no run, no money; on the untouched set only after the new freeze (D-902). This replaces the 19 November "full version" decision for this rule (D-781, D-670 item 2). Issue #289 carries it.
+- C23: not now. No operator rule declares [compare: cells] or [compare: passages]; it is added in the beta when one of his rules truly asks for a table or passage comparison. Issue opened in the beta milestone.
+
+## D-908 (lead, 21 November 2026 11:04 +0300): sweep item C02 merged: the shipped table path settles with 0.40 and the 0.70 floor
+- Lane lane/sweep-c02 (3f8eb888), merged as 46940743: config/semantic_thresholds.json ships cell_claim 0.40 (D-870) and cell_claim_not_enough_info_floor 0.70 (D-897), each with its development figures and the label "chosen post hoc on development records in the alpha"; scripts/cell_selection.py applies the floor in review before the class is read, saved probabilities unchanged, a note on the decision and its row. Proofs: cell_selection_checks 45 of 45 (two new, each neutralised, failed, restored, passed) on the merged tree; choice_decision, pair_judge, case_questions, auditor_roles unchanged; gate checks 317, 324, 326, 328, 331, 333, 388 to 394, 480 to 484, 487, 507 to 509, 536 to 538, 544 to 546 and 690 pass when called alone; 325 red before and after (known: "the reply stays the default" since D-887).
+- One recorded difference from the saved-record tool: a tie among the remaining answers stays an explicit "cannot be settled" (UNDECIDED) in the product, where the tool left the claim silent. Kept: the product's answer is its own, never a silent default (D-871).
+- Bound files changed: the next freeze re-seals (CONTROLLER-BINDING); the development replay check runs now (D-902 step 2), the untouched set after the freeze.
+
+## D-909 (lead, 21 November 2026 11:06 +0300; under Seckin's G-20261121-1105 item 1b): the ContraDoc decision form's development check runs now, unfrozen; the quick subset waits
+- C02's development replay (docs/loop/private/C02_DEV_CHECK_20261121.md): the shipped code gives the saved-record tool's class on all 47 development claims (FLAG 18, CLEAR 25, UNDECIDED 4; no tie). D-902 step 2 done for C02.
+- DEV_contradoc_decision ran nothing yet because it waited for a freeze tag on 01ae4f9f that only a green gate C could give, and gate C never ended (D-904). D-902 puts the development check before the one freeze, so the tag precondition is lifted (DEV_CHECK_BEFORE_FREEZE in its launch.py, a recorded switch, not a deletion) and only the development parts run: request, seal, admit, D1 and D2 (the 15 development documents, half A of G1), forecast seal 1.54 + 2.43 + 2.18 = 6.15 USD, each step under the 5 USD approval (D-708). Q1 to Q4 (the 40 quick-subset documents, already seen) are removed from the chain and wait for the freeze. Options weighed: wait for a new full gate and tag first (breaks D-902's order and holds Seckin's item 1b), or run all six parts now (17.9 USD, seen items before the freeze). Reverse: rename chain.json aside before the request.
+
+## D-910 (lead, 21 November 2026 11:12 +0300): sweep item C14 merged: the ContraDoc leaning line
+- Lane lane/sweep-c14 (75e1ebba), merged as 873c35de (one hand-resolved conflict in docs/CLAUDE_REFERENCE.md, TABLE-AUTHORITY-A: both lanes' sentences kept). tools/contradoc_leaning.py reads saved pair decisions beside the unchanged v2_primary headline: both orders FLAG a detection, both CLEAR clear, anything else a labelled low-confidence leaning counted by the direction of its stronger order (SciTab's rule); an optional post hoc threshold line is printed apart so its effect is not mixed with the leanings'. tools/coverage_check.py: under the decision form a document is a judged absence only when every pair is CLEAR in both orders; one with leanings and no kept pair is leaning_only, counted apart and never answered. Gate check 696 (8 proofs, each neutralised, failed, restored, passed) passes on the merged tree; table_authority groups 480 to 484 unchanged.
+- Consequence recorded: a decision-form run with no passage_pair threshold no longer counts as judged absence, so the ContraDoc development figure needs its threshold chosen first on the D parts' records (D-887's rule), written into config before the freeze.
+- Order from here (D-902, G-1105): round 4 adoption reading (devpilot_b, then R4DP); the ContraDoc D1 and D2 development run, its threshold chosen on those records by a rule written first, the leaning line read on them by role B; then one full gate and one freeze. The untouched sets and validation go after 25 November 11:00.
+
+## D-911 (lead, 21 November 2026 12:10 +0300; answering Seckin G-20261121-1210): the post-freeze measurements can run with no Claude session; built after the reset, bound as 25 November's first job
+- Read from the records, no build: already without Claude today: the launch chain (task ShimmerLaunchChain: request, seal, admit, parts), the in-run early stop (watch.py, tools/loop/fail_fast.py), the reaper and its deadlines, coverage, chance test and intervals (tools/coverage_check.py, tools/chance_test.py, score_neg_advisor.py, the adapters' score.py: all Python). Still done by a Claude session today: (1) launch.py after, by hand (hands outputs to role N); (2) role B and role N scoring sessions, which only run those Python scorers with the keys in their own folders; (3) the threshold choice by the written rule (D-870, D-887, D-896: a grid and a pick, Python in nei_rule.py choose); (4) reading the full gate's reds against the known list and putting the freeze tag; (5) building the untouched bundles (role B's adapter build, Python) and the negotiation prompts (role N, Python tools).
+- All five turn into Python: an after step kind in tools/loop/launch_chain.py (with its check 517 proof); one scoring script per role written into that role's folder as its next session's input and run by a per-user scheduled task in that folder, so keys stay in the role's folder and only counts-only hand-backs leave it (the role boundary holds as now: separate folders, the lead never opens them; the scorer is the same frozen Python, only the Claude wrapper goes); the rule-based threshold pick; a gate reader that tags only when the reds equal the known list exactly, else writes ALERT and stops; the builds as chain steps. Results land in one file for 25 November 11:00 (counts, figures, intervals, p values, coverage).
+- Not now: building and proving those pieces (about 2 to 3 usage points) does not fit beside G-1105's (a) and (b) before 97 percent, and the freeze itself needs the ContraDoc D1/D2 threshold first, then a full gate of about 2 to 2.5 hours: it cannot finish before 97 percent. So: prepared as a plan now, built and bound as the first job after 25 November 11:00 (P9 reason b, usage). Spend forecast for the chained measurements: gate about 2.5, ContraDoc quick subset and 6 untouched groups about 15, SciTab 3 untouched papers about 3, negotiation part 2 and the untouched part about 6: about 27 USD against about 56 left under the 435 cap (379.10 spent at the 09:07 UTC reaper reading).
+
+## D-912 (lead, 21 November 2026 12:34 +0300): the no-Claude chain to the untouched figures (G-1214, G-1216)
+- Freeze: tools/loop/freeze_tag.py (commit e3083fac, 9 proofs) runs every 5 minutes as task ShimmerFreezeTag on ROUTE_GATE_D_dab39cc4. It tags v1.0-alpha-freeze-d on dab39cc4 only when the gate exited 0, every check ran, the reds equal the known list (28, 31, 118, 121, 146, 193, 257, 325, 333, 338, 348) and the evidence tree equals dab39cc4's tree. SKIP checks are neither pass nor red and are recorded. Otherwise FREEZE_REFUSED.json and one ALERT line; the tag is never moved.
+- BUNT: role B's first start stopped at the input check (the tree digest method was not written; benchmark/dryrun was missing). Second start at 12:31 with code_dab39cc4_v2 (adds benchmark/dryrun, 819 files) and a per-file FILES_SHA256.txt instead of a tree digest. The token counter is the same git file as before (LF 108040c9, CRLF 95e8c968).
+- Scoring (role B, task ShimmerBScore, no Claude): the threshold is chosen by D-887's rule read literally. A document is contradictory only with a kept pair (both orders FLAG at the value), and ties go to the highest value. The "or the run's own FLAG label" reading is written beside it as a secondary line and never chooses. The threshold file must be older than every untouched file. Coverage 5 percent, 10,000-shuffle chance test, seed 20261121, one look per set. 34 proofs on fixtures.
+- Untouched runs: UNT_scitab_d and UNT_contradoc_d, each held on FREEZE_OK.json, BUNT_DONE.json and staged digests. They are staged by build tasks, then armed by make_plan once ARM_ON_PLAN.txt and LEAD_GO.txt are present, and delivered to role B by after tasks. Each step is under 5 USD (forecasts 0.84 seal plus 0.78 to 2.82 SciTab, 1.93 ContraDoc).
+- One Claude step is left: the development pair list (DEV_PAIRS.json) for the 15 D1/D2 documents needs role B's key paths. A small role B session (Sonnet) writes it once D1/D2 evidence is delivered. Usage is recorded.
+
+## D-913 (lead, 21 November 2026 12:38 +0300): the development pair list is written without a lead step
+- DEV_contradoc_decision launch.py gains `after` (D1 and D2 only, proven on a fixture). Task ShimmerDevCdAfter delivers their evidence with a manifest to role B's dev_cd folder once both parts have ended clean.
+- Task ShimmerDevpStart (external/s05/DEVP_start_gated.pyw) starts role B's DEVP session once through role_starter (start_b_devp.cmd allowed; Sonnet, effort low) when both manifests exist. That session writes DEV_PAIRS.json (15 entries) and hands back counts and a digest only. BSCORE then chooses the threshold. The untouched deliveries wait for PAIR_THRESHOLD.json (D-912).
+- The empty README.new (gate D) and the empty BSCORE __pycache__ are left in place: both are under a protected root, and an empty file is not worth a protected-root deletion.
+
+## D-914 (lead, 21 November 2026 12:59 +0300): round 4 is not adopted (D-864, NEG_BAR); the negotiation untouched part is not in today's freeze
+- Role N R4DP (12:50, hand-back d062eec0): the same 24 development items, round 4 less round 2 with the fix, paired BCa over items. M10 +0.074 (0.014 to 0.145), movable F1 +0.251, M4 +0.066 (0.007 to 0.181), open floor +0.519. But two of bar line 3's fate floors (NEG_BAR.md, the hit rate within each fate) fell beyond their intervals: kept -0.185 (-0.423 to -0.063) and removed -0.212 (-0.350 to -0.115). M1, M5 and M8 did not move beyond their intervals; the dropped share is unchanged at 0.033.
+- Rule (D-864 and NEG_BAR "adopting a change"): adopted only if M10 rises and no bar figure falls beyond its interval. Two floors fell, so round 4 is NOT adopted. The open answer took stances away from kept and removed. No R4_DEV_ADOPTED.json; NEG_r4_part2 stays unarmed and is dropped.
+- The adopted negotiation setting stays round 2 with the fix (R4S1B). The freeze candidate dab39cc4 carries round 4's scorer switch open_stance_m4 true, which reads round 2's M4 differently (0.429 against 0.276). So an untouched negotiation reading on this freeze would not measure the adopted setting. It is "dahil değil" in today's result file and waits for a config freeze with open_stance_m4 false on 25 November (G-1258 order: gate, freeze, threshold, untouched sets, negotiation).
+- G-1258: the root-cause sweep stops. No new items. The fixes already in dab39cc4 stay. The rest go to the beta as one issue line each.
+
+## D-915 (lead, 21 November 2026 13:08 +0300): usage stop at 100 and the chain's machines exempt from the silence trigger (G-1300, G-1302)
+- Seckin G-1300: the loop starts nothing new at 99 percent and stops at 100. The reaper's usage stop becomes 100 (tools/loop/instance_reaper.py, merged dda0bd0f). The history keeps 98 from 20 November 19:37 until 21 November 13:00. Proofs: 16 salvage tests pass.
+- Seckin G-1302: the Claude-free chain does not stop at 100. It keeps running and writes its finish files, and the supervisor watches it on his credit. The reaper's silence trigger (no lead heartbeat for 90 minutes while a machine runs, D-S84) would have stopped it, so config/reaper_silence.json exempt_chain_launches is set true. A machine counts as chain-launched when the chain's own launch_started trace line (same purpose, up to 30 minutes before the ledger request) precedes it. Such machines keep their deadline termination, spend cap and usage trigger. Hand-launched machines are still salvaged on silence. Limit: a hand launch reusing a chain purpose within 30 minutes would read as a chain launch. This answers the 13:00 SORU, option (a).
+## D-916 (lead, 21 November 2026 13:08 +0300): a status board and one graceful stop for the supervisor (G-1302 item 3)
+- tools/loop/chain_board.py (task ShimmerChainBoard, every 5 minutes) writes docs/loop/private/CHAIN_BOARD.json and CHAIN_BOARD.md: per step pending, ready, running, done, failed or held, with spend and deadline. Hand-back files get existence, size and time only. overall is done when FREEZE_OK and BSCORE_DONE exist.
+- tools/loop/graceful_stop.py [--execute | --resume]: disables only the tasks that start new work (config/graceful_stop.json stop). It keeps the reaper, the freeze tag, the deliveries and the scorer. It never kills a process or terminates a machine, and it writes GRACEFUL_STOP.json and one ALERT line. Proofs: 10 pass (merged 4549612f).
+
+## D-917 (lead, 21 November 2026 14:36 +0300): the 15 development documents are delivered whole, one integrity failure included and named
+- D1 and D2 ended clean: terminated and verified, 15 entries, every evidence with pipeline exit 0. One D1 entry returned workload exit 2: its evidence reads execution_integrity_passed false (semantic_incomplete, required_contract_failure). The pipeline still ended and its records were saved.
+- Decision: the delivery accepts exit 2 only with pipeline exit 0, as launch_chain.batch_state does. The manifest carries each entry's workload exit code, its integrity flag and reasons, and a per-part integrity_failed count. The threshold is chosen on all 15 documents by D-887's rule: a pair the incomplete run did not save counts as not kept (silence is never a detection). Dropping the document would choose the threshold on 14 hand-picked documents, and the scorer requires 15. The result file names the one integrity failure.
+- Delivery fix: after() judged a batch part by a top-level workload_return that batch parts never write. Now each entry is read, as launch_chain.batch_state does, in DEV_contradoc_decision and in both UNT folders.
+- The chain's 13:58 "D2 failed" was a pass landing during the shutdown phase (OPEN_ITEMS, beta).
+
+## D-918 (lead, 21 November 2026 15:07 +0300): the ContraDoc pair threshold is 0.95, chosen by D-887's rule from the development records alone
+- Role B's scorer (task, no Claude) wrote PAIR_THRESHOLD.json at 15:06:36, before any untouched output exists (the untouched runs wait for the freeze). Grid 0.34 to 0.95. Primary reading: a document is contradictory only with a kept pair. 15 documents, 600 pairs.
+- Correct per value: 7 of 15 from 0.34 to 0.65 (6 to 5 pairs kept, 3 documents detected); 8 of 15 from 0.70 to 0.95 (4 to 3 pairs kept, 2 detected). Ties go to the highest value, so 0.95, development accuracy 0.533. 13 of the 15 documents are read as leanings only.
+- Expected consequence, stated before the untouched reading: under the 5 percent coverage rule (D-871) the untouched ContraDoc figure is likely to be refused, since leaning-only documents are not judged absences. It is reported as it comes, with no change to the rule.
+
+## D-919 (lead, 21 November 2026 15:14 +0300): the freeze moves to 89023590 after the tag tool refused dab39cc4 for check 686
+- Gate D on dab39cc4: 502 checks, 484 pass, 6 skip; the 11 known reds as listed, plus check 686 FAIL; workload exit 2. Gate B exited 0 with the 11 known reds alone. freeze_tag refused as designed (FREEZE_REFUSED.json); no tag.
+- Cause: round 4 (D-888) set config/neg_advisor_dev.json open_stance_m4 true; check 686's proofs require the switches off by default. Round 4 was not adopted (D-914), so the switch goes off again (89023590, lane/cfg686). Check 686 run alone: FAIL on 921db2f2, PASS on 89023590. tools/neg_improve_checks.py 531, 532, 533 and 535 pass. No other round-4 switch is on. audit_unsupported_kept stays true (the adopted fix).
+- The one freeze is now v1.0-alpha-freeze-e on 89023590, from a new full check ROUTE_GATE_E_89023590 (about 2.5 USD). Tasks re-pointed: ShimmerFreezeTag, the board. The untouched folders are re-pointed to 89023590 and freeze-e. Their staged bundles stay valid: git diff dab39cc4 89023590 shows no change under benchmark/adapters, benchmark/dryrun or tools/stage_workload.py. The pair threshold (D-918) was chosen with dab39cc4's scorer code; the scorer code is unchanged in 89023590 (the diff touches config/neg_advisor_dev.json, the reaper, the board and the stop tools).
+- This also settles D-914's note: the freeze now carries open_stance_m4 false, the adopted negotiation setting. The untouched negotiation part still waits for 25 November (no prompts built today).
+
+## D-920 (lead, 21 November 2026 15:39 +0300): ContraDoc coverage read as D-887 wrote it; written before any untouched output (G-1538)
+- Seckin G-1538: "skor çıksın". The cause: the scorer's coverage reading, accepted by the lead at 12:33 (D-912), counted a document with no kept pair as answered only if every pair was CLEAR in both orders. With about 40 pairs a document, one undecided pair is near certain, so 13 of 15 development documents read "not answered". That is stricter than D-887, written before any run: "a document with a kept pair is contradictory, one without is the step's judged none". Every pair is asked in both orders and saved, so the absence is judged, not silent.
+- Rule now: a document is answered when its run holds saved pair decisions (pairs asked in both orders). It is contradictory with a kept pair at 0.95, else judged none. It is not answered only when no pair decision was saved. The 5 percent rule is unchanged. Undecided pairs stay on the C14 leaning line, labelled. The threshold (D-918) is unchanged: it was chosen on accuracy, which coverage does not touch.
+- Written at this time. The untouched runs wait for freeze-e, and no untouched file exists (checked by name in role B's hand-back folder). A development-only coverage readout (DEV_COVERAGE.json) is written by the scorer task before the untouched scoring.
+
+## D-921 (lead, 21 November 2026 15:50 +0300): development coverage readouts written before any untouched output (G-1538, G-1541)
+- ContraDoc, 15 development documents at 0.95 under D-920: 15 answered (2 contradictory, 13 judged none, 13 also on the leaning line), 0 not answered. The untouched figure will not be refused for the reason seen at 15:09.
+- SciTab, the 78 seen quick-subset claims (stage c labels, threshold 0.40 and floor 0.70) through the same coverage function: 77 answered, 1 silent (a decision below the threshold), 1.3 percent, under the 5 percent rule.
+- Risk stated before the look: the untouched SciTab set has 15 claims, so one silent claim (6.7 percent) refuses its figure. At the seen rate (1 in 78) the chance of at least one is about 18 percent. The only measure that would lower it is counting an undecided claim's best guess as an answer, which D-871 forbids (argmax readings are not the system's answer). Not done: it would steer the figure. If it is refused, the result file says "coverage refused: N of 15" (D-871), and the seen-item figure stands beside it.
+- The result line for all three: "bu skor önceden yazılmış eşikle, dokunulmamış örneklerde, tek bakışla çıktı" (G-1541 item 3).
+
+## D-922 (lead, 21 November 2026 15:53 +0300): the untouched negotiation part runs today on freeze-e (G-1541)
+- Freeze-e carries the adopted negotiation setting (round 2 with the fix: open_stance_m4 false, audit_unsupported_kept true), so the untouched part no longer waits for 25 November. Launch folder NEG_unt_e uses round 2's passes file byte for byte. Its setting check refuses open_stance or room_unanchored on. Forecast: seal 0.98, part 1.82 USD, each under 5.
+- Which part (D-879): the highest-numbered frozen D-843 part with looks 0 and not scored by any round. Part 2 is excluded (held for round 3). The rule, coverage (5 percent) and chance test (10,000, seed 20261121) are written first (NUNT_RULE.json, 15:46).
+- Role N session NUNT (Sonnet, low) builds the keyless prompts and hands back counts and a digest (started 15:53). The chain waits for freeze-e, NUNT_DONE and the rule. Delivery: task ShimmerNuntAfter. Scoring: role N session NSCORE (Sonnet, low), started by task ShimmerNscoreStart only while usage is under 99 on a fresh reading (G-1300 item 4). Otherwise one ALERT line hands the start to the supervisor on Seckin's credit (G-1302). Scoring needs role N's keys, so it stays a role session.
+
+## D-923 (lead, 21 November 2026 16:05 +0300): every scoring, coverage, threshold and freeze rule is quoted in a test that runs before the tool acts (G-1559, G-1600; standing order 121)
+- Freeze: tools/loop/freeze_rule_tests.py quotes D-912 in 8 clauses and runs freeze_tag's own judge on fixtures. freeze_tag.py runs it just before creating a tag. A red or unrunnable test refuses with "rule test red". 12 proofs (merged 1ceea015).
+- ContraDoc and SciTab: role B's rule_tests.py quotes D-887 (kept pair, judged none), D-887's choice (ties to the highest), D-920 (answered), D-871 (5 percent, exit 3), D-872 (10,000 shuffles, seed 20261121), D-912 (threshold first, one look) and D-908 (0.40 and 0.70 read from the frozen config). score_untouched runs it before opening any untouched file. A red test writes BSCORE_STOP_rules.txt and no score. 57 checks.
+- Negotiation: NEG_unt_e/rule_tests_neg.py quotes the NEG_BAR lines and floors, D-871, D-872, D-878 (kept, marked or withheld), D-889 (the adopted switches) and D-879 (one look): 14 rules green on code_89023590. NSCORE's first step runs it, and a red test writes NSCORE_STOP_rules.txt. 23 proofs. The intake is done: 31 prompts for 31 items of part 4 (part 2 excluded, D-879).
+- Both stop files are on the chain board as stop.
