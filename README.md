@@ -27,9 +27,11 @@ targets. The alpha did not meet its targets, which were:
 
 These are first results; the final test set has not run yet. Each headline figure
 below was scored once, on untouched items, with thresholds written before the look;
-the SciTab information-only figure was read again after a reader fault was fixed. The
-untouched comparison against the bare and the cloud model is not yet measured and is
-in progress, so nothing here says whether the system is ahead of or behind either.
+the SciTab information-only figure was read again after a reader fault was fixed. On the 31 untouched negotiation items, the cloud model scored about the same as the system
+on open point detection (0.381 against 0.393) and on stance matches fate (0.295 against
+0.299); both are far below the 0.60 target. The bare model got no figure: it wrote no
+answer for 120 of the 197 proposals, and the scorer refuses a figure when more than half
+are unanswered. The cloud figures cover 20 of the 31 items.
 
 | Task | Untouched set | Result |
 |---|---|---|

@@ -3,7 +3,7 @@
 Every result Shimmer has, newest first: the first results on untouched items of 21 November 2026 (seen and untouched items apart), the first results of November 2026 with their
 sources, the earlier development state, the development results to 31 October 2026, the
 testing rules and how to reproduce the evaluation. Every figure on this page is a
-development or validation figure. The final test set has not been run. The short
+development or validation figure, except the untouched-item figures of 21 November 2026. The final test set has not been run. The short
 [README](../README.md) gives a summary; the earlier README sections on results were moved
 here on 19 November 2026 (D-816).
 
@@ -39,7 +39,12 @@ The seen SciTab figure is a three-class macro-F1; the untouched information-only
 
 ### Comparison with the bare and the cloud model (negotiation, open point and stance)
 
-The comparison on the untouched items is running. This subsection will carry its table when it is done; until then nothing here says whether the system is ahead of or behind the bare model or the cloud model.
+| Measure | Bare model | Cloud model | System |
+|---|---|---|---|
+| Open point detection | no figure (120 of 197 proposals unanswered) | 0.381 (0.334 to 0.449), 20 items, 132 proposals | 0.393 (0.342 to 0.452), 31 items, 197 proposals |
+| Stance matches fate | no figure (same reason) | 0.295 (0.221 to 0.364) | 0.299 (0.219 to 0.389) |
+
+Same written rules and scorer, untouched items, one look; a comparison, not a reading against the target. The cloud and the system overlap on both measures. The cloud figures cover 20 of the 31 items. The bare model's missing answers were checked as a real absence, not a reading fault.
 
 Note on seen items, from the answers of the 15 November pilot. On 24 seen items, the cloud model (on its own 14-item subset) scored 0.507 on open point detection (interval 0.425 to 0.612, p 0.51) and 0.396 on stance matches fate (interval 0.292 to 0.537, p 0.0001). Both are below 0.60 too. The bare model and the system as it was then got no figure: more than half of their proposals had no answer piece, and the scorer refuses a figure when more than 50 percent are unanswered.
 
