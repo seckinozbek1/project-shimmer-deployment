@@ -183,7 +183,7 @@ def neutralise_disk_footprint_plus_margin():
 
 def observe_disk_rule_read_at_call_time():
     """The margin and the Lambda launch floor are read from the file at each call; a malformed file or a missing
-    number falls back to the old 30 GiB, never lower; the shipped file declares 12 and 12 from the decision."""
+    number falls back to the old 30 GiB, never lower; the shipped file declares 10 and 10 from D-849 (12 and 12 until 20 November 2026)."""
     with tempfile.TemporaryDirectory() as tmp:
         cfg = write_floors(Path(tmp) / 'disk.json', DISK_RULE)
         first = lf.disk_problem(2, 15.0, path=cfg) is None
@@ -200,7 +200,7 @@ def observe_disk_rule_read_at_call_time():
 
 def expected_disk_rule_read_at_call_time():
     return (True, False, ((30.0, 'fallback'), (30.0, 'fallback')), ((30.0, 'fallback'), (30.0, 'fallback'), True),
-            ((12.0, 'config'), (12.0, 'config'), True))
+            ((10.0, 'config'), (10.0, 'config'), True))
 
 
 def neutralise_disk_rule_read_at_call_time():

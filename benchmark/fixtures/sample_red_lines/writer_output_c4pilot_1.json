@@ -1,0 +1,264 @@
+{"items": {
+"syn-2114a04ad72cf323": {
+ "red_lines": [
+  {"text": "Do not accept any obligation to hand over data from all stations without charge.", "rests_on": ["POS-1"], "quote": "cannot accept, in any form, an obligation to hand over data from all stations without charge"},
+  {"text": "Do not accept letting Parties pick their own stations, since gaps in coverage would expose downstream areas.", "rests_on": ["POS-3"], "quote": "opposes letting Parties pick their own stations, because gaps in coverage would leave downstream areas dangerously exposed"}
+ ],
+ "bargainable": [
+  {"text": "Offer Kelvaro's support for the financing article as a whole as goodwill in exchange for movement on data terms.", "rests_on": ["POS-2"], "quote": "welcomes this financing article as a whole"},
+  {"text": "Consider sharing station data on charged or limited terms, since only a duty to hand over all data free is ruled out.", "rests_on": ["POS-1"], "quote": "an obligation to hand over data from all stations without charge"}
+ ]
+},
+"syn-234f00ab94a936c3": {
+ "red_lines": [
+  {"text": "Do not accept externally fixed caps on Hesmark's annual pumping in any form.", "rests_on": ["POS-3"], "quote": "cannot accept externally fixed caps on its annual pumping in any form"},
+  {"text": "Keep decisions on Hesmark's water supply national.", "rests_on": ["POS-3"], "quote": "decisions on our water supply must remain national"},
+  {"text": "Do not agree to contribute to a common compensation fund for landowners beyond Hesmark's borders.", "rests_on": ["POS-6"], "quote": "will not contribute to a common compensation fund in any form"}
+ ],
+ "bargainable": [
+  {"text": "Offer support for jointly adopted limits on fertilisers and pesticides in recharge areas as a concession to other Parties.", "rests_on": ["POS-4"], "quote": "backs jointly adopted standards limiting fertilisers and pesticides in recharge areas"},
+  {"text": "Offer support for banning new industrial facilities and waste sites in recharge zones in return for movement elsewhere.", "rests_on": ["POS-5"], "quote": "supports banning new industrial facilities and waste sites in designated recharge zones"}
+ ]
+},
+"syn-234fdb5b93636191": {
+ "red_lines": [
+  {"text": "Do not accept a rule letting one Party's failure to ratify stop the agreement for everyone.", "rests_on": ["POS-12"], "quote": "cannot accept a rule letting one Party's failure to ratify stop the agreement for everyone"},
+  {"text": "Do not accept a one-day venting rule with no exceptions for older stage designs.", "rests_on": ["POS-2"], "quote": "some of our older stage designs simply cannot meet it"}
+ ],
+ "bargainable": [
+  {"text": "Be flexible on how spent stages are made inert, provided a national regulator approves each plan in advance.", "rests_on": ["POS-5"], "quote": "giving operators flexibility in how they make spent stages inert"},
+  {"text": "Offer support for reporting each launched object's orbit, mass and disposal date within thirty days.", "rests_on": ["POS-8"], "quote": "reporting each launched object's orbit, mass and disposal date within thirty days"},
+  {"text": "Offer support for the target of halving new orbital debris within ten years as a sign of good faith.", "rests_on": ["POS-13"], "quote": "the target of halving new orbital debris within ten years"}
+ ]
+},
+"syn-275773d108061efe": {
+ "red_lines": [
+  {"text": "Do not accept a consensus requirement for the joint panel under any circumstances.", "rests_on": ["POS-8"], "quote": "will not accept a consensus requirement for the joint panel under any circumstances"},
+  {"text": "Do not accept any rule that allows either side to block designations.", "rests_on": ["POS-8"], "quote": "Allowing either side to block designations is unacceptable to us"}
+ ],
+ "bargainable": [
+  {"text": "Be open to a national register with measures each Party judges appropriate, to protect fishing communities.", "rests_on": ["POS-5"], "quote": "a national register with measures each Party judges appropriate"},
+  {"text": "The timing of the bottom trawling ban in designated areas could be traded, though Lumetia supports it from day one.", "rests_on": ["POS-7"], "quote": "banning bottom trawling there from day one"},
+  {"text": "Offer support for biennial public reports on surveys, coral damage and measures taken.", "rests_on": ["POS-4"], "quote": "welcomes biennial reports on surveys, coral damage and measures taken"}
+ ]
+},
+"syn-389db9278823908e": {
+ "red_lines": [
+  {"text": "Do not accept a scope that would compel release of commercially licensed satellite records.", "rests_on": ["POS-5"], "quote": "cannot accept a scope that would compel release of commercially licensed satellite records"},
+  {"text": "Do not accept an open-ended duty to fund training for other parties.", "rests_on": ["POS-12"], "quote": "cannot accept an open-ended duty to fund training for other parties"},
+  {"text": "Keep technology transfer voluntary, with Galdovar's institutions deciding what to offer.", "rests_on": ["POS-2"], "quote": "supports keeping technology transfer voluntary"}
+ ],
+ "bargainable": [
+  {"text": "Instrument lending could be agreed if it provides for maintenance, damage and shipping costs.", "rests_on": ["POS-11"], "quote": "lending instruments free of charge with no provision for maintenance, damage or the cost of shipping delicate radar"},
+  {"text": "A bounded, defined training contribution could be discussed, since only an open-ended duty is ruled out.", "rests_on": ["POS-12"], "quote": "an open-ended duty to fund training for other parties"},
+  {"text": "Offer support for defined data transmission periods in return for concessions elsewhere.", "rests_on": ["POS-15"], "quote": "supports defined transmission periods"}
+ ]
+},
+"syn-42b84b7682851ba3": {
+ "red_lines": [
+  {"text": "Do not accept a phase-in under which deferred obligations end without any support attached.", "rests_on": ["POS-15"], "quote": "will not accept a phase-in that ends obligations being deferred without any support attached"},
+  {"text": "Do not accept grants for vessels and sonar tied to a single income threshold that excludes members facing real hardship.", "rests_on": ["POS-3"], "quote": "objects to tying grants for vessels and sonar to a single income threshold"}
+ ],
+ "bargainable": [
+  {"text": "Offer the Alliance's agreement to the duty to report lost gear as it stands.", "rests_on": ["POS-16"], "quote": "accepts the article on the duty to report lost gear as it stands"},
+  {"text": "Offer support for recycling recovered gear where facilities allow and forbidding burning or dumping at sea.", "rests_on": ["POS-14"], "quote": "requiring recycling of recovered gear where facilities allow"},
+  {"text": "The scope of free training for fisheries officers could be traded as part of a wider support package.", "rests_on": ["POS-11"], "quote": "free training in retrieval and record keeping for fisheries officers"}
+ ]
+},
+"syn-4960f63a127aa14e": {
+ "red_lines": [
+  {"text": "Do not accept contributions tied to area burned in any form.", "rests_on": ["POS-5"], "quote": "will not accept contributions tied to area burned in any form"},
+  {"text": "Do not accept Norcasta bearing the full cost of stations on its territory alone.", "rests_on": ["POS-8"], "quote": "cannot accept bearing the full cost of stations on its territory alone"},
+  {"text": "Keep the requirement that every party consent to an amendment.", "rests_on": ["POS-3"], "quote": "the requirement that every party consent to an amendment"}
+ ],
+ "bargainable": [
+  {"text": "Equal payments into a common fund with voluntary top-ups are preferred, but the fund's details could be negotiated.", "rests_on": ["POS-6"], "quote": "equal payments into a common fund, topped up by voluntary gifts"},
+  {"text": "Station siting by a joint body could be reconsidered if the host consent safeguard is strengthened.", "rests_on": ["POS-11"], "quote": "the host consent safeguard does not go far enough"},
+  {"text": "The purpose and scope article could be accepted if its reach is made clearer.", "rests_on": ["POS-12"], "quote": "it leaves the reach of the agreement too uncertain"}
+ ]
+},
+"syn-5c4b449dcf6e618d": {
+ "red_lines": [
+  {"text": "Do not accept a shared regional register for loss reports; keep reporting national.", "rests_on": ["POS-1"], "quote": "cannot accept a shared regional register for loss reports in any form"},
+  {"text": "Do not accept an automatic review cycle in which any member may table amendments.", "rests_on": ["POS-6"], "quote": "cannot accept an automatic review cycle where any member may table amendments"},
+  {"text": "Keep unanimous consent as the condition for any change to the rules.", "rests_on": ["POS-7"], "quote": "with changes needing unanimous consent"}
+ ],
+ "bargainable": [
+  {"text": "The forty-eight hour notice could be accepted in a longer or more workable form.", "rests_on": ["POS-10"], "quote": "objects to the forty-eight hour notice"},
+  {"text": "The financing article could be accepted if most of the cost no longer falls on Upland Circle's fishing industry.", "rests_on": ["POS-5"], "quote": "it would place most of the cost on our fishing industry"},
+  {"text": "Offer agreement to the article on cooperation in recovery operations as written.", "rests_on": ["POS-4"], "quote": "accepts the article on cooperation in recovery operations as written"}
+ ]
+},
+"syn-6af5366ebe84eac1": {
+ "red_lines": [
+  {"text": "Do not accept core monitoring that relies on voluntary donations in any form.", "rests_on": ["POS-12"], "quote": "will not accept relying on voluntary donations in any form"},
+  {"text": "Do not accept assessment by area burned, which could multiply Hesmark's bill after one bad season.", "rests_on": ["POS-9"], "quote": "objects to assessment by area burned"}
+ ],
+ "bargainable": [
+  {"text": "Equal shares are preferred, but the exact assessed basis could be discussed if it avoids area burned.", "rests_on": ["POS-7"], "quote": "favours equal shares as the simplest and fairest basis"},
+  {"text": "Offer support for the data sharing article in return for movement on financing.", "rests_on": ["POS-1"], "quote": "supports this article on data sharing"},
+  {"text": "Offer support for establishing the Joint Smoke Forecasting Centre as part of a package.", "rests_on": ["POS-10"], "quote": "supports establishing the Joint Smoke Forecasting Centre"}
+ ]
+},
+"syn-725a99e33ed0278d": {
+ "red_lines": [
+  {"text": "Do not accept a joint centre reduced to a mere data supplier; keep a regional voice on warnings.", "rests_on": ["POS-4"], "quote": "cannot accept a joint centre reduced to a mere data supplier"},
+  {"text": "Keep a role for national services in issuing warnings.", "rests_on": ["POS-5"], "quote": "national services must keep a role"},
+  {"text": "Do not accept removing contested readings from public view.", "rests_on": ["POS-26"], "quote": "objects to removing contested readings from public view"}
+ ],
+ "bargainable": [
+  {"text": "Be flexible on station funding, whether through a voluntary trust fund or equal cost shares.", "rests_on": ["POS-7"], "quote": "supports financing the stations through a voluntary trust fund open to outside donors"},
+  {"text": "Be flexible on the scope test, whether a satellite detection test or declaration by the affected Party.", "rests_on": ["POS-13"], "quote": "favours the satellite detection test"},
+  {"text": "The common colour scale for simultaneous release could be discussed, though Lumetia's public knows its own scale.", "rests_on": ["POS-2"], "quote": "opposes simultaneous release on a common colour scale"},
+  {"text": "Offer support for a binding finding by an independent three-expert panel on contested readings.", "rests_on": ["POS-28"], "quote": "a binding finding from an independent panel of three experts"}
+ ]
+},
+"syn-7785b30e13e2a1b2": {
+ "red_lines": [
+  {"text": "Do not accept any text that lets flood data be held back pending security review or payment.", "rests_on": ["POS-6"], "quote": "cannot accept, in any form, a text that lets flood data be held back pending security review or payment"},
+  {"text": "Keep automatic, cost-free transmission of real-time readings.", "rests_on": ["POS-8"], "quote": "automatic, cost-free transmission of real-time readings"}
+ ],
+ "bargainable": [
+  {"text": "A financing formula could be accepted if each member's burden reflects what it actually gains from the system.", "rests_on": ["POS-1"], "quote": "it places the burden on our members without regard to what each of them actually gains"},
+  {"text": "Work toward redrafting the financing article, since the objection is to the article as drafted.", "rests_on": ["POS-1"], "quote": "objects to the financing article as drafted"}
+ ]
+},
+"syn-7f3f2e8773c0dd67": {
+ "red_lines": [
+  {"text": "Do not accept any cost article that leaves island members paying for gear they did not lose.", "rests_on": ["POS-10"], "quote": "cannot accept any cost article that leaves island members paying for gear they did not lose"},
+  {"text": "Keep the recognition of the particular needs of small island Parties in the purpose and scope.", "rests_on": ["POS-5"], "quote": "the recognition of the particular needs of small island Parties facing drifting gear on their reefs"}
+ ],
+ "bargainable": [
+  {"text": "Be flexible on dispute settlement, where binding arbitration by a three-expert panel is acceptable.", "rests_on": ["POS-6"], "quote": "supports binding arbitration by a three-expert panel"},
+  {"text": "Settlement through consultation and negotiation alone is also acceptable, so the dispute method can be traded.", "rests_on": ["POS-11"], "quote": "supports settling disputes through consultation and negotiation alone"}
+ ]
+},
+"syn-86aff6c6fe47c152": {
+ "red_lines": [
+  {"text": "Do not accept the bottom-contact fishing restrictions in any form.", "rests_on": ["POS-2"], "quote": "will not accept these fishing restrictions in any form"},
+  {"text": "Keep the rule that no permit is issued before harm to coral is properly assessed.", "rests_on": ["POS-1"], "quote": "no permit should be issued before the harm to coral is properly understood"}
+ ],
+ "bargainable": [
+  {"text": "The review interval could be discussed, though Belmora supports a five-yearly review informed by the Scientific Committee.", "rests_on": ["POS-3"], "quote": "a five-yearly review informed by the Scientific Committee"},
+  {"text": "The voting rule for updating protected areas could be traded, though Belmora supports a simple majority.", "rests_on": ["POS-3"], "quote": "a simple majority to update protected areas"}
+ ]
+},
+"syn-8c5aaa49ab30d219": {
+ "red_lines": [
+  {"text": "Do not accept an amendment procedure that lets any one Party block change.", "rests_on": ["POS-1"], "quote": "cannot accept an amendment procedure that lets any one Party block change"},
+  {"text": "Keep designation of coral protection zones based on scientific surveys.", "rests_on": ["POS-3"], "quote": "basing designation on scientific surveys"}
+ ],
+ "bargainable": [
+  {"text": "Reporting intervals could be traded, with publication left to each national authority as the preferred option.", "rests_on": ["POS-2"], "quote": "leaving publication intervals to each national authority"},
+  {"text": "Reports every two years on coral cover, gear damage and enforcement could be offered as a compromise.", "rests_on": ["POS-4"], "quote": "supports reports every two years covering coral cover, gear damage and enforcement"},
+  {"text": "The five-year designation deadline could be discussed, though Estova welcomes it.", "rests_on": ["POS-3"], "quote": "a five-year deadline"}
+ ]
+},
+"syn-8ff3af9812ba1e28": {
+ "red_lines": [
+  {"text": "Do not accept recreational and aquaculture gear being brought within these rules in any form.", "rests_on": ["POS-7"], "quote": "will not accept recreational and aquaculture gear being brought within these rules in any form whatsoever"},
+  {"text": "Keep the rules limited to registered commercial gear.", "rests_on": ["POS-4"], "quote": "limiting the rules to registered commercial gear"}
+ ],
+ "bargainable": [
+  {"text": "The seven day threshold for drifting gear could be discussed, though the Upland Circle favours it.", "rests_on": ["POS-6"], "quote": "favours the seven day threshold"},
+  {"text": "Offer support for the cost article and predictable shared funding in return for keeping the narrow scope.", "rests_on": ["POS-12"], "quote": "supports the cost article"}
+ ]
+},
+"syn-96c4b7410e6a084b": {
+ "red_lines": [
+  {"text": "Do not accept an open-ended halt on seabed disturbance tied to baseline surveys.", "rests_on": ["POS-1"], "quote": "cannot accept an open-ended halt on seabed disturbance tied to baseline surveys in any form"},
+  {"text": "Do not accept unilaterally triggered binding arbitration in any form.", "rests_on": ["POS-17"], "quote": "will not accept unilaterally triggered binding arbitration in any form"},
+  {"text": "Do not accept the finance and assistance article in its present form, since it goes beyond Estova's mandate.", "rests_on": ["POS-24"], "quote": "cannot accept the finance and assistance article in this form under any circumstances"}
+ ],
+ "bargainable": [
+  {"text": "A compulsory dispute procedure could be considered if it requires each party's express consent.", "rests_on": ["POS-15"], "quote": "requiring express consent before any compulsory procedure"},
+  {"text": "Offer support for the monitoring article and shared survey data in return for movement on other articles.", "rests_on": ["POS-18"], "quote": "cooperation on surveys and shared data is essential"},
+  {"text": "Purpose wording could be agreed if it balances reef conservation with sustainable use and coastal community needs.", "rests_on": ["POS-22"], "quote": "balancing reef conservation with sustainable use and the needs of coastal communities"}
+ ]
+},
+"syn-a5296e1f3a38aceb": {
+ "red_lines": [
+  {"text": "Do not accept an obligation to supply hourly border data free of charge.", "rests_on": ["POS-5"], "quote": "cannot accept an obligation to supply hourly border data free of charge in any form"},
+  {"text": "Do not accept alert timelines and broadcasting arrangements that override national emergency procedures.", "rests_on": ["POS-9"], "quote": "imposes rigid timelines and broadcasting arrangements that override national emergency procedures"},
+  {"text": "Do not accept a fund reserved for low-lying and island Parties; every member should be eligible.", "rests_on": ["POS-1"], "quote": "every member faces flood risk and should be eligible for the same support"}
+ ],
+ "bargainable": [
+  {"text": "The contribution basis could be negotiated, with shares tied to population in flood-prone basins as the preferred option.", "rests_on": ["POS-2"], "quote": "supports tying contributions to the population living in flood-prone basins"},
+  {"text": "Offer support for a temporary exemption for the most exposed Parties as a concession.", "rests_on": ["POS-7"], "quote": "supports a temporary exemption for the most exposed Parties"},
+  {"text": "Offer agreement to the confidentiality article in full as part of a package.", "rests_on": ["POS-8"], "quote": "accepts the confidentiality article in full"}
+ ]
+},
+"syn-aa4370fbcd7ed1b2": {
+ "red_lines": [
+  {"text": "Do not accept contributions based on forest area in any form.", "rests_on": ["POS-1"], "quote": "cannot accept contributions based on forest area in any form"},
+  {"text": "Do not sign a dispute article that removes final decisions from the parties themselves.", "rests_on": ["POS-3"], "quote": "we will not sign a text that removes final decisions from the parties themselves"}
+ ],
+ "bargainable": [
+  {"text": "Equal shares for all parties are preferred, but Arvenia could discuss the details of a simple cost formula.", "rests_on": ["POS-2"], "quote": "welcomes equal shares for all parties"},
+  {"text": "Cost formulas other than forest area could be explored, as long as forests are not made a liability.", "rests_on": ["POS-1"], "quote": "a formula that makes our forests a liability"}
+ ]
+},
+"syn-b604048858d0945d": {
+ "red_lines": [
+  {"text": "Do not accept a reporting system that rules out every external review.", "rests_on": ["POS-1"], "quote": "cannot accept, in any form, a reporting system that rules out every external review"},
+  {"text": "Do not accept an outside panel having the right to visit launch sites.", "rests_on": ["POS-4"], "quote": "objects to giving an outside panel the right to visit launch sites"}
+ ],
+ "bargainable": [
+  {"text": "Offer support for the common fund for debris removal in return for concessions on compliance review.", "rests_on": ["POS-3"], "quote": "supports the article establishing a common fund"},
+  {"text": "The form of external review is open to negotiation, provided self-reporting does not go unverified.", "rests_on": ["POS-1"], "quote": "unverified self-reporting is a line our members will not cross"}
+ ]
+},
+"syn-c1c5a08a2ea45cd0": {
+ "red_lines": [
+  {"text": "Do not accept a population formula with a fixed minimum share for contributions.", "rests_on": ["POS-13"], "quote": "cannot accept a population formula with a fixed minimum share in any form"},
+  {"text": "Keep a firm rule that drawn stocks are restored.", "rests_on": ["POS-7"], "quote": "supports a firm rule that drawn stocks are restored"}
+ ],
+ "bargainable": [
+  {"text": "Offer full support for the quality standards text as part of a package.", "rests_on": ["POS-6"], "quote": "fully supports the quality standards text"},
+  {"text": "Other contribution formulas could be discussed if they stay within what Dalrene's budget can bear.", "rests_on": ["POS-13"], "quote": "it would exceed what our budget can bear"}
+ ]
+},
+"syn-c4d556cdb9dc6677": {
+ "red_lines": [
+  {"text": "Do not accept quotas built on twenty years of historic use.", "rests_on": ["POS-1"], "quote": "cannot accept quotas built on twenty years of historic use in any form"},
+  {"text": "Do not accept a monitoring system in which each Party measures alone with no shared standards.", "rests_on": ["POS-2"], "quote": "will not accept a monitoring system in which each Party measures alone with no shared standards"},
+  {"text": "Do not accept foreign experts installing equipment on Morvane's territory without its consent.", "rests_on": ["POS-8"], "quote": "cannot accept foreign experts installing equipment on our territory without our consent"}
+ ],
+ "bargainable": [
+  {"text": "The way reductions are shared could be negotiated, provided smaller users do not carry an equal burden.", "rests_on": ["POS-3"], "quote": "objects to sharing every reduction equally"},
+  {"text": "Offer support for restricting waste sites, mining and intensive farming near recharge points.", "rests_on": ["POS-10"], "quote": "supports restricting waste sites, mining and intensive farming near recharge points"},
+  {"text": "Protection of wetlands and springs before shares are assigned could be traded within the allocation package.", "rests_on": ["POS-14"], "quote": "protecting wetlands and springs before shares are assigned"}
+ ]
+},
+"syn-c784df49ddd8e641": {
+ "red_lines": [
+  {"text": "Do not accept a mandatory five-station minimum in any form.", "rests_on": ["POS-3"], "quote": "cannot accept a mandatory five-station minimum in any form"},
+  {"text": "Keep a six-hour notice carrying the fire location, plume height and smoke forecast.", "rests_on": ["POS-2"], "quote": "a six-hour notice carrying the fire location, plume height and smoke forecast"}
+ ],
+ "bargainable": [
+  {"text": "Station commitments below a five-station minimum could be discussed if they fit Ostrelia's budget.", "rests_on": ["POS-3"], "quote": "it would bind us to costs our budget will never allow"},
+  {"text": "Station numbers could be set by a middle course, avoiding both weak coverage and an open-ended funding burden.", "rests_on": ["POS-4"], "quote": "that invites weak coverage and an open-ended funding burden on us"}
+ ]
+},
+"syn-d62c8400253c7fcc": {
+ "red_lines": [
+  {"text": "Do not accept a rule that loads round-the-clock reporting duties onto small coastal administrations.", "rests_on": ["POS-1"], "quote": "cannot accept a rule that loads round-the-clock reporting duties onto our small coastal administrations"},
+  {"text": "Do not accept contributions tied to each party's catch.", "rests_on": ["POS-5"], "quote": "objects to tying contributions to each party's catch"}
+ ],
+ "bargainable": [
+  {"text": "Reporting deadlines could be left to each flag state, provided every lost item is logged before the vessel next enters port.", "rests_on": ["POS-4"], "quote": "provided every lost item reaches the logbook before the vessel next enters port"},
+  {"text": "Capacity support could take the form of voluntary help such as training, equipment loans and satellite monitoring.", "rests_on": ["POS-7"], "quote": "voluntary help through training, equipment loans and satellite monitoring"},
+  {"text": "The dispute settlement article could be accepted if arbitration costs do not fall heavily on members with limited legal resources.", "rests_on": ["POS-3"], "quote": "the cost of arbitration would fall heavily on members with very limited legal resources"}
+ ]
+},
+"syn-d7e44bf73d9660dd": {
+ "red_lines": [
+  {"text": "Do not accept cost sharing based on river length in any form.", "rests_on": ["POS-12"], "quote": "cannot accept cost sharing based on river length in any form"},
+  {"text": "Keep a dispute settlement article in the agreement.", "rests_on": ["POS-22"], "quote": "supports including a dispute settlement article"}
+ ],
+ "bargainable": [
+  {"text": "The form of dispute settlement could be negotiated, as long as it gives a reliable way to resolve disagreements.", "rests_on": ["POS-22"], "quote": "a shared system needs a reliable way to resolve disagreements"},
+  {"text": "Other cost-sharing bases for the shared system could be discussed, since only river length is ruled out.", "rests_on": ["POS-12"], "quote": "cost sharing based on river length"}
+ ]
+}
+}}

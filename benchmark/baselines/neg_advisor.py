@@ -95,6 +95,8 @@ ATTRIBUTION_FIELD = "attribution"
 # D-664 item 2: every red line carries its source. For now only the document (v1.1 adds the operator's mandate);
 # a build may give a red line as a position id (from the document) or as {"position", "source"}.
 RED_LINE_SOURCES = ("from the document",)
+OPERATOR_SOURCE = "given by the operator"      # #278 (D-848): red lines the operator declares for the advised party
+OPERATOR_SCHEMA = "neg-operator-red-lines-v1"
 # D-666 item 2: the document layers the advisor takes in, as the reader returns them apart (scripts/docx_layers.py,
 # scripts/pdf_layers.py, scripts/html_layers.py): each entry its layer kind, its text, its author and, for a
 # comment, the text it is anchored on. Each carries an id `LAY-<n>`, so a reason can cite it.
@@ -368,6 +370,51 @@ def read_red_lines(declared):
         ids.append(pid)
         sources[pid] = source
     return ids, sources
+
+
+def operator_red_lines(item):
+    """#278 (D-848): the red lines the operator declared for the item's advised party, each {id, text}, checked;
+    none when none was declared (`persona.operator_red_lines`, put there at build time from the operator's file)."""
+    lines = item["persona"].get("operator_red_lines") or []
+    if not isinstance(lines, list) or not all(isinstance(r, dict) and isinstance(r.get("id"), str) and r["id"] and
+                                              isinstance(r.get("text"), str) and r["text"].strip() for r in lines):
+        raise ValueError("an operator red line is {id, text}")
+    if len({r["id"] for r in lines}) != len(lines):
+        raise ValueError("an operator red line id repeats")
+    return [{"id": r["id"], "text": " ".join(r["text"].split())} for r in lines]
+
+
+def party_red_lines(item):
+    """D-848, for the difference check (#309) and the chain: the advised party's red lines for one item, declared
+    ones only: those the record marks (its positions in `persona.red_lines`, each with its source) and those the
+    operator gave (#278). Each {id, text, source, round, article}; nothing is read from words (WORDS-A)."""
+    persona = item["persona"]
+    by_id = {p["id"]: p for p in item.get("positions") or []}
+    out = [{"id": pid, "text": by_id[pid]["quote"], "source": red_line_source(persona, pid),
+            "round": by_id[pid].get("round"), "article": by_id[pid].get("article")}
+           for pid in persona.get("red_lines") or [] if pid in by_id and by_id[pid]["party"] == persona["id"]]
+    return out + [dict(r, source=OPERATOR_SOURCE, round=None, article=None) for r in operator_red_lines(item)]
+
+
+def with_operator_red_lines(item, table):
+    """A copy of `item` with the operator's red lines for it (`table`: the operator file's items, by item id)."""
+    import copy as _copy
+    out = _copy.deepcopy(item)
+    lines = (table or {}).get(item["item_id"])
+    if lines:
+        out["persona"]["operator_red_lines"] = lines
+        operator_red_lines(out)
+    return out
+
+
+def read_operator_file(path):
+    """The operator's red lines file (#278): {schema, items: {item id: [{id, text}]}}; None for no path."""
+    if path is None:
+        return None
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    if value.get("schema") != OPERATOR_SCHEMA or not isinstance(value.get("items"), dict):
+        raise ValueError("not an operator red lines file (%s)" % OPERATOR_SCHEMA)
+    return value["items"]
 
 
 def red_line_source(persona, position_id):
@@ -685,6 +732,40 @@ def build(set_dir, form, groups, out, *, config_path=CONFIG_PATH, positions=None
     raise ValueError("build makes the advice or the validate form; the judge form is `judge`")
 
 
+def rebuild(prompts_path, out, *, config_path, operator_path=None):
+    """The advice prompts of an existing prompts file built again under another declared config (a round's switch
+    copy): the same items, prompt ids, groups and stance contexts, each prompt rendered again from its own item, so a
+    set already built (and its key held apart) can be run under a new switch with no new set build. The source is
+    held to its own SHA-256 and checks (load_prompts); its digest is kept as `rebuilt_from`. Advice form only."""
+    out = outside_repository(out)
+    source = Path(prompts_path)
+    value = read_file(source)
+    config = load_config(config_path)
+    table = read_operator_file(operator_path)
+    declared = {g["group"]: g for g in config["models"]}
+    prompts = []
+    for p in value["prompts"]:
+        if p.get("form") != "advice" or p["group"] not in declared:
+            raise ValueError("rebuild makes the advice form of a declared group only: %s" % p.get("prompt_id"))
+        arm = check_stance_context(config, p["group"], p.get("stance_context"))
+        item = with_operator_red_lines(p["item"], table)
+        user = render_advice(config, item, method_of(config, p["group"]))
+        prompt = dict(declared[p["group"]], prompt_id=p["prompt_id"], form="advice", item_id=p["item_id"],
+                      item=item, user=user, user_sha256=_sha(user), system=None,
+                      max_new_tokens=advice_allowance(config, p["group"]))
+        if arm is not None:
+            prompt["stance_context"] = arm
+        prompts.append(prompt)
+    extra = {k: value[k] for k in ("subset_sha256",) if k in value}
+    extra.update(audit=any(p["group"] == "system_advice" for p in prompts),
+                 rebuilt_from=hashlib.sha256(source.read_bytes()).hexdigest())
+    if operator_path is not None:
+        extra["operator_red_lines_sha256"] = hashlib.sha256(Path(operator_path).read_bytes()).hexdigest()
+    written = _write(out, _file(config, prompts, extra))
+    load_prompts(out)
+    return written
+
+
 def judged(piece, row):
     """True for a counter the judge grades (plan section 6.3): a counter with wording, on a proposal whose
     fate is changed or kept. One rule for the judge's entries and for M9's withheld counters."""
@@ -996,6 +1077,31 @@ def check_stepwise_block(block):
 #   from the declared `red_line_hit`; the reply keeps every read in `limit_reads`. A refused read or crossing
 #   check is no limit and no crossing, counted, never ending a chain. Composes with every conflict question, both
 #   orders and both stance contexts; a marked red line is never read again.
+# - R3 `room_fate` (lane/neg-round2-m4-m10, D-840; docs/loop/stages/NEG_ROUND2_M4_M10.md): the chain's stance was
+#   counter whenever the open point step said yes, else reject on a conflict, else accept; that open point step is
+#   shown the proposal's text alone (no position, no other proposal), so it cannot know whether the room will move
+#   the proposal (c4pilot_1: yes 79, no 73), and reject needs both a persona conflict and that blind no, while the
+#   key's fate (kept, changed, removed) is what the whole room did with the text. `room_fate` true drops the open
+#   point step and asks, per proposal, one CHOICE-A question from `room_fate_text`: the proposal, the other proposals on
+#   its article (`{alternatives}`, Python's list by structure, or `room_fate_alone`), and every touched position
+#   with the label the chain's own compare or stance step answered for it (`{room}`, or `room_fate_none`), over the
+#   declared `room_fate_answers` (each a label named in the template and the stance it sets, each of STANCES set by
+#   exactly one: the plan's M4 pairs, declared before any read). The stance is the answer's; the wording is asked
+#   only for a counter; the conflict field is never written by it; the piece keeps `room_fate` marked inferred. A
+#   refused answer leaves the proposal without a stance, counted. Not with fate_forecast (one fate question).
+# - R3b `changes_id_echo` (same lane): the `changes` template shows `{proposal_id}: {proposal}`, and the model
+#   copies the line with its id in front (c4pilot_1: 111 of the 112 `not_in_the_proposal` refusals; c4val_1: 175 of
+#   176), so the line is refused although its text is the proposal's, word for word. `changes_id_echo` true accepts
+#   a `changes` answer that starts with exactly the proposal id the prompt showed, then a colon, and whose rest is
+#   in the proposal; the rest is kept, the step marked `id_echo`. A structural read of the id Python put in the
+#   prompt, never a word list; any other form is refused as before.
+# - Round 3 (D-863, D-864; docs/loop/stages/NEG_ROUND3.md): the room fate's answer set had no place for a proposal
+#   still in dispute (the key's `open`, about 70 percent of M10's movable class by the declared sampler), so a text
+#   left on the table unchanged was "kept" and scored settled; and with no position read "against" the answer was
+#   "kept" in 156 of 156 development cases, a copy of the compare reads shown in `{room}`. Two changes: the room
+#   fate may declare a fourth answer setting counter (two answers set counter, accept and reject one each, nothing
+#   else), and `room_unanchored` true shows each touched position in `{room}` without its "read:" label. The
+#   labels are the config's, never a word list here (WORDS-A); off as shipped, round 2 configs ask exactly as before.
 STANCE_QUESTION, TWO_CHECKS, COMPARE = "stance", "two_checks", "compare"
 CONFLICT_QUESTIONS = (STANCE_QUESTION, TWO_CHECKS, COMPARE)
 COMPARE_SLOTS = ("{proposal}", "{quote}", "{party}", "{position_round}", "{round}")
@@ -1008,8 +1114,41 @@ LIMIT_READ, LIMIT_CROSS = "limit_read", "limit_cross"
 LIMIT_SLOTS = ("{party}", "{quote}", "{position_round}")
 LIMIT_NEVER = ("{changes}", "{proposal}", "{proposal_id}", "{article}", "{title}")
 LIMIT_CROSS_SLOTS = ("{proposal}", "{quote}")
+ROOM_FATE, ROOM_FATE_TEMPLATE = "room_fate", "room_fate_text"
+ROOM_FATE_SLOTS = ("{proposal}", "{alternatives}", "{room}")
+# - #310 `party_frame` (lane/neg-round2-d798, D-845): no step of the chain names the party it advises, so items with
+#   different personas and the same text get the same questions. `party_frame` true puts one frame before every
+#   step's question, filled by Python from what the item declares alone: the advised party (`party_text`), its
+#   positions on record with their rounds and articles (its interests), the other parties' positions on the
+#   proposal's article (the opposing positions), and the rounds on record on that article with the parties that put
+#   positions in each (the history). Nothing is chosen by a word list (WORDS-A); `party_frame_none` fills an empty
+#   list. Item-level steps (R2's limit read) get the frame over the whole item.
+# - #311 `reason_field` (same lane, D-845): after a proposal's stance, one generated step `reason` from
+#   `reason_text` asks for two lines, the mechanism of the change and its expected effect for the advised party.
+#   Python reads the two lines by their declared heads (REASON_PARTS, the form the template asks for, never a
+#   meaning cue) into the piece's `reason`; a reply without both is refused with its ANSWER-FORM-A reason
+#   (`no_mechanism`, `no_effect`), counted like every refused step, and only that field is dropped. Recorded and
+#   reported, never a bar figure.
+PARTY_FRAME_SLOTS = ("{persona}", "{interests}", "{others}", "{history}")
+# - D-848 `mandate_split`: the advised party's mandate up front before every question, its red lines (declared on the
+#   record and given by the operator, #278, each with its source; `party_red_lines`) apart from its bargainable points
+#   (its other positions on record); each operator red line is also asked by the red_line step of every proposal,
+#   and a yes makes a conflict as a marked red line does. Reading red lines out of texts stays in the beta.
+MANDATE_SLOTS = ("{persona}", "{red_lines}", "{bargainable}")
+REASON, REASON_PARTS, REASON_MAX_CHARS = "reason", ("mechanism", "effect"), 400
+# - #3 `trade_read` (same lane, D-846): the stepwise chain's reply always held no trades (and no binding state), though
+#   21 of the 64 C4 items declare trades_on_record. `trade_read` true asks, once per declared trade of the advised
+#   party whose give and get are both proposals on the table, one CHOICE-A question from `trade_text` (the two
+#   proposals, the trade's round and the item's) over `trade_answers` (each a label named in the template and whether
+#   it keeps the trade, exactly one keeping); a kept trade is offered again in the reply's `trades`, every read kept in
+#   `trade_reads` marked inferred; a refused read keeps nothing, counted. Read from the declared structure alone.
+TRADE_READ, TRADE_SLOTS = "trade_read", ("{give}", "{get}", "{trade_round}", "{round}")
 OPTIONAL_DEFAULTS = {"fate_forecast": False, "conflict_question": STANCE_QUESTION, "quote_grounding": False,
-                     "auditor_band": None, "conditional_accept": None, "limit_read": False}
+                     "auditor_band": None, "conditional_accept": None, "limit_read": False,
+                     "room_fate": False, "changes_id_echo": False, "party_frame": False, "reason_field": False,
+                     "trade_read": False, "mandate_split": False, "room_unanchored": False}
+# Round 3: the one stance a second room fate answer may set (a proposal still open and one reworded both move).
+ROOM_FATE_SHARED = "counter"
 
 
 def _template(block, key, need=(), never=("{changes}",)):
@@ -1023,9 +1162,12 @@ def _template(block, key, need=(), never=("{changes}",)):
 def optional_switches(block):
     """The declared optional switches of the stepwise block, each checked, every one off when not declared."""
     got = {k: (v if block.get(k) is None else block[k]) for k, v in OPTIONAL_DEFAULTS.items()}
-    for k in ("fate_forecast", "quote_grounding", "limit_read"):
+    for k in ("fate_forecast", "quote_grounding", "limit_read", "room_fate", "changes_id_echo", "party_frame",
+              "reason_field", "trade_read", "mandate_split", "room_unanchored"):
         if type(got[k]) is not bool:
             raise ValueError("advice.methods.stepwise.%s is true or false" % k)
+    if got["room_unanchored"] and not got["room_fate"]:
+        raise ValueError("room_unanchored changes the room fate question: it needs room_fate")
     if got["fate_forecast"]:
         _template(block, "fate", ("{proposal}", "{positions}"))
         answers = block.get("fate_answers")
@@ -1049,6 +1191,24 @@ def optional_switches(block):
         compare_answers(block)
     if got["limit_read"]:
         limit_answers(block)
+    if got["room_fate"]:
+        if got["fate_forecast"]:
+            raise ValueError("room_fate and fate_forecast each ask a proposal's fate: declare one")
+        room_fate_answers(block)
+    if got["party_frame"]:
+        _template(block, "party_frame_text", PARTY_FRAME_SLOTS)
+        if not isinstance(block.get("party_frame_none"), str) or not block["party_frame_none"].strip():
+            raise ValueError("the party frame declares party_frame_none")
+    if got["trade_read"]:
+        trade_answers(block)
+    if got["mandate_split"]:
+        _template(block, "mandate_split_text", MANDATE_SLOTS)
+        if not isinstance(block.get("party_frame_none"), str) or not block["party_frame_none"].strip():
+            raise ValueError("the mandate split fills an empty list with party_frame_none")
+    if got["reason_field"]:
+        t = _template(block, "reason_text", ("{proposal}", "{stance}"))
+        if any(("%s:" % k) not in t.lower() for k in REASON_PARTS):
+            raise ValueError("the reason template asks for each of %s as a line head" % ", ".join(REASON_PARTS))
     if got["quote_grounding"]:
         _template(block, "quote", ("{proposal}", "{sentences}"))
         if block.get("quote_none_stance") not in POSITION_STANCES or block["quote_none_stance"] == OPPOSE:
@@ -1118,6 +1278,56 @@ def limit_answers(block):
     if any(l not in template for l in labels):
         raise ValueError("the limit template names every declared answer")
     return labels, {a["label"]: a["limit"] for a in answers}
+
+
+def room_fate_answers(block):
+    """R3: the room fate's declared answers as (labels in declared order, {label: the stance it sets}). Its template
+    `room_fate_text` fills every ROOM_FATE_SLOTS slot, never shows `{changes}` (asked under either order) and names every
+    label; `room_fate_alone` and `room_fate_none` are declared texts; the labels are distinct lower-case words, none a
+    declared stance, position stance, yes or no; each sets one of STANCES and each of STANCES is set by exactly one,
+    except that round 3 (D-864) admits one fourth answer setting ROOM_FATE_SHARED (counter): a proposal still open
+    and one reworded both move. Any other count, a fifth answer or an undeclared stance is refused."""
+    template = _template(block, ROOM_FATE_TEMPLATE, ROOM_FATE_SLOTS)
+    for k in ("room_fate_alone", "room_fate_none"):
+        if not isinstance(block.get(k), str) or not block[k].strip():
+            raise ValueError("the room fate declares %s" % k)
+    answers = block.get("room_fate_answers")
+    if not isinstance(answers, list) or \
+            not all(isinstance(a, dict) and isinstance(a.get("label"), str) and a["label"] for a in answers):
+        raise ValueError("the room fate declares its answers, each a label and the stance it sets")
+    labels = tuple(a["label"] for a in answers)
+    if len(set(labels)) != len(labels) or any(l in STANCES or l in POSITION_STANCES or l in YES_NO or
+                                              l != l.strip().lower() for l in labels):
+        raise ValueError("the room fate answers are distinct lower-case labels, none a stance, yes or no")
+    set_by = [a.get("stance") for a in answers]
+    allowed = (sorted(STANCES), sorted(STANCES + (ROOM_FATE_SHARED,)))
+    if sorted(s for s in set_by if s in STANCES) not in allowed or len(set_by) not in (len(STANCES), len(STANCES) + 1) \
+            or any(s not in STANCES for s in set_by):
+        raise ValueError("each room fate answer sets one stance, each of %s exactly once (%s at most twice)"
+                         % (", ".join(STANCES), ROOM_FATE_SHARED))
+    if any(l not in template for l in labels):
+        raise ValueError("the room fate template names every declared answer")
+    return labels, {a["label"]: a["stance"] for a in answers}
+
+
+def trade_answers(block):
+    """#3: the trade read's declared answers as (labels in declared order, {label: keeps the trade}). Its template
+    `trade_text` fills every TRADE_SLOTS slot, never shows `{changes}` and names every label; the labels are distinct
+    lower-case words, none a stance, yes or no; exactly one keeps the trade."""
+    template = _template(block, "trade_text", TRADE_SLOTS)
+    answers = block.get("trade_answers")
+    if not isinstance(answers, list) or len(answers) < 2 or \
+            not all(isinstance(a, dict) and isinstance(a.get("label"), str) and a["label"] for a in answers):
+        raise ValueError("the trade read declares its answers, each a label and whether it keeps the trade")
+    labels = tuple(a["label"] for a in answers)
+    if len(set(labels)) != len(labels) or any(l in STANCES or l in POSITION_STANCES or l in YES_NO or
+                                              l != l.strip().lower() for l in labels):
+        raise ValueError("the trade answers are distinct lower-case labels, none a stance, yes or no")
+    if any(type(a.get("keeps")) is not bool for a in answers) or sum(1 for a in answers if a["keeps"]) != 1:
+        raise ValueError("each trade answer declares keeps true or false, exactly one true")
+    if any(l not in template for l in labels):
+        raise ValueError("the trade template names every declared answer")
+    return labels, {a["label"]: a["keeps"] for a in answers}
 
 
 def position_sentences(quote):
@@ -1269,13 +1479,25 @@ def _collapse(text):
     return " ".join(str(text or "").split())
 
 
-def _step_check(step, answer, item, proposal, position=None, answers=None):
+def _step_check(step, answer, item, proposal, position=None, answers=None, id_echo=False):
     """(value, None) or (None, reason): Python's check of one step's answer before the next step is asked
-    (`answers`, a step's own declared answers when they are not STEP_ANSWERS')."""
+    (`answers`, a step's own declared answers when they are not STEP_ANSWERS'). `id_echo` (R3b, changes_id_echo):
+    a `changes` line starting with exactly the proposal id the prompt showed and a colon is read without that id."""
+    if step == REASON and answers is None:
+        read = {}
+        for line in str(answer or "").splitlines():
+            head, sep, rest = line.strip().strip("*#- ").partition(":")
+            key = head.strip(" *").lower()
+            if sep and key in REASON_PARTS and rest.strip(" *") and key not in read:
+                read[key] = " ".join(rest.strip(" *").split())[:REASON_MAX_CHARS]
+        missing = [k for k in REASON_PARTS if k not in read]
+        return (read, None) if not missing else (None, "no_" + missing[0])
     said = _collapse(answer)
     if answers is not None:
         word = said.lower().strip(" .\"'")
         return (word, None) if word in answers else (None, "not_declared")
+    if step == "changes" and id_echo and said.startswith("%s:" % proposal["id"]):
+        said = said[len(proposal["id"]) + 1:].strip()
     if step == "changes":
         if len(said.split()) < BASIS_QUOTE_MIN_WORDS:
             return None, "line_too_short"
@@ -1338,6 +1560,7 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
     if cond is not None and context == TRIMMED_CONTEXT:
         raise ValueError("conditional_accept has its own stance template; the trimmed arm does not carry it")
     compare = compare_answers(block) if opt["conflict_question"] == COMPARE else None
+    room = room_fate_answers(block) if opt["room_fate"] else None
     if compare is not None and context == TRIMMED_CONTEXT:
         raise ValueError("the compare question has its own template; the trimmed arm does not carry it")
     persona = item["persona"]["id"]
@@ -1347,9 +1570,51 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
     steps, proposals, signs = (_NotedSteps(on_step) if on_step is not None else []), {}, {}
     judged = {}   # position id -> the stance its step answered, Python-checked (D-668 gap 4: the movement's input)
 
+    frame_now, lead = [""], [""]
+    if opt["mandate_split"]:
+        none, lines = block["party_frame_none"], party_red_lines(item)
+        red_ids = {r["id"] for r in lines}
+        lead[0] = _fill(block["mandate_split_text"], {
+            "{persona}": party_text(item["persona"]),
+            "{red_lines}": "\n".join("- (%s) %s" % (r["source"], r["text"]) for r in lines) or none,
+            "{bargainable}": "\n".join("- round %s, article %s: %s" % (p.get("round"), p["article"], p["quote"])
+                                       for p in positions if p["party"] == item["persona"]["id"]
+                                       and p["id"] not in red_ids) or none}) + "\n\n"
+    op_lines = operator_red_lines(item) if opt["mandate_split"] else []
+
+    def frame_for(article):
+        """#310: the frame before every question, from the item's declarations alone (None: the whole item)."""
+        none = block["party_frame_none"]
+        pid = item["persona"]["id"]
+        mine = [p for p in positions if p["party"] == pid]
+        others = [p for p in positions if p["party"] != pid and (article is None or p["article"] == article)]
+        on_art = [p for p in positions if article is None or p["article"] == article]
+        rounds = sorted({p.get("round") for p in on_art if isinstance(p.get("round"), int)})
+        history = ["- round %d: positions by %s" % (r, ", ".join(sorted({p["party"] for p in on_art
+                                                                         if p.get("round") == r}))) for r in rounds]
+        closed = [a["id"] for a in item["articles"] if a.get("agreed")]
+        now = {e.get("id") for e in item.get("round_index") or []}
+        fell = [e.get("id") for e in item.get("previous_index") or [] if e.get("id") not in now]
+        if closed:
+            history.append("- agreed in this round's text: %s" % ", ".join(closed))
+        if fell:
+            history.append("- in the previous round's text, no longer in this one: %s" % ", ".join(fell))
+        history += ["- trade on record by the party you advise, round %s: gave %s, expects %s"
+                    % (t.get("round"), t.get("give"), t.get("get")) for t in item.get("trades_on_record") or []]
+        return _fill(block["party_frame_text"], {
+            "{persona}": party_text(item["persona"]),
+            "{interests}": "\n".join("- round %s, article %s: %s" % (p.get("round"), p["article"], p["quote"])
+                                     for p in mine) or none,
+            "{others}": "\n".join("- %s, round %s: %s" % (p["party"], p.get("round"), p["quote"])
+                                  for p in others) or none,
+            "{history}": "\n".join(history) or none}) + "\n\n"
+
     def put(step, user, answers):
-        said = ask(step, user, answers)
+        said = ask(step, lead[0] + frame_now[0] + user, answers)
         return said if isinstance(said, tuple) else (said, None)
+
+    if opt["party_frame"]:
+        frame_now[0] = frame_for(None)
 
     # R2: the persona's positions read for limits, once per item, before any proposal (none marked a red line).
     read_lines, limit_reads = set(), {}
@@ -1370,6 +1635,8 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                 read_lines.add(pos["id"])
 
     for art in item["articles"]:
+        if opt["party_frame"]:
+            frame_now[0] = frame_for(art["id"])
         for n, prop in enumerate(art["proposals"], 1):
             base = {"{proposal_id}": prop["id"], "{proposal}": prop["text"], "{article}": art["id"],
                     "{title}": art["title"]}
@@ -1382,8 +1649,14 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
 
             def generated(step, template, slots):
                 said, _probs = put(step, _fill(template, slots), None)
-                value, why = _step_check(step, said, item, prop)
-                steps.append({"proposal": prop["id"], "step": step, "accepted": why is None, "refused": why})
+                echo = opt["changes_id_echo"] and step == "changes"
+                # Off, the check is called exactly as before (check 468's neutralisation replaces it by that signature).
+                value, why = (_step_check(step, said, item, prop, id_echo=True) if echo
+                              else _step_check(step, said, item, prop))
+                entry = {"proposal": prop["id"], "step": step, "accepted": why is None, "refused": why}
+                if echo and why is None and _collapse(said).startswith("%s:" % prop["id"]):
+                    entry["id_echo"] = True
+                steps.append(entry)
                 return value, why
 
             def choice(step, user, pos=None, answers=None):
@@ -1508,7 +1781,19 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                     if why:
                         return None
                     hit = hit or got == "yes"
-                if lines:
+                for op in op_lines:
+                    # D-848: each operator red line asked of every proposal by the red_line step.
+                    slots = dict(base, **{"{quote}": op["text"]})
+                    template = first["red_line"] if order == CHOICE_FIRST else block["red_line"]
+                    if order != CHOICE_FIRST:
+                        slots["{changes}"] = changes
+                    got, why, _probs = choice("red_line", _fill(template, slots))
+                    if why:
+                        return None
+                    if got == "yes":
+                        hit = True
+                        piece.setdefault("operator_lines_hit", []).append(op["id"])
+                if lines or op_lines:
                     piece["red_line_hit"] = hit
                 crossed, read = [], [p for p in mine if p["id"] in read_lines]
                 for pos in read:
@@ -1519,11 +1804,14 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                         crossed.append(pos["id"])
                 if read:
                     piece.update(limit_hit=bool(crossed), limit_lines=crossed, limit_basis=INFERRED)
-                if not mine:
+                if not mine and not piece.get("operator_lines_hit"):
                     piece["conflict"] = "not_stated"
                 else:
                     piece["conflict"] = "conflict" if hit or crossed or \
                         any(stances[p["id"]] == "oppose" for p in mine) else "no_conflict"
+                if room is not None:
+                    # R3: the blind open point step is not asked; the room fate decides the stance.
+                    return stances, hit, None
                 template = first["open_point"] if order == CHOICE_FIRST else block["open_point"]
                 slots = dict(base) if order == CHOICE_FIRST else dict(base, **{"{changes}": changes})
                 got, why, _probs = choice("open_point", _fill(template, slots))
@@ -1550,6 +1838,63 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                     if new != "counter":
                         piece.pop("wording", None)
 
+            def room_stance():
+                """R3: the proposal's fate in the room, one choice over the declared answers; the stance it sets,
+                or None when refused (the proposal is then left without a stance)."""
+                labels, sets = room
+                kept = piece.get("position_stances") or {}
+                read = []
+                for pos in touched:
+                    e = kept.get(pos["id"]) or {}
+                    line = "- %s, round %s: %s" % (pos["party"], pos.get("round"), pos["quote"])
+                    # Round 3: unanchored, the position alone, without the chain's own read of it.
+                    read.append(line if opt["room_unanchored"] else
+                                "%s\n  read: %s" % (line, e.get("answered") or e.get("stance")))
+                others = ["- %s" % q["text"] for q in art["proposals"] if q["id"] != prop["id"]]
+                user = _fill(block[ROOM_FATE_TEMPLATE], dict(base, **{
+                    "{alternatives}": "\n".join(others) or block["room_fate_alone"],
+                    "{room}": "\n".join(read) or block["room_fate_none"], "{round}": str(item.get("round"))}))
+                got, why, probs = choice(ROOM_FATE, user, None, labels)
+                if why:
+                    return None
+                piece[ROOM_FATE] = {"answered": got, "probabilities": probs, "basis": INFERRED}
+                return sets[got]
+
+            def reason_step():
+                """#311: the reasoning field after the stance, a generated step; a refusal drops this field only."""
+                if not opt["reason_field"] or "stance" not in piece:
+                    return
+                value, why = generated(REASON, block["reason_text"], dict(base, **{"{stance}": piece["stance"]}))
+                if not why:
+                    piece[REASON] = value
+
+            if room is not None:
+                # R3: the choice steps and the changes line in the declared order, then the room fate; the
+                # wording only for a counter.
+                if order == CHOICE_FIRST:
+                    if choice_steps(None) is None:
+                        continue
+                    value, why = generated("changes", block["changes"], base)
+                    if not why:
+                        piece["changes"] = value
+                else:
+                    value, why = generated("changes", block["changes"], base)
+                    if why:
+                        continue
+                    piece["changes"] = value
+                    if choice_steps(value) is None:
+                        continue
+                stance = room_stance()
+                if stance is None:
+                    continue
+                piece["stance"] = stance
+                if stance == "counter":
+                    template = first["wording"] if order == CHOICE_FIRST else block["wording"]
+                    wording, why = generated("wording", template, dict(base, **{"{changes}": piece.get("changes", "")}))
+                    if not why:
+                        piece["wording"] = wording
+                reason_step()
+                continue
             if order == CHOICE_FIRST:
                 # N3: the choice steps first; then the generated ones, each refused one dropping its own field only.
                 decided = choice_steps(None)
@@ -1566,6 +1911,7 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                 else:
                     piece["stance"] = "reject" if piece["conflict"] == "conflict" else "accept"
                 forecast()
+                reason_step()
                 continue
             value, why = generated("changes", block["changes"], base)
             if why:
@@ -1582,6 +1928,28 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
             else:
                 piece["stance"] = "reject" if piece["conflict"] == "conflict" else "accept"
             forecast()
+            reason_step()
+    # #3 (D-846) trade_read: each trade on record by the party it advises whose give and get are both on the table,
+    # one CHOICE-A question, keep or drop; a kept one is offered again in the reply's trades.
+    trades, trade_reads = [], {}
+    if opt["trade_read"]:
+        labels, keeps = trade_answers(block)
+        texts = {q["id"]: q["text"] for a in item["articles"] for q in a["proposals"]}
+        if opt["party_frame"]:
+            frame_now[0] = frame_for(None)
+        for t in item.get("trades_on_record") or []:
+            if t.get("give") not in texts or t.get("get") not in texts or t["give"] == t["get"]:
+                continue
+            user = _fill(block["trade_text"], {"{give}": "%s: %s" % (t["give"], texts[t["give"]]),
+                                                "{get}": "%s: %s" % (t["get"], texts[t["get"]]),
+                                                "{trade_round}": str(t.get("round")), "{round}": str(item.get("round"))})
+            said, probs = put(TRADE_READ, user, labels)
+            got, why = _step_check(TRADE_READ, said, item, None, None, labels)
+            steps.append({"proposal": None, "step": TRADE_READ, "trade": t.get("id"), "accepted": why is None,
+                          "refused": why})
+            trade_reads[t.get("id")] = {"answered": got, "probabilities": probs, "basis": INFERRED}
+            if why is None and keeps[got]:
+                trades.append({"give": t["give"], "get": t["get"]})
     alignment = {}
     for art in item["articles"]:
         cells = {}
@@ -1595,13 +1963,15 @@ def stepwise_advice(config, item, ask, on_step=None, stance_context=None):
                 cells[party] = "aligned" if all(common) else "opposed"
         alignment[art["id"]] = {"aligned": sorted(p for p, v in cells.items() if v == "aligned"),
                                 "opposed": sorted(p for p, v in cells.items() if v == "opposed")}
-    reply = {"proposals": proposals, "trades": [], "approach": [], "alignment": alignment, "state": {},
+    reply = {"proposals": proposals, "trades": trades, "approach": [], "alignment": alignment, "state": {},
              "unknown_ids": 0,
              # D-668 gap 4: every other party's movement toward or away from the persona over the rounds,
              # composed by Python from the stances the chain checked (a position not judged is not used).
              "movement": movement_map(item, [dict(p, stance=judged[p["id"]]) for p in positions if p["id"] in judged])}
     if opt["limit_read"]:
         reply["limit_reads"] = limit_reads
+    if opt["trade_read"]:
+        reply["trade_reads"] = trade_reads
     return reply, steps
 
 
@@ -2118,6 +2488,13 @@ def main(argv=None):
                    help="the prompts config to build from (default the shipped neg_advisor_prompt.json); a run's "
                         "declared switches, e.g. conflict_question compare (C4), live in its own copy")
     b.add_argument("--out", required=True, type=Path)
+    rb = sub.add_parser("rebuild", allow_abbrev=False,
+                        help="an existing prompts file's advice prompts built again under another declared config")
+    rb.add_argument("--prompts", required=True, type=Path)
+    rb.add_argument("--config", required=True, type=Path)
+    rb.add_argument("--out", required=True, type=Path)
+    rb.add_argument("--operator-red-lines", type=Path, default=None,
+                    help="#278: the operator's red lines file (neg-operator-red-lines-v1), by item id")
     r = sub.add_parser("run", allow_abbrev=False)
     r.add_argument("--prompts", required=True, type=Path)
     r.add_argument("--out", required=True, type=Path)
@@ -2135,6 +2512,9 @@ def main(argv=None):
                       config_path=args.config, stance_contexts=None if args.stance_contexts is None
                       else [c for c in args.stance_contexts.split(",") if c])
         print(json.dumps({"prompts": value["prompt_count"]}))
+    elif args.command == "rebuild":
+        value = rebuild(args.prompts, args.out, config_path=args.config, operator_path=args.operator_red_lines)
+        print(json.dumps({"prompts": value["prompt_count"], "config_sha256": value["config_sha256"]}))
     elif args.command == "run":
         result = run(args.prompts, args.out)
         print(json.dumps({"prompts": result["prompts"], "derived": result["derived"], "seconds": result["seconds"]}))

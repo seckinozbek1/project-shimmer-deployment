@@ -331,7 +331,9 @@ def archive_problems(folder):
         return ''
     import archive_closure
     try:
-        results = archive_closure.check_folder(folder)
+        # D-856: a result is reused while everything the check reads is unchanged (archive_closure._cache_key)
+        results = archive_closure.check_folder(
+            folder, cache_dir=Path(__file__).resolve().parents[2] / 'output' / 'loop_cache' / 'archive_closure')
     except (archive_closure.Unreadable, OSError, ValueError) as exc:
         return 'unreadable: %s' % exc
     for result in results:

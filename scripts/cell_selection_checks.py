@@ -912,5 +912,48 @@ def run_small_table_check():
                     "shipped bound reaches the replay and the real phase 5.5" % (len(proofs), shipped))
 
 
+def _fallback_text():
+    first = chr(10).join(("Table 3: Rainfall by month.", "", "| Month | Rainfall |", "|---|---|", "| March | 20 |", "| April | 30 |", ""))
+    second = chr(10).join(("Table 4: Wind by month.", "", "| Month | Gust |", "|---|---|", "| March | 55 |", "| April | 61 |", ""))
+    return first + chr(10) + second
+
+
+def _table_vectors(favoured):
+    """A stub ranker: the claim first, then one text per table; the table whose text holds `favoured` lies nearest."""
+    def embed(items):
+        return [[1.0, 0.0] if (i == 0 or favoured in item["text"]) else [0.0, 1.0] for i, item in enumerate(items)]
+    return embed
+
+
+def observe_embedding_fallback():
+    """D-873 stage b: two tables neither named by the claim are ranked by the injected embedding; a tie stays
+    refused and with no embedding the refusal is no_match, as the replay has none."""
+    text, claim = _fallback_text(), "Observations were recorded during the survey."
+    chosen = cell_selection.select(text, claim, CONFIG, _table_vectors("Gust"))
+    other = cell_selection.select(text, claim, CONFIG, _table_vectors("Rainfall"))
+    tied = cell_selection.select(text, claim, CONFIG, lambda items: [[1.0, 0.0] for _ in items])
+    bare = cell_selection.select(text, claim, CONFIG)
+    named = cell_selection.select(text, "Rainfall in April was low.", CONFIG, _table_vectors("Gust"))
+    return [chosen["selected"], chosen["selected_by"], chosen.get("table"), chosen["cells"][:23], other.get("table"),
+            tied["refused"], tied["selected"], bare["refused"], named["selected_by"], named.get("table")]
+
+
+def expected_embedding_fallback():
+    return [True, "embedding_fallback", 1, "Table 4: Wind by month.", 0, "tie", False, "no_match", "labels", 0]
+
+
+def run_embedding_fallback():
+    """Check 690 (D-873 stage b): a claim naming no table, among several, is chosen by the injected embedding
+    (selected_by embedding_fallback), a tie is refused and with no embedding the refusal stays no_match."""
+    prove_effect(
+        name="embedding fallback for no_match", validate=lambda: cell_selection.CONFIG_PATH.is_file(),
+        observe=observe_embedding_fallback,
+        check=lambda: ("PASS" if observe_embedding_fallback() == expected_embedding_fallback() else "FAIL",
+                       "embedding fallback for no_match"),
+        neutralise=lambda: patched(cell_selection, "_by_embedding", lambda found, claim, embed_with: None))
+    return "PASS", ("1 proof, neutralise, fail, restore, pass: with an embedding ranker a claim naming no table is "
+                    "answered by the nearest table (embedding_fallback), a tie stays refused, no ranker stays no_match")
+
+
 if __name__ == "__main__":
     print(json.dumps(run_checks()))

@@ -1,0 +1,22 @@
+You are the blind writer of SAMPLE user red lines (operator decision D-851). These are sample red lines written by us, standing in for what a real user might give; they are not a real user's input.
+
+Read exactly ONE file, with the Read tool:
+<USER_HOME>\local\shimmer-deployment\.claude\worktrees\agent-a8d6ddecf929785d4\benchmark\fixtures\sample_red_lines\writer_input_c4pilot_1.json
+
+Write exactly ONE file, with the Write tool:
+<USER_HOME>\local\shimmer-deployment\.claude\worktrees\agent-a8d6ddecf929785d4\benchmark\fixtures\sample_red_lines\writer_output_c4pilot_1.json
+
+Do not open, list, search or run anything else: no other file, folder, Grep, Glob, shell command, web page or agent. Everything you need is in that one file.
+
+The input holds 24 items. Each gives the party we advise (advised_party, party_kind), the ids of its positions the record marks as red lines (marked_on_record_as_red_lines, possibly empty), and its own positions on record (id, round, article, article_title, quote).
+
+For each item, writing as that party's own adviser from its positions on record ONLY:
+- 2 to 4 red lines: things the party must keep or must not accept. Each one sentence, plain English, written as an instruction from the party (for example "Do not accept ..." or "Keep ...").
+- 2 to 4 bargainable points: things the party could give ground on or trade.
+- Each red line and each bargainable point rests on a recorded position: give its position id (one or more, from that item's positions_on_record) and a short quote (at most 20 words, copied exactly from that position's quote).
+- Do not guess, imply or mention how the negotiation ended, which proposals were adopted, or anything not in the input. Do not invent facts. No em dashes.
+
+Output JSON, exactly this shape:
+{"items": {"<item_id>": {"red_lines": [{"text": "...", "rests_on": ["POS-n"], "quote": "..."}],
+                          "bargainable": [{"text": "...", "rests_on": ["POS-n"], "quote": "..."}]}}}
+with all 24 item ids. When done, reply with one line: the number of items written and the number of red lines and bargainable points in total.

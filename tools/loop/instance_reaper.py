@@ -26,7 +26,7 @@ What it does on every run:
    measurement (the instance may have cost less, or nothing), counted as actual spend and
    never refunded; its reason says it was charged that way.
 5. Salvage, then stop (D-S84), with no Claude involved. Two triggers are read on every run:
-   seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 95, or the dated ``USAGE_STOP_EXCEPTION``) in ``.claude/loop_status.json``, and no
+   seven-day usage at or above ``usage_stop_percent(now)`` (``USAGE_STOP_PERCENT`` 98 since 20 November 2026 19:37 +0300, D-857; before it the dated ``USAGE_STOP_HISTORY``) in ``.claude/loop_status.json``, and no
    lead heartbeat (the continue hook's state, LOOP_STATE, FOR_SECKIN or LOOP_HEARTBEAT.txt written) for
    ``SILENCE_MINUTES`` while a loop instance runs. Either opens a salvage episode
    (``salvage/episode.json``): every running loop instance gets a request file its controller
@@ -156,11 +156,18 @@ def salvage_dir():
 
 
 
-USAGE_STOP_PERCENT = 95   # the standing value; read through usage_stop_percent(now), never directly
-# A declared, dated exception to the standing value (D-529): until the epoch below, strictly before it,
-# the stop is 98; at or after it the standing 95 is back with no further change. The epoch is the
-# `seven_day_resets_at` of `.claude/loop_status.json` on 12 November 2026 (18 November 2026, 11:00 +03:00).
-USAGE_STOP_EXCEPTION = {'percent': 98, 'until_epoch': 1794988800, 'source': 'Seckin 14:16, 12 November 2026'}
+USAGE_STOP_PERCENT = 98   # the standing value (D-857); read through usage_stop_percent(now), never directly
+# The dated history of the threshold, oldest first: each entry was in force strictly before its
+# until_epoch (and at or after the previous entry's); at or after the last one the standing value holds.
+# D-529: 98 until the reset of 18 November 2026, 11:00 +03:00 (the `seven_day_resets_at` of
+# `.claude/loop_status.json` on 12 November 2026). Then 95 until 20 November 2026 19:37 +0300, when
+# the operator raised the standing value to 98 (G-20261120-1937, D-857; only alpha steps may use the
+# margin above 95, D-850; past 95 the lead writes an information line to FOR_SECKIN, not a stop).
+USAGE_STOP_HISTORY = (
+    {'percent': 98, 'until_epoch': 1794988800, 'source': 'D-529, Seckin 14:16, 12 November 2026'},
+    {'percent': 95, 'until_epoch': 1795192620, 'source': '95 until 20 November 2026 19:37 +0300, G-20261120-1937 / D-857'},
+)
+USAGE_STOP_SINCE = {'until_epoch': USAGE_STOP_HISTORY[-1]['until_epoch'], 'source': 'G-20261120-1937 / D-857'}
 # D-583: the usage stop acts only on a LIVE reading. The status line rewrites .claude/loop_status.json
 # each time a Claude session's status line refreshes; a reading older than USAGE_FRESH_SECONDS at the
 # moment of decision is "usage unknown, stale by N s": reported, never a trigger. The bound is the
@@ -468,20 +475,28 @@ def _epoch(now):
 
 
 def usage_stop_percent(now=None):
-    """The one reader of the stop threshold: the exception's percent strictly before its until_epoch,
-    the standing USAGE_STOP_PERCENT at or after it. `now` is a datetime or an epoch."""
-    if _epoch(now) < USAGE_STOP_EXCEPTION['until_epoch']:
-        return USAGE_STOP_EXCEPTION['percent']
-    return USAGE_STOP_PERCENT
+    """The one reader of the stop threshold: the first USAGE_STOP_HISTORY entry whose until_epoch is
+    strictly after `now`, else the standing USAGE_STOP_PERCENT. `now` is a datetime or an epoch."""
+    entry = _usage_stop_entry(now)
+    return USAGE_STOP_PERCENT if entry is None else entry['percent']
+
+
+def _usage_stop_entry(now):
+    epoch = _epoch(now)
+    for entry in USAGE_STOP_HISTORY:
+        if epoch < entry['until_epoch']:
+            return entry
+    return None
 
 
 def usage_stop_basis(now=None):
     """The threshold in force and why, in words, for the status and the report."""
-    percent = usage_stop_percent(now)
-    if percent == USAGE_STOP_PERCENT:
-        return '%d (the standing value)' % percent
-    return '%d (declared exception until epoch %d, %s; %d is the standing value)' % (
-        percent, USAGE_STOP_EXCEPTION['until_epoch'], USAGE_STOP_EXCEPTION['source'], USAGE_STOP_PERCENT)
+    entry = _usage_stop_entry(now)
+    if entry is None:
+        return '%d (the standing value since epoch %d, %s)' % (
+            USAGE_STOP_PERCENT, USAGE_STOP_SINCE['until_epoch'], USAGE_STOP_SINCE['source'])
+    return '%d (in force until epoch %d, %s; %d is the standing value)' % (
+        entry['percent'], entry['until_epoch'], entry['source'], USAGE_STOP_PERCENT)
 
 
 def usage_stop(usage, now=None):

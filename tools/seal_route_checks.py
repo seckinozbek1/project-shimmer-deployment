@@ -2502,7 +2502,7 @@ def proof_the_request_command_writes_and_checks_a_request(drv=None):
     import seal_route_driver as driver
     drv = drv or driver
     outcomes = {}
-    for case, free, spoil in (("written", 40, False), ("low disk", 11, False), ("does not check", 40, True)):
+    for case, free, spoil in (("written", 40, False), ("low disk", 9, False), ("does not check", 40, True)):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             prep, reuse, inputs, requests_path, private, root = request_inputs(tmp)

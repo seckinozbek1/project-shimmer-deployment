@@ -70,7 +70,9 @@ PROMPT_KEYS = {"prompt_id", "set", "item_id", "position_id", "prompt", "prompt_s
 FIELDS = ("article", "wording", "stance", "firm_limit")
 CONFIDENCE_FIELD = "stance"
 LABELLER_KEYS = ("family", "candidates", "terms_required", "families_never_labeller", "decoding")
-SET_NAME = re.compile(r"^[a-z][a-z0-9]*_[0-9]+$")
+# D-843: also the D-798 validation set's names (`validation`, `validation_strata`), so it can be labelled as named
+# (OPEN_ITEMS 164); still lower-case letters and digits in underscore-joined words, nothing else.
+SET_NAME = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 # The same form as tools/neg_synth.py's _DATED: a repository id ending in a date is a dated snapshot.
 DATED = re.compile(r"(?:^|[-_@])20\d{2}-?\d{2}-?\d{2}$")
 

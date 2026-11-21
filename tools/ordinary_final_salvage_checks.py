@@ -1,7 +1,8 @@
 """Salvage, then stop (D-S84): the reaper's two triggers and the controller's answer.
 
 When Claude stops while loop instances run, the reaper (a scheduled task that needs no Claude)
-reads two triggers on every run: seven-day usage at or above 95 percent (98 until the reset of 18 November 2026, D-529) in the status line's
+reads two triggers on every run: seven-day usage at or above 98 percent (the standing value since 20 November 2026 19:37 +0300, D-857;
+before it the dated history: 98 until the reset of 18 November 2026, D-529, then 95) in the status line's
 file, and no lead heartbeat for 90 minutes while a loop instance runs. Either opens a salvage
 episode: a request for every running loop instance, which its controller answers by giving the
 phase in hand five minutes, stopping the workload, packing and copying the evidence, terminating
@@ -56,13 +57,13 @@ class SalvageChecks:
         write(instance_reaper.LOOP_STATUS, dict(time_utc=stamp, seven_day_used_percentage=percent))
 
     def test_salvage_usage_stop_acts_only_on_a_live_reading(self):
-        """D-583: the reading is taken again at the moment of decision. A fresh 98 stops (before the
-        reset), a stale 98 does not stop and is reported as usage unknown with its age, a fresh 97
+        """D-583: the reading is taken again at the moment of decision. A fresh 98 stops (the standing
+        value, D-857), a stale 98 does not stop and is reported as usage unknown with its age, a fresh 97
         does not stop, and an unreadable figure stops nothing. The silence trigger is untouched."""
-        until = instance_reaper.USAGE_STOP_EXCEPTION['until_epoch']
+        since = instance_reaper.USAGE_STOP_SINCE['until_epoch']
         fresh = DECLARED_FRESH_SECONDS   # the decision's measured bound, held equal to the reaper's constant
         self.assertEqual(instance_reaper.USAGE_FRESH_SECONDS, fresh)
-        now = datetime.fromtimestamp(until - 7200, timezone.utc)
+        now = datetime.fromtimestamp(since + 7200, timezone.utc)
         beat_file = Path(instance_reaper.LOOP_STATUS).with_name('beat.txt')   # a heartbeat at `now`: silence stays quiet
         beat_file.write_text('beat', encoding='utf8')
         os.utime(beat_file, (now.timestamp(), now.timestamp()))
@@ -126,7 +127,7 @@ class SalvageChecks:
         report = Path(status['salvage']['report'])
         self.assertEqual(report.name, 'SALVAGE_REPORT_20261027T101000Z.md')
         text = report.read_text(encoding='utf8')
-        for expected in ('seven-day usage at 98.0 percent', 'stop at 98 (declared exception until epoch 1794988800', '## shimmer-loop-one', '## shimmer-loop-two',
+        for expected in ('seven-day usage at 98.0 percent', 'stop at 98 (in force until epoch 1794988800, D-529','## shimmer-loop-one', '## shimmer-loop-two',
                          '`/runs/one/collected_evidence.tar.gz`', 'Finished: workload.', 'no answer within 600 s',
                          'Cost: 0.34 USD (16 minutes)', 'Cost: 0.45 USD (21 minutes)', 'Verified gone: yes',
                          'Resume: re-seal'):
@@ -143,39 +144,49 @@ class SalvageChecks:
         self.assertIsNone(instance_reaper.salvage_request('shimmer-loop-two'))
         self.assertIsNone(instance_reaper.reap(provider, [ledger], ledger, now=start + timedelta(minutes=26))['salvage'])
 
-    def test_salvage_usage_threshold_is_98_until_the_reset_then_95(self):
-        """D-529: one function, usage_stop_percent(now), is every reader's threshold. Before the
-        reset instant (18 November 2026, 11:00 +03:00, epoch 1794988800) 97 does not trigger and 98
-        does; at the boundary instant and after it 95 triggers and 94 does not; one second before it
-        the exception still holds. The status and the trigger name the threshold in force and why."""
-        until = instance_reaper.USAGE_STOP_EXCEPTION['until_epoch']
-        self.assertEqual(until, 1794988800)
+    def test_salvage_usage_threshold_follows_its_dated_history(self):
+        """D-529 and D-857: one function, usage_stop_percent(now), is every reader's threshold. Before
+        the reset instant (18 November 2026, 11:00 +03:00, epoch 1794988800) 97.9 does not trigger and
+        98 does; from that instant 95 triggers and 94.9 does not; from 20 November 2026 19:37 +0300
+        (epoch 1795192620, G-20261120-1937) the standing value is 98: 97.9 does not trigger and 98
+        does, at the boundary instant and after it; one second before it 95 still holds. The status and
+        the trigger name the threshold in force and why."""
+        d529, d857 = (entry['until_epoch'] for entry in instance_reaper.USAGE_STOP_HISTORY)
+        self.assertEqual((d529, d857), (1794988800, 1795192620))
+        self.assertEqual(instance_reaper.USAGE_STOP_SINCE['until_epoch'], d857)
+        self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 98)
         utc = lambda epoch: datetime.fromtimestamp(epoch, timezone.utc)
         fires = lambda percent, epoch: (self.usage(percent, at=epoch), (instance_reaper.salvage_trigger(utc(epoch), ['x']) or {}).get('trigger') == 'usage')[1]
-        before = until - 3600
-        self.usage(97)
-        self.assertFalse(fires(97, before))
-        self.usage(98)
-        self.assertTrue(fires(98, before))
-        self.usage(97.9)
-        self.assertFalse(fires(97.9, until - 1))
-        self.assertEqual(instance_reaper.usage_stop_percent(utc(until - 1)), 98)
-        # The boundary instant is already the standing value.
-        self.assertEqual(instance_reaper.usage_stop_percent(utc(until)), 95)
-        self.usage(95)
-        self.assertTrue(fires(95, until))
-        self.assertTrue(fires(95, until + 86400))
-        self.usage(94.9)
-        self.assertFalse(fires(94.9, until + 1))
-        self.assertEqual(instance_reaper.USAGE_STOP_PERCENT, 95)
-        self.assertEqual(instance_reaper.usage_stop_percent(until), 95)   # an epoch is read too
-        self.usage(96, at=until + 5)
-        trigger = instance_reaper.salvage_trigger(utc(until + 5), ['x'])
-        self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (95, '95 (the standing value)'))
-        self.assertIn('stop at 95 (the standing value)', instance_reaper.trigger_words(trigger))
+        # D-529: 98 before the reset.
+        self.assertFalse(fires(97, d529 - 3600))
+        self.assertTrue(fires(98, d529 - 3600))
+        self.assertFalse(fires(97.9, d529 - 1))
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d529 - 1)), 98)
+        # 95 from the reset instant until the D-857 instant.
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d529)), 95)
+        self.assertTrue(fires(95, d529))
+        self.assertTrue(fires(95, d529 + 86400))
+        self.assertFalse(fires(94.9, d529 + 1))
+        self.assertTrue(fires(97.9, d857 - 1))
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d857 - 1)), 95)
+        # D-857: the boundary instant is already the standing 98, and it stays.
+        self.assertEqual(instance_reaper.usage_stop_percent(utc(d857)), 98)
+        self.assertEqual(instance_reaper.usage_stop_percent(d857), 98)   # an epoch is read too
+        self.assertFalse(fires(97.9, d857))
+        self.assertTrue(fires(98, d857))
+        self.assertFalse(fires(97.9, d857 + 86400))
+        self.assertTrue(fires(98, d857 + 7 * 86400))
+        self.usage(98.5, at=d857 + 5)
+        trigger = instance_reaper.salvage_trigger(utc(d857 + 5), ['x'])
+        standing = '98 (the standing value since epoch 1795192620, G-20261120-1937 / D-857)'
+        self.assertEqual((trigger['stop_percent'], trigger['stop_basis']), (98, standing))
+        self.assertIn('stop at ' + standing, instance_reaper.trigger_words(trigger))
         self.usage(10)
-        words = instance_reaper.usage_stop_basis(utc(before))
-        self.assertIn('98 (declared exception until epoch 1794988800, Seckin 14:16, 12 November 2026; 95 is the standing value)', words)
+        self.assertEqual(instance_reaper.usage_stop_basis(utc(d857 - 3600)),
+                         '95 (in force until epoch 1795192620, 95 until 20 November 2026 19:37 +0300, '
+                         'G-20261120-1937 / D-857; 98 is the standing value)')
+        self.assertEqual(instance_reaper.usage_stop_basis(utc(d529 - 3600)),
+                         '98 (in force until epoch 1794988800, D-529, Seckin 14:16, 12 November 2026; 98 is the standing value)')
 
     def test_salvage_usage_stop_reads_only_the_overall_weekly_figure(self):
         """D-534: a high per-model figure in the status file beside a low seven_day_used_percentage
@@ -303,17 +314,23 @@ SALVAGE_NEUTRALIZATIONS = [
     ('test_salvage_usage_stop_reads_only_the_overall_weekly_figure', instance_reaper, 'usage_percent',
      lambda path=None: max(float(v) for k, v in json.loads(Path(instance_reaper.LOOP_STATUS).read_text(encoding='utf8')).items()
                            if k.endswith('used_percentage'))),
-    # The exception never ends: 98 stays in force after the reset.
-    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
+    # The history is ignored: 98 at every instant, so 95 never held between the reset and D-857.
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
      lambda now=None: 98),
-    # The exception never applies: 95 before the reset, so 97 would trigger.
-    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
+    # The D-857 raise never happened: 95 at every instant, so 97.9 would trigger after it.
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
      lambda now=None: 95),
-    # The boundary instant is read as still before the reset.
-    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop_percent',
-     lambda now=None: 98 if instance_reaper._epoch(now) <= instance_reaper.USAGE_STOP_EXCEPTION['until_epoch'] else 95),
+    # The old reader: 98 before the reset, 95 for ever after it (D-857 not taken up).
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
+     lambda now=None: 98 if instance_reaper._epoch(now) < instance_reaper.USAGE_STOP_HISTORY[0]['until_epoch'] else 95),
+    # Each boundary instant is read as still inside the entry before it.
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop_percent',
+     lambda now=None: next((e['percent'] for e in instance_reaper.USAGE_STOP_HISTORY
+                            if instance_reaper._epoch(now) <= e['until_epoch']), instance_reaper.USAGE_STOP_PERCENT)),
+    # The standing constant left at the old 95.
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'USAGE_STOP_PERCENT', 95),
     # The trigger reads the standing constant directly, not the one function.
-    ('test_salvage_usage_threshold_is_98_until_the_reset_then_95', instance_reaper, 'usage_stop',
+    ('test_salvage_usage_threshold_follows_its_dated_history', instance_reaper, 'usage_stop',
      lambda usage, now=None: usage is not None and usage >= instance_reaper.USAGE_STOP_PERCENT),
     # Trigger (a) never fires.
     ('test_salvage_usage_trigger_requests_every_instance_then_reports', instance_reaper, 'usage_stop',

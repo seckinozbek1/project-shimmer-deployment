@@ -2,7 +2,7 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
-## Unreleased (after v1)
+## Unreleased (after the 2 November 2026 prototype)
 
 - **`requirements.txt` pins transformers 4.51.3, not 4.52.3**: the version the laptop and the cloud runtime lock already run, and the one `config/final_models.json` records. A container built from `requirements.txt` now installs 4.51.3, so an image built before this carries 4.52.3 and differs from one built after. The gate on a rented machine (arm G) could not be sealed before this change: its sealer requires every pin to be in the runtime lock. It now also reads a lock's CUDA build label as the same version (`2.5.1+cu121` holds the pin `2.5.1`), and nothing else is loosened.
 - **Local is the default backend** (D-487 item 1): with `SHIMMER_BACKEND_PROFILE` unset and no `--backend-profile`, a command-line run, the server, the preflight and the console use Local, not Cloud; only the exact value `cloud` chooses Cloud, so an empty or unknown value is Local and the web stays closed. The menu launchers take Local when you press Enter (C chooses Cloud). Explicit `local` and `cloud` work as before.

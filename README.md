@@ -13,8 +13,8 @@ It also advises on multi-round negotiation drafts.
 - A finding a model wrote stays visible and marked as not checked by Python. It
   never becomes an amendment.
 
-**Status: v1, a development prototype, published on GitHub on 2 November 2026.**
-Version 1.0 is not released yet.
+**Status: a development prototype, published on GitHub on 2 November 2026.**
+v1.0-alpha is not released yet; v1.0-beta, v1.0 and v1.1 follow it.
 
 ## First results
 
@@ -38,6 +38,15 @@ cloud model figures are references only.
 Shimmer found none of the negotiation pilot's 12 conflicts. The cause is found and
 a fix is built; it is not measured yet. Sources, dates and conditions for every
 figure: [docs/RESULTS.md](docs/RESULTS.md).
+
+## How figures are checked
+
+Every figure is checked before it is written: if more than 5 percent of the items lack the system's own answer
+(empty, a default, or withheld), the figure is refused (`tools/coverage_check.py`). Each figure carries a
+label-permutation test (`tools/chance_test.py`). Confidence thresholds are fixed before the measurement they govern;
+where one was chosen afterwards, it was chosen on development items only and is labelled so. A proxy reading, such
+as the model's most likely answer read from saved probabilities, is labelled and never reported as the system's own
+figure. Rules and their origin: [docs/LESSONS.md](docs/LESSONS.md).
 
 ## Where to start
 

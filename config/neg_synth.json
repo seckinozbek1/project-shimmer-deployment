@@ -123,12 +123,28 @@
        "target": 40, "drawn": 120, "offset": 12000,
        "strata": {"three_or_more": 10, "two_singles": 10, "teams": 10, "one_vs_coalition": 10}},
       {"name": "c4pilot_1", "purpose": "pilot", "fix": "C4", "fix_decision": "D-789, D-806 (docs/loop/stages/NEG_CONFLICT_FIX_REPORT.md section 5)",
-       "target": 24, "drawn": 64, "offset": 22000}
+       "target": 24, "drawn": 64, "offset": 22000},
+      {"name": "r2val_1", "purpose": "validation", "fix": "R3", "fix_decision": "D-840 (docs/loop/stages/NEG_ROUND2_M4_M10.md)",
+       "target": 40, "drawn": 120, "offset": 13000,
+       "strata": {"three_or_more": 10, "two_singles": 10, "teams": 10, "one_vs_coalition": 10}},
+      {"name": "r2pilot_1", "purpose": "pilot", "fix": "R3", "fix_decision": "D-840 (docs/loop/stages/NEG_ROUND2_M4_M10.md)",
+       "target": 24, "drawn": 64, "offset": 23000}
     ],
     "fix_rule": {
       "decision": "D-789 (Seckin 19 November 2026 14:07): every fix is measured on its own fresh validation and pilot sets, built before the fix is tried and opened only for that check, sizes and look counts recorded; D-806: the negotiation conflict fix (C4, conflict_question compare) first",
       "rule": "A set naming `fix` (an upper-case fix id) and `fix_decision` is that fix's own fresh validation or pilot set: drawn from its own seed range like every other set, never a top-up and never topped up, and not counted as the plan's one validation set or one of its pilots. A fix declares at most one validation and one pilot set. Its names match the label pass's set-name form (letters and digits, an underscore, a number). It is read only for its fix's check; afterwards it joins development like every pilot (D-671).",
-      "c4": "c4val_1: 40 items, 10 of each party structure the scorer reads (D-715 item 1: at least 5 per structure), 30 seeds drawn per structure. c4pilot_1: 24 items, plain draw, the pilot's counts check only (the compare question answered by form, against occurring at all, the declared mass). Both overlap no other set's range."
+      "c4": "c4val_1: 40 items, 10 of each party structure the scorer reads (D-715 item 1: at least 5 per structure), 30 seeds drawn per structure. c4pilot_1: 24 items, plain draw, the pilot's counts check only (the compare question answered by form, against occurring at all, the declared mass). Both overlap no other set's range.",
+      "r3": "r2val_1 and r2pilot_1 (D-840, round 2 on bar lines 2, 3 and 5: R3 room_fate and R3b changes_id_echo): the same sizes and draw as c4val_1 and c4pilot_1, offsets 13,000 and 23,000, overlapping no other set's range. Declared only; drawn when the lead starts the generation (NEG_ROUND2_M4_M10.md)."
+    },
+    "parts_rule": {
+      "decision": "D-843 (Seckin 14:34 and 14:35, 20 November 2026): round 2 (R3 room_fate, R3b changes_id_echo) is read on the D-798 validation set instead of fresh sets; the set is split first into at least four parts balanced by party structure and record kind, by a seeded rule written and frozen before any run; round 2 reads part 1 only, parts 2 and 3 are for rounds 3 and 4, one part is the spare; each part's look is logged in docs/loop/stages/NEG_ITERATION_LOG.md (docs/loop/stages/NEG_ROUND2_D798.md)",
+      "pool": ["validation", "validation_strata"],
+      "seed": 843020,
+      "parts_min": 4,
+      "target_per_part": 35,
+      "min_per_structure": 5,
+      "uses": {"1": "round 2 (R3, R3b)", "2": "round 3", "3": "round 4", "spare": "spare (never read unless a later decision names it)"},
+      "rule": "Each pool set's `select` keeps every built item no screen dropped (neg_synth.select_all; no target cap). The kept items of the pool are split by neg_synth.split_parts: parts = max(parts_min, pool // target_per_part), the last part the spare; each party structure with n items goes to its first k = min(parts, n // min_per_structure) parts (k = 0: all to the spare), ordered by record kind and then by SHA-256 of '<seed>:<item id>', dealt round-robin from a start that moves on by each structure's count. Each part's digest is the SHA-256 of its sorted item ids joined by newlines. Written and frozen before any run; the parts are computed by role S right after selection, before any label is read by the lead."
     },
     "refused_purposes": ["final", "test", "final_test"],
     "strata_rule": {

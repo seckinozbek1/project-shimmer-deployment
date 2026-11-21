@@ -107,11 +107,20 @@ def _constants(source, names):
     return found
 
 
+_PARSED = {}
+
+
 def _parse(source, filename='<unknown>'):
-    """ast.parse without the SyntaxWarnings of other files' escape sequences on stderr."""
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        return ast.parse(source, filename=filename)
+    """ast.parse without the SyntaxWarnings of other files' escape sequences on stderr. The tree of each
+    (source, filename) is parsed once and kept (D-856): the closure revisits a module whenever the names used from it
+    grow, and re-parsing large modules each time made one whole-tree check take over 40 minutes. Callers only read
+    the tree."""
+    key = (source, filename)
+    if key not in _PARSED:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            _PARSED[key] = ast.parse(source, filename=filename)
+    return _PARSED[key]
 
 
 def _tool_helpers(source):
@@ -521,13 +530,48 @@ def report(result):
     return bad, '\n'.join(lines)
 
 
-def check_folder(folder, repo=REPO):
+def _cache_key(repo, commit, request, folder):
+    """D-856: the SHA-256 of everything check_request reads: this module's source, the commit, the request, the
+    sealed manifest (if any) and the replay prompts file (if any). The tree at a commit never changes."""
+    import hashlib
+    h = hashlib.sha256()
+    h.update(Path(__file__).read_bytes())
+    h.update(('%s\n%s\n' % (Path(repo).resolve(), commit)).encode('utf-8'))
+    h.update(json.dumps(request, sort_keys=True).encode('utf-8'))
+    manifest_path = bundle_manifest(folder, request.get('name')) if folder else None
+    h.update(manifest_path.read_bytes() if manifest_path is not None else b'-')
+    prompts = _flag(list(request.get('argv') or []), '--replay-prompts')
+    if prompts:
+        path = Path(prompts)
+        if not path.is_file() and folder is not None:
+            path = Path(folder) / 'work' / Path(prompts).name
+        h.update(path.read_bytes() if path.is_file() else b'-')
+    return h.hexdigest()
+
+
+def check_folder(folder, repo=REPO, cache_dir=None):
+    """Every request of the folder checked. With `cache_dir` (the launch chain's, D-856) a result is reused when
+    its cache key (_cache_key) is unchanged; the proofs never pass one."""
     folder = Path(folder)
     commit = _launch_constant(folder, 'COMMIT')
     requests = json.loads((folder / 'requests.json').read_text(encoding='utf-8')).get('requests') or []
     if not requests:
         raise Unreadable('%s/requests.json names no request' % folder.name)
-    return [check_request(repo, commit, r, folder) for r in requests]
+    if cache_dir is None:
+        return [check_request(repo, commit, r, folder) for r in requests]
+    cache_dir = Path(cache_dir)
+    out = []
+    for r in requests:
+        key = _cache_key(repo, commit, r, folder)
+        hit = cache_dir / ('%s.json' % key)
+        if hit.is_file():
+            out.append(json.loads(hit.read_text(encoding='utf-8')))
+            continue
+        result = check_request(repo, commit, r, folder)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        hit.write_text(json.dumps(result, default=sorted), encoding='utf-8')
+        out.append(json.loads(hit.read_text(encoding='utf-8')))
+    return out
 
 
 def main(argv=None):

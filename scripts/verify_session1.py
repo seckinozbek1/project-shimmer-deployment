@@ -27888,6 +27888,16 @@ def check_537_a_fidelity_record_on_a_cell_rule_carries_no_verdict_rule_id():
                "plain rule and convention reviewer unchanged; neutralised path stamps")
 
 
+def check_690_a_claim_naming_no_table_is_answered_by_the_embedding_ranker():
+    """D-873 stage b: scripts/cell_selection.py select, when no table names the claim and an embedding ranker is
+    injected, chooses the table by the claim's embedding against each table's caption and cell text and its cells as
+    the ranked path does (selected_by embedding_fallback); two tables ranked equal stay a tie, and with no ranker
+    (the replay) the refusal stays no_match. Runs scripts/cell_selection_checks.py run_embedding_fallback on
+    fixtures with a stub ranker, no model: neutralised, failed, restored and passed."""
+    from cell_selection_checks import run_embedding_fallback
+    return run_embedding_fallback()
+
+
 def check_544_a_small_named_table_is_shown_whole_with_its_caption():
     """N4 (Seckin 2026-11-19 01:11): scripts/cell_selection.py select shows a table the claim names whole, caption
     and every cell (selected_by small_table), when its body cells are within config/cell_selection.json
@@ -28221,6 +28231,70 @@ def check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict(
     if tools not in sys.path:
         sys.path.insert(0, tools)
     from neg_round2_checks import run
+    return run()
+
+
+def check_686_a_room_fate_sets_the_stance_and_an_echoed_id_is_read_off():
+    """R3 and R3b (lane/neg-round2-m4-m10, D-840; docs/loop/stages/NEG_ROUND2_M4_M10.md): room_fate (false as
+    shipped) drops the open point step, which is shown the proposal's text alone, and asks one CHOICE-A question per
+    proposal shown the other proposals on its article and each touched position with the label the chain answered
+    for it; kept, changed and removed set accept, counter and reject by the declared pairs, the conflict field never
+    written by it. changes_id_echo (false as shipped) reads a changes line that starts with exactly the shown proposal
+    id and a colon without that id. On the fixture with a scripted model: the C4 chain's blind open point makes every
+    proposal a counter; with room_fate the stances follow the declared pairs under both orders, a refused answer
+    leaves no stance; the echoed id is read off, a wrong id or a paraphrase refused; recompose_stepwise gives the same
+    reply; neg_advisor.py rebuild keeps prompt ids and items; malformed switches and templates are refused; off
+    unchanged. Round 3 (D-864; docs/loop/stages/NEG_ROUND3.md): a fourth room fate answer may set counter (open),
+    room_unanchored (false as shipped) drops the read labels, round 2 asks the same with it off, a duplicate or
+    undeclared answer is refused. Runs tools/neg_round2_m4m10_checks.py: seven neutralisations, failed, restored,
+    passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_round2_m4m10_checks import run
+    return run()
+
+
+def check_687_the_d798_pool_is_split_into_parts_by_a_frozen_seeded_rule():
+    """D-843 (lane/neg-round2-d798): the D-798 validation pool (validation and validation_strata) keeps every item no
+    screen dropped (neg_synth.select_all) and is split by config/neg_synth.json split.parts_rule into max(4, pool //
+    target) parts, each structure on as many parts as hold its floor, record kinds and sizes balanced, a digest per
+    part, the last part the spare; the label pass takes the D-798 names. Runs tools/neg_parts_checks.py: two
+    neutralisations, failed, restored, passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_parts_checks import run
+    return run()
+
+
+def check_688_the_party_frame_reason_field_trade_read_and_mandate_split_are_declared_and_off():
+    """D-845, D-846, D-848 (lane/neg-round2-d798): party_frame (#310), reason_field (#311), trade_read (#3) and
+    mandate_split (red lines with their sources, operator red lines #278, bargainable points) of the stepwise chain,
+    each false as shipped, composing with C4, R3 and R3b. Runs tools/neg_frame_checks.py on the fixture with a
+    scripted model: four neutralisations, failed, restored, passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_frame_checks import run
+    return run()
+
+
+def check_689_the_difference_check_flags_a_change_kind_only_as_a_marked_model_record():
+    """#309 (D-847, D-848; docs/fix/DIFF_CHECK_309.md): tools/diff_check.py, a post step on a finished run (off as
+    shipped, threshold 0.999 from D-855, in-sample, development only) that places changed sentences between a source and a proposed text by structure
+    (passage_pairs.passages_read, version_changes._paired) and asks the JUDGE agent one CHOICE-A question per
+    declared kind and per red line of the advised party (neg_advisor.party_red_lines, the operator's included). On
+    fixtures with a scripted judge: the alignment; a flag only when settled, a 0.9 answer unsettled under the
+    shipped 0.999, nothing settled with a null threshold;
+    every record marked a model's, never promoted; a quote not in its text refused; off writes nothing, on adds one
+    line after the rendered bytes of reviewed_document.md and _run_summary.md; the accuracy set replays as
+    doc_judge choice prompts; no measured path imports it and no bundle archive carries it. Runs
+    tools/diff_check_checks.py: four neutralisations, failed, restored, passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from diff_check_checks import run
     return run()
 
 
@@ -28968,6 +29042,8 @@ CHECKS = [
      check_544_a_small_named_table_is_shown_whole_with_its_caption),
     ("545 Named columns are filled with unnamed ones up to the declared fill_columns, within max_columns (S3)",
      check_545_named_columns_are_filled_with_unnamed_ones_up_to_the_declared_fill),
+    ("690 A claim naming no table is answered by the embedding ranker, a tie and no ranker stay refused (D-873 b)",
+     check_690_a_claim_naming_no_table_is_answered_by_the_embedding_ranker),
     ("546 The passage-pair step asks with no threshold and saves the answer probabilities",
      check_546_the_passage_pair_step_asks_with_no_threshold_and_saves_the_probabilities),
     ("660 The archive closure preflight refuses a workload file outside the project archive (GNN_TRAIN_6f48d5ed)",
@@ -28998,6 +29074,14 @@ CHECKS = [
      check_651_the_compare_conflict_question_turns_an_against_answer_into_a_conflict),
     ("652 A read limit the proposal crosses is a second route to a conflict, off by default (R2, D-814)",
      check_652_a_read_limit_the_proposal_crosses_is_a_second_route_to_a_conflict),
+    ("686 A room fate sets the stance by the declared pairs and an echoed proposal id is read off a changes line, both off by default (R3, R3b, D-840)",
+     check_686_a_room_fate_sets_the_stance_and_an_echoed_id_is_read_off),
+    ("687 The D-798 validation pool is split into parts by a frozen seeded rule, balanced by structure and record kind (D-843)",
+     check_687_the_d798_pool_is_split_into_parts_by_a_frozen_seeded_rule),
+    ("688 Party frame, reason field, trade read and mandate split with operator red lines are declared switches, off by default (D-845, D-846, D-848)",
+     check_688_the_party_frame_reason_field_trade_read_and_mandate_split_are_declared_and_off),
+    ("689 The difference check flags a change kind or a broken red line only as a marked model record, off by default (#309, D-847, D-848)",
+     check_689_the_difference_check_flags_a_change_kind_only_as_a_marked_model_record),
     ("680 Panel freshness: a stale section, a missing CHG decision, a past promised time and a wrong bar are flagged (PANEL-FRESH-A)",
      check_680_panel_freshness_flags_stale_sections_missing_decisions_and_wrong_bars),
     ("620 The v1.05 review desk reads inputs, measured progress and the reviewed document behind the token; sealed runs get counts only (DESK-A)",

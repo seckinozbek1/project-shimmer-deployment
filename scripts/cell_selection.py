@@ -33,7 +33,8 @@ whole text for the claim alone, with no embedding; `review` selects per unit, wi
 model, on the rule's whole text. The review path is measured again before product use.
 
 Otherwise a selection is refused, never guessed, with a reason: `no_table`, `no_match` (as above, on
-a table above the caps or among several) or `tie` (two tables rank equal, or the caps fall between
+a table above the caps or among several; with an injected embedding ranker the table and its cells are chosen
+by it instead, `selected_by: embedding_fallback`, D-873 stage b, and two tables ranked equal are a `tie`) or `tie` (two tables rank equal, or the caps fall between
 two rows or columns ranked equal, so which to cut is not known).
 
 The embedding ranker is injected. It ranks only what words and figures leave equal, it differs by
@@ -76,6 +77,7 @@ COMPARE_CELLS = "cells"
 # N4: a table the claim names, small by the declared `whole_table_max_cells`, is shown whole; it is
 # still a table the claim named, so a document's whole tables of no match give way to it as to labels.
 SMALL_TABLE = "small_table"
+EMBEDDING_FALLBACK = "embedding_fallback"
 NAMED_BY = ("labels", SMALL_TABLE)
 # Python's sentence on a decided finding: its catalog row reads these words (as passage_pairs').
 DECISION_NOTE = "Decided from the model's own answer probabilities on the cells Python selected; it wrote no text: %s, confidence %.3f."
@@ -392,6 +394,23 @@ def _whole(table, of_tables, chosen=0, selected_by="whole_table"):
             "left_out_columns": 0, "ranked_by": None}
 
 
+def _by_embedding(found, claim, embed_with):
+    """D-873 stage b: the index of the table whose caption and cell text lie nearest the claim by the injected
+    embedding, or None when there is no vector or the two best tables rank equal (a tie is never guessed)."""
+    texts = [" ".join([t["caption"]] + list(t["header"]) + [cell for row in t["rows"] for cell in row]) for t in found]
+    vectors = embed_with([{"text": text} for text in [claim] + texts])
+    if not vectors or len(vectors) != len(texts) + 1:
+        return None
+    scores = [round(sum(x * y for x, y in zip(vectors[0], v)), 6) for v in vectors[1:]]
+    best = max(scores)
+    return scores.index(best) if scores.count(best) == 1 else None
+
+
+def _fallen(selection):
+    """Marks a selection made by the embedding fallback, so a reader can count it."""
+    return dict(selection, selected_by=EMBEDDING_FALLBACK, ranked_by="embedding")
+
+
 def select(text, claim, config, embed_with=None):
     """The cells of `text` that bear on `claim`: {selected, refused, selected_by, table, cells, rows,
     columns, named_rows, named_columns, of_rows, of_columns, left_out_rows, left_out_columns, ranked_by}.
@@ -406,13 +425,20 @@ def select(text, claim, config, embed_with=None):
         strength.append((sum(r[0] for r in rows) + sum(c[0] for c in columns),
                          round(sum(r[1] for r in rows) + sum(c[1] for c in columns), 6), caption))
     best = max(strength)
+    fallback = False
     if best[:2] == (0, 0.0):
         if len(found) == 1 and _within_caps(found[0], config):
             return _whole(found[0], 1)
-        return _refused(NO_MATCH, of_tables=len(found))
-    if strength.count(best) > 1:
+        if embed_with is None:
+            return _refused(NO_MATCH, of_tables=len(found))
+        chosen = _by_embedding(found, claim, embed_with)
+        if chosen is None:
+            return _refused(TIE if len(found) > 1 else NO_MATCH, of_tables=len(found))
+        fallback = True
+    elif strength.count(best) > 1:
         return _refused(TIE, of_tables=len(found))
-    chosen = strength.index(best)
+    else:
+        chosen = strength.index(best)
     table = found[chosen]
     rows, columns, keys = ranked[chosen]
     # N4: the table the claim names, when small, is shown whole with its caption, nothing cut.
@@ -420,7 +446,7 @@ def select(text, claim, config, embed_with=None):
         named = _whole(table, len(found), chosen, SMALL_TABLE)
         named.update(named_rows=sum(1 for r in rows if _matched(r)),
                      named_columns=sum(1 for i, c in enumerate(columns) if _matched(c) and i not in keys))
-        return named
+        return _fallen(named) if fallback else named
     # The embedding only orders what a cut would choose between, so with no cut it is not asked.
     cut_ahead = (len(table["rows"]) > min(config["fill_rows"], config["max_rows"])
                  or len(columns) - len(keys) > max(config["max_columns"] - len(keys), 1))
@@ -445,10 +471,11 @@ def select(text, claim, config, embed_with=None):
         return _refused(TIE, **fields)
     columns_shown = sorted(set(keys) | set(kept_columns))
     rows_shown = sorted(kept_rows)
-    return dict(fields, selected=True, refused=None, selected_by="labels", cells=render(table, rows_shown, columns_shown), rows=rows_shown,
-                columns=columns_shown, left_out_rows=len(table["rows"]) - len(rows_shown),
-                left_out_columns=len(table["header"]) - len(columns_shown),
-                ranked_by="words_and_embedding" if row_extra is not None else "words")
+    result = dict(fields, selected=True, refused=None, selected_by="labels", cells=render(table, rows_shown, columns_shown), rows=rows_shown,
+                  columns=columns_shown, left_out_rows=len(table["rows"]) - len(rows_shown),
+                  left_out_columns=len(table["header"]) - len(columns_shown),
+                  ranked_by="words_and_embedding" if row_extra is not None else "words")
+    return _fallen(result) if fallback else result
 
 
 def declared(rules):

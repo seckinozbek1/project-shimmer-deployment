@@ -1,11 +1,25 @@
 {
   "version": 1,
-  "decision": "Seckin 2026-11-19 12:03 +0300 (relayed by his supervisor 12:05): for heavy work on the laptop (big downloads, builds, installs, clones, admissions) the fixed 30 GiB floor is replaced by the job's own expected footprint plus a 12 GiB margin; the 12 GiB floor for Lambda launches and the Drive auto-pause below 12 GiB stay as they are",
+  "decision": "Seckin 2026-11-19 12:03 +0300 (relayed by his supervisor 12:05): for heavy work on the laptop (big downloads, builds, installs, clones, admissions) the fixed 30 GiB floor is replaced by the job's own expected footprint plus a 12 GiB margin; the 12 GiB floor for Lambda launches and the Drive auto-pause below 12 GiB stay as they are; changed by D-849 (Seckin 20 Nov 2026 14:46): margin and the Lambda launch floor 10 GiB (12 GiB until 20 November 2026)",
   "rule": "free disk >= job footprint + margin",
   "read_by": "tools/loop/launch_floors.py (disk_problem, margin_gib, lambda_launch_floor_gib), at each call; through it tools/seal_route_driver.py (the seal and admission gates, the route request), tools/loop/resource_reading.py and standing order 14 (tools/loop/standing_orders_check.py)",
-  "margin_gib": 12,
-  "lambda_launch_floor_gib": 12,
+  "margin_gib": 10,
+  "lambda_launch_floor_gib": 10,
   "lambda_launch_floor_source": "D-726 (Seckin 18 Nov 12:08): the route request (seal_route_driver.py request, order 91) is refused under 12 GiB free; the route's laptop worst case is 2.5 GiB. Unchanged by the 19 November decision",
   "not_here": "the Drive uploader's pause (config/drive_no_download.json upload_pause, 12 GiB) and the disk sweep's own trigger (config/disk_sweep.json, D-611) are separate decisions and read their own files",
-  "_why": "an unreadable or malformed file never lowers a floor: the readers fall back to the old fixed 30 GiB (D-099) and say so; a job whose footprint is not known is held to that 30 GiB fallback and says so, never to the margin alone"
+  "_why": "an unreadable or malformed file never lowers a floor: the readers fall back to the old fixed 30 GiB (D-099) and say so; a job whose footprint is not known is held to that 30 GiB fallback and says so, never to the margin alone",
+  "history": [
+    {
+      "until": "2026-11-20",
+      "margin_gib": 12,
+      "lambda_launch_floor_gib": 12,
+      "decision": "Seckin 19 Nov 12:03; D-726"
+    },
+    {
+      "from": "2026-11-20",
+      "margin_gib": 10,
+      "lambda_launch_floor_gib": 10,
+      "decision": "D-849, Seckin 20 Nov 14:46 (G-20261120-1446 KARAR 3): margin 12 -> 10 GiB; below 10 GiB the old rule holds: the lead deletes its own finished copies first, then asks"
+    }
+  ]
 }

@@ -1,0 +1,33 @@
+{
+ "schema": "diff-check-config-v1",
+ "description": "Settings of tools/diff_check.py (#309, D-847, D-848): the difference check between a source text and a proposed text. Python places the changed sentences by structure; whether a change is one of the declared kinds is one narrow question per kind to the registered JUDGE agent, decided from its probabilities (CHOICE-A). docs/fix/DIFF_CHECK_309.md.",
+ "enabled": false,
+ "enabled_note": "Off as shipped (docs/fix/DIFF_CHECK_309.md section 1.3). With it off, write_run writes nothing. Switching it on needs no re-seal: no file of a sealed bundle reads this file.",
+ "threshold": 0.999,
+ "threshold_note": "D-855 (20 November 2026), from the accuracy pass external/s05/DIFF309_ACC/DIFF309_SWEEP.json: at 0.999, 20 of 22 real changes flagged, 2 false flags of 68 clean (misses: widened_scope 2 of 6). A development threshold read in-sample on the lane's own 24-pair accuracy set, never a bar. A question whose top answer is below it decides 'cannot be settled' (choice_decision.settle); null would settle nothing.",
+ "threshold_decision": "D-855",
+ "min_sentence_similarity": 0.5,
+ "min_sentence_similarity_note": "Share of two leftover sentences' words in common order (difflib ratio) above which a removed and an added sentence are one changed sentence; a tie is refused (version_changes._paired). Lower than version_changes' 0.6 because a dropped condition can remove a third of a sentence. Conventional, no evidence yet.",
+ "kinds": [
+  {"kind": "dropped_condition",
+   "statement": "The proposed text drops a condition, exception or qualification that the source text attached, so what the source text allowed or required only in some cases now applies without it."},
+  {"kind": "one_way_ban",
+   "statement": "A ban or duty that the source text placed on both or all parties is placed by the proposed text on one party only, so it now runs one way."},
+  {"kind": "widened_scope",
+   "statement": "The proposed text widens the scope: what the source text said now covers more persons, things, places, periods or cases than before."},
+  {"kind": "obligation_to_statement",
+   "statement": "Something the source text made a party bound to do is, in the proposed text, only a statement of fact, intention or expectation, with no duty left."}
+ ],
+ "red_line_statement": "Party {party} holds this red line: \"{quote}\" The proposed text breaks this red line.",
+ "template": "A change to a text follows, then a statement about the change.\n\n{passage_b}\n\nSTATEMENT\n{passage_a}\n\nIs the statement true of this change? Answer with one word.\nYes: the statement is true of the change.\nNo: it is not.\nUnclear: the two texts do not let you decide.",
+ "change_block": "SOURCE TEXT\n{source}\n\nPROPOSED TEXT\n{proposed}",
+ "nothing": "(nothing: no such sentence)",
+ "answers": [
+  {"label": "yes", "surface": "Yes", "class": "FLAG"},
+  {"label": "no", "surface": "No", "class": "CLEAR"},
+  {"label": "cannot tell", "surface": "Unclear", "class": "UNDECIDED"}
+ ],
+ "flag_label": "yes",
+ "replay_group": {"group": "diff_judge", "agent": "JUDGE"},
+ "replay_group_note": "The replay's config is benchmark/baselines/choice_judge_prompt.json with its choice forms replaced by this file's one question and its first model group (Phi-4 on local_auditor at base, the JUDGE agent's model, JUDGE-AGENT-A) renamed to this group and agent; no model id is written here (diff_check.replay_config)."
+}

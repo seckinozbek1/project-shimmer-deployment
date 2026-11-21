@@ -8447,3 +8447,251 @@ Written 2026-11-20 14:15 +0300 by the lead (8fee59db).
 - The alpha freeze waits for this merge.
 - Public pages that state the completion definition are fixed at the alpha's last page check (#318).
 - Not changed: the table tool plan's on-minus-off non-inferiority margin. It is a different quantity, and that measurement is closed (D-836).
+
+## D-843: negotiation round 2 runs on one frozen part of the D-798 validation set; the set is split into at least four balanced parts first (Seckin 14:34 and 14:35, relayed, G-20261120-1434 and G-20261120-1435; G-20261120-1436 is answered by them)
+Written 2026-11-20 14:36 +0300 by the lead (8fee59db).
+- Round 2 (the M4 and M10 change, check 686) is read on the D-798 validation set, validation_strata.
+  - Status: 104 items built by S4 in three structures (two_singles 37, teams 32, one_vs_coalition 35) and both record kinds. Not yet deduplicated, labelled or selected.
+  - If round 2 is in time for the alpha (last day 21 Nov 23:59, not tonight's lock), it enters. The alpha's other steps do not wait.
+- Parts, before any run:
+  - The set, plus any other unused items at hand, is split into at least four small parts, balanced by party structure and record kind. The split rule and the part count are written and frozen before any run.
+  - Round 2 reads one part. Round 3, if needed, reads another, then round 4, with one part kept as a spare. Each part's look time is recorded.
+  - Seckin is open to a fourth round; the old limit of three rounds is relaxed for this decision. Before each new round, the 95 percent rule and the money rule stay: ask him if needed.
+- The lead's proposal for part size, written before the round:
+  - four parts of about 25 items each, after deduplication and selection; that is at least 7 per structure, above the scorer's minimum of 5 per structure, with both record kinds;
+  - expected 95 percent interval about plus or minus 0.09 on M4 and M10 at that size, from the c4val_1 interval width of 0.13 at 40 items scaled by the square root of the size;
+  - so a part can tell a move from 0.27 to 0.60 apart, but a reading near 0.60 stays uncertain. If deduplication and selection leave fewer than 80 items, the parts get smaller and the lead says so.
+- New validation, pilot and (if none) test sets are produced in the beta (GitHub v1.0-beta issue).
+- Spend: round 2 and the set's preparation stay within the 9 to 12 USD of D-840; above that, ask.
+
+## D-844: four parts stay; new set production starts now only if it uses almost no Claude usage; usage-free set production is a beta target; a set inventory goes to Seckin as one decision table (Seckin 14:36, relayed, G-20261120-1436b)
+Written 2026-11-20 14:38 +0300 by the lead (8fee59db).
+- The four parts of D-843 stay. Seckin accepts the risk: a rising score on a small part counts as an improvement. The figures are still written with their intervals, as they are.
+- New validation and pilot set production starts now, alongside the alpha, only if it costs almost no Claude usage and stays within the 5 USD per-step pre-approval. Otherwise the lead asks first, with the expected usage, money and time.
+  - Today it does not qualify: the synthetic generator calls a Claude model (opus) through a role S session. S4 took 157 calls over about 3.5 hours.
+  - So it is asked, not started.
+- Permanent beta target: every set production (negotiation, causal sets and others) runs with almost no Claude Code usage, through an open model on a rented machine (#320). New sets themselves: #319.
+- Inventory, now and at no cost: every validation, pilot and test set, with its measurement, size and looks, and the unused items in test pools that could move to validation. A moved item never returns to testing. The table goes to Seckin as one decision question, with a recommendation (docs/loop/stages/SET_INVENTORY_20261120.md, by a read-only helper).
+
+## D-845: #310 and #311 enter the alpha and are tried in round 2's first part; #309 and #312 stay in the beta; a desk search for real negotiation data (Seckin 14:41 and 14:42, relayed, G-20261120-1441 and G-20261120-1442)
+Written 2026-11-20 14:42 +0300 by the lead (8fee59db).
+- #310 (the prompt names the advised party, its interests, the opposing position and the round history) and #311 (a reasoning field: mechanism and expected effect for each change) go into the negotiation prompt with round 2's change. They are tried in the same run, on part 1 of the D-798 set.
+  - Built by the round 2 lane, behind their own switches, off as shipped. They are checked like R3 and R3b.
+  - If the time, money or 95 percent margin cannot carry them, the lead asks before the run.
+- #309 (difference check) and #312 (counterfactual step) stay in the beta. G-1442 item 3 is answered by G-1441, so no SORU.
+- ContraDoc and SciTab figures are not touched by this change: it is negotiation prompt code only. The round 1 negotiation figures stay round 1's record; round 2 is read on its own part.
+- Desk search (read only, no spending): real negotiation data with known outcomes.
+  - Candidates: the European Parliament amendments (Tadorne/amendments, Zenodo 3757714), QUILL, CaSiNo, DealOrNoDeal, CraigslistBargain, LLM-Deliberation and others.
+  - For each: content, fate labels, licence, conversion work, leakage risk. The table goes to FOR_SECKIN. Using any of them waits for his word if it costs money or usage.
+
+## D-846: round 2's prompt uses the input's comments and rationales, the round history and cross-issue trades; a table comes first (Seckin 14:45, relayed, G-20261120-1445)
+Written 2026-11-20 14:44 +0300 by the lead (8fee59db).
+- (1) The model reads the input's comments, explanatory notes and the parties' rationales, uses them in its inference, and the reasoning field (#311) rests on them.
+- (2) Earlier rounds enter the prompt: who proposed what, what closed, what fell, which concession was given.
+- (3) Cross-issue trades (quid pro quo; NEG_ADVISOR_PLAN section 1; the clause state "bound by an earlier concession"). If they are absent, they are added to the round 2 prompt.
+- Before the run, a short table goes to FOR_SECKIN: whether each is in the prompt now (with evidence), whether round 2 adds it, and which measure covers it ("not measured" if none). Extra time or money is asked first.
+- The round 2 lane builds and reports it.
+
+## D-847: #309 (difference check) also enters the alpha; only #312 stays in the beta (Seckin 14:44, relayed, G-20261120-1444; changes D-845)
+Written 2026-11-20 14:46 +0300 by the lead (8fee59db).
+- #309: the user is shown legally significant changes between the source text and the proposed text, such as a dropped condition, a ban that becomes one-way, a widened scope, or an obligation that becomes a statement. It enters the alpha.
+  - #310 and #311 are in the alpha (confirmed). #312 stays in the beta.
+- Before any run, the lead writes whether #309 can be a check added after the output that changes no prompt, answer or finding. Then the ContraDoc, SciTab and negotiation round 1 figures stay valid.
+  - If it changes them: which measurements must be taken again, with the time, the money and the 95 percent margin. If it does not fit the alpha, the lead asks.
+  - The check has its own small accuracy test on known changes.
+- A lane designs and builds it (docs/fix/DIFF_CHECK_309.md, feasibility first).
+
+## D-848: red lines and bargainable points of the advised party go into round 2's prompt; the user-given red lines (#278) enter the alpha; the free set moves and the 60 fresh ContraDoc documents go to validation (Seckin 14:46, relayed, G-20261120-1446 KARAR 1 and 2; KARAR 2 answers the 14:44 SORU, option (a))
+Written 2026-11-20 14:50 +0300 by the lead (8fee59db).
+- KARAR 1: in round 2's prompt, the advised party's red lines and bargainable points, read from its positions on record, are given up front and apart.
+  - The difference check (#309) flags against that party ("this change breaks your red line").
+  - The user-given red lines (#278, the operator's mandate) also enter the alpha; #278 is moved to v1.0-alpha with a comment.
+  - Extracting red lines from texts by themselves stays in the beta.
+  - #278's trial run (about 6.6 USD) runs with round 2 if it fits the time and the 95 percent margin; otherwise it is asked first.
+- KARAR 2, these move to validation now:
+  - SEM-TAB-FACTS' 66 unread tables, SciTab's 14 unused papers, ContraDoc's 6 leftover groups, and the negotiation validation set (49 items);
+  - the 60 fresh ContraDoc documents left after the 40-document trial. D-692's "reserve for a later, larger test" is let go.
+  - The final test sets are not touched. A moved item is never used for testing again. New set production does not start now (#320, beta).
+  - The moves are recorded in the tracked set records (docs/loop/stages/SET_INVENTORY_20261120.md gets a moves section).
+
+## D-849: the laptop disk margin is 10 GiB, no longer 12 (Seckin 14:46, relayed, G-20261120-1446 KARAR 3; his own decision)
+Written 2026-11-20 14:50 +0300 by the lead (8fee59db).
+- Heavy laptop work needs its own footprint plus 10 GiB free, and the Lambda launch floor is 10 GiB too.
+  - config/laptop_disk_floor.json: margin_gib 10 and lambda_launch_floor_gib 10, with a history of the old 12 and 12.
+  - Its readers read it at call time: launch_floors.py, seal_route_driver.py, resource_reading.py, standing order 14.
+  - Check 530's shipped-value proof now expects 10 and 10; it passes.
+- Launch folders made before today keep their own REQUEST_DISK_FLOOR_GIB = 12.0 constant until rebuilt.
+- Unchanged and separate: the Drive pause (12 GiB) and the disk sweep trigger.
+- Below 10 GiB the old rule holds: the lead first deletes its own finished copies, then asks.
+- The old value is recorded as "12 GiB until 20 November 2026".
+
+## D-850: the alpha scope is frozen; usage goes only to the alpha; one alpha timeline (Seckin, relayed after 14:46, G-20261120-1450 area)
+Written 2026-11-20 14:52 +0300 by the lead (8fee59db).
+- Nothing new enters the alpha after today's decisions (D-840 to D-849). The alpha finishes as soon as it can.
+- Everything outside the alpha waits until after the alpha release. That covers the cleanup of the v1.0 milestone's 194 issues, research beyond the inventory, beta preparation, and the real data closer look of NEG_REAL_DATA_SEARCH_20261120.md; the panel card gercek-veri is closed as "after the release".
+- Questions to Seckin only where his decision is really needed, gathered into one card if possible. The 95 percent and money rules are unchanged.
+
+## D-851: sample user red lines are written by us, blind to answers, for the #278 trial; round 2's cap is 15 USD with both development sets (Seckin 15:08, relayed, G-20261120-1508; answers the 15:04 SORU)
+Written 2026-11-20 15:08 +0300 by the lead (8fee59db).
+- #278, option (b), but Seckin does not write the file. We prepare the "user-given" red-lines file.
+  - For each item: a few red lines and bargainable points for the advised party, from its persona (recorded positions and mandate) only.
+  - The writer does not see answer keys, labels or item outcomes. It is a role or a separate session that does not know the answers, and what it looked at is recorded.
+  - Reports call it "sample user red lines written by us", never a real user's input.
+  - If it is ready by 18:00, it runs with round 2 (about 6.6 USD forecast). If not, the feature ships in the alpha with its check, and the trial moves to the beta.
+- Round 2's money: cap 15 USD (forecast 13.1); both development sets stay.
+- The panel card iki-kucuk-karar is closed.
+- Also recorded: #309 merged as an additive post step (check 689). It is off with no threshold, so it decides nothing until its accuracy pass (DIFF309_ACC, about 1.5 USD, held) gives a threshold. Wiring it into pipeline.py would be a bound change; that waits until after the alpha measurements (OPEN_ITEMS 179).
+
+## D-852: TRIAL40_ALPHA takes role B's build at 5aad34a5 for the d12da1cd bundle, as no file the build reads differs (the lead, 20 November 2026 15:36 +0300, within limits, D-807)
+- Role B's TRIAL40 session built the 40 documents at 5aad34a5, the commit its request named before the folder was retargeted to d12da1cd (D-842 merge). The folder's build.py refused the mismatch.
+- git diff --name-only 5aad34a5 d12da1cd lists 11 paths: README.md, benchmark/baselines/gate_score.py, scripts/gate_set_checks.py, a gate_set_power script and docs. None is under benchmark/adapters/, tools/, corpus_ingest/, config/, input/, benchmark/fixtures/ or the pipeline, pairing_map and reference_tables scripts. So the staged items are the same bytes either way.
+- build.py now accepts a build at another commit only when that diff is readable, non-empty and touches none of those paths; it prints the count. Staged: 40 documents in 40 groups; plan p1 to p4 at 10 each. Nothing launched; the trial still waits on the tag, the quick read's pass and LEAD_GO.txt.
+- Role B scores the trial with gate_score at d12da1cd (the 10-point cloud margin, D-842), not at 5aad34a5: say so in its scoring request.
+
+## D-853: round 2's dedup cross pairs drop the pool member, as D-823 did for C4 (the lead, 20 November 2026 15:51 +0300, within limits, D-807)
+- The C4 dedup found 5 cross pairs with the earlier sets, so role B's D798DEDUP Part B quite likely meets cross pairs between the pool (validation, validation_strata) and pilot_1, dev_1, c4pilot_1 or c4val_1.
+- Rule written into REQUEST_ROLE_B_D798DEDUP.md before the start: the earlier sets are in use and stay as they are; the pool member of each cross pair is dropped with reason cross; a pair whose earlier member was already dropped under D-823 is not a cross pair. Role B stops (CROSS_UNRESOLVED) only if a pair has no pool member or the count cannot be made. This saves one role round trip on the critical path.
+- Also recorded: the sample red lines' "held" (R2S request) means every proposal marked as hitting the line gets reject or counter (the lane's definition, adopted).
+
+## D-854: bound worktrees read the D-849 disk rule; the launch folders' clean-tree check accepts that one file (the lead, 20 November 2026 16:37 +0300, on the supervisor's G-20261120-1635)
+- The round 2 and alpha bound trees (neg-r2-fea8347d, alpha-d12da1cd) predate D-849, so their tools/loop/launch_floors.py read 12 GiB from their own config/laptop_disk_floor.json and the route request refused at 11.6 to 11.9 GiB free (OPEN_ITEMS 180).
+- Fix: the main checkout's config/laptop_disk_floor.json (D-849, 10 GiB) is copied into both trees' working copies. The clean-tree check in nine launch folders (NEG_r2_devpilot, NEG_r2_redlines, NEG_r2_devval, NEG_r2_part1, D798_DEDUP_EMBED, QUICK_READ_ALPHA, TRIAL40_ALPHA, V_D798LAB and its source copy) now accepts exactly that one differing path, and only while its bytes equal the main checkout's. Nothing sealed changes: the request reads COMMIT from git, and CLAUDE.md says a figure change needs no re-seal.
+- Read back through both trees: margin 10.0 and Lambda floor 10.0 from config. QUICK_READ_ALPHA preflight: all checks hold. The quick read chain's stale prerequisites (commit 5aad34a5, a gate part state the chain cannot read for a hand-run gate) were corrected to d12da1cd with the gate requirement dropped (the gate is green and tagged).
+
+## D-855: the #309 difference check's threshold is 0.999, from its accuracy pass (the lead, 20 November 2026 17:40 +0300, within limits, D-807; D-847 asked for the accuracy test)
+- DIFF309_ACC ran 15:54 to 16:30 (seal 0.473 USD, pass 0.323 USD): 98 CHOICE-A questions to the JUDGE agent's model, all 98 answered. With no threshold every decision is "cannot be settled", so the shipped tool flags nothing (DIFF309_SCORES.json).
+- Sweep on the saved probabilities (DIFF309_SWEEP.json; pair flagged for a kind when any change's P(yes) reaches t): 0.5: 20 of 22 real changes flagged, 22 false flags of 68 clean; 0.9: 20, 14; 0.99: 20, 7; 0.999: 20, 2; 0.9995: 18, 2; 0.9999: 16, 1; 0.99999: 13, 0.
+- Chosen: 0.999 (recall 20 of 22, false flags 2 of 68, 2.9 percent). It is read in-sample on the lane's own 24-pair set, so it is a development threshold, never a bar; reports say so. The check stays additive, marked as a model's and not promoted; the pipeline does not call it (OPEN_ITEMS 179). The misses: widened_scope 2 of 6 at 0.999.
+- A lane writes the threshold into tools/diff_check.json, moves check 689's shipped expectation with it, adds the figures to docs/fix/DIFF_CHECK_309.md, and runs tools/diff_check_checks.py alone.
+
+## D-856: the launch chain task runs at normal priority; archive_closure keeps parsed trees (the lead, 20 November 2026 19:11 +0300, within limits, D-807)
+- Found with traceback dumps (OPEN_ITEMS 180): a chain pass is slow, not hung. Before a launch it runs archive_closure over the bound tree (QUICK_READ_ALPHA's six bundles: 809 s at normal priority), and the ShimmerLaunchChain task ran at Task Scheduler priority 7 (BelowNormal), so passes took 20 to 60 minutes while roles and runs used the CPU; every pass in between was refused as locked. The lead stopped three slow passes (none half-launched) and ran one at normal priority: pilot admit 18:44, quick read request 18:57, seal 19:09 (1556 s).
+- Changed: the task's priority to 4 (normal), and archive_closure._parse keeps each parsed tree (c95ad5a4, check 660 PASS; 716 s). Batching the closure's git reads stays for after the alpha.
+
+## D-857: the weekly usage stop threshold rises from 95 to 98 percent (Seckin 19:37, 20 November 2026, relayed as G-20261120-1937)
+Written 2026-11-20 19:45 +0300 by a lane for the lead (8fee59db).
+- tools/loop/instance_reaper.py: USAGE_STOP_PERCENT is 98, the standing value from epoch 1795192620 (20 November 2026 19:37 +0300). The old value stays on record as "95 until 20 November 2026 19:37 +0300" in the dated USAGE_STOP_HISTORY, which also holds D-529's 98 until epoch 1794988800 (the former USAGE_STOP_EXCEPTION, folded in). usage_stop_percent(now) stays the one reader; usage_stop_basis names the entry in force.
+- Only alpha steps may use the margin above 95 (D-850 unchanged). When usage passes 95 the lead writes an information line to FOR_SECKIN, not a stop: that part is the lead's, not code.
+- Proof: tools/ordinary_final_salvage_checks.py, test_salvage_usage_threshold_follows_its_dated_history (97.9 does not trigger and 98 does before the reset; 95 from the reset until the D-857 instant; 98 from that instant on), with six neutralisations (history ignored, 95 always, the old reader, boundaries read inclusive, the standing constant left at 95, the trigger reading the constant directly), each fails and passes once restored.
+- Controller binding: instance_reaper.py is a bound file (prepare_ordinary_final_run.CONTROL_FILES). Every check hashes the tree its own controller runs from (ordinary_final_cloud.ROOT, the watchdog's and the bound reverify's own parents), so bundles running from their own bound worktrees (alpha-d12da1cd, neg-r2-fea8347d) are unaffected; a bundle sealed before this change and launched from a tree carrying it refuses with Controller source changed and is re-sealed.
+
+
+## D-858: the quick read relaunches only its missing entries, once, as parts cd1r and st1r (lead, 22:29, 20 November 2026)
+- What happened: parts cd1 and st1 of QUICK_READ_ALPHA each stopped on one ssh "Connection timed out" (exit 255 after 10 s) at batch_project_from_store_start, right after batch_park, on two different instances (21:54 and 22:08). The controller stopped, packed what it had and terminated cleanly. cd1 kept evidence for 5 of 10 entries, st1 for 9 of 13; nine entries have none.
+- Decision: relaunch only those nine entries, once, as two new parts (cd1r: 5 entries; st1r: 4 entries), each its own step under the 5 USD per-step pre-approval (D-708, D-826), about 3 USD in all against 75 USD left. The folder's own advisory already allows one relaunch; D-841 makes completeness the only fail condition for the alpha quick read, so a transport failure is repaired, not scored. No bound file changes, so no re-seal: the same admitted bundles run.
+- Not decided here: a retry around that ssh connect. It is a bound controller change (CONTROLLER-BINDING) and goes after the release (OPEN_ITEMS). If a relaunched part fails the same way, the quick read is reported as not completed and goes to Seckin under D-596.
+- D-858 update (22:34): the nine bundles cannot run again. The controller writes LAUNCH_INTENT.json into every bundle of a batch at its start, and three single-use guards refuse a used bundle (ordinary_final_bound_cloud.py 153, ordinary_final_cloud.py 913 and 195). Moving those files aside would defeat the guards and is not done. Instead, once cd2 to cd4 have ended, the items still without evidence are sealed again in a new folder, QUICK_READ_ALPHA_R (its own request, seal and admit through the chain at the same frozen commit), so one seal covers every loss. Drafts for the first plan stay in QUICK_READ_ALPHA (add_remainder.py, plan.json.d858_proposed, chain.json.d858_proposed, batch_cd1r.json, batch_st1r.json); plan.json and chain.json are unchanged (plan.json is hash-identical to plan.json.before_d858).
+
+## D-859: the laptop's ssh retries a failed connect three times (lead, 22:34, 20 November 2026)
+- Cause found for D-858: the one-shot ssh start of batch_project_from_store was a fresh connection with ConnectTimeout=10 on the controller's command line and no retry. Both failures hit "Connection timed out" on two machines 15 minutes apart, after clean park steps, which points to a short network drop on the laptop's side.
+- Decision: %USERPROFILE%\.ssh\config (it did not exist) now holds `Host *` / `ConnectionAttempts 3`. Both installed clients read it (`ssh -G` shows connectionattempts 3 and connecttimeout 10 for Windows OpenSSH and Git ssh). Only the TCP connect is retried; the controller's options, its timeout and every bound file are unchanged, so no re-seal is needed (CONTROLLER-BINDING binds source hashes). It applies from the next ssh call, including the running parts cd2 to cd4 and part 1 of round 2.
+- The real fix, a retry inside the controller's one-shot calls, is a bound change and goes after the release (OPEN_ITEMS).
+
+## D-860: in the alpha quick read, a run with the integrity verdict exit 2 is a complete record, scored as the system's own result (lead, 23:09, 20 November 2026)
+- Found: 4 of the 44 delivered QUICK_READ_ALPHA entries (cd2 two, cd3 one, cd4 one) have workload exit code 2: the pipeline ran to its end and wrote its outputs, and the run's own integrity check reported `semantic_incomplete` (tools/ordinary_final_run.py: integrity false returns 2). The development runs had the same rate (DEV_contradoc_full 3 of 55, DEV_scitab_dev 2 of 28) and were scored.
+- Reading of D-841 (Seckin's "fails only when it does not complete properly: records missing or broken"): these records are neither missing nor broken; their archives match their hashes and their outputs exist. An integrity verdict is a measured result of the system. Counting it as "not completed" would turn a quality result into a stop, which D-841 removed; rerunning such entries until they pass would choose results.
+- Decision: exit 0 and exit 2 both count as complete records; any other code (a crash, a refusal, no record) is missing or broken. Role B labels and scores the exit-2 runs as the system's own results, never dropped and never rerun, and reports the exit-2 count per benchmark beside the figure, with the figure over the exit-0 entries alone as a second line (REPORT_COMPARABILITY condition 4 keeps the failed-entry count printed). QUICKSCORE3/quick_after.py (GOOD_EXIT = (0, 2)) and the request say so; tested on the real state and on a fixture (code 2 passes, code 1 fails).
+- Seckin may overrule in one line; the SONUÇ entry states it.
+
+## D-861: round 2's val_b runs to its own cap, without the 90 percent watch stop (lead, 23:47, 20 November 2026)
+- Found: NR_R2DEV_VAL_B writes reply records at 10.7 a minute (val_a about 26; 48 of 446 calls crashed so far, no traceback in the workload log). val_a wrote 646. At this rate val_b ends about 19 minutes after 23:47, while the lead's watcher (watch.py, 90 percent of the cap, 1.509 USD) would stop it near 00:00 and the ledger deadline (cap 1.677 USD) falls at 00:08:48.
+- Decision: stop the watcher for val_b only (pid 25796, 23:47:22). The guard's cap, the ledger deadline and the reaper are untouched; the most this adds is the gap between 1.509 and 1.677 USD (about 0.17 USD), inside the 5 USD per-step approval (D-708). A run stopped at the deadline still has its finished replies saved, so this can only add replies.
+- If val_b does not end with exit 0 or 2, its development reading is reported as partial, n of 20 items, and R2S scores part 1 and the rest without it (R2S is a development reading beside part 1; part 1 is round 2's one look, D-843).
+- D-861 outcome: stopping the watcher made no difference. The controller's own workload timeout (deadline 23:54:47, from the step forecast) ended val_b with exit 124 before either the watch stop or the ledger deadline; the run terminated cleanly at 23:57 with its evidence collected (1.440 USD).
+
+## D-862: round 2's second development half is handed to role N as partial; the scoring starts (lead, 00:03, 21 November 2026)
+- val_b's evidence holds 13 main replies and 480 stepwise replies, where val_a (complete, exit 0) holds 134 and 512: the stepwise method ran slowly on this half (10 reply records a minute against about 26, with 56 calls classed crashed and no traceback) and the workload timed out. The standard `launch.py after` refuses any code but 0 and 2 for every part, so val_a would not have been handed either.
+- Decision: external/s05/NEG_r2_devval/after_d862.py hands both halves with the launcher's own functions. val_a is handed as the standard step would; val_b is accepted with exit 124 only, handed unopened, and its MANIFEST.json says partial: true, exit_code 124, with reply file counts per folder from member names only. REQUEST_ROLE_N_R2S.md step 3 now says how to read it: score c4val_1_b's items with a complete reply set, give c4val_1 three ways (a alone, b's complete items alone, pooled), each with its item count; never fill or count a missing item. Part 1, round 2's one look (D-843), is complete and unaffected.
+- start_n_r2s.cmd: role_start_check PASS, started 00:02 (pid 24028), precheck passed (all four manifests present).
+- Not fixed: why the stepwise steps crash and slow down on this half. After the release (OPEN_ITEMS 181).
+
+## D-863: round 3 of the negotiation improvement, option A (Seckin 00:40, 21 November 2026, relayed as G-20261121-0040; answers the Q-r3 card)
+Written 2026-11-21 00:40 +0300 by the lead (8fee59db).
+- Seckin: "Evet önerine katılıyorum ama önerdiğin gibi gitmek için neler yapılacağına bakarken webe de bak. Dersleri aldıktan sonra 3. tur bekletmeden."
+- 1. Find from the records why open-point detection (M10) fell in round 2; suspects: the red lines, the reason field, the longer prompt.
+- 2. Search the web at the same time: LLM negotiation and agreement tracking, prompt length and added constraints lowering other measures, known methods for tracking open or negotiable points. Sources go into the report.
+- 3. Once a concrete change is found, start round 3 without asking again, on part 2 of the D-798 pool (part 2 sha e7b32cc9..., 31 items), cap 15 USD, finished by the evening of 21 November. If the release slips because of it, the last day stays 21 November 23:59.
+- 4. If no concrete change is found, round 3 does not run; the alpha ships with the round 2 figures and round 3 goes to the beta (FOR_SECKIN line).
+- 5. The 98 percent usage stop holds; if it would be passed, stop and ask.
+- 6. The result is written under "SONUÇ:" and the supervisor is woken once.
+- Diagnosis is read on the development sets (c4pilot_1, c4val_1_a; c4val_1_b partial), never on part 1 or part 2 item content by the lead; part 1 was round 2's one look and part 2 is round 3's.
+
+## D-864: round 3's concrete change: the fate question gets an "open" answer and loses its anchoring labels (lead, 00:52, 21 November 2026; under D-863)
+- Diagnosis (development sets only, replies without keys; scratchpad r3_diagnosis.md, summarised here):
+  - tools/score_neg_advisor.py open_point_prediction calls a point movable only when the advice is counter.
+  - Round 1's yes/no question "will it still be open to change" gave counter on 79 of 152 (c4pilot_1) and 66 of 114 (c4val_1_a). Round 2's room_fate switch replaced it with "kept, changed or removed", where only "changed" gives counter: 17 of 152 and 7 of 114.
+  - The new answer set has no place for a point still open (about 70 percent of the movable class by the declared sampler).
+  - The question also shows each position's earlier compare read ("read: against / fits / aside", neg_advisor.py 1830 to 1834). With no "against" the answer was "kept" in 156 of 156 cases over four runs.
+  - Not causes: prompt length (the question sits at 94 percent of the prompt; the red-lines-only comparison moved M10 by -0.03), the reason field (runs after the stance), the stepwise method (in both rounds) and the audit withholding (same counter rate in both rounds).
+- Web research (scratchpad r3_web_research.md) supports the same direction: prior-label bias in prompted classification (Zhao et al. 2021; Zheng et al. ICLR 2024), and decoupled per-point questions with the decision wording last.
+- Decision: a code change in benchmark/baselines/neg_advisor.py, the round 3 prompts config and check 686. The fate question's answer set gains "open" (still in dispute, open to change in the next round), mapped to counter. Behind a new switch, the positions in the question are shown without their "read:" labels. The definitions come last in the question. The scorer does not change: M10 and M4 are read as declared. No controller-bound file is touched, so no existing bundle is re-sealed.
+- Order (NEG_BAR adoption rule, D-710): development runs on c4pilot_1 and c4val_1 (both halves) under the round 3 config. The change is adopted only if it raises M10 and lowers no bar figure beyond its interval. Only then part 2 (31 items) is read once. Everything goes through launch folders and the chain, inside the 15 USD cap (D-863).
+
+## D-865 (lead, 21 November 2026 01:40 +0300): release names, only v1.0-alpha, v1.0-beta, v1.0, v1.1 (Seckin, G-20261121-0138)
+- Seckin (through the supervisor, 01:38): the README's version wording ("1.0", "v1") is wrong. The only names are v1.0-alpha (alpha), v1.0-beta (beta), v1.0 (full release) and v1.1. Every version mention in the README, including the old v1.05 and v1.15 and a bare "v1" or "1.0", is scanned and turned into these names; the same scan runs in the last check of the site, LinkedIn and Medium (#318).
+- Done now on the lead branch: README's status line no longer calls the 2 November prototype "v1" and says v1.0-alpha is not released yet; the changelog's "Unreleased (after v1)" heading names the 2 November 2026 prototype instead. No other README mention exists (scan of v1, 1.x, alpha, beta). VERSION and CITATION.cff carry the package version 0.1.0.dev8, which is not a release name; the release step (#314 to #318) sets them for the alpha.
+- Panel: the REL alpha row "README, site, LinkedIn profili ve Medium son kontrolü" gets the version-name scan at the next write.
+
+## D-866 (lead, 21 November 2026 01:57 +0300): the quick read passes for the alpha (D-841); the 40-document trial starts
+- Role B's QUICKSCORE3 result.json (01:51): 53 of 53 items with exactly one archive, every one complete, every part complete for its delivered entries; D-841 verdict "completed properly". Under D-841 the alpha's quick read fails only when it does not complete properly, so it passes and TRIAL40_ALPHA's LEAD_GO.txt is written.
+- Figures as they are (D-841): ContraDoc v2_primary 0.55 (0.40 to 0.70), 40 documents (0.556 over the 36 exit-0 entries); SciTab 3-class macro-F1 0.19 (0.14 to 0.23), 78 claims in 13 tables (0.187 over exit-0 entries). No ABSTAIN, no answer dropped. The D-596 line 5 reading is not evaluable: role B held no B1 or cloud rows on these items and no copy of the frozen set file; the lead hands them for the comparison beside the 40-document trial.
+- TRIAL40_ALPHA/chain.json: the request's prerequisites cd1 done and st1 done (both ended on a controller failure, their missing entries run in QUICK_READ_ALPHA_R r1 under D-858) are replaced by QUICK_READ_ALPHA_R r1 done and role B's result.json; cd2 to cd4, LEAD_GO.txt and the commit stay. The forecast stays 11.99 USD guard (caps 17.98), approved under D-703.
+
+## D-867 (lead, 21 November 2026 02:03 +0300): the alpha's comparison with B1 and the cloud uses the recorded 13 November figures; no paired interval in the alpha
+- The per-item B1, cloud, K0 and K1 rows on the quick subset (external/s05/GATE/quick_read, READ_20261113 and READ_20261115) are gone, most likely in the 16 November loss (FOR_SECKIN 19 Nov); the frozen set file external/s05/GATE/freeze/quick_set_ids.json (0127b080...) is present. Rebuilding the rows would need a new B1 run on Lambda and a cloud run; not done for the alpha.
+- The comparison is written from the recorded point figures, same set and measure (DECISIONS lines 6088 to 6090): ContraDoc binary judgment accuracy, B1 52.5, cloud 90.0; SciTab 3-class macro-F1, B1 55.8, cloud 81.7. Alpha: ContraDoc 55.0, so +2.5 over B1 (bar +10, not met) and -35.0 against the cloud (bar -10, not met); SciTab 19.0, so -36.8 and -62.7 (not met). Line 5 is not met on all four bars; for the alpha a reading (D-841), the full-release condition stays (D-842). Paired intervals go to the full release, which re-measures B1 and the cloud on the same items (#292).
+- The SciTab figure is the official path with every one of the 78 claims silent (role B: silent 78 of 78), as on 18 November (0.190, the same interval) and as K0 as shipped on 13 November (all 78 ABSTAIN). The 0.517 in README and RESULTS is the development reading of the model's most likely answer on 47 other claims, where the official path gave 0.225; K1 49.3 and K3 59.8 on these 78 claims were measurement branches never shipped. The release text must say this (OPEN_ITEMS).
+
+## D-868 (Seckin 02:25, relayed G-20261121-0225): no alpha until every target holds; the table path is repaired
+Written 2026-11-21 02:25 +0300 by the lead (8fee59db). Seckin: "Her şey optimize edilip hedefle uyumlu hâle getirilmeden alfa yok." This changes the alpha reading of D-840 and D-841.
+- The alpha release stops: no release, no alpha wording on README, site, LinkedIn or Medium, no v1.0-alpha tag, until the targets hold. The targets are the recorded bars: on ContraDoc and SciTab at least 10 points above B1 and at most 10 below the cloud (D-842); on negotiation each of the three measures at least 0.60.
+- Q-tablo is answered by this: the table path is repaired (threshold measurement, rule record, new freeze, re-measurement).
+- Round 3 (D-863, D-864) and the 40-document trial (D-866) continue uncut.
+- The lead writes an optimisation plan now at 0 USD (FOR_SECKIN SORU, one wake): the gap per target, likely causes, changes in order with time, dollars and usage, which target can hold when and which may not hold at this model size. Development and validation stay apart, the test set stays closed, every figure comes from newly frozen code on new items.
+- Constraints unchanged: 435 USD cap, 98 percent usage stop, reset 25 November 11:00. The 21 November 23:59 last day may not hold under this decision; the plan says so and it goes to Seckin.
+- Found at once: config/semantic_thresholds.json holds no choice_decision family, so every choice question waits unasked (config/agent_harness.json:204); this is the common cause of SciTab's 78 of 78 and ContraDoc's 26 of 40 silent items.
+
+## D-869 (Seckin 02:30, relayed G-20261121-0230): the Q-plan answers; last day 28 November; same model made agentic, no larger model; the 40-document trial stops
+Written 2026-11-21 02:31 +0300 by the lead (8fee59db). Seckin: "Önerine katıldım. Ama usage çok az kullanarak yapalım. Ama hızlı da olsun. Daha büyük model değil, ajanlaştırılmış aynı model. 40 olanı durdur."
+- The 21 November 23:59 last day is lifted; the new target is 28 November.
+- The threshold measurement, the rule record and the new freeze start now (at most 5 USD). The validation measurement waits for the usage reset on 25 November 11:00.
+- No stronger or larger model; no K4 plan. The cloud bar is approached by making the same 7B model agentic: more steps or agents (separate finding and checking steps, several independent readings and a vote, self-checking, Python arithmetic on tables). First, at 0 USD, a short plan on development items of which agent layout gains most and what it costs (FOR_SECKIN, information; applied without asking unless a decision is needed). Cap 435 USD unchanged.
+- The 40-document trial stops now: TRIAL40_ALPHA/chain.json renamed chain.json.stopped_D869 at 02:31 (nothing further launches), and launch.py stop seal wrote TERMINATE_REQUEST for the seal launched 02:22; its evidence is downloaded and its spend recorded by the controller's own termination; the money stays for the validation measurement.
+- Claude usage: very little, without slowing. Heavy work on rented machines with the open model; Claude sessions only when needed, mechanical work on a light model, no needless helper sessions. The 98 percent stop holds.
+- Amended 21 November 2026 02:33 +0300 (Seckin 02:33, G-20261121-0233): "agentic" means full compliance with the system's own rules (constitution, thresholds, narrow questions, form), tool calls where needed (Python for table arithmetic and any other needed tool), and voting and checking steps: everything that gains, on the same model.
+- Amended 21 November 2026 02:37 +0300 (Seckin 02:36 and 02:37, G-20261121-0236 and -0237): this round's thresholds are chosen post hoc from saved records on development items only (0 USD where the saved probabilities suffice; only the missing step is run where they do not); validation runs only the narrow step that was never asked, on saved intermediate outputs where possible, and applies the threshold once, never chosen from validation results. From then on thresholds are fixed ex ante: written to config and the rule record before a measurement and never changed after it. The README method section and the slide's method line say this order.
+
+## D-870 (lead, 21 November 2026 02:41 +0300): the alpha's cell_claim threshold, chosen post hoc on development records (D-869 as amended, G-20261121-0240); the rule, written before any figure
+- Found (design lane, 02:45): in the frozen alpha the cell question is asked and every decision is saved with its answer probabilities and why `no_threshold` (cell_selection.py:473-486); the quick read's SciTab archives hold the same (checked on one archive: 18 decisions with confidence, why no_threshold). So the threshold can be applied to saved records with no run. ContraDoc's 26 silent documents have another cause: passage pairs run in reply form, which reads no threshold (config/passage_pairs.json:4); D-868's last line is corrected for ContraDoc, its cause is traced separately.
+- Development set: DEV_scitab_rerun half A, 15 tables, 47 claims, saved probabilities, labels through the adapter alone (score.py prints headline figures only). It holds supports and refutes only (D-762, D-778).
+- Grid, fixed now: 0.34, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95. At each value a saved decision whose top answer reaches the value is settled and classed as the cell step does; one below it stays unsettled and keeps its normal (silent) label.
+- Choice: the value with the highest development 2-class macro-F1 (the classes development holds); ties go to the highest value among them. Its error rate on development (settled, right, wrong, below the value) is recorded with it. The not-enough-info error rate cannot be measured on development and is stated as a limitation.
+- Applied once, unchanged, to the quick subset's 78 claims by role B (keys), reported as "threshold chosen post hoc in the alpha from development records"; no other value is scored on the quick subset. The full ex ante threshold and the full re-run go to the beta (D-869).
+- No config change in the frozen alpha: the value is applied to saved records only; it is written to config/semantic_thresholds.json ex ante for the beta.
+
+## D-871 (Seckin 02:43 and 02:45, relayed G-20261121-0243 and -0245): coverage check before every score; fix every silently skippable step
+Written 2026-11-21 02:45 +0300 by the lead (8fee59db).
+- tools/coverage_check.py reads an adapter's label output and counts, per basis, the items the system answered itself (`ok`, and `post_hoc_threshold` for the alpha's declared D-870 threshold, reported apart) and the items it did not (`silent` defaults, abstentions, run failures, exclusions, `argmax` readings, any other basis). Above 5 percent not answered it prints the reason and exits 3: no score is written. Proof on development records: the frozen alpha's labels 46 of 47 silent, refused (exit 3); the argmax reading 47 of 47 not the system's own, refused.
+- Every scoring request from now on runs it on each label output before any figure (role B and role N requests name it); the negotiation scorer's withheld and no-answer pieces are counted the same way.
+- Every silently skippable step is found and fixed, not only listed (G-0245): threshold measured and recorded, a missing answer option added, a default removed or counted and shown, the coverage check wired. Seckin is told what was fixed, its proof (check, commit) and the result.
+- A smoke test of 3 to 5 items end to end, every step shown working in the output, runs before the beta's validation measurement.
+
+## D-872 (Seckin 02:48, relayed G-20261121-0248): a chance test beside every figure; same-item re-measurement in the alpha on all three benchmarks
+Written 2026-11-21 02:49 +0300 by the lead (8fee59db).
+- tools/chance_test.py, written before any result: a label-shuffle permutation test (gold fixed, the system's labels shuffled, at least 10,000 shuffles, seed 20261121, p = (1 + hits) / (N + 1)) on accuracy or macro-F1 over the declared classes; where B1's rows exist on the same items, a paired sign-flip permutation test on the difference. Proof on synthetic rows: a perfect predictor p 0.0001, a random one p 0.79, paired against the random arm p 0.0001; fewer than 10,000 shuffles refused. The rows are built by the role holding the keys.
+- In the alpha, after the fixes, each benchmark is measured again on the same items, only the missing step on saved intermediate outputs (D-869), and reported as "on the same items, after the fix; the independent measurement is in the beta, on unseen items". The B1 rows on the quick subset are lost (D-867), so its paired test waits for the beta.
+- tools/coverage_check.py now also counts a ContraDoc document left silent as the system's own answer (judged_absence) only when its run asked the passage pair step, nothing failed and no pair was kept. Found on the quick read: the 26 silent ContraDoc documents are exactly the 26 where the step ran (3,112 pair calls in all, 0 failed) and kept nothing; ContraDoc's gap is accuracy, not a skipped step.
+
+## D-873 (Seckin 02:50, relayed G-20261121-0250): three stages, seen items beside a very small untouched set, fail-fast runs
+Written 2026-11-21 02:50 +0300 by the lead (8fee59db).
+- Order on all three benchmarks, each stage its own figure so each contribution shows: (a) the threshold from development records (D-870); (b) root-cause fixes only; (c) root cause plus the fixes seen so far.
+- Two sets side by side: the seen items (G-0248) and a very small untouched set from the validation pool, items never looked at; the locked final test sets (ContraDoc 230, SciTab 363) stay closed. Small n is written with its interval and the permutation test (D-872); under 5 items, the count alone. Which items form the untouched set is recorded before any run.
+- Fail-fast: the per-step coverage check (D-871) also runs during a run. When a step gives no answer on the first few items, the empty or default share passes 5 percent, or a form condition fails, the run stops at that stage, the machine shuts down, the spend is recorded and the reason written. Built as code and recorded; a change to the bound runner needs a re-seal (CONTROLLER-BINDING), so it goes into the next sealed bundles.
+- Stage (a) on SciTab, quick subset (role B CELLTHRESH 02:47): threshold 0.40 decided 74 of 78 claims (FLAG 25, CLEAR 28, UNDECIDED 21); 3 claims have no cell record for their rule, 1 is below the threshold; coverage 5.13 percent not answered, above 5: refused, no figure written. The 3 unrecorded claims are a step that never ran and are traced next.
+- Amended (Seckin 02:51, G-20261121-0251): by morning, at 0 USD and with no helper session, the run and scoring checks are listed with their time, dollar and usage cost, what each caught in the last week, and overlaps; only checks that repeat another, whose result is unused, or that repeat needlessly (an unchanged file checked again) are skipped or thinned. Never skipped: freeze and seal, the closed test set, the leakage check, the coverage check (D-871), fail-fast, the spend cap, the 98 percent stop, the deletion and publishing rules, supervision and wake mechanisms; a change to one of these goes to Seckin. The morning FOR_SECKIN entry says what was skipped, what it saved, and why defensibility holds.
+- Traced (02:51): the 3 SciTab claims with no decision are `no_match` selection refusals (scripts/cell_selection.py:409-412): the claim's words and figures match no cell and the document's table is above the caps or one of several, so no question is asked; the run records it as cells_none. Stage (b) fix: when no table is named, choose by the embedding ranker among the tables and ask on the cells it ranks (no guess when tied), then ask the missing question for those claims only.
+
+## D-874 (lead, 21 November 2026 03:06 +0300): SciTab stage (b) runs on frozen code: full gate on Lambda, a new local tag, then one table rerun
+- The stage (b) fix (embedding fallback for no_match, check 690, lane commit e3b4bc42, merged 5c118ad8) changes the system, so its figure must come from frozen code: freeze and seal are never skipped (G-20261121-0251 item 3).
+- Order: the full gate on a rented machine at the lead tip (arm G, as ROUTE_GATE_ALPHA did for d12da1cd); on green, a local annotated tag v1.0-alpha-freeze-b on that commit (the alpha's own tag stays on d12da1cd); then a rerun folder QUICK_READ_ALPHA_B (QUICK_READ_ALPHA_R's tooling) for the one SciTab table whose 3 claims were refused no_match (document 37788c0e8f71), sealed and run at the tagged commit; role B scores the quick subset with the D-870 threshold and the new table's labels in place of the old, coverage first (D-871) and the chance test beside (D-872), labelled "on the same items, after the fix".
+- Spend: gate about 1 to 2 USD, seal and one table about 1 USD, each step inside the 5 USD pre-approval (D-708), within the 435 USD cap. Folders built by one Sonnet lane; launches by the chain.

@@ -922,6 +922,93 @@ def select_strata(cards, set_dir, strata, dropped=()):
             "short_by_structure": short}
 
 
+def select_all(cards, set_dir, dropped=()):
+    """D-843: a set of the declared parts pool keeps every built item no screen dropped, in seed order, with no
+    target cap (the pool is split into parts afterwards, `split_parts`); never short."""
+    built = {q.parent.name for q in Path(set_dir).glob("build/*/build.json")}
+    drop = set(dropped)
+    order = [c for c in sorted(cards, key=lambda c: c["seed"]) if c["item_id"] in built]
+    kept = [c["item_id"] for c in order if c["item_id"] not in drop]
+    keep = set(kept)
+    return {"schema": SELECT_SCHEMA, "target": len(order), "built": len(order),
+            "dropped": len(drop & {c["item_id"] for c in order}), "kept": kept, "short": 0,
+            "record_kinds": dict(Counter(c["structure"]["record_kind"] for c in order if c["item_id"] in keep)),
+            "structures": dict(Counter(sna.structure_of(c["structure"]["parties"]) for c in order
+                                       if c["item_id"] in keep)), "all_kept": True}
+
+
+# ---------------------------------------------------------------------------
+# D-843 (Seckin 14:34, 14:35, 20 November 2026): the D-798 validation pool split into parts, one round a part, by
+# the seeded rule of config/neg_synth.json `split.parts_rule`, written and frozen before any run.
+
+PARTS_SCHEMA = "neg-synth-parts-v1"
+PARTS_RULE_KEYS = ("decision", "pool", "seed", "parts_min", "target_per_part", "min_per_structure", "uses", "rule")
+
+
+def parts_rule(cfg):
+    """The declared parts rule, checked: every key, a pool of declared sets, a whole-number seed, at least four
+    parts, a positive target and floor, a use for parts 1 to 3 and the spare."""
+    rule = (cfg.get("split") or {}).get("parts_rule")
+    if not isinstance(rule, dict) or any(k not in rule for k in PARTS_RULE_KEYS):
+        raise ValueError("split.parts_rule declares %s" % ", ".join(PARTS_RULE_KEYS))
+    names = {s["name"] for s in check_split(cfg)}
+    if not rule["pool"] or any(p not in names for p in rule["pool"]) or len(set(rule["pool"])) != len(rule["pool"]):
+        raise ValueError("the parts pool names declared sets, each once")
+    for k in ("seed", "parts_min", "target_per_part", "min_per_structure"):
+        if type(rule[k]) is not int or rule[k] < (4 if k == "parts_min" else 1 if k != "seed" else 0):
+            raise ValueError("split.parts_rule.%s is a whole number in range" % k)
+    if not isinstance(rule["uses"], dict) or any(k not in rule["uses"] for k in ("1", "2", "3", "spare")):
+        raise ValueError("split.parts_rule.uses names parts 1, 2, 3 and the spare")
+    return rule
+
+
+def _rule_digest(rule):
+    return hashlib.sha256(json.dumps(rule, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def split_parts(entries, rule):
+    """The pool's parts (D-843). `entries`: one {item_id, set, structure, record_kind} per kept item. The part count
+    is max(parts_min, pool // target_per_part), the last part the spare. Each party structure with n items is dealt to
+    its first k = min(parts, n // min_per_structure) parts (none: all to the spare), so every part holding a structure
+    holds at least min_per_structure of it and part 1 holds every structure that can be held; within a structure the
+    items are ordered by record kind, then by SHA-256 of "<seed>:<item id>", and dealt round-robin from a start that
+    moves on by each structure's count, so record kinds and sizes stay balanced. Ids, counts and digests only."""
+    ids = [e["item_id"] for e in entries]
+    if len(set(ids)) != len(ids):
+        raise ValueError("an item is in the pool twice")
+    n_parts = max(rule["parts_min"], len(entries) // rule["target_per_part"])
+    parts = {i: [] for i in range(1, n_parts + 1)}
+    by_structure = {}
+    for e in entries:
+        by_structure.setdefault(e["structure"], []).append(e)
+    start, spare_only = 0, {}
+    for st in sorted(by_structure):
+        items = sorted(by_structure[st], key=lambda e: (e["record_kind"], hashlib.sha256(
+            ("%d:%s" % (rule["seed"], e["item_id"])).encode("utf-8")).hexdigest()))
+        k = min(n_parts, len(items) // rule["min_per_structure"])
+        if k == 0:
+            parts[n_parts] += items
+            spare_only[st] = len(items)
+            continue
+        for j, e in enumerate(items):
+            parts[1 + (start + j) % k] += [e]
+        start += len(items)
+    uses = rule["uses"]
+    out = []
+    for i, members in parts.items():
+        member_ids = sorted(e["item_id"] for e in members)
+        cells = Counter((e["structure"], e["record_kind"]) for e in members)
+        structures = Counter(e["structure"] for e in members)
+        out.append({"part": i, "use": uses["spare"] if i == n_parts else uses.get(str(i), "later round"),
+                    "items": member_ids, "count": len(member_ids), "structures": dict(sorted(structures.items())),
+                    "cells": {"%s/%s" % c: v for c, v in sorted(cells.items())},
+                    "sets": dict(sorted(Counter(e["set"] for e in members).items())),
+                    "below_floor": sorted(st for st, v in structures.items() if v < rule["min_per_structure"]),
+                    "sha256": hashlib.sha256("\n".join(member_ids).encode("utf-8")).hexdigest()})
+    return {"schema": PARTS_SCHEMA, "rule_sha256": _rule_digest(rule), "seed": rule["seed"], "pool": len(entries),
+            "parts": out, "spare_only": spare_only}
+
+
 def strata_problems(cov, s):
     """A stratified set's drawn cards against its declared strata: a structure with fewer cards than it keeps."""
     return ["structure:%s" % st for st, n in (s.get("strata") or {}).items()
@@ -1189,6 +1276,11 @@ def main(argv=None):
     p.add_argument("--set-dir", required=True)
     p.add_argument("--dropped", nargs="*", default=[])
     p.add_argument("--out", required=True)
+    p = sub.add_parser("split-parts", help="D-843: the parts pool's kept items split by split.parts_rule")
+    p.add_argument("--select", nargs="+", required=True, help="SET=kept file of `select`, one per pool set")
+    p.add_argument("--keys", nargs="*", default=[], help="SET=card folder (the fixtures; else the declared folder)")
+    p.add_argument("--out", required=True, help="the parts with their ids (for role N)")
+    p.add_argument("--counts-out", required=True, help="counts and digests only (for the lead)")
     p = sub.add_parser("set-check")
     p.add_argument("--set-dir", required=True)
     p = sub.add_parser("label-sheets")
@@ -1278,7 +1370,10 @@ def main(argv=None):
             value = _read_json(f)
             dropped |= set(value.get("dropped_ids") or [])
         declared = split_set(cfg, args.set)
-        if declared.get("strata"):
+        rule = (cfg.get("split") or {}).get("parts_rule")
+        if rule is not None and args.set in parts_rule(cfg)["pool"]:
+            out = select_all(cards, args.set_dir, dropped)
+        elif declared.get("strata"):
             out = select_strata(cards, args.set_dir, declared["strata"], dropped)
         else:
             out = select(cards, args.set_dir, declared["target"], dropped)
@@ -1286,6 +1381,30 @@ def main(argv=None):
         print(json.dumps({k: out[k] for k in ("target", "built", "dropped", "short", "record_kinds", "structures",
                                               "short_by_structure") if k in out}, sort_keys=True))
         return 2 if out["short"] or len(out["record_kinds"]) < len(sna.RECORD_KINDS) else 0
+    if args.cmd == "split-parts":
+        rule = parts_rule(cfg)
+        selects = dict(s.split("=", 1) for s in args.select)
+        keys = dict(k.split("=", 1) for k in args.keys)
+        if sorted(selects) != sorted(rule["pool"]):
+            raise SystemExit("refused: give one kept file for each pool set (%s)" % ", ".join(rule["pool"]))
+        entries = []
+        for name in rule["pool"]:
+            kept = _read_json(selects[name])
+            if kept.get("schema") != SELECT_SCHEMA or not kept.get("all_kept"):
+                raise SystemExit("refused: %s's kept file is not a whole-pool selection (select under parts_rule)" % name)
+            folder = Path(keys[name]) if name in keys else card_folder(cfg, name)
+            cards = {c["item_id"]: c for c in (_read_json(q) for q in sorted(folder.glob("*.card.json")))}
+            if any(c.get("set") != name for c in cards.values()) or any(i not in cards for i in kept["kept"]):
+                raise SystemExit("refused: %s's cards do not hold every kept item, or hold another set's" % name)
+            entries += [{"item_id": i, "set": name, "structure": sna.structure_of(cards[i]["structure"]["parties"]),
+                         "record_kind": cards[i]["structure"]["record_kind"]} for i in kept["kept"]]
+        out = split_parts(entries, rule)
+        _write_json(Path(args.out), out)
+        counts = dict(out, parts=[{k: v for k, v in p.items() if k != "items"} for p in out["parts"]])
+        _write_json(Path(args.counts_out), counts)
+        print(json.dumps({"pool": out["pool"], "parts": [(p["part"], p["count"], p["sha256"][:12])
+                                                         for p in out["parts"]]}))
+        return 2 if any(p["below_floor"] for p in out["parts"][:-1]) else 0
     if args.cmd == "set-check":
         problems = set_kind_problems(args.set_dir, cfg)
         print("set check: " + (", ".join(problems) if problems else "both record kinds present, each item records its kind"))

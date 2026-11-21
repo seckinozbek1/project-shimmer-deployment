@@ -1,0 +1,1018 @@
+{
+ "note": "Persona of the advised party and its own positions on record, per item; extracted by script from the keyless dev pilot prompts file. No other field.",
+ "source_sha256": "365dec126fb26d52ffd7dc9d040f4c6a12226c67acf7bd627fcfb26b6ea26345",
+ "items": [
+  {
+   "item_id": "syn-2114a04ad72cf323",
+   "advised_party": "KELVARO",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-1"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 3,
+     "article": "A3",
+     "article_title": "Sharing of Hydrological Data",
+     "quote": "Kelvaro cannot accept, in any form, an obligation to hand over data from all stations without charge; that is a line we will not cross."
+    },
+    {
+     "id": "POS-2",
+     "round": 3,
+     "article": "A13",
+     "article_title": "Financing of the System",
+     "quote": "Kelvaro welcomes this financing article as a whole; it gives the system a predictable funding base that every Party can plan around."
+    },
+    {
+     "id": "POS-3",
+     "round": 3,
+     "article": "A3",
+     "article_title": "Sharing of Hydrological Data",
+     "quote": "Kelvaro opposes letting Parties pick their own stations, because gaps in coverage would leave downstream areas dangerously exposed."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-234f00ab94a936c3",
+   "advised_party": "HESMARK",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-3",
+    "POS-6"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-3",
+     "round": 3,
+     "article": "A9",
+     "article_title": "Limits on Groundwater Abstraction",
+     "quote": "Hesmark cannot accept externally fixed caps on its annual pumping in any form; decisions on our water supply must remain national."
+    },
+    {
+     "id": "POS-4",
+     "round": 3,
+     "article": "A16",
+     "article_title": "Protection of Recharge Zones",
+     "quote": "Hesmark backs jointly adopted standards limiting fertilisers and pesticides in recharge areas, since farm runoff is the main threat to aquifer quality."
+    },
+    {
+     "id": "POS-5",
+     "round": 3,
+     "article": "A16",
+     "article_title": "Protection of Recharge Zones",
+     "quote": "Hesmark supports banning new industrial facilities and waste sites in designated recharge zones, as prevention is far cheaper than cleaning a polluted aquifer."
+    },
+    {
+     "id": "POS-6",
+     "round": 3,
+     "article": "A16",
+     "article_title": "Protection of Recharge Zones",
+     "quote": "Hesmark will not contribute to a common compensation fund in any form; financing landowners beyond our borders is a limit we will not cross."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-234fdb5b93636191",
+   "advised_party": "JORTHA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-12"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-2",
+     "round": 3,
+     "article": "A11",
+     "article_title": "Making Spent Rocket Stages Safe",
+     "quote": "Jortha objects to a one-day venting rule with no exceptions, because some of our older stage designs simply cannot meet it."
+    },
+    {
+     "id": "POS-5",
+     "round": 3,
+     "article": "A11",
+     "article_title": "Making Spent Rocket Stages Safe",
+     "quote": "Jortha favours giving operators flexibility in how they make spent stages inert, with a national regulator approving each plan in advance."
+    },
+    {
+     "id": "POS-8",
+     "round": 2,
+     "article": "A13",
+     "article_title": "Launch Records and Information Sharing",
+     "quote": "Jortha supports reporting each launched object's orbit, mass and disposal date within thirty days; transparency builds trust among us."
+    },
+    {
+     "id": "POS-12",
+     "round": 1,
+     "article": "A25",
+     "article_title": "Entry into Force",
+     "quote": "Jortha cannot accept a rule letting one Party's failure to ratify stop the agreement for everyone; that is a red line for us."
+    },
+    {
+     "id": "POS-13",
+     "round": 3,
+     "article": "A1",
+     "article_title": "Purpose of the Agreement",
+     "quote": "Jortha supports the target of halving new orbital debris within ten years; a clear goal is needed to measure progress."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-275773d108061efe",
+   "advised_party": "LUMETIA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-8"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-4",
+     "round": 2,
+     "article": "A15",
+     "article_title": "Scientific Monitoring and Reporting",
+     "quote": "Lumetia welcomes biennial reports on surveys, coral damage and measures taken, and especially supports making them publicly available."
+    },
+    {
+     "id": "POS-5",
+     "round": 2,
+     "article": "A7",
+     "article_title": "Designation of Protected Coral Areas",
+     "quote": "Lumetia supports a national register with measures each Party judges appropriate, since it respects our fishing communities and economic needs."
+    },
+    {
+     "id": "POS-7",
+     "round": 2,
+     "article": "A7",
+     "article_title": "Designation of Protected Coral Areas",
+     "quote": "Lumetia firmly supports designating all areas where surveys find vulnerable reef-forming species, and banning bottom trawling there from day one."
+    },
+    {
+     "id": "POS-8",
+     "round": 2,
+     "article": "A7",
+     "article_title": "Designation of Protected Coral Areas",
+     "quote": "Lumetia will not accept a consensus requirement for the joint panel under any circumstances. Allowing either side to block designations is unacceptable to us."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-389db9278823908e",
+   "advised_party": "GALDOVAR",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-5",
+    "POS-12"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-2",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Building Monitoring Capacity",
+     "quote": "Galdovar supports keeping technology transfer voluntary; our institutions share generously, but they must decide for themselves what equipment and expertise to offer."
+    },
+    {
+     "id": "POS-5",
+     "round": 1,
+     "article": "A3",
+     "article_title": "Scope of Observation Data",
+     "quote": "Galdovar cannot accept a scope that would compel release of commercially licensed satellite records. This is a limit we will not move beyond."
+    },
+    {
+     "id": "POS-11",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Building Monitoring Capacity",
+     "quote": "Galdovar objects to lending instruments free of charge with no provision for maintenance, damage or the cost of shipping delicate radar."
+    },
+    {
+     "id": "POS-12",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Building Monitoring Capacity",
+     "quote": "Galdovar cannot accept an open-ended duty to fund training for other parties. This is a line we will not cross in any form."
+    },
+    {
+     "id": "POS-15",
+     "round": 1,
+     "article": "A12",
+     "article_title": "Timeliness of Data Transmission",
+     "quote": "Galdovar supports defined transmission periods, since a shared timetable will prevent disputes over whether a party is withholding its data."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-42b84b7682851ba3",
+   "advised_party": "EASTERN-SHELF-ALLIANCE",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-15"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-3",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Support for members with limited means",
+     "quote": "The Alliance objects to tying grants for vessels and sonar to a single income threshold, which would exclude members facing real hardship."
+    },
+    {
+     "id": "POS-11",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Support for members with limited means",
+     "quote": "The Alliance supports free training in retrieval and record keeping for fisheries officers of any member requesting it."
+    },
+    {
+     "id": "POS-14",
+     "round": 2,
+     "article": "A18",
+     "article_title": "Handling of recovered gear ashore",
+     "quote": "The Alliance supports requiring recycling of recovered gear where facilities allow and forbidding burning or dumping at sea."
+    },
+    {
+     "id": "POS-15",
+     "round": 2,
+     "article": "A19",
+     "article_title": "Support for members with limited means",
+     "quote": "The Alliance will not accept a phase-in that ends obligations being deferred without any support attached; we cannot accept that in any form."
+    },
+    {
+     "id": "POS-16",
+     "round": 2,
+     "article": "A4",
+     "article_title": "Duty to report lost gear",
+     "quote": "The Alliance accepts the article on the duty to report lost gear as it stands and agrees to it."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-4960f63a127aa14e",
+   "advised_party": "NORCASTA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-5",
+    "POS-8"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-3",
+     "round": 2,
+     "article": "A26",
+     "article_title": "Review and amendment",
+     "quote": "Norcasta supports reviews every three years and the requirement that every party consent to an amendment, which protects each state from changes imposed on it."
+    },
+    {
+     "id": "POS-5",
+     "round": 2,
+     "article": "A22",
+     "article_title": "Financing of joint monitoring",
+     "quote": "Norcasta will not accept contributions tied to area burned in any form; that is a red line for our delegation."
+    },
+    {
+     "id": "POS-6",
+     "round": 1,
+     "article": "A22",
+     "article_title": "Financing of joint monitoring",
+     "quote": "Norcasta supports equal payments into a common fund, topped up by voluntary gifts, as the simplest and fairest way to share costs."
+    },
+    {
+     "id": "POS-8",
+     "round": 1,
+     "article": "A3",
+     "article_title": "Shared smoke observation network",
+     "quote": "Norcasta cannot accept bearing the full cost of stations on its territory alone; we will not agree to this in any form."
+    },
+    {
+     "id": "POS-11",
+     "round": 2,
+     "article": "A3",
+     "article_title": "Shared smoke observation network",
+     "quote": "Norcasta objects to a joint body deciding station sites, and the host consent safeguard does not go far enough to protect our sovereignty."
+    },
+    {
+     "id": "POS-12",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Purpose and scope",
+     "quote": "Norcasta objects to the article on purpose and scope as it now reads; it leaves the reach of the agreement too uncertain."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-5c4b449dcf6e618d",
+   "advised_party": "UPLAND-CIRCLE",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-1",
+    "POS-6"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A10",
+     "article_title": "Reporting lost fishing gear",
+     "quote": "Upland Circle cannot accept a shared regional register for loss reports in any form; national reporting is the line we will not cross."
+    },
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A11",
+     "article_title": "Cooperation in recovery operations",
+     "quote": "Upland Circle accepts the article on cooperation in recovery operations as written and agrees to it."
+    },
+    {
+     "id": "POS-5",
+     "round": 2,
+     "article": "A15",
+     "article_title": "Financing gear recovery",
+     "quote": "Upland Circle objects to the financing article as drafted; it would place most of the cost on our fishing industry."
+    },
+    {
+     "id": "POS-6",
+     "round": 2,
+     "article": "A28",
+     "article_title": "Periodic review of the rules",
+     "quote": "Upland Circle cannot accept an automatic review cycle where any member may table amendments; that is a line we will not cross."
+    },
+    {
+     "id": "POS-7",
+     "round": 1,
+     "article": "A28",
+     "article_title": "Periodic review of the rules",
+     "quote": "Upland Circle supports holding a review only on written request of one third of signatories, with changes needing unanimous consent."
+    },
+    {
+     "id": "POS-10",
+     "round": 2,
+     "article": "A10",
+     "article_title": "Reporting lost fishing gear",
+     "quote": "Upland Circle objects to the forty-eight hour notice, since estimating quantity and type so quickly is often impossible at sea."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-6af5366ebe84eac1",
+   "advised_party": "HESMARK",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-12"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 2,
+     "article": "A12",
+     "article_title": "Sharing of Smoke Observation Data",
+     "quote": "Hesmark supports this article on data sharing, because forecasts are only as good as the observations every Party feeds into them."
+    },
+    {
+     "id": "POS-7",
+     "round": 2,
+     "article": "A21",
+     "article_title": "Financing of Joint Monitoring",
+     "quote": "Hesmark favours equal shares as the simplest and fairest basis, avoiding endless arguments over formulas and statistics."
+    },
+    {
+     "id": "POS-9",
+     "round": 2,
+     "article": "A21",
+     "article_title": "Financing of Joint Monitoring",
+     "quote": "Hesmark objects to assessment by area burned, because a single bad season could multiply our bill without warning."
+    },
+    {
+     "id": "POS-10",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Joint Smoke Forecasting Centre",
+     "quote": "Hesmark supports establishing the Joint Smoke Forecasting Centre, which will give all Parties one trusted regional outlook."
+    },
+    {
+     "id": "POS-12",
+     "round": 2,
+     "article": "A21",
+     "article_title": "Financing of Joint Monitoring",
+     "quote": "Hesmark will not accept relying on voluntary donations in any form; core monitoring cannot depend on money that may never come."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-725a99e33ed0278d",
+   "advised_party": "LUMETIA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-4"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-2",
+     "round": 3,
+     "article": "A19",
+     "article_title": "Public Health Warnings",
+     "quote": "Lumetia opposes simultaneous release on a common colour scale, because our health authorities already use a scale our public understands."
+    },
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Public Health Warnings",
+     "quote": "Lumetia cannot accept a joint centre reduced to a mere data supplier; a regional voice on warnings is indispensable for us."
+    },
+    {
+     "id": "POS-5",
+     "round": 2,
+     "article": "A19",
+     "article_title": "Public Health Warnings",
+     "quote": "Lumetia now doubts that the joint centre alone can issue warnings within six hours; national services must keep a role."
+    },
+    {
+     "id": "POS-7",
+     "round": 2,
+     "article": "A16",
+     "article_title": "Funding of Shared Stations",
+     "quote": "Lumetia supports financing the stations through a voluntary trust fund open to outside donors, which spares smaller budgets from fixed obligations."
+    },
+    {
+     "id": "POS-13",
+     "round": 3,
+     "article": "A2",
+     "article_title": "Scope of Joint Smoke Monitoring",
+     "quote": "Lumetia favours the satellite detection test because it relies on shared observations rather than national declarations."
+    },
+    {
+     "id": "POS-16",
+     "round": 3,
+     "article": "A2",
+     "article_title": "Scope of Joint Smoke Monitoring",
+     "quote": "Lumetia supports letting the affected Party declare qualifying events, because it avoids disputes over measurement."
+    },
+    {
+     "id": "POS-19",
+     "round": 3,
+     "article": "A16",
+     "article_title": "Funding of Shared Stations",
+     "quote": "Lumetia supports equal cost shares, since every Party benefits from the same network of stations."
+    },
+    {
+     "id": "POS-23",
+     "round": 3,
+     "article": "A2",
+     "article_title": "Scope of Joint Smoke Monitoring",
+     "quote": "Lumetia supports the ten thousand hectare threshold applying to every fire, whether or not its smoke crosses a border."
+    },
+    {
+     "id": "POS-26",
+     "round": 3,
+     "article": "A21",
+     "article_title": "Contested Readings",
+     "quote": "Lumetia objects to removing contested readings from public view, as this weakens the warning system."
+    },
+    {
+     "id": "POS-27",
+     "round": 1,
+     "article": "A16",
+     "article_title": "Funding of Shared Stations",
+     "quote": "Lumetia objects to relying on national forest inventories, which are compiled differently by each Party."
+    },
+    {
+     "id": "POS-28",
+     "round": 3,
+     "article": "A21",
+     "article_title": "Contested Readings",
+     "quote": "Lumetia supports a binding finding from an independent panel of three experts, which gives all Parties certainty."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-7785b30e13e2a1b2",
+   "advised_party": "NORTHERN-RIM-GROUP",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-6"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A21",
+     "article_title": "Financing the Warning System",
+     "quote": "Our Group objects to the financing article as drafted; it places the burden on our members without regard to what each of them actually gains from the system."
+    },
+    {
+     "id": "POS-6",
+     "round": 1,
+     "article": "A12",
+     "article_title": "Sharing of Observation Data",
+     "quote": "The Northern Rim Group cannot accept, in any form, a text that lets flood data be held back pending security review or payment."
+    },
+    {
+     "id": "POS-8",
+     "round": 1,
+     "article": "A12",
+     "article_title": "Sharing of Observation Data",
+     "quote": "The Northern Rim Group strongly supports automatic, cost-free transmission of real-time readings, which gives our communities the earliest possible warning."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-7f3f2e8773c0dd67",
+   "advised_party": "SMALL-ISLANDS-FORUM",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-10"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-5",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Purpose and Scope",
+     "quote": "The Small Islands Forum supports this purpose and scope, especially the recognition of the particular needs of small island Parties facing drifting gear on their reefs."
+    },
+    {
+     "id": "POS-6",
+     "round": 1,
+     "article": "A28",
+     "article_title": "Settlement of Disputes",
+     "quote": "The Small Islands Forum supports binding arbitration by a three-expert panel, since it gives smaller Parties a fair forum when talks with larger ones fail."
+    },
+    {
+     "id": "POS-10",
+     "round": 1,
+     "article": "A19",
+     "article_title": "Allocation of Recovery Costs",
+     "quote": "The Small Islands Forum cannot accept any cost article that leaves island members paying for gear they did not lose; this is a line we will not cross."
+    },
+    {
+     "id": "POS-11",
+     "round": 1,
+     "article": "A28",
+     "article_title": "Settlement of Disputes",
+     "quote": "The Small Islands Forum supports settling disputes through consultation and negotiation alone, without forcing any Party into third-party procedures."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-86aff6c6fe47c152",
+   "advised_party": "BELMORA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-2"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A20",
+     "article_title": "Assessment of seabed activities",
+     "quote": "Belmora welcomes this article on assessing seabed activities, because no permit should be issued before the harm to coral is properly understood."
+    },
+    {
+     "id": "POS-2",
+     "round": 3,
+     "article": "A12",
+     "article_title": "Bottom-contact fishing",
+     "quote": "Belmora will not accept these fishing restrictions in any form; the livelihoods of our fishing communities are a limit we cannot cross."
+    },
+    {
+     "id": "POS-3",
+     "round": 3,
+     "article": "A27",
+     "article_title": "Review of the Agreement",
+     "quote": "Belmora supports a five-yearly review informed by the Scientific Committee, and a simple majority to update protected areas keeps the list responsive to new science."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-8c5aaa49ab30d219",
+   "advised_party": "ESTOVA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-1"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 2,
+     "article": "A27",
+     "article_title": "Amendment Procedure",
+     "quote": "Estova cannot accept an amendment procedure that lets any one Party block change; we will not join an Agreement built on that rule in any form."
+    },
+    {
+     "id": "POS-2",
+     "round": 1,
+     "article": "A16",
+     "article_title": "Monitoring and Reporting Obligations",
+     "quote": "Estova supports leaving publication intervals to each national authority, since smaller administrations cannot sustain a fixed and costly schedule."
+    },
+    {
+     "id": "POS-3",
+     "round": 2,
+     "article": "A10",
+     "article_title": "Designation of Coral Protection Zones",
+     "quote": "Estova welcomes basing designation on scientific surveys with a five-year deadline, which gives the process both rigour and urgency."
+    },
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A16",
+     "article_title": "Monitoring and Reporting Obligations",
+     "quote": "Estova supports reports every two years covering coral cover, gear damage and enforcement, as they give all Parties a clear and comparable picture."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-8ff3af9812ba1e28",
+   "advised_party": "UPLAND-CIRCLE",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-7"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Scope of gear covered",
+     "quote": "The Upland Circle supports limiting the rules to registered commercial gear, which gives operators a clear and fair test."
+    },
+    {
+     "id": "POS-6",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Scope of gear covered",
+     "quote": "The Upland Circle favours the seven day threshold, which separates genuinely drifting gear from nets that will soon be retrieved."
+    },
+    {
+     "id": "POS-7",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Scope of gear covered",
+     "quote": "The Upland Circle will not accept recreational and aquaculture gear being brought within these rules in any form whatsoever."
+    },
+    {
+     "id": "POS-12",
+     "round": 1,
+     "article": "A9",
+     "article_title": "Meeting the costs of recovery",
+     "quote": "The Upland Circle supports the cost article, since predictable shared funding is the only way recovery will actually happen."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-96c4b7410e6a084b",
+   "advised_party": "ESTOVA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-1",
+    "POS-17",
+    "POS-24"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A1",
+     "article_title": "Purpose of the Agreement",
+     "quote": "Estova cannot accept an open-ended halt on seabed disturbance tied to baseline surveys in any form; this is a line we will not cross."
+    },
+    {
+     "id": "POS-15",
+     "round": 2,
+     "article": "A25",
+     "article_title": "Settlement of Disputes",
+     "quote": "Estova supports requiring express consent before any compulsory procedure, as it respects each party's right to choose how disputes are settled."
+    },
+    {
+     "id": "POS-17",
+     "round": 1,
+     "article": "A25",
+     "article_title": "Settlement of Disputes",
+     "quote": "Estova will not accept unilaterally triggered binding arbitration in any form; this is a line we cannot cross."
+    },
+    {
+     "id": "POS-18",
+     "round": 2,
+     "article": "A15",
+     "article_title": "Scientific Monitoring and Data Sharing",
+     "quote": "Estova supports the monitoring article; cooperation on surveys and shared data is essential if protection is to rest on evidence."
+    },
+    {
+     "id": "POS-22",
+     "round": 2,
+     "article": "A1",
+     "article_title": "Purpose of the Agreement",
+     "quote": "Estova supports balancing reef conservation with sustainable use and the needs of coastal communities; this reflects how our own waters are managed."
+    },
+    {
+     "id": "POS-24",
+     "round": 2,
+     "article": "A16",
+     "article_title": "Finance and Technical Assistance",
+     "quote": "Estova cannot accept the finance and assistance article in this form under any circumstances; these commitments go beyond our mandate."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-a5296e1f3a38aceb",
+   "advised_party": "CORVATH",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-5"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A27",
+     "article_title": "Financing of the System",
+     "quote": "Corvath objects to a fund reserved for low-lying and island Parties; every member faces flood risk and should be eligible for the same support."
+    },
+    {
+     "id": "POS-2",
+     "round": 2,
+     "article": "A27",
+     "article_title": "Financing of the System",
+     "quote": "Corvath supports tying contributions to the population living in flood-prone basins, since those who benefit most from warnings should carry a matching share of the cost."
+    },
+    {
+     "id": "POS-5",
+     "round": 2,
+     "article": "A7",
+     "article_title": "Sharing of Hydrological Data",
+     "quote": "Corvath cannot accept an obligation to supply hourly border data free of charge in any form; uncompensated transmission at that rate is a line we will not cross."
+    },
+    {
+     "id": "POS-7",
+     "round": 1,
+     "article": "A27",
+     "article_title": "Financing of the System",
+     "quote": "Corvath supports a temporary exemption for the most exposed Parties, as it allows them to join the system without delay while they build capacity."
+    },
+    {
+     "id": "POS-8",
+     "round": 1,
+     "article": "A24",
+     "article_title": "Confidentiality of Shared Information",
+     "quote": "Corvath accepts the confidentiality article in full, including the annual reporting on requests for sensitive data, and agrees to it."
+    },
+    {
+     "id": "POS-9",
+     "round": 2,
+     "article": "A10",
+     "article_title": "Timing and Channels of Alerts",
+     "quote": "Corvath objects to the alert article as a whole; it imposes rigid timelines and broadcasting arrangements that override national emergency procedures."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-aa4370fbcd7ed1b2",
+   "advised_party": "ARVENIA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-1",
+    "POS-3"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 3,
+     "article": "A11",
+     "article_title": "Cost sharing for monitoring stations",
+     "quote": "Arvenia cannot accept contributions based on forest area in any form; a formula that makes our forests a liability is a line we will not cross."
+    },
+    {
+     "id": "POS-2",
+     "round": 1,
+     "article": "A11",
+     "article_title": "Cost sharing for monitoring stations",
+     "quote": "Arvenia welcomes equal shares for all parties, as this is simple, predictable and treats every member as a full partner in the network."
+    },
+    {
+     "id": "POS-3",
+     "round": 3,
+     "article": "A22",
+     "article_title": "Settlement of disagreements",
+     "quote": "Arvenia cannot accept this dispute article in any form; we will not sign a text that removes final decisions from the parties themselves."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-b604048858d0945d",
+   "advised_party": "EASTERN-SHELF-ALLIANCE",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-1"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 1,
+     "article": "A16",
+     "article_title": "Reporting and Review of Compliance",
+     "quote": "The Alliance cannot accept, in any form, a reporting system that rules out every external review; unverified self-reporting is a line our members will not cross."
+    },
+    {
+     "id": "POS-3",
+     "round": 2,
+     "article": "A15",
+     "article_title": "Common Fund for Debris Removal",
+     "quote": "The Alliance supports the article establishing a common fund, which gives our members a shared and predictable way to pay for removing old debris."
+    },
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A16",
+     "article_title": "Reporting and Review of Compliance",
+     "quote": "The Alliance objects to giving an outside panel the right to visit launch sites; several of our members regard those facilities as too sensitive for foreign inspection."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-c1c5a08a2ea45cd0",
+   "advised_party": "DALRENE",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-13"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-6",
+     "round": 1,
+     "article": "A24",
+     "article_title": "Quality Standards for Shelter Materials",
+     "quote": "Dalrene fully supports the quality standards text; certified, regularly inspected materials are essential if shelters are to protect people in harsh climates."
+    },
+    {
+     "id": "POS-7",
+     "round": 1,
+     "article": "A23",
+     "article_title": "Replenishment of Drawn Stocks",
+     "quote": "Dalrene supports a firm rule that drawn stocks are restored, since a reserve that is never refilled offers no protection the next time."
+    },
+    {
+     "id": "POS-13",
+     "round": 1,
+     "article": "A8",
+     "article_title": "Contributions to the Reserve",
+     "quote": "Dalrene cannot accept a population formula with a fixed minimum share in any form; it would exceed what our budget can bear."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-c4d556cdb9dc6677",
+   "advised_party": "MORVANE",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-1",
+    "POS-2",
+    "POS-8"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 2,
+     "article": "A14",
+     "article_title": "Allocation of abstraction volumes",
+     "quote": "Morvane cannot accept quotas built on twenty years of historic use in any form; this is a line we will not cross."
+    },
+    {
+     "id": "POS-2",
+     "round": 1,
+     "article": "A8",
+     "article_title": "Monitoring of the aquifer",
+     "quote": "Morvane will not accept a monitoring system in which each Party measures alone with no shared standards; that is unacceptable to us in any form."
+    },
+    {
+     "id": "POS-3",
+     "round": 2,
+     "article": "A14",
+     "article_title": "Allocation of abstraction volumes",
+     "quote": "Morvane objects to sharing every reduction equally, since smaller users would carry the same burden as those responsible for most of the depletion."
+    },
+    {
+     "id": "POS-8",
+     "round": 2,
+     "article": "A8",
+     "article_title": "Monitoring of the aquifer",
+     "quote": "Morvane cannot accept foreign experts installing equipment on our territory without our consent; this is a limit we will not cross."
+    },
+    {
+     "id": "POS-10",
+     "round": 1,
+     "article": "A11",
+     "article_title": "Prevention of pollution",
+     "quote": "Morvane supports restricting waste sites, mining and intensive farming near recharge points, as these activities pose the gravest pollution risks."
+    },
+    {
+     "id": "POS-14",
+     "round": 2,
+     "article": "A14",
+     "article_title": "Allocation of abstraction volumes",
+     "quote": "Morvane supports protecting wetlands and springs before shares are assigned, since these ecosystems sustain our rural communities."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-c784df49ddd8e641",
+   "advised_party": "OSTRELIA",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-3"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-2",
+     "round": 1,
+     "article": "A24",
+     "article_title": "Cross-Border Smoke Notification",
+     "quote": "Ostrelia strongly supports a six-hour notice carrying the fire location, plume height and smoke forecast, since our hospitals need exactly that warning."
+    },
+    {
+     "id": "POS-3",
+     "round": 1,
+     "article": "A4",
+     "article_title": "Shared Observation Network",
+     "quote": "Ostrelia cannot accept a mandatory five-station minimum in any form; it would bind us to costs our budget will never allow."
+    },
+    {
+     "id": "POS-4",
+     "round": 1,
+     "article": "A4",
+     "article_title": "Shared Observation Network",
+     "quote": "Ostrelia opposes leaving station numbers to each state's means, since that invites weak coverage and an open-ended funding burden on us."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-d62c8400253c7fcc",
+   "advised_party": "SMALL-ISLANDS-FORUM",
+   "party_kind": "coalition",
+   "marked_on_record_as_red_lines": [
+    "POS-1"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-1",
+     "round": 4,
+     "article": "A3",
+     "article_title": "Reporting of Lost Gear",
+     "quote": "The Forum cannot accept a rule that loads round-the-clock reporting duties onto our small coastal administrations; this is a line our members will not cross in any form."
+    },
+    {
+     "id": "POS-3",
+     "round": 4,
+     "article": "A28",
+     "article_title": "Settlement of Disputes",
+     "quote": "The Forum objects to this dispute settlement article, because the cost of arbitration would fall heavily on members with very limited legal resources."
+    },
+    {
+     "id": "POS-4",
+     "round": 3,
+     "article": "A3",
+     "article_title": "Reporting of Lost Gear",
+     "quote": "Our members support letting each flag state set its own deadline, provided every lost item reaches the logbook before the vessel next enters port."
+    },
+    {
+     "id": "POS-5",
+     "round": 4,
+     "article": "A17",
+     "article_title": "Capacity Support for Island Members",
+     "quote": "The Forum objects to tying contributions to each party's catch, as several of our members have growing fleets and would face shares they cannot pay."
+    },
+    {
+     "id": "POS-7",
+     "round": 4,
+     "article": "A17",
+     "article_title": "Capacity Support for Island Members",
+     "quote": "Our members support voluntary help through training, equipment loans and satellite monitoring, as this can begin quickly without waiting for a fund."
+    }
+   ]
+  },
+  {
+   "item_id": "syn-d7e44bf73d9660dd",
+   "advised_party": "HESMARK",
+   "party_kind": "single",
+   "marked_on_record_as_red_lines": [
+    "POS-12"
+   ],
+   "positions_on_record": [
+    {
+     "id": "POS-12",
+     "round": 1,
+     "article": "A15",
+     "article_title": "Financing the Shared System",
+     "quote": "Hesmark cannot accept cost sharing based on river length in any form; we will not cross that line."
+    },
+    {
+     "id": "POS-22",
+     "round": 1,
+     "article": "A20",
+     "article_title": "Settlement of Disputes",
+     "quote": "Hesmark supports including a dispute settlement article, since a shared system needs a reliable way to resolve disagreements."
+    }
+   ]
+  }
+ ]
+}

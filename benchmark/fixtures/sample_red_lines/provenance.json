@@ -1,0 +1,42 @@
+{
+ "kind": "sample user red lines written by us (D-851), not a real user's input",
+ "decision": "D-851 (Seckin, 20 Nov 2026 15:08), for the #278 trial",
+ "set": "c4pilot_1 (development, 24 synthetic items, D-707)",
+ "source": {
+  "file": "external/s05/NEG_r2_devpilot/inputs/NR_r2dev_pilot_prompts.json",
+  "sha256": "365dec126fb26d52ffd7dc9d040f4c6a12226c67acf7bd627fcfb26b6ea26345",
+  "keyless_check": "every field name in the file walked by script: none matching key, label, gold, fate, accept, outcome, answer, truth, result, final, score, verdict or expected outside /config (there only the declared answer sets and switch names of the prompt config: compare_answers, limit_answers, room_fate_answers, trade_answers, audit and judge choice_answers with their labels, fate_* and room_fate_* switches, conditional_accept); per item only articles, attribution, item_id, licence, missing_parties, part, parties, persona {id, kind, red_lines, red_line_sources}, positions {article, id, party, proposal, quote, round, source}, post_cutoff, previous_index, process, record_kind, round, round_index, schema, synthetic, trades_on_record. The C4 source it was rebuilt from (NR_c4pilot_prompts.json, 638967932809...) gives the same result."
+ },
+ "writer_input": {
+  "file": "benchmark/fixtures/sample_red_lines/writer_input_c4pilot_1.json",
+  "sha256": "9e7baeb3522392271e7b3e6837c46722053771efc461e3fcb21762ef4613ea1f",
+  "extracted_by": "a lane script from the source file, per item: item_id; advised_party (persona.id); party_kind (persona.kind); marked_on_record_as_red_lines (persona.red_lines, position ids); positions_on_record = the advised party's own positions only, each id, round, article, article_title (the article's title), quote. Nothing else: no article text, no other party's positions, no proposals, no round index, no trades, no config.",
+  "positions": 109
+ },
+ "writer": {
+  "who": "one fresh general-purpose subagent, spawned once, no other context",
+  "prompt_file": "benchmark/fixtures/sample_red_lines/writer_prompt.txt",
+  "prompt_sha256": "b6533293910b65c2fa702c467d5dd51136f0e996f347265596c9b2aa7cd7e5d6",
+  "looked_at": "only writer_input_c4pilot_1.json (it used two tools in all: one Read of that file, one Write of its output)",
+  "started": "2026-11-20T15:11:19+03:00",
+  "output_file": "benchmark/fixtures/sample_red_lines/writer_output_c4pilot_1.json",
+  "output_sha256": "b04bd9dc0d75a538675c5d50a4ca5b0216c47816640bf99c48377d3e3d786587",
+  "output_counts": {"items": 24, "red_lines": 56, "bargainable": 62}
+ },
+ "conversion": {
+  "script": "external/s05/NEG_r2_redlines/make_red_lines.py",
+  "script_sha256": "65f61037e311648e14bec0de0500e24689066be7a28782f9015aaa857cc08f4b",
+  "checks": "all 24 items, 2 to 4 red lines and 2 to 4 bargainable points each, every cited id one of the advised party's positions on record, every quote found in a cited position's quote, no empty text, no em dash: all held",
+  "file": "benchmark/fixtures/sample_user_red_lines_c4pilot_1.json",
+  "sha256": "b0a8ad5a68cbb71bc87587831f7372c757354e0f90980e21661e365b139571f3",
+  "format": "neg-operator-red-lines-v1 (benchmark/baselines/neg_advisor.py read_operator_file): items {item id: [{id UL-n, text}]}; basis and bargainable are side records the code does not read"
+ },
+ "rebuild": {
+  "command": "neg_advisor.py rebuild --prompts external/s05/NEG_c4_pilot/inputs/NR_c4pilot_prompts.json --config external/s05/NEG_r2_redlines/inputs/neg_advisor_prompt_r2.json --operator-red-lines inputs/sample_user_red_lines_c4pilot_1.json",
+  "out": "external/s05/NEG_r2_redlines/inputs/NR_r2redlines_pilot_prompts.json",
+  "sha256": "a463efceedb3ecce772992fb2fdf93d669cfe94b2bd663f77c3686d87f7da457",
+  "same_without_red_lines": "the same rebuild without --operator-red-lines gives 365dec126fb2..., NEG_r2_devpilot's file, byte for byte",
+  "checked": "24 prompts, each identical to the devpilot prompt apart from persona.operator_red_lines and the top-level operator_red_lines_sha256; every item carries its 56 lines in total; a dry walk of the chain with a scripted answerer (no model) asks 399 red_line steps against the devpilot's 36"
+ },
+ "wording_note": "the bound chain labels these lines '(given by the operator)' inside the prompt (neg_advisor.OPERATOR_SOURCE); every report calls them sample user red lines written by us, never a real user's input"
+}

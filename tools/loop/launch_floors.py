@@ -20,14 +20,14 @@ D-726 1.2 GiB): an unreadable declaration never lowers a floor. A reading that i
 The laptop DISK rule (Seckin, 19 November 2026 12:03 +0300) lives here too, read from config/laptop_disk_floor.json at
 each call: heavy work on the laptop (downloads, builds, installs, clones, an admission's unpack and reverify) needs
 
-    free disk >= the job's own expected footprint + margin_gib (12)
+    free disk >= the job's own expected footprint + margin_gib (10 since D-849, 20 Nov 2026; 12 until then)
 
     disk_problem(footprint_gib, free_gib=None, where=None)
 
 returns None or a one-line reason naming free, footprint, margin and their sum. A footprint that is not known (None,
 not a number, negative) is said so and held to the old fixed floor FALLBACK_DISK_GIB (30 GiB, D-099), never to the
 margin alone. An unreadable or malformed file never lowers a floor: the margin and the Lambda launch floor both fall
-back to FALLBACK_DISK_GIB and the reason says 'fallback'. `lambda_launch_floor_gib()` is the 12 GiB floor of the route
+back to FALLBACK_DISK_GIB and the reason says 'fallback'. `lambda_launch_floor_gib()` is the 10 GiB floor of the route (12 GiB until 20 November 2026, D-849)
 request (D-726), unchanged by the 19 November decision.
 """
 from __future__ import annotations

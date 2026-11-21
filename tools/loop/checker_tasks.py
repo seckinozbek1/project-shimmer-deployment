@@ -24,7 +24,8 @@ lane deletes nothing (order 107). The lead runs --apply by hand after that yes.
 
 recovery writes ALERT.md and a FOR_SECKIN entry (at most every 2 hours) when LOOP_STATE.md is not DONE, no
 STOP_ALLOWED file exists, and no lead heartbeat (LEAD.lock heartbeat_utc; the file times of
-continue_hook_state.json, poll_heartbeat.json and LOOP_STATE.md) is newer than 30 minutes. It never starts
+continue_hook_state.json, poll_heartbeat.json, LOOP_STATE.md and LOOP_HEARTBEAT.txt, the lead's own beat file since
+20 Nov 14:4x, as for the reaper in 5739d04d) is newer than 30 minutes. It never starts
 Claude: a session is started only by the operator. Lambda machines are saved and stopped by the reaper
 (ShimmerLoopReaper, SALVAGE-A), not here.
 """
@@ -219,7 +220,7 @@ def lead_heartbeats():
             out['LEAD.lock heartbeat_utc'] = dt.datetime.fromisoformat(m.group(1).replace('Z', '+00:00'))
     except (OSError, ValueError):
         pass
-    for rel in ('continue_hook_state.json', 'poll_heartbeat.json', 'LOOP_STATE.md'):
+    for rel in ('continue_hook_state.json', 'poll_heartbeat.json', 'LOOP_STATE.md', 'LOOP_HEARTBEAT.txt'):
         p = mc.PRIVATE / rel
         if p.exists():
             out[rel + ' written'] = dt.datetime.fromtimestamp(p.stat().st_mtime).astimezone()
