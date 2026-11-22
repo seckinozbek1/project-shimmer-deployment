@@ -19,6 +19,25 @@ section{overflow-x:auto}
 <section id="current-state"><h2>Current state (alpha, 22 November 2026)</h2>
 <p class="note">This section is written by hand, copied from README.md and docs/RESULTS.md on 22 November 2026; every figure in it is the README&#x27;s. The charts and tables below it are still written by tools/progress_charts.py.</p>
 <p>&quot;Alpha&quot; means the code as it is today. It is not a finished release, and it fell short of its targets. These are first results. The final test set has not been run yet.</p>
+<h3>Scores at a glance</h3>
+<p>Every measured set, one row each. &quot;Untouched&quot; items were not used to build or tune the system; &quot;seen&quot; items were. Figures are those of docs/RESULTS.md; the same table stands in README.md and docs/RESULTS.md.</p>
+<table><thead><tr><th>Measure</th><th>Set</th><th>Items</th><th>Answered</th><th>Score</th></tr></thead><tbody>
+<tr><td>Contradictions (ContraDoc), system</td><td>untouched</td><td>8 documents</td><td>8</td><td>accuracy 0.875 (range 0.625 to 1.0, chance test p 0.249)</td></tr>
+<tr><td>Table claims (SciTab), system</td><td>untouched</td><td>15 claims</td><td>13</td><td>accuracy 11 of 13 answered = 0.846 (range 0.769 to 1.0, 4 tables, chance test p 0.026); 2 of 15 unanswered (13.3 percent); unanswered counted wrong: 11 of 15 = 0.733; coverage rule loosened by the project owner&#x27;s decision for this set, after the result was seen</td></tr>
+<tr><td>Negotiation, conflict, system</td><td>untouched</td><td>31 synthetic items, 197 proposals</td><td>192</td><td>0.955 (range 0.924 to 0.980, p 0.0001)</td></tr>
+<tr><td>Negotiation, code checks, system</td><td>untouched</td><td>31 synthetic items, 197 proposals</td><td>192</td><td>1.0, with 2.5 percent of pieces dropped</td></tr>
+<tr><td>Negotiation, open point, system</td><td>untouched</td><td>31 synthetic items, 197 proposals</td><td>192</td><td>0.393 (range 0.342 to 0.452, p 0.753)</td></tr>
+<tr><td>Negotiation, stance, system</td><td>untouched</td><td>31 synthetic items, 197 proposals</td><td>192</td><td>0.299 (range 0.219 to 0.389, p 0.938)</td></tr>
+<tr><td>Negotiation, approach, system</td><td>untouched</td><td>31 synthetic items</td><td>too few</td><td>no score: too few answers for the coverage rule</td></tr>
+<tr><td>Negotiation, open point, cloud model</td><td>untouched</td><td>20 synthetic items, 132 proposals</td><td>132</td><td>0.381 (range 0.334 to 0.449); system on the same items 0.407 (range 0.348 to 0.480)</td></tr>
+<tr><td>Negotiation, stance, cloud model</td><td>untouched</td><td>20 synthetic items, 132 proposals</td><td>132</td><td>0.295 (range 0.221 to 0.364); system on the same items 0.330 (range 0.244 to 0.435)</td></tr>
+<tr><td>Negotiation, open point and stance, bare model</td><td>untouched</td><td>31 synthetic items, 197 proposals</td><td>77</td><td>no score: more than 5 percent of answers missing (120 of 197)</td></tr>
+<tr><td>Table claims (SciTab), system</td><td>seen</td><td>78 claims, 13 tables</td><td>not given here</td><td>three-class macro-F1 0.598 (range 0.444 to 0.656, chance p 0.0001)</td></tr>
+<tr><td>Contradictions (ContraDoc), system</td><td>seen</td><td>15 documents</td><td>not given here</td><td>accuracy 0.533</td></tr>
+<tr><td>Negotiation, conflict, earlier system</td><td>seen</td><td>18 items, 179 proposals</td><td>not given here</td><td>three-class macro-F1 0.629</td></tr>
+<tr><td>Negotiation, open point and stance, earlier system</td><td>seen</td><td>18 items, 179 proposals</td><td>not given here</td><td>0.435 and 0.330</td></tr>
+</tbody></table>
+<p>The coverage rule (at most 5 percent of answers missing) still holds for every other measurement, ContraDoc included. The project owner loosened it for this one SciTab set on 22 November 2026, after the result had been seen.</p>
 <p><strong>The code.</strong> Repository: <a href="https://github.com/seckinozbek1/project-shimmer-deployment">github.com/seckinozbek1/project-shimmer-deployment</a>. The code on GitHub is commit <a href="https://github.com/seckinozbek1/project-shimmer-deployment/tree/ce8854a9">ce8854a9</a>, the public snapshot of the one alpha freeze (the loop tag v1.0-alpha-freeze-f, which stays in the private history); the results pages of 22 November are tag <a href="https://github.com/seckinozbek1/project-shimmer-deployment/tree/code-2026-11-22-c">code-2026-11-22-c</a>. The frozen alpha code ran its own 502 checks: 485 were green, 6 were skipped, and 11 known failures are carried as known.</p>
 <p>On 21 November we scored the system for the first time on untouched items: items the project had not used to build or tune it. We did not check what the models saw in their own original training. We wrote the marks before we looked at any score, and we scored each set once. Untouched items and items already seen are reported apart and never mixed (docs/RESULTS.md).</p>
 <h3>The three targets</h3>
@@ -30,7 +49,7 @@ section{overflow-x:auto}
 <h3>Results on untouched items</h3>
 <table><thead><tr><th>Task</th><th>Untouched items</th><th>Result</th></tr></thead><tbody>
 <tr><td>Finding contradictions in documents (ContraDoc)</td><td>8 documents, 6 groups</td><td>accuracy 0.875 (range 0.625 to 1.0); chance test p 0.249. 7 of 8 judged right; 1 of the 2 contradictions found, no false alarm. Answering &quot;no contradiction&quot; every time would score 0.75. The set is small.</td></tr>
-<tr><td>Checking claims about tables (SciTab)</td><td>3 papers, 4 tables, 15 claims</td><td>no main score: 13 of 15 claims answered, more than the 5 percent allowed missing. For information only: accuracy on the 13 answered claims 0.846 (range 0.769 to 1.0, chance test p 0.026).</td></tr>
+<tr><td>Checking claims about tables (SciTab)</td><td>3 papers, 4 tables, 15 claims</td><td>accuracy 11 of 13 answered = 0.846 (range 0.769 to 1.0, 4 tables, chance test p 0.026). 2 of 15 unanswered (13.3 percent); unanswered counted wrong: 11 of 15 = 0.733. Coverage rule loosened by the project owner&#x27;s decision for this set, after the result was seen (22 November 2026).</td></tr>
 <tr><td>Advising on negotiation drafts</td><td>31 synthetic items, 197 proposals</td><td>five lines, below</td></tr>
 </tbody></table>
 <table><thead><tr><th>Negotiation line</th><th>What it asks</th><th>Result</th><th>Against its mark</th></tr></thead><tbody>

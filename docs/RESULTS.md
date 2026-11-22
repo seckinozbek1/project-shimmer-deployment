@@ -7,6 +7,29 @@ development or validation figure, except the untouched-item figures of 21 Novemb
 [README](../README.md) gives a summary; the earlier README sections on results were moved
 here on 19 November 2026 (D-816).
 
+## Scores at a glance (22 November 2026)
+
+Every measured set, one row each. "Untouched" items were not used to build or tune the system; "seen" items were. The same table stands near the top of the README and on the progress page.
+
+| Measure | Set | Items | Answered | Score |
+|---|---|---|---|---|
+| Contradictions (ContraDoc), system | untouched | 8 documents | 8 | accuracy 0.875 (range 0.625 to 1.0, chance test p 0.249) |
+| Table claims (SciTab), system | untouched | 15 claims | 13 | accuracy 11 of 13 answered = 0.846 (range 0.769 to 1.0, 4 tables, chance test p 0.026); 2 of 15 unanswered (13.3 percent); unanswered counted wrong: 11 of 15 = 0.733; coverage rule loosened by the project owner's decision for this set, after the result was seen |
+| Negotiation, conflict, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.955 (range 0.924 to 0.980, p 0.0001) |
+| Negotiation, code checks, system | untouched | 31 synthetic items, 197 proposals | 192 | 1.0, with 2.5 percent of pieces dropped |
+| Negotiation, open point, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.393 (range 0.342 to 0.452, p 0.753) |
+| Negotiation, stance, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.299 (range 0.219 to 0.389, p 0.938) |
+| Negotiation, approach, system | untouched | 31 synthetic items | too few | no score: too few answers for the coverage rule |
+| Negotiation, open point, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.381 (range 0.334 to 0.449); system on the same items 0.407 (range 0.348 to 0.480) |
+| Negotiation, stance, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.295 (range 0.221 to 0.364); system on the same items 0.330 (range 0.244 to 0.435) |
+| Negotiation, open point and stance, bare model | untouched | 31 synthetic items, 197 proposals | 77 | no score: more than 5 percent of answers missing (120 of 197) |
+| Table claims (SciTab), system | seen | 78 claims, 13 tables | not given here | three-class macro-F1 0.598 (range 0.444 to 0.656, chance p 0.0001) |
+| Contradictions (ContraDoc), system | seen | 15 documents | not given here | accuracy 0.533 |
+| Negotiation, conflict, earlier system | seen | 18 items, 179 proposals | not given here | three-class macro-F1 0.629 |
+| Negotiation, open point and stance, earlier system | seen | 18 items, 179 proposals | not given here | 0.435 and 0.330 |
+
+The coverage rule (at most 5 percent of answers missing) still holds for every other measurement, ContraDoc included. The project owner loosened it for this one SciTab set on 22 November 2026, after the result had been seen.
+
 ## First results on untouched items (21 November 2026)
 
 These are first results. The final test set has not run yet, and the alpha fell short of its targets (at least 10 points above the bare model, at most 10 points below the cloud model, and a mark for each of the five negotiation lines, three of them 0.60). Each untouched figure below was scored once, on items the project had not used to build or tune it, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a finished release.
@@ -20,8 +43,7 @@ How to read the figures. An interval is the range the true score probably lies i
 | Task | Set | Measure | Result | Interval (95 percent) | Chance test | Note |
 |---|---|---|---|---|---|---|
 | Contradictions (ContraDoc) | 8 documents, 6 groups | accuracy (7 of 8 documents right) | 0.875 | 0.625 to 1.0 | permutation p 0.249 | not distinguishable from chance; 2 documents hold a contradiction, 1 was found, no false alarm; answering "no contradiction" every time scores 0.75 on this set |
-| Table claims (SciTab) | 3 papers, 4 tables, 15 claims | none: no main score | none | none | none | coverage rule not reached: 13 of 15 claims answered; at most 5 percent of answers may be missing, held back or filled in by the scoring code |
-| Table claims (SciTab), information only | the 13 answered claims | accuracy | 0.846 | 0.769 to 1.0 | chance p 0.026 | not a main score; small set; read again on the same answers after a fault in the code that reads them was fixed; the coverage rule did not change |
+| Table claims (SciTab) | 3 papers, 4 tables, 15 claims, 13 answered | accuracy (11 of 13 answered claims right) | 0.846 | 0.769 to 1.0 (4 tables) | chance p 0.026 | 2 of 15 unanswered (13.3 percent); unanswered counted wrong: 11 of 15 = 0.733; coverage rule loosened by the project owner's decision for this set, after the result was seen (22 November 2026); small set; read on the same answers after a fault in the code that reads them was fixed |
 | Negotiation advice, conflict | 31 synthetic items, 197 proposals | conflict detection | 0.955 | 0.924 to 0.980 | p 0.0001 | above the 0.60 mark |
 | Negotiation advice, code checks | 31 synthetic items, 197 proposals | share of advice pieces that satisfy the code's own checks | 1.0, with 2.5 percent of pieces dropped (the mark allows at most 10 percent) | not given | not given | at its mark of 1.0 |
 | Negotiation advice, open point | 31 synthetic items, 197 proposals | open point detection | 0.393 | 0.342 to 0.452 | p 0.753 | below the 0.60 mark |
@@ -41,7 +63,7 @@ These are figures on items the project had already looked at while building the 
 | Negotiation advice | 18 headline items (179 proposals) of a 24-item development pilot, an earlier version of the system | three-class macro-F1 on conflicts | 0.629 |
 | Negotiation advice | the same 18 items | open point detection / stance matches fate | 0.435 / 0.330, both below the 0.60 mark |
 
-The seen SciTab figure is a three-class macro-F1; the untouched information-only figure is an accuracy on the answered claims, so the two are not directly comparable. The older ContraDoc and negotiation figures in the section below use other scores or other versions of the system.
+The seen SciTab figure is a three-class macro-F1; the untouched figure is an accuracy on the answered claims, so the two are not directly comparable. The older ContraDoc and negotiation figures in the section below use other scores or other versions of the system.
 
 ### Comparison with the bare and the cloud model (negotiation, open point and stance)
 
@@ -56,7 +78,7 @@ On two hard measures, open point and stance, on 20 synthetic items, the system a
 
 On conflict, Shimmer found clashes well on synthetic items (0.955); we have no baseline for this line yet.
 
-Shimmer answered nearly all proposals (192 of 197), while the bare model left 120 of 197 empty; that is coverage, not accuracy. The frozen alpha code ran its own 502 checks: 485 of 502 checks passed, 6 were skipped, and 11 known failures are carried as known.
+Shimmer answered nearly all proposals (192 of 197), while the bare model left 120 of 197 empty; that is coverage, not accuracy. The frozen alpha code ran its own 502 checks: 485 of 502 checks were green, 6 were skipped, and 11 known failures are carried as known.
 
 The 0.60 mark was set for our own benchmark, with no outside source for a normal level, so, taken together with the chance test results, it needs to be reconsidered. The beta will make the benchmark itself more reasonable and will also review the chance test.
 

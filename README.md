@@ -23,6 +23,32 @@ How a review runs and how the agents are governed: [docs/METHOD.md](docs/METHOD.
 short of its targets. These are first results. The final test set has not been run
 yet.
 
+### Scores at a glance
+
+Every measured set, one row each. "Untouched" items were not used to build or tune
+the system; "seen" items were. Figures are those of [docs/RESULTS.md](docs/RESULTS.md).
+
+| Measure | Set | Items | Answered | Score |
+|---|---|---|---|---|
+| Contradictions (ContraDoc), system | untouched | 8 documents | 8 | accuracy 0.875 (range 0.625 to 1.0, chance test p 0.249) |
+| Table claims (SciTab), system | untouched | 15 claims | 13 | accuracy 11 of 13 answered = 0.846 (range 0.769 to 1.0, 4 tables, chance test p 0.026); 2 of 15 unanswered (13.3 percent); unanswered counted wrong: 11 of 15 = 0.733; coverage rule loosened by the project owner's decision for this set, after the result was seen |
+| Negotiation, conflict, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.955 (range 0.924 to 0.980, p 0.0001) |
+| Negotiation, code checks, system | untouched | 31 synthetic items, 197 proposals | 192 | 1.0, with 2.5 percent of pieces dropped |
+| Negotiation, open point, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.393 (range 0.342 to 0.452, p 0.753) |
+| Negotiation, stance, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.299 (range 0.219 to 0.389, p 0.938) |
+| Negotiation, approach, system | untouched | 31 synthetic items | too few | no score: too few answers for the coverage rule |
+| Negotiation, open point, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.381 (range 0.334 to 0.449); system on the same items 0.407 (range 0.348 to 0.480) |
+| Negotiation, stance, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.295 (range 0.221 to 0.364); system on the same items 0.330 (range 0.244 to 0.435) |
+| Negotiation, open point and stance, bare model | untouched | 31 synthetic items, 197 proposals | 77 | no score: more than 5 percent of answers missing (120 of 197) |
+| Table claims (SciTab), system | seen | 78 claims, 13 tables | not given here | three-class macro-F1 0.598 (range 0.444 to 0.656, chance p 0.0001) |
+| Contradictions (ContraDoc), system | seen | 15 documents | not given here | accuracy 0.533 |
+| Negotiation, conflict, earlier system | seen | 18 items, 179 proposals | not given here | three-class macro-F1 0.629 |
+| Negotiation, open point and stance, earlier system | seen | 18 items, 179 proposals | not given here | 0.435 and 0.330 |
+
+The coverage rule (at most 5 percent of answers missing) still holds for every
+other measurement, ContraDoc included. The project owner loosened it for this one
+SciTab set on 22 November 2026, after the result had been seen.
+
 On 21 November we scored the system for the first time on untouched items: items the
 project had not used to build or tune it. We did not check what the models saw in
 their own original training. ContraDoc and SciTab are public sets. We wrote the
@@ -54,7 +80,7 @@ this well.
 | Task | Untouched items | Result |
 |---|---|---|
 | Finding contradictions in documents (ContraDoc) | 8 documents, 6 groups | accuracy 0.875 (range 0.625 to 1.0); chance test p 0.249 |
-| Checking claims about tables (SciTab) | 3 papers, 4 tables, 15 claims | no main score |
+| Checking claims about tables (SciTab) | 3 papers, 4 tables, 15 claims | accuracy 0.846 on the 13 answered claims (range 0.769 to 1.0); chance test p 0.026; coverage rule loosened by the project owner, after the result was seen |
 | Advising on negotiation drafts | 31 synthetic items, 197 proposals | five lines, below |
 
 **ContraDoc.** The score is accuracy: 7 of the 8 documents were judged right. Two
@@ -62,12 +88,15 @@ documents hold a contradiction. The system found 1 of them and raised no false a
 Answering "no contradiction" every time would score 0.75 on this set. The chance test
 cannot tell 0.875 from luck. The set is small.
 
-**SciTab.** A main score counts only if at most 5 percent of answers are missing,
-held back, or filled in by the scoring code. Here 13 of 15 claims were answered, so
-there is no main score. For information only: accuracy on the 13 answered claims was
-0.846 (range 0.769 to 1.0, chance test p 0.026). The set is small. This figure was
-read after we fixed a fault in the code that reads the system's answers. The answers
-did not change.
+**SciTab.** 11 of the 13 answered claims were judged right: accuracy 0.846 (range
+0.769 to 1.0, 4 tables, chance test p 0.026). 2 of the 15 claims were left
+unanswered (13.3 percent). Counting the unanswered ones as wrong gives 11 of 15 =
+0.733. Our coverage rule allows at most 5 percent of answers missing, held back, or
+filled in by the scoring code, so it refused this score at first. On 22 November
+2026, after seeing the result, the project owner loosened the rule for this set
+only; it still holds everywhere else. The set is small. This figure was read after
+we fixed a fault in the code that reads the system's answers. The answers did not
+change.
 
 **Negotiation.** The 31 items are synthetic: a program wrote them. They are not
 taken from real negotiations. A proposal is one bracketed option in an article of a
@@ -120,7 +149,7 @@ more reasonable, and it will review the chance test.
 
 ### Tests of the code
 
-The frozen alpha code ran its own 502 checks. 485 of 502 checks passed, 6 were
+The frozen alpha code ran its own 502 checks. 485 of 502 checks were green, 6 were
 skipped, and 11 known failures are carried as known.
 
 ### Left for the beta
