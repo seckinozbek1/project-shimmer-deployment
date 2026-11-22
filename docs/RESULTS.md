@@ -30,6 +30,32 @@ Every measured set, one row each. "Untouched" items were not used to build or tu
 
 The coverage rule (at most 5 percent of answers missing) still holds for every other measurement, ContraDoc included. The project owner loosened it for this one SciTab set on 22 November 2026, after the result had been seen.
 
+## Three-way comparison: Shimmer, the bare model and the cloud model
+
+The bare model is Qwen2.5-7B-Instruct, the same open model Shimmer builds on, asked directly with no Shimmer steps around it.
+The cloud model is claude-opus-4-8, a large model run by an outside provider. Written by hand from
+docs/RESULTS.md and the decision records (no tool produces this table); the same figures appear in the README,
+docs/RESULTS.md and the progress page.
+
+| Measure and items | Shimmer | Bare model | Cloud model | What this row is |
+|---|---|---|---|---|
+| Negotiation, open point detection: untouched, the same 20 synthetic items (132 proposals) | 0.407 (0.348 to 0.480) | no score: 81 of 132 proposals have no answer piece | 0.381 (0.334 to 0.449) | Untouched items, current code, the same 20 items for all three. The intervals overlap, so the two are about equal; neither is ahead of the other. |
+| Negotiation, stance matches fate: same 20 items | 0.330 (0.244 to 0.435) | no score: same reason | 0.295 (0.221 to 0.364) | Same items and code as the row above. The intervals overlap: about equal. |
+| Contradictions (ContraDoc): untouched, 8 documents | 0.875 (0.625 to 1.0) | not measured | not measured | No bare or cloud run exists on these untouched items, so there is nothing to put beside the Shimmer figure. |
+| Table claims (SciTab): untouched, 15 claims | 0.846 on 13 answered (coverage rule loosened by the project owner after the result was seen) | not measured | not measured | No bare or cloud run exists on these untouched items. |
+| Contradictions (ContraDoc): seen, 40-document steering subset, older code | 55.0 percent; does not count: 26 of 40 undecided | 52.5 percent | 90.0 percent | Seen items, code from before the 18 to 19 November fixes; the same 40 documents for all three, but the Shimmer run is void, so this is no comparison. |
+| Table claims (SciTab): seen, 78-claim steering subset, older code | 0.190; does not count: every claim undecided | 55.8 | 81.7 | Seen items, the same older code and the same 78 claims; the Shimmer run is void. Figures as recorded in docs/RESULTS.md. |
+| Negotiation, conflict detection: seen, development pilot | 0.629 (18 items) | 0.217 (18 items) | 0.648 (14 of the 18 items) | Seen items. The bare figure comes from older saved answers without the Python step, and the cloud figure from a 14-item subset, so the three are not on equal footing. |
+
+- The cloud target moved from at most 5 to at most 10 points below the cloud model on 20 November 2026 (D-842),
+  before anyone looked at an untouched item and after every earlier check on seen items had missed 5. The project
+  owner's reason: 5 points would be an unfair comparison against a large cloud model.
+- "No score" for the bare model means its answers were too incomplete to score under the coverage rule. It does
+  not mean that Shimmer did better.
+- Rows are not comparable with each other: they differ in items, code version and measure. Compare within a row only.
+- The bare and cloud figures are references only.
+- The 0.987 on 24 seen pilot items is left out of this table: it comes from a different set and a different version.
+
 ## First results on untouched items (21 November 2026)
 
 These are first results. The final test set has not run yet, and the alpha fell short of its targets (at least 10 points above the bare model, at most 10 points below the cloud model, and a mark for each of the five negotiation lines, three of them 0.60). Each untouched figure below was scored once, on items the project had not used to build or tune it, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a finished release.

@@ -200,6 +200,7 @@ class DesktopSession:
         # honours it only because the host above is loopback; SHIMMER_KEYLESS_LOCAL=0
         # in the starter's environment keeps the token-only console.
         child_env.setdefault("SHIMMER_KEYLESS_LOCAL", "1")
+        self.keyless_local = child_env.get("SHIMMER_KEYLESS_LOCAL") == "1"
         log_dir = self.root / "output" / "startup"
         try:
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -234,7 +235,8 @@ class DesktopSession:
         if not self.process or self.process.poll() is not None:
             raise StartupFailure("Shimmer is stopped. Start the console first.")
         try:
-            return bool(self.browser(self.settings.console_url))
+            # The first screen a new user needs is the review desk; the full console is linked from it.
+            return bool(self.browser(self.settings.console_url + "?view=desk"))
         except Exception:
             return False
 
@@ -342,12 +344,18 @@ def run_gui(*, no_browser=False):
         state["busy"] = False
         state["exit"] = 0
         url.set(session.settings.console_url)
-        status.set("Console ready. Alpha: the review desk (" + session.settings.console_url + "?view=desk) opens with no token "
-                   "on this computer only. For the full console, click Copy access token, paste it into the browser's "
-                   "Access token field, then click Use this token.")
+        desk = session.settings.console_url + "?view=desk"
+        if getattr(session, "keyless_local", False):
+            status.set("Console ready: the review desk is at " + desk + ". Alpha local trial: no token is asked for on "
+                       "this computer, and this opens every protected route of this server (the desk, the full console's "
+                       "data, starting runs, answering questions) to any program or user on this computer; other "
+                       "computers are refused. Set SHIMMER_KEYLESS_LOCAL=0 before starting to require the token.")
+        else:
+            status.set("Console ready: the review desk is at " + desk + ". It asks for the access token: click Copy "
+                       "access token, paste it into the page's Token field, then click Connect.")
         controls()
         if not no_browser and not session.open_console():
-            status.set("Console ready, but the browser could not open. Click Open console to retry. "
+            status.set("Console ready, but the browser could not open. Click Open review desk to retry. "
                        "Copy access token and paste it into the sign-in field.")
 
     def launch():
@@ -485,7 +493,7 @@ def run_gui(*, no_browser=False):
 
     start_button = ttk.Button(buttons, text="Check and start", command=check_and_start)
     copy_button = ttk.Button(buttons, text="Copy access token", command=copy_access)
-    browser_button = ttk.Button(buttons, text="Open console", command=session.open_console)
+    browser_button = ttk.Button(buttons, text="Open review desk", command=session.open_console)
     stop_button = ttk.Button(buttons, text="Stop Shimmer", command=stop)
     for button in [start_button, copy_button, browser_button, stop_button]:
         button.pack(side="left", padx=(0, 6))
@@ -515,7 +523,7 @@ def run_gui(*, no_browser=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Start the Shimmer desktop console")
-    parser.add_argument("--no-browser", action="store_true", help="leave browser opening to the Open console button")
+    parser.add_argument("--no-browser", action="store_true", help="leave browser opening to the Open review desk button")
     parser.add_argument("--check-entry", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.check_entry:

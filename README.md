@@ -49,6 +49,32 @@ The coverage rule (at most 5 percent of answers missing) still holds for every
 other measurement, ContraDoc included. The project owner loosened it for this one
 SciTab set on 22 November 2026, after the result had been seen.
 
+### Three-way comparison: Shimmer, the bare model and the cloud model
+
+The bare model is Qwen2.5-7B-Instruct, the same open model Shimmer builds on, asked directly with no Shimmer steps around it.
+The cloud model is claude-opus-4-8, a large model run by an outside provider. Written by hand from
+docs/RESULTS.md and the decision records (no tool produces this table); the same figures appear in the README,
+docs/RESULTS.md and the progress page.
+
+| Measure and items | Shimmer | Bare model | Cloud model | What this row is |
+|---|---|---|---|---|
+| Negotiation, open point detection: untouched, the same 20 synthetic items (132 proposals) | 0.407 (0.348 to 0.480) | no score: 81 of 132 proposals have no answer piece | 0.381 (0.334 to 0.449) | Untouched items, current code, the same 20 items for all three. The intervals overlap, so the two are about equal; neither is ahead of the other. |
+| Negotiation, stance matches fate: same 20 items | 0.330 (0.244 to 0.435) | no score: same reason | 0.295 (0.221 to 0.364) | Same items and code as the row above. The intervals overlap: about equal. |
+| Contradictions (ContraDoc): untouched, 8 documents | 0.875 (0.625 to 1.0) | not measured | not measured | No bare or cloud run exists on these untouched items, so there is nothing to put beside the Shimmer figure. |
+| Table claims (SciTab): untouched, 15 claims | 0.846 on 13 answered (coverage rule loosened by the project owner after the result was seen) | not measured | not measured | No bare or cloud run exists on these untouched items. |
+| Contradictions (ContraDoc): seen, 40-document steering subset, older code | 55.0 percent; does not count: 26 of 40 undecided | 52.5 percent | 90.0 percent | Seen items, code from before the 18 to 19 November fixes; the same 40 documents for all three, but the Shimmer run is void, so this is no comparison. |
+| Table claims (SciTab): seen, 78-claim steering subset, older code | 0.190; does not count: every claim undecided | 55.8 | 81.7 | Seen items, the same older code and the same 78 claims; the Shimmer run is void. Figures as recorded in docs/RESULTS.md. |
+| Negotiation, conflict detection: seen, development pilot | 0.629 (18 items) | 0.217 (18 items) | 0.648 (14 of the 18 items) | Seen items. The bare figure comes from older saved answers without the Python step, and the cloud figure from a 14-item subset, so the three are not on equal footing. |
+
+- The cloud target moved from at most 5 to at most 10 points below the cloud model on 20 November 2026 (D-842),
+  before anyone looked at an untouched item and after every earlier check on seen items had missed 5. The project
+  owner's reason: 5 points would be an unfair comparison against a large cloud model.
+- "No score" for the bare model means its answers were too incomplete to score under the coverage rule. It does
+  not mean that Shimmer did better.
+- Rows are not comparable with each other: they differ in items, code version and measure. Compare within a row only.
+- The bare and cloud figures are references only.
+- The 0.987 on 24 seen pilot items is left out of this table: it comes from a different set and a different version.
+
 On 21 November we scored the system for the first time on untouched items: items the
 project had not used to build or tune it. We did not check what the models saw in
 their own original training. ContraDoc and SciTab are public sets. We wrote the
@@ -169,6 +195,7 @@ privacy: [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/THREAT_MODEL.md](docs
 - Install, hardware and cost: [docs/INSTALL.md](docs/INSTALL.md)
 - First review, step by step: [English](docs/GUIDE_EN.md), [Turkish](docs/GUIDE_TR.md); every task: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 - The review desk, one plain page for a single review: [docs/DESK_GUIDE.md](docs/DESK_GUIDE.md).
+  The review desk was built for v1.0-alpha (the current state of the code, not a release that reached its targets) and was fixed after the alpha freeze, on 22 November 2026. The freeze tag v1.0-alpha-freeze-f and snapshot ce8854a9 stay as they were; the desk fix is in tag code-2026-11-22-f. English only in the alpha. Keyless local mode (the desktop starter's default) opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused.
   Keyless for local trial only (loopback); a non-local address needs the token.
 - Agents, output files, server routes and settings: [docs/RUNTIME_REFERENCE.md](docs/RUNTIME_REFERENCE.md)
 - Contributing: [CLAUDE.md](CLAUDE.md) and the founding design, [genesis.md](genesis.md)

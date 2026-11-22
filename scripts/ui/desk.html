@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shimmer Review Desk</title>
+<title>Project Shimmer: Review desk</title>
 <style>
   :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #5f6368; --line: #d0d4d9; --model: #8a4b00; --python: #1f5f2e; }
   @media (prefers-color-scheme: dark) { :root { --bg: #16181b; --fg: #e8eaed; --muted: #9aa0a6; --line: #3c4043; --model: #f0a35a; --python: #81c995; } }
@@ -15,18 +15,21 @@
   .muted { color: var(--muted); } .model-item { color: var(--model); } .python-item { color: var(--python); }
   .error { color: #c5221f; } button { font: inherit; padding: 3px 10px; cursor: pointer; } input[type=password] { font: inherit; width: 22em; max-width: 100%; } input[type=text] { max-width: 100%; box-sizing: border-box; }
   .table-wrap { overflow-x: auto; }
+  a { color: #1a5fb4; } @media (prefers-color-scheme: dark) { a { color: #8ab4f8; } }
 </style>
 </head>
 <body>
-<h1>Shimmer review desk</h1>
-<p class="muted">A plain page over the server's own routes: what is in place, starting a review, decisions waiting, the runs, their measured progress, the reviewed document and its findings. The full console is at <a href="/console">/console</a>.</p>
+<h1>Project Shimmer: Review desk</h1>
+<p id="alpha-note"><b>Alpha prototype, below its accuracy targets.</b> Findings can be wrong or missing, and no run certifies that every problem was found. English only in the alpha.</p>
+<p id="where" class="muted">Connect to see where this server runs the review.</p>
+<p class="muted">A plain page for starting a review, answering a run's questions, following its progress and reading the reviewed document. Costs, run reports and everything else are in the full console at <a href="/console">/console</a>.</p>
 <form id="token-form">
   <label>Token <input type="password" id="token" autocomplete="off"></label>
   <button type="submit">Connect</button> <span id="token-state" class="muted">not connected</span>
 </form>
 <section><h2>In place</h2><div id="inputs" class="muted">Connect to list the inputs.</div></section>
 <section><h2>Start a review</h2>
-  <p class="muted">Files go to the server's own /submit route, the same path the console uses. Nothing starts until you confirm the plan.</p>
+  <p class="muted">Files are sent to this server the same way the console sends them. Nothing starts until you confirm the plan.</p>
   <p><label>Files <input type="file" id="start-files" multiple></label></p>
   <div id="start-roles" class="muted">Choose files, then give each one a role.</div>
   <p><label>Framing question (optional) <input type="text" id="start-question" size="50"></label></p>
@@ -39,7 +42,7 @@
 </section>
 <section><h2>Waiting for a decision</h2><div id="approvals" class="muted">Connect to list pending decisions.</div></section>
 <section><h2>Runs</h2><div id="runs" class="muted">Connect to list the runs.</div></section>
-<section><h2>Run</h2><div id="run" class="muted">Choose a run.</div><div id="reader"></div></section>
+<section><h2>Run</h2><div id="run" class="muted">Choose a run.</div><div id="action-result"></div><div id="log"></div><div id="reader"></div></section>
 <script>
 var DeskViews = (function () {
   function esc(v) {
@@ -77,7 +80,7 @@ var DeskViews = (function () {
     var rules = (data && data.conventions_compiled) || [];
     html += "<h3>Compiled rules</h3>" + (rules.length
       ? "<p>" + rules.map(function (r) { return esc(r.id) + (r.category ? " (" + esc(r.category) + ")" : ""); }).join(", ") + "</p>"
-      : '<p class="muted">No compiled rules: config/convention_registry.json is absent or empty until a run compiles input/conventions.</p>');
+      : '<p class="muted">No rules read yet: the rules in input/conventions are read when a run starts. <span class="muted">(Technical detail: config/convention_registry.json is absent or empty.)</span></p>');
     return html;
   }
 
@@ -95,11 +98,11 @@ var DeskViews = (function () {
     if (!p) { return '<p class="muted">No progress reading.</p>'; }
     var why = p.not_measurable || {};
     function cell(v, key, unit) { return v === null || v === undefined ? '<span class="muted">not measurable: ' + esc(why[key] || "no reading") + "</span>" : esc(v) + (unit ? " " + unit : ""); }
-    return "<h3>Progress (measured)</h3><table>" +
+    return '<h3>Progress (measured)</h3><div class="table-wrap"><table>' +
       "<tr><td>Documents done</td><td>" + esc(p.documents_done) + " of " + cell(p.documents_total, "total") + "</td></tr>" +
       "<tr><td>Elapsed</td><td>" + cell(p.elapsed_seconds === null || p.elapsed_seconds === undefined ? null : (p.elapsed_seconds / 60).toFixed(1), "elapsed", "min") + "</td></tr>" +
       "<tr><td>Rate</td><td>" + cell(p.rate_documents_per_minute, "rate", "documents/min") + "</td></tr>" +
-      "<tr><td>Remaining at that rate</td><td>" + cell(p.remaining_minutes, "remaining", "min") + "</td></tr></table>" +
+      "<tr><td>Remaining at that rate</td><td>" + cell(p.remaining_minutes, "remaining", "min") + "</td></tr></table></div>" +
       (p.phase_note ? '<p class="muted">' + esc(p.phase_note) + "</p>" : "") +
       (p.reading ? '<p class="muted">' + esc(p.reading) + "</p>" : "");
   }
@@ -114,15 +117,16 @@ var DeskViews = (function () {
     var docs = record.documents || [];
     html += "<h3>Documents</h3>" + (docs.length ? "<ul>" + docs.map(function (d) {
       return "<li>" + esc(d.doc_id) + " " + (d.status === "done"
-        ? '<button data-doc="' + esc(d.doc_id) + '">Read reviewed document</button>' : '<span class="muted">in progress</span>') + "</li>";
+        ? '<button data-doc="' + esc(d.doc_id) + '">Read reviewed document</button>'
+        : '<span class="muted">' + (LIVE[record.state] ? "in progress" : "not finished") + "</span>") + "</li>";
     }).join("") + "</ul>" : '<p class="muted">No document has reached the review phase yet.</p>');
-    return html;
+    return html + '<p class="muted">The cost of this run and its full report are in the full console.</p>';
   }
 
   // HONEST-OUTPUT-A: every model-written record stays visible and carries the server's own mark.
   function findingsHtml(data, mark) {
     var rows = (data && data.findings) || [];
-    if (!rows.length) { return '<h3>Findings</h3><p class="muted">No typed findings on the bus. This does not certify a clean review.</p>'; }
+    if (!rows.length) { return '<h3>Findings</h3><p class="muted">No findings were recorded for this run. This does not certify a clean review.</p>'; }
     return "<h3>Findings (" + esc(rows.length) + ')</h3><div class="table-wrap"><table><tr><th>Document</th><th>Unit</th><th>Rule</th><th>Verdict</th><th>Written by</th><th>Explanation</th></tr>' +
       rows.map(function (f) {
         var model = f.written_by !== "python";
@@ -148,19 +152,29 @@ var DeskViews = (function () {
   // ---- Start a review (step 2). The page only builds the fields /submit already takes;
   // the server classifies each file, adds the two override flags for a Normal run and
   // refuses a Sensitive one while the privacy layer is inactive.
-  var ROLES = { target: "Review target", prior: "Earlier version", grounding: "Grounding", rules: "Review rules file" };
+  // "Reference" and "Rules file" are sent the same way: the server reads each file and decides
+  // whether it is a rules file; only the review targets and earlier versions are named to it.
+  var ROLES = { target: "Review target", prior: "Earlier version", grounding: "Reference (background)", rules: "Rules file (the server decides)" };
+
+  // Where the work runs and whether it costs money, from /health's backend_profile.
+  function whereHtml(health) {
+    var profile = health && health.backend_profile;
+    if (profile === "local") { return "Local: the review runs on this computer with a local model. Document text does not leave this computer and there are no provider charges."; }
+    if (profile === "cloud" || profile === "api") { return "Cloud: document text is sent to the configured model providers, and their usage charges apply. The cost of each run is in the full console."; }
+    return "Where this server runs the review is not known (no backend profile reported).";
+  }
 
   function privacyNote(health, privacy) {
     var active = !!(health && health.sensitive_layer_active);
     if (privacy === "sensitive") {
-      return active ? "Sensitive: the privacy layer is active, so redaction stays on and the server adds no override flag."
-        : "Sensitive cannot start here: the privacy layer (LAW-IV) ships inactive, so the server refuses a Sensitive review before any file is used.";
+      return active ? "Sensitive: the privacy protection is active, so redaction stays on and the server adds no override flag."
+        : "Sensitive cannot start here: the privacy protection is inactive (not switched on) in this alpha, so the server refuses a Sensitive review before any file is used.";
     }
     if (privacy === "normal") {
-      return "Normal: the run declares that it redacts nothing, and the server adds the two override flags " +
-        "(--sensitivity-layer-inactive-override and --no-redaction-override) for this run, as it does for the console.";
+      return "Normal: nothing in the documents is redacted (blacked out) for this run. Technical detail: the server adds " +
+        "--sensitivity-layer-inactive-override and --no-redaction-override for this run, as it does for the console.";
     }
-    return "Choose Normal or Sensitive. The privacy layer is " + (active ? "active." : "inactive, so only Normal can start.");
+    return "Choose Normal or Sensitive. The privacy protection is " + (active ? "active." : "inactive in this alpha, so only Normal can start.");
   }
 
   function startPlan(files, roles, privacy, health, question) {
@@ -201,12 +215,12 @@ var DeskViews = (function () {
 
   function rolesHtml(files, roles) {
     if (!files || !files.length) { return '<p class="muted">Choose files, then give each one a role.</p>'; }
-    return "<table><tr><th>File</th><th>Role</th></tr>" + files.map(function (f, i) {
+    return '<div class="table-wrap"><table><tr><th>File</th><th>Role</th></tr>' + files.map(function (f, i) {
       var role = (roles || {})[f.name] || "grounding";
       return "<tr><td>" + esc(f.name) + ' <span class="muted">' + esc(f.size) + ' bytes</span></td><td><select data-role-file="' + i + '">' +
         Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (k === role ? " selected" : "") + ">" + esc(ROLES[k]) + "</option>"; }).join("") +
         "</select></td></tr>";
-    }).join("") + "</table>";
+    }).join("") + "</table></div>";
   }
 
   function list(names) { return names.length ? names.map(esc).join(", ") : '<span class="muted">none</span>'; }
@@ -214,12 +228,11 @@ var DeskViews = (function () {
   function startPlanHtml(p) {
     var html = "<h3>Plan</h3><p>" + esc(p.note) + "</p>";
     if (!p.ok) { return html + '<ul class="error">' + p.errors.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ul>"; }
-    return html + "<table>" +
+    return html + '<div class="table-wrap"><table>' +
       "<tr><td>Review</td><td>" + list(p.targets) + "</td></tr>" +
       "<tr><td>Earlier versions</td><td>" + list(p.prior) + "</td></tr>" +
-      "<tr><td>Grounding</td><td>" + list(p.grounding) + ' <span class="muted">(with the documents already in input/context)</span></td></tr>' +
-      "<tr><td>Review rules files</td><td>" + list(p.rules) + ' <span class="muted">(the server\'s parser decides; a file it reads as a document is used as grounding)</span></td></tr>' +
-      "</table><p class=\"muted\">The rules already in input/conventions stay in force. A file whose name exists with different content is refused by the server, never overwritten.</p>";
+      "<tr><td>Reference and rules files</td><td>" + list(p.grounding.concat(p.rules)) + ' <span class="muted">(sent the same way: the server reads each one and decides whether it is a rules file; otherwise it is background, with the documents already in input/context)</span></td></tr>' +
+      "</table></div><p class=\"muted\">The rules already in input/conventions stay in force. A file whose name exists with different content is refused by the server, never overwritten.</p>";
   }
 
   function submitResultHtml(answer) {
@@ -268,7 +281,7 @@ var DeskViews = (function () {
     } else if (pa.message || pa.topic) {
       html += "<p>" + esc(pa.message || pa.topic) + "</p>";
       var keys = Object.keys(pa.payload || {}).filter(function (k) { return k !== "message"; });
-      if (keys.length) { html += "<table>" + keys.map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(typeof pa.payload[k] === "object" ? JSON.stringify(pa.payload[k]) : pa.payload[k]) + "</td></tr>"; }).join("") + "</table>"; }
+      if (keys.length) { html += '<div class="table-wrap"><table>' + keys.map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(typeof pa.payload[k] === "object" ? JSON.stringify(pa.payload[k]) : pa.payload[k]) + "</td></tr>"; }).join("") + "</table></div>"; }
     } else {
       html += '<p class="muted">The run recorded no message for this question. Read the log before answering.</p>';
     }
@@ -280,9 +293,18 @@ var DeskViews = (function () {
 
   function approvalBody(decision, rationale) { return { decision: String(decision), rationale: String(rationale || "").trim() }; }
 
-  // The server records the decision; the run's own poll decides what it means.
+  // The server records the decision; the run reads it when it next checks and decides what it means.
   function approvalResultHtml(answer) {
-    return "<p>Decision recorded: " + esc(answer.decision) + '. <span class="muted">Recorded is not resumed: the run reads the decision on its next poll, and its state here changes when it does.</span></p>';
+    return "<p>Decision recorded: " + esc(answer.decision) + '. <span class="muted">Recorded is not resumed: the run reads the decision the next time it checks, and its state here changes when it does.</span></p>';
+  }
+
+  // A refusal's own message, not the raw answer: FastAPI's {"detail": ...} when present.
+  function errorText(status, body) {
+    var detail = null;
+    try { var j = JSON.parse(body); detail = j && j.detail; } catch (e) { detail = null; }
+    if (detail && typeof detail === "object") { detail = detail.message || detail.reason || JSON.stringify(detail); }
+    var text = String(detail || body || "").slice(0, 300) || "no message";
+    return text + " (code " + status + ")";
   }
 
   function approvalsHtml(data) {
@@ -316,7 +338,7 @@ var DeskViews = (function () {
            startPlanHtml: startPlanHtml, submitResultHtml: submitResultHtml, actions: actions, actionsHtml: actionsHtml,
            cancelResultHtml: cancelResultHtml, approvalHtml: approvalHtml, approvalBody: approvalBody,
            approvalResultHtml: approvalResultHtml, approvalsHtml: approvalsHtml, logTail: logTail, logHtml: logHtml,
-           downloadNote: downloadNote };
+           downloadNote: downloadNote, whereHtml: whereHtml, errorText: errorText };
 })();
 
 (function () {
@@ -326,11 +348,13 @@ var DeskViews = (function () {
   // only); the page then connects with no token. Anywhere else the token is asked for.
   var keyless = typeof DESK_ACCESS !== "undefined" && DESK_ACCESS === "keyless-local";
   function $(id) { return document.getElementById(id); }
+  var RESULTS = "https://github.com/seckinozbek1/project-shimmer-deployment/blob/main/docs/RESULTS.md";
+  $("alpha-note").innerHTML += ' Measured results: <a target="_blank" rel="noopener" href="' + RESULTS + '">docs/RESULTS.md</a>.';
   function send(path, options) {
     options = options || {};
     options.headers = Object.assign(token ? { Authorization: "Bearer " + token } : {}, options.headers || {});
     return fetch(path, options).then(function (r) {
-      if (!r.ok) { return r.text().then(function (t) { throw new Error(path + ": " + r.status + " " + t.slice(0, 300)); }); }
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(DeskViews.errorText(r.status, t)); }); }
       return r;
     });
   }
@@ -353,7 +377,8 @@ var DeskViews = (function () {
   }
   $("start-files").addEventListener("change", function () {
     chosen = Array.prototype.slice.call($("start-files").files || []); roles = {};
-    chosen.forEach(function (f) { roles[f.name] = "grounding"; });
+    // The first file is the review target; the rest start as reference and can be changed.
+    chosen.forEach(function (f, i) { roles[f.name] = i === 0 ? "target" : "grounding"; });
     refreshPlan();
   });
   document.addEventListener("change", function (ev) {
@@ -384,30 +409,46 @@ var DeskViews = (function () {
   function loadRuns() {
     return call("/runs").then(function (d) { $("runs").innerHTML = DeskViews.runsHtml(d.runs); }, fail($("runs")));
   }
+  // What, when it changes, means the run panel must be drawn again (state, documents, question).
+  function shape(record) {
+    return JSON.stringify([record.state, record.outcome, !!record.pending_approval, record.has_log,
+      (record.documents || []).map(function (d) { return [d && d.doc_id, d && d.status]; })]);
+  }
+  function drawRun(record) {
+    var routes = DeskViews.plan(record);
+    $("run").innerHTML = DeskViews.runHtml(record) + DeskViews.approvalHtml(record) + DeskViews.actionsHtml(record) +
+      '<div id="progress"></div><div id="findings"></div><div id="model-findings"></div>';
+    call(routes[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress")));
+    if (!DeskViews.isSealed(record)) {
+      call(routes[2]).then(function (mf) {
+        $("model-findings").innerHTML = DeskViews.modelFindingsHtml(mf);
+        return call(routes[1]).then(function (f) { $("findings").innerHTML = DeskViews.findingsHtml(f, mf.mark); });
+      }).catch(fail($("findings")));
+    }
+  }
+  // While a run is live only its progress is read again every 5 seconds; the panel is drawn
+  // again only when the run's state or documents change. The reviewed document, the log and
+  // a recorded decision (outside the panel) are never cleared by the refresh.
+  function watch(runId, seen) {
+    var tick = function () {
+      if (current !== runId) { return; }
+      var typing = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-rationale");
+      call("/runs/" + encodeURIComponent(runId)).then(function (record) {
+        if (current !== runId) { return; }
+        if (shape(record) !== seen && !typing) { seen = shape(record); drawRun(record); loadRuns(); loadApprovals(); }
+        else { call(DeskViews.plan(record)[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress"))); }
+        if (DeskViews.live(record) || shape(record) !== seen) { timer = setTimeout(tick, 5000); }
+      }, function () { timer = setTimeout(tick, 5000); });
+    };
+    timer = setTimeout(tick, 5000);
+  }
   function openRun(runId) {
     if (timer) { clearTimeout(timer); timer = null; }
-    current = runId; $("reader").innerHTML = "";
+    current = runId; $("reader").innerHTML = ""; $("log").innerHTML = ""; $("action-result").innerHTML = "";
     call("/runs/" + encodeURIComponent(runId)).then(function (record) {
       if (current !== runId) { return; }
-      var routes = DeskViews.plan(record), box = $("run");
-      box.innerHTML = DeskViews.runHtml(record) + DeskViews.approvalHtml(record) + DeskViews.actionsHtml(record) +
-        '<div id="action-result"></div><div id="progress"></div><div id="findings"></div><div id="model-findings"></div><div id="log"></div>';
-      call(routes[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress")));
-      if (!DeskViews.isSealed(record)) {
-        call(routes[2]).then(function (mf) {
-          $("model-findings").innerHTML = DeskViews.modelFindingsHtml(mf);
-          return call(routes[1]).then(function (f) { $("findings").innerHTML = DeskViews.findingsHtml(f, mf.mark); });
-        }).catch(fail($("findings")));
-      }
-      if (DeskViews.live(record)) {
-        var tick = function () {
-          // Never redraw under a rationale being typed; look again in 5 seconds.
-          var typing = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-rationale");
-          if (typing) { timer = setTimeout(tick, 5000); return; }
-          openRun(runId); loadRuns(); loadApprovals();
-        };
-        timer = setTimeout(tick, 5000);
-      }
+      drawRun(record);
+      if (DeskViews.live(record)) { watch(runId, shape(record)); }
     }, fail($("run")));
   }
   document.addEventListener("click", function (ev) {
@@ -427,7 +468,9 @@ var DeskViews = (function () {
       }, fail($("action-result")));
     }
     if (t.getAttribute && t.getAttribute("data-approve")) {
-      var aid = t.getAttribute("data-approve"), box = document.querySelector('[data-rationale="' + aid + '"]');
+      var aid = t.getAttribute("data-approve");
+      var quoted = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(aid) : String(aid).replace(/["\\]/g, "\\$&");
+      var box = document.querySelector('[data-rationale="' + quoted + '"]');
       send("/runs/" + encodeURIComponent(aid) + "/approval", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(DeskViews.approvalBody(t.getAttribute("data-decision"), box ? box.value : "")) })
         .then(function (r) { return r.json(); }).then(function (answer) {
@@ -455,7 +498,9 @@ var DeskViews = (function () {
     return call("/inputs").then(function (d) {
       $("token-state").textContent = keyless && !token ? "connected (local trial: no token needed on this computer)" : "connected";
       $("inputs").innerHTML = DeskViews.inputsHtml(d);
-      fetch("/health").then(function (r) { return r.json(); }).then(function (h) { health = h; refreshPlan(); }, function () { refreshPlan(); });
+      fetch("/health").then(function (r) { return r.json(); }).then(function (h) {
+        health = h; $("where").textContent = DeskViews.whereHtml(h); refreshPlan();
+      }, function () { refreshPlan(); });
       loadApprovals();
       return loadRuns();
     }, function (e) { $("token-state").textContent = "not connected: " + e.message; });

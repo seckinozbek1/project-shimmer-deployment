@@ -73,7 +73,7 @@ def observe_session(*, confirmed=True, open_browser=True):
 def _assert_session():
     normal = observe_session()
     assert normal == {"started": True, "spawned": 1,
-                      "opened": ["http://127.0.0.1:8173/console"], "profile": "local",
+                      "opened": ["http://127.0.0.1:8173/console?view=desk"], "profile": "local",
                       "host": "127.0.0.1", "token_hash_valid": True, "token_leaked": False,
                       "waited": True, "alive": False, "token_released": True}
     cancelled = observe_session(confirmed=False)
@@ -396,7 +396,7 @@ def _assert_gui():
     assert normal["spawned"] == 1 and normal["exit"] == 0 and normal["stopped"]
     assert normal["selected_consistent"] and normal["selected_shown"] and normal["profile"] == "cloud"
     assert normal["copied"] and normal["clipboard_cleared"] and normal["details"]
-    assert normal["opened"] == ["http://127.0.0.1:8000/console"]
+    assert normal["opened"] == ["http://127.0.0.1:8000/console?view=desk"]
     decline = observe_gui(confirmed=False)
     assert decline["spawned"] == 0 and decline["confirmations"] == 1 and not decline["opened"]
     missing = observe_gui(ready=False)
@@ -495,7 +495,7 @@ def live_server_check():
             assert session.start("cloud", confirmed=True, timeout=30)
             proc = session.process
             assert proc.poll() is None
-            assert opened == ["http://127.0.0.1:%d/console" % port]
+            assert opened == ["http://127.0.0.1:%d/console?view=desk" % port]
             # A different bearer is rejected by the real server hash mechanism.
             assert not desktop.authenticated_ready(session.settings.console_url, "fixture-invalid")
             assert not (guard / "forbidden_attempt").exists()

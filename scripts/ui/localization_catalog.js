@@ -602,6 +602,7 @@ var SHIMMER_TR = {
   "lines.": "satır.",
   "SHIMMER: Review desk": "SHIMMER: İnceleme masası",
   "Project Shimmer: Review desk": "Project Shimmer: İnceleme masası",
+  "Simple review desk": "Basit inceleme masası (yalnız İngilizce)",
   "Reviewer": "İnceleyen",
   "Developer": "Geliştirici",
   "Language": "Görünüm",

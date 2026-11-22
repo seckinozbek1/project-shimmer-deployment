@@ -210,10 +210,13 @@ lists the requested changes to tests, read-only.
 
 ### The review desk
 
-v1.0-alpha adds one plain page for a single review, at `/console?view=desk`; its short guide is
-[DESK_GUIDE.md](DESK_GUIDE.md). It walks one journey: paste the token and **Connect**; **In place** lists the
+One plain page for a single review, at `/console?view=desk`; its short guide is [DESK_GUIDE.md](DESK_GUIDE.md).
+The review desk was built for v1.0-alpha (the current state of the code, not a release that reached its targets) and was fixed after the alpha freeze, on 22 November 2026. English only in the alpha. The desktop starter opens it in keyless local mode, so it connects with no
+token; while that mode is on, every protected route of the server (not only the desk) answers any program or
+user on this computer with no token, and other computers are refused (DESK_GUIDE section 1). Elsewhere it walks
+one journey from pasting the token and **Connect**; **In place** lists the
 files in the three input folders (names and sizes, never content) and the compiled rules; **Start a review** takes
-files, a role for each (**Review target**, **Earlier version**, **Grounding**, **Review rules file**), an optional
+files, a role for each (**Review target**, **Earlier version**, **Reference (background)**, **Rules file (the server decides)**), an optional
 framing question and the privacy choice, shows the plan, and starts only after **I have read this plan** and **Start
 the review**; **Waiting for a decision** offers **Approve** and **Deny** with an optional rationale; **Runs** and
 **Run** show the measured progress (documents done, elapsed, rate, remaining at that rate, or "not measurable" with
