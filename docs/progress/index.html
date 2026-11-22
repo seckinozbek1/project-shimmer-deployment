@@ -16,6 +16,39 @@ section{overflow-x:auto}
 <body>
 <h1>Progress: charts of every measured attempt</h1>
 <p>Written by `tools/progress_charts.py` from the project&#x27;s own records; no figure here is typed by hand. Figures are labelled development (read while building), held-out development (kept apart from tuning) or fresh (read once, at the end), and never mixed. No sealed or benchmark test material appears here. Every figure names its benchmark&#x27;s own metric and class setting and carries its 95 percent interval where the record gives one. Charts start at the first standardised measurement; everything measured before it is in the tables further down, never on the same axes.</p>
+<section id="current-state"><h2>Current state (alpha, 22 November 2026)</h2>
+<p class="note">This section is written by hand, copied from README.md and docs/RESULTS.md on 22 November 2026; every figure in it is the README&#x27;s. The charts and tables below it are still written by tools/progress_charts.py.</p>
+<p>&quot;Alpha&quot; means the code as it is today. It is not a finished release, and it fell short of its targets. These are first results. The final test set has not been run yet.</p>
+<p><strong>The code.</strong> Repository: <a href="https://github.com/seckinozbek1/project-shimmer-deployment">github.com/seckinozbek1/project-shimmer-deployment</a>. The code on GitHub is commit <a href="https://github.com/seckinozbek1/project-shimmer-deployment/tree/ce8854a9">ce8854a9</a>, the public snapshot of the one alpha freeze (the loop tag v1.0-alpha-freeze-f, which stays in the private history); the results pages of 22 November are tag <a href="https://github.com/seckinozbek1/project-shimmer-deployment/tree/code-2026-11-22-c">code-2026-11-22-c</a>. The frozen alpha code ran its own 502 checks: 485 were green, 6 were skipped, and 11 known failures are carried as known.</p>
+<p>On 21 November we scored the system for the first time on untouched items: items the project had not used to build or tune it. We did not check what the models saw in their own original training. We wrote the marks before we looked at any score, and we scored each set once. Untouched items and items already seen are reported apart and never mixed (docs/RESULTS.md).</p>
+<h3>The three targets</h3>
+<ul>
+<li><strong>Cloud model.</strong> The system should score at most 10 points below the cloud model (claude-opus-4-8). This target was 5 points until 20 November; before we looked at any untouched item, the project owner changed it to 10. No result changed because of this. No cloud run exists on the untouched ContraDoc and SciTab items, so the target was not read there.</li>
+<li><strong>Bare model.</strong> The system should score at least 10 points above the bare model (Qwen2.5-7B-Instruct, used on its own with nothing around it). On negotiation the bare model got no figure, so this target could not be read.</li>
+<li><strong>Negotiation.</strong> Each of the five lines of the negotiation score has its own mark. Three of them are 0.60.</li>
+</ul>
+<h3>Results on untouched items</h3>
+<table><thead><tr><th>Task</th><th>Untouched items</th><th>Result</th></tr></thead><tbody>
+<tr><td>Finding contradictions in documents (ContraDoc)</td><td>8 documents, 6 groups</td><td>accuracy 0.875 (range 0.625 to 1.0); chance test p 0.249. 7 of 8 judged right; 1 of the 2 contradictions found, no false alarm. Answering &quot;no contradiction&quot; every time would score 0.75. The set is small.</td></tr>
+<tr><td>Checking claims about tables (SciTab)</td><td>3 papers, 4 tables, 15 claims</td><td>no main score: 13 of 15 claims answered, more than the 5 percent allowed missing. For information only: accuracy on the 13 answered claims 0.846 (range 0.769 to 1.0, chance test p 0.026).</td></tr>
+<tr><td>Advising on negotiation drafts</td><td>31 synthetic items, 197 proposals</td><td>five lines, below</td></tr>
+</tbody></table>
+<table><thead><tr><th>Negotiation line</th><th>What it asks</th><th>Result</th><th>Against its mark</th></tr></thead><tbody>
+<tr><td>Conflict</td><td>Does a proposal clash with the position of the party being advised?</td><td>0.955 (range 0.924 to 0.980, p 0.0001)</td><td>above 0.60</td></tr>
+<tr><td>Code checks</td><td>Do the advice pieces satisfy the code&#x27;s own checks?</td><td>1.0, with 2.5 percent of pieces dropped (the mark allows at most 10 percent)</td><td>reached its mark of 1.0</td></tr>
+<tr><td>Open point</td><td>Is a proposal still open to change, or already settled?</td><td>0.393 (range 0.342 to 0.452, p 0.753)</td><td>below 0.60</td></tr>
+<tr><td>Stance</td><td>Does the advice (accept, counter, reject) match what the parties did next?</td><td>0.299 (range 0.219 to 0.389, p 0.938)</td><td>below 0.60</td></tr>
+<tr><td>Approach</td><td>Whom does the advice say to approach?</td><td>no figure, too few answers</td><td>refused</td></tr>
+</tbody></table>
+<h3>The cloud model on the same 20 negotiation items</h3>
+<p>The cloud model answered all 31 items. By a rule fixed in advance to limit cost, its answers are scored on a set of 20 items (132 proposals). We also scored the system on those same 20 items, from its saved answers.</p>
+<table><thead><tr><th>Measure</th><th>System (31 items)</th><th>System (same 20 items)</th><th>Cloud model (20 items)</th></tr></thead><tbody>
+<tr><td>Open point</td><td>0.393</td><td>0.407 (range 0.348 to 0.480)</td><td>0.381 (range 0.334 to 0.449)</td></tr>
+<tr><td>Stance</td><td>0.299</td><td>0.330 (range 0.244 to 0.435)</td><td>0.295 (range 0.221 to 0.364)</td></tr>
+</tbody></table>
+<p>On the same items the system is slightly higher, but the ranges overlap, so the two are about equal. The bare model gets no score: on those 20 items it had no answer for 81 of the 132 proposals, and over the whole set none for 120 of 197. More than 5 percent were missing, so it gets no figure. We checked that the answers are really absent, not misread.</p>
+<p>The 0.60 mark was set for our own benchmark, with no outside source for a normal level. Together with the chance test results, that means the target needs to be reconsidered. The beta will make the benchmark more reasonable, and it will review the chance test.</p>
+</section>
 <section id="every-benchmark-in-use"><h2>Every benchmark in use</h2>
 <table><thead><tr><th>Benchmark</th><th>Kind</th><th>Primary metric (D-S99) and class setting</th><th>State</th></tr></thead><tbody><tr><td>ContraDoc</td><td>the gate</td><td>binary judgment accuracy, 2 classes</td><td>charted below</td></tr><tr><td>SciTab</td><td>the gate</td><td>macro-F1, 2 or 3 classes, declared from the drawn claim set (D-458)</td><td>charted below</td></tr><tr><td>PUBHEALTH</td><td>out-of-domain check</td><td>macro-F1, 4 classes</td><td>not yet measured</td></tr><tr><td>CLadder</td><td>causal probe, indicator, not a Shimmer benchmark</td><td>accuracy over yes and no answers, 2 classes</td><td>not yet measured</td></tr><tr><td>Corr2Cause</td><td>causal probe, indicator, not a Shimmer benchmark</td><td>F1 of the valid class, 2 classes</td><td>not yet measured</td></tr></tbody></table>
 </section>
