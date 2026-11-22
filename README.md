@@ -73,7 +73,31 @@ docs/RESULTS.md and the progress page.
   not mean that Shimmer did better.
 - Rows are not comparable with each other: they differ in items, code version and measure. Compare within a row only.
 - The bare and cloud figures are references only.
-- The 0.987 on 24 seen pilot items is left out of this table: it comes from a different set and a different version.
+- The 0.987 on 24 seen pilot items is left out of this table: those are development items, and the fix was made
+  with them. See "Seen against untouched" below.
+
+### Seen against untouched
+
+"Seen" items were used to build or tune the system; "untouched" items were not. A figure on seen items is
+often higher, because fixes were made with those items in view. So no seen figure counts toward a target.
+Each negotiation line below gives the seen figure, the bare and cloud figures where they exist (with the set
+and version they ran on), the untouched figure, and the 0.60 mark. Figures are from the decision records and
+[docs/RESULTS.md](docs/RESULTS.md).
+
+| Line | Seen, system | Seen, bare model | Seen, cloud model | Untouched, system | Mark |
+|---|---|---|---|---|---|
+| Conflict | 0.987 (0.964 to 0.998) on the 24 development pilot items, round 2 with the fix, from saved answers; 0.629 on the older 18 seen items (179 proposals), earlier system | 0.217 on the 18 items, from older saved answers without the Python step | 0.648 on 14 of the 18 items | 0.955 on 31 items | 0.60 |
+| Open point | 0.473 (0.403 to 0.561) on the 24 items with the adopted setting (round 2 with the fix); 0.538 (0.468 to 0.607) with round 3, which was not adopted | no figure: the scorer refused it, too many answers missing | 0.507 (0.425 to 0.612) on its 14-item subset of the 24, from the answers of the 15 November pilot | 0.393 on 31 items; 0.407 on the cloud's 20 | 0.60 |
+| Stance | 0.429 (0.344 to 0.533) on the 24 items, adopted setting; 0.276 on the same answers read with a different scoring switch (open_stance_m4) | no figure: the scorer refused it | 0.396 (0.292 to 0.537) on its 14-item subset of the 24 | 0.299 on 31 items; 0.330 on the cloud's 20 | 0.60 |
+
+- Why the seen figures do not count: the 24 pilot items are development items, and the fix was made and
+  chosen with them. The older 18 items were seen in the same way. The untouched items were scored once, with
+  the marks written first.
+- Fixed answers on the older 18 seen items (179 proposals): giving the same answer to every proposal scores
+  0.444 on open point (always "accept" or always "reject"), and on stance 0.480 for always "reject" and 0.318
+  for always "accept". They show how far a fixed answer gets on that set; they were not computed on the 24 or
+  the 31 items.
+- On seen items too, the cloud model is below 0.60 on open point and stance.
 
 On 21 November we scored the system for the first time on untouched items: items the
 project had not used to build or tune it. We did not check what the models saw in
@@ -185,6 +209,7 @@ skipped, and 11 known failures are carried as known.
 - A limit on how long one reasoning step may write.
 - Two known faults.
 - A larger set of table claims.
+- A summary file the system writes when a long session has to be compacted. Planned for beta.
 
 ### Switched off in the alpha
 
