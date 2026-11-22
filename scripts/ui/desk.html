@@ -24,8 +24,8 @@
 <p id="where" class="muted">Connect to see where this server runs the review.</p>
 <p class="muted">A plain page for starting a review, answering a run's questions, following its progress and reading the reviewed document. Costs, run reports and everything else are in the full console at <a href="/console">/console</a>.</p>
 <form id="token-form">
-  <label>Token <input type="password" id="token" autocomplete="off"></label>
-  <button type="submit">Connect</button> <span id="token-state" class="muted">not connected</span>
+  <span id="token-entry"><label>Token <input type="password" id="token" autocomplete="off"></label>
+  <button type="submit">Connect</button></span> <span id="token-state" class="muted">not connected</span>
 </form>
 <section><h2>In place</h2><div id="inputs" class="muted">Connect to list the inputs.</div></section>
 <section><h2>Start a review</h2>
@@ -42,7 +42,7 @@
 </section>
 <section><h2>Waiting for a decision</h2><div id="approvals" class="muted">Connect to list pending decisions.</div></section>
 <section><h2>Runs</h2><div id="runs" class="muted">Connect to list the runs.</div></section>
-<section><h2>Run</h2><div id="run" class="muted">Choose a run.</div><div id="action-result"></div><div id="log"></div><div id="reader"></div></section>
+<section><h2>Run</h2><div id="action-result"></div><div id="run" class="muted">Choose a run.</div><div id="log"></div><div id="reader"></div></section>
 <script>
 var DeskViews = (function () {
   function esc(v) {
@@ -159,7 +159,7 @@ var DeskViews = (function () {
   // Where the work runs and whether it costs money, from /health's backend_profile.
   function whereHtml(health) {
     var profile = health && health.backend_profile;
-    if (profile === "local") { return "Local: the review runs on this computer with a local model. Document text does not leave this computer and there are no provider charges."; }
+    if (profile === "local") { return "Local: the review runs on the computer that runs this server, with a local model. Document text is not sent to model providers and there are no provider charges."; }
     if (profile === "cloud" || profile === "api") { return "Cloud: document text is sent to the configured model providers, and their usage charges apply. The cost of each run is in the full console."; }
     return "Where this server runs the review is not known (no backend profile reported).";
   }
@@ -299,10 +299,17 @@ var DeskViews = (function () {
   }
 
   // A refusal's own message, not the raw answer: FastAPI's {"detail": ...} when present.
+  // A list answer (field checks) joins its msg fields; an object answer gives its error;
+  // the raw JSON is shown only when neither is there.
   function errorText(status, body) {
     var detail = null;
     try { var j = JSON.parse(body); detail = j && j.detail; } catch (e) { detail = null; }
-    if (detail && typeof detail === "object") { detail = detail.message || detail.reason || JSON.stringify(detail); }
+    if (Array.isArray(detail)) {
+      var msgs = detail.map(function (d) { return d && typeof d === "object" ? d.msg : d; }).filter(function (m) { return m; });
+      detail = msgs.length ? msgs.join("; ") : JSON.stringify(detail);
+    } else if (detail && typeof detail === "object") {
+      detail = detail.error || detail.message || detail.reason || JSON.stringify(detail);
+    }
     var text = String(detail || body || "").slice(0, 300) || "no message";
     return text + " (code " + status + ")";
   }
@@ -372,6 +379,12 @@ var DeskViews = (function () {
     $("start-roles").innerHTML = DeskViews.rolesHtml(chosen, roles);
     $("start-plan").innerHTML = DeskViews.startPlanHtml(currentPlan());
   }
+  // Any change to the plan other than the tick itself (files, roles, privacy, question,
+  // the server's own reading) clears the tick, so a paid start is never confirmed on an old plan.
+  function planChanged() {
+    $("start-confirm").checked = false;
+    refreshPlan();
+  }
   function loadApprovals() {
     return call("/approvals").then(function (d) { $("approvals").innerHTML = DeskViews.approvalsHtml(d); }, fail($("approvals")));
   }
@@ -379,16 +392,16 @@ var DeskViews = (function () {
     chosen = Array.prototype.slice.call($("start-files").files || []); roles = {};
     // The first file is the review target; the rest start as reference and can be changed.
     chosen.forEach(function (f, i) { roles[f.name] = i === 0 ? "target" : "grounding"; });
-    refreshPlan();
+    planChanged();
   });
   document.addEventListener("change", function (ev) {
     var t = ev.target;
     if (t.getAttribute && t.getAttribute("data-role-file") !== null && chosen[+t.getAttribute("data-role-file")]) {
-      roles[chosen[+t.getAttribute("data-role-file")].name] = t.value; refreshPlan();
+      roles[chosen[+t.getAttribute("data-role-file")].name] = t.value; planChanged();
     }
-    if (t.name === "start-privacy") { refreshPlan(); }
+    if (t.name === "start-privacy") { planChanged(); }
   });
-  $("start-question").addEventListener("input", refreshPlan);
+  $("start-question").addEventListener("input", planChanged);
   $("start-submit").addEventListener("click", function () {
     var p = currentPlan(), fields = DeskViews.submitFields(p, $("start-confirm").checked);
     refreshPlan();
@@ -419,12 +432,17 @@ var DeskViews = (function () {
     $("run").innerHTML = DeskViews.runHtml(record) + DeskViews.approvalHtml(record) + DeskViews.actionsHtml(record) +
       '<div id="progress"></div><div id="findings"></div><div id="model-findings"></div>';
     call(routes[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress")));
-    if (!DeskViews.isSealed(record)) {
-      call(routes[2]).then(function (mf) {
-        $("model-findings").innerHTML = DeskViews.modelFindingsHtml(mf);
-        return call(routes[1]).then(function (f) { $("findings").innerHTML = DeskViews.findingsHtml(f, mf.mark); });
-      }).catch(fail($("findings")));
-    }
+    loadFindings(record);
+  }
+  // The two finding routes; never for a sealed run (counts and timings only).
+  function loadFindings(record) {
+    if (DeskViews.isSealed(record)) { return; }
+    var routes = DeskViews.plan(record), runId = record.run_id;
+    call(routes[2]).then(function (mf) {
+      if (current !== runId) { return; }
+      $("model-findings").innerHTML = DeskViews.modelFindingsHtml(mf);
+      return call(routes[1]).then(function (f) { if (current === runId) { $("findings").innerHTML = DeskViews.findingsHtml(f, mf.mark); } });
+    }).catch(function (e) { if (current === runId) { fail($("findings"))(e); } });
   }
   // While a run is live only its progress is read again every 5 seconds; the panel is drawn
   // again only when the run's state or documents change. The reviewed document, the log and
@@ -436,7 +454,10 @@ var DeskViews = (function () {
       call("/runs/" + encodeURIComponent(runId)).then(function (record) {
         if (current !== runId) { return; }
         if (shape(record) !== seen && !typing) { seen = shape(record); drawRun(record); loadRuns(); loadApprovals(); }
-        else { call(DeskViews.plan(record)[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress"))); }
+        else {
+          call(DeskViews.plan(record)[0]).then(function (p) { $("progress").innerHTML = DeskViews.progressHtml(p); }, fail($("progress")));
+          loadFindings(record);
+        }
         if (DeskViews.live(record) || shape(record) !== seen) { timer = setTimeout(tick, 5000); }
       }, function () { timer = setTimeout(tick, 5000); });
     };
@@ -468,11 +489,12 @@ var DeskViews = (function () {
       }, fail($("action-result")));
     }
     if (t.getAttribute && t.getAttribute("data-approve")) {
-      var aid = t.getAttribute("data-approve");
+      var aid = t.getAttribute("data-approve"), decision = t.getAttribute("data-decision");
+      if (!window.confirm((decision === "DENY" ? "Deny" : "Approve") + " for run " + aid + "? The run reads this answer the next time it checks.")) { return; }
       var quoted = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(aid) : String(aid).replace(/["\\]/g, "\\$&");
       var box = document.querySelector('[data-rationale="' + quoted + '"]');
       send("/runs/" + encodeURIComponent(aid) + "/approval", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(DeskViews.approvalBody(t.getAttribute("data-decision"), box ? box.value : "")) })
+        body: JSON.stringify(DeskViews.approvalBody(decision, box ? box.value : "")) })
         .then(function (r) { return r.json(); }).then(function (answer) {
           $("action-result").innerHTML = DeskViews.approvalResultHtml(answer); loadApprovals();
         }, fail($("action-result")));
@@ -499,8 +521,8 @@ var DeskViews = (function () {
       $("token-state").textContent = keyless && !token ? "connected (local trial: no token needed on this computer)" : "connected";
       $("inputs").innerHTML = DeskViews.inputsHtml(d);
       fetch("/health").then(function (r) { return r.json(); }).then(function (h) {
-        health = h; $("where").textContent = DeskViews.whereHtml(h); refreshPlan();
-      }, function () { refreshPlan(); });
+        health = h; $("where").textContent = DeskViews.whereHtml(h); planChanged();
+      }, function () { planChanged(); });
       loadApprovals();
       return loadRuns();
     }, function (e) { $("token-state").textContent = "not connected: " + e.message; });
@@ -510,7 +532,11 @@ var DeskViews = (function () {
     token = $("token").value.trim();
     connect();
   });
-  if (keyless) { connect(); }
+  // Keyless local mode: no token is asked for, so the token box is hidden.
+  if (keyless) {
+    $("token-entry").hidden = true;
+    connect();
+  }
 })();
 </script>
 </body>

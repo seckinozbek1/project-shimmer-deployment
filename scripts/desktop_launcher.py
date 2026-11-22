@@ -200,7 +200,9 @@ class DesktopSession:
         # honours it only because the host above is loopback; SHIMMER_KEYLESS_LOCAL=0
         # in the starter's environment keeps the token-only console.
         child_env.setdefault("SHIMMER_KEYLESS_LOCAL", "1")
-        self.keyless_local = child_env.get("SHIMMER_KEYLESS_LOCAL") == "1"
+        # The same values server.keyless_requested accepts (trimmed, any case).
+        self.keyless_local = (str(child_env.get("SHIMMER_KEYLESS_LOCAL") or "").strip().lower()
+                              in {"1", "true", "yes", "y", "on"})
         log_dir = self.root / "output" / "startup"
         try:
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -356,7 +358,8 @@ def run_gui(*, no_browser=False):
         controls()
         if not no_browser and not session.open_console():
             status.set("Console ready, but the browser could not open. Click Open review desk to retry. "
-                       "Copy access token and paste it into the sign-in field.")
+                       + ("No token is needed on this computer." if getattr(session, "keyless_local", False) else
+                          "Then click Copy access token, paste it into the desk's Token field and click Connect."))
 
     def launch():
         state["busy"] = True
@@ -431,8 +434,8 @@ def run_gui(*, no_browser=False):
         if session.access_token:
             window.clipboard_clear()
             window.clipboard_append(session.access_token)
-            status.set("Access token copied. In the browser, paste it into Access token and click Use this token. "
-                       "Then choose Submit. Keep this window open; Stop Shimmer ends this session.")
+            status.set("Access token copied. In the review desk, paste it into the Token field and click Connect. "
+                       "Keep this window open; Stop Shimmer ends this session.")
 
     def finish_stop(message=None):
         state["busy"] = False

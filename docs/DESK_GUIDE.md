@@ -1,7 +1,7 @@
 # The review desk: a short guide
 
 The review desk is one plain page for running a single review and reading its results. The review desk was built for v1.0-alpha (the current state of the code, not a release that reached its targets) and was fixed after the alpha freeze, on 22 November 2026. It does everything through the same server as the full console, so a review started here is
-the same review the console would start. The desk and this guide are in English only in the alpha; a Turkish version follows after it. The top of the page says where the review runs: Local (on this computer, no provider charges) or Cloud (document text goes to the configured model providers and usage is charged). Costs and run reports are in the full console.
+the same review the console would start. The desk and this guide are in English only in the alpha; a Turkish version follows after it. The top of the page says where the review runs: Local (the review runs on the computer that runs this server, with a local model; document text is not sent to model providers and there are no provider charges) or Cloud (document text goes to the configured model providers and usage is charged). Costs and run reports are in the full console.
 
 For installing Shimmer and putting your material in place, see the [operator guide](USER_GUIDE.md),
 sections 1 to 3.
@@ -42,10 +42,11 @@ address bar or saved by the page.
 4. **Privacy**: choose **Normal** or **Sensitive**. Sensitive is refused while the privacy layer is not
    switched on; the page says so before anything is sent.
 5. Read the plan the page shows, tick **I have read this plan**, then press **Start the review**. Nothing
-   is sent before you tick the box.
+   is sent before you tick the box, and any change to the files, roles, privacy or question clears the tick.
+   In keyless local mode the Token field is hidden.
 
 **Waiting for a decision** lists runs that stopped to ask you something. Open the run, read the
-question, add a reason if you like, and press **Approve** or **Deny**. Your answer is recorded; the run
+question, add a reason if you like, and press **Approve** or **Deny**, then confirm in the dialog. Your answer is recorded; the run
 reads it the next time it checks, so "recorded" does not yet mean "resumed".
 
 **Runs** lists every run with its state and outcome. Press **Open** to see one.
@@ -86,8 +87,8 @@ answered.
 
 ## 5. What the desk does not do
 
-It does not delete anything or change your review rules. Whether document text leaves this computer depends on the server's profile, shown at the top of the page (Local or Cloud). For those, and
-for every other view (pairs, amendments, replies, reports), use the full console at `/console`.
+It does not delete anything or change your review rules. Whether document text is sent to model providers depends on the server's profile, shown at the top of the page (Local or Cloud).
+Costs, run reports and every other view (pairs, amendments, replies) are in the full console at `/console`.
 
 ## How it was checked
 
