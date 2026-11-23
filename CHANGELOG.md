@@ -2,6 +2,13 @@
 
 One entry per product version, in plain English. The version number lives in `VERSION` until the Python package carries it. A version ending in `.devN` is a development snapshot; `rcN` is a release candidate.
 
+## v1.0-alpha (22 November 2026)
+
+- **The alpha** is the current state of the code, not a release that reached its targets. Its public snapshot is commit `ce8854a` on `main`. The package version stays `0.1.0.dev8` (`VERSION` and `CITATION.cff`): v1.0-alpha names this state of the code, not a package release.
+- **First results on untouched items** (21 November 2026) are on the README and the results page (`docs/RESULTS.md`), seen and untouched items apart.
+- **The review desk** (`docs/DESK_GUIDE.md`), English only. It was fixed after the freeze on 22 November 2026, and the snapshot stays as it was.
+- **Keyless local mode** is the desktop starter's default: it opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused. Credentials return in the beta (`docs/THREAT_MODEL.md`).
+
 ## Unreleased (after the 2 November 2026 prototype)
 
 - **`requirements.txt` pins transformers 4.51.3, not 4.52.3**: the version the laptop and the cloud runtime lock already run, and the one `config/final_models.json` records. A container built from `requirements.txt` now installs 4.51.3, so an image built before this carries 4.52.3 and differs from one built after. The gate on a rented machine (arm G) could not be sealed before this change: its sealer requires every pin to be in the runtime lock. It now also reads a lock's CUDA build label as the same version (`2.5.1+cu121` holds the pin `2.5.1`), and nothing else is loosened.

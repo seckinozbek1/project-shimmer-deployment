@@ -82,7 +82,7 @@ this file.
 
 ## First results on untouched items (21 November 2026)
 
-These are first results. The final test set has not run yet, and the alpha fell short of its targets (at least 10 points above the bare model, at most 10 points below the cloud model, and a mark for each of the five negotiation lines, three of them 0.60). Each untouched figure below was scored once, on items the project had not used to build or tune it, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93). "Alpha" here means the current state of the code, not a finished release.
+These are first results. The final test set has not run yet, and the alpha fell short of its targets (at least 10 points above the bare model, at most 10 points below the cloud model, and a mark for each of the five negotiation lines, three of them 0.60). Each untouched figure below was scored once, on items the project had not used to build or tune it, with thresholds written before the look, on the frozen code v1.0-alpha (commit f1d58f93 in the private history, public snapshot ce8854a on main). "Alpha" here means the current state of the code, not a finished release.
 
 What is switched off in the alpha, why, and what happens instead: [README](../README.md#switched-off-in-the-alpha) and [LIMITATIONS.md](LIMITATIONS.md#switched-off-in-the-alpha).
 

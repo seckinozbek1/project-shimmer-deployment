@@ -238,7 +238,7 @@ privacy: [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/THREAT_MODEL.md](docs
 - Install, hardware and cost: [docs/INSTALL.md](docs/INSTALL.md)
 - First review, step by step: [English](docs/GUIDE_EN.md), [Turkish](docs/GUIDE_TR.md); every task: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 - The review desk, one plain page for a single review: [docs/DESK_GUIDE.md](docs/DESK_GUIDE.md).
-  The review desk was built for v1.0-alpha (the current state of the code, not a release that reached its targets) and was fixed after the alpha freeze, on 22 November 2026. The freeze tag v1.0-alpha-freeze-f and snapshot ce8854a9 stay as they were; the desk fixes are in tags code-2026-11-22-f and code-2026-11-22-g. English only in the alpha. Keyless local mode (the desktop starter's default) opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused.
+  The review desk was built for v1.0-alpha (the current state of the code, not a release that reached its targets) and was fixed after the alpha freeze, on 22 November 2026. The alpha snapshot, public commit ce8854a on main, stays as it was; the desk fixes are in tags code-2026-11-22-f and code-2026-11-22-g. English only in the alpha. Keyless local mode (the desktop starter's default) opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused.
   Keyless for local trial only (loopback); a non-local address needs the token.
 - Agents, output files, server routes and settings: [docs/RUNTIME_REFERENCE.md](docs/RUNTIME_REFERENCE.md)
 - Contributing: [CLAUDE.md](CLAUDE.md) and the founding design, [genesis.md](genesis.md)

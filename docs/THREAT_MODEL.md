@@ -12,6 +12,10 @@ Written from what was verified in the code, with citations, not from intent.
 > of that day. Under the local backend profile no provider client is built (gate check 313), so
 > the provider spend and egress described here apply to cloud runs only. A tunnel is optional
 > and not part of ordinary startup: the desktop starter binds `127.0.0.1`.
+>
+> Note (2026-11-23, v1.0-alpha): the package version is now `0.1.0.dev8`; the note above
+> records the reading made at `0.1.0.dev7`. Since then keyless local mode was added (see
+> boundary 3 and [Access](#access-one-operator)).
 
 **Scope note.** The `/polish` step that commissioned this document referred to
 "the audit's section M table". No section M or N exists in the audit at this
@@ -65,6 +69,14 @@ STEP 11 there was no backup mechanism for them at all. There is now:
 3. **Network to server.** Everything except `GET /health` and the console shell
    `GET /console` requires a Bearer token whose SHA-256 matches
    `SHIMMER_TOKEN_HASH` (`scripts/server.py:244-271`, gate checks 104 and 305).
+   The exception is keyless local mode (`SHIMMER_KEYLESS_LOCAL=1`, the alpha desktop
+   starter's default): it arms only on a loopback bind (127.0.0.0/8, `::1`,
+   `localhost`) and the server refuses to start keyless on any other host. While it
+   is on, every protected route, not only the review desk, answers with no token to
+   any program or user on this computer; a request still needs a loopback client
+   address and Host, no foreign Origin and no proxy forwarding header, so other
+   computers, a local tunnel and pages on other sites are refused
+   (`scripts/server.py:273-366`). Credentials return in the beta.
 4. **System to model providers.** Prompts, and therefore document text, leave
    the machine on every cloud call (`REALITY_MAP_P4` 4.5). This is the boundary
    LAW-IV governs, and the one the outbound masking layer exists to police.
@@ -369,4 +381,6 @@ The server checks one shared access token: it stores only the token's SHA-256
 hash (`SHIMMER_TOKEN_HASH`) and compares each request with it. There are no user
 accounts and no per-caller records, so Shimmer is a single-operator system today.
 Only `/health` and `/console` answer without the token; FastAPI's own `/docs`,
-`/redoc` and `/openapi.json` pages are switched off.
+`/redoc` and `/openapi.json` pages are switched off. In keyless local mode (the alpha
+desktop starter's default) every protected route answers without the token to any
+program or user on this computer, and other computers are refused (boundary 3).

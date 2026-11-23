@@ -16,7 +16,17 @@ What it does is in [METHOD.md](METHOD.md), and every result with its conditions 
 - A finished process or a downloadable ZIP does not prove complete coverage.
   Check missing evidence, capped replies, failed contracts and unjudged rules
   before you accept a result.
-- No figure shows accuracy on unseen documents.
+- Accuracy on unseen documents rests on few items. On 21 November 2026 the system was
+  scored on untouched items (items not used to build or tune it): ContraDoc 0.875
+  on 8 documents, with a chance test p of 0.249, so luck alone could give it; SciTab
+  0.846 on the 13 of 15 claims it answered (0.733 if the 2 unanswered count as wrong),
+  read again from the same answers after a reader fault was fixed, with the coverage
+  rule loosened by the project owner after the result was seen; on 31 synthetic
+  negotiation items, conflict 0.955, open point 0.393 and stance 0.299. On the 20 of
+  those items the cloud model also answered, the system's open point 0.407 and stance
+  0.330 are about equal to the cloud model's 0.381 and 0.295.
+  See [RESULTS.md](RESULTS.md#first-results-on-untouched-items-21-november-2026). The final test set
+  has not been run.
 - "Domain-agnostic" holds only in a narrow sense: no domain vocabulary is written
   in the code (it is declared in `config/domain_vocabulary.json`), and the
   pipeline has run on development material from several fields. The results
@@ -69,7 +79,9 @@ Some parts of Shimmer are built or planned but are not used in the alpha. Each l
 - Feed what it stores across runs (the ontology) back into a review. The one
   exception is the operator's own stored answers to external-rule conflicts, read
   only when `input/external_rules/` exists.
-- Show any accuracy on unseen documents. Nothing measured so far can.
+- Show accuracy on a final test set. The untouched-item figures of 21 November 2026
+  are few, the ContraDoc figure is within what luck alone could give, and the SciTab
+  coverage rule was loosened after the result was seen ([RESULTS.md](RESULTS.md#first-results-on-untouched-items-21-november-2026)).
 
 ## Privacy, in one line
 
