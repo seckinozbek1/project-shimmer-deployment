@@ -7,7 +7,7 @@ One entry per product version, in plain English. The version number lives in `VE
 - **The alpha** is the current state of the code, not a release that reached its targets. Its public snapshot is commit `ce8854a` on `main`. The package version stays `0.1.0.dev8` (`VERSION` and `CITATION.cff`): v1.0-alpha names this state of the code, not a package release.
 - **First results on untouched items** (21 November 2026) are on the README and the results page (`docs/RESULTS.md`), seen and untouched items apart.
 - **The review desk** (`docs/DESK_GUIDE.md`), English only. It was fixed after the freeze on 22 November 2026, and the snapshot stays as it was.
-- **Keyless local mode** is the desktop starter's default: it opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused. Credentials return in the beta (`docs/THREAT_MODEL.md`).
+- **Keyless local mode** is the desktop starter's default: it opens every protected route of the server, not only the desk, to any program or user on this computer; other computers are refused. Credentials return in v1.1 (`docs/THREAT_MODEL.md`).
 
 ## Unreleased (after the 2 November 2026 prototype)
 

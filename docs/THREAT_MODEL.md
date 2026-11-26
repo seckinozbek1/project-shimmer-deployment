@@ -76,7 +76,7 @@ STEP 11 there was no backup mechanism for them at all. There is now:
    any program or user on this computer; a request still needs a loopback client
    address and Host, no foreign Origin and no proxy forwarding header, so other
    computers, a local tunnel and pages on other sites are refused
-   (`scripts/server.py:273-366`). Credentials return in the beta.
+   (`scripts/server.py:273-366`). Credentials return in v1.1.
 4. **System to model providers.** Prompts, and therefore document text, leave
    the machine on every cloud call (`REALITY_MAP_P4` 4.5). This is the boundary
    LAW-IV governs, and the one the outbound masking layer exists to police.

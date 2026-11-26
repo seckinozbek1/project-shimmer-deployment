@@ -217,7 +217,7 @@ Some parts of Shimmer are built or planned but are not used in the alpha. Each l
 
 - Institution finder: off by default since 13 November 2026, because its job has no use yet and no other part reads its output. Nothing takes its place. The operator can switch it on for one run. The 54 alpha development items ran with it off.
 - Fact-checker: withheld from every run since 19 September 2026, because every item it returned in three test runs was wrong. Nothing takes its place. It stays registered, so it can be switched back on.
-- Masking of personal data: built but off. Switching it on needs the operator's approval, and its tests are planned for the beta. Instead, a run marked sensitive is refused. A run starts only if the operator declares it not sensitive, and that choice is logged.
+- Masking of personal data: built but off. Switching it on needs the operator's approval, and its tests are planned for v1.1. Instead, a run marked sensitive is refused. A run starts only if the operator declares it not sensitive, and that choice is logged.
 - Table tool: the alpha code still has it switched on, although a test on 38 tables did not meet its 90 percent bar (4 ended incomplete). It is used only for rules that compare table cells. The SciTab score was measured with this code, so it is not proof that the tool works.
 - Operator red lines: in the alpha, the operator can give them. They were tried only on practice items, with sample red lines we wrote. Finding red lines inside texts without the operator is planned for the beta. Until then nothing does it.
 - Difference check: built but off as shipped, and the pipeline does not call it, so a run does not show these changes. Wiring it into the run needs a re-seal, which comes after the alpha. Its threshold was set on its own small practice set.
@@ -225,7 +225,7 @@ Some parts of Shimmer are built or planned but are not used in the alpha. Each l
 - Graph network (GNN): off, because two attempts failed bars written before any figure. Instead, the ontology uses the plain knowledge graph. Any further attempt is for the full release.
 - ContraDoc low-confidence rule: not in the headline score. Adding it to the headline is planned for the full release. A separate line, with unsure pairs counted and labelled, is shown beside the headline.
 - Speed measurement: not done yet. It is planned for the beta, and no speed claim is made.
-- Review desk: no key is needed, but only on this computer. This is a free local trial, and security work comes in the beta. Keyless mode opens every protected route of the server to this computer, not only the desk. Other computers need the token.
+- Review desk: no key is needed, but only on this computer. This is a free local trial; the access key, credentials and security work come in v1.1. Keyless mode opens every protected route of the server to this computer, not only the desk. Other computers need the token.
 - Review desk language: the desk and its guide are in English only in the alpha. A short Turkish guide to a first review already exists ([docs/GUIDE_TR.md](docs/GUIDE_TR.md)).
 - Local drafting without a provider: built, but not yet proven end to end. Under Cloud, drafting uses a provider model instead.
 
