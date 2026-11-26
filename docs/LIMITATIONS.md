@@ -22,9 +22,9 @@ What it does is in [METHOD.md](METHOD.md), and every result with its conditions 
   0.846 on the 13 of 15 claims it answered (0.733 if the 2 unanswered count as wrong),
   read again from the same answers after a reader fault was fixed, with the coverage
   rule loosened by the project owner after the result was seen; on 31 synthetic
-  negotiation items, conflict 0.955, open point 0.393 and stance 0.299. On the 20 of
-  those items the cloud model also answered, the system's open point 0.407 and stance
-  0.330 are about equal to the cloud model's 0.381 and 0.295.
+  negotiation items, conflict 0.955, open point 0.393 and advice matches the next round 0.299. On the 20 of
+  those items the cloud model also answered, the system's open point 0.407 and advice matches the next round
+  0.330 are about equal to the cloud model's 0.381 and 0.295. Advice matches the next round means whether the stance the system advised for an article (accept, change, reject) matches what actually happened to that article in the next round.
   See [RESULTS.md](RESULTS.md#first-results-on-untouched-items-21-november-2026). The final test set
   has not been run.
 - "Domain-agnostic" holds only in a narrow sense: no domain vocabulary is written

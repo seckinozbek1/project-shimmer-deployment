@@ -28,6 +28,8 @@ yet.
 Every measured set, one row each. "Untouched" items were not used to build or tune
 the system; "seen" items were. Figures are those of [docs/RESULTS.md](docs/RESULTS.md).
 
+Advice matches the next round means whether the stance the system advised for an article (accept, change, reject) matches what actually happened to that article in the next round.
+
 | Measure | Set | Items | Answered | Score |
 |---|---|---|---|---|
 | Contradictions (ContraDoc), system | untouched | 8 documents | 8 | accuracy 0.875 (range 0.625 to 1.0, chance test p 0.249) |
@@ -35,15 +37,15 @@ the system; "seen" items were. Figures are those of [docs/RESULTS.md](docs/RESUL
 | Negotiation, conflict, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.955 (range 0.924 to 0.980, p 0.0001) |
 | Negotiation, code checks, system | untouched | 31 synthetic items, 197 proposals | 192 | 1.0, with 2.5 percent of pieces dropped |
 | Negotiation, open point, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.393 (range 0.342 to 0.452, p 0.753) |
-| Negotiation, stance, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.299 (range 0.219 to 0.389, p 0.938) |
+| Negotiation, advice matches the next round, system | untouched | 31 synthetic items, 197 proposals | 192 | 0.299 (range 0.219 to 0.389, p 0.938) |
 | Negotiation, approach, system | untouched | 31 synthetic items | too few | no score: too few answers for the coverage rule |
 | Negotiation, open point, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.381 (range 0.334 to 0.449); system on the same items 0.407 (range 0.348 to 0.480) |
-| Negotiation, stance, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.295 (range 0.221 to 0.364); system on the same items 0.330 (range 0.244 to 0.435) |
-| Negotiation, open point and stance, bare model | untouched | 31 synthetic items, 197 proposals | 77 | no score: more than 5 percent of answers missing (120 of 197) |
+| Negotiation, advice matches the next round, cloud model | untouched | 20 synthetic items, 132 proposals | 132 | 0.295 (range 0.221 to 0.364); system on the same items 0.330 (range 0.244 to 0.435) |
+| Negotiation, open point and advice matches the next round, bare model | untouched | 31 synthetic items, 197 proposals | 77 | no score: more than 5 percent of answers missing (120 of 197) |
 | Table claims (SciTab), system | seen | 78 claims, 13 tables | not given here | three-class macro-F1 0.598 (range 0.444 to 0.656, chance p 0.0001) |
 | Contradictions (ContraDoc), system | seen | 15 documents | not given here | accuracy 0.533 |
 | Negotiation, conflict, earlier system | seen | 18 items, 179 proposals | not given here | three-class macro-F1 0.629 |
-| Negotiation, open point and stance, earlier system | seen | 18 items, 179 proposals | not given here | 0.435 and 0.330 |
+| Negotiation, open point and advice matches the next round, earlier system | seen | 18 items, 179 proposals | not given here | 0.435 and 0.330 |
 
 The coverage rule (at most 5 percent of answers missing) still holds for every
 other measurement, ContraDoc included. The project owner loosened it for this one
@@ -59,7 +61,7 @@ docs/RESULTS.md and the progress page.
 | Measure and items | Shimmer | Bare model | Cloud model | What this row is |
 |---|---|---|---|---|
 | Negotiation, open point detection: untouched, the same 20 synthetic items (132 proposals) | 0.407 (0.348 to 0.480) | no score: 81 of 132 proposals have no answer piece | 0.381 (0.334 to 0.449) | Untouched items, current code, the same 20 items for all three. The intervals overlap, so the two are about equal; neither is ahead of the other. |
-| Negotiation, stance matches fate: same 20 items | 0.330 (0.244 to 0.435) | no score: same reason | 0.295 (0.221 to 0.364) | Same items and code as the row above. The intervals overlap: about equal. |
+| Negotiation, advice matches the next round: same 20 items | 0.330 (0.244 to 0.435) | no score: same reason | 0.295 (0.221 to 0.364) | Same items and code as the row above. The intervals overlap: about equal. |
 | Contradictions (ContraDoc): untouched, 8 documents | 0.875 (0.625 to 1.0) | not measured | not measured | No bare or cloud run exists on these untouched items, so there is nothing to put beside the Shimmer figure. |
 | Table claims (SciTab): untouched, 15 claims | 0.846 on 13 answered (coverage rule loosened by the project owner after the result was seen) | not measured | not measured | No bare or cloud run exists on these untouched items. |
 | Contradictions (ContraDoc): seen, 40-document steering subset, older code | 55.0 percent; does not count: 26 of 40 undecided | 52.5 percent | 90.0 percent | Seen items, code from before the 18 to 19 November fixes; the same 40 documents for all three, but the Shimmer run is void, so this is no comparison. |
@@ -86,18 +88,18 @@ and version they ran on), the untouched figure, and the 0.60 mark. Figures are f
 
 | Line | Seen, system | Seen, bare model | Seen, cloud model | Untouched, system | Mark |
 |---|---|---|---|---|---|
-| Conflict | 0.987 (0.964 to 0.998) on the 24 development pilot items, round 2 with the fix, from saved answers; 0.629 on the older 18 seen items (179 proposals), earlier system | 0.217 on the 18 items, from older saved answers without the Python step | 0.648 on 14 of the 18 items | 0.955 on 31 items | 0.60 |
-| Open point | 0.473 (0.403 to 0.561) on the 24 items with the adopted setting (round 2 with the fix); 0.538 (0.468 to 0.607) with round 3, which was not adopted | no figure: the scorer refused it, too many answers missing | 0.507 (0.425 to 0.612) on its 14-item subset of the 24, from the answers of the 15 November pilot | 0.393 on 31 items; 0.407 on the cloud's 20 | 0.60 |
-| Stance | 0.429 (0.344 to 0.533) on the 24 items, adopted setting; 0.276 on the same answers read with a different scoring switch (open_stance_m4) | no figure: the scorer refused it | 0.396 (0.292 to 0.537) on its 14-item subset of the 24 | 0.299 on 31 items; 0.330 on the cloud's 20 | 0.60 |
+| Conflict | 0.987 (0.964 to 0.998) on the 24 development pilot items, round 2 with the fix, from saved answers; 0.629 on the older 18 seen items (179 proposals), earlier system | 0.217 on the 18 items, from older saved answers without the Python step | 0.648 on 14 of the 18 items | 0.955 on 31 items | 0.60, target kept |
+| Open point | 0.473 (0.403 to 0.561) on the 24 items with the adopted setting (round 2 with the fix); 0.538 (0.468 to 0.607) with round 3, which was not adopted | no figure: the scorer refused it, too many answers missing | 0.507 (0.425 to 0.612) on its 14-item subset of the 24, from the answers of the 15 November pilot | 0.393 on 31 items; 0.407 on the cloud's 20 | 0.60, original bar (D-709), retired 26 November 2026 |
+| Advice matches the next round | 0.429 (0.344 to 0.533) on the 24 items, adopted setting; 0.276 on the same answers read with a different scoring switch (open_stance_m4) | no figure: the scorer refused it | 0.396 (0.292 to 0.537) on its 14-item subset of the 24 | 0.299 on 31 items; 0.330 on the cloud's 20 | 0.60, original bar (D-709), retired 26 November 2026 |
 
 - Why the seen figures do not count: the 24 pilot items are development items, and the fix was made and
   chosen with them. The older 18 items were seen in the same way. The untouched items were scored once, with
   the marks written first.
 - Fixed answers on the older 18 seen items (179 proposals): giving the same answer to every proposal scores
-  0.444 on open point (always "accept" or always "reject"), and on stance 0.480 for always "reject" and 0.318
+  0.444 on open point (always "accept" or always "reject"), and on advice matches the next round 0.480 for always "reject" and 0.318
   for always "accept". They show how far a fixed answer gets on that set; they were not computed on the 24 or
   the 31 items.
-- On seen items too, the cloud model is below 0.60 on open point and stance.
+- On seen items too, the cloud model is below the original 0.60 bar (D-709, not reached; retired on 26 November 2026, now an indicator) on open point and advice matches the next round.
 
 On 21 November we scored the system for the first time on untouched items: items the
 project had not used to build or tune it. We did not check what the models saw in
@@ -155,10 +157,10 @@ changed, or removed.
 
 | Line | What it asks | Result | Against its mark |
 |---|---|---|---|
-| Conflict | Does a proposal clash with the position of the party being advised? | 0.955 (range 0.924 to 0.980, p 0.0001) | above 0.60 |
+| Conflict | Does a proposal clash with the position of the party being advised? | 0.955 (range 0.924 to 0.980, p 0.0001) | target 0.60, kept |
 | Code checks | Do the advice pieces satisfy the code's own checks, such as "cited items exist"? | 1.0, with 2.5 percent of pieces dropped (the mark allows at most 10 percent) | at its mark of 1.0 |
-| Open point | Is a proposal still open to change, or already settled? | 0.393 (range 0.342 to 0.452, p 0.753) | below 0.60 |
-| Stance | Does the advice (accept, counter, reject) match what the parties did next? | 0.299 (range 0.219 to 0.389, p 0.938) | below 0.60 |
+| Open point | Is a proposal still open to change, or already settled? | 0.393 (range 0.342 to 0.452, p 0.753) | below the original 0.60 bar (D-709, not reached; retired on 26 November 2026, now an indicator) |
+| Advice matches the next round | Does the advice (accept, counter, reject) match what the parties did next? | 0.299 (range 0.219 to 0.389, p 0.938) | below the original 0.60 bar (D-709, not reached; retired on 26 November 2026, now an indicator) |
 | Approach | Whom does the advice say to approach? | no figure, too few answers | refused |
 
 ### The cloud model on negotiation
@@ -170,7 +172,7 @@ those same 20 items, from its saved answers.
 | Measure | System (31 items) | System (same 20 items) | Cloud model (20 items) |
 |---|---|---|---|
 | Open point | 0.393 | 0.407 (range 0.348 to 0.480) | 0.381 (range 0.334 to 0.449) |
-| Stance | 0.299 | 0.330 (range 0.244 to 0.435) | 0.295 (range 0.221 to 0.364) |
+| Advice matches the next round | 0.299 | 0.330 (range 0.244 to 0.435) | 0.295 (range 0.221 to 0.364) |
 
 On the same items the system is slightly higher, but the ranges overlap, so the two
 are about equal. On those 20 items the bare model had no answer for 81 of the 132
@@ -180,10 +182,10 @@ misread.
 
 ### What the findings show
 
-- **Level with the cloud model on two hard measures.** On open point and stance, on
+- **Level with the cloud model on two hard measures.** On open point and advice matches the next round, on
   20 synthetic items, the system and the cloud model we tested are about equal. Even
-  the cloud model we tested is far below 0.60 on them, so the measures are hard. The
-  system's open point and stance figures cannot be told from chance, so being level
+  the cloud model we tested is far below the original 0.60 bar (D-709, not reached; retired on 26 November 2026, now an indicator) on them, so the measures are hard. The
+  system's figures for open point and advice matches the next round cannot be told from chance, so being level
   tells us little yet. On synthetic items, what the parties did next was chosen by a
   program.
 - **Conflict.** On synthetic items Shimmer found clashes well: 0.955. We have no
@@ -194,7 +196,7 @@ misread.
   a coverage rule refuses a score when too many answers are missing.
 
 The 0.60 mark was set for our own benchmark, with no outside source for a normal level.
-Together with the chance test results, that means the target needs to be reconsidered. The beta will make the benchmark
+Together with the chance test results, that means the target needs to be reconsidered. On 26 November 2026 the project owner retired it for open point detection and advice matches the next round; it stays on record as the original bar, not reached, and new targets will be written before any new run. The beta will make the benchmark
 more reasonable, and it will review the chance test.
 
 ### Tests of the code
