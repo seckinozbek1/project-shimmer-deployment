@@ -76,7 +76,9 @@ BUDGET_LINE_FIELDS = ('event', 'time_utc', 'loop_start_utc', 'budget_usd', 'hard
                       'source', 'previous_budget_usd', 'previous_hard_stop_usd', 'allocations_usd',
                       'five_hour_usage_launch_limit_percent', 'seven_day_usage_launch_limit_percent',
                       'usage_five_hour', 'usage_seven_day', 'a10_price_source', 'orphans',
-                      'running_instances_at_open', 'storage_forecast_days', 'storage_forecast_usd')
+                      'running_instances_at_open', 'storage_forecast_days', 'storage_forecast_usd',
+                      # D-946: the storage rate row names the rate and forecast it replaces
+                      'previous_storage_usd_per_day', 'previous_storage_forecast_usd')
 _MAIN = {}
 
 
@@ -217,6 +219,29 @@ def read_ledger(path):
     return rows
 
 
+def storage_accrual(base_rate, start, now, changes):
+    """Storage spend from `start` to `now`, piecewise (D-946). `base_rate` (the budget_open line's
+    storage_usd_per_day) holds from `start`; each (moment, rate) of `changes` (the storage_usd_per_day a
+    budget_change line declares) holds from its moment onward, the earlier rate before it. A declared rate
+    below the base is counted at the base, so the total is never lower than base_rate x days (the reading
+    before D-946). The rates come from the ledger at call time, none is typed here."""
+    if now <= start:
+        return 0.0
+    rate = base_rate
+    marks = []
+    for moment, declared in sorted(changes, key=lambda item: item[0]):
+        if moment <= start:
+            rate = max(base_rate, declared)
+        elif moment < now:
+            marks.append((moment, max(base_rate, declared)))
+    total = 0.0
+    cursor = start
+    for moment, declared in marks:
+        total += rate * (moment - cursor).total_seconds() / 86400
+        cursor, rate = moment, declared
+    return total + rate * (now - cursor).total_seconds() / 86400
+
+
 def ledger_view(rows, now):
     """Return per-instance records keyed by name, the closed launches (launch key to the
     termination line that closed it), and total spend counted once per launch.
@@ -225,14 +250,22 @@ def ledger_view(rows, now):
     counted once across both ledgers: a closed launch by its recorded actual cost, an open
     one by its price times the minutes since the launch request, never past its recorded
     deadline (rounded up, which overstates slightly and is safe). The storage share accrues
-    from the loop's start.
+    from the loop's start, piecewise at the rate each budget_change line declares from its time (D-946).
     """
     launches = {}
     terminations = []
     storage_rate = 0.0
     loop_start = None
+    storage_changes = []
     for row in rows:
         event = row.get('event')
+        if event == 'budget_change' and row.get('storage_usd_per_day') is not None:
+            try:
+                declared = float(row['storage_usd_per_day'])
+                if math.isfinite(declared) and declared >= 0:
+                    storage_changes.append((parse_time(row['time_utc']), declared))
+            except (KeyError, TypeError, ValueError):
+                pass
         if event == 'budget_open':
             storage_rate = float(row.get('storage_usd_per_day') or 0.0)
             loop_start = row.get('loop_start_utc') or loop_start
@@ -285,8 +318,7 @@ def ledger_view(rows, now):
             # reaper's next pass.
             spend += accrued(rec, now, to_deadline=True)
     if loop_start and storage_rate:
-        days = max(0.0, (now - parse_time(loop_start)).total_seconds() / 86400)
-        spend += storage_rate * days
+        spend += storage_accrual(storage_rate, parse_time(loop_start), now, storage_changes)
     return by_name, closed, spend
 
 

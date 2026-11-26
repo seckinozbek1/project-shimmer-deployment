@@ -39,6 +39,8 @@ from pathlib import Path
 
 CONFIG = Path(__file__).resolve().parents[2] / 'config' / 'launch_ram_floors.json'
 DISK_CONFIG = Path(__file__).resolve().parents[2] / 'config' / 'laptop_disk_floor.json'
+OWN_DISK_CONFIG = DISK_CONFIG   # this tree's copy; DISK_CONFIG patched to anything else (a fixture) is read as it is
+DISK_RELATIVE = ('config', 'laptop_disk_floor.json')
 FALLBACK_GIB = 1.2
 FALLBACK_DISK_GIB = 30.0   # the old fixed laptop floor (D-099): what an unreadable rule or an unknown footprint holds
 GIB = 2 ** 30
@@ -94,9 +96,33 @@ def ram_problem(step, free_gib, lambda_steps=(), path=None):
     return 'free RAM %.2f GiB is under %.1f (step %s, kind %s, %s floor)' % (free, floor, step, kind, source)
 
 
+def disk_config():
+    """The disk rule file every call reads: the main checkout's config/laptop_disk_floor.json, the main checkout
+    named by tools/loop/shared_paths.py (SHIMMER_MAIN_CHECKOUT, else the parent of git's common directory), so a
+    bound worktree made before a change of the rule reads the rule in force, never its own old copy (beta item 28,
+    OPEN_ITEMS 180: the round 2 and #309 trees read 12 GiB after D-849 set 10). This tree's own copy when the main
+    checkout cannot be named, is reached through a link, or holds no such file; DISK_CONFIG patched away from this
+    tree's copy (a fixture) is read as it is."""
+    if Path(DISK_CONFIG) != OWN_DISK_CONFIG:
+        return Path(DISK_CONFIG)
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('shared_paths_for_floors', Path(__file__).resolve().parent / 'shared_paths.py')
+        shared = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(shared)
+        root = shared.main_checkout(start=Path(__file__).resolve().parent)
+        main = Path(root).joinpath(*DISK_RELATIVE)
+        if main.is_file() and not shared._is_link(main) and not shared._is_link(main.parent):
+            return main
+    except Exception:     # noqa: BLE001 - no main checkout named: this tree's copy, as before
+        pass
+    return OWN_DISK_CONFIG
+
+
 def load_disk(path=None):
-    """The laptop disk rule, read now (never cached). Raises on a missing or malformed file."""
-    cfg = json.loads(Path(path or DISK_CONFIG).read_text(encoding='utf-8'))
+    """The laptop disk rule, read now (never cached) from `path` or disk_config(). Raises on a missing or
+    malformed file."""
+    cfg = json.loads(Path(path or disk_config()).read_text(encoding='utf-8'))
     if not isinstance(cfg, dict):
         raise ValueError('laptop_disk_floor.json is not an object')
     return cfg

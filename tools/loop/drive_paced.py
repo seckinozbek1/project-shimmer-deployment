@@ -40,6 +40,13 @@ it is not guaranteed to be there; the trace line says so in its "how" field. An 
 MD5 (older archives) is compared by size and cloud id only ("cloud_present"), never hashed from Drive. An
 archive with no matching cloud checksum yet is traced "not_yet_on_drive" and checked again on the next run.
 Nothing is ever deleted by this tool.
+
+Overlap (D-941, Seckin 22 November 2026 16:10): a written archive is looked up every CONFIRM_POLL_S (15)
+seconds, and the next part is written while the previous one waits for its server MD5. At most one part
+runs ahead: the earlier part's confirmation is settled (cloud_confirmed, or the --confirm-wait-min deadline)
+before a third part starts. Every pacing rule (disk floor plus the part's size, the drained Drive cache, the
+upload pause, RAM at the start) still holds before each part. A run that stops early checks the part ahead
+once more without waiting; the next run's confirm pass checks it again.
 """
 from __future__ import annotations
 
@@ -65,7 +72,8 @@ CACHE_LOW = 3 * GIB
 CACHE_FLAT_MAX = 20 * GIB
 FLAT_WINDOW_S = 20 * 60
 FLAT_BAND = int(0.2 * GIB)
-POLL_S = 120
+POLL_S = 120          # disk and Drive cache pacing checks (wait_for_room)
+CONFIRM_POLL_S = 15   # D-941: how often a written archive is looked up for its server MD5 (was POLL_S)
 WAIT_TRACE_S = 30 * 60
 HOW = ('server MD5 and cloud id read from the Drive app metadata database (read-only); '
        'not a live Google Drive API read, which needs a login')
@@ -242,6 +250,26 @@ def pending(paths, include_drive_only):
             + [r for r in out if free < DISK_FLOOR + r['need_bytes']])
 
 
+def settle(ahead, wait=True):
+    """Look up the written part `ahead` (part, log line, md5, deadline) every CONFIRM_POLL_S seconds until
+    cloud_confirmed or its deadline (wait=False: once), and trace the result. A part not confirmed is not an
+    error: the next run's confirm pass checks it again. The Drive file is only stat'ed, never read (D-763)."""
+    if ahead is None:
+        return None
+    part, line, md5, deadline = ahead
+    while True:
+        try:
+            state, det = confirm(line['file'], md5)
+        except OSError as exc:      # a stat that fails is not a confirmation; the next run's confirm pass retries
+            state, det = 'not_yet_on_drive', {'note': 'stat failed: %s' % type(exc).__name__}
+        if state == 'cloud_confirmed' or not wait or time.time() >= deadline:
+            break
+        time.sleep(CONFIRM_POLL_S)
+    mc.trace(NAME, state, part=part, file=line['file'], archive_time=line.get('time'), bytes=line.get('bytes'),
+             how=HOW, **det)
+    return state
+
+
 def lock():
     """The open lock file when this run holds the drive_paced lock, None when another run does. Windows:
     an msvcrt byte-range lock; POSIX: flock on the open file description (as launch_chain._lock_region),
@@ -301,9 +329,15 @@ def main(argv=None):
              free_gib=round(free_disk() / GIB, 2), drive_only_included=args.include_drive_only)
     status = 0
     too_big = []
+    ahead = None      # (part, log line, md5, confirm deadline) of the one written part still waiting for its MD5
     for r in todo:
         part = r['part']
+        # D-941 (Opus review): the part ahead may not be counted in Drive's free space yet, so its bytes are
+        # taken off here and in archive_part's own 4 GiB check
+        ahead_bytes = (ahead[1].get('bytes') or 0) if ahead else 0
         drive_free = drive_free_bytes(paths)
+        if drive_free is not None:
+            drive_free -= ahead_bytes
         if drive_free is not None and drive_free - r['need_bytes'] < da.FLOOR:
             # The 13:07 run ended with exit 1 here: drive_archive refuses a part that would leave under 4 GiB
             # free on Drive (DEV_contradoc15, far larger than the account's free space), and the loop then
@@ -314,14 +348,18 @@ def main(argv=None):
                      drive_free_gib=round(drive_free / GIB, 2))
             continue
         if paused_now(part):
+            settle(ahead, wait=False)
             return da.PAUSED_EXIT
         room = wait_for_room(part, r['need_bytes'], args.max_wait_min * 60)
         if room is None:
+            settle(ahead, wait=False)
             return da.PAUSED_EXIT
         if not room:
+            settle(ahead, wait=False)
             return 4
         try:
-            line = da.archive_part(paths, part)
+            line = (da.archive_part(paths, part, free=lambda p, n=ahead_bytes: shutil.disk_usage(p).free - n)
+                    if ahead_bytes else da.archive_part(paths, part))
         except da.Refused as exc:
             mc.trace(NAME, 'refused', part=part, reason=str(exc)[:200])
             status = 1
@@ -334,6 +372,7 @@ def main(argv=None):
         if line.get('paused'):     # drive_archive stopped before or between files and wrote the ALERT.md line
             mc.trace(NAME, 'paused', part=part, reason=line['paused'], partial_left=line.get('partial_left'),
                      note='the next scheduled run resumes above the floor')
+            settle(ahead, wait=False)
             return da.PAUSED_EXIT
         if line.get('stopped') or not line.get('file'):
             mc.trace(NAME, 'skipped_too_big_for_drive' if line.get('stopped') else 'stopped', part=part,
@@ -344,16 +383,9 @@ def main(argv=None):
         mc.trace(NAME, 'written', part=part, file=line['file'], bytes=line.get('bytes'), sha256=line.get('sha256'),
                  md5=md5, local_verified=line.get('verified'), archive_time=line.get('time'),
                  note='written to the Drive app folder; size checked by os.stat until cloud_confirmed')
-        deadline = time.time() + args.confirm_wait_min * 60
-        while True:
-            state, det = confirm(line['file'], md5)
-            if state == 'cloud_confirmed' or time.time() >= deadline:
-                break
-            time.sleep(POLL_S)
-        mc.trace(NAME, state, part=part, file=line['file'], archive_time=line.get('time'), bytes=line.get('bytes'),
-                 how=HOW, **det)
-        if state != 'cloud_confirmed':
-            status = status or 0     # not an error yet: the next run's confirm pass checks it again
+        settle(ahead)     # D-941: the part before this one is settled before a third part starts
+        ahead = (part, line, md5, time.time() + args.confirm_wait_min * 60)
+    settle(ahead)
     if too_big:
         mc.alert('drive_paced:too_big:' + ','.join(sorted(too_big)), 'Drive backup (task ShimmerDriveBackup): %d '
                  'part(s) are larger than the free space on the Google Drive account (keeping 4 GiB free) and were '

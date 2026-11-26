@@ -337,6 +337,87 @@ def detached_launch_command(remote,label,command):
             +'test -f '+shlex.quote(started)+' && cat '+shlex.quote(pid))
 
 
+# Beta item 28 (OPEN_ITEMS 181): a one-shot ssh or scp call that loses its connection is tried again, a bounded
+# number of times with a growing wait, inside the phase's own deadline; QUICK_READ_ALPHA lost nine entries to one
+# "Connection timed out" at batch_project_from_store_start (20 Nov 2026). Only a transport failure is retried: ssh's
+# own exit 255, or scp at exit 255 or with a connect-stage message; a remote command's own non-zero exit and a call that hangs
+# to its timeout are unchanged. A detached phase's start is retried with the same attempt nonce, so a start whose
+# connection dropped after the remote wrapper began returns that wrapper's pid and never starts the work twice.
+TRANSPORT_RETRY_WAITS=(5,15,45)
+# scp's connect stage only: 'lost connection', 'Connection closed' and 'Broken pipe' are also printed when the remote
+# side of a real copy fails, so they are not read as a lost connection (review of 23 Nov 2026, point 4).
+CONNECTION_FAILURE=re.compile(rb'Connection (?:timed out|refused)|kex_exchange_identification|'
+                              rb'Network is unreachable|No route to host|Could not resolve hostname',re.I)
+
+
+class TransportFailure(RuntimeError):
+    """A required one-shot transport still failing after every retry (a batch ends that entry and goes on).
+    `phase_key` names the detached phase when the failed call was that phase's start."""
+    phase_key=None
+
+
+def transport_failed(argv,returncode,output):
+    """True when a finished ssh or scp call failed for its connection, not for the remote command."""
+    if returncode==0 or not argv:return False
+    tool=Path(str(argv[0])).name.lower()
+    if tool in ('ssh','ssh.exe'):return returncode==255
+    if tool in ('scp','scp.exe'):return returncode==255 or bool(CONNECTION_FAILURE.search(output or b''))
+    return False
+
+
+def retry_wait(attempt,remaining=None):
+    """Seconds to wait before try attempt+2 (attempt counts from 0), or None when no retry is left or it does not fit."""
+    if attempt>=len(TRANSPORT_RETRY_WAITS):return None
+    wait=TRANSPORT_RETRY_WAITS[attempt]
+    return wait if remaining is None or wait<remaining else None
+
+
+def run_with_retry(argv,timeout,required,run,sleep=time.sleep,clock=time.time,on_retry=None):
+    """(result, attempts, exhausted) of `run(argv, seconds)`: a required call that failed for its connection is tried
+    again after each of TRANSPORT_RETRY_WAITS while the wait fits in what is left of `timeout`; the first try gets
+    the whole timeout, as before. A TimeoutExpired from `run` is raised unchanged (a hang is not retried)."""
+    begin=clock();attempt=0
+    while True:
+        r=run(argv,timeout if attempt==0 else max(1,int(begin+timeout-clock())))
+        if not (required and transport_failed(argv,r.returncode,r.stderr)):return r,attempt+1,False
+        wait=retry_wait(attempt,begin+timeout-clock())
+        if wait is None:return r,attempt+1,True
+        if on_retry:on_retry(attempt+1,r.returncode,wait)
+        sleep(wait);attempt+=1
+
+
+def run_batch(batch,run_one,entry_failed,start_dead=None):
+    """Run every entry in order; an entry whose transport failed after its retries (TransportFailure) is passed to
+    `entry_failed(entry, exc, failed indices)` and the next entry runs; any other failure stops the batch as before.
+    Two more cases stop it (review of 23 Nov 2026, points 1 and 4): a failed phase start (exc.phase_key) unless
+    `start_dead(phase_key)` reads the phase dead on the instance (the work may still run, and the next entry's park
+    would move a live workload), and a second entry in a row failing so (the instance is likely unreachable)."""
+    failed=[];previous=False
+    for entry in batch:
+        try:run_one(entry)
+        except TransportFailure as exc:
+            if exc.phase_key and not (start_dead and start_dead(exc.phase_key)):raise
+            if previous:raise
+            failed.append(entry['index']);previous=True
+            entry_failed(entry,exc,failed)
+            continue
+        previous=False
+    return failed
+
+
+def retried_launch_command(remote,label,command,nonce):
+    """detached_launch_command made safe to send again: the first try writes `nonce` beside the phase files (with
+    echo, so the command's one `printf %s` stays the script's, as every reader of it expects) after clearing the
+    phase's started and rc markers; a later try that finds the same nonce and the started marker
+    prints the running wrapper's pid instead of starting the work again."""
+    base=phases_dir(remote)
+    marker,started,pid,rc=(base+'/'+label+ext for ext in ('.nonce','.started','.pid','.rc'))
+    return ('mkdir -p '+shlex.quote(base)+' && if [ "$(cat '+shlex.quote(marker)+' 2>/dev/null)" = '+shlex.quote(nonce)
+            +' ] && [ -f '+shlex.quote(started)+' ]; then cat '+shlex.quote(pid)+'; else rm -f '+shlex.quote(started)+' '
+            +shlex.quote(rc)+' && echo '+shlex.quote(nonce)+' > '+shlex.quote(marker)+' && '
+            +detached_launch_command(remote,label,command)+'; fi')
+
+
 def detached_poll_command(remote,label,progress=None):
     """One short remote command reporting RC=<code>, RUNNING or DEAD, then an optional progress tail."""
     base=phases_dir(remote)+'/'+label
@@ -1037,7 +1118,9 @@ def execute():
         folder=BASE if into is None else into
         timeout=bounded(timeout)
         begin=time.time()
-        try:r=subprocess.run(argv,capture_output=True,timeout=timeout,creationflags=no_window())
+        try:r,attempts,exhausted=run_with_retry(argv,timeout,required,
+                lambda a,t:subprocess.run(a,capture_output=True,timeout=t,creationflags=no_window()),
+                on_retry=lambda n,code,wait:write(folder/(key+'_retry_%d.json'%n),dict(epoch=time.time(),returncode=code,wait_seconds=wait)))
         except subprocess.TimeoutExpired:
             if tolerate_timeout:
                 # A poll that hangs is an unreachable poll, not a phase result.
@@ -1051,7 +1134,10 @@ def execute():
             raise RuntimeError('Possible credential detected; diagnostics withheld')
         if record:
             (folder/(key+'.log')).write_bytes(data)
-            write(folder/(key+'_timing.json'),dict(start_epoch=begin,seconds=time.time()-begin,returncode=r.returncode))
+            timing=dict(start_epoch=begin,seconds=time.time()-begin,returncode=r.returncode)
+            if attempts>1 or exhausted:timing.update(attempts=attempts,transport_failed=exhausted)
+            write(folder/(key+'_timing.json'),timing)
+        if exhausted:raise TransportFailure('Transport failed after %d attempts: %s'%(attempts,label))
         require(not required or r.returncode==0,'Execution phase failed: '+label)
         return r
     def salvage_check(label,starting):
@@ -1078,7 +1164,11 @@ def execute():
         begin=time.time()
         deadline=begin+timeout
         progress=REMOTE+'/workload.stderr.log' if label in ('ordinary_workload','batch_workload') else None
-        r=transport(label+'_start',ssh+[detached_launch_command(REMOTE,key,command)],60,True,announce=False,tag=tag,into=into)
+        nonce='%d-%d'%(os.getpid(),int(begin*1000))   # one per phase call: a retried start never starts the work twice
+        try:r=transport(label+'_start',ssh+[retried_launch_command(REMOTE,key,command,nonce)],60,True,announce=False,tag=tag,into=into)
+        except TransportFailure as exc:
+            exc.phase_key=key   # the work may have started: the batch goes on only if a poll reads it dead
+            raise
         lines=r.stdout.decode('utf8',errors='replace').strip().splitlines()
         pid=lines[-1].strip() if lines else ''
         status=dict(phase=label,started_epoch=begin,deadline_epoch=deadline,remote_pid=pid,polls=0,unreachable_polls=0,
@@ -1467,7 +1557,19 @@ pathlib.Path('remote_collection_manifest.json').write_text(json.dumps(manifest,i
         if batch:
             # Several bundles in one instance session, item by item, each collected as
             # soon as it finishes, so any stop leaves the finished pairs complete.
-            for entry in batch:run_entry(entry,permit,exe,prefix)
+            # Beta item 28 (OPEN_ITEMS 181): an entry whose one-shot transport still fails after its retries is
+            # ended with entry_failure.json (it has no workload_return.json, so every reader counts it missing)
+            # and the batch goes on with the next entry; any other failure stops the part as before, and so do a failed
+            # phase start whose phase a poll does not read dead and a second failing entry in a row (run_batch).
+            def entry_failed(entry,exc,failed):
+                if entry['folder'].exists():
+                    write(entry['folder']/'entry_failure.json',dict(error_type=type(exc).__name__,message=str(exc),epoch=time.time()))
+                save('batch_entry_failures.json',dict(indices=failed,epoch=time.time()))
+            def start_dead(key):
+                r=transport(key+'_poll',ssh+[detached_poll_command(REMOTE,key)],30,False,announce=False,record=False,
+                            tolerate_timeout=True)
+                return poll_outcome(r.returncode,r.stdout)[0]=='dead'
+            run_batch(batch,lambda entry:run_entry(entry,permit,exe,prefix),entry_failed,start_dead)
         else:
             # Exactly one entry-point invocation. A nonzero return is evidence, never
             # permission to patch the sealed source, remove RUN_CLAIMED or try again.

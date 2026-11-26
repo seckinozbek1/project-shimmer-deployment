@@ -2173,6 +2173,10 @@ def stepwise_call(backend, prompt, config, limit, record, rows, verdict):
             text = choice_decision.settle(result["decision"], threshold)["decided"]
         elif isinstance(result.get("text"), str):
             text = result["text"]
+        # Issue #322: a generated step that used its whole allowance stopped at the cap, which is counted from the
+        # backend's own output token count against the declared allowance, never from the text.
+        if n and type(result.get("output_tokens")) is int and result["output_tokens"] >= n:
+            row["cap_reached"] = True
         rows.append(row)
         record(row, result, text, error)
         return text, decision_probabilities(result.get("decision"))
@@ -2182,10 +2186,16 @@ def stepwise_call(backend, prompt, config, limit, record, rows, verdict):
 
 
 REFUSED_CATEGORY = "method_refused"
+# Issue #322 (D-947, open item 181): a generated step that ran to its token cap and Python's form check refused is
+# recorded under its own reason, `step_cap_reached`, with its own error category: neither a form refusal nor a crash.
+CAP_REASON = CAP_CATEGORY = "step_cap_reached"
 
 
 def refusal_error(entry):
-    """A refused step's record error, REASON-METHODS-A's form: `method_refused: <step> <reason>`."""
+    """A refused step's record error, REASON-METHODS-A's form: `method_refused: <step> <reason>`; a refused step
+    that stopped at its cap is `step_cap_reached: <step>` (issue #322)."""
+    if entry["refused"] == CAP_REASON:
+        return "%s: %s" % (CAP_CATEGORY, entry["step"])
     return "%s: %s %s" % (REFUSED_CATEGORY, entry["step"], entry["refused"])
 
 
@@ -2194,7 +2204,7 @@ def step_texts(config, record):
     generated text. None for a failed call; for a step Python's check refused (no decision, backend_ok false),
     its generated text if it had one, so the check refuses it again for the same reason."""
     if not record.get("backend_ok"):
-        if record.get("error_category") != REFUSED_CATEGORY:
+        if record.get("error_category") not in (REFUSED_CATEGORY, CAP_CATEGORY):
             return None
         reply = record.get("reply") or {}
         return reply.get("text") if isinstance(reply, dict) else None
@@ -2227,7 +2237,12 @@ def recompose_stepwise(config, prompt, step_rows, records):
         raise ValueError("the pass holds more steps than the chain asks: %s" % prompt["prompt_id"])
     for row, entry in zip(step_rows, steps):
         record = records.get(row.get("call_id")) or {}
-        if record.get("error_category") == REFUSED_CATEGORY and record.get("error") != refusal_error(entry):
+        if record.get("error_category") == CAP_CATEGORY:
+            # The pass saw the step stop at its cap; the chain's own form check must refuse its text too.
+            if not entry["refused"]:
+                raise ValueError("a saved cap step is accepted on reading: %s" % row.get("prompt_id"))
+            entry["refused"] = CAP_REASON
+        if record.get("error_category") in (REFUSED_CATEGORY, CAP_CATEGORY) and record.get("error") != refusal_error(entry):
             raise ValueError("a saved step's refusal is not the chain's: %s" % row.get("prompt_id"))
         if record.get("backend_ok") and entry["refused"]:
             raise ValueError("a saved step the pass accepted is refused on reading: %s" % row.get("prompt_id"))
@@ -2331,6 +2346,8 @@ def run(prompts_path, out, *, backend_factory=None, reader_for=None, run_id=None
                     def verdict(row, entry, pending=pending):
                         if not entry["refused"] or not pending or pending[-1]["row"] is not row:
                             return
+                        if row.get("cap_reached"):
+                            entry["refused"] = CAP_REASON
                         held, row["refused"] = pending[-1], entry["refused"]
                         if not held["error"]:
                             held["error"] = refusal_error(entry)

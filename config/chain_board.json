@@ -1,7 +1,7 @@
 {
  "note": "D-916: what tools/loop/chain_board.py reads. folders are names under external/s05; watched paths are checked by existence, size and modification time only, never opened. A relative path is under the main checkout; a name with * is listed in its folder. role final: every one present means done; role stop: any present means failed; role info: shown only.",
  "folders": [
-  "ROUTE_GATE_E_89023590",
+  "ROUTE_GATE_F_f1d58f93",
   "DEV_contradoc_decision",
   "UNT_scitab_d",
   "UNT_contradoc_d",
@@ -10,12 +10,12 @@
  "watched": [
   {
    "name": "FREEZE_OK",
-   "path": "external/s05/ROUTE_GATE_E_89023590/FREEZE_OK.json",
+   "path": "external/s05/ROUTE_GATE_F_f1d58f93/FREEZE_OK.json",
    "role": "final"
   },
   {
    "name": "FREEZE_REFUSED",
-   "path": "external/s05/ROUTE_GATE_E_89023590/FREEZE_REFUSED.json",
+   "path": "external/s05/ROUTE_GATE_F_f1d58f93/FREEZE_REFUSED.json",
    "role": "stop"
   },
   {

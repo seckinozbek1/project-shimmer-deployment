@@ -69,7 +69,8 @@ PROMPT_KEYS = {"prompt_id", "set", "item_id", "position_id", "prompt", "prompt_s
 # over the declared answer set, CHOICE-A's rule, read from the generation's own forward passes, no extra pass).
 FIELDS = ("article", "wording", "stance", "firm_limit")
 CONFIDENCE_FIELD = "stance"
-LABELLER_KEYS = ("family", "candidates", "terms_required", "families_never_labeller", "decoding")
+LABELLER_KEYS = ("family", "candidates", "terms_required", "families_never_labeller", "decoding", "same_family_rule",
+                 "same_family_forbidden_keys")
 # D-843: also the D-798 validation set's names (`validation`, `validation_strata`), so it can be labelled as named
 # (OPEN_ITEMS 164); still lower-case letters and digits in underscore-joined words, nothing else.
 SET_NAME = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
@@ -95,8 +96,11 @@ def check_model(model_id, labeller, generator_family):
     low = mid.lower()
     if not mid:
         raise ValueError("refused: no labeller model resolved")
-    if any(f in low for f in labeller["families_never_labeller"]) or str(generator_family).lower() in low:
-        raise ValueError("refused: a family of the system under test or of the generator never labels")
+    if any(f in low for f in labeller["families_never_labeller"]):
+        raise ValueError("refused: a family of the system under test never labels")
+    gen = str(generator_family).lower()
+    if gen and gen in low and not (labeller.get("same_family_rule") and labeller.get("same_family_forbidden_keys")):
+        raise ValueError("refused: the generator's family labels only under the declared same-family rule (D-955)")
     if labeller["family"] not in low:
         raise ValueError("refused: the labeller's family is declared as %s" % labeller["family"])
     if DATED.search(mid):
@@ -165,10 +169,27 @@ def write_file(path, labeller, generator_family, template_sha256, sets, prompts)
     return value
 
 
+def check_inputs_independent(value, forbidden):
+    """D-955: the labeller's inputs carry none of the generator's prompt, metadata or model id: no key of the file
+    at any depth is one the same-family rule names. (The file is its own sealed pass: generation never runs in it.)"""
+    stack = [value]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            bad = sorted(k for k in node if k in forbidden)
+            if bad:
+                raise ValueError("refused: the labelling inputs carry the generator's %s (D-955 same-family rule)" % bad[0])
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+
+
 def check_file(value):
     """Every refusal of a labelling prompts file; returns its prompts."""
     if not is_prompts_file(value):
         raise ValueError("not a labelling pass file (%s)" % SCHEMA)
+    check_inputs_independent({k: v for k, v in value.items() if k != "labeller"},
+                             set((value.get("labeller") or {}).get("same_family_forbidden_keys") or ()))
     lab = value.get("labeller") or {}
     if set(lab) != set(LABELLER_KEYS) or not lab["candidates"]:
         raise ValueError("the file's labeller block is not the declared one")

@@ -21,10 +21,23 @@ an ABSTAIN class, or any basis not named here) counts as not answered. When the 
 above the limit (5 percent), the check prints the reason and exits 3: the score is not written. It prints counts
 and shares only, never an item id, a label or a key. Exit 0: every file is within the limit. Exit 2: a file is
 unreadable or not a label output.
+
+Empty answers (beta list item 17, Seckin 23 November 2026): every not-answered row is tagged `empty`
+(tools/empty_answers.py) with its basis as the reason, and its count printed beside the coverage line. This changes
+no count and no verdict. With --empty-list PATH the item ids of the empty rows and of every scored row are written
+to PATH (the only place an id is written; default, D-950: <--out stem>_empty.json in the report's own folder); with --recheck PREVIOUS (a listing an earlier run wrote) the previously
+empty items are read against this run, counts printed, each item's status written into the --empty-list file.
+Seckin 18:10 (G-20261123-1812): the empty count is printed on two lines, withheld by the system as unsupported and
+plain silence (tools/empty_answers.kind_of); with --correct N (the scorer's count of right answers among the
+answered, an accuracy-type figure only) the main figure N/answered is printed beside the figure counting each
+empty answer wrong, N/items. Nothing else in the counting changes.
 """
 import json
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import empty_answers  # noqa: E402
 
 ANSWERED = ('ok', 'post_hoc_threshold', 'judged_absence')
 LIMIT = 0.05
@@ -76,12 +89,19 @@ def judged_absence(runs, document_id):
 
 def counts(path, runs=None):
     """{'items', 'answered', 'post_hoc', 'not_answered', 'by_basis'} for one label output."""
+    return read_rows(path, runs)[0]
+
+
+def read_rows(path, runs=None):
+    """(counts, empty entries, scored keys) of one label output; the empty entries are its not-answered rows, each
+    tagged `empty` with its basis (beta item 17), the same rows counts() counts as not answered."""
     data = json.loads(Path(path).read_text(encoding='utf-8'))
     rows = data['primary']['labels']
     if not isinstance(rows, list):
         raise ValueError('primary.labels is not a list')
     by_basis = {}
     answered = post_hoc = leaning_only = 0
+    empty, scored = [], []
     for row in rows:
         basis = str(row.get('basis'))
         if basis == 'silent':
@@ -90,19 +110,28 @@ def counts(path, runs=None):
         if row.get('class') == 'ABSTAIN':
             basis = basis + '/ABSTAIN'
         by_basis[basis] = by_basis.get(basis, 0) + 1
+        scored.append(empty_answers.key_of(row.get('item_id')))
         if basis in ANSWERED:
             answered += 1
             post_hoc += basis == 'post_hoc_threshold'
+        else:
+            # Item 17: a not-answered row is an empty answer, tagged with its basis; no count changes.
+            empty.append(empty_answers.entry(row.get('item_id'), basis))
     out = {'items': len(rows), 'answered': answered, 'post_hoc': post_hoc, 'not_answered': len(rows) - answered,
            'by_basis': dict(sorted(by_basis.items()))}
     if leaning_only:
         # D-907: a silent row whose document's pairs hold a leaning and no detection, not answered, counted apart
         out[LEANING_ONLY] = leaning_only
-    return out
+    return out, empty, scored
+
+
+def default_listing(out):
+    """D-950: the empty-answers listing's path beside the --out report, in the same folder."""
+    return str(Path(out).parent / (Path(out).stem + '_empty.json'))
 
 
 def main(argv):
-    limit, out, runs, files = LIMIT, None, None, []
+    limit, out, runs, files, empty_list, previous, correct = LIMIT, None, None, [], None, None, None
     i = 0
     while i < len(argv):
         if argv[i] == '--limit':
@@ -111,19 +140,38 @@ def main(argv):
             runs, i = argv[i + 1], i + 2
         elif argv[i] == '--out':
             out, i = argv[i + 1], i + 2
+        elif argv[i] == '--empty-list':
+            empty_list, i = argv[i + 1], i + 2
+        elif argv[i] == '--recheck':
+            previous, i = argv[i + 1], i + 2
+        elif argv[i] == '--correct':
+            correct, i = int(argv[i + 1]), i + 2
         else:
             files.append(argv[i])
             i += 1
-    if not files:
+    if out and not empty_list:
+        # D-950 (Seckin 18:10, item b): the listing sits in the score report's own folder unless named.
+        empty_list = default_listing(out)
+    if not files or (previous and not empty_list):
         print(__doc__)
         return 2
+    if previous:
+        try:
+            previous = empty_answers.read_listing(previous)
+        except (OSError, ValueError) as e:
+            print('%s: not an empty-answers listing (%s): stop' % (Path(previous).name, type(e).__name__))
+            return 2
     report, refused = {'limit': limit, 'files': {}}, []
+    all_empty, all_scored = [], []
     for f in files:
         try:
-            c = counts(f, runs)
+            c, empty, scored = read_rows(f, runs)
         except (OSError, ValueError, KeyError, TypeError) as e:
             print('%s: not a label output (%s): stop' % (Path(f).name, type(e).__name__))
             return 2
+        c[empty_answers.TAG] = empty_answers.summary(empty, c['items'])
+        all_empty += empty
+        all_scored += scored
         share = c['not_answered'] / c['items'] if c['items'] else 1.0
         c['not_answered_share'] = round(share, 4)
         c['verdict'] = 'within' if share <= limit else 'refused'
@@ -134,11 +182,37 @@ def main(argv):
         if c.get(LEANING_ONLY):
             print('%s: of the not answered, %d rest on low-confidence leanings alone (D-907), never the system\'s own '
                   'answer' % (Path(f).name, c[LEANING_ONLY]))
+        print('%s: tagged %s (%s): %d of %d, by reason %s'
+              % (Path(f).name, empty_answers.TAG, empty_answers.LABEL_TR, c['empty']['count'], c['items'],
+                 json.dumps(c['empty']['by_reason'])))
+        for line in empty_answers.kind_lines(c['empty']):
+            print('%s: %s' % (Path(f).name, line))
         if share > limit:
             refused.append('%s: %.1f percent not answered by the system, above %.0f percent'
                            % (Path(f).name, 100 * share, 100 * limit))
     report['verdict'] = 'refused' if refused else 'within'
     report['reasons'] = refused
+    items = sum(c['items'] for c in report['files'].values())
+    answered = sum(c['answered'] for c in report['files'].values())
+    if correct is not None:
+        # Seckin 18:10 (G-20261123-1812) item (a): both figures side by side, from the scorer's count of right answers.
+        report['figures'] = empty_answers.both_figures(correct, answered, items)
+        print(empty_answers.figures_line(report['figures']))
+    else:
+        print('both figures: pass --correct N (the count of right answers the scorer gives among the %d answered) to print '
+              'the main figure beside the one counting blanks wrong' % answered)
+    if empty_list:
+        report['listing'] = str(Path(empty_list).resolve())
+        print('%s (%s) ids are listed in %s, not here' % (empty_answers.TAG, empty_answers.LABEL_TR, report['listing']))
+    if empty_list:
+        listed = empty_answers.listing('coverage', all_empty, all_scored, run=[Path(f).name for f in files])
+        if previous:
+            listed['recheck'] = empty_answers.recheck(previous, listed)
+            report['recheck'] = listed['recheck']['counts']
+            rc = report['recheck']
+            print('previously empty %d: now answered %d, still empty %d, not in this run %d'
+                  % (sum(rc.values()), rc['now_answered'], rc['still_empty'], rc['not_in_this_run']))
+        Path(empty_list).write_text(json.dumps(listed, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
     if out:
         Path(out).write_text(json.dumps(report, indent=1) + '\n', encoding='utf-8')
     if refused:

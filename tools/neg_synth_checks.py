@@ -360,15 +360,15 @@ class Provenance(NegSynthChecks):
                 set_dir = ns.prepare_set(Path(tmp) / "dev_1", "dev_1", CFG)
                 prompt = ns.brief_of(card, CFG, GEN)
                 problems, build = ns.validate(card, reply, CFG)
-                row = ns.provenance_row(card, "dev_1", prompt, reply_bytes, build, family="claude",
-                                        model_id="claude-opus", decoding={"temperature": 1.0}, regeneration=0,
+                row = ns.provenance_row(card, "dev_1", prompt, reply_bytes, build, family="olmo",
+                                        model_id="olmo-fixture", decoding={"temperature": 1.0}, regeneration=0,
                                         cfg=CFG, generated_at="2026-11-16T20:30:00+0300")
                 ns.write_item(set_dir, card, build, CFG)
                 ns.write_provenance(set_dir, row)
                 rows = [json.loads(x) for x in (set_dir / ns.PROVENANCE_FILE).read_text(encoding="utf-8").splitlines()]
                 back = rows[0] if rows else {}
                 built = json.loads((set_dir / "build" / card["item_id"] / "build.json").read_text(encoding="utf-8"))
-                kw = dict(family="claude", model_id="claude-opus", decoding={}, regeneration=0, cfg=CFG)
+                kw = dict(family="olmo", model_id="olmo-fixture", decoding={}, regeneration=0, cfg=CFG)
                 return {
                     "rows": len(rows), "problems": problems,
                     "fields": sorted(f for f in ns.PROVENANCE_REQUIRED if back.get(f) not in (None, "")),
@@ -379,7 +379,7 @@ class Provenance(NegSynthChecks):
                     "second_row": attempt(lambda: ns.write_provenance(set_dir, row)),
                     "missing_field": attempt(lambda: ns.write_provenance(set_dir, dict(row, item_id="other", seed=None))),
                     "dated_id": attempt(lambda: ns.provenance_row(card, "dev_1", prompt, reply_bytes, build,
-                                                                  **dict(kw, model_id="claude-opus-20261101"))),
+                                                                  **dict(kw, model_id="olmo-fixture-20261101"))),
                     "family": attempt(lambda: ns.provenance_row(card, "dev_1", prompt, reply_bytes, build,
                                                                 **dict(kw, family="qwen"))),
                     "synthetic_flag": built.get("synthetic")}
@@ -1009,7 +1009,7 @@ class CardFolder(NegSynthChecks):
                     reply.write_text(json.dumps(fixture_reply(c)), encoding="utf-8")
                     code, text = self._run(["assemble", "--set", self.SET, "--item", c["item_id"], "--prompt",
                                             str(prompt), "--reply", str(reply), "--set-dir", str(set_dir),
-                                            "--generator-family", "claude", "--model-id", "fixture-model"])
+                                            "--generator-family", "olmo", "--model-id", "olmo-fixture"])
                     printed.append(text)
                     accepted += code == 0
                 code, text = self._run(["select", "--set", self.SET, "--set-dir", str(set_dir),

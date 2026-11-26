@@ -1,0 +1,21 @@
+{
+  "purpose": "Operator overrides of the 5 percent coverage rule (D-871), one reading each. No code reads this file; tools/coverage_check.py and its limit are unchanged. An override covers only the set and reading named here.",
+  "overrides": [
+    {
+      "decision": "D-934",
+      "operator": "Seckin",
+      "time": "2026-11-22 11:23 +03:00",
+      "rule": "D-871, coverage limit 0.05 (tools/coverage_check.py LIMIT)",
+      "set": "SciTab untouched, 3 papers, 4 tables, 15 claims, frozen code f1d58f93 (v1.0-alpha-freeze-f)",
+      "reading": "D-930, look 3 on the same outputs after the reader fault fix (D-929)",
+      "answered": 13,
+      "items": 15,
+      "not_answered_share": 0.133,
+      "after_result_seen": true,
+      "score": "accuracy 11 of 13 answered = 0.846 (interval 0.769 to 1.0, 4 table clusters, chance p 0.026)",
+      "unanswered_counted_wrong": "11 of 15 = 0.733",
+      "label": "coverage rule loosened by the operator's decision, after the result was seen",
+      "not_covered": "every other measurement, ContraDoc included; each needs its own operator decision"
+    }
+  ]
+}

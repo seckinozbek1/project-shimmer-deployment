@@ -38,7 +38,7 @@ side and the fixtures.
     check-split                                             the split plan's form, its sets and ranges
     draw        --set dev_1 --seed-base F --briefs <S>/briefs   cards and prompts; counts only [--keys DIR]
     assemble    --set dev_1 --item <item id> --prompt P --reply R --set-dir <S>/sets/dev_1
-                --generator-family claude --model-id <live alias> [--decoding JSON] [--regeneration N]
+                --generator-family olmo --model-id <live alias> [--decoding JSON] [--regeneration N]
                                                             [--card C in place of --item]
     coverage    --set dev_1                                   class counts of the drawn cards only [--keys DIR]
     set-check   --set-dir <S>/sets/dev_1                      D-711: both record kinds held, each item records it
@@ -1124,6 +1124,8 @@ def check_generator(family, model_id, cfg):
         raise ValueError("refused: the generator's live model id is recorded")
     if any(f in mid.lower() for f in gen["families_never_generator"]):
         raise ValueError("refused: a family the system under test uses never generates")
+    if gen["generator_family"] not in mid.lower():
+        raise ValueError("refused: the generator's model id does not belong to its declared family %s" % gen["generator_family"])
     if _DATED.search(mid):
         raise ValueError("refused: a dated snapshot id; a bare alias read live is recorded")
     return fam, mid

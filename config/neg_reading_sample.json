@@ -1,0 +1,542 @@
+{
+ "schema": "neg-reading-sample-v2",
+ "note": "NEG-READING-A (beta item 18, D-929): the negotiation scorer's reading self-check. An invented item (the fixture item of tools/neg_advisor_checks.py, no real record) and replies in the runner's saved form, each with the answered count a correct reading gives and its per-item M1, M4 and M10 rows as report() writes them (recorded from the reader on 23 November 2026 and checked by hand against the fixture key: full reply M10 settled 2 and movable 1, M1 and M4 one row per proposal): the proposals whose reply piece carries a declared stance, over the proposals the key scores in M10. The shapes follow the D-931 comparison script's reading check. tools/neg_reading_check.py reads each through tools/reread_replies.py and tools/score_neg_advisor.py report() and stops the scoring when any count differs. Changing a number here without a reason is a wrong sample and stops every negotiation score. The build's terms text is under terms_field_text and is put under neg_advisor.TERMS_FIELD when read.",
+ "build": {
+  "schema": "neg-advisor-build-v1",
+  "item_id": "fx-k2-alpha",
+  "part": "P",
+  "process": "fixture process",
+  "round": 2,
+  "synthetic": false,
+  "post_cutoff": false,
+  "terms_field_text": "fixture terms of use, invented",
+  "attribution": "fixture attribution, invented",
+  "persona": {
+   "id": "ALPHA",
+   "kind": "single"
+  },
+  "red_lines": [
+   "POS-2"
+  ],
+  "parties": [
+   {
+    "id": "ALPHA",
+    "kind": "single"
+   },
+   {
+    "id": "BETA",
+    "kind": "single"
+   },
+   {
+    "id": "GROUP1",
+    "kind": "coalition"
+   }
+  ],
+  "articles": [
+   {
+    "id": "A1",
+    "title": "Surveillance",
+    "text": "The parties shall cooperate on surveillance.\n\n[Each party shall report all outbreak data within seventy two hours of detection] [Each party should share outbreak data when it judges appropriate]"
+   },
+   {
+    "id": "A2",
+    "title": "Finance",
+    "text": "A fund is established.\n\n[Contributions shall be mandatory for developed parties and assessed annually]"
+   },
+   {
+    "id": "A3",
+    "title": "Definitions",
+    "text": "For the purposes of this agreement the terms used have their ordinary meaning.",
+    "agreed": true
+   }
+  ],
+  "round_index": [
+   {
+    "id": "A1",
+    "title": "Surveillance"
+   },
+   {
+    "id": "A2",
+    "title": "Finance"
+   },
+   {
+    "id": "A3",
+    "title": "Definitions"
+   }
+  ],
+  "previous_index": [
+   {
+    "id": "A1",
+    "title": "Surveillance"
+   },
+   {
+    "id": "A2",
+    "title": "Finance"
+   },
+   {
+    "id": "A3",
+    "title": "Definitions"
+   },
+   {
+    "id": "A9",
+    "title": "Old annex"
+   }
+  ],
+  "next_articles": {
+   "A1": "The parties shall cooperate on surveillance. Each party shall report all outbreak data within seventy two hours of detection.",
+   "A2": "A fund is established. Contributions shall be mandatory for developed parties and reviewed every five years.",
+   "A3": "For the purposes of this agreement the terms used have their ordinary meaning."
+  },
+  "positions": [
+   {
+    "id": "POS-1",
+    "party": "ALPHA",
+    "round": 1,
+    "article": "A1",
+    "proposal": 1,
+    "stance": "support",
+    "quote": "We support reporting within a fixed time.",
+    "source": "fixture 1"
+   },
+   {
+    "id": "POS-2",
+    "party": "ALPHA",
+    "round": 2,
+    "article": "A2",
+    "proposal": null,
+    "stance": "oppose",
+    "quote": "We cannot accept mandatory contributions.",
+    "source": "fixture 2"
+   },
+   {
+    "id": "POS-3",
+    "party": "BETA",
+    "round": 2,
+    "article": "A1",
+    "proposal": 1,
+    "stance": "support",
+    "quote": "A fixed reporting time is essential.",
+    "source": "fixture 3"
+   },
+   {
+    "id": "POS-4",
+    "party": "BETA",
+    "round": 2,
+    "article": "A2",
+    "proposal": null,
+    "stance": "oppose",
+    "quote": "Contributions must stay voluntary.",
+    "source": "fixture 4"
+   },
+   {
+    "id": "POS-5",
+    "party": "GROUP1",
+    "round": 2,
+    "article": "A1",
+    "proposal": 1,
+    "stance": "oppose",
+    "quote": "A fixed time is not workable for us.",
+    "source": "fixture 5"
+   },
+   {
+    "id": "POS-6",
+    "party": "GROUP1",
+    "round": 1,
+    "article": "A2",
+    "proposal": null,
+    "stance": "support",
+    "quote": "Assessed contributions are the only predictable source.",
+    "source": "fixture 6"
+   }
+  ],
+  "trades_on_record": [
+   {
+    "id": "T-1",
+    "give": [
+     "A1",
+     1
+    ],
+    "get": [
+     "A2",
+     1
+    ],
+    "round": 1
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "full reply, every proposal with its stance",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "full reply, the system arm",
+   "group": "system_advice",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "no reply text",
+   "group": "b1",
+   "text": "",
+   "answered": 0,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'no_answer')": 1,
+     "('no_conflict', 'no_answer')": 1,
+     "('not_stated', 'no_answer')": 1
+    },
+    "M4": {
+     "miss": 3
+    },
+    "M10": {
+     "('movable', 'no_answer')": 1,
+     "('settled', 'no_answer')": 2
+    }
+   }
+  },
+  {
+   "name": "a reply with no object, the system arm",
+   "group": "system_advice",
+   "text": "No advice can be given.",
+   "answered": 0,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'no_answer')": 1,
+     "('no_conflict', 'no_answer')": 1,
+     "('not_stated', 'no_answer')": 1
+    },
+    "M4": {
+     "miss": 3
+    },
+    "M10": {
+     "('movable', 'no_answer')": 1,
+     "('settled', 'no_answer')": 2
+    }
+   }
+  },
+  {
+   "name": "one stance missing",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 2,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 2,
+     "miss": 1
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'no_answer')": 1,
+     "('settled', 'settled')": 1
+    }
+   }
+  },
+  {
+   "name": "one proposal id the item does not hold (the reader drops that entry)",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A7-9\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 2,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'no_answer')": 1
+    },
+    "M4": {
+     "hit": 2,
+     "miss": 1
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'no_answer')": 1,
+     "('settled', 'settled')": 1
+    }
+   }
+  },
+  {
+   "name": "one unknown proposal id, the system arm",
+   "group": "system_advice",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A7-9\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 2,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 2,
+     "miss": 1
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'no_answer')": 1,
+     "('settled', 'settled')": 1
+    }
+   }
+  },
+  {
+   "name": "a fenced object with upper-case stances (ANSWER-FORM-A)",
+   "group": "system_advice",
+   "text": "```json\n{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"ACCEPT\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"stance\": \"REJECT\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"COUNTER\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}\n```",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "two objects, the last one is read",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}\n\n{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "lower-case proposal ids",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"p-a1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"p-a1-2\", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"p-a2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "proposal ids with spaces around them",
+   "group": "system_advice",
+   "text": "{\"proposals\": [{\"id\": \" P-A1-1 \", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \" P-A1-2 \", \"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \" P-A2-1 \", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 3,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 3
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'settled')": 2
+    }
+   }
+  },
+  {
+   "name": "one entry without an id",
+   "group": "b1",
+   "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 2,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'no_answer')": 1
+    },
+    "M4": {
+     "hit": 2,
+     "miss": 1
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'no_answer')": 1,
+     "('settled', 'settled')": 1
+    }
+   }
+  },
+  {
+   "name": "proposals as an object keyed by id (not a form the reader takes: nothing read)",
+   "group": "b1",
+   "text": "{\"proposals\": {\"P-A1-1\": {\"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, \"P-A1-2\": {\"conflict\": \"not_stated\", \"stance\": \"reject\", \"reasons\": [\"PAR-2\"]}, \"P-A2-1\": {\"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}}, \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+   "answered": 0,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'no_answer')": 1,
+     "('no_conflict', 'no_answer')": 1,
+     "('not_stated', 'no_answer')": 1
+    },
+    "M4": {
+     "miss": 3
+    },
+    "M10": {
+     "('movable', 'no_answer')": 1,
+     "('settled', 'no_answer')": 2
+    }
+   }
+  },
+  {
+   "name": "a step-wise reply composed by Python, one step refused, one stance lost",
+   "group": "system_advice",
+   "composed": {
+    "text": "{\"proposals\": [{\"id\": \"P-A1-1\", \"conflict\": \"no_conflict\", \"stance\": \"accept\", \"reasons\": [\"POS-1\"]}, {\"id\": \"P-A1-2\", \"conflict\": \"not_stated\", \"reasons\": [\"PAR-2\"]}, {\"id\": \"P-A2-1\", \"conflict\": \"conflict\", \"stance\": \"counter\", \"wording\": \"Contributions shall be mandatory for developed parties and reviewed every five years\", \"reasons\": [\"POS-2\", \"PAR-4\"]}], \"trades\": [{\"give\": \"P-A1-1\", \"get\": \"P-A2-1\"}], \"approach\": [\"BETA\"], \"alignment\": [{\"article\": \"A1\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}, {\"article\": \"A2\", \"aligned\": [\"BETA\"], \"opposed\": [\"GROUP1\"]}], \"state\": [{\"article\": \"A1\", \"state\": \"bracketed\"}, {\"article\": \"A2\", \"state\": \"bracketed\"}, {\"article\": \"A3\", \"state\": \"closed\"}, {\"article\": \"A9\", \"state\": \"dropped\"}]}",
+    "steps_refused": [
+     "room_fate:undeclared_answer"
+    ]
+   },
+   "answered": 2,
+   "rows": 3,
+   "expect": {
+    "M1": {
+     "('conflict', 'conflict')": 1,
+     "('no_conflict', 'no_conflict')": 1,
+     "('not_stated', 'not_stated')": 1
+    },
+    "M4": {
+     "hit": 2,
+     "miss": 1
+    },
+    "M10": {
+     "('movable', 'movable')": 1,
+     "('settled', 'no_answer')": 1,
+     "('settled', 'settled')": 1
+    }
+   }
+  }
+ ],
+ "movement": {
+  "note": "score_negotiation.py's reading: reply texts through reread_replies.negotiation_rows and score_negotiation.reply_answers, system gap rows through score_negotiation.system_label, each with its known label",
+  "replies": [
+   {
+    "name": "a declared answer",
+    "text": "narrowed",
+    "label": "moved_toward"
+   },
+   {
+    "name": "its whole declared line",
+    "text": "widened: the gap is larger in the later round.",
+    "label": "moved_away"
+   },
+   {
+    "name": "a fenced upper-case answer",
+    "text": "```\nSTAYED THE SAME\n```",
+    "label": "unchanged_from_prior"
+   },
+   {
+    "name": "a field label before the answer",
+    "text": "Answer: cannot be told",
+    "label": "not_computable"
+   },
+   {
+    "name": "no reply text",
+    "text": "",
+    "label": "no_answer"
+   },
+   {
+    "name": "a near word is not read (WORDS-A)",
+    "text": "narrower",
+    "label": "no_answer"
+   }
+  ],
+  "system_rows": [
+   {
+    "name": "a written movement",
+    "row": {
+     "outcome": "moved_toward"
+    },
+    "label": "moved_toward"
+   },
+   {
+    "name": "not computed",
+    "row": {
+     "outcome": "not_computed",
+     "why": "fixture"
+    },
+    "label": "not_computable"
+   },
+   {
+    "name": "an outcome outside the labels",
+    "row": {
+     "outcome": "closer"
+    },
+    "label": "no_answer"
+   },
+   {
+    "name": "not a row",
+    "row": null,
+    "label": "no_answer"
+   }
+  ]
+ }
+}

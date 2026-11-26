@@ -80,6 +80,7 @@ class Tree:
         if not self.names:
             raise Unreadable('the commit %s holds no files in %s' % (commit, repo))
         self._cache = {}
+        self._batch = None
 
     def _git(self, *args, data=None):
         proc = subprocess.run(['git', '-C', str(self.repo), *args], input=data, capture_output=True,
@@ -88,9 +89,53 @@ class Tree:
             raise Unreadable('git %s failed: %s' % (args[0], proc.stderr.decode('utf-8', 'replace').strip()[:200]))
         return proc.stdout
 
+    def _cat(self, name):
+        """One file's bytes through a single `git cat-file --batch` process kept for the tree (beta item 28,
+        OPEN_ITEMS 180: one `git show` per object, about 10,700 for a whole-tree bundle, made a pass take 15 to 20
+        minutes). A name the commit does not hold is Unreadable, as `git show` was."""
+        if self._batch is None:
+            self._batch = subprocess.Popen(['git', '-C', str(self.repo), 'cat-file', '--batch'], stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, creationflags=no_window())
+        try:
+            self._batch.stdin.write(('%s:%s\n' % (self.commit, name)).encode('utf-8'))
+            self._batch.stdin.flush()
+            header = self._batch.stdout.readline().split()
+        except OSError as exc:
+            self.close()
+            raise Unreadable('git cat-file failed: %s' % exc) from None
+        if len(header) == 2 and header[1] == b'missing':
+            raise Unreadable('git show failed: %s:%s does not exist' % (self.commit, name))
+        if len(header) != 3 or not header[2].isdigit():
+            self.close()
+            raise Unreadable('git cat-file failed: unexpected answer for %s' % name)
+        size = int(header[2])
+        data = self._batch.stdout.read(size)
+        self._batch.stdout.read(1)          # the line feed after the object
+        if len(data) != size:
+            self.close()
+            raise Unreadable('git cat-file failed: %s ended after %d of %d bytes' % (name, len(data), size))
+        if header[1] != b'blob':
+            raise Unreadable('git show failed: %s:%s is a %s' % (self.commit, name, header[1].decode('ascii', 'replace')))
+        return data
+
+    def close(self):
+        if self._batch is not None:
+            proc, self._batch = self._batch, None
+            try:
+                proc.stdin.close()
+                proc.wait(timeout=30)
+            except (OSError, subprocess.TimeoutExpired):
+                proc.kill()
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:     # noqa: BLE001 - interpreter shutdown
+            pass
+
     def read(self, name):
         if name not in self._cache:
-            self._cache[name] = self._git('show', '%s:%s' % (self.commit, name))
+            self._cache[name] = self._cat(name)
         return self._cache[name]
 
 
@@ -496,19 +541,22 @@ def check_request(repo, commit, request, folder=None):
         commit = manifest.get('source_commit') or commit
         source = 'sealed manifest %s' % manifest_path.relative_to(folder).as_posix()
     tree = Tree(repo, commit)
-    if _flag(argv, '--arm') == 'G':
-        archive, source = set(tree.names), source + ' (arm G runs from the whole bound tree)'
-    elif manifest_path is not None:
-        archive = set(manifest.get('project_files') or {})
-    else:
-        archive = sealer_archive(tree)
-    if manifest_path is not None:
-        present = {'tools/' + n for n in (manifest.get('support_files') or {}) if n.endswith('.py')}
-    else:
-        present = sealer_support(tree)
-    entries = entries_for(tree, argv, folder)
-    dispatcher, handler = dispatch(entries)
-    result = closure(tree, archive, entries, present, dispatcher, handler)
+    try:
+        if _flag(argv, '--arm') == 'G':
+            archive, source = set(tree.names), source + ' (arm G runs from the whole bound tree)'
+        elif manifest_path is not None:
+            archive = set(manifest.get('project_files') or {})
+        else:
+            archive = sealer_archive(tree)
+        if manifest_path is not None:
+            present = {'tools/' + n for n in (manifest.get('support_files') or {}) if n.endswith('.py')}
+        else:
+            present = sealer_support(tree)
+        entries = entries_for(tree, argv, folder)
+        dispatcher, handler = dispatch(entries)
+        result = closure(tree, archive, entries, present, dispatcher, handler)
+    finally:
+        tree.close()
     result.update(name=request.get('name'), commit=commit, archive_source=source, archive_files=len(archive),
                   entries=entries)
     return result
@@ -590,8 +638,11 @@ def main(argv=None):
             results = check_folder(args.folder, args.repo)
         else:
             tree = Tree(args.repo, args.commit)
-            archive = sealer_archive(tree)
-            r = closure(tree, archive, args.entry, sealer_support(tree), *dispatch(args.entry))
+            try:
+                archive = sealer_archive(tree)
+                r = closure(tree, archive, args.entry, sealer_support(tree), *dispatch(args.entry))
+            finally:
+                tree.close()
             r.update(name='entries', commit=args.commit, archive_source='sealer rule at %s' % args.commit,
                      archive_files=len(archive), entries=args.entry)
             results = [r]

@@ -67,6 +67,11 @@ class StepBackend(nb.FakeBackend):
     script = {}
 
     def generate(self, system, user, n):
+        if "What does this proposal change?" in user and self.script.get("changes"):
+            # Issue #322: `changes` answers with `text` and reports `tokens` generated (n is the allowance).
+            text, tokens = self.script["changes"]
+            return {"text": text, "payload": user, "form": "rendered_prompt",
+                    "output_tokens": n if tokens == "cap" else tokens}
         if "What does this proposal change?" in user:
             return {"text": " ".join(user.splitlines()[1].split(": ", 1)[1].split()[:6]), "payload": user,
                     "form": "rendered_prompt"}
@@ -595,7 +600,45 @@ def neutralise_reason_first_allowance_equal():
     return patch.object(na, "ALLOWANCE_METHODS", (na.PLAIN,))
 
 
+def _cap_run(changes):
+    seen = replay(script={"changes": changes})
+    if "measurement" not in seen or isinstance(seen["answers"], str):
+        return {"failed": str(seen.get("replay") or seen.get("answers"))}
+    records = _records(seen)
+    row = _row(seen)
+    again = seen["again"]
+    again = again if isinstance(again, str) else next(r for r in again["rows"] if r["group"] == "system_advice")
+    steps = [r for r in seen["measurement"]["rows"] if r["form"] == na.STEP_FORM and r["step"] == "changes"]
+    return {"categories": sorted({r.get("error_category") for r in records if r.get("error_category")}),
+            "errors": sorted({r["error"] for r in records if r.get("error")}),
+            "cap_rows": sum(1 for r in steps if r.get("cap_reached")), "refused": row.get("steps_refused"),
+            "reread_same": not isinstance(again, str) and again.get("steps_refused") == row.get("steps_refused")}
+
+
+BAD_LINE = "zzz yyy xxx www vvv uuu"
+
+
+def observe_cap_step_has_its_own_reason():
+    return {"capped_refused": _cap_run((BAD_LINE, "cap")), "short_refused": _cap_run((BAD_LINE, 7))}
+
+
+def expected_cap_step_has_its_own_reason():
+    # Three changes steps a run. Capped and refused: its own category and reason, counted by reason, read again the
+    # same. Refused short of the cap: the form reason as before.
+    return {"capped_refused": {"categories": ["step_cap_reached"], "errors": ["step_cap_reached: changes"], "cap_rows": 3,
+                               "refused": {"changes:step_cap_reached": 3}, "reread_same": True},
+            "short_refused": {"categories": ["method_refused"], "errors": ["method_refused: changes not_in_the_proposal"],
+                              "cap_rows": 0, "refused": {"changes:not_in_the_proposal": 3}, "reread_same": True}}
+
+
+def neutralise_cap_step_has_its_own_reason():
+    sp = " " * 28
+    return with_source(na, "run", 'if row.get("cap_reached"):\n' + sp + 'entry["refused"] = CAP_REASON',
+                       'if False:\n' + sp + 'pass')
+
+
 GROUPS = {
+    "708": ("cap_step_has_its_own_reason",),
     "518": ("mplain_allowance_declared", "allowance_read_from_config", "load_holds_the_allowance",
             "config_refuses_a_bad_allowance", "reason_first_allowance_equal"),
     "515": ("chain_on_the_replay_pass", "each_step_checked", "off_unless_declared", "recomposed_from_saved_steps",
@@ -603,7 +646,8 @@ GROUPS = {
             "reread_counts_stepwise_audits"),
     "516": ("split_by_group", "dropped_per_group", "method_binds_by_question", "candidates_from_reasoning_methods"),
 }
-WHAT = {"515": "the negotiation advisor's step-wise chain on the replay pass, each step checked by Python, one "
+WHAT = {"708": "a generated step that stopped at its token cap is recorded and counted under its own reason, step_cap_reached, never as a form refusal",
+        "515": "the negotiation advisor's step-wise chain on the replay pass, each step checked by Python, one "
                "record a step, the reply composed again from the saved steps, off unless declared",
         "516": "one prompts file of three groups read one group a candidate, bound by question, a dropped figure each",
         "518": "M-plain's advice allowance (D-725) and reason_first's equal one (D-740) read from the config's "

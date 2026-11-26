@@ -81,9 +81,11 @@ REPEAT_ALERT = 3               # refusals of one kind in a row before ALERT.md
 INTENT_WINDOW_MIN = 30         # a launch_intent younger than this with no termination is a launch in flight
 ADMIT_WAIT_MINUTES = 20        # an admit with no visible work counts as launching this long after its launch
 ADMIT_LOG_QUIET_MINUTES = 15   # an admit.log written more recently than this is an admission at work
+ENDING_PHASE = 'terminate_instance'   # the controller's phase between the ledger's termination and its cleanup
+ENDING_MINUTES = 15            # a batch part in ENDING_PHASE this long after the phase was written reads failed
 POLL_S = 15
 PASS_BUDGET_S = 50 * 60        # no new launch is begun after this
-TIMEOUT_S = {'status': 180, 'preflight': 600, 'request': 1800, 'admit': 900, 'ledger': 1200}
+TIMEOUT_S = {'status': 180, 'preflight': 600, 'request': 1800, 'admit': 900, 'ledger': 1200, 'reading_check': 600}
 STARTED = 'launch_started'
 UNCONFIRMED = 'launch_unconfirmed'
 ACTION_RESULTS = (STARTED, 'launch', 'launch_failed', 'preflight_failed', 'guard_refused', UNCONFIRMED, 'cleared')
@@ -199,6 +201,7 @@ def load_chain(folder):
     steps = chain.get('steps') if isinstance(chain, dict) else None
     if not isinstance(steps, list) or not steps:
         raise ChainError('chain.json names no steps')
+    check_reading_check(folder, chain)
     purposes = launch_purposes(folder)
     seen = []
     for s in steps:
@@ -233,6 +236,50 @@ def load_chain(folder):
                 raise ChainError('step %s: requires.commit must be 7 to 40 hex digits' % name)
         seen.append(name)
     return chain
+
+
+def check_reading_check(folder, chain):
+    """NEG-READING-A (beta item 18, D-929): every new measurement comes with its own reading check. A chain.json
+    declaring "measurement": true (declared by the lead, never read from a name or a step) must name, in
+    "reading_check", a non-empty Python file of the folder itself (relative, no .., no link or junction on the
+    way); otherwise the folder is refused whole and none of its steps launches. The file is run before every
+    launch of the folder's steps (`reading_check_problem`). Limit: the key is opt-in; a folder that does not
+    declare "measurement" is not checked, and a launch.py run by hand is not guarded."""
+    declared = chain.get('measurement', False)
+    if not isinstance(declared, bool):
+        raise ChainError('chain.json "measurement" must be true or false')
+    if not declared:
+        return
+    rel = chain.get('reading_check')
+    if rel is None:
+        raise ChainError('a measurement folder names no reading_check: it is not launched (NEG-READING-A)')
+    _relative(rel, 'reading_check')
+    path = Path(folder) / rel
+    if through_links(folder, path) or not path.is_file() or path.suffix != '.py' or path.stat().st_size == 0:
+        raise ChainError('a measurement folder\'s reading_check %r is not a non-empty Python file of the folder: it is '
+                         'not launched (NEG-READING-A)' % rel)
+
+
+def reading_check_problem(folder, chain):
+    """None, or why a measurement folder's reading check did not pass: it is run in the folder right after
+    preflight, before every launch; it must exit 0 and print PASS on its last line."""
+    if not chain.get('measurement'):
+        return None
+    if not isinstance(chain.get('reading_check'), str):
+        return 'the measurement folder names no reading check'
+    path = Path(folder) / chain['reading_check']
+    try:
+        done = subprocess.run(interpreter() + [str(path)], cwd=str(folder), env=child_env(), stdin=subprocess.DEVNULL,
+                              capture_output=True, text=True, encoding='utf-8', errors='replace',
+                              timeout=TIMEOUT_S['reading_check'], creationflags=mc.no_window())
+    except subprocess.TimeoutExpired:
+        return 'the reading check %s timed out after %d s' % (chain['reading_check'], TIMEOUT_S['reading_check'])
+    except OSError as exc:
+        return 'the reading check %s could not run: %s' % (chain['reading_check'], exc)
+    last = ([x for x in (done.stdout or '').splitlines() if x.strip()] or [''])[-1]
+    if done.returncode != 0 or 'PASS' not in last:
+        return 'the reading check %s exited %d, last line %r' % (chain['reading_check'], done.returncode, last[:200])
+    return None
 
 
 PURPOSE = re.compile(r'[a-z0-9][a-z0-9-]{0,39}')
@@ -486,12 +533,68 @@ def evidence_exit_code(path):
     return result.get('pipeline_exit_code') if isinstance(result, dict) else None
 
 
+def batch_form(folder, step, bundles):
+    """True when the step runs as a batch: more than one bundle, or one bundle run in batch form (its run folder
+    holds batch_manifests.json, or the folder holds batch_<step>.json): such a part writes no top-level
+    workload_return.json (beta item 26, OPEN_ITEMS 184: QUICK_READ_ALPHA_B r1 read as failed, exit_code None)."""
+    if not bundles:
+        return False
+    if len(bundles) > 1:
+        return True
+    if (Path(folder) / ('batch_%s.json' % step['step'])).is_file():
+        return True
+    run = batch_run_folder(folder, step, bundles)
+    return run is not None and (run / 'batch_manifests.json').is_file() and not through_links(folder, run)
+
+
+def latest_run_folder(folder, step, bundles):
+    """The run folder of the step's latest attempt: admitted/<first bundle>.N with the highest N >= 2 when there
+    (tools/ordinary_final_bound_cloud.py names a retry so), else batch_run_folder; never through a link."""
+    base = Path(folder) / 'admitted'
+    best = None
+    try:
+        entries = list(base.iterdir())
+    except OSError:
+        entries = []
+    for item in entries:
+        head, dot, tail = item.name.rpartition('.')
+        if dot and head == bundles[0] and tail.isdigit() and int(tail) >= 2 and item.is_dir()                 and not through_links(folder, item) and (best is None or int(tail) > best[0]):
+            best = (int(tail), item)
+    return best[1] if best else batch_run_folder(folder, step, bundles)
+
+
+def phase_age_minutes(folder, step, bundles, row=None):
+    """Minutes since the current phase was written: the epoch launch.py status reports for CURRENT_PHASE when it
+    carries one, else CURRENT_PHASE.json of the latest attempt's run folder (its epoch, else the file time); None
+    when it cannot be read."""
+    reported = ((row or {}).get('phase') or {}).get('CURRENT_PHASE') or {}
+    epoch = reported.get('epoch') if isinstance(reported, dict) else None
+    if not isinstance(epoch, (int, float)) or isinstance(epoch, bool):
+        run = latest_run_folder(folder, step, bundles)
+        path = None if run is None else run / 'CURRENT_PHASE.json'
+        if path is None or not path.is_file() or through_links(folder, path):
+            return None
+        try:
+            value = json.loads(path.read_text(encoding='utf-8'))
+            epoch = value.get('epoch') if isinstance(value, dict) else None
+            epoch = float(epoch) if isinstance(epoch, (int, float)) else path.stat().st_mtime
+        except (OSError, ValueError):
+            return None
+    return max(0.0, (time.time() - float(epoch)) / 60)
+
+
 def batch_state(folder, step, row, bundles):
-    """A batch part (more than one bundle) never writes workload_return.json: done when the instance ended
+    """A batch part never writes workload_return.json: done when the instance ended
     terminated_and_cleaned with TERMINATION_VERIFIED, no controller_failure, and one batch/NN_*/collected_evidence
-    per bundle whose evidence/result.json has pipeline_exit_code 0; failed otherwise, with the reason."""
+    per bundle whose evidence/result.json has pipeline_exit_code 0; failed otherwise, with the reason. While the
+    controller is still in terminate_instance (the ledger closed, cleanup not finished) with no controller_failure,
+    for at most ENDING_MINUTES after that phase was written, the part is still running (OPEN_ITEMS 184)."""
     phase, cost, n = row['phase'], row['cost'], len(bundles)
     current = (phase.get('CURRENT_PHASE') or {}).get('phase')
+    if current == ENDING_PHASE and 'controller_failure' not in phase:
+        age = phase_age_minutes(folder, step, bundles, row)
+        if age is not None and age <= ENDING_MINUTES:
+            return 'running', 'ending: phase %s %.1f minutes ago, cleanup not finished (%.3f USD)' % (current, age, cost)
     problems = []
     if current != 'terminated_and_cleaned':
         problems.append('phase %s' % current)
@@ -533,7 +636,7 @@ def own_state(folder, step, status, rows=(), t=None):
         return 'running', 'ledger launch line, no termination (%.3f USD so far)' % row['cost']
     if row['state'] == 'ended':
         bundles = step_bundles(folder, step)
-        if bundles and len(bundles) > 1:
+        if batch_form(folder, step, bundles):
             return batch_state(folder, step, row, bundles)
         code = (row['phase'].get('workload_return') or {}).get('exit_code')
         if code == 0:
@@ -1131,6 +1234,13 @@ def launch_step(folder, step, row, chain):
         mc.alert('launch_chain:archive:%s:%s' % (folder.name, name),
                  'Launch chain: %s %s is ready but the archive closure preflight refused it: %s. Not launched; the '
                  'chain tries again after %d minutes.' % (folder.name, name, closure[:300], RETRY_MINUTES))
+        return False
+    reading = reading_check_problem(folder, chain)
+    if reading:
+        mc.trace(NAME, 'preflight_failed', folder=folder.name, step=name, rc=1, preflight=reading[:300])
+        mc.alert('launch_chain:reading:%s:%s' % (folder.name, name),
+                 'Launch chain: %s %s is ready but its reading check did not pass (NEG-READING-A): %s. Not launched; '
+                 'the chain tries again after %d minutes.' % (folder.name, name, reading[:300], RETRY_MINUTES))
         return False
     if not wait_ledger_lock():
         mc.trace(NAME, 'deferred', folder=folder.name, step=name, why='the budget ledger lock was held after preflight')

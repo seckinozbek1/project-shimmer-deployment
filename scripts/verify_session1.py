@@ -26917,6 +26917,45 @@ def check_696_contradoc_leanings_stand_on_their_own_line_beside_the_unchanged_he
     return _table_authority_checks().run_check(696)
 
 
+def _neg_reading_checks():
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import neg_reading_checks
+    return neg_reading_checks
+
+
+def check_697_the_negotiation_scorer_checks_its_reading_before_any_figure():
+    """NEG-READING-A (beta item 18, #326; D-929, D-930): tools/neg_reading_check.py puts the known sample
+    config/neg_reading_sample.json through the score-time reader and score_neg_advisor's report() before any
+    advisor figure, comparing each case's M1, M4 and M10 rows and answered count; a difference, a sample with a
+    wrong number, or a missing or malformed sample writes no score, a stop text and exits 5; an arm with more than
+    half its rows not answered for a reading reason (no reply, no stance, an undeclared stance) is "okuma hatası
+    olabilir" (a possible reading error): the system arm refuses the score (exit 3), a comparison arm is left out;
+    otherwise every figure is report()'s own, also through the real score_neg_advisor main. Runs
+    tools/neg_reading_checks.py group 697: each proof neutralised, failed, restored and passed."""
+    return _neg_reading_checks().run_check(697)
+
+
+def check_698_a_measurement_folder_without_its_own_reading_check_is_not_launched():
+    """NEG-READING-A (beta item 18): tools/loop/launch_chain.py refuses whole a launch folder whose chain.json declares
+    "measurement": true unless "reading_check" names a non-empty Python file of the folder, and runs that file
+    before every launch of its steps: a non-zero exit or a last line without PASS holds the step as a failed
+    preflight; a folder not declaring it loads and launches as before. Runs tools/neg_reading_checks.py group 698
+    on fixture folders: each proof neutralised, failed, restored and passed."""
+    return _neg_reading_checks().run_check(698)
+
+
+def check_699_the_movement_scorer_checks_its_reading_before_any_figure():
+    """NEG-READING-A (beta item 18): tools/neg_reading_check.py movement-score puts the sample's movement replies
+    through reread_replies.negotiation_rows and score_negotiation.reply_answers, and its gap rows through
+    system_label, before any figure of tools/score_negotiation.py; a wrong label stops; an arm with more than half
+    of the key rows held unread is "okuma hatası olabilir" and no score for it (the system refuses); otherwise
+    report()'s figures are unchanged. Runs tools/neg_reading_checks.py group 699: each proof neutralised, failed,
+    restored and passed."""
+    return _neg_reading_checks().run_check(699)
+
+
 def _neg_structure_checks():
     tools = str(Path(__file__).resolve().parents[1] / 'tools')
     if tools not in sys.path:
@@ -28331,6 +28370,128 @@ def check_689_the_difference_check_flags_a_change_kind_only_as_a_marked_model_re
     return run()
 
 
+def _empty_answers_checks():
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import empty_answers_checks
+    return empty_answers_checks
+
+
+def check_703_coverage_tags_every_empty_answer_lists_it_by_id_and_rechecks_it():
+    """Beta list item 17 (Seckin, 23 November 2026: an empty answer should not happen, but if it does it is tagged
+    empty and the next validation or pilot checks whether it was fixed): tools/coverage_check.py tags every
+    not-answered label row `empty` (tools/empty_answers.py) with its basis, prints the count beside the coverage
+    line with no item id, writes the ids only to its --empty-list file, and with --recheck reads an earlier listing:
+    each previously empty item now_answered, still_empty or not_in_this_run. Counts and verdict unchanged. Runs
+    tools/empty_answers_checks.py tests 703 on invented rows: each proof neutralised, failed, restored and passed. Revision 2 (Seckin 18:10, G-20261123-1812): the main
+    figure printed beside the one counting blanks wrong, and withheld answers on their own line apart from silence."""
+    return _empty_answers_checks().check_703()
+
+
+def check_704_the_negotiation_scorer_tags_empty_pieces_per_arm_with_figures_unchanged():
+    """Beta list item 17: tools/empty_answers.py negotiation_report calls tools/score_neg_advisor.py report()
+    unchanged (the scorer is never edited: its code_sha256 is pinned in every negotiation power record, and the
+    check proves it equals the base commit's), tags each proposal an arm left without an answer `empty` with M10's
+    own reason, counts it per arm, and `neg-score` wraps `score`, printing counts only and writing the ids inside the
+    set folder only; --recheck reads an earlier listing per arm. Runs tools/empty_answers_checks.py tests 704 on the
+    invented negotiation fixture: each proof neutralised, failed, restored and passed. Revision 2 (Seckin 18:10, G-20261123-1812): the main
+    figure printed beside the one counting blanks wrong, and withheld answers on their own line apart from silence."""
+    return _empty_answers_checks().check_704()
+def check_705_a_hand_launch_of_a_later_part_refuses_while_an_earlier_part_failed():
+    """Beta item 25 (OPEN_ITEMS 174): tools/loop/prior_parts.py, loaded by every launch folder's launch.py from the
+    main checkout (docs/loop/LAUNCH_CHAIN.md "Earlier parts"), refuses `launch.py <part>` by hand and `launch.py
+    preflight <part>` from the chain while an earlier part of this folder or of another arm of the same measurement
+    (plan.json prior_arms, or the same bench and set with an arm) has a table with a non-zero exit code, a
+    controller_failure, or ended with fewer tables than bundles; a part running or not launched is no refusal;
+    `--decision D-NNN` overrides and prints what it overrides; a launcher that cannot read the module refuses. Runs
+    tools/loop/launcher_fix_checks.py on temp fixture folders and a fixture launch.py: each proof neutralised,
+    failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    for p in (loop, tools):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    from launcher_fix_checks import run_705
+    return run_705()
+
+
+def check_706_the_chain_reads_one_bundle_batches_and_ending_parts_and_task_arguments_are_checked():
+    """Beta item 26 (OPEN_ITEMS 184): tools/loop/launch_chain.py reads a part of one bundle run in batch form
+    (batch_manifests.json in its run folder, or batch_<step>.json in the folder) from its batch entries, never from
+    a top-level workload_return it does not write (QUICK_READ_ALPHA_B r1 read failed, exit_code None); a batch part
+    whose ledger shows the termination while the controller is still in terminate_instance, no controller_failure,
+    the phase under 15 minutes old, reads running, not failed (DEV_contradoc_decision D2); tools/loop/
+    task_args_check.py flags a scheduled task argument holding an unexpanded shell variable or a path that does not
+    exist (ShimmerUntScitabAfter's `s05$d`: the wrapper's working folder did not exist, so it exited 1), never a
+    Task Scheduler `$(name)` or %NAME%. Runs tools/loop/launcher_fix_checks.py on temp fixtures: each proof
+    neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    for p in (loop, tools):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    from launcher_fix_checks import run_706
+    return run_706()
+
+
+def check_708_a_step_that_stops_at_its_token_cap_has_its_own_reason():
+    """Issue #322 (D-947, open item 181): a generated step of the negotiation advisor's stepwise chain whose output
+    reached the declared allowance and which Python's form check refused is written as `step_cap_reached: <step>`
+    (its own error category), counted under the reason `step_cap_reached` in `steps_refused`, read again the same by
+    answers and the re-reader; a refusal short of the cap keeps its form reason and `method_refused`. The cap is the
+    method's declared max_new_tokens, no number in code. Runs tools/replay_methods_checks.py with a fake model: each
+    proof neutralised, failed, restored and passed."""
+    return _replay_methods(708)
+def check_709_storage_accrues_piecewise_at_each_budget_change_rate_never_below_the_old_reading():
+    """D-946: tools/loop/instance_reaper.ledger_view accrues storage at the rate each budget_change line declares
+    from its time onward (the earlier rate before it), read from the ledger at call time; a declared rate below
+    the opening rate is counted at the opening rate, so the total is never lower than the old reading; the
+    budget, hard stop and warning figures are unchanged. Runs tools/loop/storage_accrual_checks.py on fixture
+    ledgers: each proof neutralised, failed, restored and passed."""
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    if loop not in sys.path:
+        sys.path.insert(0, loop)
+    from storage_accrual_checks import run_709
+    return run_709()
+
+
+def check_707_one_shot_transports_retry_and_the_bound_launch_reads_are_fast_and_current():
+    """Beta item 28 (OPEN_ITEMS 180, 181; bound files, CONTROLLER-BINDING: every bundle is sealed again before it
+    runs under this controller): tools/ordinary_final_cloud.py tries a required one-shot ssh or scp call that lost
+    its connection (ssh exit 255; scp at exit 255 or a connect-stage message) again after 5, 15 and 45 s while the
+    wait fits in the phase's deadline, never a remote command's own exit or a hang; a detached start is sent again
+    with the same nonce, so it never starts the work twice; a batch entry whose transport still fails is ended with
+    entry_failure.json and the next entry runs, except a failed phase start the instance does not read dead and a
+    second failing entry in a row, which stop the part. tools/loop/archive_closure.py reads the bound tree through one `git
+    cat-file --batch` process. tools/loop/launch_floors.py reads the disk rule of the main checkout
+    tools/loop/shared_paths.py names, never a bound tree's old copy. Runs tools/transport_retry_checks.py on fakes
+    and temp fixtures (the start leg on a Linux shell when there is one): each proof neutralised, failed, restored
+    and passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    loop = str(Path(__file__).resolve().parents[1] / 'tools' / 'loop')
+    for p in (loop, tools):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    from transport_retry_checks import run
+    return run()
+
+
+def check_710_the_generator_and_the_labeller_share_the_olmo_family_under_the_same_family_rule():
+    """D-955 (NEG-SYNTH-A): the synthetic sets' generator is the OLMo model already sealed on the rented file system
+    and role V's labeller is OLMo too, in a separate sealed pass. config/neg_synth.json declares generator_family
+    olmo (claude, gpt, qwen and phi never generate, a model id must belong to its family, Granite 8B a declared
+    fallback that is not active); the labeller's same-family id is accepted only under labeller.same_family_rule,
+    and a labelling file carrying a generator prompt, metadata or model id key is refused; every other independence
+    refusal stays. Runs tools/neg_synth_family_checks.py on fixtures: each proof neutralised, failed, restored and
+    passed."""
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from neg_synth_family_checks import run_group
+    return run_group("710")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -28915,6 +29076,12 @@ CHECKS = [
      check_484_not_enough_info_development_data_waits_for_the_leakage_check),
     ("696 ContraDoc leanings stand on their own labelled line beside the unchanged v2_primary headline; coverage never counts them answered (D-907)",
      check_696_contradoc_leanings_stand_on_their_own_line_beside_the_unchanged_headline),
+    ("697 The negotiation scorer reads a known sample first; a wrong count or over half not answered writes no score (NEG-READING-A)",
+     check_697_the_negotiation_scorer_checks_its_reading_before_any_figure),
+    ("698 A measurement launch folder without its own reading check is not launched (NEG-READING-A)",
+     check_698_a_measurement_folder_without_its_own_reading_check_is_not_launched),
+    ("699 The movement scorer reads a known sample first; a wrong label or over half unread writes no score (NEG-READING-A)",
+     check_699_the_movement_scorer_checks_its_reading_before_any_figure),
 
 
     ("460 Other instances' complete loop records after a seal job's read copy do not refuse its admission (order 99)",
@@ -29131,6 +29298,22 @@ CHECKS = [
      check_662_every_desk_control_calls_its_mapped_route_on_a_running_server),
     ("681 Keyless local mode serves the desk with no token on a loopback bind only; a non-loopback host refuses to start, a non-local request is refused (DESK-A, D-835)",
      check_681_keyless_local_mode_only_on_a_loopback_bind),
+    ("703 Every empty answer in a coverage reading is tagged, counted, listed by id apart and checked again at the next run; counts unchanged (beta item 17)",
+     check_703_coverage_tags_every_empty_answer_lists_it_by_id_and_rechecks_it),
+    ("704 The negotiation scorer tags each unanswered proposal empty per arm by reason, ids kept apart, figures unchanged (beta item 17)",
+     check_704_the_negotiation_scorer_tags_empty_pieces_per_arm_with_figures_unchanged),
+    ("705 A hand launch of a later part refuses while an earlier part of this or another arm failed; a decision id overrides (beta item 25)",
+     check_705_a_hand_launch_of_a_later_part_refuses_while_an_earlier_part_failed),
+    ("706 The chain reads a one-bundle batch and a part still ending correctly; task arguments with an unexpanded variable are flagged (beta item 26)",
+     check_706_the_chain_reads_one_bundle_batches_and_ending_parts_and_task_arguments_are_checked),
+    ("707 One-shot ssh and scp calls retry a lost connection, a failed batch entry ends alone, the closure reads one git process, the disk rule is the main checkout's (beta item 28, bound)",
+     check_707_one_shot_transports_retry_and_the_bound_launch_reads_are_fast_and_current),
+    ("708 A step that stops at its token cap is recorded and counted under its own reason, never a form refusal (issue #322)",
+     check_708_a_step_that_stops_at_its_token_cap_has_its_own_reason),
+    ("709 Storage accrues piecewise at the rate each budget_change line declares, never below the old reading (D-946, bound)",
+     check_709_storage_accrues_piecewise_at_each_budget_change_rate_never_below_the_old_reading),
+    ("710 The generator and the labeller share the OLMo family only under the declared same-family rule; Granite 8B is the inactive fallback (D-955)",
+     check_710_the_generator_and_the_labeller_share_the_olmo_family_under_the_same_family_rule),
 ]
 
 

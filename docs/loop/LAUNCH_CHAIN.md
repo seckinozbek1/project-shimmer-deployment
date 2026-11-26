@@ -100,7 +100,13 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
   `BUNDLES` in launch.py) names more than one bundle, writes no `workload_return`: it is done when its phase is
   `terminated_and_cleaned` with `TERMINATION_VERIFIED` and no `controller_failure`, and `admitted/<first>/batch/`
   holds one `NN_*/collected_evidence.tar.gz` per bundle whose `evidence/result.json` has `pipeline_exit_code` 0;
-  otherwise failed, the reason naming the count (e.g. "7 of 10 batch evidences").
+  otherwise failed, the reason naming the count (e.g. "7 of 10 batch evidences"). A part of one bundle run in
+  batch form (`admitted/<first>/batch_manifests.json` exists, or the folder holds `batch_<step>.json`) is read the
+  same way, never from a top-level `workload_return` it does not write (beta item 26, OPEN_ITEMS 184,
+  QUICK_READ_ALPHA_B r1). While the ledger already shows the termination but the controller is still cleaning up
+  (phase `terminate_instance`, no `controller_failure`, the phase written less than 15 minutes ago, its time taken
+  from the status line when it carries one, else from the latest attempt's run folder `<first>.N`) a batch part
+  reads `running`, not failed (DEV_contradoc_decision D2, 21 Nov 13:58); older than that it is failed.
 - `purpose` (ledger steps, required): the ledger purpose, of the form `[a-z0-9][a-z0-9-]{0,39}`; by default read
   from `launch.py` PURPOSES as a literal (never run). A ledger step with none is refused.
 - `controller_logs` (ledger steps): the step's own controller_detached.log paths (globs allowed), where a
@@ -117,8 +123,49 @@ below on fixture folders, each proof neutralised, failed, restored and passed.
 - `watch` (ledger steps, default true): start `watch.py <step>` detached after the launch.
 - `"template": true` (top level, OPEN_ITEMS 159): the folder is a template copied by hand; the chain never plans
   or launches it (its copies carry no marker).
+- `"measurement": true` with `"reading_check"` (top level, NEG-READING-A, beta item 18): a folder whose steps make a
+  measurement says so, and names its own reading self-check, a non-empty Python file of the folder (relative, no
+  `..`, no link). The chain runs it in the folder right after `launch.py preflight`, before every launch of the
+  folder's steps; it must exit 0 and print PASS on its last line, else the step is held like a failed preflight
+  (ALERT.md, tried again after 10 minutes). A folder declaring a measurement with no such file is refused whole:
+  none of its steps launches. Limits, plainly: the key is opt-in (a folder that does not declare it is read as
+  before and nothing checks that it should have); the chain cannot tell whether the file checks the right thing,
+  only that it ran and said PASS; a `launch.py` run by hand is not guarded. Check 698.
 - `admit_wait_minutes` (admit, default 20): how long after its launch an admit with no visible work still counts
   as launching; the chain never waits on it.
+
+## Earlier parts (hand launches too)
+
+A part launched by hand is held exactly as the chain would hold it (beta item 25, OPEN_ITEMS 174): every launch
+folder's `launch.py` loads `tools/loop/prior_parts.py` from the main checkout by path and, for a part step, adds its
+refusal to preflight's problems, so `launch.py <part>` and `launch.py preflight <part>` both stop while an earlier
+part of this folder, or of another arm of the same measurement (plan.json `prior_arms`, or a sibling folder whose
+plan.json declares the same `bench` and `set` with an `arm`), has a table with a non-zero exit code or an
+`entry_failure.json`, a `controller_failure`, or ended with fewer tables than bundles or with a returned table
+lacking `collected_evidence.tar.gz`. A part has ended when its termination is verified, its phase is
+`terminated_and_cleaned`, the ledger's last line for its purpose is a termination, or its `CURRENT_PHASE.json` is
+over 6 hours old (a killed controller). `launch.py <part> --decision D-NNN` launches anyway
+and prints what it overrides. A folder that cannot load the module refuses the part. The lines to add:
+
+```python
+def prior_part_problem(step, decision=None):
+    try:
+        spec = importlib.util.spec_from_file_location('prior_parts', M / 'tools' / 'loop' / 'prior_parts.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.refusal(HERE, step, decision)
+    except Exception as exc:
+        return 'tools/loop/prior_parts.py could not be read (%s): the part is not launched' % type(exc).__name__
+
+# in preflight(disk_floor, step, decision=None), beside the RAM floor:
+    if step in BUNDLES:
+        prior = prior_part_problem(step, decision)
+        if prior:
+            problems.append(prior)
+# in main: for `preflight STEP` and `STEP`, take `--decision D-NNN` from args and pass it to preflight
+```
+
+By hand: `py -3.12 -X utf8 tools/loop/prior_parts.py LAUNCH_FOLDER PART` (read-only, exit 1 on a refusal).
 
 ## Commands
 
